@@ -235,17 +235,19 @@ GLOBAL_LIST_EMPTY(mob_hat_cache)
 /mob/living/silicon/robot/drone/pick_module()
 	return
 
-//Drones cannot be upgraded with borg modules so we need to catch some items before they get used in ..().
-/mob/living/silicon/robot/drone/attackby(obj/item/W, mob/user)
-	if(IS_HELPING(user) && istype(W, /obj/item/clothing/head))
-		if(hat)
-			to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
-			return
-		user.unEquip(W)
-		place_on_head(W)
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [W] on \the [src]."))
-		return
-	return ..()
+EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM("Put on hat", PROC_REF(drone_interaction_hat)))
+
+/// Old attackby: on help intent a hat goes on the drone, before the cyborg item handling.
+/mob/living/silicon/robot/drone/proc/drone_interaction_hat(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!IS_HELPING(user) || !istype(held, /obj/item/clothing/head))
+		return FALSE
+	if(hat)
+		to_chat(user, span_warning("\The [src] is already wearing \the [hat]."))
+		return TRUE
+	user.unEquip(held)
+	place_on_head(held)
+	user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [held] on \the [src]."))
+	return TRUE
 
 /// Drones' wiring is always reachable.
 /mob/living/silicon/robot/drone/can_rewire()

@@ -60,8 +60,12 @@
 		data["bmode"] = dir2text(targetdirection)
 	return data
 
-/mob/living/bot/floorbot/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open controls", PROC_REF(floorbot_interaction_hand)))
+
+/// Old attack_hand (no gate, no default touch): open the controls.
+/mob/living/bot/floorbot/proc/floorbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /mob/living/bot/floorbot/emag_act(remaining_charges, mob/user)
 	. = ..()

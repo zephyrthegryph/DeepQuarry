@@ -54,17 +54,28 @@
 
 	name = "Mulebot #[suffix]"
 
-/mob/living/bot/mulebot/MouseDrop_T(atom/movable/C, mob/user)
+// DECLARE, not EXTEND: the item effect calls the bot's own effect first (old `..()` then update_icons()),
+// so the inherited bot spec must not run a second time.
+DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
+	INTERACT_ITEM(null, PROC_REF(mulebot_interaction_item)), \
+	INTERACT_HAND_UNGATED("Open controls", PROC_REF(mulebot_interaction_hand)), \
+	INTERACT_DRAG("Load", PROC_REF(mulebot_interaction_drag)))
+
+/// Old MouseDrop_T: load the dropped thing. Takes every drop (the old override never reached the drag-buckle).
+/mob/living/bot/mulebot/proc/mulebot_interaction_drag(mob/user, atom/movable/C, datum/interaction/interaction)
 	if(user.stat)
-		return
+		return TRUE
 
 	if(!istype(C) || C.anchored || get_dist(user, src) > 1 || get_dist(src, C) > 1 )
-		return
+		return TRUE
 
 	load(C)
+	return TRUE
 
-/mob/living/bot/mulebot/attack_hand(mob/user)
+/// Old attack_hand (no gate, no default touch): open the controls.
+/mob/living/bot/mulebot/proc/mulebot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /mob/living/bot/mulebot/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -144,8 +155,9 @@
 	home = get_turf(beaconlist[new_dest])
 	homeName = new_dest
 
-/mob/living/bot/mulebot/attackby(obj/item/O, mob/user)
-	..()
+/// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
+/mob/living/bot/mulebot/proc/mulebot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	. = bot_interaction_item(user, O, interaction)
 	update_icons()
 
 /mob/living/bot/mulebot/proc/obeyCommand(mob/user, command)

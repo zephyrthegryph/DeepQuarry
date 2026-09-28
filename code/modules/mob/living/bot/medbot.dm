@@ -208,7 +208,13 @@
 	else
 		icon_state = "medibot[on]"
 
-/mob/living/bot/medbot/attack_hand(mob/living/carbon/human/H)
+EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
+	INTERACT_ITEM(null, PROC_REF(medbot_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(medbot_interaction_hand)))
+
+/// Old attack_hand (no gate, no default touch): disarm tips it, help rights it, else open the controls.
+/mob/living/bot/medbot/proc/medbot_interaction_hand(mob/living/carbon/human/H, obj/item/held, datum/interaction/interaction)
+	. = TRUE
 	if(istype(H) && IS_DISARMING(H) && !is_tipped)
 		H.visible_message(span_danger("[H] begins tipping over [src]."), span_warning("You begin tipping over [src]..."))
 
@@ -264,22 +270,22 @@
 		ui = new(user, src, "Medbot", name)
 		ui.open()
 
-/mob/living/bot/medbot/attackby(obj/item/O, mob/user)
-	if(istype(O, /obj/item/reagent_containers/glass))
-		if(locked)
-			to_chat(user, span_notice("You cannot insert a beaker because the panel is locked."))
-			return
-		if(!isnull(reagent_glass))
-			to_chat(user, span_notice("There is already a beaker loaded."))
-			return
+/// Old attackby: load a beaker; anything else falls to the bot's item handling.
+/mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
+	if(!istype(O, /obj/item/reagent_containers/glass))
+		return FALSE
+	if(locked)
+		to_chat(user, span_notice("You cannot insert a beaker because the panel is locked."))
+		return TRUE
+	if(!isnull(reagent_glass))
+		to_chat(user, span_notice("There is already a beaker loaded."))
+		return TRUE
 
-		user.drop_item()
-		O.loc = src
-		reagent_glass = O
-		to_chat(user, span_notice("You insert [O]."))
-		return
-	else
-		..()
+	user.drop_item()
+	O.loc = src
+	reagent_glass = O
+	to_chat(user, span_notice("You insert [O]."))
+	return TRUE
 
 /mob/living/bot/medbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())

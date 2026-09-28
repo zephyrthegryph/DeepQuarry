@@ -1,5 +1,10 @@
-/mob/living/silicon/robot/platform/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
+	INTERACT_ITEM(null, PROC_REF(platform_interaction_item)), \
+	INTERACT_HAND_UNGATED(null, PROC_REF(platform_interaction_hand)), \
+	INTERACT_DRAG("Load into cargo", PROC_REF(platform_interaction_drag)))
 
+/// Old attack_hand: pop out the recharging item or cargo; otherwise the cyborg touch follows.
+/mob/living/silicon/robot/platform/proc/platform_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!opened)
 		if(recharging)
 			var/obj/item/recharging_atom = om_resolve(recharging)
@@ -13,10 +18,10 @@
 		if(try_remove_cargo(user))
 			return TRUE
 
-	. = ..()
+	return FALSE
 
-/mob/living/silicon/robot/platform/attackby(obj/item/W, mob/user)
-
+/// Old attackby: a cell goes in the recharging port; a floor painter repaints; else the cyborg handling.
+/mob/living/silicon/robot/platform/proc/platform_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell) && !opened)
 		if(recharging)
 			to_chat(user, span_warning("\The [src] already has \a [om_resolve(recharging)] inserted into its recharging port."))
@@ -27,10 +32,13 @@
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " slots \the [W] into \the [src]'s recharging port."))
 		return TRUE
 
+	// Old code returned FALSE here so the painter's afterattack called try_paint(); a used-up input
+	// skips afterattack now, so paint directly.
 	if(istype(W, /obj/item/floor_painter))
-		return FALSE // Paint sprayer wil call try_paint() in afterattack()
+		try_paint(W, user)
+		return TRUE
 
-	. = ..()
+	return FALSE
 
 /mob/living/silicon/robot/platform/attack_ghost(mob/observer/dead/user)
 

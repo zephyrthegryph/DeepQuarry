@@ -222,10 +222,10 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/stack/cable_coil/cyborg/material_totals()
 	return list()
 
-/obj/item/stack/cable_coil/cyborg/attack_self(mob/user)
-	. = ..(user)
-	if(.)
-		return TRUE
+EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colour", PROC_REF(cyborg_coil_self)))
+
+/// Old attack_self.
+/obj/item/stack/cable_coil/cyborg/proc/cyborg_coil_self(mob/user, obj/item/held, datum/interaction/interaction)
 	set_colour(user)
 
 /obj/item/stack/cable_coil/cyborg/proc/set_colour(mob/user)

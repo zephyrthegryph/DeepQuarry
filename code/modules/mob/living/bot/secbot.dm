@@ -123,8 +123,12 @@
 
 	return data
 
-/mob/living/bot/secbot/attack_hand(mob/user)
+EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", PROC_REF(secbot_interaction_hand)))
+
+/// Old attack_hand (no gate, no default touch): open the controls.
+/mob/living/bot/secbot/proc/secbot_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
+	return TRUE
 
 /mob/living/bot/secbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -409,23 +413,21 @@
 
 //Secbot Construction
 
-/obj/item/clothing/head/helmet/attackby(obj/item/assembly/signaler/S, mob/user as mob)
-	..()
-	if(!issignaler(S))
-		..()
-		return
+EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet, INTERACT_INSERT(/obj/item/assembly/signaler, PROC_REF(helmet_secbot_signaler), "Add signaler"))
 
+/// Old attackby: a secured signaler turns a plain helmet into a secbot assembly.
+/obj/item/clothing/head/helmet/proc/helmet_secbot_signaler(mob/user, obj/item/assembly/signaler/S, datum/interaction/interaction)
 	if(type != /obj/item/clothing/head/helmet) //Eh, but we don't want people making secbots out of space helmets.
-		return
+		return FALSE
 
-	if(S.secured)
-		consume(S, user)
-		var/obj/item/secbot_assembly/A = new /obj/item/secbot_assembly
-		user.put_in_hands(A)
-		to_chat(user, "You add the signaler to the helmet.")
-		consume(src, user)
-	else
-		return
+	if(!S.secured)
+		return INTERACTION_HANDLED_PASS
+	consume(S, user)
+	var/obj/item/secbot_assembly/A = new /obj/item/secbot_assembly
+	user.put_in_hands(A)
+	to_chat(user, "You add the signaler to the helmet.")
+	consume(src, user)
+	return TRUE
 
 /obj/item/secbot_assembly
 	name = "helmet/signaler assembly"
@@ -442,10 +444,12 @@
 	construction_graph = /datum/construction_graph/secbot_assembly
 
 // Renaming the finished bot is not construction: keep it a plain interaction.
-/obj/item/secbot_assembly/attackby(obj/item/W, mob/user)
-	..()
-	if(istype(W, /obj/item/pen))
-		ask_name_var(user)
+EXTEND_INTERACTIONS(/obj/item/secbot_assembly, INTERACT_INSERT(/obj/item/pen, PROC_REF(secbot_assembly_rename), "Rename"))
+
+/// Old attackby: name the bot with a pen.
+/obj/item/secbot_assembly/proc/secbot_assembly_rename(mob/user, obj/item/W, datum/interaction/interaction)
+	ask_name_var(user)
+	return INTERACTION_HANDLED_PASS
 
 /**
  * The Securitron assembly: a helmet welded open, then a signaler (added by

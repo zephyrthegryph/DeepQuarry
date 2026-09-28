@@ -118,11 +118,7 @@
 	created_name = "ED-CLN Security Robot"
 	construction_graph = /datum/construction_graph/secbot_assembly/edCLN
 
-// Renaming the finished bot is not construction: keep it a plain interaction.
-/obj/item/secbot_assembly/edCLN_assembly/attackby(obj/item/W as obj, mob/user as mob)
-	..()
-	if(istype(W, /obj/item/pen))
-		ask_name_var(user)
+// Renaming with a pen is inherited from /obj/item/secbot_assembly (secbot_assembly_rename).
 
 /datum/construction_graph/secbot_assembly/edCLN
 	id = "edCLN_assembly"
