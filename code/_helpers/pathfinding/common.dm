@@ -78,7 +78,7 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	RETURN_TYPE(/list)
 	CRASH("Not implemented on base type.")
 
-/// Identifies everything that decides this search's result, for SSpathfinder's failure cache.
+/// Identifies everything that decides this search's result, for the pathfinder service's failure cache.
 /// Returns null when the search can't be cached (a context object may carry its own state).
 /datum/pathfinding/proc/failure_cache_key()
 	if(context || !start || !goal)

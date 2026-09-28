@@ -122,11 +122,12 @@ GLOBAL_VAR_INIT(jps_visualization_resolve, TRUE)
 	var/adjacency_call = src.adjacency_call
 	var/heuristic_call = src.heuristic_call
 	var/datum/context = src.context
-	if(SSpathfinder.pathfinding_cycle >= SHORT_REAL_LIMIT)
-		SSpathfinder.pathfinding_cycle = 0
+	var/datum/om/service/pathfinder/pathfinder = om_pathfinder()
+	if(pathfinder.pathfinding_cycle >= SHORT_REAL_LIMIT)
+		pathfinder.pathfinding_cycle = 0
 	// our cycle. used to determine if a turf was pathed on by us. in theory, this isn't entirely collision resistant,
 	// but i don't really care :>
-	var/cycle = ++SSpathfinder.pathfinding_cycle
+	var/cycle = ++pathfinder.pathfinding_cycle
 	//* variables - run
 	// open priority queue
 	var/datum/priority_queue/open = new /datum/priority_queue(/proc/cmp_jps_node)
