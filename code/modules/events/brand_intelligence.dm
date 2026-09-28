@@ -2,8 +2,8 @@
 	announceWhen	= 21
 	endWhen			= 1000	//Ends when all vending machines are subverted anyway.
 
-	var/list/obj/machinery/vending/vendingMachines
-	var/list/obj/machinery/vending/infectedVendingMachines
+	var/list/vendingMachines	// OM handles
+	var/list/infectedVendingMachines	// OM handles
 	var/tmp/originMachine_handle
 
 	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
@@ -22,14 +22,14 @@
 /datum/event/brand_intelligence/start()
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(isNotStationLevel(V.z))	continue
-		LAZYADD(vendingMachines, V)
+		LAZYADD(vendingMachines, om_handle(V))
 
 	if(!length(vendingMachines))
 		kill()
 		return
 
-	originMachine_handle = om_handle(DEFAULTPICK(vendingMachines, null))
-	LAZYREMOVE(vendingMachines, originMachine())
+	originMachine_handle = DEFAULTPICK(vendingMachines, null)
+	LAZYREMOVE(vendingMachines, originMachine_handle)
 	originMachine().shut_up = 0
 	originMachine().shoot_inventory = 1
 
@@ -37,7 +37,7 @@
 /datum/event/brand_intelligence/tick()
 	if(!length(vendingMachines) || !originMachine() || originMachine().shut_up) //if every machine is infected, or if the original vending machine is missing or has it's voice switch flipped
 		// Effects when 'source' machine is destroyed/silenced
-		for(var/obj/machinery/vending/saved in infectedVendingMachines)
+		for(var/obj/machinery/vending/saved in om_resolve_all(infectedVendingMachines))
 			saved.shoot_inventory = 0
 		if(originMachine())
 			originMachine().speak("I am... vanquished. My people will remem...ber...meeee.")
@@ -48,17 +48,19 @@
 
 	if(ISMULTIPLE(activeFor, 5))
 		if(prob(15))
-			var/obj/machinery/vending/infectedMachine = DEFAULTPICK(vendingMachines, null)
-			LAZYREMOVE(vendingMachines, infectedMachine)
-			LAZYADD(infectedVendingMachines, infectedMachine)
-			infectedMachine.shut_up = 0
-			infectedMachine.shoot_inventory = 1
+			var/infected_handle = DEFAULTPICK(vendingMachines, null)
+			LAZYREMOVE(vendingMachines, infected_handle)
+			var/obj/machinery/vending/infectedMachine = om_resolve(infected_handle)
+			if(infectedMachine)
+				LAZYADD(infectedVendingMachines, infected_handle)
+				infectedMachine.shut_up = 0
+				infectedMachine.shoot_inventory = 1
 
 			if(ISMULTIPLE(activeFor, 12))
 				originMachine().balloon_alert_visible(pick(rampant_speeches))
 
 /datum/event/brand_intelligence/end()
-	for(var/obj/machinery/vending/infectedMachine in infectedVendingMachines)
+	for(var/obj/machinery/vending/infectedMachine in om_resolve_all(infectedVendingMachines))
 		infectedMachine.shut_up = 1
 		infectedMachine.shoot_inventory = 0
 

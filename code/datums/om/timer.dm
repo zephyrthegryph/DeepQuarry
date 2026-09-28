@@ -318,6 +318,15 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 	state[1] = FALSE
 
 /// Resolves captured handles in place. FALSE if any is gone.
+/// The live datums a list of OM handles names, in order, skipping any that have been deleted.
+/// For an instance list keyed by om_handle() (LC-refs: lists, lifecycle.md sec 4) that is iterated.
+/proc/om_resolve_all(list/handles)
+	. = list()
+	for(var/h in handles)
+		var/datum/D = om_resolve(h)
+		if(D)
+			. += D
+
 /proc/om_resolve_captured(list/captured, list/positions)
 	for(var/i in positions)
 		var/datum/D = om_resolve(captured[i])

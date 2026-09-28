@@ -1,6 +1,6 @@
 /datum/event/hostile_runtime
 	var/tmp/picked_area_handle
-	var/list/obj/machinery/door/airlock/target_airlocks
+	var/list/target_airlocks	// OM handles
 	var/tmp/apc_handle
 
 	var/static/list/excluded = list(
@@ -27,7 +27,7 @@
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
-		LAZYADD(target_airlocks, airlock)
+		LAZYADD(target_airlocks, om_handle(airlock))
 
 	if(!picked_area())
 		log_game("Hostile Runtime event: No areas was chosen!")
@@ -48,14 +48,14 @@
 /datum/event/hostile_runtime/start()
 	switch(severity)
 		if(EVENT_LEVEL_MODERATE)
-			for(var/obj/machinery/door/airlock/door in target_airlocks)
+			for(var/obj/machinery/door/airlock/door in om_resolve_all(target_airlocks))
 				if(prob(50))
 					door.lock()
 					door.aiControlDisabled = TRUE
 					if(prob(75))
 						door.electrify(-1)
 		if(EVENT_LEVEL_MAJOR)
-			for(var/obj/machinery/door/airlock/door in target_airlocks)
+			for(var/obj/machinery/door/airlock/door in om_resolve_all(target_airlocks))
 				door.lock()
 				door.aiControlDisabled = TRUE
 				door.electrify(-1)

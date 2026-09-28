@@ -27,8 +27,8 @@
 	var/original_mobs = 0
 
 	//in-use spawns from the area
-	var/list/obj/asteroid_spawner/rockspawns
-	var/list/obj/rogue_mobspawner/mobspawns
+	var/list/rockspawns	// OM handles (om_resolve_all())
+	var/list/mobspawns	// OM handles (om_resolve_all())
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
@@ -281,20 +281,20 @@
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
 	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
-	for(var/obj/asteroid_spawner/SP in rockspawns)
+	for(var/obj/asteroid_spawner/SP in om_resolve_all(rockspawns))
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
 		GLOB.rm_controller.dbg("ZM(p): Placing asteroid.")
 		place_asteroid(A,SP)
 
-	for(var/obj/rogue_mobspawner/SP in mobspawns)
+	for(var/obj/rogue_mobspawner/SP in om_resolve_all(mobspawns))
 		GLOB.rm_controller.dbg("ZM(p): Spawning mob at [SP.x],[SP.y],[SP.z].")
 		//Make sure we can spawn a spacemob here
 		if(!istype(get_turf(SP),/turf/space))
 			GLOB.rm_controller.dbg("ZM(p): Turf blocking mob spawn at [SP.x],[SP.y],[SP.z].")
-			LAZYREMOVE(mobspawns, SP)
+			LAZYREMOVE(mobspawns, om_handle_of(SP))
 			for(var/obj/rogue_mobspawner/NS in myarea().mob_spawns)
-				if(NS in mobspawns)
+				if(om_handle_of(NS) in mobspawns)
 					continue
 				if(istype(get_turf(NS),/turf/space))
 					SP = NS
@@ -320,7 +320,7 @@
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
 	for(var/obj/asteroid_spawner/SP in myarea().asteroid_spawns)
 		if(prob(chance))
-			LAZYADD(rockspawns, SP)
+			LAZYADD(rockspawns, om_handle(SP))
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
@@ -328,7 +328,7 @@
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
 	for(var/obj/rogue_mobspawner/SP in myarea().mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
-			LAZYADD(mobspawns, SP)
+			LAZYADD(mobspawns, om_handle(SP))
 			original_mobs++
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
 	return myarea()
@@ -448,3 +448,4 @@
 /// LC-refs: the myshuttle_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
 	return om_resolve(myshuttle_landmark_handle)
+
