@@ -430,5 +430,5 @@ REF_WEAK_LIST(/datum/unit_test/dq_integrity_pool, "before_contents")
 	TEST_ASSERT(dq_near(applied, before - mech.get_integrity(), 0.01), "the sink reports what it applied")
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)
 	P.damage = 30
-	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through dynbulletdamage, not the generic adapter")
+	TEST_ASSERT_EQUAL(mech.projectile_damage(P, null), 0, "rounds go through the mech body plan, not the generic adapter")
 	clear_debris(T)

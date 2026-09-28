@@ -1055,71 +1055,23 @@ REF_PAIR(/obj/mecha, list("minihud" = "owner_mech"))
 
 /obj/mecha/proc/clearInternalDamage(int_dam_flag)
 	internal_damage &= ~int_dam_flag
-	switch(int_dam_flag)
-		if(MECHA_INT_TEMP_CONTROL)
-			occupant_message(span_infoplain(span_blue(span_bold("Life support system reactivated."))))
-			start_process(MECHA_PROC_INT_TEMP)
-		if(MECHA_INT_FIRE)
-			occupant_message(span_infoplain(span_blue(span_bold("Internal fire extinquished."))))
-		if(MECHA_INT_TANK_BREACH)
-			occupant_message(span_infoplain(span_blue(span_bold("Damaged internal tank has been sealed."))))
+	var/datum/mech_affliction/A = mech_body_plan().affliction_for(int_dam_flag)
+	A?.on_cleared(src)
 	return
 
 ////////////////////////////////////////
 ////////  Health related procs  ////////
 ////////////////////////////////////////
 
+/// Legacy integrity-style damage call. Everything lands through the machine body plan
+/// (code/modules/body/mech_body.dm): armour plates, hull, then internal parts.
 /obj/mecha/take_damage(amount, type=BRUTE)
-	// Mech armour tables key burn absorption as "fire".
-	if(type == BURN)
-		type = FIRE
-	update_damage_alerts()
-	if(amount)
-		var/damage = absorbDamage(amount,type)
+	mech_body_plan().injure(src, amount, type)
 
-		damage = components_handle_damage(damage,type)
-
-		update_integrity(get_integrity() - damage)
-
-		update_health()
-		log_append_to_last("Took [damage] points of damage. Damage type: \"[type]\".",1)
-	return
-
-/obj/mecha/proc/components_handle_damage(damage, type = BRUTE)
-	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-
-	if(AC)
-		var/armor_efficiency = AC.get_efficiency()
-		var/damage_change = armor_efficiency * (damage * 0.5) * AC.damage_absorption[type]
-		AC.damage_part(damage_change, type)
-		damage -= damage_change
-
-	var/obj/item/mecha_parts/component/hull/HC = internal_components[MECH_HULL]
-
-	if(HC)
-		if(HC.get_integrity())
-			var/hull_absorb = round(rand(5, 10) / 10, 0.1) * damage
-			HC.damage_part(hull_absorb, type)
-			damage -= hull_absorb
-
-	for(var/obj/item/mecha_parts/component/C in (internal_components - list(MECH_HULL, MECH_ARMOR)))
-		if(prob(C.relative_size))
-			var/damage_part_amt = round(damage / 4, 0.1)
-			C.damage_part(damage_part_amt)
-			damage -= damage_part_amt
-
-	return damage
-
-/obj/mecha/proc/get_damage_absorption()
-	var/obj/item/mecha_parts/component/armor/AC = internal_components[MECH_ARMOR]
-	if(istype(AC) && AC.get_efficiency() > 0.25)
-		return AC.damage_absorption
-
-/obj/mecha/proc/absorbDamage(damage,damage_type)
-	return call((LAZYACCESS(proc_res, "dynabsorbdamage")||src), "dynabsorbdamage")(damage,damage_type)
-
-/obj/mecha/proc/dynabsorbdamage(damage,damage_type)
-	return damage*(listgetindex(get_damage_absorption(),damage_type) || 1)
+/// The mech's injure(): a hit of `amount` keyed by armour key, through the body plan.
+/// Returns the chassis integrity lost.
+/obj/mecha/proc/injure_mech(amount, armor_key = MELEE)
+	return mech_body_plan().injure(src, amount, armor_key)
 
 /obj/mecha/airlock_crush(crush_damage)
 	..()
@@ -1215,105 +1167,48 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		src.log_append_to_last("Armor saved.")
 	return TRUE
 
-/// The mech's packet sink. Each kind lands through the mech's own absorption
-/// and component model (take_damage: absorbDamage, then
-/// components_handle_damage), keyed by the kind's armour key. The body-model
-/// step (damage.md §5, with the body rewrite) replaces this with the machine
-/// body plan. Projectiles and throws keep their own entry points
-/// (dynbulletdamage, dynhitby), which apply deflection and penetration first.
+/// The mech's packet sink. Each kind lands through the machine body plan
+/// (mech_body_plan().injure), keyed by the kind's armour key. Projectiles and throws
+/// come in through their own body entry points (receive_projectile, receive_thrown),
+/// which apply deflection and penetration first.
 /obj/mecha/receive_damage(datum/damage_packet/packet)
 	if(QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
+	var/datum/mech_body_plan/plan = mech_body_plan()
 	. = 0
 	for(var/kind in 1 to DAMAGE_KIND_COUNT)
 		var/amount = amounts[kind]
 		if(amount <= 0)
 			continue
-		if(!damage_kind_obj_damage_type(kind))
+		var/armor_key = damage_kind_obj_damage_type(kind)
+		if(!armor_key)
 			continue
 		if(kind == DAMAGE_IONIC)
 			amount *= emp_integrity_factor
 			if(amount <= 0)
 				continue
 		var/before = get_integrity()
-		take_damage(amount, damage_kind_obj_damage_type(kind))
+		plan.injure(src, amount, armor_key)
 		if(QDELETED(src))
 			return . + before
 		. += before - get_integrity()
 
-/// dynbulletdamage() already applied the round (deflection, penetration, equipment).
+/// bullet_act() already applied the round through the body plan (receive_projectile).
 /obj/mecha/projectile_damage(obj/item/projectile/P, def_zone)
 	return 0
 
-/// dynhitby() already applied the throw.
+/// hitby() already applied the throw through the body plan (receive_thrown).
 /obj/mecha/thrown_damage(atom/movable/source, datum/thrownthing/throwingdatum)
 	return 0
 
-/obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum) //wrapper
+/obj/mecha/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	src.mecha_log_message("Hit by [source].",1)
-	call((LAZYACCESS(proc_res, "dynhitby")||src), "dynhitby")(source)
+	mech_body_plan().receive_thrown(src, source)
 	return
 
-//I think this is relative to throws.
-/obj/mecha/proc/dynhitby(atom/movable/A)
-	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
-
-	var/temp_deflect_chance = deflect_chance
-	var/temp_fail_penetration_value = fail_penetration_value
-
-	if(!ArmC)
-		temp_deflect_chance = 0
-		//temp_damage_minimum = 0 //CHOMPremove
-		//temp_minimum_penetration = 0
-		temp_fail_penetration_value = 1
-
-	else
-		temp_deflect_chance = round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0))
-		//temp_damage_minimum = round(ArmC.get_efficiency() * ArmC.damage_minimum) //CHOMPremove
-		//temp_minimum_penetration = round(ArmC.get_efficiency() * ArmC.minimum_penetration) //CHOMPremove
-		temp_fail_penetration_value = round(ArmC.get_efficiency() * ArmC.fail_penetration_value)
-
-	if(istype(A, /obj/item/mecha_parts/mecha_tracking))
-		A.forceMove(src)
-		src.visible_message("The [A] fastens firmly to [src].")
-		return
-	if(prob(temp_deflect_chance) || istype(A, /mob))
-		src.occupant_message(span_notice("\The [A] bounces off the armor."))
-		src.visible_message("\The [A] bounces off \the [src] armor")
-		src.log_append_to_last("Armor saved.")
-		if(isliving(A))
-			var/mob/living/M = A
-			M.injure(INJURY_BLUNT, 10, null, src)
-	else if(istype(A, /obj/item))
-		var/obj/item/O = A
-		if(O.throwforce)
-			var/pass_damage = O.throwforce
-			var/pass_damage_reduc_mod
-			if(pass_damage <= damage_minimum) // Too little to go through. // temp_damage_mininum -> damage_minimum
-				src.occupant_message(span_notice("\The [A] bounces off the armor."))
-				src.visible_message("\The [A] bounces off \the [src] armor")
-				return
-
-			else if(O.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // temp_minimum_penetration -> minimum_penetration
-				src.occupant_message(span_notice("\The [A] struggles to bypass \the [src] armor."))
-				src.visible_message("\The [A] struggles to bypass \the [src] armor")
-				pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
-			else
-				src.occupant_message(span_notice("\The [A] manages to pierce \the [src] armor."))
-				pass_damage_reduc_mod = 1
-
-			for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
-				pass_damage = ME.handle_ranged_contact(A, pass_damage)
-
-			pass_damage = (pass_damage*pass_damage_reduc_mod)//Applying damage reduction
-			src.take_damage(pass_damage)	//The take_damage() proc handles armor values
-			if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
-				src.check_for_internal_damage(list(MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST))
-	return
-
-/obj/mecha/bullet_act(obj/item/projectile/Proj) //wrapper
+/obj/mecha/bullet_act(obj/item/projectile/Proj)
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
@@ -1321,88 +1216,15 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
-	call((LAZYACCESS(proc_res, "dynbulletdamage")||src), "dynbulletdamage")(Proj) //calls equipment
+	if(!negate_projectile(Proj))
+		mech_body_plan().receive_projectile(src, Proj)
 	..()
 	return
 
-/obj/mecha/proc/dynbulletdamage(obj/item/projectile/Proj)
-	var/obj/item/mecha_parts/component/armor/ArmC = internal_components[MECH_ARMOR]
-
-	var/temp_deflect_chance = deflect_chance
-	var/temp_fail_penetration_value = fail_penetration_value
-
-	if(!ArmC)
-		temp_deflect_chance = 0
-		//temp_damage_minimum = 0 //CHOMPremove
-		//temp_minimum_penetration = 0 //CHOMPremove
-		temp_fail_penetration_value = 1
-
-	else
-		temp_deflect_chance = round(ArmC.get_efficiency() * ArmC.deflect_chance + (defence_mode ? 25 : 0))
-		//temp_damage_minimum = round(ArmC.get_efficiency() * ArmC.damage_minimum) //CHOMPremove
-		//temp_minimum_penetration = round(ArmC.get_efficiency() * ArmC.minimum_penetration) //CHOMPremove
-		temp_fail_penetration_value = round(ArmC.get_efficiency() * ArmC.fail_penetration_value)
-
-	if(prob(temp_deflect_chance))
-		src.occupant_message(span_notice("The armor deflects incoming projectile."))
-		src.visible_message("The [src.name] armor deflects the projectile")
-		src.log_append_to_last("Armor saved.")
-		return
-
-	if(Proj.injury_kind == INJURY_PAIN)
-		use_power(Proj.agony * 5)
-
-	if(!(Proj.nodamage))
-		var/ignore_threshold
-		if(istype(Proj, /obj/item/projectile/beam/pulse))	//ATM, this is literally only for the pulse rifles used mostly by deathsquads.
-			ignore_threshold = 1
-
-		var/pass_damage = Proj.damage
-		var/pass_damage_reduc_mod
-		for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
-			pass_damage = ME.handle_projectile_contact(Proj, pass_damage)
-
-		if(pass_damage < damage_minimum) // too pathetic to really damage you. // temp_damage_minimum -> damage_minimum
-			src.occupant_message(span_notice("The armor deflects incoming projectile."))
-			src.visible_message("The [src.name] armor deflects\the [Proj]")
-			return
-
-		else if(Proj.armor_penetration < minimum_penetration) // If you don't have enough pen, you won't do full damage // temp_minimum_penetration -> damage_minimum
-			src.occupant_message(span_notice("\The [Proj] struggles to pierce \the [src] armor."))
-			src.visible_message("\The [Proj] struggles to pierce \the [src] armor")
-			pass_damage_reduc_mod = temp_fail_penetration_value	//This will apply to reduce damage to 2/3 or 66% by default
-
-		else	//You go through completely because you use AP. Nice.
-			src.occupant_message(span_notice("\The [Proj] manages to pierce \the [src] armor."))
-			pass_damage_reduc_mod = 1
-
-		pass_damage = (pass_damage_reduc_mod*pass_damage)//Apply damage reduction before usage.
-		// we can spark even when taking no damage. But don't check after a proc that might have deleted this
-		if(prob(25))
-			spark_system.start()
-		src.take_damage(pass_damage, injury_armor_key(Proj.injury_kind))	//The take_damage() proc handles armor values
-		if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
-			src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),ignore_threshold)
-
-		//AP projectiles have a chance to cause additional damage
-		if(Proj.penetrating)
-			var/distance = get_dist(Proj.starting, get_turf(loc))
-			var/hit_occupant = 1 //only allow the occupant to be hit once
-			for(var/i in 1 to min(Proj.penetrating, round(Proj.damage/15)))
-				if(src?.slot_item(MECHA_SLOT_PILOT) && hit_occupant && prob(20))
-					Proj.attack_mob(src?.slot_item(MECHA_SLOT_PILOT), distance)
-					hit_occupant = 0
-				else
-					if(pass_damage > internal_damage_minimum)	//Only decently painful attacks trigger a chance of mech damage.
-						src.check_for_internal_damage(list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT), 1)
-
-				Proj.penetrating--
-
-				if(prob(15))
-					break //give a chance to exit early
-
-	Proj.on_hit(src) //on_hit just returns if it's argument is not a living mob so does this actually do anything?
-	return
+/// Chassis-specific chance to negate a round before it reaches the body (phase armour).
+/// Return TRUE when the round is negated.
+/obj/mecha/proc/negate_projectile(obj/item/projectile/Proj)
+	return FALSE
 
 //This refer to whenever you are caught in an explosion.
 /obj/mecha/ex_act(severity)

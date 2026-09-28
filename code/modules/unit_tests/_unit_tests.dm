@@ -204,6 +204,7 @@
 #include "dq_explosion_batch_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_integrity_pool_tests.dm"
+#include "dq_mech_body_tests.dm"
 #include "dq_pool_tests.dm"
 #include "dq_robot_machine_tests.dm"
 #include "dq_life_om_tests.dm"
