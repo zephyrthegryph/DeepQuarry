@@ -23,6 +23,12 @@
 	GLOB.dq_refsearch_spent_ds += REALTIMEOFDAY - search_started
 #endif
 
+// Declared in every build so unit_test.dm and DreamChecker see them; only test builds fill them.
+GLOBAL_LIST_EMPTY(dq_refsearch_searched)
+GLOBAL_LIST_EMPTY(dq_refsearch_type_counts)
+GLOBAL_LIST_EMPTY(dq_refsearch_skipped)
+GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
+
 #ifdef UNIT_TESTS
 /// Test builds: every automatic reference search (GC hard lookup, collapse
 /// diagnostics) runs with FIND_REF_NO_CHECK_TICK and can freeze the world for
@@ -33,10 +39,6 @@
 /// instead of hanging it.
 #define DQ_REFSEARCH_PER_TYPE 3
 #define DQ_REFSEARCH_BUDGET_DS (5 MINUTES)
-GLOBAL_LIST_EMPTY(dq_refsearch_searched)
-GLOBAL_LIST_EMPTY(dq_refsearch_type_counts)
-GLOBAL_LIST_EMPTY(dq_refsearch_skipped)
-GLOBAL_VAR_INIT(dq_refsearch_spent_ds, 0)
 
 /proc/dq_refsearch_allowed(datum/D)
 	var/key = ref(D)
