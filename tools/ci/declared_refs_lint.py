@@ -93,6 +93,7 @@ LIST_ADD = re.compile(r"^(?:src\.)?(\w+)\s*(?:\+=|\|=)\s*(.+)$")
 LIST_ASSIGN = re.compile(r"^(?:src\.)?(\w+)\s*=(?!=)\s*list\((.*)\)\s*$")
 BACKLIST_VALUE = re.compile(r'"\w+"\s*=\s*"(\w+)"')
 
+OM_FIELD_TYPED = re.compile(r"^OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,\s*(\w+)\s*,")
 VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
 STRING_LIT = re.compile(r'"([^"]*)"')
 
@@ -194,6 +195,14 @@ def scan_file(path):
         if indent == 0:
             m = TYPE_HEADER.match(text)
             cur_type = m.group(1) if m else None
+            # OM_FIELD_TYPED(type, vartype, name, ...) declares `type/var/vartype/name` (om.dm).
+            fm = OM_FIELD_TYPED.match(text)
+            if fm:
+                parsed = split_var((fm.group(2) + "/" + fm.group(3)).strip("/").split("/"))
+                if parsed:
+                    mods, vtype, name, _is_list = parsed
+                    if not (mods & UNSAVED_MODS) and under(vtype, REF_ROOTS)                             and name not in declared.get(fm.group(1), ()):
+                        sites.append((rel, no, "%s var/%s/%s" % (fm.group(1), vtype.strip("/"), name)))
             continue
         if indent != 1 or cur_type is None:
             continue

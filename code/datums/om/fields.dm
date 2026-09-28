@@ -25,7 +25,7 @@
 /datum/om/registry
 	/// type path -> field name -> channel (every field_def whose `of` is an ancestor, merged).
 	var/list/fields_by_type = list()
-	/// Every /datum/om/field_def prototype.
+	/// Every /datum/om/field_def type (read with initial(); never instantiated).
 	var/list/field_defs
 
 /// Declared fields of `path` (and its ancestors): field name -> channel.
@@ -37,13 +37,13 @@
 	if(!field_defs)
 		field_defs = list()
 		for(var/def_path in subtypesof(/datum/om/field_def))
-			var/datum/om/field_def/D = new def_path
-			if(D.field)
-				field_defs += D
+			var/datum/om/field_def/D = def_path
+			if(initial(D.field))
+				field_defs += def_path
 	F = list()
 	for(var/datum/om/field_def/D as anything in field_defs)
-		if(ispath(path, D.of))
-			F[D.field] |= D.channel
+		if(ispath(path, initial(D.of)))
+			F[initial(D.field)] |= initial(D.channel)
 	fields_by_type[path] = F
 	return F
 
