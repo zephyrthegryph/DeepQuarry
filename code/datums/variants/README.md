@@ -25,7 +25,7 @@ plus a data table.
 |---|---|
 | `code/datums/variants/` | Shared plumbing and the crayon/marker variants. |
 | `code/modules/clothing/variants/` | One file per collapsed clothing family. |
-| `code/datums/components/sparse_vars/` | The same idea for per-instance vars: rarely used `/atom` vars moved into components so most atoms carry no storage for them. |
+| `code/datums/entity_state/sparse_vars/` | The same idea for per-instance vars: rarely used `/atom` vars moved into components so most atoms carry no storage for them. |
 
 ## Adding a family
 

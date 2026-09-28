@@ -10,7 +10,7 @@
 //
 // Minds move between bodies and mind hosts (brain organs, MMIs, posibrains,
 // protean cores) through /proc/transfer_mind() — see
-// code/datums/components/mind_host.dm.
+// code/datums/entity_state/mind_host.dm.
 
 /datum/character_identity
 	/// The character's real name.

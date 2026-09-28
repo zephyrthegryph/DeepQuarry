@@ -71,7 +71,7 @@
 // --- Trait systems ------------------------------------------------------------------------------
 
 /// Category for trait stages (the old COMSIG_LIVING_LIFE listeners). A trait state
-/// (/datum/trait_state, code/datums/components/traits/_trait_state.dm) adds its stage with
+/// (/datum/trait_state, code/datums/entity_state/traits/_trait_state.dm) adds its stage with
 /// om_stage_add() when it attaches and removes it when it detaches. A subtype either sets
 /// `state_type` (the stage then calls life_tick() on each such state each cycle) or overrides perform().
 /datum/om/stage/life/trait
