@@ -90,10 +90,7 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	output.assembly_handle = om_handle(src)
 
 // its holder device forgets the assembly.
-/obj/item/electronic_assembly/device/on_destroy(force)
-	if(holder()?.EA == src)
-		holder().EA = null
-	..()
+REF_BACK_HANDLE(/obj/item/electronic_assembly/device, list("holder_handle" = "EA"))
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))

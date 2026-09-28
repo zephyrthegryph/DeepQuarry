@@ -24,11 +24,7 @@
 REF_OWNED_LIST(/atom/movable/screen/movable/ability_master, "ability_objects")
 
 // the mob's ability_master var points back at us; a master deleted on its own clears it.
-/atom/movable/screen/movable/ability_master/on_destroy(force)
-	var/mob/M = my_mob()
-	if(M?.ability_master == src)
-		M.ability_master = null
-	..()
+REF_BACK_HANDLE(/atom/movable/screen/movable/ability_master, list("my_mob_handle" = "ability_master"))
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)

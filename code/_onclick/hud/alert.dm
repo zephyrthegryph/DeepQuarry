@@ -498,13 +498,6 @@ so as to remain in compliance with the most up-to-date laws."
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr
 
-// Alerts are pooled per mob; reset rather than collected.
-/atom/movable/screen/alert/on_destroy(force)
-	..()
-	severity = 0
-	master_ref = null
-	screen_loc = ""
-
 /atom/movable/screen/alert/fat
 	name = "Full"
 	desc = "You overate! If you don't exercise soon, you might find yourself gaining weight."

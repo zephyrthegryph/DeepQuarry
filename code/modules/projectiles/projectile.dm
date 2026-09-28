@@ -491,10 +491,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return ..()
 
 // its casing forgets it.
-/obj/item/projectile/on_destroy(force)
-	if(my_case()?.BB == src)
-		my_case().BB = null
-	..()
+REF_BACK_HANDLE(/obj/item/projectile, list("my_case_handle" = "BB"))
 
 /obj/item/projectile/proc/cleanup_beam_segments()
 	QDEL_LIST_ASSOC(beam_segments)

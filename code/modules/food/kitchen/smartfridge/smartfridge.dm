@@ -405,8 +405,6 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 // records shared with the upper unit must not be deleted with it (the owned
 // item_records list is deleted when the links clear, right after this).
 /obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
-	if(attached())
-		attached().attached_handle = null // clear the upper unit's back-reference to us
 	item_records = null // shared with the upper unit; don't let phase 4 qdel its stored records
 	..()
 
@@ -435,3 +433,4 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
 	return om_resolve(attached_handle)
+REF_BACK_HANDLE(/obj/machinery/smartfridge/chemistry/chemvator/down, list("attached_handle" = "attached_handle"))

@@ -93,10 +93,7 @@
 	director().defense_runtime_handle = om_handle(src)
 
 // its director forgets it.
-/datum/generated_station_defense_runtime/on_destroy(force)
-	if(om_handle_is(director()?.defense_runtime_handle, src))
-		director().defense_runtime_handle = null
-	..()
+REF_BACK_HANDLE(/datum/generated_station_defense_runtime, list("director_handle" = "defense_runtime_handle"))
 
 
 /datum/generated_station_defense_runtime/proc/create_roster()

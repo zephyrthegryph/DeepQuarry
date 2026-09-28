@@ -16,6 +16,8 @@
 			call(destroy_listener, destroy_listeners[destroy_listener])(src)
 	// Component qdels with the atom; no manual cleanup needed.
 	..()
+	// alternate appearances (code/modules/entopics/alternate_appearance.dm) leave everyone who saw them.
+	remove_all_alt_appearances()
 
 /atom/proc/register(event, procOwner, proc_call)
 	var/list/listeners = dq_get_listener_list_from_event(src, event)

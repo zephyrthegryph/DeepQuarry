@@ -13,10 +13,7 @@
 	src.owner_handle = om_handle(owner)
 
 // clears the client's back-reference (clients aren't datums).
-/datum/interaction_menu/on_destroy(force)
-	if(owner()?.interaction_menu == src)
-		owner().interaction_menu = null
-	..()
+REF_BACK_HANDLE(/datum/interaction_menu, list("owner_handle" = "interaction_menu"))
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 

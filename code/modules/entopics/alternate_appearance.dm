@@ -54,10 +54,6 @@
 	remove()
 	..()
 
-/atom/on_destroy(force)
-	..()
-	remove_all_alt_appearances()
-
 /atom/proc/add_alt_appearance(key, img, list/displayTo = list())
 	if(!key || !img)
 		return

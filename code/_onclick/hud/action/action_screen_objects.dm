@@ -257,11 +257,7 @@
 	var/color_timer_id
 
 // the hud owns us as its toggle_palette; one deleted on its own clears that var.
-/atom/movable/screen/button_palette/on_destroy(force)
-	var/datum/hud/hud = our_hud()
-	if(hud?.toggle_palette == src)
-		hud.toggle_palette = null
-	..()
+REF_BACK_HANDLE(/atom/movable/screen/button_palette, list("our_hud_handle" = "toggle_palette"))
 
 /atom/movable/screen/button_palette/Initialize(mapload)
 	. = ..()
@@ -422,11 +418,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	scroll_direction = 1
 
 // the hud owns us as its palette_down; one deleted on its own clears that var.
-/atom/movable/screen/palette_scroll/down/on_destroy(force)
-	var/datum/hud/hud = our_hud()
-	if(hud?.palette_down == src)
-		hud.palette_down = null
-	..()
+REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/down, list("our_hud_handle" = "palette_down"))
 
 /atom/movable/screen/palette_scroll/up
 	name = "Scroll Up"
@@ -435,11 +427,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	scroll_direction = -1
 
 // the hud owns us as its palette_up; one deleted on its own clears that var.
-/atom/movable/screen/palette_scroll/up/on_destroy(force)
-	var/datum/hud/hud = our_hud()
-	if(hud?.palette_up == src)
-		hud.palette_up = null
-	..()
+REF_BACK_HANDLE(/atom/movable/screen/palette_scroll/up, list("our_hud_handle" = "palette_up"))
 
 /// Exists so you have a place to put your buttons when you move them around
 /atom/movable/screen/action_landing

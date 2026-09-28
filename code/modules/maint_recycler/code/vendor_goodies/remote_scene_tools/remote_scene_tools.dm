@@ -137,8 +137,6 @@ why aren't these accessories?
 // its linked tool forgets it; its wearer is unregistered.
 /obj/item/remote_scene_tool/on_destroy(force)
 	..()
-	if(linked())
-		linked().linked_handle = null //clear out the other side
 	unregister_from_mob(worn_mob())
 
 /obj/item/remote_scene_tool/examine(mob/user)
@@ -215,3 +213,4 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 /// LC-refs: the worn_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return om_resolve(worn_mob_handle)
+REF_BACK_HANDLE(/obj/item/remote_scene_tool, list("linked_handle" = "linked_handle"))

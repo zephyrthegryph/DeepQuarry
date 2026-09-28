@@ -337,13 +337,6 @@
 			undeploy()
 		revert_shell() // To get it out of the GLOB list.
 	set_cell(null)
-	QDEL_LIST(components)
-	if(module)
-		QDEL_NULL(module)
-	if(radio)
-		QDEL_NULL(radio)
-	if(camera)
-		QDEL_NULL(camera)
 	..()
 
 /// Stat changes are events: equipment drops once, senses and sprite refresh once.
@@ -1846,7 +1839,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 REF_OWNED(/mob/living/silicon/robot, list("robotact", "bolt", "communicator", "rbPDA", "hat_overlay", "inv1", "inv2", "inv3", "robot_modules_background", "ion_trail", "spark_system"))
 REF_SPILL(/mob/living/silicon/robot, "hat")
-// Destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks,
-// the module, radio and camera go after the AI link and shell are undone.
-REF_HELD(/mob/living/silicon/robot, list("mmi", "cell", "module", "radio", "camera", "connected_ai", "traitor_hud_client"))
+// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
+// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
+REF_HELD(/mob/living/silicon/robot, list("mmi", "cell", "connected_ai", "traitor_hud_client"))
+REF_OWNED(/mob/living/silicon/robot, list("module", "radio", "camera"))
+REF_OWNED_LIST(/mob/living/silicon/robot, "components")
 REF_STATIC(/mob/living/silicon/robot, "sprite_datum")

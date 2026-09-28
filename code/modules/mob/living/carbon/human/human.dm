@@ -83,7 +83,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_ALT_FARMANIMALS)
 
 REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 
-// organs are deleted from a snapshot; nif and blood vessel go with the body.
+// organs are deleted from a snapshot; the nif (REF_OWNED) and blood vessel go with the body.
 /mob/living/carbon/human/on_destroy(force)
 	// Each organ's Destroy() removes itself (and qdels its children/internals)
 	// out of src.organs, so iterating the live list skips entries — skipped
@@ -95,8 +95,6 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	if(organs)
 		for(var/o in organs.Copy())
 			qdel(o)
-	if(nif)
-		QDEL_NULL(nif)
 	..()
 
 /mob/living/carbon/human/get_status_tab_items()

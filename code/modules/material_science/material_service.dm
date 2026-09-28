@@ -224,8 +224,6 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/on_destroy(force)
 	unregister_diagnostics()
 	clear_watches()
-	if(owner()?.material_service == src)
-		owner().material_service = null
 	..()
 
 /datum/material_service/proc/schedule(delay = MATERIAL_SERVICE_INTERVAL)
@@ -632,3 +630,4 @@ REF_STATIC(/datum/material_service, "electrical_stock_static")
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/material_service/proc/owner() as /obj
 	return om_resolve(owner_handle)
+REF_BACK_HANDLE(/datum/material_service, list("owner_handle" = "material_service"))

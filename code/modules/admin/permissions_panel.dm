@@ -114,10 +114,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	holder_handle = om_handle(owner_holder)
 
 // clears its holder's cached panel.
-/datum/permissions_panel/on_destroy(force)
-	if(holder())
-		holder().dq_permissions_panel = null
-	..()
+REF_BACK_HANDLE(/datum/permissions_panel, list("holder_handle" = "dq_permissions_panel"))
 
 /datum/permissions_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_PERMISSIONS)

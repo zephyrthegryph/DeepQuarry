@@ -16,12 +16,6 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	registry_join(stat == DEAD ? REGISTRY_DEAD_MOBS : REGISTRY_LIVING_MOBS, src)
 
 
-// the mind forgets us as its original character.
-/mob/on_destroy(force)
-	if(mind && om_handle_is(mind.original_character, src))
-		mind.original_character = null
-	..()
-
 /mob/on_destroy(force)//This makes sure that mobs withGLOB.clients/keys are not just deleted from the game.
 	publish_mob_chunk(src)
 	if(client)
@@ -51,6 +45,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
 	if(mind?.current == src)
 		mind.current = null
+	// the mind forgets us as its original character.
+	if(mind && om_handle_is(mind.original_character, src))
+		mind.original_character = null
 	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
