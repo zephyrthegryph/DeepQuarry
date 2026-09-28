@@ -40,15 +40,15 @@
 	var/source
 	/// Readable source name, for logs and diagnosis.
 	var/source_name
-	/// world.time the support lapses at (0 = until removed).
-	var/expires_at = 0
+	/// When the support lapses (a cooldown; 0 = until removed).
+	COOLDOWN_DECLARE(expires_at)
 	/// Optional validity check (performer adjacent, machine powered...).
 	var/datum/callback/still_valid
 
 DECLARE_REF(/datum/body_support, "still_valid", OWNED, null)
 
 /datum/body_support/proc/is_valid()
-	if(expires_at && world.time >= expires_at) // ALLOW(cooldown): physiology factor expiry
+	if(COOLDOWN_STARTED(src, expires_at) && COOLDOWN_FINISHED(src, expires_at))
 		return FALSE
 	if(source && !om_resolve(source))
 		return FALSE
@@ -102,7 +102,10 @@ DECLARE_REF(/datum/body, "physiology", OWNED, null)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
 	S.floor = floor
 	S.multiplier = multiplier
-	S.expires_at = duration ? world.time + duration : 0
+	if(duration)
+		COOLDOWN_START(S, expires_at, duration)
+	else
+		COOLDOWN_RESET(S, expires_at)
 	S.still_valid = still_valid
 	if(changed)
 		invalidate(BODY_DIRTY_PHYSIOLOGY)
@@ -287,8 +290,8 @@ DECLARE_REF(/datum/body, "physiology", OWNED, null)
 	var/blood_fraction = 1
 	/// Debt band last logged.
 	var/debt_band = 0
-	/// world.time the post-revival grace ends (0 = none).
-	var/revival_grace_until = 0
+	/// When the post-revival grace ends (a cooldown; 0 = none).
+	COOLDOWN_DECLARE(revival_grace_until)
 
 DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 
@@ -330,11 +333,11 @@ DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 
 /// Start (or restart) the post-revival grace.
 /datum/physiology/proc/begin_revival_grace(source)
-	revival_grace_until = world.time + PHYSIOLOGY_REVIVAL_GRACE
+	COOLDOWN_START(src, revival_grace_until, PHYSIOLOGY_REVIVAL_GRACE)
 	log_runtime("PHYSIOLOGY: [key_name(body?.owner)] circulation restored by [source]; post-revival grace for [PHYSIOLOGY_REVIVAL_GRACE / (1 SECONDS)]s with [round(oxygen_debt)] debt outstanding")
 
 /datum/physiology/proc/in_revival_grace()
-	return revival_grace_until && world.time < revival_grace_until // ALLOW(cooldown): revival grace deadline in body model
+	return COOLDOWN_STARTED(src, revival_grace_until) && !COOLDOWN_FINISHED(src, revival_grace_until)
 
 /datum/physiology/proc/add_debt(amount, source)
 	var/before = oxygen_debt
@@ -587,8 +590,8 @@ DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 /datum/om/stage/life/physiology/rewake_delay(mob/living/self)
 	. = 0
 	for(var/datum/body_support/S as anything in self.body?.supports)
-		if(!S.expires_at)
+		if(!COOLDOWN_STARTED(S, expires_at))
 			continue
-		var/left = max(S.expires_at - world.time, 1)
+		var/left = max(COOLDOWN_TIMELEFT(S, expires_at), 1)
 		if(!. || left < .)
 			. = left
