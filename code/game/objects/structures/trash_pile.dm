@@ -202,12 +202,13 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 	desc = "A small heap of trash, perfect for mice and other pests to nest in."
 	icon = 'icons/obj/trash_piles.dmi'
 	icon_state = "randompile"
-	spawn_types = list(
-	/mob/living/simple_mob/animal/passive/mouse= 100,
-	/mob/living/simple_mob/animal/passive/cockroach = 25)
 	simultaneous_spawns = 1
 	destructible = 1
 	spawn_delay = 1 HOUR
+
+TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/passive/mouse= 100, \
+	/mob/living/simple_mob/animal/passive/cockroach = 25))
 
 /obj/structure/mob_spawner/mouse_nest/Initialize(mapload)
 	. = ..()

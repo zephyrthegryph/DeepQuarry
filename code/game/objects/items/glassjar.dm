@@ -12,7 +12,6 @@
 	w_class = ITEMSIZE_SMALL
 	MATERIAL_BULK(MAT_GLASS, 200)
 	flags = NOBLUDGEON
-	var/list/accept_mobs = list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 	var/contains = 0 // 0 = nothing, 1 = money, 2 = animal, 3 = spiderling
 	drop_sound = 'sound/items/drop/glass.ogg'
 	pickup_sound = 'sound/items/pickup/glass.ogg'
@@ -21,6 +20,8 @@
 	var/can_fill = FALSE
 	///If we are filled with water.
 	var/filled = FALSE
+
+TYPE_TABLE_DECLARE(/obj/item/glass_jar, glass_jar_mobs, list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly))
 
 /obj/item/glass_jar/Initialize(mapload)
 	. = ..()
@@ -41,7 +42,7 @@
 			return
 	if(istype(A, /mob))
 		var/accept = 0
-		for(var/D in accept_mobs)
+		for(var/D in TYPE_TABLE_GET(src, glass_jar_mobs))
 			if(istype(A, D))
 				accept = 1
 		if(!accept)
@@ -226,7 +227,8 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 
 	w_class = ITEMSIZE_NORMAL
 
-	accept_mobs = list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/passive/fish)
+TYPE_TABLE(/obj/item/glass_jar/fish, glass_jar_mobs, list(/mob/living/simple_mob/animal/passive/lizard, /mob/living/simple_mob/animal/passive/mouse, /mob/living/simple_mob/animal/sif/leech, /mob/living/simple_mob/animal/sif/frostfly, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/passive/fish))
+
 
 /obj/item/glass_jar/fish/plastic
 	name = "plastic tank"

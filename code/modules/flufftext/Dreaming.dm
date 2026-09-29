@@ -129,7 +129,7 @@ GLOBAL_LIST_INIT(dreams, populate_dream_list())
 	var/fragment = ""
 
 	for(var/obj/item/bedsheet/sheet in dreamer.loc)
-		custom_dream_nouns += sheet.dream_messages
+		custom_dream_nouns += TYPE_TABLE_GET(sheet, bedsheet_dream_messages)
 
 	. = list()
 	. += "you see"

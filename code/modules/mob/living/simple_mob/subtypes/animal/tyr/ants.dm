@@ -393,26 +393,27 @@ ANT STRUCTURES
 
 	spawn_delay = 15 MINUTES
 
-	spawn_types = list(
-	/mob/living/simple_mob/animal/tyr/mineral_ants/bronze = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/builder = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/copper = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/quartz = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/agate = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/painite = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/diamond = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/uranium = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/graphite = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/silver = 1,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/gold = 1,
-	)
 
 	simultaneous_spawns = 5
 
 	destructible = 1
 	max_integrity = 50 //Unsure why you would want to break it but you can
+
+TYPE_TABLE(/obj/structure/mob_spawner/ant_hill, mob_spawner_types, list( \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/bronze = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/builder = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/copper = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/quartz = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/agate = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/painite = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/diamond = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/uranium = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/graphite = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/silver = 1, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/gold = 1, \
+	))
 
 /obj/structure/mob_spawner/ant_hill/creatable
 	simultaneous_spawns = 2
@@ -547,20 +548,21 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	anchored = FALSE
 	layer = HIDING_LAYER
 	max_integrity = 3
-	grow_as = list(/mob/living/simple_mob/animal/tyr/mineral_ants/bronze,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/builder,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/copper,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/quartz,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/agate,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/painite,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/diamond,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/uranium,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/graphite,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/silver,
-	/mob/living/simple_mob/animal/tyr/mineral_ants/gold)
 	faction = FACTION_TYR_ANT
+
+TYPE_TABLE(/obj/effect/spider/spiderling/antling, spiderling_grow_as, list(/mob/living/simple_mob/animal/tyr/mineral_ants/bronze, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/builder, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/copper, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/quartz, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/agate, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/painite, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/diamond, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/verdantium, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/uranium, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/mhydro, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/graphite, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/silver, \
+	/mob/living/simple_mob/animal/tyr/mineral_ants/gold))
 
 /obj/effect/spider/spiderling/antling/created
 	faction = FACTION_TYR

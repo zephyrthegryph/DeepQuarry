@@ -22,9 +22,8 @@ LINEN BINS
 	var/special_handling = FALSE
 	resistance_flags = FLAMMABLE
 
-	// / Custom nouns to act as the subject of dreams // Dreaming
-	// ALLOW(instance_list): c: read-only per-subtype constant table (17 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/dream_messages = list("white") // Dreaming
+/// Custom nouns to act as the subject of dreams.
+TYPE_TABLE_DECLARE(/obj/item/bedsheet, bedsheet_dream_messages, list("white"))
 
 /obj/item/bedsheet/Initialize(mapload)
 	. = ..()
@@ -66,74 +65,91 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 
 /obj/item/bedsheet/blue
 	icon_state = "sheetblue"
-	dream_messages = list("blue") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/blue, bedsheet_dream_messages, list("blue"))
 
 /obj/item/bedsheet/green
 	icon_state = "sheetgreen"
-	dream_messages = list("green") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/green, bedsheet_dream_messages, list("green"))
 
 /obj/item/bedsheet/orange
 	icon_state = "sheetorange"
-	dream_messages = list("orange") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/orange, bedsheet_dream_messages, list("orange"))
 
 /obj/item/bedsheet/purple
 	icon_state = "sheetpurple"
-	dream_messages = list("purple") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/purple, bedsheet_dream_messages, list("purple"))
 
 /obj/item/bedsheet/rainbow
 	icon_state = "sheetrainbow"
-	dream_messages = list("red", "orange", "yellow", "green", "blue", "purple", "a rainbow") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/rainbow, bedsheet_dream_messages, list("red", "orange", "yellow", "green", "blue", "purple", "a rainbow"))
 
 /obj/item/bedsheet/red
 	icon_state = "sheetred"
-	dream_messages = list("red") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/red, bedsheet_dream_messages, list("red"))
 
 /obj/item/bedsheet/yellow
 	icon_state = "sheetyellow"
-	dream_messages = list("yellow") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/yellow, bedsheet_dream_messages, list("yellow"))
 
 /obj/item/bedsheet/mime
 	icon_state = "sheetmime"
-	dream_messages = list("silence", "gestures", "a pale face", "a gaping mouth", "the mime") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/mime, bedsheet_dream_messages, list("silence", "gestures", "a pale face", "a gaping mouth", "the mime"))
 
 /obj/item/bedsheet/clown
 	icon_state = "sheetclown"
 	item_state = "sheetrainbow"
-	dream_messages = list("honk", "laughter", "a prank", "a joke", "a smiling face", "the clown") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/clown, bedsheet_dream_messages, list("honk", "laughter", "a prank", "a joke", "a smiling face", "the clown"))
 
 /obj/item/bedsheet/captain
 	icon_state = "sheetcaptain"
-	dream_messages = list("authority", "a golden ID", "sunglasses", "a green disc", "an antique gun", "the captain") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/captain, bedsheet_dream_messages, list("authority", "a golden ID", "sunglasses", "a green disc", "an antique gun", "the captain"))
 
 /obj/item/bedsheet/rd
 	icon_state = "sheetrd"
-	dream_messages = list("authority", "a silvery ID", "a bomb", "a mech", "a facehugger", "maniacal laughter", "the research director") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/rd, bedsheet_dream_messages, list("authority", "a silvery ID", "a bomb", "a mech", "a facehugger", "maniacal laughter", "the research director"))
 
 /obj/item/bedsheet/medical
 	name = "medical blanket"
 	desc = "It's a sterilized* blanket commonly used in the Medbay.  *Sterilization is voided if a virologist is present onboard the station."
 	icon_state = "sheetmedical"
-	dream_messages = list("healing", "life", "surgery", "a doctor") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/medical, bedsheet_dream_messages, list("healing", "life", "surgery", "a doctor"))
 
 /obj/item/bedsheet/hos
 	icon_state = "sheethos"
-	dream_messages = list("authority", "a silvery ID", "handcuffs", "a baton", "a flashbang", "sunglasses", "the head of security") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/hos, bedsheet_dream_messages, list("authority", "a silvery ID", "handcuffs", "a baton", "a flashbang", "sunglasses", "the head of security"))
 
 /obj/item/bedsheet/hop
 	icon_state = "sheethop"
-	dream_messages = list("authority", "a silvery ID", "obligation", "a computer", "an ID", "a corgi", "the head of personnel") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/hop, bedsheet_dream_messages, list("authority", "a silvery ID", "obligation", "a computer", "an ID", "a corgi", "the head of personnel"))
 
 /obj/item/bedsheet/ce
 	icon_state = "sheetce"
-	dream_messages = list("authority", "a silvery ID", "the engine", "power tools", "an APC", "a parrot", "the chief engineer") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/ce, bedsheet_dream_messages, list("authority", "a silvery ID", "the engine", "power tools", "an APC", "a parrot", "the chief engineer"))
 
 /obj/item/bedsheet/brown
 	icon_state = "sheetbrown"
-	dream_messages = list("brown") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/brown, bedsheet_dream_messages, list("brown"))
 
 /obj/item/bedsheet/ian
 	icon_state = "sheetian"
-	dream_messages = list("a dog", "a corgi", "woof", "bark", "arf") // Dreaming
+
+TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a corgi", "woof", "bark", "arf"))
 
 /obj/item/bedsheet/double
 	icon_state = "doublesheet"

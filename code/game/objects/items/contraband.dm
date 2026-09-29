@@ -17,21 +17,23 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/random
 	flags = NONE
-	var/list/random_reagent_list = list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1) // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/glass/beaker/vial/random, random_vial_reagents, list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1))
 
 /obj/item/reagent_containers/glass/beaker/vial/random/toxin
-	random_reagent_list = list(
-		list(REAGENT_ID_MINDBREAKER = 10, REAGENT_ID_BLISS = 20)	= 3,
-		list(REAGENT_ID_CARPOTOXIN = 15)							= 2,
-		list(REAGENT_ID_IMPEDREZENE = 15)						= 2,
-		list(REAGENT_ID_ZOMBIEPOWDER = 10)						= 1)
+
+TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_vial_reagents, list( \
+		list(REAGENT_ID_MINDBREAKER = 10, REAGENT_ID_BLISS = 20)	= 3, \
+		list(REAGENT_ID_CARPOTOXIN = 15)							= 2, \
+		list(REAGENT_ID_IMPEDREZENE = 15)						= 2, \
+		list(REAGENT_ID_ZOMBIEPOWDER = 10)						= 1))
 
 /obj/item/reagent_containers/glass/beaker/vial/random/Initialize(mapload)
 	. = ..()
 	if(is_open_container())
 		flags ^= OPENCONTAINER
 
-	var/list/picked_reagents = pickweight(random_reagent_list)
+	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
 	for(var/reagent in picked_reagents)
 		reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick
 

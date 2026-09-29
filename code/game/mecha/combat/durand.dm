@@ -20,13 +20,6 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-	starting_components = list(
-		/obj/item/mecha_parts/component/hull/durable,
-		/obj/item/mecha_parts/component/actuator,
-		/obj/item/mecha_parts/component/armor/military,
-		/obj/item/mecha_parts/component/gas,
-		/obj/item/mecha_parts/component/electrical
-		)
 
 	defence_mode_possible = 1
 
@@ -34,6 +27,14 @@
 	icon_scale_y = 1.5
 
 //This is for the Mech stats / Menu system. To be moved later on.
+
+TYPE_TABLE(/obj/mecha/combat/durand, mecha_starting_components, list( \
+		/obj/item/mecha_parts/component/hull/durable, \
+		/obj/item/mecha_parts/component/actuator, \
+		/obj/item/mecha_parts/component/armor/military, \
+		/obj/item/mecha_parts/component/gas, \
+		/obj/item/mecha_parts/component/electrical \
+		))
 /obj/mecha/combat/durand/get_commands()
 	var/output = {"<div class='wr'>
 						<div class='header'>Special</div>

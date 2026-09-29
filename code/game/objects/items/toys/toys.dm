@@ -1293,7 +1293,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 	icon_state = "eight-ball"
 	var/use_action = "shakes the ball"
 	COOLDOWN_DECLARE(cooldown)
-	var/list/possible_answers = list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never.") // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/toy/eight_ball, eight_ball_answers, list("Definitely.", "All signs point to yes.", "Most likely.", "Yes.", "Ask again later.", "Better not tell you now.", "Future unclear.", "Maybe.", "Doubtful.", "No.", "Don't count on it.", "Never."))
 
 DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -1301,7 +1302,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(inter
 /obj/item/toy/eight_ball/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
 		COOLDOWN_START(src, cooldown, 3 SECONDS)
-		var/answer = pick(possible_answers)
+		var/answer = pick(TYPE_TABLE_GET(src, eight_ball_answers))
 		user.visible_message(span_notice("[user] focuses on their question and [use_action]..."))
 		user.visible_message(span_notice("The [src] says \"[answer]\""))
 		return TRUE
@@ -1312,9 +1313,10 @@ DECLARE_INTERACTIONS(/obj/item/toy/eight_ball, INTERACT_USE(null, PROC_REF(inter
 	desc = "All hail the Magic Conch!"
 	icon_state = "conch"
 	use_action = "pulls the string"
-	possible_answers = list("Yes.", "No.", "Try asking again.", "Nothing.", "I don't think so.", "Neither.", "Maybe someday.")
 
 // DND Character minis. Use the naming convention (type)character for the icon states.
+
+TYPE_TABLE(/obj/item/toy/eight_ball/conch, eight_ball_answers, list("Yes.", "No.", "Try asking again.", "Nothing.", "I don't think so.", "Neither.", "Maybe someday."))
 /obj/item/toy/character
 	icon = 'icons/obj/toy.dmi'
 	w_class = ITEMSIZE_SMALL

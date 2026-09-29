@@ -9,18 +9,6 @@
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
 	var/output_dest
-	var/list/vac_settings = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-			"power off" = 0,
-			"dust and grime" = 1,
-			"tiny objects" = 2,
-			"pests and small objects" = 3,
-			"medium objects" = 4,
-			"large objects" = 5,
-			"large pests" = 6,
-			"auto-level" = 7,
-			"DANGEROUS" = 8,
-			"output destination" = 9
-			)
 	var/vac_owner = null
 	var/sucksound = 'sound/machines/kitchen/candymaker/candymaker-mid1.ogg'
 	var/suckverb = "vacuum"
@@ -29,13 +17,26 @@
 	var/max_items = 20
 	flags = NOBLUDGEON
 
+TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
+			"power off" = 0, \
+			"dust and grime" = 1, \
+			"tiny objects" = 2, \
+			"pests and small objects" = 3, \
+			"medium objects" = 4, \
+			"large objects" = 5, \
+			"large pests" = 6, \
+			"auto-level" = 7, \
+			"DANGEROUS" = 8, \
+			"output destination" = 9 \
+			))
+
 DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!om_resolve(output_dest))
 		apply_setting(user, "output destination")
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = vac_settings, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = TYPE_TABLE_GET(src, vac_attachment_settings), ask_flags = ASK_CARRIED | ASK_CAPABLE)
 
 /obj/item/vac_attachment/proc/setting_chosen(datum/om/prompt/choice/ask)
 	apply_setting(ask.answerer, ask.choice)
@@ -50,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			vac_options = list("Vore Belly", "Borg Belly", "Trash Bag")
 		om_ask(user, /datum/om/prompt/choice, PROC_REF(output_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's connection port", choices = vac_options, ask_flags = ASK_CARRIED | ASK_CAPABLE)
 		return
-	vac_power = vac_settings[set_input]
+	vac_power = TYPE_TABLE_GET(src, vac_attachment_settings)[set_input]
 	icon_state = "sucker-[vac_power]"
 
 /obj/item/vac_attachment/proc/output_chosen(datum/om/prompt/choice/ask)
@@ -383,17 +384,18 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	sucksound = 'sound/machines/hatchclose.ogg'
 	suckverb = "scoop"
 	suckanim = FALSE
-	vac_settings = list(
-			"power off" = 0,
-			"dust and grime" = 1,
-			"tiny objects" = 2,
-			"pests and small objects" = 3,
-			"medium objects" = 4,
-			"large objects" = 5,
-			"large pests" = 6,
-			"auto-level" = 7,
-			"output destination" = 8
-			)
+
+TYPE_TABLE(/obj/item/vac_attachment/scoop, vac_attachment_settings, list( \
+			"power off" = 0, \
+			"dust and grime" = 1, \
+			"tiny objects" = 2, \
+			"pests and small objects" = 3, \
+			"medium objects" = 4, \
+			"large objects" = 5, \
+			"large pests" = 6, \
+			"auto-level" = 7, \
+			"output destination" = 8 \
+			))
 
 /obj/effect/vac_visual
 	icon = 'icons/effects/anomalies.dmi'

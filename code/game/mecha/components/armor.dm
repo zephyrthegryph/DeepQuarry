@@ -21,18 +21,19 @@
 	step_delay = 1
 
 	var/deflect_chance = 10
-	var/list/damage_absorption = list( // ALLOW(instance_list): c: read-only per-subtype constant table (9 subtype overrides); a getter would share it, not worth it on a rare type
-		"brute"=	0.8,
-		"fire"=		1.2,
-		"bullet"=	0.9,
-		"laser"=	1,
-		"energy"=	1,
-		"bomb"=		1,
-		"bio"=		1,
-		"rad"=		1
-		)
 
 	var/fail_penetration_value = 0.66
+
+TYPE_TABLE_DECLARE(/obj/item/mecha_parts/component/armor, mecha_armor_absorption, list( \
+		"brute"=	0.8, \
+		"fire"=		1.2, \
+		"bullet"=	0.9, \
+		"laser"=	1, \
+		"energy"=	1, \
+		"bomb"=		1, \
+		"bio"=		1, \
+		"rad"=		1 \
+		))
 
 /obj/item/mecha_parts/component/armor/mining
 	name = "blast-resistant mecha plating"
@@ -40,16 +41,17 @@
 	step_delay = 2
 	max_integrity = 80
 
-	damage_absorption = list(
-		"brute"=0.8,
-		"fire"=0.8,
-		"bullet"=1.2,
-		"laser"=1.2,
-		"energy"=1,
-		"bomb"=0.5,
-		"bio"=1,
-		"rad"=1
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/mining, mecha_armor_absorption, list( \
+		"brute"=0.8, \
+		"fire"=0.8, \
+		"bullet"=1.2, \
+		"laser"=1.2, \
+		"energy"=1, \
+		"bomb"=0.5, \
+		"bio"=1, \
+		"rad"=1 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/lightweight
 	name = "lightweight mecha plating"
@@ -57,16 +59,17 @@
 	max_integrity = 50
 	step_delay = 0
 
-	damage_absorption = list(
-		"brute"=1,
-		"fire"=1.4,
-		"bullet"=1.1,
-		"laser"=1.2,
-		"energy"=1,
-		"bomb"=1,
-		"bio"=1,
-		"rad"=1
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/lightweight, mecha_armor_absorption, list( \
+		"brute"=1, \
+		"fire"=1.4, \
+		"bullet"=1.1, \
+		"laser"=1.2, \
+		"energy"=1, \
+		"bomb"=1, \
+		"bio"=1, \
+		"rad"=1 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/reinforced
 	name = "reinforced mecha plating"
@@ -75,15 +78,16 @@
 
 	max_integrity = 80
 
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/reinforced, mecha_armor_absorption, list( \
+		"brute"=0.7, \
+		"fire"=1, \
+		"bullet"=0.7, \
+		"laser"=0.85, \
+		"energy"=1, \
+		"bomb"=0.8 \
+		))
 
-	damage_absorption = list(
-		"brute"=0.7,
-		"fire"=1,
-		"bullet"=0.7,
-		"laser"=0.85,
-		"energy"=1,
-		"bomb"=0.8
-		)
+
 
 /obj/item/mecha_parts/component/armor/military
 	name = "military grade mecha plating"
@@ -96,15 +100,16 @@
 
 	required_type = list(/obj/mecha/combat)
 
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/military, mecha_armor_absorption, list( \
+		"brute"=0.5, \
+		"fire"=1.1, \
+		"bullet"=0.65, \
+		"laser"=0.85, \
+		"energy"=0.9, \
+		"bomb"=0.8 \
+		))
 
-	damage_absorption = list(
-		"brute"=0.5,
-		"fire"=1.1,
-		"bullet"=0.65,
-		"laser"=0.85,
-		"energy"=0.9,
-		"bomb"=0.8
-		)
+
 
 /obj/item/mecha_parts/component/armor/military/attach(obj/mecha/target, mob/living/user)
 	. = ..()
@@ -133,14 +138,15 @@
 
 	required_type = list(/obj/mecha/combat)
 
-	damage_absorption = list(
-		"brute"=0.75,
-		"fire"=1,
-		"bullet"=0.8,
-		"laser"=0.7,
-		"energy"=0.85,
-		"bomb"=1
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/marshal, mecha_armor_absorption, list( \
+		"brute"=0.75, \
+		"fire"=1, \
+		"bullet"=0.8, \
+		"laser"=0.7, \
+		"energy"=0.85, \
+		"bomb"=1 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/marshal/attach(obj/mecha/target, mob/living/user)
 	. = ..()
@@ -160,14 +166,15 @@
 
 	step_delay = 5
 
-	damage_absorption = list(
-		"brute"=0.6,
-		"fire"=0.8,
-		"bullet"=0.6,
-		"laser"=0.5,
-		"energy"=0.65,
-		"bomb"=0.8
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/marshal/reinforced, mecha_armor_absorption, list( \
+		"brute"=0.6, \
+		"fire"=0.8, \
+		"bullet"=0.6, \
+		"laser"=0.5, \
+		"energy"=0.65, \
+		"bomb"=0.8 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/military/marauder
 	name = "cutting edge mecha plating"
@@ -182,14 +189,15 @@
 
 	deflect_chance = 25
 
-	damage_absorption = list(
-		"brute"=0.5,
-		"fire"=0.7,
-		"bullet"=0.45,
-		"laser"=0.6,
-		"energy"=0.7,
-		"bomb"=0.7
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/military/marauder, mecha_armor_absorption, list( \
+		"brute"=0.5, \
+		"fire"=0.7, \
+		"bullet"=0.45, \
+		"laser"=0.6, \
+		"energy"=0.7, \
+		"bomb"=0.7 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/military/marauder/attach(obj/mecha/target, mob/living/user)
 	. = ..()
@@ -212,14 +220,15 @@
 	//minimum_penetration = 10
 	// end
 
-	damage_absorption = list(
-		"brute"=0.7,
-		"fire"=0.7,
-		"bullet"=0.7,
-		"laser"=0.7,
-		"energy"=0.7,
-		"bomb"=0.7
-		)
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/alien, mecha_armor_absorption, list( \
+		"brute"=0.7, \
+		"fire"=0.7, \
+		"bullet"=0.7, \
+		"laser"=0.7, \
+		"energy"=0.7, \
+		"bomb"=0.7 \
+		))
+
 
 /obj/item/mecha_parts/component/armor/alien/attach(obj/mecha/target, mob/living/user)
 	. = ..()
@@ -239,11 +248,12 @@
 	step_delay = 0
 	emp_resistance = 2
 	required_type = list(/obj/mecha/combat/fighter)
-	damage_absorption = list(
-		"brute"=0.8,
-		"fire"=0.8,
-		"bullet"=1,
-		"laser"=1,
-		"energy"=0.8,
-		"bomb"=0.5
-		)
+
+TYPE_TABLE(/obj/item/mecha_parts/component/armor/fighter, mecha_armor_absorption, list( \
+		"brute"=0.8, \
+		"fire"=0.8, \
+		"bullet"=1, \
+		"laser"=1, \
+		"energy"=0.8, \
+		"bomb"=0.5 \
+		))

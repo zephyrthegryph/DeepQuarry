@@ -366,7 +366,6 @@
 	var/emagged = 0
 	window_type = "rglass"
 	var/turret_faction = null
-	modes = list(RCD_FLOORWALL, RCD_AIRLOCK, RCD_WINDOWGRILLE, RCD_DECONSTRUCT, RCD_WINDOOR, RCD_FIRELOCK, RCD_FRAME, RCD_WALLFRAME, RCD_CONVEYOR, RCD_TURRET)
 	var/static/image/radial_image_firelock = image(icon = 'icons/mob/radial.dmi', icon_state = "firelock")
 	var/static/image/radial_image_windoor = image(icon= 'icons/mob/radial.dmi', icon_state = "windoor")
 	var/static/image/radial_image_frame = image(icon = 'icons/mob/radial.dmi', icon_state = "machine")
@@ -476,17 +475,17 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(rcd_girder_chosen), choices = wall_types, anchor = src, require_near = TRUE, tooltips = TRUE, optional = TRUE)
 			return
 		if("Airlock")
-			mode_index = modes.Find(RCD_AIRLOCK)
+			mode_index = rcd_mode_index(RCD_AIRLOCK)
 		if("Windoor")
-			mode_index = modes.Find(RCD_WINDOOR)
+			mode_index = rcd_mode_index(RCD_WINDOOR)
 		if("Firelock")
-			mode_index = modes.Find(RCD_FIRELOCK)
+			mode_index = rcd_mode_index(RCD_FIRELOCK)
 		if("Deconstruct")
-			mode_index = modes.Find(RCD_DECONSTRUCT)
+			mode_index = rcd_mode_index(RCD_DECONSTRUCT)
 		if("Grilles & Windows")
-			mode_index = modes.Find(RCD_WINDOWGRILLE)
+			mode_index = rcd_mode_index(RCD_WINDOWGRILLE)
 		if("Frames")
-			mode_index = modes.Find(RCD_FRAME)
+			mode_index = rcd_mode_index(RCD_FRAME)
 		if("WallFrames")
 			var/list/wall_frame_types = list(
 			"Air Alarm" = image(icon = 'icons/mob/radial.dmi', icon_state = "wallframe"),
@@ -521,7 +520,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			change_airlock_setting(user)
 			return
 		if("Conveyors")
-			mode_index = modes.Find(RCD_CONVEYOR)
+			mode_index = rcd_mode_index(RCD_CONVEYOR)
 		if("Turrets")
 			var/list/turret_factions = list(
 			"HOSTILE TO ALL" = image(icon = 'icons/mob/radial.dmi', icon_state = "turret1"),
@@ -549,7 +548,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			girder_type = /obj/structure/girder/bay
 		if("ERIS")
 			girder_type = /obj/structure/girder/eris
-	mode_index = modes.Find(RCD_FLOORWALL)
+	mode_index = rcd_mode_index(RCD_FLOORWALL)
 	rcd_mode_changed(user, "Floors & Walls")
 
 /obj/item/rcd/proc/rcd_wall_frame_chosen(datum/om/prompt/choice/radial/ask)
@@ -602,7 +601,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 		if("Entertainment Monitor")
 			wall_frame_type = /obj/machinery/computer/security/telescreen/entertainment
 
-	mode_index = modes.Find(RCD_WALLFRAME)
+	mode_index = rcd_mode_index(RCD_WALLFRAME)
 	rcd_mode_changed(user, "WallFrames")
 
 /obj/item/rcd/proc/rcd_turret_faction_chosen(datum/om/prompt/choice/radial/ask)
@@ -614,7 +613,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			turret_faction = null
 		if("HOSTILE TO ENEMIES")
 			turret_faction = user.faction
-	mode_index = modes.Find(RCD_TURRET)
+	mode_index = rcd_mode_index(RCD_TURRET)
 	rcd_mode_changed(user, "Turrets")
 
 /obj/item/rcd/proc/get_airlock_image(airlock_type)
