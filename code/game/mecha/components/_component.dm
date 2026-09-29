@@ -54,10 +54,10 @@
 
 // Damage code.
 
-/obj/item/mecha_parts/component/emp_act(severity = EMP_HARMLESS, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_emp))
+/// An EMP wears the component down, less so the more resistant it is.
+/obj/item/mecha_parts/component/proc/component_emp(datum/damage_packet/packet)
+	var/severity = packet.severity || EMP_HARMLESS
 	if(severity + emp_resistance >= EMP_NONE)
 		return
 

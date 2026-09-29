@@ -22,6 +22,8 @@ OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
+	/// Until when an EMP keeps the machine down (EMP_DISABLE). Takes a long time for the machines to reboot.
+	EXPIRY_DECLARE(emp_until)
 	var/list/links // list of machines this machine is linked to
 	var/traffic = 0 // value increases as traffic increases
 	var/netspeed = 5 // how much traffic to lose per tick (50 gigabytes/second * netspeed)
@@ -238,17 +240,19 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 		MACHINE_WAKE(src)
 	return changed
 
-/obj/machinery/telecomms/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
+EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
+
+/// Weaker pulses only sometimes knock a telecomms machine out.
+/obj/machinery/telecomms/emp_disable_react(datum/damage_packet/packet)
+	if(!prob(100/max(packet.severity, 1)))
 		return
-	if(prob(100/severity))
-		if(!has_stat(EMPED))
-			stat_add(EMPED)
-			MACHINE_WAKE(src)
-			play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
-			var/duration = (300 * 10)/severity
-			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
+	return ..()
+
+/obj/machinery/telecomms/emp_disable_changed(disabled)
+	..()
+	MACHINE_WAKE(src)
+	if(disabled)
+		play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 
 /// Telecomms heat: idle_power_usage while on, 30% with no traffic. It goes
 /// through the machine's heat body (heat_objects.dm); overheating is the
@@ -700,9 +704,6 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
 
-/obj/machinery/telecomms/proc/emp_recover()
-	stat_remove(EMPED)
-	MACHINE_WAKE(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/telecomms/step_start_condition()

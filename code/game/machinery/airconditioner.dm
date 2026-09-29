@@ -72,13 +72,13 @@
 	env.merge(removed)
 
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
-/obj/machinery/power/thermoregulator/southerncross/emp_act(severity)
+/obj/machinery/power/thermoregulator/southerncross/thermoregulator_emp(datum/damage_packet/packet)
 	if(!on)
 		set_on(1)
 	target_temp += rand(0, 20)
 	wake_for_state_change()
 	update_icon()
-	..(severity)
+	return ..()
 
 #undef MODE_IDLE
 #undef MODE_HEATING
@@ -306,10 +306,9 @@
 	set_mode(new_mode)
 	update_icon()
 
-/obj/machinery/power/thermoregulator/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/machinery/power/thermoregulator, DAMAGE_EMP, PROC_REF(thermoregulator_emp))
+/// An EMP switches the regulator on and scrambles its target temperature.
+/obj/machinery/power/thermoregulator/proc/thermoregulator_emp(datum/damage_packet/packet)
 	if(!on)
 		set_on(TRUE)
 	target_temp += rand(0, 1000)

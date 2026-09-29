@@ -1424,12 +1424,11 @@ About the new airlock wires panel:
 		electronics.conf_access = req_one_access
 		electronics.one_access = 1
 
-/obj/machinery/door/airlock/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(prob(40/severity))
-		var/duration = world.time + ((30 / severity) SECONDS)
+DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
+/// An EMP may electrify the airlock for a while.
+/obj/machinery/door/airlock/proc/airlock_emp(datum/damage_packet/packet)
+	if(prob(40/packet.severity))
+		var/duration = world.time + ((30 / packet.severity) SECONDS)
 		if(duration > electrified_until)
 			electrify(duration)
 

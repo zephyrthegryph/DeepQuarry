@@ -204,8 +204,11 @@ EXTEND_INTERACTIONS(/obj/effect/catwalk_plated, \
 	INTERACT_OBSERVER(null, PROC_REF(interaction_effect_activate_spawner)), \
 )
 
-/obj/effect/catwalk_plated/attack_generic()
+DAMAGE_REACTION(/obj/effect/catwalk_plated, DAMAGE_GENERIC_ATTACK, PROC_REF(catwalk_spawner_touched))
+/// Anything attacking the spawner makes it place its catwalk.
+/obj/effect/catwalk_plated/proc/catwalk_spawner_touched(datum/damage_packet/packet)
 	activate()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/catwalk_plated/proc/activate()
 	if(activated) return

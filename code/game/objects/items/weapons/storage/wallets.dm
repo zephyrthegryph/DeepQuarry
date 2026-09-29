@@ -127,10 +127,9 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	if(ask.picked_color && (ask.picked_color != color))
 		color = ask.picked_color
 
-/obj/item/storage/wallet/poly/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_emp))
+/// An EMP glitches the wallet's colour display for a while.
+/obj/item/storage/wallet/poly/proc/poly_wallet_emp(datum/damage_packet/packet)
 	var/original_state = icon_state
 	icon_state = "wallet-emp"
 	update_icon()

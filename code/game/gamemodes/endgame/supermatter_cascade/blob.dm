@@ -7,6 +7,7 @@
 	icon_state = "bluespace"
 
 	plane = PLANE_LIGHTING_ABOVE
+	resistance_flags = BOMB_PROOF
 
 /turf/unsimulated/wall/supermatter/conversion_cascade_act(list/already_marked_turfs)
 	// Do pretty fadeout animation for the new turf
@@ -89,5 +90,3 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 	qdel(user)
 
 
-/turf/unsimulated/wall/supermatter/ex_act(severity)
-	return

@@ -47,15 +47,16 @@
 
 	return
 
-/obj/machinery/portable_atmospherics/powered/pump/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, PROC_REF(pump_emp))
+/// An EMP scrambles a working pump's settings.
+/obj/machinery/portable_atmospherics/powered/pump/proc/pump_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 
-	if(prob(50/severity))
+	if(prob(50/packet.severity))
 		set_on(!on)
 
-	if(prob(100/severity))
+	if(prob(100/packet.severity))
 		direction_out = !direction_out
 
 	target_pressure = rand(0,1300)

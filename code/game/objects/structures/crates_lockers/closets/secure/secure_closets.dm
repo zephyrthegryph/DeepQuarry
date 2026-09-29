@@ -19,10 +19,10 @@
 		return 0
 	return ..()
 
-/obj/structure/closet/secure_closet/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/structure/closet/secure_closet, DAMAGE_EMP, PROC_REF(secure_closet_emp))
+/// An EMP may toggle the lock, pop the closet or scramble its access.
+/obj/structure/closet/secure_closet/proc/secure_closet_emp(datum/damage_packet/packet)
+	var/severity = packet.severity
 	if(!broken)
 		if(prob(50/severity))
 			locked = !locked

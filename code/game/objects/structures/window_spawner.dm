@@ -26,8 +26,11 @@ EXTEND_INTERACTIONS(/obj/effect/wingrille_spawn, \
 	attack_generic()
 	return TRUE
 
-/obj/effect/wingrille_spawn/attack_generic()
+DAMAGE_REACTION(/obj/effect/wingrille_spawn, DAMAGE_GENERIC_ATTACK, PROC_REF(wingrille_spawner_touched))
+/// Anything attacking the spawner makes it place its window.
+/obj/effect/wingrille_spawn/proc/wingrille_spawner_touched(datum/damage_packet/packet)
 	activate()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/wingrille_spawn/CanPass(atom/movable/mover, turf/target)
 	return FALSE

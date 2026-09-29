@@ -22,6 +22,8 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
+	/// Until when an EMP keeps the node down (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
 
 // Proc: New()
 // Parameters: None
@@ -79,20 +81,11 @@ DECLARE_REF(/obj/machinery/exonet_node, "soundloop", OWNED, null)
 		noisy = TRUE
 	update_icon()
 
-// Proc: emp_act(severity, recursive)
-// Parameters: 1 (severity - how strong the EMP is, with lower numbers being stronger)
-// Description: Shuts off the machine for awhile if an EMP hits it.  Ion anomalies also call this to turn it off.
-/obj/machinery/exonet_node/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
-		return
-	stat_add(EMPED)
-	var/duration = (300 * 10)/severity
-	om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover))
-	update_power()
+// An EMP shuts off the machine for awhile.  Ion anomalies also pulse it to turn it off.
+EMP_DISABLE(/obj/machinery/exonet_node, 300 SECONDS, "emp_until")
 
-/obj/machinery/exonet_node/proc/emp_recover()
-	stat_remove(EMPED)
+/obj/machinery/exonet_node/emp_disable_changed(disabled)
+	..()
 	update_power()
 
 // Proc: process()

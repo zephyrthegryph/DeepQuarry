@@ -61,8 +61,9 @@
 	flick("mass_driver1", src)
 	return
 
-/obj/machinery/mass_driver/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/mass_driver, DAMAGE_EMP, PROC_REF(mass_driver_emp))
+/// An EMP fires the driver.
+/obj/machinery/mass_driver/proc/mass_driver_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 	drive()

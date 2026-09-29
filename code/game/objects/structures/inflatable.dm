@@ -47,8 +47,11 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	. = ..()
 	update_nearby_tiles(need_rebuild=1)
 
-/obj/structure/inflatable/blob_act()
+DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob))
+/// A blob punctures the inflatable.
+/obj/structure/inflatable/proc/inflatable_blob(datum/damage_packet/packet)
 	puncture()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/inflatable/declare_interactions(list/into)
 	into += list(

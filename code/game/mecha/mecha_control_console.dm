@@ -109,11 +109,7 @@
 
 	return data
 
-/obj/item/mecha_parts/mecha_tracking/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	qdel(src)
+DAMAGE_REACTION(/obj/item/mecha_parts/mecha_tracking, DAMAGE_EMP, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
 /obj/item/mecha_parts/mecha_tracking/proc/in_mecha()
 	if(istype(loc, /obj/mecha))

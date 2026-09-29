@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	else if(istype(target, /obj/machinery/camera))
 		var/obj/machinery/camera/C = target
 		if(prob(effectchance * diode.rating))
-			C.emp_act(CLAMP(4 - diode.rating, 1, 4), forced = TRUE)
+			C.camera_disrupt(CLAMP(4 - diode.rating, 1, 4))
 			outmsg = span_notice("You shine the [src] into the lens of [C].")
 			add_attack_logs(user,C,"Disabled using [src]")
 		else

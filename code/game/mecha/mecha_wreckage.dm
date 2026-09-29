@@ -15,8 +15,7 @@
 	var/list/crowbar_salvage
 	var/salvage_num = 5
 
-/obj/effect/decal/mecha_wreckage/bullet_act(obj/item/projectile/Proj)
-	return
+DAMAGE_REACTION(/obj/effect/decal/mecha_wreckage, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 
 // Salvaging with a welder, wirecutters or a crowbar: mecha_wreckage_salvage.dm.

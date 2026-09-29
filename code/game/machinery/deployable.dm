@@ -86,11 +86,12 @@ DECLARE_APPEARANCE(/obj/machinery/deployable/barrier, "locked", list("0" = list(
 	explode(FALSE)
 	return ..()
 
-/obj/machinery/deployable/barrier/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || (!operable()))
+DAMAGE_REACTION(/obj/machinery/deployable/barrier, DAMAGE_EMP, PROC_REF(barrier_emp))
+/// An EMP may flip the barrier's lock and anchors.
+/obj/machinery/deployable/barrier/proc/barrier_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
-	if(prob(50/severity))
+	if(prob(50/packet.severity))
 		set_locked(!locked)
 		set_anchored(!anchored)
 		icon_state = "barrier[locked]"

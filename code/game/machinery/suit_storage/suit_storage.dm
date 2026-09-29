@@ -61,10 +61,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
-/obj/machinery/suit_storage_unit/ex_act(severity)
-	if(severity <= 2 && prob(50))
+DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(suit_storage_blast))
+/// A heavy blast may throw the unit's contents out.
+/obj/machinery/suit_storage_unit/proc/suit_storage_blast(datum/damage_packet/packet)
+	if(packet.severity <= 2 && prob(50))
 		dump_everything()
-	return ..()
 
 /obj/machinery/suit_storage_unit/declare_interactions(list/into)
 	into += list(

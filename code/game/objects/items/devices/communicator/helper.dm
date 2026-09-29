@@ -313,7 +313,7 @@
 
 	for(var/obj/item/gps/G in internal_devices)
 		var/gpsdata[0]
-		if(G.tracking && !G.emped)
+		if(G.tracking && !EXPIRY_ACTIVE(G, emp_until, CLOCK_WORLD))
 			cumulative.tracking = TRUE // Turn it on
 			if(G.long_range)
 				cumulative.long_range = TRUE // It can detect long-range
