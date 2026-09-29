@@ -9,7 +9,9 @@ act_message runtime (code/modules/messages/), that is any of
   2. an actor naming itself or its user: the text interpolates `[R]` for the receiver R of
      `R.visible_message`, `[src]` in a bare call inside a /mob proc, or `[user]` / `[usr]`;
   3. the second half of a `to_chat(X, ...)` + `X.visible_message(...)` pair (same X, the
-     next statement).
+     next statement);
+  4. the retired interaction message fields: any `message_self` / `message_others` /
+     `start_messages(` / `fill_message(` token in code (use `feedback` / `start_feedback`).
 
 Write act_message(user, target, MSG_SELF(...), MSG_OTHERS(...), MSG_BLIND(...)) with the
 %U% / %T% / %I% tokens instead, or act_message_t() with a declared /datum/msg template.
@@ -23,6 +25,7 @@ RULES = {
 RUNTIME_PREFIX = "code/modules/messages/"
 CALL = re.compile(r"(?:\b([A-Za-z_]\w*)\s*\.\s*)?\bvisible_message\s*\(")
 PROC_HEAD = re.compile(r"^(/[\w/]+?)(?:/proc|/verb)?/(\w+)\s*\(([^)]*)\)")
+OLD_FIELDS = re.compile(r"(?<![\w.])(message_self|message_others|start_messages|fill_message)\b")
 TO_CHAT = re.compile(r"^\s*to_chat\s*\(\s*([A-Za-z_]\w*)\s*,")
 BS = chr(92)
 MOB_NAMES = ("user", "usr")
@@ -82,6 +85,10 @@ def scan(files):
         rel = rel.replace(BS, "/")
         if rel.startswith(RUNTIME_PREFIX) or not rel.endswith(".dm"):
             continue
+        for idx, line in enumerate(lines):
+            code = line.split("//", 1)[0]
+            if OLD_FIELDS.search(code) and "ALLOW(sys_visible_pair)" not in line:
+                out["visible_pair"].append((rel, idx + 1))
         text = "\n".join(lines)
         if "visible_message" not in text:
             continue
