@@ -40,7 +40,7 @@
 		var/datum/rule/flavour = rules[path]
 		TEST_ASSERT(flavour, "[path] is registered")
 		TEST_ASSERT_EQUAL(length(flavour.thresholds()), 1, "[path] declares one threshold")
-	TEST_ASSERT_EQUAL(length(dq_damage_flavour_rules()), 3, "three flavour bands")
+	TEST_ASSERT_EQUAL(length(GLOBAL_TABLE_GET(damage_flavour_rules)), 3, "three flavour bands")
 
 	// Only types that declare a breakpoint get the rules; plain objects cost nothing.
 	TEST_ASSERT(breaks in dq_rules_for_type(/obj/machinery/computer), "computers break by rule")

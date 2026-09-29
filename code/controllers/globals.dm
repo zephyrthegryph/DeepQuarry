@@ -72,7 +72,7 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 /// before, MB after) for every step that took time or memory. A proc-local static rather than
 /// a GLOB var because GLOB may not exist yet when the first note is taken.
 /proc/benchmark_early_notes()
-	var/static/list/notes = list()
+	var/static/list/notes = list() // ALLOW(sys_static_getter): early-boot accumulator that exists before GLOB, not a table
 	return notes
 
 /// DreamDaemon's private MB from the bench sampler's file (null outside a bench).

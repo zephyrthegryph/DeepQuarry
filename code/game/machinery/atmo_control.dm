@@ -274,7 +274,7 @@
 	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
-	var/list/options = list("Sensors", "Frequency", "Cancel")
+	var/static/list/options = list("Sensors", "Frequency", "Cancel")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), title = "Options!", choices = options, tool = W)
 	return TRUE
 
@@ -502,7 +502,7 @@
 
 /obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
-	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
+	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency", "Cancel")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), choices = options, tool = W)
 	return TRUE
 
@@ -656,7 +656,7 @@
 
 /obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
-	var/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
+	var/static/list/options =  list("Inlet", "Outlet", "Sensors", "Frequency")
 	om_ask(user, /datum/om/prompt/choice/air_control_menu, PROC_REF(control_option_chosen), choices = options, tool = W)
 	return TRUE
 

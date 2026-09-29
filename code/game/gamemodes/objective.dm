@@ -210,7 +210,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	if(issilicon(owner.current))
 		return 0
 	var/area/shuttle = locate(/area/shuttle/escape/centcom)
-	var/list/protected_mobs = list(/mob/living/silicon/ai, /mob/living/silicon/pai)
+	var/static/list/protected_mobs = list(/mob/living/silicon/ai, /mob/living/silicon/pai)
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(player.type in protected_mobs)	continue
 		if (player.mind && (player.mind != owner))
@@ -573,7 +573,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	return
 
 /datum/objective/heist/kidnap/choose_target()
-	var/list/roles = list(JOB_CHIEF_ENGINEER,JOB_RESEARCH_DIRECTOR,JOB_ROBOTICIST,JOB_CHEMIST,JOB_ENGINEER)
+	var/static/list/roles = list(JOB_CHIEF_ENGINEER,JOB_RESEARCH_DIRECTOR,JOB_ROBOTICIST,JOB_CHEMIST,JOB_ENGINEER)
 	var/list/possible_targets = list()
 	var/list/priority_targets = list()
 

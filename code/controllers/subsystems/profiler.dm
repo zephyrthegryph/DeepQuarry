@@ -120,10 +120,13 @@ SUBSYSTEM_DEF(profiler)
 	log_runtime("ATMOS_PROFILE [json_encode(atmos_arena)]")
 	log_runtime("RUST_ALLOC_PROFILE [json_encode(rust_allocator)]")
 
+/// The diagnostics readout of a missing subsystem or service (shared; only encoded).
+GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
+
 /// A world service's cost readout (it runs on the OM scheduler, not as a subsystem).
 /datum/controller/subsystem/profiler/proc/world_service_diagnostics(datum/world_service/target)
 	if(!target)
-		return list("missing" = TRUE)
+		return GLOB.profiler_missing_diagnostics
 	var/list/stat = null
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched && target.lane)
@@ -141,7 +144,7 @@ SUBSYSTEM_DEF(profiler)
 
 /datum/controller/subsystem/profiler/proc/subsystem_diagnostics(datum/controller/subsystem/target)
 	if(!target)
-		return list("missing" = TRUE)
+		return GLOB.profiler_missing_diagnostics
 	return list(
 		"name" = target.name,
 		"active_ema_ms" = target.cost,

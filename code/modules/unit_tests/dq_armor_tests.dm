@@ -51,7 +51,7 @@
 /datum/unit_test/dq_armor_specs_parse
 
 /datum/unit_test/dq_armor_specs_parse/Run()
-	var/list/known = dq_armor_keys()
+	var/list/known = GLOB.armor_keys
 	var/checked = 0
 	for(var/path in typesof(/obj, /mob/living))
 		var/atom/prototype = path
