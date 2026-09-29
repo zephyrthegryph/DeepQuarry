@@ -152,7 +152,6 @@ UI_DATA_REPLACE(/obj/machinery/chem_master, "condi:num", "pillsprite:num", "bott
 
 	return data
 
-DECLARE_UI_MODAL(/obj/machinery/chem_master)
 
 /obj/machinery/chem_master/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

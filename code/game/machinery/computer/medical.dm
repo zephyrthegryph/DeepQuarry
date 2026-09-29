@@ -435,7 +435,6 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_print_p)
 	requires = PROMPT_ADJACENT
 	var/datum/data/record/record
 
-DECLARE_UI_MODAL(/obj/machinery/computer/med_data)
 
 /obj/machinery/computer/med_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

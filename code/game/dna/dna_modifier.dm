@@ -733,7 +733,6 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 /obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish()
 	injector_ready = TRUE
 
-DECLARE_UI_MODAL(/obj/machinery/computer/scan_consolenew)
 
 /obj/machinery/computer/scan_consolenew/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

@@ -275,6 +275,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(isnull(answer))
 			return
 		named[F.name] = answer
+	// Reserved names last: no form field can shadow them.
+	named["user"] = ctx.user
+	named["held"] = ctx.held
 	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
 
 // ---- the bespoke entries: small capabilities ----
