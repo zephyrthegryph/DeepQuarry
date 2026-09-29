@@ -31,6 +31,15 @@
 	if(!E || QDELING(E))
 		return
 	om_changed(E, channel)
+#if defined(UNIT_TESTS)
+	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
+	if(E == GLOB.refresh_running)
+		var/msg = "REFRESH SELF-MARK: [E.type] marked itself changed during its own refresh"
+		GLOB.refresh_self_marks += msg
+		if(!GLOB.refresh_self_mark_expected)
+			stack_trace(msg)
+#endif
+	refresh_trace_note(E, channel)
 	// Sources watching E through a relation view (rel(..., watch = ...)) re-derive too. Only on
 	// E's first mark this frame, so two entities watching each other stop after one round.
 	if(E.rel_watchers && !E.refresh_queued)
@@ -43,11 +52,45 @@
 		if(!D.refresh_queued)
 			D.refresh_queued = TRUE
 			GLOB.refresh_queue += D
-		D = owner_of(D)
-		if(!D || QDELING(D))
+		// H2: the owner is marked only when one of its capabilities draws this child (a slot with
+		// draws_var naming the var that holds it). Anything else stays local.
+		var/datum/owner = owner_of(D)
+		if(!owner || QDELING(owner) || !isatom(owner) || !owner_draws_child(owner, D))
 			break
+		D = owner
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// The entity whose refresh is running now (the self-mark detector reads it).
+GLOBAL_DATUM(refresh_running, /datum)
+GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
+/// Self-mark reports this round (the detector test reads them).
+GLOBAL_LIST_EMPTY(refresh_self_marks)
+
+/// Whether one of owner's capabilities draws `child` (its draws_var holds it).
+/proc/owner_draws_child(atom/owner, datum/child)
+	for(var/datum/capability/C as anything in caps_all(owner))
+		if(!C.draws_var)
+			continue
+		var/held = owner.vars[C.draws_var]
+		if(held == child || (islist(held) && (child in held)))
+			return TRUE
+	return FALSE
+
+// ---- "why did this redraw?" (M10): the last marks of each entity, with where they came from ----
+
+/// Entities whose marks are being traced (the admin verb turns one on). Empty: tracing costs one check.
+GLOBAL_LIST_EMPTY(refresh_traced)
+
+/proc/refresh_trace_note(datum/E, channel)
+	if(!length(GLOB.refresh_traced) || !(E in GLOB.refresh_traced))
+		return
+	var/list/lines = GLOB.refresh_traced[E]
+	if(!islist(lines))
+		lines = GLOB.refresh_traced[E] = list()
+	var/callee/source = callee?.caller?.caller
+	lines += "[world.time]: channel [channel] from [source ? "[source.proc]" : "?"]"
+	if(length(lines) > 20)
+		lines.Cut(1, 2)
 
 // ---- the derived procs (plain overrides) ----
 
@@ -56,7 +99,7 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 /atom/proc/draw(datum/look/look)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
-	for(var/datum/capability/C as anything in caps_of(src))
+	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
 
 /// TRUE while periodic_step(dt) should run on `periodic_cadence`. Re-evaluated on change.
@@ -86,6 +129,7 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 		var/datum/D = Q[i]
 		D.refresh_queued = FALSE
 		if(QDELETED(D))
+			D.refresh_bits = 0
 			continue
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
@@ -109,6 +153,18 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 
 /// One entity's refresh: periodic gate, look, hidden verbs, open windows, then on_state_changed.
 /proc/refresh_one(datum/D, bits)
+	var/datum/outer = GLOB.refresh_running
+	GLOB.refresh_running = D
+	try
+		refresh_one_inner(D, bits)
+	catch(var/exception/e)
+		// Restore before the drain reports it: a stale refresh_running would flag every later mark of
+		// D as a self-mark.
+		GLOB.refresh_running = outer
+		throw e
+	GLOB.refresh_running = outer
+
+/proc/refresh_one_inner(datum/D, bits)
 	refresh_periodic(D)
 	if(isatom(D))
 		var/atom/A = D
@@ -135,6 +191,11 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 	L.reset()
 	A.draw(L)
 	if(!L.touched)
+		if(apply && !isnull(A.look_key))
+			// It drew before and draws nothing now: applying the empty look takes back everything the
+			// last look set (overlays, filters, vis_contents, base properties).
+			L.apply_to(A)
+			A.look_key = null
 		return null
 	var/key = L.change_key()
 	if(apply && key != A.look_key)
@@ -143,7 +204,7 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 	return key
 
 /proc/refresh_verbs(atom/A, apply = TRUE)
-	var/list/hidden = A.hidden_verbs()
+	var/list/hidden = A.hidden_verbs() || list()
 	if(!length(hidden) && !length(A.refresh_hidden_verbs))
 		return hidden
 	if(!apply)
@@ -158,7 +219,9 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 
 // ---- the background sweep ----
 
-/// Atoms with something derived (a look, hidden verbs, periodic work). Weakly held: dead ones drop.
+/// Atoms with something derived (a look, hidden verbs, periodic work), as ref text -> TRUE. Refs,
+/// not the atoms: the sweep list never keeps a deleted atom alive (it would hard-delete every drawn
+/// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
 GLOBAL_VAR_INIT(refresh_sweep_index, 1)
 /// Drift reports this round (the drift test reads them).
@@ -172,32 +235,52 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.periodic_cadence)
 		return
 	A.refresh_swept = TRUE
-	GLOB.refresh_sweep_list += A
+	GLOB.refresh_sweep_list[REF(A)] = TRUE
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
 /// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
 /proc/refresh_sweep_step(budget = 50)
+	// H3: test builds sweep everything strictly (drift fails the run). Production sweeps only what a
+	// player can see or has open, at a small budget: the CI rules are the real protection.
+#if !defined(UNIT_TESTS)
+	budget = min(budget, 10)
+#endif
 	var/list/L = GLOB.refresh_sweep_list
 	var/checked = 0
 	while(checked < budget && length(L))
 		if(GLOB.refresh_sweep_index > length(L))
 			GLOB.refresh_sweep_index = 1
-		var/atom/A = L[GLOB.refresh_sweep_index]
-		if(QDELETED(A))
+		var/atom/A = locate(L[GLOB.refresh_sweep_index])
+		if(!isatom(A) || QDELETED(A) || !A.refresh_swept)
 			L.Cut(GLOB.refresh_sweep_index, GLOB.refresh_sweep_index + 1)
 			continue
 		GLOB.refresh_sweep_index++
 		checked++
 		if(A.refresh_queued)
 			continue
+#if !defined(UNIT_TESTS)
+		if(!LAZYLEN(A.open_tguis) && !refresh_near_client(A))
+			continue
+#endif
 		refresh_check_drift(A)
+
+/// Whether any client's mob is on A's z-level within a screen of it.
+/proc/refresh_near_client(atom/A)
+	var/turf/T = get_turf(A)
+	if(!T)
+		return FALSE
+	for(var/client/C as anything in GLOB.clients)
+		var/turf/where = get_turf(C.mob)
+		if(where && where.z == T.z && get_dist(where, T) <= world.view + 2)
+			return TRUE
+	return FALSE
 
 /proc/refresh_check_drift(atom/A)
 	var/list/drift = list()
 	var/key = refresh_look(A, apply = FALSE)
 	if(key != A.look_key)
 		drift += "draw()"
-	var/list/hidden = A.hidden_verbs()
+	var/list/hidden = A.hidden_verbs() || list()
 	var/list/was = A.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
