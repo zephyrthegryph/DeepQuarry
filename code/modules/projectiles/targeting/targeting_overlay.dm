@@ -100,7 +100,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 		cancel_aiming()
 		return
 
-	if(!locked && lock_time <= world.time)
+	if(!locked && EXPIRY_EXPIRED(src, lock_time, CLOCK_WORLD))
 		locked = 1
 		to_chat(owner(), span_notice("You are locked onto your target."))
 		to_chat(aiming_at, span_danger("The gun is trained on you!"))
@@ -175,7 +175,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	toggle_active(1)
 	locked = 0
 	update_icon()
-	lock_time = world.time + 25
+	EXPIRY_SET(src, lock_time, 25, CLOCK_WORLD)
 
 /obj/aiming_overlay/update_icon()
 	if(locked)

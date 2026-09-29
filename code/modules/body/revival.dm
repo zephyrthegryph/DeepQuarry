@@ -118,7 +118,7 @@
 	registry_leave(REGISTRY_DEAD_MOBS, src)
 	registry_join(REGISTRY_LIVING_MOBS, src)
 	if(!(flags & REVIVE_KEEP_TIMEOFDEATH))
-		timeofdeath = 0
+		EXPIRY_CLEAR(src, timeofdeath)
 		tod = null
 	failed_last_breath = 0
 

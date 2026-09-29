@@ -351,13 +351,13 @@
 	var/temp = 1 //stops spam
 	for(var/obj/singularity/O in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(O.last_warning && temp)
-			if((world.time - O.last_warning) > 50) //to stop message-spam
+			if(ELAPSED(O, last_warning, CLOCK_WORLD) > 5 SECONDS) //to stop message-spam
 				temp = 0
 				admin_chat_message(message = "SINGUL/TESLOOSE!", color = "#FF2222")
 				message_admins("A singulo exists and a containment field has failed.")
 				investigate_log("has " + span_red("failed") + " whilst a singulo exists.","singulo")
 				log_game("FIELDGEN([x],[y],[z]) Containment failed while singulo/tesla exists.")
-		O.last_warning = world.time
+		EXPIRY_STAMP(O, last_warning, CLOCK_WORLD)
 
 /obj/machinery/field_generator/pre_mapped
 	state = 2 //Start welded.

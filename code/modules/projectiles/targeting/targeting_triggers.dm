@@ -29,4 +29,4 @@
 	if(istype(G))
 		G.Fire(aiming_at, owner(), reflex = 1)
 		locked = 0
-		lock_time = world.time+10
+		EXPIRY_SET(src, lock_time, 10, CLOCK_WORLD)

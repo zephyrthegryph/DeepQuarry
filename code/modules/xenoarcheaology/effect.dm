@@ -19,7 +19,7 @@
 	var/effect_color = "#ffffff"
 
 	// The last time the effect was toggled.
-	var/last_activation = 0
+	EXPIRY_DECLARE(last_activation)
 	// If we can start activated or not! Note: This is only really disabled on artifacts that can REALLY do some MAJOR DAMAGE to the server itself. See: Atmos & temperature artifacts destroying an entire Z-level's atmos.
 	var/can_start_activated = TRUE
 
@@ -76,8 +76,8 @@ DECLARE_REF(/datum/artifact_effect, "active_effect", OWNED, null)
 /datum/artifact_effect/proc/ToggleActivate(reveal_toggle = TRUE, spawn_toggle = FALSE)
 	var/atom/target = get_master_holder()
 
-	if(world.time - last_activation > 1 SECOND)
-		last_activation = world.time
+	if(ELAPSED(src, last_activation, CLOCK_WORLD) > 1 SECOND)
+		EXPIRY_STAMP(src, last_activation, CLOCK_WORLD)
 		if(activated)
 			activated = FALSE
 		else

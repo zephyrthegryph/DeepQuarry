@@ -58,7 +58,7 @@
 	/// The default button to be selected
 	var/default
 	/// The time at which the tgui_list_input was created, for displaying timeout progress.
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// The lifespan of the tgui_list_input, after which the window will close and delete itself.
 	var/timeout
 	/// Boolean field describing if the tgui_list_input was closed by the user.
@@ -91,7 +91,7 @@
 		invalid = TRUE
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 
 /**

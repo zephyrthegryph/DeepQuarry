@@ -1223,8 +1223,8 @@
 			to_chat(M, span_notice("You regain focus..."))
 		else
 			var/delay = (5 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0)
 				to_chat(M, span_warning("Your senses feel unfocused, and divided."))
 
 /datum/reagent/spaceacillin/affect_touch(mob/living/carbon/M, alien, removed)
@@ -1258,8 +1258,8 @@
 			to_chat(M, span_notice("Your body ceases its revolt."))
 		else
 			var/delay = (3 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0)
 				to_chat(M, span_critical("It feels like your body is revolting!"))
 		M.status_at_least(EFFECT_CONFUSED, 7)
 		M.injure(INJURY_BURN, removed * 2, source = src)
@@ -1333,8 +1333,8 @@
 			to_chat(M, span_notice("The itching fades..."))
 		else
 			var/delay = (2 MINUTES)
-			if(world.time > data + delay)
-				data = world.time
+			if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > delay)
+				data = EXPIRY_AT(src, CLOCK_WORLD, 0)
 				to_chat(M, span_warning("Your skin itches."))
 
 /datum/reagent/spacomycaze/touch_obj(obj/O)

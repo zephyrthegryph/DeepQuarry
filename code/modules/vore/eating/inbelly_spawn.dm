@@ -154,7 +154,7 @@
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
-	if((world.time - req_time) > 1 MINUTES)
+	if(ELAPSED_SINCE(src, req_time, CLOCK_WORLD) > 1 MINUTES)
 		to_chat(src, span_warning("The request had already expired. (1 minute waiting max)"))
 		return
 
@@ -179,7 +179,7 @@
 		to_chat(prey, span_warning("[src] has denied your request."))
 		return
 
-	if((world.time - req_time) > 1 MINUTES)
+	if(ELAPSED_SINCE(src, req_time, CLOCK_WORLD) > 1 MINUTES)
 		to_chat(src, span_warning("The request had already expired. (1 minute waiting max)"))
 		return
 

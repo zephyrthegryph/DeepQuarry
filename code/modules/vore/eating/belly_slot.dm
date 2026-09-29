@@ -23,7 +23,7 @@
 	var/tmp/cycle_token
 	/// The period the clock runs at, and when it last ran a cycle.
 	var/tmp/cycle_period
-	var/tmp/cycle_last = 0
+	EXPIRY_TMP_DECLARE(cycle_last)
 	/// The om_after() timer id armed for the next liquid batch of an empty, generating belly.
 	var/tmp/liquid_timer
 
@@ -85,7 +85,7 @@
 		var/period = belly_cycle_period()
 		if(!cycle_token || cycle_period != period)
 			if(!cycle_token)
-				cycle_last = world.time
+				EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 			cycle_token = TRUE
 			cycle_period = period
 			om_deadline(src, max(period - (world.time - cycle_last), 0), /datum/om/behaviour/belly_cycle)
@@ -109,7 +109,7 @@
 	if(QDELETED(src) || !cycle_token)
 		return
 	var/seconds = (world.time - cycle_last) / (1 SECONDS)
-	cycle_last = world.time
+	EXPIRY_STAMP(src, cycle_last, CLOCK_WORLD)
 	om_deadline(src, cycle_period, /datum/om/behaviour/belly_cycle)
 	belly_cycle(seconds)
 	if(!QDELETED(src) && !belly_occupied())

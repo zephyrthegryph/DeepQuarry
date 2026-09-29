@@ -719,7 +719,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	var/ambulance = FALSE
 	var/datum/looping_sound/ambulance/soundloop
 	var/ambulance_state = FALSE
-	var/ambulance_last_switch = 0
+	EXPIRY_DECLARE(ambulance_last_switch)
 
 /obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -752,7 +752,7 @@ DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, nu
 	if(!ambulance)
 		om_task_periodic_stop(src)
 		return
-	if(world.time - ambulance_last_switch > 15)
+	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"
 		if(ambulance_state)
@@ -761,7 +761,7 @@ DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, nu
 			var/mob/M = loc
 			M.update_inv_back()
 		set_light(2, 1, newlight)
-		ambulance_last_switch = world.time
+		EXPIRY_STAMP(src, ambulance_last_switch, CLOCK_WORLD)
 */ //ChompREMOVE End
 
 /datum/looping_sound/ambulance
@@ -1528,7 +1528,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 		om_task_timed(user, 1 SECOND, src, src, PROC_REF(search_done), list(user), claims = TRUE)
 		return
 
-	if(world.time - last_message <= 5 SECONDS)
+	if(ELAPSED(src, last_message, CLOCK_WORLD) <= 5 SECONDS)
 		return
 	if(interaction.stance == I_HELP)
 		user.visible_message(span_notice(span_bold("\The [user]") + " hugs [src]!"),span_notice("You hug [src]!"))
@@ -1544,7 +1544,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 		icon_state = "pandorba_d"
 		playsound(src, 'sound/items/drop/plushie.ogg', 25, 0)
 		visible_message("[src] says, \"[pokephrase]\"")
-	last_message = world.time
+	EXPIRY_STAMP(src, last_message, CLOCK_WORLD)
 
 //Yeehawguvnah - Cephyra
 

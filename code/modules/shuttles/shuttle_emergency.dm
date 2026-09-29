@@ -27,7 +27,7 @@
 
 	//update move_time and launch_time so we get correct ETAs
 	move_time = travel_time
-	GLOB.emergency_shuttle_service.launch_time = world.time
+	EXPIRY_STAMP(GLOB.emergency_shuttle_service, launch_time, CLOCK_WORLD)
 
 	..(destination, interim, travel_time, direction)
 

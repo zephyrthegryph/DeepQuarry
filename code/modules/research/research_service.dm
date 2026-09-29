@@ -164,7 +164,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 				bitcoins[i] *= (income_time_difference / 10) * techweb_list.income_modifier
 			techweb_list.add_point_list(bitcoins)
 
-		techweb_list.last_income = world.time
+		techweb_list.last_income = EXPIRY_AT(techweb_list, CLOCK_WORLD, 0)
 
 		if(length(techweb_list.research_queue_nodes))
 			techweb_list.research_node_id(LAZYACCESS(techweb_list.research_queue_nodes, 1)) // Attempt to research the first node in queue if possible

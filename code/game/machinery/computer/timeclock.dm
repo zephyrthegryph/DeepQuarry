@@ -235,7 +235,7 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 	return TRUE
 
 /obj/machinery/computer/timeclock/proc/getCooldown()
-	return 1 MINUTES - (world.time - card.last_job_switch) // 10 minute wait down to 1 minute.
+	return 1 MINUTES - ELAPSED(card, last_job_switch, CLOCK_WORLD) // 10 minute wait down to 1 minute.
 
 /obj/machinery/computer/timeclock/proc/checkFace(mob/user)
 	var/turf/location = get_turf(src) // Needed for admin logs.

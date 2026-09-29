@@ -46,7 +46,7 @@
 	/// The color the user selected, null if no selection has been made
 	var/choice
 	/// The time at which the tgui_color_picker was created, for displaying timeout progress.
-	var/start_time
+	EXPIRY_DECLARE(start_time)
 	/// The lifespan of the tgui_color_picker, after which the window will close and delete itself.
 	var/timeout
 	/// The bool that controls if this modal should grab window focus
@@ -66,7 +66,7 @@
 	src.state_static = ui_state
 	if (timeout)
 		src.timeout = timeout
-		start_time = world.time
+		EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 		om_qdel_after(src, timeout)
 	if(user)
 		src.preset_colors = user.read_preference(/datum/preference/text/preset_colors)

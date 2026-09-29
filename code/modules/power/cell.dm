@@ -31,7 +31,7 @@
 	/// Material-derived resistance to EMP charge loss, as a percentage.
 	var/material_emp_resistance = 0
 	var/material_discharge_credit
-	var/material_discharge_updated
+	EXPIRY_DECLARE(material_discharge_updated)
 	/// Hysteretic physical state. A quenched conductor must cool meaningfully
 	/// below its transition before it can carry enhanced output again.
 	var/material_superconducting = FALSE
@@ -126,7 +126,7 @@
 		material_discharge_credit = material_discharge_limit
 	else
 		material_discharge_credit = min(material_discharge_limit, material_discharge_credit + max(world.time - material_discharge_updated, 0) / 10 * material_discharge_limit)
-	material_discharge_updated = world.time
+	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
 	var/temperature = material_service?.temperature || T20C
