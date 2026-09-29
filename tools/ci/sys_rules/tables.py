@@ -111,6 +111,49 @@ def all_returns_constant(lines, header_index):
     return True
 
 
+def strip_block_comments(lines):
+    """The lines with /* ... */ spans blanked (dead code in block comments is not a site)."""
+    text = "\n".join(lines)
+    if "/*" not in text:
+        return lines
+    out = []
+    depth = 0
+    index = 0
+    in_string = False
+    while index < len(text):
+        pair = text[index:index + 2]
+        char = text[index]
+        if not depth:
+            if char == "\n":
+                in_string = False
+            elif char == '"' and (index == 0 or text[index - 1] != "\\"):
+                in_string = not in_string
+            elif pair == "//" and not in_string:
+                end = text.find("\n", index)
+                end = len(text) if end < 0 else end
+                out.append(text[index:end])
+                index = end
+                continue
+        if in_string:
+            out.append(char)
+            index += 1
+            continue
+        if pair == "/*":
+            depth += 1
+            index += 2
+            out.append("  ")
+            continue
+        if pair == "*/" and depth:
+            depth -= 1
+            index += 2
+            out.append("  ")
+            continue
+        char = text[index]
+        out.append(char if not depth or char == "\n" else " ")
+        index += 1
+    return "".join(out).split("\n")
+
+
 def scan(files):
     out = {rule: [] for rule in RULES}
     global_lists = set()
@@ -119,6 +162,7 @@ def scan(files):
             if "GLOBAL_LIST" in line:
                 global_lists.update(GLOBAL_LIST_DECL.findall(line))
     for rel, lines in files:
+        lines = strip_block_comments(lines)
         in_proc = False
         header = None
         for number, line in enumerate(lines, 1):
