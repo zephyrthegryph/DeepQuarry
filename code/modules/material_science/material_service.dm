@@ -29,14 +29,14 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/reagent/acid/polyacid
 	material_corrosivity = 1.6
 
-/proc/material_corrosive_gases()
-	var/static/list/types
-	if(!types)
-		types = list()
-		for(var/datum/gas/gas_type as anything in subtypesof(/datum/gas))
-			if(initial(gas_type.material_corrosivity))
-				types += gas_type
+/proc/build_material_corrosive_gases()
+	var/list/types = list()
+	for(var/datum/gas/gas_type as anything in subtypesof(/datum/gas))
+		if(initial(gas_type.material_corrosivity))
+			types += gas_type
 	return types
+
+GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_gases))
 
 /obj
 	var/datum/material_service/material_service // ALLOW(state_ref): running: the material simulation service while admitted

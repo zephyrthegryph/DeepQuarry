@@ -391,7 +391,7 @@
 /datum/unit_test/dq_medical_custom_affliction_runtime_config
 
 /datum/unit_test/dq_medical_custom_affliction_runtime_config/Run()
-	TEST_ASSERT(!(/datum/affliction/custom in dq_catalogued_affliction_types()), "runtime-configured custom afflictions must not appear in the book")
+	TEST_ASSERT(!(/datum/affliction/custom in GLOBAL_TABLE_GET(dq_catalogued_affliction_types)), "runtime-configured custom afflictions must not appear in the book")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/lungs = H.organ_in(O_LUNGS)
 	var/datum/affliction/custom/A = H.body.afflict(/datum/affliction/custom, lungs, AFFLICTION_SEVERITY_TERMINAL)

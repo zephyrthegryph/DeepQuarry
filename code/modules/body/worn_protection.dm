@@ -43,9 +43,7 @@
 	var/worn_insulation = 0
 
 /// The body part flags the cache holds: the external limbs' body_part values.
-/proc/dq_worn_zone_parts()
-	var/static/list/parts = list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LEFT, LEG_RIGHT, FOOT_LEFT, FOOT_RIGHT, ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT)
-	return parts
+GLOBAL_LIST_INIT(dq_worn_zone_parts, list(HEAD, UPPER_TORSO, LOWER_TORSO, LEG_LEFT, LEG_RIGHT, FOOT_LEFT, FOOT_RIGHT, ARM_LEFT, ARM_RIGHT, HAND_LEFT, HAND_RIGHT))
 
 /// The combined armour (/datum/armor) on body part `part` from `items`
 /// (clothing in the armour slots) and their accessories. Null when nothing
@@ -104,7 +102,7 @@
 	var/list/insulation_items = owner?.body_slot_items(BODY_SLOT_INSULATION)
 	if(!length(armor_items) && !length(insulation_items))
 		return
-	var/list/parts = dq_worn_zone_parts()
+	var/list/parts = GLOB.dq_worn_zone_parts
 	for(var/part in parts)
 		var/datum/armor/combined = dq_worn_armor_scan(armor_items, part)
 		if(combined)
@@ -156,7 +154,7 @@
 		return dq_armor_none()
 	ensure_worn_protection()
 	var/datum/armor/combined
-	if(part in dq_worn_zone_parts())
+	if(part in GLOB.dq_worn_zone_parts)
 		combined = armor_by_part?[part]
 	else
 		combined = dq_worn_armor_scan(owner.body_slot_items(BODY_SLOT_ARMOR), part)
@@ -173,7 +171,7 @@
 	if(!part)
 		return 1
 	ensure_worn_protection()
-	if(part in dq_worn_zone_parts())
+	if(part in GLOB.dq_worn_zone_parts)
 		var/siemens = siemens_by_part?[part]
 		return isnull(siemens) ? 1 : siemens
 	return dq_worn_siemens_scan(owner.body_slot_items(BODY_SLOT_INSULATION), part)

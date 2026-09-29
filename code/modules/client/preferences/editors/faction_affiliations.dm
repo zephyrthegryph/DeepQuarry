@@ -30,7 +30,7 @@
 		))
 	return list(
 		"factions" = factions,
-		"choices" = reputation_affiliation_choices(),
+		"choices" = GLOB.reputation_affiliation_choices,
 	)
 
 /datum/preference_editor/faction_affiliations/handle_action(datum/preferences/preferences, action, list/params, mob/user)
@@ -38,7 +38,7 @@
 		return PREF_UPDATE_UNCHANGED
 	var/faction_id = params["faction"]
 	var/affiliation = params["affiliation"]
-	if(!(faction_id in GLOB.reputation_factions) || !(affiliation in reputation_affiliation_choices()))
+	if(!(faction_id in GLOB.reputation_factions) || !(affiliation in GLOB.reputation_affiliation_choices))
 		return PREF_UPDATE_REJECTED
 	var/list/current = preferences.read_preference(/datum/preference/faction_affiliations)
 	current = islist(current) ? current.Copy() : list()

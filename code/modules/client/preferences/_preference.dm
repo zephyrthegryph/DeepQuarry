@@ -585,7 +585,7 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	if(isnull(cached_values))
-		cached_values = init_possible_values()
+		cached_values = TYPE_TABLE_GET(src, pref_choices) || init_possible_values()
 		ASSERT(cached_values.len)
 
 	return cached_values
@@ -601,6 +601,11 @@ GLOBAL_LIST_INIT(preference_entries_by_key, init_preference_entries_by_key())
 		serialized_choices += pref_serialize(choice)
 
 	return serialized_choices
+
+/// A choice list that is a fixed shared table (e.g. a GLOB list): set with
+/// TYPE_TABLE(/datum/preference/choiced/x, pref_choices, GLOB.y) instead of overriding
+/// `init_possible_values()`. Shared and read-only.
+TYPE_TABLE_DECLARE(/datum/preference/choiced, pref_choices, null)
 
 /// Returns a list of every possible value.
 /// This must be overriden by `/datum/preference/choiced` subtypes.

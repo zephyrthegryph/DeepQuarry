@@ -1362,7 +1362,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 // attack bulb/tube with object
 // if a syringe, can inject phoron to make it explode
 /obj/item/light/multitool_act(mob/user, obj/item/tool)
-	var/list/menu_list = list(
+	var/static/list/menu_list = list(
 		"Normal Range",
 		"Normal Brightness",
 		"Normal Color",

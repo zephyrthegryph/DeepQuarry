@@ -20,7 +20,8 @@
 	//resource returns when crunched; a small amount of OK stuff by default
 	var/min_ore			= 3
 	var/max_ore			= 5
-	var/list/resource_list	=	list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold) // ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/research_sample, research_sample_resources, list(/obj/item/ore/glass,/obj/item/ore/coal,/obj/item/ore/iron,/obj/item/ore/lead,/obj/item/ore/marble,/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold))
 
 /obj/item/research_sample/Initialize(mapload)
 	. = ..()
@@ -121,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/item/research_sample, INTERACT_HAND_DEFAULT("Pick up", 
 	H.visible_message(span_notice("[H] crushes \the [src], stabilizing its anomalous properties and rendering it into a pile of assorted minerals."))
 	var/i = rand(min_ore,max_ore)
 	while(i>0)
-		var/ore = pick(resource_list)
+		var/ore = pick(TYPE_TABLE_GET(src, research_sample_resources))
 		new ore(H.loc)
 		i--
 	H.drop_from_inventory(src,get_turf(H))
@@ -222,7 +223,8 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	//modest amount of decent stuff
 	min_ore			= 4
 	max_ore			= 6
-	resource_list	= list(/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold,/obj/item/ore/osmium,/obj/item/ore/diamond)
+
+TYPE_TABLE(/obj/item/research_sample/uncommon, research_sample_resources, list(/obj/item/ore/phoron,/obj/item/ore/silver,/obj/item/ore/gold,/obj/item/ore/osmium,/obj/item/ore/diamond))
 
 /obj/item/research_sample/rare
 	catalogue_data = list(/datum/category_item/catalogue/information/research_sample/rare)
@@ -235,7 +237,8 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	//a decent amount of rare stuff only
 	min_ore			= 8
 	max_ore			= 10
-	resource_list	=	list(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium)
+
+TYPE_TABLE(/obj/item/research_sample/rare, research_sample_resources, list(/obj/item/ore/osmium,/obj/item/ore/uranium,/obj/item/ore/hydrogen,/obj/item/ore/diamond,/obj/item/ore/verdantium))
 
 /obj/item/research_sample/bluespace
 	name = "bluespace anomaly"
@@ -253,7 +256,8 @@ DECLARE_INTERACTIONS(/obj/item/research_sample, \
 	//a single bluespace crystal
 	min_ore			= 1
 	max_ore			= 1
-	resource_list	=	list(/obj/item/bluespace_crystal)
+
+TYPE_TABLE(/obj/item/research_sample/bluespace, research_sample_resources, list(/obj/item/bluespace_crystal))
 
 /obj/item/research_sample/bluespace/Initialize(mapload)
 	. = ..()

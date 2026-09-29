@@ -22,20 +22,13 @@
 	var/dispense_flavour = ICECREAM_VANILLA
 	var/flavour_name = "vanilla"
 
+/// Reagents each flavour / cone uses, indexed by ICECREAM_* / CONE_*. Shared, read-only.
+GLOBAL_LIST_INIT(icecream_ingredients, list( 	list(REAGENT_ID_MILK, REAGENT_ID_ICE), 	list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_COCO), 	list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_BERRYJUICE), 	list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_SINGULO), 	list(REAGENT_ID_FLOUR, REAGENT_ID_SUGAR), 	list(REAGENT_ID_FLOUR, REAGENT_ID_SUGAR, REAGENT_ID_COCO), ))
+
 /obj/machinery/icecream_vat/proc/get_ingredient_list(type)
-	switch(type)
-		if(ICECREAM_CHOCOLATE)
-			return list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_COCO)
-		if(ICECREAM_STRAWBERRY)
-			return list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_BERRYJUICE)
-		if(ICECREAM_BLUE)
-			return list(REAGENT_ID_MILK, REAGENT_ID_ICE, REAGENT_ID_SINGULO)
-		if(CONE_WAFFLE)
-			return list(REAGENT_ID_FLOUR, REAGENT_ID_SUGAR)
-		if(CONE_CHOC)
-			return list(REAGENT_ID_FLOUR, REAGENT_ID_SUGAR, REAGENT_ID_COCO)
-		else
-			return list(REAGENT_ID_MILK, REAGENT_ID_ICE)
+	if(!isnum(type) || type < ICECREAM_VANILLA || type > CONE_CHOC)
+		type = ICECREAM_VANILLA
+	return GLOB.icecream_ingredients[type]
 
 /obj/machinery/icecream_vat/proc/get_flavour_name(flavour_type)
 	switch(flavour_type)

@@ -314,11 +314,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 		ui.open()
 	ui.set_autoupdate(FALSE)
 
-/datum/jobban_panel/proc/get_offmap_job_titles()
-	var/static/list/titles
-	if(titles)
-		return titles
-	titles = list()
+/proc/build_jobban_offmap_job_titles()
+	var/list/titles = list()
 	for(var/dept in GLOB.offmap_departments)
 		for(var/jobPos in SSjob.get_job_titles_in_department(dept))
 			if(!jobPos)
@@ -329,20 +326,17 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 			titles += job.title
 	return titles
 
-/datum/jobban_panel/proc/get_dept_layout()
-	var/static/list/layout
-	if(layout)
-		return layout
-	layout = list(
-		list("title" = "Command Positions",     "color" = "#ccccff", "dept_bantype" = "commanddept",     "dept_const" = DEPARTMENT_COMMAND,     "extra_jobs" = null),
-		list("title" = "Security Positions",    "color" = "#ffddf0", "dept_bantype" = "securitydept",    "dept_const" = DEPARTMENT_SECURITY,    "extra_jobs" = null),
-		list("title" = "Engineering Positions", "color" = "#fff5cc", "dept_bantype" = "engineeringdept", "dept_const" = DEPARTMENT_ENGINEERING, "extra_jobs" = null),
-		list("title" = "Cargo Positions",       "color" = "#fff5cc", "dept_bantype" = "cargodept",       "dept_const" = DEPARTMENT_CARGO,       "extra_jobs" = null),
-		list("title" = "Medical Positions",     "color" = "#ffeef0", "dept_bantype" = "medicaldept",     "dept_const" = DEPARTMENT_MEDICAL,     "extra_jobs" = null),
-		list("title" = "Science Positions",     "color" = "#e79fff", "dept_bantype" = "sciencedept",     "dept_const" = DEPARTMENT_RESEARCH,    "extra_jobs" = null),
-		list("title" = "Exploration Positions", "color" = "#ebb8fc", "dept_bantype" = "explorationdept", "dept_const" = DEPARTMENT_PLANET,      "extra_jobs" = null),
-	)
-	return layout
+GLOBAL_TABLE(jobban_offmap_job_titles, GLOBAL_PROC_REF(build_jobban_offmap_job_titles))
+
+GLOBAL_LIST_INIT(jobban_dept_layout, list(
+	list("title" = "Command Positions",     "color" = "#ccccff", "dept_bantype" = "commanddept",     "dept_const" = DEPARTMENT_COMMAND,     "extra_jobs" = null),
+	list("title" = "Security Positions",    "color" = "#ffddf0", "dept_bantype" = "securitydept",    "dept_const" = DEPARTMENT_SECURITY,    "extra_jobs" = null),
+	list("title" = "Engineering Positions", "color" = "#fff5cc", "dept_bantype" = "engineeringdept", "dept_const" = DEPARTMENT_ENGINEERING, "extra_jobs" = null),
+	list("title" = "Cargo Positions",       "color" = "#fff5cc", "dept_bantype" = "cargodept",       "dept_const" = DEPARTMENT_CARGO,       "extra_jobs" = null),
+	list("title" = "Medical Positions",     "color" = "#ffeef0", "dept_bantype" = "medicaldept",     "dept_const" = DEPARTMENT_MEDICAL,     "extra_jobs" = null),
+	list("title" = "Science Positions",     "color" = "#e79fff", "dept_bantype" = "sciencedept",     "dept_const" = DEPARTMENT_RESEARCH,    "extra_jobs" = null),
+	list("title" = "Exploration Positions", "color" = "#ebb8fc", "dept_bantype" = "explorationdept", "dept_const" = DEPARTMENT_PLANET,      "extra_jobs" = null),
+))
 
 /datum/jobban_panel/proc/get_dept_job_titles(dept_const)
 	var/static/list/titles_by_dept
@@ -383,12 +377,12 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	data["target_name"] = target().name
 	data["target_ref"] = "\ref[target()]"
 	var/list/departments = list()
-	for(var/list/layout_entry in get_dept_layout())
+	for(var/list/layout_entry in GLOB.jobban_dept_layout)
 		departments += list(build_dept_block(layout_entry["dept_const"], layout_entry["title"], layout_entry["dept_bantype"], layout_entry["color"]))
 
 	// Offmap is the union of multiple departments.
 	var/list/offmap_block_jobs = list()
-	for(var/title in get_offmap_job_titles())
+	for(var/title in GLOBAL_TABLE_GET(jobban_offmap_job_titles))
 		offmap_block_jobs += list(list(
 			"title" = title,
 			"is_banned" = !!jobban_isbanned(target(), title),
@@ -433,7 +427,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	))
 
 	// Misc roles.
-	var/list/misc_roles = list(JOB_DIONAEA, JOB_GRAFFITI, JOB_CUSTOM_LOADOUT, JOB_PAI, JOB_GHOSTROLES, JOB_ANTAGHUD)
+	var/static/list/misc_roles = list(JOB_DIONAEA, JOB_GRAFFITI, JOB_CUSTOM_LOADOUT, JOB_PAI, JOB_GHOSTROLES, JOB_ANTAGHUD)
 	var/list/misc_jobs = list()
 	for(var/entry in misc_roles)
 		misc_jobs += list(list(

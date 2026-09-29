@@ -349,8 +349,8 @@ SUBSYSTEM_DEF(internal_wiki)
 		var/reactions = list()
 		for(var/datum/decl/chemical_reaction/distilling/CR in display_reactions)
 			var/list/assemble_reaction = list()
-			assemble_reaction["temp_min"] = CR.temp_range[1]
-			assemble_reaction["temp_max"] = CR.temp_range[2]
+			assemble_reaction["temp_min"] = TYPE_TABLE_GET(CR, distilling_temp_range)[1]
+			assemble_reaction["temp_max"] = TYPE_TABLE_GET(CR, distilling_temp_range)[2]
 			assemble_reaction["xgm_min"] = CR.minimum_xgm_pressure
 			assemble_reaction["xgm_max"] = CR.maximum_xgm_pressure
 			assemble_reaction["require_xgm_gas"] = CR.require_xgm_gas ? GLOB.gas_data.name[CR.require_xgm_gas] : null

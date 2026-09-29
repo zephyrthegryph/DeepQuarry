@@ -276,7 +276,7 @@
 	// Lists still shared with the type's defaults (belly_shared_lists.dm) are not saved:
 	// a load gives the belly the same shared copy.
 	var/list/customized = belly_unshared_list_names()
-	for(var/var_name in belly_default_lists())
+	for(var/var_name in GLOBAL_TABLE_GET(belly_default_lists))
 		if(!(var_name in customized))
 			. += var_name
 

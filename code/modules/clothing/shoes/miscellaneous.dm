@@ -395,32 +395,36 @@
 	siemens_coefficient = 0.7 // Same as loadout jackboots.
 	can_hold_knife = 1
 	force = 2
-	// ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
-	var/list/squeak_sound = list("mechstep"=1)	//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+
+//Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
+TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list("mechstep"=1))
 
 /obj/item/clothing/shoes/mech_shoes/fit_constraint()
 	return null
 
 /obj/item/clothing/shoes/mech_shoes/Initialize(mapload)
 	.=..()
-	make_squeaky(squeak_sound, 15*step_volume_mod)
+	make_squeaky(TYPE_TABLE_GET(src, mech_shoes_squeak_sounds), 15*step_volume_mod)
 
 /obj/item/clothing/shoes/mech_shoes/light
 	name = "light mech shoes"
 	desc = "Thud thud, but quieter."
-	squeak_sound = list("powerloaderstep"=1)
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/light, mech_shoes_squeak_sounds, list("powerloaderstep"=1))
 
 /obj/item/clothing/shoes/mech_shoes/heavy
 	name = "heavy mech shoes"
 	desc = "Thud thud, but heavy."
-	squeak_sound = list('sound/mob/footstep_large.ogg'=1,'sound/mob/footstep_large2.ogg'=1)
 	step_volume_mod = 4
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/heavy, mech_shoes_squeak_sounds, list('sound/mob/footstep_large.ogg'=1,'sound/mob/footstep_large2.ogg'=1))
 
 /obj/item/clothing/shoes/mech_shoes/mister_x
 	name = "concealed extra large jackboots"
 	desc = "Lets hope there's no evil in this residence."
-	squeak_sound = list('sound/mob/heavy_boots.ogg'=1)
 	step_volume_mod = 5
+
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sounds, list('sound/mob/heavy_boots.ogg'=1))
 
 /obj/item/clothing/shoes/mech_shoes/mister_x/visible
 	name = "visible extra large jackboots"

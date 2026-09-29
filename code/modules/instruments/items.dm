@@ -181,34 +181,7 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	throw_speed = 3
 	throw_range = 15
 	hitsound = 'sound/items/bikehorn.ogg'
-/*
-/obj/item/choice_beacon/music
-	name = "instrument delivery beacon"
-	desc = "Summon your tool of art."
-	icon_state = "gangtool-red"
 
-/obj/item/choice_beacon/music/generate_display_names()
-	var/static/list/instruments
-	if(!instruments)
-		instruments = list()
-		var/list/templist = list(/obj/item/instrument/violin,
-							/obj/item/instrument/piano_synth,
-							/obj/item/instrument/banjo,
-							/obj/item/instrument/guitar,
-							/obj/item/instrument/eguitar,
-							/obj/item/instrument/glockenspiel,
-							/obj/item/instrument/accordion,
-							/obj/item/instrument/trumpet,
-							/obj/item/instrument/saxophone,
-							/obj/item/instrument/trombone,
-							/obj/item/instrument/recorder,
-							/obj/item/instrument/harmonica,
-							/obj/item/instrument/piano_synth/headphones
-							)
-		for(var/atom/A as anything in templist)
-			instruments[initial(A.name)] = A
-	return instruments
-*/
 /obj/item/instrument/musicalmoth
 	name = "musical moth"
 	desc = "Despite its popularity, this controversial musical toy was eventually banned due to its unethically sampled sounds of moths screaming in agony."

@@ -17,7 +17,7 @@
 	if(!islist(input))
 		return result
 	var/list/source = input
-	var/list/choices = reputation_affiliation_choices()
+	var/list/choices = GLOB.reputation_affiliation_choices
 	for(var/faction_id in GLOB.reputation_factions)
 		if(source[faction_id] in choices)
 			result[faction_id] = source[faction_id]
@@ -39,7 +39,7 @@
 /datum/preference/faction_affiliations/is_valid(value)
 	if(!islist(value))
 		return FALSE
-	var/list/choices = reputation_affiliation_choices()
+	var/list/choices = GLOB.reputation_affiliation_choices
 	for(var/faction_id in GLOB.reputation_factions)
 		if(!(value[faction_id] in choices))
 			return FALSE

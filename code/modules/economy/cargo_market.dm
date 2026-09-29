@@ -138,11 +138,11 @@ TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, seller_groups, list())
 
 TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, buyer_profiles, list())
 
-/datum/cargo_market_counterparty/proc/cover_names() as /list
-	return list(name)
+/// Names a covert counterparty trades under (one is picked per rotation). Null: its own name.
+TYPE_TABLE_DECLARE(/datum/cargo_market_counterparty, cargo_cover_names, null)
 
 /datum/cargo_market_counterparty/proc/rotate_cover()
-	var/list/names = cover_names()
+	var/list/names = TYPE_TABLE_GET(src, cargo_cover_names)
 	active_cover_name = length(names) ? pick(names) : name
 
 /datum/cargo_market_counterparty/nanotrasen
@@ -203,15 +203,13 @@ TYPE_TABLE(/datum/cargo_market_counterparty/eclipse, buyer_profiles, list(/datum
 	allows_contraband = TRUE
 	legal_class = CARGO_MARKET_LEGAL_COVERT
 
-/datum/cargo_market_counterparty/syndicate/cover_names()
-	var/static/list/names = list(
-		"Grey Meridian Medical",
-		"Helix Transit Cooperative",
-		"Kestrel Industrial Recovery",
-		"Orpheus Research Brokerage",
-		"Redwood Frontier Logistics",
-	)
-	return names
+TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, cargo_cover_names, list( \
+	"Grey Meridian Medical", \
+	"Helix Transit Cooperative", \
+	"Kestrel Industrial Recovery", \
+	"Orpheus Research Brokerage", \
+	"Redwood Frontier Logistics", \
+))
 
 TYPE_TABLE(/datum/cargo_market_counterparty/syndicate, seller_groups, list("Munitions", "Miscellaneous", "Supplies"))
 

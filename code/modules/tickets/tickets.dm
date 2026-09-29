@@ -689,7 +689,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /proc/keywords_lookup(msg,irc)
 
 	//This is a list of words which are ignored by the parser when comparing message contents for names. MUST BE IN LOWER CASE!
-	var/list/adminhelp_ignored_words = list("unknown","the","a","an","of","monkey","alien","as", "i")
+	var/static/list/adminhelp_ignored_words = list("unknown","the","a","an","of","monkey","alien","as", "i")
 
 	//explode the input msg into a list
 	var/list/msglist = splittext(msg, " ")

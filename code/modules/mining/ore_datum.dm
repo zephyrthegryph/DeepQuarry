@@ -10,13 +10,14 @@
 	var/ore	              // Path to the ore produced when tile is mined.
 	var/scan_icon         // Overlay for ore scanners.
 	// Xenoarch stuff. No idea what it's for, just refactored it to be less awful.
-	var/list/xarch_ages = list( // ALLOW(instance_list): c: read-only per-subtype constant table (4 subtype overrides); a getter would share it, not worth it on a rare type
-		"thousand" = 999,
-		"million" = 999
-		)
 	var/xarch_source_mineral = REAGENT_ID_IRON
 	var/reagent = REAGENT_ID_SILICATE
 	var/wiki_flag = 0
+
+TYPE_TABLE_DECLARE(/datum/ore, ore_xarch_ages, list( \
+	"thousand" = 999, \
+	"million" = 999 \
+))
 
 /datum/ore/New()
 	. = ..()
@@ -31,12 +32,13 @@
 	spread_chance = 10
 	ore = /obj/item/ore/uranium
 	scan_icon = "mineral_uncommon"
-	xarch_ages = list(
-		"thousand" = 999,
-		"million" = 704
-		)
 	xarch_source_mineral = REAGENT_ID_POTASSIUM
 	reagent = REAGENT_ID_RADIUM // Otherwise it emp pulses constantly with iron
+
+TYPE_TABLE(/datum/ore/uranium, ore_xarch_ages, list( \
+	"thousand" = 999, \
+	"million" = 704 \
+))
 
 /datum/ore/hematite
 	name = ORE_HEMATITE
@@ -78,14 +80,15 @@
 	spread_chance = 25
 	ore = /obj/item/ore/phoron
 	scan_icon = "mineral_uncommon"
-	xarch_ages = list(
-		"thousand" = 999,
-		"million" = 999,
-		"billion" = 13,
-		"billion_lower" = 10
-		)
 	xarch_source_mineral = REAGENT_ID_PHORON
 	reagent = REAGENT_ID_PHORON
+
+TYPE_TABLE(/datum/ore/phoron, ore_xarch_ages, list( \
+	"thousand" = 999, \
+	"million" = 999, \
+	"billion" = 13, \
+	"billion_lower" = 10 \
+))
 
 /datum/ore/silver
 	name = ORE_SILVER
@@ -105,13 +108,14 @@
 	spread_chance = 10
 	ore = /obj/item/ore/gold
 	scan_icon = "mineral_uncommon"
-	xarch_ages = list(
-		"thousand" = 999,
-		"million" = 999,
-		"billion" = 4,
-		"billion_lower" = 3
-		)
 	reagent = REAGENT_ID_GOLD
+
+TYPE_TABLE(/datum/ore/gold, ore_xarch_ages, list( \
+	"thousand" = 999, \
+	"million" = 999, \
+	"billion" = 4, \
+	"billion_lower" = 3 \
+))
 
 /datum/ore/diamond
 	name = ORE_DIAMOND
@@ -154,11 +158,12 @@
 	spread_chance = 5
 	ore = /obj/item/ore/verdantium
 	scan_icon = "mineral_rare"
-	xarch_ages = list(
-		"billion" = 13,
-		"billion_lower" = 10
-		)
 	reagent = REAGENT_ID_PHOSPHORUS
+
+TYPE_TABLE(/datum/ore/verdantium, ore_xarch_ages, list( \
+	"billion" = 13, \
+	"billion_lower" = 10 \
+))
 
 /datum/ore/marble
 	name = ORE_MARBLE

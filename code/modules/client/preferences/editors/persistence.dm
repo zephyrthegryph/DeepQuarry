@@ -22,16 +22,10 @@
 		),
 	)
 
+GLOBAL_LIST_INIT(persistence_editor_static_data, list( 	"labels" = list( 		"spawn"    = "Carry spawn point between rounds", 		"weight"   = "Carry weight between rounds", 		"organs"   = "Carry organ status (amputations, augments) between rounds", 		"markings" = "Carry markings between rounds", 		"size"     = "Carry size between rounds", 	), ))
+
 /datum/preference_editor/persistence/build_ui_static_data(datum/preferences/preferences)
-	return list(
-		"labels" = list(
-			"spawn"    = "Carry spawn point between rounds",
-			"weight"   = "Carry weight between rounds",
-			"organs"   = "Carry organ status (amputations, augments) between rounds",
-			"markings" = "Carry markings between rounds",
-			"size"     = "Carry size between rounds",
-		),
-	)
+	return GLOB.persistence_editor_static_data
 
 /datum/preference_editor/persistence/handle_action(datum/preferences/preferences, action, list/params, mob/user)
 	if(action != "toggle_flag")

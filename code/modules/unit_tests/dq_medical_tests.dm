@@ -750,7 +750,7 @@
 /datum/unit_test/dq_medical_all_conditions_categorized
 
 /datum/unit_test/dq_medical_all_conditions_categorized/Run()
-	for(var/T in dq_catalogued_affliction_types())
+	for(var/T in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/proto = dq_proto(T)
 		TEST_ASSERT(proto.category, "[T] missing category")
 		TEST_ASSERT(proto.clinical_description, "[T] missing clinical_description")

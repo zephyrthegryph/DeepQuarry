@@ -109,7 +109,8 @@
 	///How much damage it does to the lasertag vest. Generally for oneshots.
 	var/tag_damage = 5
 	///What vests we are allowed to hit with the knife.
-	var/list/allowed_suits = list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni) // ALLOW(instance_list): c: read-only per-subtype constant table (2 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/lasertagknife, lasertag_knife_allowed_suits, list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni))
 
 /obj/item/lasertagknife/blue
 	name = "blue laser tag dagger"
@@ -117,7 +118,8 @@
 	icon_state = "tagknifeblue"
 	item_state_slots = list(slot_r_hand_str = "tagknifeblue", slot_l_hand_str = "tagknifeblue")
 	required_vest = /obj/item/clothing/suit/lasertag/bluetag
-	allowed_suits = list(/obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni)
+
+TYPE_TABLE(/obj/item/lasertagknife/blue, lasertag_knife_allowed_suits, list(/obj/item/clothing/suit/lasertag/redtag, /obj/item/clothing/suit/lasertag/omni))
 
 /obj/item/lasertagknife/red
 	name = "red laser tag dagger"
@@ -125,14 +127,15 @@
 	icon_state = "tagknifered"
 	item_state_slots = list(slot_r_hand_str = "tagknifered", slot_l_hand_str = "tagknifered")
 	required_vest = /obj/item/clothing/suit/lasertag/redtag
-	allowed_suits = list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/omni)
+
+TYPE_TABLE(/obj/item/lasertagknife/red, lasertag_knife_allowed_suits, list(/obj/item/clothing/suit/lasertag/bluetag, /obj/item/clothing/suit/lasertag/omni))
 
 //We have to do this if(user) check all over the place because for some reason someone broke thrower code. Thanks.
 /obj/item/lasertagknife/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(user)
 		user.setClickCooldown(user.get_attack_speed(src))
 		user.do_attack_animation(target)
-	var/success = handle_lasertag_attack(target, user, tag_damage, vest_override, required_vest, allowed_suits)
+	var/success = handle_lasertag_attack(target, user, tag_damage, vest_override, required_vest, TYPE_TABLE_GET(src, lasertag_knife_allowed_suits))
 
 	if(success)
 		user.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
@@ -147,5 +150,5 @@
 	if(ismob(hit_atom))
 		//So, attacker should ALWAYS be true, but there's a problem. The code doesn't actually set 'thrower' which we used for thrown laser knives.
 		//Instead of this PR getting massively out of scope and refactoring throwing code, we're just going to have thrown knives do vest override.
-		return handle_lasertag_attack(hit_atom, throwingdatum?.get_thrower(), tag_damage, TRUE, required_vest, allowed_suits)
+		return handle_lasertag_attack(hit_atom, throwingdatum?.get_thrower(), tag_damage, TRUE, required_vest, TYPE_TABLE_GET(src, lasertag_knife_allowed_suits))
 	..()

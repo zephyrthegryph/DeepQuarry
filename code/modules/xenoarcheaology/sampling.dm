@@ -34,8 +34,8 @@
 	age = rand(1, 999)
 
 	if(container.mineral())
-		if(islist(container.mineral().xarch_ages))
-			var/list/ages = container.mineral().xarch_ages
+		var/list/ages = TYPE_TABLE_GET(container.mineral(), ore_xarch_ages)
+		if(islist(ages))
 			if(ages["thousand"])
 				age_thousand = rand(1, ages["thousand"])
 			if(ages["million"])

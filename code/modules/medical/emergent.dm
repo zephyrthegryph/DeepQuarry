@@ -287,7 +287,7 @@
 /// (90+). Sub-clinical below 25 — accumulating but no overt effects yet
 /// (symptoms cleared, stage reset to null).
 ///
-/// Each OD condition declares its own `get_stages()` with stage-specific
+/// Each OD condition declares its own `affliction_stages` table with stage-specific
 /// effect data; the dispatcher only owns the severity→stage_id mapping.
 /proc/_dq_apply_od_stage(datum/affliction/existing)
 	var/new_stage

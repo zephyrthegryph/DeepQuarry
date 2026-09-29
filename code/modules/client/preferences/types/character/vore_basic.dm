@@ -32,8 +32,10 @@
 /datum/preference/text/human/autohiss/create_default_value()
 	return "Full"
 
+GLOBAL_LIST_INIT(autohiss_mode_choices, list("Off", "Basic", "Full"))
+
 /datum/preference/text/human/autohiss/get_pref_choices(datum/preferences/preferences)
-	return list("Off", "Basic", "Full")
+	return GLOB.autohiss_mode_choices
 
 /datum/preference/text/human/autohiss/is_valid(value)
 	return (value in list("Off", "Basic", "Full"))

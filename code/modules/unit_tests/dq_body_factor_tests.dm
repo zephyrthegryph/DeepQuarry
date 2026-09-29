@@ -81,7 +81,7 @@
 	TEST_ASSERT_NULL(body_factor_finalize(acc), "contributions that cancel out should leave no list")
 
 	// Every factor is registered.
-	var/list/defs = body_factor_defs()
+	var/list/defs = GLOBAL_TABLE_GET(body_factor_defs)
 	for(var/id in 1 to BF_COUNT)
 		TEST_ASSERT_NOTNULL(defs[id], "body factor [id] has no definition")
 
@@ -168,7 +168,7 @@
 	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	var/datum/affliction/overdose/hyperzine/od = H.body.afflict(/datum/affliction/overdose/hyperzine, B)
 	TEST_ASSERT_NOTNULL(od, "hyperzine overdose should afflict")
-	var/list/stages = od.get_stages()
+	var/list/stages = TYPE_TABLE_GET(od, affliction_stages)
 	var/last_stage = stages[length(stages)]
 	od._apply_stage(last_stage)
 	var/list/table = stages[last_stage]["factors"]

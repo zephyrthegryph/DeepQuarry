@@ -1245,7 +1245,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 		to_chat(user, "This suit does not have any sensors.")
 		return 0
 
-	var/list/modes = list(
+	var/static/list/modes = list(
 		"Off" = SUIT_SENSOR_OFF,
 		"Binary sensors" = SUIT_SENSOR_BINARY,
 		"Vitals tracker" = SUIT_SENSOR_VITAL,
