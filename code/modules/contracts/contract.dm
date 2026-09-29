@@ -5,7 +5,7 @@
 
 /datum/contract_audit_entry/New(_category, _detail)
 	. = ..()
-	time = world.time
+	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	category = _category
 	detail = _detail
 
@@ -202,10 +202,10 @@ DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 	var/deadline_duration = 0
 	var/deadline_timer
 	var/deadline_grace_duration = CONTRACT_DEFAULT_GRACE_DURATION
-	var/grace_until = 0
-	var/offer_expires_at = 0
+	EXPIRY_DECLARE(grace_until)
+	EXPIRY_DECLARE(offer_expires_at)
 	var/offer_timer
-	var/accepted_at = 0
+	EXPIRY_DECLARE(accepted_at)
 	var/accepted_by_account = 0
 	var/closed_at = 0
 	var/offer_kind = CONTRACT_OFFER_OPPORTUNITY
@@ -276,7 +276,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	if(!length(audit_log))
 		audit(CONTRACT_AUDIT_CREATED, "Contract offered by [issuer_name].")
 	audit(CONTRACT_AUDIT_OFFER, "Published on [board_key || "the contract board"]: [offer_reason || "eligible offer"].")
-	offer_expires_at = world.time + duration
+	EXPIRY_SET(src, offer_expires_at, duration, CLOCK_WORLD)
 	offer_timer = om_after(src, duration, PROC_REF(expire_offer))
 	return TRUE
 
@@ -442,10 +442,10 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		offer_timer = null
 	offer_expires_at = 0
 	state = CONTRACT_ACTIVE
-	accepted_at = world.time
+	EXPIRY_STAMP(src, accepted_at, CLOCK_WORLD)
 	accepted_by_account = accepting_account?.account_number || contract_account_for_mob(user)?.account_number
 	if(deadline_duration > 0)
-		deadline = world.time + deadline_duration
+		deadline = EXPIRY_AT(null, CLOCK_WORLD, 0) + deadline_duration
 	if(BEFORE(src, deadline, CLOCK_WORLD))
 		deadline_timer = om_after(src, deadline - world.time, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
@@ -486,7 +486,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		return FALSE
 	var/old_state = state
 	state = CONTRACT_GRACE
-	grace_until = world.time + deadline_grace_duration
+	EXPIRY_SET(src, grace_until, deadline_grace_duration, CLOCK_WORLD)
 	deadline_timer = om_after(src, deadline_grace_duration, PROC_REF(check_deadline))
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(CONTRACT_AUDIT_GRACE, "The operational deadline passed; already-prepared evidence has [DisplayTimeText(deadline_grace_duration)] to arrive.")
@@ -669,7 +669,7 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	grace_until = 0
 	state = new_state
 	closure_code = _closure_code
-	closed_at = world.time
+	closed_at = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	SScontracts.set_contract_state(src, old_state, state)
 	audit(category, detail)
 	SScontracts?.on_contract_closed(src)

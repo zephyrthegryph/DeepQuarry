@@ -337,7 +337,7 @@
 	var/fulfilled_units = 0
 	var/price_multiplier = 1
 	var/expires_at = 0
-	var/completed_at = 0
+	EXPIRY_DECLARE(completed_at)
 	var/cover_name
 	var/reservation_key
 	var/reserved_account = 0
@@ -356,7 +356,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	var/value = 0
 	var/account_number = 0
 	var/principal_account = 0
-	var/occurred_at = 0
+	EXPIRY_DECLARE(occurred_at)
 	var/covert = FALSE
 	var/trace_strength = 0
 	var/detected = FALSE
@@ -667,7 +667,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	transaction.description = description
 	transaction.value = max(0, round(value))
 	transaction.account_number = account_number
-	transaction.occurred_at = world.time
+	EXPIRY_STAMP(transaction, occurred_at, CLOCK_WORLD)
 	transaction.reservation_key = reservation_key
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(reservation_key)
@@ -741,7 +741,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		"detail" = "An external buyer accepted [item.name] against [bid.profile.name].",
 	), "market-export:[REF(item)]:[bid.id]", item)
 	if(bid.fulfilled_units >= bid.target_units && !bid.completed_at)
-		bid.completed_at = world.time
+		EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
 		adjust_station_faction_reputation(counterparty.faction_id, 2)
 		adjust_department_faction_reputation(DEPARTMENT_CARGO, counterparty.faction_id, 6)
 		if(export.market_router_account)
@@ -868,7 +868,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			continue
 		var/datum/cargo_market_bid/bid = market_bids?[market_id]
 		if(bid)
-			bid.completed_at = world.time
+			EXPIRY_STAMP(bid, completed_at, CLOCK_WORLD)
 			bid.reservation_key = null
 			bid.reserved_account = 0
 			bid.expires_at = min(bid.expires_at, next_market_refresh)

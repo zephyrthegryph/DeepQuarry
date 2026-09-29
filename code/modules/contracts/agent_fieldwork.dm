@@ -224,7 +224,7 @@
 	payload["contact_account"] = contract.contact_account_number
 	payload["contact_name"] = contract.contact_name
 	payload["contact_mode"] = contract.contact_mode
-	payload["signed_at"] = world.time
+	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed external freight subcontract — [contract.id]"
 	paper.info += "<br><b>Authenticated contact:</b> [html_encode(contract.contact_name)]<br><b>Terms:</b> [agent_contact_mode_name(contract.contact_mode)], [contract.contact_share_percent]% reward share.<br>"
 	paper.updateinfolinks()
@@ -237,7 +237,7 @@
 	if(account?.account_number != contract.contact_account_number)
 		return FALSE
 	payload["cooperated"] = TRUE
-	payload["cooperated_at"] = world.time
+	payload["cooperated_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	contract.contact_cooperated = TRUE
 	contract.contact_share_percent = 0
 	contract.contact_sales_commission = 0
@@ -275,7 +275,7 @@
 		return FALSE
 	payload["signed"] = TRUE
 	payload["approach"] = selected_approach
-	payload["signed_at"] = world.time
+	payload["signed_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed faction operation charter — [contract.id]"
 	paper.info += "<br><b>Authenticated agent:</b> [html_encode(contract_account_for_mob(user)?.owner_name || user.real_name)]<br><b>Operating approach:</b> [agent_approach_name(selected_approach)].<br>"
 	paper.updateinfolinks()
@@ -302,7 +302,7 @@
 			crate.cargo_market_bid_id = bid.id
 			crate.cargo_market_router_account = contract.contact_account_number
 			crate.cargo_market_contract_key = contract.offer_key
-			document.payload["loaded_at"] = world.time
+			document.payload["loaded_at"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 			document.payload["shipment_ref"] = REF(crate)
 			return TRUE
 	return FALSE

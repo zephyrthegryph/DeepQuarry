@@ -148,7 +148,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		generate_mc_data()
 	if(!mc_metrics || !BEFORE(src, mc_metrics_generated_at + 5 SECONDS, CLOCK_WORLD))
 		mc_metrics = generate_mc_metrics()
-		mc_metrics_generated_at = world.time
+		mc_metrics_generated_at = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	target.stat_panel.send_message("update_mc", list(
 		"mc_data" = mc_data,
 		"mc_metrics" = mc_metrics,

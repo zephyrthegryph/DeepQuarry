@@ -65,7 +65,7 @@
 	if(!D || D.nospecial || !D.specialtoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.repulse()
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/dragon_tail_sweep/get_player_verb_info()
@@ -114,7 +114,7 @@
 	if(!D || D.nospecial || !D.specialtoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.chargestart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/dragon_charge/get_player_verb_info()
@@ -158,7 +158,7 @@
 	if(!D || D.norange || !D.flametoggle)
 		return DQ_BEHAVIOR_FAILED
 	D.firebreathstart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/dragon_fire_breath/get_player_verb_info()

@@ -87,7 +87,7 @@
 /datum/contract/medical_case_report/proc/register_consent(obj/item/paper/paper, mob/living/carbon/human/subject)
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
-	consent_time = world.time
+	consent_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	consent_record_handle = om_handle(paper)
 	return TRUE
 
@@ -116,7 +116,7 @@
 	payload["signed"] = TRUE
 	report.consent_evidence_id = evidence_id
 	SScontracts.bind_evidence_subject(evidence_id, report.target_ref)
-	payload["signature_time"] = world.time
+	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed case registry consent - [subject.real_name]"
 	paper.info += "<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this form with the completed case narrative and longitudinal body scans, then fax it to [CONTRACT_FAX_CASE_REGISTRY]."
 	paper.updateinfolinks()

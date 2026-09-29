@@ -7,7 +7,7 @@
 	/// There is only ever the one: if it is destroyed, it is gone.
 	var/obj/item/rig/protean/rig
 	/// world.time of the last form change (form strain).
-	var/last_switch_time = 0
+	EXPIRY_DECLARE(last_switch_time)
 
 /datum/forms/protean/get_form_types()
 	var/static/list/types = list(/datum/form/human, /datum/form/protean_blob)
@@ -102,7 +102,7 @@
 	. = ..()
 	if(!.)
 		return
-	last_switch_time = world.time
+	EXPIRY_STAMP(src, last_switch_time, CLOCK_WORLD)
 	if(previous_switch && ELAPSED_SINCE(src, previous_switch, CLOCK_WORLD) < NANITE_FORM_SWITCH_GRACE)
 		var/mob/living/carbon/human/H = owner
 		H.body?.afflict(/datum/affliction/nanite/form_strain, null, NANITE_STRAIN_PER_FAST_SWITCH)

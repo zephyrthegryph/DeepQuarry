@@ -82,7 +82,7 @@
 	var/peak_damage = 0
 	/// world.time a continuous treatment mechanism last acted on this lesion
 	/// (see is_stabilised(): halts bleeding, leaking and necrotic spread).
-	var/tmp/stabilised_at = 0
+	EXPIRY_TMP_DECLARE(stabilised_at)
 
 	// --- Defined by the lesion kind ---
 	/// Short noun for the lesion ("contusion", "laceration"…).
@@ -243,7 +243,7 @@
 		if(!can_regenerate())
 			return 0
 	else if(continuous)
-		stabilised_at = world.time
+		EXPIRY_STAMP(src, stabilised_at, CLOCK_WORLD)
 	if(continuous)
 		amount *= LESION_TREATMENT_TICK_SCALE
 	if(is_full_repair(tag))

@@ -27,7 +27,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		death_list = list()
 		insert_deaths(batch)
 	if(!profile_next_dump)
-		profile_next_dump = world.time + 2 MINUTES
+		profile_next_dump = EXPIRY_AT(null, CLOCK_WORLD, 0) + 2 MINUTES
 	else if(!BEFORE(src, profile_next_dump, CLOCK_WORLD))
 		dump_profile()
 	return TRUE
@@ -45,7 +45,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 /// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
 /// MOB_PARK_SUMMARY line, every two minutes.
 /datum/world_service/mobs/proc/dump_profile()
-	profile_next_dump = world.time + 2 MINUTES
+	profile_next_dump = EXPIRY_AT(null, CLOCK_WORLD, 0) + 2 MINUTES
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
 		return

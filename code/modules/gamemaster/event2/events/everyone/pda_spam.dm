@@ -18,7 +18,7 @@
 	var/tmp/node_handle
 
 /datum/event2/event/pda_spam/set_up()
-	last_spam_time = world.time // So it won't immediately give up.
+	last_spam_time = EXPIRY_AT(null, CLOCK_WORLD, 0) // So it won't immediately give up.
 	MS_handle = om_handle(pick_message_server())
 	node_handle = om_handle(get_exonet_node())
 
@@ -130,7 +130,7 @@
 	return list(sender, message)
 
 /datum/event2/event/pda_spam/proc/send_spam(obj/item/pda/P, sender, message)
-	last_spam_time = world.time
+	last_spam_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 	PM.notify(span_bold("Message from [sender] (Unknown / spam?), ") + "\"[message]\" (Unable to Reply)", 0)
 	if(spam_debug)

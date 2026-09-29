@@ -184,7 +184,7 @@
 
 	shift_state = AB_SHIFT_NONE
 	if(from_temporary)
-		last_shift = world.time
+		EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)
 
 
 /mob/living/simple_mob/vore/demon/verb/blood_burst()
@@ -207,7 +207,7 @@
 
 	playsound(src.loc, 'sound/effects/blobattack.ogg', 50, 1)
 
-	blood_spawn = world.time
+	EXPIRY_STAMP(src, blood_spawn, CLOCK_WORLD)
 
 	return
 
@@ -357,4 +357,4 @@
 	update_icon()
 
 	shift_state = AB_SHIFT_NONE
-	last_shift = world.time
+	EXPIRY_STAMP(src, last_shift, CLOCK_WORLD)

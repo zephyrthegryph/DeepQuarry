@@ -276,7 +276,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
 					site.participants |= L
-			site.last_occupied = world.time
+			EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
 			continue
 		if(site.status >= EXP_STATUS_ACTIVE)
 			if(site.has_travel_lease())

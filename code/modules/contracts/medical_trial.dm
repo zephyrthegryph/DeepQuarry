@@ -178,7 +178,7 @@ DECLARE_REF(/datum/contract/medical_trial, "participants", OWNED_VALUES, null)
 	participant.dose += amount
 	subject.record_clinical_exposure(id, profile.code_name, "coded trial medication", amount)
 	if(!participant.exposure_time)
-		participant.exposure_time = world.time
+		EXPIRY_STAMP(participant, exposure_time, CLOCK_WORLD)
 
 /datum/contract/medical_trial/proc/record_challenge(mob/living/carbon/human/subject, amount)
 	var/datum/contract_subject_identity/identity = SScontracts.subject_identity(subject)
@@ -417,7 +417,7 @@ DECLARE_REF(/datum/contract/medical_trial, "participants", OWNED_VALUES, null)
 	var/corpse_contract_offered = FALSE
 	var/dose = 0
 	var/challenge_dose = 0
-	var/exposure_time = 0
+	EXPIRY_DECLARE(exposure_time)
 	var/consent_time = 0
 	var/completed = FALSE
 	var/faxed = FALSE
@@ -657,13 +657,13 @@ DECLARE_REF(/datum/contract/medical_trial, "participants", OWNED_VALUES, null)
 			"contract_id" = contract_id,
 			"study_code" = study_code,
 			"agent" = agent_name,
-			"first_exposure" = world.time,
+			"first_exposure" = EXPIRY_AT(null, CLOCK_WORLD, 0),
 			"dose" = 0,
 		)
 		LAZYINITLIST(clinical_exposure_history)
 		clinical_exposure_history += list(existing)
 	existing["dose"] += amount
-	existing["last_exposure"] = world.time
+	existing["last_exposure"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 /mob/living/carbon/human/proc/clinical_exposure_printout()
 	if(!length(clinical_exposure_history))

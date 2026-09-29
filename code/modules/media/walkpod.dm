@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 /obj/item/walkpod/proc/start_stop_song()
 	if(current_track() && playing)
 		media_url = current_track().url
-		media_start_time = world.time
+		media_start_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 		runechat_message("*&nbsp;[current_track().display()]&nbsp;*", specific_viewers = list(listener()))
 	else
 		media_url = ""

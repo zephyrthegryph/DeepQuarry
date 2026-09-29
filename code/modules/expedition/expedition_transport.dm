@@ -42,8 +42,8 @@ DECLARE_REF(/obj/effect/overmap/visitable/sector/expedition, "site_handle", BACK
 	if(!site() || shuttle != site().assigned_shuttle())
 		return
 	site().status = EXP_STATUS_ACTIVE
-	site().deployed_at = world.time
-	site().last_occupied = world.time
+	EXPIRY_STAMP(site(), deployed_at, CLOCK_WORLD)
+	EXPIRY_STAMP(site(), last_occupied, CLOCK_WORLD)
 	for(var/area/A in shuttle.shuttle_area)
 		for(var/mob/living/L in contents_of(A))
 			site().participants |= L
@@ -54,7 +54,7 @@ DECLARE_REF(/obj/effect/shuttle_landmark/automatic/clearing/expedition, "site_ha
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
 	var/tmp/active_expedition_handle
-	var/next_expedition_plot = 0
+	EXPIRY_DECLARE(next_expedition_plot)
 
 DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui", OWNED, null)
 
@@ -80,7 +80,7 @@ DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "active_expedition_
 	var/datum/expedition_site/site = GLOB.expedition_service.plot_for_vessel(user, vessel, src)
 	if(site)
 		active_expedition_handle = om_handle(site)
-		next_expedition_plot = world.time + EXP_LAUNCH_COOLDOWN
+		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/proc/site() as /datum/expedition_site

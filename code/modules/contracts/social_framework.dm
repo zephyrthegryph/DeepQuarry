@@ -36,7 +36,7 @@
 	var/approved_weight = 0
 	var/status = CONTRACT_STAKEHOLDER_PENDING
 	var/contribution = 0
-	var/created_at
+	EXPIRY_DECLARE(created_at)
 
 /datum/contract_stakeholder_proposal/New(datum/money_account/account, _role_id, _requested_weight)
 	. = ..()
@@ -45,7 +45,7 @@
 	department = account.department_id
 	role_id = _role_id
 	requested_weight = clamp(round(_requested_weight), 1, 3)
-	created_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 
 /// Social contracts keep their exceptional target live until an authorized
 /// head finalizes the outcome or the deadline does so automatically. All

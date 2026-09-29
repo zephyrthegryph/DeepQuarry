@@ -51,17 +51,17 @@
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
 
 	// --- Tactical state (read by behaviors) ---
-	var/last_attack_at = 0           // world.time of the most recent successful attack tick
+	EXPIRY_DECLARE(last_attack_at) // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
 	var/tmp/home_turf_handle	// for guard / return_home behaviors
 	var/leader_ref = null  // for follow_leader / cooperative AI
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
-	var/lose_threat_at = 0
+	EXPIRY_DECLARE(lose_threat_at)
 	/// Dependency-driven strategic scheduling. Events set this to zero; a calm
 	/// brain uses a long discovery cadence while combat stays responsive.
-	var/next_strategic_at = 0
+	EXPIRY_DECLARE(next_strategic_at)
 	var/idle_strategic_interval = 10 SECONDS
 	/// While hibernating: the chunks it watches (watch_mob_chunks()).
 	var/tmp/list/react_sleep_tokens
@@ -148,7 +148,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	selection_dirty = TRUE
 	if(primary_threat)
 		// Combat: the quarter-second tactical loop owns behavior selection.
-		next_strategic_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
 		sync_fast_processing()
 		return
 	// Calm: this is the ONLY place no-threat behaviors (wander, idle speak,
@@ -159,10 +159,10 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	if(active_behavior_type)
 		// A tick-driven idle behavior is running: let the fast loop drive it
 		// until it finishes (sync_fast_processing drops us again on DONE).
-		next_strategic_at = world.time + 2 SECONDS
+		EXPIRY_SET(src, next_strategic_at, 2 SECONDS, CLOCK_WORLD)
 		sync_fast_processing()
 		return
-	next_strategic_at = world.time + idle_strategic_interval
+	EXPIRY_SET(src, next_strategic_at, idle_strategic_interval, CLOCK_WORLD)
 	sync_fast_processing()
 	// Only hibernate when nothing idle wants to run and no one-shot walk is
 	// queued. A brain with an idle behavior scoring > 0 (or cooling down
@@ -403,7 +403,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 			// This prevents caves-are-dark from dropping the target the instant
 			// the player steps one tile out of the narrow view() cone.
 			if(!lose_threat_at)
-				lose_threat_at = world.time
+				EXPIRY_STAMP(src, lose_threat_at, CLOCK_WORLD)
 				return  // Start the grace timer; don't drop yet.
 			if(BEFORE(src, lose_threat_at + DQ_LOSE_THREAT_TIMEOUT, CLOCK_WORLD))
 				return  // Still within the grace period.
@@ -534,7 +534,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	LAZYINITLIST(behavior_state)
 	if(!behavior_state[btype])
 		behavior_state[btype] = list("cooldown" = 0, "charges" = null)
-	behavior_state[btype]["cooldown"] = world.time + duration
+	behavior_state[btype]["cooldown"] = EXPIRY_AT(null, CLOCK_WORLD, 0) + duration
 
 /datum/ai_brain/proc/consume_charge(btype, atom/source)
 	if(source)

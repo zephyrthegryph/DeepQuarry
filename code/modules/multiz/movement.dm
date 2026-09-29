@@ -890,7 +890,7 @@
 		blind_message = span_infoplain("You hear the sounds of climbing!"), runemessage = "Tap Tap")
 	var/grace_time = 4 SECONDS
 	to_chat(L, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_at = world.time + grace_time)
+	om_task_start(/datum/om/task/timed/simulated_climb_wall, L, src, receiver = src, duration = climb_time, above_mob = above_mob, above_wall = above_wall, fall_chance = fall_chance, drop_our_held = drop_our_held, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
 
 /datum/om/task/timed/simulated_climb_wall
 	complete_proc = /turf/simulated/proc/climb_wall_done
@@ -1039,7 +1039,7 @@
 	below_wall.audible_message(message = span_infoplain("You hear something climbing up " + span_bold("\The [below_wall]")), runemessage= "Tap Tap")
 	var/grace_time = 3 SECONDS
 	to_chat(src, span_warning("If you get interrupted after [(grace_time / (1 SECOND))] seconds of climbing, you will fall and hurt yourself, beware!"))
-	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = world.time + grace_time)
+	om_task_start(/datum/om/task/timed/living_climb_down, src, src, duration = climb_time, front_of_us = front_of_us, destination = destination, below_wall = below_wall, fall_chance = fall_chance, nutrition_cost = nutrition_cost, fall_at = EXPIRY_AT(null, CLOCK_WORLD, 0) + grace_time)
 
 /datum/om/task/timed/living_climb_down
 	complete_proc = /mob/living/proc/climb_down_done

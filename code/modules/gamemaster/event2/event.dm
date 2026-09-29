@@ -27,8 +27,8 @@ This allows for events that have their announcement happen after the end itself.
 	var/finished = FALSE	// Is set to TRUE when `ended` and `announced` are TRUE.
 
 	// `world.time`s when this event started, and finished, for bookkeeping.
-	var/time_started = null
-	var/time_finished = null
+	EXPIRY_DECLARE(time_started)
+	EXPIRY_DECLARE(time_finished)
 
 	// If these are set, the announcement will be delayed by a random time between the lower and upper bounds.
 	// If the upper bound is not defined, then it will use the lower bound instead.
@@ -118,15 +118,15 @@ This allows for events that have their announcement happen after the end itself.
 
 // Starts the event.
 /datum/event2/event/proc/execute()
-	time_started = world.time
+	EXPIRY_STAMP(src, time_started, CLOCK_WORLD)
 
 	if(announce_delay_lower_bound)
 		announce_delay = rand(announce_delay_lower_bound, announce_delay_upper_bound ? announce_delay_upper_bound : announce_delay_lower_bound)
-		time_to_announce = world.time + announce_delay
+		time_to_announce = EXPIRY_AT(null, CLOCK_WORLD, 0) + announce_delay
 
 	if(start_delay_lower_bound)
 		start_delay = rand(start_delay_lower_bound, start_delay_upper_bound ? start_delay_upper_bound : start_delay_lower_bound)
-		time_to_start = world.time + start_delay
+		time_to_start = EXPIRY_AT(null, CLOCK_WORLD, 0) + start_delay
 
 	if(length_lower_bound)
 		var/starting_point = time_to_start ? time_to_start : world.time
@@ -139,7 +139,7 @@ This allows for events that have their announcement happen after the end itself.
 // Don't override this, use `end()` for cleanup instead.
 /datum/event2/event/proc/finish()
 	finished = TRUE
-	time_finished = world.time
+	EXPIRY_STAMP(src, time_finished, CLOCK_WORLD)
 
 // Called by admins wanting to stop an event immediately.
 /datum/event2/event/proc/abort()

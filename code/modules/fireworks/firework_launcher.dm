@@ -10,14 +10,14 @@
 
 	circuit = /obj/item/circuitboard/firework_launcher
 	var/tmp/loaded_star_handle
-	var/last_launch
+	EXPIRY_DECLARE(last_launch)
 	var/launch_cooldown = 5 MINUTES
 
 /obj/machinery/firework_launcher/Initialize(mapload)
 	. = ..()
 
 	default_apply_parts()
-	last_launch = world.time						// Prevents cheesing cooldown by deconstructing and reconstructing
+	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)	// Prevents cheesing cooldown by deconstructing and reconstructing
 	update_icon()
 
 /obj/machinery/firework_launcher/RefreshParts()
@@ -124,7 +124,7 @@
 	loaded_star().trigger_firework(WH)
 	qdel(loaded_star())
 	loaded_star_handle = null
-	last_launch = world.time
+	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
 	update_icon()
 	flick("launcher_launch", src)

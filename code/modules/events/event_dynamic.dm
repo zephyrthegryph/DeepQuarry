@@ -65,7 +65,7 @@ GLOBAL_LIST_EMPTY(event_last_fired)
 		possibleEvents[event_type] = max(possibleEvents[event_type] - weight_modifier, 0)
 
 	var/picked_event = pickweight(possibleEvents)
-	GLOB.event_last_fired[picked_event] = world.time
+	GLOB.event_last_fired[picked_event] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 	// Debug code below here, very useful for testing so don't delete please.
 	var/debug_message = "Firing random event. "

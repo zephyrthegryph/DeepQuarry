@@ -239,7 +239,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		log_and_message_admins("has ghosted in cryo as [special_role]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[location.x];Y=[location.y];Z=[location.z]'>JMP</a>)",src)
 	var/mob/observer/dead/ghost = ghostize(0)	// 0 parameter is so we can never re-enter our body, "Charlie, you can never come baaaack~" :3
 	if(ghost)
-		ghost.timeofdeath = world.time 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
+		ghost.timeofdeath = EXPIRY_AT(null, CLOCK_WORLD, 0) 	// Because the living mob won't have a time of death and we want the respawn timer to work properly.
 		ghost.set_respawn_timer()
 		announce_ghost_joinleave(ghost)
 
@@ -1098,7 +1098,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 			if(ELAPSED_SINCE(src, timeofdeath, CLOCK_WORLD) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 				record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 				db.notify(record)						//So you probably will want to let someone know if you die.
-				record.last_notification = world.time
+				record.last_notification = EXPIRY_AT(null, CLOCK_WORLD, 0)
 				to_chat(src, span_notice("New notification has been sent."))
 			else
 				to_chat(src, span_warning("Your backup is not past-due yet."))
@@ -1106,7 +1106,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 			to_chat(src, span_warning("Too little time has passed since your last notification."))
 		else
 			db.notify(record)
-			record.last_notification = world.time
+			record.last_notification = EXPIRY_AT(null, CLOCK_WORLD, 0)
 			to_chat(src, span_notice("New notification has been sent."))
 	else
 		to_chat(src,span_warning("No backup record could be found, sorry."))

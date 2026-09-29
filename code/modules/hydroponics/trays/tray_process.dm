@@ -23,7 +23,7 @@
 			schedule_growth_wake()
 			return PROCESS_KILL
 		return
-	lastcycle = world.time
+	lastcycle = EXPIRY_AT(null, CLOCK_WORLD, 0)
 
 	// Mutation level drops each main tick.
 	mutation_level -= rand(2,4)

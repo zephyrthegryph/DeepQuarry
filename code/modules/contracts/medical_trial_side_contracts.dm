@@ -346,9 +346,9 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	SScontracts.bind_evidence_subject(evidence_id, identity.id)
 	payload["subject_name"] = subject.real_name
 	payload["signature"] = signature
-	payload["signature_time"] = world.time
+	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	var/datum/medical_trial_participant/signed_participant = trial.participants[identity.id]
-	signed_participant.consent_time = world.time
+	signed_participant.consent_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	signed_participant.consent_evidence_id = evidence_id
 	signed_participant.consent_record = paper
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
@@ -369,7 +369,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	if(payload["signed"] || !istype(subject) || SScontracts.subject_identity(subject)?.id != payload["subject_id"])
 		return FALSE
 	payload["signed"] = TRUE
-	payload["signature_time"] = world.time
+	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	paper.name = "signed [paper.name]"
 	paper.info += "<br><b>Status:</b> Signed withdrawal pending receipt by [destination]."
 	paper.updateinfolinks()

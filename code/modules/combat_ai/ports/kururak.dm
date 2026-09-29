@@ -130,7 +130,7 @@
 	if(issilicon(L) && stance != I_GRAB)
 		stance = I_DISARM
 	K.special_attack_target(L, stance)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

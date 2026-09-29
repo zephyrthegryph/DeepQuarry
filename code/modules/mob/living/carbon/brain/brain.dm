@@ -124,7 +124,7 @@
 		if((world.time - identity().time_of_death) > 5 MINUTES)	//Allows notify transcore to be used if you have an entry but for some reason weren't marked as dead
 			record.dead_state = MR_DEAD				//Such as if you got scanned but didn't take an implant. It's a little funky, but I mean, you got scanned
 			db.notify(record)						//So you probably will want to let someone know if you die.
-			record.last_notification = world.time
+			record.last_notification = EXPIRY_AT(null, CLOCK_WORLD, 0)
 			to_chat(src, span_notice("New notification has been sent."))
 		else
 			to_chat(src, span_warning("Your backup is not past-due yet."))
@@ -132,7 +132,7 @@
 		to_chat(src, span_warning("Too little time has passed since your last notification."))
 	else
 		db.notify(record)
-		record.last_notification = world.time
+		record.last_notification = EXPIRY_AT(null, CLOCK_WORLD, 0)
 		to_chat(src, span_notice("New notification has been sent."))
 
 DECLARE_REF(/mob/living/carbon/brain, "host", BACK, "view")

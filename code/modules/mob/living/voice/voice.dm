@@ -48,7 +48,7 @@
 // Parameters: None
 // Description: Sets a timeofdeath variable, to fix the free respawn bug.
 /mob/living/voice/ghostize()
-	timeofdeath = world.time
+	timeofdeath = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	. = ..()
 
 // Verb: hang_up()

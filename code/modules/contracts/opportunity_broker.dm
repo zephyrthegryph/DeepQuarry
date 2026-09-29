@@ -9,7 +9,7 @@
 /datum/contract_opportunity_observation
 	var/fact_key
 	var/revision = 0
-	var/occurred_at = 0
+	EXPIRY_DECLARE(occurred_at)
 	var/value = 0
 	var/actor_key
 	var/list/diversity_values
@@ -103,8 +103,8 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 /datum/contract_opportunity_window
 	var/key
 	var/bucket
-	var/created_at
-	var/last_event_at
+	EXPIRY_DECLARE(created_at)
+	EXPIRY_DECLARE(last_event_at)
 	var/latched = FALSE
 	var/list/facts_by_signal
 
@@ -112,8 +112,8 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 	. = ..()
 	key = _key
 	bucket = _bucket
-	created_at = world.time
-	last_event_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
+	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
 	facts_by_signal = list()
 	for(var/datum/contract_opportunity_signal/signal in rule.signals)
 		facts_by_signal[signal.id] = list()
@@ -151,7 +151,7 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 			return FALSE
 		facts -= fact_key
 		qdel(previous)
-	last_event_at = world.time
+	EXPIRY_STAMP(src, last_event_at, CLOCK_WORLD)
 	if(!event.fact_active || !signal.event_matches(event))
 		return TRUE
 	facts[fact_key] = new /datum/contract_opportunity_observation(fact_key, event, signal)
@@ -289,7 +289,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 		"offer_kind" = CONTRACT_OFFER_OPPORTUNITY,
 		"opportunity_rule" = id,
 		"opportunity_bucket" = window.bucket,
-		"opportunity_triggered_at" = world.time,
+		"opportunity_triggered_at" = EXPIRY_AT(null, CLOCK_WORLD, 0),
 		"trigger_event_id" = event.id,
 		"trigger_area" = event.area_name,
 		"trigger_signals" = deepCopyList(signal_snapshots),
@@ -319,7 +319,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 
 /datum/contract_opportunity_history_entry/New(datum/contract_opportunity_rule/rule, datum/contract_opportunity_window/window, datum/contract_event/event, list/_snapshots)
 	. = ..()
-	time = world.time
+	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	rule_id = rule.id
 	bucket = window.bucket
 	event_id = event.id
@@ -405,11 +405,11 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 		return
 	if(!rule.trigger(src, window, event, signal_snapshots))
 		// Avoid retrying a definition with exhausted demand on every event.
-		opportunity_cooldowns[window_key] = world.time + 2 MINUTES
+		opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + 2 MINUTES
 		opportunities_suppressed++
 		return
 	window.latched = TRUE
-	opportunity_cooldowns[window_key] = world.time + rule.cooldown
+	opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + rule.cooldown
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
 	opportunity_history += history_entry

@@ -14,7 +14,7 @@
 	var/dead_icon
 	var/amount_grown = 0
 	var/max_grown = 200
-	var/time_of_birth
+	EXPIRY_DECLARE(time_of_birth)
 	var/language
 	death_message = "lets out a waning guttural screech, green blood bubbling from its maw."
 	var/can_namepick_as_adult = 0
@@ -24,7 +24,7 @@
 /mob/living/carbon/alien/Initialize(mapload)
 	. = ..()
 
-	time_of_birth = world.time
+	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
 
 	add_verb(src, /mob/living/proc/ventcrawl)
 	add_verb(src, /mob/living/proc/hide)

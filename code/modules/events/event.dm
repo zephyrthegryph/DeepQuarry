@@ -65,8 +65,8 @@
 	var/severity			= 0 //Severity. Lower means less severe, higher means more severe. Does not have to be supported. Is set on New().
 	var/activeFor			= 0	//How long the event has existed. You don't need to change this.
 	var/isRunning			= TRUE //If this event is currently running. You should not change this.
-	var/startedAt			= 0 //When this event started.
-	var/endedAt				= 0 //When this event ended.
+	EXPIRY_DECLARE(startedAt) //When this event started.
+	EXPIRY_DECLARE(endedAt) //When this event ended.
 	var/processing_active 	= TRUE
 	var/tmp/event_meta_handle
 	var/list/affecting_z	= null // List of z-levels to affect, null lets the event choose (usally station_levels)
@@ -159,7 +159,7 @@
 		isRunning = 0
 		end()
 
-	endedAt = world.time
+	EXPIRY_STAMP(src, endedAt, CLOCK_WORLD)
 	if(!external_use)
 		GLOB.event_service.event_complete(src)
 
@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/datum/event, REGISTRY_ACTIVE_EVENTS)
 		if(severity < EVENT_LEVEL_MUNDANE) severity = EVENT_LEVEL_MUNDANE
 		if(severity > EVENT_LEVEL_MAJOR) severity = EVENT_LEVEL_MAJOR
 
-	startedAt = world.time
+	EXPIRY_STAMP(src, startedAt, CLOCK_WORLD)
 
 	if(!affecting_z)
 		affecting_z = using_map.station_levels.Copy()

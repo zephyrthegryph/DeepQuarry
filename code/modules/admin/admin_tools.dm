@@ -22,7 +22,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	var/target_name
 	var/target_ckey
 	var/special_role
-	var/last_refresh
+	EXPIRY_DECLARE(last_refresh)
 	var/client_view
 
 /datum/player_log_viwer/tgui_close(mob/user)
@@ -35,7 +35,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 	target_name = name
 	target_ckey = ckey
 	special_role = special
-	last_refresh = world.time
+	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
 	client_view = is_client
 	if(!islist(log_data))
 		log_data = list()
@@ -75,7 +75,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 			if(refresh_cooldown())
 				return FALSE
 			refresh_data()
-			last_refresh = world.time
+			EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
 			update_tgui_static_data(ui.user)
 			return TRUE
 		if("select_client")
@@ -91,7 +91,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 			special_role = selected.mob()?.mind?.special_role
 			client_view = TRUE
 			refresh_data()
-			last_refresh = world.time
+			EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
 			update_tgui_static_data(ui.user)
 			return TRUE
 

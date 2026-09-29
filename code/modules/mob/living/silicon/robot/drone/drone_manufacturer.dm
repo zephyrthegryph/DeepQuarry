@@ -83,7 +83,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/drone_fabricator, REGISTRY_DRONE_FABRICATORS)
 	flick("h_lathe_leave",src)
 	drone_progress = 0
 
-	time_last_drone = world.time
+	time_last_drone = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	MACHINE_WAKE(src)
 
 	var/mob/living/silicon/robot/drone/new_drone = new drone_type(get_turf(src))
