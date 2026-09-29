@@ -31,23 +31,38 @@
 	var/temperature_factor = max(0.25, 1 + (temperature - T20C) / 300)
 	return max(0, aggression * temperature_factor * (100 - corrosion_resistance) / 100)
 
+/// Emitted on GLOB.om_world when a material's physical vars change after facts were read from
+/// it (material_facts_changed()). Shared caches of material-derived facts clear on it.
+/datum/om/event/material_facts_changed
+
+/// A material's stable cache identity (MATERIAL_CACHE_ID()): its registry id when it is the
+/// registered material of that name (every static material, and processed alloys, whose
+/// registry id is a hash of their defining batch), otherwise a never-reused SHARED_CACHE_UID.
+/// Never a ref: a recycled ref could hand a new material another one's facts.
+/proc/material_cache_id(datum/material/M)
+	if(M.name && GLOB.name_to_material[M.name] == M)
+		M.shared_cache_uid = "m:[M.name]"
+		return M.shared_cache_uid
+	return shared_cache_assign_uid(M)
+
 /// Radiation transmission through `thickness_mm` of this material. Shared per (material,
 /// thickness) (doc/rewrite/init_and_turfs.md sec 3.1): every wall, window, girder, door and item
 /// of a material asks the same question of the same (usually singleton) material.
 /datum/material/proc/material_radiation_transmission(thickness_mm)
-	return CACHED_KEY(material_radiation_transmission, "[ref(src)]|[thickness_mm]", src, thickness_mm)
+	return CACHED_KEY(material_radiation_transmission, "[MATERIAL_CACHE_ID(src)]|[thickness_mm]", src, thickness_mm)
 
 /proc/build_material_radiation_transmission(datum/material/M, thickness_mm)
 	var/attenuation = max(0, M.radiation_resistance + M.density / 8) * max(thickness_mm, 0) / 100
 	return clamp(2.718281828 ** (-attenuation), 0, 1)
 
-DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_EXPLICIT, 4096, 0)
+DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_material_radiation_transmission), SC_ON_EVENT(/datum/om/event/material_facts_changed), 4096, 0)
 
-/// A material's physical vars changed after facts were read from it: drop the shared facts
-/// derived from materials (a version bump; changes are rare).
+/// A material's physical vars changed after facts were read from it: every shared cache of
+/// material-derived facts clears (SC_ON_EVENT; changes are rare). A material that was not yet
+/// registered when it got its cache id takes its registry id from now on.
 /datum/material/proc/material_facts_changed()
-	INVALIDATE_SHARED_CACHE(material_radiation_transmission)
-	INVALIDATE_SHARED_CACHE(wall_material_facts)
+	shared_cache_uid = null
+	OM_EMIT_WORLD(/datum/om/event/material_facts_changed)
 
 /// Environmental load exerted by a gas mixture on an exposed material.  This
 /// is deliberately composition-based: no infrastructure class owns its own

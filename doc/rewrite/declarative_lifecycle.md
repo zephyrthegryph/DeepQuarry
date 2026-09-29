@@ -186,7 +186,10 @@ DECLARE_APPEARANCE(PATH, "state_var" | null, list(
   `"0"`/`"1"`. A layer with no matching row and no `"*"` row adds nothing.
 - Later layers win for icon_state, colour and icon; overlays add up.
 - The combined result is built once per (type, combination of row keys) and shared: the
-  `wall_overlay_images()` pattern, made generic.
+  `wall_overlay_images()` pattern, made generic. It lives in the `decl_appearance` shared cache
+  ([caching.md](caching.md)), interned, so types whose layers build the same overlays share one
+  list, with the cache's stats and test-build mutation guard. The per-type table itself is the
+  `lifecycle_decls` shared cache, and binder singletons are `decl_binders`.
 - It is applied at init and by the base `/atom/update_icon()`. A declared type needs no
   `update_icon()` override, or one that calls `..()` and keeps only the non-visual work.
 - The declaration swaps **only the overlays it added**. It never calls `cut_overlays()`.

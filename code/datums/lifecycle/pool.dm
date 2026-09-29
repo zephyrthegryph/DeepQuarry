@@ -80,7 +80,9 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
 		pool.created++
 		if(isnull(pool.transient))
-			pool.transient = own_table_of(D).pool_reset_vars || list()
+			// The table is a shared cache entry: the pool keeps its own copy.
+			var/list/reset_names = own_table_of(D).pool_reset_vars
+			pool.transient = reset_names ? reset_names.Copy() : list()
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
 	pool.out++

@@ -225,7 +225,8 @@ DECLARE_SHARED_CACHE_EX(character_icons, GLOBAL_PROC_REF(build_character_icon), 
 	return getCompoundIcon(desired)
 
 /proc/cached_character_icon(mob/desired)
-	return CACHED_KEY(character_icons, "\ref[desired][desired.real_name]", desired)
+	// A mob has no registry id: SHARED_CACHE_UID() is never reused, where a ref would be.
+	return CACHED_KEY(character_icons, "[SHARED_CACHE_UID(desired)]|[desired.real_name]", desired)
 
 /proc/not_has_ooc_text(mob/user)
 	if (CONFIG_GET(flag/allow_metadata) && (!user.client?.prefs?.read_preference(/datum/preference/text/living/ooc_notes) || length(user.client.prefs.read_preference(/datum/preference/text/living/ooc_notes)) < 15))
