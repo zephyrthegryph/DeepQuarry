@@ -658,8 +658,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/figure, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "basecarp"
 
-/obj/random/carp_plushie/item_to_spawn()
-	return pick(typesof(/obj/item/toy/plushie/carp)) //can pick any carp plushie, even the original.
+DECLARE_LOOT(/obj/random/carp_plushie, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/plushie/carp))))
 
 /obj/item/toy/plushie/carp/ice
 	name = "ice carp plushie"
@@ -2430,8 +2429,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/chainsaw, INTERACT_USE(null, PROC_REF(interac
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "aliencharacter"
 
-/obj/random/miniature/item_to_spawn()
-	return pick(typesof(/obj/item/toy/character))
+DECLARE_LOOT(/obj/random/miniature, LOOT_TABLE(LOOT_TYPES(1, typesof(/obj/item/toy/character))))
 
 /*
  * Snake popper

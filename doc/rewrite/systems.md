@@ -232,11 +232,42 @@ DECLARE_LOOT(/obj/random/toolbox, LOOT_TABLE(/obj/item/storage/toolbox/mechanica
 	/obj/item/storage/toolbox/electrical = 2), LOOT_COUNT(1), LOOT_CHANCE(100))
 ```
 
-- A loot table is a weighted `TYPE_TABLE`; nested tables by path (`LOOT_REF(/datum/loot/maint)`).
+- A loot table is a weighted table; nested tables by path (`LOOT_REF(/loot/maint)`).
 - The roll happens at materialize with a seeded RNG (`GLOB.loot_seed ^ hash(x,y,z,type)`), so a
   map's loot is reproducible per round seed. `/obj/random` never becomes a live atom (see #9).
 - Replaces `item_to_spawn()` overrides and `code/datums/loot_tables/`.
-- Lint `sys_item_to_spawn`, `sys_loot_table_datum`.
+- Lint `sys_item_to_spawn`, `sys_loot_table_datum`, `sys_random_spawn_list`.
+
+As built (`code/__defines/loot.dm`, `code/datums/loot/loot.dm`):
+
+- `DECLARE_LOOT(PATH, SPECS...)` defines `/datum/loot_decl<PATH>/specs()`; `loot_decl_for(path)`
+  builds and caches the declaration of a path or its nearest declared ancestor. A subtype's line
+  merges over its parent's: it replaces only the specs it names, and what spawns (`LOOT_TABLE`,
+  `LOOT_ALL`, `LOOT_PER_ROUND`) as one unit. Pure tables live under `/loot/...` and are named with
+  `LOOT_REF(/loot/...)` (a `/datum/loot_decl` path).
+- Specs: `LOOT_TABLE(entries)` (rolled `LOOT_COUNT` times), `LOOT_ALL(entries)` (always),
+  `LOOT_CHANCE(percent)`, `LOOT_HOOK(proc)` (`proc(atom/spawned, path, varedits, rng)`, on what the
+  declaration spawns itself, e.g. random mob faction/AI setup), `LOOT_PER_ROUND` (the table pick is
+  made once per round per spawner type: the themed semi-random mob spawners).
+- Entries: a path (`= weight`, default 1); a path with its own declaration or map resolver rolls it
+  (nesting: `/obj/random/...` inside a table); a `/turf` path changes the turf; `LOOT_SET(w, ...)`
+  spawns a group; `LOOT_SUB(w, ...)` a nested pick; `LOOT_STACK(w, path, amount)`;
+  `LOOT_TYPES(w, list_expr)` a computed list (`subtypesof()`), each member weighing `w`.
+- Searchable tiers for piles: `LOOT_UNLUCKY`, `LOOT_UNCOMMON(chance, ...)`, `LOOT_RARE(chance, ...)`,
+  `LOOT_GAMMA(chance)`, `LOOT_DEPLETION(left, delete)`, `LOOT_REPEAT_SEARCH`, rolled by
+  `loot_search(source, L, searched_by, wake_chance)`; a pile names its table in `loot_decl`.
+- Seeding: `/datum/loot_rng` (Wichmann-Hill, exact in BYOND floats), seeded by `loot_rng_at()` from
+  `GLOB.loot_seed`, the turf's x, y, z and the type's hash; rolls after map load also mix a serial
+  so two runtime rolls on one tile differ. Nested rolls share the stream.
+- `loot_spawn(path, loc, varedits, rng, direct_out)` is the one entry point (also for code that has
+  a path which may be a spawner: contraband packages, falling objects, multi-point spawns).
+- Migrated: 212 `item_to_spawn()` overrides (plus 7 by hand: junk, plushies, cutouts, cursed items,
+  semi-random mobs, synx, single) across 23 files, the 5 custom `spawn_item()` overrides (random
+  mobs, multi-mob packs, outside mobs, catslugs, turf swappers; now hooks), `spawn_nothing_percentage`
+  (now `LOOT_CHANCE`), the `/obj/random/fromList` `to_spawn` lists, and all 28 `/datum/loot_table`
+  types (`code/datums/loot/tables/`, each complete with its inherited tiers). `item_to_spawn`,
+  `spawn_item` on spawners, `get_random_junk_type()`, `/datum/loot_table`, `loot_table_type` and
+  `loot_reward()` are deleted.
 
 ## 9. Map-time resolvers
 
@@ -252,7 +283,40 @@ MAP_RESOLVER(/obj/effect/landmark, /proc/resolve_landmark)            // record 
   No atom is created, initialized or qdel'd.
 - Measured with `tools/build/build.sh bench --scenario=boot` before and after.
 - Lint `sys_init_qdel` (an `Initialize()` that ends in `return INITIALIZE_HINT_QDEL` on a
-  resolvable family).
+  resolvable family) and `sys_init_self_delete` (an Initialize/LateInitialize that does its work
+  then deletes itself: `qdel(src)`, `expire(0)`, `replace_with(src, ...)` at its top level).
+
+As built (`code/__defines/map_resolvers.dm`, `code/modules/maps/map_resolvers.dm`):
+
+- `MAP_RESOLVER(PATH, PROC)` sets the type var `map_resolver` (a type default: no per-instance
+  cost, subtypes inherit and may override). The resolver is `proc(atom/loc, path, list/varedits)`
+  and returns TRUE when it resolved (FALSE: make the atom normally, e.g. a landmark that stays).
+  Read vars with `MAP_VAR(P, varedits, name)` (the edit if present, else `initial()`).
+- Two entry points. The map reader (`build_coordinate()`) resolves before instancing, with the
+  model's attributes as varedits: the atom is never created. `SSatoms.InitAtom()` resolves atoms
+  that already exist before Initialize: the compiled station map (BYOND instances it before any DM
+  code runs, so those atoms exist but are never initialized, materialized or qdel'd; they are
+  detached and freed by refcount) and `new` at runtime (supply packs putting `/obj/random` in
+  crates). Their varedits are `map_varedits_of(A)`: plain vars that differ from the type default,
+  plus list vars (only an instance carries a type's list default).
+- `map_resolve_later(proc, loc, path, varedits)`: for resolvers whose work needs the rest of the
+  load (the device an airlock helper configures, neighbouring window spawners, the level above
+  stairs, whole-level helpers, turbolifts). Rows run once the outermost `InitializeAtoms()` of the
+  load has created its atoms, inside its frame (what they create initializes as mapload and joins
+  the batch); outside a load they run at once. `GLOB.map_resolve_scratch` is per-load scratch
+  (window spawner cells, duplicate low wall checks).
+- Landmarks: the coordinate-only names (`start`, `blobstart`, `JoinLateCryo`, ...) of plain,
+  `start` and `virtual_reality` landmarks become rows of their existing coordinate registries
+  (`landmark_coordinate_registry()`); landmarks that stay (`JoinLate`, event triggers, ...) are made
+  normally. Multi-point spawns (`/obj/random_multi`) become weighted rows in
+  `GLOB.multi_point_spawns`, rolled at round start.
+- Converted families: `/obj/random`, floor decals (incl. reset, asteroid, fancy shuttle; painted
+  at runtime by `floor_decal_paint()`), warning stripes, window/plated catwalk/low wall/stairs
+  spawners, landmarks and costume landmarks, map helpers (airlock, base turf, tele/phase blocks,
+  in/outdoors), gib sprays (`gibs()` with static patterns), fifty/fruit/telecrystal/parts/animal/TTV/
+  one-tank bomb spawners, wire deleters, floor breakers, falling effects (`drop_from_sky()`),
+  turbolift holders, multi-point spawns, fossils, two-bagel snacks, instant explosions, graffiti,
+  recycler beacons, mouse holes, map data, fancy shuttle previews.
 
 ## 10. Declared examine lines
 

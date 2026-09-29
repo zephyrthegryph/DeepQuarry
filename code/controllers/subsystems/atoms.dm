@@ -31,6 +31,11 @@ SUBSYSTEM_DEF(atoms)
 
 	/// Atoms that will be deleted once the subsystem is initialized
 	var/list/queued_deletions = list()
+	/// Map resolvers that need the whole load in place (map_resolve_later()): list(proc, loc, path,
+	/// varedits) rows, run after the outermost InitializeAtoms() of the load created its atoms.
+	var/list/deferred_resolvers
+	/// InitializeAtoms() nesting depth; deferred resolvers flush when it returns to 0.
+	var/initialize_depth = 0
 
 	EXPIRY_DECLARE(init_start_time)
 
@@ -70,6 +75,7 @@ SUBSYSTEM_DEF(atoms)
 	// One frame per call (atoms_batch.dm): it owns the deferred work unless it joined a
 	// running frame, and yields only between chunks.
 	var/datum/materialize_batch/batch = batch_open(source)
+	initialize_depth++
 	var/list/outer_created = created_atoms
 	created_atoms = atoms_to_return ? list() : null
 	batch.created_atoms = created_atoms
@@ -83,6 +89,10 @@ SUBSYSTEM_DEF(atoms)
 	dq_heat_bind_begin()
 	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
 	CreateAtoms(batch, atoms)
+	// Deferred map resolvers run once the outermost load's atoms exist, still inside its frame
+	// (what they create initializes as mapload and joins the batch).
+	if(initialize_depth == 1 && (deferred_resolvers || length(GLOB.map_resolve_scratch)))
+		map_resolve_flush_deferred()
 	clear_tracked_initalize(source)
 	var/list/created = batch.created_atoms
 	created_atoms = outer_created
@@ -116,6 +126,8 @@ SUBSYSTEM_DEF(atoms)
 
 	if(created)
 		atoms_to_return += created
+
+	initialize_depth--
 
 	for (var/queued_deletion in queued_deletions)
 		var/atom/resolved = om_resolve(queued_deletion)

@@ -519,37 +519,35 @@
 	name = "random potted plant"
 	desc = "This is a random potted plant."
 
-/obj/random/pottedplant/item_to_spawn()
-	return pick(
-		prob(10);/obj/structure/flora/pottedplant,
-		prob(10);/obj/structure/flora/pottedplant/large,
-		prob(10);/obj/structure/flora/pottedplant/fern,
-		prob(10);/obj/structure/flora/pottedplant/overgrown,
-		prob(10);/obj/structure/flora/pottedplant/bamboo,
-		prob(10);/obj/structure/flora/pottedplant/largebush,
-		prob(10);/obj/structure/flora/pottedplant/thinbush,
-		prob(10);/obj/structure/flora/pottedplant/mysterious,
-		prob(10);/obj/structure/flora/pottedplant/smalltree,
-		prob(10);/obj/structure/flora/pottedplant/unusual,
-		prob(10);/obj/structure/flora/pottedplant/orientaltree,
-		prob(10);/obj/structure/flora/pottedplant/smallcactus,
-		prob(10);/obj/structure/flora/pottedplant/tall,
-		prob(10);/obj/structure/flora/pottedplant/sticky,
-		prob(10);/obj/structure/flora/pottedplant/smelly,
-		prob(10);/obj/structure/flora/pottedplant/small,
-		prob(10);/obj/structure/flora/pottedplant/aquatic,
-		prob(10);/obj/structure/flora/pottedplant/shoot,
-		prob(10);/obj/structure/flora/pottedplant/flower,
-		prob(10);/obj/structure/flora/pottedplant/crystal,
-		prob(10);/obj/structure/flora/pottedplant/subterranean,
-		prob(10);/obj/structure/flora/pottedplant/minitree,
-		prob(10);/obj/structure/flora/pottedplant/stoutbush,
-		prob(10);/obj/structure/flora/pottedplant/drooping,
-		prob(10);/obj/structure/flora/pottedplant/tropical,
-		prob(10);/obj/structure/flora/pottedplant/dead,
-		prob(10);/obj/structure/flora/pottedplant/decorative,
-		prob(1);/obj/structure/flora/pottedplant/xmas
-				)
+DECLARE_LOOT(/obj/random/pottedplant, LOOT_TABLE(\
+	/obj/structure/flora/pottedplant = 10, \
+	/obj/structure/flora/pottedplant/large = 10, \
+	/obj/structure/flora/pottedplant/fern = 10, \
+	/obj/structure/flora/pottedplant/overgrown = 10, \
+	/obj/structure/flora/pottedplant/bamboo = 10, \
+	/obj/structure/flora/pottedplant/largebush = 10, \
+	/obj/structure/flora/pottedplant/thinbush = 10, \
+	/obj/structure/flora/pottedplant/mysterious = 10, \
+	/obj/structure/flora/pottedplant/smalltree = 10, \
+	/obj/structure/flora/pottedplant/unusual = 10, \
+	/obj/structure/flora/pottedplant/orientaltree = 10, \
+	/obj/structure/flora/pottedplant/smallcactus = 10, \
+	/obj/structure/flora/pottedplant/tall = 10, \
+	/obj/structure/flora/pottedplant/sticky = 10, \
+	/obj/structure/flora/pottedplant/smelly = 10, \
+	/obj/structure/flora/pottedplant/small = 10, \
+	/obj/structure/flora/pottedplant/aquatic = 10, \
+	/obj/structure/flora/pottedplant/shoot = 10, \
+	/obj/structure/flora/pottedplant/flower = 10, \
+	/obj/structure/flora/pottedplant/crystal = 10, \
+	/obj/structure/flora/pottedplant/subterranean = 10, \
+	/obj/structure/flora/pottedplant/minitree = 10, \
+	/obj/structure/flora/pottedplant/stoutbush = 10, \
+	/obj/structure/flora/pottedplant/drooping = 10, \
+	/obj/structure/flora/pottedplant/tropical = 10, \
+	/obj/structure/flora/pottedplant/dead = 10, \
+	/obj/structure/flora/pottedplant/decorative = 10, \
+	/obj/structure/flora/pottedplant/xmas = 1))
 
 /obj/structure/flora/sif
 	icon = 'icons/obj/flora/sifflora.dmi'

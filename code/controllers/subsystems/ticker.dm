@@ -201,11 +201,7 @@ SUBSYSTEM_DEF(ticker)
 	GLOB.round_start_time = REALTIMEOFDAY
 
 	// Spawn randomized items
-	for(var/id, value in GLOB.multi_point_spawns)
-		var/obj/random_multi/rm = pickweight(value)
-		rm.generate_items()
-		for(var/entry in value)
-			qdel(entry)
+	spawn_multi_point_items()
 
 	// Place empty AI cores once we know who is playing AI
 	for(var/obj/effect/landmark/start/S in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))

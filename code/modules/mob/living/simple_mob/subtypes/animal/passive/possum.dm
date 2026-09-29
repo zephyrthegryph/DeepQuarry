@@ -12,29 +12,25 @@
 /obj/item/animal_spawner
 	var/critter_type = /mob/living/simple_mob/animal/passive/mouse
 
-/obj/item/animal_spawner/Initialize(mapload)
-	..()
+MAP_RESOLVER(/obj/item/animal_spawner, GLOBAL_PROC_REF(resolve_animal_spawner))
+MAP_RESOLVER_VARS(/obj/item/animal_spawner, "critter_type")
 
-	var/mob/living/simple_mob/critter = critter_type
+/// MAP_RESOLVER for animal spawners: the critter in its holder, where the spawner would have been
+/// (in the hands of the mob holding it, if any).
+/proc/resolve_animal_spawner(atom/loc, path, list/varedits)
+	var/obj/item/animal_spawner/P = path
+	var/mob/living/simple_mob/critter = MAP_VAR(P, varedits, critter_type)
 	if(!ispath(critter, /mob/living/simple_mob))
-		return INITIALIZE_HINT_QDEL
-
+		return TRUE
 	var/obj/item/holder/critter_holder = initial(critter.holder_type)
 	if(!ispath(critter_holder, /obj/item/holder))
-		return INITIALIZE_HINT_QDEL
-
-	var/mob/M = loc
-	var/was_in_hands = istype(M) && (src == M.get_active_hand() || src == M.get_inactive_hand())
-
+		return TRUE
 	critter = new critter(critter_holder)
-	critter_holder = new(loc, critter)
-
+	critter_holder = new critter_holder(loc, critter)
+	var/mob/M = loc
 	if(istype(M))
-		M.drop_from_inventory(src)
-		if(was_in_hands)
-			M.put_in_hands(critter_holder)
-
-	return INITIALIZE_HINT_QDEL
+		M.put_in_hands(critter_holder)
+	return TRUE
 
 /obj/item/animal_spawner/possum
 	name = "possum"

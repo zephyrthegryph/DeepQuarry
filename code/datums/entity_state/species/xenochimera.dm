@@ -478,7 +478,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		var/T = get_turf(owner)
 		var/blood_color = owner.species.blood_color
 		var/flesh_color = owner.species.flesh_color
-		new /obj/effect/gibspawner/human/xenochimera(T, null, flesh_color, blood_color)
+		gibs(T, null, /obj/effect/gibspawner/human/xenochimera, flesh_color, blood_color)
 		owner.visible_message(span_danger(span_huge("The lifeless husk of [owner] bursts open, revealing a new, intact copy in the pool of viscera."))) //Bloody hell...
 		play_sfx(T, SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_HATCH)
 	else //lower cost for doing a quick cosmetic revive

@@ -539,15 +539,14 @@
 
 	mob_faction = "candy"
 
-/obj/random/mob/candycritter/item_to_spawn()
-	return pick(prob(40);/mob/living/simple_mob/vore/candy/purplecabold,
-				prob(40);/mob/living/simple_mob/vore/candy/bluecabold,
-				prob(40);/mob/living/simple_mob/vore/candy/greencabold,
-				prob(40);/mob/living/simple_mob/vore/candy/yellowcabold,
-				prob(40);/mob/living/simple_mob/vore/candy/orangecabold,
-				prob(40);/mob/living/simple_mob/vore/candy/redcabold,
-				prob(40);/mob/living/simple_mob/vore/candy/peppermint
-				)
+DECLARE_LOOT(/obj/random/mob/candycritter, LOOT_TABLE(\
+	/mob/living/simple_mob/vore/candy/purplecabold, \
+	/mob/living/simple_mob/vore/candy/bluecabold, \
+	/mob/living/simple_mob/vore/candy/greencabold, \
+	/mob/living/simple_mob/vore/candy/yellowcabold, \
+	/mob/living/simple_mob/vore/candy/orangecabold, \
+	/mob/living/simple_mob/vore/candy/redcabold, \
+	/mob/living/simple_mob/vore/candy/peppermint))
 
 /obj/item/projectile/bullet/cmblast
 	use_submunitions = 1

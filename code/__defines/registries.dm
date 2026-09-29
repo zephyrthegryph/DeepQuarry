@@ -158,6 +158,5 @@
 #define REGISTRY_TRACKING_IMPLANTS "all_tracking_implants"
 #define REGISTRY_TRANSACTION_DEVICES "transaction_devices"
 #define REGISTRY_TURBINES "all_turbines"
-#define REGISTRY_TURBOLIFT_HOLDERS "turbolifts"
 #define REGISTRY_VISUAL_NETS "visual_nets"
 #define REGISTRY_WAYPOINTS "all_waypoints"

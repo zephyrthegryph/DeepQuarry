@@ -47,7 +47,7 @@
 		// now make it obvious that we're not human (or whatever xeno race they are impersonating)
 		play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 		var/T = get_turf(src)
-		new /obj/effect/gibspawner/human(T)
+		gibs(T, null, /obj/effect/gibspawner/human)
 		visible_message(span_warning("With a sickening squish, [src] reforms their whole body, casting their old parts on the floor!"),
 		span_notice("We reform our body.  We are whole once more."),
 		span_warningplain("You hear organic matter ripping and tearing!"))

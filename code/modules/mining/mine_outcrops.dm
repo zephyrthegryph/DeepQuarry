@@ -125,14 +125,14 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 	icon = 'icons/obj/outcrop.dmi'
 	icon_state = "outcrop-random"
 
-/obj/random/outcrop/item_to_spawn()
-	return pick(prob(100);/obj/structure/outcrop,
-				prob(100);/obj/structure/outcrop/iron,
-				prob(100);/obj/structure/outcrop/coal,
-				prob(65);/obj/structure/outcrop/silver,
-				prob(50);/obj/structure/outcrop/gold,
-				prob(30);/obj/structure/outcrop/uranium,
-				prob(30);/obj/structure/outcrop/phoron,
-				prob(7);/obj/structure/outcrop/diamond,
-				prob(15);/obj/structure/outcrop/platinum,
-				prob(15);/obj/structure/outcrop/lead)
+DECLARE_LOOT(/obj/random/outcrop, LOOT_TABLE(\
+	/obj/structure/outcrop = 100, \
+	/obj/structure/outcrop/iron = 100, \
+	/obj/structure/outcrop/coal = 100, \
+	/obj/structure/outcrop/silver = 65, \
+	/obj/structure/outcrop/gold = 50, \
+	/obj/structure/outcrop/uranium = 30, \
+	/obj/structure/outcrop/phoron = 30, \
+	/obj/structure/outcrop/diamond = 7, \
+	/obj/structure/outcrop/platinum = 15, \
+	/obj/structure/outcrop/lead = 15))

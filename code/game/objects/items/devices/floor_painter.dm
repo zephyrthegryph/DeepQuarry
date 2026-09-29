@@ -104,7 +104,7 @@
 	if(decal_data["coloured"] && paint_colour)
 		painting_colour = paint_colour
 
-	new painting_decal(F, painting_dir, painting_colour)
+	floor_decal_paint(F, painting_decal, painting_dir, painting_colour)
 
 DECLARE_INTERACTIONS(/obj/item/floor_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
 

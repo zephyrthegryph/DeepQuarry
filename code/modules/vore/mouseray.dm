@@ -348,25 +348,23 @@
 	name = "random ray"
 	icon = 'icons/mob/randomlandmarks.dmi'
 	icon_state = "fanc_trejur"
-	spawn_nothing_percentage = 0
 
-/obj/random/mouseray/item_to_spawn()
-	return pick(prob(300);/obj/item/gun/energy/mouseray,
-				prob(50);/obj/item/gun/energy/mouseray/corgi,
-				prob(50);/obj/item/gun/energy/mouseray/woof,
-				prob(50);/obj/item/gun/energy/mouseray/cat,
-				prob(50);/obj/item/gun/energy/mouseray/chicken,
-				prob(50);/obj/item/gun/energy/mouseray/lizard,
-				prob(50);/obj/item/gun/energy/mouseray/rabbit,
-				prob(50);/obj/item/gun/energy/mouseray/fennec,
-				prob(5);/obj/item/gun/energy/mouseray/monkey,
-				prob(5);/obj/item/gun/energy/mouseray/wolpin,
-				prob(5);/obj/item/gun/energy/mouseray/otie,
-				prob(5);/obj/item/gun/energy/mouseray/direwolf,
-				prob(5);/obj/item/gun/energy/mouseray/giantrat,
-				prob(50);/obj/item/gun/energy/mouseray/redpanda,
-				prob(5);/obj/item/gun/energy/mouseray/catslug,
-				prob(5);/obj/item/gun/energy/mouseray/teppi,
-				prob(1);/obj/item/gun/energy/mouseray/metamorphosis,
-				prob(1);/obj/item/gun/energy/mouseray/metamorphosis/advanced/random
-				)
+DECLARE_LOOT(/obj/random/mouseray, LOOT_TABLE(\
+	/obj/item/gun/energy/mouseray = 300, \
+	/obj/item/gun/energy/mouseray/corgi = 50, \
+	/obj/item/gun/energy/mouseray/woof = 50, \
+	/obj/item/gun/energy/mouseray/cat = 50, \
+	/obj/item/gun/energy/mouseray/chicken = 50, \
+	/obj/item/gun/energy/mouseray/lizard = 50, \
+	/obj/item/gun/energy/mouseray/rabbit = 50, \
+	/obj/item/gun/energy/mouseray/fennec = 50, \
+	/obj/item/gun/energy/mouseray/monkey = 5, \
+	/obj/item/gun/energy/mouseray/wolpin = 5, \
+	/obj/item/gun/energy/mouseray/otie = 5, \
+	/obj/item/gun/energy/mouseray/direwolf = 5, \
+	/obj/item/gun/energy/mouseray/giantrat = 5, \
+	/obj/item/gun/energy/mouseray/redpanda = 50, \
+	/obj/item/gun/energy/mouseray/catslug = 5, \
+	/obj/item/gun/energy/mouseray/teppi = 5, \
+	/obj/item/gun/energy/mouseray/metamorphosis = 1, \
+	/obj/item/gun/energy/mouseray/metamorphosis/advanced/random = 1), LOOT_CHANCE(100))

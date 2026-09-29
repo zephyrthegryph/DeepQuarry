@@ -196,14 +196,8 @@ DECLARE_INTERACTIONS(/obj/item/stolenpackage, INTERACT_USE(null, PROC_REF(intera
 					/obj/random/contraband,
 					/obj/random/contraband,
 					/obj/random/weapon/guarenteed)
-	//VOREstation edit - Randomized map objects were put in loot piles, so handle them...
-	if(istype(loot,/obj/random))
-		var/obj/random/randy = loot
-		var/new_I = randy.spawn_item()
-		qdel(loot)
-		loot = new_I // swap it
-	//VOREstation edit end
-	new loot(user.loc)
+	// A random spawner entry rolls its own declaration (loot_spawn).
+	loot_spawn(loot, user.loc)
 	to_chat(user, "You unwrap the package.")
 	consume(src, user)
 	return TRUE

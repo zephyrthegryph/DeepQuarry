@@ -266,7 +266,7 @@
 	add_attack_logs(user, target, "Tore a blood vessel in [part.name] with [tool]")
 	target.injure(INJURY_CUT, 30, part, tool, affliction = /datum/affliction/wound/internal_bleeding, flags = INJURE_IGNORE_RESISTANCE)
 	target.drip(30)
-	new /obj/effect/gibspawner/human(target.loc, target.dna, target.species.flesh_color, target.species.blood_color)
+	gibs(target.loc, target.dna, /obj/effect/gibspawner/human, target.species.flesh_color, target.species.blood_color)
 	target.emote("scream")
 
 

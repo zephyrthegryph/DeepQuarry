@@ -55,15 +55,9 @@ DECLARE_INTERACTIONS(/obj/item/pizzavoucher, INTERACT_USE(null, PROC_REF(interac
 /obj/effect/falling_effect/pizza_delivery
 	name = "PIZZA PIE POWER!"
 	crushing = FALSE
+	falling_type = LOOT_REF(/loot/pizza_delivery)
 
-/obj/effect/falling_effect/pizza_delivery/Initialize(mapload)
-	..()
-	falling_type = pick(prob(20);/obj/item/pizzabox/meat,
-				prob(20);/obj/item/pizzabox/margherita,
-				prob(20);/obj/item/pizzabox/vegetable,
-				prob(20);/obj/item/pizzabox/mushroom,
-				prob(20);/obj/item/pizzabox/pineapple)
-	return INITIALIZE_HINT_LATELOAD
+DECLARE_LOOT(/loot/pizza_delivery, LOOT_TABLE(/obj/item/pizzabox/meat, /obj/item/pizzabox/margherita, /obj/item/pizzabox/vegetable, /obj/item/pizzabox/mushroom, /obj/item/pizzabox/pineapple))
 
 /obj/effect/falling_effect/pizza_delivery/special
 	crushing = TRUE

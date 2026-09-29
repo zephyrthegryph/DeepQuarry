@@ -36,5 +36,5 @@
 			E.fracture() // Oof, ouch, owie
 	var/turf/T = M.loc
 	if(isturf(T))
-		new /obj/effect/gibspawner/generic(T)
+		gibs(T)
 	return ITEM_INTERACT_SUCCESS

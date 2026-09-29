@@ -189,18 +189,18 @@
 	icon_state = "outcrop-random"
 
 
-/obj/random/tyroutcrop/item_to_spawn()
-	return pick(prob(3);/obj/structure/outcrop/verdantium,
-				prob(1);/obj/structure/outcrop/iron/tyr,
-				prob(1);/obj/structure/outcrop/coal/tyr,
-				prob(1);/obj/structure/outcrop/silver/tyr,
-				prob(1);/obj/structure/outcrop/gold/tyr,
-				prob(1);/obj/structure/outcrop/uranium/tyr,
-				prob(3);/obj/structure/outcrop/diamond/tyr,
-				prob(1);/obj/structure/outcrop/platinum/tyr,
-				prob(5);/obj/structure/outcrop/weathered_gate,
-				prob(3);/obj/structure/outcrop/hydrogen,
-				prob(1);/obj/structure/outcrop/lead/tyr)
+DECLARE_LOOT(/obj/random/tyroutcrop, LOOT_TABLE(\
+	/obj/structure/outcrop/verdantium = 3, \
+	/obj/structure/outcrop/iron/tyr = 1, \
+	/obj/structure/outcrop/coal/tyr = 1, \
+	/obj/structure/outcrop/silver/tyr = 1, \
+	/obj/structure/outcrop/gold/tyr = 1, \
+	/obj/structure/outcrop/uranium/tyr = 1, \
+	/obj/structure/outcrop/diamond/tyr = 3, \
+	/obj/structure/outcrop/platinum/tyr = 1, \
+	/obj/structure/outcrop/weathered_gate = 5, \
+	/obj/structure/outcrop/hydrogen = 3, \
+	/obj/structure/outcrop/lead/tyr = 1))
 
 /obj/item/prop/tyrlore
 	name = "alien disk"

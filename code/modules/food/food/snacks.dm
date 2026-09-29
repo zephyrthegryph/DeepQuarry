@@ -4732,18 +4732,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bageleverything, null,
 	desc = "Noo! ...Two bagels!"
 	icon_state = "bagelplain"
 
-/obj/item/reagent_containers/food/snacks/bageltwo/Initialize(mapload)
-	..()
-	spawn_bagels()
-	spawn_bagels()
-	return INITIALIZE_HINT_QDEL
-
-/obj/item/reagent_containers/food/snacks/bageltwo/proc/spawn_bagels()
-	var/build_path = /obj/item/reagent_containers/food/snacks/bagelplain
-	var/atom/A = new build_path(get_turf(src))
-	if(pixel_x || pixel_y)
-		A.pixel_x = pixel_x
-		A.pixel_y = pixel_y
+DECLARE_LOOT(/obj/item/reagent_containers/food/snacks/bageltwo, LOOT_TABLE(/obj/item/reagent_containers/food/snacks/bagelplain), LOOT_COUNT(2))
+MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(resolve_loot))
 
 /obj/item/reagent_containers/food/snacks/macncheese
 	name = "macaroni and cheese"

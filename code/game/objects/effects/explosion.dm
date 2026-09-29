@@ -62,8 +62,11 @@
 	lightboom = 0
 	flash = 0
 
-/obj/effect/instantboom/Initialize(mapload)
-	..()
-	var/turf/T = get_turf(src)
-	explosion(T,devastation,heavyboom,lightboom,flash)
-	return INITIALIZE_HINT_QDEL
+MAP_RESOLVER(/obj/effect/instantboom, GLOBAL_PROC_REF(resolve_instantboom))
+MAP_RESOLVER_VARS(/obj/effect/instantboom, "devastation;flash;heavyboom;lightboom")
+
+/// MAP_RESOLVER for instant explosions: the explosion, where it was placed.
+/proc/resolve_instantboom(atom/loc, path, list/varedits)
+	var/obj/effect/instantboom/P = path
+	explosion(get_turf(loc), MAP_VAR(P, varedits, devastation), MAP_VAR(P, varedits, heavyboom), MAP_VAR(P, varedits, lightboom), MAP_VAR(P, varedits, flash))
+	return TRUE

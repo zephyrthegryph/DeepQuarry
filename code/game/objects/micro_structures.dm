@@ -558,11 +558,13 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 	var/chance_to_spawn = 25
 
-/obj/effect/mouse_hole_spawner/Initialize(mapload)
-	. = ..()
+MAP_RESOLVER(/obj/effect/mouse_hole_spawner, GLOBAL_PROC_REF(resolve_mouse_hole_spawner))
+MAP_RESOLVER_VARS(/obj/effect/mouse_hole_spawner, "chance_to_spawn")
 
-	if(prob(chance_to_spawn))
-		var/obj/structure/micro_tunnel/tunnel = new (get_turf(src.loc))
-		tunnel.set_dir(dir)
-
-	return INITIALIZE_HINT_QDEL
+/// MAP_RESOLVER for mouse hole spawners: a tunnel, chance_to_spawn percent of the time.
+/proc/resolve_mouse_hole_spawner(atom/loc, path, list/varedits)
+	var/obj/effect/mouse_hole_spawner/P = path
+	if(prob(MAP_VAR(P, varedits, chance_to_spawn)))
+		var/obj/structure/micro_tunnel/tunnel = new (get_turf(loc))
+		tunnel.set_dir(MAP_VAR(P, varedits, dir))
+	return TRUE

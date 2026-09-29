@@ -203,7 +203,7 @@
 		return FALSE
 
 
-	new /obj/effect/gibspawner/generic(T)
+	gibs(T)
 
 	play_sfx(src.loc, SFX_EFFECTS_BLOBATTACK, volume = 50)
 

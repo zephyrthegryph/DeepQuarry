@@ -1,0 +1,1 @@
+# sys_lint baseline for tools/ci/sys_rules/resolvers.py (doc/rewrite/systems.md); shrink-only, target 0

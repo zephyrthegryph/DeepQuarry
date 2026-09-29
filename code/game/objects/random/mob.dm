@@ -17,55 +17,53 @@
 	var/mob_retaliate = 0
 	var/mob_ghostjoin = 0 //Should be a number between 0 and 100, dictates the probability of that mob being ghost joinable.
 
-/obj/random/mob/item_to_spawn()
-	return pick(prob(10);/mob/living/simple_mob/animal/passive/lizard,
-				prob(6);/mob/living/simple_mob/animal/sif/diyaab,
-				prob(10);/mob/living/simple_mob/animal/passive/cat,
-				prob(6);/mob/living/simple_mob/animal/passive/cat,
-				prob(10);/mob/living/simple_mob/animal/passive/dog/corgi,
-				prob(6);/mob/living/simple_mob/animal/passive/dog/corgi/puppy,
-				prob(10);/mob/living/simple_mob/animal/passive/crab,
-				prob(10);/mob/living/simple_mob/animal/passive/chicken,
-				prob(6);/mob/living/simple_mob/animal/passive/chick,
-				prob(10);/mob/living/simple_mob/animal/passive/cow,
-				prob(6);/mob/living/simple_mob/animal/goat,
-				prob(10);/mob/living/simple_mob/animal/passive/penguin,
-				prob(10);/mob/living/simple_mob/animal/passive/mouse,
-				prob(10);/mob/living/simple_mob/animal/passive/mothroach,
-				prob(10);/mob/living/simple_mob/animal/passive/yithian,
-				prob(10);/mob/living/simple_mob/animal/passive/tindalos,
-				prob(10);/mob/living/simple_mob/animal/passive/pillbug,
-				prob(10);/mob/living/simple_mob/animal/passive/dog/tamaskan,
-				prob(10);/mob/living/simple_mob/animal/passive/dog/brittany,
-				prob(3);/mob/living/simple_mob/animal/passive/bird/parrot,
-				prob(1);/mob/living/simple_mob/animal/passive/crab)
+MAP_RESOLVER_VARS(/obj/random/mob, "drop_get_turf;overwrite_hostility;mob_faction;mob_returns_home;mob_wander;mob_wander_distance;mob_hostile;mob_ghostjoin")
 
-/obj/random/mob/spawn_item() //These should only ever have simple mobs.
-	var/build_path = item_to_spawn()
+DECLARE_LOOT(/obj/random/mob, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/lizard = 10, \
+	/mob/living/simple_mob/animal/sif/diyaab = 6, \
+	/mob/living/simple_mob/animal/passive/cat = 16, \
+	/mob/living/simple_mob/animal/passive/dog/corgi = 10, \
+	/mob/living/simple_mob/animal/passive/dog/corgi/puppy = 6, \
+	/mob/living/simple_mob/animal/passive/crab = 11, \
+	/mob/living/simple_mob/animal/passive/chicken = 10, \
+	/mob/living/simple_mob/animal/passive/chick = 6, \
+	/mob/living/simple_mob/animal/passive/cow = 10, \
+	/mob/living/simple_mob/animal/goat = 6, \
+	/mob/living/simple_mob/animal/passive/penguin = 10, \
+	/mob/living/simple_mob/animal/passive/mouse = 10, \
+	/mob/living/simple_mob/animal/passive/mothroach = 10, \
+	/mob/living/simple_mob/animal/passive/yithian = 10, \
+	/mob/living/simple_mob/animal/passive/tindalos = 10, \
+	/mob/living/simple_mob/animal/passive/pillbug = 10, \
+	/mob/living/simple_mob/animal/passive/dog/tamaskan = 10, \
+	/mob/living/simple_mob/animal/passive/dog/brittany = 10, \
+	/mob/living/simple_mob/animal/passive/bird/parrot = 3), LOOT_HOOK(GLOBAL_PROC_REF(loot_hook_random_mob)))
 
-	var/mob/living/simple_mob/M = new build_path(src.loc)
+/// LOOT_HOOK for /obj/random/mob: sets up each spawned simple mob from the spawner's vars (its map
+/// varedits over its type's defaults). Multiple-mob spawners set only the AI and offset.
+/proc/loot_hook_random_mob(atom/spawned, path, list/varedits, datum/loot_rng/rng)
+	var/mob/living/simple_mob/M = spawned
 	if(!istype(M))
 		return
+	var/obj/random/mob/P = path
 	if(M.ai_brain)
 		var/datum/ai_brain/AI = M.ai_brain
 		AI.go_sleep() //Don't fight eachother while we're still setting up!
-		AI.returns_home = mob_returns_home
-		AI.wander = mob_wander
-		AI.max_home_distance = mob_wander_distance
-		if(overwrite_hostility)
-			AI.set_hostile(mob_hostile)
+		AI.returns_home = MAP_VAR(P, varedits, mob_returns_home)
+		AI.wander = MAP_VAR(P, varedits, mob_wander)
+		AI.max_home_distance = MAP_VAR(P, varedits, mob_wander_distance)
+		if(MAP_VAR(P, varedits, overwrite_hostility))
+			AI.set_hostile(MAP_VAR(P, varedits, mob_hostile))
 		AI.go_wake() //Now you can kill eachother if your faction didn't override.
-
-	if(pixel_x || pixel_y)
-		M.pixel_x = pixel_x
-		M.pixel_y = pixel_y
-
-	if(mob_faction)
-		M.faction = mob_faction
-
-	if(mob_ghostjoin)
-		if(prob(mob_ghostjoin))
-			M.ghostjoin = 1
+	if(ispath(path, /obj/random/mob/multiple))
+		return
+	var/faction = MAP_VAR(P, varedits, mob_faction)
+	if(faction)
+		M.faction = faction
+	var/ghostjoin = MAP_VAR(P, varedits, mob_ghostjoin)
+	if(ghostjoin && rng.chance(ghostjoin))
+		M.ghostjoin = 1
 
 /obj/random/mob/sif
 	name = "Random Sif Animal"
@@ -75,17 +73,16 @@
 	mob_returns_home = 1
 	mob_wander_distance = 10
 
-/obj/random/mob/sif/item_to_spawn()
-	return pick(prob(30);/mob/living/simple_mob/animal/sif/diyaab,
-				prob(20);/mob/living/simple_mob/animal/passive/hare,
-				prob(15);/mob/living/simple_mob/animal/passive/crab,
-				prob(15);/mob/living/simple_mob/animal/passive/penguin,
-				prob(15);/mob/living/simple_mob/animal/passive/mouse,
-				prob(15);/mob/living/simple_mob/animal/passive/dog/tamaskan,
-				prob(10);/mob/living/simple_mob/animal/sif/siffet,
-				prob(2);/mob/living/simple_mob/animal/giant_spider/frost,
-				prob(1);/mob/living/simple_mob/animal/space/goose,
-				prob(20);/mob/living/simple_mob/animal/passive/crab)
+DECLARE_LOOT(/obj/random/mob/sif, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/sif/diyaab = 30, \
+	/mob/living/simple_mob/animal/passive/hare = 20, \
+	/mob/living/simple_mob/animal/passive/crab = 35, \
+	/mob/living/simple_mob/animal/passive/penguin = 15, \
+	/mob/living/simple_mob/animal/passive/mouse = 15, \
+	/mob/living/simple_mob/animal/passive/dog/tamaskan = 15, \
+	/mob/living/simple_mob/animal/sif/siffet = 10, \
+	/mob/living/simple_mob/animal/giant_spider/frost = 2, \
+	/mob/living/simple_mob/animal/space/goose = 1))
 
 
 /obj/random/mob/sif/peaceful
@@ -96,35 +93,35 @@
 	mob_returns_home = 1
 	mob_wander_distance = 12
 
-/obj/random/mob/sif/peaceful/item_to_spawn()
-	return pick(prob(30);/mob/living/simple_mob/animal/sif/diyaab,
-				prob(20);/mob/living/simple_mob/animal/passive/hare,
-				prob(15);/mob/living/simple_mob/animal/passive/crab,
-				prob(15);/mob/living/simple_mob/animal/passive/penguin,
-				prob(15);/mob/living/simple_mob/animal/passive/mouse,
-				prob(15);/mob/living/simple_mob/animal/passive/dog/tamaskan,
-				prob(20);/mob/living/simple_mob/animal/sif/hooligan_crab)
+DECLARE_LOOT(/obj/random/mob/sif/peaceful, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/sif/diyaab = 30, \
+	/mob/living/simple_mob/animal/passive/hare = 20, \
+	/mob/living/simple_mob/animal/passive/crab = 15, \
+	/mob/living/simple_mob/animal/passive/penguin = 15, \
+	/mob/living/simple_mob/animal/passive/mouse = 15, \
+	/mob/living/simple_mob/animal/passive/dog/tamaskan = 15, \
+	/mob/living/simple_mob/animal/sif/hooligan_crab = 20))
 
 /obj/random/mob/sif/hostile
 	name = "Random Hostile Sif Animal"
 	desc = "This is a random hostile cold weather animal."
 	icon_state = "animal_hostile"
 
-/obj/random/mob/sif/hostile/item_to_spawn()
-	return pick(prob(22);/mob/living/simple_mob/animal/sif/savik,
-				prob(33);/mob/living/simple_mob/animal/giant_spider/frost,
-				prob(20);/mob/living/simple_mob/animal/sif/frostfly,
-				prob(10);/mob/living/simple_mob/animal/sif/tymisian,
-				prob(45);/mob/living/simple_mob/animal/sif/shantak)
+DECLARE_LOOT(/obj/random/mob/sif/hostile, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/sif/savik = 22, \
+	/mob/living/simple_mob/animal/giant_spider/frost = 33, \
+	/mob/living/simple_mob/animal/sif/frostfly = 20, \
+	/mob/living/simple_mob/animal/sif/tymisian = 10, \
+	/mob/living/simple_mob/animal/sif/shantak = 45))
 
 /obj/random/mob/sif/kururak
 	name = "Random Kururak"
 	desc = "This is a random kururak, either waking or hibernating. Will be hostile if more than one are waking."
 	icon_state = "frost"
 
-/obj/random/mob/sif/kururak/item_to_spawn()
-	return pick(prob(1);/mob/living/simple_mob/animal/sif/kururak/hibernate,
-				prob(20);/mob/living/simple_mob/animal/sif/kururak)
+DECLARE_LOOT(/obj/random/mob/sif/kururak, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/sif/kururak/hibernate = 1, \
+	/mob/living/simple_mob/animal/sif/kururak = 20))
 
 /obj/random/mob/spider
 	name = "Random Spider" //Spiders should patrol where they spawn.
@@ -134,9 +131,9 @@
 	mob_returns_home = 1
 	mob_wander_distance = 4
 
-/obj/random/mob/spider/item_to_spawn()
-	return pick(prob(33);/mob/living/simple_mob/animal/giant_spider/hunter,
-				prob(45);/mob/living/simple_mob/animal/giant_spider)
+DECLARE_LOOT(/obj/random/mob/spider, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/giant_spider/hunter = 33, \
+	/mob/living/simple_mob/animal/giant_spider = 45))
 
 /obj/random/mob/spider/nurse
 	name = "Random Nurse Spider"
@@ -146,26 +143,26 @@
 	mob_returns_home = 1
 	mob_wander_distance = 4
 
-/obj/random/mob/spider/nurse/item_to_spawn()
-	return pick(prob(22);/mob/living/simple_mob/animal/giant_spider/nurse/hat,
-				prob(45);/mob/living/simple_mob/animal/giant_spider/nurse)
+DECLARE_LOOT(/obj/random/mob/spider/nurse, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/giant_spider/nurse/hat = 22, \
+	/mob/living/simple_mob/animal/giant_spider/nurse = 45))
 
 /obj/random/mob/spider/mutant
 	name = "Random Mutant Spider"
 	desc = "This is a random mutated spider."
 	icon_state = "phoron"
 
-/obj/random/mob/spider/mutant/item_to_spawn()
-	return pick(prob(5);/obj/random/mob/spider,
-				prob(10);/mob/living/simple_mob/animal/giant_spider/webslinger,
-				prob(10);/mob/living/simple_mob/animal/giant_spider/carrier,
-				prob(33);/mob/living/simple_mob/animal/giant_spider/lurker,
-				prob(33);/mob/living/simple_mob/animal/giant_spider/tunneler,
-				prob(40);/mob/living/simple_mob/animal/giant_spider/pepper,
-				prob(20);/mob/living/simple_mob/animal/giant_spider/thermic,
-				prob(40);/mob/living/simple_mob/animal/giant_spider/electric,
-				prob(1);/mob/living/simple_mob/animal/giant_spider/phorogenic,
-				prob(40);/mob/living/simple_mob/animal/giant_spider/frost)
+DECLARE_LOOT(/obj/random/mob/spider/mutant, LOOT_TABLE(\
+	/obj/random/mob/spider = 5, \
+	/mob/living/simple_mob/animal/giant_spider/webslinger = 10, \
+	/mob/living/simple_mob/animal/giant_spider/carrier = 10, \
+	/mob/living/simple_mob/animal/giant_spider/lurker = 33, \
+	/mob/living/simple_mob/animal/giant_spider/tunneler = 33, \
+	/mob/living/simple_mob/animal/giant_spider/pepper = 40, \
+	/mob/living/simple_mob/animal/giant_spider/thermic = 20, \
+	/mob/living/simple_mob/animal/giant_spider/electric = 40, \
+	/mob/living/simple_mob/animal/giant_spider/phorogenic = 1, \
+	/mob/living/simple_mob/animal/giant_spider/frost = 40))
 
 /obj/random/mob/robotic
 	name = "Random Robot Mob"
@@ -181,20 +178,20 @@
 	mob_hostile = 1
 	mob_retaliate = 1
 
-/obj/random/mob/robotic/item_to_spawn() //Hivebots have a total number of 'lots' equal to the lesser drone, at 60.
-	return pick(prob(60);/mob/living/simple_mob/mechanical/combat_drone/lesser,
-				prob(50);/mob/living/simple_mob/mechanical/combat_drone,
-				prob(50);/mob/living/simple_mob/mechanical/mining_drone,
-				prob(15);/mob/living/simple_mob/mechanical/mecha/ripley,
-				prob(15);/mob/living/simple_mob/mechanical/mecha/odysseus,
-				prob(10);/mob/living/simple_mob/mechanical/hivebot,
-				prob(15);/mob/living/simple_mob/mechanical/hivebot/swarm,
-				prob(10);/mob/living/simple_mob/mechanical/hivebot/ranged_damage,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard)
+DECLARE_LOOT(/obj/random/mob/robotic, LOOT_TABLE(\
+	/mob/living/simple_mob/mechanical/combat_drone/lesser = 60, \
+	/mob/living/simple_mob/mechanical/combat_drone = 50, \
+	/mob/living/simple_mob/mechanical/mining_drone = 50, \
+	/mob/living/simple_mob/mechanical/mecha/ripley = 15, \
+	/mob/living/simple_mob/mechanical/mecha/odysseus = 15, \
+	/mob/living/simple_mob/mechanical/hivebot = 10, \
+	/mob/living/simple_mob/mechanical/hivebot/swarm = 15, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage = 10, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 5))
 
 /obj/random/mob/robotic/drone
 	name = "Random Drone"
@@ -210,10 +207,10 @@
 	mob_hostile = 1
 	mob_retaliate = 1
 
-/obj/random/mob/robotic/drone/item_to_spawn()
-	return pick(prob(6);/mob/living/simple_mob/mechanical/combat_drone/lesser,
-				prob(1);/mob/living/simple_mob/mechanical/combat_drone,
-				prob(3);/mob/living/simple_mob/mechanical/mining_drone)
+DECLARE_LOOT(/obj/random/mob/robotic/drone, LOOT_TABLE(\
+	/mob/living/simple_mob/mechanical/combat_drone/lesser = 6, \
+	/mob/living/simple_mob/mechanical/combat_drone = 1, \
+	/mob/living/simple_mob/mechanical/mining_drone = 3))
 
 /obj/random/mob/robotic/hivebot
 	name = "Random Hivebot"
@@ -222,15 +219,15 @@
 
 	mob_faction = FACTION_HIVEBOT
 
-/obj/random/mob/robotic/hivebot/item_to_spawn()
-	return pick(prob(10);/mob/living/simple_mob/mechanical/hivebot,
-				prob(15);/mob/living/simple_mob/mechanical/hivebot/swarm,
-				prob(10);/mob/living/simple_mob/mechanical/hivebot/ranged_damage,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong,
-				prob(5);/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard)
+DECLARE_LOOT(/obj/random/mob/robotic/hivebot, LOOT_TABLE(\
+	/mob/living/simple_mob/mechanical/hivebot = 10, \
+	/mob/living/simple_mob/mechanical/hivebot/swarm = 15, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage = 10, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/rapid = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong = 5, \
+	/mob/living/simple_mob/mechanical/hivebot/ranged_damage/strong/guard = 5))
 
 //Mice
 
@@ -238,14 +235,13 @@
 	name = "Random Mouse"
 	desc = "This is a random boring maus."
 	icon_state = "animal"
-	spawn_nothing_percentage = 15
 
-/obj/random/mob/mouse/item_to_spawn()
-	return pick(prob(15);/mob/living/simple_mob/animal/passive/mouse/white,
-				prob(15);/mob/living/simple_mob/animal/passive/mouse/black,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/brown,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/gray,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/rat)
+DECLARE_LOOT(/obj/random/mob/mouse, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/mouse/white = 15, \
+	/mob/living/simple_mob/animal/passive/mouse/black = 15, \
+	/mob/living/simple_mob/animal/passive/mouse/brown = 30, \
+	/mob/living/simple_mob/animal/passive/mouse/gray = 30, \
+	/mob/living/simple_mob/animal/passive/mouse/rat = 30), LOOT_CHANCE(85))
 
 /obj/random/mob/fish
 	name = "Random Fish"
@@ -256,19 +252,19 @@
 	mob_hostile = 0
 	mob_retaliate = 0
 
-/obj/random/mob/fish/item_to_spawn()
-	return pick(prob(10);/mob/living/simple_mob/animal/passive/fish/bass,
-				prob(20);/mob/living/simple_mob/animal/passive/fish/icebass,
-				prob(20);/mob/living/simple_mob/animal/passive/fish/trout,
-				prob(20);/mob/living/simple_mob/animal/passive/fish/salmon,
-				prob(10);/mob/living/simple_mob/animal/passive/fish/pike,
-				prob(10);/mob/living/simple_mob/animal/passive/fish/perch,
-				prob(20);/mob/living/simple_mob/animal/passive/fish/murkin,
-				prob(15);/mob/living/simple_mob/animal/passive/fish/javelin,
-				prob(20);/mob/living/simple_mob/animal/passive/fish/rockfish,
-				prob(5);/mob/living/simple_mob/animal/passive/fish/solarfish,
-				prob(10);/mob/living/simple_mob/animal/passive/crab,
-				prob(1);/mob/living/simple_mob/animal/sif/hooligan_crab)
+DECLARE_LOOT(/obj/random/mob/fish, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/fish/bass = 10, \
+	/mob/living/simple_mob/animal/passive/fish/icebass = 20, \
+	/mob/living/simple_mob/animal/passive/fish/trout = 20, \
+	/mob/living/simple_mob/animal/passive/fish/salmon = 20, \
+	/mob/living/simple_mob/animal/passive/fish/pike = 10, \
+	/mob/living/simple_mob/animal/passive/fish/perch = 10, \
+	/mob/living/simple_mob/animal/passive/fish/murkin = 20, \
+	/mob/living/simple_mob/animal/passive/fish/javelin = 15, \
+	/mob/living/simple_mob/animal/passive/fish/rockfish = 20, \
+	/mob/living/simple_mob/animal/passive/fish/solarfish = 5, \
+	/mob/living/simple_mob/animal/passive/crab = 10, \
+	/mob/living/simple_mob/animal/sif/hooligan_crab = 1))
 
 /obj/random/mob/bird
 	name = "Random Bird"
@@ -276,15 +272,15 @@
 	icon_state = "bird"
 	mob_faction = "bird"
 
-/obj/random/mob/bird/item_to_spawn()
-	return pick(prob(10);/mob/living/simple_mob/animal/passive/bird/black_bird,
-				prob(10);/mob/living/simple_mob/animal/passive/bird/azure_tit,
-				prob(20);/mob/living/simple_mob/animal/passive/bird/european_robin,
-				prob(10);/mob/living/simple_mob/animal/passive/bird/goldcrest,
-				prob(20);/mob/living/simple_mob/animal/passive/bird/ringneck_dove,
-				prob(10);/mob/living/simple_mob/animal/space/goose,
-				prob(5);/mob/living/simple_mob/animal/passive/chicken,
-				prob(1);/mob/living/simple_mob/animal/passive/penguin)
+DECLARE_LOOT(/obj/random/mob/bird, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/bird/black_bird = 10, \
+	/mob/living/simple_mob/animal/passive/bird/azure_tit = 10, \
+	/mob/living/simple_mob/animal/passive/bird/european_robin = 20, \
+	/mob/living/simple_mob/animal/passive/bird/goldcrest = 10, \
+	/mob/living/simple_mob/animal/passive/bird/ringneck_dove = 20, \
+	/mob/living/simple_mob/animal/space/goose = 10, \
+	/mob/living/simple_mob/animal/passive/chicken = 5, \
+	/mob/living/simple_mob/animal/passive/penguin = 1))
 
 // Mercs
 /obj/random/mob/merc
@@ -296,145 +292,76 @@
 	mob_returns_home = 1
 	mob_wander_distance = 7	// People like to wander, and these people probably have a lot of stuff to guard.
 
-/obj/random/mob/merc/item_to_spawn()
-	return pick(prob(60);/mob/living/simple_mob/humanoid/merc/melee/poi,
-				prob(40);/mob/living/simple_mob/humanoid/merc/melee/sword/poi,
-				prob(40);/mob/living/simple_mob/humanoid/merc/ranged/poi,
-				prob(30);/mob/living/simple_mob/humanoid/merc/ranged/smg/poi,
-				prob(20);/mob/living/simple_mob/humanoid/merc/ranged/laser/poi,
-				prob(5);/mob/living/simple_mob/humanoid/merc/ranged/ionrifle/poi,
-				prob(10);/mob/living/simple_mob/humanoid/merc/ranged/grenadier/poi,
-				prob(10);/mob/living/simple_mob/humanoid/merc/ranged/rifle/poi,
-				prob(15);/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi,
-				prob(10);/mob/living/simple_mob/humanoid/merc/ranged/technician/poi
-				)
+DECLARE_LOOT(/obj/random/mob/merc, LOOT_TABLE(\
+	/mob/living/simple_mob/humanoid/merc/melee/poi = 60, \
+	/mob/living/simple_mob/humanoid/merc/melee/sword/poi = 40, \
+	/mob/living/simple_mob/humanoid/merc/ranged/poi = 40, \
+	/mob/living/simple_mob/humanoid/merc/ranged/smg/poi = 30, \
+	/mob/living/simple_mob/humanoid/merc/ranged/laser/poi = 20, \
+	/mob/living/simple_mob/humanoid/merc/ranged/ionrifle/poi = 5, \
+	/mob/living/simple_mob/humanoid/merc/ranged/grenadier/poi = 10, \
+	/mob/living/simple_mob/humanoid/merc/ranged/rifle/poi = 10, \
+	/mob/living/simple_mob/humanoid/merc/ranged/rifle/mag/poi = 15, \
+	/mob/living/simple_mob/humanoid/merc/ranged/technician/poi = 10))
 
 /obj/random/mob/merc/armored
 	name = "Random Armored Infantry Merc"
 	desc = "This is a random PoI exo or robot for mercs."
 	icon_state = "mecha"
 
-/obj/random/mob/merc/armored/item_to_spawn()
-	return pick(prob(30);/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark,
-				prob(40);/mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax,
-				prob(40);/mob/living/simple_mob/mechanical/mecha/combat/gygax,
-				prob(10);/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary,
-				prob(60);/mob/living/simple_mob/mechanical/mecha/hoverpod/manned,
-				prob(5);/mob/living/simple_mob/mechanical/mecha/combat/marauder,
-				prob(1);/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph,
-				prob(15);/mob/living/simple_mob/mechanical/mecha/odysseus/manned,
-				prob(15);/mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus/manned,
-				prob(60);/mob/living/simple_mob/mechanical/mecha/ripley/manned
-				)
+DECLARE_LOOT(/obj/random/mob/merc/armored, LOOT_TABLE(\
+	/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark = 30, \
+	/mob/living/simple_mob/mechanical/mecha/combat/gygax/medgax = 40, \
+	/mob/living/simple_mob/mechanical/mecha/combat/gygax = 40, \
+	/mob/living/simple_mob/mechanical/mecha/combat/durand/defensive/mercenary = 10, \
+	/mob/living/simple_mob/mechanical/mecha/hoverpod/manned = 60, \
+	/mob/living/simple_mob/mechanical/mecha/combat/marauder = 5, \
+	/mob/living/simple_mob/mechanical/mecha/combat/marauder/seraph = 1, \
+	/mob/living/simple_mob/mechanical/mecha/odysseus/manned = 15, \
+	/mob/living/simple_mob/mechanical/mecha/odysseus/murdysseus/manned = 15, \
+	/mob/living/simple_mob/mechanical/mecha/ripley/manned = 60))
 
 /obj/random/mob/merc/all
 	name = "Random Mercenary All"
 	desc = "A random PoI mercenary, including armored."
 
-/obj/random/mob/merc/all/item_to_spawn()
-	return pick(prob(20);/obj/random/mob/merc,
-				prob(1);/obj/random/mob/merc/armored
-				)
+DECLARE_LOOT(/obj/random/mob/merc/all, LOOT_TABLE(/obj/random/mob/merc = 20, /obj/random/mob/merc/armored = 1))
 
 // Multiple mobs, one spawner.
 /obj/random/mob/multiple
 	name = "Random Multiple Mob Spawner"
 	desc = "A base multiple-mob spawner. Takes lists of lists."
 
-/obj/random/mob/multiple/spawn_item()
-	var/list/things_to_make = item_to_spawn()
-
-	for(var/new_type in things_to_make)
-
-		var/mob/living/simple_mob/M = new new_type(src.loc)
-
-		if(!istype(M))
-			continue
-
-		if(M.ai_brain)
-			var/datum/ai_brain/AI = M.ai_brain
-			AI.go_sleep() //Don't fight eachother while we're still setting up!
-			AI.returns_home = mob_returns_home
-			AI.wander = mob_wander
-			AI.max_home_distance = mob_wander_distance
-			if(overwrite_hostility)
-				AI.set_hostile(mob_hostile)
-			AI.go_wake() //Now you can kill eachother if your faction didn't override.
-
-		if(pixel_x || pixel_y)
-			M.pixel_x = pixel_x
-			M.pixel_y = pixel_y
-
 /obj/random/mob/multiple/sifmobs
 	name = "Random Sifmob Pack"
 	desc = "A pack of random neutral sif mobs."
 	icon_state = "animal_group"
 
-/obj/random/mob/multiple/sifmobs/item_to_spawn()
-	return pick(
-			prob(60);list(
-				/mob/living/simple_mob/animal/sif/diyaab,
-				/mob/living/simple_mob/animal/sif/diyaab,
-				/mob/living/simple_mob/animal/sif/diyaab
-			),
-			prob(15);list(
-				/mob/living/simple_mob/animal/sif/duck,
-				/mob/living/simple_mob/animal/sif/duck,
-				/mob/living/simple_mob/animal/sif/duck
-			),
-			prob(15);list(
-				/mob/living/simple_mob/animal/passive/hare,
-				/mob/living/simple_mob/animal/passive/hare,
-				/mob/living/simple_mob/animal/passive/hare,
-				/mob/living/simple_mob/animal/passive/hare
-			),
-			prob(10);list(
-				/mob/living/simple_mob/animal/sif/shantak/retaliate,
-				/mob/living/simple_mob/animal/sif/shantak/retaliate,
-				/mob/living/simple_mob/animal/sif/shantak/retaliate,
-				/mob/living/simple_mob/animal/sif/shantak/leader/autofollow/retaliate
-			),
-			prob(5);list(
-				/mob/living/simple_mob/animal/sif/kururak/leader,
-				/mob/living/simple_mob/animal/sif/kururak,
-				/mob/living/simple_mob/animal/sif/kururak
-			),
-			prob(5);list(
-				/mob/living/simple_mob/animal/sif/glitterfly,
-				/mob/living/simple_mob/animal/sif/glitterfly,
-				/mob/living/simple_mob/animal/sif/glitterfly,
-				/mob/living/simple_mob/animal/sif/glitterfly,
-				/mob/living/simple_mob/animal/sif/glitterfly
-			),
-			prob(1);list(
-				/mob/living/simple_mob/animal/goat,
-				/mob/living/simple_mob/animal/goat
-			),
-			prob(1);list(
-				/mob/living/simple_mob/animal/sif/sakimm/intelligent,
-				/mob/living/simple_mob/animal/sif/sakimm,
-				/mob/living/simple_mob/animal/sif/sakimm,
-				/mob/living/simple_mob/animal/sif/sakimm
-			)
-		)
+DECLARE_LOOT(/obj/random/mob/multiple/sifmobs, LOOT_TABLE(\
+	LOOT_SET(60, /mob/living/simple_mob/animal/sif/diyaab, /mob/living/simple_mob/animal/sif/diyaab, /mob/living/simple_mob/animal/sif/diyaab), \
+	LOOT_SET(15, /mob/living/simple_mob/animal/sif/duck, /mob/living/simple_mob/animal/sif/duck, /mob/living/simple_mob/animal/sif/duck), \
+	LOOT_SET(15, /mob/living/simple_mob/animal/passive/hare, /mob/living/simple_mob/animal/passive/hare, /mob/living/simple_mob/animal/passive/hare, /mob/living/simple_mob/animal/passive/hare), \
+	LOOT_SET(10, /mob/living/simple_mob/animal/sif/shantak/retaliate, /mob/living/simple_mob/animal/sif/shantak/retaliate, /mob/living/simple_mob/animal/sif/shantak/retaliate, /mob/living/simple_mob/animal/sif/shantak/leader/autofollow/retaliate), \
+	LOOT_SET(5, /mob/living/simple_mob/animal/sif/kururak/leader, /mob/living/simple_mob/animal/sif/kururak, /mob/living/simple_mob/animal/sif/kururak), \
+	LOOT_SET(5, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/sif/glitterfly, /mob/living/simple_mob/animal/sif/glitterfly), \
+	LOOT_SET(1, /mob/living/simple_mob/animal/goat, /mob/living/simple_mob/animal/goat), \
+	LOOT_SET(1, /mob/living/simple_mob/animal/sif/sakimm/intelligent, /mob/living/simple_mob/animal/sif/sakimm, /mob/living/simple_mob/animal/sif/sakimm, /mob/living/simple_mob/animal/sif/sakimm)))
 
 /obj/random/mob/vermin
 	name = "Random Vermin"
 	desc = "Often found in trash."
 	icon_state = "animal"
-	spawn_nothing_percentage = 15
 
-/obj/random/mob/vermin/item_to_spawn()
-	return pick(prob(15);/mob/living/simple_mob/animal/passive/mouse/white,
-				prob(15);/mob/living/simple_mob/animal/passive/mouse/black,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/brown,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/gray,
-				prob(30);/mob/living/simple_mob/animal/passive/mouse/rat,
-				prob(30);/obj/effect/spider/spiderling/non_growing,
-				prob(30);/mob/living/simple_mob/animal/passive/raccoon,
-				prob(30);/mob/living/simple_mob/animal/passive/opossum,
-				prob(40);/mob/living/simple_mob/animal/passive/cockroach,
-				)
+DECLARE_LOOT(/obj/random/mob/vermin, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/mouse/white = 15, \
+	/mob/living/simple_mob/animal/passive/mouse/black = 15, \
+	/mob/living/simple_mob/animal/passive/mouse/brown = 30, \
+	/mob/living/simple_mob/animal/passive/mouse/gray = 30, \
+	/mob/living/simple_mob/animal/passive/mouse/rat = 30, \
+	/obj/effect/spider/spiderling/non_growing = 30, \
+	/mob/living/simple_mob/animal/passive/raccoon = 30, \
+	/mob/living/simple_mob/animal/passive/opossum = 30, \
+	/mob/living/simple_mob/animal/passive/cockroach = 40), LOOT_CHANCE(85))
 
 
 /obj/random/weapon // For Gateway maps and Syndicate. Can possibly spawn almost any gun in the game.
@@ -442,204 +369,191 @@
 	desc = "This is a random illegal weapon."
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "p08"
-	spawn_nothing_percentage = 50
-/obj/random/weapon/item_to_spawn()
-	return pick(prob(11);/obj/random/ammo_all,\
-				prob(11);/obj/item/gun/energy/laser,\
-				prob(11);/obj/item/gun/projectile/pirate,\
-				prob(10);/obj/item/material/twohanded/spear,\
-				prob(10);/obj/item/gun/energy/stunrevolver,\
-				prob(10);/obj/item/gun/energy/taser,\
-				prob(10);/obj/item/gun/projectile/shotgun/doublebarrel/pellet,\
-				prob(10);/obj/item/material/knife,\
-				prob(10);/obj/item/gun/projectile/luger,\
-			/*	prob(10);/obj/item/gun/projectile/pipegun,\ */
-				prob(10);/obj/item/gun/projectile/revolver/detective,\
-				prob(10);/obj/item/gun/projectile/revolver/judge,\
-				prob(10);/obj/item/gun/projectile/colt,\
-				prob(10);/obj/item/gun/projectile/shotgun/pump,\
-				prob(10);/obj/item/gun/projectile/shotgun/pump/rifle,\
-				prob(10);/obj/item/melee/baton,\
-				prob(10);/obj/item/melee/telebaton,\
-				prob(10);/obj/item/melee/classic_baton,\
-				prob(9);/obj/item/gun/projectile/automatic/wt550/lethal,\
-				prob(9);/obj/item/gun/projectile/automatic/pdw,\
-				prob(9);/obj/item/gun/projectile/automatic/sol, \
-				prob(9);/obj/item/gun/energy/crossbow/largecrossbow,\
-				prob(9);/obj/item/gun/projectile/pistol,\
-				prob(9);/obj/item/gun/projectile/shotgun/pump,\
-				prob(9);/obj/item/cane/concealed,\
-				prob(9);/obj/item/gun/energy/gun,\
-				prob(8);/obj/item/gun/energy/retro,\
-				prob(8);/obj/item/gun/energy/gun/eluger,\
-				prob(8);/obj/item/gun/energy/xray,\
-				prob(8);/obj/item/gun/projectile/automatic/c20r,\
-				prob(8);/obj/item/melee/energy/sword,\
-				prob(8);/obj/item/gun/projectile/derringer,\
-				prob(8);/obj/item/gun/projectile/revolver/lemat,\
-			/*	prob(8);/obj/item/gun/projectile/shotgun/pump/rifle/mosin,\ */
-			/*	prob(8);/obj/item/gun/projectile/automatic/m41a,\ */
-				prob(7);/obj/item/material/butterfly,\
-				prob(7);/obj/item/material/butterfly/switchblade,\
-				prob(7);/obj/item/gun/projectile/giskard,\
-				prob(7);/obj/item/gun/projectile/automatic/p90,\
-				prob(7);/obj/item/gun/projectile/automatic/sts35,\
-				prob(7);/obj/item/gun/projectile/shotgun/pump/combat,\
-				prob(6);/obj/item/gun/energy/sniperrifle,\
-				prob(6);/obj/item/gun/projectile/automatic/z8,\
-				prob(6);/obj/item/gun/energy/captain,\
-				prob(6);/obj/item/material/knife/tacknife,\
-				prob(5);/obj/item/gun/projectile/shotgun/pump/USDF,\
-				prob(5);/obj/item/gun/projectile/giskard/olivaw,\
-				prob(5);/obj/item/gun/projectile/revolver/consul,\
-				prob(5);/obj/item/gun/projectile/revolver/mateba,\
-				prob(5);/obj/item/gun/projectile/revolver,\
-				prob(4);/obj/item/gun/projectile/deagle,\
-				prob(4);/obj/item/material/knife/tacknife/combatknife,\
-				prob(4);/obj/item/melee/energy/sword,\
-				prob(4);/obj/item/gun/projectile/automatic/mini_uzi,\
-				prob(4);/obj/item/gun/projectile/contender,\
-				prob(4);/obj/item/gun/projectile/contender/tacticool,\
-				prob(3);/obj/item/gun/projectile/SVD,\
-				prob(3);/obj/item/gun/energy/lasercannon,\
-				prob(3);/obj/item/gun/projectile/shotgun/pump/rifle/lever,\
-				prob(3);/obj/item/gun/projectile/automatic/bullpup,\
-				/*prob(2);/obj/item/gun/energy/pulse_rifle,\ */ // Players should absolutely not have this
-				prob(2);/obj/item/gun/energy/gun/nuclear,\
-				prob(2);/obj/item/gun/projectile/automatic/l6_saw,\
-				prob(2);/obj/item/gun/energy/gun/burst,\
-				prob(2);/obj/item/storage/box/frags,\
-				prob(2);/obj/item/material/twohanded/fireaxe,\
-				prob(2);/obj/item/gun/projectile/luger/brown,\
-				prob(2);/obj/item/gun/launcher/crossbow,\
-				prob(2);/obj/item/melee/shock_maul,\
-			/*	prob(1);/obj/item/gun/projectile/automatic/battlerifle,\ */ // Too OP
-				prob(1);/obj/item/gun/projectile/deagle/gold,\
-				prob(1);/obj/item/gun/energy/imperial,\
-				prob(1);/obj/item/gun/projectile/automatic/as24,\
-				prob(1);/obj/item/gun/launcher/rocket,\
-				prob(1);/obj/item/gun/launcher/grenade,\
-				prob(1);/obj/item/gun/projectile/gyropistol,\
-				prob(1);/obj/item/gun/projectile/heavysniper,\
-				prob(1);/obj/item/plastique,\
-				prob(1);/obj/item/gun/energy/ionrifle,\
-				prob(1);/obj/item/material/sword,\
-				prob(1);/obj/item/cane/concealed,\
-				prob(1);/obj/item/material/sword/katana)
+DECLARE_LOOT(/obj/random/weapon, LOOT_TABLE(\
+	/obj/random/ammo_all = 11, \
+	/obj/item/gun/energy/laser = 11, \
+	/obj/item/gun/projectile/pirate = 11, \
+	/obj/item/material/twohanded/spear = 10, \
+	/obj/item/gun/energy/stunrevolver = 10, \
+	/obj/item/gun/energy/taser = 10, \
+	/obj/item/gun/projectile/shotgun/doublebarrel/pellet = 10, \
+	/obj/item/material/knife = 10, \
+	/obj/item/gun/projectile/luger = 10, \
+	/obj/item/gun/projectile/revolver/detective = 10, \
+	/obj/item/gun/projectile/revolver/judge = 10, \
+	/obj/item/gun/projectile/colt = 10, \
+	/obj/item/gun/projectile/shotgun/pump = 19, \
+	/obj/item/gun/projectile/shotgun/pump/rifle = 10, \
+	/obj/item/melee/baton = 10, \
+	/obj/item/melee/telebaton = 10, \
+	/obj/item/melee/classic_baton = 10, \
+	/obj/item/gun/projectile/automatic/wt550/lethal = 9, \
+	/obj/item/gun/projectile/automatic/pdw = 9, \
+	/obj/item/gun/projectile/automatic/sol = 9, \
+	/obj/item/gun/energy/crossbow/largecrossbow = 9, \
+	/obj/item/gun/projectile/pistol = 9, \
+	/obj/item/cane/concealed = 10, \
+	/obj/item/gun/energy/gun = 9, \
+	/obj/item/gun/energy/retro = 8, \
+	/obj/item/gun/energy/gun/eluger = 8, \
+	/obj/item/gun/energy/xray = 8, \
+	/obj/item/gun/projectile/automatic/c20r = 8, \
+	/obj/item/melee/energy/sword = 12, \
+	/obj/item/gun/projectile/derringer = 8, \
+	/obj/item/gun/projectile/revolver/lemat = 8, \
+	/obj/item/material/butterfly = 7, \
+	/obj/item/material/butterfly/switchblade = 7, \
+	/obj/item/gun/projectile/giskard = 7, \
+	/obj/item/gun/projectile/automatic/p90 = 7, \
+	/obj/item/gun/projectile/automatic/sts35 = 7, \
+	/obj/item/gun/projectile/shotgun/pump/combat = 7, \
+	/obj/item/gun/energy/sniperrifle = 6, \
+	/obj/item/gun/projectile/automatic/z8 = 6, \
+	/obj/item/gun/energy/captain = 6, \
+	/obj/item/material/knife/tacknife = 6, \
+	/obj/item/gun/projectile/shotgun/pump/USDF = 5, \
+	/obj/item/gun/projectile/giskard/olivaw = 5, \
+	/obj/item/gun/projectile/revolver/consul = 5, \
+	/obj/item/gun/projectile/revolver/mateba = 5, \
+	/obj/item/gun/projectile/revolver = 5, \
+	/obj/item/gun/projectile/deagle = 4, \
+	/obj/item/material/knife/tacknife/combatknife = 4, \
+	/obj/item/gun/projectile/automatic/mini_uzi = 4, \
+	/obj/item/gun/projectile/contender = 4, \
+	/obj/item/gun/projectile/contender/tacticool = 4, \
+	/obj/item/gun/projectile/SVD = 3, \
+	/obj/item/gun/energy/lasercannon = 3, \
+	/obj/item/gun/projectile/shotgun/pump/rifle/lever = 3, \
+	/obj/item/gun/projectile/automatic/bullpup = 3, \
+	/obj/item/gun/energy/gun/nuclear = 2, \
+	/obj/item/gun/projectile/automatic/l6_saw = 2, \
+	/obj/item/gun/energy/gun/burst = 2, \
+	/obj/item/storage/box/frags = 2, \
+	/obj/item/material/twohanded/fireaxe = 2, \
+	/obj/item/gun/projectile/luger/brown = 2, \
+	/obj/item/gun/launcher/crossbow = 2, \
+	/obj/item/melee/shock_maul = 2, \
+	/obj/item/gun/projectile/deagle/gold = 1, \
+	/obj/item/gun/energy/imperial = 1, \
+	/obj/item/gun/projectile/automatic/as24 = 1, \
+	/obj/item/gun/launcher/rocket = 1, \
+	/obj/item/gun/launcher/grenade = 1, \
+	/obj/item/gun/projectile/gyropistol = 1, \
+	/obj/item/gun/projectile/heavysniper = 1, \
+	/obj/item/plastique = 1, \
+	/obj/item/gun/energy/ionrifle = 1, \
+	/obj/item/material/sword = 1, \
+	/obj/item/material/sword/katana = 1), LOOT_CHANCE(50))
 
 /obj/random/weapon/guarenteed
-	spawn_nothing_percentage = 0
+DECLARE_LOOT(/obj/random/weapon/guarenteed, LOOT_CHANCE(100))
 
 /obj/random/ammo_all
 	name = "Random Ammunition (All)"
 	desc = "This is random ammunition. Spawns all ammo types."
 	icon = 'icons/obj/ammo.dmi'
 	icon_state = "666"
-/obj/random/ammo_all/item_to_spawn()
-	return pick(prob(5);/obj/item/ammo_magazine/ammo_box/b12g,\
-				prob(5);/obj/item/ammo_magazine/ammo_box/b12g/pellet,\
-				prob(5);/obj/item/ammo_magazine/clip/c762,\
-				prob(5);/obj/item/ammo_magazine/m380,\
-				prob(5);/obj/item/ammo_magazine/m45,\
-				prob(5);/obj/item/ammo_magazine/m9mm,\
-				prob(5);/obj/item/ammo_magazine/s38,\
-				prob(4);/obj/item/ammo_magazine/clip/c45,\
-				prob(4);/obj/item/ammo_magazine/clip/c9mm,\
-				prob(4);/obj/item/ammo_magazine/m45uzi,\
-				prob(4);/obj/item/ammo_magazine/m9mml,\
-				prob(4);/obj/item/ammo_magazine/m9mmt,\
-				prob(4);/obj/item/ammo_magazine/m9mmp90,\
-				prob(4);/obj/item/ammo_magazine/m10mm,\
-				prob(4);/obj/item/ammo_magazine/m545/small,\
-				prob(3);/obj/item/ammo_magazine/clip/c44,\
-				prob(3);/obj/item/ammo_magazine/ammo_box/b10mm/emp,\
-				prob(3);/obj/item/ammo_magazine/ammo_box/b10mm,\
-				prob(3);/obj/item/ammo_magazine/s44,\
-				prob(3);/obj/item/ammo_magazine/m762,\
-				prob(3);/obj/item/ammo_magazine/m545,\
-				prob(3);/obj/item/cell/device/weapon,\
-				prob(2);/obj/item/ammo_magazine/m44,\
-				prob(2);/obj/item/ammo_magazine/s357,\
-				prob(2);/obj/item/ammo_magazine/m762/ext,\
-				prob(2);/obj/item/ammo_magazine/clip/c12g,
-				prob(2);/obj/item/ammo_magazine/clip/c12g/pellet,
-				prob(1);/obj/item/ammo_magazine/m45tommy,
-			/*	prob(1);/obj/item/ammo_magazine/m95, */
-				prob(1);/obj/item/ammo_casing/rocket,
-				prob(1);/obj/item/ammo_magazine/ammo_box/b145,
-				prob(1);/obj/item/ammo_magazine/ammo_box/b12g/flash,
-				prob(1);/obj/item/ammo_magazine/ammo_box/b12g/beanbag,
-				prob(1);/obj/item/ammo_magazine/ammo_box/b12g/stunshell,
-				prob(1);/obj/item/ammo_magazine/mtg,
-				prob(1);/obj/item/ammo_magazine/m12gdrum,
-				prob(1);/obj/item/ammo_magazine/m12gdrum/pellet,
-				prob(1);/obj/item/ammo_magazine/m45tommydrum
-				)
+DECLARE_LOOT(/obj/random/ammo_all, LOOT_TABLE(\
+	/obj/item/ammo_magazine/ammo_box/b12g = 5, \
+	/obj/item/ammo_magazine/ammo_box/b12g/pellet = 5, \
+	/obj/item/ammo_magazine/clip/c762 = 5, \
+	/obj/item/ammo_magazine/m380 = 5, \
+	/obj/item/ammo_magazine/m45 = 5, \
+	/obj/item/ammo_magazine/m9mm = 5, \
+	/obj/item/ammo_magazine/s38 = 5, \
+	/obj/item/ammo_magazine/clip/c45 = 4, \
+	/obj/item/ammo_magazine/clip/c9mm = 4, \
+	/obj/item/ammo_magazine/m45uzi = 4, \
+	/obj/item/ammo_magazine/m9mml = 4, \
+	/obj/item/ammo_magazine/m9mmt = 4, \
+	/obj/item/ammo_magazine/m9mmp90 = 4, \
+	/obj/item/ammo_magazine/m10mm = 4, \
+	/obj/item/ammo_magazine/m545/small = 4, \
+	/obj/item/ammo_magazine/clip/c44 = 3, \
+	/obj/item/ammo_magazine/ammo_box/b10mm/emp = 3, \
+	/obj/item/ammo_magazine/ammo_box/b10mm = 3, \
+	/obj/item/ammo_magazine/s44 = 3, \
+	/obj/item/ammo_magazine/m762 = 3, \
+	/obj/item/ammo_magazine/m545 = 3, \
+	/obj/item/cell/device/weapon = 3, \
+	/obj/item/ammo_magazine/m44 = 2, \
+	/obj/item/ammo_magazine/s357 = 2, \
+	/obj/item/ammo_magazine/m762/ext = 2, \
+	/obj/item/ammo_magazine/clip/c12g = 2, \
+	/obj/item/ammo_magazine/clip/c12g/pellet = 2, \
+	/obj/item/ammo_magazine/m45tommy = 1, \
+	/obj/item/ammo_casing/rocket = 1, \
+	/obj/item/ammo_magazine/ammo_box/b145 = 1, \
+	/obj/item/ammo_magazine/ammo_box/b12g/flash = 1, \
+	/obj/item/ammo_magazine/ammo_box/b12g/beanbag = 1, \
+	/obj/item/ammo_magazine/ammo_box/b12g/stunshell = 1, \
+	/obj/item/ammo_magazine/mtg = 1, \
+	/obj/item/ammo_magazine/m12gdrum = 1, \
+	/obj/item/ammo_magazine/m12gdrum/pellet = 1, \
+	/obj/item/ammo_magazine/m45tommydrum = 1))
 
 /obj/random/cargopod
 	name = "Random Cargo Item"
 	desc = "Hot Stuff."
 	icon = 'icons/obj/items.dmi'
 	icon_state = "purplecomb"
-	spawn_nothing_percentage = 0
 
-/obj/random/cargopod/item_to_spawn()
-	return pick(prob(10);/obj/item/poster,
-				prob(8);/obj/item/haircomb,
-				prob(6);/obj/item/storage/pill_bottle/paracetamol,
-				prob(6);/obj/item/material/butterflyblade,
-				prob(6);/obj/item/material/butterflyhandle,
-				prob(4);/obj/item/storage/pill_bottle/happy,
-				prob(4);/obj/item/storage/pill_bottle/zoom,
-				prob(4);/obj/item/material/butterfly,
-				prob(2);/obj/item/material/butterfly/switchblade,
-				prob(2);/obj/item/clothing/accessory/knuckledusters,
-				prob(2);/obj/item/reagent_containers/syringe/drugs,
-				prob(1);/obj/item/material/knife/tacknife,
-				prob(1);/obj/item/clothing/suit/storage/vest/heavy/merc,
-				prob(1);/obj/item/beartrap,
-				prob(1);/obj/item/handcuffs,
-				prob(1);/obj/item/handcuffs/legcuffs,
-				prob(1);/obj/item/reagent_containers/syringe/steroid)
+DECLARE_LOOT(/obj/random/cargopod, LOOT_TABLE(\
+	/obj/item/poster = 10, \
+	/obj/item/haircomb = 8, \
+	/obj/item/storage/pill_bottle/paracetamol = 6, \
+	/obj/item/material/butterflyblade = 6, \
+	/obj/item/material/butterflyhandle = 6, \
+	/obj/item/storage/pill_bottle/happy = 4, \
+	/obj/item/storage/pill_bottle/zoom = 4, \
+	/obj/item/material/butterfly = 4, \
+	/obj/item/material/butterfly/switchblade = 2, \
+	/obj/item/clothing/accessory/knuckledusters = 2, \
+	/obj/item/reagent_containers/syringe/drugs = 2, \
+	/obj/item/material/knife/tacknife = 1, \
+	/obj/item/clothing/suit/storage/vest/heavy/merc = 1, \
+	/obj/item/beartrap = 1, \
+	/obj/item/handcuffs = 1, \
+	/obj/item/handcuffs/legcuffs = 1, \
+	/obj/item/reagent_containers/syringe/steroid = 1), LOOT_CHANCE(100))
 
-//A random thing so that the spawn_nothing_percentage can be used w/o duplicating code.
+//A random thing so that the spawn chance can be used w/o duplicating code.
 /obj/random/trash_pile
 	name = "Random Trash Pile"
 	desc = "Hot Garbage."
 	icon = 'icons/obj/trash_piles.dmi'
 	icon_state = "randompile"
-	spawn_nothing_percentage = 0
-/obj/random/trash_pile/item_to_spawn()
-	return	/obj/structure/trash_pile
+DECLARE_LOOT(/obj/random/trash_pile, LOOT_TABLE(/obj/structure/trash_pile), LOOT_CHANCE(100))
 
 /obj/random/outside_mob
 	name = "Random Mob"
 	desc = "Eek!"
 	icon = 'icons/mob/screen1.dmi'
 	icon_state = "x"
-	spawn_nothing_percentage = 10
 	var/faction = FACTION_WILD_ANIMAL
 
-/obj/random/outside_mob/item_to_spawn() // Special version for mobs to have the same faction.
-	return pick(
-				prob(50);/mob/living/simple_mob/animal/passive/gaslamp,
-//				prob(50);/mob/living/simple_mob/vore/otie/feral, // Removed until Otie code is unfucked.
-				prob(20);/mob/living/simple_mob/vore/aggressive/dino/virgo3b,
-				prob(1);/mob/living/simple_mob/vore/aggressive/dragon/virgo3b)
+MAP_RESOLVER_VARS(/obj/random/outside_mob, "drop_get_turf;faction")
 
-/obj/random/outside_mob/spawn_item()
-	. = ..()
-	if(isanimal(.))
-		var/mob/living/simple_mob/this_mob = .
-		this_mob.faction = src.faction
-		if (this_mob.minbodytemp > 200) // Temporary hotfix. Eventually I'll add code to change all mob vars to fit the environment they are spawned in.
-			this_mob.minbodytemp = 200
-		//wander the mobs around so they aren't always in the same spots
-		var/turf/T = null
-		for(var/i = 1 to 20)
-			T = get_step_rand(this_mob) || T
-		if(T)
-			this_mob.forceMove(T)
+DECLARE_LOOT(/obj/random/outside_mob, LOOT_TABLE(\
+	/mob/living/simple_mob/animal/passive/gaslamp = 50, \
+	/mob/living/simple_mob/vore/aggressive/dino/virgo3b = 20, \
+	/mob/living/simple_mob/vore/aggressive/dragon/virgo3b = 1), LOOT_CHANCE(90), LOOT_HOOK(GLOBAL_PROC_REF(loot_hook_outside_mob)))
+
+/// LOOT_HOOK for /obj/random/outside_mob: one faction for the pack, cold-tolerant, wandered off.
+/proc/loot_hook_outside_mob(atom/spawned, path, list/varedits, datum/loot_rng/rng)
+	var/mob/living/simple_mob/this_mob = spawned
+	if(!isanimal(this_mob))
+		return
+	var/obj/random/outside_mob/P = path
+	this_mob.faction = MAP_VAR(P, varedits, faction)
+	if (this_mob.minbodytemp > 200) // Temporary hotfix. Eventually I'll add code to change all mob vars to fit the environment they are spawned in.
+		this_mob.minbodytemp = 200
+	//wander the mobs around so they aren't always in the same spots
+	var/turf/T = null
+	for(var/i = 1 to 20)
+		T = get_step_rand(this_mob) || T
+	if(T)
+		this_mob.forceMove(T)
 
 //Just overriding this here, no more super medkit so those can be reserved for PoIs and such
 /obj/random/tetheraid
@@ -648,29 +562,29 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "firstaid"
 
-/obj/random/tetheraid/item_to_spawn()
-	return pick(prob(10);/obj/item/storage/firstaid/regular,
-				prob(8);/obj/item/storage/firstaid/toxin,
-				prob(8);/obj/item/storage/firstaid/o2,
-				prob(5);/obj/item/storage/firstaid/adv,
-				prob(8);/obj/item/storage/firstaid/fire,
-				prob(1);/obj/item/denecrotizer/medical)
+DECLARE_LOOT(/obj/random/tetheraid, LOOT_TABLE(\
+	/obj/item/storage/firstaid/regular = 10, \
+	/obj/item/storage/firstaid/toxin = 8, \
+	/obj/item/storage/firstaid/o2 = 8, \
+	/obj/item/storage/firstaid/adv = 5, \
+	/obj/item/storage/firstaid/fire = 8, \
+	/obj/item/denecrotizer/medical = 1))
 
 //Override from maintenance.dm to prevent combat kits from spawning in Tether maintenance
-/obj/random/maintenance/item_to_spawn()
-	return pick(prob(300);/obj/random/tech_supply,
-				prob(200);/obj/random/medical,
-				prob(100);/obj/random/tetheraid,
-				prob(10);/obj/random/contraband,
-				prob(50);/obj/random/action_figure,
-				prob(50);/obj/random/plushie,
-				prob(200);/obj/random/junk,
-				prob(200);/obj/random/material,
-				prob(50);/obj/random/toy,
-				prob(100);/obj/random/tank,
-				prob(50);/obj/random/soap,
-				prob(60);/obj/random/drinkbottle,
-				prob(500);/obj/random/maintenance/clean)
+DECLARE_LOOT(/obj/random/maintenance, LOOT_TABLE(\
+	/obj/random/tech_supply = 300, \
+	/obj/random/medical = 200, \
+	/obj/random/tetheraid = 100, \
+	/obj/random/contraband = 10, \
+	/obj/random/action_figure = 50, \
+	/obj/random/plushie = 50, \
+	/obj/random/junk = 200, \
+	/obj/random/material = 200, \
+	/obj/random/toy = 50, \
+	/obj/random/tank = 100, \
+	/obj/random/soap = 50, \
+	/obj/random/drinkbottle = 60, \
+	/obj/random/maintenance/clean = 500))
 
 /obj/random/action_figure/supplypack
 	drop_get_turf = FALSE
@@ -680,17 +594,16 @@
 	desc = "Hot Stuff. Hopefully"
 	icon = 'icons/obj/items.dmi'
 	icon_state = "spickaxe"
-	spawn_nothing_percentage = 0
 
-/obj/random/roguemineloot/item_to_spawn()
-	return pick(prob(5);/obj/random/mre,
-				prob(5);/obj/random/maintenance,
-				prob(4);/obj/random/firstaid,
-				prob(3);/obj/random/toolbox,
-				prob(2);/obj/random/multiple/minevault,
-				prob(1);/obj/random/coin,
-				prob(1);/obj/random/drinkbottle,
-				prob(1);/obj/random/tool/alien)
+DECLARE_LOOT(/obj/random/roguemineloot, LOOT_TABLE(\
+	/obj/random/mre = 5, \
+	/obj/random/maintenance = 5, \
+	/obj/random/firstaid = 4, \
+	/obj/random/toolbox = 3, \
+	/obj/random/multiple/minevault = 2, \
+	/obj/random/coin = 1, \
+	/obj/random/drinkbottle = 1, \
+	/obj/random/tool/alien = 1), LOOT_CHANCE(100))
 
 //Scug spawner for the picnic!
 /obj/random/mob/wildscugs
@@ -698,49 +611,27 @@
 	desc = "Spawns catslugs with random colours!"
 	icon_state = "vore"
 	mob_faction = "vore"
-	spawn_nothing_percentage = 25
 	mob_wander_distance = 4
 	mob_wander = 1
 	mob_returns_home = 1
 	var/newname = null
 	var/newdesc = null
 
-/*//Among Us meme
-/obj/random/mob/wildscugs/item_to_spawn()
-	return pick(prob(99); /mob/living/simple_mob/vore/alienanimals/catslug,
-				prob(1); /mob/living/simple_mob/vore/alienanimals/catslug/suslug/color) //A super rare surprise
-*/
-/obj/random/mob/wildscugs/spawn_item()
-	var/build_path = item_to_spawn()
+MAP_RESOLVER_VARS(/obj/random/mob/wildscugs, "drop_get_turf;overwrite_hostility;mob_faction;mob_returns_home;mob_wander;mob_wander_distance;mob_hostile;mob_ghostjoin;newname;newdesc")
 
-	var/mob/living/simple_mob/M = new build_path(src.loc)
+DECLARE_LOOT(/obj/random/mob/wildscugs, LOOT_CHANCE(75), LOOT_HOOK(GLOBAL_PROC_REF(loot_hook_wildscugs)))
+
+/// LOOT_HOOK for the catslug spawner: the random-mob setup, then a random colour and name.
+/proc/loot_hook_wildscugs(atom/spawned, path, list/varedits, datum/loot_rng/rng)
+	loot_hook_random_mob(spawned, path, varedits, rng)
+	var/mob/living/simple_mob/M = spawned
 	if(!istype(M))
 		return
-	if(M.ai_brain)
-		var/datum/ai_brain/AI = M.ai_brain
-		AI.go_sleep() //Don't fight eachother while we're still setting up!
-		AI.returns_home = mob_returns_home
-		AI.wander = mob_wander
-		AI.max_home_distance = mob_wander_distance
-		if(overwrite_hostility)
-			AI.set_hostile(mob_hostile)
-		AI.go_wake() //Now you can kill eachother if your faction didn't override.
-
-	if(pixel_x || pixel_y)
-		M.pixel_x = pixel_x
-		M.pixel_y = pixel_y
-
-	if(mob_faction)
-		M.faction = mob_faction
-
+	var/obj/random/mob/wildscugs/P = path
 	M.color = pick(COLOR_WHITE, COLOR_RED, COLOR_PURPLE, COLOR_YELLOW, COLOR_CYAN_BLUE, COLOR_RED_GRAY, COLOR_BEIGE, COLOR_PINK, COLOR_BLACK)
+	var/newname = MAP_VAR(P, varedits, newname)
 	if(newname)
-		if(islist(newname))
-			M.name = pick(newname)
-		else
-			M.name = newname
+		M.name = islist(newname) ? pick(newname) : newname
+	var/newdesc = MAP_VAR(P, varedits, newdesc)
 	if(newdesc)
-		if(islist(newdesc))
-			M.desc = pick(newdesc)
-		else
-			M.desc = newdesc
+		M.desc = islist(newdesc) ? pick(newdesc) : newdesc

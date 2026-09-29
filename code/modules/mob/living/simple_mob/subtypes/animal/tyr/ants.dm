@@ -527,13 +527,13 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	desc = "This is a metant build"
 	icon_state = "tool"
 
-/obj/random/ant_building/item_to_spawn()
-	return pick(/obj/effect/ant_structure/trap/poison,
-				/obj/effect/ant_structure/trap/burn,
-				/obj/effect/ant_structure/trap/slowdown,
-				/obj/effect/ant_structure/trap/confusion,
-				/obj/effect/ant_structure/trap/trip,
-				/obj/structure/mob_spawner/ant_hill/creatable)
+DECLARE_LOOT(/obj/random/ant_building, LOOT_TABLE(\
+	/obj/effect/ant_structure/trap/poison, \
+	/obj/effect/ant_structure/trap/burn, \
+	/obj/effect/ant_structure/trap/slowdown, \
+	/obj/effect/ant_structure/trap/confusion, \
+	/obj/effect/ant_structure/trap/trip, \
+	/obj/structure/mob_spawner/ant_hill/creatable))
 
 
 /obj/effect/spider/spiderling/antling

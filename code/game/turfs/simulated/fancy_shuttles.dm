@@ -42,9 +42,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	layer = DISPOSAL_LAYER
 	alpha = 90
 
-/obj/effect/fancy_shuttle_floor_preview/Initialize(mapload)
-	. = ..()
-	return INITIALIZE_HINT_QDEL
+// A mapping preview only: discarded at map time.
+MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolve_discard))
 
 // Only icon changes are damage
 /turf/simulated/wall/fancy_shuttle
@@ -146,24 +145,30 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	icon = 'icons/turf/fancy_shuttles/_fancy_helpers.dmi'
 	icon_state = "fancy_shuttle"
 	layer = DECAL_LAYER-1
-	var/icon_file
 	var/fancy_shuttle_tag
 
-/obj/effect/floor_decal/fancy_shuttle/Initialize(mapload)
-	var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
-	if(!F)
-		WARNING("Fancy shuttle floor decal at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-		return INITIALIZE_HINT_QDEL
-	icon = F.split_icon
-	icon_file = F.split_file
-	icon_state = "floors [x - F.x],[y - F.y]"
-	return ..()
+MAP_RESOLVER(/obj/effect/floor_decal/fancy_shuttle, GLOBAL_PROC_REF(resolve_fancy_shuttle_decal))
+MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 
-/obj/effect/floor_decal/fancy_shuttle/make_decal_image()
-	return image(icon = icon, icon_state = icon_state, layer = BUILTIN_DECAL_LAYER)
+/// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
+/// once the load is in place (the helper may be loaded after the decal).
+/proc/resolve_fancy_shuttle_decal(atom/loc, path, list/varedits)
+	map_resolve_later(GLOBAL_PROC_REF(fancy_shuttle_decal_resolve), get_turf(loc), path, varedits)
+	return TRUE
 
-/obj/effect/floor_decal/fancy_shuttle/get_cache_key(turf/T)
-	return "[alpha]-[color]-[dir]-[icon_state]-[T.layer]-[icon_file]"
+/proc/fancy_shuttle_decal_resolve(turf/T, path, list/varedits)
+	var/obj/effect/floor_decal/fancy_shuttle/P = path
+	var/tag = MAP_VAR(P, varedits, fancy_shuttle_tag)
+	var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[tag]
+	if(!F || !T)
+		WARNING("Fancy shuttle floor decal at [T?.x],[T?.y],[T?.z] couldn't locate a helper with tag [tag]")
+		return
+	fancy_shuttle_decal_apply(F, T, path, varedits)
+
+/proc/fancy_shuttle_decal_apply(obj/effect/fancy_shuttle/F, turf/T, path, list/varedits)
+	var/obj/effect/floor_decal/fancy_shuttle/P = path
+	floor_decal_apply(T, F.split_icon, "floors [T.x - F.x],[T.y - F.y]", MAP_VAR(P, varedits, dir), \
+		MAP_VAR(P, varedits, color), MAP_VAR(P, varedits, alpha), BUILTIN_DECAL_LAYER, "-[F.split_file]")
 
 /**
  * Shuttle Glass

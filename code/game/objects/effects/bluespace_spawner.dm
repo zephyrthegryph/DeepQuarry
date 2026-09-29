@@ -4,7 +4,7 @@
 	anchored = 1
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "portalgateway"
-	var/item_to_spawn = /obj/item/stack/telecrystal
+	var/spawn_type = /obj/item/stack/telecrystal
 	var/item_arg = 8
 	var/time_between_spawn = 1 MINUTE
 	var/time_to_end = 45 MINUTES
@@ -28,9 +28,9 @@ DECLARE_START_TIMER(/obj/effect/bspawner, "time_to_end", /datum/proc/qdel_self)
 
 /obj/effect/bspawner/proc/spawn_item()
 	if(!isnull(item_arg))
-		new item_to_spawn(loc,item_arg)
+		new spawn_type(loc,item_arg)
 	else
-		new item_to_spawn(loc)
+		new spawn_type(loc)
 
 /obj/effect/bspawner/min30
 	time_to_end = 30 MINUTES

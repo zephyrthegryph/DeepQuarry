@@ -384,7 +384,7 @@ DECLARE_REF(/datum/affliction/core_dormancy, "held_mob", BACK, null)
 			play_sfx(site, SFX_MACHINES_DEFIB_ZAP)
 			if(patient.mend(TREAT_DEFIBRILLATION, 1))
 				play_sfx(site, SFX_MACHINES_DEFIB_SUCCESS)
-				new /obj/effect/gibspawner/robot(get_turf(site))
+				gibs(get_turf(site), null, /obj/effect/gibspawner/robot)
 				site.atom_say("Contact received! Reassembly nanites calibrated. Estimated time to resucitation: 1 minute 30 seconds")
 	log_game("NANOFORM: [key_name(user)] worked on [key_name(patient)]'s dormant core with [W] via [site]; step [step] -> [revival_step].")
 

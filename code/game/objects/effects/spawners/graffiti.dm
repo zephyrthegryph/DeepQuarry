@@ -8,21 +8,17 @@
 	// If the effect's color is not set, it will be chosen at random.
 	var/color_secondary	// The hexcode for the desired secondary color of your graffiti. If blank, it will inherit this effect's color.
 
-/obj/effect/graffitispawner/Initialize(mapload)
-	..()
+MAP_RESOLVER(/obj/effect/graffitispawner, GLOBAL_PROC_REF(resolve_graffitispawner))
+MAP_RESOLVER_VARS(/obj/effect/graffitispawner, "color_secondary;graffiti_type")
 
+/// MAP_RESOLVER for old scrawlings: a crayon drawing, random colour and shape unless set.
+/proc/resolve_graffitispawner(atom/loc, path, list/varedits)
+	var/obj/effect/graffitispawner/P = path
+	var/color = MAP_VAR(P, varedits, color)
 	if(!color)
 		color = rgb(rand(1,255),rand(1,255),rand(1,255))
-
-	if(!color_secondary)
-		color_secondary = color
-
-	if(!graffiti_type)
-		graffiti_type = pick("rune", "graffiti", "left", "right", "up", "down")
-
-	var/turf/T = get_turf(src)
-	var/obj/effect/decal/cleanable/crayon/C = new(T, color, color_secondary, graffiti_type)
-
-	C.name = name
-
-	return INITIALIZE_HINT_QDEL
+	var/color_secondary = MAP_VAR(P, varedits, color_secondary) || color
+	var/graffiti_type = MAP_VAR(P, varedits, graffiti_type) || pick("rune", "graffiti", "left", "right", "up", "down")
+	var/obj/effect/decal/cleanable/crayon/C = new(get_turf(loc), color, color_secondary, graffiti_type)
+	C.name = MAP_VAR(P, varedits, name)
+	return TRUE

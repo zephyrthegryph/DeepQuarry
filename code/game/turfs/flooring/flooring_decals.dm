@@ -1,6 +1,7 @@
-// These are objects that destroy themselves and add themselves to the
-// decal list of the floor under them. Use them rather than distinct icon_states
-// when mapping in interesting floor designs.
+// Floor decals: map markers painted onto the floor under them at map time (MAP_RESOLVER,
+// code/__defines/map_resolvers.dm). They never become atoms; the turf keeps the image in its
+// decals list (so it re-applies them after cutting overlays). Use them rather than distinct
+// icon_states when mapping interesting floor designs. Painted at runtime by floor_decal_paint().
 GLOBAL_LIST_EMPTY(floor_decals)
 
 /obj/effect/floor_decal
@@ -8,51 +9,54 @@ GLOBAL_LIST_EMPTY(floor_decals)
 	icon = 'icons/turf/flooring/decals_vr.dmi'
 	plane = DECAL_PLANE
 	layer = DECAL_LAYER
-	var/supplied_dir
 
-/obj/effect/floor_decal/Initialize(mapload, newdir, newcolour)
-	supplied_dir = newdir
-	if(newcolour)
-		color = newcolour
-	add_to_turf_decals()
-	..()
-	return INITIALIZE_HINT_QDEL
+MAP_RESOLVER(/obj/effect/floor_decal, GLOBAL_PROC_REF(resolve_floor_decal))
 
-// This is a separate proc from initialize() to facilitiate its caching and other stuff.  Look into it someday.
-/obj/effect/floor_decal/proc/add_to_turf_decals()
-	if(supplied_dir)
-		set_dir(supplied_dir) // TODO - Why can't this line be done in initialize/New()?
-	var/turf/T = get_turf(src)
-	if(istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor))
-		var/cache_key = get_cache_key(T)
-		var/image/I = GLOB.floor_decals[cache_key]
-		if(!I)
-			I = make_decal_image()
-			GLOB.floor_decals[cache_key] = I
-		LAZYADD(T.decals, I) // Add to its decals list (so it remembers to re-apply after it cuts overlays)
-		T.add_overlay(I) // Add to its current overlays too.
-		return T
+/// MAP_RESOLVER for floor decals: adds the decal's image (from its type and the map's var edits)
+/// to the floor's decals.
+/proc/resolve_floor_decal(atom/loc, path, list/varedits)
+	var/obj/effect/floor_decal/P = path
+	floor_decal_apply(get_turf(loc), MAP_VAR(P, varedits, icon), MAP_VAR(P, varedits, icon_state), \
+		MAP_VAR(P, varedits, dir), MAP_VAR(P, varedits, color), MAP_VAR(P, varedits, alpha))
+	return TRUE
 
-/obj/effect/floor_decal/proc/make_decal_image()
-	var/image/I = image(icon = icon, icon_state = icon_state, dir = dir)
-	I.layer = MAPPER_DECAL_LAYER
-	I.color = color
-	I.alpha = alpha
-	return I
+/// Paints decal type `path` onto `T` at runtime (floor painter, generated stations).
+/proc/floor_decal_paint(turf/T, path, dir, colour)
+	var/list/edits = list()
+	if(dir)
+		edits["dir"] = dir
+	if(colour)
+		edits["color"] = colour
+	var/obj/effect/floor_decal/P = path
+	return call(initial(P.map_resolver))(T, path, edits)
 
-/obj/effect/floor_decal/proc/get_cache_key(turf/T)
-	return "[alpha]-[color]-[dir]-[icon_state]-[T.layer]"
+/// Adds one decal image to floor `T` (shared per look), remembered in T.decals.
+/proc/floor_decal_apply(turf/T, icon, icon_state, dir, color, alpha, layer = MAPPER_DECAL_LAYER, extra_key = "")
+	if(!(istype(T, /turf/simulated/floor) || istype(T, /turf/unsimulated/floor) || istype(T, /turf/simulated/shuttle/floor)))
+		return
+	var/cache_key = "[alpha]-[color]-[dir]-[icon_state]-[T.layer]-[icon]-[layer][extra_key]"
+	var/image/I = GLOB.floor_decals[cache_key]
+	if(!I)
+		I = image(icon = icon, icon_state = icon_state, dir = dir)
+		I.layer = layer
+		I.color = color
+		I.alpha = alpha
+		GLOB.floor_decals[cache_key] = I
+	LAZYADD(T.decals, I) // Add to its decals list (so it remembers to re-apply after it cuts overlays)
+	T.add_overlay(I) // Add to its current overlays too.
 
 /obj/effect/floor_decal/reset
 	name = "reset marker"
 
-/obj/effect/floor_decal/reset/Initialize(mapload)
-	..()
-	var/turf/T = get_turf(src)
-	if(T.decals && T.decals.len)
+MAP_RESOLVER(/obj/effect/floor_decal/reset, GLOBAL_PROC_REF(resolve_floor_decal_reset))
+
+/// MAP_RESOLVER for the reset marker: clears the floor's decals.
+/proc/resolve_floor_decal_reset(atom/loc, path, list/varedits)
+	var/turf/T = get_turf(loc)
+	if(T && length(T.decals))
 		T.decals.Cut()
 		T.update_icon()
-	return INITIALIZE_HINT_QDEL
+	return TRUE
 
 /obj/effect/floor_decal/corner
 	icon_state = "corner_white"
@@ -644,9 +648,14 @@ GLOBAL_LIST_EMPTY(floor_decals)
 	name = "random asteroid rubble"
 	icon_state = "asteroid0"
 
-/obj/effect/floor_decal/asteroid/Initialize(mapload, newdir, newcolour)
-	icon_state = "asteroid[rand(0,9)]"
-	. = ..()
+MAP_RESOLVER(/obj/effect/floor_decal/asteroid, GLOBAL_PROC_REF(resolve_floor_decal_asteroid))
+
+/// MAP_RESOLVER for asteroid rubble: one of ten rubble states.
+/proc/resolve_floor_decal_asteroid(atom/loc, path, list/varedits)
+	var/obj/effect/floor_decal/P = path
+	floor_decal_apply(get_turf(loc), MAP_VAR(P, varedits, icon), "asteroid[rand(0,9)]", \
+		MAP_VAR(P, varedits, dir), MAP_VAR(P, varedits, color), MAP_VAR(P, varedits, alpha))
+	return TRUE
 
 /obj/effect/floor_decal/chapel
 	name = "chapel"

@@ -13,64 +13,91 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	alpha = 170
 
 	//The controller we're wanting our device to use
-	var/my_controller_handle
 	var/my_controller_type = /obj/machinery/embedded_controller/radio/airlock
 	//The device we're setting up
-	var/my_device
 	var/my_device_type
 	//Most things have a radio tag of some sort that needs adjusting
 	var/tag_addon
+	/// Sensors and buttons: the command they send.
+	var/command
 
-/obj/effect/map_helper/airlock/Initialize(mapload)
-	..()
-	my_controller_handle = om_handle(get_controller(get_area(src)))
-	my_device = locate_within(get_turf(src), my_device_type)
-	if(!my_device)
-		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find what it wanted at: X:[x] Y:[y] Z:[z]")]"))
-		log_mapping("WARNING: Airlock helper '[name]' couldn't find what it wanted at: X:[x] Y:[y] Z:[z]")
-	else if(!my_controller())
-		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find a controller at: X:[x] Y:[y] Z:[z]")]"))
-		log_mapping("WARNING: Airlock helper '[name]' couldn't find a controller at: X:[x] Y:[y] Z:[z]")
-	else if(!my_controller().id_tag)
-		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' found a controller without an 'id_tag' set: X:[x] Y:[y] Z:[z]")]"))
-		log_mapping("WARNING: Airlock helper '[name]' found a controller without an 'id_tag' set: X:[x] Y:[y] Z:[z]")
+// Resolved at map time; the setup waits for the load so the device and controller exist.
+MAP_RESOLVER(/obj/effect/map_helper/airlock, GLOBAL_PROC_REF(resolve_airlock_helper))
+MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my_device_type;tag_addon")
+
+/proc/resolve_airlock_helper(atom/loc, path, list/varedits)
+	map_resolve_later(GLOBAL_PROC_REF(airlock_helper_setup), get_turf(loc), path, varedits)
+	return TRUE
+
+/// Wires the helper's device on `T` to the nearest controller of its type in the area.
+/proc/airlock_helper_setup(turf/T, path, list/varedits)
+	var/obj/effect/map_helper/airlock/P = path
+	var/name = MAP_VAR(P, varedits, name)
+	if(!T)
+		return
+	var/device = locate_within(T, MAP_VAR(P, varedits, my_device_type))
+	var/obj/machinery/embedded_controller/radio/controller = airlock_helper_controller(T, MAP_VAR(P, varedits, my_controller_type))
+	if(!device)
+		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find what it wanted at: X:[T.x] Y:[T.y] Z:[T.z]")]"))
+		log_mapping("WARNING: Airlock helper '[name]' couldn't find what it wanted at: X:[T.x] Y:[T.y] Z:[T.z]")
+	else if(!controller)
+		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' couldn't find a controller at: X:[T.x] Y:[T.y] Z:[T.z]")]"))
+		log_mapping("WARNING: Airlock helper '[name]' couldn't find a controller at: X:[T.x] Y:[T.y] Z:[T.z]")
+	else if(!controller.id_tag)
+		to_chat(world, span_world("[span_red("WARNING:")][span_black("Airlock helper '[name]' found a controller without an 'id_tag' set: X:[T.x] Y:[T.y] Z:[T.z]")]"))
+		log_mapping("WARNING: Airlock helper '[name]' found a controller without an 'id_tag' set: X:[T.x] Y:[T.y] Z:[T.z]")
 	else
-		setup()
-	return INITIALIZE_HINT_QDEL
+		airlock_helper_configure(device, controller, MAP_VAR(P, varedits, tag_addon), MAP_VAR(P, varedits, command))
 
-/obj/effect/map_helper/airlock/proc/get_controller(area/A)
+/// The controller of `controller_type` in T's area closest to T.
+/proc/airlock_helper_controller(turf/T, controller_type)
+	var/area/A = get_area(T)
 	if(!A)
 		return null
-
-	var/list/potentials = list()
+	var/closest
+	var/closest_dist
 	for(var/obj/O in area_contents_of_type(A, /obj))
-		if(istype(O, my_controller_type))
-			potentials += O
-
-	//Couldn't find one
-	if(!potentials.len)
-		return null
-
-	//Only found one
-	if(potentials.len == 1)
-		return potentials[1]
-
-	//Gotta find closest
-	var/closest = potentials[potentials.len]
-	var/closest_dist = get_dist(src, closest)
-	potentials.len--
-	while(potentials.len)
-		var/C = potentials[potentials.len]
-		potentials.len--
-		var/dist = get_dist(src, C)
-		if(dist < closest_dist)
+		if(!istype(O, controller_type))
+			continue
+		var/dist = get_dist(T, O)
+		if(!closest || dist < closest_dist)
+			closest = O
 			closest_dist = dist
-			closest = C
-
 	return closest
 
-/obj/effect/map_helper/airlock/proc/setup()
-	return //Stub for subtypes
+/// Applies the controller's tags, frequency and access to the helper's device.
+/proc/airlock_helper_configure(device, obj/machinery/embedded_controller/radio/controller, tag_addon, command)
+	if(istype(device, /obj/machinery/door/airlock))
+		var/obj/machinery/door/airlock/my_airlock = device
+		my_airlock.lock()
+		my_airlock.id_tag = controller.id_tag + tag_addon
+		my_airlock.frequency = controller.frequency
+		my_airlock.set_frequency(controller.frequency)
+		my_airlock.req_access = controller.req_access
+		my_airlock.req_one_access = controller.req_one_access
+	else if(istype(device, /obj/machinery/atmospherics/unary/vent_pump))
+		var/obj/machinery/atmospherics/unary/vent_pump/my_pump = device
+		my_pump.frequency = controller.frequency //Unlike doors, these set up their radios in atmos init, so they won't have gone before us.
+		my_pump.id_tag = controller.id_tag + tag_addon
+	else if(istype(device, /obj/machinery/airlock_sensor))
+		var/obj/machinery/airlock_sensor/my_sensor = device
+		my_sensor.id_tag = controller.id_tag + tag_addon
+		my_sensor.master_tag = controller.id_tag
+		my_sensor.frequency = controller.frequency
+		my_sensor.set_frequency(controller.frequency)
+		my_sensor.req_access = controller.req_access
+		my_sensor.req_one_access = controller.req_one_access
+		if(command)
+			my_sensor.command = command
+	else if(istype(device, /obj/machinery/access_button))
+		var/obj/machinery/access_button/my_button = device
+		my_button.master_tag = controller.id_tag
+		my_button.frequency = controller.frequency
+		my_button.set_frequency(controller.frequency)
+		my_button.req_access = controller.req_access
+		my_button.req_one_access = controller.req_one_access
+		if(command)
+			my_button.command = command
 
 /*
 	Doors
@@ -78,15 +105,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/door
 	name = "use a subtype! - airlock door"
 	my_device_type = /obj/machinery/door/airlock
-
-/obj/effect/map_helper/airlock/door/setup()
-	var/obj/machinery/door/airlock/my_airlock = my_device
-	my_airlock.lock()
-	my_airlock.id_tag = my_controller().id_tag + tag_addon
-	my_airlock.frequency = my_controller().frequency
-	my_airlock.set_frequency(my_controller().frequency)
-	my_airlock.req_access = my_controller().req_access
-	my_airlock.req_one_access = my_controller().req_one_access
 
 /obj/effect/map_helper/airlock/door/ext_door
 	name = "exterior airlock door"
@@ -110,11 +128,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/atmos
 	name = "use a subtype! - airlock pump"
 	my_device_type = /obj/machinery/atmospherics/unary/vent_pump
-
-/obj/effect/map_helper/airlock/atmos/setup()
-	var/obj/machinery/atmospherics/unary/vent_pump/my_pump = my_device
-	my_pump.frequency = my_controller().frequency //Unlike doors, these set up their radios in atmos init, so they won't have gone before us.
-	my_pump.id_tag = my_controller().id_tag + tag_addon
 
 /obj/effect/map_helper/airlock/atmos/chamber_pump
 	name = "chamber pump"
@@ -140,18 +153,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/sensor
 	name = "use a subtype! - airlock sensor"
 	my_device_type = /obj/machinery/airlock_sensor
-	var/command
-
-/obj/effect/map_helper/airlock/sensor/setup()
-	var/obj/machinery/airlock_sensor/my_sensor = my_device
-	my_sensor.id_tag = my_controller().id_tag + tag_addon
-	my_sensor.master_tag = my_controller().id_tag
-	my_sensor.frequency = my_controller().frequency
-	my_sensor.set_frequency(my_controller().frequency)
-	my_sensor.req_access = my_controller().req_access
-	my_sensor.req_one_access = my_controller().req_one_access
-	if(command)
-		my_sensor.command = command
 
 /obj/effect/map_helper/airlock/sensor/ext_sensor
 	name = "exterior sensor"
@@ -179,17 +180,6 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 /obj/effect/map_helper/airlock/button
 	name = "Use a subtype! - button"
 	my_device_type = /obj/machinery/access_button
-	var/command
-
-/obj/effect/map_helper/airlock/button/setup()
-	var/obj/machinery/access_button/my_button = my_device
-	my_button.master_tag = my_controller().id_tag
-	my_button.frequency = my_controller().frequency
-	my_button.set_frequency(my_controller().frequency)
-	my_button.req_access = my_controller().req_access
-	my_button.req_one_access = my_controller().req_one_access
-	if(command)
-		my_button.command = command
 
 /obj/effect/map_helper/airlock/button/ext_button
 	name = "exterior button"
@@ -204,6 +194,3 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 	command = "cycle_interior"
 // ition End
 
-/// LC-refs: my controller -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/effect/map_helper/airlock/proc/my_controller() as /obj/machinery/embedded_controller/radio
-	return om_resolve(my_controller_handle)
