@@ -194,7 +194,6 @@
 			var/local = dot ? copytext(input, 1, dot) : input
 			if(!F[local])
 				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input]: [local] is not a declared field of [D.of]"
-		qdel(D)
 
 // ---------------------------------------------------------------- cross-entity derived inputs
 //
@@ -218,7 +217,6 @@
 				if(istext(input) && findtext(input, "."))
 					var/dot = findtext(input, ".")
 					all += list(D.of, copytext(input, 1, dot), copytext(input, dot + 1))
-			qdel(D)
 	var/list/out
 	for(var/i in 1 to length(all) step 3)
 		if(ispath(path, all[i]))

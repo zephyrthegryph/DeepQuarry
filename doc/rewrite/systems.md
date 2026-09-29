@@ -164,6 +164,16 @@ DECLARE_REPEAT(/obj/effect/beam, 2 SECONDS, PROC_REF(pulse), "active")          
   `om_task_periodic_stop(src)` / `MACHINE_WAKE(src)` / `MACHINE_SLEEP(src)` next to a var write or
   first in an `if(<fields>)`/`else` branch).
 - Test: `code/modules/unit_tests/dq_sys_periodic_tests.dm`.
+- **Derived fields declare inputs (rewrite/sys-periodic-2).** `OM_DERIVE_FIELD(T, F, list("a", "b",
+  CHANGE_X))`: inputs are declared fields by name, or raw channels the framework raises for state that is
+  not a field (an item's loc). F's channel is the union of the inputs' channels (`om_field_table()`), so
+  input setters refresh it and no hand `om_changed()` does; boot reports an undeclared input. A
+  cross-entity input `"rel.field"` reads `field` on the entity in the declared field `rel` (object or
+  handle): the holder subscribes to that entity's channel (`rec.relay_in`/`relay_out`, fields.dm), a
+  raise there raises CHANGE_RELATED on the holder, and a write of `rel` resubscribes. Mirrors that
+  copied another object's state (dosimeter film darkness, tanning rack wetness, contagion host_dead) are
+  gone. Lint `derived_hand_raise`: `om_changed(src, CHANGE_EXPLICIT)` in a type with derived fields, or
+  any `om_changed(src, ...)` next to a write of a derived input.
 
 ## 3. Declared UI model
 
