@@ -188,7 +188,7 @@ DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
 	. = ..()
 	// A burst of power changes (every grid binding at boot) shares one pending settle.
 	if(!om_timer_slot_pending(src, "power_settle"))
-		om_after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
+		after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
 
 OWN_TIMER(/obj/machinery/firealarm, power_settle)
 

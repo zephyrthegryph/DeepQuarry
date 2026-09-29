@@ -176,7 +176,7 @@ OWN_TIMER(/mob/living/simple_mob/animal/giant_spider/broodling, deathtimer)
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	om_after_slot(src, "deathtimer", 2 MINUTES, PROC_REF(death))
+	after_slot(src, "deathtimer", 2 MINUTES, PROC_REF(death))
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)

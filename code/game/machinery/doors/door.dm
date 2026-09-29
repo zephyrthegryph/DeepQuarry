@@ -106,7 +106,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 	door_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		om_after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
+		after_slot(src, "door_timer_token", max(deadline - world.time, 0), PROC_REF(door_timer_fired))
 
 /obj/machinery/door/proc/door_timer_fired()
 	door_timer_at = 0

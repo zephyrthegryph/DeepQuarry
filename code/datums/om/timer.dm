@@ -311,7 +311,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// Schedules `proc_ref` after `delay` (as om_after()) into E's timer slot `slot`, replacing any
 /// timer pending there. Returns TRUE if scheduled. E null: the global owner.
-/proc/om_after_slot(datum/E, slot, delay, proc_ref, ...)
+/proc/after_slot(datum/E, slot, delay, proc_ref, ...)
 	if(isnull(E))
 		E = om_global_owner()
 	om_timer_slot_check(E, slot)

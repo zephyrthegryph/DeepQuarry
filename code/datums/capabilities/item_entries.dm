@@ -17,24 +17,56 @@
 // fingerprints and logs the ITEM (the holder). The clicked target is marked only if the handler says so
 // with changed(target).
 
-/// The empty-item-in-hand use: a hand-like entry on an item used on itself. Offered only while the item
-/// is in the actor's hands (REQ_SELF_USE_REACH), answers INPUT_ACTION_SELF_USE. Handler on the item:
-/// (mob/user, ...form answers). Gating arguments as cap_hand(); works_broken/unpowered default FALSE.
-/proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
-	var/datum/capability/entry/C = cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, null, name_proc, applies, blocked_by)
-	var/datum/interaction/capability/E = C.entry
+/// A held item used on itself (attack_self, the Z key): the holder is the item, which must be in the
+/// actor's hands (needs cap_in_hand; `in_inventory = TRUE` also accepts a worn item, for a native verb).
+/// Runs from attack_self() (INTERACTION_ENTRY_SELF), not from clicks on the item, so an empty hand still
+/// picks it up. Answers INPUT_ACTION_SELF_USE. Handler on the item: (mob/user, ...form answers).
+/// Gating arguments as cap_hand() (works_broken/unpowered default FALSE); `entry_type` lets a library
+/// capability give the entry its own why_not().
+/proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown, in_inventory = FALSE, entry_type = /datum/interaction/capability)
+	var/datum/capability/entry/C = new
+	var/datum/interaction/capability/E = new entry_type
+	var/list/all_needs = list(in_inventory ? TYPE_PROC_REF(/atom, cap_in_inventory) : TYPE_PROC_REF(/atom, cap_in_hand))
+	if(needs)
+		all_needs += needs
+	E.name = name
 	E.id = "use_self:[name]:[handler]"
+	E.handler = handler
+	E.behind = behind
+	E.blocked_by = blocked_by
+	E.locked_by = locked_by
+	E.needs = all_needs
+	E.else_say = else_say
+	E.works_broken = works_broken
+	E.works_unpowered = works_unpowered
+	E.log = log
+	E.form = form
+	E.name_proc = name_proc
+	E.applies = applies
+	E.priority = priority || 0
+	E.passes_held = FALSE
+	E.cooldown = cooldown
+	E.duration = delay || 0
 	E.entry = INTERACTION_ENTRY_SELF
+	E.category = INTERACTION_CAT_TOGGLE
 	E.default_action = INPUT_ACTION_SELF_USE
-	E.requires = list(REQ_SELF_USE_REACH)
+	E.cap = C
+	C.entry = E
 	C.key = E.id
+	C.behind = behind
+	C.locked_by = locked_by
+	C.log = log
 	return C
+
+/// needs: the holder (an item) is on the actor: held or worn.
+/atom/proc/cap_in_inventory(mob/user, obj/item/held)
+	return dq_interaction_in_inventory(user, src, held) ? TRUE : "it's not on you"
 
 /// The held item used on another atom. Handler on the item: (mob/user, atom/target, ...form answers).
 /// range 1 is adjacent only; a larger range also fires at a target up to that many tiles away (the old
 /// afterattack with proximity FALSE). target_types (a type or a list) limits what may be clicked.
 /// Gating arguments as cap_hand(); the gate reads the ITEM's state bits.
-/proc/cap_use_at(name, handler, range = 1, target_types, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
+/proc/cap_use_at(name, handler, range = 1, target_types, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE, cooldown)
 	var/datum/capability/entry/use_at/C = new
 	var/datum/interaction/capability/use_at/E = new
 	E.name = name
@@ -55,6 +87,7 @@
 	E.applies = applies
 	E.priority = priority || 0
 	E.passes_held = FALSE
+	E.cooldown = cooldown
 	E.passes_target = TRUE
 	E.category = INTERACTION_CAT_TOGGLE
 	E.cap = C

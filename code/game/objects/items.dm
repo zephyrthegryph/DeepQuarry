@@ -577,7 +577,7 @@ OWN_TIMER(/obj/item, tip_timer)
 //For non-projectile attacks this usually means the attack is blocked.
 //Otherwise should return 0 to indicate that the attack is not affected in any way.
 /obj/item/proc/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
-	return 0
+	return cap_block_hit(user, damage, damage_source, attacker, attack_text) // cap_block() (code/datums/capabilities/library/block.dm)
 
 /obj/item/proc/get_loc_turf()
 	var/atom/L = loc
@@ -936,7 +936,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		om_after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
+		after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
 
 /obj/item/MouseExited()
 	. = ..()
