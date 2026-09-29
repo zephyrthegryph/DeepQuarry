@@ -29,7 +29,7 @@
 
 /proc/generated_station_department_catalog()
 	var/list/catalog = list()
-	var/list/rows = list(
+	var/static/list/rows = list(
 		list("command", "Command", TRUE, list("power", "atmosphere"), list("coordination")),
 		list("ai", "AI Core", TRUE, list("power", "data"), list("data")),
 		list("security", "Security", TRUE, list("power", "coordination", "data"), list("security")),
@@ -121,7 +121,7 @@
 /// One page of the finished plan, so no json_decode call monopolizes a tick. Returns the state to
 /// carry on with, or null once the plan is read (and handed on).
 /datum/generated_station_planner/proc/plan_fetch_slice(list/state)
-	var/list/sections = generated_station_plan_sections()
+	var/list/sections = GLOB.generated_station_plan_sections
 	var/section = sections[state["section"]]
 	var/page_size = section == "tile_rows" ? 4 : 24
 	var/list/page
@@ -152,9 +152,7 @@
 	on_done?.Invoke(spec)
 
 /// The plan's array sections, read a page at a time by plan_fetch_slice().
-/proc/generated_station_plan_sections()
-	var/static/list/sections = list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks")
-	return sections
+GLOBAL_LIST_INIT(generated_station_plan_sections, list("departments", "nodes", "rooms", "doors", "edges", "tile_rows", "content_rooms", "fixtures", "networks"))
 
 /// BYOND numbers cannot preserve every integer above 24 bits or serialize them without
 /// scientific notation. Keep the public seed in its exact range before it crosses the strict
