@@ -130,7 +130,7 @@
 // returns true if open
 // false if closed
 /atom/proc/is_open_container()
-	return flags & OPENCONTAINER
+	return (flags & OPENCONTAINER) || (cap_state & CAP_LID_OPEN)
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 

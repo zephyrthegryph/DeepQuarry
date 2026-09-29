@@ -328,3 +328,36 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 /// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
 /proc/insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc)
 	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, null, name_proc)
+
+/// The capability of `type` the running entry belongs to (so one handler serves several
+/// instances of a capability on a type, one per var), else A's first capability of that type.
+/proc/cap_current(atom/A, type)
+	var/datum/dispatch_context/ctx = GLOB.dispatch_context_now
+	var/datum/interaction/capability/E = ctx?.entry
+	if(ctx?.target == A && istype(E) && istype(E.cap, type))
+		return E.cap
+	return cap_of(A, type)
+
+// ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
+
+/// Any capability with periodic work that wants to run keeps the holder stepping.
+/atom/should_run()
+	. = ..()
+	if(.)
+		return
+	for(var/datum/capability/C as anything in caps_of(src))
+		if(C.cadence && C.cap_should_run(src))
+			return TRUE
+	return FALSE
+
+/// Steps every capability whose periodic work wants to run. A type with its own periodic_step()
+/// calls ..() to keep its capabilities stepping.
+/atom/periodic_step(delta)
+	var/stepped = FALSE
+	for(var/datum/capability/C as anything in caps_of(src))
+		if(C.cadence && C.cap_should_run(src))
+			C.cap_periodic_step(src, delta)
+			stepped = TRUE
+	if(!stepped)
+		return PROCESS_KILL
+	changed(src) // a periodic step is a dispatched call (dx_conventions.md §1)

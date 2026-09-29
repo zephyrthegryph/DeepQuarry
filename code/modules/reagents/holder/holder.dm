@@ -73,6 +73,10 @@
 	// The holder's heat capacity changed with its contents (H3).
 	if(!isnull(my_atom?.heat_body) && !ismob(my_atom))
 		my_atom.heat_capacity_changed()
+	// A reagent change is a dispatched change for holders that draw or show their contents
+	// (the reagent_container capability's fill gauge and examine line).
+	if(isatom(my_atom) && cap_of(my_atom, /datum/capability/reagent_container))
+		changed(my_atom)
 	return
 
 /// Heat capacity of the contents, J/K: each reagent's volume x specific heat.

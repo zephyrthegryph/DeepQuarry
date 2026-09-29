@@ -1,0 +1,84 @@
+// The cell holder and charger capabilities (code/datums/capabilities/library/cell_holder.dm).
+
+/// A cell behind the cover.
+/obj/cap_fixture/cell_box
+	var/obj/item/cell/cell
+
+OWN(/obj/cap_fixture/cell_box, cell, OWN_CONTAINED)
+
+/obj/cap_fixture/cell_box/capabilities()
+	. = ..()
+	. += cell_holder(nameof(cell), /obj/item/cell, behind = COVER)
+
+/// A charger with its own cell slot.
+/obj/cap_fixture/cell_charger
+	var/obj/item/cell/charging
+
+OWN(/obj/cap_fixture/cell_charger, charging, OWN_CONTAINED)
+
+/obj/cap_fixture/cell_charger/capabilities()
+	. = ..()
+	. += cell_holder(nameof(charging))
+	. += charger(rate = 100)
+
+/// Insert and remove: gating behind the cover, ownership, examine, the layer, the empty refusal.
+/datum/unit_test/dx_cap_cell_holder_insert_remove/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/cap_fixture/cell_box/box = allocate(/obj/cap_fixture/cell_box, T)
+	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
+	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
+	var/datum/interaction/capability/insert_cell = dxs_entry(box, "cell:insert:cell:[/obj/item/cell]")
+	var/datum/interaction/capability/remove_cell = dxs_entry(box, "cell:remove:cell")
+	TEST_ASSERT_NOTNULL(insert_cell, "the cell holder offers Insert cell")
+	TEST_ASSERT_NOTNULL(remove_cell, "and Remove cell")
+	TEST_ASSERT(!insert_cell.is_meant(H, box, screwdriver), "a screwdriver is not a cell")
+	TEST_ASSERT("It has no cell." in box.caps_examine(H), "examine says there is no cell")
+	TEST_ASSERT_EQUAL(remove_cell.why_not(H, box, null), "open the cover first", "the holder is behind the cover")
+	cap_set(box, CAP_COVER_OPEN, TRUE)
+	TEST_ASSERT_EQUAL(remove_cell.why_not(H, box, null), "there's no cell in it", "Remove cell refuses while empty")
+	TEST_ASSERT(H.put_in_active_hand(cell), "the human holds the cell")
+	TEST_ASSERT_EQUAL(try_interaction(H, box, cell, INPUT_ACTION_USE), INTERACTION_TRY_RAN, "the held cell goes in through the resolver")
+	TEST_ASSERT_EQUAL(box.cell, cell, "the holder var holds the cell")
+	TEST_ASSERT_EQUAL(cell.loc, box, "the cell is inside")
+	TEST_ASSERT(!H.is_in_hands(cell), "and out of the hand")
+	TEST_ASSERT_EQUAL(insert_cell.why_not(H, box, cell), "there's already a cell in it", "a full holder refuses another")
+	TEST_ASSERT(findtext(jointext(box.caps_examine(H), " "), "charged to"), "examine shows the charge")
+	refresh_flush()
+	TEST_ASSERT(dxs_has_layer(box, "cell"), "the cell layer is drawn")
+	var/list/data = list()
+	box.caps_ui_data(H, data)
+	TEST_ASSERT_EQUAL(data["cell"]?["name"], cell.name, "the UI data names the cell")
+	TEST_ASSERT(remove_cell.perform(H, box, null), "Remove cell runs")
+	TEST_ASSERT_NULL(box.cell, "the var is cleared")
+	TEST_ASSERT(H.is_in_hands(cell), "the cell is in the hand")
+	refresh_flush()
+	TEST_ASSERT(!dxs_has_layer(box, "cell"), "the layer is gone")
+
+/// The charger joins the periodic lane while a cell is in and the holder works, and charges by rate.
+/datum/unit_test/dx_cap_charger_periodic/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/cap_fixture/cell_charger/charger = allocate(/obj/cap_fixture/cell_charger, T)
+	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
+	cell.charge = 0
+	TEST_ASSERT_EQUAL(charger.periodic_cadence, PERIODIC_SECOND, "the holder took the charger's cadence")
+	refresh_flush()
+	TEST_ASSERT(!charger.should_run(), "no cell, no periodic work")
+	TEST_ASSERT(!om_task_periodic_running(charger), "and nothing is running")
+	TEST_ASSERT(charger.cell_holder_insert(nameof(charger.charging), cell, null), "cell_holder_insert() puts the cell in from code")
+	refresh_flush()
+	TEST_ASSERT(charger.should_run(), "with a cell, it should run")
+	TEST_ASSERT(om_task_periodic_running(charger), "and the refresh started it")
+	charger.periodic_step(1 SECOND)
+	TEST_ASSERT_EQUAL(cell.charge, 100, "one second at rate 100 gives 100")
+	cap_set(charger, CAP_BROKEN, TRUE)
+	refresh_flush()
+	TEST_ASSERT(!charger.should_run(), "a broken charger doesn't run")
+	TEST_ASSERT(!om_task_periodic_running(charger), "and the refresh stopped it")
+	TEST_ASSERT_EQUAL(charger.periodic_step(1 SECOND), PROCESS_KILL, "a step with nothing to do parks")
+	TEST_ASSERT_EQUAL(cell.charge, 100, "and gave nothing")
+	cap_set(charger, CAP_BROKEN, FALSE)
+	TEST_ASSERT_EQUAL(charger.cell_holder_eject(nameof(charger.charging), null), cell, "cell_holder_eject() takes it out from code")
+	refresh_flush()
+	TEST_ASSERT(!om_task_periodic_running(charger), "no cell, not running")
+	TEST_ASSERT(!("It is charging \the [cell]." in charger.caps_examine(null)), "no charging line without a cell")
