@@ -1369,18 +1369,24 @@ function assignTestShards(shardCount: number, selection: Set<string> | null, tie
   const loads = new Array(shardCount).fill(0);
   const durations = new Map<string, number>();
   const isSweep = sweepTestPredicate();
-  // Durations from the newest run that covered most of the suite, not just
-  // the newest run: that is often a focused run of a handful of tests.
+  // Each test's newest recorded duration, from the last 30 runs: the newest
+  // run alone is often a focused run of a handful of tests, or a normal-tier
+  // run that never ran the exhaustive tests an `--tier=all` run has to place.
   const runs = listRuns(TEST_RUNS_DIR);
-  for (let i = runs.length - 1; i >= 0; i--) {
-    const run = readJson<TestRun>(runs[i]);
-    if (Object.keys(run.tests).length < 500) continue;
-    for (const [name, entry] of Object.entries(run.tests)) {
-      if (!isSweep(name)) durations.set(name, entry.duration_ds ?? 1);
+  for (let i = runs.length - 1; i >= Math.max(runs.length - 30, 0); i--) {
+    let run: TestRun;
+    try {
+      run = readJson<TestRun>(runs[i]);
+    } catch {
+      continue;
     }
-    break;
+    for (const [name, entry] of Object.entries(run.tests)) {
+      if (!durations.has(name) && !isSweep(name)) durations.set(name, entry.duration_ds ?? 1);
+    }
   }
-  const known = new Set(durations.keys());
+  // Only test types the source scan finds: a run record also holds synthetic
+  // entries (the harness's own checks), which no world could run.
+  const known = new Set<string>();
   for (const name of enumerateUnitTestTypes()) {
     if (!isSweep(name)) known.add(name);
   }
@@ -1596,8 +1602,18 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
   );
   writeJson(`${TEST_RUNS_DIR}/${record.id}.json`, record);
   const shardTimes = runs.map((r) => `${Math.round(r.durationSeconds)}s`).join('/');
+  // A shard that wrote no results lost every test assigned to it: say so in
+  // the summary, so its counts can't read as a complete run.
+  const lost = runs.filter((r) => !r.results).map((r) => r.index);
+  if (lost.length) {
+    Juke.logger.error(
+      `Shard(s) ${lost.join(', ')} wrote no results: their assigned tests did not run, and the counts below `
+        + 'cover only the other shards.',
+    );
+  }
   Juke.logger.info(
-    `Unit-test summary (${shardCount} shards, tier ${tier}): ${record.counts.passed} passed, ${record.counts.failed} failed, `
+    `Unit-test summary (${shardCount} shards, tier ${tier}${lost.length ? `, ${lost.length} SHARD(S) LOST` : ''}): `
+      + `${record.counts.passed} passed, ${record.counts.failed} failed, `
       + `${record.counts.skipped} skipped in ${Math.round(wallSeconds)}s wall (shards ${shardTimes}) / `
       + `~${Math.round(totalCpuSeconds)}s summed CPU (saved ${TEST_RUNS_DIR}/${record.id}.json).`,
   );
