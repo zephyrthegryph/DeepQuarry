@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(in
 	receive_weapon_hit(I, user, silent = FALSE)
 	return INTERACTION_HANDLED_PASS
 
-/obj/structure/mob_spawner/receive_damage(datum/damage_packet/packet)
+/obj/structure/mob_spawner/damage_sink(datum/damage_packet/packet)
 	if(!destructible)
 		return 0
 	return ..()

@@ -1,6 +1,7 @@
 // Generic damage proc (slimes and monkeys).
 /atom/proc/attack_generic(mob/user, damage, attack_verb)
 	if(!damage || !uses_integrity)
+		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
 		return 0
 	user.do_attack_animation(src)
 	visible_message(span_danger("[user] [attack_verb || "attacks"] \the [src]!"))

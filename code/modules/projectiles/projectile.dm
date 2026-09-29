@@ -688,9 +688,13 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 /// injure(). Ion rounds (emp_on_hit) pulse the target instead. Returns the
 /// amount applied.
 /obj/item/projectile/proc/inflict_injury(mob/living/target, def_zone)
-	if(nodamage || !damage || !istype(target))
+	if(!istype(target))
+		return 0
+	if(nodamage || !damage)
+		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
 		return 0
 	if(emp_on_hit)
+		target.react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, src, firer)
 		target.receive_ionic(damage * (100 - target.armor_against(injury_kind, def_zone, armor_penetration)) / 100)
 		return 0
 	return target.receive_projectile(src, def_zone)

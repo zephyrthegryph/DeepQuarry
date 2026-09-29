@@ -68,7 +68,7 @@
 /// Packet sink for the casing/component pool. Stun rounds cause minor
 /// component damage (short-circuits), burns hit components and casing
 /// equally, and physical damage mostly hits the casing.
-/obj/item/modular_computer/receive_damage(datum/damage_packet/packet)
+/obj/item/modular_computer/damage_sink(datum/damage_packet/packet)
 	var/list/amounts = packet.amounts
 	var/physical = amounts[DAMAGE_BLUNT] + amounts[DAMAGE_SHARP] + amounts[DAMAGE_PIERCE] + amounts[DAMAGE_BLAST]
 	var/thermal = amounts[DAMAGE_THERMAL] + amounts[DAMAGE_CORROSIVE]

@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 /// generator's shared energy (deal_shield_damage) by shield damage type.
 /// take_damage() keeps its (damage, SHIELD_DAMTYPE_*, hitby) form for this sink
 /// and for fire and projectiles.
-/obj/effect/shield/receive_damage(datum/damage_packet/packet)
+/obj/effect/shield/damage_sink(datum/damage_packet/packet)
 	if(QDELETED(src) || disabled_for)
 		return 0
 	var/list/amounts = packet.amounts

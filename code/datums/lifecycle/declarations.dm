@@ -152,8 +152,9 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /datum/lifecycle_decls/proc/add_timer(delay, proc_ref)
 	LAZYADD(timers, list(list(delay, proc_ref)))
 
-/datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref)
-	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref))
+/// `skip_unset`: an unset (0) value is not armed at materialize (nothing to lapse; EMP_DISABLE).
+/datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref, skip_unset = FALSE)
+	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref, skip_unset))
 
 /// Validates the declarations against the first instance and works out the work bits.
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
@@ -208,6 +209,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
+	finish_damage_reactions(D)
 
 /// A declared value that may be a var name: the instance's value for a string.
 /proc/lifecycle_decl_value(datum/D, value)

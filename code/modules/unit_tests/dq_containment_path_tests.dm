@@ -17,7 +17,7 @@
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		damage_taken[i] = 0
 
-/obj/item/dq_path_probe/receive_damage(datum/damage_packet/packet)
+/obj/item/dq_path_probe/damage_sink(datum/damage_packet/packet)
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
 		damage_taken[i] += packet.amounts[i]
 	return 0

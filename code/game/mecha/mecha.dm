@@ -1072,7 +1072,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 /// (mech_body_plan().injure), keyed by the kind's armour key. Projectiles and throws
 /// come in through their own body entry points (receive_projectile, receive_thrown),
 /// which apply deflection and penetration first.
-/obj/mecha/receive_damage(datum/damage_packet/packet)
+/obj/mecha/damage_sink(datum/damage_packet/packet)
 	if(QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts

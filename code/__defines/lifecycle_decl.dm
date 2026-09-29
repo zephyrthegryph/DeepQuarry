@@ -104,3 +104,5 @@
 #define DECL_WORK_MATERIALIZE (1<<1)
 #define DECL_WORK_UNBIND (1<<2)
 #define DECL_WORK_APPEARANCE (1<<3)
+/// Damage reactions / REFLECTS / EMP_DISABLE (code/datums/sys/damage_reactions.dm).
+#define DECL_WORK_REACT (1<<4)

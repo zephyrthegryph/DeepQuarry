@@ -16,7 +16,7 @@
 /// with the body rewrite (damage.md §2), with the packet's penetration as
 /// armor_pen. injure() is the one mob mitigation pipeline: armour
 /// (injury_armor(kind, zone)), shields, resistance factors, species.
-/mob/living/receive_damage(datum/damage_packet/packet)
+/mob/living/damage_sink(datum/damage_packet/packet)
 	var/injure_flags = (packet.flags & DAMAGE_PACKET_UNARMORED) ? NONE : INJURE_ARMORED
 	if(packet.flags & DAMAGE_PACKET_PROJECTILE)
 		injure_flags |= INJURE_PROJECTILE
@@ -40,6 +40,8 @@
 	return injure_split(injury_kind, injury_kinds, amount, packet.zone, packet.source || packet.weapon || packet.attacker, packet.penetration, injure_flags)
 
 /mob/living/bullet_act(obj/item/projectile/P, def_zone)
+	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
+		return PROJECTILE_CONTINUE
 	// begin, re-adds stealth removed feature
 	if(istype(get_active_hand(),/obj/item/assembly/signaler))
 		var/obj/item/assembly/signaler/signaler = get_active_hand()
@@ -112,6 +114,19 @@
 	if(severity == 5)	// Effectively nullified.
 		return
 
+	// The family's own EMP effects (human species sensitivity, synthetic simple mobs) run in
+	// its override after this; declared DAMAGE_EMP reactions fire here, once.
+	if(react_to_entry(DAMAGE_ENTRY_EMP, severity))
+		return . | EMP_PROTECT_SELF
+
+/// Explosion entry for mobs: each family's ladder (human, silicon, simple mob ...) chains here
+/// first and stops if this returns TRUE (a component ignored the blast, or a declared
+/// DAMAGE_EXPLOSION reaction blocked it).
+/mob/living/ex_act(severity)
+	if(..())
+		return TRUE
+	return react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)
+
 /mob/living/blob_act(obj/structure/blob/B)
 	if(stat == DEAD || faction == B.faction)
 		return
@@ -142,7 +157,7 @@
 	if(ai_brain)
 		ai_brain.react_to_attack(B)
 
-	receive_split(damage_packet(B, B?.overmind, null, def_zone, NONE, armor_pen), kind, kinds, damage)
+	receive_split(damage_packet(B, B?.overmind, null, def_zone, NONE, armor_pen, 0, null, DAMAGE_ENTRY_BLOB), kind, kinds, damage)
 
 /mob/living/proc/resolve_item_attack(obj/item/I, mob/living/user, target_zone, stance = I_HURT)
 	return target_zone
@@ -273,6 +288,7 @@
 					span_warning("[src] is covered in sharp bits and it hurt when you touched them!"), )
 
 	if(!damage)
+		react_to_entry(DAMAGE_ENTRY_GENERIC, 0, user, user)
 		return
 
 	receive_generic_attack(user, damage)

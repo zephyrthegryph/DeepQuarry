@@ -193,6 +193,8 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
 	if(OM_EMIT(src, /datum/om/event/before/atom_bullet_act, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return
+	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
+		return PROJECTILE_CONTINUE
 
 	P.on_hit(src, 0, def_zone)
 	. = 0

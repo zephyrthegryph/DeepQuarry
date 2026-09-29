@@ -347,7 +347,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /// Packet sink for the adapters with nothing blob-specific to say (fire,
 /// explosions, shocks): each kind is scaled by the blob type's brute or burn
 /// multiplier and offered to its on_received_damage() before it lands on integrity.
-/obj/structure/blob/receive_damage(datum/damage_packet/packet)
+/obj/structure/blob/damage_sink(datum/damage_packet/packet)
 	if(QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
