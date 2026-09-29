@@ -71,6 +71,7 @@
 		GRANT_VERB_HIDE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_verb),
 		GRANT_ACCESS = list("combine" = COMBINE_SUM_PER_KEY),
 		GRANT_TRAIT = list("combine" = COMBINE_SUM_PER_KEY),
+		GRANT_CADENCE = list("combine" = COMBINE_SUM_PER_KEY, "type" = /datum/om/effect/grant_cadence),
 	)
 
 // ---------------------------------------------------------------- relations

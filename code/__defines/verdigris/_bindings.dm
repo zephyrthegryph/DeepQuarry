@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "92e87bfb0975be2b"
+#define VERDIGRIS_ABI "c89ba765bd3489cc"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1830,6 +1830,17 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_sched_stats_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
+
+/// Changes the world's step length (the gas publication cadence: a rupture asks
+/// for a short step for a while, the last grant to expire restores the default).
+/// Every law integrates the new `dt` from the next step on. Returns the step
+/// length now in effect, in seconds; a non-finite or non-positive `seconds` is
+/// refused and the current length is returned.
+// /proc/vg_world_set_dt (verdigris/ffi/src/world.rs)
+/proc/vg_world_set_dt(seconds)
+	var/static/__f = load_ext(VERDIGRIS, "byond:world_set_dt_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(seconds)
 
 // /proc/vg_shutdown (verdigris/ffi/src/world.rs)
 /proc/vg_world_shutdown()

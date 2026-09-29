@@ -13,6 +13,8 @@ for lint in \
 	scheduler_lints.py \
 	ownership_lint.py \
 	lifecycle_counts_lint.py \
+	qdel_src_lint.py \
+	base_vars_lint.py \
 	lifecycle_lint.py \
 	containment_lint.py \
 	latent_lint.py \

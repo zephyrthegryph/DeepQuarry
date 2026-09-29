@@ -55,6 +55,10 @@ SUBSYSTEM_DEF(vg)
 	/// `wait` itself moved instead of adding a second tick caller) — 100
 	/// atoms per 10s was ~10/s; 5 per 0.5s keeps that rate.
 	var/sweep_batch = 5
+	/// Holds the GRANT_CADENCE grants (code/datums/om/cadence.dm), created on first use.
+	var/datum/cadence/ssvg/cadence
+	/// The step length last handed to Rust (vg_world_set_dt), seconds; `wait` follows it.
+	var/current_dt = CADENCE_BASE_DT
 
 	/// COUNT metric (§12): must stay 0. Repairs this sweep / lifetime.
 	var/last_repairs = 0
@@ -66,6 +70,8 @@ SUBSYSTEM_DEF(vg)
 	entities_by_index = SSvg.entities_by_index
 	sweep_index = SSvg.sweep_index
 	total_repairs = SSvg.total_repairs
+	cadence = SSvg.cadence
+	current_dt = SSvg.current_dt
 
 /datum/controller/subsystem/vg/stat_entry(msg)
 	msg = "B:[length(bound)] R:[total_repairs]"
@@ -213,3 +219,28 @@ SUBSYSTEM_DEF(vg)
 	if(!istype(mover) || !mover.vg_entity)
 		return "(unbound)"
 	return vg_entity_describe(mover.vg_entity)
+
+/// The cadence datum to hold GRANT_CADENCE grants on.
+/datum/controller/subsystem/vg/proc/get_cadence()
+	if(!cadence)
+		cadence = new
+	return cadence
+
+/// Runs the world (and this subsystem) at the shortest step any cadence grant names.
+/datum/controller/subsystem/vg/proc/apply_cadence()
+	set_cadence(get_cadence().dt_seconds())
+
+/// Sets the step length: Rust integrates it from the next step, and this subsystem fires at it.
+/// The reconcile sweep keeps its atoms-per-second rate.
+/datum/controller/subsystem/vg/proc/set_cadence(dt)
+	if(dt == current_dt)
+		return
+	current_dt = vg_world_set_dt(dt)
+	wait = current_dt SECONDS
+	sweep_batch = max(1, round(initial(sweep_batch) * current_dt / CADENCE_BASE_DT))
+
+/// The cadence holder for SSvg: a step change reaches Rust and the subsystem's wait.
+/datum/cadence/ssvg
+
+/datum/cadence/ssvg/cadence_changed()
+	SSvg.apply_cadence()

@@ -348,6 +348,19 @@ impl Pacer {
         self.dt
     }
 
+    /// Changes the fixed step. The carry (real time owed a step) is kept, so
+    /// no time is lost or invented at the change; if the new step is shorter
+    /// the carry may already owe several steps, which the backlog cap bounds.
+    /// A non-finite or non-positive `dt` is refused (returns `false`) and the
+    /// pacer is unchanged.
+    pub fn set_dt(&mut self, dt: Seconds) -> bool {
+        if !dt.0.is_finite() || dt.0 <= 0.0 {
+            return false;
+        }
+        self.dt = dt;
+        true
+    }
+
     /// Real time still owed a step, not yet enough for one.
     #[must_use]
     pub const fn carry(&self) -> f64 {
@@ -510,5 +523,23 @@ mod tests {
         let mut p = Pacer::new(Seconds(1.0), 3);
         assert_eq!(p.advance(Seconds(10.0)), 3);
         assert_eq!(p.carry(), 0.0);
+    }
+
+    #[test]
+    fn pacer_set_dt_keeps_the_carry_and_refuses_nonsense() {
+        let mut p = Pacer::new(Seconds(0.5), 10);
+        assert_eq!(p.advance(Seconds(0.4)), 0);
+        assert!(p.set_dt(Seconds(0.1)));
+        assert_eq!(p.dt(), Seconds(0.1));
+        // 0.4 s was owed at the old step; at 0.1 s that is four steps.
+        assert_eq!(p.advance(Seconds(0.0)), 4);
+        assert!(!p.set_dt(Seconds(0.0)));
+        assert!(!p.set_dt(Seconds(-1.0)));
+        assert!(!p.set_dt(Seconds(f64::NAN)));
+        assert_eq!(p.dt(), Seconds(0.1));
+        // Back to the slow step: nothing is owed until 0.5 s has passed.
+        assert!(p.set_dt(Seconds(0.5)));
+        assert_eq!(p.advance(Seconds(0.3)), 0);
+        assert_eq!(p.advance(Seconds(0.2)), 1);
     }
 }
