@@ -43,7 +43,6 @@
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
-	VAR_PRIVATE/occupant_handle = null
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	locked = 0
@@ -91,17 +90,18 @@ DECLARE_REF(/obj/machinery/clonepod, "containers", SPILL_LIST, null)
 	if(target.get_occupant() == source)
 		target.set_occupant(null)
 
-OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, CHANGE_MACHINE_OCCUPANT)
+/// Handle to the clone growing in the pod; set_occupant() is the only caller of its setter.
+OM_FIELD(/obj/machinery/clonepod, occupant_handle, null, CHANGE_MACHINE_OCCUPANT)
+OM_DERIVE_FIELD(/obj/machinery/clonepod, clonepod_occupied, list("occupant_handle"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occupied")
 
-/// Derived field: the pod holds a clone (set_occupant() raises CHANGE_MACHINE_OCCUPANT).
+/// Derived field: the pod holds a clone.
 /obj/machinery/clonepod/proc/clonepod_occupied()
 	return occupant_handle ? TRUE : FALSE
 
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	occupant_handle = L ? om_handle(L) : null
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
+	set_occupant_handle(L ? om_handle(L) : null)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)

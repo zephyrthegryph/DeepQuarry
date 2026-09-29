@@ -4664,8 +4664,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/vending/vendor = new(T)
 	vendor.set_stat(0)
 	vendor.set_shut_up(TRUE)
-	vendor.seconds_electrified = 0
-	vendor.shoot_inventory = FALSE
+	vendor.set_seconds_electrified(0)
+	vendor.set_shoot_inventory(FALSE)
 	TEST_ASSERT(test_machine_idle(vendor), "silent stable vending machine remained scheduled")
 	var/obj/machinery/computer/security/security_console = new(T)
 	TEST_ASSERT(test_machine_idle(security_console), "passive computer inherited permanent polling")

@@ -155,9 +155,9 @@
 	E.replaced(src)
 
 	// Reconnect the organ and children as normally this is done with surgery.
-	E.status &= ~ORGAN_CUT_AWAY
+	E.set_status(E.status & ~ORGAN_CUT_AWAY)
 	for(var/obj/item/organ/external/child in E.children)
-		child.status &= ~ORGAN_CUT_AWAY
+		child.set_status(child.status & ~ORGAN_CUT_AWAY)
 
 	act_message(src, null, MSG_SELF(span_notice("You attach %I% to your body!")), MSG_OTHERS(span_notice("%U% attaches %I% to %THEIR% body!")), item = E)
 	regenerate_icons() // Not sure why this isn't called by removed(), but without it we don't update our limb appearance.

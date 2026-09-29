@@ -59,7 +59,7 @@
 			burn_cache += W.damage
 		else
 			trauma_cache += W.damage
-	damage = min(max_damage, trauma_cache + burn_cache)
+	set_damage(min(max_damage, trauma_cache + burn_cache))
 
 /// Wound afflictions located on this limb, attached or detached. D24: a cached
 /// read-only view rebuilt only when a wound changed; `.Copy()` it before mutating.

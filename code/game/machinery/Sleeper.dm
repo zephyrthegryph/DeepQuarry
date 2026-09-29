@@ -122,10 +122,11 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	active_power_usage = 200 //builtin health analyzer, dialysis machine, injectors.
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_containers/glass/beaker/large)
-OM_DERIVE_FIELD(/obj/machinery/sleeper, sleeper_occupied, CHANGE_MACHINE_OCCUPANT)
+OM_DERIVE_FIELD(/obj/machinery/sleeper, sleeper_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("operable", "sleeper_occupied"))
 
-/// Derived field: the sleeper holds someone. go_in/go_out raise CHANGE_MACHINE_OCCUPANT.
+/// Derived field: the sleeper holds someone. Entering or leaving the occupant slot links or unlinks
+/// its slot relation, which raises CHANGE_RELATION_ADDED/REMOVED on the sleeper (om_link/om_unlink).
 /obj/machinery/sleeper/proc/sleeper_occupied()
 	return slot_item(OCCUPANT_SLOT_SLEEPER) ? TRUE : FALSE
 
@@ -524,7 +525,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return
 	occupant = M
 	set_use_power(USE_POWER_ACTIVE)
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	occupant.cozyloop.start() // Cozy Music
 	update_icon()
 
@@ -545,7 +545,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	update_icon()
 	toggle_filter()
 	toggle_pump()
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)

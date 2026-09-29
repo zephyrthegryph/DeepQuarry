@@ -211,7 +211,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 /// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 OM_FIELD(/obj/machinery/portable_atmospherics/hydroponics, frozen, 0, CHANGE_MACHINE_SETTINGS)
 /// Everything but cryogenically frozen (frozen == 1) grows.
-OM_DERIVE_FIELD(/obj/machinery/portable_atmospherics/hydroponics, not_frozen, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/portable_atmospherics/hydroponics, not_frozen, list("frozen"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE_PIPELINE, "not_frozen")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()

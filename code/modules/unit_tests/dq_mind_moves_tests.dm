@@ -42,7 +42,7 @@
 	var/mob/living/carbon/human/surgeon = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, 30, /datum/affliction/lesion/contusion)
-	brain.status |= ORGAN_DEAD
+	brain.set_status(brain.status | ORGAN_DEAD)
 	TEST_ASSERT(brain.is_brain_dead(), "setup: a dead brain organ is brain dead")
 
 	TEST_ASSERT(!brain.restore_status(), "a dead brain's status can't be restored")

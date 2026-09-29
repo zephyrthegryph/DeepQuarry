@@ -42,11 +42,11 @@ OM_FIELD(/obj/machinery/field_generator, Varedit_start, FALSE, CHANGE_MACHINE_SE
 /// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
 OM_FIELD(/obj/machinery/field_generator, warming_up, 0, CHANGE_MACHINE_SETTINGS)
 /// Fields up (active 2) and drawing power, or an admin quick-start pending.
-OM_DERIVE_FIELD(/obj/machinery/field_generator, fields_running, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/field_generator, fields_running, list("active", "Varedit_start"))
 /obj/machinery/field_generator/proc/fields_running()
 	return active == 2 || Varedit_start
 /// Switched on (active 1) and still warming up.
-OM_DERIVE_FIELD(/obj/machinery/field_generator, warming, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/field_generator, warming, list("active", "warming_up"))
 /obj/machinery/field_generator/proc/warming()
 	return active == 1 && warming_up && warming_up < 3
 

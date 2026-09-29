@@ -42,7 +42,7 @@ log transactions
 
 
 /// Has mains power (NOPOWER clear); the timers and cash dispensing only run while it does.
-OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, CHANGE_MACHINE_POWER)
+OM_DERIVE_FIELD(/obj/machinery/atm, has_mains_power, list("stat"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/atm, MACHINE_PIPELINE, "has_mains_power")
 
 /obj/machinery/atm/proc/has_mains_power()

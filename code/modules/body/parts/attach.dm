@@ -292,8 +292,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 OM_FIELD_TYPED(/obj/item/organ, tmp, left_body_loose, FALSE, CHANGE_EXPLICIT)
 /// A part out of a body that hasn't died: it ticks on its own (decay, loose afflictions) while
 /// this holds (DECLARE_PERIODIC_WHILE). Attached parts are ticked by the body's organs stage.
-/// Death and revival raise CHANGE_EXPLICIT (die(), peridaxon, bioregeneration).
-OM_DERIVE_FIELD(/obj/item/organ, organ_ticks_loose, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/organ, organ_ticks_loose, list("left_body_loose", "status", "robotic", "damage", "max_damage"))
 DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
 
 /obj/item/organ/proc/organ_ticks_loose()
@@ -333,4 +332,4 @@ DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
 
 /obj/item/organ/external/left_body(mob/living/M)
 	..()
-	status |= ORGAN_CUT_AWAY // checked by the reattachment surgery
+	set_status(status | ORGAN_CUT_AWAY) // checked by the reattachment surgery

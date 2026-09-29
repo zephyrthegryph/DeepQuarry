@@ -5,7 +5,7 @@
 // cooking rule (code/datums/rules/declarations.dm) decides when food is cooked.
 /// A cooker steps while cooking, while on (its thermostat; it hibernates at temperature on a heat
 /// watch), and while off until its heat body has cooled back to the room and been released.
-OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, list("cooking", "stat", "heat_body"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooker_needs_step")
 
 /obj/machinery/appliance/cooker/proc/cooker_needs_step()

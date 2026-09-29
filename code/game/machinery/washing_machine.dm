@@ -108,7 +108,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 			for(var/i=0,i<10,i++)
 				our_human.injure(INJURY_BLUNT, max_health_coefficient*damage_modifier, pick(BP_ALL), src) //Let's randomly do damage across the body. One limb might get hurt more than the others. At 100% damge mod, does 90% of max hp in damage.
 			continue
-		mobs.stat = DEAD //Kill them so they can't interact anymore.
+		mobs.set_stat(DEAD) //Kill them so they can't interact anymore.
 
 	if(has_mobs)
 		set_state(BLOODY_CLOSED)

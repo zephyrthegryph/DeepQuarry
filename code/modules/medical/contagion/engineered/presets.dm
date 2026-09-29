@@ -35,7 +35,7 @@
 	for(var/guaranteed_symptom in guaranteed_symptoms)
 		symptoms += new guaranteed_symptom
 	if(!mute)
-		virus_modifiers |= IMMUTABLE
+		set_virus_modifiers(virus_modifiers | IMMUTABLE)
 	Finalize()
 
 	if(randomname)
@@ -55,7 +55,7 @@
 			sickrisk = 0.5
 		if(SPECIES_XENOCHIMERA)
 			var/datum/affliction/contagion/roanoke/dormant_roanoke = new
-			dormant_roanoke.virus_modifiers |= DORMANT
+			dormant_roanoke.set_virus_modifiers(dormant_roanoke.virus_modifiers | DORMANT)
 			force_contagion(dormant_roanoke, TRUE)
 			return TRUE
 		if(SPECIES_PROMETHEAN) // Too clean
@@ -64,8 +64,8 @@
 	if(prob(min(100, (biohazard * sickrisk))))
 		var/symptom_amt = rand(min_symptoms, max_symptoms)
 		var/datum/affliction/contagion/engineered/dormant_disease = new /datum/affliction/contagion/engineered/random(symptom_amt, max_level, min_level, guaranteed_symptoms, infected = src)
-		dormant_disease.virus_modifiers |= DORMANT
-		dormant_disease.spread_flags = DISEASE_SPREAD_NON_CONTAGIOUS
+		dormant_disease.set_virus_modifiers(dormant_disease.virus_modifiers | DORMANT)
+		dormant_disease.set_spread_flags(DISEASE_SPREAD_NON_CONTAGIOUS)
 		dormant_disease.spread_text = "None"
 		dormant_disease.visibility_flags |= HIDDEN_SCANNER
 		force_contagion(dormant_disease, TRUE)

@@ -1297,6 +1297,9 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			LAZYADD(T.services, S)
 			LAZYADD(T.service_masks, mine)
 	T.sys_periodic_mask = sys_periodic_mask_for(path)
+	T.derived_relays = om_derived_relays_of(path)
+	for(var/i in 1 to length(T.derived_relays) step 2)
+		T.relay_mask |= om_field_table(path)[T.derived_relays[i]]
 	return T
 
 /proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b)

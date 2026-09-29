@@ -62,7 +62,7 @@
 /obj/item/organ/proc/restore_status()
 	if(is_beyond_repair())
 		return FALSE
-	status = 0
+	set_status(0)
 	return TRUE
 
 /// Lesion afflictions on this organ, attached or detached.
@@ -88,7 +88,7 @@
 	for(var/datum/affliction/lesion/L in source)
 		if(L.location == src)
 			total += L.damage
-	damage = max_damage ? min(max_damage, total) : total
+	set_damage(max_damage ? min(max_damage, total) : total)
 	owner?.body?.invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_ORGANS)
 
 /// Put `amount` of `lesion_type` on this organ, merging into an existing

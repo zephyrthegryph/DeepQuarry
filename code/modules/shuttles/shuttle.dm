@@ -40,7 +40,7 @@
 OM_FLAG_FIELD(/datum/shuttle, shuttle_flags, SHUTTLE_FLAGS_NONE, CHANGE_DATUM_A)
 OM_FIELD_SETTER(/datum/shuttle, process_state, CHANGE_DATUM_A)
 /// TRUE while the shuttle has launch/move work: it processes and it is launching, moving or always processing.
-OM_DERIVE_FIELD(/datum/shuttle, shuttle_working, CHANGE_DATUM_A)
+OM_DERIVE_FIELD(/datum/shuttle, shuttle_working, list("shuttle_flags", "process_state"))
 /// Long jump in transit: the destination landmark (OM handle), null otherwise.
 OM_FIELD_TYPED(/datum/shuttle, tmp, transit_dest_handle, null, CHANGE_DATUM_B)
 /// Long jump in transit: where it started (OM handle), and whether the landing warning was made.
@@ -99,12 +99,10 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		GLOB.supply_service.shuttle = null
 	return ..()
 
+/// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A),
+/// which also refreshes shuttle_working.
 /datum/shuttle/proc/set_process_state(new_state)
-	if(process_state == new_state)
-		return FALSE
-	process_state = new_state
-	om_changed(src, CHANGE_DATUM_A)
-	return TRUE
+	return om_set(src, "process_state", new_state)
 
 // This is called after all shuttles have been initialized by SSshuttles, but before sectors have been initialized.
 // Importantly for subtypes, all shuttles will have been initialized and mothershuttles hooked up by the time this is called.

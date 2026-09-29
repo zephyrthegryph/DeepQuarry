@@ -32,7 +32,7 @@
 			parent_organ = force_location
 			return ..(mapload, internal)
 		// invalid, spawn as dead...
-		status = ORGAN_DEAD
+		set_status(ORGAN_DEAD)
 	else
 		// engineered ones don't do all of the above
 		if(force_location)

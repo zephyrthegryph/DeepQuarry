@@ -16,7 +16,7 @@
 OM_FIELD(/obj/machinery/shield_diffuser, alarm, 0, CHANGE_MACHINE_SETTINGS)
 OM_FIELD(/obj/machinery/shield_diffuser, enabled, TRUE, CHANGE_MACHINE_SETTINGS)
 /// It has a step to take: an alarm to count down, or a diffuse pass while enabled.
-OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/shield_diffuser, diffuser_has_work, list("enabled", "alarm"))
 /obj/machinery/shield_diffuser/proc/diffuser_has_work()
 	return enabled || alarm
 DECLARE_PERIODIC_WHILE(/obj/machinery/shield_diffuser, MACHINE_PIPELINE, "diffuser_has_work")

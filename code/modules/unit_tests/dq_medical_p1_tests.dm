@@ -343,10 +343,10 @@
 
 /datum/unit_test/dq_p1_d7_scanner_assisted_label/Run()
 	var/obj/item/organ/internal/heart/O = allocate(/obj/item/organ/internal/heart)
-	O.robotic = ORGAN_ASSISTED
+	O.set_robotic(ORGAN_ASSISTED)
 	TEST_ASSERT_EQUAL(bodyscanner_organ_kind(O), "Assisted", "an assisted organ reads Assisted")
-	O.robotic = 0
-	O.status |= ORGAN_ASSISTED
+	O.set_robotic(0)
+	O.set_status(O.status | ORGAN_ASSISTED)
 	TEST_ASSERT_NULL(bodyscanner_organ_kind(O), "a status bit with the same value is not a prosthesis")
 
 /// D8: resection and retinal repair can reach inside bone.

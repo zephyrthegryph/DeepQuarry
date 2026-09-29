@@ -31,14 +31,14 @@
 	originMachine_handle = DEFAULTPICK(vendingMachines, null)
 	LAZYREMOVE(vendingMachines, originMachine_handle)
 	originMachine().set_shut_up(FALSE)
-	originMachine().shoot_inventory = 1
+	originMachine().set_shoot_inventory(1)
 
 
 /datum/event/brand_intelligence/tick()
 	if(!length(vendingMachines) || !originMachine() || originMachine().shut_up) //if every machine is infected, or if the original vending machine is missing or has it's voice switch flipped
 		// Effects when 'source' machine is destroyed/silenced
 		for(var/obj/machinery/vending/saved in om_resolve_all(infectedVendingMachines))
-			saved.shoot_inventory = 0
+			saved.set_shoot_inventory(0)
 		if(originMachine())
 			originMachine().speak("I am... vanquished. My people will remem...ber...meeee.")
 			originMachine().visible_message("[originMachine()] beeps and seems lifeless.")
@@ -54,7 +54,7 @@
 			if(infectedMachine)
 				LAZYADD(infectedVendingMachines, infected_handle)
 				infectedMachine.set_shut_up(FALSE)
-				infectedMachine.shoot_inventory = 1
+				infectedMachine.set_shoot_inventory(1)
 
 			if(ISMULTIPLE(activeFor, 12))
 				originMachine().balloon_alert_visible(pick(rampant_speeches))
@@ -62,7 +62,7 @@
 /datum/event/brand_intelligence/end()
 	for(var/obj/machinery/vending/infectedMachine in om_resolve_all(infectedVendingMachines))
 		infectedMachine.set_shut_up(TRUE)
-		infectedMachine.shoot_inventory = 0
+		infectedMachine.set_shoot_inventory(0)
 
 /// LC-refs: the originMachine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending

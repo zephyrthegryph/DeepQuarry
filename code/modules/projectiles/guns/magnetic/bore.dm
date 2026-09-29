@@ -60,7 +60,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 		if(cell && removable_components)
 			removing = cell
-			cell = null
+			set_cell(null)
 
 		if(removing)
 			user.put_in_hands(removing)
@@ -206,9 +206,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 	actions_types = list(/datum/action/item_action/toggle_internal_generator)
 
-	var/generator_state = GEN_OFF
 	var/datum/looping_sound/small_motor/soundloop
 	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
+
+/// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
+OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHANGE_EXPLICIT)
 
 /obj/item/gun/magnetic/matfed/phoronbore/consume_next_projectile()
 	if(!check_ammo() || !capacitor || capacitor.charge < power_cost)
@@ -238,7 +240,7 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop", OWNED, null)
 
 /// Replaces /obj/item/gun/magnetic's capacitor_unsettled declaration: the bore also steps while its
 /// generator runs, whatever the capacitor is doing.
-OM_DERIVE_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, bore_busy, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, bore_busy, list("generator_state", "capacitor_unsettled"))
 /obj/item/gun/magnetic/matfed/phoronbore/proc/bore_busy()
 	return generator_state > GEN_OFF || capacitor_unsettled()
 DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, "bore_busy")
@@ -247,13 +249,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
 		soundloop.stop()
-		generator_state = GEN_OFF
+		set_generator_state(GEN_OFF)
 
 	else if(generator_state > GEN_OFF)
 		if(generator_state == GEN_IDLE && (cell?.percent() < 80 || (!cell && capacitor && capacitor.charge/capacitor.max_charge < 0.8)))
-			generator_state = GEN_ACTIVE
+			set_generator_state(GEN_ACTIVE)
 		else if(generator_state == GEN_ACTIVE && (!cell || cell.fully_charged()) && (!capacitor || capacitor.charge == capacitor.max_charge))
-			generator_state = GEN_IDLE
+			set_generator_state(GEN_IDLE)
 		soundloop.speed = generator_state
 		generator_generate()
 
@@ -284,13 +286,13 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 		return
 
 	else if(!generator_state)
-		generator_state = GEN_STARTING
+		set_generator_state(GEN_STARTING)
 		pull_cord(user, (!cell || cell.charge < 100) ? rand(1,4) : 0)
 
 	else if(generator_state > GEN_OFF && COOLDOWN_FINISHED(src, stop_lockout_cooldown))
 		soundloop.stop()
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")
-		generator_state = GEN_OFF
+		set_generator_state(GEN_OFF)
 
 /// Pulls the cord (2 seconds a pull, a timed action each) until the motor starts.
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_cord(mob/living/user, pulls)
@@ -302,10 +304,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, 
 	COOLDOWN_START(src, stop_lockout_cooldown, 3 SECONDS)
 	cell?.use(100)
 	audible_message(span_notice("\The [src] starts chugging."),span_notice("A motor noise starts up."), runemessage = "whirr")
-	generator_state = GEN_IDLE
+	set_generator_state(GEN_IDLE)
 
 /obj/item/gun/magnetic/matfed/phoronbore/proc/pull_abandoned()
-	generator_state = GEN_OFF
+	set_generator_state(GEN_OFF)
 
 /obj/item/gun/magnetic/matfed/phoronbore/loaded
 	cell = /obj/item/cell/apc

@@ -242,7 +242,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 OM_FIELD(/obj/item/beacon_locator, scan_ticks, 0, CHANGE_EXPLICIT)
 OM_FIELD_TYPED(/obj/item/beacon_locator, tmp, target_radio_handle, null, CHANGE_EXPLICIT)
 /// Scanning for a beacon or tracking one: derived from scan_ticks and target_radio_handle.
-OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/beacon_locator, locating, list("scan_ticks", "target_radio_handle"))
 /obj/item/beacon_locator/proc/locating()
 	return scan_ticks || target_radio_handle
 DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")

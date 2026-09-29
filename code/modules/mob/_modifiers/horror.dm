@@ -409,7 +409,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		ex_organ.dislocated = -1
 		ex_organ.nonsolid = TRUE
 		ex_organ.spread_dam = TRUE
-		ex_organ.max_damage = 5 //VERY fragile, now.
+		ex_organ.set_max_damage(5) //VERY fragile, now.
 		ex_organ.vital = FALSE
 		ex_organ.encased = FALSE
 		ex_organ.cannot_gib = FALSE
@@ -551,7 +551,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 	for(var/obj/item/organ/external/limb in unfortunate_soul.bad_external_organs)
 		limb.germ_level = max(0, limb.germ_level - 25)
 		if(limb.status & ORGAN_DEAD && (limb.damage < limb.is_broken()) && (limb.germ_level < INFECTION_LEVEL_ONE)) //If we have any dead organs, try to revive them.
-			limb.status = 0
+			limb.set_status(0)
 
 	COOLDOWN_START(state, heal_tick_cooldown_until, heal_tick_cooldown)
 

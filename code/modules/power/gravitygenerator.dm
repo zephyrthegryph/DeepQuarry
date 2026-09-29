@@ -142,7 +142,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
 OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
 /// Not BROKEN (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
-OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/gravity_generator/main, unbroken, list("stat"))
 /obj/machinery/gravity_generator/main/proc/unbroken()
 	return !has_stat(BROKEN)
 

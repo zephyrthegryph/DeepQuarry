@@ -19,16 +19,16 @@
 	var/tmp/locked_by_handle	// The ID that locked this assembly
 	var/tmp/access_card_handle	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
-	/// Cached flag: TRUE when this assembly has at least one circuit that draws or
-	/// makes power (so handle_idle_power() actually has work to do). Invalidated to
-	/// null on circuit add/remove via Entered()/Exited() and recomputed lazily.
-	var/tmp/power_relevant = null
+
+/// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
+/// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
+/// Entered()/Exited(); null until first computed.
+OM_FIELD_TYPED(/obj/item/electronic_assembly, tmp, power_relevant, null, CHANGE_EXPLICIT)
 
 DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/device)
 
-/// Has power-relevant work (a battery plus a circuit that makes or draws idle power). Entered()/
-/// Exited() drop the cache and raise CHANGE_EXPLICIT; the value is recomputed when next read.
-OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, CHANGE_EXPLICIT)
+/// Has power-relevant work (a battery plus a circuit that makes or draws idle power).
+OM_DERIVE_FIELD(/obj/item/electronic_assembly, has_power_work, list("power_relevant"))
 DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_work")
 
 /obj/item/electronic_assembly/proc/has_power_work()
@@ -39,30 +39,28 @@ DECLARE_PERIODIC_WHILE(/obj/item/electronic_assembly, PERIODIC_SLOW, "has_power_
 /obj/item/electronic_assembly/periodic_step(seconds_per_tick)
 	handle_idle_power(seconds_per_tick)
 
-// Cache invalidation: any circuit entering/leaving contents can change whether
-// there's power-relevant work to do. Recomputed lazily when has_power_work() is next read.
+// Any circuit or cell entering/leaving contents can change whether there's power-relevant work to
+// do: recompute now, so set_power_relevant() raises only on a real change.
 /obj/item/electronic_assembly/Entered(atom/movable/AM, atom/old_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
-		power_relevant = null
-		om_changed(src, CHANGE_EXPLICIT)
+		recompute_power_relevant()
 
 /obj/item/electronic_assembly/Exited(atom/movable/AM, atom/new_loc)
 	. = ..()
 	if(istype(AM, /obj/item/integrated_circuit) || istype(AM, /obj/item/cell))
-		power_relevant = null
-		om_changed(src, CHANGE_EXPLICIT)
+		recompute_power_relevant()
 
 // (Re)computes whether handle_idle_power() has anything to do: a battery to draw
 // from plus at least one circuit that makes or draws idle power.
 /obj/item/electronic_assembly/proc/recompute_power_relevant()
-	power_relevant = FALSE
-	if(!battery || battery.loc != src)
-		return
-	for(var/obj/item/integrated_circuit/IC in contents)
-		if(IC.power_draw_idle || istype(IC, /obj/item/integrated_circuit/passive/power))
-			power_relevant = TRUE
-			return
+	var/relevant = FALSE
+	if(battery && battery.loc == src)
+		for(var/obj/item/integrated_circuit/IC in contents)
+			if(IC.power_draw_idle || istype(IC, /obj/item/integrated_circuit/passive/power))
+				relevant = TRUE
+				break
+	set_power_relevant(relevant)
 
 /obj/item/electronic_assembly/proc/handle_idle_power(seconds_per_tick)
 	net_power = 0 // Reset this. This gets increased/decreased with [give/draw]_power() outside of this loop.

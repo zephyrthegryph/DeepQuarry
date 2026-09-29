@@ -132,7 +132,7 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 /datum/body/proc/add_affliction(datum/affliction/A, location = null)
 	if(!A || A.body == src)
 		return FALSE
-	A.body = src
+	A.set_body(src)
 	A.owner = owner
 	A.location = location
 	LAZYADD(afflictions, A)
@@ -155,7 +155,7 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_removed()
-	A.body = null
+	A.set_body(null)
 	A.owner = null
 	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
 	return TRUE
@@ -170,7 +170,7 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	A.active_symptoms = null
-	A.body = null
+	A.set_body(null)
 	A.owner = null
 	return TRUE
 

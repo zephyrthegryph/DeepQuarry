@@ -204,7 +204,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			icon_state = "[initial(icon_state)]_packed"
 
 OM_FIELD(/obj/item/uav, state, UAV_OFF, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/uav, is_flying, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/uav, is_flying, list("state"))
 /// Drains its cell and watches for masters every 2 s while flying.
 DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 

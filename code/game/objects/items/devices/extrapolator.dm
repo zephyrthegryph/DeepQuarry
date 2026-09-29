@@ -303,7 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 /obj/item/extrapolator/proc/create_culture(mob/living/user, datum/affliction/contagion/engineered/disease)
 	. = FALSE
 	disease = disease.Copy()
-	disease.virus_modifiers &= ~DORMANT
+	disease.set_virus_modifiers(disease.virus_modifiers & ~DORMANT)
 	var/list/data = list("viruses" = list(disease))
 	if(user.get_active_hand() != src)
 		to_chat(user, span_warning("The extrapolator must be held in your active hand to work!"))

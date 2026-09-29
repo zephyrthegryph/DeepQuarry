@@ -145,7 +145,7 @@
 		B.injure(INJURY_PIERCE, 10, BP_HEAD, src)
 		var/obj/item/organ/external/E = B.get_organ(BP_HEAD)
 		if(!(E.status & ORGAN_BLEEDING))
-			E.status |= ORGAN_BLEEDING //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
+			E.set_status(E.status | ORGAN_BLEEDING) //If 10 points of piercing didn't make the organ bleed, we are making it bleed.
 
 
 	else

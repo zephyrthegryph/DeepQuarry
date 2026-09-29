@@ -1198,7 +1198,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 
 				injure(INJURY_CUT, rand(1,3), organ.organ_tag, O)
 				if(!(organ.is_robotic()) && (should_have_organ(O_HEART))) //There is no blood in protheses.
-					organ.status |= ORGAN_BLEEDING
+					organ.set_status(organ.status | ORGAN_BLEEDING)
 
 /mob/living/carbon/human/verb/check_pulse()
 	set category = "Object"

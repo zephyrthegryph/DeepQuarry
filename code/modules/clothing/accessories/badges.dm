@@ -292,13 +292,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	item_state = "dosimeter"
 	overlay_state = "dosimeter"
 	slot_flags = SLOT_TIE
-	var/obj/item/dosimeter_film/current_film = null
+
+/// The loaded film (set at init by DECLARE_DEFAULT_CHILD).
+OM_FIELD_TYPED(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, null, CHANGE_EXPLICIT)
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
 
-/// A film that can still darken is loaded: it reads the wearer's radiation. update_state() (every
-/// film insert, removal and darkening) raises CHANGE_EXPLICIT.
-OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, CHANGE_EXPLICIT)
+/// A film that can still darken is loaded: it reads the wearer's radiation.
+OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))
 DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW, "film_live")
 
 /obj/item/clothing/accessory/dosimeter/proc/film_live()
@@ -323,7 +324,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	if(user.get_inactive_hand() == src)
 		if(current_film)
 			user.put_in_hands(current_film)
-			current_film = null
+			set_current_film(null)
 			to_chat(user, span_notice("You pulled out the film out of \the [src]."))
 			desc = "This seems like a dosimeter, but there is no film inside."
 			update_state(0)
@@ -335,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	if(!current_film)
 		user.drop_item()
 		I.forceMove(src)
-		current_film = I
+		set_current_film(I)
 		update_state(current_film.state)
 
 		to_chat(user, span_notice("You inserted the film into \the [src]."))
@@ -359,12 +360,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /obj/item/clothing/accessory/dosimeter/proc/update_state(tostate)
 	var/obj/item/dosimeter_film/film = current_film
 	if(film)
-		film.state = tostate
+		film.set_state(tostate)
 		icon_state = "[initial(icon_state)][tostate]"
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
 		icon_state = "[initial(icon_state)]-empty"
-	om_changed(src, CHANGE_EXPLICIT)
 	update_icon()
 
 /obj/item/dosimeter_film
@@ -373,7 +373,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "dosimeter_film0"
-	var/state = 0 //0 - White, 1 - Darker, 2 - Black (same as iconstates)
+
+/// How dark the film is: 0 white, 1 darker, 2 black (same as the icon states). A dosimeter holding it
+/// reads it through its "current_film.state" derived input.
+OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
 	icon_state = tostate

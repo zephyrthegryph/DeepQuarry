@@ -43,14 +43,9 @@
 	slot_id = OCCUPANT_SLOT_VR_POD
 	name = "VR pod"
 
-/datum/om/relation/slot/occupant/vr_pod/on_link(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
-	om_changed(target, CHANGE_MACHINE_OCCUPANT)
-
-/datum/om/relation/slot/occupant/vr_pod/on_unlink(mob/living/source, obj/machinery/vr_sleeper/target, datum/om/edge/edge)
-	om_changed(target, CHANGE_MACHINE_OCCUPANT)
-
-/// Derived field: the pod holds someone. The slot's on_link()/on_unlink() raise CHANGE_MACHINE_OCCUPANT.
-OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, CHANGE_MACHINE_OCCUPANT)
+/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
+/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
+OM_DERIVE_FIELD(/obj/machinery/vr_sleeper, vr_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 /obj/machinery/vr_sleeper/proc/vr_occupied()
 	return slot_item(OCCUPANT_SLOT_VR_POD) ? TRUE : FALSE
 

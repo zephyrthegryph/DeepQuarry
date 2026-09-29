@@ -16,7 +16,7 @@
 
 		for(var/mob/living/voice/V in possessed_voice) // Delete voices.
 			V.ghostize(0) // Prevent Reenter Corpse sending observers to the shadow realm
-			V.stat = DEAD // Helps with autosleeving
+			V.set_stat(DEAD) // Helps with autosleeving
 			if(V.mind) V.mind.vore_death = 1 // Digested item TFs get vore_death timer
 			qdel(V)
 		for(var/mob/living/M in contents)//Drop mobs from objects(shoes) before deletion
@@ -117,7 +117,7 @@
 		if(!recycled)
 			for(var/mob/living/voice/V in possessed_voice) // Delete voices.
 				V.ghostize(0) //Prevent Reenter Corpse sending observers to the shadow realm
-				V.stat = DEAD //Helps with autosleeving
+				V.set_stat(DEAD) //Helps with autosleeving
 				if(V.mind) V.mind.vore_death = 1 //Digested item TFs get vore_death timer
 				qdel(V) //Destroy the voice.
 		if(istype(B) && recycled)

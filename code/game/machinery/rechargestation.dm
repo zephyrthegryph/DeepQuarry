@@ -27,7 +27,7 @@
 OM_FIELD_TYPED(/obj/machinery/recharge_station, obj/item/cell, cell, null, CHANGE_MACHINE_SETTINGS)
 
 /// Not BROKEN (an unpowered station still runs off its cell, so operable() is too strict).
-OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))
 /obj/machinery/recharge_station/proc/unbroken()
 	return !has_stat(BROKEN)
 

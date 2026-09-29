@@ -287,23 +287,21 @@ MATERIAL_MIX(/obj/item/stock_parts/capacitor, list(MAT_STEEL = 50,MAT_GLASS = 50
 	desc = "A basic capacitor used in the construction of a variety of devices."
 	icon_state = "capacitor"
 
-	var/charge = 0
 	var/max_charge = 1000
+
+/// Stored charge; read by its holder's derived fields as "capacitor.charge" (magnetic guns).
+OM_FIELD(/obj/item/stock_parts/capacitor, charge, 0, CHANGE_EXPLICIT)
 
 /obj/item/stock_parts/capacitor/Initialize(mapload)
 	. = ..()
 	max_charge *= rating
 
 /obj/item/stock_parts/capacitor/proc/charge(amount)
-	charge += amount
-	if(charge > max_charge)
-		charge = max_charge
+	set_charge(min(charge + amount, max_charge))
 
 /obj/item/stock_parts/capacitor/proc/use(amount)
 	if(charge)
-		charge -= amount
-		if(charge < 0)
-			charge = 0
+		set_charge(max(charge - amount, 0))
 
 MATERIAL_MIX(/obj/item/stock_parts/scanning_module, list(MAT_STEEL = 50,MAT_GLASS = 20))
 /obj/item/stock_parts/scanning_module

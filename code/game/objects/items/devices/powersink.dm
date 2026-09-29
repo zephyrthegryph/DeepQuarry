@@ -27,7 +27,7 @@
 
 /// 0 = off, 1 = clamped (off), 2 = operating
 OM_FIELD(/obj/item/powersink, mode, 0, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/powersink, operating, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/powersink, operating, list("mode"))
 // Drains the attached powernet while operating.
 DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 

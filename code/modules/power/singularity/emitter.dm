@@ -35,7 +35,7 @@
 	max_integrity = 80
 
 /// Not BROKEN (the emitter runs on grid power, not APC power, so operable() doesn't fit).
-OM_DERIVE_FIELD(/obj/machinery/power/emitter, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/power/emitter, unbroken, list("stat"))
 /obj/machinery/power/emitter/proc/unbroken()
 	return !has_stat(BROKEN)
 

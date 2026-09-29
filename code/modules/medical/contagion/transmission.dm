@@ -190,19 +190,14 @@
 	return host?.stat == DEAD && global_flag_check(virus_modifiers, SPREAD_DEAD) && !global_flag_check(virus_modifiers, DORMANT)
 
 /// The spread lane runs while the strain is in a body and either sheds airborne or keeps its
-/// course in a dead host. Computed from the host's state, so it has no setter: the wake rules
-/// (joining a body, the host dying, a strain refresh (engineered), going active) call
-/// update_spread_lane(), which re-evaluates the declaration now.
-OM_DERIVE_FIELD(/datum/affliction/contagion, spread_lane_wanted, CHANGE_DATUM_A)
+/// course in a dead host. Every input's setter re-evaluates it: joining or leaving a body
+/// (set_body/set_host), the host dying or reviving ("host.stat"), a strain refresh
+/// (set_spread_flags/set_virus_modifiers/set_infectivity).
+OM_DERIVE_FIELD(/datum/affliction/contagion, spread_lane_wanted, list("host", "body", "spread_flags", "infectivity", "virus_modifiers", "host.stat"))
 DECLARE_PERIODIC_WHILE(/datum/affliction/contagion, PERIODIC_SLOW, "spread_lane_wanted")
 
 /datum/affliction/contagion/proc/spread_lane_wanted()
 	return !QDELETED(src) && host && body && (can_shed_airborne() || acts_in_dead_host())
-
-/// A wake rule changed what spread_lane_wanted() reads: raise its channel (the declaration re-evaluates).
-/datum/affliction/contagion/proc/update_spread_lane()
-	om_changed(src, CHANGE_DATUM_A)
-	sys_periodic_evaluate(src)
 
 /// One lane step (every 2 s): a SPREAD_DEAD strain in a corpse keeps its
 /// course, and an airborne strain rolls infectivity and sheds (the declaration

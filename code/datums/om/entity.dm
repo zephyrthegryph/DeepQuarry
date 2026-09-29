@@ -42,6 +42,11 @@
 	/// Stride 3: owner entity, mask, behaviour id.
 	var/list/watches_in
 	var/list/watching
+	/// Cross-entity derived inputs (fields.dm, "rel.field"): stride 2, holder entity, mask. A raise of
+	/// `mask` here raises CHANGE_RELATED on the holder (its derived field's channel includes it).
+	var/list/relay_in
+	/// The entities this one relays from (their relay_in lists name it), for relink and teardown.
+	var/list/relay_out
 	/// Stride 4: origin entity, mask, behaviour id (negative: derived idx), structural (1 when an intermediate hop).
 	var/list/fwd_in
 	var/list/fwd_out
@@ -98,8 +103,10 @@
 	rec.table = om_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		om_cache_scan(rec.table, E)
-	if(rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask | rec.table.relay_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask | rec.table.relay_mask
+	if(rec.table.derived_relays)
+		om_derived_relink(E, rec)
 	return rec
 
 // ---------------------------------------------------------------- declared caches
@@ -316,6 +323,9 @@
 		slow |= B.requires_mask | B.related_added_mask
 	for(var/i in 1 to length(rec.watches_in) step 3)
 		slow |= rec.watches_in[i + 1]
+	for(var/i in 1 to length(rec.relay_in) step 2)
+		slow |= rec.relay_in[i + 1]
+	slow |= rec.table?.relay_mask
 	for(var/i in 1 to length(rec.fwd_in) step 4)
 		slow |= rec.fwd_in[i + 1]
 	if(rec.dv)
@@ -391,6 +401,15 @@
 				rec.pend_union |= B.wake_on & bits
 				sched.enqueue(rec, B.lane)
 		i++
+	// A field a cross-entity derived input reads changed here: relay it to the holders.
+	if(rec.relay_in)
+		var/list/R = rec.relay_in
+		for(var/j in 1 to length(R) step 2)
+			if(R[j + 1] & bits)
+				om_changed(R[j], CHANGE_RELATED)
+	// A relation var a cross-entity derived input follows changed: resubscribe.
+	if(rec.table.relay_mask & bits)
+		om_derived_relink(E, rec)
 	if(rec.watches_in)
 		var/list/W = rec.watches_in
 		for(var/j in 1 to length(W) step 3)
@@ -521,6 +540,7 @@
 			if(wrec)
 				LAZYREMOVE(wrec.watching, E)
 		rec.watches_in = null
+	om_relay_clear(E, rec)
 	om_teardown_hooks(rec)
 	om_clear_fwd_out(rec)
 	for(var/i in 1 to length(rec.fwd_in) step 4)

@@ -104,9 +104,9 @@
 	E.replaced(target)
 	// Modular bodyparts (prosthetics) need no reconnection.
 	if(E.get_modular_limb_category() != MODULAR_BODYPART_INVALID)
-		E.status &= ~ORGAN_CUT_AWAY
+		E.set_status(E.status & ~ORGAN_CUT_AWAY)
 		for(var/obj/item/organ/external/child in E.children)
-			child.status &= ~ORGAN_CUT_AWAY
+			child.set_status(child.status & ~ORGAN_CUT_AWAY)
 	target.update_icons_body(FALSE)
 	target.UpdateDamageIcon()
 	log_game("SURGERY: [key_name(user)] attached [E] ([E.type]) to [key_name(target)], carrying [length(E.afflictions_here())] afflictions")
@@ -135,9 +135,9 @@
 	return (part.status & ORGAN_CUT_AWAY) ? TRUE : FALSE
 
 /datum/surgical_step/limb/connect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
-	part.status &= ~ORGAN_CUT_AWAY
+	part.set_status(part.status & ~ORGAN_CUT_AWAY)
 	for(var/obj/item/organ/external/child in part.children)
-		child.status &= ~ORGAN_CUT_AWAY
+		child.set_status(child.status & ~ORGAN_CUT_AWAY)
 		to_chat(user, span_notice("You attach [target]'s [child.name] as well."))
 	target.update_icons_body()
 	target.UpdateDamageIcon()

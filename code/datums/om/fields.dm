@@ -162,7 +162,13 @@
 		for(var/datum/om/field_def/D as anything in mine)
 			var/channel = F[D.field]
 			for(var/input in D.inputs)
-				channel |= isnum(input) ? input : F[input]
+				if(isnum(input))
+					channel |= input
+				else if(findtext(input, "."))
+					// "rel.field": the relation var's own channel (relink) plus the relay's CHANGE_RELATED.
+					channel |= F[copytext(input, 1, findtext(input, "."))] | CHANGE_RELATED
+				else
+					channel |= F[input]
 			if(channel != F[D.field])
 				F[D.field] = channel
 				changed = TRUE
@@ -182,6 +188,96 @@
 		if(!length(D.inputs))
 			. += "OM_DERIVE_FIELD([D.of], [D.field]) declares no inputs"
 		for(var/input in D.inputs)
-			if(!isnum(input) && !F[input])
-				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input], which [D.of] does not declare as a field"
+			if(isnum(input))
+				continue
+			var/dot = findtext(input, ".")
+			var/local = dot ? copytext(input, 1, dot) : input
+			if(!F[local])
+				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input]: [local] is not a declared field of [D.of]"
 		qdel(D)
+
+// ---------------------------------------------------------------- cross-entity derived inputs
+//
+// A derived input "rel.field" reads `field` on the entity held in the holder's declared field `rel`
+// (an object, or an OM handle). Each holder subscribes to that entity's `field` channel: the target's
+// rec.relay_in names the holder, and a raise there raises CHANGE_RELATED on the holder, which is part
+// of the derived field's channel. Writing `rel` (its setter raises its channel, the type's relay_mask)
+// resubscribes; teardown of either end drops the subscription.
+
+/// Stride 2 (relation var, field) for every cross-entity input of `path`'s derived fields.
+/proc/om_derived_relays_of(path)
+	var/static/list/all // stride 3: declaring type, relation var, field (built once)
+	if(!all)
+		all = list()
+		for(var/def_path in subtypesof(/datum/om/field_def))
+			var/datum/om/field_def/proto = def_path
+			if(!initial(proto.derived))
+				continue
+			var/datum/om/field_def/D = new def_path
+			for(var/input in D.inputs)
+				if(istext(input) && findtext(input, "."))
+					var/dot = findtext(input, ".")
+					all += list(D.of, copytext(input, 1, dot), copytext(input, dot + 1))
+			qdel(D)
+	var/list/out
+	for(var/i in 1 to length(all) step 3)
+		if(ispath(path, all[i]))
+			LAZYADD(out, list(all[i + 1], all[i + 2]))
+	return out
+
+/// Resubscribes E to the entities its relation vars name now.
+/proc/om_derived_relink(datum/E, datum/om/rec/rec)
+	var/list/relays = rec.table.derived_relays
+	var/list/wanted = list() // target -> mask
+	for(var/i in 1 to length(relays) step 2)
+		var/datum/target = E.vars[relays[i]]
+		if(istext(target))
+			target = om_resolve(target)
+		if(!istype(target) || QDELETED(target))
+			continue
+		var/channel = om_field_table(target.type)[relays[i + 1]]
+		if(channel)
+			wanted[target] |= channel
+	for(var/datum/old as anything in rec.relay_out?.Copy())
+		if(!wanted[old])
+			om_relay_remove(E, rec, old)
+	for(var/datum/target as anything in wanted)
+		var/datum/om/rec/trec = om_rec_of(target)
+		if(!trec)
+			continue
+		var/found = FALSE
+		for(var/j in 1 to length(trec.relay_in) step 2)
+			if(trec.relay_in[j] == E)
+				trec.relay_in[j + 1] = wanted[target]
+				found = TRUE
+				break
+		if(!found)
+			LAZYADD(trec.relay_in, list(E, wanted[target]))
+			LAZYOR(rec.relay_out, target)
+		om_recompute_listen(trec)
+
+/proc/om_relay_remove(datum/E, datum/om/rec/rec, datum/target)
+	LAZYREMOVE(rec.relay_out, target)
+	var/datum/om/rec/trec = target.om_rec
+	if(!trec?.relay_in)
+		return
+	for(var/j in 1 to length(trec.relay_in) step 2)
+		if(trec.relay_in[j] == E)
+			trec.relay_in.Cut(j, j + 2)
+			break
+	if(!length(trec.relay_in))
+		trec.relay_in = null
+	om_recompute_listen(trec)
+
+/// Teardown (links phase): E stops relaying from its targets, and its holders stop relaying from E.
+/proc/om_relay_clear(datum/E, datum/om/rec/rec)
+	for(var/datum/target as anything in rec.relay_out?.Copy())
+		om_relay_remove(E, rec, target)
+	rec.relay_out = null
+	for(var/j in 1 to length(rec.relay_in) step 2)
+		var/datum/holder = rec.relay_in[j]
+		var/datum/om/rec/hrec = holder?.om_rec
+		if(hrec)
+			LAZYREMOVE(hrec.relay_out, E)
+			om_changed(holder, CHANGE_RELATED) // what it read is going away
+	rec.relay_in = null

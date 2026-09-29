@@ -664,7 +664,7 @@
 		ex_organ.dislocated = -1
 		ex_organ.nonsolid = TRUE //ESSENTIAL for boneless. Otherwise it acts like a normal limb.
 		ex_organ.spread_dam = TRUE
-		ex_organ.max_damage = floor(ex_organ.max_damage * limb_health)
+		ex_organ.set_max_damage(floor(ex_organ.max_damage * limb_health))
 
 		if(istype(ex_organ, /obj/item/organ/external/head))
 			ex_organ.encased = FALSE //you can just reach in and grab it

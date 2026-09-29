@@ -23,7 +23,7 @@
 	)
 
 /datum/viral_trait/robotic_adaptation/OnAdd(datum/affliction/contagion/engineered/A)
-	A.virus_modifiers |= INFECT_SYNTHETICS
+	A.set_virus_modifiers(A.virus_modifiers | INFECT_SYNTHETICS)
 
 /datum/viral_trait/robotic_adaptation/severityset(datum/affliction/contagion/engineered/A)
 	. = ..()
@@ -136,4 +136,4 @@
 			to_chat(H, span_userdanger("You feel lighter and metallic, as your innards lose their silicon facade."))
 
 /datum/viral_trait/robotic_adaptation/OnRemove(datum/affliction/contagion/engineered/A)
-	A.virus_modifiers &= ~INFECT_SYNTHETICS
+	A.set_virus_modifiers(A.virus_modifiers & ~INFECT_SYNTHETICS)

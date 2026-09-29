@@ -9,7 +9,7 @@
 
 /// How many times this can has been shaken; it settles back down over time.
 OM_FIELD(/obj/item/reagent_containers/food/drinks/cans, shaken, 0, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/reagent_containers/food/drinks/cans, is_shaken, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/reagent_containers/food/drinks/cans, is_shaken, list("shaken"))
 DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/food/drinks/cans, PERIODIC_SLOW, "is_shaken")
 
 /obj/item/reagent_containers/food/drinks/cans/proc/is_shaken()
