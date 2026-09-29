@@ -1,10 +1,10 @@
-// embed(): how readily the item lodges in what it hits. The item's `embed_chance` stays the truth the
+// cap_embed(): how readily the item lodges in what it hits. The item's `embed_chance` stays the truth the
 // hit code reads (carbon_defense.dm, human_defense.dm); `chance` is the type default written onto it
 // at init, before /obj/item/Initialize() would derive one from force, and a map edit wins.
 //
 //	/obj/item/material/shard/capabilities()
 //		. = ..()
-//		. += embed(chance = 40)
+//		. += cap_embed(chance = 40)
 
 /datum/capability/embed
 	works_broken = TRUE
@@ -12,9 +12,10 @@
 	/// Percent chance to lodge on a hit hard enough (0 never embeds).
 	var/chance = 0
 
-/proc/embed(chance = 0)
+/proc/cap_embed(chance = 0, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/embed/C = new
 	C.chance = clamp(chance, 0, 100)
+	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/embed/on_holder_init(atom/holder, mapload)

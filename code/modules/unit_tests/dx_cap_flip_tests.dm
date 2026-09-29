@@ -1,11 +1,11 @@
-// flip() (code/datums/capabilities/library/flip.dm).
+// cap_flip() (code/datums/capabilities/library/flip.dm).
 
 /obj/structure/table/standard/cap_fixture
 	can_flip_verb = FALSE // only the capability's entries
 
 /obj/structure/table/standard/cap_fixture/capabilities()
 	. = ..()
-	. += flip()
+	. += cap_flip()
 
 /datum/unit_test/dx_cap_flip
 

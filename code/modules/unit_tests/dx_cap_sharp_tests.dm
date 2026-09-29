@@ -1,12 +1,12 @@
-// sharp() (code/datums/capabilities/library/sharp.dm), and cap_default_var() (instance vars win).
+// cap_sharp() (code/datums/capabilities/library/sharp.dm), and cap_default_var() (instance vars win).
 
 /obj/item/cap_fixture/blade/capabilities()
 	. = ..()
-	. += sharp(edge = TRUE)
+	. += cap_sharp(edge = TRUE)
 
 /obj/item/cap_fixture/spike/capabilities()
 	. = ..()
-	. += sharp()
+	. += cap_sharp()
 
 /datum/unit_test/dx_cap_sharp
 

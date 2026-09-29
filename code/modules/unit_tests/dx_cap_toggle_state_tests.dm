@@ -1,4 +1,4 @@
-// toggle_state() (code/datums/capabilities/library/toggle_state.dm).
+// cap_toggle_state() (code/datums/capabilities/library/toggle_state.dm).
 
 /obj/item/cap_fixture/hoodie
 	var/stuck = FALSE
@@ -7,7 +7,7 @@
 
 /obj/item/cap_fixture/hoodie/capabilities()
 	. = ..()
-	. += toggle_state("hood", on_suffix = "_t", verb_name = "Toggle Hood", apply = PROC_REF(fx_apply), available = PROC_REF(fx_available), else_say = "it has no hood", self_on = "You raise the hood of %T%.", self_off = "You lower the hood of %T%.", examine_on = "Its hood is up.", examine_off = "Its hood is down.", log = LOG_GAME)
+	. += cap_toggle_state("hood", on_suffix = "_t", verb_name = "Toggle Hood", apply = PROC_REF(fx_apply), available = PROC_REF(fx_available), else_say = "it has no hood", self_on = "You raise the hood of %T%.", self_off = "You lower the hood of %T%.", examine_on = "Its hood is up.", examine_off = "Its hood is down.", log = LOG_GAME)
 
 /obj/item/cap_fixture/hoodie/proc/fx_apply(on, mob/user)
 	if(stuck)
@@ -20,7 +20,7 @@
 
 /obj/item/cap_fixture/jacket/capabilities()
 	. = ..()
-	. += toggle_state("buttons", on_state = "open", off_state = "closed", bit = CAP_TOGGLE_2)
+	. += cap_toggle_state("buttons", on_state = "open", off_state = "closed", bit = CAP_TOGGLE_2)
 
 /// The verb in A.verbs named `name`, or null.
 /proc/dx_verb_named(atom/A, name)
@@ -37,7 +37,7 @@
 	var/obj/item/cap_fixture/hoodie/F = allocate(/obj/item/cap_fixture/hoodie, T)
 
 	var/datum/interaction/capability/E = dx_cap_entry(F, "Toggle Hood")
-	TEST_ASSERT_NOTNULL(E, "toggle_state() offers its entry, named verb_name")
+	TEST_ASSERT_NOTNULL(E, "cap_toggle_state() offers its entry, named verb_name")
 	TEST_ASSERT_EQUAL(E.entry, INTERACTION_ENTRY_SELF, "a self-use entry")
 	TEST_ASSERT_EQUAL(E.why_not(H, F, F), "you need to be carrying it", "only while carried")
 	TEST_ASSERT_NOTNULL(dx_verb_named(F, "Toggle Hood"), "the native verb, renamed")

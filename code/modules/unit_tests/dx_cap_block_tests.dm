@@ -1,19 +1,19 @@
-// blocks() (code/datums/capabilities/library/block.dm).
+// cap_block() (code/datums/capabilities/library/block.dm).
 
 /obj/item/cap_fixture/blocker/capabilities()
 	. = ..()
-	. += blocks(chance = 100, verb = "parries")
+	. += cap_block(chance = 100, verb = "parries")
 
 /obj/item/cap_fixture/blocker/never/capabilities()
 	. = ..()
 	. = without(., /datum/capability/block)
-	. += blocks(chance = 0)
+	. += cap_block(chance = 0)
 
 /obj/item/cap_fixture/blocker/wielded/capabilities()
 	. = ..()
 	. = without(., /datum/capability/block)
-	. += two_handed()
-	. += blocks(chance = 100, needs_wielded = TRUE, projectiles = TRUE)
+	. += cap_two_handed()
+	. += cap_block(chance = 100, needs_wielded = TRUE, projectiles = TRUE)
 
 /datum/unit_test/dx_cap_block
 

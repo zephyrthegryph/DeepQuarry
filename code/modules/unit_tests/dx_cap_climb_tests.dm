@@ -1,8 +1,8 @@
-// climb() (code/datums/capabilities/library/climb.dm).
+// cap_climb() (code/datums/capabilities/library/climb.dm).
 
 /obj/cap_fixture/climbable/capabilities()
 	. = ..()
-	. += climb(delay = 2 SECONDS)
+	. += cap_climb(delay = 2 SECONDS)
 
 /// Made climbable by its own Initialize(): the capability leaves it as it is.
 /obj/cap_fixture/climbable/preset/Initialize(mapload)
@@ -21,7 +21,7 @@
 	TEST_ASSERT(has_trait(F, TRAIT_CLIMBABLE), "the behaviour is attached")
 
 	var/datum/interaction/capability/E = dx_cap_entry(F, "Climb")
-	TEST_ASSERT_NOTNULL(E, "climb() offers its entry")
+	TEST_ASSERT_NOTNULL(E, "cap_climb() offers its entry")
 	TEST_ASSERT_NULL(E.default_action, "Menu only")
 	TEST_ASSERT_NULL(E.why_not(H, F, null), "climbable")
 	TEST_ASSERT(E.perform(H, F, null), "the entry starts the climb")

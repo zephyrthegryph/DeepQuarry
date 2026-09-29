@@ -3,7 +3,7 @@
 
 /obj/cap_fixture/weldable/capabilities()
 	. = ..()
-	. += tool("Weld", TOOL_WELDER, PROC_REF(fx_weld), needs = TYPE_PROC_REF(/atom, cap_needs_lit_welder))
+	. += cap_tool("Weld", TOOL_WELDER, PROC_REF(fx_weld), needs = TYPE_PROC_REF(/atom, cap_needs_lit_welder))
 
 /obj/cap_fixture/weldable/proc/fx_weld(mob/user, obj/item/held)
 	LAZYADD(calls, "weld")
@@ -38,7 +38,7 @@
 	TEST_ASSERT_EQUAL(welder.get_fuel(), start - 7, "and nothing burned")
 	TEST_ASSERT(!tool_use(wrench, TOOL_WELDER, 0), "the wrong quality spends nothing")
 
-	// A needs proc built on tool_ready() gates a tool() entry.
+	// A needs proc built on tool_ready() gates a cap_tool() entry.
 	var/datum/interaction/capability/weld = dx_cap_entry(target, "Weld")
 	welder.set_welding(FALSE)
 	TEST_ASSERT_EQUAL(weld.why_not(H, target, welder), "it needs to be lit", "the entry refuses an unlit welder with the reason")

@@ -1,4 +1,4 @@
-// climb(): mobs can climb onto (or, with `vaulting`, over) the holder. Wraps the climbable behaviour
+// cap_climb(): mobs can climb onto (or, with `vaulting`, over) the holder. Wraps the climbable behaviour
 // (code/datums/behaviours/climbable.dm): at init the holder is made climbable with `kind`, which
 // brings the mouse-drag climb, the "Climb structure" verb, the examine line, shaking climbers off
 // and the timed climb itself. The holder's `climbable_delay` stays the per-instance truth: `delay` is
@@ -6,7 +6,7 @@
 //
 //	/obj/structure/railing/capabilities()
 //		. = ..()
-//		. += climb(delay = 5 SECONDS, vaulting = TRUE, kind = /datum/om/behaviour/climbable/unanchored_can_break)
+//		. += cap_climb(delay = 5 SECONDS, vaulting = TRUE, kind = /datum/om/behaviour/climbable/unanchored_can_break)
 
 /datum/capability/climb
 	works_broken = TRUE
@@ -16,13 +16,12 @@
 	/// The climbable behaviour type (a /datum/om/behaviour/climbable subtype: tables, cliffs, railings).
 	var/kind = /datum/om/behaviour/climbable
 
-/proc/climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, behind = NONE, log)
+/proc/cap_climb(delay = 3.5 SECONDS, vaulting = FALSE, kind = /datum/om/behaviour/climbable, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/climb/C = new
 	C.delay = delay
 	C.vaulting = vaulting
 	C.kind = kind
-	C.behind = behind
-	C.log = log
+	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/climb/on_holder_init(atom/holder, mapload)
@@ -33,11 +32,11 @@
 	O.make_climbable(kind, instance_delay, vaulting)
 
 /datum/capability/climb/interactions(atom/holder)
-	var/datum/interaction/capability/E = adopt_entry(hand("Climb", TYPE_PROC_REF(/obj, cap_climb_start), behind = behind, needs = TYPE_PROC_REF(/obj, cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/E = adopt_entry(cap_hand("Climb", TYPE_PROC_REF(/obj, cap_climb_start), needs = TYPE_PROC_REF(/obj, cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE))
 	E.default_action = null // Menu only: a click keeps doing the holder's own thing, a drag climbs
 	return list(E)
 
-/// needs: the holder is still climbable (a table flipped by the flip() capability stays climbable).
+/// needs: the holder is still climbable (a table flipped by the cap_flip() capability stays climbable).
 /obj/proc/cap_climb_ok(mob/user, obj/item/held)
 	if(!climbable_type)
 		return "it can't be climbed"

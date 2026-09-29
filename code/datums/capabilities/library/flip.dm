@@ -1,26 +1,25 @@
-// flip(): a table can be flipped on its side (a makeshift barricade) and put back. Wraps the table's
+// cap_flip(): a table can be flipped on its side (a makeshift barricade) and put back. Wraps the table's
 // own flipping (code/modules/tables/flipping.dm): its `flipped` var stays the truth, flip()/unflip()
 // do the work (the whole straight run of matching tables goes over together, loose things on it are
 // thrown), and straight_table_check()/unflipping_check() give the refusals. Tables only.
 //
 //	/obj/structure/table/capabilities()
 //		. = ..()
-//		. += flip()
+//		. += cap_flip()
 
 /datum/capability/flip
 	log = LOG_GAME
 	works_broken = TRUE
 	works_unpowered = TRUE
 
-/proc/flip(behind = NONE, log = LOG_GAME)
+/proc/cap_flip(behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/flip/C = new
-	C.behind = behind
-	C.log = log
+	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
 /datum/capability/flip/interactions(atom/holder)
-	var/datum/interaction/capability/over = adopt_entry(hand("Flip table", TYPE_PROC_REF(/obj/structure/table, cap_flip_over), behind = behind, needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_flip), works_broken = TRUE, works_unpowered = TRUE, log = log))
-	var/datum/interaction/capability/back = adopt_entry(hand("Put table back", TYPE_PROC_REF(/obj/structure/table, cap_flip_back), behind = behind, needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_put_back), works_broken = TRUE, works_unpowered = TRUE, log = log))
+	var/datum/interaction/capability/over = adopt_entry(cap_hand("Flip table", TYPE_PROC_REF(/obj/structure/table, cap_flip_over), needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_flip), works_broken = TRUE, works_unpowered = TRUE))
+	var/datum/interaction/capability/back = adopt_entry(cap_hand("Put table back", TYPE_PROC_REF(/obj/structure/table, cap_flip_back), needs = TYPE_PROC_REF(/obj/structure/table, cap_flip_can_put_back), works_broken = TRUE, works_unpowered = TRUE))
 	over.default_action = null // Menu only: a click on a table puts things on it
 	back.default_action = null
 	return list(over, back)

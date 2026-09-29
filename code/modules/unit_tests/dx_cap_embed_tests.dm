@@ -1,12 +1,12 @@
-// embed() (code/datums/capabilities/library/embed.dm).
+// cap_embed() (code/datums/capabilities/library/embed.dm).
 
 /obj/item/cap_fixture/barbed/capabilities()
 	. = ..()
-	. += embed(chance = 70)
+	. += cap_embed(chance = 70)
 
 /obj/item/cap_fixture/slick/capabilities()
 	. = ..()
-	. += embed(chance = 0)
+	. += cap_embed(chance = 0)
 
 /datum/unit_test/dx_cap_embed
 

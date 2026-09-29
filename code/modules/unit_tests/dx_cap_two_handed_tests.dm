@@ -1,4 +1,4 @@
-// two_handed() (code/datums/capabilities/library/two_handed.dm).
+// cap_two_handed() (code/datums/capabilities/library/two_handed.dm).
 
 /// Base fixture for item capability tests (the holder is the item).
 /obj/item/cap_fixture
@@ -9,12 +9,12 @@
 
 /obj/item/cap_fixture/two_handed/capabilities()
 	. = ..()
-	. += two_handed(force_wielded = 25, icon_base = "axe", log = LOG_GAME)
+	. += cap_two_handed(force_wielded = 25, icon_base = "axe", log = LOG_GAME)
 
 /obj/item/cap_fixture/two_handed/derived/capabilities()
 	. = ..()
 	. = without(., /datum/capability/two_handed)
-	. += two_handed(multiplier = 2)
+	. += cap_two_handed(multiplier = 2)
 
 /datum/unit_test/dx_cap_two_handed
 
@@ -24,7 +24,7 @@
 	var/obj/item/cap_fixture/two_handed/A = allocate(/obj/item/cap_fixture/two_handed, T)
 
 	var/datum/interaction/capability/E = dx_cap_entry(A, "Wield")
-	TEST_ASSERT_NOTNULL(E, "two_handed() offers its entry")
+	TEST_ASSERT_NOTNULL(E, "cap_two_handed() offers its entry")
 	TEST_ASSERT_EQUAL(E.entry, INTERACTION_ENTRY_SELF, "a self-use entry")
 	TEST_ASSERT_EQUAL(E.display_name(H, A), "Wield", "named for its state")
 	TEST_ASSERT_EQUAL(E.why_not(H, A, A), "not in your hand", "wielding needs it in hand")

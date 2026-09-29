@@ -2,12 +2,12 @@
 // a job now, and spend what the job costs. They wrap the tool pipeline (code/datums/interactions/
 // tools.dm): has_tool_quality() / tool_quality_failure() for the quality and tier, the readiness
 // hooks below for fuel, charge, stack units and a multitool's buffer, and use_tool() /
-// tool_use_resources() for spending. A tool() entry already runs use_tool(); these are for needs
+// tool_use_resources() for spending. A cap_tool() entry already runs use_tool(); these are for needs
 // procs ("the welder must be lit before the entry is offered") and for handlers that spend again.
 //
 //	/obj/machinery/thing/proc/welder_ready(mob/user, obj/item/held)
 //		return tool_ready(held, TOOL_WELDER, amount = 2)
-//	. += tool("Weld shut", TOOL_WELDER, PROC_REF(weld), needs = PROC_REF(welder_ready))
+//	. += cap_tool("Weld shut", TOOL_WELDER, PROC_REF(weld), needs = PROC_REF(welder_ready))
 
 /**
  * TRUE when `held` can do a `quality` job needing `amount` (fuel, charge or stack units) now, else the

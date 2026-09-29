@@ -1,4 +1,4 @@
-// toggle_state(): a two-state clothing (or any item) toggle: a hood up or down, a jacket buttoned or
+// cap_toggle_state(): a two-state clothing (or any item) toggle: a hood up or down, a jacket buttoned or
 // open, a mask up or hanging, sensors on or off. The state is one CAP_TOGGLE_* bit (`bit`, so an item
 // can carry up to three toggles). It is reached three ways, all through the same entry: self-use (Z,
 // in hand), the Menu, and a native verb named `verb_name` while the item is carried (verbs()).
@@ -13,7 +13,7 @@
 //
 //	/obj/item/clothing/suit/storage/toggle/capabilities()
 //		. = ..()
-//		. += toggle_state("buttons", on_suffix = "_open", verb_name = "Toggle Coat Buttons", self_on = "You unbutton %T%.", self_off = "You button up %T%.")
+//		. += cap_toggle_state("buttons", on_suffix = "_open", verb_name = "Toggle Coat Buttons", self_on = "You unbutton %T%.", self_off = "You button up %T%.")
 
 /datum/capability/toggle_state
 	works_broken = TRUE
@@ -39,7 +39,7 @@
 	/// The renamed native verb, made once per capability.
 	var/tmp/verb_ref
 
-/proc/toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, needs, else_say, self_on, self_off, others_on, others_off, examine_on, examine_off, log)
+/proc/cap_toggle_state(name, on_state, off_state, on_suffix, verb_name, bit = CAP_TOGGLE_1, apply, available, self_on, self_off, others_on, others_off, examine_on, examine_off, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
 	var/datum/capability/toggle_state/C = new
 	C.name = name
 	C.key = "toggle_state:[bit]"
@@ -50,20 +50,18 @@
 	C.verb_name = verb_name || "Toggle [name]"
 	C.apply = apply
 	C.available = available
-	C.needs = needs
-	C.else_say = else_say
 	C.self_on = self_on
 	C.self_off = self_off
 	C.others_on = others_on
 	C.others_off = others_off
 	C.examine_on = examine_on
 	C.examine_off = examine_off
-	C.log = log
 	var/verb_path = cap_toggle_verb_path(bit)
 	C.verb_ref = new verb_path(null, C.verb_name)
+	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
-/// The generic verb proc for a toggle bit (renamed per capability by toggle_state()).
+/// The generic verb proc for a toggle bit (renamed per capability by cap_toggle_state()).
 /proc/cap_toggle_verb_path(bit)
 	switch(bit)
 		if(CAP_TOGGLE_1)
@@ -72,7 +70,7 @@
 			return /obj/item/proc/cap_toggle_verb_2
 		if(CAP_TOGGLE_3)
 			return /obj/item/proc/cap_toggle_verb_3
-	CRASH("toggle_state(): bit [bit] is not a CAP_TOGGLE_* bit")
+	CRASH("cap_toggle_state(): bit [bit] is not a CAP_TOGGLE_* bit")
 
 /// The toggle's entry: refuses while the toggle is unavailable, and knows its capability when it runs.
 /datum/interaction/capability/toggle
@@ -90,11 +88,8 @@
 	E.name = verb_name
 	E.id = "self:toggle:[bit]"
 	E.handler = TYPE_PROC_REF(/obj/item, cap_toggle_run)
-	E.needs = needs
-	E.else_say = else_say
 	E.works_broken = TRUE
 	E.works_unpowered = TRUE
-	E.log = log
 	E.entry = INTERACTION_ENTRY_SELF
 	E.category = INTERACTION_CAT_TOGGLE
 	E.default_action = INPUT_ACTION_USE
@@ -183,7 +178,7 @@
 			act_message(user, src, self = self ? span_notice(self) : null, others = others ? span_notice(others) : null)
 	return TRUE
 
-// The native verbs, renamed per toggle by toggle_state(). Each runs the toggle's entry.
+// The native verbs, renamed per toggle by cap_toggle_state(). Each runs the toggle's entry.
 /obj/item/proc/cap_toggle_verb_1()
 	set name = "Toggle"
 	set category = "Object"
