@@ -53,7 +53,8 @@
 	var/tmp/atom/target
 	var/tmp/datum/expedition_site/expedition
 	var/discovered = TRUE
-	var/list/active_plans
+	/// Relation list: the flight plans leasing this destination (a destroyed plan leaves it).
+	var/list/datum/flight_plan/active_plans
 
 /datum/flight_destination/proc/is_available()
 	if(kind == FLIGHT_DEST_SYSTEM)
@@ -143,7 +144,8 @@
 	rel_set(src, "vessel", new_vessel)
 	rel_set(src, "origin", new_origin)
 	rel_set(src, "destination", new_destination)
-	LAZYADD(destination().active_plans, src)
+	if(destination())
+		rel_add(destination(), "active_plans", src)
 	created_at = world.time
 	id = "flight-[REF(src)]"
 	if(destination()?.expedition() && destination().expedition().z_level <= 0)
@@ -157,8 +159,8 @@
 
 /datum/flight_plan/proc/release_leases(release_assignment = FALSE)
 	if(destination())
-		LAZYREMOVE(destination().active_plans, src)
-	if(om_handle_is(arrival_port()?.reserved_by, src))
+		rel_remove(destination(), "active_plans", src)
+	if(arrival_port()?.reserved_by == src)
 		rel_clear(arrival_port(), "reserved_by")
 	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
 		rel_clear(destination().expedition(), "assigned_flight_vessel")
@@ -263,3 +265,5 @@
 /datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
 	return active_expedition
 
+
+REL_LIST(/datum/flight_destination, active_plans)

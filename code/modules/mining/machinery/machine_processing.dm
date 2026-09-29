@@ -128,7 +128,8 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 					if("Smelting") new_setting = PROCESS_SMELT
 					if("Compressing") new_setting = PROCESS_COMPRESS
 					if("Alloying") new_setting = PROCESS_ALLOY
-			LAZYSET(machine().ores_processing, ore, new_setting)
+			var/obj/machinery/mineral/processing_unit/unit = machine()
+			LAZYSET(unit.ores_processing, ore, new_setting)
 			. = TRUE
 		if("power")
 			machine().active = !machine().active

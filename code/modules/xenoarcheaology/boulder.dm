@@ -7,6 +7,7 @@
 	opacity = 1
 	anchored = TRUE
 	var/excavation_level = 0
+	/// Owned: the boulder's own geosample and the artifact find it took over from its mine turf.
 	var/tmp/datum/geosample/geological_data_static
 	var/tmp/datum/artifact_find/artifact_find_static
 	COOLDOWN_DECLARE(dig_cooldown)
@@ -103,10 +104,10 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 		if(istype(M.selected,/obj/item/mecha_parts/mecha_equipment/tool/drill))
 			M.selected.action(src)
 
-/// Accessor for a shared definition.
+/// Accessor for the owned value.
 /obj/structure/boulder/proc/geological_data() as /datum/geosample
 	return geological_data_static
 
-/// Accessor for a shared definition.
+/// Accessor for the owned value.
 /obj/structure/boulder/proc/artifact_find() as /datum/artifact_find
 	return artifact_find_static

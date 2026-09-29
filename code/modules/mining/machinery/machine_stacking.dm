@@ -70,7 +70,8 @@
 			if(LAZYACCESS(machine().stack_storage, stack) > 0)
 				var/stacktype = LAZYACCESS(machine().stack_paths, stack)
 				new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
-				LAZYSET(machine().stack_storage, stack, 0)
+				var/obj/machinery/mineral/stacking_machine/stacker = machine()
+				LAZYSET(stacker.stack_storage, stack, 0)
 			. = TRUE
 
 	add_fingerprint(ui.user)

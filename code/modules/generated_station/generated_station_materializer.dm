@@ -183,7 +183,6 @@
 	control_landmarks = list()
 	service_endpoints = list()
 	service_routes = list()
-	rel_set(src, "furnishings", list())
 	owned_furnishing_atoms = list()
 	doors = list()
 	infrastructure = list()
@@ -1585,3 +1584,5 @@
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return transit_area
 
+
+REL_LIST(/datum/generated_station_materialization, furnishings)

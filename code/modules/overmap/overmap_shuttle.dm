@@ -5,7 +5,7 @@
 
 	var/range = 1	// Short-jump craft can reach sectors one overmap tile away.
 	var/fuel_consumption = 0 //Amount of moles of gas consumed per trip; If zero, then shuttle is magic and does not need fuel
-	var/list/fuel_ports //the fuel ports of the shuttle (but usually just one); the list side of the fuel ports' backlist
+	var/list/obj/structure/fuel_port/fuel_ports //the fuel ports of the shuttle (but usually just one); pairs with each port's parent_shuttle
 	var/tmp/obj/effect/overmap/visitable/ship/landable/myship	//my overmap ship object
 
 	category = /datum/shuttle/autodock/overmap
@@ -15,11 +15,10 @@
 	refresh_fuel_ports_list()
 
 /datum/shuttle/autodock/overmap/proc/refresh_fuel_ports_list() //loop through all
-	fuel_ports = list()
+	rel_clear(src, "fuel_ports")
 	for(var/area/A in shuttle_area)
 		for(var/obj/structure/fuel_port/fuel_port_in_area in contents_of(A))
-			rel_set(fuel_port_in_area, "parent_shuttle", src)
-			fuel_ports += fuel_port_in_area
+			rel_set(fuel_port_in_area, "parent_shuttle", src) // lists it in fuel_ports (the pair)
 
 /datum/shuttle/autodock/overmap/fuel_check()
 	if(!src.try_consume_fuel()) //insufficient fuel
@@ -88,7 +87,7 @@
 /datum/shuttle/autodock/overmap/proc/try_consume_fuel() //returns 1 if sucessful, returns 0 if error (like insufficient fuel)
 	if(!fuel_consumption)
 		return 1 //shuttles with zero fuel consumption are magic and can always launch
-	if(!fuel_ports.len)
+	if(!length(fuel_ports))
 		return 0 //Nowhere to get fuel from
 	var/list/obj/item/tank/fuel_tanks = list()
 	for(var/obj/structure/FP in fuel_ports) //loop through fuel ports and assemble list of all fuel tanks
@@ -126,7 +125,7 @@
 	var/icon_empty = "fuel_port_empty"
 	var/icon_full = "fuel_port_full"
 	var/opened = 0
-	var/parent_shuttle
+	var/datum/shuttle/autodock/overmap/parent_shuttle
 	var/base_tank = /obj/item/tank/phoron
 
 /obj/structure/fuel_port/Initialize(mapload)
@@ -194,5 +193,6 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 /datum/shuttle/autodock/overmap/proc/myship() as /obj/effect/overmap/visitable/ship/landable
 	return myship
 
-/// LC-refs: a fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
+/// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
 REL_PAIR(/obj/structure/fuel_port, parent_shuttle, fuel_ports)
+REL_PAIR_LIST(/datum/shuttle/autodock/overmap, fuel_ports, parent_shuttle)

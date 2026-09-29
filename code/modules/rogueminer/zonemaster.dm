@@ -26,8 +26,9 @@
 	var/original_mobs = 0
 
 	//in-use spawns from the area
-	var/list/rockspawns	// OM handles (om_resolve_all())
-	var/list/mobspawns	// OM handles (om_resolve_all())
+	/// Relation lists: the spawners enabled for this preparation.
+	var/list/obj/asteroid_spawner/rockspawns
+	var/list/obj/rogue_mobspawner/mobspawns
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
@@ -280,20 +281,20 @@
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
 	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
-	for(var/obj/asteroid_spawner/SP in om_resolve_all(rockspawns))
+	for(var/obj/asteroid_spawner/SP in rockspawns)
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
 		GLOB.rm_controller.dbg("ZM(p): Placing asteroid.")
 		place_asteroid(A,SP)
 
-	for(var/obj/rogue_mobspawner/SP in om_resolve_all(mobspawns))
+	for(var/obj/rogue_mobspawner/SP in mobspawns?.Copy())
 		GLOB.rm_controller.dbg("ZM(p): Spawning mob at [SP.x],[SP.y],[SP.z].")
 		//Make sure we can spawn a spacemob here
 		if(!istype(get_turf(SP),/turf/space))
 			GLOB.rm_controller.dbg("ZM(p): Turf blocking mob spawn at [SP.x],[SP.y],[SP.z].")
-			LAZYREMOVE(mobspawns, om_handle_of(SP))
+			rel_remove(src, "mobspawns", SP)
 			for(var/obj/rogue_mobspawner/NS in myarea().mob_spawns)
-				if(om_handle_of(NS) in mobspawns)
+				if(NS in mobspawns)
 					continue
 				if(istype(get_turf(NS),/turf/space))
 					SP = NS
@@ -315,19 +316,19 @@
 //Randomize the landmarks that are enabled
 /datum/rogue/zonemaster/proc/randomize_spawns(chance = 50)
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(rockspawns)] rockspawns.")
-	LAZYCLEARLIST(rockspawns)
+	rel_clear(src, "rockspawns")
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
 	for(var/obj/asteroid_spawner/SP in myarea().asteroid_spawns)
 		if(prob(chance))
-			LAZYADD(rockspawns, om_handle(SP))
+			rel_add(src, "rockspawns", SP)
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
-	LAZYCLEARLIST(mobspawns)
+	rel_clear(src, "mobspawns")
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
 	for(var/obj/rogue_mobspawner/SP in myarea().mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
-			LAZYADD(mobspawns, om_handle(SP))
+			rel_add(src, "mobspawns", SP)
 			original_mobs++
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
 	return myarea()
@@ -379,8 +380,8 @@
 	//Cut these lists so qdel can dereference the things properly
 	LAZYCLEARLIST(mineral_rocks)
 	LAZYCLEARLIST(spawned_mobs)
-	LAZYCLEARLIST(rockspawns)
-	LAZYCLEARLIST(mobspawns)
+	rel_clear(src, "rockspawns")
+	rel_clear(src, "mobspawns")
 
 	clean_pass(delay, 1)
 	return myarea()
@@ -448,3 +449,6 @@
 /datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
 	return myshuttle_landmark
 
+
+REL_LIST(/datum/rogue/zonemaster, rockspawns)
+REL_LIST(/datum/rogue/zonemaster, mobspawns)

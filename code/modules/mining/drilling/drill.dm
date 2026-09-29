@@ -13,7 +13,8 @@
 	circuit = /obj/item/circuitboard/miningdrill
 	var/braces_needed = 2
 	var/total_brace_tier = 0
-	var/list/supports	// OM handles of the connected braces (om_resolve_all())
+	/// Connected braces: pairs with each brace's connected (REL_PAIR_LIST).
+	var/list/obj/machinery/mining/brace/supports
 	var/supported = 0
 	var/active = 0
 	var/list/resource_field
@@ -385,7 +386,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	supported = 0
 	total_brace_tier = 0
 
-	var/list/braces = om_resolve_all(supports)
+	var/list/braces = supports
 	if(!length(braces) && initial(anchored) == 0)
 		icon_state = "mining_drill"
 		anchored = FALSE
@@ -553,26 +554,24 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	if(!connected())
 		return
 
-	if(!connected().supports)
-		connected().supports = list()
-
 	icon_state = "mining_brace_active"
 
-	LAZYADD(connected().supports, om_handle(src))
+	// rel_set() above already listed us in the drill's supports (the pair).
 	connected().check_supports()
 
 /obj/machinery/mining/brace/proc/disconnect()
 
 	if(!connected()) return
 
-	if(!connected().supports) connected().supports = list()
-
 	icon_state = "mining_brace"
 
-	LAZYREMOVE(connected().supports, om_handle_of(src))
-	connected().check_supports()
-	rel_clear(src, "connected")
+	var/obj/machinery/mining/drill/drill = connected()
+	rel_clear(src, "connected") // leaves the drill's supports too (the pair)
+	drill.check_supports()
 
 /// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
 	return connected
+
+REL_PAIR(/obj/machinery/mining/brace, connected, supports)
+REL_PAIR_LIST(/obj/machinery/mining/drill, supports, connected)
