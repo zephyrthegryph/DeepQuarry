@@ -41,7 +41,7 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 
 		// Update the controller and prepare each of the solar array lists it needs
 		SC.update()
-		controller_run[REF(SC)] = om_handle(SC)
+		controller_run[REF(SC)] = SC // this pass's work queue (like current_run); a controller deleted mid-pass is skipped below
 		panel_run[REF(SC)] = SC.get_connected_panels().Copy()
 		panel_sum[REF(SC)] = 0
 
@@ -53,11 +53,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 	////////////////////////////////////////////////////////////////////////////////
 	while(length(controller_run))
 		var/conkey = controller_run[length(controller_run)]
-		var/conref= controller_run[conkey]
-
 		// Check if the controller still exists
-		var/obj/machinery/power/solar_control/SC = om_resolve(conref)
-		if(!SC)
+		var/obj/machinery/power/solar_control/SC = controller_run[conkey]
+		if(QDELETED(SC))
 			controller_run -= conkey
 			if(TICK_CHECK)
 				return FALSE

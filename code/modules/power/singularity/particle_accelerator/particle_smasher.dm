@@ -29,7 +29,6 @@
 
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
-	own_set(src, "storage", list())
 	update_icon()
 	prepare_recipes()
 
@@ -78,8 +77,9 @@
 	if(M.uses_charge)
 		to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
 		return TRUE
-	own_set(src, "target", M.split(1))
-	target.forceMove(src)
+	var/obj/item/stack/material/piece = M.split(1)
+	piece.forceMove(src)
+	own_set(src, "target", piece)
 	update_icon()
 	return TRUE
 
@@ -99,8 +99,8 @@
 		G.drop_item()
 	else
 		user.drop_from_inventory(W)
-	rel_set(src, "reagent_container", W)
-	reagent_container().forceMove(src)
+	W.forceMove(src)
+	own_set(src, "reagent_container", W)
 	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
 	return TRUE
@@ -126,7 +126,7 @@
 	effect = /obj/machinery/particle_smasher/proc/interaction_store
 
 /obj/machinery/particle_smasher/proc/can_store_item(mob/actor, atom/target, obj/item/held)
-	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && storage.len < max_storage
+	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && length(storage) < max_storage
 
 /obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
 	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
@@ -287,7 +287,7 @@
 							if(!reagent_container() || R.check_reagents(reagent_container().reagents) == -1)	// It doesn't have a reagent storage when it needs it, or it's lacking what is needed.
 								continue
 						if(R.items && R.items.len)
-							if(!(storage && storage.len) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
+							if(!length(storage) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
 								continue
 						possible_recipes += R
 						max_prob += R.probability
@@ -307,8 +307,7 @@
 	if(!successful_craft || !recipe)
 		return
 
-	qdel(target)
-	own_take(src, "target")
+	own_clear(src, "target", OWN_DELETE)
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
@@ -317,8 +316,7 @@
 		for(var/obj/item/I in storage)
 			for(var/item_type in recipe.items)
 				if(istype(I, item_type) && prob(recipe.item_consume_chance))
-					own_take_member(src, "storage", I)
-					qdel(I)
+					own_remove(src, "storage", I) // consumed
 					break
 
 	var/result = recipe.result
@@ -340,8 +338,9 @@
 	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
+	// Everything goes to the floor below: detach the owned slots first.
 	own_take(src, "target")
-	rel_clear(src, "reagent_container")
+	own_take(src, "reagent_container")
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
@@ -703,8 +702,9 @@
 
 
 OWN(/obj/machinery/particle_smasher, target, OWN_CONTAINED)
+OWN(/obj/machinery/particle_smasher, reagent_container, OWN_CONTAINED)
 
-/// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
 	return reagent_container
 

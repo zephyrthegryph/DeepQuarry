@@ -73,7 +73,7 @@
 	if(!origin())
 		return last_area()
 
-	rel_set(src, "last_area", origin().get_alarm_area())
+	last_area = origin().get_alarm_area()
 	return last_area()
 
 /datum/alarm/proc/alarm_name()
@@ -91,7 +91,7 @@
 	if(!cameras)
 		cameras = origin() ? origin().get_alarm_cameras() : last_area()?.get_alarm_cameras()
 
-	rel_set(src, "last_camera_area", last_area())
+	last_camera_area = last_area()
 	return cameras
 
 /datum/alarm/proc/max_severity()
@@ -144,14 +144,14 @@
 /mob/living/silicon/robot/syndicate/get_alarm_cameras()
 	return list()
 
-/// LC-refs: The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera). -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 /datum/alarm/proc/last_area() as /area
 	return last_area
 
-/// LC-refs: The last area in which cameras where fetched, used to see if the camera list should be updated. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last area in which cameras where fetched, used to see if the camera list should be updated.
 /datum/alarm/proc/last_camera_area() as /area
 	return last_camera_area
 
-/// LC-refs: Used to identify the alarm area. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The alarm's origin (an atom or an area): a relation view, null once the atom is deleted.
 /datum/alarm/proc/origin() as /atom
 	return origin

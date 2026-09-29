@@ -46,14 +46,6 @@ DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 
-/// Phase 2: fusion control consoles drop it.
-/obj/machinery/power/fusion_core/lifecycle_dematerialize()
-	. = ..()
-	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		LAZYREMOVE(FCC.connected_devices, src)
-		if((FCC.cur_viewed_device == src))
-			rel_clear(FCC, "cur_viewed_device")
-
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(stat & BROKEN)
 		return
@@ -104,8 +96,7 @@ OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 			owned_field.MRC()
 		else
 			owned_field.RadiateAll()
-		qdel(owned_field)
-		own_take(src, "owned_field")
+		own_clear(src, "owned_field", OWN_DELETE)
 	update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
