@@ -16,7 +16,12 @@
 /// Builder for type_lists. `post` (a global proc ref, optional) maps the built list once, before it
 /// is cached (capabilities are interned through it).
 /proc/build_type_list(datum/D, proc_ref, post)
-	var/result = call(D, proc_ref)()
+	var/result
+	try
+		result = call(D, proc_ref)()
+	catch(var/exception/e)
+		// Surface it and don't cache an empty list: the next instance tries again (and fails loudly).
+		CRASH("type_list: [D.type].[proc_ref] failed while building: [e] ([e.file]:[e.line])")
 	if(isnull(result))
 		result = list()
 	else if(!islist(result))

@@ -12,9 +12,16 @@
 // entry, re-run on the answer (library/checks.dm). Text is sanitised, numbers clamped.
 
 /// The context to re-check for a prompt: the running dispatch, or a fresh one for target.
-/proc/ask_context(mob/user, datum/target, datum/dispatch_context/context, needs)
+/**
+ * The context an ask_*() re-checks. third_party: the answerer is not the acting user (a vore consent
+ * prompt, "let them in?"): the running action's context belongs to the actor, so the answerer gets a
+ * fresh one that checks only the answerer (and `target`, `needs` when given).
+ */
+/proc/ask_context(mob/user, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
 	if(context)
 		return ask_context_needs(context, needs)
+	if(third_party)
+		return ask_context_needs(new /datum/dispatch_context(user, target), needs)
 	var/datum/dispatch_context/ctx = GLOB.dispatch_context_now
 	if(ctx && ctx.user == user && (!target || ctx.target == target))
 		if(ctx.returned)
@@ -61,8 +68,8 @@ GLOBAL_LIST_EMPTY(asks_open)
 	to_chat(ctx.user, span_warning("Never mind: [reason]."))
 	return FALSE
 
-/proc/ask_text(mob/user, message, title, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE, datum/target, datum/dispatch_context/context, needs)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs)
+/proc/ask_text(mob/user, message, title, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
 	var/answer = tgui_input_text(user, message, title || "Input", default, max_length, multiline)
@@ -72,8 +79,8 @@ GLOBAL_LIST_EMPTY(asks_open)
 	answer = sanitize(answer, max_length)
 	return length(answer) ? answer : null
 
-/proc/ask_number(mob/user, message, min_value = 0, max_value = INFINITY, title, default = 0, round_value = TRUE, datum/target, datum/dispatch_context/context, needs)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs)
+/proc/ask_number(mob/user, message, min_value = 0, max_value = INFINITY, title, default = 0, round_value = TRUE, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
 	var/answer = tgui_input_number(user, message, title || "Input", default, max_value, min_value, 0, round_value)
@@ -82,8 +89,8 @@ GLOBAL_LIST_EMPTY(asks_open)
 		return null
 	return ui_number(answer, min_value, max_value, round_value ? 1 : 0)
 
-/proc/ask_list(mob/user, message, list/choices, title, default, datum/target, datum/dispatch_context/context, needs)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs)
+/proc/ask_list(mob/user, message, list/choices, title, default, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
 	var/answer = tgui_input_list(user, message, title || "Select", choices, default)
@@ -93,8 +100,8 @@ GLOBAL_LIST_EMPTY(asks_open)
 	return ui_choice(answer, choices)
 
 /// TRUE for yes, FALSE for no, null when cancelled or no longer valid.
-/proc/ask_yes_no(mob/user, message, title, datum/target, datum/dispatch_context/context, needs)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs)
+/proc/ask_yes_no(mob/user, message, title, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
 	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No"))
@@ -103,8 +110,8 @@ GLOBAL_LIST_EMPTY(asks_open)
 		return null
 	return answer == "Yes"
 
-/proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target, datum/dispatch_context/context, needs)
-	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs)
+/proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
+	var/datum/dispatch_context/ctx = ask_context(user, target, context, needs, third_party)
 	if(!ask_open(ctx))
 		return null
 	var/answer = tgui_color_picker(user, message, title || "Colour", default)
@@ -114,11 +121,11 @@ GLOBAL_LIST_EMPTY(asks_open)
 	return sanitize_hexcolor(answer, default)
 
 /// One of `candidates` (mobs), by name.
-/proc/ask_mob(mob/user, message, list/candidates, title, datum/target, datum/dispatch_context/context, needs)
+/proc/ask_mob(mob/user, message, list/candidates, title, datum/target, datum/dispatch_context/context, needs, third_party = FALSE)
 	var/list/by_name = list()
 	for(var/mob/M as anything in candidates)
 		by_name[avoid_assoc_duplicate_keys(M.name, by_name)] = M
-	var/choice = ask_list(user, message, by_name, title, target = target, context = context, needs = needs)
+	var/choice = ask_list(user, message, by_name, title, target = target, context = context, needs = needs, third_party = third_party)
 	if(isnull(choice))
 		return null
 	var/mob/M = by_name[choice]

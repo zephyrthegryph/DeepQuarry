@@ -11,6 +11,7 @@
 /// per type and cached: `. = ..()` then `. += ...`; `. = without(., /datum/capability/x)` drops one.
 /// Pure: read no instance state here.
 /atom/proc/capabilities()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -53,7 +54,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
 /proc/cap_of(atom/A, key)
-	for(var/datum/capability/C as anything in caps_of(A))
+	for(var/datum/capability/C as anything in caps_all(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			return C
 	return null
@@ -80,6 +81,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// Sets or clears `bits` on A through the change path. TRUE when the state changed.
 /proc/cap_set(atom/A, bits, on)
+	if(isnull(on))
+		CRASH("cap_set: `on` is required (TRUE to set, FALSE to clear) for [A?.type]")
 	var/was = A.cap_state
 	if(on)
 		A.cap_state |= bits
@@ -135,6 +138,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
  *			. += /obj/item/healthanalyzer/proc/toggle_adv
  */
 /atom/proc/type_verbs()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -197,6 +201,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /atom/proc/caps_destroy()
+	if(timed_until)
+		timed_cancel_all(src)
 	var/flags = GLOB.type_derives_cache[type]
 	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !cap_data && !cap_extras)
 		return
