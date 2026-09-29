@@ -1,0 +1,10 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "TGUI pushes are coalesced through the object model: update_uis() requests one push per UI per throttle window, open UIs watch their object for changes, and data pushes carry a slim config instead of rebuilding the whole block"
+  - code_imp: "Added /datum/client_session, which owns every connection-scoped datum and the asset jobs; client/Destroy is now qdel(session)"
+  - code_imp: "Asset flushes are released by the client's ack (or a timeout) instead of polling with stoplag; tgui window open no longer blocks up to 5 seconds"
+  - code_imp: "Added SKIN_* control-id defines with a CI check against interface/skin.dmf"
+  - bugfix: "client/New no longer continues logging in a client it just deleted for a spoofed BYOND version"
+  - bugfix: "The asset-arrival ack is handled before the usr/mob gate, so a body swap can't drop it"
+  - code_imp: "A reconnecting client no longer re-reads its preferences savefile from disk inside client/New"

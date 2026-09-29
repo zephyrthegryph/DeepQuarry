@@ -51,6 +51,17 @@
 	return
 
 /datum/tgui/om_ui_push()
+	if(closing || QDELETED(src))
+		return
+	if(push_reinteract)
+		// An update_uis() request: re-run tgui_interact, as the old inline push did.
+		push_reinteract = FALSE
+		INVOKE_ASYNC(src, TYPE_PROC_REF(/datum/tgui, process), 0.9, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+		return
+	// A watched change: validate the status, then send data only.
+	if(process_status() && status <= STATUS_CLOSE)
+		close()
+		return
 	send_update()
 
 /datum/om/behaviour/internal/ui_push

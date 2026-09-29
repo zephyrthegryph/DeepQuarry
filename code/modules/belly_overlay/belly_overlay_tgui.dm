@@ -22,7 +22,7 @@
 // hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/on_destroy(force)
 	if(owner()?.client)
-		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
+		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 	..()
 
 /datum/belly_overlay_tgui/tgui_state(mob/user)
@@ -43,9 +43,9 @@
 	if(!owner()?.client)
 		return
 	var/client/C = owner().client
-	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
+	winset(C, SKIN_BELLY_OVERLAY, "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
-		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
+		var/datum/tgui_window/win = new(C, SKIN_BELLY_OVERLAY)
 		own_set(src, "active_ui", new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win))
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
@@ -173,7 +173,7 @@
 	if(active_ui)
 		active_ui.send_update()
 	if(owner()?.client)
-		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
+		winset(owner().client, SKIN_BELLY_OVERLAY, "is-visible=false")
 
 /proc/get_belly_overlay_tgui(mob/M)
 	if(!M)

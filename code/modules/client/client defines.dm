@@ -102,11 +102,6 @@
 	control_freak = 0 // KSC 1/30/20 - This enables all clientside options for Players.
 	// List of all asset filenames sent to this client by the asset cache, along with their assoicated md5s
 	var/list/sent_assets = list() // ALLOW(instance_list): d: one per connected client; every client is sent assets on login
-	/// List of all completed blocking send jobs awaiting acknowledgement by send_asset
-	var/list/completed_asset_jobs
-	/// Last asset send job id.
-	var/last_asset_job = 0
-	var/last_completed_asset_job = 0
 
 	///Last ping of the client
 	var/lastping = 0

@@ -6,8 +6,8 @@
 	if(ui)
 		ui.close()
 
-	winset(src, "lobby_browser", "is-disabled=false;is-visible=true")
-	own_set(src, "lobby_window", new /datum/tgui_window(client, "lobby_browser"))
+	winset(src, SKIN_LOBBY_BROWSER, "is-disabled=false;is-visible=true")
+	own_set(src, "lobby_window", new /datum/tgui_window(client, SKIN_LOBBY_BROWSER))
 	lobby_window.initialize(
 		assets = list(
 			get_asset_datum(/datum/asset/simple/tgui)

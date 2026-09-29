@@ -17,7 +17,7 @@
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
 		winset(src, null, "command=[client.tgui_say_create_open_command(SAY_CHANNEL)]")
-		winset(src, "tgui_say.browser", "focus=true")
+		winset(src, SKIN_SAY_BROWSER, "focus=true")
 		return
 
 	say_verb_old()
@@ -28,7 +28,7 @@
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
 		winset(src, null, "command=[client.tgui_say_create_open_command(ME_CHANNEL)]")
-		winset(src, "tgui_say.browser", "focus=true")
+		winset(src, SKIN_SAY_BROWSER, "focus=true")
 		return
 
 	me_verb_old()
@@ -39,7 +39,7 @@
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say))
 		winset(src, null, "command=[client.tgui_say_create_open_command(WHIS_CHANNEL)]")
-		winset(src, "tgui_say.browser", "focus=true")
+		winset(src, SKIN_SAY_BROWSER, "focus=true")
 		return
 
 	whisper_old()
@@ -51,7 +51,7 @@
 
 	if(client?.prefs?.read_preference(/datum/preference/toggle/tgui_say) && client?.prefs?.read_preference(/datum/preference/toggle/tgui_say_emotes))
 		winset(src, null, "command=[client.tgui_say_create_open_command(SUBTLE_CHANNEL)]")
-		winset(src, "tgui_say.browser", "focus=true")
+		winset(src, SKIN_SAY_BROWSER, "focus=true")
 		return
 
 	me_verb_subtle_old()
