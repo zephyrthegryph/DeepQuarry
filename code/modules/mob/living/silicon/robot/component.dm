@@ -41,7 +41,7 @@
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
 	if(part)
-		own_set(src, "wrapped", part)
+		own_move(part, src, "wrapped")
 	installed = ROBOT_PART_INSTALLED
 	if(istype(wrapped, /obj/item/robot_parts/robot_component))
 		var/obj/item/robot_parts/robot_component/comp = wrapped
@@ -77,10 +77,7 @@
 		brokenstate = comp.icon_state_broken
 	// Clear the slot before deleting the part so deletion handlers (the
 	// robot's cell watcher) see an empty slot rather than a removal.
-	var/obj/item/old_part = wrapped
-	own_take(src, "wrapped")
-	if(old_part)
-		qdel(old_part)
+	own_clear(src, "wrapped", OWN_DELETE)
 	if(!internal)
 		own_set(src, "wrapped", new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate

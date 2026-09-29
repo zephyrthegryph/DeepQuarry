@@ -42,13 +42,13 @@
 	if(spray_blood && prob(5)) // Make a big mess
 		visible_message("Something flies out of [src]. It seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(get_turf(src))
-		ignore_list += gib
+		rel_add(src, "ignore_list", gib)
 		om_after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), gib)
 
 /mob/living/bot/cleanbot/proc/clear_ignored_gib(obj/gibref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	ignore_list -= gibref
+	rel_remove(src, "ignore_list", gibref)
 
 /mob/living/bot/cleanbot/handlePanic()	// Speed modification based on alert level.
 	. = 0

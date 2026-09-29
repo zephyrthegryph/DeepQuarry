@@ -503,4 +503,4 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 			. += span_notice("[src] is dry.")
 // CHOMPEnable End
 
-// Matter synths belong to the robot module (DECLARE_REF(..., OWNED_LIST) "synths"); tools draw on them.
+// Matter synths belong to the robot module (the owned "synths" list); tools draw on them.

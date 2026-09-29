@@ -68,7 +68,7 @@
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	var/locked = 0
-	VAR_PRIVATE/occupant_handle = null
+	VAR_PRIVATE/mob/living/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0
 	var/damage_coeff
@@ -109,14 +109,14 @@
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		occupant_handle = null
+		rel_clear(src, "occupant")
 		return
-	occupant_handle = om_handle(L)
+	rel_set(src, "occupant", L)
 
 /obj/machinery/dna_scannernew/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return om_resolve(occupant_handle)
+	return occupant
 
 /obj/machinery/dna_scannernew/RefreshParts()
 	scan_level = 0
@@ -208,9 +208,9 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		own_set(src, "beaker", item)
 		user.drop_item()
 		item.forceMove(src)
+		own_set(src, "beaker", item)
 		user.visible_message("\The [user] adds \a [item] to \the [src]!", "You add \a [item] to \the [src]!")
 		SStgui.update_uis(src)
 		return TRUE
@@ -368,7 +368,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
-		buffers[i+1]=R
+		own_put(src, "buffers", i+1, R)
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
 		rel_set(src, "connected", locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
@@ -612,7 +612,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 							var/mob/living/carbon/human/H = WC
 							databuf.mydna.dna.real_name = H.dna.real_name
 							databuf.mydna.gender = H.gender
-						buffers[bufferId] = databuf
+						own_put(src, "buffers", bufferId, databuf)
 					return TRUE
 				if("clear")
 					playsound(src, "keyboard", 40)
@@ -622,7 +622,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					R.mydna.dna = new
 					R.mydna.dna.ResetUI()
 					R.mydna.dna.ResetSE()
-					buffers[bufferId] = R
+					own_put(src, "buffers", bufferId, R)
 					return TRUE
 				if("changeLabel")
 					playsound(src, "keyboard", 40)
@@ -655,7 +655,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 					databuf.init_from_br(disk.stored)
 					databuf.mydna.types = DNA2_BUF_SE // structurals only
-					buffers[bufferId] = databuf
+					own_put(src, "buffers", bufferId, databuf)
 				if("saveDisk")
 					playsound(src, "keyboard", 40)
 					if(isnull(disk)) // Traitgenes Removed readonly
@@ -749,7 +749,6 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 						return
 					var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
 					buf.mydna.name = answer // Traitgenes Use bodyrecords
-					buffers[buffer_id] = buf
 				else
 					return FALSE
 		else
@@ -896,6 +895,6 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 OWN(/obj/machinery/dna_scannernew, beaker, OWN_CONTAINED)
 OWN(/obj/machinery/computer/scan_consolenew, disk, OWN_CONTAINED)
 
-/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected: a relation view, null once the scanner is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew
 	return connected

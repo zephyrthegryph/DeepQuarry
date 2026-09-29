@@ -108,8 +108,10 @@ REL_PAIR(/datum/gene/trait, linked_trait, linked_gene)
 			// Add trait
 			if(linked_trait.type in H.species.traits)
 				return
-			linked_trait.apply( H.species, H, H.species.traits[linked_trait.type])
-			H.species.traits.Add(linked_trait.type)
+			// Mutate the mob's own copy, never the shared species prototype.
+			var/datum/species/S = proto_private(H, "species")
+			linked_trait.apply(S, H, S.traits[linked_trait.type])
+			S.traits.Add(linked_trait.type)
 			if(!(linked_trait.type in H.dna.species_traits)) // Set species traits too
 				LAZYADD(H.dna.species_traits, linked_trait.type)
 			// message player with change
@@ -123,9 +125,11 @@ REL_PAIR(/datum/gene/trait, linked_trait, linked_gene)
 			// Remove trait
 			if(!(linked_trait.type in H.species.traits))
 				return
-			linked_trait.unapply( H.species, H, H.species.traits[linked_trait.type])
-			linked_trait.remove(H.species) // Does nothing, but may as well call it because it exists and has a place now
-			H.species.traits.Remove(linked_trait.type)
+			// Mutate the mob's own copy, never the shared species prototype.
+			var/datum/species/S = proto_private(H, "species")
+			linked_trait.unapply(S, H, S.traits[linked_trait.type])
+			linked_trait.remove(S) // Does nothing, but may as well call it because it exists and has a place now
+			S.traits.Remove(linked_trait.type)
 			if(linked_trait.type in H.dna.species_traits) // Clear species traits too
 				LAZYREMOVE(H.dna.species_traits, linked_trait.type)
 			// message player with change

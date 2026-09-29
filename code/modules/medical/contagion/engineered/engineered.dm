@@ -195,11 +195,24 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	if(!keepid)
 		id = null
 
-	if(!GLOB.archive_diseases[GetDiseaseID()])
+	// While the archive copy of a new strain is built, its own Refresh() sees the id being
+	// archived and takes the original's name (the archive never holds a live strain itself).
+	var/static/archiving_id
+	var/static/archiving_name
+	var/disease_id = GetDiseaseID()
+	if(!isnull(archiving_id) && disease_id == archiving_id)
+		if(archiving_name != DEVELOPER_WARNING_NAME)
+			name = archiving_name
+	else if(!GLOB.archive_diseases[disease_id])
 		if(new_name)
 			AssignName()
-		GLOB.archive_diseases[GetDiseaseID()] = src // So we don't infinite loop
-		GLOB.archive_diseases[GetDiseaseID()] = new /datum/affliction/contagion/engineered(0, src, 1)
+		disease_id = GetDiseaseID()
+		archiving_id = disease_id
+		archiving_name = name
+		var/datum/affliction/contagion/engineered/archived = new /datum/affliction/contagion/engineered(0, src, 1)
+		archiving_id = null
+		archiving_name = null
+		GLOB.archive_diseases[disease_id] = archived
 	else
 		var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[GetDiseaseID()]
 		var/actual_name = A.name

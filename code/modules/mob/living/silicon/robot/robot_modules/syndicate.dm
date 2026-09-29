@@ -99,7 +99,7 @@
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	rel_set(N, "synths", list(nanite))
+	rel_add(N, "synths", nanite)
 	src.modules += N
 
 	var/obj/item/dogborg/sleeper/compactor/syndie/MD = new /obj/item/dogborg/sleeper/compactor/syndie(src)
@@ -145,13 +145,13 @@
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	rel_set(O, "synths", list(medicine))
+	rel_add(O, "synths", medicine)
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	rel_set(B, "synths", list(medicine))
+	rel_add(B, "synths", medicine)
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
-	rel_set(S, "synths", list(medicine))
+	rel_add(S, "synths", medicine)
 	src.modules += O
 	src.modules += B
 	src.modules += S

@@ -200,6 +200,7 @@
 /mob/living/carbon/human/proc/nano_fitting_chosen(datum/om/prompt/choice/ask)
 	if(!species)
 		return
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.base_species = ask.choice
 	regenerate_icons()
 

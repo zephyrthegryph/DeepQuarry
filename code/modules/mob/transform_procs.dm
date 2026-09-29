@@ -104,7 +104,7 @@
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))
-			O.mind.original_character = om_handle(O)
+			rel_set(O.mind, "original_character", O)
 	else
 		O.key = key // admin-made AI from an observer: first assignment
 
@@ -165,7 +165,7 @@
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
-			O.mind.original_character = om_handle(O)
+			rel_set(O.mind, "original_character", O)
 		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 

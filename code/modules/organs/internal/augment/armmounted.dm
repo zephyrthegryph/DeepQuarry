@@ -211,11 +211,8 @@
 		integrated_tool_images = list()
 
 		var/list/synth_paths = synth_types()
-		if(length(synth_paths))
-			synths = list()
-			for(var/datumpath in synth_paths)
-				var/datum/matter_synth/MS = new datumpath
-				synths += MS
+		for(var/datumpath in synth_paths)
+			own_add(src, "synths", new datumpath)
 
 		for(var/path in integrated_tools)
 			if(!integrated_tools[path])
@@ -223,17 +220,26 @@
 			var/obj/item/I = integrated_tools[path]
 			I.canremove = FALSE
 			I.toolspeed = toolspeed
-			I.my_augment_handle = om_handle(src)
+			rel_set(I, "my_augment", src)
 			I.name = "integrated [I.name]"
 
 		for(var/tool in integrated_tools)
 			var/obj/item/Tool = integrated_tools[tool]
 			if(istype(Tool, /obj/item/stack))
 				var/obj/item/stack/S = Tool
-				rel_set(S, "synths", synths)
-				S.uses_charge = synths.len
+				for(var/datum/matter_synth/MS as anything in synths)
+					rel_add(S, "synths", MS)
+				S.uses_charge = length(synths)
 			integrated_tools_by_name[Tool.name] = Tool
 			integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
+
+/// Deploys `tool` as the integrated object. Every tool stays in integrated_tools, so the one put
+/// away is detached (not disposed of) before the new one is adopted.
+/obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/select_integrated_tool(obj/item/tool)
+	if(integrated_object == tool)
+		return
+	own_take(src, "integrated_object")
+	own_set(src, "integrated_object", tool)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special()
 	..()
@@ -261,7 +267,7 @@
 
 	if(length(options) == 1)
 		for(var/key in options)
-			own_set(src, "integrated_object", integrated_tools_by_name[key])
+			select_integrated_tool(integrated_tools_by_name[key])
 		return ..()
 
 	om_ask(owner, /datum/om/prompt/choice/radial, PROC_REF(integrated_tool_chosen), choices = options, anchor = owner)
@@ -270,7 +276,7 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/integrated_tool_chosen(datum/om/prompt/choice/radial/ask)
 	if(!owner || ask.answerer != owner || is_broken())
 		return
-	own_set(src, "integrated_object", integrated_tools_by_name[ask.choice])
+	select_integrated_tool(integrated_tools_by_name[ask.choice])
 	tool_picked = TRUE
 	augment_action()
 

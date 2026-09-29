@@ -28,6 +28,7 @@
 		block_hud = 1
 		hud_updateflag = 1
 		to_chat(src, span_warning("Your fur shimmers and shifts around you, hiding you from the naked eye."))
+		proto_private(src, "species") // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 	else
 		uncloak()
@@ -57,6 +58,7 @@
 
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	dna.base_species = new_species
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.base_species = new_species
 	visible_message(span_infoplain(span_bold("\The [src]") + " shifts and contorts, taking the form of \a [new_species]!"))
 	regenerate_icons()
@@ -186,6 +188,7 @@
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
 	put_in_active_hand(N)
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
 
@@ -211,6 +214,7 @@
 	var/obj/structure/glamour_ring/R = new(spawnloc)
 	R.connected_mob = src
 	src.teleporters |= R
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost_spawn
 	species.update_lleill_hud(src)
 
@@ -285,6 +289,7 @@
 
 	var/S = get_turf(R)
 	src.forceMove(S)
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost_tele
 
 	spk.start()
@@ -415,6 +420,7 @@
 
 /mob/living/carbon/human/proc/lleill_contact_done(mob/living/carbon/human/chosen_target)
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " and \the [chosen_target] complete their contact."))
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.lleill_energy = species.lleill_energy_max
 	adjust_nutrition((chosen_target.nutrition / 2))
 	to_chat(src, span_warning("You feel revitalised."))
@@ -486,6 +492,7 @@
 	var/spawnloc = get_turf(src)
 	var/obj/item/N = new transmute_product(spawnloc)
 	put_in_active_hand(N)
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost
 	species.update_lleill_hud(src)
 
@@ -637,8 +644,8 @@
 	var/turf/beast_loc = src.loc
 	ourmob.forceMove(beast_loc)
 	ourmob.forceMove(beast_loc)
-	own_set(ourmob, "vore_selected", vore_selected)
-	own_take(src, "vore_selected")
+	rel_set(ourmob, "vore_selected", vore_selected) // a pointer at one of the bellies (vore_organs), never owned
+	rel_clear(src, "vore_selected")
 	ourmob.mob_belly_transfer(src)
 
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)
@@ -763,6 +770,7 @@
 	var/mob/living/new_mob = spawn_beast_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
+		proto_private(src, "species") // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 		add_verb(new_mob, /mob/living/proc/revert_beast_form)
 		add_verb(new_mob, /mob/living/proc/set_size)

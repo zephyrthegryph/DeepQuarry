@@ -167,8 +167,7 @@
 	icon_selected = TRUE
 	var/module_type = GLOB.robot_modules[new_module]
 	if(modtype != new_module || !module)
-		if(module)
-			qdel(module)
+		own_clear(src, "module", OWN_DELETE)
 		modtype = new_module
 		own_set(src, "module", new module_type(src))
 		feedback_inc("cyborg_[lowertext(new_module)]",1)
@@ -176,7 +175,7 @@
 	hud_used.update_robot_modules_display()
 	notify_ai(ROBOT_NOTIFICATION_NEW_MODULE, module.name)
 	robotact?.update_static_data_for_all_viewers()
-	sprite_datum = new_datum
+	proto_set(src, "sprite_datum", new_datum)
 	if(!istype(src,/mob/living/silicon/robot/drone))
 		sprite_type = sprite_datum.name
 

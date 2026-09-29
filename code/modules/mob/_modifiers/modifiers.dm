@@ -92,9 +92,10 @@
 			return G
 	return null
 
-/// The generator projecting the shield on `L`, or null.
+/// The generator projecting the shield on `L`, or null. The effect's per-mob state is the colour
+/// it last drew (plain data), so a generator swap re-draws without holding a reference to it.
 /datum/body_effect/shield_projection/proc/generator_of(mob/living/L) as /obj/item/personal_shield_generator
-	return om_resolve(L.body_effect_state(type))
+	return find_generator(L)
 
 /// The generator must still be worn (and switched on); it also sets the shield's colour.
 /datum/body_effect/shield_projection/on_check(mob/living/L)
@@ -102,8 +103,8 @@
 	if(!G || !G.slot_check())
 		L.end_body_effect(type, !G)
 		return
-	if(generator_of(L) != G)
-		L.set_body_effect_state(type, om_handle(G))
+	if(L.body_effect_state(type) != G.effect_color)
+		L.set_body_effect_state(type, G.effect_color)
 		L.update_modifier_visuals()
 
 /datum/body_effect/shield_projection/overlay_color(mob/living/L)

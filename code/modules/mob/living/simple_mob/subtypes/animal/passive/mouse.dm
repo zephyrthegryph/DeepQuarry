@@ -86,7 +86,6 @@
 		holder_type = /obj/item/holder/mouse/black
 
 	if(prob(40))
-		LAZYINITLIST(rat_diseases)
 		own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)

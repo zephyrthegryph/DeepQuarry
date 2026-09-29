@@ -84,8 +84,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields",
 	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/mining_drone/on_death(gibbed)
-	my_storage.forceMove(get_turf(src))
-	own_take(src, "my_storage")
+	var/obj/item/ore_bag/dropped = own_take(src, "my_storage")
+	dropped?.forceMove(get_turf(src))
 	..()
 
 /mob/living/simple_mob/mechanical/mining_drone/Process_Spacemove(check_drift = 0)

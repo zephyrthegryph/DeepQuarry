@@ -132,12 +132,10 @@
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				qdel(coin)
-				own_take(src, "coin")
+				own_clear(src, "coin", OWN_DELETE)
 				categories &= ~CAT_COIN
 		else
-			qdel(coin)
-			own_take(src, "coin")
+			own_clear(src, "coin", OWN_DELETE)
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)

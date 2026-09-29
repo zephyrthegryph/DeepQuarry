@@ -98,7 +98,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/multicam_allowed = TRUE
 	var/multicam_on = FALSE
 	var/atom/movable/screen/movable/pic_in_pic/ai/master_multicam
-	var/list/multicam_screens = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/multicam_screens // REL_LIST (multicam.dm)
 	var/max_multicams = 6
 
 	can_be_antagged = TRUE
@@ -150,8 +150,8 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 		own_set(src, "laws", new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
 
 	own_set(src, "aiRadio", new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
-	own_set(src, "common_radio", aiRadio)
-	aiRadio.myAi = src
+	rel_set(src, "common_radio", aiRadio) // an alias of the owned aiRadio
+	rel_set(aiRadio, "myAi", src)
 	additional_law_channels["Binary"] = "#b"
 	additional_law_channels["Holopad"] = ":h"
 
@@ -294,9 +294,9 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		if(Entry[1] == src.ckey && Entry[2] == src.real_name)
 			icon = CUSTOM_ITEM_SYNTH
 			custom_sprite = TRUE
-			selected_sprite = new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")
+			proto_set(src, "selected_sprite", new/datum/ai_icon("Custom", "[src.ckey]-ai", "4", "[ckey]-ai-crash", "#FFFFFF", "#FFFFFF", "#FFFFFF")) // the AI's private custom icon
 		else
-			selected_sprite = GLOB.default_ai_icon
+			proto_set(src, "selected_sprite", GLOB.default_ai_icon)
 	update_icon()
 
 /mob/living/silicon/ai/pointed(atom/A as mob|obj|turf in view())
@@ -383,7 +383,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	return (AI.stat || AI.aiRestorePowerRoutine || AI.custom_sprite) ? "unable" : null
 
 /mob/living/silicon/ai/proc/ai_icon_chosen(datum/om/prompt/choice/ai_icon/ask)
-	selected_sprite = ask.choice
+	proto_set(src, "selected_sprite", ask.choice)
 	update_icon()
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
@@ -959,7 +959,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	..()
 
 /mob/living/silicon/ai/update_icon()
-	if(!selected_sprite) selected_sprite = GLOB.default_ai_icon
+	if(!selected_sprite)
+		proto_set(src, "selected_sprite", GLOB.default_ai_icon)
 
 	if(stat == DEAD)
 		icon_state = selected_sprite.dead_icon
@@ -1108,3 +1109,5 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 /mob/living/silicon/ai/proc/hacking_done()
 	hacking = 0
 
+// A registered AI icon, or the AI's private custom icon (copy-on-write).
+PROTO(/mob/living/silicon/ai, selected_sprite)

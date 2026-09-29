@@ -33,7 +33,7 @@
 	if(!thing_to_copy)
 		return FALSE
 	appearance = thing_to_copy.appearance
-	own_set(src, "copying", thing_to_copy)
+	rel_set(src, "copying", thing_to_copy)
 	density = thing_to_copy.density // So you can't bump into objects that aren't supposed to be dense.
 	catalogue_data = thing_to_copy.get_catalogue_data()
 	dq_set_catalogue_delay(src, thing_to_copy.get_catalogue_delay()) // copy DQ catalogue scan-delay so illusions don't reveal themselves via faster scan time
@@ -125,4 +125,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	if(copying)
 		return copying.get_catalogue_delay()
 
-OWN(/mob/living/simple_mob/illusion, copying, OWN_CONTAINED)

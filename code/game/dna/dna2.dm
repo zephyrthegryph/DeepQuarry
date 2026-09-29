@@ -440,13 +440,15 @@ GLOBAL_LIST_EMPTY_TYPED(dna_genes_bad, /datum/gene/trait)
 	// anything that sets stuff in species MUST be done beyond here!
 	LAZYINITLIST(species_traits); H.species.produceCopy(species_traits, H, base_species, FALSE) // Traitgenes edit - reset_dna flag required, or genes get reset on resleeve
 
-	// Update species blood with our blood color from dna!
-	H.species.blood_reagents = blood_reagents
-	H.species.blood_color = blood_color
-	H.species.species_sounds = species_sounds
-	H.species.gender_specific_species_sounds = gender_specific_species_sounds
-	H.species.species_sounds_male = species_sounds_male
-	H.species.species_sounds_female = species_sounds_female
+	// Update species blood with our blood color from dna! produceCopy() left H's species a private
+	// copy; proto_private() returns it (and never lets these writes reach a registered species).
+	var/datum/species/own_species = proto_private(H, "species")
+	own_species.blood_reagents = blood_reagents
+	own_species.blood_color = blood_color
+	own_species.species_sounds = species_sounds
+	own_species.gender_specific_species_sounds = gender_specific_species_sounds
+	own_species.species_sounds_male = species_sounds_male
+	own_species.species_sounds_female = species_sounds_female
 /**
  * End of mob to dna, and dna to mob transfer procs.
  */

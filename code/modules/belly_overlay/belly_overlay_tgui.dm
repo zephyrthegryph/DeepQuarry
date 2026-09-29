@@ -188,6 +188,6 @@
 
 
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner: a relation view, null once it is deleted.
 /datum/belly_overlay_tgui/proc/owner() as /mob
 	return owner

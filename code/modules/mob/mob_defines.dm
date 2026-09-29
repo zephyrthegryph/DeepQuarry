@@ -97,7 +97,7 @@
 	var/sec_record = ""
 	var/gen_record = ""
 	var/exploit_record = ""
-	var/exploit_addons = list()		//Assorted things that show up at the end of the exploit_record list
+	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
@@ -202,7 +202,7 @@
 	var/tmp/mob/living/carbon/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
-	// ALLOW(object_keyed_lists): spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm); the mob neither owns nor deletes them
+	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
 	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 //Changlings, but can be used in other modes
@@ -274,7 +274,7 @@
 	/// dict of custom stat tabs with data
 	var/list/list/misc_tabs = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
-	// ALLOW(object_keyed_lists): membership list maintained by /datum/action Grant()/Remove(); the action owns the relation
+	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions
 
 
@@ -300,5 +300,8 @@
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-// Screen objects belong to hud_used; the mob only points at them (remove_screen_obj_references()).
-OWN(/mob, control_object, OWN_CONTAINED)
+REL(/mob, control_object) // the object an admin possesses
+REL_LIST(/mob, spell_list)
+REL_LIST(/mob, actions)
+REL_PAIR_LIST(/mob, exploit_addons, exploit_for)
+REL_PAIR(/obj/item, exploit_for, exploit_addons)

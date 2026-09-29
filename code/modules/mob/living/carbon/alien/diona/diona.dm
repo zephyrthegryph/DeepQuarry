@@ -51,7 +51,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 
 /mob/living/carbon/alien/diona/Initialize(mapload)
 	. = ..()
-	species = GLOB.all_species[SPECIES_DIONA]
+	proto_set(src, "species", GLOB.all_species[SPECIES_DIONA])
 	add_language(LANGUAGE_ROOTGLOBAL)
 	add_language(LANGUAGE_GALCOM)
 	add_verb(src, /mob/living/carbon/alien/diona/proc/merge)

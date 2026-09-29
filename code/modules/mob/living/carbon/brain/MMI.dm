@@ -32,11 +32,11 @@
 
 /// Seat `B` as this MMI's brain tissue: the occupant's status reads it.
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
-	own_set(src, "brainobj", B)
 	if(B)
 		B.preserved = TRUE
 		if(B.loc != src)
 			B.forceMove(src)
+	own_set(src, "brainobj", B) // contained: moved in first
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 
@@ -146,7 +146,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 /// Take the brain organ out; the occupant (and its mind) goes with it. The
 /// organ keeps its lesions, so damage and treatment carry on.
 /obj/item/mmi/proc/eject_brain(atom/destination, reason = "ejected")
-	var/obj/item/organ/internal/brain/brain = brainobj
+	// Detached before it leaves our contents; set_brain(null) below then only drops the tissue.
+	var/obj/item/organ/internal/brain/brain = brainobj ? own_take(src, "brainobj") : null
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
 	brain.preserved = FALSE
@@ -171,11 +172,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 		if(istype(rig,/obj/item/rig))
 			rig.forced_move(direction, user)
 
-// the occupant view is discarded before the tissue; a borg forgets its MMI.
+// the occupant view is discarded before the tissue (the borg's mmi var empties on its own).
 /obj/item/mmi/on_destroy(force)
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/borg = loc
-		own_take(borg, "mmi")
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
@@ -394,4 +392,4 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
 OWN(/obj/item/mmi, brainobj, OWN_CONTAINED)
-OWN(/obj/item/mmi, mecha, OWN_CONTAINED)
+REL(/obj/item/mmi, mecha) // the mech we are installed in

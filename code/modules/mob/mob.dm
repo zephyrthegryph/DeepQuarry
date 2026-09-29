@@ -25,8 +25,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	unset_machine()
 	clear_fullscreen()
+	// The screen objects are ours (own_set by the HUD setup) and go in teardown.
 	if(client)
-		remove_screen_obj_references()
 		client.screen = list()
 	if(mind && mind.current == src)
 		spellremove(src)
@@ -37,35 +37,16 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	if(LAZYLEN(vore_organs))
-		QDEL_NULL_LIST(vore_organs)
+	// our bellies go with us; each leaves vore_organs through the pair
+	for(var/obj/belly/B as anything in vore_organs?.Copy())
+		qdel(B)
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
-	if(mind?.current == src)
-		rel_clear(mind, "current")
-	// the mind forgets us as its original character.
-	if(mind && om_handle_is(mind.original_character, src))
-		mind.original_character = null
+	// mind.current / mind.original_character are relation views: they clear as we go.
 	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
-
-/mob/proc/remove_screen_obj_references()
-	own_take(src, "hands")
-	own_take(src, "pullin")
-	own_take(src, "purged")
-	own_take(src, "internals")
-	own_take(src, "i_select")
-	own_take(src, "m_select")
-	own_take(src, "healths")
-	own_take(src, "throw_icon")
-	own_take(src, "pain")
-	own_take(src, "item_use_icon")
-	own_take(src, "gun_move_icon")
-	own_take(src, "gun_setting_icon")
-	own_take(src, "spell_masters")
-	own_take(src, "zone_sel")
 
 /mob/Initialize(mapload)
 	OM_EMIT_WORLD(/datum/om/event/world_mob_created, src)
@@ -471,7 +452,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 		//Their objectives cleanup
 		if(length(mind.objectives))
-			own_clear(mind, "objectives", OWN_DELETE)
+			// each dying objective leaves mind.objectives on its own (works for the OWN or pair declaration)
+			for(var/datum/objective/O as anything in mind.objectives.Copy())
+				qdel(O)
 			mind.special_role = null
 
 		//Cut the PDA manifest (ugh)
@@ -1156,12 +1139,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		exploit_addons |= I
+		rel_add(src, "exploit_addons", I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
-		I.exploit_for = om_handle(src)
-
-// exploit add-ons forget the item (the exploited mob is a handle).
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
@@ -1561,9 +1541,7 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 			return
 
 		if(L.ai_brain)	//Cleaning up the original ai
-			var/datum/ai_brain/old_brain = L.ai_brain
-			own_take(L, "ai_brain")
-			qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+			own_clear(L, "ai_brain", OWN_DELETE)
 		L.initialize_ai_brain()
 		om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, usr, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
 

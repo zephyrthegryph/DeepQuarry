@@ -7,7 +7,7 @@
 		ui.close()
 
 	winset(src, "lobby_browser", "is-disabled=false;is-visible=true")
-	rel_set(src, "lobby_window", new /datum/tgui_window(client, "lobby_browser"))
+	own_set(src, "lobby_window", new /datum/tgui_window(client, "lobby_browser"))
 	lobby_window.initialize(
 		assets = list(
 			get_asset_datum(/datum/asset/simple/tgui)
@@ -116,7 +116,7 @@
 			if(client.feedback_form)
 				client.feedback_form.display() // In case they closed the form early.
 			else
-				client.feedback_form = new(client)
+				own_set(client, "feedback_form", new /datum/managed_browser/feedback_form(client)) // the client owns its form
 			return TRUE
 		if("open_station_news")
 			show_latest_news(GLOB.news_data.station_newspaper())
@@ -173,7 +173,7 @@
 
 		observer.set_respawn_timer(time_till_respawn()) // Will keep their existing time if any, or return 0 and pass 0 into set_respawn_timer which will use the defaults
 		observer.client.init_verbs()
-		QDEL_NULL(mind)
+		qdel(mind) // mind is a relation view: the framework clears it as the mind dies
 		qdel(src)
 
 		// pAI notify if we have be pAI invite on

@@ -563,7 +563,7 @@
 		return ..()
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
-	default_attack = u_attack
+	rel_set(src, "default_attack", u_attack) // an attack the species owns
 
 /mob/living/carbon/human/proc/perform_cpr(mob/living/carbon/human/reviver)
 	// Check for sanity

@@ -103,8 +103,10 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	om_hook(human, /datum/om/event/mob_death, src, PROC_REF(on_human_death))
 
 /obj/item/nif/proc/unregister_human()
+	if(!human)
+		return
 	om_unhook(human, /datum/om/event/mob_death, src)
-	human.nif = null
+	rel_clear(src, "human") // the pair clears human.nif too
 
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
@@ -120,9 +122,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 // the NIF unregisters from its human.
 /obj/item/nif/on_destroy(force)
-	if(human)
-		unregister_human()
-		human = null
+	unregister_human()
 	..()
 
 //Being implanted in some mob
@@ -135,11 +135,9 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!bioadap && (H.species.flags & NO_DNA)) //NO_DNA is the default 'too complicated' flag
 			return FALSE
 
-		human = H
-		human.nif = src
+		rel_set(src, "human", H) // the pair sets H.nif too
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		own_clear(src, "menu_ref", OWN_DELETE)
 		own_set(src, "menu_ref", new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
@@ -182,16 +180,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /obj/item/nif/proc/unimplant(mob/living/carbon/human/H)
 	var/datum/nifsoft/soulcatcher/SC = imp_check(NIF_SOULCATCHER)
 	if(SC) //Clean up stored people, this is dirty but the easiest way.
-		QDEL_LIST_NULL(SC.brainmobs)
-		SC.brainmobs = list()
+		own_clear(SC, "brainmobs", OWN_DELETE)
 	stat = NIF_PREINSTALL
 	vis_update()
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		own_take(H, "nif")
 	own_clear(src, "menu_ref", OWN_DELETE)
 	unregister_human()
-	human = null
 	install_done = null
 	update_icon()
 
@@ -760,3 +755,6 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		nif.save_data["examine_msg"] = new_flavor
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
+// The implanted human and its NIF name each other (the NIF lives in an organ's implants).
+REL_PAIR(/obj/item/nif, human, nif)
+REL_PAIR(/mob/living/carbon/human, nif, human)

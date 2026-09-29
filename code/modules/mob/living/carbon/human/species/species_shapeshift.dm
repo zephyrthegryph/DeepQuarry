@@ -608,7 +608,8 @@ GLOBAL_LIST_EMPTY(wrapped_species_by_ref)
 		return
 
 	dna.base_species = new_species
-	species.base_species = new_species
+	var/datum/species/own_species = proto_private(src, "species") // never write through to a registered species
+	own_species.base_species = new_species
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	if (visible)
 		visible_message(span_filter_notice(span_bold("\The [src]") + " shifts and contorts, taking the form of \a [new_species]!"))

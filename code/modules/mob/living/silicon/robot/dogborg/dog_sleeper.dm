@@ -19,7 +19,8 @@
 	// ALLOW(instance_list): c: read-only per-subtype constant table (10 subtype overrides); a getter would share it, not worth it on a rare type
 	var/list/injection_chems = list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL) //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 	var/eject_port = "ingestion"
-	var/list/items_preserved = list() // ALLOW(instance_list): d: sleeper contents bookkeeping, edited in place through many paths
+	/// Things in our contents spared from digestion.
+	var/list/items_preserved
 	var/stabilizer = TRUE
 	var/compactor = FALSE
 	var/analyzer = FALSE
@@ -68,9 +69,9 @@
 	. = ..()
 	own_set(src, "med_analyzer", new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 
-// The synths are the module's (DECLARE_REF(..., OWNED_LIST) "synths"); the patient is in our contents.
-// Things in our contents spared from digestion; like everything else inside they go out with us.
-OWN(/obj/item/dogborg/sleeper, items_preserved, OWN_SPILL)
+// The synths are the module's (the owned "synths" list); the patient is in our contents.
+// Things in our contents spared from digestion (a marker set; go_out() drops all contents).
+REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)
@@ -227,7 +228,7 @@ OWN(/obj/item/dogborg/sleeper, items_preserved, OWN_SPILL)
 
 /obj/item/dogborg/sleeper/proc/go_out()
 	rel_set(src, "hound", src.loc)
-	own_take_all(src, "items_preserved")
+	rel_clear(src, "items_preserved")
 	cleaning = 0
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
@@ -347,7 +348,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		"deliveryslot_1" = (deliveryslot_1 || list()),
 		"deliveryslot_2" = (deliveryslot_2 || list()),
 		"deliveryslot_3" = (deliveryslot_3 || list()),
-		"items_preserved" = items_preserved,
+		"items_preserved" = items_preserved || list(),
 		"has_destructive_analyzer" = analyzer,
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
@@ -476,7 +477,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 	//Sanity? Maybe not required. More like if indigestible person OOC escapes.
 	for(var/I in items_preserved)
 		if(!(I in contents))
-			own_take_member(src, "items_preserved", I)
+			rel_remove(src, "items_preserved", I)
 
 	var/list/touchable_items = contents - items_preserved - (deliveryslot_1 + deliveryslot_2 + deliveryslot_3)
 
@@ -539,7 +540,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
 	if(om_has(T, EFFECT_GODMODE) || !T.digestable)
-		own_add(src, "items_preserved", T)
+		rel_add(src, "items_preserved", T)
 		return
 	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
 	damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
@@ -580,7 +581,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			if(brain)
 				hound.remove_from_mob(brain,src)
 				brain.forceMove(src)
-				own_add(src, "items_preserved", brain)
+				rel_add(src, "items_preserved", brain)
 		else
 			T.drop_from_inventory(I, src)
 	var/volume = 0
@@ -612,7 +613,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		var/is_trash = istype(T, /obj/item/trash)
 		var/digested = T.digest_act(item_storage = src)
 		if(!digested)
-			own_add(src, "items_preserved", T)
+			rel_add(src, "items_preserved", T)
 		else
 			if(volume && water)
 				water.add_charge(volume)
@@ -644,7 +645,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		qdel(target)
 		hound.adjust_nutrition(10) //drain(-100)
 	else
-		own_add(src, "items_preserved", target)
+		rel_add(src, "items_preserved", target)
 
 /obj/item/dogborg/sleeper/periodic_step()
 	if(!istype(src.loc,/mob/living/silicon/robot))

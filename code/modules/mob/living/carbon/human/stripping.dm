@@ -214,7 +214,7 @@
 /mob/living/carbon/human/proc/toggle_internals(mob/living/user)
 	if(internal)
 		internal.add_fingerprint(user)
-		own_take(src, "internal")
+		rel_clear(src, "internal")
 		if(internals)
 			internals.icon_state = "internal0"
 	else
@@ -223,11 +223,11 @@
 			return
 		// Find an internal source.
 		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/tank))
-			own_set(src, "internal", get_equipped_item(SLOT_ID_BACK))
+			rel_set(src, "internal", get_equipped_item(SLOT_ID_BACK))
 		else if(istype(get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
-			own_set(src, "internal", get_equipped_item(SLOT_ID_SUIT_STORAGE))
+			rel_set(src, "internal", get_equipped_item(SLOT_ID_SUIT_STORAGE))
 		else if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/tank))
-			own_set(src, "internal", get_equipped_item(SLOT_ID_BELT))
+			rel_set(src, "internal", get_equipped_item(SLOT_ID_BELT))
 
 	if(internal)
 		visible_message(span_warning("\The [src] is now running on internals!"))

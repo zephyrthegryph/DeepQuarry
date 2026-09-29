@@ -352,7 +352,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		on = 1
 		update_icons()
 		. = 1
-	ignore_list |= user
+	rel_add(src, "ignore_list", user)
 
 /mob/living/bot/medbot/explode()
 	on = 0

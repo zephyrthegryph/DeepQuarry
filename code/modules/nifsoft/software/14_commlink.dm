@@ -11,14 +11,14 @@
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
-		nif().comm = new /obj/item/communicator/commlink(nif(),src)
+		own_set(nif(), "comm", new /obj/item/communicator/commlink(nif(),src))
 		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
 			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
 
 /datum/nifsoft/commlink/uninstall()
 	var/obj/item/nif/lnif = nif() //Awkward. Parent clears it in an attempt to clean up.
 	if((. = ..()) && lnif)
-		QDEL_NULL(lnif.comm)
+		own_clear(lnif, "comm", OWN_DELETE)
 
 /datum/nifsoft/commlink/activate()
 	if((. = ..()))
@@ -45,8 +45,9 @@
 	rel_set(src, "nif", loc)
 	rel_set(src, "nifsoft", soft)
 
-REL_PAIR(/obj/item/communicator/commlink, nif, comm)
-REL_PAIR(/obj/item/nif, comm, nif)
+// The NIF creates and owns its commlink (in its contents, deleted with it); the commlink's `nif`
+// is a plain back relation.
+OWN(/obj/item/nif, comm, OWN_DELETE)
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name
@@ -127,6 +128,6 @@ REL_PAIR(/obj/item/nif, comm, nif)
 	if(ringer && nif.human)
 		nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
 
-/// LC-refs: the nifsoft this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the nifsoft this refers to -- a relation view: null once it is deleted.
 /obj/item/communicator/commlink/proc/nifsoft() as /datum/nifsoft/commlink
 	return nifsoft

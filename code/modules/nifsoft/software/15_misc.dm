@@ -199,6 +199,6 @@
 			last_ads = world.time
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 
-/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the apc this refers to -- a relation view: null once it is deleted.
 /datum/nifsoft/apc_recharge/proc/apc() as /obj/machinery/power/apc
 	return apc

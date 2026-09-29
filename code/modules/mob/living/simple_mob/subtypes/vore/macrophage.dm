@@ -25,7 +25,6 @@
 	water_resist = 1
 
 	var/datum/affliction/contagion/base_disease = null
-	var/list/infections = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	melee_damage_lower = 1
 	melee_damage_upper = 5
@@ -67,7 +66,6 @@
 	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
-	infections += D
 	own_set(src, "base_disease", D)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
@@ -143,7 +141,7 @@
 		sick.update_icon()
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		LAZYADD(sick.viruses, base_disease.Copy())
+		own_add(sick, "viruses", base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"
@@ -162,4 +160,4 @@
 	var/obj/belly/B = new /obj/belly/macrophage(src)
 	own_set(src, "vore_selected", B)
 
-// The macrophage's own strain; victims get copies. base_disease is also in infections.
+// The macrophage's own strain (owned); victims and decals get their own copies.

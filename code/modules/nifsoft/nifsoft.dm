@@ -432,6 +432,6 @@ DECLARE_INTERACTIONS(/obj/item/disk/nifsoft/compliance, INTERACT_USE(null, PROC_
 	for(var/i = 0 to 7)
 		new /obj/item/disk/nifsoft/sizechange(src)
 
-/// LC-refs: The NIF that the software is stored in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: The NIF that the software is stored in -- a relation view: null once it is deleted.
 /datum/nifsoft/proc/nif() as /obj/item/nif
 	return nif

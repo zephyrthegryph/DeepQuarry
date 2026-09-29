@@ -140,4 +140,4 @@
 		to_chat(user, span_danger("Nothing on \the [T] is useful to you."))
 	return
 
-// The synths are the robot module's (DECLARE_REF(..., OWNED_LIST) "synths").
+// The synths are the robot module's (the owned "synths" list).

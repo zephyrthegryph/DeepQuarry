@@ -101,7 +101,7 @@
 		to_chat(src, span_warning("You must restore to your original form first!"))
 		return
 	morphed = TRUE
-	own_set(src, "form", target)
+	rel_set(src, "form", target)
 
 	visible_message(span_warning("[src] suddenly twists and changes shape, becoming a copy of [target]!"))
 	color = null
@@ -146,7 +146,7 @@
 	if(!silent)
 		visible_message(span_warning("[src] suddenly collapses in on itself, dissolving into a pile of flesh!"))
 
-	own_take(src, "form")
+	rel_clear(src, "form")
 	name = initial(name)
 	desc = initial(desc)
 
@@ -434,4 +434,3 @@
 
 #undef MORPH_COOLDOWN
 
-OWN(/mob/living/simple_mob/vore/morph, form, OWN_CONTAINED)

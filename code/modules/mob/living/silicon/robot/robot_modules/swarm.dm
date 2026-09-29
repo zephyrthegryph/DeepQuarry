@@ -1,6 +1,5 @@
 /obj/item/robot_module/drone/swarm
 	name = "swarm drone module"
-	var/obj/item/card/id/drone_id
 	idcard_type = /obj/item/card/id/syndicate
 
 /obj/item/robot_module/drone/swarm/create_equipment(mob/living/silicon/robot/robot)
@@ -39,4 +38,3 @@
 	charge_cost = 800
 	recharge_time = 0.5 SECONDS
 
-OWN(/obj/item/robot_module/drone/swarm, drone_id, OWN_CONTAINED)

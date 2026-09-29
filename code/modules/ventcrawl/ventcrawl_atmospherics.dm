@@ -7,7 +7,7 @@
 		M.forceMove(get_turf(src))
 	..()
 
-/// LC-refs: the pipe image leaves every ventcrawler's screen before phase 4 drops it (DECLARE_REF(..., OWNED)).
+/// The pipe image (owned) leaves every ventcrawler's screen before teardown deletes it.
 /obj/machinery/atmospherics/lifecycle_dematerialize()
 	if(pipe_image)
 		for(var/mob/living/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))

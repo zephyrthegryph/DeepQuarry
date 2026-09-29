@@ -303,7 +303,7 @@
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			own_set(src, "host_bodypart", H.get_organ(infest_target))
+			rel_set(src, "host_bodypart", H.get_organ(infest_target))
 			LAZYOR(host_bodypart.implants, src)
 
 		return
@@ -334,7 +334,7 @@
 
 	if(host_bodypart)
 		LAZYREMOVE(host_bodypart.implants, src)
-		own_take(src, "host_bodypart")
+		rel_clear(src, "host_bodypart")
 
 	forceMove(get_turf(host))
 
@@ -485,4 +485,3 @@
 
 #undef LEECH_TREAT_URGENCY
 
-OWN(/mob/living/simple_mob/animal/sif/leech, host_bodypart, OWN_CONTAINED)

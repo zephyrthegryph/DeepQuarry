@@ -70,7 +70,7 @@
 	var/escaping = FALSE
 	var/escaping_attempts = 0
 	var/entering_vent = FALSE
-	/// om_handle() of the vent we're escaping into.
+	/// The vent we're escaping into: a relation view, null once it is deleted.
 	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 
 /obj/item/organ/internal/intestine/horror/periodic_step()

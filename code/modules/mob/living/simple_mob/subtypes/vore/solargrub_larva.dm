@@ -199,10 +199,9 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
 	shuffle_power_usages()
-	rel_set(src, "grub", loc)
-	if(!istype(grub))
-		rel_clear(src, "grub")
+	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
 		return INITIALIZE_HINT_QDEL
+	rel_set(src, "grub", loc)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 /obj/machinery/abstract_grub_machine/machine_step()

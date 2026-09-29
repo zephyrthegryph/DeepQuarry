@@ -9,7 +9,8 @@
 	p_drain = 0.01
 
 	var/setting_flags = (NIF_SC_ALLOW_EARS|NIF_SC_ALLOW_EYES|NIF_SC_BACKUPS|NIF_SC_PROJECTING)
-	var/list/brainmobs = list() // ALLOW(instance_list): d: soulcatcher occupants, edited in place through many paths
+	/// Occupants the soulcatcher creates and owns (lazy; deleted with it). Each names it back through `soulcatcher`.
+	var/list/brainmobs
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 
 /datum/nifsoft/soulcatcher/New()
@@ -27,7 +28,7 @@
 		return TRUE
 
 /datum/nifsoft/soulcatcher/stat_text()
-	return "Change Settings ([brainmobs.len] minds)"
+	return "Change Settings ([LAZYLEN(brainmobs)] minds)"
 
 /datum/nifsoft/soulcatcher/install()
 	if((. = ..()))
@@ -37,7 +38,7 @@
 			add_verb(nif().human, /mob/proc/nme)
 
 /datum/nifsoft/soulcatcher/uninstall()
-	QDEL_LIST_NULL(brainmobs)
+	own_clear(src, "brainmobs", OWN_DELETE)
 	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
 		remove_verb(nif().human, /mob/proc/nsay)
 		remove_verb(nif().human, /mob/proc/nme)
@@ -169,8 +170,7 @@
 				if(isnull(warning))
 					return
 				if(warning == "DELETE")
-					brainmobs -= brainpick
-					qdel(brainpick)
+					own_remove(src, "brainmobs", brainpick)
 				return TRUE
 
 			//Must just be a flag without special handling then.
@@ -233,10 +233,10 @@
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
 	rel_set(brainmob, "nif", nif())
 	rel_set(brainmob, "soulcatcher", src)
-	own_set(brainmob, "container", src)
+	rel_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	brainmobs |= brainmob
+	own_add(src, "brainmobs", brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
@@ -266,7 +266,7 @@
 	to_chat(brainmob,message)
 
 	//Reminder on how this works to host
-	if(brainmobs.len == 1) //Only spam this on the first one
+	if(LAZYLEN(brainmobs) == 1) //Only spam this on the first one
 		to_chat(nif().human,span_notice("Your occupant's messages/actions can only be seen by you, and you can \
 		send messages that only they can hear/see by using the NSay and NMe verbs (or the *nsay and *nme emotes)."))
 
@@ -302,12 +302,8 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	if(soulcatcher())
 		soulcatcher().notify_into("Mind unloaded: [name]")
-		soulcatcher().brainmobs -= src
-		rel_clear(src, "soulcatcher")
 	if(eyeobj)
 		reenter_soulcatcher()
-	own_take(src, "container")
-	rel_clear(src, "nif")
 	..()
 
 /datum/om/stage/life/type_pre/carbon/brain/caught_soul
@@ -550,7 +546,7 @@
 	if(!SC)
 		to_chat(src,span_warning("You need the Soulcatcher software to use NSay."))
 		return
-	if(!SC.brainmobs.len)
+	if(!LAZYLEN(SC.brainmobs))
 		to_chat(src,span_warning("You need a loaded mind to use NSay."))
 		return
 	if(!message)
@@ -583,7 +579,7 @@
 	if(!SC)
 		to_chat(src,span_warning("You need the Soulcatcher software to use NMe."))
 		return
-	if(!SC.brainmobs.len)
+	if(!LAZYLEN(SC.brainmobs))
 		to_chat(src,span_warning("You need a loaded mind to use NMe."))
 		return
 
@@ -671,14 +667,14 @@
 		var/sane_message = sanitize(message)
 		soulcatcher().emote_into(sane_message,src,null)
 
-/// LC-refs: the soulcatcher this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the soulcatcher this refers to -- a relation view: null once it is deleted.
 /mob/living/carbon/brain/caught_soul/proc/soulcatcher() as /datum/nifsoft/soulcatcher
 	return soulcatcher
 
-/// LC-refs: the parent_human this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the parent_human this refers to -- a relation view: null once it is deleted.
 /mob/observer/eye/ar_soul/proc/parent_human() as /mob/living
 	return parent_human
 
-/// LC-refs: the nif this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the nif this refers to -- a relation view: null once it is deleted.
 /mob/living/carbon/brain/caught_soul/proc/nif() as /obj/item/nif
 	return nif

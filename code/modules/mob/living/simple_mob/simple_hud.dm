@@ -83,7 +83,7 @@
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "hotkeybuttons", using)
+	hotkeybuttons += using
 
 	//Pull button
 	own_set(src, "pullin", new /atom/movable/screen())
@@ -91,7 +91,7 @@
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
 	pullin.screen_loc = ui_pull_resist
-	own_add(HUD, "hotkeybuttons", pullin)
+	hotkeybuttons += pullin
 	hud_elements |= pullin
 
 	//Health status
@@ -162,7 +162,7 @@
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "hotkeybuttons", using)
+		hotkeybuttons += using
 
 		//Equip detail
 		using = new /atom/movable/screen()
@@ -232,7 +232,7 @@
 		throw_icon.screen_loc = ui_drop_throw
 		throw_icon.color = ui_color
 		throw_icon.alpha = ui_alpha
-		own_add(HUD, "hotkeybuttons", throw_icon)
+		hotkeybuttons += throw_icon
 		hud_elements |= throw_icon
 
 	extra_huds(HUD, HUD.ui_style, hud_elements)

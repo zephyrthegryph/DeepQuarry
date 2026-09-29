@@ -18,13 +18,10 @@
 	max_n2 = 0
 	minbodytemp = 0
 
-	var/owner
+	var/obj/item/glamour_face/owner // relation: the face that made us (its homunculus view clears when we go)
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/homunculus/replace_death(gibbed)
-	if(owner)
-		var/obj/item/glamour_face/O = owner
-		rel_set(O, "homunculus", 0)
 	qdel(src)
 	return TRUE
 

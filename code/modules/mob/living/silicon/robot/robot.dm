@@ -219,7 +219,7 @@
 
 /mob/living/silicon/robot/proc/setup_radio()
 	own_set(src, "radio", new /obj/item/radio/borg(src))
-	own_set(src, "common_radio", radio)
+	rel_set(src, "common_radio", radio) // an alias of the owned radio
 
 /// The photo camera and the machinery camera that feeds the robots network.
 /mob/living/silicon/robot/proc/setup_camera()
@@ -278,9 +278,9 @@
 	if(sprite_datum)
 		return
 	if(SSrobot_sprites)
-		sprite_datum = SSrobot_sprites.get_default_module_sprite(modtype)
+		proto_set(src, "sprite_datum", SSrobot_sprites.get_default_module_sprite(modtype))
 	if(!sprite_datum)
-		sprite_datum = new /datum/robot_sprite/default(src)
+		proto_set(src, "sprite_datum", new /datum/robot_sprite/default(src)) // unregistered fallback: the robot's private copy
 
 /mob/living/silicon/robot/rejuvenate()
 	// Clear every located load first, then rebuild any fried or missing parts.
@@ -326,18 +326,18 @@
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(src, "mmi")
+				own_take(src, "mmi") // left the robot for the turf
 			else
 				if(!T)
+					// The MMI stays in the robot and goes with it by ownership policy.
 					log_game("MIND: cyborg [key_name(src)] was destroyed with no location; its MMI is lost and the mind is ghosted without re-entry.")
-					own_clear(src, "mmi", OWN_DELETE) // ALLOW(decl): the MMI is lost with the mind when there is no turf
-				else if(!shell) // Shells don't have brainmobs in their MMIs.
-					log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
-					to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-				own_take(src, "mmi")
+				else
+					if(!shell) // Shells don't have brainmobs in their MMIs.
+						log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
+						to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
+					own_take(src, "mmi") // left the robot for the turf
 				ghostize(FALSE)
-		else
-			own_clear(src, "mmi", OWN_DELETE) // ALLOW(decl): mindless MMI deleted here on purpose, beside the mind-transfer branch
+		// A mindless MMI stays in the robot and goes with it by ownership policy.
 	clear_traitor_hud()
 	disconnect_from_ai(TRUE)
 	if(shell)
@@ -407,6 +407,8 @@
 	var/obj/item/cell/old_cell = cell
 	if(old_cell)
 		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
+	if(new_cell && new_cell.loc != src)
+		new_cell.forceMove(src) // CONTAINED: in our contents before own_set()
 	own_set(src, "cell", new_cell)
 	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
@@ -418,8 +420,6 @@
 		if(old_cell.loc == src)
 			qdel(old_cell)
 	if(new_cell)
-		if(new_cell.loc != src)
-			new_cell.forceMove(src)
 		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
 		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))
 		var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
@@ -623,7 +623,7 @@
 		if(module_sprites.len == 1 || !client)
 			if(!module_sprites.len)
 				return
-			sprite_datum = module_sprites[1]
+			proto_set(src, "sprite_datum", module_sprites[1])
 			sprite_datum.do_equipment_glamour(module)
 			update_worn_icons()
 			return
@@ -1528,7 +1528,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return
 
 /mob/living/silicon/robot/proc/set_default_module_icon()
-	sprite_datum = null
+	proto_set(src, "sprite_datum", null)
 	resolve_sprite_datum()
 	update_icon()
 
@@ -1922,3 +1922,5 @@ OWN(/mob/living/silicon/robot, hat, OWN_SPILL)
 // The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
 OWN(/mob/living/silicon/robot, mmi, OWN_CONTAINED)
 OWN(/mob/living/silicon/robot, cell, OWN_CONTAINED)
+// A registered robot sprite, or the robot's private fallback default (copy-on-write).
+PROTO(/mob/living/silicon/robot, sprite_datum)

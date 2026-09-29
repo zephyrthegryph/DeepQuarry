@@ -45,7 +45,7 @@
 	var/turf/T = get_turf(loc)
 	var/obj/machinery/navbeacon/N = locate_on(T, /obj/machinery/navbeacon)
 	if(N)
-		home = T
+		rel_set(src, "home", T)
 		homeName = N.location
 	else
 		homeName = "Unset"
@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	return TRUE
 
 /mob/living/bot/mulebot/proc/home_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
-	home = get_turf(ask.choices[ask.choice])
+	rel_set(src, "home", get_turf(ask.choices[ask.choice]))
 	homeName = ask.choice
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.

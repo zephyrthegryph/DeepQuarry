@@ -369,4 +369,4 @@
 
 	return data
 
-OWN(/mob/living, internal, OWN_CONTAINED)
+REL(/mob/living, internal) // the equipped (or pump-supplied) tank we breathe from; the slot owns it

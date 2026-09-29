@@ -926,6 +926,24 @@
 	return new_copy
 
 //We REALLY don't need to go through every variable. Doing so makes this lag like hell on 515
+/// The private copy proto_private() makes of a mob's species (copy-on-write, carbon_defines.dm):
+/// a fresh instance with this one's saved vars copied over, lists copied so the copy never
+/// shares a mutable list with the registered prototype. tmp/const/global vars (the ownership
+/// stamps and reverse indexes among them) are left at the new instance's values.
+/datum/species/proto_copy()
+	var/datum/species/copy = new type()
+	for(var/var_name in vars)
+		if(var_name == "vars" || !issaved(vars[var_name]))
+			continue
+		var/value = vars[var_name]
+		if(copy.vars[var_name] == value)
+			continue
+		if(islist(value))
+			var/list/L = value
+			value = L.Copy()
+		copy.vars[var_name] = value // ALLOW(api): species copy
+	return copy
+
 /datum/species/proc/copy_variables(datum/species/S, list/whitelist)
 	//List of variables to ignore, trying to copy type will runtime.
 	//Makes thorough copy of species datum.

@@ -37,7 +37,7 @@
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
 		BITSET(H.hud_updateflag, BACKUP_HUD)
-		our_db().implants |= om_handle(src)
+		rel_add(our_db(), "implants", src)
 
 		return 1
 
@@ -53,7 +53,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	throw_speed = 1
 	throw_range = 5
 	w_class = ITEMSIZE_SMALL
-	var/list/obj/item/implant/backup/imps = list() // ALLOW(instance_list): d: the implanter's loaded implants, filled in New()
+	var/list/obj/item/implant/backup/imps // the implanter's loaded implants (owned, lazy)
 	var/max_implants = 4 //Iconstates need to exist due to the update proc!
 
 	var/db_key // To give to the baby implants
@@ -67,7 +67,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	update()
 
 /obj/item/backup_implanter/proc/update()
-	icon_state = "[initial(icon_state)][imps.len]"
+	icon_state = "[initial(icon_state)][LAZYLEN(imps)]"
 	germ_level = 0
 
 EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
@@ -80,9 +80,9 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	if(!istype(user))
 		return
 
-	if(imps.len)
+	if(LAZYLEN(imps))
 		to_chat(user, span_notice("You eject a backup implant."))
-		var/obj/item/implant/backup/imp = imps[imps.len]
+		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
 		imp.forceMove(get_turf(user))
 		own_take_member(src, "imps", imp)
 		user.put_in_any_hand_if_possible(imp)
@@ -94,11 +94,11 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 
 /// Old attackby.
 /obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
-	if(imps.len < max_implants)
+	if(LAZYLEN(imps) < max_implants)
 		user.unEquip(W)
+		W.forceMove(src)
 		own_add(src, "imps", W)
 		W.germ_level = 0
-		W.forceMove(src)
 		update()
 		to_chat(user, span_notice("You load \the [W] into \the [src]."))
 	else
@@ -113,10 +113,10 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 	var/mob/living/M = task.target
 	var/mob/living/user = task.actor
 	var/turf/T1 = task.T1
-	if((get_turf(M) == T1) && src.imps.len)
+	if((get_turf(M) == T1) && LAZYLEN(imps))
 		M.visible_message(span_notice("[M] has been backup implanted by [user]."))
 
-		var/obj/item/implant/backup/imp = imps[imps.len]
+		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
 		if(imp.handle_implant(M,user.zone_sel.selecting))
 			imp.post_implant(M)
 			own_take_member(src, "imps", imp)
@@ -127,7 +127,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 /obj/item/backup_implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if (!istype(M, /mob/living/carbon))
 		return ITEM_INTERACT_FAILURE
-	if(user && imps.len)
+	if(user && LAZYLEN(imps))
 		M.visible_message(span_notice("[user] is injecting a backup implant into [M]."))
 
 		user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)

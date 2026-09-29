@@ -28,9 +28,7 @@
 		if(istype(nest, /obj/structure/prop/nest))
 			var/obj/structure/prop/nest/N = nest
 			N.remove_creature(src)
-		if(istype(nest, /obj/structure/blob/factory))
-			var/obj/structure/blob/factory/F = nest
-			LAZYREMOVE(F.spores, src)
+		// a blob spore leaves its factory's spores through the pair's teardown
 		if(istype(nest, /obj/structure/mob_spawner))
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)
@@ -46,8 +44,9 @@
 		else
 			var/turf/get_dat_turf = get_turf(src)
 			tf_mob_holder.forceMove(get_dat_turf)
-		QDEL_LIST_NULL(tf_mob_holder.vore_organs)
-		tf_mob_holder.vore_organs = list()
+		// the holder's old bellies go; each leaves tf_mob_holder.vore_organs through the pair
+		for(var/obj/belly/B as anything in tf_mob_holder.vore_organs?.Copy())
+			qdel(B)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
@@ -62,7 +61,6 @@
 			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
-	aimed.Cut()
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.

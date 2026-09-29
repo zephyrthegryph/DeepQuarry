@@ -480,4 +480,4 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 
-OWN(/mob, s_active, OWN_CONTAINED)
+REL(/mob, s_active) // the storage being viewed, anywhere nearby

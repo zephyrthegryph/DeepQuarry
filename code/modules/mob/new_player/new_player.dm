@@ -279,7 +279,7 @@
 		for(var/obj/belly/B in character.vore_organs)
 			if(B.name == gut)
 				gut_to_enter = B
-				own_set(character, "vore_selected", B)
+				rel_set(character, "vore_selected", B) // a pointer at one of vore_organs
 		var/datum/effect/effect/system/teleport_greyscale/tele = new /datum/effect/effect/system/teleport_greyscale()
 		tele.set_up("#00FFFF", get_turf(prey))
 		tele.start()
@@ -342,7 +342,7 @@
 
 	if(mind)
 		mind.active = 0					//we wish to transfer the key manually
-		mind.original_character = om_handle(new_character)
+		rel_set(mind, "original_character", new_character)
 		mind.loaded_from_ckey = client.ckey
 		mind.loaded_from_slot = client.prefs.default_slot
 		mind.transfer_to(new_character)					//won't transfer key since the mind is not active

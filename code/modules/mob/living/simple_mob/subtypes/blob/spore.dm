@@ -48,8 +48,7 @@
 
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
-		rel_set(src, "factory", my_factory)
-		LAZYADD(factory.spores, src)
+		rel_set(src, "factory", my_factory) // the pair adds us to factory.spores
 	return ..()
 
 // Destroy() drops the body out before letting go.

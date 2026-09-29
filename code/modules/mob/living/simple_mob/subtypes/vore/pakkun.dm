@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		LAZYSET(prey_excludes, target, world.time)
-		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(target))
+		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), target)
 	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))
 			LAZYSET(prey_excludes, L, world.time)
-			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(L))
+			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
 	return TRUE
 
 //a palette-swapped version that's a bit bossier, in JRPG tradition
@@ -208,21 +208,23 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	devourable = 0
 
 	vore_default_mode = DM_HOLD
-	/// OM handles of the help-touchers she remembers.
-	var/list/petters = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	/// The help-touchers she remembers (a relation list).
+	var/list/petters
+
+REL_LIST(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, petters)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
 
 /// Old attack_hand: remember help-touchers, then carry on to the pakkun touch (FALSE).
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
-	if(!(om_handle(M) in petters))
+	if(!(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
-		petters += om_handle(M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
+		rel_add(src, "petters", M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
 	return FALSE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
 	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap
-		petters -= pick(petters)
+		rel_remove(src, "petters", pick(petters))
 	..()
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/load_default_bellies()

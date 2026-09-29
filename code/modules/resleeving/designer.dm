@@ -43,8 +43,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 /// Old attackby.
 /obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
 	user.unEquip(W)
+	W.forceMove(src)
 	own_set(src, "disk", W)
-	disk.forceMove(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
 	return INTERACTION_HANDLED_PASS
@@ -57,7 +57,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 		return
 	if(!designer_gui)
 		own_set(src, "designer_gui", new /datum/tgui_module/appearance_changer/body_designer(src, null))
-		designer_gui.linked_body_design_console = om_handle(src)
+		rel_set(designer_gui, "linked_body_design_console", src)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())
 		designer_gui.make_fake_owner()

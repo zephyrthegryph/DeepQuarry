@@ -837,7 +837,6 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		if(!dog.control_node)
 			rel_set(src, "host", dog)
-			rel_set(dog, "control_node", src)
 
 REL_PAIR(/obj/structure/control_pod, host, control_node)
 
@@ -1103,9 +1102,9 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 		if(id == T.id)
 			if(T == src)
 				continue
-			own_set(src, "target", T)
+			rel_set(src, "target", T)
 			if(!T.target)
-				own_set(T, "target", src)
+				rel_set(T, "target", src)
 
 /obj/effect/dog_teleporter/Crossed(atom/movable/AM as mob|obj)	//I am ashamed to admit how long it took to get this to do anything
 	. = ..()

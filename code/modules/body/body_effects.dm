@@ -131,7 +131,7 @@
 	var/list/body_effect_timers
 	/// Body effect type -> the id of its pending tick timer. Lazy.
 	var/list/body_effect_tickers
-	/// Body effect type -> OM handle of whoever applied it. Lazy.
+	/// Body effect type -> an owned /datum/body_effect_origin naming whoever applied it. Lazy.
 	var/list/body_effect_origins
 	/// Body effect type -> per-application state (anything the definition keeps). Lazy.
 	var/list/body_effect_data
@@ -165,7 +165,21 @@
 /// Whoever applied body effect `path` (the mob itself when nobody else did), or null when it
 /// is gone or the effect is not on.
 /mob/living/proc/body_effect_origin(path)
-	return om_resolve(body_effect_origins?[path])
+	var/datum/body_effect_origin/O = body_effect_origins?[path]
+	return O?.origin
+
+/// Records whoever applied body effect `path`: an owned record holding a relation view, so the
+/// origin reads null once it is deleted.
+/mob/living/proc/set_body_effect_origin(path, atom/origin)
+	if(isnull(origin))
+		if(body_effect_origins && (path in body_effect_origins))
+			own_put(src, "body_effect_origins", path, null)
+			if(!length(body_effect_origins))
+				own_clear(src, "body_effect_origins", OWN_DELETE)
+		return
+	var/datum/body_effect_origin/O = new
+	rel_set(O, "origin", origin)
+	own_put(src, "body_effect_origins", path, O)
 
 /mob/living/proc/body_effect_state(path)
 	return body_effect_data?[path]
@@ -255,11 +269,10 @@
 				return TRUE
 	else
 		// The origin is readable from can_apply() and on_start().
-		LAZYSET(body_effect_origins, path, om_handle(origin || src))
+		set_body_effect_origin(path, origin || src)
 		if(!def.can_apply(src, suppress_output) || QDELETED(src))
-			if(body_effect_origins && !body_effect_stacks(path))
-				body_effect_origins -= path
-				UNSETEMPTY(body_effect_origins)
+			if(!body_effect_stacks(path))
+				set_body_effect_origin(path, null)
 			return FALSE
 	var/stacks = (def.stacks == MODIFIER_STACK_ALLOWED) ? current + 1 : 1
 	om_hold(src, EFFECT_BODY_EFFECTS, src, stacks, path)
@@ -371,9 +384,7 @@
 		record_genetic_effect(path, FALSE)
 	if(!QDELETED(src))
 		def.on_end(src, expired)
-	if(body_effect_origins)
-		body_effect_origins -= path
-		UNSETEMPTY(body_effect_origins)
+	set_body_effect_origin(path, null)
 	set_body_effect_state(path, null)
 	if(body_effect_factors)
 		body_effect_factors -= path
@@ -458,3 +469,8 @@
 		if(reset_color)
 			I.appearance_flags = RESET_COLOR
 		LAZYADD(., I)
+
+/// Who applied one body effect to a mob: owned by the mob's body_effect_origins, keyed by type.
+/datum/body_effect_origin
+	/// A relation view: null once the origin is deleted.
+	var/atom/origin

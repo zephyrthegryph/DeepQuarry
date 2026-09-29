@@ -26,6 +26,9 @@
 
 	var/list/integrated_tool_images
 
+/// The selected tool: one of cyborg_integrated_tools, which owns it.
+REL(/obj/item/robotic_multibelt, selected_item)
+
 /obj/item/robotic_multibelt/item_ctrl_click(mob/user)
 	if(selected_item)
 		selected_item.attack_self(user)
@@ -74,8 +77,7 @@
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
-// its integrated tools (assoc values) go with it.
-// The selection and the by-name indexes point into cyborg_integrated_tools, which owns the tools.
+// The selection and the by-name index point into cyborg_integrated_tools.
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -107,7 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	icon = chosen_item.icon
 	icon_state = chosen_item.icon_state
 	color = chosen_item.color
-	selected_item = chosen_item
+	rel_set(src, "selected_item", chosen_item)
 
 /obj/item/robotic_multibelt/dropped(mob/user, equipping, slot)
 	..()
@@ -115,7 +117,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	original_state()
 
 /obj/item/robotic_multibelt/proc/original_state(mob/user)
-	selected_item = null
+	rel_clear(src, "selected_item")
 	icon = initial(icon)
 	icon_state = initial(icon_state)
 
@@ -437,8 +439,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/datum/matter_synth/synth in module.synths)
 		if(istype(synth, synth_path))
-			own_take_member(module, "synths", synth)
-			qdel(synth)
+			own_remove(module, "synths", synth)
 	update_material_multibelts()
 
 //The Material Dispenser Multibelt
@@ -503,7 +504,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
-		rel_set(current_stack, "synths", possible_synths[stack_to_add])
+		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
+			rel_add(current_stack, "synths", linked_synth)
 		cyborg_integrated_tools += current_stack
 
 	. = ..()
@@ -562,6 +564,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+/// The selected pocket (one of `pockets`) or item.
+REL(/obj/item/gripper, current_pocket)
+REL(/obj/item/gripper, our_robot)
+
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE
 
@@ -576,11 +582,11 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
 			new_pocket.name = "Pocket [i]"
 			pockets += new_pocket
-	current_pocket = peek(pockets)
+	rel_set(src, "current_pocket", peek(pockets))
 	if(isrobot(loc.loc)) //We're in the module.
-		our_robot = loc.loc
+		rel_set(src, "our_robot", loc.loc)
 	else if(isrobot(loc)) //We spawned in the robot's module slots...Weird, but whatever.
-		our_robot = loc
+		rel_set(src, "our_robot", loc)
 	else //We were in neither. Let's qdel ourselves.
 		return INITIALIZE_HINT_QDEL
 	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))

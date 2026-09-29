@@ -72,8 +72,7 @@
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
 	for(var/datum/medical_effect/active in side_effects)
 		if(active.cure(src))
-			own_take_member(src, "side_effects", active)
-			qdel(active)
+			own_remove(src, "side_effects", active)
 	var/list/registry = dq_medical_effect_registry()
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]
@@ -100,8 +99,7 @@
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
 			if (M.cure(self) || M.strength > 50)
-				own_take_member(self, "side_effects", M)
-				qdel(M)
+				own_remove(self, "side_effects", M)
 			else
 				if(self.life_tick % 45 == 0)
 					M.on_life(self, strength_percent*M.strength)

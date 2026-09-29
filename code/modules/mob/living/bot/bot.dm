@@ -21,8 +21,10 @@
 	var/list/req_one_access = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 
 	var/atom/target = null
-	var/list/ignore_past = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
-	var/list/ignore_list = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	/// How often each target was given up on, keyed by REF(target) text: AI memory, not a reference.
+	var/list/ignore_past
+	/// Targets the bot is currently ignoring (REL_LIST, cleared by the framework when they die).
+	var/list/ignore_list
 	var/list/patrol_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/list/target_path = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
 	var/turf/obstacle = null
@@ -196,18 +198,17 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	bot_steps(count - 1, delay, step_proc)
 
 /mob/living/bot/proc/handleAI()
-	if(ignore_list.len)
-		for(var/atom/A in ignore_list)
-			if(!A || !A.loc || prob(1))
-				var/past_key = om_handle(A)
-				if(past_key && (past_key in ignore_past))
-					if(prob(10/ignore_past[past_key]) || !A || !A.loc)
+	if(length(ignore_list))
+		for(var/atom/A as anything in ignore_list.Copy())
+			if(!A.loc || prob(1))
+				var/past_key = REF(A)
+				if(past_key in ignore_past)
+					if(prob(10/ignore_past[past_key]) || !A.loc)
 						ignore_past[past_key]++
-						ignore_list -= A
+						rel_remove(src, "ignore_list", A)
 				else
-					if(past_key)
-						ignore_past[past_key] = 1
-					ignore_list -= A
+					LAZYSET(ignore_past, past_key, 1)
+					rel_remove(src, "ignore_list", A)
 	handleRegular()
 
 	var/panic_speed_mod = 0
@@ -298,12 +299,12 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	return
 
 /mob/living/bot/proc/handleFrustrated(has_target)
-	obstacle = null
+	rel_clear(src, "obstacle")
 	if (has_target)
 		if (length(target_path))
-			obstacle = target_path[1]
+			rel_set(src, "obstacle", target_path[1])
 	else if (length(patrol_path))
-		obstacle = patrol_path[1]
+		rel_set(src, "obstacle", patrol_path[1])
 	target_path = list()
 	patrol_path = list()
 
@@ -332,7 +333,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 		patrol_path = om_pathfinder().default_bot_pathfinding(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
-		obstacle = null
+		rel_clear(src, "obstacle")
 	return
 
 /mob/living/bot/proc/getPatrolTurf()
@@ -364,11 +365,11 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 0)
 	if(!target_path)
 		if(target && target.loc)
-			ignore_list |= target
+			rel_add(src, "ignore_list", target)
 		resetTarget()
-		obstacle = null
-	else if(om_handle_of(target) in ignore_past)
-		ignore_past.Remove(om_handle_of(target))
+		rel_clear(src, "obstacle")
+	else if(target)
+		LAZYREMOVE(ignore_past, REF(target))
 	return
 
 /mob/living/bot/proc/makeStep(list/path)
@@ -393,7 +394,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	update_icons()
 	resetTarget()
 	patrol_path = list()
-	ignore_list = list()
+	rel_clear(src, "ignore_list")
 	update_canmove()
 	return 1
 
@@ -535,9 +536,9 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 	if(!card.pai)
 		to_chat(user, span_notice("This card does not currently have a personality!"))
 		return
-	own_set(src, "paicard", card)
 	user.unEquip(card)
 	card.forceMove(src)
+	own_set(src, "paicard", card)
 	transfer_mind(AI.mind, src, "pAI installed into [src]")
 	name = AI.name
 	to_chat(src, span_notice("You feel a tingle in your circuits as your systems interface with \the [initial(src.name)]."))
@@ -599,5 +600,5 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
 OWN(/mob/living/bot, paicard, OWN_CONTAINED)
-/// Things the bot gave up on and how often: AI memory, re-learned as it patrols.
-// ignore_past counts how often each target was ignored, keyed by om_handle(): the bot owns none of them.
+/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
+REL_LIST(/mob/living/bot, ignore_list)

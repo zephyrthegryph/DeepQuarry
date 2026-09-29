@@ -96,8 +96,6 @@
 
 	special_handling = TRUE
 
-OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
-
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/on_destroy(force)
 	// Child limbs and organs sit in this limb's part slots: the ledger deletes
@@ -106,14 +104,12 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 	for(var/datum/affliction/wound/W as anything in get_wounds())
 		remove_wound(W)
 
+	// `splinted` is a relation view (it may name a worn spacesuit), so a splint that went into
+	// this limb goes with it by hand; the tourniquet is owned and deleted by policy.
 	if(splinted && splinted.loc == src)
-		splinted.moveToNullspace()
-		qdel(splinted)
-	own_take(src, "splinted")
-
-	if(tourniquet && tourniquet.loc == src)
-		qdel(tourniquet)
-	own_take(src, "tourniquet")
+		var/atom/movable/splint = splinted
+		splint.moveToNullspace()
+		qdel(splint)
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before
@@ -153,13 +149,13 @@ OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 /// organ removal left `imp_in` dangling.
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && istype(target))
-		own_set(source, "part", target)
+		rel_set(source, "part", target)
 		LAZYADD(target.implants, source)
 		rel_set(source, "imp_in", target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && source.part == target)
-		own_take(source, "part")
+		rel_clear(source, "part")
 	if(istype(target))
 		LAZYREMOVE(target.implants, source)
 	// Unlike a bare relation, this slot's own drop_policy (DELETE) may
@@ -1368,7 +1364,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/proc/apply_splint(atom/movable/splint)
 	if(!splinted)
-		own_set(src, "splinted", splint)
+		rel_set(src, "splinted", splint)
 		if(!applied_pressure)
 			rel_set(src, "applied_pressure", splint)
 		refresh_fracture_support()
@@ -1381,7 +1377,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			splinted.dropInto(owner? owner.loc : src.loc)
 		if(applied_pressure == splinted)
 			rel_clear(src, "applied_pressure")
-		own_take(src, "splinted")
+		rel_clear(src, "splinted")
 		refresh_fracture_support()
 		return 1
 	return 0

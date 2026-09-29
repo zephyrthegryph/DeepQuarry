@@ -57,10 +57,6 @@
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "core", /obj/item/technomancer_core/golem)
 
 
-/mob/living/simple_mob/mechanical/technomancer_golem/unref_spell()
-	own_take(src, "active_spell")
-	return ..()
-
 /mob/living/simple_mob/mechanical/technomancer_golem
 	delete_on_death = TRUE
 
@@ -75,8 +71,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))
 		return FALSE
-	if(active_spell)
-		qdel(active_spell)
+	own_clear(src, "active_spell", OWN_DELETE)
 
 	own_set(src, "active_spell", new path(src))
 
@@ -85,7 +80,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 
 /mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/ask)
 	if(isnull(ask.choice))
-		qdel(active_spell)
+		own_clear(src, "active_spell", OWN_DELETE)
 		return
 	place_spell_in_hand(known_spells[ask.choice])
 

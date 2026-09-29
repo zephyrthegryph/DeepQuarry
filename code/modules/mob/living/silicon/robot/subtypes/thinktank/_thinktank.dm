@@ -39,8 +39,10 @@
 	var/tmp/recharge_complete =       FALSE
 	var/tmp/recharger_charge_amount = 10 KILOWATTS
 	var/tmp/recharger_tick_cost =     80 KILOWATTS
-	var/recharging
+	/// The cell in the recharging port (in our contents).
+	var/obj/item/cell/recharging
 
+	/// Cargo in our contents.
 	var/list/stored_atoms
 	var/max_stored_atoms = 1
 	var/static/list/can_store_types = list(
@@ -53,6 +55,9 @@
 	var/static/list/cannot_store_types = list(
 		/obj/machinery/power/supermatter
 	)
+
+REL(/mob/living/silicon/robot/platform, recharging)
+REL_LIST(/mob/living/silicon/robot/platform, stored_atoms)
 
 /mob/living/silicon/robot/platform/Login()
 	. = ..()
@@ -78,15 +83,14 @@
 		types[ROBOT_SLOT_ARMOUR] = /datum/robot_component/armour/platform
 	return types
 
-// stored atoms and the recharging item drop out (stored as handles).
+// Stored atoms and the recharging cell drop out.
 /mob/living/silicon/robot/platform/on_destroy(force)
 	revoke_ability(ABILITY_ID_ROBOT_EJECT_CARGO, src)
-	for(var/drop_ref in stored_atoms)
-		var/atom/movable/drop_atom = om_resolve(drop_ref)
-		if(istype(drop_atom) && !QDELETED(drop_atom) && drop_atom.loc == src)
+	for(var/atom/movable/drop_atom as anything in stored_atoms?.Copy())
+		if(!QDELETED(drop_atom) && drop_atom.loc == src)
 			drop_atom.dropInto(loc)
-	var/obj/item/recharging_atom = om_resolve(recharging)
-	if(istype(recharging_atom) && recharging_atom.loc == src)
+	var/obj/item/recharging_atom = recharging
+	if(recharging_atom && recharging_atom.loc == src)
 		recharging_atom.dropInto(loc)
 	..()
 
@@ -95,8 +99,8 @@
 	if(distance <= 3)
 
 		if(recharging)
-			var/obj/item/cell/recharging_atom = om_resolve(recharging)
-			if(istype(recharging_atom) && !QDELETED(recharging_atom))
+			var/obj/item/cell/recharging_atom = recharging
+			if(!QDELETED(recharging_atom))
 				. += "It has \a [recharging_atom] slotted into its recharging port."
 				. += "The cell readout shows [round(recharging_atom.percent(),1)]% charge."
 			else
@@ -106,10 +110,8 @@
 
 		if(length(stored_atoms))
 			var/list/atom_names = list()
-			for(var/stored_ref in stored_atoms)
-				var/atom/movable/AM = om_resolve(stored_ref)
-				if(istype(AM))
-					atom_names += "\a [AM]"
+			for(var/atom/movable/AM as anything in stored_atoms)
+				atom_names += "\a [AM]"
 			if(length(atom_names))
 				. += "It has [english_list(atom_names)] loaded into its transport bay."
 		else
@@ -148,9 +150,9 @@
 
 		if(recharging)
 
-			var/obj/item/cell/recharging_atom = om_resolve(recharging)
-			if(!istype(recharging_atom) || QDELETED(recharging_atom) || recharging_atom.loc != src)
-				recharging = null
+			var/obj/item/cell/recharging_atom = recharging
+			if(QDELETED(recharging_atom) || recharging_atom.loc != src)
+				rel_clear(src, "recharging")
 				return
 
 			if(recharging_atom.percent() < 100)

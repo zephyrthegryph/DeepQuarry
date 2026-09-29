@@ -110,8 +110,8 @@
 /datum/transhuman/body_record
 	destroy_hint = QDEL_HINT_HARDDEL
 
+// mydna (and its dna) are owned: teardown deletes them.
 /datum/transhuman/body_record/on_destroy(force)
-	own_clear(mydna, "dna", OWN_DELETE)
 	limb_data.Cut()
 	organ_data.Cut()
 	..()
@@ -216,6 +216,9 @@
 				continue
 			if("mydna")
 				own_set(src, "mydna", orig.mydna.copy())
+				continue
+			if("mind_ref")
+				rel_set(src, "mind_ref", orig.mind_ref) // a relation view: never a raw copy
 				continue
 		if(islist(vars[A]))
 			var/list/L = orig.vars[A]

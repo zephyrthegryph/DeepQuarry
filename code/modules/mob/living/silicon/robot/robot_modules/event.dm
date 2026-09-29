@@ -80,7 +80,7 @@
 	own_add(src, "synths", wood)
 
 	var/obj/item/stack/material/cyborg/wood/W = new (src)
-	rel_set(W, "synths", list(wood))
+	rel_add(W, "synths", wood)
 	src.modules += W
 
 	// For uwu
@@ -126,43 +126,44 @@
 	src.modules += MD
 
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
-	rel_set(M, "synths", list(metal))
+	rel_add(M, "synths", metal)
 	src.modules += M
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
-	rel_set(G, "synths", list(glass))
+	rel_add(G, "synths", glass)
 	src.modules += G
 
 	var/obj/item/stack/rods/cyborg/rods = new /obj/item/stack/rods/cyborg(src)
-	rel_set(rods, "synths", list(metal))
+	rel_add(rods, "synths", metal)
 	src.modules += rods
 
 	var/obj/item/stack/cable_coil/cyborg/C = new /obj/item/stack/cable_coil/cyborg(src)
-	rel_set(C, "synths", list(wire))
+	rel_add(C, "synths", wire)
 	src.modules += C
 
 	var/obj/item/stack/material/cyborg/plasteel/PS = new (src)
-	rel_set(PS, "synths", list(plasteel))
+	rel_add(PS, "synths", plasteel)
 	src.modules += PS
 
 	var/obj/item/stack/tile/wood/cyborg/WT = new /obj/item/stack/tile/wood/cyborg(src)
-	rel_set(WT, "synths", list(wood))
+	rel_add(WT, "synths", wood)
 	src.modules += WT
 
 	var/obj/item/stack/tile/floor/cyborg/S = new /obj/item/stack/tile/floor/cyborg(src)
-	rel_set(S, "synths", list(metal))
+	rel_add(S, "synths", metal)
 	src.modules += S
 
 	var/obj/item/stack/tile/roofing/cyborg/CT = new /obj/item/stack/tile/roofing/cyborg(src)
-	rel_set(CT, "synths", list(metal))
+	rel_add(CT, "synths", metal)
 	src.modules += CT
 
 	var/obj/item/stack/material/cyborg/glass/reinforced/RG = new (src)
-	rel_set(RG, "synths", list(metal, glass))
+	rel_add(RG, "synths", metal)
+	rel_add(RG, "synths", glass)
 	src.modules += RG
 
 	var/obj/item/stack/material/cyborg/plastic/PL = new (src)
-	rel_set(PL, "synths", list(plastic))
+	rel_add(PL, "synths", plastic)
 	src.modules += PL //CHOMEdit End
 
 /obj/item/robot_module/robot/malf/gravekeeper/handle_special_unlocks(mob/living/silicon/robot/owner_robot)

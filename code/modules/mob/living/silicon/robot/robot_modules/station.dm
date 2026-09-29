@@ -214,14 +214,16 @@
 			var/datum/matter_synth/new_synth = new matter_synth.type(10000)
 			item_synths += new_synth
 			own_add(src, "synths", new_synth)
-	rel_set(item_with_synth, "synths", item_synths)
+	rel_clear(item_with_synth, "synths")
+	for(var/datum/matter_synth/linked_synth as anything in item_synths)
+		rel_add(item_with_synth, "synths", linked_synth)
 
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
 		if(robot.idcard)
 			modules -= robot.idcard
 			own_clear(robot, "idcard", OWN_DELETE)
-		own_set(robot, "idcard", new_item)
+		own_move(new_item, robot, "idcard")
 	modules += new_item
 	new_item.forceMove(src)
 	robot.hud_used?.update_robot_modules_display()
@@ -363,13 +365,13 @@
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) // edit: we have burn surgeries so they should be able to do them
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	rel_set(N, "synths", list(medicine))
+	rel_add(N, "synths", medicine)
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	rel_set(B, "synths", list(medicine))
+	rel_add(B, "synths", medicine)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	rel_set(O, "synths", list(medicine))
+	rel_add(O, "synths", medicine)
 	src.modules += N
 	src.modules += B
 	src.modules += O
@@ -427,16 +429,16 @@
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
 	C.uses_charge = 1
 	C.charge_costs = list(5000)
-	rel_set(C, "synths", list(medicine))
+	rel_add(C, "synths", medicine)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	rel_set(O, "synths", list(medicine))
+	rel_add(O, "synths", medicine)
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	rel_set(B, "synths", list(medicine))
+	rel_add(B, "synths", medicine)
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
-	rel_set(S, "synths", list(medicine))
+	rel_add(S, "synths", medicine)
 	src.modules += O
 	src.modules += B
 	src.modules += S
@@ -603,18 +605,19 @@
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
 	M.name = "steel recycler"
 	M.desc = "A device that refines recycled steel into sheets."
-	rel_set(M, "synths", list(metal))
-	M.recipes = list()
-	M.recipes += new/datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20)
+	rel_add(M, "synths", metal)
+	// Shared recipe tables, like material.get_recipes(): never owned by one stack.
+	var/static/list/steel_recycler_recipes = list(new /datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20))
+	var/static/list/glass_recycler_recipes = list(new /datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20))
+	M.recipes = steel_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
 	src.modules += M
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
 	G.name = "glass recycler"
 	G.desc = "A device that refines recycled glass into sheets."
 	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
-	rel_set(G, "synths", list(glass))
-	G.recipes = list()
-	G.recipes += new/datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20)
+	rel_add(G, "synths", glass)
+	G.recipes = glass_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
 	src.modules += G
 
 	var/obj/item/dogborg/sleeper/compactor/C = new /obj/item/dogborg/sleeper/compactor(src)
@@ -689,7 +692,7 @@
 	src.emag += PB
 
 	var/datum/reagents/R = new/datum/reagents(50)
-	PB.reagents = R
+	own_set(PB, "reagents", R)
 	rel_set(R, "my_atom", PB)
 	R.add_reagent(REAGENT_ID_BEER2, 50)
 	PB.name = "Auntie Hong's Final Sip"
@@ -804,7 +807,7 @@
 	var/obj/item/stack/marker_beacon/MB = new /obj/item/stack/marker_beacon(src)
 	MB.uses_charge = 1
 	MB.charge_costs = list(500)
-	rel_set(MB, "synths", list(beacon))
+	rel_add(MB, "synths", beacon)
 	src.modules += MB
 
 	src.modules += new /obj/item/dogborg/sleeper/compactor/supply(src)
@@ -852,7 +855,7 @@
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	rel_set(N, "synths", list(nanite))
+	rel_add(N, "synths", nanite)
 	src.modules += N
 
 	src.modules += new /obj/item/dogborg/sleeper/compactor/analyzer(src)

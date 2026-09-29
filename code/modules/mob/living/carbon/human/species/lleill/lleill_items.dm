@@ -97,6 +97,7 @@
 /datum/reagent/glamour_twinkling/affect_blood(mob/living/carbon/human/target, removed)
 	if(target.species.darksight < 10)
 		to_chat(target, span_warning("You can suddenly see much better than before."))
+		proto_private(target, "species") // per-mob change: never mutate the shared species
 		target.species.darksight = 10
 	if(target.disabilities & NEARSIGHTED)
 		target.disabilities &= ~NEARSIGHTED
@@ -125,7 +126,7 @@
 	desc = "A piece of glamour that is formed vaguely into the shape of a face."
 	icon = 'icons/obj/glamour.dmi'
 	icon_state = "face"
-	var/mob/living/homunculus = 0
+	var/mob/living/homunculus // relation: the homunculus we summoned
 
 DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -165,7 +166,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		H.copy_overlays(chosen_target, TRUE)
 		H.resize(chosen_target.size_multiplier, ignore_prefs = TRUE)
 		rel_set(src, "homunculus", H)
-		H.owner = src
+		rel_set(H, "owner", src)
 
 /obj/item/glamour_face/proc/homunculus_action_chosen(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
@@ -175,8 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		return
 	if(h_action == "Recall")
 		H.visible_message(span_infoplain(span_bold("\The [H]") + " returns to the face."))
-		qdel(H)
-		rel_set(src, "homunculus", 0)
+		qdel(H) // the framework clears our homunculus view
 		return
 	if(h_action == "Speak Through")
 		om_ask(user, /datum/om/prompt/text, PROC_REF(homunculus_words_entered), message = "What should the homunculus say:", title = "Speak Through", ask_flags = ASK_HELD | ASK_CAPABLE)
@@ -295,17 +295,22 @@ DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PR
 		if(!COOLDOWN_FINISHED(LL, ring_cooldown))
 			to_chat(M, span_warning("You must wait a while before drawing energy from the glamour again."))
 			return
-		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, LL = LL)
+		om_task_start(/datum/om/task/timed/glamour_ring_attack_hand_glamour_ring, M, src, receiver = src, lleill_mob = L)
 		return
 
 /datum/om/task/timed/glamour_ring_attack_hand_glamour_ring
 	duration = 10 SECONDS
 	complete_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done
 	cancel_proc = /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_failed
-	var/datum/species/lleill/LL
+	/// The lleill drawing energy (their species is made private before it is changed).
+	var/mob/living/carbon/human/lleill_mob
 
 /obj/structure/glamour_ring/proc/attack_hand_glamour_ring_done(datum/om/task/timed/glamour_ring_attack_hand_glamour_ring/task)
-	var/datum/species/lleill/LL = task.LL
+	if(!task.lleill_mob)
+		return
+	var/datum/species/lleill/LL = proto_private(task.lleill_mob, "species") // per-mob change: never mutate the shared species
+	if(!istype(LL))
+		return
 	COOLDOWN_START(LL, ring_cooldown, 10 MINUTES)
 	LL.lleill_energy = min((LL.lleill_energy + 75),LL.lleill_energy_max)
 

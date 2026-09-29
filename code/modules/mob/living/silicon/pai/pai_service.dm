@@ -14,7 +14,8 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	lane = /datum/om/behaviour/world/pai
 	VAR_PRIVATE/list/datum/pai_sprite/pai_chassis_sprites = list()
 	VAR_PRIVATE/list/current_run = list()
-	VAR_PRIVATE/list/pai_ghosts = list()
+	/// Candidate ghosts this refresh (REL_LIST, cleared by the framework when a ghost dies).
+	VAR_PRIVATE/list/pai_ghosts
 	VAR_PRIVATE/list/asked = list()
 
 /datum/world_service/pai/initialize()
@@ -41,7 +42,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 
 /datum/world_service/pai/service_step(resumed)
 	if(!resumed)
-		pai_ghosts.Cut()
+		rel_clear(src, "pai_ghosts")
 		current_run = REGISTRY_COPY(REGISTRY_OBSERVERS)
 
 	while(length(current_run))
@@ -54,7 +55,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 			continue
 
 		// Create candidate
-		pai_ghosts[REF(ghost)] = om_handle(ghost)
+		rel_add(src, "pai_ghosts", ghost)
 	return TRUE
 
 /datum/world_service/pai/proc/get_chassis_list()
@@ -104,16 +105,14 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!ghost_ref)
 		return null
-	var/WF = pai_ghosts[ghost_ref]
-	return om_resolve(WF)
+	return locate(ghost_ref) in pai_ghosts
 
 /datum/world_service/pai/proc/get_invite_list_data()
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
 	var/list/data = list()
-	for(var/ghost_ref in pai_ghosts)
-		var/mob/observer/ghost = get_ghost_from_ref(ghost_ref)
+	for(var/mob/observer/ghost as anything in pai_ghosts)
 		if(!istype(ghost) || !ghost.client?.prefs)
 			continue
 
@@ -140,11 +139,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	RETURN_TYPE(/list)
 	SHOULD_NOT_OVERRIDE(TRUE)
 
-	if(!(ghost_ref in pai_ghosts))
-		return null
-
-	var/WF = pai_ghosts[ghost_ref]
-	var/mob/observer/ghost = om_resolve(WF)
+	var/mob/observer/ghost = get_ghost_from_ref(ghost_ref)
 	if(!istype(ghost) || !ghost.client?.prefs)
 		return null
 
@@ -248,5 +243,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 /datum/world_service/pai/proc/clear_pai_block_delay(ghost_ref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	asked -= ghost_ref
+
+REL_LIST(/datum/world_service/pai, pai_ghosts)
 
 #undef PAI_DELAY_TIME

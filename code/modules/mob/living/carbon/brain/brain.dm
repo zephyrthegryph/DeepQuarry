@@ -26,9 +26,7 @@
 
 /mob/living/carbon/brain/Initialize(mapload)
 	. = ..()
-	var/datum/reagents/R = new/datum/reagents(1000)
-	reagents = R
-	rel_set(R, "my_atom", src)
+	create_reagents(1000)
 	default_language = GLOB.all_languages[LANGUAGE_GALCOM]
 
 // a brain with a player dies and ghosts; its host forgets the view.
@@ -40,14 +38,15 @@
 	..()
 
 /// A view names itself after the character it shows and reads the
-/// character's DNA and languages by reference.
+/// character's languages by reference. The DNA belongs to the character's body,
+/// so the view keeps its own copy (one owner per DNA datum).
 /mob/living/carbon/brain/on_identity_bound()
 	..()
 	if(identity().real_name)
 		real_name = identity().real_name
 		name = real_name
 	if(identity().get_dna())
-		own_set(src, "dna", identity().dna())
+		own_set(src, "dna", identity().get_dna().Clone())
 	if(identity().languages)
 		languages = identity().languages
 	else
@@ -135,4 +134,4 @@
 		record.last_notification = world.time
 		to_chat(src, span_notice("New notification has been sent."))
 
-OWN(/mob/living/carbon/brain, container, OWN_CONTAINED)
+REL(/mob/living/carbon/brain, container) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

@@ -7,7 +7,6 @@
 	malfunctioning = 1
 	own_set(src, "research", new/datum/malf_research())
 	rel_set(research, "owner", src)
-	rel_set(src, "hacked_apcs", list())
 	recalc_cpu()
 
 	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_hardware())
@@ -26,11 +25,8 @@
 
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src
-	own_take(src, "research")
-	// Fix hacked APCs
-	if(hacked_apcs)
-		for(var/obj/machinery/power/apc/A in hacked_apcs)
-			rel_clear(A, "hacker")
+	own_clear(src, "research", OWN_DELETE)
+	// Fix hacked APCs (a pair: clearing our side clears each APC's hacker)
 	rel_clear(src, "hacked_apcs")
 	// Reset our verbs
 	src.verbs = null
@@ -120,8 +116,7 @@
 /mob/living/silicon/ai/show_malf_ai()
 	. = ""
 	if(src.is_malf())
-		if(src.hacked_apcs)
-			. += "Hacked APCs: [src.hacked_apcs.len]"
+		. += "Hacked APCs: [length(src.hacked_apcs)]"
 		. += "System Status: [src.hacking ? "Busy" : "Stand-By"]"
 		if(src.research)
 			. += "Available CPU: [src.research.stored_cpu] TFlops"
@@ -137,6 +132,4 @@
 
 // Cleaner proc for creating powersupply for an AI.
 /mob/living/silicon/ai/proc/create_powersupply()
-	if(psupply)
-		qdel(psupply)
 	own_set(src, "psupply", new/obj/machinery/ai_powersupply(src))

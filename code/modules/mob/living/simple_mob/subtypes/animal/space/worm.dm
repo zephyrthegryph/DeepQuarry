@@ -197,8 +197,6 @@
 	DumpStomach()
 	if(previous)
 		previous.Detach(1)
-	if(next)
-		rel_clear(next, "previous")
 	..()
 
 /mob/living/simple_mob/animal/space/space_worm/Moved(atom/old_loc, direction, forced = FALSE)

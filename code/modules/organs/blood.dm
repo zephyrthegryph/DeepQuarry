@@ -371,9 +371,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		return
 	if(!our)
 		log_runtime("[src] has no blood reagent, proceeding with fallback reinitialization.")
-		var/vessel_old = vessel
-		own_take(src, "vessel")
-		qdel(vessel_old)
+		own_clear(src, "vessel", OWN_DELETE)
 		make_blood(amount)
 		if(!vessel)
 			log_runtime("Failed to re-initialize blood datums on [src]!")
@@ -495,8 +493,9 @@ BLOOD_VOLUME_SURVIVE = 40
 		B.init_forensic_data().merge_blooddna(null,new_data)
 
 	// Update virus information.
-	if(source.data["viruses"])
-		B.viruses = source.data["viruses"]
+	// Each holder owns its own contagion copies: never alias the reagent's list or its members.
+	for(var/datum/affliction/contagion/D in source.data["viruses"])
+		own_add(B, "viruses", D.Copy())
 
 	dq_set_fluorescent(B, 0)
 	B.invisibility = INVISIBILITY_NONE

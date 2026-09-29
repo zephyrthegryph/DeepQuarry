@@ -8,11 +8,11 @@
 
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	own_set(src, "aiEye", new /mob/observer/eye/aiEye/pic_in_pic()) // ALLOW(decl): eye mob is created in nullspace, not inside src
-	aiEye.screen = src
+	own_set(src, "aiEye", new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
+	rel_set(aiEye, "screen", src)
 
 // ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.
-// set_ai(null) in Destroy() takes the window off the AI.
+// The AI names its windows through relations (multicam_screens, master_multicam), cleared when a window dies.
 
 // the AI loses this multicam window.
 /atom/movable/screen/movable/pic_in_pic/ai/on_destroy(force)
@@ -88,15 +88,14 @@ Whatever you did that made the last camera window disappear-- don't do that agai
 		qdel(src)
 		return
 	if(ai)
-		ai.multicam_screens -= src
+		rel_remove(ai, "multicam_screens", src)
 		om_unlink(aiEye, ai, /datum/om/relation/eye_of)
-		if(ai.master_multicam == src)
-			ai.master_multicam = null
+		rel_remove(ai, "master_multicam", src)
 		if(ai.multicam_on)
 			unshow_to(ai.client)
-	ai = new_ai
+	rel_set(src, "ai", new_ai)
 	if(new_ai)
-		new_ai.multicam_screens += src
+		rel_add(new_ai, "multicam_screens", src)
 		om_link(aiEye, ai, /datum/om/relation/eye_of)
 		if(new_ai.multicam_on)
 			show_to(new_ai.client)
@@ -138,7 +137,8 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 /mob/observer/eye/aiEye/pic_in_pic
 	name = "Secondary AI Eye"
 	var/atom/movable/screen/movable/pic_in_pic/ai/screen
-	var/list/cameras_telegraphed = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	/// Cameras whose in_use_lights we raised (REL_LIST); disable_camera_telegraphing() lowers them again.
+	var/list/cameras_telegraphed
 	var/telegraph_cameras = TRUE
 	var/telegraph_range = 7
 
@@ -167,19 +167,19 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 				continue
 			visible |= C
 
-	add = visible - cameras_telegraphed
-	remove = cameras_telegraphed - visible
+	add = visible - (cameras_telegraphed || list())
+	remove = (cameras_telegraphed || list()) - visible
 
 	for(var/obj/machinery/camera/C as anything in remove)
 		if(QDELETED(C))
 			continue
-		cameras_telegraphed -= C
+		rel_remove(src, "cameras_telegraphed", C)
 		C.in_use_lights--
 		C.update_icon()
 	for(var/obj/machinery/camera/C as anything in add)
 		if(QDELETED(C))
 			continue
-		cameras_telegraphed |= C // ALLOW(object_keyed_lists): cameras whose in_use_lights we raised; disable_camera_telegraphing() lowers them again, so the list must survive until then
+		rel_add(src, "cameras_telegraphed", C)
 		C.in_use_lights++
 		C.update_icon()
 
@@ -190,10 +190,11 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 			continue
 		C.in_use_lights--
 		C.update_icon()
-	cameras_telegraphed.Cut()
+	rel_clear(src, "cameras_telegraphed")
 
-// The screen owns its eye (DECLARE_REF(..., OWNED) aiEye); `screen` is only the way back,
+// The screen owns its eye (implicit OWN aiEye); `screen` is only the way back (a relation),
 // so ownership stays a tree (tools/ci/ownership_cycle_lint.py).
+REL_LIST(/mob/observer/eye/aiEye/pic_in_pic, cameras_telegraphed)
 
 // stops telegraphing to the cameras it watched.
 /mob/observer/eye/aiEye/pic_in_pic/on_destroy(force)
@@ -210,7 +211,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 		return
 	if(!eyeobj)
 		return
-	if(multicam_screens.len >= max_multicams)
+	if(length(multicam_screens) >= max_multicams)
 		if(!silent)
 			to_chat(src, span_warning("Cannot place more than [max_multicams] multicamera windows."))
 		return
@@ -266,10 +267,12 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 	if(master_multicam)
 		master_multicam.set_view_center(get_turf(eyeobj), FALSE)
 		master_multicam.unhighlight()
-		own_take(src, "master_multicam")
+		rel_clear(src, "master_multicam")
 
 	if(P)
 		P.highlight()
 		eyeobj.setLoc(get_turf(P.center()))
 		P.set_view_center(eyeobj)
-		own_set(src, "master_multicam", P)
+		rel_set(src, "master_multicam", P)
+
+REL_LIST(/mob/living/silicon/ai, multicam_screens)

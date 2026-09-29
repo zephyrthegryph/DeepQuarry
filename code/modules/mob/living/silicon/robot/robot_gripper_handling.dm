@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 			update_ref(selected_pocket)
 			return TRUE
 
-		current_pocket = selected_pocket
+		rel_set(src, "current_pocket", selected_pocket)
 		update_ref(null)
 		return TRUE
 
@@ -263,7 +263,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 		I.forceMove(selected_pocket)
 
 	to_chat(user, "You collect \the [I].")
-	current_pocket = selected_pocket
+	rel_set(src, "current_pocket", selected_pocket)
 	update_ref(I)
 	return TRUE
 
@@ -339,7 +339,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	if(!P)
 		P = pick(pockets)
 
-	current_pocket = P
+	rel_set(src, "current_pocket", P)
 
 /// Clears the currently wrapped item and selects the pocket
 /obj/item/gripper/proc/clear_and_select_pocket()
@@ -476,6 +476,6 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	cell.update_icon()
 	cell.forceMove(P)
 
-	current_pocket = P
+	rel_set(src, "current_pocket", P)
 	update_ref(cell)
 	return TRUE

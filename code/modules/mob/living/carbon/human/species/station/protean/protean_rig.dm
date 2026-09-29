@@ -110,15 +110,12 @@
 	stop_soaking()
 	if(myprotean)
 		var/datum/forms/protean/F = myprotean.get_protean_forms()
-		if(F?.rig == src)
-			rel_clear(F, "rig")
 		if(myprotean.loc == src)
 			myprotean.forceMove(drop_location())
 		// A dormant core with no cluster left is repaired on the protean itself.
 		if(F?.is_dormant())
 			log_game("NANOFORM: [key_name(myprotean)]'s control cluster was destroyed during dormancy; repairs continue on the body at [AREACOORD(myprotean)].")
 			myprotean.visible_message(span_warning("[myprotean]'s core spills out of the ruined control cluster.")) // ALLOW(decl): message from the protean, only while dormant
-		rel_clear(src, "myprotean")
 	..()
 
 /obj/item/rig/proc/AssimilateBag(mob/living/carbon/human/P, spawned, obj/item/storage/backpack/B)
@@ -141,8 +138,8 @@
 /// Old verb "Remove Stored Bag".
 /obj/item/rig/protean/proc/protean_removebag_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rig_storage)
-		user.put_in_hands(rig_storage)
-		own_take(src, "rig_storage")
+		var/obj/item/storage/backpack/removed_bag = own_take(src, "rig_storage")
+		user.put_in_hands(removed_bag)
 	else
 		to_chat(user, "This Rig does not have a bag installed. Use a bag on it to install one.")
 
@@ -331,15 +328,13 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		if(!user.unEquip(W))
 			return INTERACTION_HANDLED_PASS
 
-		own_set(src, "air_supply", W)
 		W.forceMove(src)
+		own_set(src, "air_supply", W) // contained: must already be inside
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS
 
 		// Check if this is a hardsuit upgrade or a modification.
 	else if(istype(W,/obj/item/rig_module))
-		if(!installed_modules)
-			rel_set(src, "installed_modules", list())
 		if(length(installed_modules))
 			for(var/obj/item/rig_module/installed_mod in installed_modules)
 				if(!installed_mod.redundant && istype(installed_mod,W))
@@ -376,9 +371,8 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	if(!user.unEquip(mod))
 		return
 	to_chat(user, "You install \the [mod] into \the [src].")
-	LAZYOR(installed_modules, mod)
 	mod.forceMove(src)
-	mod.installed(src)
+	mod.installed(src) // pair: installed_modules gains mod
 	update_icon()
 	return 1
 
@@ -388,12 +382,12 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	if(!air_supply)
 		to_chat(user, "There is no tank to remove.")
 		return ITEM_INTERACT_BLOCKING
+	var/obj/item/tank/removed_tank = own_take(src, "air_supply")
 	if(user.get_equipped_item(SLOT_ID_HAND_R) && user.get_equipped_item(SLOT_ID_HAND_L))
-		air_supply.forceMove(get_turf(user))
+		removed_tank.forceMove(get_turf(user))
 	else
-		user.put_in_hands(air_supply)
-	to_chat(user, "You detach and remove \the [air_supply].")
-	own_take(src, "air_supply")
+		user.put_in_hands(removed_tank)
+	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/rig/protean/screwdriver_act(mob/living/user, obj/item/tool)
@@ -432,8 +426,7 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 	var/obj/item/rig_module/removed = ask.choices[ask.choice]
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
-	removed.removed()
-	LAZYREMOVE(installed_modules, removed)
+	removed.removed() // pair: installed_modules loses it
 	update_icon()
 
 /// Revival of a dormant core, one step per tool. Each step is a treatment

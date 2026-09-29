@@ -345,7 +345,7 @@
 
 /mob/living/simple_mob/proc/chase_target(ticker)
 	if(QDELETED(movement_target))
-		own_take(src, "movement_target")
+		rel_clear(src, "movement_target")
 		return
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
@@ -359,7 +359,7 @@
 		UnarmedAttack(movement_target, TRUE, I_HELP)
 	else if(ishuman(movement_target.loc) && prob(20))
 		visible_emote("stares at the [movement_target] that [movement_target.loc] has with an unknowable gaze.")
-	own_take(src, "movement_target")
+	rel_clear(src, "movement_target")
 
 /mob/living/simple_mob/say_quote(message, datum/language/speaking = null)
 	if(speak_emote.len)
@@ -1042,4 +1042,3 @@
 	to_chat(src, "Your concentration wears off.")
 	sight -= SEE_MOBS
 
-OWN(/mob/living/simple_mob, movement_target, OWN_CONTAINED)

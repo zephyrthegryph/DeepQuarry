@@ -316,6 +316,6 @@ Bonus
 	return TRUE
 */
 
-/// LC-refs: the mind to put back in its body -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mind to put back in its body: a relation view, null once it is deleted.
 /datum/viral_trait/growth/proc/ownermind() as /datum/mind
 	return ownermind

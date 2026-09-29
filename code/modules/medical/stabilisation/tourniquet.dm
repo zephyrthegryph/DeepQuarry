@@ -92,7 +92,8 @@
 	/// Tourniquet cinched on this limb, or null. Stops flow to it and every limb below it.
 	var/obj/item/tourniquet/tourniquet
 
-OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
+// Owned: a cinched tourniquet sits in the limb and is deleted with it.
+OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).
@@ -130,8 +131,8 @@ OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
 /obj/item/organ/external/proc/apply_tourniquet(obj/item/tourniquet/T, mob/user)
 	if(tourniquet || !istype(T))
 		return FALSE
-	own_set(src, "tourniquet", T)
 	T.forceMove(src)
+	own_set(src, "tourniquet", T)
 	T.applied_at = world.time
 	afflict_ischemia_below()
 	update_damages()

@@ -111,15 +111,17 @@
 	. = ..()
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
-	own_set(src, "card", loc)
-	if(!istype(card))
-		own_set(src, "card", new default_pai_card_path(src)) // ALLOW(decl): only when not spawned in a card
+	if(istype(loc, /obj/item/paicard))
+		rel_set(src, "card", loc)
+	else
+		var/obj/item/paicard/new_card = new default_pai_card_path(src) // only when not spawned in a card
+		rel_set(src, "card", new_card)
 		rel_set(card, "pai", src)
 
 	if(card)
 		if(!card.radio)
 			own_set(card, "radio", new /obj/item/radio/borg/pai(src.card))
-		own_set(src, "radio", card.radio)
+		rel_set(src, "radio", card.radio)
 
 	//Default languages without universal translator software
 	add_language(LANGUAGE_SOL_COMMON, 1)
@@ -186,9 +188,8 @@
 	update_icon()
 	return TRUE
 
-// `radio` is the card's radio; the cable is retracted by check_retract_cable(); records belong to the datacore.
-OWN(/mob/living/silicon/pai, radio, OWN_CONTAINED)
-OWN(/mob/living/silicon/pai, cable, OWN_CONTAINED)
+// `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
+// the radio). The cable is ours (implicit OWN, deleted with us); records belong to the datacore.
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)
