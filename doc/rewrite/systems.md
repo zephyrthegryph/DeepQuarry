@@ -326,10 +326,18 @@ EMP_DISABLE(/obj/machinery/camera, 90 SECONDS, "emped")        // sets field, ex
   side effects reading at most severity and the reflect boilerplate are all flagged. The adapter
   roots (/atom, /atom/movable, /obj, /turf, /mob, /mob/living) aren't scanned. 221 sites at the
   start; 0 now, empty baseline.
-- ALLOWs: `/obj/item/storage/emp_act` (virtual contents must be made real before the base
-  recursion reaches contents; a reaction runs after it).
-- Behaviour notes: EMP_DISABLE outages are exactly duration / severity (the ±2 s jitter and the ARF
-  generator's severity-independent 5-7.5 s are gone); types that replaced bullet_act without the
+  The lint also scans overrides of the packet adapters `receive_emp`/`receive_ionic`/
+  `receive_explosion`/`receive_blob`/`receive_shock` (the shieldgen EMP scramble was one).
+- Turf blast sinks with their own ladder (floor, wall, outdoor ground, rock) fire DAMAGE_EXPLOSION
+  reactions first through `react_to_entry()` (explosive fishing is a water-turf reaction).
+- ALLOWs (3): `/obj/item/storage/emp_act` (virtual contents must be made real before the base
+  recursion reaches contents; a reaction runs after it); `/turf/simulated/floor/outdoors` and
+  `/turf/simulated/mineral` `receive_explosion()` (they are the blast sink of those turfs: they
+  change turf instead of losing integrity, so the hit lands there rather than being reacted to).
+- Behaviour notes: EMP_DISABLE outages are exactly duration / severity and aren't extended by a
+  second pulse (the ±2 s jitter, the ARF generator's severity-independent 5-7.5 s, the port
+  generator's 30 s light-pulse outage, the R&D server's flat 60 s and vehicles' 30 s × severity
+  are gone); types that replaced bullet_act without the
   parent now run the projectile's `on_hit()` before their blocking reaction; the laser pointer
   calls `camera_disrupt()` instead of a forced camera `emp_act`; the clonepod, flash, sleeper and
   multicaster no longer take an EMP twice (they called the parent twice).
