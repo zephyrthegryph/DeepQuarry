@@ -71,6 +71,9 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	dispatch_record(ctx.user, target, action_name, log, null)
 	return result
 
+/// The last dispatch_record() call (user, target, action, log). Only unit tests write and read it.
+GLOBAL_LIST_EMPTY(dispatch_last_record)
+
 /// Tells user why an action was refused; a ui_<action> or entry handler returns its result.
 /proc/refuse(mob/user, text)
 	if(user && text)
@@ -82,6 +85,9 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
  * null. details: an assoc list rendered "k=v" after the line.
  */
 /proc/dispatch_record(mob/user, datum/target, action, log, list/details)
+#ifdef UNIT_TESTS
+	GLOB.dispatch_last_record = list("user" = user, "target" = target, "action" = action, "log" = log)
+#endif
 	if(isatom(target) && isliving(user))
 		var/atom/A = target
 		A.add_fingerprint(user)
