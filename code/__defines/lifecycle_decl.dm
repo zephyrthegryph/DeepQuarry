@@ -58,16 +58,17 @@
 /// Drops every inherited reagent declaration (holder and contents); a later line may declare anew.
 #define DECLARE_NO_REAGENTS(PATH) _LIFECYCLE_DECL(PATH, clear_reagents())
 
-/// 4. Appearance by state, as layers. Each line adds one layer keyed by STATE_VAR (the row is
-/// picked by "[value]"), or a static layer when STATE_VAR is null. ROWS: list("key" =
+/// 4. Appearance by state, as layers (doc/rewrite/systems.md section 1; the other appearance
+/// declarations and the runtime: code/__defines/sys_appearance.dm, code/datums/sys/appearance.dm).
+/// Each line adds one layer keyed by STATE_VAR (a var or a no-argument proc; the row is picked by
+/// "[value]"), or a static layer when STATE_VAR is null. ROWS: list("key" =
 /// list(APPEARANCE_ICON_STATE = "x", APPEARANCE_OVERLAYS = list("state", ...), APPEARANCE_COLOR =
 /// "#rrggbb", APPEARANCE_ICON = 'x.dmi'), ...); the "*" row is the layer's fallback, and a layer with
 /// no matching row adds nothing. Later layers win for icon_state/colour/icon, overlays add up.
-/// The combined result is built once per (type, combination) and shared: the wall_overlay_images
-/// pattern, generic. Applied at init and by the base /atom/update_icon() (a declared type needs no
-/// update_icon() override, or one that calls ..()). The declaration owns the overlays it adds and
-/// swaps them on a state change; it never touches other overlays. A subtype's layer on the same var
-/// replaces the parent's.
+/// The combined result is built once per (type, combination) and shared. Applied at init and by the
+/// base /atom/update_icon(); when STATE_VAR is a declared field its setter refreshes it (no manual
+/// update_icon()). The declaration owns the overlays it adds and swaps them on a state change; it
+/// never touches other overlays. A subtype's layer on the same var replaces the parent's.
 #define DECLARE_APPEARANCE(PATH, STATE_VAR, ROWS) _LIFECYCLE_DECL(PATH, set_appearance(STATE_VAR, ROWS))
 #define APPEARANCE_ICON_STATE "icon_state"
 #define APPEARANCE_OVERLAYS "overlays"

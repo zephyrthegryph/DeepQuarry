@@ -105,12 +105,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/holoposter/power_change()
-	var/wasUnpowered = has_stat(NOPOWER)
-	. = ..()
-	if(wasUnpowered != (has_stat(NOPOWER)))
-		update_icon()
-
 /obj/machinery/holoposter/emp_act(severity, recursive)
 	. = ..()
 	if (. & EMP_PROTECT_SELF || has_stat(BROKEN))

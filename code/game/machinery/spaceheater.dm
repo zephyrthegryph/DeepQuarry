@@ -165,7 +165,6 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 		if(state)
 			MACHINE_WAKE(src)
 		user.visible_message(span_notice("[user] switches [state ? "on" : "off"] the [src]."),span_notice("You switch [state ? "on" : "off"] the [src]."))
-		update_icon()
 	return
 
 /obj/machinery/space_heater/tgui_state(mob/user)
@@ -247,7 +246,6 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				if(heat_transfer > 0)	//heating air
 					if(state == SHEATER_STANDBY)
 						set_state(SHEATER_HEAT)
-						update_icon()
 					heat_transfer = min(heat_transfer , heating_power) //limit by the power rating of the heater
 
 					removed.add_thermal_energy(heat_transfer)
@@ -255,7 +253,6 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 				else	//cooling air
 					if(state == SHEATER_STANDBY)
 						set_state(SHEATER_COOL)
-						update_icon()
 					heat_transfer = abs(heat_transfer)
 
 					//Assume the heat is being pumped into the hull which is fixed at 20 C

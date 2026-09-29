@@ -34,7 +34,6 @@
 		set_on(!on)
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
 	cut_overlays()
@@ -210,11 +209,6 @@
 		icon_state = "scrubber:1"
 	else
 		icon_state = "scrubber:0"
-
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/power_change()
-	. = ..()
-	if (.)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/machine_step()
 	if(!anchored || (!operable()))

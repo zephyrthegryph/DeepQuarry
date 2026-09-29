@@ -74,7 +74,6 @@
 
 	for(var/obj/machinery/light_switch/L in area())
 		L.set_on(on)
-		L.update_icon()
 
 	area().power_change()
 	GLOB.lights_switched_on_roundstat++
@@ -91,7 +90,6 @@
 		else
 			stat_add(NOPOWER)
 
-		update_icon()
 
 /obj/machinery/light_switch/emp_act(severity, recursive)
 	. = ..()

@@ -56,11 +56,6 @@
 /obj/machinery/mech_sensor/proc/enabled()
 	return on && !has_stat(NOPOWER)
 
-/obj/machinery/mech_sensor/power_change()
-	. = ..()
-	if(.)
-		update_icon()
-
 /obj/machinery/mech_sensor/update_icon(safety = 0)
 	if (enabled())
 		icon_state = "airlock_sensor_standby"
@@ -90,7 +85,6 @@
 	else if (signal.data["command"] == "disable")
 		set_on(0)
 
-	update_icon()
 
 /// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mech_sensor/proc/radio_connection() as /datum/radio_frequency

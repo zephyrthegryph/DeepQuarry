@@ -85,10 +85,6 @@
 /obj/machinery/button/remote/proc/trigger()
 	return
 
-/obj/machinery/button/remote/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/button/remote/update_icon()
 	if(has_stat(NOPOWER))
 		icon_state = "doorctrl-p"
@@ -218,7 +214,6 @@
 	if(active)
 		return
 	set_active(TRUE)
-	update_icon()
 
 	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
@@ -240,7 +235,6 @@
 			M.close()
 
 	set_active(FALSE)
-	update_icon()
 
 /obj/machinery/button/remote/driver/declare_interactions(list/into)
 	into += list(

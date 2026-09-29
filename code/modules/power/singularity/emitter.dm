@@ -96,7 +96,6 @@
 		return PROCESS_KILL
 	if(src.state != 2 || (!power_region && active_power_usage))
 		set_active(0)
-		update_icon()
 		return PROCESS_KILL
 	if(!active)
 		return PROCESS_KILL
@@ -259,7 +258,6 @@
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")
-		update_icon()
 	else
 		to_chat(user, span_warning("Access denied."))
 	return TRUE

@@ -153,7 +153,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 /obj/machinery/pointdefense/power_change()
 	. = ..()
 	if(.)
-		update_icon()
 		if(active && operable())
 			MACHINE_WAKE(src)
 
@@ -313,7 +312,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
 	set_active(TRUE)
 	MACHINE_WAKE(src)
-	update_icon()
 	return TRUE
 
 /obj/machinery/pointdefense/proc/Deactivate()

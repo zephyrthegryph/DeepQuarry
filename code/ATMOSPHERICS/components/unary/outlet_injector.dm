@@ -46,11 +46,6 @@
 		return
 	add_underlay(T, node, dir)
 
-/obj/machinery/atmospherics/unary/outlet_injector/power_change()
-	. = ..()
-	if(.)
-		update_icon()
-
 /obj/machinery/atmospherics/unary/outlet_injector/machine_step()
 	..()
 
@@ -187,7 +182,6 @@
 /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
 	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
-	update_icon()
 	return TRUE
 
 /obj/machinery/atmospherics/unary/outlet_injector/multitool_act(mob/user, obj/item/W)

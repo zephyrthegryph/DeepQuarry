@@ -650,7 +650,6 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 /obj/machinery/button/windowtint/doortint/toggle_tint()
 	use_power(5)
 	set_active(!active)
-	update_icon()
 
 	for(var/obj/machinery/door/D in range(src,range))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))

@@ -135,10 +135,6 @@
 	paperamount--
 	return new /obj/item/shreddedp(get_turf(src))
 
-/obj/machinery/papershredder/power_change()
-	. = ..()
-	om_after(src, rand(0,15), TYPE_PROC_REF(/atom, update_icon))
-
 /obj/machinery/papershredder/update_icon()
 	cut_overlays()
 	if(operable())

@@ -23,10 +23,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/transhuman/autoresleever, REGISTRY_AUTORESLEE
 	else
 		icon_state = "autoresleever"
 
-/obj/machinery/transhuman/autoresleever/power_change()
-	. = ..()
-	update_icon()
-
 EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	INTERACT_OBSERVER("Respawn", PROC_REF(autoresleever_interaction_ghost)), \
 	INTERACT_ITEM(null, PROC_REF(autoresleever_interaction_item)), \

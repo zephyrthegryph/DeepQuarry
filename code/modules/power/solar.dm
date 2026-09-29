@@ -551,10 +551,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 	set_power_supply(connected_power)
 	update_icon()
 
-/obj/machinery/power/solar_control/power_change()
-	if((. = ..()))
-		update_icon()
-
 //
 // MISC
 //

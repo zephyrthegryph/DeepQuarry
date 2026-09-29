@@ -88,10 +88,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
-/obj/machinery/requests_console/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/requests_console/update_icon()
 	cut_overlays()
 

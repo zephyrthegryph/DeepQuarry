@@ -699,7 +699,6 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	. = ..()
 	if(!stat_remove(BROKEN)) // raises CHANGE_MACHINE_BROKEN
 		return FALSE
-	update_icon()
 	return TRUE
 
 // --- Sleeping until something changes (om_watch on change channels) ------------------------------

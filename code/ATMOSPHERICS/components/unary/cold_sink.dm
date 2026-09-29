@@ -111,7 +111,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	switch(action)
 		if("toggleStatus")
 			set_use_power(!use_power)
-			update_icon()
 		if("setGasTemperature")
 			var/amount = text2num(params["temp"])
 			if(amount > 0)
@@ -181,7 +180,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	if(.)
 		// process() hibernates on NOPOWER; a power transition is a dependency change.
 		invalidate_gas_dependencies()
-		update_icon()
 
 //upgrading parts
 /obj/machinery/atmospherics/unary/freezer/RefreshParts()

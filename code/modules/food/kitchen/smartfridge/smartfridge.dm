@@ -89,7 +89,6 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 /obj/machinery/smartfridge/power_change()
 	. = ..()
 	if(.)
-		update_icon()
 		if(!operable())
 			soundloop?.stop()
 			playing_sound = FALSE

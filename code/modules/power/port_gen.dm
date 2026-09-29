@@ -32,10 +32,8 @@
 /obj/machinery/power/port_gen/proc/TogglePower()
 	if(active)
 		set_active(FALSE)
-		update_icon()
 	else if(HasFuel())
 		set_active(TRUE)
-		update_icon()
 	MACHINE_WAKE(src)
 
 /obj/machinery/power/port_gen/machine_step()

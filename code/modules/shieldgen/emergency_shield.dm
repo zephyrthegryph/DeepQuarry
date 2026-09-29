@@ -142,7 +142,6 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 
 	set_active(TRUE)
 	MACHINE_WAKE(src)
-	update_icon()
 
 	create_shields()
 
@@ -198,7 +197,6 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 /obj/machinery/shieldgen/atom_break(damage_flag)
 	. = ..()
 	malfunction = TRUE
-	update_icon()
 
 // Integrity zero blows the generator apart.
 /obj/machinery/shieldgen/atom_destruction(damage_flag)

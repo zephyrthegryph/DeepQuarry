@@ -99,7 +99,6 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 		return FALSE
 
 	set_on(!on)
-	update_icon()
 	if(on)
 		MACHINE_WAKE(src)
 	if(message)

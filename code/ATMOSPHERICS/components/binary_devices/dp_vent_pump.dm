@@ -253,7 +253,6 @@
 	if(.)
 		// process() hibernates on NOPOWER; re-evaluate when power returns.
 		wake_for_state_change()
-		update_icon()
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/receive_signal(datum/signal/signal)
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))

@@ -253,14 +253,6 @@
 	if(Adjacent(user))
 		. += "It has [honey] units of honey in its storage tank."
 
-/obj/machinery/honey_extractor/power_change()
-	. = ..()
-	var/delay = rand(0,15)
-	if(delay)
-		om_after(src, delay, TYPE_PROC_REF(/atom, update_icon))
-		return
-	update_icon()
-
 /obj/machinery/honey_extractor/update_icon()
 	cut_overlays()
 

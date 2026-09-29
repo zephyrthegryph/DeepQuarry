@@ -693,7 +693,6 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
 			set_locked(!locked)
 			to_chat(user, "You [locked ? "lock" : "unlock"] the APC interface.")
-			update_icon()
 		else
 			to_chat(user, span_warning("Access denied."))
 
@@ -725,7 +724,6 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	set_emagged(1)
 	set_locked(0)
 	to_chat(user, span_notice("You emag the APC interface."))
-	update_icon()
 
 /obj/machinery/power/apc/blob_act()
 	wires.cut_all()
@@ -963,7 +961,6 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 					to_chat(ui.user, "The APC does not respond to the command.")
 					return
 				set_locked(!locked)
-				update_icon()
 		if("cover")
 			coverlocked = !coverlocked
 		if("breaker")
@@ -1135,7 +1132,6 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	hacker = A
 	A.hacked_apcs += src
 	set_locked(1)
-	update_icon()
 	return 1
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1189,7 +1185,6 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(prob(25))
 		set_emagged(1)
 		set_locked(0)
-		update_icon()
 	if(prob(25))
 		if(cell)
 			cell.corrupt()

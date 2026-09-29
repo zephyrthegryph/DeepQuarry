@@ -173,7 +173,6 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 /obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	set_active(!active)
-	update_icon()
 	MACHINE_WAKE(src)
 	return TRUE
 

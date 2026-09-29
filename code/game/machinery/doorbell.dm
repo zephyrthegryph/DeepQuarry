@@ -31,10 +31,6 @@
 	set_light(0)
 	update_icon()
 
-/obj/machinery/doorbell_chime/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/doorbell_chime/update_icon()
 	cut_overlays()
 	if(panel_open)
@@ -110,10 +106,6 @@
 	if (!id)
 		assign_uid()
 		id = num2text(uid)
-	update_icon()
-
-/obj/machinery/button/doorbell/power_change()
-	. = ..()
 	update_icon()
 
 /obj/machinery/button/doorbell/update_icon()

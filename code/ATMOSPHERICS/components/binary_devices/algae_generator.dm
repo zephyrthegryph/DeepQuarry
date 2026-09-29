@@ -51,7 +51,6 @@
 /obj/machinery/atmospherics/binary/algae_farm/power_change()
 	. = ..()
 	if(.)
-		update_icon()
 		// machine_step() sleeps while inoperable; wake it when power returns
 		// to a farm that is still switched on.
 		if(operable() && use_power >= USE_POWER_ACTIVE)
@@ -245,7 +244,6 @@
 				MACHINE_WAKE(src)
 			else
 				set_use_power(USE_POWER_IDLE)
-			update_icon()
 			. = TRUE
 
 		if("ejectMaterial")

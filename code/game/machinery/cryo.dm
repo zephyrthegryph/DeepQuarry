@@ -165,10 +165,8 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		if("switchOn")
 			set_on(1)
 			MACHINE_WAKE(src)
-			update_icon()
 		if("switchOff")
 			set_on(0)
-			update_icon()
 		if("ejectBeaker")
 			if(beaker)
 				beaker.forceMove(get_step(src.loc, SOUTH))
@@ -361,7 +359,6 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	occupant.pixel_y += 19
 	set_use_power(USE_POWER_ACTIVE)
 	add_fingerprint(usr)
-	update_icon()
 	SStgui.update_uis(src)
 	return 1
 

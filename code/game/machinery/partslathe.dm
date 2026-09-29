@@ -165,7 +165,6 @@
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
 		busy = 0
 		set_use_power(USE_POWER_IDLE)
-		update_icon()
 		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
 
 /obj/machinery/partslathe/proc/addToQueue(datum/category_item/partslathe/D, producer_account = 0)

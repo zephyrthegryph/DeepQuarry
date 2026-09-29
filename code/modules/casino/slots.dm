@@ -52,7 +52,6 @@
 	. = ..()
 	if(!has_stat(NOPOWER))
 		ispowered = 1
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 
@@ -198,7 +197,6 @@
 	. = ..()
 	if(!has_stat(NOPOWER))
 		ispowered = 1
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 

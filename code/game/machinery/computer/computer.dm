@@ -74,7 +74,6 @@
 
 /obj/machinery/computer/power_change()
 	. = ..()
-	update_icon()
 	if(has_stat(NOPOWER))
 		set_light(0)
 	else

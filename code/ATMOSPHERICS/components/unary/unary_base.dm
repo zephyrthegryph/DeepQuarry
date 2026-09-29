@@ -151,7 +151,6 @@
 		if(allowed(user))
 			invalidate_gas_dependencies()
 			set_use_power(!use_power)
-			update_icon()
 			add_fingerprint(user)
 			if(use_power)
 				to_chat(user, span_notice("You toggle the [name] on."))

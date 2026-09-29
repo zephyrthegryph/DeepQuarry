@@ -238,7 +238,6 @@ Thus, the two variables affect pump operation are set in New():
 	. = ..()
 	if(.)
 		update_rust_device()
-		update_icon()
 
 /obj/machinery/atmospherics/binary/pump/on_pump_target_reached()
 	update_icon()

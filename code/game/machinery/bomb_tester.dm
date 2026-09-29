@@ -69,7 +69,6 @@
 
 /obj/machinery/bomb_tester/power_change()
 	. = ..()
-	update_icon()
 	if(simulating && has_stat(NOPOWER))
 		simulation_finish(1)
 
@@ -356,7 +355,6 @@
 		simulation_timer = 0
 	simulating = 0
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE
 	if(cancelled)

@@ -98,13 +98,11 @@
 	. = ..()
 	if(operable())
 		ispowered = TRUE
-		update_icon()
 		if(alwaysactive || wasactive)	//reboot our field if we were on or are supposed to be always-on
 			generate_field()
 	if(. && isactive && (!operable()))
 		ispowered = FALSE
 		disable_field()
-		update_icon()
 
 /obj/machinery/atmospheric_field_generator/emp_act(severity, recursive)
 	. = ..()

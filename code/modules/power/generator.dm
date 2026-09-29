@@ -289,7 +289,6 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	if(anchored)
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)
-	update_icon()
 
 /obj/machinery/power/generator/power_spike(announce_prob = 30)
 	if(!(effective_gen >= max_power / 2 && power_region)) // Don't make a spike if we're not making a whole lot of power.

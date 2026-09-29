@@ -540,7 +540,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	// sleeper's partial-eject bug -- is gone.
 	slot_remove(occupant, get_turf(src))
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	toggle_filter()
 	toggle_pump()
 	MACHINE_SLEEP(src)

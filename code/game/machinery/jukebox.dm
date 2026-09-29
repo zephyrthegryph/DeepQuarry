@@ -282,7 +282,6 @@
 	playing = 0
 	MACHINE_SLEEP(src)
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 	start_stop_song()
 
 /obj/machinery/media/jukebox/proc/StartPlaying()
@@ -291,7 +290,6 @@
 	playing = 1
 	MACHINE_WAKE(src)
 	set_use_power(USE_POWER_ACTIVE)
-	update_icon()
 	start_stop_song()
 
 // Advance to the next track - Don't start playing it unless we were already playing

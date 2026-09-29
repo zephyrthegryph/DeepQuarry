@@ -105,7 +105,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	if(.)
 		// machine_step() sleeps on NOPOWER; a power transition is a dependency change.
 		invalidate_gas_dependencies()
-		update_icon()
 
 /obj/machinery/atmospherics/unary/heater
 	silicon_use = SILICON_USE_UI
@@ -154,7 +153,6 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	switch(action)
 		if("toggleStatus")
 			set_use_power(!use_power)
-			update_icon()
 		if("setGasTemperature")
 			var/amount = text2num(params["temp"])
 			if(amount > 0)

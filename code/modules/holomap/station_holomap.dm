@@ -177,7 +177,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	. = ..()
 	if(has_stat(NOPOWER))
 		stopWatching()
-	update_icon()
 	// TODO - Port use_auto_lights from /vg - For now implement it manually here
 	if(has_stat(NOPOWER))
 		set_light(0)

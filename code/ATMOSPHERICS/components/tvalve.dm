@@ -61,7 +61,6 @@
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_state(1)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -73,7 +72,6 @@
 
 	var/list/old_edges = rust_pipe_internal_edges()
 	set_state(0)
-	update_icon()
 	rust_rewire_internal_ports(old_edges, rust_pipe_internal_edges())
 
 	return 1
@@ -181,11 +179,6 @@
 /obj/machinery/atmospherics/tvalve/digital/bypass
 	icon_state = "map_tvalve1"
 	state = 1
-
-/obj/machinery/atmospherics/tvalve/digital/power_change()
-	. = ..()
-	if(.)
-		update_icon()
 
 /obj/machinery/atmospherics/tvalve/digital/update_icon()
 	..()

@@ -347,9 +347,9 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	if(nametag) // mailer only
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
 	new_bin.set_stat(stat) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
-	new_bin.dir = new_dir
 	new_bin.set_mode(mode)
-	new_bin.update_icon() // sets up wall outlets
+	new_bin.dir = new_dir
+	new_bin.update_icon() // the new dir: sets up wall outlets
 	new_bin.update_icon()
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
 	// Effects
@@ -510,10 +510,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	switch(action)
 		if("pumpOn")
 			set_mode(DISPOSALMODE_CHARGING)
-			update_icon()
 		if("pumpOff")
 			set_mode(DISPOSALMODE_OFF)
-			update_icon()
 
 		if("engageHandle")
 			flush = TRUE
@@ -603,7 +601,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		set_use_power(USE_POWER_IDLE)
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		set_mode(DISPOSALMODE_CHARGED) //if full enough, switch to ready mode
-		update_icon()
 		if(!flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			sleep_until_keys()
 			return
@@ -680,7 +677,6 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/power_change()
 	. = ..()	// do default setting/reset of stat NOPOWER bit
 	if(.)
-		update_icon()	// update icon
 		if(flush || length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			wake_for_state_change()
 		else if(mode == DISPOSALMODE_CHARGING && !has_stat(NOPOWER) && can_pressurize_from(loc.return_air()) && !om_timer_slot_pending(src, "power_retry_timer"))

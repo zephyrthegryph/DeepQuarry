@@ -70,6 +70,9 @@ def _sys_rules():
         spec.loader.exec_module(mod)
         for rule in getattr(mod, "RULES", {}):
             out["sys_" + rule] = "tools/ci/sys_rules/%s.py" % name
+        # A module may read one ALLOW name for several rules (appearance: sys_update_icon).
+        for alias in getattr(mod, "ALLOW_NAMES", {}):
+            out["sys_" + alias] = "tools/ci/sys_rules/%s.py" % name
     return out
 
 

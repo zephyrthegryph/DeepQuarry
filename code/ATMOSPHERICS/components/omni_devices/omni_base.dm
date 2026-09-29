@@ -87,7 +87,6 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	. = ..()
 	OMNI_WAKE_TRACE(src, "power_change changed=[.]")
 	if(.)
-		update_icon()
 		wake_for_state_change()
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over every port

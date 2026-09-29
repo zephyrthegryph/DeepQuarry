@@ -476,13 +476,11 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat_remove(NOPOWER)
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	stat_add(NOPOWER)
-	update_icon()
 
 /datum/interaction/machine_item/porta_turret_lock
 	id = "porta_turret_lock"
@@ -560,13 +558,11 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	if(!anchored)
 		playsound(src, tool.usesound, 100, 1)
 		set_anchored(TRUE)
-		update_icon()
 		to_chat(user, span_notice("You secure the exterior bolts on the turret."))
 	else
 		playsound(src, tool.usesound, 100, 1)
 		set_anchored(FALSE)
 		to_chat(user, span_notice("You unsecure the exterior bolts on the turret."))
-		update_icon()
 
 /obj/machinery/porta_turret/proc/attempt_retaliate(incoming_damage)
 	if(QDELETED(src) || attacked || !enabled || emagged || incoming_damage < 1) //if the force of impact dealt at least 1 damage, the turret gets pissed off

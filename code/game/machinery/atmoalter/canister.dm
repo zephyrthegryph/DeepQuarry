@@ -237,7 +237,6 @@ update_flag
 	src.destroyed = 1
 	play_sfx(src, SFX_EFFECTS_SPRAY)
 	set_density(FALSE)
-	update_icon()
 
 	if (src.holding)
 		src.holding.forceMove(src.loc)

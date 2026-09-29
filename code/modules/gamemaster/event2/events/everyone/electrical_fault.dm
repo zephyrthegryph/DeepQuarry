@@ -91,7 +91,6 @@
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(5))
 		A.set_emagged(TRUE)
-		A.update_icon()
 		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 

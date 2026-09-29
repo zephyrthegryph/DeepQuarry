@@ -57,7 +57,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	. = ..()
 	if(!has_stat(NOPOWER))
 		ispowered = 1
-		update_icon()
 	else
 		om_after(src, rand(0, 15), PROC_REF(lose_power))
 

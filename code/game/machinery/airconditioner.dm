@@ -304,7 +304,6 @@
 	if(mode == new_mode)
 		return
 	set_mode(new_mode)
-	update_icon()
 
 /obj/machinery/power/thermoregulator/emp_act(severity, recursive)
 	. = ..()

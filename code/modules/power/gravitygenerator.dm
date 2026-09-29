@@ -204,7 +204,6 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 		if(M.has_stat(BROKEN))
 			M.atom_fix()
 	broken_state = FALSE
-	update_icon()
 	set_power()
 	update_list()
 	update_areas()

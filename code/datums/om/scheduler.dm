@@ -391,6 +391,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	if(lane == LANE_DERIVED)
 		if(!run_services())
 			return FALSE
+	if(lane == LANE_PRESENTATION)
+		// Declared appearances whose watched fields changed (code/datums/sys/appearance.dm).
+		if(!appearance_drain(src))
+			return FALSE
 	if(!run_world_wakes(lane))
 		return FALSE
 	if(!run_wakes(lane))

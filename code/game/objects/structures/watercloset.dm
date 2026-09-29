@@ -552,7 +552,6 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/machinery/shower/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
-	update_icon()
 	handle_mist()
 	add_fingerprint(user)
 	if(on)

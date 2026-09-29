@@ -61,9 +61,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/reagent_holder_type
 	/// Set color from the reagents after filling.
 	var/reagent_tint = FALSE
-	/// Appearance layers: state var name (APPEARANCE_ANY for a static layer) -> rows (key -> row).
-	/// The built combinations are in the decl_appearance shared cache (appearance_row()).
-	var/list/appearance_layers
+	// Appearance declarations: code/datums/sys/appearance.dm.
 	/// Registry ids declared with DECLARE_REGISTRY that are conditional (joined at materialize).
 	var/list/registries
 	/// list of list(service GLOB name, join proc, leave proc).
@@ -87,7 +85,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	children = null
 	gas = null
 	clear_reagents()
-	appearance_layers = null
+	drop_appearance()
 	registries = null
 	services = null
 	binders = null
@@ -131,8 +129,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	reagent_holder_type = null
 	reagent_tint = FALSE
 
-/datum/lifecycle_decls/proc/set_appearance(state_var, list/rows)
-	LAZYSET(appearance_layers, state_var || APPEARANCE_ANY, rows)
 
 /datum/lifecycle_decls/proc/add_registry(id)
 	LAZYOR(registries, id)
@@ -182,22 +178,17 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(!isnull(reagent_volume) && !isatom(D))
 		stack_trace("DECLARE_REAGENTS([owner_type]): only atoms have reagents; dropped")
 		clear_reagents()
-	for(var/layer_var in appearance_layers?.Copy())
-		if(layer_var != APPEARANCE_ANY && !(layer_var in D.vars))
-			stack_trace("DECLARE_APPEARANCE([owner_type], \"[layer_var]\"): no such var; dropped")
-			appearance_layers -= layer_var
-	if(!length(appearance_layers))
-		appearance_layers = null
+	finish_appearance(D)
 	for(var/id in registries?.Copy())
 		var/datum/registry/registry = get_registry(id)
 		if(!registry?.conditional)
 			registries -= id // an ordinary registry is joined by join_registries() already
 	if(!length(registries))
 		registries = null
-	if(children || gas || !isnull(reagent_volume) || appearance_layers)
+	if(appearance_draws || appearance_mask)
+		work |= DECL_WORK_INIT | DECL_WORK_APPEARANCE
+	if(children || gas || !isnull(reagent_volume))
 		work |= DECL_WORK_INIT
-	if(appearance_layers)
-		work |= DECL_WORK_APPEARANCE
 	for(var/hook_var in expiry_hooks?.Copy())
 		if(!(hook_var in D.vars))
 			stack_trace("EXPIRY_ON_LAPSE([owner_type], \"[hook_var]\"): no such var; dropped")
@@ -229,8 +220,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		decls.create_gas(D)
 	if(!isnull(decls.reagent_volume))
 		decls.create_reagents_on(D)
-	if(decls.appearance_layers)
-		decls.apply_appearance(D)
+	if(decls.work & DECL_WORK_APPEARANCE)
+		decls.init_appearance(D)
 
 /datum/lifecycle_decls/proc/create_children(datum/D)
 	for(var/var_name in children)
@@ -301,92 +292,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(total > volume)
 		WARNING("[A]([A.type]) declares more reagents ([total]) than its volume ([volume])")
 
-// ---- appearance ----
-
-/atom
-	/// The DECLARE_APPEARANCE row key applied last (its overlays are the ones to swap out).
-	var/tmp/decl_appearance_key
-
-/// A's combined appearance key: each layer's row key ("[value]", or the layer's "*" row, or
-/// nothing when neither exists), joined. Layers are in declaration order.
-/datum/lifecycle_decls/proc/appearance_key(atom/A)
-	var/key = ""
-	for(var/layer_var in appearance_layers)
-		var/list/rows = appearance_layers[layer_var]
-		var/row_key = APPEARANCE_ANY
-		if(layer_var != APPEARANCE_ANY)
-			row_key = "[A.vars[layer_var]]"
-			if(!rows[row_key])
-				row_key = APPEARANCE_ANY
-		if(!rows[row_key])
-			row_key = ""
-		key += "[row_key]|"
-	return key
-
-/// The built appearance for a combined key, shared by every instance: list(icon_state, color,
-/// overlay images, icon). Later layers win for icon_state, color and icon; overlays add up.
-/// One `decl_appearance` shared cache entry per (type, key), interned: types whose layers build
-/// the same overlays share one list. Read-only (test builds runtime on a write).
-/datum/lifecycle_decls/proc/appearance_row(atom/A, key)
-	return CACHED_KEY(decl_appearance, "[owner_type]|[key]", src, key)
-
-/// Builder for decl_appearance. The table's owner type is the instance's type
-/// (lifecycle_decls_of() is keyed by it), so its initial icon is the type's.
-/proc/build_decl_appearance(datum/lifecycle_decls/decls, key)
-	var/atom/owner = decls.owner_type
-	var/list/row_keys = splittext(key, "|")
-	var/state
-	var/tint
-	var/row_icon
-	var/list/images
-	var/i = 0
-	for(var/layer_var in decls.appearance_layers)
-		i++
-		var/row_key = row_keys[i]
-		if(!row_key)
-			continue
-		var/list/row = decls.appearance_layers[layer_var][row_key]
-		if(row[APPEARANCE_ICON])
-			row_icon = row[APPEARANCE_ICON]
-		if(!isnull(row[APPEARANCE_ICON_STATE]))
-			state = row[APPEARANCE_ICON_STATE]
-		if(!isnull(row[APPEARANCE_COLOR]))
-			tint = row[APPEARANCE_COLOR]
-		for(var/overlay in row[APPEARANCE_OVERLAYS])
-			if(istext(overlay))
-				LAZYADD(images, image(row[APPEARANCE_ICON] || initial(owner.icon), overlay))
-			else
-				LAZYADD(images, overlay)
-	return list(state, tint, images, row_icon)
-
-DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance), SC_NEVER, 0, SC_INTERN)
-
-/// Applies the appearance for A's current state; swaps out the overlays the previous one added.
-/datum/lifecycle_decls/proc/apply_appearance(atom/A)
-	var/key = appearance_key(A)
-	if(key == A.decl_appearance_key)
-		return
-	var/list/row = appearance_row(A, key)
-	if(A.decl_appearance_key)
-		var/list/old = appearance_row(A, A.decl_appearance_key)
-		if(old[3])
-			A.cut_overlay(old[3])
-	A.decl_appearance_key = key
-	if(row[4])
-		A.icon = row[4]
-	if(!isnull(row[1]))
-		A.icon_state = row[1]
-	if(!isnull(row[2]))
-		A.color = row[2]
-	if(row[3])
-		A.add_overlay(row[3])
-
-/// Re-applies A's declared appearance after a state var changed. The base /atom/update_icon()
-/// calls it, so a declared type only needs update_icon() (or ..() from its own override).
-/atom/proc/decl_appearance_apply()
-	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
-	if(decls?.appearance_layers)
-		decls.apply_appearance(src)
+// ---- appearance: code/datums/sys/appearance.dm ----
 
 // ---- materialize / dematerialize ----
 

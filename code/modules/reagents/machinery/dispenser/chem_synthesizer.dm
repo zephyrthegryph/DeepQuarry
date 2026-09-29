@@ -125,10 +125,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(panel_open)
 		. += "It has [cartridges.len] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - cartridges.len] more."
 
-/obj/machinery/chemical_synthesizer/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/chemical_synthesizer/update_icon()
 	underlays.Cut()
 	if(has_stat(BROKEN))

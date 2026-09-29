@@ -21,7 +21,6 @@
 		return
 	lit = !lit
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
-	update_icon()
 
 /obj/machinery/neonsign/update_icon()
 	if(!lit)
@@ -37,7 +36,6 @@
 		lit = 0
 		set_use_power(USE_POWER_OFF)
 
-	update_icon()
 
 /obj/machinery/neonsign/cafe
 	name = "cafe neon sign"

@@ -262,7 +262,6 @@
 	// hand-kept exclude list" loop is gone.
 	slot_remove(occupant, get_turf(src))
 	set_use_power(USE_POWER_IDLE)
-	update_icon()
 
 /obj/machinery/vr_sleeper/proc/enter_vr()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)

@@ -18,10 +18,6 @@
 	. = ..()
 	update_icon()
 
-/obj/machinery/ai_slipper/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/ai_slipper/update_icon()
 	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "liquid_dispenser"

@@ -36,8 +36,6 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
 /obj/machinery/computer/timeclock/power_change()
 	. = ..()
-	if(.)
-		update_icon()
 	if(has_stat(NOPOWER))
 		set_light(0)
 	else

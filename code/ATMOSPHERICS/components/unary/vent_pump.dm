@@ -450,7 +450,6 @@
 	. = ..()
 	if(.)
 		invalidate_gas_dependencies()
-		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_pump/multitool_act(mob/user, obj/item/W)
 	var/static/list/options = list(

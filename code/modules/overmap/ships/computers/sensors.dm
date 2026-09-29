@@ -224,7 +224,6 @@
 	if(!use_power) //need some juice to kickstart
 		use_power_oneoff(idle_power_usage*5)
 	set_use_power(!use_power)
-	update_icon()
 	refresh_linked_consoles()
 	MACHINE_WAKE(src)
 

@@ -255,11 +255,6 @@
 	else
 		icon_state = "siphon:0"
 
-/obj/machinery/portable_atmospherics/powered/pump/huge/power_change()
-	. = ..()
-	if (.)
-		update_icon()
-
 /obj/machinery/portable_atmospherics/powered/pump/huge/machine_step()
 	if(!anchored || (!operable()))
 		set_on(0)
@@ -341,7 +336,6 @@
 	. = ..()
 	if(operable())
 		set_on(1)
-		update_icon()
 
 /obj/machinery/portable_atmospherics/powered/pump/huge/step_has_work()
 	return on && anchored && operable()

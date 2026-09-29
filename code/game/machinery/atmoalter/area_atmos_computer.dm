@@ -62,7 +62,6 @@
 				connectedscrubbers -= S
 				return TRUE
 			S.set_on(!S.on)
-			S.update_icon()
 			MACHINE_WAKE(S)
 			. = TRUE
 		if("allon")
@@ -84,7 +83,6 @@
 			connectedscrubbers -= S
 			continue
 		S.set_on(on)
-		S.update_icon()
 		MACHINE_WAKE(S)
 		CHECK_TICK
 

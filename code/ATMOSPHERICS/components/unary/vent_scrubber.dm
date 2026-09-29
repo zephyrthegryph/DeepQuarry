@@ -292,7 +292,6 @@
 	. = ..()
 	if(.)
 		invalidate_gas_dependencies()
-		update_icon()
 
 /obj/machinery/atmospherics/unary/vent_scrubber/welder_act(mob/user, obj/item/W)
 	use_tool(user, W, src, delay = 20, quality = TOOL_WELDER, volume = 0, start_self = "Now welding the vent.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user, W))

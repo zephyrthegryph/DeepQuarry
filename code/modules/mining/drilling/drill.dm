@@ -413,7 +413,6 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		faultreporter.autosay(error, src.name, "Supply", using_map.get_map_levels(z))
 	need_player_check = 1
 	set_active(0)
-	update_icon()
 
 /obj/machinery/mining/drill/proc/get_resource_field()
 

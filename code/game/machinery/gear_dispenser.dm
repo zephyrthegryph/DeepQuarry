@@ -344,10 +344,6 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 
-/obj/machinery/gear_dispenser/suit_fancy/power_change()
-	. = ..()
-	update_icon()
-
 /obj/machinery/gear_dispenser/suit_fancy/update_icon()
 	cut_overlays()
 

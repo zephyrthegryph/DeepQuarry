@@ -120,7 +120,6 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	explosion_resistance = 0
 	set_density(FALSE)
-	update_icon()
 	update_nearby_tiles()
 
 	if(operating == 1) //emag again
@@ -135,7 +134,6 @@
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
 	set_density(TRUE)
-	update_icon()
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
 	om_after(src, 1 SECONDS, PROC_REF(finish_close))
