@@ -413,29 +413,39 @@ fn pipe_device_remove(id: ByondValue) -> Result<ByondValue> {
     .map(ByondValue::from)
 }
 
-/// Every `Flow`/valve-open bound to device entity `device_e`
-/// (`DeviceFlow`/`DeviceValve` rows, no op wire: DM creates and configures
-/// them directly through the generated `vg_component_*` accessors on
-/// `/obj/effect/device_flow_row`/`device_valve_row` -- `rust_architecture.md`
-/// §8.5 step 6's pipe-device redesign). Several flows on the same device
-/// compose in `DeviceFlow` bind order (a filter's passthrough plus its
-/// filtered flow, a mixer's two inputs); every current DM device sets
-/// exactly one.
-fn device_laws(w: &World, device_e: EntityId) -> (Vec<Flow>, bool) {
-    let index = device_e.index();
-    let flows = w
-        .entities_with::<DeviceFlow>()
-        .into_iter()
-        .filter_map(|e| w.read::<DeviceFlow>(e))
-        .filter(|row| row.device == index)
-        .map(|row| row.flow())
-        .collect();
-    let open = w
-        .entities_with::<DeviceValve>()
-        .into_iter()
-        .filter_map(|e| w.read::<DeviceValve>(e))
-        .any(|v| v.device == index && v.open);
-    (flows, open)
+/// Every `Flow`/valve-open bound to each device entity, keyed by the device
+/// entity's slot index (`DeviceFlow`/`DeviceValve` rows, no op wire: DM
+/// creates and configures them directly through the generated
+/// `vg_component_*` accessors -- `rust_architecture.md` §8.5 step 6's
+/// pipe-device redesign). Several flows on the same device compose in
+/// `DeviceFlow` bind order (a filter's passthrough plus its filtered flow, a
+/// mixer's two inputs).
+///
+/// Built once per [`pipe_step_devices`] call: one pass over the flow rows and
+/// one over the valve rows, O(devices + rows). The previous per-device lookup
+/// rescanned every row for every device (O(devices x rows)), which on
+/// Southern Cross (~thousands of vents/scrubbers) cost ~130 ms per SSair fire.
+#[derive(Default)]
+struct DeviceLaws {
+    flows: Vec<Flow>,
+    valve_open: bool,
+}
+
+fn device_law_index(w: &World) -> HashMap<u32, DeviceLaws> {
+    let mut index: HashMap<u32, DeviceLaws> = HashMap::new();
+    for e in w.entities_with::<DeviceFlow>() {
+        if let Some(row) = w.read::<DeviceFlow>(e) {
+            index.entry(row.device).or_default().flows.push(row.flow());
+        }
+    }
+    for e in w.entities_with::<DeviceValve>() {
+        if let Some(v) = w.read::<DeviceValve>(e) {
+            if v.open {
+                index.entry(v.device).or_default().valve_open = true;
+            }
+        }
+    }
+    index
 }
 
 /// Runs every device edge's flow(s)/valve once for `dt` seconds -- region
@@ -452,8 +462,12 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
             .network::<Pipes>()
             .map(|h| h.devices().map(|(_, e)| e).collect())
             .unwrap_or_default();
+        let laws = device_law_index(w);
         for e in devices {
-            let (flows, valve_open) = device_laws(w, e);
+            let Some(law) = laws.get(&e.index()) else {
+                continue;
+            };
+            let (flows, valve_open) = (&law.flows, law.valve_open);
             if flows.is_empty() && !valve_open {
                 continue;
             }
@@ -470,13 +484,13 @@ fn pipe_step_devices(dt: ByondValue) -> Result<ByondValue> {
             drop(host);
             let report = match (ea, eb) {
                 (Endpoint::Node(_), Endpoint::Node(_)) => {
-                    step_region_region(w, e, &flows, valve_open, dt)
+                    step_region_region(w, e, flows, valve_open, dt)
                 }
                 // A turf device's flow treats the turf as side `a` (vent
                 // pump, scrubber), wherever the graph stores the cell.
                 (Endpoint::Cell(cell), Endpoint::Node(_))
                 | (Endpoint::Node(_), Endpoint::Cell(cell)) => {
-                    step_region_turf(w, e, cell, &flows, valve_open, dt)
+                    step_region_turf(w, e, cell, flows, valve_open, dt)
                 }
                 _ => None,
             };
