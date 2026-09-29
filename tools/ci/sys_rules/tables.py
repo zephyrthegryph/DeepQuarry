@@ -68,7 +68,7 @@ def constant(text):
 
 
 PROC_HDR = re.compile(r"^/[\w/]*\w\((.*)\)")
-OVERRIDE_HDR = re.compile(r"^/[\w/]+/(?!proc/|verb/)\w+\(\s*\)")
+OVERRIDE_HDR = re.compile(r"^/(?!proc/)(?![\w/]*/(?:proc|verb)/)[\w/]+/\w+\(\s*\)")
 GLOB_RETURN = re.compile(r"^\s+return\s+(?:GLOB|global)\.(\w+)\s*$")
 GLOBAL_LIST_DECL = re.compile(r"\bGLOBAL_LIST(?:_INIT|_EMPTY|_INIT_TYPED|_EMPTY_TYPED)?\(\s*(\w+)")
 STATIC_ANY = re.compile(r"^(\s+)var/static/list/(\w+)\b")

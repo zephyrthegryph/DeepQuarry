@@ -59,7 +59,7 @@
 /// list(heat capacity J/K, conductance to the surroundings W/K, emissivity).
 /// Items take theirs from their materials (heat_objects.dm).
 /atom/proc/thermal_properties()
-	return GLOB.default_thermal_properties // ALLOW(sys_static_getter): base default of a virtual whose overrides compute their result, not a per-type table
+	return GLOB.default_thermal_properties
 
 /// The default thermal_properties(). Shared, read-only.
 GLOBAL_LIST_INIT(default_thermal_properties, list(THERMAL_CAPACITY_DEFAULT, THERMAL_CONDUCTANCE_DEFAULT, THERMAL_EMISSIVITY_DEFAULT))

@@ -69,11 +69,9 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 /// Early boot notes for the memory breakdown (init_and_turfs.md §0.4): list(name, ds, MB
-/// before, MB after) for every step that took time or memory. A proc-local static rather than
-/// a GLOB var because GLOB may not exist yet when the first note is taken.
-/proc/benchmark_early_notes()
-	var/static/list/notes = list() // ALLOW(sys_static_getter): early-boot accumulator that exists before GLOB, not a table
-	return notes
+/// before, MB after) for every step that took time or memory. A real global rather than a GLOB
+/// var because GLOB may not exist yet when the first note is taken; created on first use.
+GLOBAL_REAL_VAR(list/benchmark_early_notes)
 
 /// DreamDaemon's private MB from the bench sampler's file (null outside a bench).
 /proc/benchmark_early_private_mb()
@@ -88,6 +86,6 @@ GLOBAL_REAL(GLOB, /datum/controller/global_vars)
 /proc/benchmark_early_note(name, ds, mb_before)
 	var/mb_after = benchmark_early_private_mb()
 	if(ds >= 1 || (isnum(mb_before) && isnum(mb_after) && mb_after - mb_before >= 2))
-		var/list/notes = benchmark_early_notes()
+		var/list/notes = benchmark_early_notes || (benchmark_early_notes = list())
 		notes += list(list(name, ds, mb_before, mb_after))
 #endif

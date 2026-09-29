@@ -20,7 +20,7 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 
 //Returns status string for this engine
 /datum/ship_engine/proc/get_status()
-	return GLOB.ship_engine_nominal_status // ALLOW(sys_static_getter): base default of a virtual whose overrides compute their result, not a per-type table
+	return GLOB.ship_engine_nominal_status
 
 GLOBAL_LIST_INIT(ship_engine_nominal_status, list("All systems nominal"))
 
