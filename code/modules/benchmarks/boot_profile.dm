@@ -45,11 +45,10 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /// Marks once a second for `seconds`, naming the subsystems that fired
 /// since the previous mark and their cost, to place growth after round start.
 /proc/benchmark_mark_seconds(seconds)
+	// Keyed by subsystem type text: a deferred call's arguments may not hold datum assoc keys.
 	var/list/fired = list()
-	var/list/cost = list()
 	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		fired[S] = S.times_fired
-		cost[S] = S.cost
+		fired["[S.type]"] = S.times_fired
 	// A mark a second, on timers (nothing sleeps).
 	om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), list(fired), 1, seconds)
 
@@ -57,10 +56,11 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	var/list/fired = fired_box[1]
 	var/list/names = list()
 	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		var/delta = S.times_fired - fired[S]
+		var/key = "[S.type]"
+		var/delta = S.times_fired - fired[key]
 		if(delta > 0)
 			names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
-		fired[S] = S.times_fired
+		fired[key] = S.times_fired
 	benchmark_rust_mark("t+[i]s: [jointext(names, ", ")]")
 	if(i < seconds)
 		om_after(null, 1 SECONDS, GLOBAL_PROC_REF(benchmark_mark_second), fired_box, i + 1, seconds)
