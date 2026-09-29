@@ -244,6 +244,20 @@ OBJ_TOKEN = re.compile(r"(?<![\w.\"])(src|new|[A-Za-z_]\w*)(?![\w.\[(?:])")
 
 
 REGISTRY_ROOTS = ()
+NEW_VALUE = re.compile(r"^\s*new\s*(/[\w/]+)?")
+VALUE_TYPES = ("/image", "/mutable_appearance", "/icon", "/matrix", "/regex", "/list", "/sound", "/savefile",
+               "/database", "/generator", "/particles", "/filter", "/alist")
+
+
+def creates_entity(rhs):
+    """True when the assigned value is `new /entity/type(...)` (not a value type such as an image)."""
+    m = NEW_VALUE.match(rhs.split("//", 1)[0])
+    if not m:
+        return False
+    path = m.group(1)
+    if not path:
+        return False  # implicit type: the declared type decides (already handled)
+    return not under(path, VALUE_TYPES)
 
 
 def puts_object(rhs, local_types, owner):
@@ -458,6 +472,12 @@ def main(argv=None):
                     kind, dtype = unknown_receiver_kind(name), None
                 else:
                     continue
+                if not kind and rtype and how == "=" and creates_entity(rhs):
+                    # A member var assigned a new entity: whatever its declared type, the holder made
+                    # it, so it owns it (own_set), unless declared otherwise.
+                    got = idx.member(rtype, name)
+                    if got:
+                        kind, dtype = "entity", got[0]
                 if not kind and rtype and how in OBJLIST_WRITES and puts_object(rhs, local_types, owner):
                     # An untyped list var collecting entities (src, a new object, an entity-typed local):
                     # an object-keyed roster, which is an owned or relation list.
