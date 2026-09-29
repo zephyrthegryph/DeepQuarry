@@ -1859,7 +1859,7 @@
 /area/survivalpod/superpose/TradingShip)
 "SR" = (
 /obj/machinery/vending/tool{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -1967,7 +1967,7 @@
 /area/survivalpod/superpose/TradingShip)
 "VL" = (
 /obj/machinery/vending/engivend{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)

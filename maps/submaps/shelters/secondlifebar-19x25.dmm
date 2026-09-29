@@ -1083,7 +1083,7 @@
 /area/survivalpod/superpose/secondlifebar)
 "PO" = (
 /obj/machinery/vending/loadout/loadout_misc{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/floor/tiled/milspec/raised,
 /area/survivalpod/superpose/secondlifebar)

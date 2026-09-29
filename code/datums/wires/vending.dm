@@ -11,9 +11,7 @@
 	var/obj/machinery/vending/V = holder
 	if(iscarbon(user) && V.seconds_electrified && V.shock(user, 100))
 		return FALSE
-	if(V.panel_open)
-		return TRUE
-	return FALSE
+	return wires_exposed(V)
 
 /datum/wires/vending/get_status()
 	var/obj/machinery/vending/V = holder

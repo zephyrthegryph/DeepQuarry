@@ -385,7 +385,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "hw" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},
@@ -1346,8 +1346,8 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "AP" = (
 /obj/machinery/vending/medical{
+	cap_state = 16;
 	dir = 4;
-	emagged = 1;
 	pixel_x = 5;
 	req_access = list(777)
 	},
@@ -2468,7 +2468,7 @@
 /area/survivalpod/superpose/CrashedInfestedShip)
 "WX" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_access = list(777);
 	req_log_access = null
 	},

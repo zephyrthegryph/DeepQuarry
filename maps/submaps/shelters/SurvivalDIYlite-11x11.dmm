@@ -4,7 +4,7 @@
 /area/survivalpod/superpose/SurvivalDIY_11x11lite)
 "b" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},
@@ -237,7 +237,7 @@
 /area/survivalpod/superpose/SurvivalDIY_11x11lite)
 "X" = (
 /obj/machinery/vending/tool{
-	emagged = 1;
+	cap_state = 16;
 	req_log_access = null
 	},
 /turf/simulated/floor/plating,
