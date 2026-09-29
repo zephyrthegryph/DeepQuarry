@@ -369,6 +369,40 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		)
 		return json_encode(d)
 
+	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
+	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
+	if (T == "omdeadlines" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/datum/om/scheduler/sched = om_scheduler()
+		var/datum/om/registry/reg = om_registry()
+		var/total = 0
+		var/live = 0
+		var/max_bucket = 0
+		var/list/by_owner = list()
+		var/list/by_behaviour = list()
+		for(var/list/L as anything in sched.buckets)
+			var/n = length(L) / 4
+			total += n
+			max_bucket = max(max_bucket, n)
+			for(var/i in 1 to length(L) step 4)
+				var/datum/om/rec/rec = L[i]
+				var/dl_key = L[i + 1]
+				var/bid = dl_key % OM_DL_SUB
+				var/datum/om/behaviour/B = (bid >= 1 && bid <= length(reg.behaviours)) ? reg.behaviours[bid] : null
+				var/bname = B ? "[B.type]" : "bid [bid]"
+				var/is_live = FALSE
+				if(rec && !rec.torn_down && rec.deadlines)
+					var/list/D = rec.deadlines
+					for(var/j in 1 to length(D) step 3)
+						if(D[j] == dl_key && D[j + 1] == L[i + 2])
+							is_live = TRUE
+							break
+				if(is_live)
+					live++
+				var/owner_type = "[rec?.owner?.type]"
+				by_owner[owner_type] = (by_owner[owner_type] || 0) + 1
+				by_behaviour["[bname][is_live ? "" : " (stale)"]"] = (by_behaviour["[bname][is_live ? "" : " (stale)"]"] || 0) + 1
+		return json_encode(list("total" = total, "live" = live, "stale" = total - live, "max_bucket" = max_bucket, "by_owner" = by_owner, "by_behaviour" = by_behaviour))
+
 	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
 	// sendmaps profile, mcprof_dump writes both as JSON into the round log dir and returns the paths,
 	// mcprof_stop ends collection.

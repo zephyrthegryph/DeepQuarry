@@ -570,6 +570,23 @@ impl<D: Domain> MainPort<D> {
         std::mem::take(&mut self.collected)
     }
 
+    /// A value that changes whenever what [`read`](Self::read) may return
+    /// changes: a new pinned view (frame result, absorb, repin), a DM write
+    /// (every write issues a sequence number, fallback path included) or a
+    /// fallback piece applied to the live store. Readers that mirror cells
+    /// (the gas watch probes) compare it to skip re-reading an unchanged
+    /// domain. The pinned view's address alone could be reused after a swap,
+    /// so its version rides along.
+    #[must_use]
+    pub fn read_signature(&self) -> (usize, u64, u64, u64) {
+        (
+            Arc::as_ptr(&self.pinned).cast::<u8>() as usize,
+            self.pinned.version,
+            self.commands.last_issued().0,
+            self.fallback.as_ref().map_or(0, |fb| fb.applied_pieces),
+        )
+    }
+
     /// The view pinned for this tick.
     #[must_use]
     pub fn pinned(&self) -> &Arc<View<D::Value>> {
