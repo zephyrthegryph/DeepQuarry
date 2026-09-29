@@ -73,7 +73,8 @@
 /datum/capability/proc/hidden_verbs(atom/holder)
 	return null
 
-/// Native verbs this capability adds to its holder type.
+/// Native verbs this capability gives its holder: the holder has them while it has the capability
+/// (atom/granted_verbs() collects them; hidden_verbs() still wins).
 /datum/capability/proc/verbs()
 	return null
 

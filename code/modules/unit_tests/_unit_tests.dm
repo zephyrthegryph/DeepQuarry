@@ -95,6 +95,7 @@
 #include "type_list_tests.dm"
 #include "dx_core_review_tests.dm"
 #include "dx_core_tests.dm"
+#include "dx_granted_verbs_tests.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
 #include "dx_cap_breakable_tests.dm"

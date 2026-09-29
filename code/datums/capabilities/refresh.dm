@@ -21,6 +21,8 @@
 	var/tmp/list/look_overlays
 	/// The verbs hidden by the last refresh.
 	var/tmp/list/refresh_hidden_verbs
+	/// The verbs granted_verbs() gave by the last refresh.
+	var/tmp/list/refresh_granted_verbs
 
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
@@ -132,6 +134,25 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	SHOULD_NOT_SLEEP(TRUE)
 	return caps_hidden_verbs()
 
+/**
+ * The verbs this atom has because of what it currently HAS (its capabilities, and for a mob its species
+ * and traits), as opposed to type_verbs() (per type, static) and hidden_verbs() (hide by state).
+ * Per instance and derived: re-evaluated on change and applied through the verb store; hidden_verbs()
+ * still wins. Call ..() first (capabilities add their verbs()). Pure: read state, write nothing.
+ *	/mob/living/carbon/human/granted_verbs()
+ *		. = ..()
+ *		if(dexterous_trait)
+ *			. += /mob/living/proc/toggle_pass_table
+ */
+/atom/proc/granted_verbs()
+	RETURN_TYPE(/list)
+	SHOULD_NOT_SLEEP(TRUE)
+	. = list()
+	for(var/datum/capability/C as anything in caps_all(src))
+		var/list/native = C.verbs()
+		if(native)
+			. |= native
+
 /// Side effects of a state change (a Rust device sync, a network rebuild), coalesced to once per
 /// frame. `bits` are the channels raised since the last refresh. Never call it by hand.
 /datum/proc/on_state_changed(bits)
@@ -214,9 +235,13 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		// draw and hide, and a type not seen yet is tried once and recorded.
 		var/flags = type_derive_flags(A)
 		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
-		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs
+		// A mob may be granted verbs by its species and traits, which no type flag can know.
+		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs || A.refresh_granted_verbs || ismob(A)
 		var/drew = may_draw ? !isnull(refresh_look(A)) : FALSE
-		var/hid = may_hide ? length(refresh_verbs(A)) : FALSE
+		var/hid = FALSE
+		if(may_hide)
+			hid = length(refresh_verbs(A))
+			hid = length(refresh_granted_verbs(A)) || hid
 		if(flags & TYPE_DERIVES_PENDING)
 			type_derive_record(A, drew, hid)
 		refresh_sweep_track(A)
@@ -271,6 +296,21 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		verb_store_refresh(A, flipped)
 	return hidden
 
+/// Brings A's derived granted verbs in line with granted_verbs(); only the flipped keys are re-synced
+/// through the verb store (which keeps hidden_verbs() winning).
+/proc/refresh_granted_verbs(atom/A, apply = TRUE)
+	var/list/granted = A.granted_verbs() || list()
+	if(!length(granted) && !length(A.refresh_granted_verbs))
+		return granted
+	if(!apply)
+		return granted
+	var/list/was = A.refresh_granted_verbs || list()
+	var/list/flipped = (was - granted) + (granted - was)
+	A.refresh_granted_verbs = length(granted) ? granted : null
+	if(length(flipped))
+		verb_store_refresh(A, flipped)
+	return granted
+
 // ---- the background sweep ----
 
 /// Atoms with something derived (a look, hidden verbs, periodic work), as ref text -> TRUE. Refs,
@@ -286,7 +326,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 /proc/refresh_sweep_track(atom/A)
 	if(A.refresh_swept)
 		return
-	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.periodic_cadence)
+	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.refresh_granted_verbs && !A.periodic_cadence)
 		return
 	A.refresh_swept = TRUE
 	GLOB.refresh_sweep_list[REF(A)] = TRUE
@@ -354,6 +394,10 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/list/was = A.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
+	var/list/granted = A.granted_verbs() || list()
+	var/list/was_granted = A.refresh_granted_verbs || list()
+	if(length(granted ^ was_granted))
+		drift += "granted_verbs()"
 	if(A.periodic_cadence && (!!A.should_run() != om_task_periodic_running(A)))
 		drift += "should_run()"
 	if(!length(drift))

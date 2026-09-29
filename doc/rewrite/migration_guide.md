@@ -148,7 +148,7 @@ Verbs:
 - **Always on:** native `/verb/` declarations.
 - **Conditional:** `hidden_verbs()` returns the verbs to hide right now; it is re-evaluated on change and applied through the verb store [built].
 - **Per subtype:** `type_verbs()` [built].
-- **Species, traits and capabilities:** `granted_verbs()` [planned].
+- **Species, traits and capabilities:** `granted_verbs()` [built]: per instance, derived; default returns every capability's `verbs()`, and a human adds `/datum/trait/proc/granted_verbs()` of its species' traits (example: `xenomorph_hunter`). `hidden_verbs()` still wins.
 - **Admin:** `ADMIN_VERB(...)` (unchanged).
 - **Debug:** `DEBUG_VERB(...)`, compiled out of release [planned].
 - **Categories:** `set category = VERB_CAT_*` defines only [planned: plan §2.12]. Until the defines land, don't invent new category strings.
@@ -606,7 +606,7 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 | `DECLARE_VERB(type, verb)` | a native `/verb/`, or `type_verbs()` for a per-subtype set |
 | `DECLARE_VERB_IF(type, verb, "varname")` | `hidden_verbs()` returning the verb while the var is false |
 | `DECLARE_VERB_HIDE` | `hidden_verbs()` |
-| a trait or species granting verbs in `apply()` | `granted_verbs()` [planned]; until then keep `om_grant` in `apply()` |
+| a trait or species granting verbs in `apply()` | `/datum/trait/proc/granted_verbs()` [built] (see `xenomorph_hunter`); species-level grants still use `om_grant` in `apply()` |
 
 ## B12. Periodic → a cadence
 

@@ -57,6 +57,7 @@
 	LAZYADD(A.cap_extras, C)
 	C.on_holder_init(A, FALSE)
 	cap_join_systems(A, C)
+	refresh_granted_verbs(A)
 	changed(A, CHANGE_CAPABILITY)
 	return TRUE
 
@@ -67,6 +68,7 @@
 			C.on_holder_destroy(A)
 			cap_leave_systems(A, C)
 			LAZYREMOVE(A.cap_extras, C)
+			refresh_granted_verbs(A)
 			var/datum/data = A.cap_data?[C.key]
 			LAZYREMOVE(A.cap_data, C.key)
 			if(isdatum(data))

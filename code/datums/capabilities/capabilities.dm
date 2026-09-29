@@ -160,6 +160,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		for(var/datum/capability/C as anything in caps_of(src))
 			C.on_holder_init(src, mapload)
 			cap_join_systems(src, C)
+		refresh_granted_verbs(src) // capability verbs are there from init, not a frame later
 	if(flags || periodic_cadence || periodic_interval)
 		changed(src)
 
