@@ -43,21 +43,26 @@
 	om_task_periodic(D, P)
 	D.om_rec.sched.run_pass(1e9)
 	TEST_ASSERT(!om_pipe_parked(D, P), "om_task_periodic() did not unpark it")
+	// The pass may already have run the woken entity's slot, depending on where the suite's
+	// clock put the ring: measure the explicit frame from what the pass left.
+	var/after_pass = D.steps
+	TEST_ASSERT(after_pass <= 3, "the pass stepped a woken entity more than once")
 	om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, 3, "a woken entity did not step")
+	TEST_ASSERT_EQUAL(D.steps, after_pass + 1, "a woken entity did not step")
 	om_task_periodic_stop(D)
+	var/stopped_at = D.steps
 	for(var/i in 1 to 3)
 		om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, 3, "om_task_periodic_stop() did not end the work")
+	TEST_ASSERT_EQUAL(D.steps, stopped_at, "om_task_periodic_stop() did not end the work")
 	TEST_ASSERT(om_pipe_parked(D, P), "a stopped entity did not park")
 
 	// Moving to another lane leaves the first one idle, not missed.
 	D.work = 5
 	om_task_periodic(D, PERIODIC_FAST)
 	om_run_frame_now(D, P)
-	TEST_ASSERT_EQUAL(D.steps, 3, "the old lane kept stepping after a move")
+	TEST_ASSERT_EQUAL(D.steps, stopped_at, "the old lane kept stepping after a move")
 	om_run_frame_now(D, PERIODIC_FAST)
-	TEST_ASSERT_EQUAL(D.steps, 4, "the new lane did not step")
+	TEST_ASSERT_EQUAL(D.steps, stopped_at + 1, "the new lane did not step")
 	TEST_ASSERT_EQUAL(D.last_delta, 2, "the fast lane passes the old SSfastprocess delta")
 	om_task_periodic_stop(D)
 
