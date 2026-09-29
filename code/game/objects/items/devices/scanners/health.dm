@@ -24,11 +24,6 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/healthanalyzer/Initialize(mapload)
-	. = ..()
-	if(profile_type != /datum/diagnostic_profile/health_analyzer)
-		om_grant(src, GRANT_VERB, /obj/item/healthanalyzer/proc/toggle_adv, src)
-
 /obj/item/healthanalyzer/examine(mob/user)
 	. = ..()
 	if(guide)
@@ -154,6 +149,12 @@
 
 	showadvscan = !showadvscan
 	to_chat(usr, "The scanner will now perform [showadvscan ? "an advanced" : "a basic"] analysis.")
+
+// The better scanners can switch between the basic and the advanced report.
+DECLARE_VERB(/obj/item/healthanalyzer/improved, /obj/item/healthanalyzer/proc/toggle_adv)
+DECLARE_VERB(/obj/item/healthanalyzer/advanced, /obj/item/healthanalyzer/proc/toggle_adv)
+DECLARE_VERB(/obj/item/healthanalyzer/phasic, /obj/item/healthanalyzer/proc/toggle_adv)
+DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/toggle_adv)
 
 /obj/item/healthanalyzer/improved //reports localized injuries, blood pressure and more reagents
 	name = "improved health analyzer"

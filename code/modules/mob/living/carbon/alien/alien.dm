@@ -21,13 +21,14 @@
 	var/adult_name
 	var/instance_num
 
+DECLARE_VERB(/mob/living/carbon/alien, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/carbon/alien, /mob/living/proc/hide)
+
 /mob/living/carbon/alien/Initialize(mapload)
 	. = ..()
 
 	EXPIRY_STAMP(src, time_of_birth, CLOCK_WORLD)
 
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 
 	instance_num = rand(1, 1000)
 	name = "[initial(name)] ([instance_num])"

@@ -47,9 +47,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 	glow_override = TRUE
 
-/mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+DECLARE_VERB(/mob/living/simple_mob/animal/solargrub_larva, /mob/living/proc/ventcrawl)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.draining = 0

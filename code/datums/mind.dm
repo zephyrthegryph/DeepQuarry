@@ -422,7 +422,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	else
 		mind.identity = identity()
 	if(GLOB.antag_service.player_is_antag(mind))
-		add_verb(src.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
+		om_grant(src.client, GRANT_VERB, /client/proc/aooc, mind) // the mind grants its player aooc while it is an antag
 	if (client?.prefs)
 		// directory tags migrated from legacy /datum/preferences vars
 		// to /datum/preference subtypes.

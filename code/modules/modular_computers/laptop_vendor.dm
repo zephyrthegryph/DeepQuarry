@@ -270,13 +270,11 @@
 				fabricated_laptop.screen_on = 0
 				fabricated_laptop.set_anchored(FALSE)
 				fabricated_laptop.update_icon()
-				fabricated_laptop.update_verbs()
 				fabricated_laptop = null
 			else if((devtype == 2) && fabricated_tablet)
 				if(fabricated_tablet.battery_module)
 					fabricated_tablet.battery_module.charge_to_full()
 				fabricated_tablet.forceMove(src.loc)
-				fabricated_tablet.update_verbs()
 				fabricated_tablet = null
 			ping("Enjoy your new product!")
 			set_state(3)

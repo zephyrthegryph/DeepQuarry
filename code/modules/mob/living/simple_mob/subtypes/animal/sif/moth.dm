@@ -114,10 +114,8 @@
 
 			return FALSE
 
-/mob/living/simple_mob/animal/sif/tymisian/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/hide)
 
 DECLARE_REF(/mob/living/simple_mob/animal/sif/tymisian, "smoke_spore", OWNED, null)
 

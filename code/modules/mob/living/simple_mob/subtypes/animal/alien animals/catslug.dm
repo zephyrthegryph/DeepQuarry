@@ -106,11 +106,9 @@ TYPE_TABLE(/mob/living/simple_mob/vore/alienanimals/catslug, ventcrawl_get_item_
 		/obj/item/perfect_tele_beacon, \
 		))
 
-/mob/living/simple_mob/vore/alienanimals/catslug/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, src)
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
 DECLARE_REF(/mob/living/simple_mob/vore/alienanimals/catslug, "hat", SPILL, null)
 
@@ -290,11 +288,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	var/siemens_coefficient = 1 		//Referenced later by others.
 	can_wear_hat = FALSE
 
-/mob/living/simple_mob/vore/alienanimals/catslug/custom/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
-	om_revoke(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, src)	//Most of these have custom sprites with colour already, so we'll not let them have this.
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/proc/hide)
+DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color) //Most of these have custom sprites with colour already, so we'll not let them have this.
 
 /datum/category_item/catalogue/fauna/catslug/custom/spaceslug
 	name = "Alien Wildlife - Catslug - Miros"
@@ -1006,9 +1002,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/impostor
 	is_impostor = TRUE
 
+DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug/suslug, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
+
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/Initialize(mapload)
 	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate, src)
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/update_icon()

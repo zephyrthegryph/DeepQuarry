@@ -60,13 +60,11 @@
 	/mob/living/simple_mob/vore/morph,
 	/obj/effect))
 
-/mob/living/simple_mob/vore/morph/Initialize(mapload)
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/morph/proc/take_over_prey, src)
-	if(!istype(src, /mob/living/simple_mob/vore/morph/dominated_prey))
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/morph/proc/morph_color, src)
+DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/take_over_prey)
 
-	return ..()
+DECLARE_VERB(/mob/living/simple_mob/vore/morph, /mob/living/simple_mob/vore/morph/proc/morph_color)
+DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/morph/dominated_prey, /mob/living/simple_mob/vore/morph/proc/morph_color)
 
 /mob/living/simple_mob/vore/morph/proc/allowed(atom/movable/A)
 	return !is_type_in_typecache(A, blacklist_typecache) && (isobj(A) || ismob(A))

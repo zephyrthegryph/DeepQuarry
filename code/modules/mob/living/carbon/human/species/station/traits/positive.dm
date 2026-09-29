@@ -417,8 +417,7 @@
 	. = ..()
 	if (H.pass_flags & PASSTABLE)
 		H.pass_flags ^= PASSTABLE
-	if(!(/mob/living/proc/toggle_pass_table in S.inherent_verbs)) // Teshari shouldn't lose agility
-		om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src) // a species that has it inherently (Teshari) keeps it: that grant is the species\'
 
 /datum/trait/positive/photosynth
 	name = "Photosynthesis"

@@ -50,12 +50,13 @@
 	vore_icons = null
 
 //bluenom
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vr/alchemistbee/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()

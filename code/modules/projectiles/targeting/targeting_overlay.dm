@@ -24,7 +24,6 @@
 	if(!istype(owner(), /mob))
 		return INITIALIZE_HINT_QDEL
 	moveToNullspace()
-	verbs.Cut()
 
 /obj/aiming_overlay/proc/toggle_permission(perm)
 

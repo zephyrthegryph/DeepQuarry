@@ -77,10 +77,11 @@
 	if(antag && mind)
 		GLOB.borers.add_antagonist(mind)
 
+DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/borer/Initialize(mapload)
 	add_language("Cortical Link")
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	motiontracker_subscribe()
 
 	true_name = "[pick("Primary","Secondary","Tertiary","Quaternary")] [rand(1000,9999)]"

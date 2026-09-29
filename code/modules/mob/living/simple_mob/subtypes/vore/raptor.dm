@@ -73,12 +73,13 @@
 		icon_dead = "[icon_living]_dead"
 		update_icon()
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/raptor, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/raptor, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/raptor/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/raptor/load_default_bellies()

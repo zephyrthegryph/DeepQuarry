@@ -154,7 +154,7 @@ DECLARE_REF(/obj/soulgem, "brainmobs", OWNED_LIST, null)
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
 		own_mind_handle = om_handle(brainmob.mind)
-		om_revoke(brainmob, GRANT_VERB, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
+		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
 		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self, brainmob)
 		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body, brainmob)
 

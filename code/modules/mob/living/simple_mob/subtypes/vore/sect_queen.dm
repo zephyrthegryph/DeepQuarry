@@ -85,9 +85,7 @@
 
 	allow_mind_transfer = TRUE
 
-/mob/living/simple_mob/vore/sect_queen/Login()
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color, src)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_queen, /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color)
 
 /mob/living/simple_mob/vore/sect_queen/proc/set_abdomen_color()
 	set name = "Set Glow Color"

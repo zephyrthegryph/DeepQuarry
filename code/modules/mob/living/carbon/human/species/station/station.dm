@@ -659,18 +659,12 @@
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		act_message(H, null, others = span_danger("%U% collapses into parts, revealing a solitary diona nymph at the core."))
 
+		remove_inherent_verbs(H) // split and regenerate came from this species
 		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
 		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
 			qdel(Org)
-
-		// Purge the diona verbs.
-		// Every source (species, nymph surgery) loses it.
-		for(var/datum/grant_source as anything in om_grant_sources(H, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph))
-			om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, grant_source)
-		for(var/datum/grant_source as anything in om_grant_sources(H, GRANT_VERB, /mob/living/carbon/human/proc/regenerate))
-			om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, grant_source)
 
 		return
 

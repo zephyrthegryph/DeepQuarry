@@ -90,13 +90,14 @@
 	The great wolves have been hunted to near extinction by poachers due to its extremely valuable hide. They are very rare, as one would expect, and generally cautious around people."
 	value = CATALOGUER_REWARD_HARD
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/proc/toggle_rider_reins)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob/proc/pick_color)
+
 /mob/living/simple_mob/vore/greatwolf/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \

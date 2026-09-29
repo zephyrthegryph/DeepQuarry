@@ -51,11 +51,8 @@
 	say_list_type = /datum/say_list/softdog
 	swallowTime = 0.1 SECONDS
 
-/mob/living/simple_mob/vore/woof/Initialize(mapload)
-	. = ..()
-
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/vore/woof, /mob/living/proc/hide)
 
 /datum/say_list/softdog
 	speak = list("Woof~", "Woof!", "Yip!", "Yap!", "Yip~", "Yap~", "Awoooooo~", "Awoo!", "AwooooooooooOOOOOOoOooOoooOoOOoooo!")

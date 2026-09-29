@@ -583,11 +583,6 @@
 	var/atom/master = null
 	anchored = TRUE
 
-/atom/movable/overlay/Initialize(mapload)
-	. = ..()
-	for(var/x in src.verbs)
-		src.verbs -= x // ALLOW(sys_add_verb_pair): strips every static verb off a visual overlay; nothing is granted
-
 // An overlay passes touches and items on to what it overlays.
 DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_REF(overlay_pass_touch)), 	INTERACT_ITEM(null, PROC_REF(overlay_pass_item)), )
 

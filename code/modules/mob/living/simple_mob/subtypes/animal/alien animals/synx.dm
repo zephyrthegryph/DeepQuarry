@@ -190,6 +190,15 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 	)
 */
 
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/distend_stomach)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/proc/contort)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/sonar_ping)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/proc/shred_limb)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/disguise)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/randomspeech)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/synx/proc/set_style)
+
 /mob/living/simple_mob/animal/synx/Initialize(mapload, is_pet) //this is really cool. Should be able to ventcrawl canonicaly, contort, and make random speech.
 //some things should be here that arent tho.
 	. = ..()
@@ -199,15 +208,17 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 		voremob_loaded = TRUE
 		init_vore()
 	if(is_pet)
+		// A pet synx keeps to the owner: none of the wild synx verbs.
+		om_grant_each(src, GRANT_VERB_HIDE, list(
+			/mob/living/proc/ventcrawl,
+			/mob/living/simple_mob/animal/synx/proc/distend_stomach,
+			/mob/living/simple_mob/proc/contort,
+			/mob/living/simple_mob/animal/synx/proc/sonar_ping,
+			/mob/living/proc/shred_limb,
+			/mob/living/simple_mob/animal/synx/proc/disguise,
+			/mob/living/simple_mob/animal/synx/proc/randomspeech,
+			/mob/living/simple_mob/animal/synx/proc/set_style), src)
 		return
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/distend_stomach, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/contort, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/sonar_ping, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/disguise, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/randomspeech, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/set_style, src)
 	realname = name
 	voices += "Garbled voice"
 	voices += "Unidentifiable Voice"
@@ -929,11 +940,12 @@ TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list
 /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/debug_var_entered(datum/om/prompt/text/synx_debug_var/ask)
 	vars[ask.var_name] = ask.text
 
+DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
+DECLARE_VERB(/mob/living/simple_mob/animal/synx/ai/pet/debug, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc, src)
 
 ////////////////////////////////////////
 ////////////////SYNX SPAWNER////////////

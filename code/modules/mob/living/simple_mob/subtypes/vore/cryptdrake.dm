@@ -60,12 +60,13 @@
 	vore_bump_emote = "tries to devour"
 	can_be_drop_prey = FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/cryptdrake/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/cryptdrake/load_default_bellies()

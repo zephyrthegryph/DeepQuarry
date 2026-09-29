@@ -171,6 +171,7 @@
 
 	if(Chest.robotic >= 2)
 		act_message(src, null, others = span_warning("%U% shudders slightly, then ejects a cluster of nymphs with a wet slithering noise."))
+		species.remove_inherent_verbs(src) // the diona species granted split and regenerate
 		species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
 
 		// Bust it
@@ -178,13 +179,6 @@
 
 		for(var/obj/item/organ/internal/diona/Org in internal_organ_list()) // Remove Nymph organs. (a fresh list from the organ slots)
 			qdel(Org)
-
-		// Purge the diona verbs.
-		// Every source (species, nymph surgery) loses it.
-		for(var/datum/grant_source as anything in om_grant_sources(src, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph))
-			om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, grant_source)
-		for(var/datum/grant_source as anything in om_grant_sources(src, GRANT_VERB, /mob/living/carbon/human/proc/regenerate))
-			om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, grant_source)
 
 		for(var/obj/item/organ/external/E in organs.Copy()) // Just fall apart.
 			E.droplimb(TRUE)

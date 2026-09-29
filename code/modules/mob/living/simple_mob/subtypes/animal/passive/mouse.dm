@@ -50,13 +50,14 @@
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_3p = list("squeaks", "squiks")
 
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/passive/mouse/Initialize(mapload, keep_parent_data)
 	. = ..()
 	ghostjoin = TRUE
 	ghostjoin_icon()
 
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
@@ -219,7 +220,7 @@
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
-	remove_verb(src,/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour) // ALLOW(sys_add_verb_pair): set_mouse_colour is a static verb of the mouse type; one-shot suppression after use, not a grant
+	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour, src) // one colour change only
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology
 	name = "Fleming"
@@ -318,11 +319,12 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	name = "Cooper"
 	desc = "A lonely miner's best friend."
 
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse/mining, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/passive/mouse/mining/Initialize(mapload)
 	. = ..()
 
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
 	item_state = "mouse_miner"
 	icon_living = "mouse_miner"
@@ -341,9 +343,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 /mob/living/simple_mob/animal/passive/mouse/beastmode
 	body_color = "white" // Always set white so it can be easily recoloured
 
-/mob/living/simple_mob/animal/passive/mouse/beastmode/Initialize(mapload)
-	. = ..()
-	om_revoke(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) //No ventcrawl for hanner
+DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/mouse/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 DECLARE_REF(/mob/living/simple_mob/animal/passive/mouse, "rat_diseases", OWNED_LIST, null)

@@ -199,7 +199,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	new /obj/machinery/ai_powersupply(src)
 
 	if(CONFIG_GET(flag/allow_ai_shells))
-		om_grant(src, GRANT_VERB, /mob/living/silicon/ai/proc/deploy_to_shell_act, src)
+		om_grant(src, GRANT_VERB, /mob/living/silicon/ai/proc/deploy_to_shell_act, verb_source(VERB_SOURCE_CONFIG))
 
 	create_eyeobj()
 	if(eyeobj)

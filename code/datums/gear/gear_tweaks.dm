@@ -479,7 +479,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	if(ValidTeslaLinks[metadata[7]])
 		var/t = ValidTeslaLinks[metadata[7]]
 		I.tesla_link = new t(I)
-	I.update_verbs()
 
 /datum/gear_tweak/laptop
 	var/static/list/ValidProcessors = list(/obj/item/computer_hardware/processor_unit/small, /obj/item/computer_hardware/processor_unit)
@@ -571,7 +570,6 @@ GLOBAL_DATUM_INIT(gear_tweak_free_digestable, /datum/gear_tweak/toggle_digestabl
 	if(ValidTeslaLinks[metadata[7]])
 		var/t = ValidTeslaLinks[metadata[7]]
 		I.tesla_link = new t(I)
-	I.update_verbs()
 
 /datum/gear_tweak/implant_location
 	var/static/list/bodypart_names_to_tokens = list(

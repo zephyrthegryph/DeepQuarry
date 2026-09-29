@@ -63,10 +63,11 @@
 /mob/living/simple_mob/animal/sif/frostfly/get_cold_protection()
 	return 1	// It literally produces a cryogenic mist inside itself. Cold doesn't bother it.
 
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/frostfly, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/sif/frostfly/Initialize(mapload)
 	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
 DECLARE_REF(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", OWNED, null)

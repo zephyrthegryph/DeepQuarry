@@ -241,19 +241,20 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	The most common example of this being gold coins and ingots."
 	value = CATALOGUER_REWARD_SUPERHARD //Scan range is the same as flame breath range. Good luck.
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/proc/toggle_rider_reins)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/set_style)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/special_toggle)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/export_style)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/bigdragon, /mob/living/simple_mob/vore/bigdragon/proc/import_style)
+
 /mob/living/simple_mob/vore/bigdragon/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/set_style, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/toggle_glow, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/sprite_toggle, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/flame_toggle, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/special_toggle, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/export_style, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/bigdragon/proc/import_style, src)
 	faction = FACTION_NEUTRAL
 
 /mob/living/simple_mob/vore/bigdragon/Initialize(mapload)

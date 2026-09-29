@@ -10,28 +10,28 @@
 // BEGIN RESEARCH DATUMS
 
 /datum/malf_research_ability/manipulation/electrical_pulse
-	ability = new/datum/game_mode/malfunction/verb/electrical_pulse()
+	ability = /datum/game_mode/malfunction/verb/electrical_pulse
 	price = 50
 	next = new/datum/malf_research_ability/manipulation/hack_camera()
 	name = "Electrical Pulse"
 
 
 /datum/malf_research_ability/manipulation/hack_camera
-	ability = new/datum/game_mode/malfunction/verb/hack_camera()
+	ability = /datum/game_mode/malfunction/verb/hack_camera
 	price = 1200
 	next = new/datum/malf_research_ability/manipulation/emergency_forcefield()
 	name = "Hack Camera"
 
 
 /datum/malf_research_ability/manipulation/emergency_forcefield
-	ability = new/datum/game_mode/malfunction/verb/emergency_forcefield()
+	ability = /datum/game_mode/malfunction/verb/emergency_forcefield
 	price = 3000
 	next = new/datum/malf_research_ability/manipulation/machine_overload()
 	name = "Emergency Forcefield"
 
 
 /datum/malf_research_ability/manipulation/machine_overload
-	ability = new/datum/game_mode/malfunction/verb/machine_overload()
+	ability = /datum/game_mode/malfunction/verb/machine_overload
 	price = 7500
 	name = "Machine Overload"
 

@@ -819,7 +819,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 
 	if(!(has_mutation(mMorph)))
-		remove_verb(src, /mob/living/carbon/human/proc/morph) // ALLOW(sys_add_verb_pair): defensive strip of a verb no code grants (admin-given only); nothing to revoke
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/morph, verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
 		return
 
 	// hair
@@ -929,9 +929,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 
 	if(!(src.has_mutation(mRemotetalk)))
-		for(var/datum/grant_source as anything in om_grant_sources(src, GRANT_VERB, /mob/living/carbon/human/proc/remotesay))
-			om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/remotesay, grant_source)
-		return
+		return // the gene's unapply revokes its grant; any other source keeps the verb
 	var/list/creatures = list()
 	for(var/mob/living/carbon/h in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(h == src) // Don't target self

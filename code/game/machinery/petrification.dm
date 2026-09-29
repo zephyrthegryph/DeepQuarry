@@ -131,12 +131,8 @@
 		om_grant(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, G)
 		comp?.cooldown = 0
 	else
-		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation))
-			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, grant_source)
-		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause))
-			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause, grant_source)
-		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy))
-			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy, grant_source)
+		// A permanent statue: the structure hides the gargoyle verbs for as long as it stands, whoever grants them.
+		om_grant_each(statue, GRANT_VERB_HIDE, list(/mob/living/carbon/human/proc/gargoyle_transformation, /mob/living/carbon/human/proc/gargoyle_pause, /mob/living/carbon/human/proc/gargoyle_checkenergy), G)
 		comp?.cooldown = INFINITY
 
 	if (!petrifier)

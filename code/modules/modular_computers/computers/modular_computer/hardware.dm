@@ -29,7 +29,6 @@
 		H.holder2_handle = om_handle(src)
 		user.drop_from_inventory(H)
 		H.forceMove(src)
-		update_verbs()
 
 // Installs hardware during preset construction (no user interaction).
 // Used by install_default_hardware() overrides and the laptop vendor.
@@ -62,7 +61,6 @@
 			to_chat(user, "You remove \the [H] from \the [src].")
 		H.forceMove(get_turf(src))
 		H.holder2_handle = null
-		update_verbs()
 	if(critical && enabled)
 		if(user)
 			to_chat(user, span_danger("\The [src]'s screen freezes for few seconds and then displays an \"HARDWARE ERROR: Critical component disconnected. Please verify component connection and reboot the device. If the problem persists contact technical support for assistance.\" warning."))

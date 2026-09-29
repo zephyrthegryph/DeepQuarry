@@ -85,15 +85,16 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	leap_warmup = 1 SECOND
 	movement_cooldown = -3
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/toggle_rider_reins)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/set_size)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/polymorph)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_invisibility)
+
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/set_size, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/polymorph, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/glamour_invisibility, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/ddraig/load_default_bellies()

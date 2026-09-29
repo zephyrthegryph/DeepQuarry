@@ -122,10 +122,8 @@
 		mane_color = ask.picked_color
 		update_icon()
 
-/mob/living/simple_mob/vore/retaliate/lion/Login()
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, src)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/proc/pick_color)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/retaliate/lion, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
 
 DECLARE_REF(/mob/living/simple_mob/vore/retaliate/lion, "mane_overlay", OWNED, null)

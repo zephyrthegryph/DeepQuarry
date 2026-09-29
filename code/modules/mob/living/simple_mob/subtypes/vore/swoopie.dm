@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Login()
 	. = ..()
-	verbs -= /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings //Controlled swoopies dont need their settings changed externally // ALLOW(sys_add_verb_pair): change_settings is a static verb of the swoopie type; suppressed for player-controlled swoopies, not a grant
+	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings, src) //Controlled swoopies dont need their settings changed externally
 
 //Special Swoopie vaccum so it can be handled better than a vareditted vacpack.
 /obj/item/vac_attachment/swoopie

@@ -172,9 +172,15 @@
 	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
-/mob/living/simple_mob/Initialize(mapload)
-	remove_verb(src, /mob/verb/observe) // ALLOW(sys_add_verb_pair): /mob/verb/observe is a static verb on /mob; simple mobs suppress it, not a grant
+// Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
+DECLARE_VERB_HIDE(/mob/living/simple_mob, /mob/verb/observe)
+DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/simple_mob/proc/animal_nom, "vore_active") // useable before the vorgans initialise
+DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/proc/shred_limb, "vore_active")
+DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/nutrition_heal)
+DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_headset) // TGPanel
+DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGPanel
 
+/mob/living/simple_mob/Initialize(mapload)
 	// Per-subtype constant tables: share one list across every instance of
 	// this type instead of allocating a fresh copy per mob. attacktext can
 	// be a single string on some subtypes, so only intern the list form;
@@ -200,21 +206,13 @@
 	if(has_eye_glow)
 		add_eyes()
 
-	if(vore_active)	// Moved here so the verb is useable before initialising vorgans.
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, src)
-		om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/nutrition_heal, src)
-
 	if(organ_names)
 		organ_names = GET_DECL(organ_names)
 
 	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, src)
+		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, verb_source(VERB_SOURCE_CONFIG))
 
 	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
-
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/use_headset, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/use_pda, src) // TGPanel
 
 	return ..()
 
@@ -229,10 +227,11 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 	..()
 
 //Client attached
+DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_size)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_color)
+
 /mob/living/simple_mob/Login()
 	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_size, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
 	to_chat(src,span_boldnotice("You are \the [src].") + " [player_msg]")
 	if(vore_active && !voremob_loaded)
 		init_vore(TRUE)

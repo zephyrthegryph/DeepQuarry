@@ -78,6 +78,14 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/timers
 	/// EXPIRY_ON_LAPSE: var name -> list(clock, proc_ref) (code/datums/sys/expiry.dm).
 	var/list/expiry_hooks
+	/// DECLARE_VERB: verb paths every instance has from init.
+	var/list/verbs_always
+	/// DECLARE_LOGIN_VERB: verb paths a mob has once a player had it.
+	var/list/verbs_login
+	/// DECLARE_VERB_IF: verb path -> the instance var that must be true.
+	var/list/verbs_if
+	/// DECLARE_VERB_HIDE: verb paths no instance has.
+	var/list/verbs_hidden
 
 /datum/lifecycle_decls/New(owner_type)
 	src.owner_type = owner_type
@@ -94,6 +102,10 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	behaviours = null
 	periodic = null
 	timers = null
+	verbs_always = null
+	verbs_login = null
+	verbs_if = null
+	verbs_hidden = null
 	return src
 
 /datum/lifecycle_decls/proc/add_child(var_name, default)
@@ -152,6 +164,24 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /datum/lifecycle_decls/proc/add_timer(delay, proc_ref)
 	LAZYADD(timers, list(list(delay, proc_ref)))
 
+/// DECLARE_VERB family: `how` is VERB_DECL_ALWAYS/LOGIN/HIDE or a var name (DECLARE_VERB_IF).
+/// A later declaration of the same verb replaces the parent's.
+/datum/lifecycle_decls/proc/add_verb_decl(verb_path, how)
+	LAZYREMOVE(verbs_always, verb_path)
+	LAZYREMOVE(verbs_login, verb_path)
+	LAZYREMOVE(verbs_if, verb_path)
+	LAZYREMOVE(verbs_hidden, verb_path)
+	if(istext(how))
+		LAZYSET(verbs_if, verb_path, how)
+		return
+	switch(how)
+		if(VERB_DECL_ALWAYS)
+			LAZYADD(verbs_always, verb_path)
+		if(VERB_DECL_LOGIN)
+			LAZYADD(verbs_login, verb_path)
+		if(VERB_DECL_HIDE)
+			LAZYADD(verbs_hidden, verb_path)
+
 /datum/lifecycle_decls/proc/add_expiry_hook(var_name, clock, proc_ref)
 	LAZYSET(expiry_hooks, var_name, list(clock, proc_ref))
 
@@ -194,7 +224,29 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			registries -= id // an ordinary registry is joined by join_registries() already
 	if(!length(registries))
 		registries = null
-	if(children || gas || !isnull(reagent_volume) || appearance_layers)
+	var/list/declared_verbs = list()
+	declared_verbs |= verbs_always
+	declared_verbs |= verbs_login
+	declared_verbs |= verbs_hidden
+	for(var/verb_path in verbs_if)
+		declared_verbs |= verb_path
+	for(var/verb_path in declared_verbs)
+		if(!ispath(verb_path))
+			stack_trace("DECLARE_VERB([owner_type], [verb_path]): not a verb path; dropped")
+			LAZYREMOVE(verbs_always, verb_path)
+			LAZYREMOVE(verbs_login, verb_path)
+			LAZYREMOVE(verbs_if, verb_path)
+			LAZYREMOVE(verbs_hidden, verb_path)
+	for(var/verb_path in verbs_if?.Copy())
+		if(!(verbs_if[verb_path] in D.vars))
+			stack_trace("DECLARE_VERB_IF([owner_type], [verb_path], \"[verbs_if[verb_path]]\"): no such var; dropped")
+			LAZYREMOVE(verbs_if, verb_path)
+	if(verbs_login && !ismob(D))
+		stack_trace("DECLARE_LOGIN_VERB([owner_type]): only mobs log in; dropped")
+		verbs_login = null
+	if(verbs_always || verbs_login || verbs_if || verbs_hidden)
+		work |= DECL_WORK_VERBS
+	if(children || gas || !isnull(reagent_volume) || appearance_layers || verbs_always || verbs_if || verbs_hidden)
 		work |= DECL_WORK_INIT
 	if(appearance_layers)
 		work |= DECL_WORK_APPEARANCE
@@ -231,6 +283,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		decls.create_reagents_on(D)
 	if(decls.appearance_layers)
 		decls.apply_appearance(D)
+	if(decls.verbs_always || decls.verbs_if || decls.verbs_hidden)
+		verb_store_apply_declared(D, decls)
 
 /datum/lifecycle_decls/proc/create_children(datum/D)
 	for(var/var_name in children)

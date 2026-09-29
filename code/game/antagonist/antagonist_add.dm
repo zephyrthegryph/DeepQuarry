@@ -37,7 +37,7 @@
 	om_grant(player.current, GRANT_VERB, /mob/living/proc/write_ambition, src)
 
 	if(can_speak_aooc)
-		add_verb(player.current.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
+		om_grant(player.current.client, GRANT_VERB, /client/proc/aooc, player)
 
 	// Handle only adding a mind and not bothering with gear etc.
 	if(nonstandard_role_type)
@@ -62,7 +62,7 @@
 		if(!is_special_character(player))
 			om_revoke(player.current, GRANT_VERB, /mob/living/proc/write_ambition, src)
 			if(player.current.client)
-				remove_verb(player.current.client, /client/proc/aooc) // ALLOW(sys_add_verb_pair): aooc is a client verb (clients hold no grants)
+				om_revoke(player.current.client, GRANT_VERB, /client/proc/aooc, player)
 			player.ambitions = ""
 		return 1
 	return 0

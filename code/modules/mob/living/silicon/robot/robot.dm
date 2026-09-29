@@ -1490,7 +1490,6 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 
 	UnlinkSelf()
 	to_chat(src, span_filter_notice("Buffers flushed and reset. Camera system shutdown. All systems operational."))
-	om_revoke(src, GRANT_VERB, /mob/living/silicon/robot/proc/ResetSecurityCodes, src)
 
 /mob/living/silicon/robot/proc/SetLockdown(state = 1)
 	// They stay locked down if their wire is cut.

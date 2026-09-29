@@ -1172,21 +1172,6 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 			else
 				firesoundloop.end_sound = 'sound/effects/mob_effects/on_fire/fire_extinguish4.ogg'
 
-/*
-Maybe later, gotta figure out a way to click yourself when in a locker etc.
-
-/mob/living/proc/click_self()
-	set name = "Click Self"
-	set desc = "Clicks yourself. Useful when you can't see yourself."
-	set category = "IC.Game"
-
-	ClickOn(src)
-
-/mob/living/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/click_self, src) // TGPanel
-*/
-
 /mob/living/proc/handle_vorefootstep(m_intent, turf/T) // Moved from living_ch.dm
 	return FALSE
 

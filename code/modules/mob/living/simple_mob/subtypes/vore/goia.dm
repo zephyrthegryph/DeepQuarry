@@ -211,13 +211,14 @@
 		if("Belly")
 			om_ask(src, /datum/om/prompt/color/goia_overlay, PROC_REF(overlay_color_picked), message = "Pick belly color:", title = "Belly Color", default = goia_overlays["zorgoia_belly"], overlay = "zorgoia_belly", style_key = "belly", style = choice)
 
+DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch)
+DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/recolor)
+DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/proc/injection) //Poison sting c:
+DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/export_style)
+DECLARE_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/vore/zorgoia/proc/import_style)
+
 /mob/living/simple_mob/vore/zorgoia/Initialize(mapload)
 	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/zorgoia/proc/appearance_switch, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/zorgoia/proc/recolor, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/injection, src) //Poison sting c:
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/zorgoia/proc/export_style, src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/zorgoia/proc/import_style, src)
 	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MICROCILLIN)			// get small
 	LAZYADD(src.trait_injection_reagents, REAGENT_ID_MACROCILLIN)			// get BIG
 	LAZYADD(src.trait_injection_reagents, REAGENT_ID_NORMALCILLIN)			// normal
@@ -387,12 +388,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 
 	return FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/zorgoia, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/zorgoia/on_death(gibbed) //are they going to be ok?

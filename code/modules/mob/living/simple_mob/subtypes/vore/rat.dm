@@ -221,12 +221,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD, volume = 50)
 	..()
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/aggressive/rat, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/aggressive/rat/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/rat/phoron

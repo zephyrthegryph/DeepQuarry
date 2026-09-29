@@ -131,11 +131,12 @@ DECLARE_REF(/mob/living/simple_mob/animal/sif/sakimm, "hat", SPILL, null)
 		I.appearance_flags = RESET_COLOR
 		add_overlay(I)
 
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/sakimm, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
 	. = ..()
 
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 
 	if(randomize_size)
 		adjust_scale(rand(8, 11) / 10)

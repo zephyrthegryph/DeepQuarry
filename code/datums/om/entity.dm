@@ -53,6 +53,8 @@
 	var/list/held_on
 	/// Stride 5: behaviour id, target, effect idx, source, key (holds made in hooks).
 	var/list/hold_log
+	/// Verb store: VERB_NAMED key -> the renamed verb instance on this entity (grant_verbs.dm).
+	var/list/named_verbs
 	/// Entities whose hold_log names this entity as a target.
 	var/list/hook_holders
 	/// om_hook(): event path -> flat list (listener, proc, ...) of hooks on this entity.

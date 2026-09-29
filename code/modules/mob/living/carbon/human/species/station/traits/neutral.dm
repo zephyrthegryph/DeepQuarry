@@ -426,10 +426,8 @@
 // Traitgenes made into a genetrait
 /datum/trait/neutral/trashcan/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/eat_trash in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/eat_trash, src)
-	if(!(/mob/living/proc/toggle_trash_catching in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/eat_trash, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
 
 /datum/trait/neutral/gem_eater
 	name = "Expensive Taste"
@@ -452,8 +450,7 @@
 // Traitgenes made into a genetrait
 /datum/trait/neutral/gem_eater/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/eat_minerals in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/eat_minerals, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/eat_minerals, src)
 
 /datum/trait/neutral/synth_chemfurnace
 	name = "Biofuel Processor"
@@ -502,8 +499,7 @@
 // Traitgenes Made into a genetrait
 /datum/trait/neutral/glowing_eyes/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	if(!(/mob/living/carbon/human/proc/toggle_eye_glow in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/toggle_eye_glow, src)
+	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/toggle_eye_glow, src)
 
 /datum/trait/neutral/glowing_body
 	name = "Glowing Body"
@@ -528,10 +524,8 @@
 // Traitgenes Made into a genetrait
 /datum/trait/neutral/glowing_body/unapply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	if(!(/mob/living/proc/glow_toggle in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/glow_toggle, src)
-	if(!(/mob/living/proc/glow_color in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/glow_color, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/glow_toggle, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/glow_color, src)
 
 //Allergen traits! Not available to any species with a base allergens var.
 /datum/trait/neutral/allergy
@@ -1078,8 +1072,7 @@
 // Traitgenes made into a genetrait
 /datum/trait/neutral/dominate_predator/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/proc/dominate_predator in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/proc/dominate_predator, src)
+	om_revoke(H, GRANT_VERB, /mob/proc/dominate_predator, src)
 
 /datum/trait/neutral/dominate_prey
 	name = "Dominate Prey"
@@ -1100,8 +1093,7 @@
 // Traitgenes made into a genetrait
 /datum/trait/neutral/dominate_prey/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/dominate_prey in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/dominate_prey, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/dominate_prey, src)
 
 /datum/trait/neutral/submit_to_prey
 	name = "Submit To Prey"
@@ -1122,8 +1114,7 @@
 // Traitgenes made into a genetrait
 /datum/trait/neutral/submit_to_prey/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	..()
-	if(!(/mob/living/proc/lend_prey_control in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/proc/lend_prey_control, src)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/lend_prey_control, src)
 
 /datum/trait/neutral/vertical_nom
 	name = "Vertical Nom"

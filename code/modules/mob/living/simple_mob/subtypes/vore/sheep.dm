@@ -41,12 +41,13 @@
 	vore_active = 1
 	vore_icons = SA_ICON_LIVING
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sheep, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/sheep/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/sheep/load_default_bellies()

@@ -8,7 +8,7 @@
 
 ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.", ADMIN_CATEGORY_MISC)
 	SSadmin_verbs.deassosciate_admin(user)
-	add_verb(user, /client/proc/show_verbs) // ALLOW(sys_add_verb_pair): client verb (clients hold no grants)
+	om_grant(user, GRANT_VERB, /client/proc/show_verbs, user.holder)
 
 	to_chat(user, span_filter_system(span_interface("Almost all of your adminverbs have been hidden.")))
 	feedback_add_details("admin_verb","TAVVH") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -21,7 +21,7 @@ ADMIN_VERB(hide_verbs, R_HOLDER, "Adminverbs - Hide All", "Hide all admin verbs.
 	if(!check_rights_for(src, R_HOLDER))
 		return
 
-	remove_verb(src, /client/proc/show_verbs) // ALLOW(sys_add_verb_pair): client verb (clients hold no grants)
+	om_revoke(src, GRANT_VERB, /client/proc/show_verbs, holder)
 	add_admin_verbs()
 
 	to_chat(src, span_filter_adminlog(span_interface("All of your adminverbs are now visible.")))

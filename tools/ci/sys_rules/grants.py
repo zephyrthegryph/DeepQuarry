@@ -1,21 +1,40 @@
-"""Verbs through grants (doc/rewrite/systems.md §19). See tools/ci/sys_lint.py."""
+"""Verbs through grants (doc/rewrite/systems.md §19). See tools/ci/sys_lint.py.
+
+The verb store (code/datums/om/grant_verbs.dm) is the only writer of a `verbs` list. Anywhere
+else, any write is a finding: `verbs +=`, `-=`, `|=`, `&=`, `^=`, assigning `verbs`, the list
+procs (`Add`, `Remove`, `Cut`, `Insert`, `Swap`, `Splice`, `Copy` into it), the removed
+`add_verb()` / `remove_verb()` helpers, and `new /x/proc/y(target, ...)` (which puts a renamed
+verb on target). No ALLOW is accepted for this rule: there is no exception to the store.
+"""
 import re
 
 RULES = {
-    "add_verb_pair": "om_grant(mob, GRANT_VERB, verb, source) / om_revoke(); the source's removal or deletion revokes (doc/rewrite/systems.md §19)",
+    "verb_write": "om_grant(target, GRANT_VERB | GRANT_VERB_HIDE, verb, source) / om_revoke(), or DECLARE_VERB* on the type; the store is the only verbs writer (doc/rewrite/systems.md §19)",
 }
 
-PATTERN = re.compile(r"\badd_verb\s*\(|\bremove_verb\s*\(|\bverbs\s*(\+|-|\|)=|\bverbs\.(Add|Remove)\s*\(")
-EXEMPT = ("code/_helpers/verbs.dm",)
+# ALLOW(sys_verb_write) does not suppress a finding (read by tools/ci/sys_lint.py).
+NO_ALLOW = ("verb_write",)
+
+PATTERN = re.compile(
+    r"\badd_verb\s*\("
+    r"|\bremove_verb\s*\("
+    r"|\bverbs\s*(\+|-|\||&|\^)="
+    r"|\bverbs\s*=(?!=)"
+    r"|\bverbs\s*\.\s*(Add|Remove|Cut|Insert|Swap|Splice)\s*\("
+    r"|\bverbs\s*\[[^\]]*\]\s*=(?!=)"
+    r"|\bnew\s*/[\w/]*/(proc|verb)/\w+\s*\("
+)
+STRING = re.compile(r'"(?:[^"\\]|\\.)*"')
+STORE = ("code/datums/om/grant_verbs.dm",)
 
 
 def scan(files):
     out = {rule: [] for rule in RULES}
     for rel, lines in files:
-        if rel in EXEMPT:
+        if rel in STORE:
             continue
         for number, line in enumerate(lines, 1):
-            code = line.split("//", 1)[0]
+            code = STRING.sub('""', line).split("//", 1)[0]
             if PATTERN.search(code):
-                out["add_verb_pair"].append((rel, number))
+                out["verb_write"].append((rel, number))
     return out

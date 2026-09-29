@@ -174,10 +174,6 @@
 	mouse_opacity = 2
 	screen_loc = "SOUTHWEST to NORTHEAST"
 
-/atom/movable/screen/click_catcher/Initialize(mapload, ...)
-	. = ..()
-	verbs.Cut()
-
 /atom/movable/screen/click_catcher/Click(location, control, params)
 	var/list/P = params2list(params)
 	switch(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, click_catcher_table)))

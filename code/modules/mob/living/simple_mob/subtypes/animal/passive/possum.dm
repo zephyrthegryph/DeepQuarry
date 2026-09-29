@@ -99,10 +99,8 @@
 /mob/living/simple_mob/animal/passive/opossum/proc/respond_to_damage()
 	return
 
-/mob/living/simple_mob/animal/passive/opossum/Initialize(mapload)
-	. = ..()
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/passive/opossum, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/passive/opossum/poppy
 	name = "Poppy the Safety Possum"
@@ -122,6 +120,5 @@ TYPE_TABLE(/datum/decl/mob_organ_names/possum, mob_organ_hit_zones, list("head",
 /datum/decl/mob_organ_names/poppy
 TYPE_TABLE(/datum/decl/mob_organ_names/poppy, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "pouch", "cute little jacket"))
 
-/mob/living/simple_mob/animal/passive/opossum/beastmode/Initialize(mapload)
-	. = ..()
-	om_revoke(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) //No ventcrawl for hanner
+DECLARE_VERB_HIDE(/mob/living/simple_mob/animal/passive/opossum/beastmode, /mob/living/proc/ventcrawl) //No ventcrawl for hanner
+

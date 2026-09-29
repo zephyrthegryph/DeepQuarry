@@ -419,6 +419,7 @@
 	rec.hook_holders = null
 	rec.contribs = null
 	rec.cval = null
+	rec.named_verbs = null
 
 /// After a `holds` hook returns: every hold the hook made before but not this
 /// time is released.
@@ -472,20 +473,26 @@
 // ---------------------------------------------------------------- grants
 
 /// Grants are effects with COMBINE_SUM_PER_KEY: kind -> effect id, id -> key,
-/// source -> contribution source. Ids are text or type paths.
-/proc/om_grant(datum/target, kind, id, datum/source)
-	return om_hold(target, kind, source, 1, id)
+/// source -> contribution source. Ids are text or type paths. `target` may be a client
+/// (om_grant_target(), code/datums/om/grant_verbs.dm).
+/proc/om_grant(target, kind, id, datum/source)
+	return om_hold(om_grant_target(target), kind, source, 1, id)
 
-/proc/om_revoke(datum/target, kind, id, datum/source)
-	return om_release(target, kind, source, id)
+/proc/om_revoke(target, kind, id, datum/source)
+	var/datum/E = om_grant_target(target, FALSE)
+	return E ? om_release(E, kind, source, id) : FALSE
 
-/proc/om_has_grant(datum/target, kind, id)
-	var/list/per_key = om_value_of(target, kind)
+/proc/om_has_grant(target, kind, id)
+	var/datum/E = om_grant_target(target, FALSE)
+	if(!E)
+		return FALSE
+	var/list/per_key = om_value_of(E, kind)
 	return islist(per_key) && per_key[id] > 0
 
 /// The sources granting `target` the `kind` grant `id` (a list), or null when none does.
-/proc/om_grant_sources(datum/target, kind, id)
-	var/datum/om/rec/rec = target?.om_rec
+/proc/om_grant_sources(target, kind, id)
+	var/datum/E = om_grant_target(target, FALSE)
+	var/datum/om/rec/rec = E?.om_rec
 	if(!rec?.contribs)
 		return null
 	var/eidx = om_registry().effect(kind).idx
@@ -495,9 +502,10 @@
 			LAZYADD(., C[i + OM_C_SOURCE])
 
 /// Every grant `source` gives `target`: list of list(kind, id).
-/proc/om_grants_from(datum/target, datum/source)
+/proc/om_grants_from(target, datum/source)
 	. = list()
-	var/datum/om/rec/rec = target?.om_rec
+	var/datum/E = om_grant_target(target, FALSE)
+	var/datum/om/rec/rec = E?.om_rec
 	if(!rec)
 		return
 	var/list/effects = om_registry().effects

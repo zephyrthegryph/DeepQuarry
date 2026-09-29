@@ -883,9 +883,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
-		// Whoever granted it (embed() self-grants; limb embeds may use another source), the last object is out.
-		for(var/datum/granter as anything in om_grant_sources(src, GRANT_VERB, /mob/proc/yank_out_object))
-			om_revoke(src, GRANT_VERB, /mob/proc/yank_out_object, granter)
+		om_revoke(src, GRANT_VERB, /mob/proc/yank_out_object, src) // embed() grants it
 		clear_alert("embeddedobject")
 
 	if(ishuman(src))
@@ -1396,11 +1394,14 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 /mob/proc/vv_verb_added(datum/om/prompt/choice/vv_debug/ask)
 	var/verb = ask.choice
 	if(verb != "Cancel")
-		om_grant(src, GRANT_VERB, verb, src)
+		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
+		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
+		om_grant(src, GRANT_VERB, verb, verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_verb_removed(datum/om/prompt/choice/vv_debug/ask)
-	om_revoke(src, GRANT_VERB, ask.choice, src)
-	remove_verb(src, ask.choice) // ALLOW(sys_add_verb_pair): VV debug removal must also strip type-static and other-source verbs
+	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
+	om_revoke(src, GRANT_VERB, ask.choice, verb_source(VERB_SOURCE_ADMIN))
+	om_grant(src, GRANT_VERB_HIDE, ask.choice, verb_source(VERB_SOURCE_ADMIN))
 
 /mob/proc/vv_organ_added(datum/om/prompt/choice/vv_spawn/ask)
 	var/mob/user = ask.answerer

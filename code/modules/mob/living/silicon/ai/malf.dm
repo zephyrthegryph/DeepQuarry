@@ -26,15 +26,20 @@
 
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src
+	// Every malf verb goes: the research, its unlocked abilities and the hardware granted them.
+	if(research)
+		for(var/datum/ability as anything in research.unlocked_abilities)
+			om_revoke_all_of(src, GRANT_VERB, ability)
+		om_revoke_all_of(src, GRANT_VERB, research)
+	if(hardware)
+		om_revoke_all_of(src, GRANT_VERB, hardware)
+	om_revoke_each(src, GRANT_VERB, list(/datum/game_mode/malfunction/verb/ai_select_hardware, /datum/game_mode/malfunction/verb/ai_select_research, /datum/game_mode/malfunction/verb/ai_help, /datum/game_mode/malfunction/verb/ai_destroy_station), src)
 	research = null
 	// Fix hacked APCs
 	if(hacked_apcs)
 		for(var/obj/machinery/power/apc/A in hacked_apcs)
 			A.hacker = null
 	hacked_apcs = null
-	// Reset our verbs
-	src.verbs = null
-	add_ai_verbs()
 	// Let them know.
 	to_chat(user, "You are no longer malfunctioning. Your abilities have been removed.")
 

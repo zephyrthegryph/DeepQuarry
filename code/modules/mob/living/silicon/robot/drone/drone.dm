@@ -107,10 +107,11 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	can_pick_shell = FALSE
 	shell_accessories = list("eyes-miningdrone")
 
+DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
+
 /mob/living/silicon/robot/drone/Initialize(mapload, is_decoy)
 	. = ..(mapload, FALSE)
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	remove_language(LANGUAGE_ROBOT_TALK)
 	add_language(LANGUAGE_ROBOT_TALK, 0)
 	add_language(LANGUAGE_DRONE_TALK, 1)

@@ -99,8 +99,27 @@
 /// 8c. om_after(src, DELAY, PROC) at materialize. DELAY: a time, or a var name. PROC: PROC_REF(x).
 #define DECLARE_START_TIMER(PATH, DELAY, PROC) _LIFECYCLE_DECL(PATH, add_timer(DELAY, PROC))
 
+// Verbs a type has by what it is (code/datums/om/grant_verbs.dm, doc/rewrite/systems.md §19).
+// Applied by the verb store with no per-instance store entry; a runtime GRANT_VERB_HIDE still
+// hides them and GRANT_VERB grants still stack on top. VERB is a verb or proc path.
+/// 4b. VERB is on every PATH instance from init.
+#define DECLARE_VERB(PATH, VERB) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VERB_DECL_ALWAYS))
+/// VERB is on a PATH mob once a player has had it (applied at Login); NPC-only mobs never carry it.
+#define DECLARE_LOGIN_VERB(PATH, VERB) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VERB_DECL_LOGIN))
+/// VERB is on a PATH instance while its var VAR_NAME (a string) is true. Whoever changes the var
+/// calls verb_store_refresh(src, VERB) after.
+#define DECLARE_VERB_IF(PATH, VERB, VAR_NAME) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VAR_NAME))
+/// VERB (usually a verb the type inherits) is never on a PATH instance: replaces stripping a type verb in Initialize().
+#define DECLARE_VERB_HIDE(PATH, VERB) _LIFECYCLE_DECL(PATH, add_verb_decl(VERB, VERB_DECL_HIDE))
+
+#define VERB_DECL_ALWAYS 1
+#define VERB_DECL_LOGIN 2
+#define VERB_DECL_HIDE 3
+
 // /datum/lifecycle_decls/var/work bits.
 #define DECL_WORK_INIT (1<<0)
 #define DECL_WORK_MATERIALIZE (1<<1)
 #define DECL_WORK_UNBIND (1<<2)
 #define DECL_WORK_APPEARANCE (1<<3)
+/// Declared verbs (DECLARE_VERB and friends).
+#define DECL_WORK_VERBS (1<<4)

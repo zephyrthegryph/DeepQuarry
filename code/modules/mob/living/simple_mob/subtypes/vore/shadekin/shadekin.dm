@@ -74,6 +74,8 @@
 	var/check_for_observer = FALSE
 	var/check_timer = 0
 
+DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
+
 /mob/living/simple_mob/shadekin/Initialize(mapload)
 	//You spawned the prototype, and want a totally random one.
 	if(type == /mob/living/simple_mob/shadekin)
@@ -123,7 +125,6 @@
 
 	update_icon()
 
-	om_grant(src, GRANT_VERB, /mob/proc/adjust_hive_range, src)
 
 	return ..()
 

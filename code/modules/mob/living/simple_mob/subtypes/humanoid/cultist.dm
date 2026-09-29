@@ -754,12 +754,13 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	can_be_drop_prey = FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
@@ -791,12 +792,13 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	can_be_drop_prey = FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
@@ -829,12 +831,13 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	can_be_drop_prey = FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
@@ -866,12 +869,13 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 
 	can_be_drop_prey = FALSE
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()

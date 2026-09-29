@@ -30,8 +30,7 @@
 
 /datum/trait/positive/superpower_remoteview/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	if(/mob/living/carbon/human/proc/remoteobserve in S.inherent_verbs)
-		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remoteobserve, src)
+	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remoteobserve, src)
 
 /datum/trait/positive/superpower_regenerate
 	name = "Regenerate"
@@ -67,8 +66,7 @@
 
 /datum/trait/positive/superpower_remotetalk/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
-	if(!(/mob/living/carbon/human/proc/remotesay in S.inherent_verbs))
-		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remotesay, src)
+	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/remotesay, src)
 
 /datum/trait/positive/superpower_noprints
 	name = "No Prints"

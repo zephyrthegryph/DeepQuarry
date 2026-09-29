@@ -107,6 +107,15 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_chassis)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_verbs)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/proc/dominate_predator)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/dominate_prey)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/set_size)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/shred_limb)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/toggle_trash_catching)
+DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun support, and it shouldn't use guns anyway
+
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
@@ -128,16 +137,6 @@
 	add_language(LANGUAGE_EAL, 1)
 	add_language(LANGUAGE_TERMINUS, 1)
 	add_language(LANGUAGE_SIGN, 1)
-
-	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/choose_chassis, src)
-	om_grant(src, GRANT_VERB, /mob/living/silicon/pai/proc/choose_verbs, src)
-	om_grant(src, GRANT_VERB, /mob/proc/dominate_predator, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/dominate_prey, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/set_size, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
-	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
-
-	remove_verb(src, /mob/verb/toggle_gun_mode) // ALLOW(sys_add_verb_pair): suppresses a verb every /mob has statically, not a grant. Pai doesn't have support for this and shouldn't be able to use guns anyway
 
 	//PDA
 	pda.ownjob = "Personal Assistant"

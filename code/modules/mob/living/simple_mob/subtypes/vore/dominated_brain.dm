@@ -17,6 +17,8 @@
 	/// The predator had no mind: this back seat is kept even while empty.
 	var/was_mob
 
+DECLARE_VERB(/mob/living/dominated_brain, /mob/living/dominated_brain/proc/resist_control)
+
 /mob/living/dominated_brain/Initialize(mapload, mob/living/pred, preyname, mob/living/prey)
 	prey_name = preyname
 	if(prey)
@@ -26,7 +28,6 @@
 		return INITIALIZE_HINT_QDEL
 	. = ..()
 	lets_register_our_signals()
-	om_grant(src, GRANT_VERB, /mob/living/dominated_brain/proc/resist_control, src)
 
 /datum/om/stage/life/type_post/dominated_brain
 	of = /mob/living/dominated_brain

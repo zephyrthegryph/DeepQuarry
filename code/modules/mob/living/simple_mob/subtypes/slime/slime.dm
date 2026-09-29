@@ -93,8 +93,9 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_see = list("bounces", "jiggles", "sways")
 	emote_hear = list("squishes")
 
+DECLARE_VERB(/mob/living/simple_mob/slime, /mob/living/proc/ventcrawl)
+
 /mob/living/simple_mob/slime/Initialize(mapload)
-	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
 	update_mood()
 	set_glow_color(color)
 	refresh_glow()

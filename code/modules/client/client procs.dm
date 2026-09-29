@@ -312,7 +312,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		admin_datum.associate(src)
 		connecting_admin = TRUE
 	else if(GLOB.deadmins[ckey])
-		add_verb(src, /client/proc/readmin) // ALLOW(sys_add_verb_pair): readmin is a client verb (clients hold no grants)
+		om_grant(src, GRANT_VERB, /client/proc/readmin, GLOB.deadmins[ckey])
 		connecting_admin = TRUE
 
 	if (byond_version >= 512)
@@ -414,6 +414,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(holder)
 		holder.owner_handle = null
 		GLOB.admins -= src
+	QDEL_NULL(verb_store) // its grants die with it
 	if(skybox)
 		QDEL_NULL(skybox)
 	if(fakeConversations)
