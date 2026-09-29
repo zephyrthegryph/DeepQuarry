@@ -385,7 +385,7 @@
 /datum/affliction/burn_shock/proc/total_burn(fresh = FALSE)
 	if(!fresh && burn_cache_time == world.time)
 		return burn_cache
-	burn_cache_time = world.time
+	burn_cache_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	burn_cache = 0
 	var/mob/living/carbon/human/H = owner
 	if(istype(H))

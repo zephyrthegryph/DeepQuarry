@@ -36,7 +36,7 @@
 	var/approved_weight = 0
 	var/status = CONTRACT_STAKEHOLDER_PENDING
 	var/contribution = 0
-	var/created_at
+	EXPIRY_DECLARE(created_at)
 
 /datum/contract_stakeholder_proposal/New(datum/money_account/account, _role_id, _requested_weight)
 	. = ..()
@@ -45,7 +45,7 @@
 	department = account.department_id
 	role_id = _role_id
 	requested_weight = clamp(round(_requested_weight), 1, 3)
-	created_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 
 /// Social contracts keep their exceptional target live until an authorized
 /// head finalizes the outcome or the deadline does so automatically. All
@@ -420,14 +420,14 @@ DECLARE_REF(/datum/contract/social, "stakeholder_proposals", OWNED_VALUES, null)
 
 /datum/contract/social/check_deadline()
 	deadline_timer = null
-	if(state == CONTRACT_ACTIVE && deadline && world.time >= deadline)
+	if(state == CONTRACT_ACTIVE && deadline && !BEFORE(src, deadline, CLOCK_WORLD))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else if(deadline_grace_duration > 0)
 			enter_grace()
 		else
 			fail("The delivery window closed before the minimum graded outcome and required stakeholder participation were reached.")
-	else if(state == CONTRACT_GRACE && grace_until && world.time >= grace_until)
+	else if(state == CONTRACT_GRACE && grace_until && !BEFORE(src, grace_until, CLOCK_WORLD))
 		if(can_finalize_outcome())
 			finalize_graded_outcome()
 		else

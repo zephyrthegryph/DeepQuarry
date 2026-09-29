@@ -128,7 +128,7 @@ DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					GLOB.emergency_shuttle_service.launch_time = world.time + (new_time_left * 10)
+					GLOB.emergency_shuttle_service.launch_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's launch time to [new_time_left * 10]"), 1)
 			else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
@@ -136,7 +136,7 @@ DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 				if(isnull(new_time_left))
 					return
 				if(isnum(new_time_left))
-					GLOB.emergency_shuttle_service.shuttle.arrive_time = world.time + (new_time_left * 10)
+					GLOB.emergency_shuttle_service.shuttle.arrive_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + (new_time_left * 10)
 					log_admin("[key_name(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 					message_admins(span_blue("[key_name_admin(ui.user)] edited the Emergency Shuttle's arrival time to [new_time_left * 10]"), 1)
 			else

@@ -39,7 +39,7 @@
 	if(!istype(SM))
 		return DQ_BEHAVIOR_FAILED
 	SM.shoot_target(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // --- Aimed shot (granted by held guns) --------------------------------------
@@ -88,5 +88,5 @@
 	// Use the gun's existing fire pipeline. Pointblank when adjacent.
 	var/pointblank = owner.Adjacent(target)
 	G.Fire(target, owner, null, pointblank, FALSE)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE

@@ -21,7 +21,7 @@
 	attacktext = list("scratches")
 	see_in_dark = 8
 	minbodytemp = 0
-	var/well_fed = 0
+	EXPIRY_DECLARE(well_fed)
 
 	vore_bump_chance = 0
 	vore_digest_chance = 50
@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/meowl, INTERACT_INSERT(/obj/item
 		return TRUE
 	user.visible_message(span_notice("\The [src] happily gulps down \the [O] right out of \the [user]'s hand, it seems pretty content now."),span_notice("\The [src] happily gulps down \the [O] right out of your hand, it seems pretty content now."))
 	consume(O, user)
-	well_fed = world.time
+	EXPIRY_STAMP(src, well_fed, CLOCK_WORLD)
 	return TRUE
 
 /mob/living/simple_mob/vore/meowl/PounceTarget(mob/living/M, successrate = 100)

@@ -212,7 +212,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	if(time_to_wait > 0)
 		to_chat(src, span_red("Error: AllowUpload(): Spam prevention. Please wait [round(time_to_wait/10)] seconds."))
 		return 0
-	fileaccess_timer = world.time + FTPDELAY	*/
+	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY	*/
 	return 1
 
 	///////////
@@ -335,7 +335,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 
 	loot_panel = new(src)
 
-	connection_time = world.time
+	EXPIRY_STAMP(src, connection_time, CLOCK_WORLD)
 	connection_realtime = world.realtime
 	connection_timeofday = world.timeofday
 
@@ -370,7 +370,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	//////////////
 /client/Del()
 	if(!gc_destroyed)
-		gc_destroyed = world.time
+		gc_destroyed = EXPIRY_AT(null, CLOCK_WORLD, 0)
 		if (!QDELING(src))
 			stack_trace("Client does not purport to be QDELING, this is going to cause bugs in other places!")
 

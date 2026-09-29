@@ -6,7 +6,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 	EXPIRY_DECLARE(end_time)
 
 /datum/event/money_hacker/setup()
-	end_time = world.time + 6000
+	end_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + 6000
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
 		affected_account_handle = om_handle(pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
@@ -26,7 +26,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 
 
 /datum/event/money_hacker/tick()
-	if(world.time >= end_time)
+	if(!BEFORE(src, end_time, CLOCK_WORLD))
 		endWhen = activeFor
 	else
 		endWhen = activeFor + 10

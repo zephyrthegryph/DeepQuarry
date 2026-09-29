@@ -112,7 +112,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	if(max_growth > 2 && prob(50))
 		max_growth-- //Ensure some variation in final sprite, makes the carpet of crap look less wonky.
 
-	mature_time = world.time + seed().get_trait(TRAIT_MATURATION) + 15 //prevent vines from maturing until at least a few seconds after they've been created.
+	mature_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + seed().get_trait(TRAIT_MATURATION) + 15 //prevent vines from maturing until at least a few seconds after they've been created.
 	spread_chance = seed().get_trait(TRAIT_POTENCY)
 	spread_distance = ((growth_type>0) ? round(spread_chance*0.6) : round(spread_chance*0.3))
 	update_icon()
@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		die_off()
 
 /obj/effect/plant/proc/is_mature()
-	return (health >= (max_health/3) && world.time > mature_time)
+	return (health >= (max_health/3) && ELAPSED_SINCE(src, mature_time, CLOCK_WORLD) > 0)
 
 #undef DEFAULT_SEED
 #undef VINE_GROWTH_STAGES

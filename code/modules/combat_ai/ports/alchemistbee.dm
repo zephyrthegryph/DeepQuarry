@@ -103,7 +103,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.chemblast(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -152,7 +152,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.dangerbolt(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------
@@ -189,7 +189,7 @@
 		return DQ_BEHAVIOR_FAILED
 	COOLDOWN_START(B, special_attack_cooldown_until, B.special_attack_cooldown)
 	B.homingcluster(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

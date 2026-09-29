@@ -18,7 +18,7 @@
 	var/tmp/node_handle
 
 /datum/event2/event/pda_spam/set_up()
-	last_spam_time = world.time // So it won't immediately give up.
+	last_spam_time = EXPIRY_AT(null, CLOCK_WORLD, 0) // So it won't immediately give up.
 	MS_handle = om_handle(pick_message_server())
 	node_handle = om_handle(get_exonet_node())
 
@@ -59,7 +59,7 @@
 	. = ..()
 	if(!.)
 		// Give up if nobody was reachable for five minutes.
-		if(last_spam_time + give_up_after < world.time)
+		if(ELAPSED_SINCE(src, last_spam_time + give_up_after, CLOCK_WORLD) > 0)
 			log_game("PDA Spam event giving up after not being able to spam for awhile.")
 			return TRUE
 
@@ -130,7 +130,7 @@
 	return list(sender, message)
 
 /datum/event2/event/pda_spam/proc/send_spam(obj/item/pda/P, sender, message)
-	last_spam_time = world.time
+	last_spam_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	var/datum/data/pda/app/messenger/PM = P.find_program(/datum/data/pda/app/messenger)
 	PM.notify(span_bold("Message from [sender] (Unknown / spam?), ") + "\"[message]\" (Unable to Reply)", 0)
 	if(spam_debug)

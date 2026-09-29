@@ -22,7 +22,7 @@
 
 /mob/living/simple_mob/vore/blaidd
 	/// world.time the current uninterrupted stare-down began; 0 if not watched.
-	var/blaidd_watched_since = 0
+	EXPIRY_DECLARE(blaidd_watched_since)
 
 /mob/living/simple_mob/vore/blaidd/get_ai_behaviors()
 	var/static/list/L = list(
@@ -149,9 +149,9 @@
 		return null
 	// First tick of a stare: start the grace timer, don't flee yet (freeze instead).
 	if(!B.blaidd_watched_since)
-		B.blaidd_watched_since = world.time
+		EXPIRY_STAMP(B, blaidd_watched_since, CLOCK_WORLD)
 		return null
-	if(world.time < B.blaidd_watched_since + stare_grace)
+	if(BEFORE(src, B.blaidd_watched_since + stare_grace, CLOCK_WORLD))
 		return null
 	return DQAI_RESULT(90, watcher)
 

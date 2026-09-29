@@ -66,7 +66,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 			qdel(P)
 	initialize_cargo_market()
 
-	next_payroll = world.time + 15 MINUTES
+	next_payroll = EXPIRY_AT(null, CLOCK_WORLD, 0) + 15 MINUTES
 	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/world_service/supply/proc/reset_shift_economy_tracking()
@@ -84,9 +84,9 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 
 /datum/world_service/supply/service_step(resumed)
 	process_cargo_market()
-	if(world.time < next_payroll)
+	if(BEFORE(src, next_payroll, CLOCK_WORLD))
 		return TRUE
-	next_payroll = world.time + 15 MINUTES
+	next_payroll = EXPIRY_AT(null, CLOCK_WORLD, 0) + 15 MINUTES
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
 	run_department_payroll()

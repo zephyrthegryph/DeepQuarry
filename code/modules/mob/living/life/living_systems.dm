@@ -335,7 +335,7 @@
 	if(world.time >= (self.lastareachange + pref MINUTES)) // Every 5 minutes (by default, set per-client), we're going to run a 35% chance (by default, also set per-client) to play ambience.
 		var/area/A = get_area(self)
 		if(A)
-			self.lastareachange = world.time // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
+			EXPIRY_STAMP(self, lastareachange, CLOCK_WORLD) // This will refresh the last area change to prevent this call happening LITERALLY every life tick.
 			A.play_ambience(self, initial = FALSE)
 
 /// Lazy: sleeps until the next replay is due.

@@ -88,7 +88,7 @@
 /datum/affliction/wound/New(location, initial_damage = 0)
 	..()
 	wound_category = injury_category
-	created = world.time
+	created = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	damage = initial_damage
 	init_stage(initial_damage)
 	bleed_timer += initial_damage
@@ -154,7 +154,7 @@
 	if(is_treated())
 		return TRUE
 	if(wound_damage() <= autoheal_cutoff)
-		if(created + 10 MINUTES > world.time) // Wounds don't autoheal for ten minutes if not bandaged.
+		if(BEFORE(src, created + 10 MINUTES, CLOCK_WORLD)) // Wounds don't autoheal for ten minutes if not bandaged.
 			return FALSE
 		return TRUE
 	return FALSE

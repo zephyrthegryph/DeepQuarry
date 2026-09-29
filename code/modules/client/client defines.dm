@@ -59,7 +59,7 @@
 	var/moving			= null
 	var/adminobs		= null
 	var/area			= null
-	var/time_died_as_mouse = null //when the client last died as a mouse
+	EXPIRY_DECLARE(time_died_as_mouse) //when the client last died as a mouse
 	var/datum/tooltip/tooltips 	= null
 	var/datum/volume_panel/volume_panel = null // Initialized by /client/verb/volume_panel()
 	var/seen_news = 0
@@ -116,7 +116,7 @@
 	var/avgping = 0
 
 	///world.time they connected
-	var/connection_time
+	EXPIRY_DECLARE(connection_time)
 	///world.realtime they connected
 	var/connection_realtime
 	///world.timeofday they connected

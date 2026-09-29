@@ -77,7 +77,7 @@
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us
-	var/last_hearcheck = 0
+	EXPIRY_DECLARE(last_hearcheck)
 	/// The list of mobs that can hear us
 	var/list/hearing_mobs
 	/// If this is enabled, some things won't be strictly cleared when they usually are (liked compiled_chords on play stop)
@@ -146,7 +146,7 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
  * Checks and stores which mobs can hear us. Terminates sounds for mobs that leave our range.
  */
 /datum/song/proc/do_hearcheck()
-	last_hearcheck = world.time
+	EXPIRY_STAMP(src, last_hearcheck, CLOCK_WORLD)
 	var/list/old = hearing_mobs.Copy()
 	hearing_mobs.len = 0
 	var/turf/source = get_turf(parent())

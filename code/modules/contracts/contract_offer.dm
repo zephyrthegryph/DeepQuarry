@@ -9,7 +9,7 @@
 	var/board_key
 	var/offer_kind
 	var/reason
-	var/created_at
+	EXPIRY_DECLARE(created_at)
 	var/expires_at
 	var/priority = 50
 	var/list/context
@@ -22,7 +22,7 @@
 	board_key = _board_key
 	offer_kind = _offer_kind
 	reason = _reason
-	created_at = world.time
+	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	expires_at = _expires_at
 	priority = _priority
 	context = _context ? deepCopyList(_context) : list()
@@ -38,7 +38,7 @@
 
 /datum/contract_lifecycle_entry/New(_action, _contract_id, _definition_id, _offer_key, _board_key, _reason)
 	. = ..()
-	time = world.time
+	time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	action = _action
 	contract_id = _contract_id
 	definition_id = _definition_id
@@ -204,7 +204,7 @@
 		return materialized
 	var/cooldown_until = offer_cooldowns[offer_key] || 0
 	var/recheck_delay = candidate_expires_at ? max(1, candidate_expires_at - world.time) : 0
-	if(cooldown_until > world.time)
+	if(BEFORE(src, cooldown_until, CLOCK_WORLD))
 		recheck_delay = recheck_delay ? min(recheck_delay, cooldown_until - world.time) : cooldown_until - world.time
 	if(recheck_delay)
 		om_after(src, recheck_delay, PROC_REF(reconcile_offer_board), "Candidate timer")
@@ -214,7 +214,7 @@
 	if(!candidate || !(candidate in offer_candidates))
 		return null
 	var/datum/contract_definition/definition = definitions[candidate.definition_id]
-	if(!definition || (candidate.expires_at && world.time >= candidate.expires_at) || !definition.is_available(candidate.context))
+	if(!definition || (candidate.expires_at && !BEFORE(src, candidate.expires_at, CLOCK_WORLD)) || !definition.is_available(candidate.context))
 		withdraw_candidate(candidate, "Eligibility ended before publication.")
 		return null
 	// ALLOW(cooldown): per-offer-key cooldown table; keys are data-defined
@@ -289,7 +289,7 @@
 	if(definition?.auto_replace && contract.offer_kind == CONTRACT_OFFER_STANDING)
 		cooldown = rand(CONTRACT_ROTATION_MIN_DELAY, CONTRACT_ROTATION_MAX_DELAY)
 	if(isnum(cooldown) && cooldown > 0)
-		offer_cooldowns[contract.offer_key] = world.time + cooldown
+		offer_cooldowns[contract.offer_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + cooldown
 	switch(contract.closure_code)
 		if(CONTRACT_CLOSE_DECLINED)
 			offers_declined++

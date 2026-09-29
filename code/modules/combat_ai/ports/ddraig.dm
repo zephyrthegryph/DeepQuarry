@@ -90,7 +90,7 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.lunge(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/ddraig_lunge/get_player_verb_info()
@@ -126,7 +126,7 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.firebreathstart(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/ddraig_firebreath/get_player_verb_info()
@@ -162,7 +162,7 @@
 	if(!istype(D))
 		return DQ_BEHAVIOR_FAILED
 	D.tfbeam(target)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 /datum/ai_behavior/ddraig_tfbeam/get_player_verb_info()

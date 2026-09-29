@@ -1808,7 +1808,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 	w_class = ITEMSIZE_TINY
 	glove_level = 1
 	var/original_size
-	var/last_activated
+	EXPIRY_DECLARE(last_activated)
 	var/emagged = FALSE
 	var/target_size = 1
 
@@ -1822,10 +1822,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		if(!H.resizable)
 			return
 		if(H.size_multiplier != target_size)
-			if(!(world.time - last_activated > 10 SECONDS))
+			if(!(ELAPSED_SINCE(src, last_activated, CLOCK_WORLD) > 10 SECONDS))
 				to_chat(M, span_warning("\The [src] flickers. It seems to be recharging."))
 				return
-			last_activated = world.time
+			EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 			original_size = H.size_multiplier
 			H.resize(target_size, ignore_prefs = FALSE) // In case someone else tries to put it on you. // no uncapped
 			H.visible_message(span_warning("The space around [H] distorts as they change size!"),span_notice("The space around you distorts as you change size!"))
@@ -1837,7 +1837,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		var/mob/living/carbon/human/H = M
 		if(!H.resizable)
 			return
-		last_activated = world.time
+		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 		H.resize(original_size, ignore_prefs = FALSE) // no uncapped
 		original_size = null
 		H.visible_message(span_warning("The space around [H] distorts as they return to their original size!"),span_notice("The space around you distorts as you return to your original size!"))
@@ -1944,7 +1944,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/bluespace/deluxe, \
 		H.resize(new_size/100, ignore_prefs = TRUE) // Ignores prefs because you can only resize yourself
 		H.visible_message(span_notice("The space around [H] distorts as they change size!"), span_notice("The space around you distorts as you change size!"))
 		target_size = new_size/100
-		last_activated = world.time
+		EXPIRY_STAMP(src, last_activated, CLOCK_WORLD)
 
 
 //Same as Nanotrasen Security Uniforms

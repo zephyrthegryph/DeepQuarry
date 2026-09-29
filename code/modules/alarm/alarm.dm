@@ -10,7 +10,7 @@
 
 /datum/alarm_source/New(atom/source)
 	src.source = source
-	start_time = world.time
+	start_time = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	source_name = source.get_source_name()
 
 /datum/alarm
@@ -36,15 +36,15 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 /datum/alarm/proc/alarm_tick()
 	// Has origin gone missing?
 	if(!origin() && !end_time)
-		end_time = world.time + ALARM_RESET_DELAY
+		end_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + ALARM_RESET_DELAY
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
-		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
+		if((AS.end_time && ELAPSED_SINCE(src, AS.end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED_SINCE(src, (AS.start_time + AS.duration), CLOCK_WORLD) > 0))
 			LAZYREMOVE(sources, AS)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
-			AS.end_time = world.time + ALARM_RESET_DELAY
+			AS.end_time = EXPIRY_AT(null, CLOCK_WORLD, 0) + ALARM_RESET_DELAY
 
 #undef ALARM_RESET_DELAY
 

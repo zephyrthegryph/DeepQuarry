@@ -27,7 +27,7 @@
 	var/path_navigation_revision = 0
 	/// world.time before which a failed A* toward (roughly) the same goal is
 	/// not retried. Zero when the last pathfind succeeded.
-	var/next_path_attempt_at = 0
+	EXPIRY_DECLARE(next_path_attempt_at)
 	/// Current failure backoff (deciseconds); grows with consecutive failures.
 	var/path_fail_backoff = 0
 
@@ -69,7 +69,7 @@
 		// A recent A* to this same goal (same nav revision, goal hasn't
 		// drifted) came back empty: honour the backoff instead of recomputing
 		// on every fast tick. A moved goal or a map change retries at once.
-		if(next_path_attempt_at && world.time < next_path_attempt_at \
+		if(next_path_attempt_at && BEFORE(src, next_path_attempt_at, CLOCK_WORLD) \
 			&& path_goal() && get_dist(path_goal(), target_turf) <= path_recompute_tolerance \
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
@@ -79,7 +79,7 @@
 		failed_steps = 0
 		if(!length(cached_path))
 			path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
-			next_path_attempt_at = world.time + path_fail_backoff
+			EXPIRY_SET(src, next_path_attempt_at, path_fail_backoff, CLOCK_WORLD)
 			dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
 			return FALSE
 		path_fail_backoff = 0

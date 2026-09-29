@@ -81,7 +81,7 @@
 	else if(hp_frac <= 0.7)
 		stance = I_GRAB              // Phase two
 	E.special_attack_target(target, stance)
-	brain.last_attack_at = world.time
+	EXPIRY_STAMP(brain, last_attack_at, CLOCK_WORLD)
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

@@ -14,8 +14,8 @@
 /datum/borrowbook // Datum used to keep track of who has borrowed what when and for how long.
 	var/bookname
 	var/mobname
-	var/getdate
-	var/duedate
+	EXPIRY_DECLARE(getdate)
+	EXPIRY_DECLARE(duedate)
 
 /*
  * Library Public Computer
@@ -397,8 +397,8 @@
 			var/datum/borrowbook/b = new
 			b.bookname = sanitizeSafe(buffer_book)
 			b.mobname = sanitize(buffer_mob)
-			b.getdate = world.time
-			b.duedate = world.time + (checkoutperiod * 600)
+			EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
+			EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 			LAZYADD(checkouts, b)
 			return TRUE
 		if("checkin")
