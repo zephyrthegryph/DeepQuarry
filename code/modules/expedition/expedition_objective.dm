@@ -23,15 +23,15 @@
 	var/bonus_cash = 0
 	/// Back-reference to the site.
 	var/tmp/datum/expedition_site/site
-	/// Atoms this objective spawned / tracks, as om_handle()s (they live on the site; read with om_resolve_all()).
-	var/list/tracked
+	/// Relation list: atoms this objective spawned / tracks (they live on the site; dead ones leave it).
+	var/list/atom/tracked
 	/// Progress / target for the console readout.
 	var/progress = 0
 	var/target = 1
 
 /datum/expedition_objective/New(_required = TRUE)
 	required = _required
-	tracked = list()
+
 
 /datum/expedition_objective/proc/populate(datum/expedition_site/S)
 	rel_set(src, "site", S)
@@ -62,7 +62,7 @@
 
 /datum/expedition_objective/proc/count_alive()
 	var/n = 0
-	for(var/mob/living/L in om_resolve_all(tracked))
+	for(var/mob/living/L in tracked)
 		if(!QDELETED(L) && L.stat != DEAD)
 			n++
 	return n
@@ -86,7 +86,7 @@
 			continue
 		var/mob/guard = expedition_spawn_guard(T, S.faction, S.difficulty)
 		if(guard)
-			tracked += om_handle(guard)
+			rel_add(src, "tracked", guard)
 
 /datum/expedition_objective/eliminate_all/check()
 	var/alive = count_alive()
@@ -107,7 +107,7 @@
 	target = 1
 	var/turf/T = S.random_floor()
 	if(T)
-		tracked += om_handle(expedition_spawn_boss(T, S.faction, S.difficulty))
+		rel_add(src, "tracked", expedition_spawn_boss(T, S.faction, S.difficulty))
 
 /datum/expedition_objective/eliminate_boss/check()
 	if(count_alive() <= 0)
@@ -131,7 +131,7 @@
 	var/datum/expedition_building/B = new()
 	B.loot_difficulty = S.difficulty
 	B.loot_size = S.size
-	B.loot_biome_static = S.biome
+	rel_set(B, "loot_biome", S.biome)
 	var/dim = 14 + S.size * 4
 	if(!B.build(center, rand(dim - 2, dim + 4), rand(dim - 2, dim + 4)))
 		qdel(B)
@@ -144,7 +144,7 @@
 		if(prob(60))
 			var/mob/guard = expedition_spawn_guard(rt, S.faction, S.difficulty)
 			if(guard)
-				tracked += om_handle(guard)
+				rel_add(src, "tracked", guard)
 		if(prob(50))
 			expedition_spawn_loot(rt, expedition_roll_tier(S.difficulty, S.size))
 	if(!length(tracked) && length(B.room_centers))
@@ -153,7 +153,7 @@
 		if(rt)
 			var/mob/guard = expedition_spawn_guard(rt, S.faction, S.difficulty)
 			if(guard)
-				tracked += om_handle(guard)
+				rel_add(src, "tracked", guard)
 	target = max(1, length(tracked))
 	qdel(B)
 
@@ -186,7 +186,7 @@
 	var/datum/expedition_poi/vault/V = new()
 	var/obj/item/expedition_artifact/relic = V.stamp(T, S)
 	if(relic)
-		tracked += om_handle(relic)
+		rel_add(src, "tracked", relic)
 
 /datum/expedition_objective/retrieve/check()
 	if(count_returned(/obj/item/expedition_artifact) >= 1)
@@ -243,7 +243,7 @@
 	var/datum/expedition_poi/camp/C = new()
 	var/obj/structure/expedition_survivor_pod/pod = C.stamp(T, S)
 	if(pod)
-		tracked += om_handle(pod)
+		rel_add(src, "tracked", pod)
 
 /datum/expedition_objective/rescue/check()
 	if(count_returned(/obj/structure/expedition_survivor_pod) >= 1)
@@ -270,11 +270,11 @@
 		if(!T)
 			continue
 		var/obj/structure/expedition_survey_beacon/beacon = new(T)
-		tracked += om_handle(beacon)
+		rel_add(src, "tracked", beacon)
 
 /datum/expedition_objective/survey/check()
 	var/done = 0
-	for(var/obj/structure/expedition_survey_beacon/B in om_resolve_all(tracked))
+	for(var/obj/structure/expedition_survey_beacon/B in tracked)
 		if(!QDELETED(B) && B.scanned)
 			done++
 	progress = done
@@ -306,7 +306,7 @@
 			best = T
 	if(best)
 		own_set(src, "marker", new /obj/structure/expedition_marker(best))
-		tracked += om_handle(marker)
+		rel_add(src, "tracked", marker)
 
 /datum/expedition_objective/reach/check()
 	if(QDELETED(marker) || !site())
@@ -337,12 +337,13 @@
 	/// Power output (watts) the generator must reach to count as commissioned.
 	var/power_threshold = 50000
 	/// Generators found in the stamped engine bay.
-	var/list/generators // om_handle()s
+	/// Relation list: the generators to restore.
+	var/list/obj/machinery/power/generator/generators
 
 /datum/expedition_objective/commission_engine/populate(datum/expedition_site/S)
 	..()
 	target = 1
-	generators = list()
+
 	var/datum/map_template/expedition_engine/template = new()
 	if(template.width <= 0 || template.height <= 0)
 		return
@@ -357,13 +358,13 @@
 	for(var/turf/T in template.get_affected_turfs(corner))
 		var/obj/machinery/power/generator/G = locate_within(T, /obj/machinery/power/generator)
 		if(G)
-			generators += om_handle(G)
+			rel_add(src, "generators", G)
 			// `tracked` is what has_viable_objectives() inspects; leaving it empty
 			// made every restore mission log as published without objectives.
-			tracked += om_handle(G)
+			rel_add(src, "tracked", G)
 
 /datum/expedition_objective/commission_engine/check()
-	for(var/obj/machinery/power/generator/G in om_resolve_all(generators))
+	for(var/obj/machinery/power/generator/G in generators)
 		if(!QDELETED(G) && G.effective_gen >= power_threshold)
 			progress = 1
 			state = EXP_OBJ_COMPLETE
@@ -389,7 +390,7 @@
 	if(!T)
 		return
 	own_set(src, "target_obj", new /obj/structure/expedition_demo_target(T))
-	tracked += om_handle(target_obj)
+	rel_add(src, "tracked", target_obj)
 	for(var/turf/G in range(2, T))
 		if(G == T || !expedition_is_walkable(G))
 			continue
@@ -467,6 +468,9 @@
 
 
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the site var.
 /datum/expedition_objective/proc/site() as /datum/expedition_site
 	return site
+
+REL_LIST(/datum/expedition_objective, tracked)
+REL_LIST(/datum/expedition_objective/commission_engine, generators)

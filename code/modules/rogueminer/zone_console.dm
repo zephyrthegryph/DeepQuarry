@@ -183,6 +183,6 @@
 #undef TRANSIT_Z
 #undef BELT_Z
 
-/// LC-refs: the shuttle_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the shuttle_control var.
 /obj/machinery/computer/roguezones/proc/shuttle_control() as /obj/machinery/computer/shuttle_control/belter
 	return shuttle_control

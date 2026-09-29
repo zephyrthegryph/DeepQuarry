@@ -36,6 +36,6 @@
 			if(rotcount >= actual_severity)
 				break
 
-/// LC-refs: the center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the center var.
 /datum/event/wallrot/proc/center() as /turf/simulated/wall
 	return center

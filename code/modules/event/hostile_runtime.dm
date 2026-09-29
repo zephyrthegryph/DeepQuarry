@@ -1,6 +1,7 @@
 /datum/event/hostile_runtime
 	var/tmp/area/picked_area
-	var/list/target_airlocks	// OM handles
+	/// Relation list (REL_LIST): the airlocks this event bolts.
+	var/list/obj/machinery/door/airlock/target_airlocks
 	var/tmp/obj/machinery/power/apc/apc
 
 	var/static/list/excluded = list(
@@ -23,11 +24,11 @@
 /datum/event/hostile_runtime/setup()
 	var/list/area/affected_areas = get_station_areas(excluded)
 
-	rel_set(src, "picked_area", pick(affected_areas))
+	picked_area = pick(affected_areas)
 	for(var/obj/machinery/door/airlock/airlock in picked_area())
 		if(airlock.isElectrified() && !airlock.arePowerSystemsOn())
 			continue
-		LAZYADD(target_airlocks, om_handle(airlock))
+		rel_add(src, "target_airlocks", airlock)
 
 	if(!picked_area())
 		log_game("Hostile Runtime event: No areas was chosen!")
@@ -48,14 +49,14 @@
 /datum/event/hostile_runtime/start()
 	switch(severity)
 		if(EVENT_LEVEL_MODERATE)
-			for(var/obj/machinery/door/airlock/door in om_resolve_all(target_airlocks))
+			for(var/obj/machinery/door/airlock/door in target_airlocks)
 				if(prob(50))
 					door.lock()
 					door.aiControlDisabled = TRUE
 					if(prob(75))
 						door.electrify(-1)
 		if(EVENT_LEVEL_MAJOR)
-			for(var/obj/machinery/door/airlock/door in om_resolve_all(target_airlocks))
+			for(var/obj/machinery/door/airlock/door in target_airlocks)
 				door.lock()
 				door.aiControlDisabled = TRUE
 				door.electrify(-1)
@@ -66,10 +67,12 @@
 			for(var/obj/machinery/light/light in picked_area())
 				light.flicker(10)
 
-/// LC-refs: the picked_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the picked_area var.
 /datum/event/hostile_runtime/proc/picked_area() as /area
 	return picked_area
 
-/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the apc var.
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
+
+REL_LIST(/datum/event/hostile_runtime, target_airlocks)

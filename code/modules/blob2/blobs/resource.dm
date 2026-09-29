@@ -9,13 +9,8 @@
 	var/resource_delay = 0
 	var/resource_cooldown = 4 SECONDS
 
-/obj/structure/blob/resource/Initialize(mapload, new_overmind)
-	if(overmind)
-		rel_add(overmind, "resource_blobs", src)
-	return ..()
-
+// Pairs with the overmind's resource_blobs (declared in base_blob.dm): setting overmind lists us.
 REL_PAIR(/obj/structure/blob/resource, overmind, resource_blobs)
-REL_PAIR_LIST(/mob/observer/blob, resource_blobs, overmind)
 
 /obj/structure/blob/resource/pulsed()
 	. = ..()

@@ -54,7 +54,8 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		T.time = pick("", stationtime2text(), time2)
 		T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD")
 
-		LAZYADD(affected_account().transaction_log, T)
+		var/datum/money_account/account = affected_account()
+		LAZYADD(account.transaction_log, T)
 
 	else
 		//crew wins
@@ -66,6 +67,6 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		if(!MS.active) continue
 		MS.send_rc_message(JOB_HEAD_OF_PERSONNEL + "'s Desk", my_department, message, "", "", 2)
 
-/// LC-refs: the affected_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the affected_account var.
 /datum/event/money_hacker/proc/affected_account() as /datum/money_account
 	return affected_account

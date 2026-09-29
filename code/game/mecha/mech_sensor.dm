@@ -93,6 +93,6 @@
 
 	update_icon()
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection
 /obj/machinery/mech_sensor/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

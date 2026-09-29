@@ -126,10 +126,10 @@
 		failure_reason = materializer().last_failure_details || phase
 		rel_clear(src, "materialization")
 		return null
-	var/datum/generated_station_materialization/done = materializer().result
-	// Hand-off: the materializer owns its result (DECLARE_REF(..., OWNED)) only while building it, so
-	// deleting the materializer afterwards must not delete the station it built.
-	materializer().result = null
+	// Hand-off: the materializer owns its result only while building it, so it lets go here
+	// (deleting the materializer afterwards must not delete the station it built). The expedition
+	// site adopts it (own_set) when it is published.
+	var/datum/generated_station_materialization/done = own_take(materializer(), "result")
 	rel_set(src, "materialization", done)
 	checkpoint("Station materialization complete", 62)
 	return done
@@ -144,15 +144,15 @@
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST
 
-/// LC-refs: the materializer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materializer var.
 /datum/generated_station_materialization_job/proc/materializer() as /datum/generated_station_materializer
 	return materializer
 
-/// LC-refs: the flight_plan this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the flight_plan var.
 /datum/generated_station_materialization_job/proc/flight_plan() as /datum/flight_plan
 	return flight_plan
 
-/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materialization var.
 /datum/generated_station_materialization_job/proc/materialization() as /datum/generated_station_materialization
 	return materialization
 

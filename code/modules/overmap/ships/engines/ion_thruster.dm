@@ -81,6 +81,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engin
 							/obj/item/stock_parts/matter_bin = 1,
 							/obj/item/stock_parts/capacitor = 2)
 
-/// LC-refs: the thruster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the thruster var.
 /datum/ship_engine/ion/proc/thruster() as /obj/machinery/ion_engine
 	return thruster

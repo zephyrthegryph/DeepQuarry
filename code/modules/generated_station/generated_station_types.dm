@@ -40,6 +40,7 @@
 /// Per-station realization of an authored department definition.
 /datum/generated_station_department_instance
 	var/id
+	/// Relation view: this department's definition (owned by the spec's department_definitions).
 	var/tmp/datum/generated_station_department_definition/definition_static
 	var/desired_area = 1
 	var/layout_node_id
@@ -438,6 +439,6 @@
 #define GENERATED_STATION_TILE_FLOOR "floor"
 #define GENERATED_STATION_TILE_HULL "hull"
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// This department's definition (a relation view; the spec owns the definitions).
 /datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
 	return definition_static

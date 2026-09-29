@@ -128,7 +128,8 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 					if("Smelting") new_setting = PROCESS_SMELT
 					if("Compressing") new_setting = PROCESS_COMPRESS
 					if("Alloying") new_setting = PROCESS_ALLOY
-			LAZYSET(machine().ores_processing, ore, new_setting)
+			var/obj/machinery/mineral/processing_unit/unit = machine()
+			LAZYSET(unit.ores_processing, ore, new_setting)
 			. = TRUE
 		if("power")
 			machine().active = !machine().active
@@ -376,18 +377,18 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 #undef PROCESS_COMPRESS
 #undef PROCESS_ALLOY
 
-/// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the input var.
 /obj/machinery/mineral/processing_unit/proc/input_marker() as /obj/machinery/mineral
 	return input
 
-/// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the output var.
 /obj/machinery/mineral/processing_unit/proc/output_marker() as /obj/machinery/mineral
 	return output
 
-/// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the console var.
 /obj/machinery/mineral/processing_unit/proc/console() as /obj/machinery/mineral
 	return console
 
-/// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the machine var.
 /obj/machinery/mineral/processing_unit_console/proc/machine() as /obj/machinery/mineral/processing_unit
 	return machine

@@ -31,10 +31,10 @@
 		var/area/asteroid/rogue/A = loc.loc
 		A.mob_spawns += src
 
-/// LC-refs: the myasteroid this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the myasteroid var.
 /obj/asteroid_spawner/proc/myasteroid() as /datum/rogue/asteroid
 	return myasteroid
 
-/// LC-refs: the mymob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the mymob var.
 /obj/rogue_mobspawner/proc/mymob() as /mob
 	return mymob

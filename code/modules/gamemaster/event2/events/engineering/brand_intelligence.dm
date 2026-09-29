@@ -89,6 +89,6 @@
 /datum/event2/event/brand_intelligence/proc/can_propagate(obj/machinery/vending/V)
 	return V && V.shut_up == FALSE
 
-/// LC-refs: The first vending machine infected. If that one gets fixed, all other infected machines will be cured. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 /datum/event2/event/brand_intelligence/proc/vender_zero() as /obj/machinery/vending
 	return vender_zero

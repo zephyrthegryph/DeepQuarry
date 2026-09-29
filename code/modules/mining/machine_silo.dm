@@ -9,8 +9,9 @@
 
 	/// List of all connected components that are on hold from accessing materials.
 	var/list/holds
-	/// List of all components that are sharing ores with this silo.
-	// ALLOW(scheduler, declared_refs, object_keyed_lists): membership list maintained by /datum/remote_materials (connect/disconnect, it names the silo by handle); Destroy() disconnects each. No objlist kind fits a non-owning list on a movable (a CHANGE_EXPLICIT cache would be cleared whenever the silo moves).
+	/// List of all components that are sharing ores with this silo. A relation list in the model
+	/// (REL_PAIR_LIST with remote_materials' silo); /datum/remote_materials still writes it with
+	/// LAZYADD/LAZYREMOVE, so the declaration waits for that file's conversion.
 	var/list/datum/remote_materials/ore_connected_machines
 	/// Material Container
 	var/datum/material_container/materials
@@ -18,7 +19,7 @@
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
 
-	materials = new /datum/material_container( \
+	own_set(src, "materials", new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \
@@ -28,7 +29,7 @@
 			(/datum/om/event/matcontainer_stack_retrieved) = TYPE_PROC_REF(/obj/machinery/ore_silo, log_sheets_ejected), \
 		), \
 		allowed_items = /obj/item/stack \
-	)
+	))
 	if(!GLOB.ore_silo_default && mapload && (z in using_map.station_levels))
 		GLOB.ore_silo_default = src
 

@@ -109,6 +109,6 @@
 	if(. && charging())
 		MACHINE_WAKE(src)
 
-/// LC-refs: charging -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// charging
 /obj/machinery/mech_recharger/proc/charging() as /atom/movable
 	return charging

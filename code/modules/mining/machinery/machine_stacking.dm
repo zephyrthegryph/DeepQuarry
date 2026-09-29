@@ -70,7 +70,8 @@
 			if(LAZYACCESS(machine().stack_storage, stack) > 0)
 				var/stacktype = LAZYACCESS(machine().stack_paths, stack)
 				new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
-				LAZYSET(machine().stack_storage, stack, 0)
+				var/obj/machinery/mineral/stacking_machine/stacker = machine()
+				LAZYSET(stacker.stack_storage, stack, 0)
 			. = TRUE
 
 	add_fingerprint(ui.user)
@@ -151,18 +152,18 @@
 	if(!did_work)
 		return PROCESS_KILL
 
-/// LC-refs: the input this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the input var.
 /obj/machinery/mineral/stacking_machine/proc/input_marker() as /obj/machinery/mineral
 	return input
 
-/// LC-refs: the output this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the output var.
 /obj/machinery/mineral/stacking_machine/proc/output_marker() as /obj/machinery/mineral
 	return output
 
-/// LC-refs: the console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the console var.
 /obj/machinery/mineral/stacking_machine/proc/console() as /obj/machinery/mineral/stacking_unit_console
 	return console
 
-/// LC-refs: the machine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the machine var.
 /obj/machinery/mineral/stacking_unit_console/proc/machine() as /obj/machinery/mineral/stacking_machine
 	return machine

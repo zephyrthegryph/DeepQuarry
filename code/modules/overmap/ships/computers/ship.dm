@@ -132,7 +132,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (om_handle(user) in viewers) // ALLOW(ownership): viewers is filled by /datum/remote_view/viewer_managed (remote_view.dm, out of scope) with handles
 
 /obj/machinery/computer/ship/tgui_close(mob/user)
 	. = ..()
@@ -152,6 +152,6 @@ Ships can now be hijacked!
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
 	return linked

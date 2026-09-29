@@ -13,10 +13,10 @@
 /obj/item/anomaly_neutralizer/Initialize(mapload)
 	. = ..()
 
-	effect_remover = new /datum/effect_remover(src, \
+	own_set(src, "effect_remover", new /datum/effect_remover(src, \
 		success_feedback = "You neutralize %THEEFFECT with %THEWEAPON, frying its circuitry in the process.", \
 		on_clear_callback = om_callable(src, PROC_REF(on_anomaly_neutralized)), \
-		effects_we_clear = list(/obj/effect/anomaly))
+		effects_we_clear = list(/obj/effect/anomaly)))
 
 /obj/item/anomaly_neutralizer/proc/on_anomaly_neutralized(obj/effect/anomaly/target, mob/living/user)
 	target.anomalyNeutralize()
@@ -82,7 +82,8 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	var/buffered_anomaly = null
+	/// Relation view: the last anomaly scanned (set by the anomaly's scan, _anomalies.dm).
+	var/obj/effect/anomaly/buffered_anomaly
 
 DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -105,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly)
+	var/obj/effect/anomaly/anom = buffered_anomaly
 
 	if(!istype(anom))
 		return data

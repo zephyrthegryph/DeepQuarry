@@ -250,6 +250,6 @@ ADMIN_VERB(event_manager_panel, R_ADMIN|R_EVENT, "Event Manager Panel", "Opens t
 	GLOB.event_service.Interact(user)
 	feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/// LC-refs: the selected_event_container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the selected_event_container var.
 /datum/world_service/events/proc/selected_event_container() as /datum/event_container
 	return selected_event_container

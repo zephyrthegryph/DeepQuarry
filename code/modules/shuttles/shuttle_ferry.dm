@@ -53,10 +53,10 @@
 	if(active_docking_controller() && active_docking_controller().docking_codes)
 		set_docking_codes(active_docking_controller().docking_codes)
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/ferry/proc/landmark_station() as /obj/effect/shuttle_landmark
 	return landmark_station
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/ferry/proc/landmark_offsite() as /obj/effect/shuttle_landmark
 	return landmark_offsite

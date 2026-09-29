@@ -139,6 +139,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 				var/mob/living/carbon/human/D = load
 				to_chat(D, span_notice("The [callme]'s brushes turn off, as it runs out of cleaner."))
 
-/// LC-refs: the mybag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the mybag var.
 /obj/vehicle/train/engine/janicart/proc/mybag() as /obj/item/storage/bag/trash
 	return mybag

@@ -38,7 +38,7 @@
 /datum/generated_station_materializer/proc/department_id_for_module(datum/generated_station_module/module)
 	if(!nodes_by_id || !module)
 		return null
-	var/datum/generated_station_layout_node/node = om_resolve(nodes_by_id[module.department_node_id])
+	var/datum/generated_station_layout_node/node = nodes_by_id[module.department_node_id]
 	if(!node)
 		return null
 	var/datum/generated_station_department_instance/department = department_for_node(node)

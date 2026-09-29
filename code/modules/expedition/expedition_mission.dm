@@ -299,6 +299,6 @@
 		bonus_obj(/datum/expedition_objective/eliminate_all, 80, 100),
 	)
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the site var.
 /datum/expedition_mission/proc/site() as /datum/expedition_site
 	return site

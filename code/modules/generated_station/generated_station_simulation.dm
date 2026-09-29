@@ -165,11 +165,11 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 	recompute()
 	return (capabilities[capability_id] || 0) >= amount
 
-/// LC-refs: the department this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the department var.
 /datum/generated_station_department_runtime/proc/department() as /datum/generated_station_department_instance
 	return department
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
 	return spec
 

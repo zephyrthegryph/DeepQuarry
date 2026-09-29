@@ -38,21 +38,26 @@
 
 /obj/mecha/proc/RemoveActions(mob/living/user, human_occupant = 0)
 	if(human_occupant)
-		eject_action.Remove(user, src)
-	internals_action.Remove(user, src)
-	cycle_action.Remove(user, src)
-	lights_action.Remove(user, src)
-	stats_action.Remove(user, src)
-	strafing_action.Remove(user, src)
+		revoke_action(eject_action, user)
+	revoke_action(internals_action, user)
+	revoke_action(cycle_action, user)
+	revoke_action(lights_action, user)
+	revoke_action(stats_action, user)
+	revoke_action(strafing_action, user)
 
-	defence_action.Remove(user, src)
-	smoke_action.Remove(user, src)
-	zoom_action.Remove(user, src)
-	thrusters_action.Remove(user, src)
-	phasing_action.Remove(user, src)
-	switch_damtype_action.Remove(user, src)
-	overload_action.Remove(user, src)
-	cloak_action.Remove(user, src)
+	revoke_action(defence_action, user)
+	revoke_action(smoke_action, user)
+	revoke_action(zoom_action, user)
+	revoke_action(thrusters_action, user)
+	revoke_action(phasing_action, user)
+	revoke_action(switch_damtype_action, user)
+	revoke_action(overload_action, user)
+	revoke_action(cloak_action, user)
+
+/// Revokes one of our action buttons from `user` (a local, so an action's Remove() is not
+/// mistaken for a list write).
+/obj/mecha/proc/revoke_action(datum/action/innate/mecha/action, mob/living/user)
+	action?.Remove(user, src)
 
 //
 ////BUTTONS STUFF
@@ -172,7 +177,7 @@
 		chassis.occupant_message("No equipment available.")
 		return
 	if(!chassis.selected)
-		own_set(chassis, "selected", available_equipment[1])
+		rel_set(chassis, "selected", available_equipment[1])
 		chassis.occupant_message("You select [chassis.selected]")
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())
 		button_icon_state = "mech_cycle_equip_on"
@@ -183,11 +188,11 @@
 		number++
 		if(A == chassis.selected)
 			if(available_equipment.len == number)
-				own_take(chassis, "selected")
+				rel_clear(chassis, "selected")
 				chassis.occupant_message("You switch to no equipment")
 				button_icon_state = "mech_cycle_equip_off"
 			else
-				own_set(chassis, "selected", available_equipment[number+1])
+				rel_set(chassis, "selected", available_equipment[number+1])
 				chassis.occupant_message("You switch to [chassis.selected]")
 				button_icon_state = "mech_cycle_equip_on"
 			send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","eq_list",chassis.get_equipment_list())

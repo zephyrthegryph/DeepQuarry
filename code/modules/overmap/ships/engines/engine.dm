@@ -44,6 +44,6 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 		LAZYREMOVE(S.engines, src)
 	return ..()
 
-/// LC-refs: actual engine object -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// actual engine object
 /datum/ship_engine/proc/holder() as /obj/machinery
 	return holder

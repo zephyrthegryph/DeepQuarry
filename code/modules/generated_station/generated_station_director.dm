@@ -7,7 +7,8 @@
 	var/confidence = 0
 	var/created_at = 0
 	var/expires_at = 0
-	var/target_ref
+	/// Relation view: the atom (or turf) this report is about.
+	var/atom/target
 
 /datum/generated_station_knowledge_report/proc/is_expired(at_time = world.time)
 	return expires_at > 0 && at_time >= expires_at
@@ -239,10 +240,10 @@
 	qdel(order)
 	return TRUE
 
-/// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the simulation var.
 /datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
 	return simulation
 
-/// LC-refs: the defense_runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the defense_runtime var.
 /datum/generated_station_director/proc/defense_runtime() as /datum/generated_station_defense_runtime
 	return defense_runtime

@@ -45,6 +45,6 @@
 	do_after_cooldown()
 	return
 
-/// LC-refs: my deployer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// my deployer
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/my_deployer() as /obj/item/inflatable_dispenser
 	return my_deployer

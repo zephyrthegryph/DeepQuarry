@@ -63,6 +63,6 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 			Bumped(usr)
 			over_object.contain(src)
 
-/// LC-refs: the contained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the contained var.
 /obj/structure/anomaly_container/proc/contained() as /obj/machinery/artifact
 	return contained

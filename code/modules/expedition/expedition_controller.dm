@@ -15,7 +15,7 @@
 // next generate_site() to reuse.
 
 /datum/expedition_teardown_job
-	var/tmp/datum/world_service/expedition/controller_static
+	/// The released site, owned by the job (taken from the service's sites) until the wipe ends.
 	var/tmp/datum/expedition_site/site
 	var/z_level
 	var/reason
@@ -24,10 +24,9 @@
 	/// The z's turfs, in wipe order, while the job runs.
 	var/tmp/list/turfs
 
-/datum/expedition_teardown_job/New(datum/world_service/expedition/new_controller, datum/expedition_site/new_site, new_reason)
+/datum/expedition_teardown_job/New(datum/expedition_site/new_site, new_reason)
 	..()
-	controller_static = new_controller
-	rel_set(src, "site", new_site)
+	own_move(new_site, src, "site")
 	z_level = new_site?.z_level
 	reason = new_reason
 
@@ -62,10 +61,13 @@
 		return
 	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
+		// Nothing may keep naming a turf of a pooled z: drop the views made during the wipe too.
+		var/dropped = om_drop_z(z_level)
+		log_world("Expedition: om_drop_z(z[z_level]) cleared [dropped] relation view(s) before pooling.")
 		controller().free_z |= z_level
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
-	qdel(site())
+	own_clear(src, "site", OWN_DELETE)
 	qdel(src)
 
 // The expedition world service (was GLOB.expedition_service). On demand: the lifecycle poll lane is parked
@@ -80,11 +82,12 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// preallocates a z-level through load_new_z(), which needs the map system up and should
 	// follow the station mapload, so boot right after SSmapping.
 	boot_after = /datum/controller/subsystem/mapping
-	/// "[z]" -> /datum/expedition_site for every live site.
+	/// "[z]" -> /datum/expedition_site for every live site (a lookup of live sites, like a keyed
+	/// registry; a released site is owned by its teardown job).
 	var/list/sites = list()
 	/// Surveyed site descriptors not yet materialized (z_level 0). Flight
-	/// destinations and vessels name a descriptor only by handle, so this list
-	/// is what owns it until it is materialized, abandoned or deleted.
+	/// destinations and vessels name a descriptor only through relation views, so this
+	/// owned list holds it until it is materialized, abandoned or deleted.
 	var/list/descriptors
 	/// Wiped z-levels available for reuse.
 	var/list/free_z = list()
@@ -186,7 +189,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(assigned_vessel)
 		rel_set(assigned_vessel, "active_expedition", site)
 	site.status = EXP_STATUS_GENERATING
-	LAZYADD(descriptors, site)
+	own_add(src, "descriptors", site)
 	GLOB.flight_service?.register_expedition(site)
 	return site
 
@@ -206,8 +209,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /datum/world_service/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)
 	if(!descriptor || QDELETED(descriptor) || !plan || QDELETED(plan))
 		return
-	// The descriptor keeps owning its mission while the site generates (the deferred steps hold it
-	// by handle only); the generated site takes it over with own_transfer() in site_materialized().
+	// The descriptor keeps owning its mission while the site generates (the deferred om_callable
+	// steps capture it as a handle, and the generation list is copied into each step);
+	// publish_generated_site() moves it to the generated site with own_move().
 	var/datum/expedition_mission/mission = descriptor.mission
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
@@ -320,7 +324,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	emergency_area.station_id = spec.id
 	emergency_area.department_id = "emergency"
 	emergency_area.name = "[spec.name] Habitable Annex"
-	rel_set(materialization, "transit_area", emergency_area)
+	materialization.transit_area = emergency_area
 	for(var/local_x in 1 to spec.grid_width)
 		for(var/local_y in 1 to spec.grid_height)
 			var/turf/T = materialization.world_turf(local_x, local_y)
@@ -333,7 +337,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 				materialization.floor_count++
 			ChangeArea(T, emergency_area)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
-	rel_set(materialization, "entry", new /obj/effect/landmark/generated_station_entry(arrival))
+	own_set(materialization, "entry", new /obj/effect/landmark/generated_station_entry(arrival))
 	materialization.entry().station_id = spec.id
 	generated_station_emergency_utilities(spec, materialization, emergency_area)
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
@@ -511,6 +515,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
 /datum/world_service/expedition/proc/wipe_z_async(z, list/on_done)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/world_service/expedition/proc/wipe_z_slice(list/cursor)
@@ -581,8 +587,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	rel_set(site, "landing", get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
 		rel_set(site, "landing", site.floors[1])
-		qdel_handle(station_materialization.entry); station_materialization.entry = null
-		rel_set(station_materialization, "entry", new /obj/effect/landmark/generated_station_entry(site.landing()))
+		own_set(station_materialization, "entry", new /obj/effect/landmark/generated_station_entry(site.landing()))
 		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
@@ -693,6 +698,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	var/z = site.z_level
 	site.status = EXP_STATUS_EXPIRED
+	// The teardown job owns the site (own_move in its New()) until the wipe finishes.
 	sites -= "[z]"
 	if(site.flight_destination_id)
 		GLOB.flight_service?.unregister_destination(site.flight_destination_id)
@@ -701,9 +707,13 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
 		rel_clear(site.assigned_flight_vessel(), "active_expedition")
 	own_clear(site, "landing_waypoint", OWN_DELETE)
-	qdel_handle(site.overmap_sector); site.overmap_sector = null
+	own_clear(site, "overmap_sector", OWN_DELETE)
+	// Every relation view naming a turf on this z (payout turfs, landing turfs, rich edges) is
+	// cleared now, and again when the wiped z goes back into free_z (finish()).
+	var/dropped = om_drop_z(z)
+	log_world("Expedition: om_drop_z(z[z]) cleared [dropped] relation view(s) before teardown.")
 	teardown_z["[z]"] = TRUE
-	var/datum/expedition_teardown_job/job = new(src, site, reason)
+	var/datum/expedition_teardown_job/job = new(site, reason)
 	job.execute()
 
 // Every mob still on a z that is about to be wiped is either a player (connected
@@ -743,6 +753,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 // first by evacuate_mobs_from_z(), and anything still left is skipped (defensive).
 /datum/world_service/expedition/proc/wipe_z(z)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	var/area/space/space_area = generated_station_space_area()
 	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
 	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)
@@ -787,11 +799,11 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 			count++
 	return count
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The expedition service (a world-service singleton; not held in a var).
 /datum/expedition_teardown_job/proc/controller() as /datum/world_service/expedition
-	return controller_static
+	return GLOB.expedition_service
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site being torn down (owned by the job).
 /datum/expedition_teardown_job/proc/site() as /datum/expedition_site
 	return site
 

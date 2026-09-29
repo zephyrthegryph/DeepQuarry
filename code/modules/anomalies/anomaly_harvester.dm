@@ -14,7 +14,8 @@
 	var/points_to_create = 100
 	var/efficiency = 1
 
-	var/harvested
+	/// Relation view: the anomaly this harvester is attached to.
+	var/obj/effect/anomaly/harvested
 
 /obj/machinery/anomaly_harvester/Initialize(mapload)
 	. = ..()
@@ -48,7 +49,7 @@
 	if(!harvested)
 		return
 
-	var/obj/effect/anomaly/anom = om_resolve(harvested)
+	var/obj/effect/anomaly/anom = harvested
 	if(!istype(anom))
 		return
 
@@ -101,22 +102,23 @@
 /obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
 	. = ..()
 	if(. & ITEM_INTERACT_SUCCESS)
-		harvested = null
+		rel_clear(src, "harvested")
 
-/obj/machinery/anomaly_harvester/proc/attach_anomaly(anomaly)
-	var/obj/effect/anomaly/anom = om_resolve(anomaly)
+/obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
+	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.
+	var/obj/effect/anomaly/anom = anomaly
 	if(!istype(anom))
 		return
 
 	var/datum/anomaly_stats/stats = anom.stats
 	if(stats.attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = om_resolve(stats.attached_harvester)
+		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester
 		if(harvester)
-			harvester.harvested = null
+			rel_clear(harvester, "harvested")
 			harvester.update_icon()
-		stats.attached_harvester = null
-	harvested = anomaly
-	stats.attached_harvester = om_handle(src)
+		rel_clear(stats, "attached_harvester")
+	rel_set(src, "harvested", anom)
+	rel_set(stats, "attached_harvester", src)
 	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
 	return TRUE
 
@@ -143,7 +145,7 @@
 		add_overlay("harvester_on")
 
 	if(harvested)
-		var/obj/effect/anomaly/anom = om_resolve(harvested)
+		var/obj/effect/anomaly/anom = harvested
 		if(!istype(anom))
 			return
 
@@ -177,7 +179,7 @@
 			"ref" = REF(sample)
 		))
 
-	var/obj/effect/anomaly/anom = om_resolve(harvested)
+	var/obj/effect/anomaly/anom = harvested
 	var/list/data = list(
 		"name" = anom,
 		"points" = points,

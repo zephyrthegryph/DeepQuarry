@@ -30,7 +30,7 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 	chosen_disease.virus_modifiers |= CARRIER
 
 /datum/event/disease_outbreak/start()
-	GLOB.current_pending_diseases += chosen_disease
+	GLOB.current_pending_diseases += chosen_disease.Copy()
 
 	var/list/candidates = list()
 	for(var/mob/living/carbon/human/G in REGISTRY_MEMBERS(REGISTRY_HUMANS))
@@ -58,7 +58,8 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		chosen_infect--
 
 	if(!GLOB.archive_diseases[chosen_disease.GetDiseaseID()])
-		GLOB.archive_diseases[chosen_disease.GetDiseaseID()] = chosen_disease
+		// The event owns chosen_disease (deleted with it); the archive keeps its own copy.
+		GLOB.archive_diseases[chosen_disease.GetDiseaseID()] = chosen_disease.Copy()
 
 //Creates a virus with a harmful effect, guaranteed to be spreadable by contact or airborne
 /datum/event/disease_outbreak/proc/create_virus(max_severity = 6)

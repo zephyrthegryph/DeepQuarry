@@ -200,11 +200,11 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 	return ZM_target
 
-/// LC-refs: the current_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the current_zone var.
 /datum/controller/rogue/proc/current_zone() as /datum/rogue/zonemaster
 	return current_zone
 
-/// LC-refs: the previous_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the previous_zone var.
 /datum/controller/rogue/proc/previous_zone() as /datum/rogue/zonemaster
 	return previous_zone
 

@@ -109,6 +109,6 @@
 
 	LAZYADD(A.transaction_log, T)
 
-/// LC-refs: the targeted_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the targeted_account var.
 /datum/event2/event/money_hacker/proc/targeted_account() as /datum/money_account
 	return targeted_account

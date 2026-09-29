@@ -7,6 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
+	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
 /obj/item/rocksliver/Initialize(mapload)
@@ -26,6 +27,20 @@
 
 /datum/geosample/New(turf/simulated/mineral/container)
 	UpdateTurf(container)
+
+/// A private copy: a mine turf, each ore dug from it and each sample own their own geosample
+/// (never one shared owned instance).
+/datum/geosample/proc/copy()
+	var/datum/geosample/G = new /datum/geosample(null)
+	G.age = age
+	G.age_thousand = age_thousand
+	G.age_million = age_million
+	G.age_billion = age_billion
+	G.artifact_id = artifact_id
+	G.artifact_distance = artifact_distance
+	G.source_mineral = source_mineral
+	G.find_presence = LAZYCOPY(find_presence)
+	return G
 
 /datum/geosample/proc/UpdateTurf(turf/simulated/mineral/container)
 	if(!istype(container))
@@ -144,7 +159,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			R.geological_data_static = geo_data
+			own_set(R, "geological_data_static", geo_data.copy())
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -178,6 +193,6 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 		to_chat(user, span_warning("The core sampler is empty."))
 
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for the owned value.
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
 	return geological_data_static

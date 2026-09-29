@@ -155,6 +155,7 @@
 	var/door_count = 0
 	var/styled_floor_count = 0
 	var/accent_decal_count = 0
+	/// The arrival landmark, created and owned by the materialization.
 	var/tmp/obj/effect/landmark/generated_station_entry/entry
 	var/area/generated_station/transit/transit_area
 	var/tmp/area/generated_station/maintenance/maintenance_area
@@ -182,7 +183,6 @@
 	control_landmarks = list()
 	service_endpoints = list()
 	service_routes = list()
-	rel_set(src, "furnishings", list())
 	owned_furnishing_atoms = list()
 	doors = list()
 	infrastructure = list()
@@ -205,21 +205,25 @@
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
-/// The areas are owned values (deleted in phase 4); their turfs revert to space first,
-/// as do the transit/maintenance areas' (named by handle, deleted here).
+/// The department/module areas are owned values (deleted in phase 4); their turfs revert to
+/// space first, as do the transit/maintenance areas' (plain area vars, deleted here). The entry
+/// landmark is owned and goes by policy.
 /datum/generated_station_materialization/lifecycle_prerelease()
-	qdel_handle(entry)
 	var/area/space/space_area = generated_station_space_area()
 	if(transit_area())
 		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	qdel_handle(transit_area)
+	if(transit_area && !QDELETED(transit_area))
+		qdel(transit_area)
+	transit_area = null
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	qdel_handle(maintenance_area)
+	if(maintenance_area && !QDELETED(maintenance_area))
+		qdel(maintenance_area)
+	maintenance_area = null
 	for(var/list/by_id in list(department_areas, module_areas))
 		for(var/id in by_id)
 			var/area/generated_station/A = by_id[id]
@@ -239,7 +243,7 @@
 	var/min_y
 	var/max_x
 	var/max_y
-	/// Layout node handles by id (the spec owns the nodes).
+	/// Layout nodes by id: a lookup for the job's lifetime (the spec owns the nodes and outlives it).
 	var/list/nodes_by_id
 	var/area/generated_station/transit/transit_area
 	var/tmp/area/generated_station/maintenance/maintenance_area
@@ -303,10 +307,10 @@
 	max_x = origin_x + spec().grid_width - 1
 	max_y = origin_y + spec().grid_height - 1
 	nodes_by_id = list()
-	rel_set(src, "transit_area", generated_station_create_area(/area/generated_station/transit))
+	transit_area = generated_station_create_area(/area/generated_station/transit)
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
-	rel_set(src, "maintenance_area", generated_station_create_area(/area/generated_station/maintenance))
+	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
 	own_set(src, "result", new /datum/generated_station_materialization)
@@ -314,10 +318,10 @@
 	result.z_level = z_level
 	result.origin_x = min_x
 	result.origin_y = min_y
-	rel_set(result, "transit_area", transit_area())
-	rel_set(result, "maintenance_area", maintenance_area())
+	result.transit_area = transit_area()
+	result.maintenance_area = maintenance_area()
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		nodes_by_id[node.id] = om_handle(node)
+		nodes_by_id[node.id] = node
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
@@ -358,8 +362,7 @@
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)
 	last_failure_details = details || last_failure_details || stage
 	log_world("Generated station [spec()?.id] materialization failed during [stage].")
-	qdel(result)
-	own_take(src, "result")
+	own_clear(src, "result", OWN_DELETE)
 	own_clear(src, "tile_plan", OWN_DELETE)
 	own_take(src, "active_job")
 	return GENERATED_STATION_PHASE_FAILED
@@ -458,7 +461,7 @@
 		var/y = text2num(parts[2])
 		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors[key])
 			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors[key]
-			var/datum/generated_station_layout_node/door_node = om_resolve(nodes_by_id[maintenance_door.owner_node_id])
+			var/datum/generated_station_layout_node/door_node = nodes_by_id[maintenance_door.owner_node_id]
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
 				access_id = department_for_node(door_node)?.definition()?.id
@@ -560,7 +563,7 @@
 			var/obj/machinery/door/airlock/airlock = new intent.door_type(T)
 			airlock.set_dir(intent.door_direction || NORTH)
 			if(intent.owner_id != "transit" && intent.owner_id != "maintenance")
-				configure_department_airlock(airlock, department_for_node(om_resolve(nodes_by_id[intent.owner_id])))
+				configure_department_airlock(airlock, department_for_node(nodes_by_id[intent.owner_id]))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
 			result.doors += airlock
@@ -906,7 +909,7 @@
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
-	var/datum/generated_station_layout_node/node = om_resolve(nodes_by_id[module?.department_node_id])
+	var/datum/generated_station_layout_node/node = nodes_by_id[module?.department_node_id]
 	for(var/datum/generated_station_room_allocation/room in node?.room_program)
 		if(room.id == module.id)
 			return room
@@ -1538,7 +1541,7 @@
 				T = candidate
 				break
 	if(T)
-		rel_set(result, "entry", new /obj/effect/landmark/generated_station_entry(T))
+		own_set(result, "entry", new /obj/effect/landmark/generated_station_entry(T))
 		result.entry().station_id = spec().id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
 
@@ -1557,27 +1560,29 @@
 	maintenance_area()?.power_change()
 
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec
 	return spec
 
-/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the maintenance_area var.
 /datum/generated_station_materializer/proc/maintenance_area() as /area/generated_station/maintenance
 	return maintenance_area
 
-/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the maintenance_area var.
 /datum/generated_station_materialization/proc/maintenance_area() as /area/generated_station/maintenance
 	return maintenance_area
 
-/// LC-refs: the entry this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the entry var.
 /datum/generated_station_materialization/proc/entry() as /obj/effect/landmark/generated_station_entry
 	return entry
 
-/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the transit_area var.
 /datum/generated_station_materialization/proc/transit_area() as /area/generated_station/transit
 	return transit_area
 
-/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the transit_area var.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
 	return transit_area
 
+
+REL_LIST(/datum/generated_station_materialization, furnishings)

@@ -812,10 +812,10 @@
 
 
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_utility_builder/proc/spec() as /datum/generated_station_spec
 	return spec
 
-/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materialization var.
 /datum/generated_station_utility_builder/proc/materialization() as /datum/generated_station_materialization
 	return materialization

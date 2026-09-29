@@ -76,6 +76,6 @@
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
-/// LC-refs: locked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// locked
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/locked() as /atom/movable
 	return locked

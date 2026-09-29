@@ -9,7 +9,7 @@
 	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, null))
 	if(GLOB.emergency_shuttle_service.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
-	GLOB.emergency_shuttle_service.shuttle = src
+	rel_set(GLOB.emergency_shuttle_service, "shuttle", src)
 
 /datum/shuttle/autodock/ferry/emergency/arrived()
 	. = ..()
@@ -202,6 +202,6 @@
 	read_authorization(W)
 	return FALSE
 
-/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the radio_connection var.
 /datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

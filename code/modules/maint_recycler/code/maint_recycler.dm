@@ -334,10 +334,12 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	inserted_item.forceMove(get_turf(src))
-	visible_message(span_warning("[src] ejects \the [inserted_item] from its recycling chamber!"))
-	inserted_item.throw_at(get_step(src,SOUTH),5,1,src)
-	inserted_item = null;
+	var/atom/movable/ejected = own_take(src, "inserted_item")
+	if(!ejected)
+		return
+	ejected.forceMove(get_turf(src))
+	visible_message(span_warning("[src] ejects \the [ejected] from its recycling chamber!"))
+	ejected.throw_at(get_step(src,SOUTH),5,1,src)
 	update_icon()
 
 /obj/machinery/maint_recycler/proc/start_recycling(mob/user)
@@ -360,13 +362,13 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	if(istype(inserted_item,/mob))
-		var/mob/m = inserted_item
+	var/recycled = own_take(src, "inserted_item")
+	if(istype(recycled,/mob))
+		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?
 	else
-		qdel(inserted_item)
+		qdel(recycled)
 	set_screen_state("screen_cashout",10)
-	own_take(src, "inserted_item")
 	door_locked = FALSE
 	open_door(user)
 	update_icon()

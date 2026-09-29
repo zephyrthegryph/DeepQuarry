@@ -15,7 +15,8 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	// right after it; that keeps it after mapload, as INITSTAGE_LAST did.
 	boot_after = /datum/controller/subsystem/shuttles
 
-	var/datum/shuttle/autodock/ferry/emergency/shuttle // Set in shuttle_emergency.dm TODO - is it really?
+	/// Relation view: the emergency shuttle (set in shuttle_emergency.dm; the shuttle registry owns it).
+	var/datum/shuttle/autodock/ferry/emergency/shuttle
 	var/list/escape_pods = list()
 
 	TIMESTAMP_VAR(launch_time) //the time at which the shuttle will be launched

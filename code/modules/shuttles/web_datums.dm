@@ -20,8 +20,6 @@
 	travel_time = _time
 	one_way = _oneway
 
-// Leaves both endpoints' route lists.
-
 /datum/shuttle_route/proc/get_other_side(datum/shuttle_destination/PoV)
 	if(PoV == start())
 		return end()
@@ -134,8 +132,8 @@
 
 	// Now we can connect them.
 	var/datum/shuttle_route/new_route = new(src, other_place, interim_tag, travel_time)
-	LAZYADD(routes, new_route)
-	LAZYADD(other_place.routes, new_route)
+	rel_add(src, "routes", new_route)
+	rel_add(other_place, "routes", new_route)
 
 // Depending on certain circumstances, the shuttles can fail.
 // What happens depends on where the shuttle is.  If it's in space, it just can't move until its fixed.
@@ -326,43 +324,44 @@
 	reset_path()
 	master().path_finished(src)
 
-/// LC-refs: One of the two sides of this route.  Start just means it was the creator of this route. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// One of the two sides of this route.  Start just means it was the creator of this route.
 /datum/shuttle_route/proc/start() as /datum/shuttle_destination
 	return start
 
-/// LC-refs: The second side. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The second side.
 /datum/shuttle_route/proc/end() as /datum/shuttle_destination
 	return end
 
-/// LC-refs: The datum that does the coordination with the actual shuttle datum. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The datum that does the coordination with the actual shuttle datum.
 /datum/shuttle_destination/proc/master() as /datum/shuttle_web_master
 	return master
 
-/// LC-refs: Ref to the shuttle this datum is coordinating with. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Ref to the shuttle this datum is coordinating with.
 /datum/shuttle_web_master/proc/my_shuttle() as /datum/shuttle/autodock/web_shuttle
 	return my_shuttle
 
-/// LC-refs: Datum used to direct an autopilot. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Datum used to direct an autopilot.
 /datum/shuttle_web_master/proc/autopath() as /datum/shuttle_autopath
 	return autopath
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the master var.
 /datum/shuttle_autopath/proc/master() as /datum/shuttle_web_master
 	return master
 
-/// LC-refs: Where it will be in the near future. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Where it will be in the near future.
 /datum/shuttle_web_master/proc/future_destination() as /datum/shuttle_destination
 	return future_destination
 
-/// LC-refs: Where the shuttle currently is.  Bit of a misnomer. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Where the shuttle currently is.  Bit of a misnomer.
 /datum/shuttle_web_master/proc/current_destination() as /datum/shuttle_destination
 	return current_destination
 
-/// LC-refs: Where the shuttle will move to when it actually arrives. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Where the shuttle will move to when it actually arrives.
 /datum/shuttle_destination/proc/my_landmark() as /obj/effect/shuttle_landmark
 	return my_landmark
 
-REL_PAIR(/datum/shuttle_route, end, routes)
-REL_PAIR(/datum/shuttle_route, start, routes)
-REL_PAIR_LIST(/datum/shuttle_destination, routes, end)
-REL_PAIR_LIST(/datum/shuttle_destination, routes, start)
+// A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
+// Not pairs: one routes list would need two partner vars (start and end).
+REL(/datum/shuttle_route, start)
+REL(/datum/shuttle_route, end)
+REL_LIST(/datum/shuttle_destination, routes)
