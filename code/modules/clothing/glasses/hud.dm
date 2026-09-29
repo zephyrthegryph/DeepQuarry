@@ -97,10 +97,10 @@ DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 /obj/item/clothing/glasses/omnihud/proc/reconnect_tgar(datum/tgui_module/screen)
 	tgarscreen = screen
 
-/obj/item/clothing/glasses/omnihud/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud_emp_disconnect))
+
+/// A pulse drops the AR link for a while (and can glitch the lenses).
+/obj/item/clothing/glasses/omnihud/proc/omnihud_emp_disconnect(datum/damage_packet/packet)
 	if(tgarscreen)
 		SStgui.close_uis(src)
 	var/disconnect_tgar = tgarscreen

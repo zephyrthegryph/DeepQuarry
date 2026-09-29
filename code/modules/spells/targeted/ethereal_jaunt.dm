@@ -108,8 +108,7 @@ DECLARE_REF(/obj/effect/dummy/spell_jaunt, "contents", SPILL_LIST, null)
 	src.canmove = 0
 	om_after(src, 2, PROC_REF(allow_move))
 
-/obj/effect/dummy/spell_jaunt/bullet_act(blah)
-	return
+DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1

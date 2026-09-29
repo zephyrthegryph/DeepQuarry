@@ -71,23 +71,24 @@ DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shiel
 	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 	return FALSE
 
-/obj/machinery/shield/bullet_act(obj/item/projectile/Proj)
-	..()
+DAMAGE_REACTION_AFTER(/obj/machinery/shield, DAMAGE_PROJECTILE, PROC_REF(shield_flash_opaque))
+DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit))
+
+/// The shield flickers opaque for a moment after absorbing a hit (purely aesthetic).
+/obj/machinery/shield/proc/shield_flash_opaque(datum/damage_packet/packet)
 	set_opacity(1)
 	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
 
-/obj/machinery/shield/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+/// A thrown hit is announced and flickers the shield, then lands as usual.
+/obj/machinery/shield/proc/shield_thrown_hit(datum/damage_packet/packet)
 	//Let everyone know we've been hit!
-	visible_message(span_danger("\The [src] was hit by [source]."))
+	visible_message(span_danger("\The [src] was hit by [packet.source]."))
 
 	//This seemed to be the best sound for hitting a force field.
 	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
-	set_opacity(1)
-	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
-
-	..()
+	shield_flash_opaque(packet)
 
 /obj/machinery/shieldgen
 	emp_integrity_factor = 1
@@ -206,10 +207,12 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 	explosion(explosion_turf, 0, 0, 1, 0, 0, 0)
 	return ..()
 
-/obj/machinery/shieldgen/ex_act(severity)
-	if(severity == 2 && prob(15))
+DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EXPLOSION, PROC_REF(shieldgen_blast_malfunction))
+
+/// A heavy blast can knock the generator into malfunctioning.
+/obj/machinery/shieldgen/proc/shieldgen_blast_malfunction(datum/damage_packet/packet)
+	if(packet.severity == 2 && prob(15))
 		malfunction = TRUE
-	return ..()
 
 /// EMPs eat into the generator's remaining integrity and scramble it.
 /obj/machinery/shieldgen/receive_emp(severity)

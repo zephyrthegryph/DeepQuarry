@@ -83,11 +83,7 @@
 /obj/item/integrated_circuit/memory/constant/do_work()
 	var/datum/integrated_io/O = outputs[1]
 	O.push_data()
-/*
-/obj/item/integrated_circuit/memory/constant/emp_act(severity, recursive)
-	// Prevents default EMP behavior for single-slot constants memory.
-	return
-*/
+
 DECLARE_INTERACTIONS(/obj/item/integrated_circuit/memory/constant, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.

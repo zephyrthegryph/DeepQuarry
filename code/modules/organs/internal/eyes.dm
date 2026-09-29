@@ -125,11 +125,12 @@
 /obj/item/organ/internal/eyes/proc/additional_flash_effects(intensity)
 	return -1
 
-/obj/item/organ/internal/eyes/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !robotic || !owner)
+/// Robotic eyes blur their owner's sight on a pulse.
+/obj/item/organ/internal/eyes/organ_emp(datum/damage_packet/packet)
+	..()
+	if(!robotic || !owner)
 		return
-	owner.status_adjust(EFFECT_BLURRY, (4/severity))
+	owner.status_adjust(EFFECT_BLURRY, (4/packet.severity))
 
 // MED-6: when this organ's periodic_step() has nothing to do (see /obj/item/organ/proc/life_step_idle()).
 /obj/item/organ/internal/eyes/life_step_idle()

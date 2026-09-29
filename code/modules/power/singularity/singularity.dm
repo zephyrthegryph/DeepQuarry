@@ -50,23 +50,24 @@ DECLARE_INTERACTIONS(/obj/singularity, INTERACT_HAND_UNGATED(null, PROC_REF(inte
 	consume(user)
 	return TRUE
 
-/obj/singularity/ex_act(severity)
+DAMAGE_REACTION(/obj/singularity, DAMAGE_EXPLOSION, PROC_REF(singularity_blast))
+//Will there be an impact? Who knows. Will we see it? No.
+DAMAGE_REACTION(/obj/singularity, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
+
+/// A blast feeds the singularity, or (rarely, when devastating) disperses it. It takes no damage.
+/obj/singularity/proc/singularity_blast(datum/damage_packet/packet)
 	if(current_size == STAGE_SUPER)//IT'S UNSTOPPABLE
-		return
-	switch(severity)
+		return DAMAGE_REACTION_BLOCK
+	switch(packet.severity)
 		if(1.0)
 			if(prob(25))
 				investigate_log("has been destroyed by an explosion.", I_SINGULO)
 				qdel(src)
-				return
 			else
 				energy += 50
 		if(2.0 to 3.0)
 			energy += round((rand(20,60)/2),1)
-			return
-
-/obj/singularity/bullet_act(obj/item/projectile/P)
-	return 0 //Will there be an impact? Who knows. Will we see it? No.
+	return DAMAGE_REACTION_BLOCK
 
 /obj/singularity/Bump(atom/A)
 	consume(A)

@@ -30,13 +30,20 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	pixel_y = 16
 
-/obj/machinery/gravity_generator/ex_act(severity, target)
-	if(severity == 1) // Very sturdy.
-		atom_break()
+DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_EXPLOSION, PROC_REF(gravgen_blast_break))
+DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_blob_break))
 
-/obj/machinery/gravity_generator/blob_act(obj/structure/blob/B)
+/// Very sturdy: only a devastating blast breaks it, and nothing else of a blast lands.
+/obj/machinery/gravity_generator/proc/gravgen_blast_break(datum/damage_packet/packet)
+	if(packet.severity == 1)
+		atom_break()
+	return DAMAGE_REACTION_BLOCK
+
+/// A blob sometimes breaks it, and does nothing else to it.
+/obj/machinery/gravity_generator/proc/gravgen_blob_break(datum/damage_packet/packet)
 	if(prob(20))
 		atom_break()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/machinery/gravity_generator/update_icon()
 	icon_state = "[get_status()]_[sprite_number]"

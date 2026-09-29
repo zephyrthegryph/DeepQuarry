@@ -154,8 +154,12 @@
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
 
-/obj/machinery/computer/shuttle_control/bullet_act(obj/item/projectile/Proj)
-	visible_message("\The [Proj] ricochets off \the [src]!")
+DAMAGE_REACTION(/obj/machinery/computer/shuttle_control, DAMAGE_PROJECTILE, PROC_REF(shuttle_console_ricochet))
+
+/// Rounds ricochet off the console harmlessly.
+/obj/machinery/computer/shuttle_control/proc/shuttle_console_ricochet(datum/damage_packet/packet)
+	visible_message("\The [packet.source] ricochets off \the [src]!")
+	return DAMAGE_REACTION_BLOCK
 
 /obj/item/paper/dockingcodes
 	name = "Docking Codes"

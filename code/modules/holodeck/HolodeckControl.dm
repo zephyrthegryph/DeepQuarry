@@ -193,9 +193,11 @@
 	emergencyShutdown()
 	..()
 
-/obj/machinery/computer/HolodeckControl/ex_act(severity)
+DAMAGE_REACTION(/obj/machinery/computer/HolodeckControl, DAMAGE_EXPLOSION, PROC_REF(holodeck_blast_shutdown))
+
+/// A blast shuts the holodeck down.
+/obj/machinery/computer/HolodeckControl/proc/holodeck_blast_shutdown(datum/damage_packet/packet)
 	emergencyShutdown()
-	..()
 
 /obj/machinery/computer/HolodeckControl/power_change()
 	. = ..()

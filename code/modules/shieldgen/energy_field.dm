@@ -54,8 +54,12 @@ DECLARE_REF(/obj/effect/energy_field, "my_gen_handle", BACKLIST_HANDLE, list(/ob
 			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
 				F.update_icon()
 
-/obj/effect/energy_field/ex_act(severity)
-	adjust_strength(-(4 - severity) * 4)
+DAMAGE_REACTION(/obj/effect/energy_field, DAMAGE_EXPLOSION, PROC_REF(field_blast_drain))
+
+/// A blast drains the field instead of damaging it.
+/obj/effect/energy_field/proc/field_blast_drain(datum/damage_packet/packet)
+	adjust_strength(-(4 - packet.severity) * 4)
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/energy_field/bullet_act(obj/item/projectile/Proj)
 	adjust_strength(-Proj.get_structure_damage() / 10)

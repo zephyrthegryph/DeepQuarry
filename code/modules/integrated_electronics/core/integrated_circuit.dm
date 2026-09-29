@@ -47,10 +47,10 @@ DECLARE_REF(/obj/item/integrated_circuit, "inputs", OWNED_LIST, null)
 DECLARE_REF(/obj/item/integrated_circuit, "outputs", OWNED_LIST, null)
 DECLARE_REF(/obj/item/integrated_circuit, "activators", OWNED_LIST, null)
 
-/obj/item/integrated_circuit/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_emp_scramble))
+
+/// A pulse scrambles every pin.
+/obj/item/integrated_circuit/proc/circuit_emp_scramble(datum/damage_packet/packet)
 	for(var/datum/integrated_io/io in inputs + outputs + activators)
 		io.scramble()
 

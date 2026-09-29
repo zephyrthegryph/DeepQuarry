@@ -174,17 +174,16 @@ DECLARE_REF(/obj/item/organ/external, "applied_pressure", BACK, null)
 	if(istype(source))
 		source.imp_in_handle = null
 
-/obj/item/organ/external/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+/// A robotic limb is also scorched by a pulse.
+/obj/item/organ/external/organ_emp(datum/damage_packet/packet)
+	..()
 	for(var/obj/O as anything in contents_of(src))
-		O.emp_act(severity, recursive)
+		O.emp_act(packet.severity)
 
 	if(!(is_robotic()))
 		return
 	var/scorch_damage = 0
-	switch (severity)
+	switch (packet.severity)
 		if (1)
 			scorch_damage += rand(5, 8)
 		if (2)
