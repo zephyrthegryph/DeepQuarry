@@ -320,6 +320,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// Whether the handler takes the held item: (mob/user, obj/item/held, ...). hand() handlers are
 	/// (mob/user, ...); tool()/use_on()/insert() and library item entries pass `held`.
 	var/passes_held = TRUE
+	/// Whether the handler takes the clicked atom as `target` (use_at entries: (mob/user, atom/target, ...)).
+	var/passes_target = FALSE
 	/// Form fields (choice_field()/text_field()/number_field()): asked in order, answers passed by name.
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
@@ -361,6 +363,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
 
+/// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
+/datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
+	return ctx.target
+
 /// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
 /// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
 /atom/proc/before_entry(mob/user, datum/interaction/capability/entry, obj/item/held)
@@ -371,15 +377,19 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /atom/proc/caps_suspended()
 	return FALSE
 
-/// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()).
+/// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()). The handler runs
+/// on, and the dispatch marks/fingerprints/logs, the entry's HOLDER (holder_of(): the target, except a
+/// use_at entry, whose holder is the held item).
 /proc/cap_dispatch(datum/dispatch_context/ctx)
 	var/datum/interaction/capability/E = ctx.entry
 	var/list/named = list("user" = ctx.user)
 	if(E.passes_held)
 		named["held"] = ctx.held
+	if(E.passes_target)
+		named["target"] = ctx.target
 	if(length(E.form))
 		return cap_dispatch_form(ctx, named)
-	return dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
+	return dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /proc/cap_dispatch_form(datum/dispatch_context/ctx, list/named)
 	set waitfor = FALSE
@@ -395,7 +405,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		named["held"] = ctx.held
 	else
 		named -= "held"
-	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
+	if(E.passes_target)
+		named["target"] = ctx.target
+	dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /**
  * Merges capability C's gating (its constructor's behind / blocked_by / locked_by / needs / else_say /

@@ -1,0 +1,148 @@
+// The items-wave entries (doc/rewrite/migration_guide.md A3/A4): what an item does when it is used on
+// ITSELF (cap_use_self, replaces attack_self) and when it is used on ANOTHER atom (cap_use_at, replaces
+// afterattack and the use-on-target half of attack()).
+//
+// cap_use_self is an ordinary capability entry on the item (target = held = the item), run from
+// attack_self() through the INTERACTION_ENTRY_SELF path; the handler is (mob/user, ...form args).
+//
+// cap_use_at is different: the item is the HOLDER and the atom clicked is the TARGET, so it is never a
+// candidate on the target's own entry list. The click path (`/obj/item/proc/after_click`, called where
+// afterattack used to be) asks the held item for its use_at entries (cap_use_at_try). Order of a click:
+// resolve_attackby() -> the target's attackby() first (an ordinary attackby on the target still
+// happens, and a consumed result stops here, as before) -> only then the item's use_at entries ->
+// only if none answered, the legacy afterattack(). A matching entry that is gated (not in hand,
+// needs, broken...) tells the user why and uses the input up, like a legacy handler that spoke and
+// returned; a handler returning FALSE (not null, not truthy) declines and the next entry / afterattack
+// runs. The dispatch context has target = the clicked atom and held = the item; dispatch marks changed,
+// fingerprints and logs the ITEM (the holder). The clicked target is marked only if the handler says so
+// with changed(target).
+
+/// The empty-item-in-hand use: a hand-like entry on an item used on itself. Offered only while the item
+/// is in the actor's hands (REQ_SELF_USE_REACH), answers INPUT_ACTION_SELF_USE. Handler on the item:
+/// (mob/user, ...form answers). Gating arguments as cap_hand(); works_broken/unpowered default FALSE.
+/proc/cap_use_self(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
+	var/datum/capability/entry/C = cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, null, name_proc, applies, blocked_by)
+	var/datum/interaction/capability/E = C.entry
+	E.id = "use_self:[name]:[handler]"
+	E.entry = INTERACTION_ENTRY_SELF
+	E.default_action = INPUT_ACTION_SELF_USE
+	E.requires = list(REQ_SELF_USE_REACH)
+	C.key = E.id
+	return C
+
+/// The held item used on another atom. Handler on the item: (mob/user, atom/target, ...form answers).
+/// range 1 is adjacent only; a larger range also fires at a target up to that many tiles away (the old
+/// afterattack with proximity FALSE). target_types (a type or a list) limits what may be clicked.
+/// Gating arguments as cap_hand(); the gate reads the ITEM's state bits.
+/proc/cap_use_at(name, handler, range = 1, target_types, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
+	var/datum/capability/entry/use_at/C = new
+	var/datum/interaction/capability/use_at/E = new
+	E.name = name
+	E.id = "use_at:[name]:[handler]"
+	E.handler = handler
+	E.range = range
+	E.target_types = target_types
+	E.behind = behind
+	E.blocked_by = blocked_by
+	E.locked_by = locked_by
+	E.needs = needs
+	E.else_say = else_say
+	E.works_broken = works_broken
+	E.works_unpowered = works_unpowered
+	E.log = log
+	E.form = form
+	E.name_proc = name_proc
+	E.applies = applies
+	E.priority = priority || 0
+	E.passes_held = FALSE
+	E.passes_target = TRUE
+	E.category = INTERACTION_CAT_TOGGLE
+	E.cap = C
+	C.entry = E
+	C.key = E.id
+	C.behind = behind
+	C.locked_by = locked_by
+	C.log = log
+	return C
+
+/// A capability made of one use_at entry. It has no interactions on its holder: the entry is offered
+/// only by cap_use_at_try().
+/datum/capability/entry/use_at
+
+/datum/capability/entry/use_at/interactions(atom/holder)
+	return list()
+
+/// An entry whose holder is the held item and whose target is the clicked atom.
+/datum/interaction/capability/use_at
+	/// Furthest tile distance it fires at; 1 = adjacent only.
+	var/range = 1
+	/// A type or list of types the clicked atom must be (null: anything).
+	var/target_types
+
+/datum/interaction/capability/use_at/holder_of(datum/dispatch_context/ctx)
+	return ctx.held
+
+/// Whether a click at `target` from `actor` (proximity: adjacent) is one this entry answers.
+/datum/interaction/capability/use_at/proc/matches(mob/actor, atom/target, proximity)
+	if(!proximity)
+		if(range <= 1 || target.z != actor.z || get_dist(actor, target) > range)
+			return FALSE
+	if(target_types)
+		var/list/types = islist(target_types) ? target_types : list(target_types)
+		var/found = FALSE
+		for(var/path in types)
+			if(istype(target, path))
+				found = TRUE
+				break
+		if(!found)
+			return FALSE
+	return TRUE
+
+/// `held` is the holder here (the item in hand), `target` the clicked atom.
+/datum/interaction/capability/use_at/why_not(mob/actor, atom/target, obj/item/held)
+	if(!held)
+		return "you're not holding anything"
+	if(!dq_interaction_self_reach(actor, held, held))
+		return "it's not in your hand"
+	return cap_gate_reason(held, actor, held, src)
+
+/datum/interaction/capability/use_at/applies_to(atom/target)
+	return TRUE
+
+/// Runs it for actor clicking target with held: the holder hook, then the dispatch (target = target).
+/datum/interaction/capability/use_at/run_effect(mob/actor, atom/target, obj/item/held)
+	if(!held.before_entry(actor, src, held))
+		return UI_REFUSED
+	var/datum/dispatch_context/ctx = new(actor, target, held, src)
+	. = cap_dispatch(ctx)
+	if(isnull(.))
+		. = TRUE // returned nothing, or went async to ask
+
+/// The item's use_at entries for a click on `target`, or a used-up input: TRUE when one answered (or told
+/// the user why it could not). FALSE lets the legacy afterattack() run.
+/obj/item/proc/cap_use_at_try(atom/target, mob/user, proximity)
+	if(!length(caps_all(src)) || caps_suspended())
+		return FALSE
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(!istype(C, /datum/capability/entry/use_at))
+			continue
+		var/datum/capability/entry/use_at/U = C
+		var/datum/interaction/capability/use_at/E = U.entry
+		if(!istype(E) || !E.matches(user, target, proximity))
+			continue
+		if(E.applies && !call(src, E.applies)())
+			continue
+		var/reason = E.why_not(user, target, src)
+		if(reason)
+			E.tell_blocked(user, src, reason)
+			return TRUE
+		var/result = E.run_effect(user, target, src)
+		if(result != FALSE)
+			return TRUE
+	return FALSE
+
+/// Where afterattack() used to be called from a click: the item's use_at entries, else afterattack().
+/obj/item/proc/after_click(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
+	if(cap_use_at_try(target, user, proximity_flag))
+		return
+	afterattack(target, user, proximity_flag, click_parameters, stance)

@@ -577,6 +577,7 @@
 #include "code\datums\capabilities\debug_verbs.dm"
 #include "code\datums\capabilities\dispatch.dm"
 #include "code\datums\capabilities\examine.dm"
+#include "code\datums\capabilities\item_entries.dm"
 #include "code\datums\capabilities\library\_library.dm"
 #include "code\datums\capabilities\library\anchor.dm"
 #include "code\datums\capabilities\library\breakable.dm"

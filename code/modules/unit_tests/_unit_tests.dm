@@ -282,6 +282,7 @@
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_buckle_tests.dm"
 #include "dx_cap_entries_tests.dm"
+#include "dx_cap_item_entries_tests.dm"
 #include "dx_cap_label_tests.dm"
 #include "dx_cap_rotate_tests.dm"
 #include "dq_ability_tests.dm"
