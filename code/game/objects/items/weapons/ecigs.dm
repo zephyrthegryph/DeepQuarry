@@ -122,9 +122,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		if (ec_cartridge)//can't add second one
 			to_chat(user, span_notice("A cartridge has already been installed."))
 		else//fits in new one
-			user.remove_from_mob(I)
-			I.forceMove(src)//I.loc=src
-			own_set(src, "ec_cartridge", I)
+			if(!own_set(src, nameof(src.ec_cartridge), I, user = user))
+				return INTERACTION_HANDLED_PASS
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
 	return INTERACTION_HANDLED_PASS

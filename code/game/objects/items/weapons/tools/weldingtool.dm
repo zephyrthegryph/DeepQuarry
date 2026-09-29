@@ -123,8 +123,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 		var/obj/item/stack/rods/R = W
 		R.use(1)
 		var/obj/item/flamethrower/F = new/obj/item/flamethrower(get_turf(user))
-		user.drop_from_inventory(src,F)
-		own_set(F, "weldtool", src)
+		if(!own_set(F, nameof(F.weldtool), src, user = user))
+			return INTERACTION_HANDLED_PASS
 		add_fingerprint(user)
 		return INTERACTION_HANDLED_PASS
 
@@ -623,9 +623,8 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!power_supply)
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, "power_supply", W)
+				if(!own_set(src, nameof(src.power_supply), W, user = user))
+					return FALSE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_icon()
 			else

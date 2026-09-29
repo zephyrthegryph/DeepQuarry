@@ -218,9 +218,8 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!cell)
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, "cell", W)
+				if(!own_set(src, nameof(src.cell), W, user = user))
+					return FALSE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				play_sfx(src, SFX_MACHINES_BUTTON)
 				update_brightness()

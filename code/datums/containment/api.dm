@@ -29,8 +29,10 @@
 // contents by hand (code/datums/containment/lifecycle.dm).
 
 /// Why `thing` can't go into `slot_id` (null: the default slot) on `holder`,
-/// or null if it can. Checks both sides; changes nothing.
-/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor)
+/// or null if it can. Checks both sides; changes nothing. `check_removal = FALSE`
+/// skips the source side, for a caller that asked the thing's current place
+/// itself (the one-call transfer's release_refusal(), ownership/transfer.dm).
+/proc/dq_ledger_refusal(atom/movable/thing, atom/holder, slot_id, mob/actor, check_removal = TRUE)
 	if(!istype(thing) || QDELETED(thing))
 		return "it is gone"
 	if(!holder || QDELETED(holder))
@@ -48,9 +50,10 @@
 	var/list/entry = dest.entries[thing]
 	if(entry && entry[LEDGER_E_SLOT] == id)
 		return "it is already there"
-	. = dq_ledger_removal_refusal(thing, actor)
-	if(.)
-		return .
+	if(check_removal)
+		. = dq_ledger_removal_refusal(thing, actor)
+		if(.)
+			return .
 	. = def.refusal(holder, thing, actor)
 	if(.)
 		return .

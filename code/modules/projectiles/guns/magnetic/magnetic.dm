@@ -169,8 +169,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
-			user.drop_from_inventory(thing, src)
-			own_set(src, "cell", thing)
+			if(!own_set(src, nameof(src.cell), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
@@ -180,8 +180,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(capacitor)
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
-			own_set(src, "capacitor", thing)
-			user.drop_from_inventory(capacitor, src)
+			if(!own_set(src, nameof(src.capacitor), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = capacitor)
@@ -198,9 +198,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		// specific ammo types may exist down the track.
 		var/obj/item/stack/ammo = thing
 		if(!istype(ammo))
-			own_set(src, "loaded", thing)
-			user.drop_from_inventory(thing)
-			thing.forceMove(src)
+			if(!own_set(src, nameof(src.loaded), thing, user = user))
+				return
 		else
 			own_set(src, "loaded", new load_type(src, 1))
 			ammo.use(1)

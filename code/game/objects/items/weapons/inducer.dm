@@ -75,10 +75,9 @@
 	if(istype(W, /obj/item/cell))
 		if(opened)
 			if(!cell)
-				user.drop_from_inventory(W)
-				W.forceMove(src)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				own_set(src, "cell", W)
+				if(!own_set(src, nameof(src.cell), W, user = user))
+					return INTERACTION_HANDLED_PASS
 				update_icon()
 				return INTERACTION_HANDLED_PASS
 			else

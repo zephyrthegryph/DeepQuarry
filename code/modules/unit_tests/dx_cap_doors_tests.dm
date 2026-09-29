@@ -242,6 +242,8 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	TEST_ASSERT(door_crush(A), "a human in the doorway is crushed")
 	TEST_ASSERT(H.status_units(EFFECT_STUNNED) > 0, "and stunned")
+	for(var/obj/effect/decal/cleanable/mess in T)
+		qdel(mess)
 	TEST_ASSERT_EQUAL(A.door_safeties_on(), TRUE, "the safeties start on")
 	var/list/data = list()
 	A.caps_ui_data(H, data)

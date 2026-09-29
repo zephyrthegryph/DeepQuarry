@@ -770,7 +770,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /// an open or dead door.
 /obj/machinery/door/airlock/proc/emag_effect(mob/user, obj/item/card/emag/card)
 	if(!on_emag(1, user, card))
-		return EMAG_DECLINED
+		return FALSE // cap_emag(): the effect refuses first, so nothing is set or spent
 	return TRUE
 
 // door.dm declares the door's emag for every door; the airlock's is its emag() capability.

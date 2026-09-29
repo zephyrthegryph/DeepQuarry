@@ -156,9 +156,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 		if(length(darts) >= max_darts)
 			to_chat(user, span_warning("[src] is full!"))
 			return INTERACTION_HANDLED_PASS
-		user.remove_from_mob(C)
-		C.forceMove(src)
-		own_add(src, "darts", C) //add to the end
+		if(!own_add(src, nameof(src.darts), C, user = user))
+			return INTERACTION_HANDLED_PASS
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		return INTERACTION_HANDLED_PASS
 	return ..()

@@ -1508,9 +1508,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
 			return INTERACTION_HANDLED_PASS
-		user.unEquip(I)
-		I.forceMove(src)
-		own_set(src, "holding", I)
+		if(!own_set(src, nameof(src.holding), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS

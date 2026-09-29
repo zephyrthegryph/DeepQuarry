@@ -211,7 +211,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 		return "it's welded shut"
 	if(is_bolted(src))
 		return "its bolts prevent it from being forced"
-	if(cap_powered())
+	if(cap_of(src, /datum/capability/powered) && cap_powered())
 		var/datum/capability/pry/C = cap_of(src, /datum/capability/pry)
 		if(!C?.strong_tier || !held || dq_tool_tier(held, C.tool_quality) < C.strong_tier)
 			return "its motors resist your efforts to force it"
@@ -416,12 +416,13 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	return new /datum/capability/ai_control
 
 /datum/capability/ai_control/ui_logged()
-	return list(
+	var/static/list/logged = list(
 		"shock_temp" = LOG_GAME,
 		"shock_perm" = LOG_GAME,
 		"bolt_toggle" = LOG_GAME,
 		"emergency_toggle" = LOG_GAME,
 	)
+	return logged
 
 /datum/capability/ai_control/proc/act_disrupt_main(mob/user, obj/machinery/door/airlock/holder)
 	if(holder.main_power_lost_until)
