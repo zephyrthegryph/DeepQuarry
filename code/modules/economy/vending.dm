@@ -293,7 +293,7 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emag), null, null)
 	effect = /obj/machinery/vending/proc/interaction_coin
 
 /obj/machinery/vending/proc/interaction_coin(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, "coin", W, user = user))
+	if(!own_set(src, nameof(src.coin), W, user = user))
 		return TRUE
 	categories |= CAT_COIN
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))

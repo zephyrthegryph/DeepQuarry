@@ -76,7 +76,7 @@
 		if(opened)
 			if(!cell)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				if(!own_set(src, "cell", W, user = user))
+				if(!own_set(src, nameof(src.cell), W, user = user))
 					return INTERACTION_HANDLED_PASS
 				update_icon()
 				return INTERACTION_HANDLED_PASS

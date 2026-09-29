@@ -233,7 +233,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 		if(beaker)
 			to_chat(user, span_notice("\The [src] is already loaded."))
 		else
-			own_set(src, "beaker", O, user = user)
+			own_set(src, nameof(src.beaker), O, user = user)
 	else if(processing)
 		to_chat(user, span_notice("\The [src] is currently processing."))
 	else if(istype(O, /obj/item/storage/bag/plants))

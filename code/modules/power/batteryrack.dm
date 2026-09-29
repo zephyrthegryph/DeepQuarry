@@ -152,7 +152,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	if(!own_add(src, "internal_cells", C, user = user, into = TRUE))
+	if(!own_add(src, nameof(src.internal_cells), C, user = user, into = TRUE))
 		return 0
 	RefreshParts()
 	update_maxcharge()

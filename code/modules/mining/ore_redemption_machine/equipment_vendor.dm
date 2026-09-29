@@ -305,7 +305,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 /obj/machinery/mineral/equipment_vendor/proc/interaction_insert_id(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!powered())
 		return TRUE
-	else if(!inserted_id && own_set(src, "inserted_id", I, user = user))
+	else if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
 		tgui_interact(user)
 	return TRUE
 

@@ -781,7 +781,7 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 	return !cell
 
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!own_set(src, "cell", I, user = user))
+	if(!own_set(src, nameof(src.cell), I, user = user))
 		return TRUE
 	RefreshParts()
 	update_icon()

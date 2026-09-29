@@ -104,10 +104,10 @@ OWN_IF(/obj/mecha, cell, OWN_SPILL, salvageable, OWN_DELETE)
 the whole transfer:
 
 ```dm
-own_set(src, "beaker", W, user = user)
+own_set(src, nameof(src.beaker), W, user = user)
 ```
 
-replaces `user.drop_item(); W.forceMove(src); own_set(src, "beaker", W)`. In one call:
+replaces `user.drop_item(); W.forceMove(src); own_set(src, nameof(src.beaker), W)`. In one call:
 
 1. **Checks** (requirements; a refusal changes nothing, returns null and, with `user`, tells the user
    why through `refuse()`): the item can leave its current place, asked through

@@ -26,7 +26,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
-				own_set(src, "circuit", P, user = user)
+				own_set(src, nameof(src.circuit), P, user = user)
 		if(2)
 			if(istype(P, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = P
@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				if(occupant.mind)
 					GLOB.antag_service.clear_antag_roles(occupant.mind, 1)
 
-				if(!own_set(src, "brain", P, user = user))
+				if(!own_set(src, nameof(src.brain), P, user = user))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, "Added [P].")
 				icon_state = "3b"

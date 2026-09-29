@@ -314,7 +314,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 			to_chat(user, span_notice("\The [src] already has a [attached_lock]."))
 			return
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		if(!own_set(src, "attached_lock", A, user = user))
+		if(!own_set(src, nameof(src.attached_lock), A, user = user))
 			return
 		dna_lock = 1
 		return

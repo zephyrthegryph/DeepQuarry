@@ -301,7 +301,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	if(!istype(C))
 		return
 
-	if(!own_set(src, "cell", C, user = H))
+	if(!own_set(src, nameof(src.cell), C, user = H))
 		return
 	powercheck()
 	to_chat(H, span_notice("You install [C] in [src]."))

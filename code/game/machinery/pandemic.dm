@@ -242,7 +242,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 /obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!operable())
 		return TRUE
-	if(!own_set(src, "beaker", I, user = user))
+	if(!own_set(src, nameof(src.beaker), I, user = user))
 		return TRUE
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)

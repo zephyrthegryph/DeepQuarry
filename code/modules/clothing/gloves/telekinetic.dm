@@ -44,7 +44,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 /obj/item/clothing/gloves/telekinetic/proc/telekinetic_insert_cell(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell/device))
 		if(!cell)
-			if(!own_set(src, "cell", W, user = user))
+			if(!own_set(src, nameof(src.cell), W, user = user))
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)

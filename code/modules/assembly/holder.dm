@@ -27,8 +27,8 @@
 
 	rel_set(D, "holder", src)
 	rel_set(D2, "holder", src)
-	own_set(src, "a_left", D, user = user, into = TRUE)
-	own_set(src, "a_right", D2, user = user, into = TRUE)
+	own_set(src, nameof(src.a_left), D, user = user, into = TRUE)
+	own_set(src, nameof(src.a_right), D2, user = user, into = TRUE)
 	name = "[D.name]-[D2.name] assembly"
 	update_icon()
 	user.put_in_hands(src)

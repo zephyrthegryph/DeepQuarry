@@ -391,7 +391,7 @@
 
 		var/mob/living/living_mob = holder.held_mob
 
-		own_add(src, "food_inserted_micros", living_mob, user = user, into = TRUE) // out of the holder
+		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
 		rel_clear(holder, "held_mob")
 		consume(holder, user)
 
@@ -466,7 +466,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 /obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
 
-		own_add(src, "food_inserted_micros", M, user = user, into = TRUE)
+		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
 
 		to_chat(user, span_warning("You climb into \the [src]."))
 		return INTERACTION_HANDLED_PASS
@@ -4032,7 +4032,7 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 	if( istype(I, /obj/item/reagent_containers/food/snacks/sliceable/pizza/) ) // Long ass fucking object name
 
 		if( src.open )
-			if(!own_set(src, "pizza", I, user = user))
+			if(!own_set(src, nameof(src.pizza), I, user = user))
 				return INTERACTION_HANDLED_PASS
 
 			update_icon()

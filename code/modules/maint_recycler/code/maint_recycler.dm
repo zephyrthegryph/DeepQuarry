@@ -211,14 +211,14 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		if(consent)
 			if(user in range(1,src))
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
-				own_set(src, "inserted_item", m, user = user)
+				own_set(src, nameof(src.inserted_item), m, user = user)
 			else
 				return TRUE //too far away, dumbass.
 		else
 			deny_act(O,user)
 	else
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
-		own_set(src, "inserted_item", O, user = user)
+		own_set(src, nameof(src.inserted_item), O, user = user)
 
 	update_icon()
 	return FALSE
@@ -232,7 +232,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 		if(get_item_whitelist(source) == RECYCLER_ALLOWED)
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
-				own_set(src, "inserted_item", source, into = TRUE)
+				own_set(src, nameof(src.inserted_item), source, into = TRUE)
 				update_icon()
 				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)

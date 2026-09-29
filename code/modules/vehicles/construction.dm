@@ -225,7 +225,7 @@
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
 	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell, into = TRUE)
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 
@@ -443,7 +443,7 @@
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
 	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell, into = TRUE)
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 
@@ -614,7 +614,7 @@
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
 	rel_clear(assembly, "cell")
-	own_set(product, "cell", moved_cell, into = TRUE)
+	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
 

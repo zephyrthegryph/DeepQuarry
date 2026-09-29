@@ -620,7 +620,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/apc, TYPE_PROC_REF(/atom, appearanc
 		if(W.w_class != ITEMSIZE_NORMAL)
 			to_chat(user, "\The [W] is too [W.w_class < 3 ? "small" : "large"] to work here.")
 			return TRUE
-		if(!own_set(src, "cell", W, user = user))
+		if(!own_set(src, nameof(src.cell), W, user = user))
 			return TRUE
 		sync_cell_charge()
 		act_message(user, null, MSG_SELF(span_notice("You insert the power cell.")), \

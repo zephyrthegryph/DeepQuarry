@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	to_chat(user, span_notice("You insert [I] into [nickname]."))
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	power_down()
-	own_set(src, "cell", I, user = user)
+	own_set(src, nameof(src.cell), I, user = user)
 
 /obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
 	if(!cell)

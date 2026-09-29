@@ -260,12 +260,12 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		if("install input")
 			if(!InputBeaker)
 				W.add_fingerprint(user)
-				own_set(src, "InputBeaker", W, user = user)
+				own_set(src, nameof(src.InputBeaker), W, user = user)
 
 		if("install output")
 			if(!OutputBeaker)
 				W.add_fingerprint(user)
-				own_set(src, "OutputBeaker", W, user = user)
+				own_set(src, nameof(src.OutputBeaker), W, user = user)
 
 	update_icon()
 	return TRUE

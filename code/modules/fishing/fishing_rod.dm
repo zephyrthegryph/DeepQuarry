@@ -70,7 +70,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 		if(Bait)
 			Bait.forceMove(get_turf(user))
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))
-		if(!own_set(src, "Bait", I, user = user))
+		if(!own_set(src, nameof(src.Bait), I, user = user))
 			return INTERACTION_HANDLED_PASS
 		update_bait()
 	return FALSE

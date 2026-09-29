@@ -3,7 +3,7 @@
 doc/rewrite/ownership.md §1.3a, code/datums/ownership/transfer.dm. Giving an owned var a movable
 that is somewhere else is one call:
 
-    own_set(src, "beaker", W, user = user)
+    own_set(src, nameof(src.beaker), W, user = user)
 
 It checks that the item can leave its hand, equip slot, storage or holder and enter this one,
 releases it (HUD, dropped(), storage bookkeeping), moves it in and adopts it. The old sequence took
@@ -18,8 +18,8 @@ worked. Target: 0 (the baseline is empty).
 import re
 
 RULES = {
-    "manual_transfer": "own_set/own_add/own_put(holder, \"var\", item, user = user): one call takes it out of the hand, slot or storage (ownership.md §1.3a)",
-    "manual_move_adopt": "own_set/own_add/own_put(holder, \"var\", item, into = TRUE) moves it in itself (ownership.md §1.3a)",
+    "manual_transfer": "own_set/own_add/own_put(holder, nameof(holder.var), item, user = user): one call takes it out of the hand, slot or storage (ownership.md §1.3a)",
+    "manual_move_adopt": "own_set/own_add/own_put(holder, nameof(holder.var), item, into = TRUE) moves it in itself (ownership.md §1.3a)",
 }
 
 TAKE_OUT = re.compile(r"\b(drop_item|drop_from_inventory|unEquip|remove_from_mob|drop_l_hand|drop_r_hand|drop_active_hand|remove_from_storage)\s*\(")

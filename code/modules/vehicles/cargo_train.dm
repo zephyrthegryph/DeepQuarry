@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	if(!istype(W, key_type))
 		return FALSE
 	if(!key)
-		own_set(src, "key", W, user = user)
+		own_set(src, nameof(src.key), W, user = user)
 	return TRUE
 
 /*

@@ -98,14 +98,14 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 					return FALSE
 				W.moveToNullspace()
 				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-				own_set(src, "corptag", W, into = FALSE)
+				own_set(src, nameof(src.corptag), W, into = FALSE)
 				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 			else
 				if(!user.unEquip(W))
 					return FALSE
 				W.moveToNullspace()
 				// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-				own_set(src, "corptag", W, into = FALSE)
+				own_set(src, nameof(src.corptag), W, into = FALSE)
 				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 			update_icon()
 

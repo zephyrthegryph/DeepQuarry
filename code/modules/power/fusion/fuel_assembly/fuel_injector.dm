@@ -83,8 +83,8 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " inserts \a [held] into %T%."))
 
 	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
-	if(!own_set(src, "cur_assembly", held, user = user))
-		own_set(src, "cur_assembly", old_assembly)
+	if(!own_set(src, nameof(src.cur_assembly), held, user = user))
+		own_set(src, nameof(src.cur_assembly), old_assembly)
 		return TRUE
 	if(old_assembly)
 		old_assembly.forceMove(get_turf(src))

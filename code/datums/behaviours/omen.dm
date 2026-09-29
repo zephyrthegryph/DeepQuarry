@@ -195,7 +195,7 @@
 		for(var/obj/machinery/washing_machine/evil_washer in the_turf)
 			if(evil_washer.state == 1) //Empty and open door
 				our_guy.visible_message(span_danger("[our_guy] slips near the [evil_washer] and falls in, the door shutting!"), span_boldwarning("You slip on a wet spot near the [evil_washer] and fall in, the door shutting! You're stuck!"))
-				own_add(evil_washer, "washing", our_guy, into = TRUE)
+				own_add(evil_washer, nameof(evil_washer.washing), our_guy, into = TRUE)
 				evil_washer.set_state(4)
 				evil_washer.visible_message(span_danger("[evil_washer] begins its spin cycle!"))
 				evil_washer.start(TRUE, omen_damage)

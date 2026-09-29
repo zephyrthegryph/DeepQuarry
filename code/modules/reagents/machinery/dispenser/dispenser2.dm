@@ -62,7 +62,7 @@
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
 
-	if(!own_put(src, "cartridges", C.label, C, user = user, into = TRUE))
+	if(!own_put(src, nameof(src.cartridges), C.label, C, user = user, into = TRUE))
 		return
 	if(user)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
@@ -115,7 +115,7 @@
 	return TRUE
 
 /obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	if(!own_set(src, "container", RC, user = user))
+	if(!own_set(src, nameof(src.container), RC, user = user))
 		return TRUE
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return TRUE

@@ -329,7 +329,7 @@
 /obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
 	var/obj/item/I = task.I
 	var/mob/user = task.actor
-	if(!own_set(src, "stored_item", I, user = user))
+	if(!own_set(src, nameof(src.stored_item), I, user = user))
 		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 

@@ -150,7 +150,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	if(holding)
 		return TRUE
 	var/obj/item/tank/T = W
-	if(!own_set(src, "holding", T, user = user))
+	if(!own_set(src, nameof(src.holding), T, user = user))
 		return TRUE
 	update_icon()
 	return TRUE
@@ -216,7 +216,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	var/obj/item/cell/C = I
 
 	C.add_fingerprint(user)
-	if(!own_set(src, "cell", C, user = user))
+	if(!own_set(src, nameof(src.cell), C, user = user))
 		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
 		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))

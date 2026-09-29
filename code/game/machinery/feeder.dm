@@ -73,7 +73,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	effect = /obj/machinery/feeder/proc/interaction_insert_beaker
 
 /obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, "beaker", W, user = user))
+	if(!own_set(src, nameof(src.beaker), W, user = user))
 		return TRUE
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()

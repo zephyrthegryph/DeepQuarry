@@ -141,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		else if(!istype(W, /obj/item/cell/device/weapon)) //Weapon cells only!
 			to_chat(user, span_notice("This cell will not fit in the device."))
 		else
-			if(!own_set(src, "bcell", W, user = user))
+			if(!own_set(src, nameof(src.bcell), W, user = user))
 				return TRUE
 			if(active_weapon)
 				rel_set(active_weapon, "power_supply", bcell)

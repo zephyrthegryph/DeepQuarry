@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 
 /// Old attackby.
 /obj/machinery/computer/med_data/proc/med_data_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(istype(O, /obj/item/card/id) && !scan && own_set(src, "scan", O, user = user))
+	if(istype(O, /obj/item/card/id) && !scan && own_set(src, nameof(src.scan), O, user = user))
 		to_chat(user, "You insert \the [O].")
 		tgui_interact(user)
 		return TRUE
@@ -202,7 +202,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, "scan", I, user = ui.user)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 
 UI_ACT(/obj/machinery/computer/med_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_login)

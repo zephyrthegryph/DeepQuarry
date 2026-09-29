@@ -73,7 +73,7 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
-		own_set(src, "cell", C, into = TRUE)
+		own_set(src, nameof(src.cell), C, into = TRUE)
 		return
 	own_set(src, "cell", new /obj/item/cell/hyper(src))
 

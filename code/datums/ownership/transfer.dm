@@ -3,9 +3,9 @@
 // own_set / own_add / own_put on an atom holder, given a movable that is somewhere else, take it
 // out of wherever it is and put it in the holder before adopting it:
 //
-//   own_set(src, "beaker", W, user = user)
+//   own_set(src, nameof(src.beaker), W, user = user)
 //
-// replaces `user.drop_item(); W.forceMove(src); own_set(src, "beaker", W)`. In one call:
+// replaces `user.drop_item(); W.forceMove(src); own_set(src, nameof(src.beaker), W)`. In one call:
 //   1. the checks: it can leave its current place (a mob's hand or equip slot: can_unequip and
 //      NODROP; a storage item's or any other ledger slot's removal rules) and it can enter the
 //      holder (the holder's ledger slot, when it has slots). A refusal changes nothing, returns

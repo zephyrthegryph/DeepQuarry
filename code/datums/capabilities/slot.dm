@@ -131,15 +131,7 @@
 
 /// The one-call transfer in: out of the hand, slot or container it is in, into holder, adopted.
 /datum/capability/slot/proc/adopt(atom/holder, obj/item/item, mob/user)
-	if(ismob(item.loc))
-		var/mob/carrier = item.loc
-		if(!carrier.unEquip(item, target = holder))
-			to_chat(user, span_warning("\The [item] is stuck to your hand!"))
-			return FALSE
-	if(item.loc != holder)
-		item.forceMove(holder)
-	own_set(holder, slot_var, item)
-	return holder.vars[slot_var] == item
+	return !isnull(own_set(holder, slot_var, item, user = user, into = TRUE))
 
 /// Puts `item` into the slot on `holder`. TRUE when the input is used (inserted or refused), FALSE
 /// when the slot declines (SLOT_FULL_PASS, SLOT_REFUSED_PASS, a type it doesn't accept).

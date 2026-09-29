@@ -115,7 +115,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	return TRUE
 
 /obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(!own_add(src, "feedstock", stock, user = user)) // the user is told why
+	if(!own_add(src, nameof(src.feedstock), stock, user = user)) // the user is told why
 		return TRUE
 	act_message(user, src, others = span_notice("%U% loads [stock] into %T%."))
 	return TRUE
@@ -131,7 +131,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 /obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
 	if(firing || output_stock())
 		return TRUE
-	if(!own_add(src, "carbon_feed", item, user = user)) // the user is told why
+	if(!own_add(src, nameof(src.carbon_feed), item, user = user)) // the user is told why
 		return TRUE
 	act_message(user, src, others = span_notice("%U% adds carbon to %T%'s charge."))
 	return TRUE

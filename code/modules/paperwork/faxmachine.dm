@@ -208,7 +208,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, "scan", I, user = ui.user)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "login", ui_act_login, UI_ARG_NUM("login_type"))
@@ -340,7 +340,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	return !scan
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	own_set(src, "scan", held, user = user)
+	own_set(src, nameof(src.scan), held, user = user)
 	return TRUE
 
 /datum/interaction/machine_item/faxmachine_insert_toner

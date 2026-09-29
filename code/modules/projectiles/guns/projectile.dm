@@ -582,7 +582,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 					to_chat(user, span_warning("This is an open bolt gun. Make sure you close the bolt before inserting a new magazine."))
 					return
-				if(!own_set(src, "ammo_magazine", AM, user = user))
+				if(!own_set(src, nameof(src.ammo_magazine), AM, user = user))
 					return
 				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
@@ -642,7 +642,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			to_chat(user, span_warning("[src] is full."))
 			return
 
-		if(!own_add(src, "loaded", C, user = user))
+		if(!own_add(src, nameof(src.loaded), C, user = user))
 			return
 		moveElement(loaded, length(loaded), 1) //to the head of the list
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))

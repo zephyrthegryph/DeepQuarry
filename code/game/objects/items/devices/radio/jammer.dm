@@ -103,7 +103,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 
 /obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!power_source)
-		if(!own_set(src, "power_source", W, user = user))
+		if(!own_set(src, nameof(src.power_source), W, user = user))
 			return TRUE
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		update_icon()

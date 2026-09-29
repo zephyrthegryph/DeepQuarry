@@ -17,7 +17,7 @@
 	// Grab any mapped notices.
 	own_take_all(src, "notices")
 	for(var/obj/item/paper/note in get_turf(src))
-		own_add(src, "notices", note, into = TRUE)
+		own_add(src, nameof(src.notices), note, into = TRUE)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 	// notices in contents

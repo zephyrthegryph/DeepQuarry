@@ -317,7 +317,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		// insert cell
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
-			if(!own_set(src, "cell", C, user = user))
+			if(!own_set(src, nameof(src.cell), C, user = user))
 				return TRUE
 			C.add_fingerprint(user)
 

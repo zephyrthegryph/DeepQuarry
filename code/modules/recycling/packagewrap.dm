@@ -29,7 +29,7 @@
 			to_chat(user, span_warning("You need more paper."))
 			return
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(get_turf(O.loc))	//Aaannd wrap it up!
-		if(!own_set(P, "wrapped", O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
+		if(!own_set(P, nameof(P.wrapped), O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
 			qdel(P)
 			return
 		P.w_class = O.w_class

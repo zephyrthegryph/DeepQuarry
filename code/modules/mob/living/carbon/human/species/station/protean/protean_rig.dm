@@ -125,7 +125,7 @@
 		if(QDELETED(B)) // for mannequins or such
 			return
 		// Off the back (spawned) or out of the hand, into the rig.
-		if(!own_set(src, "rig_storage", B, user = spawned ? null : P, into = TRUE))
+		if(!own_set(src, nameof(src.rig_storage), B, user = spawned ? null : P, into = TRUE))
 			return
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
@@ -315,7 +315,7 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			return INTERACTION_HANDLED_PASS
 
 
-		if(!own_set(src, "air_supply", W, user = user))
+		if(!own_set(src, nameof(src.air_supply), W, user = user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS

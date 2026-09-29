@@ -93,7 +93,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 		to_chat(user, span_warning("\The [src] is already wearing \a [hat]."))
 		return
 	else
-		if(!own_set(src, "hat", new_hat, user = user))
+		if(!own_set(src, nameof(src.hat), new_hat, user = user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
 		update_icon()

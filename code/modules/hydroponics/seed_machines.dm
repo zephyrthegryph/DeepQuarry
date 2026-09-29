@@ -127,7 +127,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
-		if(!own_set(src, "seed", W, user = user))
+		if(!own_set(src, nameof(src.seed), W, user = user))
 			return TRUE
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
@@ -168,7 +168,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	return TRUE
 
 /obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, "loaded_disk", W, user = user))
+	if(!own_set(src, nameof(src.loaded_disk), W, user = user))
 		return TRUE
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE

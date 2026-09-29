@@ -76,7 +76,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 /obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
 	if (beaker)
 		return TRUE
-	if(!own_set(src, "beaker", O, user = user))
+	if(!own_set(src, nameof(src.beaker), O, user = user))
 		return TRUE
 	update_icon()
 	return TRUE

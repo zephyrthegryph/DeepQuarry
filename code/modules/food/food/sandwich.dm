@@ -30,7 +30,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 		to_chat(user, span_blue("You layer [W] over \the [src]."))
 		var/obj/item/reagent_containers/F = W
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
-		if(!own_add(src, "ingredients", W, user = user))
+		if(!own_add(src, nameof(src.ingredients), W, user = user))
 			return INTERACTION_HANDLED_PASS
 		update()
 		return INTERACTION_HANDLED_PASS

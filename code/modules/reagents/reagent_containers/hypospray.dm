@@ -133,7 +133,7 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 	if(W.is_open_container())
 		W.flags ^= OPENCONTAINER
 		W.update_icon()
-	if(!own_set(src, "loaded_vial", W, user = user))
+	if(!own_set(src, nameof(src.loaded_vial), W, user = user))
 		return
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)

@@ -67,7 +67,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 					do_transfer = TRUE
 
 			if(do_transfer)
-				own_add(src, "food_inserted_micros", F, into = TRUE) // out of the food, whose food_inserted_micros lets it go
+				own_add(src, nameof(src.food_inserted_micros), F, into = TRUE) // out of the food, whose food_inserted_micros lets it go
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)

@@ -223,7 +223,7 @@
 /obj/machinery/computer/skills/proc/interaction_insert_id(mob/user, obj/item/O, datum/interaction/interaction)
 	if(scan)
 		return FALSE
-	if(!own_set(src, "scan", O, user = user))
+	if(!own_set(src, nameof(src.scan), O, user = user))
 		return FALSE
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)
@@ -463,7 +463,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, "scan", I, user = ui.user)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 
 UI_ACT(/obj/machinery/computer/skills, "cleartemp", ui_act_cleartemp)
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_cleartemp)

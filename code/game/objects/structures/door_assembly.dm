@@ -231,7 +231,7 @@
 	if(!src) return
 	to_chat(user, span_notice("You installed the airlock electronics!"))
 	src.state = 2
-	own_set(src, "electronics", W, user = user)
+	own_set(src, nameof(src.electronics), W, user = user)
 /obj/structure/door_assembly/proc/attackby_timed_done3(mob/user, obj/item/stack/S)
 	if(!(!glass))
 		return

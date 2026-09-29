@@ -97,7 +97,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 		return TRUE
 	if(cell())
 		to_chat(user, span_warning("There is a power cell already installed!"))
-	else if(own_set(src, "cell", W, user = user))
+	else if(own_set(src, nameof(src.cell), W, user = user))
 		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
 	return TRUE
@@ -590,7 +590,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 
 /// Puts bulb `L` in the socket, from wherever it is (`user`'s hand: told why when it can't let go).
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L, mob/user)
-	if(!own_set(src, "installed_light", L, user = user, into = TRUE))
+	if(!own_set(src, nameof(src.installed_light), L, user = user, into = TRUE))
 		return FALSE
 	. = TRUE
 	update_from_bulb(L)

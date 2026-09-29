@@ -234,7 +234,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 /obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
 	to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
 	bin.forceMove(src.loc) //Remove the old bin.
-	if(!own_set(src, "bin", I, user = user))
+	if(!own_set(src, nameof(src.bin), I, user = user))
 		return
 	return
 

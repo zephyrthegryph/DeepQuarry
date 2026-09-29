@@ -85,7 +85,7 @@ OWN(/obj/item/gun/energy/modular, guncomponents, OWN_CONTAINED)
 	if(istype(O, /obj/item/stock_parts/capacitor) && capacitor_rating == 5)
 		to_chat(user, span_warning("You can't add any more capacitors!"))
 		return
-	if(!own_add(src, "guncomponents", O, user = user))
+	if(!own_add(src, nameof(src.guncomponents), O, user = user))
 		return
 	to_chat(user, span_notice("You add a component to the [src]"))
 	CheckParts()

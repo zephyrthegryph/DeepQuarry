@@ -115,10 +115,9 @@ GLOBAL_LIST_EMPTY(dispatch_last_record)
 		#endif
 	return UI_REFUSED
 
-#ifdef UNIT_TESTS
 /// Test builds: while a test sets this to a list, refuse() also appends list(user, text) to it.
+/// Declared in every build so the linter, which reads the tests without UNIT_TESTS, resolves it.
 GLOBAL_VAR(refuse_capture)
-#endif
 
 /**
  * The fingerprint and the declared log line for a successful dispatch. log: LOG_GAME, LOG_ADMIN or

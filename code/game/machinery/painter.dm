@@ -83,7 +83,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
 		return TRUE
 	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
-	if(!own_set(src, "inserted", I, user = user))
+	if(!own_set(src, nameof(src.inserted), I, user = user))
 		return TRUE
 	SStgui.update_uis(src)
 	return TRUE
@@ -93,7 +93,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 		return
 	if(user)
 		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
-	own_set(src, "inserted", victim, user = user, into = TRUE)
+	own_set(src, nameof(src.inserted), victim, user = user, into = TRUE)
 
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE

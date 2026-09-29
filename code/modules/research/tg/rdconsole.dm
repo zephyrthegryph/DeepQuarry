@@ -68,13 +68,13 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 		if(t_disk)
 			to_chat(user, span_warning("A technology disk is already loaded!"))
 			return TRUE
-		if(!own_set(src, "t_disk", D, user = user)) // the user is told why
+		if(!own_set(src, nameof(src.t_disk), D, user = user)) // the user is told why
 			return TRUE
 	else if (istype(D, /obj/item/disk/design_disk))
 		if(d_disk)
 			to_chat(user, span_warning("A design disk is already loaded!"))
 			return TRUE
-		if(!own_set(src, "d_disk", D, user = user)) // the user is told why
+		if(!own_set(src, nameof(src.d_disk), D, user = user)) // the user is told why
 			return TRUE
 	else
 		to_chat(user, span_warning("Machine cannot accept disks in that format."))

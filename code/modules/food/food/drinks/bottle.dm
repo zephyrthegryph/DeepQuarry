@@ -139,7 +139,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
-	if(own_set(src, "rag", R, user = user))
+	if(own_set(src, nameof(src.rag), R, user = user))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
 		flags &= ~OPENCONTAINER
 		update_icon()

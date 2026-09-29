@@ -386,14 +386,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		else
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id))
-				own_set(src, "id", I, user = user)
+				own_set(src, nameof(src.id), I, user = user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
 			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
-			if(!own_set(src, "id", I, user = user))
-				own_set(src, "id", old_id)
+			if(!own_set(src, nameof(src.id), I, user = user))
+				own_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)
 			return 1
@@ -413,7 +413,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// Old attackby.
 /obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		if(!own_set(src, "cartridge", C, user = user))
+		if(!own_set(src, nameof(src.cartridge), C, user = user))
 			return INTERACTION_HANDLED_PASS
 		cartridge.update_programs(src)
 		update_shortcuts()
@@ -440,7 +440,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 					add_overlay("pda-id")
 			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
-		if(!own_set(src, "pai", C, user = user))
+		if(!own_set(src, nameof(src.pai), C, user = user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src

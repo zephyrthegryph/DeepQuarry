@@ -97,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 	if(!istype(W, /obj/item/key/rover))
 		return FALSE
 	if(!key)
-		own_set(src, "key", W, user = user)
+		own_set(src, nameof(src.key), W, user = user)
 	return TRUE
 
 //cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead

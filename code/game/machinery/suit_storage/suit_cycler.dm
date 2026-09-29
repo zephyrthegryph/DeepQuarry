@@ -251,7 +251,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 			return TRUE
 
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
-	if(!own_set(src, "helmet", IH, user = user))
+	if(!own_set(src, nameof(src.helmet), IH, user = user))
 		return TRUE
 
 	update_icon()
@@ -271,7 +271,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 			return TRUE
 
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
-	if(!own_set(src, "suit", IS, user = user))
+	if(!own_set(src, nameof(src.suit), IS, user = user))
 		return TRUE
 
 	update_icon()

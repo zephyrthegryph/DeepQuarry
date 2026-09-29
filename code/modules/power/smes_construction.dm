@@ -396,7 +396,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 
 		to_chat(user, "You install the coil into the SMES unit!")
 		cur_coils ++
-		if(!own_add(src, "component_parts", W, user = user))
+		if(!own_add(src, nameof(src.component_parts), W, user = user))
 			return TRUE
 		recalc_coils()
 	else

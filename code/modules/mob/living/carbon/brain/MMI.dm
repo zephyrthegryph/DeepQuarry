@@ -34,7 +34,7 @@
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
 	if(B)
 		B.preserved = TRUE
-	own_set(src, "brainobj", B, into = TRUE)
+	own_set(src, nameof(src.brainobj), B, into = TRUE)
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 

@@ -17,7 +17,7 @@
 
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	own_add(src, "aipictures", p, into = TRUE)
+	own_add(src, nameof(src.aipictures), p, into = TRUE)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
 

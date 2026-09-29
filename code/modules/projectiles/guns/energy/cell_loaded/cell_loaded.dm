@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
-		if(!own_add(src, "stored_ammo", B, user = user))
+		if(!own_add(src, nameof(src.stored_ammo), B, user = user))
 			return
 		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)

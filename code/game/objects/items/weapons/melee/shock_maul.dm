@@ -168,7 +168,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appeara
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!bcell)
-				if(!own_set(src, "bcell", W, user = user))
+				if(!own_set(src, nameof(src.bcell), W, user = user))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()

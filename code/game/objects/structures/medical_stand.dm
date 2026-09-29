@@ -334,7 +334,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		else if(!is_loosen)
 			to_chat(user, span_warning("Loosen the nut with a wrench first."))
 		else
-			if(!own_set(src, "tank", W, user = user))
+			if(!own_set(src, nameof(src.tank), W, user = user))
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
@@ -345,7 +345,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(!isnull(src.beaker))
 			to_chat(user, "There is already a reagent container loaded!")
 			return TRUE
-		if(!own_set(src, "beaker", W, user = user))
+		if(!own_set(src, nameof(src.beaker), W, user = user))
 			return TRUE
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()

@@ -1,6 +1,6 @@
 /obj/item/rig/proc/install_module_done(mob/living/user, obj/item/rig_module/mod)
 	to_chat(user, "You install \the [mod] into \the [src].")
-	if(!own_add(src, "installed_modules", mod, user = user))
+	if(!own_add(src, nameof(src.installed_modules), mod, user = user))
 		return
 	mod.installed(src)
 	update_icon()
@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 				return INTERACTION_HANDLED_PASS
 
 
-			if(!own_set(src, "air_supply", W, user = user))
+			if(!own_set(src, nameof(src.air_supply), W, user = user))
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 			return INTERACTION_HANDLED_PASS
@@ -92,7 +92,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		else if(!cell && istype(W,/obj/item/cell))
 
 			to_chat(user, "You jack \the [W] into \the [src]'s battery mount.")
-			if(!own_set(src, "cell", W, user = user))
+			if(!own_set(src, nameof(src.cell), W, user = user))
 				return INTERACTION_HANDLED_PASS
 			return INTERACTION_HANDLED_PASS
 

@@ -319,7 +319,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 		var/mob/living/M = H.held_mob
 
-		own_add(src, "victims", M, user = user, into = TRUE) // out of the holder
+		own_add(src, nameof(src.victims), M, user = user, into = TRUE) // out of the holder
 		rel_clear(H, "held_mob")
 		consume(H, user)
 

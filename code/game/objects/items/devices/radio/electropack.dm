@@ -41,11 +41,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 		A.icon = 'icons/obj/assemblies.dmi'
 
 		rel_set(W, "master", A)
-		if(!own_set(A, "part1", W, user = user))
+		if(!own_set(A, nameof(A.part1), W, user = user))
 			return TRUE
 
 		rel_set(src, "master", A)
-		if(!own_set(A, "part2", src, user = user))
+		if(!own_set(A, nameof(A.part2), src, user = user))
 			return TRUE
 
 		user.put_in_hands(A)

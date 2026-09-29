@@ -50,7 +50,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
 	if(!powered())
 		return TRUE
-	if(!inserted_id && own_set(src, "inserted_id", I, user = user))
+	if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -162,7 +162,7 @@ UI_ACT(/obj/machinery/mineral/processing_unit_console, "insert", ui_act_insert)
 UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
 	var/obj/item/card/id/I = ui.user.get_active_hand()
 	if(istype(I))
-		own_set(src, "inserted_id", I, user = ui.user)
+		own_set(src, nameof(src.inserted_id), I, user = ui.user)
 	else
 		to_chat(ui.user, span_warning("No valid ID."))
 	. = TRUE

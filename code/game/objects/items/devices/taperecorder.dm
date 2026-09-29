@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	return TRUE
 
 /obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!own_set(src, "mytape", I, user = user))
+	if(!own_set(src, nameof(src.mytape), I, user = user))
 		return TRUE
 	to_chat(user, span_notice("You insert [I] into [src]."))
 	update_icon()

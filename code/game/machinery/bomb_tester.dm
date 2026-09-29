@@ -98,7 +98,7 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	return !tank1 || !tank2
 
 /obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
-	var/adopted = tank1 ? own_set(src, "tank2", I, user = user) : own_set(src, "tank1", I, user = user)
+	var/adopted = tank1 ? own_set(src, nameof(src.tank2), I, user = user) : own_set(src, nameof(src.tank1), I, user = user)
 	if(!adopted)
 		return TRUE
 	update_icon()

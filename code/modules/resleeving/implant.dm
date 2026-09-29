@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 /// Old attackby.
 /obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
 	if(LAZYLEN(imps) < max_implants)
-		if(!own_add(src, "imps", W, user = user))
+		if(!own_add(src, nameof(src.imps), W, user = user))
 			return INTERACTION_HANDLED_PASS
 		W.germ_level = 0
 		update()

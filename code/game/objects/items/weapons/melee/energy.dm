@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 	if(use_cell)
 		if(istype(W, cell_type))
 			if(!bcell)
-				if(!own_set(src, "bcell", W, user = user))
+				if(!own_set(src, nameof(src.bcell), W, user = user))
 					return FALSE
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()

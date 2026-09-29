@@ -68,7 +68,7 @@
 	R.add_overlay(stampoverlay)
 	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
 	var/obj/item/smallDelivery/D = new(R.loc)
-	own_set(D, "wrapped", R, into = TRUE)
+	own_set(D, nameof(D.wrapped), R, into = TRUE)
 	D.name = "small parcel - 'EFTPOS access code'"
 
 // TGUI migration. attack_self opens Eftpos.tsx; the

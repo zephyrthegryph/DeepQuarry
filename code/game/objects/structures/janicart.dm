@@ -131,7 +131,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 /obj/structure/janitorialcart/proc/interaction_drag(mob/living/user, atom/movable/O, datum/interaction/interaction)
 	if (istype(O, /obj/structure/mopbucket) && !mybucket)
-		own_set(src, "mybucket", O, user = user, into = TRUE)
+		own_set(src, nameof(src.mybucket), O, user = user, into = TRUE)
 		setTguiIcon("mybucket", mybucket)
 		user.balloon_alert(user, "you mount the [O] on the janicart.")
 		update_icon()

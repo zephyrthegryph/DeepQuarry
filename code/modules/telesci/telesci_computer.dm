@@ -88,7 +88,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 /obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!inserted_gps)
-		if(!own_set(src, "inserted_gps", W, user = user))
+		if(!own_set(src, nameof(src.inserted_gps), W, user = user))
 			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
 	return TRUE
