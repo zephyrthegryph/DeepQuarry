@@ -470,13 +470,25 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	if(tgs_prime)
 		world.TgsInitializationComplete()
 
-	if(sleep_offline_after_initializations)
+	// Decide before sleeping: with sleep_offline set and no client connected, BYOND stops
+	// advancing world.time, so a sleep(1 TICKS) followed by "resume" never returns until a
+	// player or Topic() wakes the world -- RESUME_AFTER_INITIALIZATIONS was silently ignored
+	// and an empty server sat frozen in pregame with the MC parked.
+	// Only ever switch it on: writing sleep_offline when it doesn't need to change has been
+	// seen to leave a clientless world parked (see the TGS note on BYOND forum post 2894866).
+	if(post_init_sleep_offline(FALSE, CONFIG_GET(flag/resume_after_initializations)))
 		world.sleep_offline = TRUE
+	log_world("MC: post-init sleep_offline=[world.sleep_offline] (resume_after_initializations=[CONFIG_GET(flag/resume_after_initializations)])")
 	sleep(1 TICKS) // ALLOW(scheduler): MC
-
-	if(sleep_offline_after_initializations && CONFIG_GET(flag/resume_after_initializations))
-		world.sleep_offline = FALSE
 	initializations_finished_with_no_players_logged_in = initialized_tod < REALTIMEOFDAY - 10
+
+/// TRUE when the world should sleep offline once initialization completes (kept separate so a test can pin it).
+/// RESUME_AFTER_INITIALIZATIONS must win here, before the post-init sleep: an empty world with
+/// sleep_offline set stops advancing world.time, so nothing after that sleep would run.
+/datum/controller/master/proc/post_init_sleep_offline(current, resume)
+	if(!sleep_offline_after_initializations)
+		return current
+	return !resume
 
 /**
  * Initialize a given subsystem and handle the results.

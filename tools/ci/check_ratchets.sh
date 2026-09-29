@@ -38,8 +38,13 @@ for lint in \
 	init_lint.py \
 	decl_lint.py \
 	organ_slots_lint.py \
+<<<<<<< HEAD
 	cache_lint.py \
 	stance_examine_lint.py; do
+=======
+	stance_examine_lint.py \
+	static_ref_new_lint.py; do
+>>>>>>> 8917247920 (Fix post-init MC stall and species copy lifecycle)
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")
