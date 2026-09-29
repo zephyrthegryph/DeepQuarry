@@ -57,35 +57,35 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("set_network")
-			Topic("network=1", list("network" = "1"))
+			traffic_set_network(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("scan")
-			Topic("operation=scan", list("operation" = "scan"))
+			traffic_operation(ui.user, "scan")
 			SStgui.update_uis(src)
 			return TRUE
 		if("flush_buffer")
-			Topic("operation=release", list("operation" = "release"))
+			traffic_operation(ui.user, "release")
 			SStgui.update_uis(src)
 			return TRUE
 		if("view_server")
 			var/id = "[params["id"]]"
-			Topic("viewserver=[id]", list("viewserver" = id))
+			traffic_view_server(ui.user, id)
 			SStgui.update_uis(src)
 			return TRUE
 		if("main_menu")
-			Topic("operation=mainmenu", list("operation" = "mainmenu"))
+			traffic_operation(ui.user, "mainmenu")
 			SStgui.update_uis(src)
 			return TRUE
 		if("refresh")
-			Topic("operation=refresh", list("operation" = "refresh"))
+			traffic_operation(ui.user, "refresh")
 			SStgui.update_uis(src)
 			return TRUE
 		if("edit_code")
-			Topic("operation=editcode", list("operation" = "editcode"))
+			traffic_operation(ui.user, "editcode")
 			SStgui.update_uis(src)
 			return TRUE
 		if("toggle_run")
-			Topic("operation=togglerun", list("operation" = "togglerun"))
+			traffic_operation(ui.user, "togglerun")
 			SStgui.update_uis(src)
 			return TRUE

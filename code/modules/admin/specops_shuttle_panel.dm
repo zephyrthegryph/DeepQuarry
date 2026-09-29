@@ -51,10 +51,10 @@
 		return
 	switch(action)
 		if("send_to_dock")
-			Topic("sendtodock=1", list("sendtodock" = "1"))
+			specops_send_to_dock(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
 		if("send_to_station")
-			Topic("sendtostation=1", list("sendtostation" = "1"))
+			specops_send_to_station(ui.user)
 			SStgui.update_uis(src)
 			return TRUE
