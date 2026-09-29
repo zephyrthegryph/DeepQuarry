@@ -19,6 +19,7 @@ benchmarks excluded). A site whose line (or the comment line above it) carries
     python tools/ci/sys_lint.py --update     # drop fixed sites from the baselines (never adds)
     python tools/ci/sys_lint.py --seed SYSTEM  # create a baseline for a new system
     python tools/ci/sys_lint.py --only SYSTEM  # restrict to one system module
+    python tools/ci/sys_lint.py --selftest     # run every module's selftest() fixtures
 """
 import glob
 import importlib.util
@@ -80,10 +81,26 @@ def run_module(mod, files, raw):
     return out
 
 
+def selftest(only=None):
+    """Runs selftest() of every module that has one (fixtures inline in the module)."""
+    ran = []
+    for name, mod in modules():
+        if only and name != only:
+            continue
+        test = getattr(mod, "selftest", None)
+        if test:
+            test()
+            ran.append(name)
+    print("sys_lint selftest ok: %s" % (", ".join(ran) or "no module has a selftest"))
+    return 0
+
+
 def main(argv):
     only = None
     if "--only" in argv:
         only = argv[argv.index("--only") + 1]
+    if "--selftest" in argv:
+        return selftest(only)
     seed = None
     if "--seed" in argv:
         seed = argv[argv.index("--seed") + 1]

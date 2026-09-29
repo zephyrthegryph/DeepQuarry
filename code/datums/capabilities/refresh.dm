@@ -50,17 +50,21 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 /atom/proc/draw(datum/look/look)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	// Not SHOULD_BE_PURE yet: caps_of() memoizes through a shared_cache, which DreamChecker counts
+	// as impure (design review H5; the capability draw() hooks are pure).
 	for(var/datum/capability/C as anything in caps_of(src))
 		C.draw(src, look)
 
 /// TRUE while periodic_step(dt) should run on `periodic_cadence`. Re-evaluated on change.
 /datum/proc/should_run()
 	SHOULD_NOT_SLEEP(TRUE)
+	SHOULD_BE_PURE(TRUE)
 	return FALSE
 
 /// The verbs to hide right now. Call ..() (capabilities hide theirs). Re-evaluated on change.
 /atom/proc/hidden_verbs()
 	SHOULD_NOT_SLEEP(TRUE)
+	// Not SHOULD_BE_PURE yet: caps_of() memoizes (see draw()).
 	return caps_hidden_verbs()
 
 /// Side effects of a state change (a Rust device sync, a network rebuild), coalesced to once per

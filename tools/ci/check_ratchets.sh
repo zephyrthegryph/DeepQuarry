@@ -8,6 +8,12 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
+# Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
+for lint in ui_actions_lint.py sys_lint.py; do
+	if ! "$PY" "tools/ci/$lint" --selftest; then
+		failed+=("$lint --selftest")
+	fi
+done
 for lint in \
 	allow_annotations.py \
 	scheduler_lints.py \

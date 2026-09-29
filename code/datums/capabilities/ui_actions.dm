@@ -9,9 +9,10 @@
 // tgui_act() finds `ui_<action>` on the host and calls it as
 // call(src, proc)(arglist(list("user" = user) + params)). An argument name the proc doesn't declare
 // is a runtime, caught by dispatch_call(), logged and refused. Types are not enforced by DM: the
-// body validates with ui_number/ui_text/ui_choice/ui_ref. ui_allowed() is the type-wide gate, and
+// body validates with ui_number/ui_text/ui_choice/ui_ref/ui_bool. ui_allowed() is the type-wide gate, and
 // ui_logged() says which actions are logged. tools/ci/ui_actions_lint.py checks that every TSX
-// act() names an existing ui_ proc with matching argument names.
+// act() names an existing ui_ proc with matching argument names, that every ui_ parameter is sent
+// by some act() (C1), and that each parameter's first use is a validator or a constant compare (C2).
 
 /// The type-wide gate for every ui_<action>: FALSE refuses silently.
 /datum/proc/ui_allowed(mob/user, action)
@@ -90,3 +91,14 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 	if(!D || (type && !istype(D, type)))
 		return null
 	return D
+
+/// A boolean from the client: TRUE for true/1/"1"/"true", FALSE for any other scalar (null, 0, other
+/// text or numbers), null for a non-scalar (a list or a datum) so a malformed payload is refused.
+/proc/ui_bool(value)
+	if(isnull(value))
+		return FALSE
+	if(isnum(value))
+		return value == 1
+	if(istext(value))
+		return value == "1" || lowertext(value) == "true"
+	return null

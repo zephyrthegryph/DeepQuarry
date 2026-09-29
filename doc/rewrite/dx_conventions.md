@@ -165,11 +165,18 @@ gating vars are `key`, `behind`, `locked_by`, `needs`, `else_say`, `works_broken
   `call(src, "ui_[action]")(arglist(list("user" = user) + params))`. An argument name the proc
   doesn't declare is a runtime, which the dispatcher catches, logs and refuses.
 - **Validation.** DM doesn't enforce the argument types, so the body validates them with
-  `ui_number(x, min, max)`, `ui_text(x, max_length)`, `ui_choice(x, list)` and
-  `ui_ref(x, list, type)`, and refuses with `refuse(user, text)`.
+  `ui_number(x, min, max)`, `ui_text(x, max_length)`, `ui_choice(x, list)`,
+  `ui_ref(x, list, type)` and `ui_bool(x)`, and refuses with `refuse(user, text)`. The first use of
+  every parameter must be one of those validators (or `!!x`, `switch(x)`, or a compare against a
+  constant); a helper proc that validates its own parameter first counts.
+- **Every parameter is client-facing.** Each parameter except `user` must be sent by some TSX
+  `act()`. An internal flag (`force`, `silent`) goes on a separate internal proc, since a client
+  could set any parameter by naming it.
 - **Gating and logging.** `ui_allowed(mob/user, action)` is the type-wide gate. `ui_logged()` is
   a per-type list mapping actions to log levels.
-- **CI** checks that every TSX `act()` names an existing `ui_` proc with matching argument names.
+- **CI** (`ui_actions_lint.py`) checks that every TSX `act()` names an existing `ui_` proc with
+  matching argument names, that every parameter is sent by some `act()` (C1), and that each is
+  validated before use (C2).
 - **Removed:** `DECLARE_UI`, `UI_ACT*`, `UI_DATA*`, `UI_ARG_*` and the generated tables.
 
 ## 6. Prompts
@@ -225,8 +232,23 @@ Every old form is banned once its migration lands, each with a baseline of 0.
 - **`dx_manual_fingerprint_log`:** fingerprint or log calls in dispatched handlers.
 - **`dx_manual_transfer`:** `drop_item()`/`forceMove(src)` around `own_set`.
 - **`dx_raw_delay`:** decisecond literals.
-- **`dx_string_names`:** a string literal where a var name goes.
-- **`ui_actions_lint`:** a TSX `act()` that doesn't match a `ui_` proc.
+- **`dx_string_names`:** a string literal where a var name goes (the second argument of
+  `own_*`/`rel_*`/`om_set`/`timed_set`/`time_left`/`timed_cancel`); ratcheted.
+- **`dx_raw_overlays`:** `add_overlay`/`cut_overlay(s)`/`overlays +=`/`overlays -=` outside the
+  look builder and the legacy appearance runtime; ratcheted.
+- **`dx_untracked_read`:** a reactive proc (`draw`, `should_run`, `hidden_verbs`, `tgui_data`,
+  a capability's `draw`/`gate`/`ui_data`/`examine`/`hidden_verbs`, a `needs =` proc) reads another
+  object's var that isn't TRACKED (or `set_<var>`) or reached through a watched relation. Static:
+  matched by var name; `tools/ci/sys_rules/dx_reactive.py` lists the limits.
+- **`dx_caps_instance_read`:** `capabilities()` reads an instance var.
+- **`dx_timed_write`:** a var handed to `timed_set()` written other than through it or its setter.
+- **`ui_actions_lint`:** a TSX `act()` that doesn't match a `ui_` proc; a `ui_` parameter no
+  `act()` sends (`ui_unsent_param`); a `ui_` parameter used before a validator
+  (`ui_unvalidated_param`).
+- **Purity (DreamChecker):** `should_run()` and the capability `draw`/`gate`/`ui_data`/`examine`/
+  `hidden_verbs` hooks carry `SHOULD_BE_PURE(TRUE)`. `/atom/draw()` and `/atom/hidden_verbs()` don't
+  yet, because `caps_of()` memoizes through a shared_cache, and neither does `tgui_data()`, whose
+  legacy overrides write state.
 - **`allow_tags`:** an unregistered `ALLOW()` tag.
 - **`doc_snippets`:** a complete ```` ```dm ```` block in `doc/rewrite` that doesn't compile.
   ```` ```dm before ```` and ```` ```dm fragment ```` blocks are skipped.

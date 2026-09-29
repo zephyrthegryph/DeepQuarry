@@ -36,25 +36,32 @@
 
 /// Examine lines for user, in list order.
 /datum/capability/proc/examine(atom/holder, mob/user)
+	SHOULD_BE_PURE(TRUE)
 	return null
 
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
 /datum/capability/proc/draw(atom/holder, datum/look/look)
+	SHOULD_NOT_SLEEP(TRUE)
+	SHOULD_BE_PURE(TRUE)
 	return
 
 /// Adds keys to the holder's tgui_data().
 /datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
+	SHOULD_BE_PURE(TRUE)
 	return
 
 /// Gates ANOTHER entry: null lets it through, text refuses with that reason. The cover gates
 /// every entry whose `behind` includes COVER while it is closed; the lock does the same for
 /// `locked_by`.
 /datum/capability/proc/gate(atom/holder, mob/user, datum/interaction/entry)
+	SHOULD_NOT_SLEEP(TRUE)
+	SHOULD_BE_PURE(TRUE)
 	return null
 
 /// Verbs to hide on holder right now (re-evaluated on change).
 /datum/capability/proc/hidden_verbs(atom/holder)
+	SHOULD_BE_PURE(TRUE)
 	return null
 
 /// Native verbs this capability adds to its holder type.
