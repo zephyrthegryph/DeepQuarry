@@ -146,7 +146,7 @@
 		rel_clear(src, "cameraFollow")
 
 	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
-	var/mob/target = target_ref ? locate(target_ref) in track.tracked : null
+	var/mob/target = target_ref ? locate_in_list(track.tracked, target_ref) : null
 	own_clear(src, "track", OWN_DELETE)
 	ai_actual_track(target)
 

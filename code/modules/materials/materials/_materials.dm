@@ -454,8 +454,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 /// Material name -> the stack recipes usable with a sheet of that material. Materials are
 /// registered DEF singletons frozen after boot, so the recipe table lives here, built on first use.
 /// The recipes are shared by every stack of the material; never write the returned list.
-GLOBAL_LIST_EMPTY(material_recipe_cache)
-
+GLOBAL_LIST_EMPTY(material_recipe_cache) // ALLOW(cache): recipe objects built on first use per material and kept off the frozen material definition; a shared cache would intern and snapshot the objects
 /datum/material/proc/get_recipes()
 	var/list/cached = GLOB.material_recipe_cache[name]
 	if(!islist(cached))

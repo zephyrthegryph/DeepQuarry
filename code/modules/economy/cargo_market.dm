@@ -447,12 +447,12 @@
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
 		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && world.time < existing_listing.expires_at))
-			qdel(own_take_member(src, "market_listings", listing_id))
+			own_put(src, "market_listings", listing_id, null) // disposes of the owned listing
 	var/list/bid_ids = market_bids?.Copy()
 	for(var/bid_id in bid_ids)
 		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
 		if(!(existing_bid.reservation_key && !existing_bid.completed_at && world.time < existing_bid.expires_at))
-			qdel(own_take_member(src, "market_bids", bid_id))
+			own_put(src, "market_bids", bid_id, null) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
 	for(var/counterparty_id in market_counterparties)

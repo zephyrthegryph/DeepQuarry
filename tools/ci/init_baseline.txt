@@ -5387,7 +5387,7 @@ world_reads	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_n
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	qdel(GLOB.ai_camera_room_landmark)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
 world_reads	code/modules/mob/living/silicon/pai/pai.dm	internal_set_chassis( GLOB.pai_service.chassis_data(chassis_name))
-world_reads	code/modules/mob/living/silicon/pai/software.dm	software = GLOB.default_pai_software.Copy()
+world_reads	code/modules/mob/living/silicon/pai/software.dm	for(var/id in GLOB.default_pai_software)
 world_reads	code/modules/mob/living/silicon/silicon.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 world_reads	code/modules/mob/living/simple_mob/simple_mob.dm	languages |= GLOB.all_languages[L]
 world_reads	code/modules/mob/living/simple_mob/subtypes/animal/alien animals/jellyfish.dm	GLOB.jellyfish_count ++

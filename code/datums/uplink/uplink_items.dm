@@ -15,7 +15,7 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
-			qdel(item) // an abstract uplink item: nothing adopts it
+			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
 			continue
 
 		own_add(src, "items", item)

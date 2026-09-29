@@ -427,7 +427,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 		prize_list["Extra"] = extra
 	var/datum/data/mining_equipment/old_entry = extra[name]
 	if(old_entry)
-		qdel(old_entry)
+		qdel(old_entry) // ALLOW(lifecycle): the vendor's own catalogue entry, replaced by the new one below
 	extra[name] = new /datum/data/mining_equipment(name, path, cost)
 	dirty_items = TRUE
 

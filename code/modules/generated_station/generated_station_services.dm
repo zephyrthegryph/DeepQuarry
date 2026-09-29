@@ -291,7 +291,7 @@
 			qdel(definition)
 			for(var/datum/generated_station_module/failed_module as anything in department_modules)
 				if(!own_remove(result, "modules", failed_module))
-					qdel(failed_module)
+					qdel(failed_module) // ALLOW(lifecycle): a planned module the failed result never adopted
 			department_modules.Cut()
 			return FALSE
 		var/has_authored_fragment = length(definition.fragment_options)
