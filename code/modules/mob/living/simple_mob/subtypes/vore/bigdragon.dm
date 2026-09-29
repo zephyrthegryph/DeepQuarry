@@ -748,7 +748,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	om_after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
+	after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -789,7 +789,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)

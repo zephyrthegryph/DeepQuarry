@@ -6,7 +6,7 @@
  *
  *	/obj/structure/frame/capabilities()
  *		. = ..()
- *		. += cap_frame_ladder()
+ *		. += cap_frame_ladder()	// a proc on the frame
  *
  * Which of the frame's steps are offered depends on its frame class (machine, computer, display,
  * alarm) and on whether it came with its board (then it has an outer cover instead of a board to
@@ -27,18 +27,13 @@
  * cap_deconstruct(board = /obj/item/circuitboard/x): with the panel open (`behind`), a crowbar
  * dismantles the machine into its frame. Works broken and unpowered.
  */
-/proc/cap_deconstruct(board, behind = PANEL, locked_by = NONE, needs, else_say, log = LOG_GAME)
+/proc/cap_deconstruct(board, behind = PANEL, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log = LOG_GAME)
 	var/datum/capability/deconstruct/made = new
 	made.board = board
-	made.behind = behind
-	made.locked_by = locked_by
-	made.needs = needs
-	made.else_say = else_say
-	made.log = log
-	made.works_broken = TRUE
-	made.works_unpowered = TRUE
-	return made
+	return cap_gating(made, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs,
+		else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+/// One crowbar entry; its gating comes from the capability (cap_apply_gating()).
 /datum/capability/deconstruct/interactions(atom/holder)
 	if(!dismantle)
 		var/datum/interaction/capability/entry = new
@@ -48,16 +43,10 @@
 		entry.tool = TOOL_CROWBAR
 		entry.category = INTERACTION_CAT_MAINTAIN
 		entry.default_action = INPUT_ACTION_USE
-		entry.behind = behind
-		entry.locked_by = locked_by
-		entry.needs = needs
-		entry.else_say = else_say
 		entry.works_broken = TRUE
 		entry.works_unpowered = TRUE
-		entry.log = log
-		entry.cap = src
 		entry.apply_stance_tags()
-		dismantle = entry
+		own_set(src, nameof(src.dismantle), entry)
 	return list(dismantle)
 
 /datum/capability/deconstruct/examine(atom/holder, mob/user)
@@ -73,43 +62,49 @@
 // ---- The standard frame ladder ----
 
 /**
- * The frame's ladder. Its stage is the frame's `state` (FRAME_*), plus "loose" for a placed frame
- * that isn't wrenched down; frame_ladder_stage() names them.
+ * cap_frame_ladder(): the frame's ladder. Its stage is the frame's `state` (FRAME_*), plus "loose"
+ * for a placed frame that isn't wrenched down; frame_ladder_stage() names them. It is a proc on the
+ * frame, the only holder its hooks exist on, so they are plain PROC_REFs (it reads no instance var).
  */
-/proc/cap_frame_ladder()
+/obj/structure/frame/proc/cap_frame_ladder()
 	return cap_construction(
-		ladder_options(state = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_stage), store = TYPE_PROC_REF(/obj/structure/frame, set_frame_ladder_stage), starts = list("placed")),
-		stage("loose",
+		ladder_options(state = PROC_REF(frame_ladder_stage), store = PROC_REF(set_frame_ladder_stage), starts = list("placed")),
+		stage("loose", also = list(frame_ladder_cut_branch(),
+			branch("board fastened", cap_tool(quality = TOOL_WRENCH, delay = 2 SECONDS), say = "wrench %T% into place and set its cover",
+				when = PROC_REF(frame_ladder_fitted_board), on_enter = PROC_REF(frame_ladder_cover_set)))),
+		stage("placed", build = cap_tool(quality = TOOL_WRENCH, delay = 2 SECONDS), undo = cap_tool(quality = TOOL_WRENCH, delay = 2 SECONDS), anchored = TRUE,
+			when = PROC_REF(frame_ladder_no_fitted_board), also = list(frame_ladder_cut_branch())),
+		stage("board in", build = cap_insert(held_type = /obj/item/circuitboard, needs = PROC_REF(frame_ladder_board_fits)),
+			sfx = SFX_ITEMS_DECONSTRUCT, when = PROC_REF(frame_ladder_wants_board),
+			undo = cap_tool(quality = TOOL_CROWBAR), undo_say = "pry the circuit board out of %T%", undo_when = PROC_REF(frame_ladder_own_board),
+			on_enter = PROC_REF(frame_ladder_board_in), on_leave = PROC_REF(frame_ladder_board_out)),
+		stage("board fastened", build = cap_tool(quality = TOOL_SCREWDRIVER), say = "screw the circuit board into %T%",
+			undo = cap_tool(quality = TOOL_SCREWDRIVER), undo_say = "unscrew the circuit board in %T%", undo_when = PROC_REF(frame_ladder_own_board),
+			also = list(branch("placed", cap_tool(quality = TOOL_SCREWDRIVER), say = "unfasten %T%'s outer cover",
+				when = PROC_REF(frame_ladder_fitted_board)))),
+		stage("wired", build = cap_use_on(held_type = /obj/item/stack/cable_coil, delay = 2 SECONDS), uses = 5, sfx = SFX_ITEMS_DECONSTRUCT,
+			undo = cap_tool(quality = TOOL_WIRECUTTER),
+			on_enter = PROC_REF(frame_ladder_wired), on_leave = PROC_REF(frame_ladder_unwired),
 			also = list(
-				branch("board fastened", with_tool(TOOL_WRENCH, 2 SECONDS), say = "wrench %T% into place and set its cover",
-					when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_fitted_board), on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_cover_set)),
-				branch(LADDER_DONE, with_tool(TOOL_WELDER, 2 SECONDS), say = "cut %T% apart", on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_cut_apart)))),
-		stage("placed", build = with_tool(TOOL_WRENCH, 2 SECONDS), undo = with_tool(TOOL_WRENCH, 2 SECONDS), anchored = TRUE,
-			when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_no_fitted_board),
-			also = list(branch(LADDER_DONE, with_tool(TOOL_WELDER, 2 SECONDS), say = "cut %T% apart", on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_cut_apart)))),
-		stage("board in", build = inserting(/obj/item/circuitboard, sfx = SFX_ITEMS_DECONSTRUCT), undo = with_tool(TOOL_CROWBAR), undo_say = "pry the circuit board out of %T%",
-			when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_wants_board), undo_when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_own_board),
-			needs = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_board_fits),
-			on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_board_in), on_leave = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_board_out)),
-		stage("board fastened", build = with_tool(TOOL_SCREWDRIVER), undo = with_tool(TOOL_SCREWDRIVER), say = "screw the circuit board into %T%", undo_say = "unscrew the circuit board in %T%",
-			undo_when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_own_board),
-			also = list(branch("placed", with_tool(TOOL_SCREWDRIVER), say = "unfasten %T%'s outer cover", when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_fitted_board)))),
-		stage("wired", build = using(/obj/item/stack/cable_coil, amount = 5, delay = 2 SECONDS, sfx = SFX_ITEMS_DECONSTRUCT), undo = with_tool(TOOL_WIRECUTTER),
-			on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_wired), on_leave = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_unwired),
-			also = list(
-				branch("wired", with_tool(TOOL_CROWBAR), say = "pry the components out of %T%", when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_is_machine),
-					on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_components_out)),
-				branch(LADDER_DONE, with_tool(TOOL_SCREWDRIVER), say = "finish %T%", when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_is_machine), priority = 11,
-					needs = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_has_components), else_say = "it is missing components",
-					on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_finish_machine)),
-				branch(LADDER_DONE, with_tool(TOOL_SCREWDRIVER), say = "fasten %T%'s cover", when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_is_alarm),
-					on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_finish_alarm)))),
-		stage("paneled", build = using(/obj/item/stack/material/glass, amount = 2, delay = 2 SECONDS, match = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_plain_glass), name = "glass sheets", sfx = SFX_ITEMS_DECONSTRUCT),
-			undo = with_tool(TOOL_CROWBAR), undo_say = "pry the glass panel out of %T%",
-			when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_has_screen), undo_when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_has_screen),
-			also = list(branch(LADDER_DONE, with_tool(TOOL_SCREWDRIVER), say = "connect %T%'s monitor", when = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_has_screen),
-				on_enter = TYPE_PROC_REF(/obj/structure/frame, frame_ladder_finish_screen)))),
+				branch("wired", cap_tool(quality = TOOL_CROWBAR), say = "pry the components out of %T%",
+					when = PROC_REF(frame_ladder_is_machine), on_enter = PROC_REF(frame_ladder_components_out)),
+				branch(LADDER_DONE, cap_tool(quality = TOOL_SCREWDRIVER), say = "finish %T%", priority = 11,
+					when = PROC_REF(frame_ladder_is_machine), on_enter = PROC_REF(frame_ladder_finish_machine),
+					needs = PROC_REF(frame_ladder_has_components), else_say = "it is missing components"),
+				branch(LADDER_DONE, cap_tool(quality = TOOL_SCREWDRIVER), say = "fasten %T%'s cover",
+					when = PROC_REF(frame_ladder_is_alarm), on_enter = PROC_REF(frame_ladder_finish_alarm)))),
+		stage("paneled", build = cap_use_on("glass sheets", /obj/item/stack/material/glass, delay = 2 SECONDS,
+				needs = PROC_REF(frame_ladder_plain_glass), else_say = "it needs plain glass"),
+			uses = 2, sfx = SFX_ITEMS_DECONSTRUCT, when = PROC_REF(frame_ladder_has_screen),
+			undo = cap_tool(quality = TOOL_CROWBAR), undo_say = "pry the glass panel out of %T%", undo_when = PROC_REF(frame_ladder_has_screen),
+			also = list(branch(LADDER_DONE, cap_tool(quality = TOOL_SCREWDRIVER), say = "connect %T%'s monitor",
+				when = PROC_REF(frame_ladder_has_screen), on_enter = PROC_REF(frame_ladder_finish_screen)))),
 	)
+
+/// Welding the frame apart, from a loose or placed frame (each stage owns its own branch).
+/obj/structure/frame/proc/frame_ladder_cut_branch()
+	return branch(LADDER_DONE, cap_tool(quality = TOOL_WELDER, delay = 2 SECONDS), say = "cut %T% apart",
+		on_enter = PROC_REF(frame_ladder_cut_apart))
 
 /// The frame's stage name, from its FRAME_* `state` and whether it is wrenched down.
 /obj/structure/frame/proc/frame_ladder_stage()
@@ -171,7 +166,7 @@
 	return has_all_components(user, src, held)
 
 /// Plain glass only, not its reinforced or phoron kinds.
-/obj/structure/frame/proc/frame_ladder_plain_glass(obj/item/held)
+/obj/structure/frame/proc/frame_ladder_plain_glass(mob/user, obj/item/held)
 	return held.get_material_name() == MAT_GLASS
 
 /obj/structure/frame/proc/frame_ladder_cover_set(mob/user, obj/item/held, from)
@@ -181,16 +176,16 @@
 /obj/structure/frame/proc/frame_ladder_cut_apart(mob/user, obj/item/held, from)
 	replace_with(src, /obj/item/stack/material/steel, frame_type.frame_size)
 
-/// The board went in (inserting() moved it into the frame).
+/// The board went in (the cap_insert() cost moved it into the frame).
 /obj/structure/frame/proc/frame_ladder_board_in(mob/user, obj/item/held, from)
-	own_set(src, nameof(circuit), held)
+	own_set(src, nameof(src.circuit), held)
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		check_components()
 		update_desc()
 
 /// The board is coming back out (the undo then moves it to the floor).
 /obj/structure/frame/proc/frame_ladder_board_out(mob/user, obj/item/held, destination)
-	own_take(src, nameof(circuit))
+	own_take(src, nameof(src.circuit))
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		req_components = null
 	update_desc()

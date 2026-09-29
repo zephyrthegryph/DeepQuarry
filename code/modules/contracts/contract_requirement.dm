@@ -383,7 +383,7 @@ OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 		return FALSE
 	var/token = event.id
 	pending_tokens[entity_key] = token
-	om_after_slot(src, "pending:[entity_key]", duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
+	after_slot(src, "pending:[entity_key]", duration, PROC_REF(complete_duration), entity_key, token, event.actor_account, event.value("detail"))
 	return TRUE
 
 /datum/contract_requirement/sustained_event/proc/complete_duration(entity_key, token, contributor_account, detail)
@@ -482,7 +482,7 @@ OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	om_after_slot(src, "pending:[stage_key]", max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
+	after_slot(src, "pending:[stage_key]", max(1, stage["duration"]), PROC_REF(complete_stage), stage_key, stage_index, token, event.actor_account, event.value("detail"))
 	changed = TRUE
 	return changed
 

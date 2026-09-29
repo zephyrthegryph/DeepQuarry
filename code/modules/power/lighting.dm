@@ -1047,7 +1047,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		om_cancel_timer_slot(src, "light_timer_token")
 	light_timer_at = deadline
 	if(deadline)
-		om_after_slot(src, "light_timer_token", max(deadline - world.time, 0), PROC_REF(light_timer_fired))
+		after_slot(src, "light_timer_token", max(deadline - world.time, 0), PROC_REF(light_timer_fired))
 
 /obj/machinery/light/proc/light_timer_fired()
 	light_timer_at = 0

@@ -41,9 +41,9 @@ OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
 		om_cancel_timer_slot(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
-		om_after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
+		after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
 	else
-		om_after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
+		after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY

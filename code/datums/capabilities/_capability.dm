@@ -82,3 +82,19 @@
 	return
 /datum/capability/proc/on_holder_destroy(atom/holder)
 	return
+
+// ---- periodic work (until the core's systems() hook lands) ----
+
+/datum/capability
+	/// The periodic pipeline (PERIODIC_*) this capability steps on, or null for none. The holder
+	/// takes it as its periodic_cadence at init when it declares none of its own.
+	var/cadence
+
+/// TRUE while this capability has periodic work on holder. Pure: re-evaluated on change through
+/// the holder's should_run().
+/datum/capability/proc/cap_should_run(atom/holder)
+	return FALSE
+
+/// One periodic step on holder (delta: the pipeline's step, as periodic_step() gets it).
+/datum/capability/proc/cap_periodic_step(atom/holder, delta)
+	return

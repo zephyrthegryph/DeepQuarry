@@ -407,7 +407,7 @@ OWN_TIMER(/datum/affliction/core_dormancy, reboot_timer)
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		om_after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
+		after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,

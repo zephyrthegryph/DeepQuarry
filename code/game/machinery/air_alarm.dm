@@ -1093,7 +1093,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 		return
 	var/delay_time = rand(0,15)
 	if(delay_time)
-		om_after_slot(src, "power_settle", delay_time, PROC_REF(process_power_change))
+		after_slot(src, "power_settle", delay_time, PROC_REF(process_power_change))
 		return
 	process_power_change()
 

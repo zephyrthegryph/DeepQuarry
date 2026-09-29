@@ -9,13 +9,20 @@
 
 /// Takes the entry out of a one-entry wrapper built by cap_hand()/cap_tool()/cap_use_on()/cap_insert(),
 /// makes src its capability and, with `id`, gives it a stable id (the predicate cache key: it must
-/// differ wherever the tool or held type differs).
-/datum/capability/proc/adopt_entry(datum/capability/entry/wrapper, id)
+/// differ wherever the tool or held type differs). category: overrides the constructor's;
+/// empty_handed: offered only to an empty hand; pass_cap: the handler also gets this capability as
+/// the named arg `cap` (review 2 M15: a handler never looks its capability up after a sleep).
+/datum/capability/proc/adopt_entry(datum/capability/entry/wrapper, id, category, empty_handed = FALSE, pass_cap = FALSE)
 	var/datum/interaction/capability/E = wrapper.entry
 	E.cap = src
 	wrapper.entry = null
 	if(id)
 		E.id = id
+	if(category)
+		E.category = category
+	if(empty_handed)
+		E.offered_when = list(REQ_EMPTY_HANDED)
+	E.passes_cap = pass_cap
 	return E
 
 /// Draws this capability's layer while `when` holds, unless it draws nothing (CAP_NO_LAYER).
@@ -37,3 +44,29 @@
 
 /proc/is_welded(atom/A)
 	return !!(A.cap_state & CAP_WELDED)
+
+/**
+ * A held item used on itself (attack_self, the Z key): the holder is the item and the handler gets
+ * `held` = the item. It runs from attack_self() (INTERACTION_ENTRY_SELF), not from clicks on the item,
+ * so an empty hand still picks the item up. `requires` replaces the default in-hand reach clause
+ * (REQ_IN_INVENTORY lets a worn item's native verb reach the same entry).
+ *
+ *	/datum/capability/two_handed/interactions(atom/holder)
+ *		return list(adopt_entry(self_use("Wield", TYPE_PROC_REF(/obj/item, cap_two_handed_toggle))))
+ */
+/proc/self_use(name, handler, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/requires, priority, name_proc)
+	var/datum/capability/entry/C = cap_hand(name, handler, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log, priority = priority, name_proc = name_proc)
+	var/datum/interaction/capability/E = C.entry
+	E.id = "self:[name]:[handler]"
+	E.entry = INTERACTION_ENTRY_SELF
+	E.requires = requires || list(REQ_SELF_USE_REACH)
+	C.key = E.id
+	return C
+
+/// Sets D's var to a capability's type default unless the instance already differs from its compiled
+/// default (a map edit, an earlier write): a capability's arguments are type defaults, instance vars win.
+/proc/cap_default_var(datum/D, var_name, value)
+	if(isnull(value) || D.vars[var_name] != initial(D.vars[var_name]))
+		return FALSE
+	D.vars[var_name] = value
+	return TRUE

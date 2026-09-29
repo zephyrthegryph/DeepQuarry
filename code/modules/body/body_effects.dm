@@ -223,8 +223,8 @@ OWN_TIMER(/mob/living, body_effect)
 /// name). The slot owns the timer: firing, cancelling and deletion end it.
 /mob/living/proc/body_effect_after(datum/body_effect/def, name, delay, proc_ref, path)
 	if(def.world_clock)
-		return om_after_slot(null, body_effect_slot(def, name), delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)
-	return om_after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)
+		return after_slot(null, body_effect_slot(def, name), delay, GLOBAL_PROC_REF(body_effect_world_timer), src, proc_ref, path)
+	return after_slot(src, body_effect_slot(def, name), delay, proc_ref, path)
 
 /mob/living/proc/body_effect_cancel(datum/body_effect/def, name)
 	om_cancel_timer_slot(def.world_clock ? null : src, body_effect_slot(def, name))

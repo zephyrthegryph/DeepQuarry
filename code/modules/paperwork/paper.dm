@@ -449,79 +449,10 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 	update_icon()
 
 /obj/item/paper/proc/get_signature(obj/item/pen/P, mob/user as mob)
-	if(P && istype(P, /obj/item/pen))
-		return P.get_signature(user)
-	return (user && user.real_name) ? user.real_name : "Anonymous"
+	return pen_signature(P, user)
 
 /obj/item/paper/proc/parsepencode(t, obj/item/pen/P, mob/user as mob, iscrayon = 0)
-
-	t = replacetext(t, "\[center\]", "<center>")
-	t = replacetext(t, "\[/center\]", "</center>")
-	t = replacetext(t, "\[br\]", "<BR>")
-	t = replacetext(t, "\[b\]", "<B>")
-	t = replacetext(t, "\[/b\]", "</B>")
-	t = replacetext(t, "\[i\]", "<I>")
-	t = replacetext(t, "\[/i\]", "</I>")
-	t = replacetext(t, "\[u\]", "<U>")
-	t = replacetext(t, "\[/u\]", "</U>")
-	t = replacetext(t, "\[time\]", "[stationtime2text()]")
-	t = replacetext(t, "\[date\]", "[stationdate2text()]")
-	t = replacetext(t, "\[station\]", "[station_name()]")
-	t = replacetext(t, "\[large\]", "<font size=\"4\">")
-	t = replacetext(t, "\[/large\]", "</font>")
-	if(findtext(t, "\[sign\]"))
-		t = replacetext(t, "\[sign\]", "<font face=\"[signfont]\"><i>[get_signature(P, user)]</i></font>")
-	t = replacetext(t, "\[field\]", "<span class=\"paper_field\"></span>")
-
-	t = replacetext(t, "\[h1\]", "<H1>")
-	t = replacetext(t, "\[/h1\]", "</H1>")
-	t = replacetext(t, "\[h2\]", "<H2>")
-	t = replacetext(t, "\[/h2\]", "</H2>")
-	t = replacetext(t, "\[h3\]", "<H3>")
-	t = replacetext(t, "\[/h3\]", "</H3>")
-	t = replacetext(t, "\[tab\]", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
-
-	if(!iscrayon)
-		t = replacetext(t, "\[*\]", "<li>")
-		t = replacetext(t, "\[hr\]", "<HR>")
-		t = replacetext(t, "\[small\]", "<font size = \"1\">")
-		t = replacetext(t, "\[/small\]", "</font>")
-		t = replacetext(t, "\[list\]", "<ul>")
-		t = replacetext(t, "\[/list\]", "</ul>")
-		t = replacetext(t, "\[table\]", "<table border=1 cellspacing=0 cellpadding=3 style='border: 1px solid black;'>")
-		t = replacetext(t, "\[/table\]", "</td></tr></table>")
-		t = replacetext(t, "\[grid\]", "<table>")
-		t = replacetext(t, "\[/grid\]", "</td></tr></table>")
-		t = replacetext(t, "\[row\]", "</td><tr>")
-		t = replacetext(t, "\[/row\]", "")
-		t = replacetext(t, "\[cell\]", "<td>")
-		t = replacetext(t, "\[/cell\]", "")
-		t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")
-		t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
-		t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
-		t = replacetext(t, "\[trlogo\]", "<img src=\ref['html/images/trader.png']>")
-		t = replacetext(t, "\[pclogo\]", "<img src=\ref['html/images/pclogo.png']>") // Not available on virgo // CHOMPEnable
-
-		t = "<font face=\"[deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
-	else // If it is a crayon, and he still tries to use these, make them empty!
-		t = replacetext(t, "\[*\]", "")
-		t = replacetext(t, "\[hr\]", "")
-		t = replacetext(t, "\[small\]", "")
-		t = replacetext(t, "\[/small\]", "")
-		t = replacetext(t, "\[list\]", "")
-		t = replacetext(t, "\[/list\]", "")
-		t = replacetext(t, "\[table\]", "")
-		t = replacetext(t, "\[/table\]", "")
-		t = replacetext(t, "\[row\]", "")
-		t = replacetext(t, "\[cell\]", "")
-		t = replacetext(t, "\[/cell\]", "")
-		t = replacetext(t, "\[/row\]", "")
-		t = replacetext(t, "\[logo\]", "")
-		t = replacetext(t, "\[talogo\]", "")
-		t = replacetext(t, "\[sglogo\]", "")
-
-		t = "<font face=\"[crayonfont]\" color=[P ? P.colour : "black"]><b>[t]</b></font>"
-
+	t = pencode_to_html(t, P, user, iscrayon)
 
 //	t = replacetext(t, "#", "") // Junk converted to nothing!
 
@@ -654,18 +585,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		return INTERACTION_HANDLED_PASS
 
 	else if(istype(P, /obj/item/stamp) || istype(P, /obj/item/clothing/accessory/ring/seal))
-		if(istype(P, /obj/item/stamp))
-			var/obj/item/stamp/the_stamp = P
-			if(the_stamp.stamptext)
-				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("[the_stamp.stamptext]")
-			else
-				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("This paper has been stamped with the [the_stamp.name].")
-		else
-			var/obj/item/clothing/accessory/ring/seal/the_stamp = P
-			if(the_stamp.stamptext)
-				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("[the_stamp.stamptext]")
-			else
-				stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics("This paper has been stamped with the [the_stamp.name].")
+		stamps += (stamps=="" ? "<HR>" : "<BR>") + span_italics(stamp_mark_text(P, "paper"))
 		if((!in_range(src, user) && loc != user && !( istype(loc, /obj/item/clipboard) ) && loc.loc != user && user.get_active_hand() != P))
 			return INTERACTION_HANDLED_PASS
 		var/image/stampoverlay = image('icons/obj/bureaucracy.dmi')
@@ -681,10 +601,9 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		stampoverlay.pixel_x = x
 		stampoverlay.pixel_y = y
 
-		if(istype(P, /obj/item/stamp/clown))
-			if(!clown)
-				to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
-				return INTERACTION_HANDLED_PASS
+		if(!clown && !stamp_usable_by(P, user))
+			to_chat(user, span_notice("You are totally unable to use the stamp. HONK!"))
+			return INTERACTION_HANDLED_PASS
 
 		if(!ico)
 			ico = new
@@ -912,3 +831,99 @@ APPEARANCE_NONE(/obj/item/paper/crumpled)
 		SScontracts?.release_evidence(carried_evidence_id)
 		carried_evidence_id = null
 
+/// Pencode ([b], [sign], [field], ...) to the paper HTML, in P's colour (crayon rules when iscrayon).
+/// Shared by paper and the writable capability (code/datums/capabilities/library/writable.dm).
+/proc/pencode_to_html(t, obj/item/pen/P, mob/user, iscrayon = FALSE)
+
+	t = replacetext(t, "\[center\]", "<center>")
+	t = replacetext(t, "\[/center\]", "</center>")
+	t = replacetext(t, "\[br\]", "<BR>")
+	t = replacetext(t, "\[b\]", "<B>")
+	t = replacetext(t, "\[/b\]", "</B>")
+	t = replacetext(t, "\[i\]", "<I>")
+	t = replacetext(t, "\[/i\]", "</I>")
+	t = replacetext(t, "\[u\]", "<U>")
+	t = replacetext(t, "\[/u\]", "</U>")
+	t = replacetext(t, "\[time\]", "[stationtime2text()]")
+	t = replacetext(t, "\[date\]", "[stationdate2text()]")
+	t = replacetext(t, "\[station\]", "[station_name()]")
+	t = replacetext(t, "\[large\]", "<font size=\"4\">")
+	t = replacetext(t, "\[/large\]", "</font>")
+	if(findtext(t, "\[sign\]"))
+		t = replacetext(t, "\[sign\]", "<font face=\"[/obj/item/paper::signfont]\"><i>[pen_signature(P, user)]</i></font>")
+	t = replacetext(t, "\[field\]", "<span class=\"paper_field\"></span>")
+
+	t = replacetext(t, "\[h1\]", "<H1>")
+	t = replacetext(t, "\[/h1\]", "</H1>")
+	t = replacetext(t, "\[h2\]", "<H2>")
+	t = replacetext(t, "\[/h2\]", "</H2>")
+	t = replacetext(t, "\[h3\]", "<H3>")
+	t = replacetext(t, "\[/h3\]", "</H3>")
+	t = replacetext(t, "\[tab\]", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;")
+
+	if(!iscrayon)
+		t = replacetext(t, "\[*\]", "<li>")
+		t = replacetext(t, "\[hr\]", "<HR>")
+		t = replacetext(t, "\[small\]", "<font size = \"1\">")
+		t = replacetext(t, "\[/small\]", "</font>")
+		t = replacetext(t, "\[list\]", "<ul>")
+		t = replacetext(t, "\[/list\]", "</ul>")
+		t = replacetext(t, "\[table\]", "<table border=1 cellspacing=0 cellpadding=3 style='border: 1px solid black;'>")
+		t = replacetext(t, "\[/table\]", "</td></tr></table>")
+		t = replacetext(t, "\[grid\]", "<table>")
+		t = replacetext(t, "\[/grid\]", "</td></tr></table>")
+		t = replacetext(t, "\[row\]", "</td><tr>")
+		t = replacetext(t, "\[/row\]", "")
+		t = replacetext(t, "\[cell\]", "<td>")
+		t = replacetext(t, "\[/cell\]", "")
+		t = replacetext(t, "\[logo\]", "<img src=\ref['html/images/ntlogo.png']>")
+		t = replacetext(t, "\[talogo\]", "<img src=\ref['html/images/talonlogo.png']>")
+		t = replacetext(t, "\[sglogo\]", "<img src=\ref['html/images/sglogo.png']>")
+		t = replacetext(t, "\[trlogo\]", "<img src=\ref['html/images/trader.png']>")
+		t = replacetext(t, "\[pclogo\]", "<img src=\ref['html/images/pclogo.png']>") // Not available on virgo // CHOMPEnable
+
+		t = "<font face=\"[/obj/item/paper::deffont]\" color=[P ? P.colour : "black"]>[t]</font>"
+	else // If it is a crayon, and he still tries to use these, make them empty!
+		t = replacetext(t, "\[*\]", "")
+		t = replacetext(t, "\[hr\]", "")
+		t = replacetext(t, "\[small\]", "")
+		t = replacetext(t, "\[/small\]", "")
+		t = replacetext(t, "\[list\]", "")
+		t = replacetext(t, "\[/list\]", "")
+		t = replacetext(t, "\[table\]", "")
+		t = replacetext(t, "\[/table\]", "")
+		t = replacetext(t, "\[row\]", "")
+		t = replacetext(t, "\[cell\]", "")
+		t = replacetext(t, "\[/cell\]", "")
+		t = replacetext(t, "\[/row\]", "")
+		t = replacetext(t, "\[logo\]", "")
+		t = replacetext(t, "\[talogo\]", "")
+		t = replacetext(t, "\[sglogo\]", "")
+
+		t = "<font face=\"[/obj/item/paper::crayonfont]\" color=[P ? P.colour : "black"]><b>[t]</b></font>"
+	return t
+
+/// The signature P writes for user ([sign]).
+/proc/pen_signature(obj/item/pen/P, mob/user)
+	if(istype(P))
+		return P.get_signature(user)
+	return (user && user.real_name) ? user.real_name : "Anonymous"
+
+/// The line a stamp or seal ring leaves on what it stamps: its own text, or who stamped it.
+/// Shared by paper and the stamp_target capability.
+/proc/stamp_mark_text(obj/item/S, noun = "paper")
+	var/stamptext
+	if(istype(S, /obj/item/stamp))
+		var/obj/item/stamp/stamp = S
+		stamptext = stamp.stamptext
+	else if(istype(S, /obj/item/clothing/accessory/ring/seal))
+		var/obj/item/clothing/accessory/ring/seal/seal = S
+		stamptext = seal.stamptext
+	return stamptext || "This [noun] has been stamped with the [S.name]."
+
+/// Whether user can use stamp S: the clown's stamp only works for clowns, jesters and fools.
+/proc/stamp_usable_by(obj/item/S, mob/user)
+	if(!istype(S, /obj/item/stamp/clown))
+		return TRUE
+	var/title = user?.mind?.role_alt_title
+	return title == JOB_CLOWN || title == JOB_ALT_JESTER || title == JOB_ALT_FOOL

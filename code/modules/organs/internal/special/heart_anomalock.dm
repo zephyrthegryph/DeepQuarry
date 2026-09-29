@@ -45,11 +45,11 @@ OWN_TIMER(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
+		after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
+	after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
