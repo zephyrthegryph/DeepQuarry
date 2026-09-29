@@ -143,7 +143,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 		user.bloody_hands += taken
 		user.hand_blood_color = basecolor
 		user.update_inv_gloves(1)
-		add_verb(user, /mob/living/carbon/human/proc/bloody_doodle)
+		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, user)
 
 	if(viruses)
 		for(var/datum/affliction/contagion/D in viruses)

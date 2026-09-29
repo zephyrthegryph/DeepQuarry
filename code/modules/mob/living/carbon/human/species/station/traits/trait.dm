@@ -77,7 +77,7 @@
 		H.disabilities |= disability // bitflag
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
-	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/trait_tutorial, src)
 	if(special_env)
 		LAZYADD(S.env_traits, src)
 	if(added_component_path && !species_state_has(H, added_component_path))

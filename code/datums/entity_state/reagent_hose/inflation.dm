@@ -9,7 +9,7 @@
 	if(!ishuman(new_carrier))
 		return FALSE
 	. = ..()
-	remove_verb(human_owner(),/atom/proc/disconnect_hose)
+	om_revoke(human_owner(), GRANT_VERB, /atom/proc/disconnect_hose, src)
 
 /datum/hose_connector/inflation/on_examine(datum/source, datum/om/event/examine/event)
 	return
@@ -30,10 +30,10 @@
 // Adding and removing the verb is more complex on humans... This code also expects only ONE hose connector
 /datum/hose_connector/inflation/connect(datum/hose/H)
 	. = ..()
-	add_verb(human_owner(),/atom/proc/disconnect_hose)
+	om_grant(human_owner(), GRANT_VERB, /atom/proc/disconnect_hose, src)
 
 /datum/hose_connector/inflation/remove_hose()
-	remove_verb(human_owner(),/atom/proc/disconnect_hose)
+	om_revoke(human_owner(), GRANT_VERB, /atom/proc/disconnect_hose, src)
 	. = ..()
 
 // Succ command center

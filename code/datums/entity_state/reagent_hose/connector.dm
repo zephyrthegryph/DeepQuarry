@@ -53,7 +53,7 @@ DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
-	carrier.verbs |= /atom/proc/disconnect_hose
+	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
@@ -72,7 +72,7 @@ DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 	if(my_hose)
 		qdel(my_hose)
 	if(carrier)
-		carrier.verbs -= /atom/proc/disconnect_hose
+		om_revoke(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
 		LAZYREMOVE(carrier.hose_connectors, src)
 
 /datum/hose_connector/proc/get_carrier()

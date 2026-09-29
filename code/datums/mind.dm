@@ -88,7 +88,7 @@
 		changeling_comp = is_changeling(current)			//remove ourself from our old body's mind variable
 		if(changeling_comp)
 			current.remove_changeling_powers()
-			remove_verb(current, /mob/proc/EvolutionMenu)
+			om_revoke(current, GRANT_VERB, /mob/proc/EvolutionMenu, changeling_comp)
 		current.mind = null
 
 	if(new_character.mind)		//remove any mind currently in our new body's mind variable

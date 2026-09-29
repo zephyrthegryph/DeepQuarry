@@ -666,8 +666,11 @@
 			qdel(Org)
 
 		// Purge the diona verbs.
-		remove_verb(H, /mob/living/carbon/human/proc/diona_split_nymph)
-		remove_verb(H, /mob/living/carbon/human/proc/regenerate)
+		// Every source (species, nymph surgery) loses it.
+		for(var/datum/grant_source as anything in om_grant_sources(H, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph))
+			om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, grant_source)
+		for(var/datum/grant_source as anything in om_grant_sources(H, GRANT_VERB, /mob/living/carbon/human/proc/regenerate))
+			om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, grant_source)
 
 		return
 

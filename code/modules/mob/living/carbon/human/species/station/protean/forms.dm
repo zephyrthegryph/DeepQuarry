@@ -185,14 +185,14 @@ TYPE_TABLE_DECLARE(/datum/form, get_form_verbs, null)
 		H.holder_type = holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		add_verb(H, form_verbs)
+		om_grant_each(H, GRANT_VERB, form_verbs, src)
 
 /datum/form/proc/on_exit(datum/forms/F, mob/living/carbon/human/H)
 	if(holder_type)
 		H.holder_type = F.prior_holder_type
 	var/list/form_verbs = TYPE_TABLE_GET(src, get_form_verbs)
 	if(length(form_verbs))
-		remove_verb(H, form_verbs)
+		om_revoke_each(H, GRANT_VERB, form_verbs, src)
 
 /datum/form/proc/announce_enter(mob/living/carbon/human/H)
 	if(enter_message)

@@ -202,7 +202,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 		H.ability_master = new /atom/movable/screen/movable/ability_master/lleill(H)
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
-			add_verb(H, P.verbpath)
+			om_grant(H, GRANT_VERB, P.verbpath, src)
 			H.ability_master.add_lleill_ability(
 					object_given = H,
 					verb_given = P.verbpath,

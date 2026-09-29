@@ -8,7 +8,7 @@
 		return
 
 	if(!adult_form)
-		remove_verb(src, /mob/living/carbon/alien/verb/evolve)
+		remove_verb(src, /mob/living/carbon/alien/verb/evolve) // ALLOW(sys_add_verb_pair): hides the statically-declared evolve verb from a larval form with no adult form
 		return
 
 	if(get_equipped_item(SLOT_ID_HANDCUFFED) || get_equipped_item(SLOT_ID_LEGCUFFED))
