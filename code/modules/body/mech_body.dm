@@ -33,18 +33,18 @@
 TYPE_TABLE_DECLARE(/datum/mech_body_plan, part_order, list(MECH_ARMOR, MECH_HULL, MECH_ACTUATOR, MECH_ELECTRIC, MECH_GAS))
 
 /// The affliction flyweights, keyed by their MECHA_INT_* flag as text.
-/datum/mech_body_plan/proc/afflictions()
-	var/static/list/table
-	if(!table)
-		table = list()
-		for(var/path in subtypesof(/datum/mech_affliction))
-			var/datum/mech_affliction/A = new path
-			if(A.flag)
-				table["[A.flag]"] = A
+/proc/build_mech_affliction_flyweights()
+	var/list/table = list()
+	for(var/path in subtypesof(/datum/mech_affliction))
+		var/datum/mech_affliction/A = new path
+		if(A.flag)
+			table["[A.flag]"] = A
 	return table
 
+GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_flyweights))
+
 /datum/mech_body_plan/proc/affliction_for(flag)
-	return afflictions()["[flag]"]
+	return GLOBAL_TABLE_GET(mech_affliction_flyweights)["[flag]"]
 
 /// A body part (installed component) by slot, or null.
 /datum/mech_body_plan/proc/part(obj/mecha/host, slot)
@@ -305,7 +305,7 @@ TYPE_TABLE_DECLARE(/datum/mech_body_plan, part_order, list(MECH_ARMOR, MECH_HULL
 	. = list()
 	if(!LAZYLEN(host.afflictions))
 		return
-	var/list/table = afflictions()
+	var/list/table = GLOBAL_TABLE_GET(mech_affliction_flyweights)
 	for(var/key in table)
 		var/datum/mech_affliction/A = table[key]
 		if(A in host.afflictions)

@@ -1245,14 +1245,15 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sausage, null, list(RE
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
 	var/warm = FALSE
-	var/list/heated_reagents = list(REAGENT_ID_TRICORDRAZINE = 5) // ALLOW(instance_list): c: read-only per-subtype constant table (3 subtype overrides); a getter would share it, not worth it on a rare type
+
+TYPE_TABLE_DECLARE(/obj/item/reagent_containers/food/snacks/donkpocket, donkpocket_heated_reagents, list(REAGENT_ID_TRICORDRAZINE = 5))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list(REAGENT_ID_PROTEIN = 2))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/heat()
 	warm = 1
-	for(var/reagent in heated_reagents)
-		reagents.add_reagent(reagent, heated_reagents[reagent])
+	for(var/reagent in TYPE_TABLE_GET(src, donkpocket_heated_reagents))
+		reagents.add_reagent(reagent, TYPE_TABLE_GET(src, donkpocket_heated_reagents)[reagent])
 	bitesize = 6
 	name = "warm [name]"
 	cooltime()
@@ -1310,15 +1311,17 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list
 	icon_state = "dankpocket"
 	nutriment_amt = 2
 	nutriment_desc = list("heartiness" = 1, "dough" = 2)
-	heated_reagents = list(REAGENT_ID_BLISS = 5)
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket, donkpocket_heated_reagents, list(REAGENT_ID_BLISS = 5))
 
 /obj/item/reagent_containers/food/snacks/donkpocket/sinpocket
 	name = "\improper Sin-pocket"
 	desc = "The food of choice for the veteran. Do <B>NOT</B> overconsume."
 	filling_color = "#6D6D00"
-	heated_reagents = list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25)
 	var/has_been_heated = FALSE
 	special_handling = TRUE
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpocket_heated_reagents, list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25))
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self)))
 
@@ -8045,7 +8048,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/locust_cooked, null, l
 	icon_state = "donkpocket_ascended"
 	nutriment_amt = 5
 	nutriment_desc = list("burning fires of radioactive hell" = 20)
-	heated_reagents = list(REAGENT_ID_SUPERMATTER = 1)
+
+TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, donkpocket_heated_reagents, list(REAGENT_ID_SUPERMATTER = 1))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket/ascended, null, list(REAGENT_ID_URANIUM = 3, REAGENT_ID_THERMITEV = 3))
 
@@ -8491,7 +8495,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 	if(!src?.reagents)
 		return
 	src.warm = 0
-	for(var/reagent in heated_reagents)
+	for(var/reagent in TYPE_TABLE_GET(src, donkpocket_heated_reagents))
 		src.reagents.del_reagent(reagent)
 	src.name = initial(name)
 

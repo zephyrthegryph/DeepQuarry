@@ -39,9 +39,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/antag_vis/init_possible_values()
-	return GLOB.antag_visiblity_choices
-
+TYPE_TABLE(/datum/preference/choiced/human/antag_vis, pref_choices, GLOB.antag_visiblity_choices)
 /datum/preference/choiced/human/antag_vis/create_default_value()
 	return "Hidden"
 
@@ -80,9 +78,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/vantag_preference/init_possible_values()
-	return GLOB.vantag_choices_list
-
+TYPE_TABLE(/datum/preference/choiced/human/vantag_preference, pref_choices, GLOB.vantag_choices_list)
 /datum/preference/choiced/human/vantag_preference/create_default_value()
 	return VANTAG_NONE
 

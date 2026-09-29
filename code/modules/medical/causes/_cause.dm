@@ -278,7 +278,7 @@ GLOBAL_PROTECT(affliction_triggers_by_kind)
 /// (damage_event, organ_damage, severity_gate, blood_loss, germ_level).
 /// Falls back to /datum/affliction_trigger if none matched.
 /proc/parent_type_of(T)
-	var/list/kinds = list(
+	var/static/list/kinds = list(
 		/datum/affliction_trigger/injury,
 		/datum/affliction_trigger/organ_integrity,
 		/datum/affliction_trigger/progression,

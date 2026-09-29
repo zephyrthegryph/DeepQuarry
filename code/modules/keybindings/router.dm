@@ -68,7 +68,7 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 /datum/input_router/proc/action_for_click(mob/user, params)
 	var/datum/input_adapter/adapter = user.input_adapter()
 	var/list/modifiers = params2list(params)
-	return classify(modifiers, adapter.click_table(), user.client ? user.client.right_click_binding() : INPUT_ACTION_MENU)
+	return classify(modifiers, TYPE_TABLE_GET(adapter, adapter_click_table), user.client ? user.client.right_click_binding() : INPUT_ACTION_MENU)
 
 /// Entry point for every map click.
 /datum/input_router/proc/route_click(mob/user, atom/target, params)
@@ -76,7 +76,7 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 	if(!adapter.accept_click(user, target, params))
 		return
 	var/list/modifiers = params2list(params)
-	var/action = classify(modifiers, adapter.click_table(), user.client ? user.client.right_click_binding() : INPUT_ACTION_MENU)
+	var/action = classify(modifiers, TYPE_TABLE_GET(adapter, adapter_click_table), user.client ? user.client.right_click_binding() : INPUT_ACTION_MENU)
 	return adapter.perform(user, target, action, modifiers, params)
 
 /// Entry point for drag and drop: the Drag action.

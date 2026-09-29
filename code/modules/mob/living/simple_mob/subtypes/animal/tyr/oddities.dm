@@ -28,7 +28,8 @@
 /obj/item/projectile/energy/blob/rainbowfly
 	damage = 10
 	splatter = TRUE
-	my_chems = list(REAGENT_ID_CRYPTOBIOLIN)
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/rainbowfly, blob_projectile_chems, list(REAGENT_ID_CRYPTOBIOLIN))
 
 /datum/om/stage/life/special/animal/tyr/rainbow_fly
 	of = /mob/living/simple_mob/animal/tyr/rainbow_fly

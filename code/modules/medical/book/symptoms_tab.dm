@@ -7,7 +7,7 @@
 
 /obj/item/book/dq_medical_reference/proc/_dq_book_symptoms()
 	var/list/condition_index = list()
-	for(var/CT in dq_catalogued_affliction_types())
+	for(var/CT in GLOBAL_TABLE_GET(dq_catalogued_affliction_types))
 		var/datum/affliction/cproto = dq_proto(CT)
 		// Track which (condition, symptom) pairs we've already indexed
 		// so a symptom shared across multiple stages of the same
@@ -20,11 +20,11 @@
 			for(var/sym_path in cproto.symptom_pool)
 				best_weight[sym_path] = cproto.symptom_pool[sym_path]
 		// Pull every stage's pool too — many staged conditions only
-		// declare their symptoms inside get_stages() (e.g. acute_radiation
+		// declare their symptoms inside the affliction_stages table (e.g. acute_radiation
 		// keeps `skin_burns_minor` only on Moderate/Severe stages, with
 		// no top-level pool), so an indexer that only walks the prototype's
 		// `symptom_pool` would miss them.
-		var/list/stages = cproto.get_stages()
+		var/list/stages = TYPE_TABLE_GET(cproto, affliction_stages)
 		if(islist(stages))
 			for(var/stage_id in stages)
 				var/list/sd = stages[stage_id]

@@ -196,8 +196,8 @@
 		out += "<table><tr><th>Name<th>EQUIP<th>LIGHT<th>ENVIRON<th>CELL<th>LOAD"
 
 		// These lists are used as replacement for number based APC settings
-		var/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
-		var/list/chg = list("N","C","F")
+		var/static/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
+		var/static/list/chg = list("N","C","F")
 
 		// Split to multiple lines to make it more readable
 		for(var/obj/machinery/power/apc/A in L)
@@ -240,8 +240,8 @@
 	var/list/APC_data = list()
 	if(L.len > 0)
 		// These lists are used as replacement for number based APC settings
-		var/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
-		var/list/chg = list("N","C","F")
+		var/static/list/S = list("M-OFF","A-OFF","M-ON", "A-ON")
+		var/static/list/chg = list("N","C","F")
 
 		for(var/obj/machinery/power/apc/A in L)
 			var/list/APC_entry = list()

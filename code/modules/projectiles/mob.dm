@@ -66,10 +66,11 @@
 /obj/item/projectile/energy/blob/moth
 	damage = 30 //old 15
 	armor_penetration = 15
-	my_chems = list(REAGENT_ID_FUEL, REAGENT_ID_MOLD)
 	flammability = 0.25
 	color = "#38b9ff"
 	speed = 3.2
+
+TYPE_TABLE(/obj/item/projectile/energy/blob/moth, blob_projectile_chems, list(REAGENT_ID_FUEL, REAGENT_ID_MOLD))
 
 /obj/item/projectile/energy/blob/moth/on_hit(atom/target, blocked = 0, def_zone)
 	. = ..()

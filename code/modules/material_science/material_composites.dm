@@ -69,7 +69,7 @@ DECLARE_SHARED_CACHE_EX(material_radiation_transmission, GLOBAL_PROC_REF(build_m
 		return 0
 	var/temperature = mixture.return_temperature()
 	var/load = 0
-	for(var/datum/gas/gas_type as anything in material_corrosive_gases())
+	for(var/datum/gas/gas_type as anything in GLOBAL_TABLE_GET(material_corrosive_gases))
 		if(temperature < initial(gas_type.material_corrosion_temperature))
 			continue
 		var/partial_pressure = mixture.get_moles(gas_type) * R_IDEAL_GAS_EQUATION * temperature / max(mixture.return_volume(), 1)

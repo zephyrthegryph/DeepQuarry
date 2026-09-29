@@ -13,12 +13,14 @@
 	inhibitors = list(REAGENT_ID_OXYGEN = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(54.36, 90.19) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_O2
 	rejects_xgm_gas = GAS_PHORON
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_oxygen, distilling_temp_range, list(54.36, 90.19))
 
 /datum/decl/chemical_reaction/distilling/condense_nitrogen
 	name = "Condensing Nitrogen"
@@ -28,12 +30,14 @@
 	inhibitors = list(REAGENT_ID_NITROGEN = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(63.15, 77.36) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_N2
 	rejects_xgm_gas = GAS_PHORON
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_nitrogen, distilling_temp_range, list(63.15, 77.36))
 
 /datum/decl/chemical_reaction/distilling/condense_nitrox
 	name = "Condensing Nitrous Oxide"
@@ -43,12 +47,14 @@
 	inhibitors = list(REAGENT_ID_NITROGEN = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(0, 182.3) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_N2O
 	rejects_xgm_gas = GAS_PHORON
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_nitrox, distilling_temp_range, list(0, 182.3))
 
 /datum/decl/chemical_reaction/distilling/condense_carbon
 	name = "Condensing Carbon Dioxide"
@@ -58,12 +64,14 @@
 	inhibitors = list(REAGENT_ID_CARBON = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(54.36, 90.19) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_CO2
 	rejects_xgm_gas = GAS_PHORON
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_carbon, distilling_temp_range, list(54.36, 90.19))
 
 /datum/decl/chemical_reaction/distilling/condense_phoron
 	name = "Condensing Phoron"
@@ -73,12 +81,14 @@
 	inhibitors = list(REAGENT_ID_PHORON = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(14.60, 52.99) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_PHORON
 	rejects_xgm_gas = GAS_O2
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_phoron, distilling_temp_range, list(14.60, 52.99))
 
 /datum/decl/chemical_reaction/distilling/condense_fuel
 	name = "Condensing Volatiles"
@@ -88,12 +98,14 @@
 	inhibitors = list(REAGENT_ID_FUEL = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(91.60, 120.19) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_VOLATILE_FUEL
 	rejects_xgm_gas = GAS_O2
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_fuel, distilling_temp_range, list(91.60, 120.19))
 
 /datum/decl/chemical_reaction/distilling/condense_methane
 	name = "Condensing Methane"
@@ -103,12 +115,14 @@
 	inhibitors = list(REAGENT_ID_TOXIN = 0.1) // Used to limit the reaction
 	result_amount = CONDENSING_RESULT
 
-	temp_range = list(90.7, 111.65) // kelvin
 	temp_shift = CONDENSING_HEAT
 
 	require_xgm_gas = GAS_CH4
 	rejects_xgm_gas = GAS_O2
 	consumes_xgm_gas = CONDENSING_RATE
+
+// kelvin
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/condense_methane, distilling_temp_range, list(90.7, 111.65))
 
 #undef CONDENSING_RATE
 #undef CONDENSING_RESULT

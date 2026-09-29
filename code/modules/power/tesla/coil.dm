@@ -90,7 +90,7 @@
 
 /obj/machinery/power/tesla_coil/multitool_act(mob/user, obj/item/W)
 	if(panel_open)
-		var/list/menu_list = list(
+		var/static/list/menu_list = list(
 		"Normal",
 		"Relay",
 		"Splitter",

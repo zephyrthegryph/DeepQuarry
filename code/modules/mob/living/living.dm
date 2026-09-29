@@ -975,7 +975,7 @@
 			var/dealt = injure(kinds[choice], amount, zone == "whole body" ? null : zone, flags = INJURE_IGNORE_RESISTANCE)
 			return "injured ([choice], [amount] requested, [round(dealt, 0.1)] dealt[zone == "whole body" ? "" : " at [zone]"])"
 		if("mend")
-			var/list/names = dq_treatment_tag_names()
+			var/list/names = GLOB.dq_treatment_tag_names
 			var/list/tags = list()
 			for(var/tag in names)
 				tags[names[tag]] = tag

@@ -13,11 +13,6 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 	var/blocker_insertion_impedement_threshold = -1 //if we have more blockers than this, we can't place item in :(
 	var/show_blocker_in_examine = TRUE
 
-	var/list/possible_ingredients = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
-		/obj/item/trash,
-		/obj/item/toy/plushie/ipc,
-		/obj/item/toy/tennis
-	) //list of items that can make up a recipe.
 
 	var/no_dupes_in_recipe = FALSE //do we care about repeats? if so, set to true
 	var/need_recipe_in_order = FALSE //start from the first one! or ignore it and do whatever, man...
@@ -55,6 +50,13 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 	var/list/disabling_sources //what things are disabling us?
 	var/list/active_recipe //volatile, when given an item it removes it
 	var/current_step = 0 //current step for icon states
+
+//list of items that can make up a recipe.
+TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
+	/obj/item/trash, \
+	/obj/item/toy/plushie/ipc, \
+	/obj/item/toy/tennis \
+))
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
@@ -105,7 +107,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 /obj/structure/event_collector/proc/pick_new_recipe()
 	active_recipe = list() //clear it out
 	if(no_dupes_in_recipe)
-		var/list/destructive_clone = possible_ingredients.Copy()
+		var/list/destructive_clone = TYPE_TABLE_COPY(src, event_collector_ingredients)
 		for(var/i in 1 to recipe_size)
 			var/temp = pick(destructive_clone)
 			active_recipe += temp
@@ -113,7 +115,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 	else
 		for(var/i in 1 to recipe_size)
-			active_recipe += pick(possible_ingredients)
+			active_recipe += pick(TYPE_TABLE_GET(src, event_collector_ingredients))
 
 	if(noisy_step_completion)
 		var/next_item = "Nothing! The sequence is done!"

@@ -23,7 +23,7 @@
 /obj/machinery/replicator/Initialize(mapload)
 	. = ..()
 
-	var/list/viables = list(
+	var/static/list/viables = list(
 	/obj/item/roller,
 	/obj/structure/closet/crate,
 	/obj/structure/closet/acloset,

@@ -3,9 +3,7 @@
 
 /// Single source of truth for the body-part flavor slots — shared between the static-data
 /// payload and the Topic-validation whitelist so the two can't drift apart.
-/proc/dq_flavor_zones()
-	var/static/list/zones = list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet")
-	return zones
+GLOBAL_LIST_INIT(dq_flavor_zones, list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
 
 /datum/preference_editor/flavor
 	key = "flavor"
@@ -30,7 +28,7 @@
 
 /datum/preference_editor/flavor/build_ui_static_data(datum/preferences/preferences)
 	return list(
-		"flavor_zones" = dq_flavor_zones(),
+		"flavor_zones" = GLOB.dq_flavor_zones,
 		"robot_modules" = GLOB.robot_module_types,
 	)
 
@@ -40,7 +38,7 @@
 			// Whitelist zone against the static list — a forged Topic could otherwise write
 			// arbitrary assoc-list keys into the savefile.
 			var/zone = params["zone"]
-			if(!(zone in dq_flavor_zones()))
+			if(!(zone in GLOB.dq_flavor_zones))
 				return PREF_UPDATE_REJECTED
 			var/text = strip_html_simple(params["text"])
 			if(istext(text) && length_char(text) > MAX_MESSAGE_LEN)

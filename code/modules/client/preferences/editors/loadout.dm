@@ -126,25 +126,23 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, body_slot_table, list( \
 /// from the indirect vars (headset, backpack), not declared statically on the outfit.
 /// Resolved separately below in job_default_labels so the ghost shows the job's actual
 /// themed kit instead of being blank.
-/datum/preference_editor/loadout/proc/outfit_field_to_slot()
-	var/static/list/L = list(
-		"uniform"    = "[SLOT_ID_UNIFORM]",
-		"suit"       = "[SLOT_ID_SUIT]",
-		"belt"       = "[SLOT_ID_BELT]",
-		"gloves"     = "[SLOT_ID_GLOVES]",
-		"shoes"      = "[SLOT_ID_SHOES]",
-		"head"       = "[SLOT_ID_HEAD]",
-		"mask"       = "[SLOT_ID_MASK]",
-		"glasses"    = "[SLOT_ID_EYES]",
-		"l_pocket"   = "[SLOT_ID_POCKET_L]",
-		"r_pocket"   = "[SLOT_ID_POCKET_R]",
-		"suit_store" = "[SLOT_ID_SUIT_STORAGE]",
-	)
-	return L
+TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slot, list( \
+	"uniform"    = "[SLOT_ID_UNIFORM]", \
+	"suit"       = "[SLOT_ID_SUIT]", \
+	"belt"       = "[SLOT_ID_BELT]", \
+	"gloves"     = "[SLOT_ID_GLOVES]", \
+	"shoes"      = "[SLOT_ID_SHOES]", \
+	"head"       = "[SLOT_ID_HEAD]", \
+	"mask"       = "[SLOT_ID_MASK]", \
+	"glasses"    = "[SLOT_ID_EYES]", \
+	"l_pocket"   = "[SLOT_ID_POCKET_L]", \
+	"r_pocket"   = "[SLOT_ID_POCKET_R]", \
+	"suit_store" = "[SLOT_ID_SUIT_STORAGE]", \
+))
 
 /// Returns {body_slot_str: item_name} for the given job's outfit, using initial(.name)
 /// instead of instantiating items. The straight slot mappings (uniform/suit/belt/etc.)
-/// come from outfit_field_to_slot(); the indirect slots — l_ear, back, wear_id, the
+/// come from the loadout_outfit_field_to_slot table; the indirect slots — l_ear, back, wear_id, the
 /// per-job pda_slot — are filled at runtime by pre_equip() from outfit.headset /
 /// outfit.backpack / outfit.id_type / outfit.pda_type, so resolve those explicitly here.
 /// `backbag_choice` is vestigial (the backbag pref was deleted) — kept in signature for
@@ -156,7 +154,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, body_slot_table, list( \
 	var/datum/decl/hierarchy/outfit/outfit = outfit_by_type(job.outfit_type)
 	if(!outfit)
 		return out
-	var/list/mapping = outfit_field_to_slot()
+	var/list/mapping = TYPE_TABLE_GET(src, loadout_outfit_field_to_slot)
 	for(var/field in mapping)
 		var/path = outfit.vars[field]
 		if(!path || !ispath(path))

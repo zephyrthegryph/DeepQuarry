@@ -134,7 +134,7 @@
 			target().particles.datum_flags |= DF_VAR_EDITED
 			. = TRUE
 		if("transform_size")
-			var/list/matrix_size = list("Simple Matrix" = 6, "Complex Matrix" = 12, "Projection Matrix" = 16)
+			var/static/list/matrix_size = list("Simple Matrix" = 6, "Complex Matrix" = 12, "Projection Matrix" = 16)
 			var/new_size = matrix_size[params["new_value"]]
 			if(!new_size)
 				return FALSE

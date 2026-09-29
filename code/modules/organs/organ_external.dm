@@ -1664,7 +1664,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(wound_descriptors.len)
 		var/list/flavor_text = list()
-		var/list/no_exclude = list("gaping wound", "big gaping wound", "massive wound", "large bruise",\
+		var/static/list/no_exclude = list("gaping wound", "big gaping wound", "massive wound", "large bruise",\
 		"huge bruise", "massive bruise", "severe burn", "large burn", "deep burn", "carbonised area") //note to self make this more robust
 		for(var/wound in wound_descriptors)
 			switch(wound_descriptors[wound])

@@ -46,9 +46,8 @@
 /datum/preference/choiced/gender/biological
 	savefile_key = "gender"
 
-/datum/preference/choiced/gender/biological/init_possible_values()
-	// Actual validation happens in pref_deserialize
-	return list(MALE, FEMALE, PLURAL, NEUTER)
+// Actual validation happens in pref_deserialize
+TYPE_TABLE(/datum/preference/choiced/gender/biological, pref_choices, list(MALE, FEMALE, PLURAL, NEUTER))
 
 /datum/preference/choiced/gender/biological/create_default_value()
 	return MALE
@@ -60,8 +59,7 @@
 /datum/preference/choiced/gender/identifying
 	savefile_key = "id_gender"
 
-/datum/preference/choiced/gender/identifying/init_possible_values()
-	return list(MALE, FEMALE, PLURAL, NEUTER, HERM)
+TYPE_TABLE(/datum/preference/choiced/gender/identifying, pref_choices, list(MALE, FEMALE, PLURAL, NEUTER, HERM))
 
 /datum/preference/choiced/gender/identifying/create_default_value()
 	return MALE

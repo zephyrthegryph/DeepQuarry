@@ -1,8 +1,10 @@
 // The curse of hot_water reagent lives on!
 /datum/decl/chemical_reaction/distilling/drinks
 	name = REAGENT_DEVELOPER_WARNING // Unit test ignore
-	temp_range = list(T0C + 100, T0C + 500) // These all imply a boiled drink anyway
 	wiki_flag = WIKI_DRINK
+
+// These all imply a boiled drink anyway
+TYPE_TABLE(/datum/decl/chemical_reaction/distilling/drinks, distilling_temp_range, list(T0C + 100, T0C + 500))
 
 /datum/decl/chemical_reaction/distilling/drinks/coffee
 	name = REAGENT_COFFEE

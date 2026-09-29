@@ -67,8 +67,7 @@
 	savefile_key = "EXAMINE_MODE"
 	savefile_identifier = PREFERENCE_PLAYER
 
-/datum/preference/choiced/examine_mode/init_possible_values()
-	return list(EXAMINE_MODE_SLIM,EXAMINE_MODE_VERBOSE,EXAMINE_MODE_SWITCH_TO_PANEL)
+TYPE_TABLE(/datum/preference/choiced/examine_mode, pref_choices, list(EXAMINE_MODE_SLIM,EXAMINE_MODE_VERBOSE,EXAMINE_MODE_SWITCH_TO_PANEL))
 
 /datum/preference/choiced/examine_mode/create_default_value()
 	return EXAMINE_MODE_VERBOSE
@@ -78,8 +77,7 @@
 	savefile_identifier = PREFERENCE_PLAYER
 	savefile_key = "MULTI_LANGUAGE_YAP_MODE"
 
-/datum/preference/choiced/multilingual_mode/init_possible_values()
-	return list(MULTILINGUAL_DEFAULT,MULTILINGUAL_SPACE,MULTILINGUAL_DOUBLE_DELIMITER, MULTILINGUAL_OFF)
+TYPE_TABLE(/datum/preference/choiced/multilingual_mode, pref_choices, list(MULTILINGUAL_DEFAULT,MULTILINGUAL_SPACE,MULTILINGUAL_DOUBLE_DELIMITER, MULTILINGUAL_OFF))
 
 /datum/preference/choiced/multilingual_mode/create_default_value()
 	return MULTILINGUAL_DEFAULT

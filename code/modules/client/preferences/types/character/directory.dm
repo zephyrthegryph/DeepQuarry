@@ -27,9 +27,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/directory_tag/init_possible_values()
-	return GLOB.char_directory_tags
-
+TYPE_TABLE(/datum/preference/choiced/human/directory_tag, pref_choices, GLOB.char_directory_tags)
 /datum/preference/choiced/human/directory_tag/create_default_value()
 	return "Unset"
 
@@ -43,9 +41,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/directory_gendertag/init_possible_values()
-	return GLOB.char_directory_gendertags
-
+TYPE_TABLE(/datum/preference/choiced/human/directory_gendertag, pref_choices, GLOB.char_directory_gendertags)
 /datum/preference/choiced/human/directory_gendertag/create_default_value()
 	return "Unset"
 
@@ -59,9 +55,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/directory_sexualitytag/init_possible_values()
-	return GLOB.char_directory_sexualitytags
-
+TYPE_TABLE(/datum/preference/choiced/human/directory_sexualitytag, pref_choices, GLOB.char_directory_sexualitytags)
 /datum/preference/choiced/human/directory_sexualitytag/create_default_value()
 	return "Unset"
 
@@ -75,9 +69,7 @@
 	savefile_identifier = PREFERENCE_CHARACTER
 	can_randomize = FALSE
 
-/datum/preference/choiced/human/directory_erptag/init_possible_values()
-	return GLOB.char_directory_erptags
-
+TYPE_TABLE(/datum/preference/choiced/human/directory_erptag, pref_choices, GLOB.char_directory_erptags)
 /datum/preference/choiced/human/directory_erptag/create_default_value()
 	return "Unset"
 

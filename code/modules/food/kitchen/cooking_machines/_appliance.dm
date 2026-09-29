@@ -73,29 +73,33 @@
 	else
 		to_chat(user, span_notice("It is empty."))
 
+/// list(colour, text) per cooking stage for the tgui panel, indexed by report_progress_tgui(). Shared, read-only.
+GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."), 	list("blue", "Cold."), 	list("blue", "It's barely started cooking."), 	list("average", "It's cooking away nicely."), 	list("good", "It's almost ready!"), 	list("good", "It's done!"), 	list("bad", "It looks overcooked, get it out!"), 	list("bad", "It is burning!"), ))
+
 /obj/machinery/appliance/proc/report_progress_tgui(datum/cooking_item/CI)
+	var/list/texts = GLOB.appliance_progress_texts
 	if(!CI || !CI.max_cookwork)
-		return list("average", "Not Cooking.")
+		return texts[1]
 
 	if(!CI.cookwork)
-		return list("blue", "Cold.")
+		return texts[2]
 
 	var/progress = CI.cookwork / CI.max_cookwork
 
 	if (progress < 0.25)
-		return list("blue", "It's barely started cooking.")
+		return texts[3]
 	if (progress < 0.75)
-		return list("average", "It's cooking away nicely.")
+		return texts[4]
 	if (progress < 1)
-		return list("good", "It's almost ready!")
+		return texts[5]
 
 	var/half_overcook = (CI.overcook_mult - 1)*0.5
 	if (progress < 1+half_overcook)
-		return list("good", "It's done!")
+		return texts[6]
 	if (progress < CI.overcook_mult)
-		return list("bad", "It looks overcooked, get it out!")
+		return texts[7]
 	else
-		return list("bad", "It is burning!")
+		return texts[8]
 
 /obj/machinery/appliance/proc/report_progress(datum/cooking_item/CI)
 	if (!CI || !CI.max_cookwork)

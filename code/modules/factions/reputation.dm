@@ -1,8 +1,7 @@
 GLOBAL_LIST_INIT(reputation_factions, init_reputation_factions())
 GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, new())
 
-/proc/reputation_affiliation_choices() as /list
-	return list(AFFILIATION_HOSTILE, AFFILIATION_OPPOSED, AFFILIATION_NEUTRAL, AFFILIATION_FRIENDLY, AFFILIATION_MEMBER)
+GLOBAL_LIST_INIT(reputation_affiliation_choices, list(AFFILIATION_HOSTILE, AFFILIATION_OPPOSED, AFFILIATION_NEUTRAL, AFFILIATION_FRIENDLY, AFFILIATION_MEMBER))
 
 /proc/reputation_for_affiliation(affiliation)
 	switch(affiliation)
@@ -510,7 +509,7 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	var/datum/faction_reputation_ledger/ledger = ensure_faction_reputation()
 	for(var/faction_id in GLOB.reputation_factions)
 		var/affiliation = affiliations?[faction_id]
-		if(!(affiliation in reputation_affiliation_choices()))
+		if(!(affiliation in GLOB.reputation_affiliation_choices))
 			affiliation = AFFILIATION_NEUTRAL
 		faction_affiliations[faction_id] = affiliation
 		if(!ledger.affiliations_initialized)

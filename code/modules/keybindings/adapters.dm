@@ -65,8 +65,8 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 		return FALSE
 	return TRUE
 
-/datum/input_adapter/proc/click_table()
-	return TYPE_TABLE_GET(GLOB.input_router, standard_click_table)
+/// Click classification rows for this adapter (see /datum/input_router). Shared, read-only.
+TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLOB.input_router, standard_click_table))
 
 /// The mob proc that runs a non-Use action, or null if the action does nothing.
 /// Each action is one mob proc named after it; mob types override the proc (AI, cyborgs, hardsuits).
@@ -397,16 +397,14 @@ GLOBAL_LIST_INIT(input_adapters, init_input_adapters())
 
 /// The AI reads fewer modifiers than other mobs: no extra mouse buttons, no
 /// point, no loot panel, and alt-click ignores right-click.
-/datum/input_adapter/ai/click_table()
-	var/static/list/table = list(
-		list(list(SHIFT_CLICK, CTRL_CLICK), INPUT_ACTION_QUICK),
-		list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS),
-		list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT),
-		list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE),
-		list(list(CTRL_CLICK), INPUT_ACTION_PULL),
-		list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING),
-	)
-	return table
+TYPE_TABLE(/datum/input_adapter/ai, adapter_click_table, list( \
+	list(list(SHIFT_CLICK, CTRL_CLICK), INPUT_ACTION_QUICK), \
+	list(list(MIDDLE_CLICK), INPUT_ACTION_SWAP_HANDS), \
+	list(list(SHIFT_CLICK), INPUT_ACTION_INSPECT), \
+	list(list(ALT_CLICK), INPUT_ACTION_ALTERNATE), \
+	list(list(CTRL_CLICK), INPUT_ACTION_PULL), \
+	list(list(RIGHT_CLICK), INPUT_ACTION_RIGHT_CLICK_BINDING), \
+))
 
 /// The AI has no hands: only tool-less interactions tagged remote, on what its cameras can see.
 /datum/input_adapter/ai/allows_interaction(mob/living/silicon/ai/user, atom/target, datum/interaction/interaction)

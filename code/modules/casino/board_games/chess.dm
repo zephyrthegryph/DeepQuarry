@@ -49,8 +49,10 @@
 		ui = new(user, src, "ChessCheckers", name)
 		ui.open()
 
+GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
+
 /datum/board_game/chess/tgui_static_data(mob/user)
-	return list("game_type" = "chess")
+	return GLOB.chess_static_data
 
 /datum/board_game/chess/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)

@@ -131,14 +131,14 @@
 
 /datum/unit_test/dq_k_b_d5_overdose_stage_data/Run()
 	var/datum/affliction/overdose/bicaridine/B = new
-	var/list/stages = B.get_stages()
+	var/list/stages = TYPE_TABLE_GET(B, affliction_stages)
 	TEST_ASSERT_NOTNULL(stages, "the bicaridine overdose has a stage table")
 	TEST_ASSERT_EQUAL(length(stages), 3, "three stages")
 	var/list/critical = stages["Critical"]
 	TEST_ASSERT_NOTNULL(critical, "a Critical stage")
 	TEST_ASSERT_EQUAL(critical["max_symptoms"], 3, "the stage numbers come from the data")
 	TEST_ASSERT((/datum/affliction/internal_hemorrhage in critical["always_spawns"]), "extra stage keys survive")
-	TEST_ASSERT(stages == B.get_stages(), "the table is built once per type")
+	TEST_ASSERT(stages == TYPE_TABLE_GET(B, affliction_stages), "the table is built once per type")
 	qdel(B)
 	for(var/path in subtypesof(/datum/affliction/overdose))
 		var/datum/affliction/overdose/O = path
@@ -146,7 +146,7 @@
 			continue
 		var/datum/affliction/overdose/inst = new path
 		if(length(inst.overdose_stage_data))
-			TEST_ASSERT_EQUAL(length(inst.get_stages()), 3, "[path] builds three stages from its data")
+			TEST_ASSERT_EQUAL(length(TYPE_TABLE_GET(inst, affliction_stages)), 3, "[path] builds three stages from its data")
 		qdel(inst)
 
 /// C12: reagent changes dirty the factors only on a band crossing or when a
