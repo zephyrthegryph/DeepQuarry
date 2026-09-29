@@ -71,7 +71,7 @@
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] suddenly crouches and wiggles its backside...!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly crouches and wiggles its backside...!")))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 
 	do_windup_animation(A, leap_warmup)
@@ -87,7 +87,7 @@
 		return FALSE
 
 	status_flags |= LEAPING
-	visible_message(span_warning("\The [src] pounces at \the [L]!!"))
+	act_message(src, L, null, MSG_OTHERS(span_warning("%U% pounces at %T%!!")))
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
@@ -200,7 +200,7 @@
 
 /mob/living/simple_mob/vore/blackhole/grotesque/on_death(gibbed)
 	..()
-	visible_message("[src] lets out a horrible cry as it collapses into an inky black pile of gore!")
+	act_message(src, null, null, MSG_OTHERS("%U% lets out a horrible cry as it collapses into an inky black pile of gore!"))
 	playsound(src, 'sound/metroid/metroiddeath.ogg', 100, 1)
 
 /mob/living/simple_mob/vore/blackhole/ranged
@@ -705,10 +705,10 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 				if(L.zone_sel.selecting == BP_GROIN)
 					if(L.vore_bellyrub(src))
 						return
-				L.visible_message(span_notice("\The [L] [response_help] \the [src]."))
+				act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 
 		if(I_DISARM)
-			L.visible_message(span_notice("\The [L] [response_disarm] \the [src]."))
+			act_message(L, src, null, MSG_OTHERS(span_notice("%U% [response_disarm] %T%.")))
 			L.do_attack_animation(src)
 			//TODO: Push the mob away or something
 
@@ -718,7 +718,7 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 			if (!(status_flags & CANPUSH))
 				return
 			if(!incapacitated(INCAPACITATION_ALL) && prob(grab_resist))
-				L.visible_message(span_warning("[src] pulses ominously at [L], forcefully pushing them away with psychic energy as they try to grab it!"))
+				act_message(src, L, null, MSG_OTHERS(span_warning("%U% pulses ominously at %T%, forcefully pushing them away with psychic energy as they try to grab it!")))
 				return
 
 #undef OBELISK_LURE
@@ -751,13 +751,13 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 
 /mob/living/simple_mob/vore/blackhole/proc/explode()
 	if(src && !exploded)
-		visible_message(span_danger("\The [src]'s body violently explodes!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U%'s body violently explodes!")))
 		exploded = TRUE
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 		gib(src)
 
 /mob/living/simple_mob/vore/blackhole/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
@@ -766,12 +766,12 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/proc/explode()
 	if(src && !exploded)
-		visible_message(span_danger("\The [src]'s body violently explodes!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U%'s body violently explodes!")))
 		exploded = TRUE
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 
 /mob/living/simple_mob/vore/otie/syndicate/blackhole/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#A663FF", time = 0.1 SECONDS)
@@ -780,13 +780,13 @@ DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/explode()
 	if(src && !exploded)
-		visible_message(span_danger("\The [src] violently explodes!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U% violently explodes!")))
 		exploded = TRUE
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 
 /mob/living/simple_mob/vore/blackhole_obelisk/on_death(gibbed)
-	visible_message(span_critical("\\The [src] suddenly destablizes!"))
-	visible_message("[src] flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby...")
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U% suddenly destablizes!")))
+	act_message(src, null, null, MSG_OTHERS("%U% flashes brightly, crumbling as its psychic influence suddenly vanishes from the minds of those nearby..."))
 	playsound(src, 'sound/effects/monolith_death.ogg', 100)
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#FFFFFF", time = 0.1 SECONDS, loop = ceil(delay/2))

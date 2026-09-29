@@ -109,7 +109,7 @@
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] crouches down and wiggles its haunches!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% crouches down and wiggles its haunches!")))
 	to_chat(L, span_danger("\The [src] is looking right at you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)

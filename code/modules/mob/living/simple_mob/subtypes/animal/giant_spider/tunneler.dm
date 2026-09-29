@@ -89,7 +89,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/proc/tunnel_dig(atom/A, turf/destination, turf/starting_turf)
 	// Do the dig!
-	visible_message(span_danger("\The [src] tunnels towards \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% tunnels towards %T%!")))
 	submerge()
 	handle_tunnel(destination, PROC_REF(tunnel_arrived), list(destination, starting_turf))
 
@@ -111,7 +111,7 @@
 		if(L == src)
 			continue
 
-		visible_message(span_danger("\The [src] erupts from underneath, and hits \the [L]!"))
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% erupts from underneath, and hits %T%!")))
 		playsound(src, 'sound/weapons/heavysmash.ogg', 75, 1)
 		L.apply_body_effect(/datum/body_effect/entangled, 3 SECONDS) //L.status_at_least(EFFECT_WEAKENED, 3)
 		overshoot = FALSE

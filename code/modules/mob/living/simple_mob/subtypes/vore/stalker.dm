@@ -75,9 +75,9 @@
 	COOLDOWN_START(src, vore_pounce_cooldown, 1 SECONDS) // don't attempt another pounce for a while
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
-		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
-		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
 		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
 
 	if(will_eat(M) && (!M.canmove || vore_standing_too)) //if they're edible then eat them too

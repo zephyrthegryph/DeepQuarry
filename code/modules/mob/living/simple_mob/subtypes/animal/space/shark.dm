@@ -48,6 +48,6 @@
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
 			L.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS) // replacing weaken/slowdown with slow down
-			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/shark/event

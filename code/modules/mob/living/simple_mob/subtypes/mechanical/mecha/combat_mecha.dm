@@ -20,7 +20,7 @@
 	if(isliving(A))
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
-			visible_message(span_danger("\The [src] sends \the [L] flying with their mechanized fist!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with their mechanized fist!")))
 			playsound(src, "punch", 50, 1)
 			L.status_at_least(EFFECT_WEAKENED, weaken_amount)
 			var/throw_dir = get_dir(src, L)
@@ -28,5 +28,5 @@
 			L.throw_at(get_edge_target_turf(L, throw_dir), throw_dist, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] punches you with incredible force, but you remain in place."))
-			visible_message(span_danger("\The [src] slams it's mechanized fist into \the [L] with incredible force, to no visible effect!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% slams it's mechanized fist into %T% with incredible force, to no visible effect!")))
 			playsound(src, "punch", 50, 1)

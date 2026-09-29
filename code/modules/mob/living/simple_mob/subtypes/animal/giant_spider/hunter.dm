@@ -95,7 +95,7 @@
 
 	if(victim)
 		victim.status_at_least(EFFECT_WEAKENED, 2)
-		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
+		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 
 	ai_busy_end()

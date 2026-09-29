@@ -77,8 +77,8 @@
 	if(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam))
 		var/reflect_prob = reflect_chance - round(P.damage/3)
 		if(prob(reflect_prob))
-			visible_message(span_danger("The [P.name] gets reflected by [src]'s armor!"), \
-							span_userdanger("The [P.name] gets reflected by [src]'s armor!"))
+			act_message(src, null, MSG_SELF(\
+							span_userdanger("The [P.name] gets reflected by %U%'s armor!")), MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s armor!")))
 
 			// Find a turf near or on the original location to bounce to
 			if(P.starting)

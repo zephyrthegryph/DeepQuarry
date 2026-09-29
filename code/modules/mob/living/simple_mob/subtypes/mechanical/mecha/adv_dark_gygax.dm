@@ -133,7 +133,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 	energy_ball.adjust_scale(0.5)
 	energy_ball.orbit(src, 32, TRUE, 1 SECOND)
 
-	visible_message(span_warning("\The [src] creates \an [energy_ball] around itself!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% creates \an [energy_ball] around itself!")))
 
 	playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
 
@@ -196,7 +196,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
@@ -212,7 +212,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced, 
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/launch_microsingularity(atom/target)
 	var/turf/T = get_turf(target)
-	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires an energetic sphere into the air!")))
 	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)

@@ -255,7 +255,7 @@
 
 	// This is meant to be a bit silly, cause borers don't have much options otherwise
 	remove_verb(src, /mob/living/carbon/human/proc/jumpstart)
-	visible_message(span_danger("With a hideous, rattling moan, [src] shudders back to life!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger("With a hideous, rattling moan, %U% shudders back to life!")))
 
 	// Dump damage or we won't be able to revive properly
 	mend(TREAT_ANALGESIC, 1000)

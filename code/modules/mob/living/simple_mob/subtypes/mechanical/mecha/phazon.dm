@@ -52,7 +52,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a red missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a red missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/big, 2, "\The [src] retracts the red missile rack.")
 
@@ -69,7 +69,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a blue missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a blue missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 2, "\The [src] retracts the blue missile rack.")
 
@@ -86,7 +86,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a yellow missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a yellow missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/spread, 2, "\The [src] retracts the yellow missile rack.")
 

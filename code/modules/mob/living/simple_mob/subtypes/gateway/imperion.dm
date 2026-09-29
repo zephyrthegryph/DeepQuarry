@@ -89,7 +89,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
@@ -118,7 +118,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase2/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
-	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires an energetic sphere into the air!")))
 	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
@@ -212,7 +212,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.")
 
@@ -260,7 +260,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase4/proc/launch_microsingularity(atom/target)
 	var/turf/T = get_turf(target)
-	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires an energetic sphere into the air!")))
 	playsound(src, 'sound/weapons/Laser.ogg', 50, 1)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)
@@ -348,7 +348,7 @@
 
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-	visible_message(span_warning("\The [src] deploys a missile rack!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% deploys a missile rack!")))
 	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 3, "\The [src] retracts the missile rack.", PROC_REF(microsingularity_followup))
 

@@ -105,7 +105,7 @@
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 
 	// Do the dig!
-	visible_message(span_danger("\The [src] sinks into a puddle of blood \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% sinks into a puddle of blood %T%!")))
 	new /obj/effect/decal/cleanable/blood (src.loc)
 	flick("blood_out",A)
 	icon_state = "bloodout"
@@ -130,7 +130,7 @@
 		if(L == src)
 			continue
 
-		visible_message(span_danger("\The [src] suddenly rises from a pool of blood \the [L]!"))
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% suddenly rises from a pool of blood %T%!")))
 		new /obj/effect/decal/cleanable/blood (src.loc)
 		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
 		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
@@ -482,7 +482,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 	. = TRUE
 	if(O.force)
 		if(prob(30))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -490,7 +490,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/cultist/elite, INTERACT_ITEM
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/cultist/elite/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return

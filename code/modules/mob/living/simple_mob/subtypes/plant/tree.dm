@@ -39,7 +39,7 @@
 		var/mob/living/L = A
 		if(prob(15))
 			L.status_at_least(EFFECT_WEAKENED, 3)
-			L.visible_message(span_danger("\The [src] knocks down \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 
 /mob/living/simple_mob/animal/space/tree
 	delete_on_death = TRUE

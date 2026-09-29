@@ -123,7 +123,7 @@
 		if(is_injured())
 			mend(TREAT_PLATING_REPAIR, rand(A.melee_damage_lower, A.melee_damage_upper))
 			mend(TREAT_WIRING_REPAIR, rand(A.melee_damage_lower, A.melee_damage_upper))
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " mends some of \the [src]'s wounds."))
+			act_message(user, src, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " mends some of %T%'s wounds.")))
 		else
 			to_chat(user, span_notice("\The [src] is undamaged."))
 		return

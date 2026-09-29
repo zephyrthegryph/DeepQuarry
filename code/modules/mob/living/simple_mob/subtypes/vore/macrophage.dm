@@ -81,8 +81,8 @@
 	EXTRAPOLATOR_ACT_SET(., EXTRAPOLATOR_ACT_PRIORITY_SPECIAL)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/extrapolator_act_macrophage_done(mob/living/user, obj/item/extrapolator/extrapolator)
-	user.visible_message(span_danger("[user] stabs [src] with [extrapolator], sucking it up!"), \
-		span_danger("You stab [src] with [extrapolator]'s probe, destroying it!"))
+	act_message(user, src, MSG_SELF(\
+		span_danger("You stab %T% with [extrapolator]'s probe, destroying it!")), MSG_OTHERS(span_danger("%U% stabs %T% with [extrapolator], sucking it up!")))
 	death()
 
 /mob/living/simple_mob/vore/aggressive/macrophage/proc/deathcheck()
@@ -109,7 +109,7 @@
 	status_flags |= LEAPING
 	flying = TRUE
 	dq_set_hovering(src, TRUE)
-	visible_message(span_warning("The [src] lunges at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_warning("%U% lunges at %T%!")))
 	throw_at(A, 7, 2)
 	if(status_flags & LEAPING)
 		status_flags &= ~LEAPING
@@ -136,7 +136,7 @@
 			var/mob/living/pred = belly.owner
 			pred.force_contagion(base_disease)
 	else
-		visible_message(span_warning("\The [src] shrivels up and dies, unable to survive!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% shrivels up and dies, unable to survive!")))
 		var/obj/effect/decal/cleanable/blood/sick = new(loc)
 		sick.name = "plasma"
 		sick.basecolor = "#47cbcf"

@@ -48,7 +48,7 @@
 	if(is_queen)
 		status_set(EFFECT_PARALYZED, 7998)
 		playsound(src, 'sound/metroid/metroidgrow.ogg', 50, 1)
-		src.visible_message(span_notice("\The [src] begins to lay an egg."))
+		act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay an egg.")))
 		om_after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
@@ -73,7 +73,7 @@
 	L = new next(get_turf(src)) //Next is a variable defined by metTypes.dm that just points to the next metroid in the evolutionary stage.
 	if(mind)
 		src.mind.transfer_to(L)
-	visible_message(span_warning("\The [src] suddenly evolves!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
 	qdel(src)
 
 // Code for metroids attacking other things.
@@ -93,10 +93,7 @@
 
 				if(prob(stun_power * 10)) // Try an electric shock.
 					power_charge = max(0, power_charge - 3)
-					L.visible_message(
-						span_danger("\The [src] has shocked \the [L]!"),
-						span_danger("\The [src] has shocked you!")
-						)
+					act_message(L, src, MSG_SELF(span_danger("%T% has shocked you!")), MSG_OTHERS(span_danger("%T% has shocked %U%!")))
 					playsound(src, 'sound/weapons/egloves.ogg', 75, 1)
 					L.status_at_least(EFFECT_WEAKENED, 4)
 					L.status_at_least(EFFECT_STUNNED, 4)
@@ -115,10 +112,7 @@
 					return FALSE
 
 				else if(prob(20)) // Try to do a regular disarm attack.
-					L.visible_message(
-						span_danger("\The [src] has pounced at \the [L]!"),
-						span_danger("\The [src] has pounced at you!")
-						)
+					act_message(L, src, MSG_SELF(span_danger("%T% has pounced at you!")), MSG_OTHERS(span_danger("%T% has pounced at %U%!")))
 					playsound(src, 'sound/weapons/thudswoosh.ogg', 75, 1)
 					L.status_at_least(EFFECT_WEAKENED, 2)
 					do_attack_animation(L)
@@ -128,10 +122,7 @@
 					return FALSE
 
 				else // Failed to do anything this time.
-					L.visible_message(
-						span_warning("\The [src] has tried to pounce at \the [L]!"),
-						span_warning("\The [src] has tried to pounce at you!")
-						)
+					act_message(L, src, MSG_SELF(span_warning("%T% has tried to pounce at you!")), MSG_OTHERS(span_warning("%T% has tried to pounce at %U%!")))
 					playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
 					do_attack_animation(L)
 					return FALSE

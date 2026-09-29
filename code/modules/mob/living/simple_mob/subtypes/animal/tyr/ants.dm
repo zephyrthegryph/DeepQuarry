@@ -64,14 +64,14 @@
 	if(isliving(A) && combat_mode)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
-			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			playsound(src, "punch", 50, 1)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
-			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // Visible/audible feedback for *resisting* the slam.
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% hits %T% with incredible force, to no visible effect!"))) // Visible/audible feedback for *resisting* the slam.
 			playsound(src, "punch", 50, 1) // Visible/audible feedback for *resisting* the slam.
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/copper //lighting ants
@@ -121,12 +121,12 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/proc/explode()
 	if(src && !exploded)
-		visible_message(span_danger("\The [src]'s body detonates!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U%'s body detonates!")))
 		exploded = TRUE
 		explosion(src.loc, 0, 3, 0, 0)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s body begins to rupture!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body begins to rupture!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
@@ -307,7 +307,7 @@
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
 	return TRUE
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/silver //transparent
@@ -340,12 +340,12 @@
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/gold/proc/explode()
 	if(src && !exploded)
-		visible_message(span_danger("\The [src]'s body detonates!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U%'s body detonates!")))
 		exploded = TRUE
 		empulse(src, 1, 2, 0, 0)
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/gold/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s body begins to rupture!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body begins to rupture!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
@@ -377,7 +377,7 @@
 		return FALSE
 	if(istext(om_task_start(/datum/om/task/mob_work/ant_build, src, T)))
 		return FALSE
-	visible_message(span_notice("\The [src] begins to secrete a sticky substance."))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to secrete a sticky substance.")))
 	return TRUE
 
 /*
@@ -437,9 +437,9 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	user.setClickCooldown(user.get_attack_speed(W))
 
 	if(LAZYLEN(W.attack_verb))
-		visible_message(span_warning("\The [src] has been [pick(W.attack_verb)] with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been [pick(W.attack_verb)] with %I%[(user ? " by %T%." : ".")]")), item = W)
 	else
-		visible_message(span_warning("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
+		act_message(src, user, null, MSG_OTHERS(span_warning("%U% has been attacked with %I%[(user ? " by %T%." : ".")]")), item = W)
 
 	var/damage = W.force / 4.0
 
@@ -472,11 +472,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 		if(L.faction == FACTION_TYR_ANT)
 			return
 		else if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps in \the [src]."),
-				span_danger("You step in \the [src]!"),
-				span_hear(span_bold("You hear a strange rustling!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step in %T%!")), MSG_OTHERS(span_danger("%U% steps in %T%.")), MSG_BLIND(span_hear(span_bold("You hear a strange rustling!"))))
 			attack_mob(L)
 			update_icon()
 	..()

@@ -94,7 +94,7 @@
 /mob/living/simple_mob/vore/sheep/proc/shear_done(mob/user, obj/item/O)
 	if(!harvestable_wool)
 		return
-	user.visible_message(span_notice("\The [user] shears \the [src] with \the [O]."),span_notice("You shear \the [src] with \the [O]."))
+	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = O)
 	new /obj/item/stack/material/fur/wool(get_turf(user))
 	harvestable_wool = FALSE
 	update_icon()

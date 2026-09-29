@@ -178,7 +178,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 /mob/living/simple_mob/animal/passive/snake/python/noodle/proc/noodle_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	. = TRUE
 	if(istype(O, /obj/item/reagent_containers/food/snacks/snakesnack))
-		visible_message(span_notice("[user] feeds \the [O] to [src]."))
+		act_message(user, src, null, MSG_OTHERS(span_notice("%U% feeds %I% to %T%.")), item = O)
 		adjust_nutrition(100) //It's sugar!
 		consume(O, user)
 	else

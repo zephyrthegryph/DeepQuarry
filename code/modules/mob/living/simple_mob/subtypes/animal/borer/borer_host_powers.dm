@@ -61,7 +61,7 @@
 		return
 
 	to_chat(src, span_alien("Your host twitches and quivers as you rapidly excrete a larva from your sluglike body."))
-	visible_message(span_danger("\The [src] heaves violently, expelling a rush of vomit and a wriggling, sluglike creature!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger("%U% heaves violently, expelling a rush of vomit and a wriggling, sluglike creature!")))
 
 	do_vomit(lost_nutrition = 1) // Needs to be instant
 	new /mob/living/simple_mob/animal/borer/non_antag(get_turf(src))

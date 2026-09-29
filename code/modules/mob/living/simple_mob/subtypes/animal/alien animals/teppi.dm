@@ -499,7 +499,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		if(resting)
 			lay_down()
 		handle_affinity(user, -5)
-		user.visible_message(user, span_notice("\The [user] hits \the [src] with \the [O]. \The [src] grumbles at \the [user]."),span_notice("You hits \the [src] with \the [O]. \The [src] grumbles at you."))
+		act_message(user, src, MSG_SELF(span_notice("You hit %T% with %I%. %T% grumbles at you.")), MSG_OTHERS(span_notice("%U% hits %T% with %I%. %T% grumbles at %U%.")), item = O)
 		playsound(src, 'sound/weapons/tap.ogg', 50, 1, -1)
 		return FALSE
 	if(teppi_wool)
@@ -511,7 +511,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			to_chat(user, span_notice("\The [src] is napping, and doesn't respond to \the [O]."))
 			return
 		if(nutrition >= 5000)
-			user.visible_message(span_notice("\The [user] tries to feed \the [O] to \the [src]. It snoofs but does not eat."),span_notice("You try to feed \the [O] to \the [src], but it only snoofts at it."))
+			act_message(user, O, MSG_SELF(span_notice("You try to feed %T% to \the [src], but it only snoofts at it.")), MSG_OTHERS(span_notice("%U% tries to feed %T% to \the [src]. It snoofs but does not eat.")))
 			return
 		var/nutriment_amount = O.reagents?.get_reagent_amount(REAGENT_ID_NUTRIMENT) //does it have nutriment, if so how much?
 		var/protein_amount = O.reagents?.get_reagent_amount(REAGENT_ID_PROTEIN) //does it have protein, if so how much?
@@ -530,25 +530,25 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 				if(R.allergen_type & allergen_unpreference)
 					disliked = TRUE
 			if(liked && disliked) //in case a food has both the thing they like and also the thing they don't like in it
-				user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] and looks confused."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] and looks confused."))
+				act_message(user, O, MSG_SELF(span_notice("You feed %T% to \the [src]. It nibbles %T% and looks confused.")), MSG_OTHERS(span_notice("%U% feeds %T% to \the [src]. It nibbles %T% and looks confused.")))
 			else if(liked && !disliked)
-				user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] excitedly."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] excitedly."))
+				act_message(user, O, MSG_SELF(span_notice("You feed %T% to \the [src]. It nibbles %T% excitedly.")), MSG_OTHERS(span_notice("%U% feeds %T% to \the [src]. It nibbles %T% excitedly.")))
 				yum *= 2
 				handle_affinity(user, 5)
 			else if(!liked && disliked)
-				user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] slowly."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] slowly."))
+				act_message(user, O, MSG_SELF(span_notice("You feed %T% to \the [src]. It nibbles %T% slowly.")), MSG_OTHERS(span_notice("%U% feeds %T% to \the [src]. It nibbles %T% slowly.")))
 				yum *= 0.5
 				handle_affinity(user, -5)
 			else
-				user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O]."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O]."))
+				act_message(user, O, MSG_SELF(span_notice("You feed %T% to \the [src]. It nibbles %T%.")), MSG_OTHERS(span_notice("%U% feeds %T% to \the [src]. It nibbles %T%.")))
 				handle_affinity(user, 1)
 		else
-			user.visible_message(span_notice("\The [user] feeds \the [O] to \the [src]. It nibbles \the [O] casually."),span_notice("You feed \the [O] to \the [src]. It nibbles \the [O] casually."))
+			act_message(user, O, MSG_SELF(span_notice("You feed %T% to \the [src]. It nibbles %T% casually.")), MSG_OTHERS(span_notice("%U% feeds %T% to \the [src]. It nibbles %T% casually.")))
 		adjust_nutrition(yum) //add the nutriment!
 		consume(O, user)
 		playsound(src, 'sound/items/eatfood.ogg', 75, 1)
 		if(!client && lets_eat(user) && prob(1))
-			visible_message(span_danger("\The [src] scromfs \the [user] along with the food!"))
+			act_message(src, user, null, MSG_OTHERS(span_danger("%U% scromfs %T% along with the food!")))
 			to_chat(user, span_notice("\The [src] leans in close, spreading its jaws in front of you. A hot, humid gust of breath blows over you as the weight of \the [src]'s presses you over, knocking you off of your feet as the warm gooey tough of jaws scromf over your figure, rapidly guzzling you away with the [O], leaving you to tumble down into the depths of its body..."))
 			playsound(src, pick(GLOB.bodyfall_sound), 75, 1)
 			teppi_pounce(user)
@@ -560,7 +560,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		if(client)
 			return FALSE
 		if(resting)
-			user.visible_message(span_attack("\The [user] approaches \the [src]'s neck with \the [O]."),span_attack("You approach \the [src]'s neck with \the [O]."))
+			act_message(user, src, MSG_SELF(span_attack("You approach %T%'s neck with %I%.")), MSG_OTHERS(span_attack("%U% approaches %T%'s neck with %I%.")), item = O)
 			om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_teppi_done), done_args = list(user))
 		else
 			return FALSE
@@ -600,7 +600,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		return FALSE
 	if(interaction.stance == I_GRAB && item_type)
 		if(affinity[M.real_name] >= 30)
-			M.visible_message(span_notice("\The [M.name] removes \the [src]'s [item_type]."),span_notice("You remove \the [src]'s [item_type]."))
+			act_message(M, src, MSG_SELF(span_notice("You remove %T%'s [item_type].")), MSG_OTHERS(span_notice("\The [M.name] removes %T%'s [item_type].")))
 			item_type = null
 			update_icon()
 			return
@@ -611,7 +611,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			lay_down()
 		return FALSE
 	if(resting)
-		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
+		act_message(M, src, MSG_SELF(span_notice("You shake %T% awake!")), MSG_OTHERS(span_notice("\The [M.name] shakes %T% awake from their nap.")))
 		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
 		lay_down()
 		return
@@ -622,12 +622,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			handle_affinity(M, 1)
 			if(teppi_adult)
 				if(prob(25))
-					M.visible_message(span_notice("\The [src] rumbles happily at \the [M]"),span_notice("\The [src] rumbles happily at you!"))
+					act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 					playsound(src, 'sound/voice/teppi/rumble.ogg', 75, 1)
 				if(vore_selected)
 					vore_selected.digest_mode = DM_DRAIN //People outside can help calm the tumby if you squirm too much
 			else if(prob(25))
-				M.visible_message(span_notice("\The [src] rumbles happily at \the [M]"),span_notice("\The [src] rumbles happily at you!"))
+				act_message(M, src, MSG_SELF(span_notice("%T% rumbles happily at you!")), MSG_OTHERS(span_notice("%T% rumbles happily at %U%")))
 				playsound(src, 'sound/voice/teppi/cute_rumble.ogg', 75, 1)
 			if(prob(25))
 				wantpet = rand(0,25) * affection_factor //We stopped wanting pets
@@ -640,7 +640,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 				to_chat(M, span_notice("\The [src] grumbles at your touch."))
 		else if(lets_eat(M) && prob(50))
 			to_chat(M, span_notice("\The [src] grumbles a bit... and then bowls you over, pressing their weight into yours to knock you off of your feet! In a rush of chaotic presses and schlorps, the gooey touch of Teppi flesh grinds over you as you're guzzled away! Casually swallowed down in retaliation for all of the pettings. Pumped down deep into the grumbling depths of \the [src]."))
-			visible_message(span_danger("\The [src] scromfs \the [M], before chuffing and settling down again."))
+			act_message(src, M, null, MSG_OTHERS(span_danger("%U% scromfs %T%, before chuffing and settling down again.")))
 			playsound(src, pick(GLOB.bodyfall_sound), 75, 1)
 			teppi_pounce(M)
 			wantpet = 100
@@ -690,7 +690,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 			replace_with(self, /mob/living/simple_mob/vore/alienanimals/teppi, self.store_teppi_data(self))
 			return
 		else
-			self.visible_message("\The [self] whines pathetically...", runemessage = "whines")
+			self.visible_message("\The [self] whines pathetically...", runemessage = "whines") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
 			if(prob(50))
 				playsound(self, 'sound/voice/teppi/whine1.ogg', 75, 1)
 			else
@@ -755,7 +755,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	return TRUE
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/teppi_shear_teppi_done(mob/user, obj/item/tool)
-	user.visible_message(span_notice("\The [user] shears \the [src] with \the [tool]."),span_notice("You shear \the [src] with \the [tool]."))
+	act_message(user, src, MSG_SELF(span_notice("You shear %T% with %I%.")), MSG_OTHERS(span_notice("%U% shears %T% with %I%.")), item = tool)
 	amount_grown = rand(0,250)
 	var/obj/item/stack/material/fur/F = new(get_turf(user), rand(10,15))
 	F.color = marking_color
@@ -993,7 +993,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 		teppi_mutate = TRUE
 	mom.adjust_nutrition(-500)
 	dad.adjust_nutrition(-250)
-	mom.visible_message("\The [src] is born from [mom]... It's the miracle of life!", runemessage = "grunts")
+	mom.visible_message("\The [src] is born from [mom]... It's the miracle of life!", runemessage = "grunts") // ALLOW(sys_visible_pair): custom runemessage; act_message has no runechat parameter
 	handle_affinity(mom, 26)	//this way the babies will follow their parents around (and keep track of them)
 	handle_affinity(dad, 25)
 

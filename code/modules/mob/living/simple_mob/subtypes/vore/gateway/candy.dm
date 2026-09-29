@@ -223,14 +223,14 @@
 	if(isliving(A) && stance == I_HURT)
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
-			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% sends %T% flying with the impact!")))
 			playsound(src, "punch", 50, 1)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
-			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // Visible/audible feedback for *resisting* the slam.
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% hits %T% with incredible force, to no visible effect!"))) // Visible/audible feedback for *resisting* the slam.
 			playsound(src, "punch", 50, 1)
 
 /mob/living/simple_mob/vore/candy/yellowcabold //Speeds folks
@@ -457,21 +457,21 @@
 			debuff_combo(A)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo(atom/target)
-	visible_message(span_warning("\The [src] calls for help!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	om_after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
 
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_1()
-	visible_message(span_warning("\The [src] calls for help!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	om_after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_2()
-	visible_message(span_warning("\The [src] calls for help!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
@@ -479,13 +479,13 @@
 	om_after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_3()
-	visible_message(span_warning("\The [src] calls for help!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	visible_message(span_warning("\The [src] begins to heal!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to heal!")))
 	om_after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_4()
@@ -512,7 +512,7 @@
 		om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, next_shot, null)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_combo(atom/target)
-	visible_message(span_warning("\The [src] prepares to let out a thunderous roar!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares to let out a thunderous roar!")))
 	om_after(src, 2.5 SECONDS, PROC_REF(debuff_roar), target)
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_roar(atom/target)
@@ -622,13 +622,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 /mob/living/simple_mob/vore/candy/peppermint/proc/peppermint_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(O.force)
 		if(prob(80))
-			visible_message(span_danger("\The [src] deflects \the [O] with its shell!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% deflects %T% with its shell!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return TRUE
 		return FALSE
 	to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-	visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+	act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 	return TRUE
 
 /*

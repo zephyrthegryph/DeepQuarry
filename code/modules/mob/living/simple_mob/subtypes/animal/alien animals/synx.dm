@@ -761,12 +761,12 @@
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/on_death(gibbed)
 	..()
-	visible_message(span_notice("\The [src] fades away!"))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/gib()
-	visible_message(span_notice("\The [src] fades away!"))
+	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
 	qdel(src)

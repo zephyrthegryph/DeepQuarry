@@ -62,17 +62,17 @@
 				return
 			if(A.mob_size > MOB_SMALL)
 				if(prob(squish_chance))
-					A.visible_message(span_notice("[A] squashed [src]."), span_notice("You squashed [src]."))
+					act_message(A, src, MSG_SELF(span_notice("You squashed %T%.")), MSG_OTHERS(span_notice("%U% squashed %T%.")))
 					injure(INJURY_BLUNT, 1, source = A) //kills a normal cockroach
 				else
-					visible_message(span_notice("[src] avoids getting crushed."))
+					act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 	else
 		if(isstructure(AM))
 			if(prob(squish_chance))
 				AM.visible_message(span_notice("[src] was crushed under [AM]."))
 				injure(INJURY_BLUNT, 1, source = AM)
 			else
-				visible_message(span_notice("[src] avoids getting crushed."))
+				act_message(src, null, null, MSG_OTHERS(span_notice("%U% avoids getting crushed.")))
 
 /mob/living/simple_mob/animal/passive/cockroach/ex_act() //Explosions are a terrible way to handle a cockroach.
 	return

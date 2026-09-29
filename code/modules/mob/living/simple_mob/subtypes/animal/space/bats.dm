@@ -44,7 +44,7 @@
 		var/mob/living/L = A
 		if(prob(scare_chance))
 			L.status_at_least(EFFECT_STUNNED, 1)
-			L.visible_message(span_danger("\The [src] scares \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% scares %T%!")))
 
 // Spookiest of bats
 /mob/living/simple_mob/animal/space/bats/cult

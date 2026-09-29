@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 	. = TRUE
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
-		user.visible_message(span_notice("[user] milks [src] using \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_notice("%U% milks %T% using %I%.")), item = O)
 		var/transfered = udder.trans_id_to(G, REAGENT_ID_MILK, rand(5,10))
 		if(G.reagents.total_volume >= G.volume)
 			to_chat(user, span_red("The [O] is full."))
@@ -62,7 +62,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 /mob/living/simple_mob/animal/passive/cow/proc/cow_interaction_hand(mob/living/carbon/M, obj/item/held, datum/interaction/interaction)
 	. = TRUE
 	if(!stat && interaction.stance == I_DISARM && icon_state != icon_dead)
-		M.visible_message(span_warning("[M] tips over [src]."),span_notice("You tip over [src]."))
+		act_message(M, src, MSG_SELF(span_notice("You tip over %T%.")), MSG_OTHERS(span_warning("%U% tips over %T%.")))
 		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead
 		om_after(src, rand(20, 50), PROC_REF(get_up_after_tipping), M)

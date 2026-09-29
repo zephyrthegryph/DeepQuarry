@@ -67,7 +67,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED,
 
 /mob/living/simple_mob/mechanical/technomancer_golem/on_death(gibbed)
 	..()
-	visible_message("\The [src] disintegrates!")
+	act_message(src, null, null, MSG_OTHERS("%U% disintegrates!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)

@@ -104,7 +104,7 @@
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()
-	visible_message(span_warning("Connection... terminated... Sweet Release... obtained."),span_danger("\The [src] blows apart!"))
+	act_message(src, null, MSG_SELF(span_danger("%U% blows apart!")), MSG_OTHERS(span_warning("Connection... terminated... Sweet Release... obtained.")))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
 	s.set_up(3, 1, src)
