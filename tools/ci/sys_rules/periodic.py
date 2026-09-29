@@ -240,14 +240,23 @@ RAISE = re.compile(r"om_changed\(\s*src\s*,")
 
 
 def _derived_inputs(files):
-    """type path -> set of input field names of the derived fields it (or an ancestor) declares."""
+    """type path -> set of input field names of the derived fields it (or an ancestor) declares.
+
+    "" marks a type whose derived fields a hand CHANGE_EXPLICIT raise can reach: one with a named
+    input field (whose channel may be CHANGE_EXPLICIT) or a raw CHANGE_EXPLICIT input. A derived
+    field over other raw channels only (get_integrity over CHANGE_INTEGRITY, declared on /atom)
+    marks nothing: no CHANGE_EXPLICIT raise refreshes it, so it doesn't make every atom's raise
+    (a movable's Moved() location raise) a hand refresh."""
     out = {}
     for _rel, lines in files:
         for line in lines:
             m = DERIVE.match(line.strip())
             if m:
-                out.setdefault(m.group(1), set()).update(re.findall(r"\"(\w+)\"", m.group(3)))
-                out[m.group(1)].add("")  # marks a type with derived fields
+                names = set(re.findall(r"\"(\w+)\"", m.group(3)))
+                entry = out.setdefault(m.group(1), set())
+                entry |= names
+                if names or "CHANGE_EXPLICIT" in m.group(3):
+                    entry.add("")
     return out
 
 

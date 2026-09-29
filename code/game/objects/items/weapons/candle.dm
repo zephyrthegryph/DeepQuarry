@@ -71,7 +71,6 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 /obj/item/flame/candle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit)
 		set_lit(FALSE)
-		update_icon()
 		set_light(0)
 	return TRUE
 
@@ -113,6 +112,8 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 	return lit ? "_lit" : ""
 
 APPEARANCE_TEMPLATE(/obj/item/flame/candle/candelabra, "candelabra{appearance_candelabra_suffix}")
+// Its template reads lit through a proc, so watch it: set_lit() redraws the candelabra too.
+APPEARANCE_WATCH(/obj/item/flame/candle/candelabra, list("lit"))
 
 /obj/item/flame/candle/everburn
 	wax = 99999

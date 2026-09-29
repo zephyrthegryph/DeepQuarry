@@ -276,7 +276,6 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			to_chat(user, span_warning("The shield deactivates! An error message pops up on screen: 'Cell missing. Cell replacement required.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
 		set_shield_active(0)
-		update_icon()
 		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
 
@@ -294,7 +293,6 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			bcell.use(generator_active_cost) //Causes it to go boom.
 			own_take(src, "bcell")
 			set_shield_active(0)
-			update_icon()
 			return
 
 		else //Normal operation.

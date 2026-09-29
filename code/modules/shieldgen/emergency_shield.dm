@@ -152,7 +152,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 	if(!active) return 0 //If it's already off, how did this get called?
 
 	set_active(FALSE)
-	update_icon()
 
 	collapse_shields()
 

@@ -299,7 +299,6 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 		return FALSE
 	play_sfx(src, SFX_MACHINES_APC_NOPOWER)
 	set_active(FALSE)
-	update_icon()
 	return TRUE
 
 /// Audit: an active point defense must not sleep through meteors.

@@ -106,6 +106,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	newKey += pick("1", "2", "3", "4", "5", "6", "7", "8", "9", "0")
 	return newKey
 
+/// Settles its hum while it is on (set_active() starts the step; it sleeps again once settled).
+DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active")
+
 /obj/machinery/message_server/machine_step()
 	if(active && (!operable()))
 		set_active(0)
@@ -172,7 +175,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 /obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
 	set_active(!active)
-	MACHINE_WAKE(src)
 	return TRUE
 
 /// Old attackby: the message-monitor upgrade branch. offered_when falls through to the base attackby otherwise.
@@ -473,9 +475,3 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 #undef MESSAGE_SERVER_SPAM_REJECT
 #undef MESSAGE_SERVER_DEFAULT_SPAM_LIMIT
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/message_server/step_start_condition()
-	return active // its hum
-
-

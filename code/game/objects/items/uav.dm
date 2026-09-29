@@ -226,11 +226,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 	switch(state)
 		if(UAV_PAIRING)
 			set_state(UAV_OFF)
-			update_icon()
 			return TRUE
 		if(UAV_OFF)
 			set_state(UAV_PAIRING)
-			update_icon()
 			return TRUE
 	return FALSE
 
@@ -272,7 +270,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 		return
 
 	set_state(UAV_ON)
-	update_icon()
 	start_hover()
 	set_light_on(TRUE)
 	no_masters_time = 0
@@ -283,7 +280,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/uav, PERIODIC_SLOW, "is_flying")
 		return
 
 	set_state(UAV_OFF)
-	update_icon()
 	stop_hover()
 	set_light_on(FALSE)
 	clear_masters()
