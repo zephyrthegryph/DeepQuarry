@@ -31,7 +31,6 @@
 		S.faction = overmind.blob_type.faction
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), overmind)
-			rel_add(overmind, nameof(overmind.blob_mobs), S)
 			if(overmind.blob_type.ranged_spores)
 				S.projectiletype = overmind.blob_type.spore_projectile
 				S.projectilesound = overmind.blob_type.spore_firesound

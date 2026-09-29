@@ -25,7 +25,6 @@
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), O)
 			S.faction = faction
-			rel_add(O, nameof(O.blob_mobs), S)
 		else
 			S.faction = faction
 		S.update_icons()
@@ -37,8 +36,6 @@
 		if(istype(S))
 			rel_set(S, nameof(S.overmind), B.overmind)
 			S.faction = faction
-			if(B.overmind)
-				rel_add(B.overmind, nameof(/mob/observer/blob::blob_mobs), S)
 		else
 			S.faction = faction
 		S.update_icons()

@@ -380,3 +380,75 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 		if(raise[1] == E && (raise[2] & CHANGE_MACHINE_SETTINGS))
 			return TRUE
 	return FALSE
+
+// ---- the four declaration concepts: own() policies, rel() watch ----
+
+/datum/own_test_policy_holder
+	var/datum/own_test_child/spilled
+	var/datum/own_test_child/conditional
+	var/datum/own_test_child/by_proc
+	var/datum/own_test_child/plain
+	var/keep_it = FALSE
+
+/datum/own_test_policy_holder/declare_ownership(decl)
+	..()
+	own(decl, nameof(spilled), policy = OWN_SPILL)
+	own(decl, nameof(conditional), policy = OWN_SPILL, if_var = nameof(keep_it), else_policy = OWN_DELETE)
+	own(decl, nameof(by_proc), policy_proc = TYPE_PROC_REF(/datum/own_test_policy_holder, by_proc_policy))
+	own(decl, nameof(plain), keep_after_destroy = TRUE)
+
+/datum/own_test_policy_holder/proc/by_proc_policy()
+	return keep_it ? OWN_CONTAINED : OWN_DELETE
+
+/datum/unit_test/ownership_declared_policies
+
+/datum/unit_test/ownership_declared_policies/Run()
+	var/datum/own_test_policy_holder/H = new
+	var/datum/own_decls/table = own_table_of(H)
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.spilled), table.entries[nameof(H.spilled)]), OWN_SPILL, "policy = sets the policy")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_DELETE, "else_policy applies while if_var is false")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_DELETE, "policy_proc is asked")
+	H.keep_it = TRUE
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_SPILL, "policy applies while if_var is true")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_CONTAINED, "policy_proc answers from state")
+	TEST_ASSERT(isnull(table.entries[nameof(H.plain)]), "an annotation-only own() declares no kind")
+	TEST_ASSERT(nameof(H.plain) in table.keep, "keep_after_destroy is recorded")
+	qdel(H)
+
+/datum/own_test_watch_target
+	var/power_level = 0
+	var/label = "x"
+TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
+
+/datum/own_test_watch_holder
+	var/datum/own_test_watch_target/watched
+	var/datum/own_test_watch_target/unwatched
+
+/datum/own_test_watch_holder/declare_ownership(decl)
+	..()
+	rel(decl, nameof(watched), watch = list(nameof(/datum/own_test_watch_target::power_level)))
+	rel(decl, nameof(unwatched))
+
+/datum/unit_test/ownership_watched_relation
+
+/datum/unit_test/ownership_watched_relation/Run()
+	var/datum/own_test_watch_holder/H = new
+	var/datum/own_test_watch_target/T = new
+	var/datum/own_test_watch_target/U = new
+	rel_set(H, nameof(H.watched), T)
+	rel_set(H, nameof(H.unwatched), U)
+	refresh_flush()
+	TEST_ASSERT(!H.refresh_queued, "nothing queued after the flush")
+	U.set_power_level(3)
+	TEST_ASSERT(!H.refresh_queued, "a change on an unwatched relation does not mark the holder")
+	refresh_flush()
+	T.set_power_level(5)
+	TEST_ASSERT(H.refresh_queued, "a setter on the watched target marks the holder changed")
+	refresh_flush()
+	rel_clear(H, nameof(H.watched))
+	T.set_power_level(7)
+	TEST_ASSERT(!H.refresh_queued, "an unlinked target no longer marks the holder")
+	refresh_flush()
+	qdel(T)
+	qdel(U)
+	qdel(H)

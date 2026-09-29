@@ -291,7 +291,6 @@ OWN_TIMER(/datum/contract, offer_timer)
 	if(!child || child == src || child.parent)
 		return FALSE
 	rel_set(child, nameof(child.parent), src)
-	rel_add(src, nameof(children), child)
 	return TRUE
 
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)

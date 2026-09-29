@@ -66,7 +66,6 @@
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
 		if(!P.connected())
-			rel_add(src, nameof(pods), P)
 			rel_set(P, nameof(P.connected), src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
@@ -111,7 +110,6 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
-	rel_add(src, nameof(pods), pod)
 	rel_set(pod, nameof(pod.connected), src)
 	pod.name = "[initial(pod.name)] #[LAZYLEN(pods)]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))

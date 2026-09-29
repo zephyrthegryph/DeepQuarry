@@ -36,7 +36,7 @@ why aren't these accessories?
 		return
 
 	rel_set(src, nameof(linked), to_link)
-	// REL_PAIR(linked, linked): the partner now names us back.
+	// rel(pair =): the partner now names us back.
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)

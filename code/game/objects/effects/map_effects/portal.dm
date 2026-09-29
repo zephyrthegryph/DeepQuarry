@@ -175,13 +175,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 
 		if(M.portal_id == src.portal_id)
 			rel_set(src, nameof(counterpart), M)
-			rel_set(M, nameof(M.counterpart), src)
 			if(length(portal_lines))
 				for(var/i = 1 to length(portal_lines))
 					var/obj/effect/map_effect/portal/line/our_line = LAZYACCESS(portal_lines, i)
 					var/obj/effect/map_effect/portal/line/their_line = LAZYACCESS(M.portal_lines, i)
 					rel_set(our_line, nameof(our_line.counterpart), their_line)
-					rel_set(their_line, nameof(their_line.counterpart), our_line)
 			break
 
 	if(!counterpart)

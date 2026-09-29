@@ -259,7 +259,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	var/list/pentry = own_table_of(target).entries[partner_var]
 	if(!pentry || pentry[OWNE_KIND] != OWNK_REL)
-		OWN_REPORT("[source.type].[var_name]: partner var [target.type].[partner_var] is not declared REL_PAIR/REL_SET")
+		OWN_REPORT("[source.type].[var_name]: partner var [target.type].[partner_var] is not declared rel(pair =) / rel(symmetric =)")
 		return
 	var/theirs = target.vars[partner_var]
 	if(pentry[OWNE_LIST])

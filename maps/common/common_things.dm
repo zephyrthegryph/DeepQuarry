@@ -175,7 +175,7 @@
 /obj/item/multitool/scioutpost/Initialize(mapload)
 	. = ..()
 	for(var/obj/machinery/power/quantumpad/scioutpost/outpost in world)
-		rel_set(src, "connectable", outpost)
+		rel_set(src, nameof(connectable), outpost)
 		if(connectable())
 			icon_state = "multitool_red"
 		return

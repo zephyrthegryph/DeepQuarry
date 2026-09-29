@@ -20,7 +20,7 @@
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))
-		rel_set(src, nameof(partner), new_partner) // REL_PAIR(partner, partner): names us back
+		rel_set(src, nameof(partner), new_partner) // rel(pair =): the partner names us back
 
 /obj/effect/overmap/bluespace_rift/proc/take_this(atom/movable/AM)
 	paused = TRUE

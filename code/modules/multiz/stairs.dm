@@ -49,11 +49,8 @@
 	rel_set(B, nameof(B.top), T)
 	rel_set(B, nameof(B.middle), M)
 	T.dir	 = B.dir
-	rel_set(T, nameof(/obj/machinery/gravity_generator/main::middle), M)
-	T.bottom = B
+	rel_set(T, nameof(T.middle), M) // pairs: also sets T.bottom, M.bottom and M.top
 	M.dir	 = B.dir
-	rel_set(M, nameof(/obj/structure/stairs/bottom::top), T)
-	M.bottom = B
 	return TRUE
 
 // Used to actually move stuff up/down stairs. Removed from Crossed for special cases
@@ -302,8 +299,7 @@
 
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
-	rel_set(T, nameof(/obj/machinery/gravity_generator/main::middle), src)
-	rel_set(src, nameof(top), T)
+	rel_set(T, nameof(T.middle), src) // pair: sets our top too
 	src.dir = T.dir
 	return TRUE
 

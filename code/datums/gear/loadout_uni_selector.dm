@@ -15,7 +15,7 @@
 	..()
 	var/list/selector_uniforms = list(
 	)
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 */
 
 //Command/Specific

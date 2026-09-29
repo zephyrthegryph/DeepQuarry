@@ -27,7 +27,6 @@
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
 				rel_set(src, nameof(target_down), L)
-				rel_set(L, nameof(L.target_up), src)
 				L.update_icon()
 				break
 	update_icon()

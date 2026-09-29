@@ -341,7 +341,6 @@
 	var/datum/expedition_site/site = new(world.maxz + 1, EXP_DIFF_LOW)
 	var/obj/machinery/computer/shuttle_control/explore/console = new(null)
 	rel_set(site, nameof(site.origin_console), console)
-	rel_set(console, nameof(console.active_expedition), site)
 	TEST_ASSERT(site.has_active_assignment(), "A site owned by its origin console was not recognized as actively assigned")
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1

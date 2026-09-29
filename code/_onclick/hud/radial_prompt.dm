@@ -71,7 +71,6 @@
 		offset_x = (anchor_turf.x - user_turf.x) * ICON_SIZE_X + where.pixel_x - user.pixel_x
 		offset_y = (anchor_turf.y - user_turf.y) * ICON_SIZE_Y + where.pixel_y - user.pixel_y
 	rel_set(src, nameof(ui), menu)
-	rel_set(menu, nameof(menu.om_prompt), src)
 	menu.show_to(user, offset_x, offset_y)
 	log_input("Input: [key_name(user)] was shown a radial menu ([type]) on [where].")
 	return TRUE

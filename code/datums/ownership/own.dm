@@ -411,7 +411,7 @@
 				if(isdatum(child))
 					. += child
 
-/// What an `OWN(..., contents, ...)` declaration owns: the holder's contents, less the movables
+/// What an `own(decl, nameof(contents), ...)` declaration owns: the holder's contents, less the movables
 /// another owned var of the holder names (an attached accessory, a suit's hood): those are
 /// disposed of by their own var's policy, not spilled with the rest. `contents` is a built-in
 /// list with no associated values (indexing it by an object is a "bad index" runtime), so it is

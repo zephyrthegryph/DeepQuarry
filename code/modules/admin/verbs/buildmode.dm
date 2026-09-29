@@ -466,8 +466,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				rel_set(A, nameof(/obj/structure/ladder::target_up), B)
-				rel_set(B, nameof(B.target_down), A)
+				rel_set(A, nameof(A.target_up), B) // pair: sets B.target_down
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()

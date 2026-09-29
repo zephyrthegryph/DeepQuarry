@@ -22,7 +22,6 @@
 			var/tex = uppertext(T.name)
 			G.name = "[copytext(tex,1,min( 8, length(tex)+1 ))]:[G.block]"
 			rel_set(T, nameof(T.linked_gene), G)
-			rel_set(G, nameof(G.linked_trait), T)
 			GLOB.dna_activity_bounds[G.block] = T.activity_bounds
 			// Handle global block data
 			log_world("DNA2: Assigned [G.name] - Linked to trait [T.name].")

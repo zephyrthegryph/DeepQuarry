@@ -183,14 +183,14 @@
 
 /// The board went in (inserting() moved it into the frame).
 /obj/structure/frame/proc/frame_ladder_board_in(mob/user, obj/item/held, from)
-	own_set(src, "circuit", held)
+	own_set(src, nameof(circuit), held)
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		check_components()
 		update_desc()
 
 /// The board is coming back out (the undo then moves it to the floor).
 /obj/structure/frame/proc/frame_ladder_board_out(mob/user, obj/item/held, destination)
-	own_take(src, "circuit")
+	own_take(src, nameof(circuit))
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		req_components = null
 	update_desc()

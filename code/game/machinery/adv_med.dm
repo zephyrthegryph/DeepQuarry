@@ -335,7 +335,6 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	if(istype(multitool.connectable(), /obj/machinery/bodyscanner))
 		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable()
 		rel_set(src, nameof(scanner), body_scanner)
-		rel_set(body_scanner, nameof(body_scanner.console), src)
 		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
 		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
@@ -517,7 +516,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/body_scanconsole, TYPE_PROC_REF(/atom, ap
 		bodyscannernew = locate(/obj/machinery/bodyscanner, get_step(src, dir)) // Try to find a scanner in that direction
 		if(bodyscannernew)
 			rel_set(src, nameof(scanner), bodyscannernew)
-			rel_set(bodyscannernew, nameof(bodyscannernew.console), src)
 			set_dir(get_dir(src, bodyscannernew))
 			return
 	return

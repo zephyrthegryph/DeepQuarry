@@ -41,7 +41,6 @@
 		sleepernew = locate(/obj/machinery/sleeper, get_step(src, direction)) // Try to find a scanner in that direction
 		if(sleepernew)
 			rel_set(src, nameof(sleeper), sleepernew)
-			rel_set(sleepernew, nameof(sleepernew.console), src)
 			break
 
 

@@ -1603,7 +1603,6 @@
 		P.icon_state = "[flag_path]_l"
 		var/obj/structure/sign/flag/P2 = new(user.loc)
 		rel_set(P, nameof(P.linked_flag), P2)
-		rel_set(P2, nameof(P2.linked_flag), P)
 		P2.icon_state = "[flag_path]_r"
 		P2.dir = P.dir
 		switch(P2.dir)
