@@ -378,14 +378,15 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
 		)
 
-	var/shield_generator_handle //The generator we are linked to!
+	/// Relation view: the generator we are linked to!
+	var/obj/item/personal_shield_generator/linked_generator
 	var/wielded = 0
 	var/cooldown = 0
 
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
-	shield_generator_handle = om_handle(shield_gen)
-	own_set(src, "power_supply", shield_generator().bcell)
+	rel_set(src, "linked_generator", shield_gen)
+	rel_set(src, "power_supply", shield_generator()?.bcell) // the generator owns the cell; the gun only names it
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))
@@ -595,9 +596,12 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	charge_amount = 200 // 100 to 200.
 	charge_delay = 30 // Starts charging three seconds after it's discharged.
 
-/// LC-refs: shield generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The relation view `linked_generator` (null once it is gone).
 /obj/item/gun/energy/gun/generator/proc/shield_generator() as /obj/item/personal_shield_generator
-	return om_resolve(shield_generator_handle)
+	return linked_generator
+
+// The generator gun runs off the generator's cell: a view, not an owned cell.
+REL(/obj/item/gun/energy/gun/generator, power_supply)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

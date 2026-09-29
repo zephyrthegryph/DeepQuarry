@@ -159,8 +159,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			current_T = get_step(current_T, dir_to_search)
 			var/obj/effect/map_effect/portal/line/line = locate_on(current_T, /obj/effect/map_effect/portal/line)
 			if(line)
-				own_add(src, "portal_lines", line)
-				rel_set(line, "my_master", src)
+				rel_set(line, "my_master", src) // the pair adds it to portal_lines (lines are mapped, not owned)
 			else
 				break
 

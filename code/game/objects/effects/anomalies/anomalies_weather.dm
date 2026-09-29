@@ -5,7 +5,9 @@
 	lifespan = ANOMALY_COUNTDOWN_TIMER * 2.5
 	var/telegraph_percent = 7
 
+	/// Areas are plain vars (not relation targets).
 	var/list/area/affected_areas
+	/// Relation list view: the turfs the weather acts on.
 	var/list/turf/affected_turfs
 
 	var/datum/anomalous_weather/selected_weather
@@ -37,8 +39,8 @@
 			to_chat(mob, span_notice(selected_weather.telegraph_message))
 		for(var/turf/turf in area)
 			if(isopenturf(turf))
-				LAZYADD(affected_turfs, GetBelow(turf))
-			LAZYADD(affected_turfs, turf)
+				rel_add(src, "affected_turfs", GetBelow(turf))
+			rel_add(src, "affected_turfs", turf)
 
 	apply_wibbly_filters(src)
 
@@ -48,7 +50,7 @@
 	for(var/turf/turf in to_add)
 		if(isspace(turf))
 			continue
-		LAZYADD(affected_turfs, turf)
+		rel_add(src, "affected_turfs", turf)
 
 /obj/effect/anomaly/weather/proc/find_adjacent_impacted_area(check_dir)
 	var/limit = 10
@@ -137,18 +139,18 @@
 			sparks.set_up(3, 1, src)
 			sparks.start()
 			LAZYCLEARLIST(affected_areas)
-			LAZYCLEARLIST(affected_turfs)
+			rel_clear(src, "affected_turfs")
 		if(16 to 33)
 			clear_weather()
-			LAZYCLEARLIST(affected_turfs)
+			rel_clear(src, "affected_turfs")
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, "selected_weather", new /datum/anomalous_weather/rain)
+				own_set(src, "selected_weather", new /datum/anomalous_weather/rain) // disposes of the old weather
 			update_reagent(REAGENT_ID_WATER)
 			add_turfs(circleviewturfs(src, 3))
 			start_weather()
 		if(34 to 65)
 			clear_weather()
-			LAZYCLEARLIST(affected_turfs)
+			rel_clear(src, "affected_turfs")
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
 				own_set(src, "selected_weather", new /datum/anomalous_weather/rain)
 			update_reagent(pick(REAGENT_ID_WATER, REAGENT_ID_ICE, REAGENT_ID_ORANGEJUICE))
@@ -156,7 +158,7 @@
 			start_weather()
 		else
 			clear_weather()
-			LAZYCLEARLIST(affected_turfs)
+			rel_clear(src, "affected_turfs")
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
 				own_set(src, "selected_weather", new /datum/anomalous_weather/rain/storm)
 

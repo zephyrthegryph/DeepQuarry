@@ -8,7 +8,8 @@
 	icon='icons/effects/beam.dmi'
 	icon_state="b_beam"
 	plane = ABOVE_OBJ_PLANE
-	var/tmp/BeamSource_handle
+	/// Relation view: the atom the beam comes from.
+	var/tmp/atom/BeamSource
 
 /obj/effect/overlay/beam/Initialize(mapload)
 	. = ..()
@@ -187,4 +188,4 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 
 /// LC-refs: BeamSource -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/overlay/beam/proc/BeamSource() as /atom
-	return om_resolve(BeamSource_handle)
+	return BeamSource

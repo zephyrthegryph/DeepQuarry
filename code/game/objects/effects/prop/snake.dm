@@ -8,8 +8,8 @@
 
 	invisibility = INVISIBILITY_MAXIMUM
 
-// The atom which created this.
-	var/creator_handle
+// Relation view: the atom which created this.
+	var/atom/movable/creator
 // Will the snake ever intentionally move onto its creator's turf?
 	var/safe = FALSE
 
@@ -19,16 +19,16 @@
 	var/list/iterated_turfs
 // How many turfs this snake should remember.
 	var/total_turf_memory = 5
-// Is the snake hunting a specific atom? (Will always try to meander toward this target.)
-	var/hunting_handle
+// Relation view: is the snake hunting a specific atom? (Will always try to meander toward this target.)
+	var/atom/hunting
 
 /obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
 	. = ..()
 	if(hunt_target)
-		hunting_handle = om_handle(hunt_target)
+		rel_set(src, "hunting", hunt_target)
 
 	if(Creator)
-		creator_handle = om_handle(Creator)
+		rel_set(src, "creator", Creator)
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
 	snake_pulse_wait()
@@ -109,7 +109,7 @@
 		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
-	hunting_handle = om_handle(locate_in_list(range(7, src), /mob/living))
+	rel_set(src, "hunting", locate_in_list(range(7, src), /mob/living))
 	..()
 
 /*
@@ -129,8 +129,8 @@
 
 /// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/temporary_effect/pulse/snake/proc/creator() as /atom/movable
-	return om_resolve(creator_handle)
+	return creator
 
 /// LC-refs: hunting -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/temporary_effect/pulse/snake/proc/hunting() as /atom
-	return om_resolve(hunting_handle)
+	return hunting

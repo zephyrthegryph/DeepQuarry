@@ -57,7 +57,8 @@
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/hidden_uplink_handle // All items can have an uplink hidden inside, just remember to add the triggers.
+	/// All items can have an uplink hidden inside, just remember to add the triggers.
+	var/hidden_uplink_handle // ALLOW(ownership): written as a handle outside code/game/objects (traitor.dm, pda messenger); convert with them
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -125,7 +126,8 @@
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
-	var/my_augment_handle	// Used to reference the object's host organ.
+	/// Used to reference the object's host organ.
+	var/my_augment_handle // ALLOW(ownership): written as a handle by code/modules/organs/internal/augment*.dm; convert with them
 	var/datum/identification/identity = null // ALLOW(state_ref): owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -1126,12 +1128,12 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return FALSE
 
 
-/// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// The hidden uplink (a handle until its writers convert); a global helper keeps the proc off the base type.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return om_resolve(I?.hidden_uplink_handle)
+	return om_resolve(I?.hidden_uplink_handle) // ALLOW(ownership): written as a handle outside code/game/objects (traitor.dm, pda messenger); convert with them
 
-/// LC-refs: my augment -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// The host organ (a handle until its writers convert); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return om_resolve(I?.my_augment_handle)
+	return om_resolve(I?.my_augment_handle) // ALLOW(ownership): my_augment_handle is written by code/modules/organs (out of scope)
 
 OWN(/obj/item, master, OWN_CONTAINED)
