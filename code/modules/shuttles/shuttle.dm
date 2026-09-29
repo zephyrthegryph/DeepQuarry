@@ -55,6 +55,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 /datum/shuttle/New(_name, obj/effect/shuttle_landmark/initial_location)
 	..()
+	lifecycle_decls_init(src) // starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize)
 	if(_name)
 		src.name = _name
 
@@ -88,7 +89,6 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		if(GLOB.supply_service.shuttle)
 			CRASH("A supply shuttle is already defined.")
 		GLOB.supply_service.shuttle = src
-	lifecycle_decls_init(src) // starts DECLARE_PERIODIC_WHILE (a non-atom has no materialize)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()

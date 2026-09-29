@@ -200,7 +200,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/m
 DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
 DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
 
-DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 
 /obj/mecha/Initialize(mapload)
 	. = ..()

@@ -143,9 +143,11 @@ DECLARE_REPEAT(/obj/effect/beam, 2 SECONDS, PROC_REF(pulse), "active")          
   lifecycle declaration entry, so only declared types pay at materialize. `finish()` resolves the
   type's `/datum/sys_periodic_table` (nearest while-declaration; repeats by proc, nearest wins) and
   validates fields and procs against the first instance.
-- Watch: `/datum/om/service/sys_periodic` observes, per declaring type, the union of the declared
-  fields' channels (fields resolved from the `field_def` registrations, derived fields included), so a
-  setter's raise queues one re-evaluation per entity per tick: start what holds, stop what doesn't.
+- Watch: each OM type table carries `sys_periodic_mask`, the union of the type's declared fields'
+  channels (resolved from the `field_def` registrations, derived fields included). A raise of one
+  re-evaluates the entity's declarations synchronously in `om_dispatch_change()`: start what holds,
+  stop what doesn't (starting only schedules, so this is safe inside a setter). A derived field's
+  inputs raise its channel (`om_changed()`) where they change.
   Materialize ensures an OM record (the listen mask) and evaluates; dematerialize stops. Non-atom
   datums start from `lifecycle_decls_init(src)` in `New()`.
 - Gate: while a while-declaration doesn't hold, `om_task_periodic()` on its cadence and

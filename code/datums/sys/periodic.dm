@@ -7,10 +7,10 @@
 // /datum/sys_periodic_table (its nearest while-declaration and its repeats) into
 // `decls.sys_periodic`.
 //
-// Watching: /datum/om/service/sys_periodic observes, per declaring type, the change channels of
-// the declared fields (its wake_on_any is built from the defs when the registry builds services),
-// so a field setter's om_changed() queues one on_changes() for the entity per tick, which
-// re-evaluates every declaration of the entity: start what now holds, stop what no longer does.
+// Watching: each entity type's OM type table carries sys_periodic_mask, the union of its declared
+// fields' change channels (sys_periodic_mask_for()). om_dispatch_change() re-evaluates the entity's
+// declarations synchronously when one is raised: start what now holds, stop what no longer does.
+// Starting only schedules (a pipeline wake, a timer), so evaluating inside a setter is safe.
 // Materialize ensures the entity has an OM record (its listen mask then carries those channels)
 // and evaluates once.
 //
@@ -234,17 +234,14 @@ OM_TIMER_SLOT(/datum, sys_repeat)
 
 // ---------------------------------------------------------------- the watch
 
-/// Watches the declared fields' channels on every declaring type (and so its subtypes).
-/datum/om/service/sys_periodic
-
-/datum/om/service/sys_periodic/New()
-	wake_on_any = list()
+/// The union of the declared fields' channels on `path` (its own and its ancestors' declarations).
+/// The type table keeps it (sys_periodic_mask): om_dispatch_change() re-evaluates the entity's
+/// declarations synchronously when one of them is raised, and the listen mask carries it.
+/proc/sys_periodic_mask_for(path)
+	. = 0
 	for(var/datum/sys_periodic_def/D as anything in sys_periodic_defs())
-		if(D.mask)
-			wake_on_any[D.of] |= D.mask
-
-/datum/om/service/sys_periodic/on_changes(datum/E, bits)
-	sys_periodic_evaluate(E)
+		if(ispath(path, D.of))
+			. |= D.mask
 
 /// finish()'s check against the first instance: every field is a var (or a derived field's proc)
 /// of it, every repeat proc exists. A bad declaration is reported once and dropped.

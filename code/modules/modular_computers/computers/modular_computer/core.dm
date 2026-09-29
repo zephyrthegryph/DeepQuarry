@@ -63,7 +63,6 @@
 /obj/item/modular_computer/proc/install_default_programs()
 	return 1
 
-DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 
 /obj/item/modular_computer/Initialize(mapload)
 	if(!overlay_icon)

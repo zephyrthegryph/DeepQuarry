@@ -10,7 +10,7 @@
 	var/datum/shuttle/autodock/ferry/arrivals/shuttle = new /datum/shuttle/autodock/ferry/arrivals/unit_test("Unit Test Arrivals")
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle does not request idle processing from SSshuttles")
 	var/obj/machinery/computer/shuttle_control/arrivals/console = new(null)
-	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still polls an idle shuttle")
+	TEST_ASSERT(test_machine_idle(console), "arrivals console still polls an idle shuttle")
 	qdel(console)
 	qdel(shuttle)
 
@@ -25,14 +25,11 @@
 	shuttle.shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
 	SSshuttles.process_shuttles |= shuttle
 	shuttle.set_process_state(IDLE_STATE)
-	sys_periodic_evaluate(shuttle) // what the declaration's watch runs on the next tick
 	TEST_ASSERT(!shuttle.shuttle_working(), "idle shuttle declared as working")
 	TEST_ASSERT_NULL(shuttle.periodic_pipe, "idle shuttle remained on the slow lane")
 	shuttle.set_process_state(WAIT_LAUNCH)
-	sys_periodic_evaluate(shuttle)
 	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "launching shuttle did not start its slow-lane work")
 	shuttle.set_process_state(IDLE_STATE)
-	sys_periodic_evaluate(shuttle)
 	TEST_ASSERT_NULL(shuttle.periodic_pipe, "settled shuttle did not leave the slow lane")
 	qdel(shuttle)
 //
@@ -220,7 +217,7 @@
 	// ALLOW(spatial): world search
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
-	TEST_ASSERT_EQUAL(console.machine_step(), PROCESS_KILL, "arrivals console still performs idle polling instead of hibernating")
+	TEST_ASSERT(test_machine_idle(console), "arrivals console still performs idle polling instead of hibernating")
 	TEST_ASSERT_NOTNULL(shuttle.landmark_station(), "arrivals shuttle has no station landmark")
 	var/total_o2_before = 0
 	var/pressurized_turfs_before = 0

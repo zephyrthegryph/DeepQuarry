@@ -199,7 +199,7 @@ DECLARE_PERIODIC_WHILE(/datum/affliction/contagion, PERIODIC_SLOW, "spread_lane_
 /datum/affliction/contagion/proc/spread_lane_wanted()
 	return !QDELETED(src) && host && body && (can_shed_airborne() || acts_in_dead_host())
 
-/// Re-evaluates the spread-lane declaration after a wake rule changed what it reads.
+/// A wake rule changed what spread_lane_wanted() reads: raise its channel (the declaration re-evaluates).
 /datum/affliction/contagion/proc/update_spread_lane()
 	om_changed(src, CHANGE_DATUM_A)
 	sys_periodic_evaluate(src)

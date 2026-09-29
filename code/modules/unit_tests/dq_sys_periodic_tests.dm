@@ -85,3 +85,10 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 	TEST_ASSERT_EQUAL(T.while_def.mask, CHANGE_DATUM_A | CHANGE_DATUM_B, "mask is the fields' channels")
 	TEST_ASSERT_NOTNULL(T.repeats?["pulse"], "the repeat is keyed by its proc")
 	TEST_ASSERT_NULL(sys_periodic_table_for(/datum/om_test_entity), "an undeclared type has none")
+
+/// TRUE when `M` has no step work right now: its declared state doesn't hold (the gate keeps the
+/// step from running at all), or its step, run once, says it is done.
+/proc/test_machine_idle(obj/machinery/M)
+	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
+		return TRUE
+	return M.machine_step() == PROCESS_KILL

@@ -1294,6 +1294,7 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			T.service_mask |= mine
 			LAZYADD(T.services, S)
 			LAZYADD(T.service_masks, mine)
+	T.sys_periodic_mask = sys_periodic_mask_for(path)
 	return T
 
 /proc/cmp_om_behaviour_id(datum/om/behaviour/a, datum/om/behaviour/b)
