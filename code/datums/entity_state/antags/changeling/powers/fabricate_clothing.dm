@@ -43,7 +43,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon/changeling, \
 /obj/item/clothing/under/chameleon/changeling/proc/changeling_under_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -67,7 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
 /obj/item/clothing/head/chameleon/changeling/proc/changeling_head_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
 /obj/item/clothing/suit/chameleon/changeling/proc/changeling_suit_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -123,7 +123,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
 /obj/item/clothing/shoes/chameleon/changeling/proc/changeling_shoes_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 /obj/item/storage/backpack/chameleon/changeling/proc/changeling_backpack_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		latent_materialize_all() // a walk needs real things (C5)
@@ -183,7 +183,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
 /obj/item/clothing/gloves/chameleon/changeling/proc/changeling_gloves_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -212,7 +212,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon/changeling, \
 /obj/item/clothing/mask/chameleon/changeling/proc/changeling_mask_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -236,7 +236,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
 /obj/item/clothing/glasses/chameleon/changeling/proc/changeling_glasses_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon/changeling, \
 /obj/item/storage/belt/chameleon/changeling/proc/changeling_belt_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)
@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
 /obj/item/card/id/syndicate/changeling/proc/changeling_syndicate_shred_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(ishuman(loc))
 		var/mob/living/carbon/human/H = loc
-		playsound(src, 'sound/effects/splat.ogg', 30, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		qdel(src)

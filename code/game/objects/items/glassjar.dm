@@ -13,8 +13,8 @@
 	MATERIAL_BULK(MAT_GLASS, 200)
 	flags = NOBLUDGEON
 	var/contains = 0 // 0 = nothing, 1 = money, 2 = animal, 3 = spiderling
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 	///If we can fill it with water
 	var/can_fill = FALSE

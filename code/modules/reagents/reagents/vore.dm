@@ -134,7 +134,7 @@
 				if(P.absorbed)
 					continue
 			if(prob(5))
-				playsound(M, 'sound/effects/splat.ogg', 50, 1)
+				play_sfx(M, SFX_EFFECTS_SPLAT)
 				B.release_specific_contents(A)
 
 /datum/reagent/unsorbitol
@@ -164,7 +164,7 @@
 				continue
 
 			else if(prob(1))
-				playsound(M, 'sound/vore/schlorp.ogg', 50, 1)
+				play_sfx(M, SFX_VORE_SCHLORP, 0.5, vary = TRUE)
 				P.absorbed = 0
 				M.visible_message(span_infoplain(span_green(span_bold("Something spills into [M]'s [lowertext(B.name)]!"))))
 

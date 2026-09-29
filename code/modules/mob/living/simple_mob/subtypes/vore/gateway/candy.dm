@@ -224,14 +224,14 @@
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
 			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // Visible/audible feedback for *resisting* the slam.
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 
 /mob/living/simple_mob/vore/candy/yellowcabold //Speeds folks
 	name = "gummy kobold"
@@ -354,7 +354,7 @@
 	if(stat) //you are dead
 		ai_busy_end()
 		return
-	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
+	play_sfx(src, SFX_VORE_SUNESOUND_PRED_SCHLORP)
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
 	appendage_attack.old_style_target(A, src)
 	appendage_attack.launch_projectile(A, BP_TORSO, src)

@@ -18,7 +18,7 @@
 	melee_damage_upper = 15
 	organ_names = /datum/decl/mob_organ_names/artificer
 	attacktext = list("rammed")
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	construct_spells = list(/datum/spell/targeted/purity_repair_aura,
 							/datum/spell/targeted/construct_advanced/mend_purity
 							)

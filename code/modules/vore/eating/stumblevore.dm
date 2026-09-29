@@ -22,7 +22,7 @@
 	if(om_wants(src, /datum/om/event/before/stumbled_into) && om_emit(src, new /datum/om/event/before/stumbled_into(M)) == EVENT_VETO)
 		return
 
-	playsound(src, "punch", 25, 1, -1)
+	play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 	M.status_at_least(EFFECT_WEAKENED, 4)
 	M.stop_flying()
 

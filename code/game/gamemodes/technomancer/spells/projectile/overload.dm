@@ -20,7 +20,7 @@
 	instability_per_shot = 12
 	cooldown = 10
 	pre_shot_delay = 4
-	fire_sound = 'sound/effects/supermatter.ogg'
+	fire_sound = SFX_EFFECTS_SUPERMATTER
 
 /obj/item/projectile/overload
 	name = "overloaded bolt"
@@ -28,7 +28,7 @@
 	injury_kind = INJURY_BURN
 	armor_penetration = 100
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 /obj/item/spell/projectile/overload/make_projectile(obj/item/projectile/projectile_type, mob/living/user)
 	var/obj/item/projectile/overload/P = new projectile_type(get_turf(user))

@@ -24,9 +24,7 @@
 		var/obj/effect/decal/cleanable/blood/oil/streak = new(src.loc)
 		streak.update_icon()
 	else if (prob(10))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		fx_sparks(src, 3)
 
 /obj/effect/decal/cleanable/blood/gibs/robot/limb
 	random_icon_states = list("gibarm", "gibleg")

@@ -153,7 +153,7 @@
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/HolodeckControl/emag_act(remaining_charges, mob/user as mob)
-	playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_SPARKS4)
 	last_to_emag_handle = om_handle(user) //emag again to change the owner
 	if (!emagged)
 		set_emagged(1)
@@ -231,9 +231,7 @@
 
 			for(var/turf/T in linkedholodeck())
 				if(prob(30))
-					var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-					s.set_up(2, 1, T)
-					s.start()
+					fx_sparks(T, 2)
 				T.ex_act(3)
 				T.hotspot_expose(1000,500,1)
 
@@ -387,9 +385,7 @@
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, T)
-	s.start()
+	fx_sparks(T, 2)
 	if(T)
 		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)

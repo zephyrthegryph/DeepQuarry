@@ -236,7 +236,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		user.say("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
 	else
 		user.whisper("Ta'gh fara[pick("'","`")]qha fel d'amar det!")
-	playsound(U, 'sound/items/Welder2.ogg', 25, 1)
+	play_sfx(U, SFX_ITEMS_WELDER2, 0.5)
 	var/turf/T = get_turf(U)
 	if(T)
 		T.hotspot_expose(700,125)

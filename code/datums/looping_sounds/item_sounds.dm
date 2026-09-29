@@ -1,5 +1,5 @@
 /datum/looping_sound/small_motor
-	start_sound = 'sound/items/small_motor/motor_start_nopull.ogg'
+	start_sound = SFX_ITEMS_SMALL_MOTOR_MOTOR_START_NOPULL
 	start_length = 2 SECONDS
 	mid_sounds = list(
 		'sound/items/small_motor/motor_idle.ogg',

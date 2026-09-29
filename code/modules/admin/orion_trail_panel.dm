@@ -41,7 +41,7 @@
 	user.set_machine(src)
 
 	if(gameStatus == ORION_STATUS_GAMEOVER)
-		playsound(src, 'sound/arcade/ori_fail.ogg', 50, 1, extrarange = -3, falloff = 0.1, ignore_walls = FALSE)
+		play_sfx(src, SFX_ARCADE_ORI_FAIL, ignore_walls = FALSE)
 		if(emagged)
 			if(food <= 0)
 				user.set_nutrition(0)

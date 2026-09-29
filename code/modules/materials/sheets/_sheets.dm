@@ -23,8 +23,8 @@
 	var/coin_type = null
 	var/perunit = SHEET_MATERIAL_AMOUNT
 	var/apply_colour //temp pending icon rewrite
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 	custom_handling = TRUE
 
 /obj/item/stack/material/Initialize(mapload, starting_amount)

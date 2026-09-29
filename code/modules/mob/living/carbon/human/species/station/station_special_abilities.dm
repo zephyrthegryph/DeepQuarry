@@ -905,7 +905,7 @@
 		return
 
 	visible_message(span_vnotice("\The [src] attempts to snatch up [target]!"), 					span_vnotice("You attempt to snatch up [target]!") )
-	playsound(src, 'sound/vore/sunesound/pred/schlorp.ogg', 25)
+	play_sfx(src, SFX_VORE_SUNESOUND_PRED_SCHLORP)
 
 	//Code to shoot the beam here.
 	var/obj/item/projectile/beam/appendage/appendage_attack = new /obj/item/projectile/beam/appendage(get_turf(loc))
@@ -919,9 +919,9 @@
 	damage = 0
 	eyeblur = 0
 	can_miss = FALSE //Let's not miss our tongue!
-	fire_sound = 'sound/effects/slime_squish.ogg'
-	hitsound = 'sound/vore/sunesound/pred/schlorp.ogg'
-	hitsound_wall = 'sound/vore/sunesound/pred/schlorp.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
+	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
+	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	excavation_amount = 0
 	hitscan_light_intensity = 0
 	hitscan_light_range = 0
@@ -972,7 +972,7 @@
 				originator.status_at_least(EFFECT_WEAKENED, 2) //If you hit something dense or anchored, fall flat on your face.
 				originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 								span_warning("You trip over yourself and fall flat on your face!") )
-				playsound(originator, "punch", 25, 1, -1)
+				play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			hit_object.throw_at(firer, throw_range, hit_object.throw_speed, firer)
@@ -982,7 +982,7 @@
 			originator.status_at_least(EFFECT_WEAKENED, 2) //Hit a wall? Whoops!
 			originator.visible_message(span_warning("\The [originator] trips over their self and falls flat on their face!"), \
 							span_warning("You trip over yourself and fall flat on your face!") )
-			playsound(originator, "punch", 25, 1, -1)
+			play_sfx(originator, SFX_PUNCH, 0.5, extrarange = -1)
 			return
 		else
 			return
@@ -1029,7 +1029,7 @@
 
 
 	firemodes = list(
-		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound='sound/vore/sunesound/pred/schlorp.ogg', charge_cost = 0),)
+		list(mode_name="vore", projectile_type=/obj/item/projectile/beam/appendage, modifystate=null, fire_sound=SFX_VORE_SUNESOUND_PRED_SCHLORP, charge_cost = 0),)
 
 /obj/item/gun/energy/gun/tongue/update_icon() //No updating the icon.
 	icon_state = "synthtongue"
@@ -1048,8 +1048,8 @@
 
 /obj/item/projectile/bullet/BFGtaser/tongue
 	name = "tongue ball"
-	hitsound = 'sound/vore/sunesound/pred/schlorp.ogg'
-	hitsound_wall = 'sound/vore/sunesound/pred/schlorp.ogg'
+	hitsound = SFX_VORE_SUNESOUND_PRED_SCHLORP
+	hitsound_wall = SFX_VORE_SUNESOUND_PRED_SCHLORP
 	zaptype = /obj/item/projectile/beam/appendage
 
 /mob/living/proc/target_lunge() //The leaper leap, but usable as an ability
@@ -1058,7 +1058,7 @@
 	set desc = "Dive atop your prey and gobble them up!"
 
 	var/leap_warmup = 1 SECOND //Easy to modify
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 	if(stat || has_status(EFFECT_PARALYZED) || has_status(EFFECT_WEAKENED) || has_status(EFFECT_STUNNED) || !COOLDOWN_FINISHED(src, last_special)) //No tongue flicking while status_units(EFFECT_STUNNED).
 		to_chat(src, span_warning("You can't do that in your current state."))

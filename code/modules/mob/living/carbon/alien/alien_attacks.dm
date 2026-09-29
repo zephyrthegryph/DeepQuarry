@@ -25,7 +25,7 @@
 
 			LAssailant = M
 
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			for(var/mob/O in viewers(src, null))
 				if ((O.client && !( O.blinded )))
 					O.show_message(span_danger(text("[] has grabbed [] passively!", M, src)), 1)
@@ -38,7 +38,7 @@
 					status_at_least(EFFECT_PARALYZED, 1)
 					step_away(src,M,15)
 					om_after(src, 3, PROC_REF(knocked_away_from), M)
-				playsound(src, "punch", 25, 1, -1)
+				play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
 						O.show_message(span_bolddanger(text("[] has punched []!", M, src)), 1)
@@ -49,7 +49,7 @@
 							O.show_message(span_bolddanger(text("[] has weakened []!", M, src)), 1, span_red("You hear someone fall."), 2)
 				injure(INJURY_BLUNT, damage, null, M)
 			else
-				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))
 						O.show_message(span_bolddanger(text("[] has attempted to punch []!", M, src)), 1)

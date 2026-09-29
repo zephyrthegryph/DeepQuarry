@@ -13,7 +13,7 @@
 	burst = 3
 	burst_delay = 1
 
-	fire_sound = 'sound/weapons/towelwipe.ogg'
+	fire_sound = SFX_WEAPONS_TOWELWIPE
 
 	removable_components = TRUE
 	gun_unreliable = 0

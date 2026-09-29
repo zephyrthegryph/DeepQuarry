@@ -137,7 +137,7 @@
 						to_chat(W, span_danger("Your suit beeps stridently, and suddenly goes dead."))
 					else
 						to_chat(W, span_danger("Your suit beeps stridently, and suddenly you're wearing a leaden mass of metal and plastic composites instead of a powered suit."))
-					playsound(holder(), 'sound/machines/rig/rigdown.ogg', 60, FALSE)
+					play_sfx(holder(), SFX_MACHINES_RIG_RIGDOWN)
 				if(offline_vision_restriction == 1)
 					to_chat(W, span_danger("The suit optics flicker and die, leaving you with restricted vision."))
 				else if(offline_vision_restriction == 2)

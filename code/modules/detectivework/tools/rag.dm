@@ -23,8 +23,8 @@
 	flags = OPENCONTAINER | NOBLUDGEON
 	container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_NONE
 	unacidable = FALSE
-	drop_sound = 'sound/items/drop/cloth.ogg'
-	pickup_sound = 'sound/items/pickup/cloth.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTH
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 	var/on_fire = 0
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes

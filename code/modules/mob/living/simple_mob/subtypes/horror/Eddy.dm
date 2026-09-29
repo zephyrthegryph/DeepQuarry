@@ -1,5 +1,5 @@
 /mob/living/simple_mob/horror/Eddy
-	reaction_sound = 'sound/h_sounds/holla.ogg'
+	reaction_sound = SFX_H_SOUNDS_HOLLA
 	name = "???"
 	desc = "A dark green, sluglike creature, covered in glowing green ooze, and carrying what look to be eggs on its back."
 
@@ -11,7 +11,7 @@
 	icon = 'icons/mob/horror_show/GHPS.dmi'
 	icon_gib = "generic_gib"
 
-	attack_sound = 'sound/h_sounds/negative.ogg'
+	attack_sound = SFX_H_SOUNDS_NEGATIVE
 
 	endurance = 175
 
@@ -29,11 +29,11 @@
 	say_list_type = /datum/say_list/Eddy
 
 /mob/living/simple_mob/horror/Eddy/on_death(gibbed)
-	playsound(src, 'sound/h_sounds/headcrab.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HEADCRAB)
 	..()
 
 /mob/living/simple_mob/horror/Eddy/bullet_act()
-	playsound(src, 'sound/h_sounds/holla.ogg', 50, 1)
+	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
 /datum/say_list/Eddy

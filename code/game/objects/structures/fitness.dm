@@ -33,7 +33,7 @@
 	else
 		user.setClickCooldown(user.get_attack_speed())
 		flick("[icon_state]_hit", src)
-		playsound(src, 'sound/effects/woodhit.ogg', 25, 1, -1)
+		play_sfx(src, SFX_EFFECTS_WOODHIT)
 		user.do_attack_animation(src)
 		user.adjust_nutrition(-10) // Set nutrition drain to be the same as in fitness_machines_vr.dm
 		user.weight -= 0.25 * weightloss_power * (0.01 * user.weight_loss)
@@ -49,7 +49,7 @@
 	var/static/list/qualifiers = list("with ease", "without any trouble", "with great effort")
 
 /obj/structure/fitness/weightlifter/wrench_act(mob/user, obj/item/W)
-	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	weight = ((weight) % qualifiers.len) + 1
 	to_chat(user, "You set the machine's weight level to [weight].")
 	return TRUE
@@ -82,14 +82,14 @@
 		to_chat(user, span_warning("The weight machine is already in use by somebody else."))
 		return TRUE
 	else
-		playsound(src, 'sound/effects/weightlifter.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_WEIGHTLIFTER)
 		user.set_dir(SOUTH)
 		flick("[icon_state]_[weight]", src)
 		om_task_timed(user, 3 SECONDS + (weight * 10), target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return TRUE
 
 /obj/structure/fitness/weightlifter/proc/attack_hand_timed_done(mob/living/carbon/human/user)
-	playsound(src, 'sound/effects/weightdrop.ogg', 25, 1)
+	play_sfx(src, SFX_EFFECTS_WEIGHTDROP)
 	user.adjust_nutrition(weight * -10)
 	var/weightloss_enhanced = weightloss_power * (weight * 0.5)
 	user.weight -= 0.25 * weightloss_enhanced * (0.01 * user.weight_loss)

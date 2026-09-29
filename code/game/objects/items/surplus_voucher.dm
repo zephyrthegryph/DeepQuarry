@@ -48,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(3);/obj/item/toy/sword,
 					prob(3);/obj/item/toy/cultsword,
 					prob(1);/obj/structure/plushie/ian)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)
 
@@ -67,7 +67,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(3);/obj/item/t_scanner,
 					prob(2);/obj/item/grenade/chem_grenade/metalfoam,
 					prob(1);/obj/item/toy/figure/engineer)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)
 
@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(4);/obj/item/storage/pill_bottle/assorted,
 					prob(4);/obj/item/backup_implanter,
 					prob(2);/obj/item/toy/plushie/borgplushie/medihound)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)
 
@@ -123,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(3);/obj/item/gun/energy/taser/xeno,
 					prob(3);/obj/item/storage/box/monkeycubes,
 					prob(1);/obj/item/toy/figure/borg)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)
 
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(2);/obj/item/ammo_magazine/m9mmt/rubber,
 					prob(2);/obj/item/cell/device/weapon,
 					prob(1);/obj/item/toy/plushie/borgplushie)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)
 
@@ -166,6 +166,6 @@ DECLARE_INTERACTIONS(/obj/item/surplus_voucher, INTERACT_USE("Redeem", PROC_REF(
 					prob(2);/obj/item/seeds/wheatseed,
 					prob(2);/obj/item/seeds/orangeseed,
 					prob(1);/obj/item/toy/figure/bartender)
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
 	new path(T)
 	qdel(src)

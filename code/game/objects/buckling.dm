@@ -155,7 +155,7 @@
 			M.forceMove(get_turf(src))
 
 	. = buckle_mob(M, forced)
-	playsound(src.loc, 'sound/effects/seatbelt.ogg', 50, 1)
+	play_sfx(src.loc, SFX_EFFECTS_SEATBELT)
 	if(.)
 		var/reveal_message = list("buckled_mob" = null, "buckled_to" = null)
 		if(!silent)
@@ -181,7 +181,7 @@
 
 /atom/movable/proc/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	var/mob/living/M = unbuckle_mob(buckled_mob)
-	playsound(src.loc, 'sound/effects/seatbelt.ogg', 50, 1)
+	play_sfx(src.loc, SFX_EFFECTS_SEATBELT)
 	if(M)
 		if(M != user)
 			M.visible_message(\

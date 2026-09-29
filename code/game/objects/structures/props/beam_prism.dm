@@ -16,7 +16,7 @@
 	var/external_control_lock = 0	// Does the prism only rotate from the controls of an external switch?
 	var/degrees_from_north = 0	// How far is it rotated clockwise?
 	var/compass_directions = list("North" = 0, "South" = 180, "East" = 90, "West" = 270, "Northwest" = 315, "Northeast" = 45, "Southeast" = 135, "Southwest" = 225)
-	var/interaction_sound = 'sound/mecha/mechmove04.ogg'
+	var/interaction_sound = SFX_MECHA_MECHMOVE04
 
 	var/redirect_type = /obj/item/projectile/beam
 
@@ -156,7 +156,7 @@ DECLARE_REF(/obj/structure/prop/prism, "remote_dial", BACKLIST, "my_turrets")
 /obj/structure/prop/prism/proc/rotate_auto(new_bearing)
 	if(rotation_lock)
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
-		playsound(src, 'sound/effects/clang.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_CLANG, 2, extrarange = 0)
 		return
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " rotates to a bearing of [new_bearing]."))

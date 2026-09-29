@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 			moved++
 		if(moved)
 			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [stored_ammo.len]."))
-			playsound(src, 'sound/weapons/empty.ogg', 25, 1)
+			play_sfx(src, SFX_WEAPONS_EMPTY, 0.5)
 		update_icon()
 		other.update_icon()
 		if(!other.stored_ammo.len)

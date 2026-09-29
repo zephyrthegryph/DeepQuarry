@@ -31,7 +31,7 @@
 	var/min_reaction = 2
 
 	var/mix_message = "The solution begins to bubble."
-	var/reaction_sound = 'sound/effects/bubbles.ogg'
+	var/reaction_sound = SFX_EFFECTS_BUBBLES
 
 	var/log_is_important = 0 // If this reaction should be considered important for logging. Important recipes message admins when mixed, non-important ones just log to file.
 	var/wiki_flag = 0

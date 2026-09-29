@@ -323,10 +323,38 @@ play_sfx(src, SFX_WELD)
 fx_sparks(src, 3)                   // pooled, replaces the new/set_up/start triple
 ```
 
-- `SOUND_SET(id, files, volume, vary)` rows in `code/__defines/sfx.dm`; `play_sfx(atom, id,
-  volume_mult = 1)`. Literal `playsound(x, 'file', ...)` calls become set ids.
+- `SOUND_SET(id, files, volume, vary[, extrarange, falloff])` rows; `play_sfx(atom, id,
+  volume_mult = 1, ...)`. Literal `playsound(x, 'file', ...)` calls become set ids.
 - `fx_sparks(atom, n, cardinals = TRUE)` uses a pooled spark system.
-- Lint `sys_literal_playsound`, `sys_spark_triple`.
+- Lint `sys_literal_playsound`, `sys_literal_sound_var`, `sys_sfx_string_key`, `sys_spark_triple`.
+
+As built:
+- Ids are `#define SFX_* "key"` in `code/__defines/sfx.dm`; the rows are in
+  `/proc/build_sound_sets()` in `code/game/sound_sets.dm` (a define file cannot hold statements).
+  The table was generated from the literal call sites: one set per distinct file or literal
+  `pick()` list, its defaults the most common volume/vary/extrarange/falloff at those sites.
+- The old `get_sfx()` string keys ("sparks", "punch", "shatter", ...) are rows too, with their
+  ids keeping the old key strings, so `get_sfx(id)` and string-keyed `hitsound` vars keep
+  working. `get_sfx()` is now just a table lookup. There is one registry.
+- `play_sfx(source, id, volume_mult = 1, volume = null, vary = null, extrarange = null,
+  falloff = null, is_global, frequency, channel, pressure_affected, ignore_walls, preference,
+  volume_channel)`: `volume` overrides the set volume outright (used where a site's volume was an
+  expression); null `vary`/`extrarange`/`falloff` take the set's. It picks one file and calls
+  `playsound()`, which stays the core for non-literal sounds (`usesound`, `hitsound` vars, ...).
+- Sound vars and lists hold set ids too: every literal file assigned to a var/list/global that
+  feeds `playsound()`/`playsound_local()`/`play_sfx()`/`get_sfx()` (`hitsound`, `usesound`,
+  `drop_sound`, `fire_sound`, `apply_sounds`, label-to-sound maps such as `device_ringtones`,
+  ...) was replaced by an id (a literal `list()`/`pick()` became a multi-file set and its
+  `pick()` consumer was dropped). `playsound()` and `playsound_local()` resolve ids through
+  `get_sfx()`, so non-literal call sites need no change; the few sinks that build a `/sound`
+  themselves (`looping_sound.play()`, `user << activation_sound`) call `get_sfx()` first.
+- Lint (`tools/ci/sys_rules/sfx.py`): `literal_playsound` (a literal anywhere in the call,
+  pick lists and ternaries included), `literal_sound_var` (a literal assigned to a fed name,
+  multi-line lists and `GLOBAL_LIST_INIT` included), `sfx_string_key` (a bare named-set key in a
+  sound call or assigned to a fed var) and `spark_triple` (any `spark_spread` use).
+- `fx_sparks()` (`effect_system.dm`) throws at most 10 sparks per call and keeps one world-wide
+  live-spark budget (100) counted by the spark objects themselves; the `spark_spread` datum is
+  deleted, including the persistent `spark_system` vars that were attached to items.
 
 ## 17. Expiry
 

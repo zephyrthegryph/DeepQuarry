@@ -244,7 +244,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /obj/item/nif/proc/rewire_done(mob/user, obj/item/stack/cable_coil/C)
 	if(open == 1 && C.use(3))
 		user.visible_message("[user] replaces some wiring in \the [src].",span_notice("You replace any burned out wiring in \the [src]."))
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		open = 2
 		update_icon()
 
@@ -735,7 +735,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	forceMove(eo)
 	eo.implants |= src
 	implant(T)
-	playsound(T,'sound/effects/slime_squish.ogg',50,1)
+	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
 
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"

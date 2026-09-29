@@ -241,7 +241,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
 	visible_message(span_warning("\The [user] slashes at [src]!"))
-	playsound(src, 'sound/weapons/slash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_SLASH, 2)
 	add_hiddenprint(user)
 	deal_damage(DAMAGE_SHARP, max_integrity * (1 - integrity_failure) + DAMAGE_PRECISION, source = user, attacker = user)
 	return TRUE
@@ -376,7 +376,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 			add_hiddenprint(user)
 		else
 			visible_message(span_notice(" [src] clicks and shuts down. "))
-		playsound(src, 'sound/items/Wirecutter.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		icon_state = "[initial(icon_state)]1"
 	else
 		if(user)
@@ -384,7 +384,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 			add_hiddenprint(user)
 		else
 			visible_message(span_notice(" [src] clicks and reactivates itself. "))
-		playsound(src, 'sound/items/Wirecutter.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_WIRECUTTER)
 		icon_state = initial(icon_state)
 
 /obj/machinery/camera/atom_break(damage_flag)
@@ -397,10 +397,8 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 	update_coverage()
 
 	//sparks
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 
 /obj/machinery/camera/atom_fix()
 	. = ..()

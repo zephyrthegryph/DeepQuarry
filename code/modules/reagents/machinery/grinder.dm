@@ -224,7 +224,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 	if (!beaker || (beaker && beaker.reagents.total_volume >= beaker.reagents.maximum_volume))
 		return
 
-	playsound(src, 'sound/machines/blender.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_BLENDER)
 	om_hold_busy(src, 6 SECONDS)
 
 	// Process.

@@ -3,8 +3,8 @@
 	icon_state = "sheet-phoron"
 	default_type = MAT_PHORON
 	no_variants = FALSE
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	coin_type = /obj/item/coin/phoron
 	resistance_flags = FLAMMABLE
 
@@ -13,8 +13,8 @@
 	icon_state = "sheet-diamond"
 	default_type = MAT_DIAMOND
 	no_variants = FALSE // Variants added
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 	coin_type = /obj/item/coin/diamond
 
 /obj/item/stack/material/painite

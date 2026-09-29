@@ -167,7 +167,7 @@
 
 		if(SMITE_PIE)
 			new/obj/effect/decal/cleanable/pie_smudge(get_turf(target))
-			playsound(target, 'sound/effects/slime_squish.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			play_sfx(target, SFX_EFFECTS_SLIME_SQUISH, 2, extrarange = get_rand_frequency(), falloff = 5)
 			target.status_at_least(EFFECT_WEAKENED, 1)
 			target.visible_message(span_danger("[target] is struck by pie!"))
 
@@ -177,7 +177,7 @@
 			target.status_at_least(EFFECT_BLINDED, 10)
 			target.status_at_least(EFFECT_STUNNED, 5)
 			target.status_at_least(EFFECT_WEAKENED, 5)
-			playsound(target, 'sound/effects/spray2.ogg', 100, 1, get_rand_frequency(), falloff = 5)
+			play_sfx(target, SFX_EFFECTS_SPRAY2, extrarange = get_rand_frequency(), falloff = 5)
 
 		if(SMITE_HOTDOG)
 			hotdog_smite(target)
@@ -201,7 +201,7 @@
 		if(prob(80))	T.break_tile_to_plating()
 		else			T.break_tile()
 
-	playsound(T, get_sfx("explosion"), 100, 1, get_rand_frequency(), falloff = 5) // get_sfx() is so that everyone gets the same sound
+	playsound(T, get_sfx(SFX_EXPLOSION), 100, 1, get_rand_frequency(), falloff = 5) // get_sfx() is so that everyone gets the same sound
 
 	if(target.vitality() < 0.1)
 		target.gib()
@@ -378,7 +378,7 @@ GLOBAL_VAR(redspace_abduction_z)
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)
-	playsound(target, 'sound/effects/whistle.ogg', 50, 1, get_rand_frequency(), falloff = 5)
+	play_sfx(target, SFX_EFFECTS_WHISTLE, extrarange = get_rand_frequency())
 	om_after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), target)
 
 /proc/hotdog_smite_dress(mob/living/target)

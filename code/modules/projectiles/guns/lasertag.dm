@@ -100,8 +100,8 @@
 	w_class = ITEMSIZE_SMALL
 	attackspeed = 1.2 SECONDS
 	attack_verb = list("patted", "tapped")
-	drop_sound = 'sound/items/drop/knife.ogg'
-	pickup_sound = 'sound/items/pickup/knife.ogg'
+	drop_sound = SFX_ITEMS_DROP_KNIFE
+	pickup_sound = SFX_ITEMS_PICKUP_KNIFE
 	///The vest we have to wear to use the knife.
 	var/required_vest = /obj/item/clothing/suit/lasertag/omni
 	///If we need a vest on ourselves to use it or not.
@@ -139,10 +139,10 @@ TYPE_TABLE(/obj/item/lasertagknife/red, lasertag_knife_allowed_suits, list(/obj/
 
 	if(success)
 		user.visible_message(span_danger("[target] has been zapped with [src] by [user]!"))
-		playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_EGLOVES)
 	else
 		user.visible_message(span_danger("[target] has been harmlessly bonked with [src] by [user]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	return ITEM_INTERACT_SUCCESS
 
 ///go my hack

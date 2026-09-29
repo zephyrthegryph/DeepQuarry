@@ -95,9 +95,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 					if(prob(5)) //1 in 20% chance to fry the battery completly, which has a 1/10 chance of making the battery explode on next use.
 						bcell.corrupt() //Not too bad if you slotted a battery in. Disasterous if it has a self-charging battery.
 					if(bcell.rigged) //Did the above just rig the cell? Turn it off. Don't immediately have it go boom. Instead have the cell blow soon-ish.
-						var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-						s.set_up(5, 1, src)
-						s.start()
+						fx_sparks(src, 5)
 						shield_active = 0
 						if(bcell.charge_delay) //It WILL blow up soon. Downside of self-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
@@ -199,9 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 /obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
 	var/mob/user = ask.answerer
-	var/datum/effect/effect/system/spark_spread/sparks = new
-	sparks.set_up(5, 1, src)
-	sparks.start()
+	fx_sparks(src, 5)
 	qdel(bcell)
 	bcell = null
 	if(active_weapon)
@@ -247,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			to_chat(user, span_warning("You deactive the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
 			om_task_periodic_stop(src)
-			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
+			play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		else
 			shield_active = !shield_active
 			to_chat(user, span_warning("You activate the shield!"))
@@ -255,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			user.apply_body_effect(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
 			om_task_periodic(src, PERIODIC_SLOW) //Let's only bother draining power when we're being used!
-			playsound(src, 'sound/weapons/saberon.ogg', 50, 1) //Shield turning off! PLACEHOLDER
+			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
 	update_icon()
 
 /obj/item/personal_shield_generator/proc/weapon_toggle_effect(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction) //Make this work on Alt-Click
@@ -292,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		shield_active = 0
 		om_task_periodic_stop(src)
 		update_icon()
-		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
+		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
 
 	if(shield_active)
@@ -324,7 +320,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			user.remove_body_effect(/datum/body_effect/shield_projection)
 		om_task_periodic_stop(src)
 		update_icon()
-		playsound(src, 'sound/weapons/saberoff.ogg', 50, 1) //Shield turning off! PLACEHOLDER
+		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
 
 //checks that the base unit is in the correct slot to be used
@@ -376,8 +372,8 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	modifystate = "egunstun"
 
 	firemodes = list(
-		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound='sound/weapons/taser.ogg', charge_cost = 240),
-		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound='sound/weapons/Laser.ogg', charge_cost = 480),
+		list(mode_name="stun", projectile_type=/obj/item/projectile/beam/stun/med, modifystate="egunstun", fire_sound=SFX_WEAPONS_TASER, charge_cost = 240),
+		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		)
 
 	var/shield_generator_handle //The generator we are linked to!

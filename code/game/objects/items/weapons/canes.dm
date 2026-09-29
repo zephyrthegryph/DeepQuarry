@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 	if(concealed_blade)
 		user.visible_message(span_warning("[user] has unsheathed \a [concealed_blade] from [user.p_their()] [src]!"), "You unsheathe \the [concealed_blade] from \the [src].")
 		// Calling drop/put in hands to properly call item drop/pickup procs
-		playsound(src, 'sound/weapons/holster/sheathout.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT)
 		user.drop_from_inventory(src)
 		user.put_in_hands(concealed_blade)
 		user.put_in_hands(src)
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 /obj/item/cane/concealed/proc/interaction_item(mob/user, obj/item/material/butterfly/W, datum/interaction/interaction)
 	if(!src.concealed_blade && istype(W))
 		user.visible_message(span_warning("[user] has sheathed \a [W] into [user.p_their()] [src]!"), "You sheathe \the [W] into \the [src].")
-		playsound(src, 'sound/weapons/holster/sheathin.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHIN)
 		user.drop_from_inventory(W)
 		W.forceMove(src)
 		src.concealed_blade = W
@@ -123,7 +123,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
 	return TRUE
 

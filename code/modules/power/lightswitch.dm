@@ -36,7 +36,7 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/light_switch/dismantle()
-	playsound(src, 'sound/items/Crowbar.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CROWBAR)
 	var/obj/structure/construction/lightswitch/A = new(src.loc, src.dir)
 	A.stage = FRAME_WIRED
 	A.pixel_x = pixel_x
@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 				user.update_examine_panel(src)
 				user.visible_message("\The [user] adds wires to \the [src].", \
 					"You add wires to \the [src].", "You hear a noise.")
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(i
 
 /obj/structure/construction/proc/welder_act_tool_done(mob/user)
 	user.visible_message(span_warning("\The [user] has deconstructed \the [src]."), span_notice("You deconstruct \the [src]."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, 2)
 
 /obj/structure/construction/wirecutter_act(mob/user, obj/item/W)

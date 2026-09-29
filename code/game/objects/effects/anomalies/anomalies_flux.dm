@@ -66,9 +66,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly/flux, \
 		return
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		if(16 to 33)
 			tesla_zap(src, 2, 1000, FALSE, FALSE, current_jumps = 1) //Can't chain jumps.
 		if(34 to 65)

@@ -15,7 +15,7 @@
 /obj/item/toy/mecha
 	icon = 'icons/obj/toy.dmi'
 	icon_state = "ripleytoy"
-	drop_sound = 'sound/mecha/mechstep.ogg'
+	drop_sound = SFX_MECHA_MECHSTEP
 	reach = 2 // So you can battle across the table!
 
 	// Mech Battle Vars
@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/mecha, \
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
-		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
+		play_sfx(user, SFX_MECHA_MECHSTEP)
 	return TRUE
 
 EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(mecha_toy_pick_up)))
@@ -189,7 +189,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	if(COOLDOWN_FINISHED(src, timer))
 		to_chat(user, span_notice("You telekinetically play with [src]."))
 		COOLDOWN_START(src, timer, cooldown)
-		playsound(user, 'sound/mecha/mechstep.ogg', 20, TRUE)
+		play_sfx(user, SFX_MECHA_MECHSTEP)
 	return TRUE
 
 /**
@@ -281,14 +281,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 										span_danger(" You begin charging [attacker]'s special attack! "))
 				else //just attack
 					attacker.SpinAnimation(5, 0)
-					playsound(attacker, 'sound/mecha/mechstep.ogg', 30, TRUE)
+					play_sfx(attacker, SFX_MECHA_MECHSTEP, 1.5)
 					combat_health--
 					attacker_controller.visible_message(span_danger(" [attacker] devastates [src]! "), \
 										span_danger(" You ram [attacker] into [src]! "), \
 										span_hear(" You hear hard plastic smacking hard plastic."))
 					if(prob(5))
 						combat_health--
-						playsound(src, 'sound/effects/meteorimpact.ogg', 20, TRUE)
+						play_sfx(src, SFX_EFFECTS_METEORIMPACT, 0.5)
 						attacker_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
 											span_boldwarning(" ...and you land a CRIPPLING blow on [src]! "), null)
 
@@ -298,16 +298,10 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 				combat_health--
 				attacker.combat_health--
 				// This is sloppy but we don't have do_sparks.
-				var/datum/effect/effect/system/spark_spread/sparksrc = new(src)
-				playsound(src, "sparks", 50, 1)
-				sparksrc.set_up(2, 0, src)
-				sparksrc.attach(src)
-				sparksrc.start()
-				var/datum/effect/effect/system/spark_spread/sparkatk = new(attacker)
-				playsound(attacker, "sparks", 50, 1)
-				sparkatk.set_up(2, 0, attacker)
-				sparkatk.attach(attacker)
-				sparkatk.start()
+				play_sfx(src, SFX_SPARKS)
+				fx_sparks(src, 2, FALSE)
+				play_sfx(attacker, SFX_SPARKS)
+				fx_sparks(attacker, 2, FALSE)
 				if(prob(50))
 					attacker_controller.visible_message(span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
 										span_danger(" [attacker] and [src] clash dramatically, causing sparks to fly! "), \
@@ -317,7 +311,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 									span_danger(" [src] and [attacker] clash dramatically, causing sparks to fly! "), \
 									span_hear(" You hear hard plastic rubbing against hard plastic."))
 			if(5) //both win
-				playsound(attacker, 'sound/weapons/parry.ogg', 20, TRUE)
+				play_sfx(attacker, SFX_WEAPONS_PARRY)
 				if(prob(50))
 					attacker_controller.visible_message(span_danger(" [src]'s attack deflects off of [attacker]. "), \
 										span_danger(" [src]'s attack deflects off of [attacker]. "), \
@@ -334,14 +328,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 									span_danger(" You begin charging [src]'s special attack! "))
 				else //just attack
 					SpinAnimation(5, 0)
-					playsound(src, 'sound/mecha/mechstep.ogg', 30, TRUE)
+					play_sfx(src, SFX_MECHA_MECHSTEP, 1.5)
 					attacker.combat_health--
 					src_controller.visible_message(span_danger(" [src] smashes [attacker]! "), \
 									span_danger(" You smash [src] into [attacker]! "), \
 									span_hear(" You hear hard plastic smashing hard plastic."))
 					if(prob(5))
 						attacker.combat_health--
-						playsound(attacker, 'sound/effects/meteorimpact.ogg', 20, TRUE)
+						play_sfx(attacker, SFX_EFFECTS_METEORIMPACT, 0.5)
 						src_controller.visible_message(span_boldwarning(" ...and lands a CRIPPLING BLOW! "), \
 										span_boldwarning(" ...and you land a CRIPPLING blow on [attacker]! "), null)
 			else
@@ -357,13 +351,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	var/list/winlines = list("YOU'RE NOTHING BUT SCRAP!", "I'LL YIELD TO NONE!", "GLORY IS MINE!", "AN EASY FIGHT.", "YOU SHOULD HAVE NEVER FACED ME.", "ROCKED AND SOCKED.")
 
 	if(attacker.combat_health <= 0 && combat_health <= 0) //both lose
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 20, TRUE)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 0.4, vary = TRUE)
 		attacker_controller.visible_message(span_boldnotice(" MUTUALLY ASSURED DESTRUCTION!! [src] and [attacker] both end up destroyed!"), \
 							span_boldnotice(" Both [src] and [attacker] are destroyed!"))
 	else if(attacker.combat_health <= 0) //src wins
 		wins++
 		attacker.losses++
-		playsound(attacker, 'sound/effects/light_flicker.ogg', 20, TRUE)
+		play_sfx(attacker, SFX_EFFECTS_LIGHT_FLICKER, 0.4)
 		attacker_controller.visible_message(span_notice(" [attacker] falls apart!"), \
 							span_notice(" [attacker] falls apart!"), null)
 		visible_message("[pick(winlines)]")
@@ -372,7 +366,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	else if (combat_health <= 0) //attacker wins
 		attacker.wins++
 		losses++
-		playsound(src, 'sound/effects/light_flicker.ogg', 20, TRUE)
+		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER, 0.4)
 		src_controller.visible_message(span_notice(" [src] collapses!"), \
 						span_notice(" [src] collapses!"), null)
 		attacker.visible_message("[pick(winlines)]")
@@ -442,14 +436,14 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	switch(special_attack_type)
 		if(SPECIAL_ATTACK_DAMAGE) //+2 damage
 			victim.combat_health-=2
-			playsound(src, 'sound/weapons/marauder.ogg', 20, TRUE)
+			play_sfx(src, SFX_WEAPONS_MARAUDER)
 		if(SPECIAL_ATTACK_HEAL) //+2 healing
 			combat_health+=2
-			playsound(src, 'sound/mecha/mech_shield_raise.ogg', 20, TRUE)
+			play_sfx(src, SFX_MECHA_MECH_SHIELD_RAISE)
 		if(SPECIAL_ATTACK_UTILITY) //+1 heal, +1 damage
 			victim.combat_health--
 			combat_health++
-			playsound(src, 'sound/mecha/mechmove01.ogg', 30, TRUE)
+			play_sfx(src, SFX_MECHA_MECHMOVE01, 0.6)
 		if(SPECIAL_ATTACK_OTHER) //other
 			super_special_attack(victim)
 		else
@@ -499,7 +493,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	special_attack_cry = "KILLER CLAMP"
 
 /obj/item/toy/mecha/deathripley/super_special_attack(obj/item/toy/mecha/victim)
-	playsound(src, 'sound/weapons/sonic_jackhammer.ogg', 20, TRUE)
+	play_sfx(src, SFX_WEAPONS_SONIC_JACKHAMMER)
 	if(victim.combat_health < combat_health) // Instantly kills the other mech if it's health is below our's.
 		visible_message("EXECUTE!!")
 		victim.combat_health = 0
@@ -532,7 +526,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	special_attack_cry = "MEGA HORN"
 
 /obj/item/toy/mecha/honk/super_special_attack(obj/item/toy/mecha/victim)
-	playsound(src, 'sound/machines/honkbot_evil_laugh.ogg', 20, TRUE)
+	play_sfx(src, SFX_MACHINES_HONKBOT_EVIL_LAUGH)
 	victim.special_attack_cooldown += 3 // Adds cooldown to the other mech and gives a minor self heal
 	combat_health++
 

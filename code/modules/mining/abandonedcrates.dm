@@ -176,7 +176,7 @@ vorestation edit end */
 
 	if(check_input(input))
 		to_chat(user, span_notice("The crate unlocks!"))
-		playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_LOCKRESET)
 		set_locked(0)
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))

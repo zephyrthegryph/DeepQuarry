@@ -7,8 +7,8 @@
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = null
 	item_state = "pill"
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 
 	var/base_state = "pill"
 
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC
 	if(is_sharp(W))
 		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
 		user.balloon_alert_visible("[user] cuts up [src] with [W]!", "cut up \the [src] with [W]")
-		playsound(src.loc, 'sound/effects/chop.ogg', 50, 1)
+		play_sfx(src.loc, SFX_EFFECTS_CHOP)
 
 		if(reagents)
 			reagents.trans_to_obj(J, reagents.total_volume)
@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC
 	if(istype(W, /obj/item/card/id))
 		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
 		user.balloon_alert_visible("[user] clumsily cuts up [src] with [W]!", "You clumsily cut up \the [src] with [W]")
-		playsound(src.loc, 'sound/effects/chop.ogg', 50, 1)
+		play_sfx(src.loc, SFX_EFFECTS_CHOP)
 
 		if(reagents)
 			reagents.trans_to_obj(J, reagents.total_volume)

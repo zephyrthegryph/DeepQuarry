@@ -53,7 +53,7 @@
 
 	can_be_drop_prey = FALSE
 	var/leap_warmup = 2 SECOND // How long the leap telegraphing is.
-	var/leap_sound = 'sound/weapons/spiderlunge.ogg'
+	var/leap_sound = SFX_WEAPONS_SPIDERLUNGE
 
 // Activate Noms!
 /mob/living/simple_mob/vore/gryphon

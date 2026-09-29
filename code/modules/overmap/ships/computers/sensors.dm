@@ -135,7 +135,7 @@
 				. = TRUE
 
 	if(. && !issilicon(ui.user))
-		playsound(src, "terminal_type", 50, 1)
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
 /obj/machinery/computer/ship/sensors/machine_step()
 	..()
@@ -182,7 +182,7 @@
 		to_chat(user, span_notice("You need more welding fuel to complete this task."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You start repairing the damage to [src]."))
-	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
+	play_sfx(src, SFX_ITEMS_WELDER)
 	om_task_timed(user, max(5, damage / 5), src, src, PROC_REF(weld_repair_done), list(user, welder))
 	return ITEM_INTERACT_SUCCESS
 
@@ -234,9 +234,7 @@
 			toggle()
 		if(heat > critical_heat)
 			src.visible_message(span_danger("\The [src] violently spews out sparks!"))
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 
 			take_damage(rand(10,50), BURN, FIRE)
 			toggle()

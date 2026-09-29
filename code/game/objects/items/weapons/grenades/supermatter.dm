@@ -2,7 +2,7 @@
 	name = "supermatter grenade"
 	icon_state = "banana"
 	item_state = "emergency_engi"
-	arm_sound = 'sound/effects/3.wav'
+	arm_sound = SFX_EFFECTS_3
 	var/implode_at
 
 /obj/item/grenade/supermatter/detonate()
@@ -11,7 +11,7 @@
 	implode_at = world.time + 10 SECONDS
 	om_after(src, 10 SECONDS, PROC_REF(implode))
 	update_icon()
-	playsound(src, 'sound/weapons/wave.ogg', 100)
+	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
 /obj/item/grenade/supermatter/update_icon()
 	cut_overlays()
@@ -24,7 +24,7 @@
 			var/mob/M = loc
 			M.drop_from_inventory(src)
 		forceMove(get_turf(src))
-	playsound(src, 'sound/effects/supermatter.ogg', 100)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER, 2, vary = FALSE)
 	supermatter_pull(src, world.view, STAGE_THREE)
 
 /// om_after() callback from detonate(): the pull ends in the implosion.

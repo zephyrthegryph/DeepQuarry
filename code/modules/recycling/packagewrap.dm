@@ -5,7 +5,7 @@
 	icon_state = "deliveryPaper"
 	w_class = ITEMSIZE_NORMAL
 	var/amount = 25.0
-	drop_sound = 'sound/items/drop/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
 
 /obj/item/packageWrap/afterattack(obj/target, mob/user, proximity)
 	if(!proximity) return
@@ -57,7 +57,7 @@
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a small object.")
-		playsound(src, 'sound/items/package_wrap.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else if (istype(target, /obj/structure/closet/crate))
 		var/obj/structure/closet/crate/O = target
@@ -75,7 +75,7 @@
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a large object.")
-		playsound(src, 'sound/items/package_wrap.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else if (istype (target, /obj/structure/closet))
 		var/obj/structure/closet/O = target
@@ -93,7 +93,7 @@
 		user.visible_message("\The [user] wraps \a [target] with \a [src].",\
 		span_notice("You wrap \the [target], leaving [amount] units of paper on \the [src]."),\
 		"You hear someone taping paper around a large object.")
-		playsound(src, 'sound/items/package_wrap.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_PACKAGE_WRAP)
 
 	else
 		to_chat(user, span_blue("The object you are trying to wrap is unsuitable for the sorting machinery!"))

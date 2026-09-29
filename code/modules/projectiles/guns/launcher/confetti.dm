@@ -32,7 +32,7 @@
 			to_chat(user, span_red("[src] cannot hold more paper."))
 
 /obj/item/gun/launcher/confetti_cannon/proc/pump(mob/user)
-	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
+	play_sfx(user, SFX_WEAPONS_SHOTGUNPUMP)
 	if(!chambered)
 		if(confetti_charge)
 			chambered = new /obj/item/grenade/confetti/party_ball
@@ -81,7 +81,7 @@
 	desc = "Confetti, pies, banana peels, chaos!"
 
 /obj/item/gun/launcher/confetti_cannon/robot/pump(mob/user)
-	playsound(user, 'sound/weapons/shotgunpump.ogg', 60, 1)
+	play_sfx(user, SFX_WEAPONS_SHOTGUNPUMP)
 	if(!chambered)
 		var/choice = rerun_ask(user, "k83", PROC_REF(pump), args, /datum/om/prompt/choice/alert, message = "Load the Party Canon with?", title = "Change What?", choices = list("Confetti","Banana Peel","Cream Pie"))
 		if(isnull(choice))
@@ -93,7 +93,7 @@
 			if(!R.draw_power(ROBOT_CELL_JOULES(200), src, ROBOT_CELL_JOULES(400)))
 				to_chat(R, span_warning("Warning, low power detected. Aborting action."))
 				return
-		playsound(src, 'sound/effects/pop.ogg', 50, 0)
+		play_sfx(src, SFX_EFFECTS_POP)
 		switch(choice)
 			if("Confetti")
 				chambered = new /obj/item/grenade/confetti/party_ball

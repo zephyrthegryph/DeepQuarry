@@ -331,14 +331,14 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/pinata, INTERACT_IT
 	var/turf/T = loc
 	if(owner)
 		// SURPRISE!
-		playsound(owner, 'sound/items/confetti.ogg', 75, 1)
-		playsound(src, 'sound/effects/snap.ogg', 50, 1)
+		play_sfx(owner, SFX_ITEMS_CONFETTI, 1.5, vary = TRUE)
+		play_sfx(src, SFX_EFFECTS_SNAP)
 		owner.gib()
 		T = owner.loc
 	else
 		// only the organ pops!
-		playsound(src, 'sound/items/confetti.ogg', 75, 1)
-		playsound(src, 'sound/effects/snap.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CONFETTI, 1.5, vary = TRUE)
+		play_sfx(src, SFX_EFFECTS_SNAP)
 
 	// YAYYYYY
 	if(!turf_clear(T))
@@ -387,9 +387,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/pinata, INTERACT_IT
 
 		if(turfs.len)
 			// Moves the mob, causes sparks.
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, get_turf(owner))
-			s.start()
+			fx_sparks(get_turf(owner), 3)
 			var/turf/picked = get_turf(pick(turfs))                      // Just in case...
 			owner.forceMove(picked) // And teleport them to the chosen location.
 		cooldown = rand(cooldownmin,cooldownmax)
@@ -501,7 +499,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 	if(owner)
 		owner.gib() //Kaboom!
 
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SNAP)
 
 	// place a ton of money at location, then delete organ!
 	var/turf/T = get_turf(src)
@@ -558,7 +556,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/malignant/tumor/moneyorgan, INTERAC
 /obj/item/organ/internal/malignant/parasite/honker/feed()
 	..()
 	if(prob(80))
-		var/sound = pick( list('sound/misc/sadtrombone.ogg','sound/items/bikehorn.ogg','sound/effects/clownstep1.ogg','sound/effects/clownstep2.ogg'))
+		var/sound = SFX_MISC_SADTROMBONE_MIX
 		playsound(owner, sound, 50, 1)
 	else
 		// obnoxious, terrible jokes that'll get you punched by a vox

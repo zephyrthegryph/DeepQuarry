@@ -9,8 +9,8 @@
 	throw_range = 4
 	throwforce = 10
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 /obj/item/nullrod/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 

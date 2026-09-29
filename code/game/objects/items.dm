@@ -13,7 +13,7 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 	var/health = null // organ condition (the body rewrite owns it). Object hit points are integrity (take_damage/get_integrity), never this.
 	// burn_point removed (dead, 0 refs)
 	var/burning = null
-	var/hitsound = "swing_hit"
+	var/hitsound = SFX_SWING_HIT
 	var/usesound = null // Like hitsound, but for when used properly and not to kill someone.
 	var/storage_cost = null
 	var/slot_flags = 0		//This is used to determine on which slots an item can fit.
@@ -105,9 +105,9 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 	// Sound used when equipping the items into a valid slot.
 	var/equip_sound
 	// pickup sound - this is the default
-	var/pickup_sound = "generic_pickup"
+	var/pickup_sound = SFX_GENERIC_PICKUP
 	// drop sound - this is the default
-	var/drop_sound = "generic_drop"
+	var/drop_sound = SFX_GENERIC_DROP
 
 
 	var/no_random_knockdown = FALSE			//stops item from being able to randomly knock people down in combat
@@ -433,9 +433,9 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 			else if(hitsound)
 				playsound(hit_atom, hitsound, volume, TRUE, -1)
 			else
-				playsound(hit_atom, 'sound/weapons/genhit.ogg', volume, TRUE, -1)
+				play_sfx(hit_atom, SFX_WEAPONS_GENHIT, volume = volume, extrarange = -1)
 		else
-			playsound(hit_atom, 'sound/weapons/throwtap.ogg', 1, volume, -1)
+			play_sfx(hit_atom, SFX_WEAPONS_THROWTAP, vary = volume)
 	else
 		playsound(src, drop_sound, 30, preference = /datum/preference/toggle/drop_sounds)
 
@@ -603,7 +603,7 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 	var/hit_zone = get_zone_with_miss_chance(U.zone_sel.selecting, M, U.get_accuracy_penalty(U))
 	if(!hit_zone)
 		U.do_attack_animation(M)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 		visible_message(span_danger("\The [U] attempts to stab \the [M] in the eyes, but misses!"))
 		return ITEM_INTERACT_FAILURE
 

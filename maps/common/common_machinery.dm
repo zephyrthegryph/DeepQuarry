@@ -1,8 +1,8 @@
 // Garage Doors:
 /obj/machinery/door/blast/shutters/garage
 	name = "Garage Door"
-	open_sound = 'sound/machines/door/garagedooropen.ogg'
-	close_sound = 'sound/machines/door/garagedoorclose.ogg'
+	open_sound = SFX_MACHINES_DOOR_GARAGEDOOROPEN
+	close_sound = SFX_MACHINES_DOOR_GARAGEDOORCLOSE
 
 /obj/machinery/camera/network/exterior
 	network = list(NETWORK_EXTERIOR)

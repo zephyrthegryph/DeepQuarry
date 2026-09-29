@@ -120,9 +120,7 @@
 /obj/machinery/power/smes/buildable/power_step()
 	var/needs_grounding_tick = !grounding && (Percentage() > 5)
 	if(needs_grounding_tick)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		charge -= (output_level_max * SMESRATE)
 		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
 			apcs_overload(0,10)
@@ -232,7 +230,7 @@
 		return
 
 	// Preparations
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
+	var/spark_amount = 3
 	// Check if user has protected gloves.
 	var/user_protected = 0
 	if(h_user.get_equipped_item(SLOT_ID_GLOVES))
@@ -248,7 +246,7 @@
 		if (0 to 15)
 			// Small overcharge
 			// Sparks, Weak shock
-			s.set_up(2, 1, src)
+			spark_amount = 2
 			if (user_protected && prob(80))
 				to_chat(h_user, "A small electrical arc almost burns your hand. Luckily you had your gloves on!")
 			else
@@ -259,7 +257,7 @@
 		if (16 to 35)
 			// Medium overcharge
 			// Sparks, Medium shock, Weak EMP
-			s.set_up(4,1,src)
+			spark_amount = 4
 			if (user_protected && prob(25))
 				to_chat(h_user, "A medium electrical arc sparks and almost burns your hand. Luckily you had your gloves on!")
 			else
@@ -271,7 +269,7 @@
 		if (36 to 60)
 			// Strong overcharge
 			// Sparks, Strong shock, Strong EMP, 10% light overload. 1% APC failure
-			s.set_up(7,1,src)
+			spark_amount = 7
 			if (user_protected)
 				to_chat(h_user, "A strong electrical arc sparks between you and [src], ignoring your gloves and burning your hand!")
 				h_user.injure(INJURY_ELECTRIC, rand(25,60), used_hand, src)
@@ -286,7 +284,7 @@
 		if (61 to INFINITY)
 			// Massive overcharge
 			// Sparks, Near - instantkill shock, Strong EMP, 25% light overload, 5% APC failure. 50% of SMES explosion. This is bad.
-			s.set_up(10,1,src)
+			spark_amount = 10
 			to_chat(h_user, "A massive electrical arc sparks between you and [src]. The last thing you can think about is \"Oh shit...\"")
 			// Remember, we have few gigajoules of electricity here.. Turn them into crispy toast.
 			h_user.electrocute_act(rand(150,195), src, def_zone = BP_TORSO)
@@ -304,7 +302,7 @@
 				// 30 - 60 seconds and then BAM!
 				om_after(src, rand(300,600), PROC_REF(containment_failure))
 
-	s.start()
+	fx_sparks(src, spark_amount)
 	charge = 0
 
 // Proc: apcs_overload()

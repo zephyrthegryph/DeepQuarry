@@ -210,7 +210,7 @@
 	if(!istype(T, /turf/simulated/floor))
 		to_chat(user, span_warning("You cannot place \the [src] on this spot!"))
 		return
-	playsound(src, 'sound/machines/click.ogg', 75, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 1.5)
 	user.visible_message("\The [user] attaches \the [src] to the wall.",
 		span_notice("You attach \the [src] to the wall."),
 		span_warningplain("You hear clicking."))

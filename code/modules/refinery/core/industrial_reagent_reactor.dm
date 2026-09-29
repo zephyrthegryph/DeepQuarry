@@ -113,13 +113,13 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 			// Actually enforce the air sharing
 			pad.rust_attach_external_device(internal_tank)
 			// Sfx
-			playsound(src, 'sound/mecha/gasconnected.ogg', 50, 1)
+			play_sfx(src, SFX_MECHA_GASCONNECTED)
 		else
 			internal_tank.disconnect()
-			playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
+			play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 	else if(internal_tank.connected_port())
 		internal_tank.disconnect() // How did we get here? qdelled pad?
-		playsound(src, 'sound/mecha/gasdisconnected.ogg', 50, 1)
+		play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 
 /obj/machinery/reagent_refinery/reactor/return_air()
 	if(internal_tank)

@@ -10,7 +10,7 @@
 	throwforce = 10
 	injury_kind = INJURY_BURN
 	force = 10
-	hitsound = 'sound/items/Welder2.ogg'
+	hitsound = SFX_ITEMS_WELDER2
 
 DECLARE_INTERACTIONS(/obj/item/scrying, INTERACT_USE(null, PROC_REF(interaction_self)))
 

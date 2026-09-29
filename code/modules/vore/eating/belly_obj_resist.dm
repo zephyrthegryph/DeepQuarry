@@ -120,12 +120,12 @@
 	if(is_wet)
 		var/sound/struggle_snuggle
 		if(!fancy_vore)
-			struggle_snuggle = sound(get_sfx("classic_struggle_sounds"))
+			struggle_snuggle = sound(get_sfx(SFX_CLASSIC_STRUGGLE_SOUNDS))
 		else
-			struggle_snuggle = sound(get_sfx("fancy_prey_struggle"))
+			struggle_snuggle = sound(get_sfx(SFX_FANCY_PREY_STRUGGLE))
 		playsound(src, struggle_snuggle, vary = 1, vol = 75, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises, volume_channel = VOLUME_CHANNEL_VORE)
 		return
-	var/sound/struggle_rustle = sound(get_sfx("rustle"))
+	var/sound/struggle_rustle = sound(get_sfx(SFX_RUSTLE))
 	playsound(src, struggle_rustle, vary = 1, vol = 75, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/digestion_noises, volume_channel = VOLUME_CHANNEL_VORE)
 
 /obj/belly/proc/resist_check_escapechance(mob/living/living_prey, obj/item/prey_item)

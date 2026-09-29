@@ -48,9 +48,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 			src.visible_message(span_notice("[text_activated]"))
 			update_icon()
 			if(effect == 1)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(3, 1, src)
-				s.start()
+				fx_sparks(src, 3)
 			if(effect == 2)
 				for(var/obj/machinery/light/L in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 					if(L.z != src.z || get_dist(src,L) > 10)

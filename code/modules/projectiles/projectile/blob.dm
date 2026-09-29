@@ -5,7 +5,7 @@
 	armor_penetration = 40
 	injury_kind = INJURY_BLUNT
 	pass_flags = PASSTABLE | PASSBLOB
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH
 	var/splatter = FALSE			// Will this make a cloud of reagents?
 	var/splatter_volume = 5			// The volume of its chemical container, for said cloud of reagents.
 
@@ -26,7 +26,7 @@ TYPE_TABLE_DECLARE(/obj/item/projectile/energy/blob, blob_projectile_chems, list
 		var/datum/effect/effect/system/smoke_spread/chem/blob/S = new /datum/effect/effect/system/smoke_spread/chem/blob
 		S.attach(location)
 		S.set_up(reagents, rand(1, splatter_volume), 0, location)
-		playsound(location, 'sound/effects/slime_squish.ogg', 30, 1, -3)
+		play_sfx(location, SFX_EFFECTS_SLIME_SQUISH, 0.6, extrarange = -3)
 		S.start()
 	..()
 
@@ -74,4 +74,4 @@ TYPE_TABLE(/obj/item/projectile/energy/blob/freezing, blob_projectile_chems, lis
 	injury_kind = INJURY_CORROSIVE
 	armor_penetration = 20
 	penetrating = 3
-	fire_sound = 'sound/effects/slime_squish.ogg'
+	fire_sound = SFX_EFFECTS_SLIME_SQUISH

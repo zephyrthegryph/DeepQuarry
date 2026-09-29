@@ -24,8 +24,8 @@
 	var/compact_mode = FALSE
 
 	icon = 'icons/obj/device.dmi'
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
 

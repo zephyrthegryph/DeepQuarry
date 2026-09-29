@@ -6,7 +6,7 @@
 	var/list/attack_verb = list("attack")	// Empty hand hurt intent verb.
 	var/list/attack_noun = list("fist") // ALLOW(instance_list): kept: interned with string_list() in New()
 	var/damage = 0						// Extra empty hand attack damage.
-	var/attack_sound = "punch"
+	var/attack_sound = SFX_PUNCH
 	var/miss_sound = 'sound/weapons/punchmiss.ogg'
 	var/shredding = FALSE // Calls the old attack_alien() behavior on objects/mobs when on harm intent.
 	var/sharp = FALSE
@@ -120,7 +120,7 @@
 /datum/unarmed_attack/bite
 	attack_name = "bite"
 	attack_verb = list("bit")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	damage = 0
 
 /datum/unarmed_attack/bite/event1
@@ -192,7 +192,7 @@
 	attack_name = "kick"
 	attack_verb = list("kicked", "kicked", "kicked", "kneed")
 	attack_noun = list("kick", "kick", "kick", "knee strike")
-	attack_sound = "swing_hit"
+	attack_sound = SFX_SWING_HIT
 	damage = 0
 
 /datum/unarmed_attack/kick/event1
@@ -237,7 +237,7 @@
 	attack_name = "stomp"
 	attack_verb = null
 	attack_noun = list("stomp")
-	attack_sound = "swing_hit"
+	attack_sound = SFX_SWING_HIT
 	damage = 0
 
 /datum/unarmed_attack/stomp/event1

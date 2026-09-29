@@ -155,7 +155,7 @@
 		P.firer = src
 		P.old_style_target(A)
 		P.fire()
-		playsound(src, 'sound/weapons/alien_spitacid.ogg', 25, 0)
+		play_sfx(src, SFX_WEAPONS_ALIEN_SPITACID)
 
 /mob/living/carbon/human/proc/corrosive_acid(O as obj|turf in oview(1)) //If they right click to corrode, an error will flash if its an invalid target./N
 	set name = "Corrosive Acid (200)"
@@ -284,7 +284,7 @@
 
 	if(O)
 		visible_message(span_boldwarning("[src] vomits up a thick purple substance and begins to shape it!"), span_alium("You shape a [choice]."))
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 	return
 
@@ -325,7 +325,7 @@
 
 	src.visible_message(span_danger("\The [src] leaps at [T]!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
-	playsound(src, 'sound/voice/hiss5.ogg', 50, 1)
+	play_sfx(src, SFX_VOICE_HISS5)
 	om_after(src, 5, PROC_REF(leap_land), T)
 
 /mob/living/carbon/human/proc/leap_land(mob/living/T)

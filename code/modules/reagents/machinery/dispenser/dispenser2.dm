@@ -5,7 +5,7 @@
 	desc = "Automagically fabricates chemicals from electricity."
 	icon = 'icons/obj/chemical.dmi'
 	icon_state = "dispenser"
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 
 	var/list/spawn_cartridges = null // Set to a list of types to spawn one of each on New()
 
@@ -197,7 +197,7 @@
 				recording_recipe += list(list("id" = label, "amount" = amount))
 			else if(cartridges[label] && container && container.is_open_container())
 				var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
-				playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+				play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 				C.reagents.trans_to(container, amount)
 				MACHINE_WAKE(src)
 			. = TRUE
@@ -267,7 +267,7 @@
 					if(!cartridges[label])
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
-						playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+						play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 						return
 				LAZYSET(saved_recipes, name, recording_recipe)
 				recording_recipe = null
@@ -291,17 +291,17 @@
 					if(!C)
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
-						playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+						play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 						break
 
 					// Allows copying recipes
-					playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+					play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 					var/amount_actually_dispensed = C.reagents.trans_to(container, dispense_amount)
 					MACHINE_WAKE(src)
 					if(dispense_amount != amount_actually_dispensed)
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] was only able to dispense [amount_actually_dispensed ? amount_actually_dispensed : 0]u out of [dispense_amount]u requested of <b>[label]</b>!"))
-						playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+						play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
 						break
 			else
 				recording_recipe += chemicals_to_dispense

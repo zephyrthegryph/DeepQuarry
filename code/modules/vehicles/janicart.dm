@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		if(reagents.total_volume > 1)
 			reagents.trans_to_obj(W, 2)
 			to_chat(user, span_notice("You wet \the [W] in the [callme]."))
-			playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+			play_sfx(src, SFX_EFFECTS_SLOSH)
 		else
 			to_chat(user, span_notice("This [callme] is out of water!"))
 		return TRUE

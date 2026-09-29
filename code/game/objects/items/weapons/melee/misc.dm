@@ -7,7 +7,7 @@
 	throwforce = 7
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("flogged", "whipped", "lashed", "disciplined")
-	hitsound = 'sound/weapons/whip.ogg'
+	hitsound = SFX_WEAPONS_WHIP
 	reach = 2
 
 /obj/item/melee/chainofcommand/curator_whip
@@ -74,7 +74,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 	edge = TRUE
 	injury_kind = INJURY_CUT
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	can_speak = 1
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 /obj/item/melee/cursedblade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(50))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -117,7 +117,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 	edge = FALSE
 	injury_kind = INJURY_PIERCE
 	attack_verb = list("stabbed", "lunged at", "dextrously struck", "sliced", "lacerated", "impaled", "diced", "charioted")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 
 /obj/item/melee/hammer
 	name = "claw hammer"

@@ -8,8 +8,8 @@
 	var/spamcheck = 0
 	var/emagged = 0
 	var/insults = 0
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!", "I'M A TERRORIST!", "ALL SECURITY TO SHOOT ME ON SIGHT!", "I HAVE A BOMB!", "CAPTAIN IS A COMDOM!", "GLORY TO ALMACH!"))
 
@@ -140,7 +140,7 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 			user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[insult]\"</FONT>", runemessage = insult)
 			if(broadcast_size >= 11)
 				var/turf/T = get_turf(user)
-				playsound(src, 'sound/items/AirHorn.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_AIRHORN)
 				for(var/mob/living/carbon/M in oviewers(4, T))
 					if(M.get_ear_protection() >= 2)
 						continue
@@ -158,9 +158,7 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 		else
 			user.audible_message(span_critical("*BZZZZzzzzzt*"))
 			if(prob(40) && insults <= 0)
-				var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-				s.set_up(2, 1, get_turf(user))
-				s.start()
+				fx_sparks(get_turf(user), 2)
 				user.visible_message(span_warning("\The [src] sparks violently!"))
 				om_after(src, 3 SECONDS, PROC_REF(overload_boom))
 	else

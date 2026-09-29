@@ -40,7 +40,7 @@
 	return !istype(target, /obj/machinery/button/remote)
 
 /obj/machinery/button/proc/interaction_press(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/machines/button.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	return TRUE
 
 /obj/machinery/button/windowtint/multitint

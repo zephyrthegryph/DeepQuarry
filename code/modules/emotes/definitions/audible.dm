@@ -57,7 +57,7 @@
 /datum/decl/emote/audible/multichirp
 	key = "mchirp"
 	emote_message_3p = "chirps a chorus of notes!"
-	emote_sound = 'sound/voice/multichirp.ogg'
+	emote_sound = SFX_VOICE_MULTICHIRP
 
 /datum/decl/emote/audible/alarm
 	key = "alarm"
@@ -83,7 +83,7 @@
 	key = "bbeep"
 	emote_message_1p = "You beep."
 	emote_message_3p = "beeps."
-	emote_sound = 'sound/machines/twobeep.ogg'
+	emote_sound = SFX_MACHINES_TWOBEEP
 
 /datum/decl/emote/audible/sniff
 	key = "sniff"
@@ -105,10 +105,7 @@
 /datum/decl/emote/audible/clap
 	key = "clap"
 	emote_message_3p = "claps."
-	emote_sound = list('sound/misc/clap1.ogg',
-						'sound/misc/clap2.ogg',
-						'sound/misc/clap3.ogg',
-						'sound/misc/clap4.ogg')
+	emote_sound = SFX_MISC_CLAP_MIX
 
 /datum/decl/emote/audible/chuckle
 	key = "chuckle"
@@ -157,17 +154,17 @@
 	key = "bhiss"
 	emote_message_3p_target = "hisses at TARGET."
 	emote_message_3p = "hisses."
-	emote_sound = 'sound/voice/bughiss.ogg'
+	emote_sound = SFX_VOICE_BUGHISS
 
 /datum/decl/emote/audible/bug_buzz
 	key = "bbuzz"
 	emote_message_3p = "buzzes USER_THEIR wings."
-	emote_sound = 'sound/voice/bugbuzz.ogg'
+	emote_sound = SFX_VOICE_BUGBUZZ
 
 /datum/decl/emote/audible/bug_chitter
 	key = "chitter"
 	emote_message_3p = "chitters."
-	emote_sound = 'sound/voice/bug.ogg'
+	emote_sound = SFX_VOICE_BUG
 
 /datum/decl/emote/audible/roar
 	key = "roar"
@@ -193,43 +190,43 @@
 /datum/decl/emote/audible/chirp
 	key = "chirp"
 	emote_message_3p = "chirps!"
-	emote_sound = 'sound/misc/nymphchirp.ogg'
+	emote_sound = SFX_MISC_NYMPHCHIRP
 
 /datum/decl/emote/audible/crack
 	key = "crack"
 	emote_message_3p = "cracks USER_THEIR knuckles."
-	emote_sound = 'sound/voice/knuckles.ogg'
+	emote_sound = SFX_VOICE_KNUCKLES
 
 /datum/decl/emote/audible/squish
 	key = "squish"
-	emote_sound = 'sound/effects/slime_squish.ogg' //Credit to DrMinky (freesound.org) for the sound.
+	emote_sound = SFX_EFFECTS_SLIME_SQUISH //Credit to DrMinky (freesound.org) for the sound.
 	emote_message_3p = "squishes."
 	sound_vary = FALSE
 
 /datum/decl/emote/audible/warble
 	key = "warble"
-	emote_sound = 'sound/effects/warble.ogg' // Copyright CC BY 3.0 alienistcog (freesound.org) for the sound.
+	emote_sound = SFX_EFFECTS_WARBLE // Copyright CC BY 3.0 alienistcog (freesound.org) for the sound.
 	emote_message_3p = "warbles."
 
 /datum/decl/emote/audible/croon
 	key = "croon"
 	emote_message_3p = "croons..."
-	emote_sound = list('sound/voice/croon1.ogg', 'sound/voice/croon2.ogg')
+	emote_sound = SFX_VOICE_CROON_MIX
 
 /datum/decl/emote/audible/lwarble
 	key = "lwarble"
 	emote_message_3p = "lets out a low, throaty warble!"
-	emote_sound = 'sound/voice/lwarble.ogg'
+	emote_sound = SFX_VOICE_LWARBLE
 
 /datum/decl/emote/audible/croak_skrell
 	key = "scroak"
 	emote_message_3p = "croaks!"
-	emote_sound = 'sound/voice/croak_skrell.ogg'
+	emote_sound = SFX_VOICE_CROAK_SKRELL
 
 /datum/decl/emote/audible/vox_shriek
 	key = "shriek"
 	emote_message_3p = "SHRIEKS!"
-	emote_sound = 'sound/voice/shriek1.ogg'
+	emote_sound = SFX_VOICE_SHRIEK1
 
 /datum/decl/emote/audible/caw
 	key = "caw"
@@ -237,34 +234,34 @@
 	emote_message_3p = "caws!"
 	emote_message_1p_target = "You caw at TARGET."
 	emote_message_3p_target = "caws at TARGET."
-	emote_sound = 'sound/voice/emotes/caw1.ogg' // Copyright Sampling+ 1.0 Vixuxx (freesound.org) for the source audio.
+	emote_sound = SFX_VOICE_EMOTES_CAW1 // Copyright Sampling+ 1.0 Vixuxx (freesound.org) for the source audio.
 
 /datum/decl/emote/audible/caw2
 	key = "caw2"
 	emote_message_3p = "caws."
-	emote_sound = 'sound/voice/emotes/caw2.ogg'  // Copyright CC0 1.0 Universal, by Jofae on freesound.org.
+	emote_sound = SFX_VOICE_EMOTES_CAW2  // Copyright CC0 1.0 Universal, by Jofae on freesound.org.
 
 
 /datum/decl/emote/audible/caw_m
 	key = "caw_m"
 	emote_message_3p = "caws multiple times."
-	emote_sound = 'sound/voice/emotes/caw_multiple.ogg' // Copyright CC0 1.0 Universal, by Ambientsoundapp on freesound.org.
+	emote_sound = SFX_VOICE_EMOTES_CAW_MULTIPLE // Copyright CC0 1.0 Universal, by Ambientsoundapp on freesound.org.
 
 /datum/decl/emote/audible/gwah
 	key = "gwah"
 	emote_message_3p = "gwah."
-	emote_sound = 'sound/voice/emotes/gwah.ogg' // Copyright CC0 1.0 Universal, by Ambientsoundapp on freesound.org.
+	emote_sound = SFX_VOICE_EMOTES_GWAH // Copyright CC0 1.0 Universal, by Ambientsoundapp on freesound.org.
 
 
 /datum/decl/emote/audible/purr
 	key = "purr"
 	emote_message_3p = "purrs."
-	emote_sound = 'sound/voice/cat_purr.ogg'
+	emote_sound = SFX_VOICE_CAT_PURR
 
 /datum/decl/emote/audible/purrlong
 	key = "purrl"
 	emote_message_3p = "purrs."
-	emote_sound = 'sound/voice/cat_purr_long.ogg'
+	emote_sound = SFX_VOICE_CAT_PURR_LONG
 
 /datum/decl/emote/audible/fennecscream
 	key = "fennecscream"
@@ -280,7 +277,7 @@
 	emote_message_3p = "chirps in surprise!"
 	emote_message_1p_target = "You chirp in surprise at TARGET!"
 	emote_message_3p_target = "chirps in surprise at TARGET!"
-	emote_sound = 'sound/voice/teshsqueak.ogg' // Copyright CC BY 3.0 InspectorJ (freesound.org) for the source audio.
+	emote_sound = SFX_VOICE_TESHSQUEAK // Copyright CC BY 3.0 InspectorJ (freesound.org) for the source audio.
 	sound_vary = FALSE
 
 /datum/decl/emote/audible/teshchirp
@@ -289,7 +286,7 @@
 	emote_message_3p = "chirps!"
 	emote_message_1p_target = "You chirp at TARGET!"
 	emote_message_3p_target = "chirps at TARGET!"
-	emote_sound = 'sound/voice/teshchirp.ogg' // Copyright Sampling+ 1.0 Incarnidine (freesound.org) for the source audio.
+	emote_sound = SFX_VOICE_TESHCHIRP // Copyright Sampling+ 1.0 Incarnidine (freesound.org) for the source audio.
 
 /datum/decl/emote/audible/teshtrill
 	key = "trill"
@@ -297,13 +294,13 @@
 	emote_message_3p = "trills."
 	emote_message_1p_target = "You trill at TARGET."
 	emote_message_3p_target = "trills at TARGET."
-	emote_sound = 'sound/voice/teshtrill.ogg' // Copyright CC BY-NC 3.0 Arnaud Coutancier (freesound.org) for the source audio.
+	emote_sound = SFX_VOICE_TESHTRILL // Copyright CC BY-NC 3.0 Arnaud Coutancier (freesound.org) for the source audio.
 
 /datum/decl/emote/audible/teshscream
 	key = "teshscream"
 	emote_message_1p = "You scream!"
 	emote_message_3p = "screams!"
-	emote_sound = 'sound/voice/teshscream.ogg'
+	emote_sound = SFX_VOICE_TESHSCREAM
 
 /datum/decl/emote/audible/prbt
 	key = "prbt"
@@ -311,28 +308,28 @@
 	emote_message_3p = "prbts."
 	emote_message_1p_target = "You prbt at TARGET."
 	emote_message_3p_target = "prbts at TARGET."
-	emote_sound = 'sound/voice/prbt.ogg'
+	emote_sound = SFX_VOICE_PRBT
 
 //Some Spooky sounds.
 /datum/decl/emote/audible/evil_laugh
 	key = "evillaugh"
 	emote_message_3p = "laughs!"
-	emote_sound = 'sound/mob/spooky/laugh.ogg'
+	emote_sound = SFX_MOB_SPOOKY_LAUGH
 
 /datum/decl/emote/audible/evil_no
 	key = "evilno"
 	emote_message_3p = "says no!"
-	emote_sound = 'sound/mob/spooky/no.ogg'
+	emote_sound = SFX_MOB_SPOOKY_NO
 
 /datum/decl/emote/audible/evil_breathing
 	key = "evilbreath"
 	emote_message_3p = "breaths heavily!"
-	emote_sound = 'sound/mob/spooky/breath1.ogg'
+	emote_sound = SFX_MOB_SPOOKY_BREATH1
 
 /datum/decl/emote/audible/evil_breathing_2
 	key = "evilbreath2"
 	emote_message_3p = "breaths heavily!"
-	emote_sound = 'sound/mob/spooky/breath2.ogg'
+	emote_sound = SFX_MOB_SPOOKY_BREATH2
 
 /datum/decl/emote/audible/goodripsound
 	key = "goodripsound"

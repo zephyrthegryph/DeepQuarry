@@ -18,7 +18,7 @@
 	energy_cost_per_shot = 3000
 	instability_per_shot = 10
 	cooldown = 20
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 
 /obj/item/projectile/beam/chain_lightning
 	name = "lightning"

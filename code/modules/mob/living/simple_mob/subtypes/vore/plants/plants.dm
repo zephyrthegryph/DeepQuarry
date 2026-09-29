@@ -120,7 +120,7 @@
 	appendage_color = "#03a319"
 	base_attack_cooldown = 5 SECONDS
 	projectiletype = /obj/item/projectile/beam/appendage
-	projectilesound = 'sound/effects/slime_squish.ogg'
+	projectilesound = SFX_EFFECTS_SLIME_SQUISH
 
 /mob/living/simple_mob/vore/pitcher/load_default_bellies()
 	. = ..()

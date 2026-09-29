@@ -19,7 +19,7 @@
 	magazine_type = /obj/item/ammo_magazine/m762enbloc
 	allowed_magazines = list(/obj/item/ammo_magazine/m762enbloc)
 	auto_eject = 1
-	auto_eject_sound = 'sound/weapons/garand_ping.ogg'
+	auto_eject_sound = SFX_WEAPONS_GARAND_PING
 
 /obj/item/gun/projectile/garand/update_icon()
 	if(ammo_magazine)

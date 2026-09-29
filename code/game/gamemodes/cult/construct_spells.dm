@@ -579,12 +579,12 @@
 	spell_projectile = /obj/item/projectile/beam/inversion
 	pre_shot_delay = 0
 	cooldown = 5
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 
 /obj/item/projectile/beam/inversion
 	name = "inversion beam"
 	icon_state = "invert"
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
 	armor_penetration = 60
 	light_range = 2
@@ -602,7 +602,7 @@
 	damage = 30
 	armor_penetration = 60
 	color = "#ffffff"
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 
 //Harvester Pain Orb
 
@@ -680,7 +680,7 @@
 	if(isliving(hit_atom))
 		var/mob/living/L = hit_atom
 		L.visible_message(span_danger("\The [user] [attack_message] \the [L], sending them flying!"))
-		playsound(src, "punch", 50, 1)
+		play_sfx(src, SFX_PUNCH)
 		L.status_at_least(EFFECT_WEAKENED, 2)
 		L.injure(INJURY_BLUNT, rand(30, 50), source = user)
 		var/throwdir = get_dir(src, L)
@@ -733,12 +733,12 @@
 	spell_projectile = /obj/item/projectile/beam/crippling_beam
 	pre_shot_delay = 0
 	cooldown = 50
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 
 /obj/item/projectile/beam/crippling_beam
 	name = "Crippling Beam"
 	icon_state = "invert"
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 20
 	armor_penetration = 60
 	light_range = 2
@@ -751,7 +751,7 @@
 
 /obj/item/projectile/beam/crippling_beam/proc/bang(mob/living/carbon/M)
 	to_chat(M, span_danger("You hear a loud roar."))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BANG)
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
@@ -794,12 +794,12 @@
 	spell_projectile = /obj/item/projectile/beam/banishment
 	pre_shot_delay = 0
 	cooldown = 10
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 
 /obj/item/projectile/beam/banishment
 	name = "banishment"
 	icon_state = "invert"
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 15
 	mob_bonus_damage = 45
 	armor_penetration = 60
@@ -842,12 +842,12 @@
 	spell_projectile = /obj/item/projectile/beam/force_beam
 	pre_shot_delay = 0
 	cooldown = 5
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 
 /obj/item/projectile/beam/force_beam
 	name = "force beam"
 	icon_state = "invert"
-	fire_sound = 'sound/weapons/spiderlunge.ogg'
+	fire_sound = SFX_WEAPONS_SPIDERLUNGE
 	damage = 5
 	injury_kind = INJURY_BLUNT
 	armor_penetration = 60

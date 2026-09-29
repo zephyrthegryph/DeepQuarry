@@ -58,7 +58,7 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 	if(shattered)	return
 	shattered = 1
 	icon_state = "mirror_broke"
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	desc = "Oh no, seven years of bad luck!"
 
 /obj/structure/mirror/bullet_act(obj/item/projectile/Proj)
@@ -67,7 +67,7 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 		if(!shattered)
 			shatter()
 		else if(glass)
-			playsound(src, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
+			play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 	..()
 
 /// Old attackby: re-glaze with two sheets of glass, or smash it.
@@ -88,7 +88,7 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 			return TRUE
 
 	if(shattered && glass)
-		playsound(src, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
+		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 		return TRUE
 
 	if(prob(I.force * 2))
@@ -97,7 +97,7 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 			shatter()
 	else
 		visible_message(span_warning("[user] hits [src] with [I]!"))
-		playsound(src, 'sound/effects/Glasshit.ogg', 70, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT, volume = 70)
 	return TRUE
 
 /obj/structure/mirror/proc/attackby_timed_done(mob/user, obj/item/stack/material/glass/G)
@@ -132,7 +132,7 @@ DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 
 	user.do_attack_animation(src)
 	if(shattered && glass)
-		playsound(src, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
+		play_sfx(src, SFX_EFFECTS_HIT_ON_SHATTERED_GLASS)
 		return 0
 
 	if(damage)

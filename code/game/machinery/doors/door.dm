@@ -26,7 +26,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	max_integrity = 300
 	integrity_failure = 0.25
 	var/min_force = 10 //minimum amount of force needed to damage the door with a melee weapon
-	var/hitsound = 'sound/weapons/smash.ogg' //sound door makes when hit with a weapon
+	var/hitsound = SFX_WEAPONS_SMASH //sound door makes when hit with a weapon
 	var/block_air_zones = 1 //If set, air zones cannot merge across the door even when it is opened.
 	var/close_door_at = 0 //When to automatically close the door, if possible
 	/// The deadline the `door_timer_token` timer slot was last set for (next_door_deadline()).
@@ -485,7 +485,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 		if("deny")
 			if(density && operable())
 				flick("door_deny", src)
-				playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
+				play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	return
 
 /obj/machinery/door/proc/open(forced = 0)

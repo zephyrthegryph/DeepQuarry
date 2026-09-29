@@ -118,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
 		cooking = FALSE
 		MACHINE_SLEEP(src)
 
-	playsound(src, 'sound/machines/hatch_open.ogg', 20, 1)
+	play_sfx(src, SFX_MACHINES_HATCH_OPEN, volume = 20)
 	to_chat(user, span_notice("You [open? "open":"close"] the oven door"))
 	update_icon()
 

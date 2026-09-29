@@ -6,8 +6,8 @@
 	no_variants = FALSE
 	pass_color = TRUE
 	strict_color_stacking = TRUE
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
+	drop_sound = SFX_ITEMS_DROP_LEATHER
+	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 
 //don't see anywhere else to put these, maybe together they could be used to make the xenos suit?
 /obj/item/stack/xenochitin
@@ -98,8 +98,8 @@
 	default_type = MAT_FUR
 	strict_color_stacking = TRUE
 	apply_colour = 1
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	no_variants = FALSE
 	pass_color = TRUE
 	apply_colour = TRUE

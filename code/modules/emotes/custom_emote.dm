@@ -88,9 +88,9 @@
 	if(client)
 		switch(emote_sound_mode)
 			if(EMOTE_SOUND_NO_FREQ)
-				playsound(T, pick(GLOB.emote_sound), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = 0, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, SFX_TALKSOUNDS_EMOTE, 75, TRUE, falloff = 1 , is_global = TRUE, frequency = 0, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_FREQ)
-				playsound(T, pick(GLOB.emote_sound), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
+				playsound(T, SFX_TALKSOUNDS_EMOTE, 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 			if(EMOTE_SOUND_VOICE_LIST)
 				playsound(T, pick(voice_sounds_list), 75, TRUE, falloff = 1 , is_global = TRUE, frequency = voice_freq, ignore_walls = TRUE, preference = /datum/preference/toggle/emote_sounds)
 

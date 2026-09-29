@@ -11,7 +11,7 @@
 	//the reaction goes to completion. This is to prevent reactions from going on forever with tiny reagent amounts.
 
 	mix_message = "The solution churns."
-	reaction_sound = 'sound/effects/slosh.ogg'
+	reaction_sound = SFX_EFFECTS_SLOSH
 
 
 	var/temp_shift = 0 // How much the temperature changes when the reaction occurs.

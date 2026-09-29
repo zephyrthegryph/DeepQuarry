@@ -76,8 +76,8 @@ MATERIAL_MIX(/obj/item/communicator, list(MAT_STEEL = 30,MAT_GLASS = 10))
 
 	// Ringtones! (Based on the PDA ones)
 	var/ttone = "beep" //The ringtone!
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 // Proc: New()
 // Parameters: None
@@ -147,7 +147,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			var/mob/M = loc
 			M.put_in_hands(id)
 			to_chat(M, span_notice("You remove the ID from the [name].")) // usr --> M
-			playsound(src, 'sound/machines/id_swipe.ogg', 100, 1)
+			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")

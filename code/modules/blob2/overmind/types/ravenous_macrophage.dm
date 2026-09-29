@@ -27,7 +27,7 @@
 		var/datum/effect/effect/system/smoke_spread/noxious/BS = new /datum/effect/effect/system/smoke_spread/noxious
 		BS.attach(T)
 		BS.set_up(3, 0, T)
-		playsound(T, 'sound/effects/smoke.ogg', 50, 1, -3)
+		play_sfx(T, SFX_EFFECTS_SMOKE)
 		BS.start()
 
 /datum/blob_type/ravenous_macrophage/on_death(obj/structure/blob/B)
@@ -45,5 +45,5 @@
 		var/datum/effect/effect/system/smoke_spread/noxious/BS = new /datum/effect/effect/system/smoke_spread/noxious
 		BS.attach(T)
 		BS.set_up(3, 0, T)
-		playsound(T, 'sound/effects/smoke.ogg', 50, 1, -3)
+		play_sfx(T, SFX_EFFECTS_SMOKE)
 		BS.start()

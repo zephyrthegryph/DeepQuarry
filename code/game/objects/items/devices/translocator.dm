@@ -20,7 +20,6 @@
 	var/beacons_left = 3
 	var/failure_chance = 5 //Percent
 	var/destination_handle
-	var/datum/effect/effect/system/spark_spread/spk
 	var/list/warned_users
 	var/list/logged_events
 
@@ -30,8 +29,8 @@
 	var/static/radial_set = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_set")
 	var/static/radial_seton = image(icon = 'icons/mob/radial_vr.dmi', icon_state = "tl_seton")
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
@@ -42,15 +41,10 @@
 	flags |= NOBLUDGEON
 	if(!power_source) // no cell_type
 		power_source = new /obj/item/cell/device(src) // ALLOW(decl): fallback when a subtype clears cell_type
-	spk.set_up(5, 0, src)
-	spk.attach(src)
-
 	rebuild_radial_images()
 
 DECLARE_REF(/obj/item/perfect_tele, "power_source", OWNED, null)
-DECLARE_REF(/obj/item/perfect_tele, "spk", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
-DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "spk", /datum/effect/effect/system/spark_spread)
 
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
@@ -382,9 +376,7 @@ This device records all warnings given and teleport events for admin review in c
 	if(!M || !T)
 		return
 
-	spk.set_up(5, 0, M)
-	spk.attach(M)
-	playsound(T, "sparks", 50, 1)
+	play_sfx(T, SFX_SPARKS)
 	anim(T,M,'icons/mob/mob.dmi',,"phaseout",,M.dir)
 
 /obj/item/perfect_tele/proc/phase_in(mob/M,turf/T)
@@ -392,12 +384,10 @@ This device records all warnings given and teleport events for admin review in c
 	if(!M || !T)
 		return
 
-	spk.start()
-	playsound(T, 'sound/effects/phasein.ogg', 25, 1)
-	playsound(T, 'sound/effects/sparks2.ogg', 50, 1)
+	fx_sparks(M, 5, FALSE)
+	play_sfx(T, SFX_EFFECTS_PHASEIN, 0.25)
+	play_sfx(T, SFX_EFFECTS_SPARKS2)
 	anim(T,M,'icons/mob/mob.dmi',,"phasein",,M.dir)
-	spk.set_up(5, 0, src)
-	spk.attach(src)
 
 /obj/item/perfect_tele_beacon
 	name = "translocator beacon"
@@ -527,7 +517,7 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	om_task_timed(user, 1 SECOND, target = src, receiver = src, on_done = PROC_REF(pump_stroke), done_args = list(user), on_fail = PROC_REF(pump_done))
 
 /obj/item/perfect_tele/frontier/proc/pump_stroke(mob/user)
-	playsound(src,'sound/items/change_drill.ogg',25,1)
+	play_sfx(src, SFX_ITEMS_CHANGE_DRILL)
 	if(!recharging || power_source.give(phase_power) < phase_power)
 		pump_done()
 		return

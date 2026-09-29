@@ -228,7 +228,7 @@
 	var/datum/material/M = get_material_by_name(D.material_name)
 	if(!M)
 		D.forceMove(get_step(src, dir))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 		WARNING("Dust in [src] had material_name [D.material_name], which can't be made into stacks")
 		return
 

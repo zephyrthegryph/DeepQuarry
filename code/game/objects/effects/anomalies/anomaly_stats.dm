@@ -117,9 +117,7 @@ DECLARE_REF(/datum/anomaly_stats, "modifier", OWNED, null)
 		return
 	if(critical)
 		anom.detonate()
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	QDEL_NULL(anom)
 	return
 

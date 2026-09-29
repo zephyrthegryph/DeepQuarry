@@ -194,7 +194,7 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 		return ITEM_INTERACT_BLOCKING
 	user.setClickCooldown(user.get_attack_speed(tool))
 	visible_message(span_danger("\The [src] have been burned with \the [tool] by [user]."))
-	playsound(src, 'sound/items/Welder.ogg', 100, TRUE)
+	play_sfx(src, SFX_ITEMS_WELDER)
 	take_damage(15, BRUTE, MELEE, sound_effect = FALSE)
 	return ITEM_INTERACT_SUCCESS
 

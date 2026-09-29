@@ -61,7 +61,7 @@ DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shiel
 
 /obj/machinery/shield/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
 	//Play a fitting sound
-	playsound(src, 'sound/effects/EMPulse.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE, 0.75)
 
 	//Calculate damage
 	if(W.obj_damage_type())
@@ -81,7 +81,7 @@ DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shiel
 	visible_message(span_danger("\The [src] was hit by [source]."))
 
 	//This seemed to be the best sound for hitting a force field.
-	playsound(src, 'sound/effects/EMPulse.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_EMPULSE)
 
 	//The shield becomes dense to absorb the blow.. purely asthetic.
 	set_opacity(1)

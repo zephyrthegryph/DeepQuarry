@@ -20,8 +20,8 @@
 	var/unremovable_when_enabled = FALSE
 	actions_types = list(/datum/action/item_action/toggle_magboots)
 	step_volume_mod = 1.3
-	drop_sound = 'sound/items/drop/metalboots.ogg'
-	pickup_sound = 'sound/items/pickup/toolbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALBOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 	resistance_flags = FIRE_PROOF
 
 TYPE_TABLE(/obj/item/clothing/shoes/magboots, fit_spec, null)
@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/magboots, INTERACT_USE("Toggle", PR
 		set_slowdown()
 		force = 5
 		if(icon_base) icon_state = "[icon_base]1"
-		playsound(src, 'sound/effects/magnetclamp.ogg', 20)
+		play_sfx(src, SFX_EFFECTS_MAGNETCLAMP, 0.2, vary = FALSE)
 		to_chat(user, mag_enable)
 	user.update_inv_shoes()	//so our mob-overlays update
 	user.update_mob_action_buttons()

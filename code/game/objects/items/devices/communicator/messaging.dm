@@ -80,7 +80,7 @@
 		if(ttone in GLOB.device_ringtones)
 			S = GLOB.device_ringtones[ttone]
 		else
-			S = 'sound/machines/twobeep.ogg'
+			S = SFX_MACHINES_TWOBEEP
 
 		playsound(src, S, 50, 1)
 		for (var/mob/O in hearers(2, loc))

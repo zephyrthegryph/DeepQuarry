@@ -219,7 +219,7 @@
 		to_chat(actor, span_warning("\The [held] is empty."))
 		return TRUE
 	held.reagents.remove_any(MECHA_EXTINGUISH_FOAM)
-	playsound(src, 'sound/effects/extinguish.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_EXTINGUISH, volume = 50, extrarange = 0)
 	to_chat(actor, span_notice("You flood \the [src]'s internals with foam."))
 	mech_body_plan().cure(src, MECHA_INT_FIRE)
 	return TRUE

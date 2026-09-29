@@ -45,7 +45,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 	if(!COOLDOWN_FINISHED(src, pulse_cooldown))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("[base_state]_flash", src)
 	COOLDOWN_START(src, pulse_cooldown, 15 SECONDS)
 	use_power(1500)

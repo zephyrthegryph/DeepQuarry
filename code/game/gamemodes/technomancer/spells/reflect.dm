@@ -14,14 +14,9 @@
 	toggled = 1
 	var/reflecting = 0
 	var/damage_to_energy_multiplier = 60.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 1200 energy cost
-	var/datum/effect/effect/system/spark_spread/spark_system = null
-
-DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/effect/system/spark_spread)
-
 /obj/item/spell/reflect/Initialize(mapload, coreless)
 	. = ..()
 	set_light(3, 2, l_color = "#006AFF")
-	spark_system.set_up(5, 0, src)
 	to_chat(owner_ref(), span_notice("Your shield will expire in 5 seconds!"))
 	expire(5 SECONDS)
 
@@ -60,8 +55,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 				if(check_for_scepter())
 					P.damage = P.damage * 1.5
 
-				spark_system.start()
-				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+				fx_sparks(src, 5, FALSE)
+				play_sfx(src, SFX_WEAPONS_BLADE1)
 				// now send a log so that admins don't think they're shooting themselves on purpose.
 				add_attack_logs(user,attacker,"Reflected [attacker]'s attack")
 
@@ -78,8 +73,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 				to_chat(attacker, span_danger("Your [damage_source.name] goes through \the [src] in one location, comes out \
 				on the same side, and hits you!"))
 
-				spark_system.start()
-				playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+				fx_sparks(src, 5, FALSE)
+				play_sfx(src, SFX_WEAPONS_BLADE1)
 
 				add_attack_logs(user,attacker,"Reflected [attacker]'s attack")
 
@@ -92,5 +87,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 /obj/item/spell/reflect/proc/expire_reflect()
 	to_chat(owner_ref(), span_danger("Your shield fades due being used up!"))
 	qdel(src)
-
-DECLARE_REF(/obj/item/spell/reflect, "spark_system", OWNED, null)

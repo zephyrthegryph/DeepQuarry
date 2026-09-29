@@ -5,8 +5,8 @@
 	icon_state = "folder"
 	w_class = ITEMSIZE_SMALL
 	pressure_resistance = 2
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	/// Card stock: barely slows a fire (containment paths, C2).
 	insulation = 0.1

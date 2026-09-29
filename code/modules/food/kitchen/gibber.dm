@@ -234,7 +234,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 		// remains stay physically in the slot, but are no longer "the occupant" --
 		// unlink without a ledger move (the remains stay physically where they are).
 		om_unlink(occupant, src, /datum/om/relation/slot/occupant/gibber)
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	operating = 0
 	if(LAZYLEN(byproducts))
 		for(var/path in byproducts)

@@ -9,7 +9,7 @@
 	desc = "A flare-gun, but bigger."
 	icon_state = "mecha_flaregun"
 	projectile = /obj/item/flashlight/flare
-	fire_sound = 'sound/weapons/tablehit1.ogg'
+	fire_sound = SFX_WEAPONS_TABLEHIT1
 	auto_rearm = 1
 	fire_cooldown = 20
 	projectiles_per_shot = 1
@@ -32,7 +32,7 @@
 	desc = "A missile battery that holds eight missiles."
 	icon_state = "mecha_missilerack"
 	projectile = /obj/item/projectile/bullet/srmrocket
-	fire_sound = 'sound/weapons/SRM.ogg'
+	fire_sound = SFX_WEAPONS_SRM
 	projectiles = 8
 	projectile_energy_cost = 1000
 	equip_cooldown = 60

@@ -69,7 +69,7 @@
 	active_power_usage = 1000 //For heating/cooling rooms. 1000 joules equates to about 1 degree every 2 seconds for a single tile of air.
 	power_channel = ENVIRON
 	req_one_access = list(ACCESS_ATMOSPHERICS, ACCESS_ENGINE_EQUIP)
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 30
 	blocks_emissive = NONE
 	light_power = 0.25
@@ -360,7 +360,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 			set_regulating_temperature((environment.return_temperature() > target_temperature ? 1 : 2))
 			audible_message("\The [src] clicks as it starts [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click and a faint electronic hum.", runemessage = "* click *")
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 	else
 		//check for when we should stop adjusting temperature
 		if(TEST_TLV_VALUES || abs(environment.return_temperature() - target_temperature) <= 0.5 || environment.return_pressure() < 1)
@@ -368,7 +368,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 			audible_message("\The [src] clicks quietly as it stops [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click as a faint electronic humming stops.", runemessage = "* click *")
 			set_regulating_temperature(0)
-			playsound(src, 'sound/machines/click.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_CLICK)
 
 	if(regulating_temperature)
 		if(target_temperature > T0C + MAX_TEMPERATURE)

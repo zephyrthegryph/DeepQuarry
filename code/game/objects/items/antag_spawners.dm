@@ -3,16 +3,8 @@
 	var/used = 0
 	var/ghost_query_type = null
 	var/searching = FALSE
-	var/datum/effect/effect/system/spark_spread/sparks
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 
-/obj/item/antag_spawner/Initialize(mapload)
-	. = ..()
-	sparks.set_up(5, 0, src)
-	sparks.attach(loc)
-
-DECLARE_REF(/obj/item/antag_spawner, "sparks", OWNED, null)
-DECLARE_DEFAULT_CHILD(/obj/item/antag_spawner, "sparks", /datum/effect/effect/system/spark_spread)
 DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
@@ -72,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/technomancer_apprentice, INTERACT_U
 		visible_message(span_warning("The teleporter failed to find the apprentice.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/technomancer_apprentice/spawn_antag(client/C, turf/T)
-	sparks.start()
+	fx_sparks(src, 5, FALSE)
 	var/mob/living/carbon/human/H = new/mob/living/carbon/human(T)
 	C.prefs.copy_to(H)
 	H.key = C.key
@@ -121,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/antag_spawner/syndicate_drone, INTERACT_USE(null,
 		visible_message(span_warning("The teleporter failed to find any available.  Perhaps another attempt could be made later?"))
 
 /obj/item/antag_spawner/syndicate_drone/spawn_antag(client/C, turf/T)
-	sparks.start()
+	fx_sparks(src, 5, FALSE)
 	var/mob/living/silicon/robot/R = new drone_type(T)
 
 	// Put this text here before ckey change so that their laws are shown below it, since borg login() shows it.

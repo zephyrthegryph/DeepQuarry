@@ -25,7 +25,7 @@
 		return ITEM_INTERACT_BLOCKING
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " rotates \the [src] with \the [tool]."), span_notice("You rotate \the [src] with \the [tool]."))
 	set_dir(turn(dir, 90))
-	playsound(src, 'sound/items/jaws_pry.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_JAWS_PRY)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/disperser/screwdriver_act(mob/user, obj/item/tool)

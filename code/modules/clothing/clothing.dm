@@ -1,8 +1,8 @@
 /obj/item/clothing
 	name = DEVELOPER_WARNING_NAME // "Clothing"
 	siemens_coefficient = 0.9
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 	resistance_flags = FLAMMABLE
 
 	var/list/accessories
@@ -314,8 +314,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		SPECIES_TESHARI = 'icons/inventory/hands/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/hands/mob_vox.dmi'
 		)
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 	valid_accessory_slots = (\
 		ACCESSORY_SLOT_RING\
@@ -408,8 +408,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves, "special_attack", "special_atta
 	fingerprint_chance = 100
 	punch_force = 2
 	body_parts_covered = 0
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 ///////////////////////////////////////////////////////////////////////
 //Head
@@ -439,8 +439,8 @@ TYPE_TABLE(/obj/item/clothing/gloves/ring, fit_spec, list(REQ_FITS_BODYTYPES(lis
 		SPECIES_TESHARI = 'icons/inventory/head/mob_teshari.dmi',
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi'
 		)
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 	helmet_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/clothing/head, \
@@ -572,8 +572,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/list/say_messages
 	var/list/say_verbs
 
-	drop_sound = "generic_drop"
-	pickup_sound = "generic_pickup"
+	drop_sound = SFX_GENERIC_DROP
+	pickup_sound = SFX_GENERIC_PICKUP
 
 /obj/item/clothing/mask/update_clothing_icon()
 	if (ismob(src.loc))
@@ -623,8 +623,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		SPECIES_VOX = 'icons/inventory/feet/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/feet/mob_werebeast.dmi'
 		)
-	drop_sound = 'sound/items/drop/shoes.ogg'
-	pickup_sound = 'sound/items/pickup/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
+	pickup_sound = SFX_ITEMS_PICKUP_SHOES
 
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
 	var/list/inside_emotes
@@ -669,7 +669,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 	if(user.put_in_hands(holding))
 		user.visible_message(span_danger("\The [user] pulls a knife out of their boot!"))
-		playsound(src, 'sound/weapons/holster/sheathout.ogg', 25)
+		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
 		holding = null
 		cut_overlay("[icon_state]_knife")
 	else
@@ -914,7 +914,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	siemens_coefficient = 0.9
 	w_class = ITEMSIZE_NORMAL
 	preserve_item = 1
-	equip_sound = 'sound/items/jumpsuit_equip.ogg'
+	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/suit/mob_teshari.dmi',
@@ -1046,7 +1046,7 @@ DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 	heat_protection = ARMS|LEGS|CHEST
 	cold_protection = ARMS|LEGS|CHEST
 	armor_spec = ""
-	equip_sound = 'sound/items/jumpsuit_equip.ogg'
+	equip_sound = SFX_ITEMS_JUMPSUIT_EQUIP
 	w_class = ITEMSIZE_NORMAL
 	show_messages = 1
 	blood_sprite_state = "uniformblood"

@@ -292,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_se
 			. = TRUE
 
 	if(. && iscarbon(ui.user))
-		playsound(src, "button", 10)
+		play_sfx(src, SFX_BUTTON)
 
 GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 

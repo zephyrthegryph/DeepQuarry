@@ -50,8 +50,8 @@
 		"hot",
 		"cold"
 	)
-	var/open_sound = 'sound/machines/firelockopen.ogg' // firedoor sound variable.
-	var/close_sound = 'sound/machines/firelockclose.ogg' // firedoor sound variable.
+	var/open_sound = SFX_MACHINES_FIRELOCKOPEN // firedoor sound variable.
+	var/close_sound = SFX_MACHINES_FIRELOCKCLOSE // firedoor sound variable.
 
 /obj/machinery/door/firedoor/Initialize(mapload)
 	. = ..()
@@ -235,12 +235,12 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	..()
 
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done()
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	src.blocked = 0
 	update_icon()
 	open(1)
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
-	playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	visible_message(span_danger("\The [user] forces \the [src] open!"))
 	open(1)
 
@@ -605,8 +605,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 /obj/machinery/door/firedoor/multi_tile
 	icon = 'icons/obj/doors/DoorHazard2x1.dmi'
 	width = 2
-	open_sound = 'sound/machines/firewide1o.ogg'
-	close_sound = 'sound/machines/firewide1c.ogg'
+	open_sound = SFX_MACHINES_FIREWIDE1O
+	close_sound = SFX_MACHINES_FIREWIDE1C
 
 /obj/machinery/door/firedoor/glass
 	name = "\improper Emergency Glass Shutter"
@@ -628,8 +628,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	icon = 'icons/obj/doors/DoorHazardGlass2x1.dmi'
 	width = 2
 	glass = 1
-	open_sound = 'sound/machines/firewide1o.ogg'
-	close_sound = 'sound/machines/firewide1c.ogg'
+	open_sound = SFX_MACHINES_FIREWIDE1O
+	close_sound = SFX_MACHINES_FIREWIDE1C
 
 /obj/machinery/door/firedoor/border_only/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
 	return (src.dir != dir) || ..()

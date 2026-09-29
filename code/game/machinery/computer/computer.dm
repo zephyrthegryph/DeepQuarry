@@ -16,7 +16,7 @@
 	var/light_range_on = 2
 	var/light_power_on = 1
 
-	clicksound = "keyboard"
+	clicksound = SFX_KEYBOARD
 	integrity_failure = 0.5
 
 /obj/machinery/computer/Initialize(mapload)
@@ -57,7 +57,7 @@
 
 	if(icon_keyboard)
 		if(has_stat(NOPOWER))
-			playsound(src, 'sound/machines/terminal_off.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
 			return add_overlay("[icon_keyboard]_off")
 		. += icon_keyboard
 
@@ -68,7 +68,7 @@
 
 	. += mutable_appearance(icon, overlay_state)
 	. += emissive_appearance(icon, overlay_state)
-	playsound(src, 'sound/machines/terminal_on.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_TERMINAL_ON)
 
 	add_overlay(.)
 

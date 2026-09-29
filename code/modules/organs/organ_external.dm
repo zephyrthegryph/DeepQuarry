@@ -1336,9 +1336,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 		jostle_bone()
 
 	if(istype(owner.loc, /obj/belly)) // bone breaks in bellys should be whisper range to prevent bar wide blender prefbreak. This is a hacky passive hardcode, if a pref gets added, remove this if else
-		playsound(src, "fracture", 90, 1, -6.5)
+		play_sfx(src, SFX_FRACTURE, extrarange = -6.5)
 	else
-		playsound(src, "fracture", 90, 1, -2) // Much more audible bonebreaks.
+		play_sfx(src, SFX_FRACTURE) // Much more audible bonebreaks.
 	log_runtime("FRACTURE: [key_name(owner)] fractured their [name].")
 	broken_description = pick("broken","fracture","hairline fracture")
 
@@ -1438,8 +1438,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 	remove_splint()
 	get_icon()
 	unmutate()
-	drop_sound = 'sound/items/drop/weldingtool.ogg'
-	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
+	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
+	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 
 	for(var/obj/item/organ/external/T in children)
 		T.robotize(company, keep_organs = keep_organs)
@@ -1541,11 +1541,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			span_danger("You hear an explosion!"))
 		// owner is already null here (the base removed() detached us): use victim (audit D4).
 		explosion(get_turf(victim),-1,-1,2,3)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, victim)
-		spark_system.attach(victim)
-		spark_system.start()
-		om_qdel_after(spark_system, 1 SECOND)
+		fx_sparks(victim, 5, FALSE)
 		// droplimb() keeps using this limb after removed() returns; delete it once that unwinds.
 		om_qdel_after(src, 1)
 

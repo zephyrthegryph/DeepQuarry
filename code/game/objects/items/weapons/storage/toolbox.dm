@@ -16,9 +16,9 @@
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	attack_verb = list("robusted")
-	use_sound = 'sound/items/storage/toolbox.ogg'
-	drop_sound = 'sound/items/drop/toolbox.ogg'
-	pickup_sound = 'sound/items/pickup/toolbox.ogg'
+	use_sound = SFX_ITEMS_STORAGE_TOOLBOX
+	drop_sound = SFX_ITEMS_DROP_TOOLBOX
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
 //Emergency
 

@@ -101,11 +101,11 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		return FALSE
 	if(!isnull(damaged) && !has_stat(BROKEN))
 		visible_message(span_danger("\The [user] smashes \the [src]!"))
-		playsound(src, "shatter", 70, 1)
+		play_sfx(src, SFX_SHATTER)
 		atom_break()
 	else
 		visible_message(span_danger("\The [user] attacks \the [src]!"))
-		playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(isnull(damaged)) damaged = 0
 	update_brightness()
 	return TRUE

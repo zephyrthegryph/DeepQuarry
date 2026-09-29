@@ -24,7 +24,7 @@
 	melee_damage_lower = 1
 	melee_damage_upper = 5
 	attacktext = list("kicked")
-	attack_sound = 'sound/voice/baa.ogg'
+	attack_sound = SFX_VOICE_BAA
 
 	max_buckled_mobs = 1 //Yeehaw
 	can_buckle = TRUE

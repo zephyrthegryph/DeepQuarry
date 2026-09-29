@@ -41,7 +41,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 	if(isliving(T))
 		var/mob/living/M = T
 		if(pilot_is_harming() || istype(src?.slot_item(MECHA_SLOT_PILOT), /mob/living/carbon/brain)) //Brains cannot change intents; Exo-piloting brains lack any form of physical feedback for control, limiting the ability to 'play nice'.
-			playsound(src, 'sound/weapons/heavysmash.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_HEAVYSMASH, volume = 50)
 			if(melee_injury_kind == INJURY_BLUNT)
 				step_away(M,src,15)
 			var/hit_zone = ishuman(M) ? pick(BP_TORSO, BP_TORSO, BP_TORSO, BP_HEAD) : null
@@ -83,7 +83,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 			if(melee_injury_kind == INJURY_BLUNT)
 				src.occupant_message("You hit [T].")
 				src.visible_message(span_bolddanger("[src.name] hits [T]"))
-				playsound(src, 'sound/weapons/heavysmash.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_HEAVYSMASH, volume = 50)
 
 				if(istype(T, /obj/structure/girder))
 					T.take_damage(force * 3, BRUTE, MELEE) //Girders have 200 health by default. Steel, non-reinforced walls take four punches, girders take (with this value-mod) two, girders took five without.

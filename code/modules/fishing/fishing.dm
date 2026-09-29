@@ -129,7 +129,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 		if(R.cast)
 			to_chat(user, span_notice("You can only cast one line at a time!"))
 			return INTERACTION_HANDLED_PASS
-		playsound(src, 'sound/effects/slosh.ogg', 5, 1, 5)
+		play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
 		to_chat(user,"You cast \the [P.name] into \the [src].")
 		R.cast = TRUE
 		var/fishing_time = rand(min_fishing_time SECONDS,max_fishing_time SECONDS) * R.toolspeed
@@ -151,7 +151,7 @@ GLOBAL_LIST_INIT(generic_fishing_chance_list, list(FISHING_RARE = 5, FISHING_UNC
 	var/mob/user = task.actor
 	var/obj/item/material/fishing_rod/R = task.rod
 	var/obj/item/P = R
-	playsound(src, 'sound/effects/slosh.ogg', 5, 1, 5)
+	play_sfx(src, SFX_EFFECTS_SLOSH, 0.2, extrarange = 5)
 	to_chat(user,span_notice("You feel a tug and begin pulling!"))
 	if(COOLDOWN_FINISHED(src, fishing_cooldown_until))
 		pick_fish()

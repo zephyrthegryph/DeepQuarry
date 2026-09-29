@@ -9,8 +9,8 @@
 
 	faction = FACTION_SYNDICATE
 	movement_cooldown = 1.5
-	movement_sound = "mechstep" // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
-	turn_sound = 'sound/mecha/mechturn.ogg'
+	movement_sound = SFX_MECHSTEP // This gets fed into playsound(), which can also take strings as a 'group' of sound files.
+	turn_sound = SFX_MECHA_MECHTURN
 	endurance = 300
 	mob_size = MOB_LARGE
 	damage_threshold = 5 //Anything that's 5 or less damage will not do damage.
@@ -26,17 +26,12 @@
 
 	say_list_type = /datum/say_list/malf_drone
 
-	var/datum/effect/effect/system/spark_spread/sparks
 	var/wreckage = /obj/effect/decal/mecha_wreckage/gygax/dark
 	var/pilot_type = null // Set to spawn a pilot when destroyed. Setting this also makes the mecha vulnerable to things that affect sentient minds.
 	var/deflect_chance = 10 // Chance to outright stop an attack, just like a normal exosuit.
 	var/has_repair_droid = FALSE // If true, heals 2 damage every tick and gets a repair droid overlay.
 
 /mob/living/simple_mob/mechanical/mecha/Initialize(mapload)
-	sparks = new (src) // ALLOW(decl): configured before parent init
-	sparks.set_up(3, 1, src)
-	sparks.attach(src)
-
 	if(!pilot_type)
 		name = "autonomous [initial(name)]"
 		desc = "[initial(desc)] It appears to be piloted by a drone intelligence."
@@ -48,7 +43,6 @@
 
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mecha, "sparks", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mecha
 	delete_on_death = TRUE
@@ -60,7 +54,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha, "sparks", OWNED, null)
 	..() // Do everything else first.
 
 	// Make the exploding more convincing with an actual explosion and some sparks.
-	sparks?.start()
+	fx_sparks(src, 3)
 	explosion(get_turf(src), 0, 0, 1, 3)
 
 	// 'Eject' our pilot, if one exists.
@@ -108,7 +102,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mecha, "sparks", OWNED, null)
 		visible_message(span_warning("\The [P] is deflected by \the [src]'s armor!"))
 		deflect_sprite()
 		return 0
-	sparks.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()

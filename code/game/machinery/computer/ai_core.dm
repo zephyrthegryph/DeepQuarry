@@ -23,7 +23,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 	switch(state)
 		if(1)
 			if(istype(P, /obj/item/circuitboard/aicore) && !circuit)
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
 				circuit = P
@@ -36,7 +36,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					to_chat(user, span_warning("You need five coils of wire to add them to the frame."))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to add cables to the frame."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
 				return INTERACTION_HANDLED_PASS
 		if(3)
@@ -46,7 +46,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					to_chat(user, span_warning("You need two sheets of glass to put in the glass panel."))
 					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You start to put in the glass panel."))
-				playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, RG))
 
 			if(istype(P, /obj/item/aiModule/asimov))

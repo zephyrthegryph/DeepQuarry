@@ -126,7 +126,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/responseteam, INTERACT_IT
 	var/away_planes = null
 	plane_slots = list(SLOT_ID_HEAD)
 	var/hud_active = 1
-	var/activation_sound = 'sound/items/nif_click.ogg'
+	var/activation_sound = SFX_ITEMS_NIF_CLICK
 	min_pressure_protection = 0 * ONE_ATMOSPHERE
 	max_pressure_protection = 15* ONE_ATMOSPHERE
 	max_heat_protection_temperature = SPACE_SUIT_MAX_HEAT_PROTECTION_TEMPERATURE+10000
@@ -150,7 +150,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/responseteam, \
 			away_planes = null
 			to_chat(user, "You enable the inbuilt heads-up display.")
 			hud_active = 1
-		user << activation_sound
+		user << sound(get_sfx(activation_sound))
 		user.recalculate_vis()
 
 /obj/item/clothing/head/helmet/space/void/responseteam/command

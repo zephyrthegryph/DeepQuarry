@@ -67,7 +67,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	syringes -= S
 	S.icon = 'icons/obj/chemical.dmi'
 	S.icon_state = "syringeproj"
-	playsound(src, 'sound/items/syringeproj.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SYRINGEPROJ)
 	src.mecha_log_message("Launched [S] from [src], targeting [target].")
 	S.mech_syringe_flight(trg, 6) // the syringe's own clock: it flies on if the gun is deleted
 	do_after_cooldown()
@@ -522,7 +522,7 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 	energy_drain = 100
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/weapons/flash.ogg'
+	ready_sound = SFX_WEAPONS_FLASH
 	required_type = list(/obj/mecha/medical)
 
 	tooltype = /obj/item/healthanalyzer/advanced

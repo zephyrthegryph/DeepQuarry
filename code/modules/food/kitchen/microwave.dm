@@ -21,7 +21,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 5
 	active_power_usage = 2000
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 30
 	flags = MICROWAVE_FLAGS
 	circuit = /obj/item/circuitboard/microwave
@@ -424,7 +424,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/proc/muck()
 	wzhzhzh()
-	playsound(src, 'sound/effects/splat.ogg', 50, 1) // Play a splat sound
+	play_sfx(src, SFX_EFFECTS_SPLAT) // Play a splat sound
 	src.dirty = MAX_MICROWAVE_DIRTINESS // Make it dirty so it can't be used util cleaned
 	post_state_change()
 	cook_loop(type = MICROWAVE_MUCK, cycles = 4)
@@ -521,7 +521,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/proc/stop(success = TRUE)
 	if(success)
-		playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
+		play_sfx(src.loc, SFX_MACHINES_DING)
 	operating = FALSE // Turn it off again aferwards
 	if(broken)
 		set_use_power(USE_POWER_OFF)
@@ -546,9 +546,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/proc/broke(spark = TRUE)
 	if(spark)
-		var/datum/effect/effect/system/spark_spread/s = new
-		s.set_up(2, 1, src)
-		s.start()
+		fx_sparks(src, 2)
 	src.visible_message(span_warning("\The [src] breaks!")) //Let them know they're stupid
 	src.broken = REALLY_BROKEN // Make it broken so it can't be used util fixed
 	src.flags &= ~MICROWAVE_FLAGS //So you can't add condiments
@@ -613,7 +611,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	if(istype(container, /obj/machinery/microwave))
 		var/obj/machinery/microwave/M = container
 		M.muck()
-		playsound(container.loc, 'sound/items/drop/flesh.ogg', 100, 1)
+		play_sfx(container.loc, SFX_ITEMS_DROP_FLESH)
 	. = ..()
 
 /datum/recipe/splat/make_food(obj/container)

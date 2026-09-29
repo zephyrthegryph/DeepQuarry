@@ -104,9 +104,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 		return
 
 	flick("[base_state]-spark", src)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, src)
-	s.start()
+	fx_sparks(src, 2)
 	COOLDOWN_START(src, spark_cooldown, 5 SECONDS)
 	use_power(1000)
 	var/turf/location = src.loc

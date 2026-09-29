@@ -28,7 +28,7 @@
 	changeling.chem_charges -= 40
 
 	to_chat(C,span_notice("We contort our extremities and slip our cuffs."))
-	playsound(src, 'sound/effects/blobattack.ogg', 30, 1)
+	play_sfx(src, SFX_EFFECTS_BLOBATTACK)
 	if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED), C.loc)
 	if(C.get_equipped_item(SLOT_ID_LEGCUFFED))

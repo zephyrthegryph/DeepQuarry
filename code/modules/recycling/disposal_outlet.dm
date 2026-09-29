@@ -90,14 +90,14 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	flick("outlet-open", src)
 	if((start_eject + 30) < world.time)
 		start_eject = world.time
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
 	else
 		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas)
 
 /obj/structure/disposaloutlet/proc/expel_contents(list/ejected_items, datum/gas_mixture/gas, playsound = FALSE)
 	if(playsound)
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 
 	var/turf/T = get_turf(src)
 

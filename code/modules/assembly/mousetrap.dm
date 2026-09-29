@@ -41,7 +41,7 @@
 		var/mob/living/simple_mob/animal/passive/mouse/M = target
 		visible_message(span_bolddanger("SPLAT!"))
 		M.splat()
-	playsound(target, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(target, SFX_EFFECTS_SNAP)
 	layer = MOB_LAYER - 0.2
 	armed = 0
 	update_icon()
@@ -67,7 +67,7 @@
 		to_chat(user, span_notice("You disarm [src]."))
 	armed = !armed
 	update_icon()
-	playsound(user, 'sound/weapons/handcuffs.ogg', 30, 1, -3)
+	play_sfx(user, SFX_WEAPONS_HANDCUFFS)
 	return TRUE
 
 /obj/item/assembly/mousetrap/declare_interactions(list/into)

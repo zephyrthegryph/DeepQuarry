@@ -71,7 +71,7 @@
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	projectile_type = /obj/item/projectile/scatter/ratminer
 	charge_cost = 400
-	fire_sound = 'sound/weapons/laser3.ogg'
+	fire_sound = SFX_WEAPONS_LASER3
 
 /obj/item/projectile/scatter/ratminer
 	spread_submunition_damage = FALSE

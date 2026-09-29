@@ -39,7 +39,7 @@
 	melee_damage_upper = 3	//they do very little damage but attack fairly fast, like organic viscerators
 	base_attack_cooldown = 10 // Bitey bitey!
 	attack_injury_kind = INJURY_PIERCE
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("nibbled")
 
 	organ_names = /datum/decl/mob_organ_names/fish

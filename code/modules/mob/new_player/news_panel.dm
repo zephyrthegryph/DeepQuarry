@@ -48,14 +48,14 @@
 			if(!host.current_news_page || !channel.messages || host.current_news_page == channel.messages.len)
 				return TRUE
 			host.current_news_page++
-			playsound(host.loc, "pageturn", 50, 1)
+			play_sfx(host.loc, SFX_PAGETURN)
 			SStgui.update_uis(src)
 			return TRUE
 		if("prev")
 			if(!host.current_news_page || !channel.messages || host.current_news_page <= 1)
 				return TRUE
 			host.current_news_page--
-			playsound(host.loc, "pageturn", 50, 1)
+			play_sfx(host.loc, SFX_PAGETURN)
 			SStgui.update_uis(src)
 			return TRUE
 

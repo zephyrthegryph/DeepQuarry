@@ -5,9 +5,9 @@
 	w_class = ITEMSIZE_LARGE
 	force = 30
 	throwforce = 10
-	hitsound = 'sound/weapons/bladeslice.ogg'
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
 	edge = TRUE
 	sharp = TRUE
@@ -36,7 +36,7 @@
 	user.drop_from_inventory(src, src.loc)
 	throw_at(get_edge_target_turf(src, pick(GLOB.alldirs)), rand(1,3), throw_speed)
 
-	var/spooky = pick('sound/hallucinations/growl1.ogg', 'sound/hallucinations/growl2.ogg', 'sound/hallucinations/growl3.ogg', 'sound/hallucinations/wail.ogg')
+	var/spooky = SFX_HALLUCINATIONS_GROWL_MIX
 	playsound(src, spooky, 50, 1)
 
 	return ITEM_INTERACT_SUCCESS

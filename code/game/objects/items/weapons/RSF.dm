@@ -49,7 +49,7 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 		consume(W, user)
 
 		stored_matter += 10
-		playsound(src, 'sound/machines/click.ogg', 10, 1)
+		play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 		balloon_alert(user,"the fabricator now holds [stored_matter]/30 fabrication-units.")
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
@@ -93,7 +93,7 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 	var/choice = ask.choice
 	if(choice)
 		mode = choice
-		playsound(src, 'sound/effects/pop.ogg', 50, 0)
+		play_sfx(src, SFX_EFFECTS_POP)
 		balloon_alert(user, "you will synthesize: [mode]")
 
 /obj/item/rsf/afterattack(atom/A, mob/user as mob, proximity)
@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/rsf, \
 	if(!istype(A, /obj/structure/table) && !istype(A, /turf/simulated/floor))
 		return
 
-	playsound(src, 'sound/machines/click.ogg', 10, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 	var/used_energy = 0
 	var/obj/product
 

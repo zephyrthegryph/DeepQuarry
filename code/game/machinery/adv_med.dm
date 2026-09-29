@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE
 	update_icon()
-	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
+	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
 	qdel(G)
 	SStgui.update_uis(src)
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
 		return TRUE
 	update_icon()
-	playsound(src, 'sound/machines/medbayscanner1.ogg', 50) // Beepboop you're being scanned. <3
+	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3
 	add_fingerprint(user)
 	SStgui.update_uis(src)
 	return TRUE
@@ -191,7 +191,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		if("print_p")
 			var/atom/target = console ? console : src
 			visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
-			playsound(src, 'sound/machines/printer.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_PRINTER)
 			var/obj/item/paper/P = new /obj/item/paper(get_turf(target))
 			var/name = occupant ? occupant.name : "Unknown"
 			P.info = "<CENTER>" + span_bold("Body Scan - [name]") + "</CENTER><BR>"

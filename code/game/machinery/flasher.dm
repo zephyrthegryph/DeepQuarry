@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	if((disable) || !COOLDOWN_FINISHED(src, flash_cooldown))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("[base_state]_flash", src)
 	COOLDOWN_START(src, flash_cooldown, 15 SECONDS)
 	use_power(1500)

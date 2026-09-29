@@ -7,8 +7,8 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 	light_color = "#30B5E6"
 	var/light_color_danger = "#D04E4C"
 	item_state = "egg6"
-	drop_sound = 'sound/items/drop/metalboots.ogg'
-	pickup_sound = 'sound/items/pickup/gascan.ogg'
+	drop_sound = SFX_ITEMS_DROP_METALBOOTS
+	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
 	//these things are big and heavy, they're awkward to transport, and you can't throw them very far
 	w_class = ITEMSIZE_LARGE
@@ -65,10 +65,8 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 		return
 
 	visible_message(span_danger("\The [src] sparks and sputters!"))
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, src.loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(src.loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 	coil_damaged = TRUE
 	coil_charge = (coil_charge / 2)
 	update_icon()

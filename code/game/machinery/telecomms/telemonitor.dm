@@ -136,7 +136,7 @@
 
 /obj/machinery/computer/telecomms/monitor/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		playsound(src, 'sound/effects/sparks4.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_SPARKS4)
 		set_emagged(1)
 		to_chat(user, span_notice("You you disable the security protocols"))
 		return 1

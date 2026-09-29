@@ -225,4 +225,4 @@
 	else
 		H.visible_message(span_notice("[H] hugs [target] to make [t_him] feel better!"), \
 						span_notice("You hug [target] to make [t_him] feel better!"))
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)

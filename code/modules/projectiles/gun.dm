@@ -48,8 +48,8 @@
 	preserve_item = 1
 	attack_verb = list("struck", "hit", "bashed")
 	zoomdevicename = "scope"
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 
 	var/automatic = 0	//If set, holding LMB sustains fire: the trigger is re-pulled
 						//at fire_delay cadence until released. Each pull respects the
@@ -128,7 +128,7 @@
 		set_light(light_brightness)
 		gun_light = TRUE
 
-	playsound(src, 'sound/machines/button.ogg', 25)
+	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
 	update_icon()
 
 DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_selector)
@@ -272,7 +272,7 @@ DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 		else//Otherwise just make a new one
 			auto_target = new/atom/movable/screen/auto_target(get_turf(A), src)
 			visible_message(span_danger("\The [user] readies the [src]!"))
-			playsound(src, 'sound/weapons/targeton.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_TARGETON)
 			to_chat(user, span_notice("You ready \the [src]!  Click and drag the target around to shoot."))
 			return
 	Fire(A,user,params) //Otherwise, fire normally.
@@ -581,7 +581,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 			L.stop_autofire()
 	else
 		src.visible_message("*click click*")
-	playsound(src, 'sound/weapons/empty.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY, 2)
 
 // Called when the user is about to fire.
 // Moved from handle_post_fire() because if using a laser, the message for when someone got shot would show up before the firing message.

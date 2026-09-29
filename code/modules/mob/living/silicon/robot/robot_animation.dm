@@ -18,7 +18,7 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(recall > 0)
-		playsound(src, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/Welder.ogg', 'sound/items/Wirecutter.ogg', 'sound/items/Crowbar.ogg', 'sound/items/Ratchet.ogg'), 80, 1, -1)
+		play_sfx(src, SFX_ITEMS_DRILL_USE)
 		recall--
 		om_after(src, 0.8 SECONDS, PROC_REF(transform_animation_sounds), recall, prev_lockcharge)
 		return

@@ -16,7 +16,7 @@
 	icon_state = "wm_1"
 	density = TRUE
 	anchored = TRUE
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
@@ -83,7 +83,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		set_state(RUNNING)
 	update_icon()
 	visible_message("The washing machine starts a cycle.")
-	playsound(src, 'sound/items/washingmachine.ogg', 50, 1, 1)
+	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
 	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
 

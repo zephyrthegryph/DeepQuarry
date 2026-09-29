@@ -7,8 +7,8 @@
 	desc = "Nutritious! Probably."
 	flags = NOCONDUCT
 	slot_flags = SLOT_HOLSTER
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/plantname
 	var/tmp/datum/seed/seed_static
@@ -158,7 +158,7 @@
 
 			M.stop_pulling()
 			to_chat(M, span_notice("You slipped on the [name]!"))
-			playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
+			play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
 			M.status_at_least(EFFECT_STUNNED, 8)
 			M.status_at_least(EFFECT_WEAKENED, 5)
 			seed().thrown_at(src,M)
@@ -204,7 +204,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 
 				if(W.sharp && W.edge && !isnull(seed().chems[REAGENT_ID_WOODPULP]))
 					user.show_message(span_notice("You make planks out of \the [src]!"), 1)
-					playsound(src, 'sound/effects/woodcutting.ogg', 50, 1)
+					play_sfx(src, SFX_EFFECTS_WOODCUTTING, 0.5)
 					var/flesh_colour = seed().get_trait(TRAIT_FLESH_COLOUR)
 					if(!flesh_colour) flesh_colour = seed().get_trait(TRAIT_PRODUCT_COLOUR)
 					for(var/i=0,i<2,i++)
@@ -392,8 +392,8 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 
 	name = "[S.seed_name] slice"
 	desc = "A slice of \a [S.seed_name]. Tasty, probably."
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 	var/rind_colour = S.get_trait(TRAIT_PRODUCT_COLOUR)
 	var/flesh_colour = S.get_trait(TRAIT_FLESH_COLOUR)

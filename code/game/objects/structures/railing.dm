@@ -55,7 +55,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 /obj/structure/railing/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src))
 		visible_message(span_warning("\The [src] breaks down!"))
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 	return ..()
 
 /obj/structure/railing/proc/NeighborsCheck(UpdateNeighbors = 1)
@@ -186,7 +186,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 					M.injure(INJURY_BLUNT, 8, BP_HEAD, src)
 					take_damage(8, BRUTE, MELEE, sound_effect = FALSE)
 					visible_message(span_danger("[G?.grab_assailant()] slams [M]'s face against \the [src]!"))
-					playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+					play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 				else
 					to_chat(user, span_danger("You need a better grip to do that!"))
 					return TRUE
@@ -201,7 +201,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 			return TRUE
 
 	else
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 		receive_weapon_hit(W, user)
 		user.setClickCooldown(user.get_attack_speed(W))
 

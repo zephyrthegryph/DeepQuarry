@@ -21,8 +21,8 @@
 	edge = TRUE
 	attack_verb = list("chopped", "torn", "cut")
 	applies_material_colour = 0
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 /* We have one already
 /obj/item/material/knife/machete/hatchet/stone
 	name = "sharp rock"
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 		if(!(H.species.flags & NO_SLIP) && prob(10) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT)))
 			var/armor_check = H.armor_against(INJURY_BLUNT, user.zone_sel)
 			H.apply_effect(3, WEAKEN, armor_check)
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if(armor_check < 60)
 				visible_message(span_danger("\The [src] has tripped [H]!"))
 			else
@@ -186,7 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 
 		else
 			if(H.break_all_grabs(user))
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
 			if(user.zone_sel in list(BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND))
@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 					if(I && prob(holding[I]))
 						H.drop_from_inventory(I)
 						visible_message(span_danger("\The [src] has disarmed [H]!"))
-						playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+						play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 						return
 
 DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -202,7 +202,7 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 /// Old attack_self.
 /obj/item/material/whip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	user.visible_message(span_warning("\The [user] cracks \the [src]!"))
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SNAP)
 	return TRUE
 
 
@@ -234,7 +234,7 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 	item_state = "cleaving_saw"
 	active = 0
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	w_class = ITEMSIZE_LARGE
 	edge = 1
 	sharp = 1

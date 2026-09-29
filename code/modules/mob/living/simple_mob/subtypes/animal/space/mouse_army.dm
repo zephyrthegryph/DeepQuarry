@@ -81,12 +81,12 @@
 		if(!stat)
 			var/mob/M = AM
 			M.visible_message(span_blue("[icon2html(src,viewers(M))] Squeek!"))
-			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
+			play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK)
 	..()
 
 /mob/living/simple_mob/animal/space/mouse_army/on_death(gibbed)
 	layer = MOB_LAYER
-	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
 		client.time_died_as_mouse = world.time
 	..()
@@ -246,7 +246,7 @@
 			var/mob/living/L = A
 			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] ambushes you!"))
-			playsound(L, 'sound/weapons/spiderlunge.ogg', 75, 1)
+			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 

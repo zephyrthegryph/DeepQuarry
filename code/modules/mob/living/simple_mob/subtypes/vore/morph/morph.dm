@@ -36,7 +36,7 @@
 	response_disarm = "pushes"
 	response_harm = "hits"
 	attacktext = "glomped"
-	attack_sound = 'sound/effects/blobattack.ogg'
+	attack_sound = SFX_EFFECTS_BLOBATTACK
 
 	meat_amount = 0
 

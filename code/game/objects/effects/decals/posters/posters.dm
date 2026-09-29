@@ -17,8 +17,8 @@
 	desc = "The poster comes with its own automatic adhesive mechanism, for easy pinning to any vertical surface."
 	icon = 'icons/obj/contraband.dmi'
 	icon_state = "rolled_poster"
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 	force = 0
 	VAR_PROTECTED/datum/decl/poster/poster_decl = null
 	VAR_PROTECTED/poster_type = /obj/structure/sign/poster
@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 /obj/structure/sign/poster/proc/rip_answered(datum/om/prompt/confirm/rip_poster/ask)
 	var/mob/user = ask.answerer
 	visible_message(span_warning("[user] rips [src] in a single, decisive motion!") )
-	playsound(src, 'sound/items/poster_ripped.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_POSTER_RIPPED)
 	ruined = TRUE
 	icon_state = "poster_ripped"
 	name = "ripped poster"

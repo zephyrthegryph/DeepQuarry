@@ -21,7 +21,7 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	circuit = /obj/item/circuitboard/smes
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	max_integrity = 500
 
 	var/capacity = 5e6 // maximum charge
@@ -460,16 +460,14 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 	if(terminal_turf && !terminal_turf.is_plating())
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/smes/proc/wirecutter_act_tool_done(mob/user, obj/machinery/power/terminal/term)
 	if(prob(50) && electrocute_mob(user, term.power_region, term))
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 1, src)
-		sparks.start()
+		fx_sparks(src, 5)
 		building_terminal = FALSE
 		if(user.has_status(EFFECT_STUNNED))
 			return ITEM_INTERACT_SUCCESS
@@ -520,9 +518,9 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 		if("tryoutput")
 			outputting(!output_attempt)
 			if(output_attempt)
-				playsound(loc, 'sound/effects/contactor_on.ogg', 50, FALSE)
+				play_sfx(loc, SFX_EFFECTS_CONTACTOR_ON)
 			else
-				playsound(loc, 'sound/effects/contactor_off.ogg', 50, FALSE)
+				play_sfx(loc, SFX_EFFECTS_CONTACTOR_OFF)
 			update_icon()
 			. = TRUE
 		if("input")

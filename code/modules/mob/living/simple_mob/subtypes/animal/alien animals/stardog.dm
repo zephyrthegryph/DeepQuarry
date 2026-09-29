@@ -33,7 +33,7 @@
 	response_harm = "punches"
 
 	attacktext = list("nipped", "chomped", "bullied", "gnaws on")
-	attack_sound = 'sound/voice/bork.ogg'
+	attack_sound = SFX_VOICE_BORK
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	has_langs = list(LANGUAGE_ANIMAL, LANGUAGE_CANILUNZT, LANGUAGE_GALCOM)
@@ -896,7 +896,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/our_y = rand(-5,5) + y
 
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
-	playsound(src, 'sound/vore/schlorp.ogg', vol = 100, vary = FALSE, volume_channel = VOLUME_CHANNEL_VORE)
+	play_sfx(src, SFX_VORE_SCHLORP, volume_channel = VOLUME_CHANNEL_VORE)
 	controller.throw_at(throwtarg, 10, 1)
 	controller = null
 
@@ -917,7 +917,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	icon_state = "screen_eye"
 	pixel_x = -16
 	pixel_y = -16
-	clicksound = 'sound/vore/squish1.ogg'
+	clicksound = SFX_VORE_SQUISH1
 
 /obj/machinery/computer/ship/navigation/telescreen/dog_eye/declare_interactions(list/into)
 	into += list(
@@ -1082,7 +1082,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	var/reciever = FALSE						//If true, doesn't teleport, only recieves
 	var/obj/effect/dog_teleporter/target		//Target for teleporting to, automatically set by id
 	var/throw_through = TRUE					//When moved the mob/obj will be thrown south
-	var/teleport_sound = 'sound/vore/schlorp.ogg'	//The sound that plays when we use the teleporter. Respects vore sound preferences.
+	var/teleport_sound = SFX_VORE_SCHLORP	//The sound that plays when we use the teleporter. Respects vore sound preferences.
 	var/teleport_message = ""
 	var/check_keys = FALSE
 	var/check_prefs = TRUE
@@ -1177,7 +1177,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 		AM.throw_at(throwtarg, 10, 1)	//reverbfart.ogg
 
 /obj/effect/dog_teleporter/food_gobbler
-	teleport_sound = 'sound/vore/gulp.ogg'
+	teleport_sound = SFX_VORE_GULP
 	teleport_message = span_notice("The thundering drum of the dog's heart beat throbs all around you, while the sweltering heat of its body soaks into you. It's soft and wet as a symphony of gurgles and glorps fills the steamy air!")
 
 /obj/effect/dog_teleporter/food_gobbler/Crossed(atom/movable/AM)
@@ -1400,7 +1400,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_teleporter, \
 	var/state = 0 //closed, 1 == open
 	var/isSwitchingStates = 0
 	var/countdown = 0
-	var/knock_sound = 'sound/effects/attackblob.ogg'
+	var/knock_sound = SFX_EFFECTS_ATTACKBLOB
 	var/static/list/open_sounds = list(
 		'sound/vore/sunesound/prey/squish_01.ogg',
 		'sound/vore/sunesound/prey/squish_02.ogg',

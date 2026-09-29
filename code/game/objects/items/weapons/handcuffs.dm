@@ -10,12 +10,12 @@
 	throw_speed = 2
 	throw_range = 5
 	MATERIAL_BULK(MAT_STEEL, 500)
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	var/elastic
 	var/dispenser = 0
 	var/breakouttime = 1200 //Deciseconds = 120s = 2 minutes
-	var/cuff_sound = 'sound/weapons/handcuffs.ogg'
+	var/cuff_sound = SFX_WEAPONS_HANDCUFFS
 	var/cuff_type = "handcuffs"
 	var/use_time = 30
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/handcuffs.dmi')
@@ -152,7 +152,7 @@
 	desc = "Looks like some cables tied together. Could be used to tie something up."
 	icon_state = "cuff_white"
 	breakouttime = 300 //Deciseconds = 30s
-	cuff_sound = 'sound/weapons/cablecuff.ogg'
+	cuff_sound = SFX_WEAPONS_CABLECUFF
 	cuff_type = "cable restraints"
 	elastic = 1
 
@@ -206,7 +206,7 @@
 	cuff_type = "legcuffs"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/teshari/handcuffs.dmi')
 	elastic = 0
-	cuff_sound = 'sound/weapons/handcuffs.ogg' //This shold work for now.
+	cuff_sound = SFX_WEAPONS_HANDCUFFS //This shold work for now.
 
 /obj/item/handcuffs/legcuffs/get_worn_icon_state(slot_name)
 	if(slot_name == slot_legcuffed_str)
@@ -308,7 +308,7 @@
 	elastic = 1
 	use_time = 0
 	breakouttime = 30
-	cuff_sound = 'sound/weapons/towelwipe.ogg' //Is there anything this sound can't do?
+	cuff_sound = SFX_WEAPONS_TOWELWIPE //Is there anything this sound can't do?
 	item_flags = DROPDEL
 
 /obj/item/handcuffs/legcuffs/bola/can_place(mob/target, mob/user)

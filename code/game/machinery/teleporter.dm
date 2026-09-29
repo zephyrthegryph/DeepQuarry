@@ -195,9 +195,7 @@ DECLARE_REF(/obj/machinery/teleport/hub, "com_handle.teleport_control", BACK_VIA
 			com().one_time_use = 0
 			com().teleport_control.locked_handle = null
 	else
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		accurate = 1
 		om_after(src, 5 MINUTES, PROC_REF(calibration_lapses)) //Accurate teleporting for 5 minutes
 		for(var/mob/B in hearers(src, null))

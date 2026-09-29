@@ -12,7 +12,7 @@
 	idle_power_usage = 40
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/sleeper_console
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
 /obj/machinery/sleep_console/Initialize(mapload)
@@ -363,7 +363,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return PROCESS_KILL
 	if(occupant)
 		if(auto_eject_dead && occupant.stat == DEAD)
-			playsound(loc, 'sound/machines/buzz-sigh.ogg', 40)
+			play_sfx(loc, SFX_MACHINES_BUZZ_SIGH, 0.8)
 			go_out()
 			return
 		occupant.set_stasis(stasis_level, src)

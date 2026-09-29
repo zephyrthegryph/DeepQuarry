@@ -46,7 +46,7 @@
 
 	movement_cooldown = 3
 
-	projectilesound = 'sound/weapons/gunshot_light.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_LIGHT
 
 
 	special_attack_cooldown = 15 SECONDS
@@ -189,7 +189,7 @@
 	special_attack_max_range = 2
 
 /mob/living/simple_mob/humanoid/astral_collective/purity/do_special_attack(atom/A, stance)
-	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 2))
 		if(M.get_ear_protection() == 0)
 			M.status_at_least(EFFECT_CONFUSED, 10)
@@ -388,7 +388,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/body/dagge
 	special_attack_cooldown = 18 SECONDS
 
 /mob/living/simple_mob/humanoid/astral_collective/body/juggernaught/do_special_attack(atom/A, stance)
-	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_GHOST2)
 	for(var/mob/living/M in orange(src, 3))
 		if(M.get_ear_protection() == 0)
 			M.status_at_least(EFFECT_STUNNED, 0.5)

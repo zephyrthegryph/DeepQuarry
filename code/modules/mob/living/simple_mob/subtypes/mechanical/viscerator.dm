@@ -41,7 +41,7 @@
 	melee_damage_upper = 4
 	base_attack_cooldown = 5 // Two attacks a second or so.
 	attack_injury_kind = INJURY_CUT
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	attacktext = list("cut", "sliced")
 
 	organ_names = /datum/decl/mob_organ_names/viscerator

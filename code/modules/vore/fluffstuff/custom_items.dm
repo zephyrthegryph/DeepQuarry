@@ -104,7 +104,7 @@
 		if(user.ckey != owner_ckey) //ERROR: UNAUTHORIZED USER
 			to_chat(user, span_warning("You probably shouldn't mess with all these strange tools and parts...")) //give them a slightly fluffy explanation as to why it didn't work
 			return
-	playsound(src, 'sound/items/Screwdriver.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
 	var/obj/N = new to_type(O.loc)
 	user.visible_message(span_notice("[user] opens \the [src] and modifies \the [O] into \the [N]."),span_notice("You open \the [src] and modify \the [O] into \the [N]."))
 
@@ -174,13 +174,13 @@
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 
 /obj/item/sword/fluff/joanaria/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -193,7 +193,7 @@
 
 	if(default_parry_check(user, attacker, damage_source) && prob(75))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -401,7 +401,7 @@ EXTEND_INTERACTIONS(/obj/item/flag, INTERACT_USE("Wave", PROC_REF(flag_wave_self
 	var/new_icon = "mime"
 	if(istype(O,/obj/item/card/id) && O.icon_state != new_icon)
 		O.icon_state = new_icon // Changes the icon without changing the access.
-		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		user.visible_message(span_warning(" [user] reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
@@ -478,7 +478,7 @@ TYPE_TABLE(/obj/item/clothing/suit/armor/vest/wolftaur/serdy, fit_spec, null)
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
 
 //SilencedMP5A5:Serdykov Antoz
 /obj/item/modkit_conversion/fluff/serdykit
@@ -681,7 +681,7 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 		O.icon = new_icon
 		O.icon_state = new_icon_state // Changes the icon without changing the access.
 		O.desc = new_desc
-		playsound(src, 'sound/items/polaroid2.ogg', 100, 1)
+		play_sfx(src, SFX_ITEMS_POLAROID2, 2)
 		user.visible_message(span_warning(" [user] reprints their ID."))
 		consume(src, user)
 	else if(O.icon_state == new_icon)
@@ -987,7 +987,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/fluff/stunstaff, "bcell", /obj/item/
 /obj/item/melee/baton/fluff/stunstaff/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(30))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -1015,9 +1015,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 		status = !status
 		to_chat(user, span_notice("[src] is now [status ? "on" : "off"]."))
 		if(status == 0)
-			playsound(src, 'sound/weapons/saberoff.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SABEROFF)
 		else
-			playsound(src, 'sound/weapons/saberon.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_SABERON)
 	else
 		status = 0
 		to_chat(user, span_warning("[src] is out of charge."))
@@ -1063,12 +1063,12 @@ TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY
 	sharp = TRUE
 	edge = TRUE
 	w_class = active_w_class
-	playsound(src, 'sound/weapons/sparkle.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
 
 /obj/item/melee/fluffstuff/proc/deactivate(mob/living/user)
 	if(!active)
 		return
-	playsound(src, 'sound/weapons/sparkle.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_SPARKLE)
 	active = 0
 	embed_chance = initial(embed_chance)
 	force = initial(force)
@@ -1529,7 +1529,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(
 	else
 		user.visible_message(span_notice(span_bold("\The [user]") + " pokes [src]."),span_notice("You poke [src]."))
 		icon_state = "pandorba_d"
-		playsound(src, 'sound/items/drop/plushie.ogg', 25, 0)
+		play_sfx(src, SFX_ITEMS_DROP_PLUSHIE, 0.5, vary = FALSE)
 		visible_message("[src] says, \"[pokephrase]\"")
 	last_message = world.time
 

@@ -54,7 +54,7 @@ TYPE_TABLE_DECLARE(/obj/effect/map_effect/interval/sound_emitter, sound_emitter_
 	interval_lower_bound = 10 SECONDS
 	interval_upper_bound = 15 SECONDS
 
-TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/thunder, sound_emitter_sounds, list("thunder"))
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/thunder, sound_emitter_sounds, list(SFX_THUNDER))
 
 /obj/effect/map_effect/interval/sound_emitter/geiger
 	interval_lower_bound = 1 SECOND
@@ -78,13 +78,13 @@ TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/geiger/ext, sound_emitt
 	interval_lower_bound = 5
 	interval_upper_bound = 1 SECOND
 
-TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/punching, sound_emitter_sounds, list("punch"))
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/punching, sound_emitter_sounds, list(SFX_PUNCH))
 
 /obj/effect/map_effect/interval/sound_emitter/explosions
 	interval_lower_bound = 5 SECONDS
 	interval_upper_bound = 10 SECONDS
 
-TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/explosions, sound_emitter_sounds, list("explosion"))
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/explosions, sound_emitter_sounds, list(SFX_EXPLOSION))
 
 /obj/effect/map_effect/interval/sound_emitter/explosions/distant
 
@@ -124,7 +124,7 @@ TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/energy_gunfight, sound_
 	interval_lower_bound = 5
 	interval_upper_bound = 1 SECOND
 
-TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/clownsteps, sound_emitter_sounds, list("clownstep"))
+TYPE_TABLE(/obj/effect/map_effect/interval/sound_emitter/clownsteps, sound_emitter_sounds, list(SFX_CLOWNSTEP))
 
 /obj/effect/map_effect/interval/sound_emitter/bikehorns
 	interval_lower_bound = 5

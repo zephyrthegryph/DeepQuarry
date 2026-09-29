@@ -94,8 +94,6 @@
 	var/shot_sound 				//what sound should play when the turret fires
 	var/lethal_shot_sound		//what sound should play when the emagged turret fires
 
-	var/datum/effect/effect/system/spark_spread/spark_system	//the spark system, used for generating... sparks?
-
 	var/last_target			//last target fired at, prevents turrets from erratically firing at all valid targets in range
 	var/timeout = TURRET_POPCOOLDOWN // When a turret pops up, then finds nothing to shoot at, this number decrements until 0, when it pops down.
 	var/can_salvage = TRUE	// If false, salvaging doesn't give you anything.
@@ -283,11 +281,6 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	return data
 
 /obj/machinery/porta_turret/Initialize(mapload)
-	//Sets up a spark system
-	spark_system = new /datum/effect/effect/system/spark_spread
-	spark_system.set_up(5, 0, src)
-	spark_system.attach(src)
-
 	setup()
 
 	// If turrets ever switch overlays, this will need to be cached and reapplied each time overlays_cut() is called.
@@ -295,8 +288,6 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	turret_opened_overlay.layer = layer-0.1
 	add_overlay(turret_opened_overlay)
 	return ..()
-
-DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 
 /obj/machinery/porta_turret/update_icon()
 	if(has_stat(BROKEN)) // Turret is dead.
@@ -354,7 +345,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		if(/obj/item/gun/energy/gun/burst)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam/burstlaser
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 			shot_delay = 1 SECOND
 
 		if(/obj/item/gun/energy/locked/phasegun/unlocked)
@@ -366,19 +357,19 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		if(/obj/item/gun/energy/gun)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/gun/nuclear)
 			lethal_icon_color = "red"
 			lethal_projectile = /obj/item/projectile/beam	//If it has, going to kill mode
-			lethal_shot_sound = 'sound/weapons/Laser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_LASER
 
 		if(/obj/item/gun/energy/xray)
 			lethal_icon_color = "green"
 			lethal_projectile = /obj/item/projectile/beam/xray
 			projectile = /obj/item/projectile/beam/stun // Otherwise we fire xrays on both modes.
-			lethal_shot_sound = 'sound/weapons/eLuger.ogg'
-			shot_sound = 'sound/weapons/taser.ogg'
+			lethal_shot_sound = SFX_WEAPONS_ELUGER
+			shot_sound = SFX_WEAPONS_TASER
 
 /obj/machinery/porta_turret/proc/isLocked(mob/user)
 	if(locked && !issilicon(user))
@@ -584,7 +575,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		return
 	attacked = TRUE
 	om_after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
-	playsound(src, 'sound/machines/terminal_alert.ogg', 150)
+	play_sfx(src, SFX_MACHINES_TERMINAL_ALERT)
 
 /// om_after() target: back on after an emag's grace period.
 /obj/machinery/porta_turret/proc/emag_reenable()
@@ -601,7 +592,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	attacked = FALSE
 	if(!operable())
 		return
-	playsound(src, 'sound/machines/buzzbeep.ogg', 150)
+	play_sfx(src, SFX_MACHINES_BUZZBEEP, 3)
 
 /obj/machinery/porta_turret/attack_generic(mob/living/L, damage)
 	if(isanimal(L))
@@ -641,7 +632,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 /obj/machinery/porta_turret/on_update_integrity(old_value, new_value)
 	. = ..()
 	if(new_value < old_value && (old_value - new_value) > 5 && prob(45))
-		spark_system?.start()
+		fx_sparks(src, 5, FALSE)
 
 // Reaching zero integrity runs the turret's death process (it persists as a
 // broken wreck rather than being deleted).
@@ -695,7 +686,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	atom_break()
-	spark_system?.start()	//creates some sparks because they look cool
+	fx_sparks(src, 5, FALSE)	//creates some sparks because they look cool
 	update_icon()
 	set_processing_speed(FALSE) // Drop back to slow machine processing
 
@@ -878,7 +869,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popup_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_deploy.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_DEPLOY)
 	om_after(src, 1 SECOND, PROC_REF(popup_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popup_finish(flick_holder)
@@ -911,7 +902,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 	var/atom/flick_holder = new /atom/movable/porta_turret_cover(loc)
 	flick_holder.layer = layer + 0.1
 	flick("popdown_[turret_type]", flick_holder)
-	playsound(src, 'sound/machines/turrets/turret_retract.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_RETRACT)
 	om_after(src, 1 SECOND, PROC_REF(popdown_finish), flick_holder)
 
 /obj/machinery/porta_turret/proc/popdown_finish(flick_holder)
@@ -940,7 +931,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 			var/old_dir = dir
 			set_dir(get_dir(src, target))	//even if you can't shoot, follow the target
 			if(dir != old_dir) // Play rotating sound, but only if we actually rotated
-				playsound(src, 'sound/machines/turrets/turret_rotate.ogg', 100, 1)
+				play_sfx(src, SFX_MACHINES_TURRETS_TURRET_ROTATE)
 			shootAt(target)
 			return TRUE
 	return FALSE
@@ -1418,7 +1409,7 @@ DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 		icon_state = "turret_cover_[turret_type]"
 
 /obj/machinery/porta_turret/rcd/die()
-	spark_system.start()
+	fx_sparks(src, 5, FALSE)
 	qdel(src)
 
 /// Setup at spawn: arm what wakes it (machine_pipeline.dm, materialize_wakes()).

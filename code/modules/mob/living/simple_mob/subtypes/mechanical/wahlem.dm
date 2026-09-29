@@ -17,7 +17,7 @@
 
 	melee_damage_lower = 30 // It has an ancient magic sword.
 	melee_damage_upper = 30
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	attacktext = list("slashed")
 
 

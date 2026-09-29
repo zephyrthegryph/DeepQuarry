@@ -16,7 +16,7 @@
 	see_in_dark = 10
 	has_hands = TRUE
 	seedarkness = FALSE
-	attack_sound = 'sound/misc/demonattack.ogg'
+	attack_sound = SFX_MISC_DEMONATTACK
 	has_langs = list(LANGUAGE_GALCOM,LANGUAGE_DAEMON,LANGUAGE_SHADEKIN,LANGUAGE_CULT)
 
 	melee_damage_lower = 20
@@ -56,7 +56,7 @@
 	var/is_shifting = FALSE
 
 	var/enable_autolaugh = FALSE //Whether user controlled mob will laugh when interacting automatically.
-	var/laugh = 'sound/misc/demonlaugh.ogg' //Yknow maybe someone wants a custom laugh, you never know.
+	var/laugh = SFX_MISC_DEMONLAUGH //Yknow maybe someone wants a custom laugh, you never know.
 	injury_enrages = TRUE
 
 	// ALLOW(instance_list): d: per-mob alt_demon_appearances with starting entries, edited at runtime; mobs are few

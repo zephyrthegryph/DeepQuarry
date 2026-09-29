@@ -10,7 +10,7 @@
 	item_state = null
 	item_icons = null
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	projectile_type = /obj/item/projectile/beam/stun
 
 	modifystate = "dominatorstun"
@@ -18,8 +18,8 @@
 	dna_lock = 1
 
 	firemodes = list(
-	list(mode_name="stun", charge_cost=240,projectile_type=/obj/item/projectile/beam/stun, modifystate="dominatorstun", fire_sound='sound/weapons/taser.ogg'),
-	list(mode_name="lethal", charge_cost=480,projectile_type=/obj/item/projectile/beam/dominator, modifystate="dominatorkill", fire_sound='sound/weapons/gauss_shoot.ogg'),
+	list(mode_name="stun", charge_cost=240,projectile_type=/obj/item/projectile/beam/stun, modifystate="dominatorstun", fire_sound=SFX_WEAPONS_TASER),
+	list(mode_name="lethal", charge_cost=480,projectile_type=/obj/item/projectile/beam/dominator, modifystate="dominatorkill", fire_sound=SFX_WEAPONS_GAUSS_SHOOT),
 	)
 
 	var/emagged = FALSE

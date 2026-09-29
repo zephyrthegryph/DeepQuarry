@@ -5,7 +5,7 @@
 	icon_state = "mecha_laser"
 	energy_drain = 30
 	projectile = /obj/item/projectile/beam
-	fire_sound = 'sound/weapons/MediumLaser.ogg'
+	fire_sound = SFX_WEAPONS_MEDIUMLASER
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/xray
 	equip_cooldown = 6
@@ -14,7 +14,7 @@
 	icon_state = "mecha_xray"
 	energy_drain = 150
 	projectile = /obj/item/projectile/beam/xray
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/xray/rigged
@@ -33,7 +33,7 @@
 	icon_state = "mecha_laser-rig"
 	energy_drain = 60
 	projectile = /obj/item/projectile/beam
-	fire_sound = 'sound/weapons/MediumLaser.ogg'
+	fire_sound = SFX_WEAPONS_MEDIUMLASER
 	required_type = list(/obj/mecha/combat, /obj/mecha/working)
 
 	equip_type = EQUIP_UTILITY
@@ -45,7 +45,7 @@
 	icon_state = "mecha_laser"
 	energy_drain = 60
 	projectile = /obj/item/projectile/beam/heavylaser
-	fire_sound = 'sound/weapons/LargeLaser.ogg'
+	fire_sound = SFX_WEAPONS_LARGELASER
 
 	step_delay = 1
 
@@ -56,7 +56,7 @@
 	icon_state = "mecha_emitter"
 	energy_drain = 80
 	projectile = /obj/item/projectile/beam/heavylaser/fakeemitter
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 
 	equip_type = EQUIP_UTILITY
 
@@ -67,4 +67,4 @@
 	icon_state = "mecha_coil"
 	energy_drain = 80
 	projectile = /obj/item/projectile/beam/gamma
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER

@@ -17,7 +17,7 @@
 	..()
 	mmi = new /obj/item/mmi/digital/robot(src) // Explicitly a drone.
 	updatename(modtype)
-	playsound(src, 'sound/mecha/nominalsyndi.ogg', 75, 0)
+	play_sfx(src, SFX_MECHA_NOMINALSYNDI)
 
 /mob/living/silicon/robot/syndicate/setup_laws()
 	..()

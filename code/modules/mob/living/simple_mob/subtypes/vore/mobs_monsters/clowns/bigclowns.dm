@@ -215,7 +215,7 @@
 	pixel_y = 0
 
 	movement_cooldown = 4
-	movement_sound = 'sound/weapons/heavysmash.ogg'
+	movement_sound = SFX_WEAPONS_HEAVYSMASH
 	movement_shake_radius = 5
 
 	armor_spec = "melee=40;bullet=20;laser=10"

@@ -239,22 +239,22 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	if (!emagged)
 		if ((dispenser_flags & GD_NOGREED) && (user.ckey in used_by))
 			to_chat(user,span_warning("You've already picked up your gear!"))
-			playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 			return 0
 		if ((dispenser_flags & GD_UNIQUE) && (user.ckey in unique_dispense_list))
 			to_chat(user,span_warning("You've already picked up your gear!"))
-			playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 			return 0
 	else
 		audible_message("!'^&YouVE alreaDY pIC&$!Ked UP yOU%r Ge^!ar.")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 100, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 2)
 		return 1
 	// And finally
 	if(allowed(user))
 		return 1
 	else
 		to_chat(user,span_warning("Your access is rejected!"))
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 100, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, 2)
 		return 0
 
 /obj/machinery/gear_dispenser/proc/get_gear_list(mob/living/carbon/human/user)

@@ -41,9 +41,7 @@
 		return
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		if(16 to 33)
 			burst()
 		if(34 to 65)

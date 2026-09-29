@@ -18,8 +18,8 @@
 	name = "deck of cards"
 	desc = "A simple deck of playing cards."
 	icon_state = "deck"
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/card_icon_prefix = ""
 	var/deck_size = 1 // # of times we will generate cards within this deck
 
@@ -321,7 +321,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			cards -= P
 		cards = newcards
 		user.visible_message(span_notice("\The [user] shuffles [src]."))
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
 		return
@@ -365,8 +365,8 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	w_class = ITEMSIZE_TINY
 	var/list/cards = list() // ALLOW(instance_list): d: a card pack always holds cards
 	var/parentdeck = null // This variable is added here so that card pack dependent card can be mixed together by defining a "parentdeck" for them
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 
 
 DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -391,8 +391,8 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 	desc = "Some playing cards."
 	icon = 'icons/obj/playing_cards.dmi'
 	icon_state = "empty"
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	w_class = ITEMSIZE_TINY
 
 	var/concealed = 0

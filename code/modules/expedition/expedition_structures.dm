@@ -56,7 +56,7 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 		span_notice("[user] sweeps [W] across [src]."),
 		span_notice("You begin logging [src]'s readings with [W]...")
 	)
-	playsound(src, 'sound/items/Deconstruct.ogg', 30, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 0.6)
 	om_task_timed(user, 3 SECONDS, src, src, PROC_REF(log_readings_done), list(W, user))
 	return INTERACTION_HANDLED_PASS
 
@@ -90,12 +90,12 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 
 // Use the unstable-core glass impact instead of the default structure smash sound.
 /obj/structure/expedition_demo_target/play_attack_sound(damage_amount, damage_type = BRUTE, damage_flag = 0)
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 
 // Reaching 0 integrity ruptures the core.
 /obj/structure/expedition_demo_target/atom_destruction(damage_flag)
 	visible_message(span_danger("[src] ruptures and collapses in a shower of sparks!"))
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	new /obj/effect/decal/cleanable/ash(get_turf(src))
 	return ..()
 

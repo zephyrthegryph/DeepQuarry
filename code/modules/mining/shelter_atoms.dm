@@ -386,7 +386,7 @@ GLOBAL_LIST_EMPTY(unique_deployable)
 
 	log_and_message_admins("[admin_log_verb] at [get_area(deploy_location)]!", user)
 
-	playsound(src, 'sound/effects/phasein.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_PHASEIN)
 
 	// Load shelter template
 	if(above_location)
@@ -713,7 +713,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 
 /obj/machinery/light_switch/survival_pod/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
-	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
+	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
 		target_light_handle = om_handle(locate_within(dT, /obj/machinery/light))

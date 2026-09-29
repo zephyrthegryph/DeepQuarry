@@ -133,7 +133,7 @@
 
 /obj/structure/bed/chair/wheelchair/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
-	playsound(src, 'sound/effects/roll.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_ROLL, 0.75)
 	if(has_buckled_mobs())
 		for(var/mob/living/occupant as anything in src?.buckled_mob_list())
 			if(!driving)
@@ -216,7 +216,7 @@
 		occupant.apply_effect(6, WEAKEN, blocked)
 		occupant.apply_effect(6, STUTTER, blocked)
 		occupant.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
-		playsound(src, 'sound/weapons/punch1.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCH1)
 		if(isliving(A))
 			var/mob/living/victim = A
 			def_zone = ran_zone()

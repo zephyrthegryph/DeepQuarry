@@ -123,10 +123,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 			if(COOLDOWN_FINISHED(src, nextTick))
 				COOLDOWN_START(src, nextTick, OP_COMPUTER_COOLDOWN)
 				if(crit && victim.is_critical())
-					playsound(src.loc, 'sound/machines/defib_success.ogg', 50, 0)
+					play_sfx(src.loc, SFX_MACHINES_DEFIB_SUCCESS)
 				var/saturation = victim.body?.oxygenation()
 				if(spo2 && !isnull(saturation) && saturation < spo2Alarm)
-					playsound(src.loc, 'sound/machines/defib_safetyOff.ogg', 50, 0)
+					play_sfx(src.loc, SFX_MACHINES_DEFIB_SAFETYOFF)
 				if(healthAnnounce && victim.vitality() * 100 <= healthAlarm)
 					atom_say("[round(victim.vitality() * 100)]% vitality.")
 

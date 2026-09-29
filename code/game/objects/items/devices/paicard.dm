@@ -15,8 +15,8 @@
 	var/current_emotion = 1
 	COOLDOWN_DECLARE(notify_cooldown)
 	var/screen_msg
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	// Parts and upgrades
 	var/panel_open = FALSE
@@ -417,7 +417,7 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 		if(panel_open)
 			panel_open = FALSE
 			user.visible_message(span_notice("\The [user] secured \the [src]'s maintenance panel."))
-			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		else if(pai)
 			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
 	if(istype(I,/obj/item/robotanalyzer))
@@ -604,7 +604,7 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
 	panel_open = TRUE
 	user.visible_message(span_warning("\The [user] opened \the [src]'s maintenance panel."))
-	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 /obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
 	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
 	cell = PP_FUNCTIONAL
@@ -671,7 +671,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(!panel_open)
 		return
 	var/mob/user = ask.answerer
-	playsound(src, 'sound/items/pickup/component.ogg', vary = TRUE)
+	play_sfx(src, SFX_ITEMS_PICKUP_COMPONENT, volume = 0)
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, ask.choice))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
@@ -767,9 +767,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 				capacitor = PP_BROKEN
 
 /obj/item/paicard/proc/damage_random_component(nonfatal = FALSE)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(2, 1, src)
-	s.start()
+	fx_sparks(src, 2)
 	if(prob(80) || nonfatal)	//Way more likely to be non-fatal part damage
 		switch(rand(1,3))
 			if(1)
@@ -803,7 +801,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("\The [src] buzzes and beeps."))
-			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
+			play_sfx(src, SFX_MACHINES_BUZZBEEP)
 		emagged = TRUE
 		// Add tools
 		if(has_emag_toolkit)
@@ -819,8 +817,8 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	desc = "It's broken scrap from a pAI card!"
 	icon = 'icons/obj/paicard.dmi'
 	icon_state = "broken"
-	pickup_sound = 'sound/items/pickup/card.ogg'
-	drop_sound = 'sound/items/drop/card.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
+	drop_sound = SFX_ITEMS_DROP_CARD
 
 /obj/item/paiparts/Initialize(mapload)
 	. = ..()

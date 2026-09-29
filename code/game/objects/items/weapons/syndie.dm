@@ -49,7 +49,7 @@
 
 /obj/item/syndie/c4explosive/proc/detonate()
 	icon_state = "c-4[size]_1"
-	playsound(src, 'sound/weapons/armbomb.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_ARMBOMB, extrarange = 0)
 	for(var/mob/O in hearers(src, null))
 		O.show_message("[icon2html(src, O.client)] " + span_warning(" The [src.name] beeps!"))
 	om_after(src, 5 SECONDS, PROC_REF(do_detonate))

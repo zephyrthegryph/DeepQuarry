@@ -24,9 +24,7 @@ DECLARE_REF(/obj/item/anomaly_neutralizer, "effect_remover", OWNED, null)
 	on_use(target, user)
 
 /obj/item/anomaly_neutralizer/proc/on_use(obj/effect/target, mob/living/user)
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-	sparks.set_up(3, 1, src)
-	sparks.start()
+	fx_sparks(src, 3)
 	consume(src, user)
 
 /obj/item/anomaly_releaser
@@ -80,8 +78,8 @@ DECLARE_REF(/obj/item/anomaly_neutralizer, "effect_remover", OWNED, null)
 	throw_range = 10
 	MATERIAL_BULK(MAT_STEEL, 200)
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	var/buffered_anomaly = null
 
@@ -133,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 	icon_state = "taserblue"
 	fire_delay = 4
 	projectile_type = /obj/item/projectile/energy/anomaly
-	fire_sound = 'sound/weapons/taser2.ogg'
+	fire_sound = SFX_WEAPONS_TASER2
 	recoil_mode = 0
 	accuracy = 30
 

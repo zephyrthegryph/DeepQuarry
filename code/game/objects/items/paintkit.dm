@@ -16,7 +16,7 @@
 
 /obj/item/kit/proc/use(amt, mob/user)
 	uses -= amt
-	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 	if(uses<1)
 		user.drop_item()
 		consume(src, user)

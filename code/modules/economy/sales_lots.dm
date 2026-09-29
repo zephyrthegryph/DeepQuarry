@@ -169,7 +169,7 @@
 	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")
 	crate.shipping_ledger = ledger
 	crate.shipping_ledger_snapshot = crate.freight_snapshot()
-	playsound(src, 'sound/machines/chime.ogg', 25)
+	play_sfx(src, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
 	to_chat(user, span_notice("[src] prints [ledger] into [crate] and seals its authenticated cargo snapshot."))
 	return TRUE
 
@@ -379,7 +379,7 @@
 	storefront_forget_item(item)
 	item.forceMove(get_turf(src))
 	user.put_in_hands(item)
-	playsound(src, 'sound/machines/chime.ogg', 25)
+	play_sfx(src, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
 	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_forget_item(obj/item/item)

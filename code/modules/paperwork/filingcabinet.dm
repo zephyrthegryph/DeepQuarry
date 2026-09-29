@@ -133,7 +133,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 
 /obj/structure/filingcabinet/proc/open_animation()
 	flick("[initial(icon_state)]-open",src)
-	playsound(src, 'sound/bureaucracy/filingcabinet.ogg', 50, 1)
+	play_sfx(src, SFX_BUREAUCRACY_FILINGCABINET)
 	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
 
 /*

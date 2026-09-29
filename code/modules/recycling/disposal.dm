@@ -102,7 +102,7 @@
 		else						// otherwise limit to 10 tiles
 			target = get_ranged_target_turf(T, direction, 10)
 
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		if(H)
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				if(QDELETED(AM))
@@ -116,7 +116,7 @@
 
 	else	// no specified direction, so throw in random direction
 
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		if(H)
 			for(var/atom/movable/AM in H.slot_contents(CONTAINER_SLOT_DISPOSAL))
 				if(QDELETED(AM))

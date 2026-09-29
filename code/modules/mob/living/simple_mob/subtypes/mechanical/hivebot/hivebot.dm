@@ -9,10 +9,10 @@
 
 	endurance = 3 LASERS_TO_KILL
 	water_resist = 0.5
-	movement_sound = 'sound/effects/servostep.ogg'
+	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	attacktext = list("clawed")
-	projectilesound = 'sound/weapons/gunshot_old.ogg'
+	projectilesound = SFX_WEAPONS_GUNSHOT_OLD
 
 	organ_names = /datum/decl/mob_organ_names/hivebot
 
@@ -26,9 +26,7 @@
 	..()
 	visible_message(span_warning("\The [src] blows apart!"))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 // The hivebot's default projectile.
 /obj/item/projectile/bullet/hivebot

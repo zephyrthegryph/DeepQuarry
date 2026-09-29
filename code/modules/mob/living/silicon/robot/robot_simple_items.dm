@@ -126,7 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/tool/screwdriver/cyborg
 	name = "powered screwdriver"
 	desc = "An electrical screwdriver, designed to be both precise and quick."
-	usesound = 'sound/items/drill_use.ogg'
+	usesound = SFX_ITEMS_DRILL_USE_2
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_screwdriver"
 	random_color = FALSE
@@ -135,7 +135,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 /obj/item/tool/crowbar/cyborg
 	name = "hydraulic crowbar"
 	desc = "A hydraulic prying tool, compact but powerful. Designed to replace crowbars in industrial synthetics."
-	usesound = 'sound/items/jaws_pry.ogg'
+	usesound = SFX_ITEMS_JAWS_PRY
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_crowbar"
 	force = 10
@@ -146,7 +146,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "The jaws of a small dog. Still strong enough to pry things."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "smalljaws_textless"
-	hitsound = 'sound/weapons/bite.ogg'
+	hitsound = SFX_WEAPONS_BITE
 	attack_verb = list("nibbled", "bit", "gnawed", "chomped", "nommed")
 	force = 15
 
@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "An advanced welder designed to be used in robotic systems."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "indwelder_cyborg"
-	usesound = 'sound/items/Welder2.ogg'
+	usesound = SFX_ITEMS_WELDER2
 	toolspeed = 0.5
 	welding = FALSE
 	no_passive_burn = TRUE
@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "This cuts wires. With science."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_cutters"
-	usesound = 'sound/items/jaws_cut.ogg'
+	usesound = SFX_ITEMS_JAWS_CUT
 	random_color = FALSE
 	toolspeed = 0.5
 
@@ -182,7 +182,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	desc = "An advanced robotic wrench. Can be found in industrial synthetic shells."
 	icon = 'icons/obj/tools_robot.dmi'
 	icon_state = "toolkit_engiborg_wrench"
-	usesound = 'sound/items/drill_use.ogg'
+	usesound = SFX_ITEMS_DRILL_USE_2
 	toolspeed = 0.5
 
 /obj/item/multitool/cyborg
@@ -561,8 +561,8 @@ DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OW
 
 	var/mob/living/silicon/robot/our_robot
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///Var for attack_self chain
 	var/special_handling = FALSE

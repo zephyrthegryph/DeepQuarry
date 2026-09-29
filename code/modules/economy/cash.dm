@@ -16,8 +16,8 @@
 	var/access = list()
 	access = ACCESS_CRATE_CASH
 	var/worth = 0
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
@@ -177,8 +177,8 @@ DECLARE_INTERACTIONS(/obj/item/spacecash, \
 	initial_name = "charge card"
 	icon_state = "efundcard"
 	desc = "A card that holds an amount of money."
-	drop_sound = 'sound/items/drop/card.ogg'
-	pickup_sound = 'sound/items/pickup/card.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARD
+	pickup_sound = SFX_ITEMS_PICKUP_CARD
 	var/owner_name = "" //So the ATM can set it so the EFTPOS can put a valid name on transactions.
 	special_handling = TRUE
 

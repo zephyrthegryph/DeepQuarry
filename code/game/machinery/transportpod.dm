@@ -38,7 +38,7 @@
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
 	src.forceMove(L)
-	playsound(src, pick('sound/effects/Explosion1.ogg', 'sound/effects/Explosion2.ogg', 'sound/effects/Explosion3.ogg', 'sound/effects/Explosion4.ogg'))
+	play_sfx(src, SFX_EFFECTS_EXPLOSION, volume = 0)
 	om_after(src, 2, PROC_REF(arrive_unload))
 
 /obj/machinery/transportpod/proc/arrive_unload()

@@ -45,7 +45,7 @@ DECLARE_REF(/obj/structure/ladder, "target_up", PAIR, "target_down")
 /obj/structure/ladder/welder_act(mob/user, obj/item/C)
 	var/obj/item/weldingtool/WT = C.get_welder()
 	if(WT.remove_fuel(0, user))
-		playsound(src, 'sound/items/Welder2.ogg', 50, TRUE)
+		play_sfx(src, SFX_ITEMS_WELDER2)
 		user.visible_message("\The [user] starts to deconstruct \the [src].", "You start to deconstruct \the [src].", "You hear welding")
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(deconstruct_done), list(user, WT))
 		return ITEM_INTERACT_SUCCESS

@@ -30,7 +30,7 @@ DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "lightning_overlay
 
 	if(!removed)
 		add_lightning_overlay(30 SECONDS)
-		playsound(owner, 'sound/machines/defib_zap.ogg', 50, TRUE, -1)
+		play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
 		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
 		om_hook(owner, /datum/om/event/trait_gained, src, PROC_REF(on_owner_trait_gained))
 		om_hook(owner, /datum/om/event/atom_emp_act, src, PROC_REF(on_emp_act))
@@ -78,7 +78,7 @@ DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "lightning_overlay
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/notify_cooldown(mob/living/carbon/organ_owner)
 	balloon_alert(organ_owner, "your heart strengthtens")
-	playsound(owner, 'sound/machines/defib_zap.ogg', 40)
+	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/source, datum/om/event/atom_emp_act/event)
 	EVENT_HANDLER
@@ -114,7 +114,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	user.unEquip(W, TRUE, src)
 	core = W
 	balloon_alert(user, "core_installed")
-	playsound(src, 'sound/machines/click.ogg')
+	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()
 
 /datum/om/task/timed/anomalock_remove_core

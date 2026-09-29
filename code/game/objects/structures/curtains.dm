@@ -36,7 +36,7 @@
 	effect = /obj/structure/curtain/proc/interaction_toggle
 
 /obj/structure/curtain/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, "rustle", 15, 1, -5)
+	play_sfx(src, SFX_RUSTLE, 0.6)
 	toggle()
 	return TRUE
 
@@ -46,7 +46,7 @@
 		return TRUE
 	if(!isrobot((user)))
 		return TRUE
-	playsound(src, "rustle", 15, 1, -5)
+	play_sfx(src, SFX_RUSTLE, 0.6)
 	toggle()
 	return TRUE
 

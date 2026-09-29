@@ -32,7 +32,7 @@
 	var/startdrain = 500
 	var/max_item_count = 1
 	var/upgraded_capacity = FALSE
-	var/gulpsound = 'sound/vore/gulp.ogg'
+	var/gulpsound = SFX_VORE_GULP
 	var/datum/matter_synth/metal/metal = null
 	var/datum/matter_synth/glass/glass = null
 	var/datum/matter_synth/wood/wood = null
@@ -244,7 +244,7 @@ DECLARE_REF(/obj/item/dogborg/sleeper, "items_preserved", SPILL_LIST, null)
 		hound.visible_message(span_warning("[hound.name] empties out their contents via their [eject_port] port."), span_notice("You empty your contents via your [eject_port] port."))
 		for(var/atom/movable/content in contents)
 			content.forceMove(get_turf(src))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 	update_patient()
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
@@ -406,7 +406,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 			hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
 			for(var/atom/movable/content in deliverylists[delivery_tag])
 				content.forceMove(get_turf(src))
-			playsound(src, 'sound/effects/splat.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPLAT)
 			update_patient()
 			deliverylists[delivery_tag].Cut()
 			return TRUE
@@ -495,19 +495,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		return
 
 	if(prob(20))
-		var/churnsound = pick(
-			'sound/vore/digest1.ogg',
-			'sound/vore/digest2.ogg',
-			'sound/vore/digest3.ogg',
-			'sound/vore/digest4.ogg',
-			'sound/vore/digest5.ogg',
-			'sound/vore/digest6.ogg',
-			'sound/vore/digest7.ogg',
-			'sound/vore/digest8.ogg',
-			'sound/vore/digest9.ogg',
-			'sound/vore/digest10.ogg',
-			'sound/vore/digest11.ogg',
-			'sound/vore/digest12.ogg')
+		var/churnsound = SFX_CLASSIC_DIGESTION_SOUNDS
 		playsound(src, churnsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	//If the timing is right, and there are items to be touched
 	if(SSair.times_fired%3==1)
@@ -528,22 +516,12 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 
 /// The belly is empty: announce it and stop cleaning.
 /obj/item/dogborg/sleeper/proc/finish_clean_cycle()
-	var/finisher = pick(
-		'sound/vore/death1.ogg',
-		'sound/vore/death2.ogg',
-		'sound/vore/death3.ogg',
-		'sound/vore/death4.ogg',
-		'sound/vore/death5.ogg',
-		'sound/vore/death6.ogg',
-		'sound/vore/death7.ogg',
-		'sound/vore/death8.ogg',
-		'sound/vore/death9.ogg',
-		'sound/vore/death10.ogg')
+	var/finisher = SFX_CLASSIC_DEATH_SOUNDS
 	playsound(src, finisher, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	to_chat(hound, span_notice("Your [src.name] is now clean. Ending self-cleaning cycle."))
 	cleaning = 0
 	update_patient()
-	playsound(src, 'sound/machines/ding.ogg', vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
+	play_sfx(src, SFX_MACHINES_DING, 2, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
@@ -564,17 +542,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		log_admin("[key_name(hound)] has digested [key_name(T)] with a cyborg belly. ([hound ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[hound.x];Y=[hound.y];Z=[hound.z]'>JMP</a>" : "null"])")
 	to_chat(hound, span_notice("You feel your belly slowly churn around [T], breaking them down into a soft slurry to be used as power for your systems."))
 	to_chat(T, span_notice("You feel [hound]'s belly slowly churn around your form, breaking you down into a soft slurry to be used as power for [hound]'s systems."))
-	var/deathsound = pick(
-		'sound/vore/death1.ogg',
-		'sound/vore/death2.ogg',
-		'sound/vore/death3.ogg',
-		'sound/vore/death4.ogg',
-		'sound/vore/death5.ogg',
-		'sound/vore/death6.ogg',
-		'sound/vore/death7.ogg',
-		'sound/vore/death8.ogg',
-		'sound/vore/death9.ogg',
-		'sound/vore/death10.ogg')
+	var/deathsound = SFX_CLASSIC_DEATH_SOUNDS
 	playsound(src, deathsound, vol = 100, vary = 1, falloff = 0.1, ignore_walls = TRUE, preference = /datum/preference/toggle/digestion_noises)
 	if(is_vore_predator(T))
 		for(var/obj/belly/B as anything in T.vore_organs)

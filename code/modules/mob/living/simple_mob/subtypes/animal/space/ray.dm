@@ -49,7 +49,7 @@
 	melee_damage_upper = 10	//minor damage variance, since they should only be fighting carp
 	base_attack_cooldown = 18 // A bit slower than carp
 	attack_injury_kind = INJURY_PIERCE
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("lanced","bitten","impaled","gored")
 
 	organ_names = /datum/decl/mob_organ_names/fish

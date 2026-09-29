@@ -14,8 +14,8 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	var/sides = 2
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/fake_coin/Initialize(mapload)
 	. = ..()

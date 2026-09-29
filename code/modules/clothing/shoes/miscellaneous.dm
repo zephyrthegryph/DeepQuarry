@@ -6,8 +6,8 @@
 	item_flags = NOSLIP
 	siemens_coefficient = 0.8
 	step_volume_mod = 0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
@@ -25,8 +25,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/syndigaloshes, fit_spec, null)
 	siemens_coefficient = 0 //They're thick rubber boots! Of course they won't conduct electricity!
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = ACID_PROOF
 
 TYPE_TABLE(/obj/item/clothing/shoes/galoshes, fit_spec, null)
@@ -110,11 +110,11 @@ TYPE_TABLE(/obj/item/clothing/shoes/tourist_2, fit_spec, null)
 	if(running)
 		if(footstep >= 2)
 			footstep = 0
-			playsound(src, "clownstep", 50, 1) // this will get annoying very fast.
+			play_sfx(src, SFX_CLOWNSTEP, vary = TRUE) // this will get annoying very fast.
 		else
 			footstep++
 	else
-		playsound(src, "clownstep", 20, 1)
+		play_sfx(src, SFX_CLOWNSTEP, 0.4, vary = TRUE)
 */
 
 TYPE_TABLE(/obj/item/clothing/shoes/clown_shoes, fit_spec, null)
@@ -146,8 +146,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/cult, fit_spec, null)
 	icon_state = "slippers"
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 
 TYPE_TABLE(/obj/item/clothing/shoes/slippers, fit_spec, null)
 
@@ -207,8 +207,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/swimmingfins, fit_spec, null)
 	blocks_footsteps = FALSE
 	force = 0
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 
 TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 
@@ -306,7 +306,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 
 	var/atom/target = get_edge_target_turf(user, user.dir) //gets the user's direction
 
-	playsound(src, 'sound/effects/stealthoff.ogg', 50, 1, 1)
+	play_sfx(src, SFX_EFFECTS_STEALTHOFF)
 	user.visible_message(span_warning("[user] dashes forward into the air!"))
 	user.throw_at(target, jumpdistance, jumpspeed)
 	COOLDOWN_START(src, recharging_time, recharging_rate)
@@ -386,7 +386,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/footwraps, fit_spec, null)
 	force = 2
 
 //Squeak sound list. Necessary so our subtypes can have different sounds loaded into their component
-TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list("mechstep"=1))
+TYPE_TABLE_DECLARE(/obj/item/clothing/shoes/mech_shoes, mech_shoes_squeak_sounds, list(SFX_MECHSTEP=1))
 
 TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes, fit_spec, null)
 
@@ -398,7 +398,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes, fit_spec, null)
 	name = "light mech shoes"
 	desc = "Thud thud, but quieter."
 
-TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/light, mech_shoes_squeak_sounds, list("powerloaderstep"=1))
+TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/light, mech_shoes_squeak_sounds, list(SFX_POWERLOADERSTEP=1))
 
 /obj/item/clothing/shoes/mech_shoes/heavy
 	name = "heavy mech shoes"
@@ -420,7 +420,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	icon_state = "jackboots"
 
 /obj/item/clothing/shoes/clown_shoes
-	var/static/list/squeak_sound = list("clownstep"=1)
+	var/static/list/squeak_sound = list(SFX_CLOWNSTEP=1)
 
 /obj/item/clothing/shoes/clown_shoes/Initialize(mapload)
 	.=..()
@@ -435,8 +435,8 @@ TYPE_TABLE(/obj/item/clothing/shoes/mech_shoes/mister_x, mech_shoes_squeak_sound
 	siemens_coefficient = 0
 	item_flags = NOSLIP
 	slowdown = SHOES_SLOWDOWN+0.5
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 TYPE_TABLE(/obj/item/clothing/shoes/dry_galoshes, fit_spec, null)
 

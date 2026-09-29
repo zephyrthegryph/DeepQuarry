@@ -25,7 +25,7 @@
 		do_teleport(AM, locate(AM.x, AM.y, AM.z), 8, channel = TELEPORT_CHANNEL_BLUESPACE)
 
 /obj/effect/anomaly/bluespace/detonate()
-	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50)
+	play_sfx(src, SFX_EFFECTS_COSMIC_ENERGY, vary = FALSE)
 
 	if(!impact_area())
 		return
@@ -49,7 +49,7 @@
 
 	var/turf/beacon_turf = get_turf(chosen)
 
-	playsound(beacon_turf, 'sound/effects/phasein.ogg', 100, TRUE)
+	play_sfx(beacon_turf, SFX_EFFECTS_PHASEIN)
 
 	var/datum/announcement/priority/announcement = new/datum/announcement/priority()
 	announcement.Announce("Massive bluespace translocation detected", "Anomaly Alert", ANNOUNCER_MSG_BLUESPACE_ANOM)
@@ -100,9 +100,7 @@
 
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		if(16 to 33)
 			pulse_teleport(4, 1)
 		if(34 to 65)

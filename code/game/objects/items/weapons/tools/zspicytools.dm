@@ -9,7 +9,7 @@
 	item_state = "heavysniper"
 	toolspeed = 0.1
 	force = 30
-	usesound = 'sound/weapons/gunshot_cannon.ogg'
+	usesound = SFX_WEAPONS_GUNSHOT_CANNON
 
 /obj/item/weldingtool/lasercannon
 	name = "laser cannon welding tool"
@@ -19,8 +19,8 @@
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "mhdhowitzer-wielded"
 	toolspeed = 0.1
-	usesound = 'sound/weapons/lasercannonfire.ogg'
-	acti_sound = 'sound/weapons/kenetic_reload.ogg'
+	usesound = SFX_WEAPONS_LASERCANNONFIRE
+	acti_sound = SFX_WEAPONS_KENETIC_RELOAD
 	always_process = TRUE
 
 /obj/item/weldingtool/lasercannon/periodic_step()
@@ -48,7 +48,7 @@
 	icon_state = "fuelrodgun"
 	item_icons = list(slot_l_hand_str = 'icons/mob/items/lefthand_guns.dmi',slot_r_hand_str = 'icons/mob/items/righthand_guns.dmi')
 	item_state = "coilgun"
-	usesound = 'sound/weapons/railgun.ogg'
+	usesound = SFX_WEAPONS_RAILGUN
 	toolspeed = 0.1
 	force = 30
 
@@ -58,7 +58,7 @@
 	icon = 'icons/obj/weapons.dmi'
 	icon_state = "chainsaw0"
 	item_state = "chainsaw0"
-	usesound = 'sound/weapons/chainsaw_attack.ogg'
+	usesound = SFX_WEAPONS_CHAINSAW_ATTACK
 	random_color = FALSE
 	toolspeed = 0.1
 	force = 30
@@ -69,8 +69,8 @@
 	icon = 'icons/obj/items.dmi'
 	icon_state = "diamonddrill"
 	item_state = "jackhammer"
-	hitsound = 'sound/items/drill_hit.ogg'
-	usesound = 'sound/items/drill_use.ogg'
+	hitsound = SFX_ITEMS_DRILL_HIT
+	usesound = SFX_ITEMS_DRILL_USE_2
 	random_color = FALSE
 	toolspeed = 0.1
 	force = 30

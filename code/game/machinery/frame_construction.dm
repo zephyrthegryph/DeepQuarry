@@ -126,7 +126,7 @@
 
 /datum/interaction/construction/frame/insert_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	playsound(frame, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
 	frame.circuit = held
 	actor.drop_item()
@@ -214,7 +214,7 @@
 	message_self = "You add cables to the frame."
 
 /datum/interaction/construction/frame/wire/pay_cost(mob/actor, atom/target, obj/item/held)
-	playsound(target, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(target, SFX_ITEMS_DECONSTRUCT)
 	return ..()
 
 /datum/interaction/construction/frame/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
@@ -317,7 +317,7 @@
 	return istype(held, /obj/item/stack/material) && held.get_material_name() == MAT_GLASS
 
 /datum/interaction/construction/frame/add_glass/pay_cost(mob/actor, atom/target, obj/item/held)
-	playsound(target, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(target, SFX_ITEMS_DECONSTRUCT)
 	return ..()
 
 /datum/interaction/construction/frame/remove_glass

@@ -24,11 +24,11 @@ BLIND     // can't see anything
 	var/toggleable = 0
 	var/off_state = "degoggles"
 	var/active = 1
-	var/activation_sound = 'sound/items/goggles_charge.ogg'
+	var/activation_sound = SFX_ITEMS_GOGGLES_CHARGE
 	var/tmp/overlay_handle
 	var/list/away_planes //Holder for disabled planes
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	resistance_flags = FIRE_PROOF
 
 	sprite_sheets = list(
@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	off_state = "aviator"
 	item_state_slots = list(slot_r_hand_str = "sunglasses", slot_l_hand_str = "sunglasses")
 	actions_types = list(/datum/action/item_action/toggle_hud)
-	activation_sound = 'sound/effects/pop.ogg'
+	activation_sound = SFX_EFFECTS_POP
 
 /obj/item/clothing/glasses/meson/aviator/prescription
 	name = "prescription engineering aviators"
@@ -143,7 +143,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 	off_state = "aviator"
 	actions_types = list(/datum/action/item_action/toggle_mode)
 	toggleable = 1
-	activation_sound = 'sound/effects/pop.ogg'
+	activation_sound = SFX_EFFECTS_POP
 
 /obj/item/clothing/glasses/hud/health/aviator/prescription
 	name = "prescription medical HUD aviators"
@@ -200,8 +200,8 @@ TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYP
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	body_parts_covered = 0
 	var/eye = null
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
 	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatch_switcheye_verb), REQ_IN_INVENTORY), \
@@ -226,8 +226,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatch, \
 	item_state_slots = list(slot_r_hand_str = "blindfold", slot_l_hand_str = "blindfold")
 	body_parts_covered = 0
 	var/eye = null
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 	INTERACT_VERB("Switch Eyepatch", PROC_REF(eyepatchwhite_switcheye_verb), REQ_IN_INVENTORY), \
@@ -448,8 +448,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	flash_protection = FLASH_PROTECTION_MAJOR
 	body_parts_covered = EYES
 	tint = BLIND
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 /obj/item/clothing/glasses/sunglasses/blindfold/whiteblindfold
 	name = "white blindfold"
@@ -511,7 +511,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/welding, \
 	actions_types = list(/datum/action/item_action/toggle_mode)
 	var/on = 1
 	toggleable = 1
-	activation_sound = 'sound/effects/pop.ogg'
+	activation_sound = SFX_EFFECTS_POP
 	specialty_goggles = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERACT_USE("Switch mode", PROC_REF(aviator_mode_self)))
@@ -531,7 +531,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 			enables_planes = null
 			to_chat(user, "You switch \the [src] to flash protection mode.")
 		update_icon()
-		user << activation_sound
+		user << sound(get_sfx(activation_sound))
 		user.recalculate_vis()
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
@@ -669,7 +669,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/aerogelgoggles, \
 		name = "[initial(name)]"
 		user.visible_message("[user] replaces the prescription lenses in \the [src] with generics.")
 
-	playsound(src,'sound/items/Screwdriver.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 
 //Prescription kit
 /obj/item/glasses_kit

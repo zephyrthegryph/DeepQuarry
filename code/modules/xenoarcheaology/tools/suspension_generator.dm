@@ -125,7 +125,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	else
 		desc = "It has stubby bolts aligned along its tracks for stabilising."
 		icon_state = "suspension"
-	playsound(loc, 'sound/items/Ratchet.ogg', 40)
+	play_sfx(loc, SFX_ITEMS_RATCHET, 0.8, vary = FALSE)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -196,7 +196,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	MACHINE_WAKE(src)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
-	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
+	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
 
 	for(var/obj/item/I in turf_contents_of_type(T, /obj/item))
@@ -234,7 +234,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	qdel(suspension_field)
 	suspension_field = null
 	icon_state = "suspension_wrenched"
-	playsound(loc, 'sound/machines/quiet_beep.ogg', 40)
+	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
 
 // its field deactivates.

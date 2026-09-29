@@ -24,7 +24,7 @@
 
 /datum/data/pda/utility/honk/start()
 	if(COOLDOWN_FINISHED(src, honk_cooldown))
-		playsound(pda().loc, 'sound/items/bikehorn.ogg', 50, 1)
+		play_sfx(pda().loc, SFX_ITEMS_BIKEHORN)
 		COOLDOWN_START(src, honk_cooldown, 2 SECONDS)
 
 /datum/data/pda/utility/toggle_door

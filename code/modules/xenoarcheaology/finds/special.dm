@@ -81,26 +81,26 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 				charges += 0.25
 			else
 				charges += 1
-				playsound(src, 'sound/effects/splat.ogg', 50, 1, -3)
+				play_sfx(src, SFX_EFFECTS_SPLAT, extrarange = -3)
 
 	//use up stored charges
 	if(charges >= 10)
 		charges -= 10
 		var/new_object = pick(/obj/item/soulstone, /obj/item/melee/artifact_blade, /obj/item/book/tome, /obj/item/clothing/head/helmet/space/cult, /obj/item/clothing/suit/space/cult, /obj/structure/constructshell, /obj/item/clothing/shoes/cult)
 		new new_object(pick(RANGE_TURFS(1,src)))
-		playsound(src, 'sound/effects/ghost.ogg', 50, 1, -3)
+		play_sfx(src, SFX_EFFECTS_GHOST)
 
 	if(charges >= 3)
 		if(prob(5))
 			charges -= 1
 			var/spawn_type = pick(/mob/living/simple_mob/creature)
 			new spawn_type(pick(RANGE_TURFS(1,src)))
-			playsound(src, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
+			play_sfx(src, SFX_HALLUCINATIONS_GROWL)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
 			LAZYADD(shadow_wights, new /obj/effect/shadow_wight(src.loc))
-			playsound(src, 'sound/effects/ghost.ogg', 50, 1, -3)
+			play_sfx(src, SFX_EFFECTS_GHOST)
 			charges -= 0.1
 
 	if(charges >= 0.1)
@@ -130,7 +130,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 /obj/item/vampiric/proc/bloodcall(mob/living/carbon/human/M)
 	last_bloodcall = world.time
 	if(istype(M))
-		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
+		play_sfx(src, SFX_HALLUCINATIONS_WAIL)
 		LAZYADD(nearby_mobs, M)
 
 		var/target = length(M.organs_by_name) ? pick(M.organs_by_name) : null
@@ -191,20 +191,7 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 		src.forceMove(get_turf(pick(orange(1,src))))
 		var/mob/living/carbon/M = locate_within(src.loc, /mob/living/carbon)
 		if(M)
-			playsound(src, pick('sound/hallucinations/behind_you1.ogg',\
-			'sound/hallucinations/behind_you2.ogg',\
-			'sound/hallucinations/i_see_you1.ogg',\
-			'sound/hallucinations/i_see_you2.ogg',\
-			'sound/hallucinations/im_here1.ogg',\
-			'sound/hallucinations/im_here2.ogg',\
-			'sound/hallucinations/look_up1.ogg',\
-			'sound/hallucinations/look_up2.ogg',\
-			'sound/hallucinations/over_here1.ogg',\
-			'sound/hallucinations/over_here2.ogg',\
-			'sound/hallucinations/over_here3.ogg',\
-			'sound/hallucinations/turn_around1.ogg',\
-			'sound/hallucinations/turn_around2.ogg',\
-			), 50, 1, -3)
+			play_sfx(src, SFX_HALLUCINATIONS_VOICES)
 			to_chat(M, span_cult("The [src] phases right into your body, your entire form feeling cold and numb!")) //You just had a ghost possess / take residence you...YEAH, it's going to be alarming!
 			M.visible_message(span_cult("[M]'s body glows bright red for a moment as glyphs spread across their form!")) //Let's try something fancy.
 			M.status_at_least(EFFECT_SLEEPING, rand(5, 10))

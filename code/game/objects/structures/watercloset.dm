@@ -258,7 +258,7 @@
 		return TRUE
 	if(refilling)
 		to_chat(user, span_notice("The toilet is still refilling its tank."))
-		playsound(src, 'sound/machines/door_locked.ogg', 30, 1)
+		play_sfx(src, SFX_MACHINES_DOOR_LOCKED)
 		//Even while it's flushing, you can repeatedly pull down the lever for a bigger flush.
 		if(interaction.stance == I_HURT)
 			if(COOLDOWN_FINISHED(src, panic_flush))
@@ -275,9 +275,9 @@
 
 /obj/structure/toilet/proc/flush()
 	refilling = TRUE
-	playsound(src, 'sound/vore/death7.ogg', 50, 1) //Got lazy about getting new sound files. Have a sick remix lmao.
-	playsound(src, 'sound/effects/bubbles.ogg', 50, 1)
-	playsound(src, 'sound/mecha/powerup.ogg', 30, 1)
+	play_sfx(src, SFX_VORE_DEATH7) //Got lazy about getting new sound files. Have a sick remix lmao.
+	play_sfx(src, SFX_EFFECTS_BUBBLES)
+	play_sfx(src, SFX_MECHA_POWERUP)
 
 	var/list/bowl_contents = list()
 	for(var/obj/item/I in turf_contents_of_type(loc, /obj/item))
@@ -510,7 +510,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
-	playsound(src, 'sound/effects/stonedoor_openclose.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_STONEDOOR_OPENCLOSE)
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(crowbar_act_timed_done), done_args = list(user))
 	return TRUE
 
@@ -740,7 +740,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 		slot_l_hand_str = 'icons/mob/items/lefthand.dmi',
 		slot_r_hand_str = 'icons/mob/items/righthand.dmi',
 	)
-	honk_sound = 'sound/voice/quack.ogg'
+	honk_sound = SFX_VOICE_QUACK
 
 //Admin spawn duckies
 
@@ -750,7 +750,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_red"
 	item_state = "rubberducky_red"
-	honk_sound = 'sound/effects/adminhelp.ogg'
+	honk_sound = SFX_EFFECTS_ADMINHELP
 	var/honk_count = 0
 	special_handling = TRUE
 
@@ -778,7 +778,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/red, INTERACT_USE("Squeeze", 
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_blue"
 	item_state = "rubberducky_blue"
-	honk_sound = 'sound/effects/bubbles.ogg'
+	honk_sound = SFX_EFFECTS_BUBBLES
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze", PROC_REF(duck_blue_self)))
@@ -801,7 +801,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/blue, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_pink"
 	item_state = "rubberducky_pink"
-	honk_sound = 'sound/vore/sunesound/pred/insertion_01.ogg'
+	honk_sound = SFX_VORE_SUNESOUND_PRED_INSERTION_01
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze", PROC_REF(duck_pink_self)))
@@ -834,7 +834,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/pink, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_grey"
 	item_state = "rubberducky_grey"
-	honk_sound = 'sound/effects/ghost.ogg'
+	honk_sound = SFX_EFFECTS_GHOST
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze", PROC_REF(duck_grey_self)))
@@ -863,7 +863,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/grey, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_green"
 	item_state = "rubberducky_green"
-	honk_sound = 'sound/arcade/mana.ogg'
+	honk_sound = SFX_ARCADE_MANA
 	var/static/list/flora = list(/obj/structure/flora/ausbushes,
 						/obj/structure/flora/ausbushes/reedbush,
 						/obj/structure/flora/ausbushes/leafybush,
@@ -903,7 +903,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/green, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_white"
 	item_state = "rubberducky_white"
-	honk_sound = 'sound/effects/lightningshock.ogg'
+	honk_sound = SFX_EFFECTS_LIGHTNINGSHOCK
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze", PROC_REF(duck_white_self)))
@@ -926,8 +926,8 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_black"
 	item_state = "rubberducky_black"
-	light_sound = 'sound/voice/quack.ogg'
-	blast_sound = 'sound/voice/quack.ogg'
+	light_sound = SFX_VOICE_QUACK
+	blast_sound = SFX_VOICE_QUACK
 
 /obj/item/bikehorn/rubberducky/gold
 	name = "rubber ducky"
@@ -935,7 +935,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/white, INTERACT_USE("Squeeze"
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_gold"
 	item_state = "rubberducky_gold"
-	honk_sound = 'sound/voice/quack_reverb.ogg'
+	honk_sound = SFX_VOICE_QUACK_REVERB
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze", PROC_REF(duck_gold_self)))
@@ -961,7 +961,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/gold, INTERACT_USE("Squeeze",
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_viking"
 	item_state = "rubberducky_viking"
-	honk_sound = 'sound/voice/scream_jelly_m1.ogg'
+	honk_sound = SFX_VOICE_SCREAM_JELLY_M1
 	honk_text = "DUK ROH DAH!"
 	special_handling = TRUE
 
@@ -985,7 +985,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/viking, INTERACT_USE("Squeeze
 	icon = 'icons/obj/watercloset.dmi'
 	icon_state = "rubberducky_galaxy"
 	item_state = "rubberducky_galaxy"
-	honk_sound = 'sound/effects/teleport.ogg'
+	honk_sound = SFX_EFFECTS_TELEPORT
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze", PROC_REF(duck_galaxy_self)))
@@ -1076,7 +1076,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 		return TRUE
 
 	to_chat(user, span_notice("You start washing your hands."))
-	playsound(src, 'sound/effects/sink_long.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_SINK_LONG)
 
 	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user), on_fail = PROC_REF(attack_hand_timed_failed), fail_args = list(user), claims = TRUE)
 	return TRUE
@@ -1122,7 +1122,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	if (istype(RG) && RG.is_open_container())
 		RG.reagents.add_reagent(REAGENT_ID_WATER, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
 		user.visible_message(span_notice("[user] fills \the [RG] using \the [src]."),span_notice("You fill \the [RG] using \the [src]."))
-		playsound(src, 'sound/effects/sink.ogg', 75, 1)
+		play_sfx(src, SFX_EFFECTS_SINK)
 		return 1
 
 	else if (istype(O, /obj/item/melee/baton))
@@ -1145,7 +1145,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	else if(istype(O, /obj/item/mop))
 		O.reagents.add_reagent(REAGENT_ID_WATER, 5)
 		to_chat(user, span_notice("You wet \the [O] in \the [src]."))
-		playsound(src, 'sound/effects/slosh.ogg', 25, 1)
+		play_sfx(src, SFX_EFFECTS_SLOSH)
 		return TRUE
 	else if(istype(O, /obj/item/soap))
 		var/obj/item/soap/soap = O

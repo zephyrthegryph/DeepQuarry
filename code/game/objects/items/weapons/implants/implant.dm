@@ -13,8 +13,8 @@
 	var/malfunction = 0
 	var/initialize_loc = BP_TORSO
 	var/known_implant = FALSE
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /// The implant site slot is keyed by implant type (organ_external.dm): at
 /// most one implant of a given kind per organ.
@@ -268,7 +268,7 @@ Implant Specifics:<BR>"}
 			if (elevel == "Localized Limb")
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
-					playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
+					play_sfx(src, SFX_ITEMS_COUNTDOWN)
 					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
@@ -352,7 +352,7 @@ Implant Specifics:<BR>"}
 /obj/item/implant/explosive/proc/small_boom()
 	if (ishuman(imp_in()) && part)
 		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
-		playsound(src, 'sound/items/countdown.ogg', 75, 1, -3)
+		play_sfx(src, SFX_ITEMS_COUNTDOWN)
 		om_after(src, 25, PROC_REF(small_boom_goes))
 
 //////////////////////////////
@@ -402,7 +402,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	to_chat(R, "You hear a faint *beep*.")
 	if(!src.reagents.total_volume)
 		to_chat(R, "You hear a faint click from your chest.")
-		playsound(R, 'sound/weapons/empty.ogg', 10, 1)
+		play_sfx(R, SFX_WEAPONS_EMPTY, 0.2)
 		expire(0)
 	return
 

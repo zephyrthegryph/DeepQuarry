@@ -26,7 +26,7 @@
 	var/is_dispensing_recipe = FALSE
 	/// The recipe we will dispense if `is_dispensing_recipe` is `TRUE`
 	var/selected_recipe_id
-	var/hypo_sound = 'sound/effects/hypospray.ogg'	// What sound do we play on use?
+	var/hypo_sound = SFX_EFFECTS_HYPOSPRAY	// What sound do we play on use?
 
 	var/list/reagent_volumes = list() // ALLOW(instance_list): d: filled in Initialize() with every reagent the hypo carries
 	/// Associated list of the names of each of our reagents. Indexed via `mode`.
@@ -246,7 +246,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			var/new_mode = ids.Find(params["selectedReagentId"])
 			if(new_mode)
 				var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
-				playsound(src, 'sound/effects/pop.ogg', 50, 0)
+				play_sfx(src, SFX_EFFECTS_POP)
 				if(recording_recipe)
 					UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
 				else
@@ -320,7 +320,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 			if(!selectedRecipe)
 				to_chat(ui.user, span_warning("\The [src] cannot find the recipe ") + span_boldwarning(recipe_name) + span_warning("!"))
 				return
-			playsound(ui.user, 'sound/effects/pop.ogg', 50, 0)
+			play_sfx(ui.user, SFX_EFFECTS_POP)
 			balloon_alert(ui.user, "synthesizer is using macro: '[recipe_name]'")
 			is_dispensing_recipe = TRUE
 			selected_recipe_id = recipe_name
@@ -346,7 +346,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, P
 	volume = 60
 	max_transfer_amount = 30
 	is_dispensing_drinks = TRUE
-	hypo_sound = 'sound/machines/reagent_dispense.ogg'
+	hypo_sound = SFX_MACHINES_REAGENT_DISPENSE
 
 TYPE_TABLE(/obj/item/reagent_containers/borghypo/service, borghypo_transfer_amounts, list(5, 10, 20, 30))
 

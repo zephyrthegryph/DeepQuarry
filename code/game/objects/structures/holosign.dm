@@ -34,7 +34,7 @@ DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
 /obj/structure/holosign/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed())
 	user.do_attack_animation(src)
-	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	take_damage(5, BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 
@@ -47,7 +47,7 @@ DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
 /obj/structure/holosign/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
 	user.do_attack_animation(src)
-	playsound(loc, 'sound/weapons/egloves.ogg', 80, 1)
+	play_sfx(loc, SFX_WEAPONS_EGLOVES, 1.6, extrarange = 0)
 	receive_weapon_hit(W, user)
 	return TRUE
 
@@ -94,7 +94,7 @@ DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
 	. = ..()
 	if(ishuman(AM) && !CheckHuman(AM))
 		if(COOLDOWN_FINISHED(src, buzzed))
-			playsound(get_turf(src), 'sound/machines/buzz-sigh.ogg', 50, 1)
+			play_sfx(get_turf(src), SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 			buzzed = (world.time + 60)
 
 		icon_state = "holo_medical-deny"

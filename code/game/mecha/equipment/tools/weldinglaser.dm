@@ -6,7 +6,7 @@
 	energy_drain = 15
 	range = MECH_MELEE
 	equip_type = EQUIP_UTILITY
-	ready_sound = 'sound/items/Ratchet.ogg'
+	ready_sound = SFX_ITEMS_RATCHET
 	required_type = list(/obj/mecha/working/ripley)
 
 	tooltype = /obj/item/weldingtool/electric/mounted/exosuit

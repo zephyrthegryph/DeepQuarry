@@ -82,8 +82,5 @@
 /obj/item/integrated_circuit/power/transmitter/large/do_work()
 	if(..()) // If the above code succeeds, do this below.
 		if(prob(2))
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(3, 0, get_turf(src))
-			sparks.start()
+			fx_sparks(src, 3, FALSE)
 			visible_message(span_warning("\The [assembly()] makes some sparks!"))
-			qdel(sparks)

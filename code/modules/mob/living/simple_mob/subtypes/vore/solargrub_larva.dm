@@ -38,7 +38,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 		/obj/machinery/button/windowtint
 		)
 
-	var/datum/effect/effect/system/spark_spread/sparks
 	var/image/machine_effect
 
 	var/obj/machinery/abstract_grub_machine/powermachine
@@ -50,8 +49,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 /mob/living/simple_mob/animal/solargrub_larva/Initialize(mapload)
 	. = ..()
-	sparks.set_up()
-	sparks.attach(src)
 	add_verb(src, /mob/living/proc/ventcrawl)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
@@ -62,7 +59,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
 
 DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "sparks", OWNED, null)
 DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWNED, null)
 
 /datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
@@ -86,7 +82,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				M << self.machine_effect
 		if(prob(10))
-			self.sparks.start()
+			fx_sparks(self, 3, FALSE)
 		return
 
 /mob/living/simple_mob/animal/solargrub_larva/attack_target(atom/A)
@@ -137,7 +133,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 		else
 			return
 	forceMove(get_turf(M))
-	sparks.start()
+	fx_sparks(src, 3, FALSE)
 	if(machine_effect)
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
@@ -151,7 +147,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	if(!end_vent)
 		return
 	forceMove(vent)
-	playsound(vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(vent, SFX_MACHINES_VENTCRAWL)
 	vent.visible_message("\The [src] wiggles into \the [vent]!")
 	ventcrawl_travel(vent, end_vent, 3)
 
@@ -168,7 +164,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 			return
 		ventcrawl_travel(vent, end_vent, redirect_attempts - 1)
 		return
-	playsound(end_vent, 'sound/machines/ventcrawl.ogg', 50, 1, -3)
+	play_sfx(end_vent, SFX_MACHINES_VENTCRAWL)
 	forceMove(get_turf(end_vent))
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/expand_grub()
@@ -256,4 +252,3 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 DECLARE_REF(/obj/machinery/abstract_grub_machine, "grub", BACK, "powermachine")
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)
-DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "sparks", /datum/effect/effect/system/spark_spread)

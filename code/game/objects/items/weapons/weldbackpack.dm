@@ -9,8 +9,8 @@
 	var/obj/item/nozzle = null //Attached welder, or other spray device.
 	var/nozzle_type = /obj/item/weldingtool/tubefed
 	var/nozzle_attached = 0
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()
@@ -69,7 +69,7 @@ DECLARE_REF(/obj/item/weldpack, "nozzle", OWNED, null)
 				to_chat(user, span_danger("That was close!"))
 			src.reagents.trans_to_obj(T, T.max_fuel)
 			to_chat(user, span_notice("Welder refilled!"))
-			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+			play_sfx(src, SFX_EFFECTS_REFILL)
 			return INTERACTION_HANDLED_PASS
 	else if(nozzle)
 		if(nozzle == W)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/weldpack, \
 	if (istype(O, /obj/structure/reagent_dispensers/fueltank) && src.reagents.total_volume < max_fuel)
 		O.reagents.trans_to_obj(src, max_fuel)
 		to_chat(user, span_notice("You crack the cap off the top of the pack and fill it back up again from the tank."))
-		playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+		play_sfx(src, SFX_EFFECTS_REFILL)
 		return
 	else if (istype(O, /obj/structure/reagent_dispensers/fueltank) && src.reagents.total_volume == max_fuel)
 		to_chat(user, span_warning("The pack is already full!"))

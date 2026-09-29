@@ -14,8 +14,8 @@
 	max_transfer_amount = null
 	flags = OPENCONTAINER
 	slot_flags = SLOT_BELT
-	drop_sound = 'sound/items/drop/gun.ogg'
-	pickup_sound = 'sound/items/pickup/gun.ogg'
+	drop_sound = SFX_ITEMS_DROP_GUN
+	pickup_sound = SFX_ITEMS_PICKUP_GUN
 	preserve_item = 1
 	var/filled = 0
 	var/list/filled_reagents
@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 			loaded_vial = null
 			balloon_alert(user, "vial removed from \the [src]")
 			update_icon()
-			playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 			return TRUE
 		return FALSE
 	else
@@ -145,7 +145,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	loaded_vial.reagents.trans_to_holder(reagents,volume)
 	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
 	update_icon()
-	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_EMPTY)
 
 /// Old attackby.
 /obj/item/reagent_containers/hypospray/vial/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
 	filled = 1
 	filled_reagents = list(REAGENT_ID_INAPROVALINE = 5)
 	preserve_item = 0
-	hyposound = 'sound/effects/hypospray.ogg'
+	hyposound = SFX_EFFECTS_HYPOSPRAY
 
 /obj/item/reagent_containers/hypospray/autoinjector/on_reagent_change()
 	..()

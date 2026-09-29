@@ -137,11 +137,9 @@
 		material_service.last_work_time = world.time
 		material_service.add_heat(required_energy - desired_beam)
 
-		playsound(src, 'sound/weapons/emitter.ogg', 25, 1)
+		play_sfx(src, SFX_WEAPONS_EMITTER)
 		if(prob(35))
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(5, 1, src)
-			s.start()
+			fx_sparks(src, 5)
 
 		var/obj/item/projectile/beam/emitter/A = get_emitter_beam()
 		A.damage = round(desired_beam/EMITTER_DAMAGE_POWER_TRANSFER)

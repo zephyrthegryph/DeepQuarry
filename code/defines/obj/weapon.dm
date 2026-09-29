@@ -9,9 +9,9 @@
 	throw_range = 4
 	w_class = ITEMSIZE_SMALL
 	attack_verb = list("called", "rang")
-	hitsound = 'sound/weapons/ring.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	hitsound = SFX_WEAPONS_RING
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/rsp
 	name = "\improper Rapid-Seed-Producer (RSP)"
@@ -24,8 +24,8 @@
 	var/stored_matter = 0
 	var/mode = 1
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/bikehorn
 	name = "bike horn"
@@ -39,7 +39,7 @@
 	throw_speed = 3
 	throw_range = 15
 	attack_verb = list("HONKED")
-	var/honk_sound = 'sound/items/bikehorn.ogg'
+	var/honk_sound = SFX_ITEMS_BIKEHORN
 	var/cooldown = 0
 	var/honk_text = FALSE
 	///Var for attack_self chain
@@ -79,8 +79,8 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 /obj/item/disk
 	name = "disk"
 	icon = 'icons/obj/discs_vr.dmi'
-	drop_sound = 'sound/items/drop/disk.ogg'
-	pickup_sound =  'sound/items/pickup/disk.ogg'
+	drop_sound = SFX_ITEMS_DROP_DISK
+	pickup_sound =  SFX_ITEMS_PICKUP_DISK
 
 /obj/item/disk/nuclear
 	name = "nuclear authentication disk"
@@ -117,8 +117,8 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	throw_speed = 4
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 100)
-	drop_sound = 'sound/items/drop/device.ogg'
-	pickup_sound = 'sound/items/pickup/device.ogg'
+	drop_sound = SFX_ITEMS_DROP_DEVICE
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
 /obj/item/staff
 	name = "wizards staff"
@@ -166,8 +166,8 @@ DECLARE_INTERACTIONS(/obj/item/bikehorn, INTERACT_SELF("Honk", PROC_REF(bikehorn
 	item_state = "std_mod"
 	w_class = ITEMSIZE_SMALL
 	var/mtype = 1						// 1=electronic 2=hardware
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 /obj/item/module/card_reader
 	name = "card reader module"
@@ -262,8 +262,8 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/stock_parts.dmi'
 	w_class = ITEMSIZE_SMALL
 	var/rating = 1
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 /obj/item/stock_parts/Initialize(mapload)
 	. = ..()

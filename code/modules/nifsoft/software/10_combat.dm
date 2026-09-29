@@ -54,7 +54,7 @@ GLOBAL_DATUM_INIT(unarmed_hardclaws, /datum/unarmed_attack/hardclaws, new)
 	attack_verb = list("claws")
 	attack_noun = list("talons")
 	damage = 15
-	attack_sound = "punch"
+	attack_sound = SFX_PUNCH
 	miss_sound = 'sound/weapons/punchmiss.ogg'
 	sharp = TRUE
 	edge = TRUE

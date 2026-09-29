@@ -42,7 +42,7 @@
 	maxbodytemp = 900
 
 	attacktext = list("nipped", "chomped", "bullied", "gnaws on")
-	attack_sound = 'sound/voice/bork.ogg'
+	attack_sound = SFX_VOICE_BORK
 	friendly = list("snoofs", "nuzzles", "ruffs happily at", "smooshes on")
 
 	mob_size = MOB_SMALL
@@ -146,11 +146,11 @@
 /obj/item/projectile/awoo_missile
 	name = "awoo missile"
 	icon_state = "force_missile"
-	fire_sound = 'sound/voice/long_awoo.ogg'
+	fire_sound = SFX_VOICE_LONG_AWOO
 	damage = 1
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/voice/bork.ogg'
+	hitsound_wall = SFX_VOICE_BORK
 
 /mob/living/simple_mob/vore/woof/cass
 	name = "Cass"
@@ -182,29 +182,29 @@
 /mob/living/simple_mob/vore/woof/hostile/ranged
 
 	projectiletype = /obj/item/projectile/awoo_missile
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 /mob/living/simple_mob/vore/woof/hostile/horrible
 
 	armor_spec = "melee=75;bullet=75;laser=75;energy=75;bomb=75;bio=75;rad=75"
 
 	projectiletype = /obj/item/projectile/awoo_missile/heavy
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 /obj/item/projectile/awoo_missile/heavy
 	damage = 50
 
 /obj/item/projectile/forcebolt/harmless/awoobolt
 	icon_state = "force_missile"
-	fire_sound = 'sound/voice/long_awoo.ogg'
+	fire_sound = SFX_VOICE_LONG_AWOO
 	damage = 0
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/voice/bork.ogg'
+	hitsound_wall = SFX_VOICE_BORK
 
 /mob/living/simple_mob/vore/woof/hostile/terrible
 
 	projectiletype = /obj/item/projectile/forcebolt/harmless/awoobolt
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/woof/cass, \
 	INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(cass_interaction_hand)), \
@@ -276,4 +276,4 @@ GLOBAL_VAR_INIT(woof_current, 0)
 	movement_cooldown = -2
 
 	projectiletype = /obj/item/projectile/awoo_missile
-	projectilesound = 'sound/voice/long_awoo.ogg'
+	projectilesound = SFX_VOICE_LONG_AWOO

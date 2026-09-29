@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
 	cut_overlays()
 	add_overlay(fulton_balloon("fulton_balloon"))
-	playsound(src, 'sound/items/fulext_deploy.wav', 50, 1, -3)
+	play_sfx(src, SFX_ITEMS_FULEXT_DEPLOY)
 	animate(src, pixel_z = 10, time = 20)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	om_after(src, 6 SECONDS, PROC_REF(fulton_launch), A, landing)
 
 /obj/effect/extraction_holder/proc/fulton_launch(atom/movable/A, turf/landing)
-	playsound(src, 'sound/items/fultext_launch.wav', 50, 1, -3)
+	play_sfx(src, SFX_ITEMS_FULTEXT_LAUNCH)
 	animate(src, pixel_z = 1000, time = 30)
 	if(ishuman(A))
 		var/mob/living/carbon/human/L = A

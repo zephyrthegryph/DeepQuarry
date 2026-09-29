@@ -62,7 +62,7 @@
 	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
 		req_access = null
 		req_one_access = null
-		playsound(src, "sparks", 100, 1)
+		play_sfx(src, SFX_SPARKS, 2)
 		return 1
 
 /obj/machinery/button/remote/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)

@@ -198,7 +198,7 @@ emp_act
 
 	if(!hit_zone)
 		user.do_attack_animation(src)
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 		visible_message(span_danger("\The [user] misses [src] with \the [I]!"))
 		return null
 

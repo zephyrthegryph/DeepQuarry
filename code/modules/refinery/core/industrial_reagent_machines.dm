@@ -103,7 +103,7 @@
 	// Fill up the whole volume if we can, DUMP IT OUT
 	var/obj/item/reagent_containers/C = held
 	reagents.trans_to_obj(C, reagents.total_volume)
-	playsound(src, 'sound/machines/reagent_dispense.ogg', 25, 1)
+	play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 	to_chat(user, "You drain \the [src] into \the [C].")
 	return TRUE
 

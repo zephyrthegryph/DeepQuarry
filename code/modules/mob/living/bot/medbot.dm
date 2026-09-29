@@ -64,11 +64,11 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 
 	if(vocal && prob(1))
 		var/message_options = list(
-			"Radar, put a mask on!" = 'sound/voice/medbot/mradar.ogg',
-			"There's always a catch, and it's the best there is." = 'sound/voice/medbot/mcatch.ogg',
-			"I knew it, I should've been a plastic surgeon." = 'sound/voice/medbot/msurgeon.ogg',
-			"What kind of medbay is this? Everyone's dropping like flies." = 'sound/voice/medbot/mflies.ogg',
-			"Delicious!" = 'sound/voice/medbot/mdelicious.ogg'
+			"Radar, put a mask on!" = SFX_VOICE_MEDBOT_MRADAR,
+			"There's always a catch, and it's the best there is." = SFX_VOICE_MEDBOT_MCATCH,
+			"I knew it, I should've been a plastic surgeon." = SFX_VOICE_MEDBOT_MSURGEON,
+			"What kind of medbay is this? Everyone's dropping like flies." = SFX_VOICE_MEDBOT_MFLIES,
+			"Delicious!" = SFX_VOICE_MEDBOT_MDELICIOUS
 			)
 		var/message = pick(message_options)
 		say(message)
@@ -116,9 +116,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 			if(COOLDOWN_FINISHED(src, newpatient_speak_cooldown))
 				if(vocal)
 					var/message_options = list(
-						"Hey, [H.name]! Hold on, I'm coming." = 'sound/voice/medbot/mcoming.ogg',
-						"Wait [H.name]! I want to help!" = 'sound/voice/medbot/mhelp.ogg',
-						"[H.name], you appear to be injured!" = 'sound/voice/medbot/minjured.ogg'
+						"Hey, [H.name]! Hold on, I'm coming." = SFX_VOICE_MEDBOT_MCOMING,
+						"Wait [H.name]! I want to help!" = SFX_VOICE_MEDBOT_MHELP,
+						"[H.name], you appear to be injured!" = SFX_VOICE_MEDBOT_MINJURED
 						)
 					var/message = pick(message_options)
 					say(message)
@@ -154,9 +154,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 		target = null
 		if(vocal)
 			var/death_messages = list(
-				"No! Stay with me!" = 'sound/voice/medbot/mno.ogg',
-				"Live, damnit! LIVE!" = 'sound/voice/medbot/mlive.ogg',
-				"I... I've never lost a patient before. Not today, I mean." = 'sound/voice/medbot/mlost.ogg'
+				"No! Stay with me!" = SFX_VOICE_MEDBOT_MNO,
+				"Live, damnit! LIVE!" = SFX_VOICE_MEDBOT_MLIVE,
+				"I... I've never lost a patient before. Not today, I mean." = SFX_VOICE_MEDBOT_MLOST
 				)
 			var/message = pick(death_messages)
 			say(message)
@@ -169,9 +169,9 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 			target = null
 			if(vocal)
 				var/possible_messages = list(
-					"All patched up!" = 'sound/voice/medbot/mpatchedup.ogg',
-					"An apple a day keeps me away." = 'sound/voice/medbot/mapple.ogg',
-					"Feel better soon!" = 'sound/voice/medbot/mfeelbetter.ogg'
+					"All patched up!" = SFX_VOICE_MEDBOT_MPATCHEDUP,
+					"An apple a day keeps me away." = SFX_VOICE_MEDBOT_MAPPLE,
+					"Feel better soon!" = SFX_VOICE_MEDBOT_MFEELBETTER
 					)
 				var/message = pick(possible_messages)
 				say(message)
@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 		if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
 			COOLDOWN_START(src, tipping_voice_cooldown, 15 SECONDS)// message for tipping happens when we start interacting, message for righting comes after finishing
-			var/list/messagevoice = list("Hey, wait..." = 'sound/voice/medbot/hey_wait.ogg',"Please don't..." = 'sound/voice/medbot/please_dont.ogg',"I trusted you..." = 'sound/voice/medbot/i_trusted_you.ogg', "Nooo..." = 'sound/voice/medbot/nooo.ogg', "Oh fuck-" = 'sound/voice/medbot/oh_fuck.ogg')
+			var/list/messagevoice = list("Hey, wait..." = SFX_VOICE_MEDBOT_HEY_WAIT,"Please don't..." = SFX_VOICE_MEDBOT_PLEASE_DONT,"I trusted you..." = SFX_VOICE_MEDBOT_I_TRUSTED_YOU, "Nooo..." = SFX_VOICE_MEDBOT_NOOO, "Oh fuck-" = SFX_VOICE_MEDBOT_OH_FUCK)
 			var/message = pick(messagevoice)
 			say(message)
 			playsound(src, messagevoice[message], 70, FALSE)
@@ -366,11 +366,9 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		reagent_glass = null
 
 	if(emagged && prob(25))
-		playsound(src, 'sound/voice/medbot/minsult.ogg', 50, 0)
+		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 	return ..()
 
 /mob/living/bot/medbot/handleRegular()
@@ -381,7 +379,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		return
 
 /mob/living/bot/medbot/proc/tip_over(mob/user)
-	playsound(src, 'sound/machines/warning-buzzer.ogg', 50)
+	play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
 	user.visible_message(span_danger("[user] tips over [src]!"), span_danger("You tip [src] over!"))
 	is_tipped = TRUE
 	tipper_name = user.name
@@ -393,12 +391,12 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	if(user)
 		user.visible_message(span_notice("[user] sets [src] right-side up!"), span_green("You set [src] right-side up!"))
 		if(user.name == tipper_name)
-			messagevoice = list("I forgive you." = 'sound/voice/medbot/forgive.ogg')
+			messagevoice = list("I forgive you." = SFX_VOICE_MEDBOT_FORGIVE)
 		else
-			messagevoice = list("Thank you!" = 'sound/voice/medbot/thank_you.ogg', "You are a good person." = 'sound/voice/medbot/youre_good.ogg')
+			messagevoice = list("Thank you!" = SFX_VOICE_MEDBOT_THANK_YOU, "You are a good person." = SFX_VOICE_MEDBOT_YOURE_GOOD)
 	else
 		visible_message(span_notice("[src] manages to [pick("writhe", "wriggle", "wiggle")] enough to right itself."))
-		messagevoice = list("Fuck you." = 'sound/voice/medbot/fuck_you.ogg', "Your behavior has been reported, have a nice day." = 'sound/voice/medbot/reported.ogg')
+		messagevoice = list("Fuck you." = SFX_VOICE_MEDBOT_FUCK_YOU, "Your behavior has been reported, have a nice day." = SFX_VOICE_MEDBOT_REPORTED)
 
 	tipper_name = null
 	if(COOLDOWN_FINISHED(src, tipping_voice_cooldown))
@@ -416,15 +414,15 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	var/list/messagevoice
 	switch(tipped_status)
 		if(MEDBOT_PANIC_LOW)
-			messagevoice = list("I require assistance." = 'sound/voice/medbot/i_require_asst.ogg')
+			messagevoice = list("I require assistance." = SFX_VOICE_MEDBOT_I_REQUIRE_ASST)
 		if(MEDBOT_PANIC_MED)
-			messagevoice = list("Please put me back." = 'sound/voice/medbot/please_put_me_back.ogg')
+			messagevoice = list("Please put me back." = SFX_VOICE_MEDBOT_PLEASE_PUT_ME_BACK)
 		if(MEDBOT_PANIC_HIGH)
-			messagevoice = list("Please, I am scared!" = 'sound/voice/medbot/please_im_scared.ogg')
+			messagevoice = list("Please, I am scared!" = SFX_VOICE_MEDBOT_PLEASE_IM_SCARED)
 		if(MEDBOT_PANIC_FUCK)
-			messagevoice = list("I don't like this, I need help!" = 'sound/voice/medbot/dont_like.ogg', "This hurts, my pain is real!" = 'sound/voice/medbot/pain_is_real.ogg')
+			messagevoice = list("I don't like this, I need help!" = SFX_VOICE_MEDBOT_DONT_LIKE, "This hurts, my pain is real!" = SFX_VOICE_MEDBOT_PAIN_IS_REAL)
 		if(MEDBOT_PANIC_ENDING)
-			messagevoice = list("Is this the end?" = 'sound/voice/medbot/is_this_the_end.ogg', "Nooo!" = 'sound/voice/medbot/nooo.ogg')
+			messagevoice = list("Is this the end?" = SFX_VOICE_MEDBOT_IS_THIS_THE_END, "Nooo!" = SFX_VOICE_MEDBOT_NOOO)
 		if(MEDBOT_PANIC_END)
 			GLOB.global_announcer.autosay("PSYCH ALERT: Crewmember [tipper_name] recorded displaying antisocial tendencies torturing bots in [get_area(src)]. Please schedule psych evaluation.", "[src]", "Medical")
 			set_right() // strong independent medbot
@@ -435,7 +433,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		say(message)
 		playsound(src, messagevoice[message], 70)
 	else if(prob(tipped_status * 0.2))
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 30, extrarange=-2)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 0.6, extrarange = -2)
 
 /mob/living/bot/medbot/examine(mob/user)
 	. = ..()

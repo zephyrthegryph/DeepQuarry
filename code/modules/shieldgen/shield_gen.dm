@@ -54,9 +54,7 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")
 		. = 1
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 
 /// Old attackby: swipe an ID to lock/unlock the controls.
 /datum/interaction/machine_item/shield_gen_swipe_id

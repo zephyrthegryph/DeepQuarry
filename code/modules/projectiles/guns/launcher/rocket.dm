@@ -8,7 +8,7 @@
 	throw_range = 10
 	force = 5.0
 	slot_flags = 0
-	fire_sound = 'sound/weapons/rpg.ogg'
+	fire_sound = SFX_WEAPONS_RPG
 
 	release_force = 15
 	throw_distance = 30

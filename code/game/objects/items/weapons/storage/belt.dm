@@ -7,9 +7,9 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7 //This should ensure belts always have enough room to store whatever.
 	slot_flags = SLOT_BELT
 	attack_verb = list("whipped", "lashed", "disciplined")
-	equip_sound = 'sound/items/toolbelt_equip.ogg'
-	drop_sound = 'sound/items/drop/toolbelt.ogg'
-	pickup_sound = 'sound/items/pickup/toolbelt.ogg'
+	equip_sound = SFX_ITEMS_TOOLBELT_EQUIP
+	drop_sound = SFX_ITEMS_DROP_TOOLBELT
+	pickup_sound = SFX_ITEMS_PICKUP_TOOLBELT
 	sprite_sheets = list(
 		SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/belt/mob_werebeast.dmi'

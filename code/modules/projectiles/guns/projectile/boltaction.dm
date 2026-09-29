@@ -16,12 +16,12 @@
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "boltaction"
 	item_state = "boltaction"
-	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
 	max_shells = 5
 	caliber = "7.62mm"// Old as shit rifle doesn't have very good tech.
 	ammo_type = /obj/item/ammo_casing/a762
 	load_method = SINGLE_CASING|SPEEDLOADER
-	action_sound = 'sound/weapons/riflebolt.ogg'
+	action_sound = SFX_WEAPONS_RIFLEBOLT
 	pump_animation = "boltaction-cycling"
 
 /*
@@ -109,13 +109,13 @@
 	as any modern interpretation. Uses 7.62mm rounds."
 	icon_state = "surplus"
 	item_state = "rifle"
-	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
 	max_shells = 4
 	slot_flags = null
 	caliber = "7.62mm" // Old(er) as shit rifle doesn't have very good tech.
 	ammo_type = /obj/item/ammo_casing/a762
 	load_method = SINGLE_CASING|SPEEDLOADER
-	action_sound = 'sound/weapons/riflebolt.ogg'
+	action_sound = SFX_WEAPONS_RIFLEBOLT
 	pump_animation = "surplus-cycling"
 
 /*
@@ -135,12 +135,12 @@
 	the rural communities that dot this infinite frontier."
 	icon_state = "scoped-boltaction"
 	item_state = "boltaction_scoped"
-	fire_sound = 'sound/weapons/gunshot_generic_rifle.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_GENERIC_RIFLE
 	max_shells = 5
 	caliber = "7.62mm"// Old as shit rifle doesn't have very good tech, but it does have a scope.
 	ammo_type = /obj/item/ammo_casing/a762
 	load_method = SINGLE_CASING|SPEEDLOADER
-	action_sound = 'sound/weapons/riflebolt.ogg'
+	action_sound = SFX_WEAPONS_RIFLEBOLT
 	pump_animation = "scoped-boltaction-cycling"
 
 /obj/item/gun/projectile/shotgun/pump/rifle/ui_action_click(mob/user, actiontype)

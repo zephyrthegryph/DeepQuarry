@@ -6,6 +6,6 @@
 
 /datum/decl/emote/audible/belch/get_emote_sound(atom/user)
 	return list(
-			"sound" = sound(get_sfx("belches")),
+			"sound" = sound(get_sfx(SFX_BELCHES)),
 			"vol" = emote_volume / 2
 		)

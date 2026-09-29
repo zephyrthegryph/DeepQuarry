@@ -16,7 +16,7 @@
 	melee_damage_upper = 10
 
 	movement_cooldown = 3
-	movement_sound = 'sound/effects/houndstep.ogg'
+	movement_sound = SFX_EFFECTS_HOUNDSTEP
 	// To promote a more diverse weapon selection.
 	armor_spec = "melee=25;bullet=25;laser=-20;bio=100;rad=100"
 	// dq_get_hovering(src) type-default moved to GLOB.dq_hovering_by_type
@@ -27,7 +27,7 @@
 	response_disarm = "gently pushes aside"
 	response_harm = "hits"
 	attacktext = list ("wildly struck", "lunged against", "battered")
-	attack_sound = 'sound/weapons/punch3.ogg'
+	attack_sound = SFX_WEAPONS_PUNCH3
 
 	var/emp_damage = 0
 	var/nanobot_chance = 40
@@ -61,7 +61,7 @@
 	melee_damage_lower = 5
 	melee_damage_upper = 10
 	attacktext = "splattered on"
-	attack_sound = 'sound/effects/slime_squish.ogg'
+	attack_sound = SFX_EFFECTS_SLIME_SQUISH
 
 // Do y'like brain damage?
 	var/poison_chance = 100
@@ -101,11 +101,11 @@
 	attack_armor_pen = 50
 	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
-	attack_sound = 'sound/mob/robots/cyber_horror_changelingmelee.ogg'
+	attack_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGMELEE
 	attacktext = list ("sliced", "diced", "lashed", "shredded")
 // Slow as all sin
 	movement_cooldown = 9
-	movement_sound = 'sound/effects/houndstep.ogg'
+	movement_sound = SFX_EFFECTS_HOUNDSTEP
 
 
 // You do NOT Want to get in touchy range of this thing.
@@ -120,7 +120,7 @@
 	special_attack_cooldown = 60 SECONDS
 // How long the leap telegraphing is.
 	var/leap_warmup = 2 SECOND
-	var/leap_sound = 'sound/mob/robots/cyber_horror_changelingleap.ogg'
+	var/leap_sound = SFX_MOB_ROBOTS_CYBER_HORROR_CHANGELINGLEAP
 
 /datum/say_list/cyber_horror/ling
 	threaten_sound = 'sound/mob/robots/cyber_horror_changeling.ogg'
@@ -206,7 +206,7 @@
 	icon_state = "tajaran_cyber_horror"
 	icon_dead = "tajaran_cyber_horror_dead"
 	say_list_type = /datum/say_list/cyber_horror/tajaran
-	attack_sound = 'sound/weapons/meleetear.ogg'
+	attack_sound = SFX_WEAPONS_MELEETEAR
 
 
 
@@ -264,7 +264,7 @@
 			var/mob/living/L = A
 			L.status_at_least(EFFECT_WEAKENED, cloaked_weaken_amount)
 			to_chat(L, span_danger("\The [src] tears into you!"))
-			playsound(L, 'sound/weapons/spiderlunge.ogg', 75, 1)
+			play_sfx(L, SFX_WEAPONS_SPIDERLUNGE)
 	uncloak()
 	..()
 
@@ -287,7 +287,7 @@
 	say_list_type = /datum/say_list/cyber_horror/grey
 
 	projectiletype = /obj/item/projectile/arc/blue_energy
-	projectilesound = 'sound/weapons/plasmaNEW.ogg'
+	projectilesound = SFX_WEAPONS_PLASMANEW
 
 	armor_spec = "melee=-30;bullet=10;laser=10;bio=100;rad=100"
 
@@ -306,8 +306,8 @@
 
 	base_attack_cooldown = 4
 	projectiletype = /obj/item/projectile/beam/drone
-	projectilesound = 'sound/weapons/smallLaser.ogg'
-	movement_sound = 'sound/effects/servostep.ogg'
+	projectilesound = SFX_WEAPONS_SMALLLASER
+	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 
 /datum/say_list/cyber_horror/corgi
@@ -325,7 +325,7 @@
 
 	endurance = 40
 	movement_cooldown = 0
-	movement_sound = 'sound/effects/servostep.ogg'
+	movement_sound = SFX_EFFECTS_SERVOSTEP
 
 	pass_flags = PASSTABLE
 	mob_swap_flags = 0
@@ -336,7 +336,7 @@
 // Four attacks per second.
 	base_attack_cooldown = 2.5
 	attack_injury_kind = INJURY_CUT
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	attacktext = list("jabbed", "injected")
 

@@ -52,8 +52,8 @@ DECLARE_INTERACTIONS(/obj/item/bodybag, INTERACT_SELF("Unfold", PROC_REF(bodybag
 	desc = "A plastic bag designed for the storage and transportation of cadavers."
 	icon = 'icons/obj/closets/bodybag.dmi'
 	closet_appearance = null
-	open_sound = 'sound/items/zip.ogg'
-	close_sound = 'sound/items/zip.ogg'
+	open_sound = SFX_ITEMS_ZIP
+	close_sound = SFX_ITEMS_ZIP
 	var/item_path = /obj/item/bodybag
 	density = FALSE
 	storage_capacity = (MOB_MEDIUM * 2) - 1

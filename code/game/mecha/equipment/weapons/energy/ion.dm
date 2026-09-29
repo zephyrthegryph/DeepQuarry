@@ -5,7 +5,7 @@
 	icon_state = "mecha_ion"
 	energy_drain = 120
 	projectile = /obj/item/projectile/ion
-	fire_sound = 'sound/weapons/IonCannon.ogg'
+	fire_sound = SFX_WEAPONS_IONCANNON
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/ion/rigged
 	equip_cooldown = 30

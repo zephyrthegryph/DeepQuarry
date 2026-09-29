@@ -54,11 +54,11 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 	new /obj/effect/temporary_effect/lightning_strike(T)
 
 	// For those close up.
-	playsound(T, 'sound/effects/lightningbolt.ogg', 100, 1)
+	play_sfx(T, SFX_EFFECTS_LIGHTNINGBOLT)
 
 	// And for those far away. If the strike happens on a planet, everyone on the planet will hear it.
 	// Otherwise only those on the current z-level will hear it.
-	var/sound = get_sfx("thunder")
+	var/sound = get_sfx(SFX_THUNDER)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if( (P && (M.z in P.expected_z_levels)) || M.z == T.z)
 			if(M.check_sound_preference(/datum/preference/toggle/weather_sounds))

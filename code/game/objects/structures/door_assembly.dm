@@ -202,7 +202,7 @@
 		if (S)
 			if (S.get_amount() >= 1)
 				if(material_name == MAT_RGLASS)
-					playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
+					play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 					user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
 					om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(user, S))
 				else if(material_name)
@@ -211,7 +211,7 @@
 						to_chat(user, "You cannot make an airlock out of that material.")
 						return TRUE
 					if(S.get_amount() >= 2)
-						playsound(src, 'sound/items/Crowbar.ogg', 100, 1)
+						play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 						user.visible_message("[user] adds [S.name] to the airlock assembly.", "You start to install [S.name] into the airlock assembly.")
 						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, S = S, material_name = material_name)
 

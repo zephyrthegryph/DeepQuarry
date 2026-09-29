@@ -488,7 +488,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	gene_sequencing = FALSE
 	set_temp("Injector dispensed...")
 	visible_message(span_notice("\The [src] ejects \the [I]."))
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_DING)
 
 // In here because only relevant to computer
 /obj/item/cmo_disk_holder
@@ -503,7 +503,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 
 /// Old attack_self.
 /obj/item/cmo_disk_holder/proc/cmo_disk_holder_interaction_tear(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/items/poster_ripped.ogg', 50)
+	play_sfx(src, SFX_ITEMS_POSTER_RIPPED, 0.5, vary = FALSE)
 	to_chat(user, span_warning("You tear open \the [name]."))
 	user.unEquip(src)
 	var/obj/item/disk/transcore/newdisk = new(get_turf(src))

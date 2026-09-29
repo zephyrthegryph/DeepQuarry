@@ -7,7 +7,7 @@
 	combustion = FALSE
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect/blue_laser
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 /obj/item/projectile/forcebolt/strong
 	name = "force bolt"

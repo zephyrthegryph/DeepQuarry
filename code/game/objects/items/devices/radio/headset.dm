@@ -19,8 +19,8 @@
 	var/ks1type = null
 	var/ks2type = null
 
-	drop_sound = 'sound/items/drop/component.ogg'
-	pickup_sound = 'sound/items/pickup/component.ogg'
+	drop_sound = SFX_ITEMS_DROP_COMPONENT
+	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
@@ -62,12 +62,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 	if(!ishuman(src.loc)) //ition, this IF block.
 		return ..(freq, level) //ition end
 	if (aiOverride)
-		playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds)
+		play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
 		return ..(freq, level)
 	if(ishuman(src.loc))
 		var/mob/living/carbon/human/H = src.loc
 		if(H.get_equipped_item(SLOT_ID_EAR_L) == src || H.get_equipped_item(SLOT_ID_EAR_R) == src)
-			playsound(loc, 'sound/effects/radio_common.ogg', 20, 1, 1, preference = /datum/preference/toggle/radio_sounds)
+			play_sfx(loc, SFX_EFFECTS_RADIO_COMMON, preference = /datum/preference/toggle/radio_sounds)
 			return ..(freq, level)
 	return -1
 
@@ -762,10 +762,8 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return FALSE
 	tele_threshold -= damage
 	if(tele_threshold <= 0)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
-		playsound(src, "sparks", 50, 1)
+		fx_sparks(user.loc, 5, FALSE)
+		play_sfx(src, SFX_SPARKS)
 		user.visible_message(span_danger("[user] is abruptly flung somewhere else in response to the damage!"))
 		do_teleport(user, locate(telex,teley,telez), channel = TELEPORT_CHANNEL_QUANTUM)
 		tele_threshold = initial(tele_threshold)

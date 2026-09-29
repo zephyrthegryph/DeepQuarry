@@ -12,8 +12,8 @@
 	slot_flags = SLOT_EARS
 	var/string_attached
 	var/sides = 2
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/coin/Initialize(mapload)
 	. = ..()
@@ -208,8 +208,8 @@ DECLARE_INTERACTIONS(/obj/item/coin, \
 	slot_flags = SLOT_EARS
 	var/sides = 2
 	var/value = 1
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 /obj/item/aliencoin/Initialize(mapload)
 	. = ..()

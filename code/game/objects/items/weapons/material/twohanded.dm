@@ -26,9 +26,9 @@
 	var/base_icon
 	var/base_name
 	var/unwielded_force_divisor = 0.25
-	hitsound = "swing_hit"
-	drop_sound = 'sound/items/drop/sword.ogg'
-	pickup_sound = 'sound/items/pickup/sword.ogg'
+	hitsound = SFX_SWING_HIT
+	drop_sound = SFX_ITEMS_DROP_SWORD
+	pickup_sound = SFX_ITEMS_PICKUP_SWORD
 
 /obj/item/material/twohanded/update_held_icon()
 	var/mob/living/M = loc
@@ -63,7 +63,7 @@
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
 		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -98,8 +98,8 @@
 	attack_verb = list("attacked", "chopped", "cleaved", "torn", "cut")
 	applies_material_colour = 0
 	can_cleave = TRUE
-	drop_sound = 'sound/items/drop/axe.ogg'
-	pickup_sound = 'sound/items/pickup/axe.ogg'
+	drop_sound = SFX_ITEMS_DROP_AXE
+	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
 /obj/item/material/twohanded/fireaxe/update_held_icon()
 	var/mob/living/M = loc
@@ -157,8 +157,8 @@
 	edge = FALSE
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
-	hitsound = 'sound/weapons/bladeslice.ogg'
-	mob_throw_hit_sound =  'sound/weapons/pierce.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
+	mob_throw_hit_sound =  SFX_WEAPONS_PIERCE
 	attack_verb = list("attacked", "poked", "jabbed", "torn", "gored")
 	default_material = MAT_GLASS
 	applies_material_colour = 0
@@ -213,7 +213,7 @@
 	unwielded_force_divisor = 0.25
 	force = 25
 	force_divisor = 0.9 // 10/42 with hardness 60 (steel) and 0.25 unwielded divisor
-	hitsound = 'sound/weapons/heavysmash.ogg'
+	hitsound = SFX_WEAPONS_HEAVYSMASH
 	icon = 'icons/obj/hammer_sprites_ch.dmi'
 	w_class = ITEMSIZE_HUGE
 	slowdown = 1.5
@@ -269,7 +269,7 @@
 	name = "Mjollnir"
 	desc = "A long, heavy hammer. This weapons crackles with barely contained energy."
 	force_divisor = 2
-	hitsound = 'sound/effects/lightningbolt.ogg'
+	hitsound = SFX_EFFECTS_LIGHTNINGBOLT
 	force = 50
 	throwforce = 15
 	force_wielded = 75
@@ -290,7 +290,7 @@
 			target.stun_effect_act(10 , 50, BP_TORSO, src)
 			target.injure(INJURY_ELECTRIC, 10, BP_TORSO, src)
 			target.status_at_least(EFFECT_PARALYZED, 20)
-			playsound(src.loc, "sparks", 50, 1)
+			play_sfx(src.loc, SFX_SPARKS)
 			return
 
 /obj/item/material/twohanded/sledgehammer/mjollnir/update_icon()  //Currently only here to fuck with the on-mob icons.
@@ -332,7 +332,7 @@
 	if (src.wielded == 1)
 		if(unique_parry_check(user, attacker, damage_source) && prob(50))
 			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 		return 1
 	return 0
 
@@ -371,7 +371,7 @@
 			parry_chance = base_parry_chance
 		if(unique_parry_check(user, attacker, damage_source) && prob(parry_chance))
 			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
-			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_PUNCHMISS, 2, extrarange = 0)
 			return 1
 	return 0
 

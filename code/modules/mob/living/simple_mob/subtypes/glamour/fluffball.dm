@@ -121,7 +121,7 @@
 		M.visible_message("<span class='danger'>\The [src] pounces on \the [M]!</span>!")
 	else // pounce misses!
 		M.visible_message("<span class='danger'>\The [src] attempts to pounce \the [M] but misses!</span>!")
-		playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (!M.canmove || vore_standing_too)) //if they're edible then eat them too
 		return EatTarget(M)

@@ -16,8 +16,8 @@
 	layer = OBJ_LAYER - 0.1
 	var/amount = 30					//How much paper is in the bin.
 	var/list/papers	//List of papers put in the bin for reference.
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 
 /obj/item/paper_bin/MouseDrop(mob/user)

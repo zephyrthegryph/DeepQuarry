@@ -31,8 +31,8 @@
 	display_contents_with_number = 0 // UNStABLE AS FuCK, turn on when it stops crashing clients
 	use_to_pickup = TRUE
 	slot_flags = SLOT_BELT
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 // -----------------------------
 //          Trash bag
@@ -43,8 +43,8 @@
 	icon = 'icons/obj/janitor.dmi'
 	icon_state = "trashbag0"
 	item_state_slots = list(slot_r_hand_str = "trashbag", slot_l_hand_str = "trashbag")
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_SMALL * 21
@@ -81,8 +81,8 @@ TYPE_TABLE(/obj/item/storage/bag/trash/holding, hold_spec, list(HOLD_NOT(list(/o
 	desc = "It's a very flimsy, very noisy alternative to a bag."
 	icon = 'icons/obj/trash.dmi'
 	icon_state = "plasticbag"
-	drop_sound = 'sound/items/drop/wrapper.ogg'
-	pickup_sound = 'sound/items/pickup/wrapper.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRAPPER
+	pickup_sound = SFX_ITEMS_PICKUP_WRAPPER
 
 	w_class = ITEMSIZE_LARGE
 	resistance_flags = FLAMMABLE

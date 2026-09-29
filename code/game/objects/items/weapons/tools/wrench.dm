@@ -12,10 +12,10 @@
 	w_class = ITEMSIZE_SMALL
 	material_total = 150
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked")
-	usesound = 'sound/items/Ratchet.ogg'
+	usesound = SFX_ITEMS_RATCHET
 	toolspeed = 1
-	drop_sound = 'sound/items/drop/wrench.ogg'
-	pickup_sound = 'sound/items/pickup/wrench.ogg'
+	drop_sound = SFX_ITEMS_DROP_WRENCH
+	pickup_sound = SFX_ITEMS_PICKUP_WRENCH
 	tool_qualities = list(TOOL_WRENCH)
 
 /obj/item/tool/wrench/pipe
@@ -36,7 +36,7 @@
 	throwforce = 10
 	w_class = ITEMSIZE_NORMAL
 	attack_verb = list("bashed", "battered", "bludgeoned", "whacked", "warped", "blasted")
-	usesound = 'sound/effects/stealthoff.ogg'
+	usesound = SFX_EFFECTS_STEALTHOFF
 	toolspeed = 0.5
 	reach = 2
 
@@ -61,13 +61,13 @@
 	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_wrench)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "wrench"
-	usesound = 'sound/effects/EMPulse.ogg'
+	usesound = SFX_EFFECTS_EMPULSE
 	toolspeed = 0.1
 
 /obj/item/tool/wrench/power
 	name = "power wrench"
 	desc = "You shouldn't see this."
-	usesound = 'sound/items/drill_use.ogg'
+	usesound = SFX_ITEMS_DRILL_USE_2
 	force = 8
 	throwforce = 8
 	attack_verb = list("drilled", "screwed", "jabbed")

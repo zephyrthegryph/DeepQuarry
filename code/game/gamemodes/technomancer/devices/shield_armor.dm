@@ -21,16 +21,10 @@
 	actions_types = list(/datum/action/item_action/toggle_shield_projector)
 	var/active = 0
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost
-	var/datum/effect/effect/system/spark_spread/spark_system = null
 	var/block_percentage = 75
-
-DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/armor/shield, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/clothing/suit/armor/shield/Initialize(mapload)
 	. = ..()
-	spark_system.set_up(5, 0, src)
-
-DECLARE_REF(/obj/item/clothing/suit/armor/shield, "spark_system", OWNED, null)
 
 /obj/item/clothing/suit/armor/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//Since this is a pierce of armor that is passive, we do not need to check if the user is incapacitated.
@@ -67,8 +61,8 @@ DECLARE_REF(/obj/item/clothing/suit/armor/shield, "spark_system", OWNED, null)
 	user.visible_message(span_danger("\The [user]'s [src] absorbs [attack_text]!"))
 	to_chat(user, span_warning("Your shield has absorbed most of \the [damage_source]."))
 
-	spark_system.start()
-	playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+	fx_sparks(src, 5, FALSE)
+	play_sfx(src, SFX_WEAPONS_BLADE1)
 	return 0 // This shield does not block all damage, so returning 0 is needed to tell the game to apply the new damage.
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle", PROC_REF(shield_armor_toggle_self)))

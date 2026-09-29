@@ -9,8 +9,8 @@
 
 	var/front_id_handle
 
-	drop_sound = 'sound/items/drop/leather.ogg'
-	pickup_sound = 'sound/items/pickup/leather.ogg'
+	drop_sound = SFX_ITEMS_DROP_LEATHER
+	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
 
 	var/original_name // Due to loadout customizations and such
 

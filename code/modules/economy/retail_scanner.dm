@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 			capture_service_staff(user)
 			rebuild_ticket()
 			ticket_changed()
-			playsound(src, 'sound/machines/twobeep.ogg', 25)
+			play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 			visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 			return TRUE
 		if("set_amount")
@@ -278,7 +278,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 		confirm_item = I
 		confirm_revision = ticket_revision
 		src.visible_message("[icon2html(src, viewers(src))]<b>Total price:</b> [transaction_amount] Thaler\s. Swipe again to confirm.")
-		playsound(src, 'sound/machines/twobeep.ogg', 25)
+		play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 		return 0
 
 /obj/item/retail_scanner/proc/scan_card(obj/item/card/id/I, obj/item/ID_container, mob/user)
@@ -401,7 +401,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	ticket_changed()
 	// Animation and sound
 	flick("retail_scan", src)
-	playsound(src, 'sound/machines/twobeep.ogg', 25)
+	play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
 
 /obj/item/retail_scanner/proc/ticket_changed()
 	ticket_revision++
@@ -479,7 +479,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 
 /obj/item/retail_scanner/proc/transaction_complete()
 	/// Visible confirmation
-	playsound(src, 'sound/machines/chime.ogg', 25)
+	play_sfx(src, SFX_MACHINES_CHIME, 0.5, vary = FALSE)
 	visible_message("[icon2html(src, viewers(src))]" + span_notice("Transaction complete."))
 	flick("retail_approve", src)
 	reset_memory()
@@ -498,7 +498,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	if(emagged)
 		return
 	to_chat(user, span_danger("You stealthily swipe the cryptographic sequencer through \the [src]."))
-	playsound(src, "sparks", 50, 1)
+	play_sfx(src, SFX_SPARKS)
 	req_access = list()
 	emagged = 1
 

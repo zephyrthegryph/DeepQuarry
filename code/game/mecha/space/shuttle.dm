@@ -18,7 +18,7 @@
 	opacity = FALSE
 
 	stomp_sound = 'sound/machines/generator/generator_end.ogg'
-	swivel_sound = 'sound/machines/hiss.ogg'
+	swivel_sound = SFX_MACHINES_HISS
 
 	// Paint colors! Null if not set.
 	var/base_paint

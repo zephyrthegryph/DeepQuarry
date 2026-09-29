@@ -47,11 +47,11 @@
 	var/sound/prey_digest
 	var/sound/pred_digest
 	if(!fancy_vore)
-		prey_digest = sound(get_sfx("classic_digestion_sounds"))
-		pred_digest = sound(get_sfx("classic_digestion_sounds"))
+		prey_digest = sound(get_sfx(SFX_CLASSIC_DIGESTION_SOUNDS))
+		pred_digest = sound(get_sfx(SFX_CLASSIC_DIGESTION_SOUNDS))
 	else
-		prey_digest = sound(get_sfx("fancy_digest_prey"))
-		pred_digest = sound(get_sfx("fancy_digest_pred"))
+		prey_digest = sound(get_sfx(SFX_FANCY_DIGEST_PREY))
+		pred_digest = sound(get_sfx(SFX_FANCY_DIGEST_PRED))
 
 ///////////////////// Early Non-Mode Handling /////////////////////
 

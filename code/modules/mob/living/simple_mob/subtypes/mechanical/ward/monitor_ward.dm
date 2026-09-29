@@ -98,7 +98,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 		// Decloak them .
 		if(L.is_cloaked())
 			Beam(L, icon_state = "solar_beam", time = 5)
-			playsound(L, 'sound/effects/EMPulse.ogg', 75, 1)
+			play_sfx(L, SFX_EFFECTS_EMPULSE, 0.75)
 			L.break_cloak()
 
 			to_chat(L, span_danger("\The [src] disrupts your cloak!"))

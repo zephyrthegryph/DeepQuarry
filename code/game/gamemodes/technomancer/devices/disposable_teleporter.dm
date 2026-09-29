@@ -44,10 +44,7 @@ DECLARE_INTERACTIONS(/obj/item/disposable_teleporter, INTERACT_USE(null, PROC_RE
 	if(!A)
 		return
 
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(5, 0, user.loc)
-	sparks.attach(user)
-	sparks.start()
+	fx_sparks(user, 5, FALSE)
 
 	if(user && user?.buckled_to())
 		var/atom/movable/_tmp_buck_4 = user?.buckled_to()

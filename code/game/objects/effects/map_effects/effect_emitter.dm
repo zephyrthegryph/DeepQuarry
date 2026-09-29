@@ -8,9 +8,10 @@
 	var/effect_forced_dir = null		// If set, effects emitted will always move in this direction.
 
 /obj/effect/map_effect/interval/effect_emitter/Initialize(mapload)
-	effect_system = new effect_system_type()
-	effect_system.attach(src)
-	configure_effects()
+	if(effect_system_type)
+		effect_system = new effect_system_type()
+		effect_system.attach(src)
+		configure_effects()
 	return ..()
 
 DECLARE_REF(/obj/effect/map_effect/interval/effect_emitter, "effect_system", OWNED, null)
@@ -19,8 +20,9 @@ DECLARE_REF(/obj/effect/map_effect/interval/effect_emitter, "effect_system", OWN
 	effect_system.set_up(effect_amount, effect_cardinals_only, src.loc, effect_forced_dir)
 
 /obj/effect/map_effect/interval/effect_emitter/trigger()
-	configure_effects() // We do this every interval in case it changes.
-	effect_system.start()
+	if(effect_system)
+		configure_effects() // We do this every interval in case it changes.
+		effect_system.start()
 	..()
 
 // Creates smoke clouds every so often.
@@ -57,10 +59,13 @@ DECLARE_REF(/obj/effect/map_effect/interval/effect_emitter, "effect_system", OWN
 /obj/effect/map_effect/interval/effect_emitter/sparks
 	name = "spark emitter"
 	icon_state = "spark_emitter"
-	effect_system_type = /datum/effect/effect/system/spark_spread
 
 	interval_lower_bound = 3 SECONDS
 	interval_upper_bound = 7 SECONDS
+
+/obj/effect/map_effect/interval/effect_emitter/sparks/trigger()
+	fx_sparks(src, effect_amount, effect_cardinals_only)
+	..()
 
 /obj/effect/map_effect/interval/effect_emitter/sparks/frequent
 	effect_amount = 4			// Otherwise it caps out fast.

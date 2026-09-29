@@ -87,12 +87,12 @@ DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 	for(var/atom/movable/A as mob|obj in src.connected.loc)
 		if (!( A.anchored ))
 			A.forceMove(src)
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	qdel(src.connected)
 	src.connected = null
 
 /obj/structure/morgue/proc/open()
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	src.connected = new /obj/structure/m_tray( src.loc )
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
@@ -260,10 +260,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		for(var/atom/movable/A as mob|obj in src.connected.loc)
 			if (!( A.anchored ))
 				A.forceMove(src)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		QDEL_NULL(connected)
 	else if (src.locked == 0)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		src.connected = new /obj/structure/m_tray/c_tray( src.loc )
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
@@ -320,7 +320,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/proc/cremation_done()
 	cremating = 0
 	locked = 0
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_DING)
 
 /obj/structure/morgue/crematorium/proc/cremate(atom/A, mob/user as mob)
 	if(cremating)

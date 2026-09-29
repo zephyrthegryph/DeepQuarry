@@ -20,8 +20,8 @@
 	desc = "Some patched together rags. Better than being barefoot."
 	icon_state = "rag"
 	force = 0
-	drop_sound = 'sound/items/drop/clothing.ogg'
-	pickup_sound = 'sound/items/pickup/clothing.ogg'
+	drop_sound = SFX_ITEMS_DROP_CLOTHING
+	pickup_sound = SFX_ITEMS_PICKUP_CLOTHING
 
 /*
  * Tribal Clothing

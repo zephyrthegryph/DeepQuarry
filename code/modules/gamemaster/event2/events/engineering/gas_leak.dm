@@ -49,7 +49,7 @@
 	air_contents.set_temperature(T20C + rand(-50, 50))
 	air_contents.adjust_gas(chosen_gas, (10 * MOLES_CELLSTANDARD) - LINDA_GAS_AMT(air_contents, chosen_gas))
 	chosen_turf().assume_air(air_contents)
-	playsound(chosen_turf(), 'sound/effects/smoke.ogg', 75, 1)
+	play_sfx(chosen_turf(), SFX_EFFECTS_SMOKE, 1.5, extrarange = 0)
 
 /// LC-refs: the chosen_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event2/event/gas_leak/proc/chosen_turf() as /turf

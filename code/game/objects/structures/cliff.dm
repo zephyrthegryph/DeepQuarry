@@ -209,7 +209,7 @@ two tiles on initialization, and which way a cliff is facing may change during m
 				to_chat(L, span_warning("\The [vehicle] absorbs some of the impact, damaging it."))
 				harm /= 2
 
-			playsound(L, 'sound/effects/break_stone.ogg', 70, 1)
+			play_sfx(L, SFX_EFFECTS_BREAK_STONE, volume = 70)
 			L.status_at_least(EFFECT_WEAKENED, 5 * harm)
 
 		var/fall_time = 3
@@ -222,10 +222,10 @@ two tiles on initialization, and which way a cliff is facing may change during m
 
 	if(safe_fall)
 		visible_message(span_notice("\The [L] lands on \the [T]."))
-		playsound(L, "rustle", 25, 1)
+		play_sfx(L, SFX_RUSTLE, extrarange = 0)
 		return
 
-	playsound(L, "punch", 70, 1)
+	play_sfx(L, SFX_PUNCH, 1.4)
 	shake_camera(L, 1, 1)
 
 	visible_message(span_danger("\The [L] hits \the [T]!"))

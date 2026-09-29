@@ -1,7 +1,7 @@
 /datum/unarmed_attack/bite/sharp //eye teeth
 	attack_name = "sharp bite"
 	attack_verb = list("bit", "chomped on")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	shredding = 0
 	sharp = TRUE
 	edge = TRUE
@@ -21,7 +21,7 @@
 	attack_noun = list("claws")
 	eye_attack_text = "claws"
 	eye_attack_text_victim = "sharp claws"
-	attack_sound = 'sound/weapons/slice.ogg'
+	attack_sound = SFX_WEAPONS_SLICE
 	miss_sound = 'sound/weapons/slashmiss.ogg'
 	sharp = TRUE
 	edge = TRUE
@@ -65,7 +65,7 @@
 	attack_name = "xenomorph claws"
 	attack_verb = list("slashed", "gouged", "punctured", "hacked", "ripped")
 	attack_noun = list("claws", "tailblade", "talons")
-	attack_sound = 'sound/weapons/alien_claw_flesh.ogg'
+	attack_sound = SFX_WEAPONS_ALIEN_CLAW_FLESH
 	damage = 10
 	shredding = 0
 
@@ -142,7 +142,7 @@
 	attack_name = "numbing bite"
 	attack_verb = list("bit")
 	attack_noun = list("fangs")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	shredding = 0
 	sharp = TRUE
 	edge = TRUE

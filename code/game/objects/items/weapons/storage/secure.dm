@@ -24,7 +24,7 @@
 	var/open = 0
 	w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_SMALL * 7
-	use_sound = 'sound/items/storage/briefcase.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
 	special_handling = TRUE
 
 TYPE_TABLE(/obj/item/storage/secure, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
@@ -44,11 +44,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 /obj/item/storage/secure/proc/interaction_secure_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(locked)
 		if (istype(W, /obj/item/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
-			var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-			spark_system.set_up(5, 0, src.loc)
-			spark_system.start()
-			playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
-			playsound(src, "sparks", 50, 1)
+			fx_sparks(src.loc, 5, FALSE)
+			play_sfx(src, SFX_WEAPONS_BLADE1)
+			play_sfx(src, SFX_SPARKS)
 			return INTERACTION_HANDLED_PASS
 
 		//At this point you have exhausted all the special things to do when locked

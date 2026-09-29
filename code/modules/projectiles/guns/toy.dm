@@ -51,7 +51,7 @@
 	MATERIAL_BULK(MAT_PLASTIC, 2000)
 	handle_casings = null
 	recoil = 0
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 /*
  * Moist Nugget
@@ -65,7 +65,7 @@
 	item_state = "moistnugget"
 	max_shells = 5
 	MATERIAL_BULK(MAT_PLASTIC, 2500)
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 /*
  * Pistol
@@ -83,7 +83,7 @@
 	load_method = MAGAZINE
 	MATERIAL_BULK(MAT_PLASTIC, 1000)
 	recoil = 0
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 /obj/item/gun/projectile/pistol/toy/update_icon()
 	if(ammo_magazine)
@@ -116,7 +116,7 @@
 	item_state = "leveraction"
 	max_shells = 5
 	pump_animation = "leveraction-cycling"
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 /*
  * Revolver
@@ -135,7 +135,7 @@
 	MATERIAL_BULK(MAT_PLASTIC, 1000)
 	handle_casings = null
 	recoil = null //it's a toy
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 /*
  * Big Iron
@@ -198,7 +198,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	MATERIAL_BULK(MAT_PLASTIC, 1500)
 	recoil = null //it's a toy
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 
 	firemodes = list(
 		list(mode_name="semiauto",       burst=1, fire_delay=0.1,    move_delay=null, burst_accuracy=null, dispersion=null),
@@ -230,7 +230,7 @@
 	projectile_type = /obj/item/projectile/bullet/foam_dart
 	recoil = null
 	handle_casings = null
-	fire_sound = 'sound/items/syringeproj.ogg'
+	fire_sound = SFX_ITEMS_SYRINGEPROJ
 	special_weapon_handling = TRUE
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -262,7 +262,7 @@
 		loaded.Insert(1, D)
 		success = 1
 	if(success)
-		playsound(src, 'sound/machines/hiss.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_HISS)
 		to_chat(user, "The [src] vacuums in the darts!")
 	else
 		to_chat(user, "No Donk-Soft brand foam darts detected. Aborting.")

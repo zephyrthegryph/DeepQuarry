@@ -342,7 +342,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 				distillery_pinged = FALSE
 			else if(!distillery_pinged)
 				distillery_pinged = TRUE
-				playsound(src, 'sound/machines/ping.ogg', 50, 0)
+				play_sfx(src, SFX_MACHINES_PING)
 				src.visible_message(span_infoplain(span_bold("\The [src]") + " pings as it reaches the target temperature."))
 
 		else if(connected_port() && avg_pressure > 1000)

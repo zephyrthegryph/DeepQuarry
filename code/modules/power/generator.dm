@@ -169,9 +169,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 
 	//Exceeding maximum power leads to some power loss
 	if(effective_gen > max_power && prob(5))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(3, 1, src)
-		s.start()
+		fx_sparks(src, 3)
 		stored_energy *= 0.5
 
 	//Power

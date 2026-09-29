@@ -39,7 +39,7 @@
 	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	loot_list = list(/obj/item/material/knife/tacknife = 100)
 
@@ -84,7 +84,7 @@
 	melee_damage_upper = 25
 
 	attacktext = list("slashed", "chopped", "gouged", "ripped", "cut")
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	loot_list = list(/obj/item/material/knife/machete = 100)
 
@@ -117,7 +117,7 @@
 	melee_damage_upper = 30
 	attack_armor_pen = 50
 
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 
 
 	loot_list = list(/obj/item/melee/energy/sword/pirate = 100)
@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	melee_damage_upper = 25
 
 	attacktext = list("slashed", "chopped", "gouged", "ripped", "cut")
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	loot_list = list(/obj/item/material/knife/machete = 100)
 
@@ -234,7 +234,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	reload_max = 1
 
 	projectiletype = /obj/item/projectile/bullet/shotgun
-	projectilesound = 'sound/weapons/weaponsounds_shotgunshot.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 
 	loot_list = list(/obj/item/gun/projectile/pirate = 100, /obj/item/material/knife/tacknife = 100)
 
@@ -266,7 +266,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	reload_max = 2
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
-	projectilesound = 'sound/weapons/weaponsounds_shotgunshot.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 
 	loot_list = list(/obj/item/gun/projectile/shotgun/doublebarrel/sawn = 100, /obj/item/material/knife/tacknife = 100)
 
@@ -297,7 +297,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	reload_max = 1
 
 	projectiletype = /obj/item/projectile/beam/heavylaser
-	projectilesound = 'sound/weapons/weaponsounds_laserstrong.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 
 	loot_list = list(/obj/item/gun/energy/zip = 100, /obj/item/material/knife/tacknife = 100)
 
@@ -327,7 +327,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	melee_damage_upper = 30
 	attack_armor_pen = 50
 
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 
 	armor_spec = "melee=30;bullet=20;laser=20;energy=5;bomb=5;bio=100;rad=100"
 
@@ -353,9 +353,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	melee_damage_upper = 15
 
 	projectiletype = /obj/item/projectile/beam/midlaser
-	projectilesound = 'sound/weapons/weaponsounds_lasermid.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERMID
 
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 	base_attack_cooldown = 10
 
 	loot_list = list(/obj/item/gun/energy/retro = 100, /obj/item/clothing/suit/pirate = 100)
@@ -388,10 +388,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	harm_intent_damage = 5
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectiletype = /obj/item/projectile/bullet/pellet/shotgun
-	projectilesound = 'sound/weapons/weaponsounds_shotgunshot.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_SHOTGUNSHOT
 	base_attack_cooldown = 5
 
 	loot_list = list(/*/obj/item/gun/projectile/shotgun/doublebarrel/quad = 100, Downstream*/ /obj/item/clothing/suit/pirate = 100)
@@ -414,10 +414,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	harm_intent_damage = 5
 	melee_damage_lower = 15
 	melee_damage_upper = 15
-	attack_sound = 'sound/weapons/bladeslice.ogg'
+	attack_sound = SFX_WEAPONS_BLADESLICE
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a762
-	projectilesound = 'sound/weapons/weaponsounds_heavyrifleshot.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_HEAVYRIFLESHOT
 	base_attack_cooldown = 10
 
 	loot_list = list(/obj/item/gun/projectile/shotgun/pump/rifle = 100, /obj/item/clothing/suit/pirate = 100)
@@ -436,7 +436,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	needs_reload = TRUE
 	reload_max = 4
 	projectiletype = /obj/item/projectile/beam/heavylaser
-	projectilesound = 'sound/weapons/weaponsounds_laserstrong.ogg'
+	projectilesound = SFX_WEAPONS_WEAPONSOUNDS_LASERSTRONG
 	base_attack_cooldown = 5
 
 	corpse = /obj/effect/landmark/mobcorpse/pirate/ranged

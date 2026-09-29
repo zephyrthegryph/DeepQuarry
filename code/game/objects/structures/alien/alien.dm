@@ -13,12 +13,12 @@
 
 /obj/structure/alien/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	visible_message(span_danger("\The [src] was hit by \the [source]."))
-	playsound(loc, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(loc, SFX_EFFECTS_ATTACKBLOB, 2)
 	..()
 
 /obj/structure/alien/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
-	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	receive_generic_attack(user, damage)
 	return
@@ -39,7 +39,7 @@
 
 /obj/structure/alien/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(W))
-	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	visible_message(span_danger("[user] attacks the [src]!"))
 	receive_weapon_hit(W, user)
 	return TRUE

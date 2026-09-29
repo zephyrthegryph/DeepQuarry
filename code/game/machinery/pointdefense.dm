@@ -132,7 +132,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/rotation_speed = 4.5 SECONDS  //How quickly we turn to face threats
 	var/engaging = null // The meteor we're shooting at
 	var/id_tag = null
-	var/fire_sounds = list('sound/weapons/frigate_turret/frigate_turret_fire1.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire2.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire3.ogg', 'sound/weapons/frigate_turret/frigate_turret_fire4.ogg')
+	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
@@ -310,7 +310,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	if(active)
 		return FALSE
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 0)
+	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
 	set_active(TRUE)
 	MACHINE_WAKE(src)
 	update_icon()
@@ -319,7 +319,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 /obj/machinery/pointdefense/proc/Deactivate()
 	if(!active)
 		return FALSE
-	playsound(src, 'sound/machines/apc_nopower.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_APC_NOPOWER)
 	set_active(FALSE)
 	MACHINE_SLEEP(src)
 	update_icon()

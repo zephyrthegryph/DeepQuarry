@@ -52,8 +52,8 @@
 	var/bulb_shards = 0
 	// when we get this many shards, we get a free bulb.
 	var/shards_required = 4
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	///For attack_self chain
 	var/special_handling = FALSE
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 			new_bulbs += AddShards(1)
 			consume(L, user)
 		if(new_bulbs != 0)
-			playsound(src, 'sound/machines/ding.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_DING)
 		to_chat(user, "You insert \the [L.name] into \the [src.name]. You have [uses] light\s remaining.")
 		return TRUE
 
@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	add_uses(-1)
 	return 1
 
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 				var/new_bulbs = AddShards(1)
 				if(new_bulbs != 0)
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
-					playsound(src, 'sound/machines/ding.ogg', 50, 1)
+					play_sfx(src, SFX_MACHINES_DING)
 				target.status = LIGHT_EMPTY
 				target.installed_light = null //Remove the light!
 				target.latent_bulb = FALSE
@@ -212,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 
 /obj/item/lightreplacer/emag_act(remaining_charges, mob/user)
 	emagged = !emagged
-	playsound(src, "sparks", 100, 1)
+	play_sfx(src, SFX_SPARKS, 2)
 	update_icon()
 	return 1
 

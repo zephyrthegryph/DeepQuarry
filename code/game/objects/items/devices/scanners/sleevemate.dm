@@ -21,8 +21,8 @@ GLOBAL_DATUM(sleevemate_mob, /mob/living/carbon/human/dummy/mannequin)
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
 	var/db_key
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 //These don't perform any checks and need to be wrapped by checks
 /obj/item/sleevemate/proc/clear_mind()
@@ -398,10 +398,8 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 	if(!(choice in list("Body Snatcher","Mind Binder")))
 		return
 	to_chat(user,span_danger("You hack [src]!"))
-	var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-	spark_system.set_up(5, 0, src.loc)
-	spark_system.start()
-	playsound(src, "sparks", 50, 1)
+	fx_sparks(src.loc, 5, FALSE)
+	play_sfx(src, SFX_SPARKS)
 	if(isliving(src.loc))
 		var/mob/living/L = src.loc
 		L.unEquip(src)

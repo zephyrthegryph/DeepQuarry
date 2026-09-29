@@ -6,8 +6,8 @@
 	desc = "This storage pouch can be used to provide some additional storage for quick access."
 	icon = 'icons/inventory/pockets/item.dmi'
 	slot_flags = SLOT_POCKET
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 	icon_state = "medium_generic"
 	max_storage_space = INVENTORY_POUCH_SPACE

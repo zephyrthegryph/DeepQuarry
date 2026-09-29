@@ -12,7 +12,7 @@
 	w_class = ITEMSIZE_SMALL
 	show_messages = 0
 	allow_quick_empty = TRUE
-	use_sound = 'sound/items/drop/flesh.ogg'
+	use_sound = SFX_ITEMS_DROP_FLESH
 	var/egg_name = null
 
 TYPE_TABLE(/obj/item/storage/vore_egg, hold_spec, list(HOLD_MAX_SIZE(0)))

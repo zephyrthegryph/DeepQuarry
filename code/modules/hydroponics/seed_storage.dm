@@ -476,11 +476,8 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 			req_access = list()
 			req_one_access = list()
 			to_chat(user, span_warning("\The [src]'s access mechanism shorts out."))
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-			sparks.set_up(3, 0, get_turf(src))
-			sparks.start()
+			fx_sparks(src, 3, FALSE)
 			visible_message(span_warning("\The [src]'s panel sparks!"))
-			qdel(sparks)
 		return 1
 
 /obj/machinery/seed_storage/proc/add(obj/item/seeds/O as obj, contraband = 0)

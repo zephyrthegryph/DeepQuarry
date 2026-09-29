@@ -66,7 +66,7 @@
 			var/hit_zone = get_zone_with_miss_chance(H.zone_sel.selecting, src, H.get_accuracy_penalty(), attacker = H)
 			if(!hit_zone)
 				H.do_attack_animation(src)
-				playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 				visible_message(span_filter_combat("[span_red(span_bold("[H] reaches for [src], but misses!"))]"))
 				return FALSE
 
@@ -209,7 +209,7 @@
 	if((get_equipped_item(SLOT_ID_SHOES) || !(species.flags & NO_SLIP)) && randn <= 25)
 		var/armor_check = armor_against(INJURY_BLUNT, affecting)
 		apply_effect(3, WEAKEN, armor_check)
-		playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 		if(armor_check < 60)
 			drop_both_hands()
 			if(M.lying)
@@ -224,7 +224,7 @@
 	if(randn <= 60)
 		//See about breaking grips or pulls
 		if(break_all_grabs(M))
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			return
 
 		//Actually disarm them
@@ -232,10 +232,10 @@
 			if(I)
 				drop_from_inventory(I)
 				visible_message(span_danger("[M] has disarmed [src]!"))
-				playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 				return
 
-	playsound(src, 'sound/weapons/punchmiss.ogg', 25, 1, -1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 	if(M.lying)
 		visible_message(span_filter_combat("[span_red(span_bold("[M] attempted to sweep [src] to the floor!"))]"))
 	else
@@ -268,7 +268,7 @@
 	LAssailant = M
 
 	M.do_attack_animation(src)
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	visible_message(span_warning("[M] has grabbed [src] [(M.zone_sel.selecting == BP_L_HAND || M.zone_sel.selecting == BP_R_HAND)? "by [(gender==FEMALE)? "her" : ((gender==MALE)? "his": "their")] hands": "passively"]!"))
 //Harm Intent
 /mob/living/carbon/human/proc/attack_hand_harm_intent(mob/living/carbon/human/H, mob/living/M as mob, has_hands)
@@ -378,7 +378,10 @@
 	else
 		H.visible_message(span_danger("[attack_message]"))
 
-	playsound(src, ((miss_type) ? (miss_type == 1 ? attack.miss_sound : 'sound/weapons/thudswoosh.ogg') : attack.attack_sound), 25, 1, -1)
+	if(miss_type && miss_type != 1)
+		play_sfx(src, SFX_WEAPONS_THUDSWOOSH, volume = 25)
+	else
+		playsound(src, miss_type ? attack.miss_sound : attack.attack_sound, 25, 1, -1)
 
 	add_attack_logs(H,src,"Melee attacked with fists (miss/block)")
 

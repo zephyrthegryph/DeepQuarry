@@ -31,8 +31,8 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	attack_verb = list("burnt", "singed")
-	drop_sound = 'sound/items/drop/food.ogg'
-	pickup_sound = 'sound/items/pickup/food.ogg'
+	drop_sound = SFX_ITEMS_DROP_FOOD
+	pickup_sound = SFX_ITEMS_PICKUP_FOOD
 
 /obj/item/flame/match/periodic_step()
 	if(isliving(loc))
@@ -57,7 +57,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	return ..()
 
 /obj/item/flame/match/proc/light(mob/user)
-	playsound(src, 'sound/items/cigs_lighters/matchstick_lit.ogg', 25, 0, -1)
+	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_LIT)
 	lit = 1
 	injury_kind = INJURY_BURN
 	icon_state = "match_lit"
@@ -96,7 +96,7 @@ CIGARETTE PACKETS ARE IN FANCY.DM
 	var/ignitermes = "USER lights NAME with FLAME"
 	var/brand
 	blood_sprite_state = null //Can't bloody these
-	drop_sound = 'sound/items/cigs_lighters/cig_snuff.ogg'
+	drop_sound = SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 
@@ -165,7 +165,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 /obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 	if(!src.lit)
 		src.lit = 1
-		playsound(src, 'sound/items/cigs_lighters/cig_light.ogg', 75, 1, -1)
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
 		injury_kind = INJURY_BURN
 		if(reagents.get_reagent_amount(REAGENT_ID_PHORON)) // the phoron explodes when exposed to fire
 			var/datum/effect/effect/system/reagents_explosion/e = new()
@@ -190,7 +190,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 /obj/item/clothing/mask/smokable/proc/die(nomessage = 0)
 	var/turf/T = get_turf(src)
 	set_light(0)
-	playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 	om_task_periodic_stop(src)
 	if (type_butt)
 		var/obj/item/butt = new type_butt(T)
@@ -215,7 +215,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 			var/mob/living/M = loc
 			if (!nomessage)
 				to_chat(M, span_notice("Your [name] goes out, and you empty the ash."))
-				playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+				play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			lit = 0
 			icon_state = initial(icon_state)
 			item_state = initial(item_state)
@@ -237,7 +237,7 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/smokable, "chem_volume", null)
 			to_chat(H, span_warning("\The [blocked] is in the way!"))
 			return ITEM_INTERACT_FAILURE
 		to_chat(H, span_notice("You take a drag on your [name]."))
-		playsound(src, 'sound/items/cigs_lighters/inhale.ogg', 50, 0, -1)
+		play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_INHALE)
 		smoke(5)
 		return ITEM_INTERACT_SUCCESS
 	if(istype(M) && M.on_fire)
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
-			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			die(1)
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))
@@ -456,7 +456,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
 			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
-			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
+			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_CIG_SNUFF)
 			die(1)
 		else
 			user.visible_message(span_notice("[user] puts out \the [src]."))
@@ -618,8 +618,8 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	attack_verb = list("burnt", "singed")
 	var/base_state
 	/// Sounds
-	var/activation_sound = 'sound/items/lighter_on.ogg'
-	var/deactivation_sound = 'sound/items/lighter_off.ogg'
+	var/activation_sound = SFX_ITEMS_LIGHTER_ON
+	var/deactivation_sound = SFX_ITEMS_LIGHTER_OFF
 	/// Color of the flame and how big the flame is (pulled from Welder code)
 	var/flame_color = "#FF9933"
 	var/flame_intensity = 2
@@ -714,8 +714,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 	description_fluff = "Still going after all these years."
 	icon_state = "zippo"
 	item_state = "zippo"
-	activation_sound = 'sound/items/zippo_on.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
 
 /obj/item/flame/lighter/zippo/Initialize(mapload)
@@ -819,8 +819,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A zippo style lighter with a tiny supermatter sliver held by a hardlight shield. When lighting a cigar, make sure to hover the tip near the sliver, not against it!"
 	icon_state = "SMzippo"
 	item_state = "SMzippo"
-	activation_sound = 'sound/items/zippo_on_alt.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_variant = TRUE
 	///Special supermatter var used for attack_self chain logic.
 	var/special_supermatter = FALSE
@@ -831,8 +831,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A red zippo style lighter with a tiny supermatter sliver held by a phoron field."
 	icon_state = "SyndiSMzippo"
 	item_state = "SyndiSMzippo"
-	activation_sound = 'sound/items/zippo_on_alt.ogg'
-	deactivation_sound = 'sound/items/zippo_off.ogg'
+	activation_sound = SFX_ITEMS_ZIPPO_ON_ALT
+	deactivation_sound = SFX_ITEMS_ZIPPO_OFF
 	special_supermatter = TRUE
 
 /obj/item/flame/lighter/supermatter/expsmzippo
@@ -841,8 +841,8 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 	description_fluff = "A unique take originating from the zippo design, a shard of supermatter placed within lead-lined walls. Cautious, VERY DANGEROUS do NOT touch!"
 	icon_state = "ExpSMzippo"
 	item_state = "ExpSMzippo"
-	activation_sound = 'sound/items/button-open.ogg'
-	deactivation_sound = 'sound/items/button-close.ogg'
+	activation_sound = SFX_ITEMS_BUTTON_OPEN
+	deactivation_sound = SFX_ITEMS_BUTTON_CLOSE
 	special_supermatter = TRUE
 
 // safe smzippo

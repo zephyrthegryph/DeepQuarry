@@ -364,9 +364,7 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	if(!prob(prb))
 		return 0
 	if (electrocute_mob(user, src, src, siemens_coeff))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		if(user.has_status(EFFECT_STUNNED))
 			return 1
 	return 0
@@ -458,8 +456,8 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	attack_verb = list("whipped", "lashed", "disciplined", "flogged")
 	stacktype = /obj/item/stack/cable_coil
 	singular_name = "length"
-	drop_sound = 'sound/items/drop/accessory.ogg'
-	pickup_sound = 'sound/items/pickup/accessory.ogg'
+	drop_sound = SFX_ITEMS_DROP_ACCESSORY
+	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 	tool_qualities = list(TOOL_CABLE_COIL)
 	singular_name = "cable"
 

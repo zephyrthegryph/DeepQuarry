@@ -173,7 +173,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 	receive_shock(0.2 * shock_damage, source) //shock a random part!
 	receive_shock(0.2 * shock_damage, source) //shock a random part!
 
-	playsound(src, "sparks", 50, 1, -1)
+	play_sfx(src, SFX_SPARKS, extrarange = -1)
 	if (shock_damage > 15)
 		src.visible_message(
 			span_warning("[src] was electrocuted[source ? " by the [source]" : ""]!"), \
@@ -198,9 +198,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 			if(31 to INFINITY)
 				status_at_least(EFFECT_WEAKENED, 10) //This should work for now, more is really silly and makes you lay there forever
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, loc)
-	s.start()
+	fx_sparks(loc, 5)
 
 	return shock_damage
 
@@ -263,7 +261,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 			if((H.has_mutation(SKELETON)) && (!H.get_equipped_item(SLOT_ID_UNIFORM)) && (!H.get_equipped_item(SLOT_ID_SUIT)))
 				H.play_xylophone()
 		else if (on_fire)
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			if (M.on_fire)
 				M.visible_message(span_warning("[M] tries to pat out [src]'s flames, but to no avail!"),
 				span_warning("You try to pat out [src]'s flames, but to no avail! Put yourself out first!"))
@@ -315,7 +313,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 			status_adjust(EFFECT_STUNNED, -3)
 			status_adjust(EFFECT_WEAKENED, -3)
 
-			playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 /mob/living/carbon/proc/help_shake_act_carbon_done(mob/living/carbon/M)
 	src.adjust_fire_stacks(-0.5)
@@ -417,7 +415,7 @@ DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 		return FALSE
 	stop_pulling()
 	to_chat(src, span_warning("You slipped on [slipped_on]!"))
-	playsound(src, 'sound/misc/slip.ogg', 50, 1, -3)
+	play_sfx(src, SFX_MISC_SLIP, 2, extrarange = -3)
 	if(has_trait(src, SLIP_REFLEX_TRAIT) && !lying)
 		if(COOLDOWN_FINISHED(src, next_emote))
 			src.emote("sflip")

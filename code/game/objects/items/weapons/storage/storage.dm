@@ -48,7 +48,7 @@
 	var/allow_quick_empty	//Set this variable to allow the object to have the 'empty' verb, which dumps all the contents on the floor.
 	var/allow_quick_gather	//Set this variable to allow the object to have the 'toggle mode' verb, which quickly collects all items from a tile.
 	var/collection_mode = 1;  //0 = pick one at a time, 1 = pick all on tile
-	var/use_sound = "rustle"	//sound played when used. null for no sound.
+	var/use_sound = SFX_RUSTLE	//sound played when used. null for no sound.
 	var/list/starts_with //Things to spawn on the box on spawn
 	var/empty //Mapper override to spawn an empty version of a container that usually has stuff
 	/// If you can use this storage while in a pocket

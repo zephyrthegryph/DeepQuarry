@@ -5,7 +5,7 @@
 	armor_spec = "melee=20;bullet=30;laser=30;energy=10;bomb=10;bio=100;rad=100" //Leave the 150 health value to reflect carbon players, slightly reduced melee armor because fuck it.
 
 /mob/living/simple_mob/humanoid/merc/melee/sword
-	attack_sound = 'sound/weapons/blade1.ogg' //Use the proper sword noise
+	attack_sound = SFX_WEAPONS_BLADE1 //Use the proper sword noise
 
 //Keeping the bullet lethality without bullet hosing
 /mob/living/simple_mob/humanoid/merc/ranged/smg

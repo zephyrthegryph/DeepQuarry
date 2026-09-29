@@ -310,7 +310,7 @@ OM_TIMER_SLOT(/obj/item/holder, cleanup_timer)
 
 /obj/item/holder/fish
 	attack_verb = list("fished", "disrespected", "smacked", "smackereled")
-	hitsound = 'sound/effects/slime_squish.ogg'
+	hitsound = SFX_EFFECTS_SLIME_SQUISH
 	slot_flags = SLOT_HOLSTER
 
 /obj/item/holder/fish/afterattack(atom/target, mob/living/user, proximity)

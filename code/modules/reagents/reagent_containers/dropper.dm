@@ -12,8 +12,8 @@
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	volume = 5
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/reagent_containers/dropper/examine(mob/user)
 	. = ..()

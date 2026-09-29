@@ -15,7 +15,7 @@
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "spikethrower3"
 	item_state = "spikethrower"
-	fire_sound = 'sound/weapons/bladeslice.ogg'
+	fire_sound = SFX_WEAPONS_BLADESLICE
 	fire_sound_text = "a strange noise"
 
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
@@ -72,7 +72,7 @@
 /obj/item/projectile/beam/stun/darkmatter
 	name = "dark matter wave"
 	icon_state = "darkt"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	nodamage = 1
 	taser_effect = 1
 	agony = 55
@@ -86,7 +86,7 @@
 /obj/item/projectile/beam/darkmatter
 	name = "dark matter bolt"
 	icon_state = "darkb"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 35
 	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
@@ -101,7 +101,7 @@
 /obj/item/projectile/energy/darkmatter
 	name = "dark matter pellet"
 	icon_state = "dark_pellet"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 20
 	armor_penetration = 35
 	injury_kind = INJURY_BLUNT
@@ -133,7 +133,7 @@
 /obj/item/projectile/sonic
 	name = "sonic pulse"
 	icon_state = "sound"
-	fire_sound = 'sound/effects/basscannon.ogg'
+	fire_sound = SFX_EFFECTS_BASSCANNON
 	damage = 5
 	armor_penetration = 30
 	embed_chance = 0

@@ -35,7 +35,7 @@
 	opacity = 0
 	var/list/item_list
 
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	// Power
@@ -394,7 +394,7 @@
 
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
-		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 		currently_vending_handle = null
 		use_power(vend_power_usage)	//actuators and stuff
 		flick("[icon_state]-vend",src)
@@ -402,7 +402,7 @@
 
 	for(var/i in 1 to bi.equipment_amt)
 		new bi.equipment_path(loc)
-		playsound(src, 'sound/machines/vending/vending_drop.ogg', 100, 1)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 
 	currently_vending_handle = null
 	use_power(vend_power_usage)	//actuators and stuff

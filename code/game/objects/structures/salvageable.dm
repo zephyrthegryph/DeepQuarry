@@ -201,7 +201,7 @@
 /obj/structure/salvageable/bliss/crowbar_act(mob/user, obj/item/I)
 	. = ..()
 	if(.)
-		playsound(src, 'sound/machines/shutdown.ogg', 60, 1)
+		play_sfx(src, SFX_MACHINES_SHUTDOWN)
 
 ///////////////////
 //// COMPUTERS ////

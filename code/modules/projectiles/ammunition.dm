@@ -8,8 +8,8 @@
 	throwforce = 1
 	w_class = ITEMSIZE_TINY
 	preserve_item = 1
-	drop_sound = 'sound/items/drop/ring.ogg'
-	pickup_sound = 'sound/items/pickup/ring.ogg'
+	drop_sound = SFX_ITEMS_DROP_RING
+	pickup_sound = SFX_ITEMS_PICKUP_RING
 
 	var/leaves_residue = 1
 	var/caliber = ""					//Which kind of guns it can be loaded into
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		if(H)
 			user.put_in_hands(H)
 			user.visible_message("[user] gathers some rounds into a handful.", span_notice("You gather the rounds into a handful."))
-			playsound(H, 'sound/weapons/empty.ogg', 25, 1)
+			play_sfx(H, SFX_WEAPONS_EMPTY, 0.5)
 	else
 		return FALSE
 	return INTERACTION_HANDLED_PASS
@@ -236,7 +236,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		AC.forceMove(src)
 		stored_ammo.Insert(1, AC) //add it to the head of our magazine's list
 		L.update_icon()
-	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 
 /// Old attack_self: this dumps all the bullets right on the floor.
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			to_chat(user, span_notice("[src] is already empty!"))
 			return
 		to_chat(user, span_notice("You empty [src]."))
-		playsound(src, "casing_sound", 50, 1)
+		play_sfx(src, SFX_CASING_SOUND)
 		om_after(src, 7, TYPE_PROC_REF(/atom, om_playsound), "casing_sound", 50, 1)
 		om_after(src, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), "casing_sound", 50, 1)
 		for(var/obj/item/ammo_casing/C in stored_ammo)
@@ -360,8 +360,8 @@ GLOBAL_LIST_EMPTY(magazine_icondata_states)
 	throw_range = 12
 	preserve_item = 1
 	caliber = ".357"
-	drop_sound = 'sound/items/drop/matchbox.ogg'
-	pickup_sound = 'sound/items/pickup/matchbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_MATCHBOX
+	pickup_sound = SFX_ITEMS_PICKUP_MATCHBOX
 
 EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_REF(interaction_alt)))
 

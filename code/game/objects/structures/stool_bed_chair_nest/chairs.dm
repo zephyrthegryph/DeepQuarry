@@ -23,7 +23,7 @@
 			return TRUE
 		user.drop_item()
 		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		E.set_dir(dir)
 		E.part = SK
 		SK.forceMove(E)
@@ -195,7 +195,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 /obj/structure/bed/chair/office/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
 
-	playsound(src, 'sound/effects/roll.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ROLL)
 
 /obj/structure/bed/chair/office/handle_buckled_mob_movement(atom/new_loc, direction, movetime)
 	for(var/mob/living/occupant as anything in src?.buckled_mob_list())
@@ -226,7 +226,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 			occupant.apply_effect(6, WEAKEN, blocked)
 			occupant.apply_effect(6, STUTTER, blocked)
 			occupant.injure(INJURY_BLUNT, 10, def_zone, src, flags = INJURE_ARMORED)
-			playsound(src, 'sound/weapons/punch1.ogg', 50, 1, -1)
+			play_sfx(src, SFX_WEAPONS_PUNCH1)
 			if(isliving(A))
 				var/mob/living/victim = A
 				def_zone = ran_zone()
@@ -808,7 +808,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	base_icon = "shuttle_chair"
 	icon_state = "shuttle_chair_preview"
 	buckle_movable = 0
-	var/buckling_sound = 'sound/effects/metal_close.ogg'
+	var/buckling_sound = SFX_EFFECTS_METAL_CLOSE
 	var/padding = MAT_CLOTH_BLUE
 
 /obj/structure/bed/chair/bay/shuttle/Initialize(mapload, new_material, new_padding_material)

@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		to_chat(user, span_notice("\The [src] takes a bite of \the [O]."))
 		if(user != src)
 			to_chat(src, span_notice("\The [user] feeds \the [O] to you."))
-	playsound(src, 'sound/items/eatfood.ogg', 75, 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD)
 
 /// Old attack_hand; subtypes override this proc.
 /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 			remove_hat(M)
 			return
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()
@@ -349,7 +349,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		return FALSE
 	if(interaction.stance != I_HELP)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()
@@ -449,7 +449,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 		return FALSE
 	if(interaction.stance != I_HELP)
 		return FALSE
-	playsound(src, 'sound/weapons/thudswoosh.ogg', 50, 1, -1)
+	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 	if(resting)
 		M.visible_message(span_notice("\The [M.name] shakes \the [src] awake from their nap."),span_notice("You shake \the [src] awake!"))
 		lay_down()

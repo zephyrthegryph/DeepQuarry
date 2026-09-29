@@ -131,7 +131,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 		span_danger("[user] has deployed \the [src]."),
 		span_danger("You have deployed \the [src]!")
 		)
-	playsound(src, 'sound/machines/click.ogg', 70, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
 	deployed = TRUE
 	user.drop_from_inventory(src)
@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 			span_danger("[user] starts to deactivate \the [src]."),
 			span_notice("You begin deactivate \the [src]!")
 			)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else

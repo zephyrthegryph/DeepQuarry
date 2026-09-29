@@ -69,7 +69,7 @@
 
 /// `leave_lattice`: sliced outside combat mode, so over open space the lattice stays.
 /obj/structure/catwalk/atom_deconstruct(disassembled = TRUE, mob/user, leave_lattice = FALSE)
-	playsound(src, 'sound/items/Welder.ogg', 100, 1)
+	play_sfx(src, SFX_ITEMS_WELDER)
 	to_chat(user, span_notice("Slicing \the [src] joints ..."))
 	//Lattice would delete itself, but let's save ourselves a new obj
 	if(isopenspace(loc) && leave_lattice)
@@ -157,11 +157,11 @@
 	if(plated_tile)
 		hatch_open = !hatch_open
 		if(hatch_open)
-			playsound(src, 'sound/items/Crowbar.ogg', 100, 2)
+			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
 			to_chat(user, span_notice("You pry open \the [src]'s maintenance hatch."))
 			update_falling()
 		else
-			playsound(src, 'sound/items/Deconstruct.ogg', 100, 2)
+			play_sfx(src, SFX_ITEMS_DECONSTRUCT, 2)
 			to_chat(user, span_notice("You shut \the [src]'s maintenance hatch."))
 		update_icon()
 	return TRUE
@@ -172,13 +172,13 @@
 /obj/structure/catwalk/atom_destruction(damage_flag)
 	if(dq_destroy_effects_once(src))
 		visible_message(span_warning("\The [src] breaks down!"))
-		playsound(src, 'sound/effects/grillehit.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT)
 	return ..()
 
 /obj/structure/catwalk/Crossed(atom/movable/AM)
 	. = ..()
 	if(isliving(AM) && !AM.is_incorporeal())
-		playsound(src, pick('sound/effects/footstep/catwalk1.ogg', 'sound/effects/footstep/catwalk2.ogg', 'sound/effects/footstep/catwalk3.ogg', 'sound/effects/footstep/catwalk4.ogg', 'sound/effects/footstep/catwalk5.ogg'), 25, 1)
+		play_sfx(src, SFX_EFFECTS_FOOTSTEP_CATWALK)
 
 /obj/effect/catwalk_plated
 	name = "plated catwalk spawner"

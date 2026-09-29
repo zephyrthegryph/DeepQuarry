@@ -25,7 +25,7 @@
 	var/can_cook_mobs				// Whether or not this machine accepts grabbed mobs.
 	var/mob_injury_kind = INJURY_BLUNT	// What a mob stuffed inside suffers: burns for cooking appliances, bruising for cereal/candy
 	var/food_color					// Colour of resulting food item.
-	var/cooked_sound = 'sound/machines/ding.ogg'				// Sound played when cooking completes.
+	var/cooked_sound = SFX_MACHINES_DING				// Sound played when cooking completes.
 	var/can_burn_food = FALSE		// Can the object burn food that is left inside?
 	var/burn_chance = 10			// How likely is the food to burn?
 	var/list/cooking_objs	// List of things being cooked
@@ -161,7 +161,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
 		cooking = FALSE // Stop cooking here, too, just in case.
 
-	playsound(src, 'sound/machines/click.ogg', 40, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
 
 /obj/machinery/appliance/silicon_pull(mob/living/silicon/user)
@@ -623,7 +623,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	// Produce nasty smoke.
 	visible_message(span_danger("\The [src] vomits a gout of rancid smoke!"))
 	var/datum/effect/effect/system/smoke_spread/bad/burntfood/smoke = new /datum/effect/effect/system/smoke_spread/bad/burntfood
-	playsound(src, 'sound/effects/smoke.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_SMOKE, 0.4, extrarange = 0)
 	smoke.attach(src)
 	smoke.set_up(10, 0, get_turf(src), 300)
 	smoke.start()

@@ -8,13 +8,7 @@
 	/// Time before another regeneration may start.
 	COOLDOWN_DECLARE(revive_cooldown)
 	var/revive_finished = FALSE
-	VAR_PRIVATE/regen_sounds = list(
-		'sound/effects/mob_effects/xenochimera/regen_1.ogg',
-		'sound/effects/mob_effects/xenochimera/regen_2.ogg',
-		'sound/effects/mob_effects/xenochimera/regen_4.ogg',
-		'sound/effects/mob_effects/xenochimera/regen_3.ogg',
-		'sound/effects/mob_effects/xenochimera/regen_5.ogg'
-	)
+	VAR_PRIVATE/regen_sounds = SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_REGEN_MIX
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
 /datum/xenochimera/New(mob/living/carbon/human/new_owner)
@@ -62,7 +56,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		owner.canmove = 0
 		owner.set_does_not_breathe(TRUE)
 		if(prob(2)) // 2% chance of playing squelchy noise while reviving, which is run roughly every 2 seconds/tick while regenerating.
-			playsound(owner, pick(regen_sounds), 30)
+			playsound(owner, regen_sounds, 30)
 			owner.visible_message(span_danger("<p>" + span_huge("[owner.name]'s motionless form shudders grotesquely, rippling unnaturally.") + "</p>"))
 		if(!owner.lying)
 			owner.lay_down()
@@ -486,7 +480,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 		var/flesh_color = owner.species.flesh_color
 		new /obj/effect/gibspawner/human/xenochimera(T, null, flesh_color, blood_color)
 		owner.visible_message(span_danger(span_huge("The lifeless husk of [owner] bursts open, revealing a new, intact copy in the pool of viscera."))) //Bloody hell...
-		playsound(T, 'sound/effects/mob_effects/xenochimera/hatch.ogg', 50)
+		play_sfx(T, SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_HATCH)
 	else //lower cost for doing a quick cosmetic revive
 		owner.set_nutrition(old_nutrition * 0.9)
 

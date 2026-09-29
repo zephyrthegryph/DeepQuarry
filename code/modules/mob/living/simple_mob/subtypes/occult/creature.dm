@@ -20,7 +20,7 @@
 	attack_injury_kind = INJURY_CUT
 
 	attacktext = list("chomped")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/abberation
 

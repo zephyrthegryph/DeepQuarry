@@ -46,7 +46,7 @@ DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 	pixel_y = 300
 	alpha = 0
 	forceMove(T)
-	playsound(T, 'sound/effects/droppod.ogg', 50, 1)
+	play_sfx(T, SFX_EFFECTS_DROPPOD)
 	animate(src, pixel_y = 0, time = 3 SECONDS, easing = SINE_EASING|EASE_OUT)
 	animate(src, alpha = 255, time = 1 SECOND, flags = ANIMATION_PARALLEL)
 	filters += filter(type="drop_shadow", x=-64, y=100, size=10)
@@ -66,7 +66,7 @@ DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 	filters = null
 
 	// CRONCH
-	playsound(src, 'sound/effects/meteorimpact.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
 	if(!polite)
 		for(var/atom/A in view(1, T))
 			if(A == src)
@@ -99,7 +99,7 @@ DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 	if(finished)
 		return
 	icon_state = "[initial(icon_state)]_open"
-	playsound(src, 'sound/effects/magnetclamp.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_MAGNETCLAMP)
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus

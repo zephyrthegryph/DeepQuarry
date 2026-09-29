@@ -11,7 +11,7 @@
 	anchored = TRUE
 	flags = WALL_ITEM
 	var/id_tag = null
-	var/chime_sound = 'sound/machines/doorbell.ogg'
+	var/chime_sound = SFX_MACHINES_DOORBELL
 
 /obj/machinery/doorbell_chime/Initialize(mapload)
 	. = ..()
@@ -174,7 +174,7 @@
 
 /obj/machinery/button/doorbell/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("You start to unwrench \the [src]."))
-	playsound(src, 'sound/items/Ratchet.ogg', 50, TRUE)
+	play_sfx(src, SFX_ITEMS_RATCHET)
 	om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(wrench_act_timed_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 

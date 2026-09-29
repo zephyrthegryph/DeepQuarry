@@ -5,8 +5,8 @@
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
 	var/obj/item/holstered = null // ALLOW(state_ref): owned: the holstered item, kept in the holster's contents
-	var/holster_in = 'sound/items/holsterin.ogg'
-	var/holster_out = 'sound/items/holsterout.ogg'
+	var/holster_in = SFX_ITEMS_HOLSTERIN
+	var/holster_out = SFX_ITEMS_HOLSTEROUT
 	w_class = ITEMSIZE_NORMAL
 
 /// Holsters take holsterable things; sheaths and special holsters list what they take.

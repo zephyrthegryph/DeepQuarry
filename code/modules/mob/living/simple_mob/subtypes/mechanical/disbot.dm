@@ -48,7 +48,7 @@
 	melee_damage_upper = 9
 	light_color = "#8a0707"
 	attacktext = "drugged"
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	say_list_type = /datum/say_list/disbot
 

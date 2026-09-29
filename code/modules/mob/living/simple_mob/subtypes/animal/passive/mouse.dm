@@ -100,12 +100,12 @@
 		if(!stat)
 			var/mob/M = AM
 			M.visible_message(span_blue("[icon2html(src,viewers(src))] Squeek!"))
-			playsound(src, 'sound/effects/mouse_squeak.ogg', 35, 1)
+			play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK)
 	..()
 
 /mob/living/simple_mob/animal/passive/mouse/on_death(gibbed)
 	layer = MOB_LAYER
-	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 35, 1)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD)
 	if(client)
 		client.time_died_as_mouse = world.time
 	..()

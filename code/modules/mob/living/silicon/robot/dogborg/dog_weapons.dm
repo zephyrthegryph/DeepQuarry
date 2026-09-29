@@ -4,7 +4,7 @@
 	desc = "A small and nonlethal gun produced by NT.."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "ertgunstun"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	projectile_type = /obj/item/projectile/beam/disable
 	charge_cost = 240 //Normal cost of a taser. It used to be 1000, but after some testing it was found that it would sap a borg's battery to quick
 	recharge_time = 1 //Takes ten ticks to recharge a laser, so don't waste them all!
@@ -13,7 +13,7 @@
 	name = "flare gun"
 	desc = "A flare-gun"
 	projectile_type = /obj/item/projectile/energy/flash/flare
-	fire_sound = 'sound/weapons/tablehit1.ogg'
+	fire_sound = SFX_WEAPONS_TABLEHIT1
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "taser"
 	charge_cost = 480
@@ -30,7 +30,7 @@
 	force = 5
 	icon_state = "medbeam"
 	accuracy = 100
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	self_recharge = 1
 	use_external_power = 1
 

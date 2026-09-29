@@ -49,7 +49,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	return
 
 /obj/item/reagent_containers/spray/proc/Spray_at(atom/A as mob|obj, mob/user, proximity)
-	playsound(src, 'sound/effects/spray2.ogg', 50, 1, -6)
+	play_sfx(src, SFX_EFFECTS_SPRAY2, 0.5)
 	if (A.density && proximity)
 		A.visible_message("[user] sprays [A] with [src].")
 		reagents.splash(A, amount_per_transfer_from_this)
@@ -146,8 +146,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/pepper, INTERACT_SELF("To
 	amount_per_transfer_from_this = 1
 	max_transfer_amount = null
 	volume = 10
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAGENT_ID_WATER = 10))
 
@@ -166,7 +166,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 	volume = 600
 
 /obj/item/reagent_containers/spray/chemsprayer/Spray_at(atom/A as mob|obj, mob/user)
-	playsound(src, 'sound/effects/spray3.ogg', rand(50,1), -6)
+	play_sfx(src, SFX_EFFECTS_SPRAY3, volume = rand(50,1))
 	var/direction = get_dir(src, A)
 	var/turf/T = get_turf(A)
 	var/turf/T1 = get_step(T,turn(direction, 90))
@@ -266,7 +266,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 	if(!heavy_spray)
 		for(var/a = 1 to 3)
 			if(reagents.total_volume < 1) break
-			playsound(src, 'sound/effects/spray2.ogg', 50, 1, -6)
+			play_sfx(src, SFX_EFFECTS_SPRAY2, 0.5)
 			var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
 			var/turf/my_target = the_targets[a]
 			D.create_reagents(amount_per_transfer_from_this)
@@ -278,7 +278,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 		return
 
 	else
-		playsound(src, 'sound/effects/extinguish.ogg', 75, 1, -3)
+		play_sfx(src, SFX_EFFECTS_EXTINGUISH)
 
 		for(var/a = 1 to spray_particles)
 			if(!src || !reagents.total_volume) return

@@ -537,7 +537,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		ghost.notify_revive("Someone is trying to revive you. Re-enter your body if you want to be revived!", 'sound/effects/pai-restore.ogg', source = card)
 	canmove = TRUE
 	card.setEmotion(15)
-	playsound(card, 'sound/effects/pai-restore.ogg', 50, FALSE)
+	play_sfx(card, SFX_EFFECTS_PAI_RESTORE)
 	card.visible_message(span_filter_notice("\The [card] chimes."), runemessage = "chime")
 
 /mob/living/silicon/pai/lay_down()
@@ -568,7 +568,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		return
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
-	playsound(src, 'sound/machines/click.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	QDEL_NULL(cable)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////

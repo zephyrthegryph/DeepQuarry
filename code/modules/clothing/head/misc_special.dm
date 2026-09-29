@@ -29,8 +29,8 @@ MATERIAL_MIX(/obj/item/clothing/head/welding, list(MAT_STEEL = 3000, MAT_GLASS =
 	var/base_state
 	flash_protection = FLASH_PROTECTION_MAJOR
 	tint = TINT_HEAVY
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	special_handling = TRUE
 	resistance_flags = FIRE_PROOF
 
@@ -205,8 +205,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	light_range = 2
 	light_overlay = "jackolantern"
 	w_class = ITEMSIZE_NORMAL
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /*
  * Kitty ears
@@ -339,7 +339,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear fl
 	desc = "This cone is trying to warn you of something!"
 	icon_state = "cone"
 	item_state = "cone"
-	drop_sound = 'sound/items/drop/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2

@@ -483,8 +483,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		if(has_trait(H, TRAIT_UNLUCKY) && prob(50) && H.get_bodypart_name(BP_HEAD))
 			H.visible_message(span_warning("[H] falls to the ground from the sudden appearance of gravity, smashing [H.p_their()] head against the ground!"),span_warning("You smash your head into the ground as gravity appears!"))
 			H.injure(INJURY_BLUNT, 14, BP_HEAD, src)
-			playsound(H, 'sound/effects/tableheadsmash.ogg', 90, TRUE)
-		playsound(mob, "bodyfall", 50, 1)
+			play_sfx(H, SFX_EFFECTS_TABLEHEADSMASH)
+		play_sfx(mob, SFX_BODYFALL)
 
 /area/proc/prison_break(break_lights = TRUE, open_doors = TRUE, open_blast_doors = FALSE) //set blast doors to FALSE
 	var/obj/machinery/power/apc/theAPC = get_apc()

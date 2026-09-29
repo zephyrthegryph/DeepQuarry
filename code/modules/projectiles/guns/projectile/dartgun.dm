@@ -45,7 +45,7 @@
 	var/base_state = "dartgun"
 
 	caliber = "dart"
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic click"
 	recoil = 0
 	silenced = 1
@@ -216,7 +216,7 @@
 	item_state = null
 
 	caliber = "dart"
-	fire_sound = 'sound/weapons/empty.ogg'
+	fire_sound = SFX_WEAPONS_EMPTY
 	fire_sound_text = "a metallic click"
 	recoil = 0
 	silenced = 1

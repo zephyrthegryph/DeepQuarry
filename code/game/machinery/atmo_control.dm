@@ -135,7 +135,7 @@
 	gsensor.id_tag = id_tag
 	gsensor.output = output
 	replace_with(src, gsensor)
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	return ITEM_INTERACT_SUCCESS
 
 #define ONOFF_TOGGLE(flag) "\[[(output & flag) ? "YES" : "NO"]]"

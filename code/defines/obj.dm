@@ -174,8 +174,8 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	throwforce = 0.0
 	throw_speed = 1
 	throw_range = 20
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 
 /obj/item/beach_ball/afterattack(atom/target as mob|obj|turf|area, mob/user as mob)
 	user.drop_item()
@@ -193,9 +193,9 @@ GLOBAL_LIST_INIT(acting_rank_prefixes, list("acting", "temporary", "interim", "p
 	throwforce = 0.1
 	throw_speed = 5
 	throw_range = 15
-	drop_sound = 'sound/items/drop/rubber.ogg'
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
-	hitsound = 'sound/weapons/dodgeball.ogg'
+	drop_sound = SFX_ITEMS_DROP_RUBBER
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
+	hitsound = SFX_WEAPONS_DODGEBALL
 
 /obj/effect/spawner
 	name = "object spawner"

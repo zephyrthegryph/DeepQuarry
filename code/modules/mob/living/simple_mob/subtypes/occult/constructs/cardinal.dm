@@ -21,7 +21,7 @@
 	friendly = list("pats")
 	organ_names = /datum/decl/mob_organ_names/juggernaut
 	mob_size = MOB_HUGE
-	attack_sound = 'sound/weapons/heavysmash.ogg'
+	attack_sound = SFX_WEAPONS_HEAVYSMASH
 	status_flags = 0
 	resistance = 10
 	construct_spells = list(/datum/spell/targeted/fortify,

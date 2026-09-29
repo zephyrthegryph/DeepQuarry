@@ -176,7 +176,7 @@ TYPE_TABLE(/obj/item/material/fishing_net/butterfly_net, fishing_net_accepted_mo
 		var/mob/L = A
 		user.visible_message(span_notice("[user] snatches [L] with \the [src]."), span_notice("You snatch [L] with \the [src]."))
 		L.forceMove(src)
-		playsound(src, 'sound/effects/plop.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_PLOP, volume = 50, vary = TRUE)
 		update_icon()
 		update_weight()
 		return

@@ -8,8 +8,8 @@
 	slot_flags = SLOT_EARS
 	var/colour = "red"
 	var/open = 0
-	drop_sound = 'sound/items/drop/glass.ogg'
-	pickup_sound = 'sound/items/pickup/glass.ogg'
+	drop_sound = SFX_ITEMS_DROP_GLASS
+	pickup_sound = SFX_ITEMS_PICKUP_GLASS
 
 /obj/item/lipstick/purple
 	name = "purple lipstick"

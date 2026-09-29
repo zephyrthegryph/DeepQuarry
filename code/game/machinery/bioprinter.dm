@@ -319,7 +319,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 /obj/machinery/organ_printer/flesh/print_organ(choice)
 	var/obj/item/organ/O = ..()
 
-	playsound(src, 'sound/machines/ding.ogg', 50, 1)
+	play_sfx(src, SFX_MACHINES_DING)
 	visible_message(span_info("\The [src] dings, then spits out \a [O]."))
 	return O
 

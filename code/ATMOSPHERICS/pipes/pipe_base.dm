@@ -93,7 +93,7 @@
 		damaged_leak = TRUE
 		set_leaking(TRUE)
 		visible_message(span_warning("Gas begins hissing from a fatigue crack in \the [src]."))
-		playsound(src, 'sound/effects/spray2.ogg', 35, TRUE)
+		play_sfx(src, SFX_EFFECTS_SPRAY2, 0.35, extrarange = 0)
 
 /obj/machinery/atmospherics/pipe/material_environment_owns_leak()
 	return TRUE
@@ -103,7 +103,7 @@
 
 /obj/machinery/atmospherics/pipe/proc/burst_from_pressure()
 	visible_message(span_danger("\The [src] bursts!"))
-	playsound(src, 'sound/effects/bang.ogg', 25, TRUE)
+	play_sfx(src, SFX_EFFECTS_BANG, 0.5)
 	qdel(src)
 
 /obj/machinery/atmospherics/pipe/return_air()

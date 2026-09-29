@@ -16,8 +16,8 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	throw_range = 15
 	throw_speed = 3
 	desc = "You can use this on airlocks or APCs to try to hack them without cutting wires."
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 	var/buffer_handle // simple machine buffer for device linkage
 

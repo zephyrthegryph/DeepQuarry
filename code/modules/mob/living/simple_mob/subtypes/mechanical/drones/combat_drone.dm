@@ -47,7 +47,7 @@
 
 	base_attack_cooldown = 5
 	projectiletype = /obj/item/projectile/beam/drone
-	projectilesound = 'sound/weapons/laser3.ogg'
+	projectilesound = SFX_WEAPONS_LASER3
 
 	response_help = "pokes"
 	response_disarm = "gently pushes aside"

@@ -18,7 +18,7 @@
 	friendly = list("pinches")
 	organ_names = /datum/decl/mob_organ_names/wraith
 	movement_cooldown = -1
-	attack_sound = 'sound/weapons/rapidslice.ogg'
+	attack_sound = SFX_WEAPONS_RAPIDSLICE
 	construct_spells = list(/datum/spell/targeted/ethereal_jaunt/shift,
 							/datum/spell/targeted/ambush_mode
 							)
@@ -88,7 +88,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 			continue
 
 		visible_message(span_danger("\The [src] appears in a flurry of slashes \the [L]!"))
-		playsound(L, 'sound/weapons/heavysmash.ogg', 75, 1)
+		play_sfx(L, SFX_WEAPONS_HEAVYSMASH)
 		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE
 
@@ -100,7 +100,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 
 	// Otherwise we need to keep going.
 	to_chat(src, span_warning("You overshoot your target!"))
-	playsound(src, 'sound/weapons/punchmiss.ogg', 75, 1)
+	play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
 	var/dir_to_go = get_dir(starting_turf, destination)
 	for(var/i = 1 to rand(2, 4))
 		destination = get_step(destination, dir_to_go)
@@ -131,7 +131,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 		T = get_step(src, get_dir(src, destination))
 		if(T.check_density(ignore_mobs = TRUE))
 			to_chat(src, span_critical("You hit something really solid!"))
-			playsound(src, "punch", 75, 1)
+			play_sfx(src, SFX_PUNCH, 1.5)
 			status_at_least(EFFECT_WEAKENED, 5)
 			apply_body_effect(/datum/body_effect/tunneler_vulnerable, 10 SECONDS)
 			return FALSE // Hit a wall.

@@ -426,11 +426,11 @@
 	var/sound_to_play = null
 	switch(sound_type)
 		if(HYPERSPACE_WARMUP)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_begin.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_BEGIN
 		if(HYPERSPACE_PROGRESS)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_progress.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_PROGRESS
 		if(HYPERSPACE_END)
-			sound_to_play = 'sound/effects/shuttles/hyperspace_end.ogg'
+			sound_to_play = SFX_EFFECTS_SHUTTLES_HYPERSPACE_END
 	for(var/area/A in shuttle_area)
 		for(var/obj/machinery/door/E in contents_of(A))	//dumb, I know, but playing it on the engines doesn't do it justice
 			playsound(E, sound_to_play, 50, FALSE)

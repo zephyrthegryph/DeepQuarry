@@ -585,9 +585,9 @@
 					span_danger("You fall off and hit \the [landing]!"), \
 					"You hear something slam into \the [landing].")
 			if(has_trait(src, TRAIT_HEAVY_LANDING))
-				playsound(src, 'sound/effects/meteorimpact.ogg', 75, TRUE, 3)
+				play_sfx(src, SFX_EFFECTS_METEORIMPACT, volume = 75, extrarange = 3)
 			else
-				playsound(src, "punch", 25, TRUE, -1)
+				play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 
 		// Because wounds heal rather quickly, 10 (the default for this proc) should be enough to discourage jumping off but not be enough to ruin you, at least for the first time.
 		// Hits 10 times, because apparently targeting individual limbs lets certain species survive the fall from atmosphere
@@ -695,7 +695,7 @@
 				visible_message(span_warning("\The [src] falls from above and slams into \the [landing]!"), \
 					span_danger("You fall off and hit \the [landing]!"), \
 					"You hear something slam into \the [landing].")
-			playsound(src, "punch", 25, 1, -1)
+			play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 
 	// And now to hurt the mech.
 	if(!planetary)
@@ -750,7 +750,7 @@
 		if(!safe_fall)
 			drop_mob.status_at_least(EFFECT_WEAKENED, 8)
 			status_at_least(EFFECT_WEAKENED, 8)
-			playsound(src, "punch", 25, 1, -1)
+			play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 			var/tdamage
 			for(var/i = 1 to 5)	//Twice as less damage because cushioned fall, but both get damaged.
 				tdamage = rand(0, 5)

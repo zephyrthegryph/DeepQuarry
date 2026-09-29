@@ -6,6 +6,6 @@
 	icon_state = "mecha_phase"
 	energy_drain = 25
 	projectile = /obj/item/projectile/energy/phase/heavy
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 
 	equip_type = EQUIP_UTILITY

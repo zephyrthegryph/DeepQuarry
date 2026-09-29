@@ -265,8 +265,8 @@
 	req_access = list(ACCESS_FORENSICS_LOCKERS)
 	closet_appearance = /datum/decl/closet_appearance/cabinet/secure
 
-	open_sound = 'sound/effects/wooden_closet_open.ogg'
-	close_sound = 'sound/effects/wooden_closet_close.ogg'
+	open_sound = SFX_EFFECTS_WOODEN_CLOSET_OPEN
+	close_sound = SFX_EFFECTS_WOODEN_CLOSET_CLOSE
 
 	starts_with = list(
 		/obj/item/clothing/accessory/badge/holo/detective,

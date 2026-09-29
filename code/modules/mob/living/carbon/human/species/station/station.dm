@@ -1226,7 +1226,7 @@
 		to_chat(H, span_notice("You catch the air in your wings and greatly slow your fall."))
 		landing.visible_message(span_infoplain(span_bold("\The [H]") + " glides down from above, landing safely."))
 		H.status_at_least(EFFECT_STUNNED, 1)
-		playsound(H, "rustle", 25, 1)
+		play_sfx(H, SFX_RUSTLE, extrarange = 0)
 	return TRUE
 */
 
@@ -1987,7 +1987,7 @@
 	if(check_alien_ability(150,1,O_RESIN))
 		visible_message(span_alium(span_bold("[src] has planted some alien weeds!")))
 		new /obj/effect/alien/weeds/node/weak(get_turf(src), null, "#321D37")	// Aliens.dm for weed node origin.
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 	return
 
 /mob/living/carbon/human/proc/check_plasma_amount(mob/living/carbon/human/M as mob)
@@ -2050,7 +2050,7 @@
 
 	if(O)
 		visible_message(span_warning(span_bold("[src] vomits up a thick purple substance and begins to shape it!")), span_alium("You shape a [choice]."))
-		playsound(src, 'sound/effects/blobattack.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_BLOBATTACK, volume = 40)
 
 	return
 

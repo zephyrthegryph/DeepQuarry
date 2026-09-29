@@ -18,7 +18,7 @@
 	instability_per_shot = 10
 	cooldown = 20
 	pre_shot_delay = 10
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 
 /obj/item/projectile/beam/lightning
 	name = "lightning"

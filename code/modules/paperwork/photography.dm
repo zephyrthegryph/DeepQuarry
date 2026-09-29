@@ -29,8 +29,8 @@ GLOBAL_VAR_INIT(photo_count, 0)
 	icon_state = "photo"
 	item_state = "paper"
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	var/id
 	var/icon/img	//Big photo image
 	var/scribble	//Scribble on the back.
@@ -127,7 +127,7 @@ TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/it
 		var/mob/living/carbon/human/M = usr
 		if(!( istype(over_object, /atom/movable/screen) ))
 			return ..()
-		playsound(src, "rustle", 50, 1, -5)
+		play_sfx(src, SFX_RUSTLE, 2)
 		if((!( M.restrained() ) && !( M.stat ) && M.get_equipped_item(SLOT_ID_BACK) == src))
 			switch(over_object.name)
 				if("r_hand")
@@ -281,7 +281,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	if(!on || !pictures_left || ismob(target.loc)) return
 	captureimage(target, user, flag)
 
-	playsound(src, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
+	play_sfx(src, SFX_ITEMS_POLAROID)
 
 	pictures_left--
 	desc = "A polaroid camera. It has [pictures_left] photos left."

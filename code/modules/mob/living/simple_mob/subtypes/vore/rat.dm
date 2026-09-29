@@ -120,7 +120,7 @@
 		for(var/obj/item/reagent_containers/food/snacks/S in oview(self,3)) //Accept thrown offerings and scavenge surroundings.
 			if(get_dist(self,S) <=1)
 				visible_emote("hungrily devours \the [S].")
-				playsound(self,'sound/items/eatfood.ogg', rand(10,50), 1)
+				play_sfx(self, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 				qdel(S)
 				hunger = 0
 				food = null
@@ -186,7 +186,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 /// Feed the rat your food to satisfy it.
 /mob/living/simple_mob/vore/aggressive/rat/tame/proc/tame_rat_interaction_feed(mob/user, obj/item/O, datum/interaction/interaction)
 	qdel(O)
-	playsound(src,'sound/items/eatfood.ogg', rand(10,50), 1)
+	play_sfx(src, SFX_ITEMS_EATFOOD, volume = rand(10,50))
 	hunger = 0
 	food = null
 	return TRUE
@@ -218,7 +218,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 	return T
 */
 /mob/living/simple_mob/vore/aggressive/rat/on_death(gibbed)
-	playsound(src, 'sound/effects/mouse_squeak_loud.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_MOUSE_SQUEAK_LOUD, volume = 50)
 	..()
 
 /mob/living/simple_mob/vore/aggressive/rat/Login()

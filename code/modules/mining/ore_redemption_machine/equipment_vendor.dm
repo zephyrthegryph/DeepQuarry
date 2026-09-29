@@ -418,9 +418,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 	prize_list += new /datum/data/mining_equipment(name, path, cost)
 
 /obj/machinery/mineral/equipment_vendor/ex_act(severity, target)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, src)
-	s.start()
+	fx_sparks(src, 5)
 	return ..()
 
 DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "prize_list", OWNED_LIST, null)

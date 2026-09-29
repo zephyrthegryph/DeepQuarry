@@ -8,7 +8,7 @@
 		set_flooring(use_flooring)
 		if(S.color)
 			color = S.color
-		playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)
 
 EXTEND_INTERACTIONS(/turf/simulated/floor, \
 	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(floor_item)), \
@@ -66,7 +66,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
 					T.ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
-					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+					play_sfx(src, SFX_WEAPONS_GENHIT)
 					user.visible_message(span_notice("[user] patches a hole in the ceiling."), span_notice("You patch a hole in the ceiling."))
 					expended_tile = TRUE
 			else
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 				if(A && !A.is_outdoors())
 					if(expended_tile || R.use(1))
 						make_indoors()
-						playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+						play_sfx(src, SFX_WEAPONS_GENHIT)
 						user.visible_message(span_notice("[user] roofs a tile, shielding it from the elements."), span_notice("You roof this tile, shielding it from the elements."))
 					break
 		return INTERACTION_HANDLED_PASS
@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 					if (S.get_amount() < 1)
 						return INTERACTION_HANDLED_PASS
 					S.use(1)
-					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+					play_sfx(src, SFX_WEAPONS_GENHIT)
 					ChangeTurf(/turf/simulated/floor, preserve_outdoors = TRUE)
 					if(S.color)
 						color = S.color
@@ -175,7 +175,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor, \
 	else if(istype(W, /obj/item/shovel) && (flooring.flags & TURF_REMOVE_SHOVEL))
 		to_chat(user, span_notice("You shovel off the [flooring.descriptor]."))
 		make_plating(TRUE)
-		playsound(src, 'sound/items/Deconstruct.ogg', 80, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.6)
 		return TRUE
 	return FALSE
 

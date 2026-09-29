@@ -12,8 +12,8 @@
 	siemens_coefficient = 0.7
 	w_class = ITEMSIZE_NORMAL
 	ear_protection = 1
-	drop_sound = 'sound/items/drop/helm.ogg'
-	pickup_sound = 'sound/items/pickup/helm.ogg'
+	drop_sound = SFX_ITEMS_DROP_HELM
+	pickup_sound = SFX_ITEMS_PICKUP_HELM
 	resistance_flags = FIRE_PROOF
 
 /obj/item/clothing/head/helmet/solgov
@@ -296,7 +296,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, \
 			icon_state = base_state
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
-			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
+			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
 			body_parts_covered &= ~(EYES|FACE)
@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere, \
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
-			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
+			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc
@@ -353,7 +353,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, \
 			icon_state = base_state
 			tint = initial(tint)
 			to_chat(user, "You flip the [src] down to protect yourself from the horrors of this universe. Narry a creature shall harm you with its beams of light.")
-			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
+			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		else
 			src.up = !src.up
 			body_parts_covered &= ~(EYES|FACE)
@@ -361,7 +361,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/combat/bedevere_costume, \
 			icon_state = "[base_state]_up"
 			tint = TINT_NONE
 			to_chat(user, "You push the [src] up out of your face, ineffectively clearing your vision.")
-			playsound(src, 'sound/machines/hatch_open.ogg', 75, 1)
+			play_sfx(src, SFX_MACHINES_HATCH_OPEN)
 		update_clothing_icon()	//so our mob-overlays
 		if (ismob(src.loc)) //should allow masks to update when it is opened/closed
 			var/mob/M = src.loc

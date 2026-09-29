@@ -8,8 +8,8 @@ MATERIAL_MIX(/obj/item/slime_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	throwforce = 0
 	throw_speed = 3
 	throw_range = 7
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/slime_scanner/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/simple_mob/slime/xenobio))

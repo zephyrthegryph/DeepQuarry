@@ -336,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 
 	scanreq = rand(3,9)
 	to_chat(user, span_notice("Changed mode to '[choice]'."))
-	playsound(loc, 'sound/effects/pop.ogg', 50, 0)
+	play_sfx(loc, SFX_EFFECTS_POP)
 
 /obj/item/taskmanager/afterattack(atom/target, mob/user, proximity)
 	if(!proximity)
@@ -351,7 +351,7 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 		scancount = scancount + 1
 		LAZYADD(scanned, target.type)
 		var/scansleft = scanreq - scancount
-		playsound(src, 'sound/machines/beep.ogg', 50)
+		play_sfx(src, SFX_MACHINES_BEEP)
 		to_chat(user, span_notice("You must scan [scansleft] more department objects!"))
 		if (scancount == scanreq)
 			formatx1 = rand(1,5)
@@ -391,22 +391,22 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 	switch(mode)
 		if (TM_MODE_BRIDGE)
 			new /obj/item/surplus_voucher/com(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 		if (TM_MODE_ENGINEERING)
 			new /obj/item/surplus_voucher/eng(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 		if (TM_MODE_MEDICAL)
 			new /obj/item/surplus_voucher/med(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 		if (TM_MODE_SCIENCE)
 			new /obj/item/surplus_voucher/sci(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 		if (TM_MODE_SERVICE)
 			new /obj/item/surplus_voucher/ser(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 		if (TM_MODE_SECURITY)
 			new /obj/item/surplus_voucher/sec(T)
-			playsound(src.loc, 'sound/machines/copier.ogg', 50, 0)
+			play_sfx(src.loc, SFX_MACHINES_COPIER)
 
 #undef TM_MODE_BRIDGE
 #undef TM_MODE_ENGINEERING

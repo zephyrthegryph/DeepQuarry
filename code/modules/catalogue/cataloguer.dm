@@ -98,7 +98,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		box_segments = draw_box(target, scan_range, user.client)
 		color_box(box_segments, "#00FFFF", scan_delay)
 
-	playsound(src, 'sound/machines/beep.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BEEP)
 
 	// The delay, and test for if the scan succeeds or not. The effects travel in a list so the
 	// beam (which ends itself) is never a captured argument.
@@ -123,12 +123,12 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	var/list/effects = task.effects
 	if(target.can_catalogue(user))
 		to_chat(user, span_notice("You successfully scan \the [target] with \the [src]."))
-		playsound(src, 'sound/machines/ping.ogg', 50)
+		play_sfx(src, SFX_MACHINES_PING)
 		catalogue_object(target, user)
 	else
 		// In case someone else scans it first, or it died, etc.
 		to_chat(user, span_warning("\The [target] is no longer valid to scan with \the [src]."))
-		playsound(src, 'sound/machines/buzz-two.ogg', 50)
+		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 
 	partial_scanned = null
 	partial_scan_time = 0
@@ -140,7 +140,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	var/list/effects = task.effects
 	var/scan_start_time = task.scan_start_time
 	to_chat(user, span_warning("You failed to finish scanning \the [target] with \the [src]."))
-	playsound(src, 'sound/machines/buzz-two.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#FF0000", 3)
 	if(target)
 		partial_scanned = om_handle(target)
@@ -221,7 +221,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	if(istext(om_hold_busy(src, 2 SECONDS, TYPE_PROC_REF(/atom, update_icon))))
 		return
 	update_icon()
-	playsound(src, 'sound/machines/beep.ogg', 50)
+	play_sfx(src, SFX_MACHINES_BEEP)
 
 	// First, get everything able to be scanned.
 	var/list/scannable_atoms = list()
@@ -247,9 +247,9 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 
 	update_icon()
 	if(scannable_atoms.len)
-		playsound(src, 'sound/machines/ping.ogg', 50)
+		play_sfx(src, SFX_MACHINES_PING)
 	else
-		playsound(src, 'sound/machines/buzz-two.ogg', 50)
+		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	to_chat(user, span_notice("\The [src] found [scannable_atoms.len] object\s that can be scanned."))
 
 // Negative points are bad.

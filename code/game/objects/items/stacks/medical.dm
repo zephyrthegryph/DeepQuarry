@@ -10,8 +10,8 @@
 	var/heal_brute = 0
 	var/heal_burn = 0
 	var/apply_sounds
-	drop_sound = 'sound/items/drop/cardboardbox.ogg'
-	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
+	drop_sound = SFX_ITEMS_DROP_CARDBOARDBOX
+	pickup_sound = SFX_ITEMS_PICKUP_CARDBOARDBOX
 
 	var/upgrade_to	// The type path this stack can be upgraded to.
 
@@ -98,7 +98,7 @@
 /// Treats W; returns the new count of stack units used.
 /obj/item/stack/medical/proc/apply_wound_treatment(datum/affliction/wound/W, mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, used)
 	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
-	playsound(src, pick(apply_sounds), 25)
+	playsound(src, apply_sounds, 25)
 	return used + 1
 
 /obj/item/stack/medical/proc/wound_treat_step(mob/living/carbon/human/H, mob/living/user, obj/item/organ/external/affecting, list/wounds, index, used, available)
@@ -204,7 +204,7 @@
 									"smeared bioglue over \a [W.desc] on [H]'s [affecting.name]." )
 	W.receive_tagged_treatment(TREAT_WOUND_PACKING, 1)
 	W.disinfect()
-	playsound(src, pick(apply_sounds), 25)
+	playsound(src, apply_sounds, 25)
 	update_icon()
 	// B9: one charge per wound treated; the tissue repair is applied once, in finish.
 	return used + 1
@@ -232,7 +232,7 @@
 	desc = "Some bandages to wrap around bloody stumps."
 	icon_state = "gauze"
 	no_variants = FALSE
-	apply_sounds = list('sound/effects/rip1.ogg','sound/effects/rip2.ogg')
+	apply_sounds = SFX_EFFECTS_RIP_MIX
 
 	upgrade_to = /obj/item/stack/medical/bruise_pack
 
@@ -264,9 +264,9 @@
 	desc = "Some sterile gauze to wrap around bloody stumps."
 	icon_state = "brutepack"
 	no_variants = FALSE
-	apply_sounds = list('sound/effects/rip1.ogg','sound/effects/rip2.ogg')
-	drop_sound = 'sound/items/drop/gloves.ogg'
-	pickup_sound = 'sound/items/pickup/gloves.ogg'
+	apply_sounds = SFX_EFFECTS_RIP_MIX
+	drop_sound = SFX_ITEMS_DROP_GLOVES
+	pickup_sound = SFX_ITEMS_PICKUP_GLOVES
 
 	upgrade_to = /obj/item/stack/medical/advanced/bruise_pack
 
@@ -300,9 +300,9 @@
 	icon_state = "ointment"
 	heal_burn = 1
 	no_variants = FALSE
-	apply_sounds = list('sound/effects/ointment.ogg')
-	drop_sound = 'sound/items/drop/herb.ogg'
-	pickup_sound = 'sound/items/pickup/herb.ogg'
+	apply_sounds = SFX_EFFECTS_OINTMENT
+	drop_sound = SFX_ITEMS_DROP_HERB
+	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
 /obj/item/stack/medical/ointment/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
@@ -342,7 +342,7 @@
 								"salved wounds on [M]'s [affecting.name]." )
 	use(1)
 	affecting.salve()
-	playsound(src, pick(apply_sounds), 25)
+	playsound(src, apply_sounds, 25)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/stack/medical/ointment/proc/attack_timed_failed(datum/om/task/timed/ointment_attack/task)
@@ -362,7 +362,7 @@
 	desc = "An advanced trauma kit for severe injuries."
 	icon_state = "traumakit"
 	heal_brute = 7
-	apply_sounds = list('sound/effects/rip1.ogg','sound/effects/rip2.ogg','sound/effects/tape.ogg')
+	apply_sounds = SFX_EFFECTS_RIP_MIX_2
 
 /obj/item/stack/medical/advanced/bruise_pack/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
@@ -393,7 +393,7 @@
 	desc = "An advanced treatment kit for severe burns."
 	icon_state = "burnkit"
 	heal_burn = 7
-	apply_sounds = list('sound/effects/ointment.ogg')
+	apply_sounds = SFX_EFFECTS_OINTMENT
 
 /obj/item/stack/medical/advanced/ointment/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(..() == ITEM_INTERACT_FAILURE)
@@ -437,7 +437,7 @@
 	H.mend(TREAT_BURN_CARE, heal_burn, affecting.organ_tag)
 	use(1)
 	affecting.salve()
-	playsound(src, pick(apply_sounds), 25)
+	playsound(src, apply_sounds, 25)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -453,8 +453,8 @@
 	icon_state = "splint"
 	amount = 5
 	max_amount = 5
-	drop_sound = 'sound/items/drop/hat.ogg'
-	pickup_sound = 'sound/items/pickup/hat.ogg'
+	drop_sound = SFX_ITEMS_DROP_HAT
+	pickup_sound = SFX_ITEMS_PICKUP_HAT
 
 // List of organs you can splint, natch.
 TYPE_TABLE_DECLARE(/obj/item/stack/medical/splint, splint_organs, list(BP_HEAD, BP_L_HAND, BP_R_HAND, BP_L_ARM, BP_R_ARM, BP_L_FOOT, BP_R_FOOT, BP_L_LEG, BP_R_LEG, BP_GROIN, BP_TORSO))
@@ -563,7 +563,7 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 	icon_state = "clotkit"
 	heal_burn = 0
 	heal_brute = 2 // Only applies to non-humans, to give this some slight application on animals
-	apply_sounds = list('sound/effects/spray.ogg', 'sound/effects/spray2.ogg', 'sound/effects/spray3.ogg')
+	apply_sounds = SFX_EFFECTS_SPRAY_MIX
 	amount = 5
 	max_amount = 5
 
@@ -602,7 +602,7 @@ TYPE_TABLE(/obj/item/stack/medical/splint/ghetto, splint_organs, list(BP_L_ARM, 
 
 	to_chat(user, healmessage)
 	use(1)
-	playsound(src, pick(apply_sounds), 25)
+	playsound(src, apply_sounds, 25)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

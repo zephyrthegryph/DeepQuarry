@@ -174,7 +174,7 @@ DECLARE_REF(/obj/structure/portal_target, "target", BACK, "target")
 	var/obj/effect/landmark/dest = pick(GLOB.eventdestinations)
 	if(dest)
 		M << 'sound/effects/phasein.ogg'
-		playsound(src, 'sound/effects/phasein.ogg', 100, 1)
+		play_sfx(src, SFX_EFFECTS_PHASEIN)
 		M.forceMove(dest.loc)
 		if(isliving(M) && dest.abductor)
 			var/mob/living/L = M

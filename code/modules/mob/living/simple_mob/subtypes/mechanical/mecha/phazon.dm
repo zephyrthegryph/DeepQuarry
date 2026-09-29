@@ -33,7 +33,7 @@
 	size_multiplier = 1.25
 	shock_resist = 0.5
 	ranged_attack_delay = 1 SECONDS
-	projectilesound = 'sound/weapons/gauss_shoot.ogg'
+	projectilesound = SFX_WEAPONS_GAUSS_SHOOT
 	damage_fatigue_mult = 0
 
 	projectiletype = /obj/item/projectile/bullet/rifle/a545/ap
@@ -53,7 +53,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a red missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/big, 2, "\The [src] retracts the red missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/big
@@ -70,7 +70,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a blue missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket, 2, "\The [src] retracts the blue missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/blue
@@ -87,7 +87,7 @@
 	// Telegraph our next move.
 	Beam(target, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
 	visible_message(span_warning("\The [src] deploys a yellow missile rack!"))
-	playsound(src, 'sound/effects/turret/move1.wav', 50, 1)
+	play_sfx(src, SFX_EFFECTS_TURRET_MOVE1)
 	rocket_volley(target, /obj/item/projectile/arc/explosive_rocket/spread, 2, "\The [src] retracts the yellow missile rack.")
 
 /obj/item/projectile/arc/explosive_rocket/spread

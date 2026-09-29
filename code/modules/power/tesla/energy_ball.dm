@@ -52,7 +52,7 @@
 		energy = 0 // ensure we dont have miniballs of miniballs
 
 /obj/singularity/energy_ball/proc/zap_after_move()
-	playsound(src, 'sound/effects/lightningbolt.ogg', 100, 1, extrarange = 30)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGBOLT, extrarange = 30)
 
 	set_dir(tesla_zap(src, 7, TESLA_DEFAULT_POWER, TRUE, current_jumps = 1))
 
@@ -97,7 +97,7 @@
 		energy_to_lower = energy_to_raise - 20
 		energy_to_raise = energy_to_raise * 1.25
 
-		playsound(src, 'sound/effects/lightning_chargeup.ogg', 100, 1, extrarange = 30)
+		play_sfx(src, SFX_EFFECTS_LIGHTNING_CHARGEUP)
 		om_after(src, 10 SECONDS, PROC_REF(new_mini_ball))
 
 	else if(energy < energy_to_lower && length(orbiting_balls()))

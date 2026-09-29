@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
 		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
-		playsound(src, 'sound/machines/buttonbeep.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		visible_message(span_notice("[user] pairs [I] to [nickname]"))
 		toggle_pairing()
 
@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 
 /obj/item/uav/proc/attackby_timed_done(obj/item/I, mob/user)
 	to_chat(user, span_notice("You insert [I] into [nickname]."))
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	power_down()
 	user.remove_from_mob(I)
 	I.forceMove(src)
@@ -207,7 +207,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/periodic_step()
 	if(cell?.use(power_per_process) != power_per_process)
 		visible_message(span_warning("[src] sputters and thuds to the ground, inert."))
-		playsound(src, 'sound/items/drop/metalboots.ogg', 75, 1)
+		play_sfx(src, SFX_ITEMS_DROP_METALBOOTS)
 		power_down()
 		take_damage(max_integrity*0.25, sound_effect = FALSE) //Lose 25% of your original health
 

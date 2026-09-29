@@ -5,8 +5,8 @@
 	injury_kind = INJURY_BURN
 
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
-	hitsound = 'sound/weapons/zapbang.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
+	hitsound = SFX_WEAPONS_ZAPBANG
 	hud_state = "plasma"
 	hud_state_empty = "battery_empty"
 
@@ -16,7 +16,7 @@
 /obj/item/projectile/energy/flash
 	name = "chemical shell"
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/gunshot_pathetic.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT_PATHETIC
 	hitsound_wall = null
 	damage = 5
 	range = 15 //if the shell hasn't hit anything after travelling this far it just explodes.
@@ -44,19 +44,17 @@
 					H.injure(INJURY_PAIN, 22 * (applied_strength / 5), source = src) // Five flashes to stun.  Bit weaker than melee flashes due to being ranged.
 
 	//snap pop
-	playsound(src, 'sound/effects/snap.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SNAP)
 	src.visible_message(span_warning("\The [src] explodes in a bright flash!"))
 
-	var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-	sparks.set_up(2, 1, T)
-	sparks.start()
+	fx_sparks(T, 2)
 
 	new /obj/effect/decal/cleanable/ash(src.loc) //always use src.loc so that ash doesn't end up inside windows
 	new /obj/effect/effect/smoke/illumination(T, 5, brightness, brightness, light_colour)
 
 //blinds people like the flash round, but can also be used for temporary illumination
 /obj/item/projectile/energy/flash/flare
-	fire_sound = 'sound/weapons/grenade_launcher.ogg'
+	fire_sound = SFX_WEAPONS_GRENADE_LAUNCHER
 	damage = 10
 	flash_range = 1
 	brightness = 15
@@ -74,7 +72,7 @@
 /obj/item/projectile/energy/electrode
 	name = "electrode"
 	icon_state = "spark"
-	fire_sound = 'sound/weapons/gunshot2.ogg'
+	fire_sound = SFX_WEAPONS_GUNSHOT2
 	taser_effect = 1
 	agony = 40
 	light_range = 2
@@ -104,7 +102,7 @@
 /obj/item/projectile/energy/declone
 	name = "declone"
 	icon_state = "declone"
-	fire_sound = 'sound/weapons/pulse3.ogg'
+	fire_sound = SFX_WEAPONS_PULSE3
 	nodamage = 1
 	injury_kind = INJURY_CELLULAR
 	irradiate = 40
@@ -119,7 +117,7 @@
 /obj/item/projectile/energy/excavate
 	name = "kinetic blast"
 	icon_state = "kinetic_blast"
-	fire_sound = 'sound/weapons/pulse3.ogg'
+	fire_sound = SFX_WEAPONS_PULSE3
 	injury_kind = INJURY_BLUNT
 	damage = 30
 	armor_penetration = 60
@@ -179,8 +177,8 @@
 	damage = 30
 	agony = 10
 	armor_penetration = 25	// It's acid
-	hitsound_wall = 'sound/weapons/effects/alien_spit_wall.ogg'
-	hitsound = 'sound/weapons/effects/alien_spit_wall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
+	hitsound = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
@@ -192,8 +190,8 @@
 	injury_kind = INJURY_CORROSIVE
 	agony = 60 // lowered agony damage
 	armor_penetration = 25	// It's acid-based
-	hitsound_wall = 'sound/weapons/effects/alien_spit_wall.ogg'
-	hitsound = 'sound/weapons/effects/alien_spit_wall.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
+	hitsound = SFX_WEAPONS_EFFECTS_ALIEN_SPIT_WALL
 	hud_state = "electrothermal"
 
 	combustion = FALSE
@@ -209,7 +207,7 @@
 /obj/item/projectile/energy/phoron
 	name = "phoron bolt"
 	icon_state = "energy"
-	fire_sound = 'sound/effects/stealthoff.ogg'
+	fire_sound = SFX_EFFECTS_STEALTHOFF
 	damage = 20
 	injury_kind = INJURY_TOXIN
 	irradiate = 20
@@ -224,7 +222,7 @@
 /obj/item/projectile/energy/plasmastun
 	name = "plasma pulse"
 	icon_state = "plasma_stun"
-	fire_sound = 'sound/weapons/blaster.ogg'
+	fire_sound = SFX_WEAPONS_BLASTER
 	armor_penetration = 10
 	range = 4
 	damage = 5
@@ -235,7 +233,7 @@
 /obj/item/projectile/energy/plasmastun/proc/bang(mob/living/carbon/M)
 
 	to_chat(M, span_danger("You hear a loud roar."))
-	playsound(src, 'sound/effects/bang.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_BANG)
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
@@ -266,7 +264,7 @@
 /obj/item/projectile/energy/blue_pellet
 	name = "suppressive pellet"
 	icon_state = "blue_pellet"
-	fire_sound = 'sound/weapons/laser5.ogg'
+	fire_sound = SFX_WEAPONS_LASER5
 	damage = 5
 	armor_penetration = 75
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
@@ -354,19 +352,19 @@
 	name = "plasma bolt"
 	icon = 'icons/obj/projectiles_ch.dmi'
 	icon_state = "vepr"
-	fire_sound = 'sound/weapons/serdy/vepr.ogg'
+	fire_sound = SFX_WEAPONS_SERDY_VEPR
 	damage = 30
 	armor_penetration = 10
 	muzzle_type = /obj/effect/projectile/muzzle/vepr
 	impact_effect_type = /obj/effect/temp_visual/impact_effect
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
-	hitsound = 'sound/weapons/sear.ogg'
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
+	hitsound = SFX_WEAPONS_SEAR
 	hud_state = "laser_overcharge"
 
 /obj/item/projectile/energy/phase
 	name = "phase wave"
 	icon_state = "phase"
-	fire_sound = 'sound/weapons/phase_new/phasecarbine.ogg' // New sounds.
+	fire_sound = SFX_WEAPONS_PHASE_NEW_PHASECARBINE // New sounds.
 	range = 13
 	damage = 5
 	mob_bonus_damage = 45
@@ -374,14 +372,14 @@
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/light
-	fire_sound = 'sound/weapons/phase_new/phasepistol.ogg' // New sounds.
+	fire_sound = SFX_WEAPONS_PHASE_NEW_PHASEPISTOL // New sounds.
 	range = 11
 	mob_bonus_damage = 35
 	armor_penetration = -50
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy
-	fire_sound = 'sound/weapons/phase_new/phaserifle.ogg' // New sounds.
+	fire_sound = SFX_WEAPONS_PHASE_NEW_PHASERIFLE // New sounds.
 	range = 16 // This range was not great
 	damage = 10
 	mob_bonus_damage = 50
@@ -389,7 +387,7 @@
 	hud_state = "laser_heat"
 
 /obj/item/projectile/energy/phase/heavy/cannon
-	fire_sound = 'sound/weapons/phase_new/phasecannon.ogg' // New sounds.
+	fire_sound = SFX_WEAPONS_PHASE_NEW_PHASECANNON // New sounds.
 	range = 20 // This range was mediocre, but not worth a cannon.
 	damage = 15
 	mob_bonus_damage = 60

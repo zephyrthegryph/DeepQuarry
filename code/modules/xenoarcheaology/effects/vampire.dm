@@ -23,7 +23,7 @@
 		holder = holder.loc
 	last_bloodcall = world.time
 	if(ishuman(M))
-		playsound(holder, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
+		play_sfx(holder, SFX_HALLUCINATIONS_WAIL)
 
 		var/target = pick(M.organs_by_name)
 		var/searing = rand(5, 10)
@@ -77,7 +77,7 @@
 				charges += 0.25
 			else
 				charges += 1
-				playsound(holder, 'sound/effects/splat.ogg', 50, 1, -3)
+				play_sfx(holder, SFX_EFFECTS_SPLAT, extrarange = -3)
 
 			qdel(B)
 
@@ -91,7 +91,7 @@
 			charges -= 1
 			var/spawn_type = pick(/mob/living/simple_mob/animal/space/bats, /mob/living/simple_mob/creature, /mob/living/simple_mob/faithless)
 			new spawn_type(pick(RANGE_TURFS(1,T)))
-			playsound(holder, pick('sound/hallucinations/growl1.ogg','sound/hallucinations/growl2.ogg','sound/hallucinations/growl3.ogg'), 50, 1, -3)
+			play_sfx(holder, SFX_HALLUCINATIONS_GROWL)
 
 	if(charges >= 1 && length(nearby_mobs) && prob(15 * length(nearby_mobs)))
 		var/mob/living/L = DEFAULTPICK(nearby_mobs, null)

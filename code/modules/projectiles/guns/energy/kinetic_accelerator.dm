@@ -57,7 +57,7 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	projectile_type = /obj/item/projectile/kinetic
 	charge_cost = 1200
 	battery_lock = TRUE
-	fire_sound = 'sound/weapons/kenetic_accel.ogg'
+	fire_sound = SFX_WEAPONS_KENETIC_ACCEL
 	var/overheat_time = 16
 	var/holds_charge = FALSE
 	var/unique_frequency = FALSE // modified by KA modkits
@@ -207,7 +207,7 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)
-	playsound(src, 'sound/weapons/kenetic_reload.ogg', 60, 1)
+	play_sfx(src, SFX_WEAPONS_KENETIC_RELOAD)
 	overheat = FALSE
 	update_icon()
 
@@ -379,7 +379,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 		if(.)
 			user.drop_from_inventory(src, KA)
 			to_chat(user, span_notice("You install the modkit."))
-			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
+			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
 			LAZYADD(KA.modkits, src)
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))

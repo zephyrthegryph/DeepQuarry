@@ -704,7 +704,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	else
 		for(var/mob/O in hearers(world.view-1, T))
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"Attention! Wanted issue distributed!\""),2)
-		playsound(src, 'sound/machines/warning-buzzer.ogg', 75, 1)
+		play_sfx(src, SFX_MACHINES_WARNING_BUZZER, 1.5, vary = TRUE)
 	return
 
 /obj/machinery/newscaster/proc/lose_power()

@@ -2,7 +2,7 @@
 // This class of weapons takes force and appearance data from a material datum.
 // They are also fragile based on material data and many can break/smash apart.
 /obj/item/material
-	hitsound = 'sound/weapons/bladeslice.ogg'
+	hitsound = SFX_WEAPONS_BLADESLICE
 	gender = NEUTER
 	throw_speed = 3
 	throw_range = 7
@@ -124,14 +124,14 @@ EXTEND_INTERACTIONS(/obj/item/material, INTERACT_ITEM("Repair", PROC_REF(materia
 	if(isliving(loc))
 		var/mob/living/M = loc
 		M.drop_from_inventory(src)
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(!consumed && drops_debris) material.place_shard(T)
 	qdel(src)
 
 /obj/item/material/proc/dull()
 	var/turf/T = get_turf(src)
 	T.visible_message(span_danger("\The [src] goes dull!"))
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	dulled = 1
 	if(is_sharp(src) || has_edge(src))
 		sharp = FALSE

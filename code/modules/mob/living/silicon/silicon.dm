@@ -103,9 +103,7 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 
 /mob/living/silicon/electrocute_act(shock_damage, obj/source, siemens_coeff = 0.0, def_zone = null, stun = 1)
 	if(shock_damage > 0)
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, loc)
-		s.start()
+		fx_sparks(loc, 5)
 
 		shock_damage *= siemens_coeff	//take reduced damage
 		receive_shock(shock_damage, source)

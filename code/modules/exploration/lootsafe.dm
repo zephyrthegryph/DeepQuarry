@@ -18,7 +18,6 @@
 		if(prob(15 + hackguard))
 			to_chat(user, span_notice("The safe buzzes as a security drone is teleported in!"))
 			new /mob/living/simple_mob/mechanical/combat_drone (src.loc) //if I ever make security stun drones remind me to replace this with those
-			//new /effect/system/spark_spread (src.loc) I am to tired to make this work right now
 			return 1
 		else
 			to_chat(user, span_notice("The safe buzzes but the security systems don't trigger."))
@@ -136,7 +135,7 @@
 		to_chat(user, span_notice("You leave the crate alone."))
 	else if(check_input(input))
 		to_chat(user, span_notice("The crate unlocks!"))
-		playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_LOCKRESET)
 		set_locked(0)
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))
@@ -243,7 +242,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/crate/secure/lootsafe/numberlock, INTE
 		to_chat(user, span_notice("You leave the crate alone."))
 	else if(check_input(input))
 		to_chat(user, span_notice("The crate unlocks!"))
-		playsound(src, 'sound/machines/lockreset.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_LOCKRESET)
 		set_locked(0)
 	else
 		visible_message(span_warning("A red light on \the [src]'s control panel flashes briefly."))

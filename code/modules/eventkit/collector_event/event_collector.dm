@@ -41,7 +41,7 @@ GLOBAL_LIST_INIT(event_collector_associations,list())
 
 	var/type_to_spawn_on_complete
 
-	var/static/list/recipe_process_sounds = list('sound/effects/smoke.ogg', 'sound/effects/bubbles.ogg')
+	var/static/recipe_process_sounds = SFX_EFFECTS_SMOKE_MIX
 	var/recipe_process_sound_chance = 50 //prob(50) per active process tick
 
 	//internal stuff, don't touch this with subtypes.
@@ -129,7 +129,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 	var/blockers = get_blockers()
 	if(awaiting_next_recipe && blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )
-			playsound(src,pick(recipe_process_sounds),25,TRUE)
+			playsound(src,recipe_process_sounds,25,TRUE)
 
 		calls_remaining -= max(0, 10-blockers) //10's a multiplier in case we want to scale it based on how many blockers
 		if(calls_remaining <= 0)

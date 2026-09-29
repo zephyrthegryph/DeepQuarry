@@ -106,11 +106,11 @@
 			noise_freq = B.noise_freq
 		var/soundfile
 		if(w_class >= 4)
-			soundfile = pick('sound/vore/shortgurgles/gurgle_l1.ogg', 'sound/vore/shortgurgles/gurgle_l2.ogg', 'sound/vore/shortgurgles/gurgle_l3.ogg')
+			soundfile = SFX_VORE_SHORTGURGLES_GURGLE_L_MIX
 		else if(w_class >= 3)
-			soundfile = pick('sound/vore/shortgurgles/gurgle_m1.ogg', 'sound/vore/shortgurgles/gurgle_m2.ogg', 'sound/vore/shortgurgles/gurgle_m3.ogg')
+			soundfile = SFX_VORE_SHORTGURGLES_GURGLE_M_MIX
 		else
-			soundfile = pick('sound/vore/shortgurgles/gurgle_s1.ogg', 'sound/vore/shortgurgles/gurgle_s2.ogg', 'sound/vore/shortgurgles/gurgle_s3.ogg')
+			soundfile = SFX_VORE_SHORTGURGLES_GURGLE_S_MIX
 		playsound(src, soundfile, vol = g_sound_volume, vary = 1, falloff = VORE_SOUND_FALLOFF, frequency = noise_freq, preference = /datum/preference/toggle/eating_noises, volume_channel = VOLUME_CHANNEL_VORE)
 		//Allow those turned into items to become the recycled item
 		var/recycled = B?.recycle(src)

@@ -28,9 +28,9 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	var/status = 1 		//Whether the welder is secured or unsecured (able to attach rods to it to make a flamethrower)
 	var/max_fuel = 20 	//The max amount of fuel the welder can hold
 
-	var/acti_sound = 'sound/items/welderactivate.ogg'
-	var/deac_sound = 'sound/items/welderdeactivate.ogg'
-	usesound = 'sound/items/Welder2.ogg'
+	var/acti_sound = SFX_ITEMS_WELDERACTIVATE
+	var/deac_sound = SFX_ITEMS_WELDERDEACTIVATE
+	usesound = SFX_ITEMS_WELDER2
 	var/change_icons = TRUE
 	var/flame_intensity = 2 //how powerful the emitted light is when used.
 	var/flame_color = "#FF9933" // What color the welder light emits when its on.  Default is an orange-ish color.
@@ -39,8 +39,8 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	var/always_process = FALSE // If true, keeps the welder on the process list even if it's off.  Used for when it needs to regenerate fuel.
 	var/no_passive_burn = FALSE // If true, the welder will not passively burn fuel. Used for things like electric welders.
 	toolspeed = 1
-	drop_sound = 'sound/items/drop/weldingtool.ogg'
-	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
+	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
+	pickup_sound = SFX_ITEMS_PICKUP_WELDINGTOOL
 	tool_qualities = list(TOOL_WELDER)
 
 /obj/item/weldingtool/Initialize(mapload)
@@ -145,7 +145,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 		if(!welding && max_fuel)
 			O.reagents.trans_to_obj(src, max_fuel)
 			to_chat(user, span_notice("Welder refueled"))
-			playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+			play_sfx(src, SFX_EFFECTS_REFILL)
 			return
 		else if(!welding)
 			to_chat(user, span_notice("[src] doesn't use fuel."))
@@ -532,8 +532,8 @@ DECLARE_REF(/obj/item/weldpack, "nozzle", PAIR, "mounted_pack")
 	var/cell_type = /obj/item/cell/device
 	var/use_external_power = 0	//If in a borg or hardsuit, this needs to = 1
 	flame_color = "#00CCFF"  // Blue-ish, to set it apart from the gas flames.
-	acti_sound = 'sound/effects/sparks4.ogg'
-	deac_sound = 'sound/effects/sparks4.ogg'
+	acti_sound = SFX_EFFECTS_SPARKS4
+	deac_sound = SFX_EFFECTS_SPARKS4
 
 /obj/item/weldingtool/electric/unloaded
 	cell_type = null

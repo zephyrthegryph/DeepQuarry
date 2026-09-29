@@ -23,8 +23,8 @@
 	var/PN = 0			// The power region we drain
 	var/attached_handle		// the attached cable
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/powersink/screwdriver_act(mob/user, obj/item/tool)
 	if(mode == 0)
@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 	pwr_drain()
 	power_drained -= min(dissipation_rate, power_drained)
 	if(power_drained > max_power * 0.95)
-		playsound(src, 'sound/effects/screech.ogg', 100, 1, 1)
+		play_sfx(src, SFX_EFFECTS_SCREECH)
 	if(power_drained >= max_power)
 		explosion(src.loc, 3,6,9,12)
 		qdel(src)

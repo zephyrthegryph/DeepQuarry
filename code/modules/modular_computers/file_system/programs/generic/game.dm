@@ -38,7 +38,7 @@
 	var/ended = TRUE
 	if(boss_hp <= 0)
 		heads_up = "You have crushed [boss_name]! Rejoice!"
-		playsound(computer().loc, 'sound/arcade/win.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+		play_sfx(computer().loc, SFX_ARCADE_WIN)
 		game_active = FALSE
 		program_icon_state = "arcade_off"
 		if(istype(computer(), /obj/item/modular_computer))
@@ -46,7 +46,7 @@
 		ticket_count += 1
 	else if(player_hp <= 0 || player_mp <= 0)
 		heads_up = "You have been defeated... how will the station survive?"
-		playsound(computer().loc, 'sound/arcade/lose.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+		play_sfx(computer().loc, SFX_ARCADE_LOSE)
 		game_active = FALSE
 		program_icon_state = "arcade_off"
 		if(istype(computer(), /obj/item/modular_computer))
@@ -76,17 +76,17 @@
 		return
 	if(boss_mp <= 5)
 		heads_up = "[boss_mpamt] magic power has been stolen from you!"
-		playsound(computer().loc, 'sound/arcade/steal.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+		play_sfx(computer().loc, SFX_ARCADE_STEAL)
 		player_mp -= boss_mpamt
 		boss_mp += boss_mpamt
 	else if(boss_mp > 5 && boss_hp <12)
 		heads_up = "[boss_name] heals for [bossheal] health!"
-		playsound(computer().loc, 'sound/arcade/heal.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+		play_sfx(computer().loc, SFX_ARCADE_HEAL)
 		boss_hp += bossheal
 		boss_mp -= boss_mpamt
 	else
 		heads_up = "[boss_name] attacks you for [boss_attackamt] damage!"
-		playsound(computer().loc, 'sound/arcade/hit.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+		play_sfx(computer().loc, SFX_ARCADE_HIT)
 		player_hp -= boss_attackamt
 
 	pause_state = FALSE
@@ -134,7 +134,7 @@
 				attackamt = rand(2,6) // + rand(0, gamerSkill)
 			pause_state = TRUE
 			heads_up = "You attack for [attackamt] damage."
-			playsound(computer().loc, 'sound/arcade/hit.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+			play_sfx(computer().loc, SFX_ARCADE_HIT)
 			boss_hp -= attackamt
 			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 			return TRUE
@@ -147,7 +147,7 @@
 				healcost = rand(1, maxPointCost)
 			pause_state = TRUE
 			heads_up = "You heal for [healamt] damage."
-			playsound(computer().loc, 'sound/arcade/heal.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+			play_sfx(computer().loc, SFX_ARCADE_HEAL)
 			player_hp += healamt
 			player_mp -= healcost
 			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
@@ -158,7 +158,7 @@
 				rechargeamt = rand(4,7) // + rand(0, gamerSkill)
 			pause_state = TRUE
 			heads_up = "You regain [rechargeamt] magic power."
-			playsound(computer().loc, 'sound/arcade/mana.ogg', 50, TRUE, extrarange = -3, falloff = 0.1)
+			play_sfx(computer().loc, SFX_ARCADE_MANA)
 			player_mp += rechargeamt
 			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 			return TRUE

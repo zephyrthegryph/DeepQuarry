@@ -42,8 +42,8 @@
 
 	var/cell_type = /obj/item/cell/device
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
 DECLARE_REF(/obj/item/flash, "power_supply", OWNED, null)
@@ -157,7 +157,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 		if(user)
 			update_icon()
 			to_chat(user, span_warning(span_italics("click")))
-			playsound(src, 'sound/weapons/empty.ogg', 80, 1)
+			play_sfx(src, SFX_WEAPONS_EMPTY, 1.6)
 		return FALSE
 	else if(battery && battery.checked_use(charge_cost + (round(charge_cost / 4) * max(0, times_used - max_flashes)))) // Using over your maximum flashes starts taking more charge per added flash.
 		times_used++
@@ -185,7 +185,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 	if(!check_capacitor(user))
 		return ITEM_INTERACT_FAILURE
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 
 	if(isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)
@@ -276,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 	if(!check_capacitor(user))
 		return
 
-	playsound(src, 'sound/weapons/flash.ogg', 100, 1)
+	play_sfx(src, SFX_WEAPONS_FLASH)
 	flick("flash2", src)
 	if(user && isrobot(user))
 		var/atom/movable/overlay/animation = new(user.loc)

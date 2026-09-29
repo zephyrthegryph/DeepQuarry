@@ -12,7 +12,7 @@
 	siemens_coefficient = 0.9
 	var/gas_filter_strength = 1			//For gas mask filters
 	armor_spec = "bio=75"
-	pickup_sound = 'sound/items/pickup/rubber.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_RUBBER
 	resistance_flags = FIRE_PROOF
 
 TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS_PHORON, GAS_N2O))
@@ -53,7 +53,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 /// Old attackby: fit a hailer. Always fell through to ..() afterwards.
 /obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/hailer))
-		playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		user.drop_item(src)
 		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(src.loc)
 		transfer_blooddna_to(N)

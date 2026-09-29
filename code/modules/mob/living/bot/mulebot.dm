@@ -195,7 +195,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	locked = !locked
 	to_chat(user, span_notice("You [locked ? "lock" : "unlock"] the mulebot's controls!"))
 	flick("mulebot-emagged", src)
-	playsound(src, 'sound/effects/sparks1.ogg', 100, 0)
+	play_sfx(src, SFX_EFFECTS_SPARKS1, vary = FALSE)
 	return 1
 
 /mob/living/bot/mulebot/update_icons()
@@ -214,7 +214,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 
 /mob/living/bot/mulebot/handleFrustrated(has_target)
 	automatic_custom_emote(AUDIBLE_MESSAGE, "makes a sighing buzz.")
-	playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+	play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 	..()
 
 /mob/living/bot/mulebot/handleAdjacentTarget()
@@ -223,7 +223,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 		var/completed_target_id = target ? REF(target) : completed_target
 		var/cargo_type = load?.type
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes a chiming sound.")
-		playsound(src, 'sound/machines/chime.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_CHIME, vary = FALSE)
 		UnarmedAttack(target)
 		if(SScontracts && completed_target != "Home")
 			emit_contract_event(CONTRACT_EVENT_AUTOMATION_TASK_COMPLETED, list(
@@ -273,7 +273,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 /mob/living/bot/mulebot/proc/runOver(mob/living/M)
 	if(istype(M)) // At this point, MULEBot has somehow crossed over onto your tile with you still on it. CRRRNCH.
 		visible_message(span_warning("[src] drives over [M]!"))
-		playsound(src, 'sound/effects/splat.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPLAT)
 
 		var/damage = rand(5, 7)
 		M.injure(INJURY_BLUNT, 2 * damage, BP_HEAD, src)
@@ -300,9 +300,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 	new /obj/item/stack/rods(Tsec)
 	new /obj/item/stack/cable_coil/cut(Tsec)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
 	..()
@@ -326,7 +324,7 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 
 	if(crates_only && !istype(C,/obj/structure/closet/crate))
 		automatic_custom_emote(AUDIBLE_MESSAGE, "makes a sighing buzz.")
-		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 0)
+		play_sfx(src, SFX_MACHINES_BUZZ_SIGH)
 		return
 
 	var/obj/structure/closet/crate/crate = C

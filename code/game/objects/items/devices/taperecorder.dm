@@ -18,8 +18,8 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	throwforce = 2
 	throw_speed = 4
 	throw_range = 20
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
@@ -189,7 +189,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		var/mob/M = loc
 		to_chat(M, span_notice("Recording stopped."))
 	else if(isturf(loc)) // If not hidden away in a bag
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 		visible_message("\The [src] clicks as it stops recording.","click")
 
 /obj/item/taperecorder/proc/taperecorder_stop_effect(mob/user, obj/item/held, datum/interaction/interaction)

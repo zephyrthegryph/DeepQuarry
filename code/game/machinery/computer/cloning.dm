@@ -347,7 +347,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						cloneresult = pod.growclone(C)
 						if(cloneresult)
 							set_temp("Initiating cloning cycle...", "success")
-							playsound(src, 'sound/machines/medbayscanner1.ogg', 100, 1)
+							play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, 2)
 							records.Remove(C)
 							qdel(C)
 							menu = MENU_MAIN

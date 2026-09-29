@@ -56,8 +56,8 @@
 	interfaced_with_handle = om_handle(target)
 	drain_loc = interfaced_with().loc
 
-	holder.spark_system.start()
-	playsound(H, 'sound/effects/sparks2.ogg', 50, 1)
+	fx_sparks(holder, 5, FALSE)
+	play_sfx(H, SFX_EFFECTS_SPARKS2)
 
 	return 1
 
@@ -80,8 +80,8 @@
 	if(!H || !istype(H))
 		return 0
 
-	holder.spark_system.start()
-	playsound(H, 'sound/effects/sparks2.ogg', 50, 1)
+	fx_sparks(holder, 5, FALSE)
+	play_sfx(H, SFX_EFFECTS_SPARKS2)
 
 	H.break_cloak()
 

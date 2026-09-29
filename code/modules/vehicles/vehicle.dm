@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(on)
 		return FALSE
 	on = 1
-	playsound(src, 'sound/effects/vehicle/ignition_car.ogg', 60, 2, -2) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_VEHICLE_IGNITION_CAR) // New sound effects.
 	soundloop.start()
 	set_light(initial(light_range))
 	update_icon()
@@ -213,7 +213,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(!mechanical)
 		return FALSE
 	on = 0
-	playsound(src, 'sound/effects/vehicle/engine_off.ogg', 60, 2, -2) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_VEHICLE_ENGINE_OFF) // New sound effects.
 	soundloop.stop()
 	set_light(0)
 	update_icon()
@@ -231,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 /obj/vehicle/proc/explode()
 	src.visible_message(span_bolddanger("[src] blows apart!"), 1)
-	playsound(src, 'sound/effects/explosions/vehicleexplosion.ogg', 100, 8, 3) // New sound effects.
+	play_sfx(src, SFX_EFFECTS_EXPLOSIONS_VEHICLEEXPLOSION) // New sound effects.
 	var/turf/Tsec = get_turf(src)
 
 	//stuns people who are thrown off a train that has been blown up

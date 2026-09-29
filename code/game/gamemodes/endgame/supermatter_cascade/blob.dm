@@ -49,7 +49,7 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 		span_danger("You reach out and touch \the [src]. Everything immediately goes quiet. Your last thought is \"That was not a wise decision.\""),\
 		span_warning("You hear an unearthly noise."))
 
-	playsound(src, 'sound/effects/supermatter.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 
 	Consume(user)
 	return TRUE
@@ -60,7 +60,7 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 		span_danger("You touch \the [W] to \the [src] when everything suddenly goes silent.\"") + "\n" + span_notice("\The [W] flashes into dust as you flinch away from \the [src]."),\
 		span_warning("Everything suddenly goes silent."))
 
-	playsound(src, 'sound/effects/supermatter.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 
 	user.drop_from_inventory(W)
 	Consume(W)
@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/turf/unsimulated/wall/supermatter, 	INTERACT_ROBOT("Touch",
 		AM.visible_message(span_warning("\The [AM] smacks into \the [src] and rapidly flashes to ash."),\
 		span_warning("You hear a loud crack as you are washed with a wave of heat."))
 
-	playsound(src, 'sound/effects/supermatter.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SUPERMATTER)
 
 	Consume(AM)
 

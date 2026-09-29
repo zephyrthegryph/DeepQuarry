@@ -1036,7 +1036,7 @@ TYPE_TABLE(/obj/item/clothing/suit/storage/snowsuit, suit_storage_spec, list(HOL
 	desc = "Caution! Wet Floor!"
 	description_fluff = "Used by the janitor to passive-aggressively point at when you eventually slip on one of their mopped floors."
 	icon_state = "caution"
-	drop_sound = 'sound/items/drop/shoes.ogg'
+	drop_sound = SFX_ITEMS_DROP_SHOES
 	force = 1
 	throwforce = 3
 	throw_speed = 2
@@ -1068,7 +1068,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/caution, \
 		icon_state = "caution_blinking"
 		item_state = "caution_blinking"
 		user.show_message("You turn the wet floor sign on.")
-		playsound(src.loc, 'sound/machines/button.ogg', 30, 1)
+		play_sfx(src.loc, SFX_MACHINES_BUTTON)
 	else
 		icon_state = "caution"
 		item_state = "caution"

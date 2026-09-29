@@ -62,8 +62,8 @@
 	item_state = "book16"
 	author = "Donk Co."
 	title = "WizOff Guide"
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	dat = {"
 
 		<html>

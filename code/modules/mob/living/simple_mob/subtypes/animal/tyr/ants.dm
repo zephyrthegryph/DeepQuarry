@@ -65,14 +65,14 @@
 		var/mob/living/L = A
 		if(L.mob_size <= MOB_MEDIUM)
 			visible_message(span_danger("\The [src] sends \the [L] flying with the impact!"))
-			playsound(src, "punch", 50, 1)
+			play_sfx(src, SFX_PUNCH)
 			L.status_at_least(EFFECT_WEAKENED, 1)
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 3, 1, src)
 		else
 			to_chat(L, span_warning("\The [src] hits you with incredible force, but you remain in place."))
 			visible_message(span_danger("\The [src] hits \the [L] with incredible force, to no visible effect!")) // Visible/audible feedback for *resisting* the slam.
-			playsound(src, "punch", 50, 1) // Visible/audible feedback for *resisting* the slam.
+			play_sfx(src, SFX_PUNCH) // Visible/audible feedback for *resisting* the slam.
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/copper //lighting ants
 	name = "copper metal ant"
@@ -502,7 +502,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 	//No modifier.
 
 /obj/effect/ant_structure/trap/confusion/attack_mob(mob/living/L)
-	playsound(src, 'sound/effects/ghost2.ogg', 20, 1)
+	play_sfx(src, SFX_EFFECTS_GHOST2)
 	if(L.get_ear_protection() == 0)
 		L.status_at_least(EFFECT_CONFUSED, 10)
 

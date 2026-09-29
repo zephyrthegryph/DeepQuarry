@@ -37,7 +37,7 @@
 /obj/item/chainsaw/proc/turnOn_timed_done2(mob/user)
 	visible_message("You start \the [src] up with a loud grinding!", "[user] starts \the [src] up with a loud grinding!")
 	attack_verb = list("shredded", "ripped", "torn")
-	playsound(src, 'sound/weapons/chainsaw_startup.ogg',40,1)
+	play_sfx(src, SFX_WEAPONS_CHAINSAW_STARTUP, 4, vary = TRUE)
 	force = active_force
 	edge = TRUE
 	sharp = TRUE
@@ -51,7 +51,7 @@
 	if(!on) return
 	to_chat(user, "You switch the gas nozzle on the chainsaw, turning it off.")
 	attack_verb = list("bluntly hit", "beat", "knocked")
-	playsound(src, 'sound/weapons/chainsaw_turnoff.ogg',40,1)
+	play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF)
 	force = inactive_force
 	edge = FALSE
 	sharp = FALSE
@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 	if(!proximity) return
 	..()
 	if(on)
-		playsound(src, 'sound/weapons/chainsaw_attack.ogg',40,1)
+		play_sfx(src, SFX_WEAPONS_CHAINSAW_ATTACK)
 	if(A && on)
 		if(get_fuel() > 0)
 			reagents.remove_reagent(REAGENT_ID_FUEL, 1)
@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 	var/atom/A = task.A
 	var/mob/user = task.actor
 	A.reagents.trans_to_obj(src, max_fuel)
-	playsound(src, 'sound/effects/refill.ogg', 50, 1, -6)
+	play_sfx(src, SFX_EFFECTS_REFILL)
 	to_chat(user, span_notice("Chainsaw succesfully refueled."))
 
 /obj/item/chainsaw/proc/afterattack_timed_failed(datum/om/task/timed/chainsaw_afterattack/task)
@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 	if(on)
 		if(get_fuel() > 0)
 			reagents.remove_reagent(REAGENT_ID_FUEL, 1)
-			playsound(src, 'sound/weapons/chainsaw_turnoff.ogg',15,1)
+			play_sfx(src, SFX_WEAPONS_CHAINSAW_TURNOFF, volume = 15)
 		if(get_fuel() <= 0)
 			visible_message("\The [src] sputters to a stop!")
 			turnOff()

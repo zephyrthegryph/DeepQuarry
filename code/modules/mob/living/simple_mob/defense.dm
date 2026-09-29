@@ -197,11 +197,9 @@
 		return 0
 
 	receive_shock(shock_damage * (100 - resistance) / 100, source)
-	playsound(src, "sparks", 50, 1, -1)
+	play_sfx(src, SFX_SPARKS, extrarange = -1)
 
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(5, 1, loc)
-	s.start()
+	fx_sparks(loc, 5)
 
 /mob/living/simple_mob/get_shock_protection()
 	. = shock_resist

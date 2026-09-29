@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 		var/obj/item/stack/rods/R = C
 		if (R.use(1))
 			to_chat(user, span_notice("Constructing support lattice ..."))
-			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_GENHIT)
 			ReplaceWithLattice()
 		return INTERACTION_HANDLED_PASS
 
@@ -126,7 +126,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 			if (S.get_amount() < 1)
 				return INTERACTION_HANDLED_PASS
 			qdel(L)
-			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+			play_sfx(src, SFX_WEAPONS_GENHIT)
 			S.use(1)
 			ChangeTurf(/turf/simulated/floor/airless)
 			return INTERACTION_HANDLED_PASS
@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/turf/space, INTERACT_ITEM("Build", PROC_REF(space_build)))
 				if(R.use(1)) // Cost of roofing tiles is 1:1 with cost to place lattice and plating
 					T.ReplaceWithLattice()
 					T.ChangeTurf(/turf/simulated/floor)
-					playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
+					play_sfx(src, SFX_WEAPONS_GENHIT)
 					user.visible_message(span_notice("[user] expands the ceiling."), span_notice("You expand the ceiling."))
 			else
 				to_chat(user, span_warning("There aren't any holes in the ceiling to patch here."))

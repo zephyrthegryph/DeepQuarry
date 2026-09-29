@@ -24,7 +24,7 @@
 	var/max_pill_count = 20
 	var/printing = FALSE
 	flags = OPENCONTAINER
-	clicksound = "button"
+	clicksound = SFX_BUTTON
 
 /obj/machinery/chem_master/Initialize(mapload)
 	. = ..()

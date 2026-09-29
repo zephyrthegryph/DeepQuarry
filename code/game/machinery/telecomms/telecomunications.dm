@@ -246,7 +246,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 		if(!has_stat(EMPED))
 			stat_add(EMPED)
 			MACHINE_WAKE(src)
-			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
+			play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 			var/duration = (300 * 10)/severity
 			om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover)) // Takes a long time for the machines to reboot.
 

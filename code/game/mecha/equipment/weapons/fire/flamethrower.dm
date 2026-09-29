@@ -10,7 +10,7 @@
 	step_delay = 0.5
 
 	projectile = /obj/item/projectile/bullet/incendiary/flamethrower/large
-	fire_sound = 'sound/weapons/towelwipe.ogg'
+	fire_sound = SFX_WEAPONS_TOWELWIPE
 
 /obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged
 	name = "\improper AA-CR-1 Mark 4"

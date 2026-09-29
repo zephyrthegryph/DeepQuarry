@@ -637,7 +637,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 		pestlevel -= spray.pest_kill_str
 		weedlevel -= spray.weed_kill_str
 		to_chat(user, span_filter_notice("You spray [src] with [O]."))
-		playsound(src, 'sound/effects/spray3.ogg', 50, 1, -6)
+		play_sfx(src, SFX_EFFECTS_SPRAY3, extrarange = -6)
 		consume(O, user)
 		check_health()
 

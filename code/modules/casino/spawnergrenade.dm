@@ -127,7 +127,7 @@
 /obj/item/grenade/spawnergrenade/casino/infinitycake/detonate()
 
 	var/turf/T = get_turf(src)
-	playsound(T, 'sound/effects/phasein.ogg', 100, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN)
 
 	new /obj/structure/thecake(T)
 	new /obj/item/thecake_layer(T)
@@ -145,7 +145,7 @@
 
 /obj/item/grenade/spawnergrenade/casino/universal_technomancer/detonate()
 	var/turf/T = get_turf(src)
-	playsound(T, 'sound/effects/phasein.ogg', 100, 1)
+	play_sfx(T, SFX_EFFECTS_PHASEIN)
 
 	new /obj/item/technomancer_catalog/universal(T)
 	new /obj/item/technomancer_core/universal(T)

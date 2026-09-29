@@ -164,7 +164,7 @@
 	var/power_produced = power / power_loss
 	add_avail(power_produced*input_power_multiplier)
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, zap_range, power_produced, current_jumps = current_jumps)
 
 //Unused.
@@ -176,7 +176,7 @@
 	coeff = max(coeff, 10)
 	power = (power_avail(power_region)/2)
 	draw_power(power)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, zap_range, power/(coeff/2), current_jumps = current_jumps)
 
 /obj/machinery/power/tesla_coil/relay
@@ -202,7 +202,7 @@
 	if(power_relayed < power && relay_efficiency >= 1)
 		power_relayed = power
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, zap_range, power_relayed, current_jumps = current_jumps)
 
 /obj/machinery/power/tesla_coil/relay/examine(mob/user)
@@ -235,7 +235,7 @@
 	var/power_produced = power_per_bolt / power_loss
 	add_avail(power_produced * input_power_multiplier)
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	for(var/i = 0, i < split_count, i++)
 		tesla_zap(src, zap_range, power_per_bolt, current_jumps = current_jumps)
 
@@ -268,7 +268,7 @@
 	if(power_produced < power)
 		power_produced = power //Don't let it reduce power. If the amp is worse than the original, just give them the original power.
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 	tesla_zap(src, zap_range, power_produced, current_jumps = current_jumps)
 
 /obj/machinery/power/tesla_coil/amplifier/examine(mob/user)
@@ -298,7 +298,7 @@
 	var/power_produced = power / (power_loss * 2)
 	add_avail(power_produced*input_power_multiplier)
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = zap_range)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK, extrarange = zap_range)
 	tesla_zap(src, zap_range, power_relayed, current_jumps = current_jumps)
 
 /obj/machinery/power/tesla_coil/collector
@@ -327,7 +327,7 @@
 /obj/machinery/power/tesla_coil/collector/coil_act(power, explosive, current_jumps)
 	add_avail(power*input_power_multiplier)
 	flick("[icontype]hit", src)
-	playsound(src, 'sound/effects/lightningshock.ogg', 100, 1, extrarange = 5)
+	play_sfx(src, SFX_EFFECTS_LIGHTNINGSHOCK)
 
 /obj/machinery/power/grounding_rod
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE

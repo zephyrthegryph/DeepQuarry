@@ -47,7 +47,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/condiment, INTERACT_ITEM(n
 		..()
 
 /obj/item/reagent_containers/food/condiment/feed_sound(mob/user)
-	playsound(src, 'sound/items/drink.ogg', rand(10, 50), 1)
+	play_sfx(src, SFX_ITEMS_DRINK, volume = rand(10, 50))
 
 /obj/item/reagent_containers/food/condiment/self_feed_message(mob/user)
 	to_chat(user, span_notice("You swallow some of contents of \the [src]."))

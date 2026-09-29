@@ -28,7 +28,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 	. = ..()
 	update_icon()
 
-DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'sound/effects/splat.ogg'))
+DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = SFX_EFFECTS_SPLAT))
 
 /obj/structure/blob/update_icon() //Updates color based on overmind color if we have an overmind.
 	if(overmind)
@@ -161,7 +161,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 	if(istype(T, /turf/space) && !(locate_on(T, /obj/structure/lattice)) && prob(80))
 		make_blob = FALSE
-		playsound(src, 'sound/effects/splat.ogg', 50, 1) //Let's give some feedback that we DID try to spawn in space, since players are used to it
+		play_sfx(src, SFX_EFFECTS_SPLAT) //Let's give some feedback that we DID try to spawn in space, since players are used to it
 
 	consume_tile() //hit the tile we're in, making sure there are no border objects blocking us
 
@@ -232,7 +232,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 /obj/structure/blob/attack_generic(mob/user, damage, attack_verb)
 	visible_message(span_danger("[user] [attack_verb] the [src]!"))
-	playsound(src, 'sound/effects/attackblob.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB, 2)
 	user.do_attack_animation(src)
 	if(overmind)
 		damage *= overmind.blob_type.brute_multiplier
@@ -315,7 +315,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /// Old attackby.
 /obj/structure/blob/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
-	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 	visible_message(span_danger("\The [src] has been attacked with \the [W][(user ? " by [user]." : ".")]"))
 	var/damage = W.force
 	switch(W.obj_damage_type())
@@ -326,9 +326,9 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 				damage *= 2
 
 			if(damage > 0)
-				playsound(src, 'sound/items/Welder.ogg', 100, 1)
+				play_sfx(src, SFX_ITEMS_WELDER)
 			else
-				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_TAP)
 		if(BRUTE)
 			if(overmind)
 				damage *= overmind.blob_type.brute_multiplier
@@ -336,9 +336,9 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 				damage *= 2
 
 			if(damage > 0)
-				playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
+				play_sfx(src, SFX_EFFECTS_ATTACKBLOB)
 			else
-				playsound(src, 'sound/weapons/tap.ogg', 50, 1)
+				play_sfx(src, SFX_WEAPONS_TAP)
 	if(overmind)
 		damage = overmind.blob_type.on_received_damage(src, damage, W.obj_damage_type(), user)
 	adjust_integrity(-damage)
@@ -439,7 +439,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 /obj/structure/blob/handle_deconstruct(disassembled = TRUE)
 	if(disassembled)
 		return
-	playsound(src, 'sound/effects/splat.ogg', 50, 1)
+	play_sfx(src, SFX_EFFECTS_SPLAT)
 	if(overmind)
 		overmind.blob_type.on_death(src)
 

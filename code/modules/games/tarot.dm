@@ -36,7 +36,7 @@
 			newcards += P
 			cards -= P
 		cards = newcards
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else
@@ -91,7 +91,7 @@
 			newcards += P
 			cards -= P
 		cards = newcards
-		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		user.visible_message("\The [user] shuffles [src].")
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
 	else

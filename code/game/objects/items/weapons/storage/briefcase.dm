@@ -7,9 +7,9 @@
 	throw_range = 4
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
-	use_sound = 'sound/items/storage/briefcase.ogg'
-	drop_sound = 'sound/items/drop/backpack.ogg'
-	pickup_sound = 'sound/items/pickup/backpack.ogg'
+	use_sound = SFX_ITEMS_STORAGE_BRIEFCASE
+	drop_sound = SFX_ITEMS_DROP_BACKPACK
+	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 TYPE_TABLE(/obj/item/storage/briefcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 

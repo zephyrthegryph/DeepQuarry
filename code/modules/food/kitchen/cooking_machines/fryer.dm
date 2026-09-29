@@ -7,7 +7,7 @@
 	on_icon = "fryer_on"
 	off_icon = "fryer_off"
 	food_color = "#FFAD33"
-	cooked_sound = 'sound/machines/ding.ogg'
+	cooked_sound = SFX_MACHINES_DING
 	var/datum/looping_sound/deep_fryer/fry_loop
 	circuit = /obj/item/circuitboard/fryer
 	appliancetype = FRYER

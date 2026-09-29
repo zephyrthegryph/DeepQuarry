@@ -15,7 +15,7 @@
 
 	caliber = "nsfw"
 
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 
 	load_method = MAGAZINE //Nyeh heh hehhh.
 	magazine_type = null
@@ -166,7 +166,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		B.forceMove(src)
 		stored_ammo.Add(B)
 		update_icon()
-	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
 	if(istype(loc, /obj/item/gun/projectile/cell_loaded)) // Update the HUD if we're in a gun + have a user. Not that one should be able to reload the mag while it's in a gun, but just in caaaaase.
 		var/obj/item/gun/projectile/cell_loaded/cell_load = loc

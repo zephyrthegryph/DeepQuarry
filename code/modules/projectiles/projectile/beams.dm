@@ -1,7 +1,7 @@
 /obj/item/projectile/beam
 	name = "laser"
 	icon_state = "laser"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = SFX_WEAPONS_LASER
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage = 40
 	injury_kind = INJURY_BURN
@@ -13,8 +13,8 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#FF0D00"
-	hitsound = 'sound/weapons/sear.ogg'
-	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound = SFX_WEAPONS_SEAR
+	hitsound_wall = SFX_WEAPONS_EFFECTS_SEARWALL
 
 	muzzle_type = /obj/effect/projectile/muzzle/laser
 	tracer_type = /obj/effect/projectile/tracer/laser
@@ -96,7 +96,7 @@
 	name = "pulsating laser"
 	damage = 10
 	armor_penetration = 20
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 
 	excavation_amount = 100
 
@@ -107,7 +107,7 @@
 /obj/item/projectile/beam/heavylaser
 	name = "heavy laser"
 	icon_state = "heavylaser"
-	fire_sound = 'sound/weapons/lasercannonfire.ogg'
+	fire_sound = SFX_WEAPONS_LASERCANNONFIRE
 	damage = 60
 	armor_penetration = 30
 	light_range = 3
@@ -122,7 +122,7 @@
 /obj/item/projectile/beam/heavylaser/fakeemitter
 	name = "emitter beam"
 	icon_state = "emitter"
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 	light_color = "#00CC33"
 	excavation_amount = 140	// 2 shots to dig a standard rock turf. Superior due to being a mounted tool beam, to make it actually viable.
 	hud_state = "laser_overcharge"
@@ -148,7 +148,7 @@
 /obj/item/projectile/beam/xray
 	name = "xray beam"
 	icon_state = "xray"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 25
 	armor_penetration = 50
 	light_color = "#00CC33"
@@ -161,7 +161,7 @@
 /obj/item/projectile/beam/gamma
 	name = "gamma beam"
 	icon_state = "xray"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 12
 	armor_penetration = 90
 	irradiate = 20
@@ -175,7 +175,7 @@
 /obj/item/projectile/beam/cyan
 	name = "cyan beam"
 	icon_state = "cyan"
-	fire_sound = 'sound/weapons/eLuger.ogg'
+	fire_sound = SFX_WEAPONS_ELUGER
 	damage = 40
 	light_color = "#00C6FF"
 	hud_state = "laser_disabler"
@@ -187,7 +187,7 @@
 /obj/item/projectile/beam/pulse
 	name = "pulse"
 	icon_state = "u_laser"
-	fire_sound='sound/weapons/gauss_shoot.ogg' // Needs a more meaty sound than what pulse.ogg currently is; this will be a placeholder for now.
+	fire_sound=SFX_WEAPONS_GAUSS_SHOOT // Needs a more meaty sound than what pulse.ogg currently is; this will be a placeholder for now.
 	damage = 100	//Badmin toy, don't care
 	armor_penetration = 100
 	light_color = "#0066FF"
@@ -205,7 +205,7 @@
 /obj/item/projectile/beam/emitter
 	name = "emitter beam"
 	icon_state = "emitter"
-	fire_sound = 'sound/weapons/emitter.ogg'
+	fire_sound = SFX_WEAPONS_EMITTER
 	damage = 0 // The actual damage is computed in /code/modules/power/singularity/emitter.dm
 	light_color = "#00CC33"
 	excavation_amount = 70 // 3 shots to mine a turf
@@ -262,7 +262,7 @@
 /obj/item/projectile/beam/sniper
 	name = "sniper beam"
 	icon_state = "xray"
-	fire_sound = 'sound/weapons/gauss_shoot.ogg'
+	fire_sound = SFX_WEAPONS_GAUSS_SHOOT
 	damage = 50
 	armor_penetration = 10
 	light_color = "#00CC33"
@@ -275,13 +275,13 @@
 /obj/item/projectile/beam/stun
 	name = "stun beam"
 	icon_state = "stun"
-	fire_sound = 'sound/weapons/taser.ogg'
+	fire_sound = SFX_WEAPONS_TASER
 	nodamage = 1
 	taser_effect = 1
 	agony = 35
 	injury_kind = INJURY_PAIN
 	light_color = "#FFFFFF"
-	hitsound = 'sound/weapons/zapbang.ogg'
+	hitsound = SFX_WEAPONS_ZAPBANG
 
 
 	combustion = FALSE
@@ -362,7 +362,7 @@
 	damage = 30
 	agony = 15
 	eyeblur = 2
-	hitsound = 'sound/weapons/zapbang.ogg'
+	hitsound = SFX_WEAPONS_ZAPBANG
 	hud_state = "taser"
 
 /obj/item/projectile/beam/shock/weak
@@ -407,7 +407,7 @@
 /obj/item/projectile/beam/precursor // added Precursor beam
 	name = "precursor beam"
 	icon_state = "alien beam"
-	fire_sound = 'sound/weapons/MediumLaser.ogg'
+	fire_sound = SFX_WEAPONS_MEDIUMLASER
 	light_color = "#FF0099"
 
 	muzzle_type = /obj/effect/projectile/muzzle/precursor
@@ -427,7 +427,7 @@
 
 /obj/item/projectile/beam/imperial
 	name = "laser beam"
-	fire_sound = 'sound/weapons/mandalorian.ogg'
+	fire_sound = SFX_WEAPONS_MANDALORIAN
 	icon_state = "darkb"
 	light_color = "#8837A3"
 	muzzle_type = /obj/effect/projectile/muzzle/darkmatter
@@ -437,7 +437,7 @@
 
 /obj/item/projectile/beam/rainbow
 	name = "rainbow"
-	fire_sound = 'sound/weapons/sparkle.ogg'
+	fire_sound = SFX_WEAPONS_SPARKLE
 	icon_state = "rainbow"
 	light_color = "#ffffff"
 	muzzle_type = /obj/effect/projectile/muzzle/rainbow
@@ -453,7 +453,7 @@
 
 /obj/item/projectile/beam/sparkledog
 	name = "rainbow"
-	fire_sound = 'sound/weapons/sparkle.ogg'
+	fire_sound = SFX_WEAPONS_SPARKLE
 	icon_state = "rainbow"
 	light_color = "#ffffff"
 	muzzle_type = /obj/effect/projectile/muzzle/rainbow

@@ -47,7 +47,7 @@ EXTEND_INTERACTIONS(/obj/item/pda/ai, INTERACT_USE(null, PROC_REF(ai_pda_self)))
 /obj/item/pda/ai/proc/ai_pda_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if ((honkamt > 0) && (prob(60)))//For clown virus.
 		honkamt--
-		playsound(src, 'sound/items/bikehorn.ogg', 30, 1)
+		play_sfx(src, SFX_ITEMS_BIKEHORN, 0.6)
 
 
 /obj/item/pda/ai/pai

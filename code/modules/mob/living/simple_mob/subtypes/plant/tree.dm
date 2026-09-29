@@ -22,7 +22,7 @@
 	melee_damage_lower = 8
 	melee_damage_upper = 12
 	attacktext = list("bitten")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	organ_names = /datum/decl/mob_organ_names/tree
 
@@ -47,7 +47,7 @@
 
 /mob/living/simple_mob/animal/space/tree/on_death(gibbed)
 	..()
-	playsound(src, 'sound/effects/woodcutting.ogg', 100, 1)
+	play_sfx(src, SFX_EFFECTS_WOODCUTTING)
 	new /obj/item/stack/material/wood(loc)
 
 /datum/decl/mob_organ_names/tree

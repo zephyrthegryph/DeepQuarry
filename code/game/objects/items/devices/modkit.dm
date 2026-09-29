@@ -14,8 +14,8 @@
 		/obj/item/clothing/head/helmet/space/void,
 		/obj/item/clothing/suit/space/void
 		)
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/modkit/afterattack(obj/item/O, mob/user as mob, proximity)
 	if(!proximity)

@@ -17,8 +17,8 @@
 	var/user_client_handle //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
-	pickup_sound = 'sound/items/pickup/device.ogg'
-	drop_sound = 'sound/items/drop/device.ogg'
+	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
+	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/t_scanner/update_icon()
 	icon_state = "t-ray[on]"

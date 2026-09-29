@@ -25,7 +25,7 @@
 	active_power_usage = 200
 	buckle_lying = FALSE
 	buckle_dir = SOUTH
-	clicksound = 'sound/machines/buttonbeep.ogg'
+	clicksound = SFX_MACHINES_BUTTONBEEP
 	clickvol = 30
 
 	var/temperature_archived
@@ -302,7 +302,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		return
 	log_game("CRYO: [src] released [key_name(occupant)]: automated triage reports no remaining treatment demand.")
 	visible_message(span_notice("\The [src] pings: treatment complete."))
-	playsound(src, 'sound/machines/ping.ogg', 50, FALSE)
+	play_sfx(src, SFX_MACHINES_PING)
 	go_out()
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/expel_gas()

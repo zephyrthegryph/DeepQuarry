@@ -15,7 +15,7 @@
 		return
 
 	to_chat(user,span_boldnotice("You assesses \the [AM]'s genetic traits."))
-	playsound(src, 'sound/misc/bloop.ogg', 50, 1)
+	play_sfx(src, SFX_MISC_BLOOP)
 	flick("health2", src)
 
 	om_task_timed(user, 6 SECONDS, target = AM, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(AM, user))

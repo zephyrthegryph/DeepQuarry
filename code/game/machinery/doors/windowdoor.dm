@@ -8,7 +8,7 @@
 	icon_state = "left"
 	var/base_state = "left"
 	min_force = 4
-	hitsound = 'sound/effects/Glasshit.ogg'
+	hitsound = SFX_EFFECTS_GLASSHIT
 	max_integrity = 150 //If you change this, consiter changing ../door/window/brigdoor/ max_integrity at the bottom of this .dm file
 	visible = 0.0
 	use_power = USE_POWER_OFF
@@ -52,7 +52,7 @@
 		ae.icon_state = "door_electronics_smoked"
 		operating = 0
 	set_density(FALSE)
-	playsound(src, "shatter", 70, 1)
+	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] shatters!")
 	qdel(src)
@@ -112,7 +112,7 @@
 	if (!operating) //in case of emag
 		operating = 1
 	flick(text("[src.base_state]opening"), src)
-	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 	om_after(src, 1 SECONDS, PROC_REF(finish_open))
 
 /obj/machinery/door/window/proc/finish_open()
@@ -132,7 +132,7 @@
 		return FALSE
 	operating = TRUE
 	flick(text("[]closing", src.base_state), src)
-	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
+	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
 	set_density(TRUE)
 	update_icon()
@@ -181,7 +181,7 @@
 	return H.species.can_shred(H, FALSE, 15)
 
 /obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[user] smashes against the [src.name]."), 1)
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
@@ -229,11 +229,9 @@
 
 /obj/machinery/door/window/proc/interaction_emag_slice(mob/user, obj/item/I, datum/interaction/interaction)
 	if(emag_act(10, user))
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, src.loc)
-		spark_system.start()
-		playsound(src, "sparks", 50, 1)
-		playsound(src, 'sound/weapons/blade1.ogg', 50, 1)
+		fx_sparks(src.loc, 5, FALSE)
+		play_sfx(src, SFX_SPARKS)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
 		visible_message(span_warning("The glass door was sliced open by [user]!"))
 	return TRUE
 
@@ -256,7 +254,7 @@
 /obj/machinery/door/window/proc/interaction_smash(mob/user, obj/item/I, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(I))
 	var/aforce = I.force
-	playsound(src, 'sound/effects/Glasshit.ogg', 75, 1)
+	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[src] was hit by [I]."))
 	if(I.obj_damage_type())
 		take_damage(aforce, I.obj_damage_type(), MELEE)

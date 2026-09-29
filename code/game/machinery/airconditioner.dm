@@ -330,9 +330,7 @@
 	new /obj/effect/decal/cleanable/liquid_fuel(T, 5)
 	T.assume_gas(GAS_VOLATILE_FUEL, 5, T20C)
 	T.hotspot_expose(700,400)
-	var/datum/effect/effect/system/spark_spread/s = new
-	s.set_up(5, 0, T)
-	s.start()
+	fx_sparks(T, 5, FALSE)
 	visible_message(span_warning("\The [src] bursts into flame!"))
 
 #undef MODE_IDLE

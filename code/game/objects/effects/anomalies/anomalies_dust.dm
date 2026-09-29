@@ -38,7 +38,7 @@
 		return
 
 	new /obj/effect/temp_visual/circle_wave/dirt(get_turf(src))
-	playsound(src, 'sound/effects/cosmic_energy.ogg', vol = 50, vary = TRUE)
+	play_sfx(src, SFX_EFFECTS_COSMIC_ENERGY)
 	COOLDOWN_START(src, pulse_cooldown, pulse_delay)
 	for(var/mob/living/carbon/human/person in viewers(5, src))
 		person.germ_level += rand(5, 10)
@@ -81,8 +81,6 @@
 
 	switch(stats.severity)
 		if(0 to 15)
-			var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread
-			sparks.set_up(3, 1, src)
-			sparks.start()
+			fx_sparks(src, 3)
 		else
 			anomalyEffect()

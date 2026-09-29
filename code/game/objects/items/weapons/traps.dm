@@ -51,7 +51,7 @@
 		span_danger("You have deployed \the [src]!"),
 		"You hear a latch click loudly."
 		)
-	playsound(src, 'sound/machines/click.ogg',70, 1)
+	play_sfx(src, SFX_MACHINES_CLICK, 1.4)
 
 	deployed = 1
 	user.drop_from_inventory(src)
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			span_notice("You begin disarming \the [src]!"),
 			"You hear a latch click followed by the slow creaking of a spring."
 			)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
 	else
@@ -226,7 +226,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 			span_notice("You begin collecting \the [src]!"),
 			"You hear the sound of rustling [material.name]."
 			)
-		playsound(src, 'sound/machines/click.ogg', 50, 1)
+		play_sfx(src, SFX_MACHINES_CLICK)
 
 		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
 	else
@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 		span_danger("You have deployed \the [src]!"),
 		"You hear the rustling of [material.name]."
 		)
-	playsound(src, 'sound/items/Wirecutter.ogg',70, 1)
+	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
 	om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
@@ -274,7 +274,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	if((W.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(W))
 		user.do_attack_animation(src)
-		playsound(src, 'sound/effects/grillehit.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
 		var/inc_damage = W.force
 
@@ -292,7 +292,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	if((tool.flags & NOCONDUCT) || !shock(user, 70, pick(BP_L_HAND, BP_R_HAND)))
 		user.setClickCooldown(user.get_attack_speed(tool))
 		user.do_attack_animation(src)
-		playsound(src, 'sound/effects/grillehit.ogg', 40, 1)
+		play_sfx(src, SFX_EFFECTS_GRILLEHIT, 0.8)
 
 		var/inc_damage = tool.force
 
@@ -366,9 +366,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 						var/mob/living/L = user
 						L.electrocute_act(PN_damage, src, 0.8)
 
-			var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-			s.set_up(3, 1, src)
-			s.start()
+			fx_sparks(src, 3)
 			if(user.has_status(EFFECT_STUNNED))
 				return 1
 		else
@@ -398,7 +396,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	if(!L.injure(injury_kind, force * (issilicon(L) ? 0.25 : 1), target_zone, src, flags = INJURE_ARMORED))
 		return
 
-	playsound(src, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds
+	play_sfx(src, SFX_EFFECTS_GLASS_STEP) // not sure how to handle metal shards with sounds
 	if(ishuman(L))
 		var/mob/living/carbon/human/H = L
 

@@ -186,7 +186,7 @@
 	set_trait(TRAIT_PRODUCT_COLOUR,"#DADA00")
 
 /datum/seed/gnomes
-	harvest_sound = 'sound/items/hooh.ogg'
+	harvest_sound = SFX_ITEMS_HOOH
 
 /datum/seed/pitcher_plant //Pitcher plant
 	name = PLANT_PITCHERPLANT

@@ -71,6 +71,10 @@ no upstream to merge against, so there's no reason to keep a disabled include ar
   relative. (`disallow_relative_type_definitions` / `disallow_relative_proc_definitions`.)
 - **Use defined constants**, not string literals — job/faction/access/channel names,
   sounds. Defines live under `code/__defines/`.
+- **Sounds are sets, sparks are pooled.** Play `play_sfx(atom, SFX_ID)` with a `SOUND_SET` row
+  (ids in `code/__defines/sfx.dm`, rows in `code/game/sound_sets.dm`); sound vars and lists hold
+  `SFX_*` ids, never literal files. Sparks are `fx_sparks(atom, amount)`. `tools/ci/sys_rules/sfx.py`
+  enforces both.
 - **Avoid `usr`** outside verb procs — plumb `user` through args, or use `src`.
 - **Always chain `..()`** in lifecycle overrides (`Initialize`, `on_destroy`,
   `lifecycle_prerelease`, …) unless you specifically need to suppress the parent.

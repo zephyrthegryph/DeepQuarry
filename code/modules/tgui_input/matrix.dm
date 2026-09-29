@@ -201,7 +201,7 @@
 			return TRUE
 		if("clear")
 			target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
-			playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+			play_sfx(src, SFX_EFFECTS_SPRAY3)
 			temp = "Cleared Successfully!"
 			color_matrix_last = DEFAULT_COLORMATRIX
 			update_tgui_static_data(ui.user, ui)
@@ -263,7 +263,7 @@
 		return FALSE
 	if(apply)
 		target().add_atom_colour(color_to_use, FIXED_COLOUR_PRIORITY)
-		playsound(src, 'sound/effects/spray3.ogg', 50, 1)
+		play_sfx(src, SFX_EFFECTS_SPRAY3)
 		if(isanimal(target()))
 			var/mob/living/simple_mob/M = target()
 			M.has_recoloured = TRUE

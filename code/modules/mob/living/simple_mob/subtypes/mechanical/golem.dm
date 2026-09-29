@@ -20,7 +20,7 @@
 	melee_damage_lower = 30 // It has a built in esword.
 	melee_damage_upper = 30
 	attack_armor_pen = 20
-	attack_sound = 'sound/weapons/blade1.ogg'
+	attack_sound = SFX_WEAPONS_BLADE1
 	attacktext = list("slashed")
 	melee_attack_delay = 0.5 SECONDS // Even has custom attack animations.
 	ranged_attack_delay = 0.5 SECONDS
@@ -69,9 +69,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED,
 	..()
 	visible_message("\The [src] disintegrates!")
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
-	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-	s.set_up(3, 1, src)
-	s.start()
+	fx_sparks(src, 3)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))

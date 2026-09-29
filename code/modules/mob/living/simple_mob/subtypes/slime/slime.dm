@@ -63,7 +63,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	melee_damage_lower = 10
 	melee_damage_upper = 15
 	base_attack_cooldown = 10 // One attack a second.
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 	attacktext = list("glomped")
 	speak_emote = list("chirps")
 	friendly = list("pokes")
@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	return "slime"
 
 /mob/living/simple_mob/slime/proc/squish()
-	playsound(src, 'sound/effects/slime_squish.ogg', 50, 0)
+	play_sfx(src, SFX_EFFECTS_SLIME_SQUISH, vary = FALSE)
 	visible_message(span_infoplain(span_bold("\The [src]") + " squishes!"))
 
 /datum/decl/mob_organ_names/slime

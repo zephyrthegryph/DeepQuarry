@@ -57,7 +57,7 @@
 	anchored = TRUE
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
-	clicksound = "switch"
+	clicksound = SFX_SWITCH
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
@@ -490,7 +490,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(floor && !floor.is_plating())
 		to_chat(user, span_warning("You must remove the floor plating in front of the APC first."))
 		return ITEM_INTERACT_BLOCKING
-	playsound(src, 'sound/items/Deconstruct.ogg', 50, TRUE)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 	use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", message_others = "[user.name] starts dismantling the [src]'s power terminal.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
@@ -498,9 +498,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(!(terminal && opened && has_electronics != APC_HAS_ELECTRONICS_SECURED))
 		return
 	if(prob(50) && electrocute_mob(user, terminal.power_region, terminal))
-		var/datum/effect/effect/system/spark_spread/sparks = new
-		sparks.set_up(5, 1, src)
-		sparks.start()
+		fx_sparks(src, 5)
 		if(user.has_status(EFFECT_STUNNED))
 			return ITEM_INTERACT_SUCCESS
 	new /obj/item/stack/cable_coil(loc, 10)
@@ -541,7 +539,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 
 /obj/machinery/power/apc/proc/reset_done(mob/user, obj/item/tool)
 	user.visible_message(span_notice("[user.name] resets the APC with a beep from [tool]."), "You finish resetting the APC.")
-	playsound(src, 'sound/machines/chime.ogg', 25, TRUE)
+	play_sfx(src, SFX_MACHINES_CHIME, 0.5)
 	reboot()
 
 /obj/machinery/power/apc/declare_interactions(list/into)
@@ -570,9 +568,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		return
 	var/obj/structure/cable/N = T.get_cable_node()
 	if(prob(50) && electrocute_mob(user, N, N))
-		var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread
-		s.set_up(5, 1, src)
-		s.start()
+		fx_sparks(src, 5)
 		if(user.has_status(EFFECT_STUNNED))
 			return
 	C.use(10)
@@ -640,12 +636,12 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			return TRUE
 		user.visible_message(span_warning("[user.name] adds cables to the APC frame."), \
 			"You start adding cables to the APC frame...")
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(add_cables_done), list(user, C))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((has_stat(BROKEN))))
 		user.visible_message(span_warning("[user.name] inserts the power control board into [src]."), \
 			"You start to insert the power control board into the frame...")
-		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
+		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		om_task_timed(user, 1 SECOND, src, src, PROC_REF(insert_board_done), list(user, W))
 	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (has_stat(BROKEN)))
 		to_chat(user, span_warning("The [src] is too broken for that. Repair it first."))
@@ -752,7 +748,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		if(H.species.can_shred(H, FALSE, 14))
 			user.setClickCooldown(user.get_attack_speed())
 			user.visible_message(span_warning("[user.name] slashes at the [name]!"), span_notice("You slash at the [name]!"))
-			playsound(src, 'sound/weapons/slash.ogg', 100, 1)
+			play_sfx(src, SFX_WEAPONS_SLASH, 2)
 			add_hiddenprint(H)
 			if(beenhit >= pick(3, 4) && !wiresexposed)
 				wiresexposed = TRUE

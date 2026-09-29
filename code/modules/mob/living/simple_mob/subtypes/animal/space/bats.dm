@@ -13,7 +13,7 @@
 	endurance = 20
 
 	attacktext = list("bitten")
-	attack_sound = 'sound/weapons/bite.ogg'
+	attack_sound = SFX_WEAPONS_BITE
 
 	response_help = "pets the"
 	response_disarm = "gently pushes aside the"

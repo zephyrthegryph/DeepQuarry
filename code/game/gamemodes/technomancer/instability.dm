@@ -110,12 +110,8 @@
 				rng = rand(0,1)
 				switch(rng)
 					if(0)
-						var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-						sparks.set_up(5, 0, src)
-						sparks.attach(loc)
-						sparks.start()
+						fx_sparks(loc, 5, FALSE)
 						visible_message(span_warning("Electrical sparks manifest from nowhere around \the [src]!"))
-						qdel(sparks)
 					if(1)
 						return
 
@@ -175,12 +171,8 @@
 				rng = rand(0,1)
 				switch(rng)
 					if(0)
-						var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
-						sparks.set_up(5, 0, src)
-						sparks.attach(loc)
-						sparks.start()
+						fx_sparks(loc, 5, FALSE)
 						visible_message(span_warning("Electrical sparks manifest from nowhere around \the [src]!"))
-						qdel(sparks)
 					if(1)
 						return
 

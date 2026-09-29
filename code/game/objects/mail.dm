@@ -5,8 +5,8 @@
 	icon_state = "mail_small"
 	item_flags = NOBLUDGEON
 	w_class = ITEMSIZE_SMALL
-	drop_sound = 'sound/items/drop/paper.ogg'
-	pickup_sound = 'sound/items/pickup/paper.ogg'
+	drop_sound = SFX_ITEMS_DROP_PAPER
+	pickup_sound = SFX_ITEMS_PICKUP_PAPER
 	mouse_drag_pointer = MOUSE_ACTIVE_POINTER
 	/// Destination tagging for the mail sorter.
 	var/sortTag = 0
@@ -211,7 +211,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 		if(src.sortTag != O.currTag)
 			balloon_alert(user, "labeled for [O.currTag].")
 			src.sortTag = O.currTag
-			playsound(src, 'sound/machines/twobeep.ogg', 50, 1)
+			play_sfx(src, SFX_MACHINES_TWOBEEP)
 		else
 			balloon_alert(user, "already labeled for [O.currTag].")
 	else
@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/item/mail, \
 		confetti_nade.name = "Pipebomb"
 		confetti_nade.desc = span_bolddanger("What the hell are you looking at it for?! RUN!!")
 		confetti_nade.activate()
-	playsound(loc, 'sound/items/poster_ripped.ogg', 100, TRUE)
+	play_sfx(loc, SFX_ITEMS_POSTER_RIPPED)
 	consume(src, user)
 
 /obj/item/mail/proc/initialize_for_recipient(datum/mind/recipient, preset_goodies = FALSE)
@@ -433,16 +433,16 @@ TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
 		var/obj/item/mail/saved_mail = A
 		if(saved_mail.scanned)
 			balloon_alert(user, "already scanned!")
-			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
+			play_sfx(loc, SFX_ITEMS_MAIL_MAILDENIED)
 			return
 		balloon_alert(user, "added to database")
-		playsound(loc, 'sound/items/mail/mailscanned.ogg', 50, TRUE)
+		play_sfx(loc, SFX_ITEMS_MAIL_MAILSCANNED)
 		saved = A
 		return
 	if(isliving(A))
 		if(!saved)
 			balloon_alert(user, "no logged mail!")
-			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
+			play_sfx(loc, SFX_ITEMS_MAIL_MAILDENIED)
 			return
 
 		var/datum/mind/recipient
@@ -454,17 +454,17 @@ TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
 
 		if(recipient.current.stat == DEAD)
 			to_chat(user, span_warning("Consent Verification failed: You can't deliver mail to a corpse!"))
-			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
+			play_sfx(loc, SFX_ITEMS_MAIL_MAILDENIED)
 			return
 		var/mob/living/carbon/human/scanned_human = A
 		var/mob/living/carbon/human/intended = recipient.current
 		if(!ishuman(scanned_human) || !ishuman(intended) || !scanned_human.dna || !intended.dna || scanned_human.dna.unique_enzymes != intended.dna.unique_enzymes)
 			to_chat(user, span_warning("Identity Verification failed: Target is not authorized recipient of this envelope!"))
-			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
+			play_sfx(loc, SFX_ITEMS_MAIL_MAILDENIED)
 			return
 		if(!recipient.current.client)
 			to_chat(user, span_warning("Consent Verification failed: The scanner does not accept orders from SSD crewmemmbers!"))
-			playsound(loc, 'sound/items/mail/maildenied.ogg', 50, TRUE)
+			play_sfx(loc, SFX_ITEMS_MAIL_MAILDENIED)
 			return
 
 		saved.scanned = TRUE
@@ -472,7 +472,7 @@ TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
 
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))
-		playsound(loc, 'sound/items/mail/mailapproved.ogg', 50, TRUE)
+		play_sfx(loc, SFX_ITEMS_MAIL_MAILAPPROVED)
 		GLOB.supply_service.adjust_budget(GLOB.supply_service.export_revenue(cargo_points), "Mail delivery proceeds")
 
 // JUNK MAIL STUFF

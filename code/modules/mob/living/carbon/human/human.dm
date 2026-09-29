@@ -753,7 +753,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/proc/play_xylophone()
 	if(COOLDOWN_FINISHED(src, xylophone))
 		visible_message(span_filter_notice("[span_red("\The [src] begins playing [p_their()] ribcage like a xylophone. It's quite spooky.")]"),span_notice("You begin to play a spooky refrain on your ribcage."),span_filter_notice("[span_red("You hear a spooky xylophone melody.")]"))
-		var/song = pick('sound/effects/xylophone1.ogg','sound/effects/xylophone2.ogg','sound/effects/xylophone3.ogg')
+		var/song = SFX_EFFECTS_XYLOPHONE_MIX
 		playsound(src, song, 50, 1, -1)
 		COOLDOWN_START(src, xylophone, 2 MINUTES)
 	return
@@ -1518,7 +1518,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 			footcoverage_check = TRUE
 			break
 	if(lying)
-		playsound(src, 'sound/misc/slip.ogg', 25, 1, -1)
+		play_sfx(src, SFX_MISC_SLIP)
 		drop_both_hands()
 		return FALSE
 	if((species.flags & NO_SLIP && !footcoverage_check) || (get_equipped_item(SLOT_ID_SHOES) && (get_equipped_item(SLOT_ID_SHOES).item_flags & NOSLIP))) //Footwear negates a species' natural traction.

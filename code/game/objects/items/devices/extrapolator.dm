@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/extrapolator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	playsound(src, 'sound/machines/click.ogg', 50, TRUE)
+	play_sfx(src, SFX_MACHINES_CLICK)
 	if(scan)
 		icon_state = "extrapolator_sample"
 		scan = FALSE
@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	culture_bottle.desc = "A small bottle. Contains [disease.agent] culture in synthblood medium."
 	culture_bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 5, data)
 	user.put_in_hands(culture_bottle)
-	playsound(src, 'sound/machines/ping.ogg', vol = 30, vary = TRUE)
+	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	COOLDOWN_START(src, usage_cooldown, 1 SECONDS)
 	LAZYSET(extracted_ids, disease.GetDiseaseID(), TRUE)
 	return TRUE
