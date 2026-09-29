@@ -447,7 +447,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 	if(seed)
 		previous_plant = seed.display_name
 		proto_set(src, "seed", null)
-	proto_set(src, "seed", GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))]
+	proto_set(src, "seed", GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
 	if(!seed) return //Weed does not exist, someone fucked up.
 
 	dead = 0

@@ -927,13 +927,13 @@
 		return S
 	return GLOB.plant_service.register_line(S)
 
-/// Points to.to_var (a PROTO seed var) at from.from_var's seed. A registered seed is shared; a private
-/// copy moves over (from is left empty), since a private copy has exactly one holder.
-/proc/seed_hand_over(datum/from, from_var, datum/to, to_var)
-	var/datum/seed/S = from.vars[from_var]
+/// Points dest.dest_var (a PROTO seed var) at source.source_var's seed. A registered seed is shared; a
+/// private copy moves over (source is left empty), since a private copy has exactly one holder.
+/proc/seed_hand_over(datum/source, source_var, datum/dest, dest_var)
+	var/datum/seed/S = source.vars[source_var]
 	if(!S || is_registered(S))
-		return proto_set(to, to_var, S)
-	return proto_set(to, to_var, proto_replace(from, from_var, null))
+		return proto_set(dest, dest_var, S)
+	return proto_set(dest, dest_var, proto_replace(source, source_var, null))
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))
