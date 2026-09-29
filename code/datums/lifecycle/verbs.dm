@@ -301,3 +301,7 @@
 			var/obj/structure/S = N
 			S.update_connections()
 		N.update_icon()
+
+/atom/movable/om_declared_timer_slots()
+	. = ..()
+	. += "lifecycle_lifetime_timer"

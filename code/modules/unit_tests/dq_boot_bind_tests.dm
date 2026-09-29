@@ -108,6 +108,11 @@
 	var/obj/machinery/atmospherics/omni/mixer/M = allocate(/obj/machinery/atmospherics/omni/mixer, test_floor())
 	var/datum/om/pipeline/machine/P = locate_in_list(om_registry().pipelines, /datum/om/pipeline/machine)
 	TEST_ASSERT(P, "the machine pipeline is registered")
+	// Joining after boot schedules the first wake in the machine's `first_wake` slot (zero delay):
+	// it is pending until that timer runs, then the machine is audited as usual.
+	TEST_ASSERT(P.first_wake_pending(M), "a machine that joined after boot has its first wake queued in its slot")
+	M.materialize_wakes()
+	om_cancel_timer_slot(M, "first_wake")
 	TEST_ASSERT(!P.first_wake_pending(M), "a machine whose first wake already ran is audited as usual")
 	GLOB.machine_first_wakes[om_handle(M)] = TRUE
 	TEST_ASSERT(P.first_wake_pending(M), "a machine queued for the bulk first-wake pass has its first wake pending")

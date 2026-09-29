@@ -84,9 +84,8 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	return 1
 
 /obj/machinery/atmospherics/omni/power_change()
-	var/old_stat = stat // ALLOW(sys_stat_bits): the raw bits before the change, for OMNI_WAKE_TRACE only
 	. = ..()
-	OMNI_WAKE_TRACE(src, "power_change old_stat=[old_stat]")
+	OMNI_WAKE_TRACE(src, "power_change changed=[.]")
 	if(.)
 		update_icon()
 		wake_for_state_change()

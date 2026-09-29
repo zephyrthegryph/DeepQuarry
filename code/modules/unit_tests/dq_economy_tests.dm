@@ -995,6 +995,9 @@
 	TEST_ASSERT(GLOB.supply_service.reserve_agent_contract_market(funding_contract), "preferred-supplier contract could not publish allowance-backed listings")
 	var/datum/cargo_market_listing/funded_listing = GLOB.supply_service.market_listing(funding_contract.market_reservation_ids[1])
 	TEST_ASSERT_NOTNULL(funded_listing, "contract-funded listing reservation was not addressable")
+	// The reserved pack is picked at random and some packs cost more than the base allowance:
+	// fund at least one unit of whatever was listed, so the test does not hinge on the draw.
+	funding_contract.market_allowance = max(funding_contract.market_allowance, funded_listing.unit_price)
 	var/owner_balance_before = owner_account.money
 	var/allowance_before = funding_contract.market_allowance - funding_contract.market_spend
 	var/funded_stock_before = funded_listing.stock

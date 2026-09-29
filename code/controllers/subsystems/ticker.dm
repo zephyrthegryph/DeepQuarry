@@ -64,8 +64,6 @@ SUBSYSTEM_DEF(ticker)
 	/// Why an emergency shuttle was called
 	var/emergency_reason
 
-	var/reboot_timer = null
-	var/countdown_timer = null
 
 	/// ### LEGACY VARS ###
 	/// Default time to wait before rebooting in desiseconds.
@@ -534,3 +532,7 @@ SUBSYSTEM_DEF(ticker)
 		om_cancel_timer_slot(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")
+
+/datum/controller/subsystem/ticker/om_declared_timer_slots()
+	. = ..()
+	. += list("reboot_timer", "countdown_timer")
