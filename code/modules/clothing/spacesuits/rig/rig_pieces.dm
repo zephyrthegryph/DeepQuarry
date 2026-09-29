@@ -94,7 +94,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		if(M.put_in_active_hand(tacknife()))
 			to_chat(M, span_notice("You slide \the [tacknife()] out of [src]."))
 			play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)
-			rel_clear(src, "tacknife")
+			rel_clear(src, nameof(tacknife))
 			update_icon()
 		return TRUE
 	return FALSE
@@ -105,7 +105,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 		if(tacknife())
 			return INTERACTION_HANDLED_PASS
 		M.drop_item()
-		rel_set(src, "tacknife", I)
+		rel_set(src, nameof(tacknife), I)
 		I.forceMove(src)
 		to_chat(M, span_notice("You slide the [I] into [src]."))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE, 0.8)

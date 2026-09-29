@@ -1,7 +1,9 @@
 /obj/item/modular_computer
 	var/list/paired_uavs //The paired UAVs (a relation list)
 
-REL_LIST(/obj/item/modular_computer, paired_uavs)
+/obj/item/modular_computer/declare_ownership(decl)
+	..()
+	rel(decl, nameof(paired_uavs), list = TRUE)
 
 /datum/computer_file/program/uav
 	filename = "rigger"

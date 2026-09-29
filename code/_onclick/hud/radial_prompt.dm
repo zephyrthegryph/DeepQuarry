@@ -59,7 +59,7 @@
 	menu.entry_animation = entry_animation
 	if(radius)
 		menu.radius = radius
-	rel_set(menu, "anchor", user_space ? user : where)
+	rel_set(menu, nameof(menu.anchor), user_space ? user : where)
 	menu.radial_slice_icon = radial_slice_icon
 	menu.check_screen_border(user)
 	menu.set_choices(choices, tooltips, click_on_hover)
@@ -70,8 +70,8 @@
 		var/turf/anchor_turf = get_turf(where)
 		offset_x = (anchor_turf.x - user_turf.x) * ICON_SIZE_X + where.pixel_x - user.pixel_x
 		offset_y = (anchor_turf.y - user_turf.y) * ICON_SIZE_Y + where.pixel_y - user.pixel_y
-	rel_set(src, "ui", menu)
-	rel_set(menu, "om_prompt", src)
+	rel_set(src, nameof(ui), menu)
+	rel_set(menu, nameof(menu.om_prompt), src)
 	menu.show_to(user, offset_x, offset_y)
 	log_input("Input: [key_name(user)] was shown a radial menu ([type]) on [where].")
 	return TRUE
@@ -94,21 +94,23 @@
 	var/datum/om/prompt/om_prompt
 	var/menu_id
 
-REL_PAIR(/datum/radial_menu/om, om_prompt, ui)
+/datum/radial_menu/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/radial_menu/om/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)
 	if(isnull(answer))
 		return
 	var/datum/om/prompt/P = om_prompt
-	rel_clear(src, "om_prompt")
+	rel_clear(src, nameof(om_prompt))
 	dismiss()
 	if(P)
 		om_prompt_answer(P, answer)
 
 /datum/radial_menu/om/close_menu()
 	var/datum/om/prompt/P = om_prompt
-	rel_clear(src, "om_prompt")
+	rel_clear(src, nameof(om_prompt))
 	dismiss()
 	if(P)
 		om_prompt_closed(P)

@@ -77,9 +77,9 @@ UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	own_take_all(src, "cooking_objs")
+	own_take_all(src, nameof(cooking_objs))
 	for (var/i = 0, i < max_contents, i++)
-		own_add(src, "cooking_objs", new /datum/cooking_item/(new container_type(src)))
+		own_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
@@ -182,12 +182,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	own_set(src, "thermostat_watch", heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
+	own_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
-	own_clear(src, "thermostat_watch", OWN_DELETE)
+	own_clear(src, nameof(thermostat_watch), OWN_DELETE)
 	MACHINE_WAKE(src)
 
 

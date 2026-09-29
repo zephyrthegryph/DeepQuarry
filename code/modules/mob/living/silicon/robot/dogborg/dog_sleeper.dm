@@ -65,13 +65,15 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			experiment_events = destructive_events, \
 		)
 	if(ore_storage)
-		own_set(src, "ore_bag", new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
+		own_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
 	. = ..()
-	own_set(src, "med_analyzer", new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
+	own_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).
-REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
+/obj/item/dogborg/sleeper/declare_ownership(decl)
+	..()
+	rel(decl, nameof(items_preserved), list = TRUE)
 
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)
@@ -103,7 +105,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 		playsound(src, gulpsound, vol = 100, vary = 1, falloff = 0.1, preference = /datum/preference/toggle/eating_noises)
 
 /obj/item/dogborg/sleeper/afterattack(atom/movable/target, mob/living/silicon/user, proximity_flag, click_parameters)
-	rel_set(src, "hound", loc)
+	rel_set(src, nameof(hound), loc)
 	if(!istype(target))
 		return
 	if(!proximity_flag)
@@ -220,7 +222,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 				if (!ingest_living(M, belly) || M.loc == micro)
 					delete_holder = FALSE
 			if (delete_holder)
-				rel_clear(micro, "held_mob")
+				rel_clear(micro, nameof(micro.held_mob))
 				qdel(micro)
 			return
 		if(!to_eat.move_into(belly, BELLY_SLOT_INTERIOR, hound))
@@ -235,8 +237,8 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 	return FALSE
 
 /obj/item/dogborg/sleeper/proc/go_out()
-	rel_set(src, "hound", src.loc)
-	rel_clear(src, "items_preserved")
+	rel_set(src, nameof(hound), src.loc)
+	rel_clear(src, nameof(items_preserved))
 	cleaning = 0
 	for(var/list/dlist in deliverylists)
 		dlist.Cut()
@@ -248,7 +250,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 	update_patient()
 
 /obj/item/dogborg/sleeper/proc/vore_ingest_all()
-	rel_set(src, "hound", src.loc)
+	rel_set(src, nameof(hound), src.loc)
 	if (!istype(hound) || contents_count(src) <= 0)
 		return
 	if (!hound.vore_selected)
@@ -268,7 +270,7 @@ REL_LIST(/obj/item/dogborg/sleeper, items_preserved)
 	var/mob/living/silicon/robot/R = holder
 	if(!istype(R))
 		return FALSE
-	rel_set(src, "hound", R)
+	rel_set(src, nameof(hound), R)
 	return R.draw_power(ROBOT_CELL_JOULES(amt), src, 0, TRUE)
 
 DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -465,7 +467,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 
 //For if the dogborg's existing patient uh, doesn't make it.
 /obj/item/dogborg/sleeper/proc/update_patient()
-	rel_set(src, "hound", src.loc)
+	rel_set(src, nameof(hound), src.loc)
 	if(!istype(hound,/mob/living/silicon/robot))
 		return
 
@@ -483,14 +485,14 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 
 	//Check for a new patient
 	for(var/mob/living/carbon/human/C in contents)
-		rel_set(src, "patient", C)
+		rel_set(src, nameof(patient), C)
 		set_hound_sleeper_state(patient_light_state(C))
 		patient_laststat = C.stat
 		return(C)
 
 	//Couldn't find anyone, and not cleaning
 	patient_laststat = null
-	rel_clear(src, "patient")
+	rel_clear(src, nameof(patient))
 	set_hound_sleeper_state(SLEEPER_STATE_EMPTY)
 	return
 
@@ -500,7 +502,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 	//Sanity? Maybe not required. More like if indigestible person OOC escapes.
 	for(var/I in items_preserved)
 		if(!(I in contents))
-			rel_remove(src, "items_preserved", I)
+			rel_remove(src, nameof(items_preserved), I)
 
 	var/list/touchable_items = contents - items_preserved - (deliveryslot_1 + deliveryslot_2 + deliveryslot_3)
 
@@ -541,7 +543,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 /// One digestion pass on a living occupant; indigestible ones are preserved.
 /obj/item/dogborg/sleeper/proc/digest_occupant(mob/living/T, delta_factor)
 	if(om_has(T, EFFECT_GODMODE) || !T.digestable)
-		rel_add(src, "items_preserved", T)
+		rel_add(src, nameof(items_preserved), T)
 		return
 	var/damage_gain = T.injure(INJURY_DIGESTION, digest_brute * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
 	damage_gain += T.injure(INJURY_CORROSIVE, digest_burn * digest_multiplier * delta_factor, null, hound, flags = INJURE_CONTINUOUS)
@@ -572,7 +574,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 			if(brain)
 				hound.remove_from_mob(brain,src)
 				brain.forceMove(src)
-				rel_add(src, "items_preserved", brain)
+				rel_add(src, nameof(items_preserved), brain)
 		else
 			T.drop_from_inventory(I, src)
 	var/volume = 0
@@ -589,7 +591,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 		GLOB.prey_digested_roundstat++
 	if(patient == T)
 		patient_laststat = null
-		rel_clear(src, "patient")
+		rel_clear(src, nameof(patient))
 	T.mind?.vore_death = TRUE
 	qdel(T)
 
@@ -604,7 +606,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 		var/is_trash = istype(T, /obj/item/trash)
 		var/digested = T.digest_act(item_storage = src)
 		if(!digested)
-			rel_add(src, "items_preserved", T)
+			rel_add(src, nameof(items_preserved), T)
 		else
 			if(volume && water)
 				water.add_charge(volume)
@@ -636,7 +638,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 		qdel(target)
 		hound.adjust_nutrition(10) //drain(-100)
 	else
-		rel_add(src, "items_preserved", target)
+		rel_add(src, nameof(items_preserved), target)
 
 /obj/item/dogborg/sleeper/periodic_step()
 	if(!istype(src.loc,/mob/living/silicon/robot))

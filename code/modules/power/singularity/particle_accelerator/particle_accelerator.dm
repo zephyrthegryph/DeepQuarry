@@ -154,7 +154,7 @@ APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
 		if(O.dir == src.dir)
-			rel_set(src, "master", O)
+			rel_set(src, nameof(master), O)
 			return 1
 	return 0
 

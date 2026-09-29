@@ -48,10 +48,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	if(holder_ref() && loc != holder_ref())
 		om_unhook(holder_ref(), /datum/om/event/movable_attempted_move, src)
 		holder_ref().client?.screen -= compass
-		rel_clear(src, "holder")
+		rel_clear(src, nameof(holder))
 
 	if(istype(loc, /mob))
-		rel_set(src, "holder", loc)
+		rel_set(src, nameof(holder), loc)
 		om_hook(holder_ref(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_holder_moved))
 		dq_add_recursive_move(holder_ref())
 

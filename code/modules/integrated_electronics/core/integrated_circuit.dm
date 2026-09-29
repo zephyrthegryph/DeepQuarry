@@ -224,7 +224,7 @@ UI_ACT_PROC(/obj/item/integrated_circuit, ui_act_remove)
 	disconnect_all()
 	var/turf/T = get_turf(src)
 	forceMove(T)
-	rel_clear(src, "assembly")
+	rel_clear(src, nameof(assembly))
 	play_sfx(T, SFX_ITEMS_CROWBAR)
 	to_chat(user, span_notice("You pop \the [src] out of the case, and slide it out."))
 

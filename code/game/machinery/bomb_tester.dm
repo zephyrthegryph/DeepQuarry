@@ -39,22 +39,22 @@
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	own_set(src, "faketank", new /datum/gas_mixture)
+	own_set(src, nameof(faketank), new /datum/gas_mixture)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
-		own_take(src, "tank1")
+		own_take(src, nameof(tank1))
 	if(tank2)
 		tank2.forceMove(get_turf(src))
-		own_take(src, "tank2")
+		own_take(src, nameof(tank2))
 	simulation_finish(1)
 	return ..()
 
 /obj/machinery/bomb_tester/machine_step()
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
-		rel_clear(src, "test_canister")
+		rel_clear(src, nameof(test_canister))
 
 /obj/machinery/bomb_tester/proc/appearance_suffix()
 	return has_stat(NOPOWER) ? "-p" : "[simulating]"
@@ -101,9 +101,9 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	user.drop_item(I)
 	I.forceMove(src)
 	if(!tank1)
-		own_set(src, "tank1", I)
+		own_set(src, nameof(tank1), I)
 	else
-		own_set(src, "tank2", I)
+		own_set(src, nameof(tank2), I)
 	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
@@ -189,9 +189,9 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_remove_tank)
 	var/obj/item/tank/T = params["ref"]
 	if(istype(T))
 		if(T == tank1)
-			own_take(src, "tank1")
+			own_take(src, nameof(/obj/machinery/bomb_tester::tank1))
 		if(T == tank2)
-			own_take(src, "tank2")
+			own_take(src, nameof(/obj/machinery/bomb_tester::tank2))
 		T.forceMove(get_turf(src))
 		update_icon()
 	return TRUE
@@ -202,10 +202,10 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_canister_scan)
 		if(C && C == test_canister())
 			continue
 		else if(C)
-			rel_set(src, "test_canister", C)
+			rel_set(src, nameof(/obj/machinery/bomb_tester::test_canister), C)
 			break
 		else
-			rel_clear(src, "test_canister")
+			rel_clear(src, nameof(/obj/machinery/bomb_tester::test_canister))
 	return TRUE
 
 UI_ACT(/obj/machinery/bomb_tester, "set_can_pressure", ui_act_set_can_pressure, UI_ARG_NUM("pressure"))
@@ -405,8 +405,10 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 
-OWN(/obj/machinery/bomb_tester, tank1, OWN_CONTAINED)
-OWN(/obj/machinery/bomb_tester, tank2, OWN_CONTAINED)
+/obj/machinery/bomb_tester/declare_ownership(decl)
+	..()
+	own(decl, nameof(tank1), policy = OWN_CONTAINED)
+	own(decl, nameof(tank2), policy = OWN_CONTAINED)
 
 /// test canister (a relation view: it reads null once the target is deleted).
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister

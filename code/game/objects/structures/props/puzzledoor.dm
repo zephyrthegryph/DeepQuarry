@@ -42,10 +42,12 @@
 	var/check_range = world.view * checkrange_mult
 	for(var/obj/structure/prop/lock/L in orange(src, check_range))
 		if(L.lockID == lockID)
-			rel_add(src, "locks", L) // the pair adds us to L.linked_objects
+			rel_add(src, nameof(locks), L) // the pair adds us to L.linked_objects
 
 // many-to-many with locks: a dying door leaves each lock's door list and vice versa.
-REL_PAIR_LIST(/obj/machinery/door/blast/puzzle, locks, linked_objects)
+/obj/machinery/door/blast/puzzle/declare_ownership(decl)
+	..()
+	rel(decl, nameof(locks), list = TRUE, pair = nameof(/obj/structure/prop/lock::linked_objects))
 
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(

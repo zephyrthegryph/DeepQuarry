@@ -37,12 +37,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/gun/energy, PERIODIC_SLOW, "self_recharge")
 /obj/item/gun/energy/Initialize(mapload)
 	. = ..()
 	if(self_recharge)
-		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
+		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 	else
 		if(cell_type)
-			rel_set(src, "power_supply", new cell_type(src))
+			rel_set(src, nameof(power_supply), new cell_type(src))
 		else
-			rel_clear(src, "power_supply")
+			rel_clear(src, nameof(power_supply))
 	//random starting power! gives us a random number of shots in the battery between 0 and the max possible
 	if(random_start_ammo && cell_type)
 		power_supply.charge = charge_cost*rand(0,power_supply.maxcharge/charge_cost)
@@ -136,7 +136,7 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 	if(power_supply)
 		return
 	user.remove_from_mob(P)
-	rel_set(src, "power_supply", P)
+	rel_set(src, nameof(power_supply), P)
 	P.forceMove(src)
 	act_message(user, src, MSG_SELF(span_notice("You insert [P] into %T%.")), MSG_OTHERS("%U% inserts [P] into %T%."))
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
@@ -168,7 +168,7 @@ DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refres
 		user.put_in_hands(power_supply)
 		power_supply.update_icon()
 		act_message(user, src, MSG_SELF(span_notice("You remove [power_supply] from %T%.")), MSG_OTHERS("%U% removes [power_supply] from %T%."))
-		rel_clear(src, "power_supply")
+		rel_clear(src, nameof(power_supply))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		update_icon()
 		update_held_icon()
@@ -250,7 +250,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 
 /obj/item/gun/energy/proc/start_recharge()
 	if(power_supply == null)
-		rel_set(src, "power_supply", new /obj/item/cell/device/weapon(src))
+		rel_set(src, nameof(power_supply), new /obj/item/cell/device/weapon(src))
 	set_self_recharge(1)
 	update_icon()
 
@@ -286,7 +286,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 
 // power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
-REL(/obj/item/gun/energy, power_supply)
+/obj/item/gun/energy/declare_ownership(decl)
+	..()
+	rel(decl, nameof(power_supply))
 
 /obj/item/gun/energy/note_shot()
 	..()

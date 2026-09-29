@@ -296,7 +296,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 		if(!M.stat)
 			to_chat(M, span_critical("You feel a sharp pain as something digs into your flesh!"))
 
-		rel_set(src, "host", M)
+		rel_set(src, nameof(host), M)
 		src.forceMove(M)
 		if(ai_brain)
 			ai_brain.set_hostile(FALSE)
@@ -304,8 +304,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
-			rel_set(src, "host_bodypart", H.get_organ(infest_target))
-			rel_add(host_bodypart, "implants", src)
+			rel_set(src, nameof(host_bodypart), H.get_organ(infest_target))
+			rel_add(host_bodypart, nameof(host_bodypart.implants), src)
 
 		return
 	else
@@ -334,12 +334,12 @@ DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
 		return
 
 	if(host_bodypart)
-		rel_remove(host_bodypart, "implants", src)
-		rel_clear(src, "host_bodypart")
+		rel_remove(host_bodypart, nameof(host_bodypart.implants), src)
+		rel_clear(src, nameof(host_bodypart))
 
 	forceMove(get_turf(host))
 
-	rel_clear(src, "host")
+	rel_clear(src, nameof(host))
 
 /mob/living/simple_mob/animal/sif/leech/verb/inject_victim()
 	set category = "Abilities.Leech"

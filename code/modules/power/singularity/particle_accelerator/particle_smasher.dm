@@ -81,7 +81,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 /obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
 	var/obj/item/stack/material/piece = M.split(1)
 	piece.forceMove(src)
-	own_set(src, "target", piece)
+	own_set(src, nameof(target), piece)
 	update_icon()
 	return TRUE
 
@@ -100,7 +100,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 	else
 		user.drop_from_inventory(W)
 	W.forceMove(src)
-	own_set(src, "reagent_container", W)
+	own_set(src, nameof(reagent_container), W)
 	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
 	return TRUE
@@ -135,7 +135,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 	else
 		user.drop_from_inventory(W)
 	W.forceMove(src)
-	own_add(src, "storage", W)
+	own_add(src, nameof(storage), W)
 	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
@@ -228,9 +228,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	set_energy(CLAMP(energy - 5, 0, max_energy))
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
-	own_clear(src, "recipes", OWN_DELETE)
+	own_clear(src, nameof(recipes), OWN_DELETE)
 	for(var/D in subtypesof(/datum/particle_smasher_recipe))
-		own_add(src, "recipes", new D)
+		own_add(src, nameof(recipes), new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 
@@ -295,7 +295,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	if(!successful_craft || !recipe)
 		return
 
-	own_clear(src, "target", OWN_DELETE)
+	own_clear(src, nameof(target), OWN_DELETE)
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
@@ -304,13 +304,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 		for(var/obj/item/I in storage)
 			for(var/item_type in recipe.items)
 				if(istype(I, item_type) && prob(recipe.item_consume_chance))
-					own_remove(src, "storage", I) // consumed
+					own_remove(src, nameof(storage), I) // consumed
 					break
 
 	var/result = recipe.result
 	if(recipe.recipe_type == PS_RESULT_STACK)
 		var/obj/item/stack/material/M = new result(src)
-		own_set(src, "target", M)
+		own_set(src, nameof(target), M)
 	else if(recipe.recipe_type == PS_RESULT_ITEM)
 		new result(get_turf(src))
 	update_icon()
@@ -327,14 +327,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 
 /obj/machinery/particle_smasher/proc/DumpContents()
 	// Everything goes to the floor below: detach the owned slots first.
-	own_take(src, "target")
-	own_take(src, "reagent_container")
+	own_take(src, nameof(target))
+	own_take(src, nameof(reagent_container))
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
 		if(I in storage)
-			own_take_member(src, "storage", I)
+			own_take_member(src, nameof(storage), I)
 		I.forceMove(T)
 	update_icon()
 
@@ -689,12 +689,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 #undef PS_RESULT_ITEM
 
 
-OWN(/obj/machinery/particle_smasher, target, OWN_CONTAINED)
-OWN(/obj/machinery/particle_smasher, reagent_container, OWN_CONTAINED)
+/obj/machinery/particle_smasher/declare_ownership(decl)
+	..()
+	own(decl, nameof(target), policy = OWN_CONTAINED)
+	own(decl, nameof(reagent_container), policy = OWN_CONTAINED)
+	// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
+	own(decl, nameof(storage), policy = OWN_SPILL)
 
 /// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
 	return reagent_container
-
-// Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-OWN(/obj/machinery/particle_smasher, storage, OWN_SPILL)

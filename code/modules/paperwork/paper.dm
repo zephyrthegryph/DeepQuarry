@@ -581,7 +581,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		if(src.loc == user)
 			user.drop_from_inventory(src)
 		src.forceMove(CB)
-		rel_set(CB, "toppaper", src)
+		rel_set(CB, nameof(CB.toppaper), src)
 		CB.update_icon()
 		to_chat(user, span_notice("You clip the [src] onto \the [CB]."))
 
@@ -632,8 +632,8 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		src.forceMove(B)
 		P.forceMove(B)
 
-		rel_add(B, "pages", src)
-		rel_add(B, "pages", P)
+		rel_add(B, nameof(B.pages), src)
+		rel_add(B, nameof(B.pages), P)
 		B.update_icon()
 
 	else if(istype(P, /obj/item/pen))

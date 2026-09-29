@@ -74,9 +74,9 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
 		C.forceMove(src)
-		own_set(src, "cell", C)
+		own_set(src, nameof(cell), C)
 		return
-	own_set(src, "cell", new /obj/item/cell/hyper(src))
+	own_set(src, nameof(cell), new /obj/item/cell/hyper(src))
 
 /obj/mecha/combat/gygax/serenity
 	desc = "A lightweight exosuit made from a modified Gygax chassis combined with proprietary VeyMed medical tech. It's faster and sturdier than most medical mechs, but much of the armor plating has been stripped out, leaving it more vulnerable than a regular Gygax."
@@ -140,4 +140,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothin
 	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))
 
-OWN(/obj/mecha/combat/gygax/serenity, hud, OWN_CONTAINED)
+/obj/mecha/combat/gygax/serenity/declare_ownership(decl)
+	..()
+	own(decl, nameof(hud), policy = OWN_CONTAINED)

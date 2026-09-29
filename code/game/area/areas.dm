@@ -274,10 +274,10 @@ DECLARE_APPEARANCE_PROC(/area, TYPE_PROC_REF(/atom, appearance_overlays), list()
 /area/var/list/power_machines
 
 /area/proc/power_subscribe(obj/machinery/M)
-	rel_add(src, "power_machines", M)
+	rel_add(src, nameof(power_machines), M)
 
 /area/proc/power_unsubscribe(obj/machinery/M)
-	rel_remove(src, "power_machines", M)
+	rel_remove(src, nameof(power_machines), M)
 
 // Called once per area channel change (the APC's Rust power event). Lights and
 // other reactor subscribers hear the key; subscribed machines re-check their
@@ -678,4 +678,6 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
 /// areas are never relation targets). A dying APC leaves it.
-REL(/area, apc)
+/area/declare_ownership(decl)
+	..()
+	rel(decl, nameof(apc))

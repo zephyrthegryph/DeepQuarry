@@ -91,7 +91,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	if(!user.unEquip(I, target = src))
 		return TRUE
 
-	rel_set(src, "scanned_item", I)
+	rel_set(src, nameof(scanned_item), I)
 	to_chat(user, span_notice("You put [I] into [src]."))
 	return TRUE
 
@@ -160,7 +160,7 @@ UI_ACT(/obj/machinery/radiocarbon_spectrometer, "ejectItem", ui_act_ejectitem)
 UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_ejectitem)
 	if(scanned_item())
 		scanned_item().forceMove(loc)
-		rel_clear(src, "scanned_item")
+		rel_clear(src, nameof(/obj/machinery/radiocarbon_spectrometer::scanned_item))
 	return TRUE
 
 UI_ACT(/obj/machinery/radiocarbon_spectrometer, "set_scanner_rpm_delta", ui_act_set_scanner_rpm_delta, UI_ARG_NUM("delta"))
@@ -182,7 +182,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/radiocarbon_spectrometer, MACHINE_PIPELINE
 
 /obj/machinery/radiocarbon_spectrometer/machine_step()
 	if(!scanned_item() || scanned_item().loc != src)
-		rel_clear(src, "scanned_item")
+		rel_clear(src, nameof(scanned_item))
 		stop_scanning()
 		return
 
@@ -304,7 +304,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/radiocarbon_spectrometer, MACHINE_PIPELINE
 
 	P.forceMove(loc)
 	scanned_item().forceMove(loc)
-	rel_clear(src, "scanned_item")
+	rel_clear(src, nameof(scanned_item))
 
 #undef RPM_FRICTION
 #undef IDEAL_RPM

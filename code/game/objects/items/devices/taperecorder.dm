@@ -117,7 +117,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	if(!user.unEquip(I))
 		return TRUE
 	I.forceMove(src)
-	own_set(src, "mytape", I)
+	own_set(src, nameof(mytape), I)
 	to_chat(user, span_notice("You insert [I] into [src]."))
 	update_icon()
 	return TRUE
@@ -143,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 		taperecorder_stop_effect(user)
 	to_chat(user, span_notice("You remove [mytape] from [src]."))
 	user.put_in_hands(mytape)
-	own_take(src, "mytape")
+	own_take(src, nameof(mytape))
 	update_icon()
 
 /obj/item/taperecorder/hear_talk(mob/M, list/message_pieces, verb)

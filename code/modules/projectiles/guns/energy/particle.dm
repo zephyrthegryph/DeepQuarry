@@ -128,7 +128,7 @@
 	if(!attached_safety)
 		return
 	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
-	user.put_in_hands(own_take(src, "attached_safety"))
+	user.put_in_hands(own_take(src, nameof(attached_safety)))
 	safetycatch = 0
 
 /// Old attackby.
@@ -140,7 +140,7 @@
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
 		A.forceMove(src)
-		own_set(src, "attached_safety", A)
+		own_set(src, nameof(attached_safety), A)
 		safetycatch = 1
 		return INTERACTION_HANDLED_PASS
 

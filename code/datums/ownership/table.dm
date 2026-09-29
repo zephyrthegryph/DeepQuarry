@@ -1,41 +1,132 @@
 // Ownership tables (doc/rewrite/ownership.md): one per type, built from the type's
-// OWN / SHARED / PROTO / REF declarations (code/__defines/ownership.dm) the first time an
-// instance asks, cached in the `own_table` shared cache.
+// declare_ownership() override the first time an instance asks, cached in the `own_table` shared
+// cache.
 
-/// The type's declarations: var name -> entry list(kind, arg, partner, extra). Each
-/// declaration macro overrides this and adds one entry on top of ..(). Never override by hand.
-/datum/proc/declared_ownership()
-	return null
+// ---------------------------------------------------------------- declaring
 
-/// KEEP_AFTER_DESTROY vars (diagnostics: the leak check skips them).
-/datum/proc/declared_keep_vars()
-	return null
-
-/// FORWARD_STATE vars (om_handle_forward() carries them to a replace_with() successor).
-/datum/proc/declared_forward_vars()
-	return null
+/// The type's ownership declarations: the one well-known proc a type overrides to declare the
+/// exceptions to kind inference. Call ..() first, then one concept proc per var:
+///
+///	/obj/machinery/sleeper/declare_ownership(decl)
+///		..()
+///		own(decl, nameof(beaker), policy = OWN_SPILL)
+///		rel(decl, nameof(console), pair = nameof(/obj/machinery/sleep_console::sleeper))
+///
+/// Runs once per type (on the first instance that needs the table); never call it by hand.
+/datum/proc/declare_ownership(datum/own_decls/decl)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
 
 /// OWN_TIMER names: the timers this type owns (code/datums/om/timer.dm).
 /datum/proc/declared_timer_slots()
 	return list()
 
-/// POOL_RESET vars (pool_release() resets them).
-/datum/proc/declared_pool_reset()
-	return null
+/// The declarations collected from one type's declare_ownership() chain.
+/datum/own_decls
+	/// var name -> entry list(kind, arg, partner, extra, is_list, watch)
+	var/list/entries = list()
+	/// "var: ..." lines for a var declared with two kinds across the hierarchy.
+	var/list/conflicts
+	/// Annotations: keep_after_destroy / pool_reset / forward var names.
+	var/list/keep
+	var/list/pool_reset
+	var/list/forward
+	/// rel(decl, keyed = nameof(key)) with no var: instances are keyed targets found through `key`.
+	var/keyed_key
 
-/// Declaration plumbing: `parent` (a fresh table from ..(), or null) with `entry` for `var_name`.
-/// One kind per var across the hierarchy: a subtype may change an OWN policy or a REF's
-/// partner, never the kind. A conflict is kept on the table and reported when it is built.
-/proc/own_declare(list/parent, var_name, list/entry)
-	. = parent ? parent : list()
-	var/list/old = .[var_name]
+/// Records `entry` for `var_name`. One kind per var across the hierarchy: a subtype may change an
+/// own policy or a relation's options, never the kind. A conflict is reported when the table is
+/// built.
+/datum/own_decls/proc/put(var_name, list/entry)
+	var/list/old = entries[var_name]
 	if(old && old[OWNE_KIND] != entry[OWNE_KIND])
-		var/list/conflicts = .["\[conflicts]"]
-		if(!conflicts)
-			conflicts = list()
-			.["\[conflicts]"] = conflicts
-		conflicts += "[var_name]: declared [own_kind_name(old[OWNE_KIND])] by an ancestor and [own_kind_name(entry[OWNE_KIND])] here"
-	.[var_name] = entry
+		LAZYADD(conflicts, "[var_name]: declared [own_kind_name(old[OWNE_KIND])] by an ancestor and [own_kind_name(entry[OWNE_KIND])] here")
+	entries[var_name] = entry
+
+/// The annotation options every concept proc takes.
+/datum/own_decls/proc/annotate(var_name, keep_after_destroy, pool_reset, forward)
+	if(keep_after_destroy)
+		LAZYOR(keep, var_name)
+	if(pool_reset)
+		LAZYOR(src.pool_reset, var_name)
+	if(forward)
+		LAZYOR(src.forward, var_name)
+
+/**
+ * Own: the holder owns var_name's value(s) (one, a list, or assoc values) and tears them down.
+ *
+ * - `policy`: OWN_DELETE (destroyed with the holder), OWN_SPILL (a movable drops to the holder's
+ *   drop location) or OWN_CONTAINED (a movable in the holder's contents; its ledger slot decides).
+ * - `policy_proc`: a proc path on the holder returning the policy at teardown (instead of `policy`).
+ * - `if_var` / `else_policy`: `policy` while the holder's var `if_var` (a nameof()) is true, else
+ *   `else_policy`.
+ * - Annotations: `keep_after_destroy` (the leak check skips the var), `pool_reset`
+ *   (pool_release() resets it to its initial value), `forward` (replace_with() carries it to the
+ *   successor: an owned value moves, a relation re-links, anything else is copied).
+ *
+ * With no policy, policy_proc or if_var the call only annotates: the var keeps the kind its writes
+ * give it (none, for plain data such as a pooled packet's numbers).
+ */
+/proc/own(datum/own_decls/decl, var_name, policy = null, policy_proc = null, if_var = null, else_policy = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
+	decl.annotate(var_name, keep_after_destroy, pool_reset, forward)
+	if(policy_proc)
+		decl.put(var_name, list(OWNK_OWN, policy_proc, null, null, FALSE, null))
+	else if(if_var)
+		decl.put(var_name, list(OWNK_OWN, isnull(policy) ? OWN_DELETE : policy, if_var, isnull(else_policy) ? OWN_DELETE : else_policy, FALSE, null))
+	else if(!isnull(policy))
+		decl.put(var_name, list(OWNK_OWN, policy, null, null, FALSE, null))
+
+/// Shared: var_name holds a registered singleton or DEF (only an untyped var needs this; a var
+/// typed as a registry type is implicitly shared). Never cleared.
+/proc/shared(datum/own_decls/decl, var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
+	decl.annotate(var_name, keep_after_destroy, pool_reset, forward)
+	decl.put(var_name, list(OWNK_SHARED, null, null, null, FALSE, null))
+
+/// Proto: var_name holds a registered prototype or a private copy the holder owns
+/// (proto_private / proto_set). Teardown deletes private copies only.
+/proc/proto(datum/own_decls/decl, var_name, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
+	decl.annotate(var_name, keep_after_destroy, pool_reset, forward)
+	decl.put(var_name, list(OWNK_PROTO, null, null, null, FALSE, null))
+
+/**
+ * Relation: var_name is a non-owning view the framework clears when the target dies.
+ *
+ * - `list`: the view is a list (1:N, or the "many" side of a pair).
+ * - `pair`: two-sided. `nameof(/partner/type::partner_var)`, the partner's var naming us back
+ *   (single or a list; the partner declares its end too). One rel_set()/rel_add() writes both
+ *   sides; a single end is exclusive. Never write the partner's side by hand.
+ * - `symmetric`: symmetric membership. var_name is a list; linking A to B adds each to the other's
+ *   var_name.
+ * - `keyed` + `keyed_target`: auto-linked by id. When the holder or a `keyed_target` instance
+ *   materializes, the view links to the targets whose key equals the holder's var `keyed`.
+ * - `keyed` alone, with no var_name: instances of this type are keyed targets, found by keyed
+ *   relations through their var `keyed`.
+ * - `watch`: list(nameof(/target/type::var), ...), the target vars the holder's reactive procs
+ *   (draw, should_run, hidden_verbs, ui_data, needs procs) read. While linked, a changed() of the
+ *   target marks the holder changed too.
+ */
+/proc/rel(datum/own_decls/decl, var_name = null, list = FALSE, pair = null, symmetric = FALSE, keyed = null, keyed_target = null, list/watch = null, keep_after_destroy = FALSE, pool_reset = FALSE, forward = FALSE)
+	if(isnull(var_name))
+		if(!keyed || keyed_target)
+			CRASH("rel() without a var declares a keyed target: pass keyed = nameof(key) only")
+		decl.keyed_key = keyed
+		return
+	decl.annotate(var_name, keep_after_destroy, pool_reset, forward)
+	var/shape = RELS_PLAIN
+	var/partner = null
+	if(symmetric)
+		shape = RELS_SYMMETRIC
+		partner = var_name
+		list = TRUE
+	else if(pair)
+		shape = RELS_PAIR
+		partner = pair
+	var/extra = null
+	if(keyed_target)
+		if(!keyed)
+			CRASH("rel([var_name]): keyed_target needs keyed = nameof(our key var)")
+		extra = list(keyed_target, keyed)
+	decl.put(var_name, list(OWNK_REL, shape, partner, extra, !!list, length(watch) ? watch.Copy() : null))
 
 /proc/own_kind_name(kind)
 	switch(kind)
@@ -59,17 +150,23 @@
 	var/list/ref_vars
 	var/list/proto_vars
 	var/list/shared_vars
-	/// REL_KEYED var names.
+	/// Keyed relation var names.
 	var/list/keyed_vars
-	/// KEEP_AFTER_DESTROY / POOL_RESET names.
+	/// keep_after_destroy / pool_reset names.
 	var/list/keep_vars
 	var/list/pool_reset_vars
 	/// OWN_TIMER names (owned timers), or null.
 	var/list/timer_slots
 	/// TRUE when the type declares nothing to tear down (the fast path).
 	var/empty = TRUE
-	/// TRUE when materialize/dematerialize has keyed-link work (REL_KEYED views or KEYED_TARGET).
+	/// TRUE when materialize/dematerialize has keyed-link work (keyed views, or a keyed target).
 	var/materialize_work = FALSE
+	/// forward-annotated var names (om_forward_state()), or null.
+	var/list/forward_vars
+	/// The key var when instances are keyed targets (rel(decl, keyed = ...)), or null.
+	var/keyed_key
+	/// REL vars declared with watch =, or null.
+	var/list/watch_vars
 
 /// D's ownership table (never null).
 /proc/own_table_of(datum/D)
@@ -84,13 +181,11 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /proc/build_own_table(datum/D)
 	var/datum/own_table/T = new
 	T.owner_type = D.type
-	var/list/decl = D.declared_ownership()
-	var/list/conflicts = decl?["\[conflicts]"]
-	if(conflicts)
-		decl -= "\[conflicts]"
-		for(var/line in conflicts)
-			OWN_REPORT("[D.type]: one kind per var: [line]")
-	T.entries = decl || list()
+	var/datum/own_decls/decl = new
+	D.declare_ownership(decl)
+	for(var/line in decl.conflicts)
+		OWN_REPORT("[D.type]: one kind per var: [line]")
+	T.entries = decl.entries
 	for(var/var_name in T.entries)
 		var/list/entry = T.entries[var_name]
 		if(!(var_name in D.vars))
@@ -103,16 +198,22 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				LAZYADD(T.ref_vars, var_name)
 				if(entry[OWNE_EXTRA])
 					LAZYADD(T.keyed_vars, var_name)
+				if(entry[OWNE_WATCH])
+					LAZYADD(T.watch_vars, var_name)
 			if(OWNK_PROTO)
 				LAZYADD(T.proto_vars, var_name)
 			if(OWNK_SHARED)
 				LAZYADD(T.shared_vars, var_name)
-	T.keep_vars = D.declared_keep_vars()
-	T.pool_reset_vars = D.declared_pool_reset()
+	T.keep_vars = decl.keep
+	T.pool_reset_vars = decl.pool_reset
+	T.forward_vars = decl.forward
+	T.keyed_key = decl.keyed_key
+	if(T.keyed_key && !(T.keyed_key in D.vars))
+		OWN_REPORT("[D.type] is a keyed target through var '[T.keyed_key]', which it doesn't have")
 	var/list/slots = D.declared_timer_slots()
 	T.timer_slots = length(slots) ? slots : null
 	T.empty = !(T.own_vars || T.ref_vars || T.proto_vars)
-	T.materialize_work = !!(T.keyed_vars || D.keyed_target_var())
+	T.materialize_work = !!(T.keyed_vars || T.keyed_key)
 	own_validate_table(D, T)
 	return T
 
@@ -134,13 +235,13 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				if(policy == OWN_CONTAINED && !ismovable(D) && !isturf(D))
 					OWN_REPORT("[D.type].[var_name]: CONTAINED on a type with no contents")
 				if(entry[OWNE_PARTNER] && !(entry[OWNE_PARTNER] in D.vars))
-					OWN_REPORT("[D.type].[var_name]: OWN_IF flag [entry[OWNE_PARTNER]] is not a var")
+					OWN_REPORT("[D.type].[var_name]: own() if_var [entry[OWNE_PARTNER]] is not a var")
 				var/datum/held = value
 				if(isdatum(held) && is_registered(held))
 					OWN_REPORT("[D.type].[var_name]: OWN of registry type [held.type] (a registered instance is SHARED; a per-holder copy is PROTO)")
 			if(OWNK_REL)
 				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !islist(value) && !isnull(value))
-					OWN_REPORT("[D.type].[var_name]: REL_SET needs a list var")
+					OWN_REPORT("[D.type].[var_name]: rel(symmetric = TRUE) needs a list var")
 
 /// A framework write changed holder.var_name. When the var is also a declared OM field
 /// (OM_FIELD), its channel is raised exactly as the field's setter would, so stages, watches and
@@ -166,8 +267,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	return own_table_of(holder).entries[var_name]
 
 /// The entry for holder.var_name, which must be of `kind`. An undeclared var is learned: the
-/// first own_set()/own_add() on it records an implicit OWN(DELETE), the first rel_set()/rel_add()
-/// an implicit REF, in the type's table (ownership.md §7: declarations are only for exceptions).
+/// first own_set()/own_add() on it records an implicit own(policy = OWN_DELETE), the first
+/// rel_set()/rel_add() an implicit rel(), in the type's table (ownership.md §7: declarations are only for exceptions).
 /// A var of another kind is reported and null is returned.
 /proc/own_entry_of_kind(datum/holder, var_name, kind, is_list = FALSE)
 	var/datum/own_table/T = own_table_of(holder)
@@ -178,10 +279,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 			return null
 		switch(kind)
 			if(OWNK_OWN)
-				entry = list(OWNK_OWN, OWN_DELETE, null, null, is_list)
+				entry = list(OWNK_OWN, OWN_DELETE, null, null, is_list, null)
 				LAZYADD(T.own_vars, var_name)
 			if(OWNK_REL)
-				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list)
+				entry = list(OWNK_REL, RELS_PLAIN, null, null, is_list, null)
 				LAZYADD(T.ref_vars, var_name)
 			else
 				OWN_REPORT("[holder.type].[var_name] is not declared [own_kind_name(kind)]")

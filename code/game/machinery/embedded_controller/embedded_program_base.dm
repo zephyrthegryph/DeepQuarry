@@ -6,13 +6,15 @@
 	var/id_tag
 
 /datum/embedded_program/New(obj/machinery/embedded_controller/M)
-	rel_set(src, "master", M)
+	rel_set(src, nameof(master), M)
 	if (istype(M, /obj/machinery/embedded_controller/radio))
 		var/obj/machinery/embedded_controller/radio/R = M
 		id_tag = R.id_tag
 
 // The controller owns its program (embedded_controller.program); the program names it back.
-REL(/datum/embedded_program, master)
+/datum/embedded_program/declare_ownership(decl)
+	..()
+	rel(decl, nameof(master))
 
 // Return TRUE if was a command for us, otherwise return FALSE (so controllers with multiple programs can try each in turn until one accepts)
 /datum/embedded_program/proc/receive_user_command(command)

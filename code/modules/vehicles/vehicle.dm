@@ -56,7 +56,7 @@ EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
 //-------------------------------------------
 /obj/vehicle/Initialize(mapload)
 	. = ..()
-	own_set(src, "soundloop", new /datum/looping_sound/idle_carengine(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 
 ///obj/vehicle/New()
 //	..()
@@ -69,7 +69,7 @@ EMP_DISABLE(/obj/vehicle, 30 SECONDS, "emp_until")
 	. = ..()
 	M.update_water()
 	if(riding_datum)
-		rel_set(riding_datum, "ridden", src)
+		rel_set(riding_datum, nameof(riding_datum.ridden), src)
 		riding_datum.handle_vehicle_offsets()
 
 /obj/vehicle/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
@@ -266,7 +266,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 		if(cell)
 			cell.forceMove(Tsec)
 			cell.update_icon()
-			own_take(src, "cell")
+			own_take(src, nameof(cell))
 
 	qdel(src)
 
@@ -303,7 +303,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 
 	H.drop_from_inventory(C)
 	C.forceMove(src)
-	own_set(src, "cell", C)
+	own_set(src, nameof(cell), C)
 	powercheck()
 	to_chat(H, span_notice("You install [C] in [src]."))
 
@@ -316,7 +316,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	to_chat(H, span_notice("You remove [cell] from [src]."))
 	cell.forceMove(get_turf(H))
 	H.put_in_hands(cell)
-	own_take(src, "cell")
+	own_take(src, nameof(cell))
 	powercheck()
 
 /obj/vehicle/proc/RunOver(mob/living/M)
@@ -346,7 +346,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	C.set_dir(dir)
 	C.set_anchored(TRUE)
 
-	rel_set(src, "load", C)
+	rel_set(src, nameof(load), C)
 
 	if(load_item_visible)
 		C.pixel_x += load_offset_x
@@ -406,7 +406,7 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	if(ismob(load))
 		unbuckle_mob(load)
 
-	rel_clear(src, "load")
+	rel_clear(src, nameof(load))
 
 	return 1
 
@@ -444,4 +444,6 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
 
-OWN(/obj/vehicle, cell, OWN_CONTAINED)
+/obj/vehicle/declare_ownership(decl)
+	..()
+	own(decl, nameof(cell), policy = OWN_CONTAINED)

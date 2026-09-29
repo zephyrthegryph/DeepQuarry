@@ -120,7 +120,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/baton, TYPE_PROC_REF(/atom, appearance_o
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				own_set(src, "bcell", W)
+				own_set(src, nameof(bcell), W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -152,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, "bcell")
+			own_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_icon()
@@ -250,7 +250,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				own_set(src, "bcell", W)
+				own_set(src, nameof(bcell), W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else

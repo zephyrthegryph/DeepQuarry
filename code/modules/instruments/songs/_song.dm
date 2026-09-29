@@ -116,7 +116,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
-	rel_set(src, "parent", parent)
+	rel_set(src, nameof(parent), parent)
 	if(instrument_ids)
 		allowed_instrument_ids = islist(instrument_ids) ? instrument_ids : list(instrument_ids)
 	if(length(allowed_instrument_ids))
@@ -147,10 +147,10 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	// hearing_mobs is a relation list: a deleted hearer leaves it by itself; stop_playing() still
 	// terminates the sound of every hearer left in it.
 	for(var/mob/M as anything in old - now)
-		rel_remove(src, "hearing_mobs", M)
+		rel_remove(src, nameof(hearing_mobs), M)
 		terminate_sound_mob(M)
 	for(var/mob/M as anything in now - old)
-		rel_add(src, "hearing_mobs", M)
+		rel_add(src, nameof(hearing_mobs), M)
 
 /**
  * Sets our instrument, caching anything necessary for faster accessing. Accepts an ID, typepath, or instantiated instrument datum.
@@ -159,7 +159,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	terminate_all_sounds()
 	var/old_legacy
 	if(using_instrument())
-		rel_remove(using_instrument(), "songs_using", src)
+		rel_remove(using_instrument(), nameof(/datum/instrument::songs_using), src)
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument_static = null
 	legacy = null
@@ -167,7 +167,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 		I = instrument_service().instrument_data[I]
 	if(istype(I))
 		using_instrument_static = I
-		rel_add(I, "songs_using", src)
+		rel_add(I, nameof(I.songs_using), src)
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			legacy = TRUE
@@ -198,7 +198,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
-	rel_set(src, "music_player", user)
+	rel_set(src, nameof(music_player), user)
 	if(id)
 		sync_play()
 
@@ -242,8 +242,8 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 		compiled_chords = null
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
-	rel_clear(src, "hearing_mobs")
-	rel_clear(src, "music_player")
+	rel_clear(src, nameof(hearing_mobs))
+	rel_clear(src, nameof(music_player))
 
 /**
  * Processes our song.
@@ -424,4 +424,6 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/music_player() as /atom
 	return music_player
 
-REL_LIST(/datum/song, hearing_mobs)
+/datum/song/declare_ownership(decl)
+	..()
+	rel(decl, nameof(hearing_mobs), list = TRUE)

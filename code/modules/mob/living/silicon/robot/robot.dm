@@ -176,7 +176,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 
 	set_wires(new /datum/wires/robot(src))
 
-	own_set(src, "robot_modules_background", new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
+	own_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
 	robot_modules_background.icon_state = "block"
 	ident = rand(1, 999)
 	updatename(modtype)
@@ -213,15 +213,15 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	update_icon()
 
 /mob/living/silicon/robot/proc/setup_radio()
-	own_set(src, "radio", new /obj/item/radio/borg(src))
-	rel_set(src, "common_radio", radio) // an alias of the owned radio
+	own_set(src, nameof(radio), new /obj/item/radio/borg(src))
+	rel_set(src, nameof(common_radio), radio) // an alias of the owned radio
 
 /// The photo camera and the machinery camera that feeds the robots network.
 /mob/living/silicon/robot/proc/setup_camera()
 	if(photo_camera_type)
-		own_set(src, "aiCamera", new photo_camera_type(src))
+		own_set(src, nameof(aiCamera), new photo_camera_type(src))
 	if(!scrambledcodes && !camera)
-		own_set(src, "camera", new /obj/machinery/camera(src))
+		own_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.c_tag = real_name
 		camera.replace_networks(list(NETWORK_DEFAULT,NETWORK_ROBOTS))
 		if(wires.is_cut(WIRE_BORG_CAMERA))
@@ -233,7 +233,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	return
 
 /mob/living/silicon/robot/proc/setup_laws()
-	own_set(src, "laws", new using_map.default_law_type) //use map's default
+	own_set(src, nameof(laws), new using_map.default_law_type) //use map's default
 	additional_law_channels["Binary"] = "#b"
 	if(!lawupdate || scrambledcodes)
 		return
@@ -252,15 +252,15 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		set_cell(new cell_type(src))
 
 /mob/living/silicon/robot/proc/setup_hud_images()
-	own_put(src, "hud_list", HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
-	own_put(src, "hud_list", STATUS_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS))
-	own_put(src, "hud_list", LIFE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE))
-	own_put(src, "hud_list", ID_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID))
-	own_put(src, "hud_list", WANTED_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED))
-	own_put(src, "hud_list", IMPLOYAL_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL))
-	own_put(src, "hud_list", IMPCHEM_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM))
-	own_put(src, "hud_list", IMPTRACK_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK))
-	own_put(src, "hud_list", SPECIALROLE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL))
+	own_put(src, nameof(hud_list), HEALTH_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_HEALTH))
+	own_put(src, nameof(hud_list), STATUS_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_STATUS))
+	own_put(src, nameof(hud_list), LIFE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudhealth100", plane = PLANE_CH_LIFE))
+	own_put(src, nameof(hud_list), ID_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_ID))
+	own_put(src, nameof(hud_list), WANTED_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_WANTED))
+	own_put(src, nameof(hud_list), IMPLOYAL_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPLOYAL))
+	own_put(src, nameof(hud_list), IMPCHEM_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPCHEM))
+	own_put(src, nameof(hud_list), IMPTRACK_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_IMPTRACK))
+	own_put(src, nameof(hud_list), SPECIALROLE_HUD, gen_hud_image('icons/mob/hud.dmi', src, "hudblank", plane = PLANE_CH_SPECIAL))
 
 /// The sprite datum is never null after Initialize: the module default, or
 /// the generic default when the sprite subsystem isn't ready.
@@ -268,9 +268,9 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	if(sprite_datum)
 		return
 	if(SSrobot_sprites)
-		proto_set(src, "sprite_datum", SSrobot_sprites.get_default_module_sprite(modtype))
+		proto_set(src, nameof(sprite_datum), SSrobot_sprites.get_default_module_sprite(modtype))
 	if(!sprite_datum)
-		proto_set(src, "sprite_datum", new /datum/robot_sprite/default(src)) // unregistered fallback: the robot's private copy
+		proto_set(src, nameof(sprite_datum), new /datum/robot_sprite/default(src)) // unregistered fallback: the robot's private copy
 
 /mob/living/silicon/robot/rejuvenate()
 	// Clear every located load first, then rebuild any fried or missing parts.
@@ -316,7 +316,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 			if(T && host)
 				var/mob/living/carbon/brain/view = host.receive_mind(mind, "cyborg [src] destroyed")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(src, "mmi") // left the robot for the turf
+				own_take(src, nameof(mmi)) // left the robot for the turf
 			else
 				if(!T)
 					// The MMI stays in the robot and goes with it by ownership policy.
@@ -325,7 +325,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 					if(!shell) // Shells don't have brainmobs in their MMIs.
 						log_game("MIND: cyborg [key_name(src)] was destroyed but its MMI [mmi] has no mind host; ghosting.")
 						to_chat(src, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
-					own_take(src, "mmi") // left the robot for the turf
+					own_take(src, nameof(mmi)) // left the robot for the turf
 				ghostize(FALSE)
 		// A mindless MMI stays in the robot and goes with it by ownership policy.
 	clear_traitor_hud()
@@ -401,7 +401,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		om_unhook(old_cell, list(/datum/om/event/before/atom_pre_emp_act, /datum/om/event/qdeleting), src)
 	if(new_cell && new_cell.loc != src)
 		new_cell.forceMove(src)
-	rel_set(src, "cell", new_cell)
+	rel_set(src, nameof(cell), new_cell)
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	// A5: a replacement (not a removal: remove_cell() uninstalls first and keeps the cell) takes
 	// the old cell out of the mount and deletes it, instead of orphaning it in contents (a
@@ -435,7 +435,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 	EVENT_HANDLER
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
-		own_take(mount, "wrapped")
+		own_take(mount, nameof(mount.wrapped))
 		mount.installed = ROBOT_PART_MISSING
 	set_cell(null)
 
@@ -584,13 +584,13 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 // setup the PDA and its name
 /mob/living/silicon/robot/proc/setup_PDA()
 	if (!rbPDA)
-		own_set(src, "rbPDA", new/obj/item/pda/ai(src))
+		own_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
 	om_grant(src, GRANT_VERB, /obj/item/pda/ai/verb/cmd_pda_open_ui, src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
-		own_set(src, "communicator", new/obj/item/communicator/integrated(src))
+		own_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
 	om_grant(src, GRANT_VERB, /obj/item/communicator/integrated/verb/activate, src)
 
@@ -608,7 +608,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 		if(module_sprites.len == 1 || !client)
 			if(!module_sprites.len)
 				return
-			proto_set(src, "sprite_datum", module_sprites[1])
+			proto_set(src, nameof(sprite_datum), module_sprites[1])
 			sprite_datum.do_equipment_glamour(module)
 			update_worn_icons()
 			return
@@ -799,7 +799,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	user.drop_from_inventory(W)
 	W.forceMove(src)
-	own_set(src, "bolt", W)
+	own_set(src, nameof(bolt), W)
 	to_chat(user, span_notice("You install \the [W]."))
 	return TRUE
 
@@ -965,10 +965,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
-	own_set(C, "l_leg", new/obj/item/robot_parts/l_leg(C))
-	own_set(C, "r_leg", new/obj/item/robot_parts/r_leg(C))
-	own_set(C, "l_arm", new/obj/item/robot_parts/l_arm(C))
-	own_set(C, "r_arm", new/obj/item/robot_parts/r_arm(C))
+	own_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
+	own_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
+	own_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
+	own_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
 	qdel(src)
@@ -1101,7 +1101,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /mob/living/silicon/robot/proc/wrench_act_robot_done(mob/user)
 	bolt.forceMove(get_turf(src))
-	own_take(src, "bolt")
+	own_take(src, nameof(bolt))
 	to_chat(user, span_filter_notice("You remove the restraining bolt."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -1396,7 +1396,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
 	if(hat)
 		remove_hat(get_turf(src))
-	own_set(src, "hat", new_hat)
+	own_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
 	update_icon()
 
@@ -1405,7 +1405,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 	var/obj/item/old_hat = hat
 	if(!old_hat)
 		return null
-	own_take(src, "hat")
+	own_take(src, nameof(hat))
 	old_hat.forceMove(drop_loc)
 	update_icon()
 	return old_hat
@@ -1519,7 +1519,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	return
 
 /mob/living/silicon/robot/proc/set_default_module_icon()
-	proto_set(src, "sprite_datum", null)
+	proto_set(src, nameof(sprite_datum), null)
 	resolve_sprite_datum()
 	update_icon()
 
@@ -1583,10 +1583,10 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 		if(!silent)
 			sync() // One last sync attempt
 		om_unhook(old_ai, list(/datum/om/event/silicon_laws_changed, /datum/om/event/qdeleting), src)
-		rel_remove(old_ai, "connected_robots", src)
-	rel_set(src, "connected_ai", new_ai)
+		rel_remove(old_ai, nameof(old_ai.connected_robots), src)
+	rel_set(src, nameof(connected_ai), new_ai)
 	if(new_ai)
-		rel_add(new_ai, "connected_robots", src)
+		rel_add(new_ai, nameof(new_ai.connected_robots), src)
 		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
 		om_hook(new_ai, /datum/om/event/qdeleting, src, PROC_REF(on_master_deleted))
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
@@ -1622,7 +1622,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
-	own_set(src, "laws", new /datum/ai_laws/syndicate_override)
+	own_set(src, nameof(laws), new /datum/ai_laws/syndicate_override)
 	var/time = time2text(world.realtime,"hh:mm:ss")
 	GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) emagged [name]([key])")
 	set_zeroth_law("Only [user.real_name] and people [user.p_they()] designate[user.p_s()] as being such are operatives.")
@@ -1846,7 +1846,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	// TODO: Update to new antagonist system.
 	if(mind && !mind.special_role)
 		mind.special_role = "traitor"
-		rel_add(GLOB.traitors, "current_antagonists", mind)
+		rel_add(GLOB.traitors, nameof(/datum/antagonist::current_antagonists), mind)
 	build_traitor_hud()
 
 /mob/living/silicon/robot/proc/build_traitor_hud()
@@ -1909,11 +1909,13 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	return (given_type in module.supported_upgrades)
 
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/robot_ui)
-OWN(/mob/living/silicon/robot, hat, OWN_SPILL)
-// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
-// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
-OWN(/mob/living/silicon/robot, mmi, OWN_CONTAINED)
-// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
-REL(/mob/living/silicon/robot, cell)
-// A registered robot sprite, or the robot's private fallback default (copy-on-write).
-PROTO(/mob/living/silicon/robot, sprite_datum)
+/mob/living/silicon/robot/declare_ownership(decl)
+	..()
+	own(decl, nameof(hat), policy = OWN_SPILL)
+	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
+	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
+	own(decl, nameof(mmi), policy = OWN_CONTAINED)
+	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
+	rel(decl, nameof(cell))
+	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
+	proto(decl, nameof(sprite_datum))

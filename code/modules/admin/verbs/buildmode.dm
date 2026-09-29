@@ -31,18 +31,18 @@
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)
-			rel_set(A, "master", H)
+			rel_set(A, nameof(A.master), H)
 			var/obj/effect/bmode/buildhelp/B = new/obj/effect/bmode/buildhelp(H)
-			rel_set(B, "master", H)
+			rel_set(B, nameof(B.master), H)
 			var/obj/effect/bmode/buildmode/C = new/obj/effect/bmode/buildmode(H)
-			rel_set(C, "master", H)
+			rel_set(C, nameof(C.master), H)
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
-			rel_set(D, "master", H)
+			rel_set(D, nameof(D.master), H)
 
-			own_set(H, "builddir", A)
-			own_set(H, "buildhelp", B)
-			own_set(H, "buildmode", C)
-			own_set(H, "buildquit", D)
+			own_set(H, nameof(H.builddir), A)
+			own_set(H, nameof(H.buildhelp), B)
+			own_set(H, nameof(H.buildmode), C)
+			own_set(H, nameof(H.buildquit), D)
 			M.client.screen += A
 			M.client.screen += B
 			M.client.screen += C
@@ -213,7 +213,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 /obj/effect/bmode/buildholder/on_destroy(force)
 	for(var/mob/living/unit in selected_mobs?.Copy())
 		deselect_AI_mob(cl(), unit)
-	rel_clear(src, "selected_mobs")
+	rel_clear(src, nameof(selected_mobs))
 	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.
@@ -236,11 +236,11 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	T.flags |= ADMIN_SPAWNED
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
-	rel_add(src, "selected_mobs", unit)
+	rel_add(src, nameof(selected_mobs), unit)
 	C.images += unit.selected_image
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
-	rel_remove(src, "selected_mobs", unit)
+	rel_remove(src, nameof(selected_mobs), unit)
 	C.images -= unit.selected_image
 
 /obj/effect/bmode/buildmode
@@ -420,7 +420,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 		if(BUILDMODE_THROW)
 			if(pa.Find("left"))
 				if(istype(object, /atom/movable))
-					rel_set(holder, "throw_atom", object)
+					rel_set(holder, nameof(holder.throw_atom), object)
 					log_admin("[key_name(usr)] selected [object] to throw.")
 			if(pa.Find("right"))
 				if(holder.throw_atom())
@@ -428,18 +428,18 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 		if(BUILDMODE_ROOM)
 			if(pa.Find("left"))
-				rel_set(holder.buildmode, "coordA", get_turf(object))
+				rel_set(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA), get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as point A."))
 
 			if(pa.Find("right"))
-				rel_set(holder.buildmode, "coordB", get_turf(object))
+				rel_set(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB), get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as point B."))
 
 			if(holder.buildmode.coordA() && holder.buildmode.coordB())
 				if(isnull(holder.buildmode.area_name))
 					to_chat(user, span_notice("ERROR: Insert area name before use."))
-					rel_clear(holder.buildmode, "coordA")
-					rel_clear(holder.buildmode, "coordB")
+					rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
+					rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 					return
 				to_chat(user, span_notice("A and B set, creating rectangle."))
 				holder.buildmode.make_rectangle(
@@ -450,36 +450,36 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					holder.buildmode.area_enabled,
 					holder.buildmode.area_name)
 				log_admin("BUILDMODE: [key_name(usr)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
-				rel_clear(holder.buildmode, "coordA")
-				rel_clear(holder.buildmode, "coordB")
+				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
+				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
 		if(BUILDMODE_LADDER)
 			if(pa.Find("left"))
-				rel_set(holder.buildmode, "coordA", get_turf(object))
+				rel_set(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA), get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as upper ladder location."))
 
 			if(pa.Find("right"))
-				rel_set(holder.buildmode, "coordB", get_turf(object))
+				rel_set(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB), get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as lower ladder location."))
 
 			if(holder.buildmode.coordA() && holder.buildmode.coordB())
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				rel_set(A, "target_up", B)
-				rel_set(B, "target_down", A)
+				rel_set(A, nameof(/obj/structure/ladder::target_up), B)
+				rel_set(B, nameof(B.target_down), A)
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()
 				B.update_icon()
 				log_admin("BUILDMODE: [key_name(usr)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
-				rel_clear(holder.buildmode, "coordA")
-				rel_clear(holder.buildmode, "coordB")
+				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
+				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
 		if(BUILDMODE_CONTENTS)
 			if(pa.Find("left"))
 				if(istype(object, /atom))
-					rel_set(holder, "throw_atom", object)
+					rel_set(holder, nameof(holder.throw_atom), object)
 			if(pa.Find("right"))
 				if(holder.throw_atom() && istype(object, /atom/movable))
 					object.forceMove(holder.throw_atom())
@@ -644,7 +644,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							unit.forceMove(T)
 							forced++
 							continue
-						rel_set(AI, "home_turf", T)
+						rel_set(AI, nameof(AI.home_turf), T)
 						if(AI.process_flags == 0)
 							unit.forceMove(T)
 							forced++

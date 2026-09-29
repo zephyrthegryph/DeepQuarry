@@ -42,13 +42,13 @@
 /// Compile `spec` against `registry` (default: the global one). Called once.
 /datum/predicate/proc/compile(datum/property_registry/registry)
 	var/datum/predicate_compiler/compiler = new(registry || dq_property_registry(), name || "[type]")
-	own_set(src, "root", compiler.compile_spec(spec))
+	own_set(src, nameof(root), compiler.compile_spec(spec))
 	errors = length(compiler.errors) ? compiler.errors : null
-	rel_clear(src, "watchable")
+	rel_clear(src, nameof(watchable))
 	for(var/datum/pred_node/node as anything in compiler.watchable)
-		rel_add(src, "watchable", node) // nodes are owned by the tree under root
+		rel_add(src, nameof(watchable), node) // nodes are owned by the tree under root
 	if(errors)
-		own_set(src, "root", new /datum/pred_node/invalid)
+		own_set(src, nameof(root), new /datum/pred_node/invalid)
 	return !errors
 
 /// TRUE if every clause passes.
@@ -330,7 +330,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_THRESHOLD
-		rel_add(src, "watchable", node) // the node belongs to the tree under root
+		rel_add(src, nameof(watchable), node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_band(list/clause, negate)
@@ -352,7 +352,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.outside = negate
 	if(channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_BAND
-		rel_add(src, "watchable", node) // the node belongs to the tree under root
+		rel_add(src, nameof(watchable), node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_rel(list/clause, negate)
@@ -379,7 +379,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.property_b = def_b.id
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def_a.id) && channel_backed(def_b.id))
 		node.watch_kind = PRED_WATCH_DIFFERENCE
-		rel_add(src, "watchable", node) // the node belongs to the tree under root
+		rel_add(src, nameof(watchable), node) // the node belongs to the tree under root
 	return node
 
 /proc/dq_pred_valid_cmp(op)

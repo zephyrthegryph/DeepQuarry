@@ -46,9 +46,9 @@
 		definition.minimum_area = definition.critical ? 48 : 36
 		definition.maximum_area = 100
 		for(var/capability in row[4])
-			own_add(definition, "requirements", new /datum/generated_station_capability_requirement(capability))
+			own_add(definition, nameof(definition.requirements), new /datum/generated_station_capability_requirement(capability))
 		for(var/capability in row[5])
-			own_add(definition, "provisions", new /datum/generated_station_capability_provision(capability))
+			own_add(definition, nameof(definition.provisions), new /datum/generated_station_capability_provision(capability))
 		catalog += definition
 	return catalog
 

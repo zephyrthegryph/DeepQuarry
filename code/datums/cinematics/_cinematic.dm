@@ -50,11 +50,11 @@
 	var/stop_ooc = TRUE
 
 /datum/cinematic/New(watcher, datum/callback/special_callback)
-	own_set(src, "screen", new /atom/movable/screen/cinematic(src))
+	own_set(src, nameof(screen), new /atom/movable/screen/cinematic(src))
 	if(watcher == world)
 		is_global = TRUE
 
-	own_set(src, "special_callback", special_callback)
+	own_set(src, nameof(special_callback), special_callback)
 
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.
@@ -117,7 +117,7 @@
 	if(!watching_client || (watching_client in watching))
 		return
 
-	rel_add(src, "watching", watching_client)
+	rel_add(src, nameof(watching), watching_client)
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
 	watching_client.screen += screen
 	// Clients cannot be hooked; a client that goes away leaves a null the loops skip.
@@ -143,7 +143,7 @@
 /datum/cinematic/proc/stop_cinematic()
 	for(var/client/viewing_client in watching?.Copy())
 		remove_watcher(viewing_client)
-	rel_clear(src, "watching")
+	rel_clear(src, nameof(watching))
 
 	for(var/mob/locked_mob in locked?.Copy())
 		unlock_mob(locked_mob)
@@ -152,7 +152,7 @@
 
 /// Locks a mob, preventing them from moving, being hurt, or acting
 /datum/cinematic/proc/lock_mob(mob/to_lock)
-	rel_add(src, "locked", to_lock)
+	rel_add(src, nameof(locked), to_lock)
 	add_trait(to_lock, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 
 /// Unlocks a previously locked mob
@@ -173,10 +173,12 @@
 	no_longer_watching.mob?.clear_fullscreen("cinematic")
 	no_longer_watching.screen -= screen
 
-	rel_remove(src, "watching", no_longer_watching)
+	rel_remove(src, nameof(watching), no_longer_watching)
 
-REL_LIST(/datum/cinematic, watching)
-REL_LIST(/datum/cinematic, locked)
+/datum/cinematic/declare_ownership(decl)
+	..()
+	rel(decl, nameof(watching), list = TRUE)
+	rel(decl, nameof(locked), list = TRUE)
 
 #undef CINEMATIC_SOURCE
 

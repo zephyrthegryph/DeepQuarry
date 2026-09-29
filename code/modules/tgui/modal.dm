@@ -198,7 +198,7 @@ GLOBAL_LIST(tgui_modals)
 	if(previous && !replace_previous)
 		return FALSE
 
-	rel_set(modal, "owning_source", source)
+	rel_set(modal, nameof(modal.owning_source), source)
 
 	// Previous one should get GC'd
 	LAZYSET(GLOB.tgui_modals, REF(source), modal)

@@ -153,7 +153,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		else
 			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
-	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -169,7 +169,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 // Links are symmetric membership: linking A to B lists each in the other's links, and a dying
 // machine leaves every partner's list (the framework clears both sides).
-REL_SET(/obj/machinery/telecomms, links)
+/obj/machinery/telecomms/declare_ownership(decl)
+	..()
+	rel(decl, nameof(links), symmetric = TRUE)
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)
@@ -179,7 +181,7 @@ REL_SET(/obj/machinery/telecomms, links)
 		for(var/x in autolinkers)
 			if(LAZYFIND(T.autolinkers, x))
 				if(src != T)
-					rel_add(src, "links", T)
+					rel_add(src, nameof(links), T)
 
 /obj/machinery/telecomms/proc/appearance_state()
 	return on ? initial(icon_state) : "[initial(icon_state)]_off"
@@ -542,9 +544,9 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 	var/obj/item/radio/headset/server_radio = null
 
 /obj/machinery/telecomms/server/Initialize(mapload)
-	own_set(src, "Compiler", new /datum/TCS_Compiler())
-	rel_set(Compiler, "Holder", src)
-	own_set(src, "server_radio", new /obj/item/radio/headset())
+	own_set(src, nameof(Compiler), new /datum/TCS_Compiler())
+	rel_set(Compiler, nameof(Compiler.Holder), src)
+	own_set(src, nameof(server_radio), new /obj/item/radio/headset())
 	. = ..()
 
 /obj/machinery/telecomms/server/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
@@ -612,7 +614,7 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 					log.input_type = "Corrupt File"
 
 				// Log and store everything that needs to be logged
-				own_add(src, "log_entries", log)
+				own_add(src, nameof(log_entries), log)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
 				logs++
@@ -649,7 +651,7 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 		for(var/i = 1, i <= logs, i++) // locate the first garbage collectable log entry and remove it
 			var/datum/comm_log_entry/L = LAZYACCESS(log_entries, i)
 			if(L.garbage_collector)
-				own_remove(src, "log_entries", L)
+				own_remove(src, nameof(log_entries), L)
 				logs--
 				break
 
@@ -660,7 +662,7 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 	log.input_type = input
 	log.parameters["message"] = content
 	log.parameters["timecode"] = stationtime2text()
-	own_add(src, "log_entries", log)
+	own_add(src, nameof(log_entries), log)
 	update_logs()
 
 // Simple log entry datum

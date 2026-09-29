@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/dogborg/sleeper/S in M.modules)
 					if(istype(S))
-						rel_set(src, "output_dest", S)
+						rel_set(src, nameof(output_dest), S)
 						return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
@@ -74,16 +74,16 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/storage/bag/trash/T in M.modules)
 					if(istype(T))
-						rel_set(src, "output_dest", T)
+						rel_set(src, nameof(output_dest), T)
 						return
 			for(var/obj/item/storage/bag/trash/T in contents_of(user))
 				if(istype(T))
-					rel_set(src, "output_dest", T)
+					rel_set(src, nameof(output_dest), T)
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
 			if(user.vore_selected)
-				rel_set(src, "output_dest", user.vore_selected)
+				rel_set(src, nameof(output_dest), user.vore_selected)
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)
@@ -101,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		if(get_turf(output_atom) != get_turf(user))
 			vac_power = 0
 			icon_state = "sucker-0"
-			rel_clear(src, "output_dest")
+			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Trash bag not found. Shutting down."))
 			return
 		var/obj/item/storage/bag/trash/B = output_atom
@@ -127,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				return
 			vac_power = 0
 			icon_state = "sucker-0"
-			rel_clear(src, "output_dest")
+			rel_clear(src, nameof(output_dest))
 			to_chat(user, span_warning("Target destination not found. Shutting down."))
 			return
 	if(istype(target,/obj/structure/window) || istype(target,/obj/structure/grille))

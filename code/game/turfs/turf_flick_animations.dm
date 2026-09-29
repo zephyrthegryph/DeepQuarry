@@ -16,6 +16,6 @@
 		animation.icon_state = a_icon_state
 	else
 		animation.icon_state = "blank"
-		rel_set(animation, "master", target)
+		rel_set(animation, nameof(animation.master), target)
 		flick(flick_anim, animation)
 	animation.expire(max(sleeptime, 1.5 SECONDS))

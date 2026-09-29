@@ -79,7 +79,7 @@ This saves us from having to call add_fingerprint() any time something is put in
 			if(!inserted && internal && !(get_equipped_item(SLOT_ID_HEAD)?.item_flags & AIRTIGHT))
 				if(internals)
 					internals.icon_state = "internal0"
-				rel_clear(src, "internal")
+				rel_clear(src, nameof(internal))
 		if(SLOT_ID_ID)
 			BITSET(hud_updateflag, ID_HUD)
 			BITSET(hud_updateflag, WANTED_HUD)

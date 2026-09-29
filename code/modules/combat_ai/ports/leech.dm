@@ -84,7 +84,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/sif/leech, get_ai_behaviors, list( \
 			best = W
 	if(!best)
 		return null
-	rel_set(brain, "home_turf", best)
+	rel_set(brain, nameof(brain.home_turf), best)
 	return DQAI_RESULT(110, best)
 
 /datum/ai_behavior/leech_seek_water/tick(datum/ai_brain/brain, atom/target, atom/source)

@@ -89,7 +89,7 @@ ADMIN_VERB(remove_mob_for_narration, R_FUN, "Narrate Entity (Remove ref)", "Remo
 		if(_answer_a4 != "Yes")
 			return
 		holder.entity_names = list()
-		own_clear(holder, "entity_refs", OWN_DELETE)
+		own_clear(holder, nameof(/datum/entity_narrate::entity_refs), OWN_DELETE)
 	else if(removekey)
 		holder.untrack(removekey)
 		LAZYREMOVE(holder.entity_names, removekey)
@@ -220,7 +220,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_change_mode_multi)
 	tgui_selected_id = ""
 	tgui_selected_type = ""
 	tgui_selected_name = ""
-	rel_clear(src, "tgui_selected_refs")
+	rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 	return TRUE
 
 UI_ACT(/datum/entity_narrate, "change_mode_privacy", ui_act_change_mode_privacy)
@@ -246,16 +246,16 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_select_entity)
 			tgui_selected_id = ""
 			tgui_selected_type = ""
 			tgui_selected_name = ""
-			rel_clear(src, "tgui_selected_refs")
+			rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 		else
 			tgui_selected_id_multi = list() //Using the same var for ease of implementation. Thus, we must reset to empty each time.
 			LAZYADD(tgui_selected_id_multi, params["id_selected"])
 			tgui_selected_id = params["id_selected"]
 			var/atom/picked = tracked(tgui_selected_id)
 			if(picked)
-				rel_set(src, "tgui_selected_refs", picked)
+				rel_set(src, nameof(/datum/entity_narrate::tgui_selected_refs), picked)
 			else
-				rel_clear(src, "tgui_selected_refs")
+				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 			if(!tgui_selected_refs)
 				to_chat(ui.user, span_notice("[tgui_selected_id] has invalid reference, deleting"))
 				LAZYREMOVE(entity_names, tgui_selected_id)
@@ -263,7 +263,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_select_entity)
 				tgui_selected_id = ""
 				tgui_selected_type = ""
 				tgui_selected_name = ""
-				rel_clear(src, "tgui_selected_refs")
+				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 			if(isliving(tgui_selected_refs))
 				var/mob/living/L = tgui_selected_refs
 				if(L.client)
@@ -312,7 +312,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 				tgui_selected_id = ""
 				tgui_selected_type = ""
 				tgui_selected_name = ""
-				rel_clear(src, "tgui_selected_refs")
+				rel_clear(src, nameof(/datum/entity_narrate::tgui_selected_refs))
 				return TRUE
 			if(isliving(ref))
 				var/mob/living/L = ref
@@ -353,8 +353,8 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 /// Starts tracking `A` under `unique_name`.
 /datum/entity_narrate/proc/track(unique_name, atom/A)
 	var/datum/entity_narrate_entry/entry = new
-	rel_set(entry, "target", A)
-	own_put(src, "entity_refs", unique_name, entry)
+	rel_set(entry, nameof(entry.target), A)
+	own_put(src, nameof(entity_refs), unique_name, entry)
 
 /// The entity tracked under `unique_name`, or null (never tracked, or deleted since).
 /datum/entity_narrate/proc/tracked(unique_name)
@@ -363,4 +363,4 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 
 /// Stops tracking `unique_name`.
 /datum/entity_narrate/proc/untrack(unique_name)
-	own_put(src, "entity_refs", unique_name, null)
+	own_put(src, nameof(entity_refs), unique_name, null)

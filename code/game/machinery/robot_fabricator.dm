@@ -131,11 +131,13 @@ UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
 	return TRUE
 
 /obj/machinery/robotic_fabricator/proc/complete_building(building)
-	own_set(src, "being_built", new building(src))
+	own_set(src, nameof(being_built), new building(src))
 	being_built.forceMove(get_turf(src))
-	own_take(src, "being_built")
+	own_take(src, nameof(being_built))
 	set_use_power(USE_POWER_IDLE)
 	operating = FALSE
 	cut_overlay("fab-active")
 
-OWN(/obj/machinery/robotic_fabricator, being_built, OWN_CONTAINED)
+/obj/machinery/robotic_fabricator/declare_ownership(decl)
+	..()
+	own(decl, nameof(being_built), policy = OWN_CONTAINED)

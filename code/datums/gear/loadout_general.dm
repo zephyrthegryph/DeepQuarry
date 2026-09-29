@@ -55,7 +55,7 @@
 	cointype["morphium"] = /obj/item/fake_coin/morphium
 	cointype["aluminium"] = /obj/item/fake_coin/aluminium
 	cointype["verdantium"] = /obj/item/fake_coin/verdantium
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(cointype))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(cointype))
 
 /datum/gear/tarot
 	display_name = "deck of tarot cards"
@@ -88,7 +88,7 @@
 	blacklisted_types += /obj/item/toy/plushie/customizable
 	for(var/obj/item/toy/plushie/plushie_type as anything in subtypesof(/obj/item/toy/plushie) - blacklisted_types)
 		plushies[initial(plushie_type.name)] = plushie_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(plushies)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(plushies)))
 
 /datum/gear/figure
 	display_name = "action figure selection"
@@ -100,7 +100,7 @@
 	var/list/figures = list()
 	for(var/obj/item/toy/figure/figure_type as anything in subtypesof(/obj/item/toy/figure))
 		figures[initial(figure_type.name)] = figure_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(figures)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(figures)))
 
 /datum/gear/toy
 	display_name = "toy selection"
@@ -126,7 +126,7 @@
 
 /datum/gear/flask/New()
 	..()
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/reagents(lunchables_ethanol_reagents()))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/reagents(lunchables_ethanol_reagents()))
 
 /datum/gear/vacflask
 	display_name = "vacuum-flask"
@@ -134,7 +134,7 @@
 
 /datum/gear/vacflask/New()
 	..()
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/reagents(lunchables_drink_reagents()))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/reagents(lunchables_drink_reagents()))
 
 /datum/gear/lunchbox
 	display_name = "lunchbox"
@@ -149,8 +149,8 @@
 		var/obj/item/storage/toolbox/lunchbox/lunchbox = lunchbox_type
 		if(!initial(lunchbox.filled))
 			lunchboxes[initial(lunchbox.name)] = lunchbox_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(lunchboxes)))
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/contents(lunchables_lunches(), lunchables_snacks(), lunchables_drinks()))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(lunchboxes)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/contents(lunchables_lunches(), lunchables_snacks(), lunchables_drinks()))
 
 /datum/gear/towel
 	display_name = "towel"
@@ -158,7 +158,7 @@
 
 /datum/gear/towel/New()
 	..()
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/cahwhite
 	display_name = "Cards Against The Galaxy (white deck)"
@@ -222,8 +222,8 @@
 	coffeemugs["tall metal coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/metal
 	coffeemugs["tall rainbow coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/rainbow
 	// coffeemugs["Talon coffee mug"] = /obj/item/reagent_containers/food/drinks/glass2/coffeemug/talon //
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/path(coffeemugs))
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/reagents(lunchables_drink_reagents()))
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/path(coffeemugs))
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/reagents(lunchables_drink_reagents()))
 
 /datum/gear/ball
 	display_name = "tennis ball selection"
@@ -235,7 +235,7 @@
 	var/list/balls = list()
 	for(var/obj/item/toy/tennis/ball_type as anything in typesof(/obj/item/toy/tennis/))
 		balls[initial(ball_type.name)] = ball_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(balls)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(balls)))
 
 /datum/gear/character/
 	display_name = "miniature selection"
@@ -247,7 +247,7 @@
 	var/list/characters = list()
 	for(var/obj/item/toy/character/character_type as anything in subtypesof(/obj/item/toy/character))
 		characters[initial(character_type.name)] = character_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(characters)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(characters)))
 
 /datum/gear/mechtoy/
 	display_name = "mecha toy selection"
@@ -259,7 +259,7 @@
 	var/list/mechs = list()
 	for(var/obj/item/toy/mecha/mech_type as anything in subtypesof(/obj/item/toy/mecha))
 		mechs[initial(mech_type.name)] = mech_type
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(mechs)))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(sortAssoc(mechs)))
 
 /datum/gear/toy/New()
 	..()
@@ -287,7 +287,7 @@
 	toytype["Toy nuke"] = /obj/item/toy/nuke
 	toytype["Toy gibber"] = /obj/item/toy/minigibber
 	toytype["Toy xeno"] = /obj/item/toy/toy_xeno
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(toytype))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(toytype))
 
 /datum/gear/chewtoy
 	display_name = "animal toy selection"
@@ -300,7 +300,7 @@
 	toytype["Classic"] = /obj/item/toy/chewtoy/tall
 	toytype["Mouse"] = /obj/item/toy/cat_toy
 	toytype["Feather rod"] = /obj/item/toy/cat_toy/rod
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(toytype))
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(toytype))
 
 /datum/gear/chewtoy_poly
 	display_name = "animal toy selection, colorable"
@@ -311,8 +311,8 @@
 	var/toytype = list()
 	toytype["Bone"] = /obj/item/toy/chewtoy/poly
 	toytype["Classic"] = /obj/item/toy/chewtoy/tall/poly
-	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(toytype))
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
+	own_add(src, nameof(gear_tweaks), new/datum/gear_tweak/path(toytype))
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /datum/gear/ducky
 	display_name = "rubber ducky"

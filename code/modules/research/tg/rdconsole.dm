@@ -43,10 +43,12 @@ Nothing else in the console has ID requirements.
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
-		rel_add(stored_research, "consoles_accessing", src)
+		rel_add(stored_research, nameof(stored_research.consoles_accessing), src)
 
-OWN(/obj/machinery/computer/rdconsole_tg, t_disk, OWN_SPILL)
-OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
+/obj/machinery/computer/rdconsole_tg/declare_ownership(decl)
+	..()
+	own(decl, nameof(t_disk), policy = OWN_SPILL)
+	own(decl, nameof(d_disk), policy = OWN_SPILL)
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(
@@ -71,7 +73,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		own_set(src, "t_disk", D)
+		own_set(src, nameof(t_disk), D)
 	else if (istype(D, /obj/item/disk/design_disk))
 		if(d_disk)
 			to_chat(user, span_warning("A design disk is already loaded!"))
@@ -79,7 +81,7 @@ OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		own_set(src, "d_disk", D)
+		own_set(src, nameof(d_disk), D)
 	else
 		to_chat(user, span_warning("Machine cannot accept disks in that format."))
 		return TRUE
@@ -398,10 +400,10 @@ UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_loadtech)
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)
 	if(type == RND_DESIGN_DISK && d_disk)
 		d_disk.forceMove(get_turf(src))
-		own_take(src, "d_disk")
+		own_take(src, nameof(d_disk))
 	if(type == RND_TECH_DISK && t_disk)
 		t_disk.forceMove(get_turf(src))
-		own_take(src, "t_disk")
+		own_take(src, nameof(t_disk))
 
 #undef RND_TECH_DISK
 #undef RND_DESIGN_DISK

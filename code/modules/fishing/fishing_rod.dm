@@ -40,7 +40,7 @@
 	if((src.loc == user || Adjacent(user)) && Bait)
 		Bait.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove the bait from \the [src]."))
-		own_take(src, "Bait")
+		own_take(src, nameof(Bait))
 	else
 		..()
 
@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 			to_chat(user, span_notice("You swap \the [Bait] with \the [I]."))
 		user.drop_from_inventory(I)
 		I.forceMove(src)
-		own_set(src, "Bait", I) // CONTAINED: in our contents first
+		own_set(src, nameof(Bait), I) // CONTAINED: in our contents first
 		update_bait()
 	return FALSE
 
@@ -105,7 +105,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, app
 
 /obj/item/material/fishing_rod/proc/consume_bait()
 	if(Bait)
-		own_clear(src, "Bait", OWN_DELETE)
+		own_clear(src, nameof(Bait), OWN_DELETE)
 		return TRUE
 	return FALSE
 
@@ -145,4 +145,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, app
 	toolspeed = 0.5
 
 // The bait sits in the rod's contents.
-OWN(/obj/item/material/fishing_rod, Bait, OWN_CONTAINED)
+/obj/item/material/fishing_rod/declare_ownership(decl)
+	..()
+	own(decl, nameof(Bait), policy = OWN_CONTAINED)

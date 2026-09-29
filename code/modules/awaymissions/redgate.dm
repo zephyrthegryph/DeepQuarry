@@ -23,7 +23,7 @@
 /obj/structure/redgate/on_destroy(force)
 	var/obj/structure/redgate/other = target()
 	if(other)
-		rel_clear(src, "target") // the pair: other's target clears too
+		rel_clear(src, nameof(target)) // the pair: other's target clears too
 		other.toggle_portal()
 	..()
 
@@ -160,12 +160,12 @@ DECLARE_INTERACTIONS(/obj/structure/redgate, \
 			else if(g == src)
 				continue
 			else if(g.z in using_map.station_levels)
-				rel_set(src, "target", g) // REL_PAIR: g's target names us back
+				rel_set(src, nameof(target), g) // REL_PAIR: g's target names us back
 				toggle_portal()
 				target().toggle_portal()
 				break
 			else if(g != src)
-				rel_set(src, "target", g) // REL_PAIR: g's target names us back
+				rel_set(src, nameof(target), g) // REL_PAIR: g's target names us back
 				toggle_portal()
 				target().toggle_portal()
 				break
@@ -560,4 +560,6 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
 	return target
 
-REL_PAIR(/obj/structure/redgate, target, target)
+/obj/structure/redgate/declare_ownership(decl)
+	..()
+	rel(decl, nameof(target), pair = nameof(/obj/structure/redgate::target))

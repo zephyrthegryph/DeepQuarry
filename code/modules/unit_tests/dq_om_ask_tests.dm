@@ -25,7 +25,7 @@
 
 /datum/om_test_entity/proc/offer_taken(datum/om/prompt/confirm/test_offer/ask)
 	log += "taken"
-	rel_set(src, "answered_holder", ask.holder)
+	rel_set(src, nameof(answered_holder), ask.holder)
 	answered_yes = ask.yes
 
 /datum/unit_test/om/typed_prompt_answers

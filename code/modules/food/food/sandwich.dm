@@ -32,7 +32,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
 		user.drop_item()
 		W.forceMove(src)
-		own_add(src, "ingredients", W)
+		own_add(src, nameof(ingredients), W)
 		update()
 		return INTERACTION_HANDLED_PASS
 	return FALSE

@@ -269,13 +269,13 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 	if(istype(I, /obj/item/bedsheet))
 		user.drop_item()
 		I.forceMove(src)
-		rel_add(src, "sheets", I)
+		rel_add(src, nameof(sheets), I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		user.drop_item()
 		I.forceMove(src)
-		rel_set(src, "hidden", I)
+		rel_set(src, nameof(hidden), I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE
 
@@ -292,7 +292,7 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			rel_remove(src, "sheets", B)
+			rel_remove(src, nameof(sheets), B)
 
 		else
 			B = new /obj/item/bedsheet(loc)
@@ -304,7 +304,7 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 		if(hidden())
 			hidden().forceMove(user.loc)
 			to_chat(user, span_notice("[hidden()] falls out of [B]!"))
-			rel_clear(src, "hidden")
+			rel_clear(src, nameof(hidden))
 
 
 	add_fingerprint(user)
@@ -318,7 +318,7 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			rel_remove(src, "sheets", B)
+			rel_remove(src, nameof(sheets), B)
 
 		else
 			B = new /obj/item/bedsheet(loc)
@@ -329,7 +329,7 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 
 		if(hidden())
 			hidden().forceMove(loc)
-			rel_clear(src, "hidden")
+			rel_clear(src, nameof(hidden))
 
 
 	add_fingerprint(user)

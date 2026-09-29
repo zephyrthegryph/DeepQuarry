@@ -278,7 +278,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"area" = src.area_uid,
@@ -319,7 +319,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 	//some vents work his own special way
 	radio_filter_in = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid) : null
 	radio_filter_out = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid) : null
-	rel_set(src, "radio_connection", register_radio(src, frequency, new_frequency, radio_filter_in))
+	rel_set(src, nameof(radio_connection), register_radio(src, frequency, new_frequency, radio_filter_in))
 	frequency = new_frequency
 	broadcast_status()
 
@@ -474,7 +474,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			rel_set(tool, "connectable", src)
+			rel_set(tool, nameof(tool.connectable), src)
 
 		if("Direction")
 			pump_direction = !pump_direction

@@ -144,7 +144,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	if(!new_z)
 		return
 	var/datum/life_z_presence/P = life_z_presence(new_z)
-	rel_add(P, "members", src)
+	rel_add(P, nameof(P.members), src)
 	life_z = new_z
 	if(P.occupied)
 		om_observe(src, P, RELEVANCE_NEAR)
@@ -155,7 +155,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	var/datum/life_z_presence/P = GLOB.life_z_presence[life_z]
 	life_z = 0
 	if(P)
-		rel_remove(P, "members", src)
+		rel_remove(P, nameof(P.members), src)
 		om_unobserve(src, P)
 
 /mob/proc/set_low_priority(value)

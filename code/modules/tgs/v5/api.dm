@@ -36,8 +36,8 @@
 /datum/tgs_api/v5/New(datum/tgs_event_handler/event_handler, datum/tgs_version/version, datum/tgs_http_handler/http_handler)
 	. = ..()
 	// the base type owns `version` (and replaces it on reattach): keep our own copy of the interop version
-	own_set(src, "interop_version", new /datum/tgs_version(version.raw_parameter))
-	own_set(src, "http_handler", http_handler)
+	own_set(src, nameof(interop_version), new /datum/tgs_version(version.raw_parameter))
+	own_set(src, nameof(http_handler), http_handler)
 	TGS_DEBUG_LOG("V5 API created: [json_encode(args)]")
 
 /datum/tgs_api/v5/ApiVersion()
@@ -51,7 +51,7 @@
 	access_identifier = world.params[DMAPI5_PARAM_ACCESS_IDENTIFIER]
 
 	var/datum/tgs_version/api_version = ApiVersion()
-	own_clear(src, "version", OWN_DELETE) // we want this to be the TGS version, not the interop version
+	own_clear(src, nameof(version), OWN_DELETE) // we want this to be the TGS version, not the interop version
 
 	// sleep once to prevent an issue where world.Export on the first tick can hang indefinitely
 	TGS_DEBUG_LOG("Starting Export bug prevention sleep tick. time:[world.time] sleep_offline:[world.sleep_offline]")
@@ -73,21 +73,21 @@
 		TerminateWorld()
 
 	initial_bridge_request_received = TRUE
-	own_set(src, "version", new /datum/tgs_version(runtime_information[DMAPI5_RUNTIME_INFORMATION_SERVER_VERSION])) // reassigning this because it can change if TGS updates
+	own_set(src, nameof(version), new /datum/tgs_version(runtime_information[DMAPI5_RUNTIME_INFORMATION_SERVER_VERSION])) // reassigning this because it can change if TGS updates
 	security_level = runtime_information[DMAPI5_RUNTIME_INFORMATION_SECURITY_LEVEL]
 	visibility = runtime_information[DMAPI5_RUNTIME_INFORMATION_VISIBILITY]
 	instance_name = runtime_information[DMAPI5_RUNTIME_INFORMATION_INSTANCE_NAME]
 
 	var/list/revisionData = runtime_information[DMAPI5_RUNTIME_INFORMATION_REVISION]
 	if(istype(revisionData))
-		own_set(src, "revision", new /datum/tgs_revision_information)
+		own_set(src, nameof(revision), new /datum/tgs_revision_information)
 		revision.commit = revisionData[DMAPI5_REVISION_INFORMATION_COMMIT_SHA]
 		revision.timestamp = revisionData[DMAPI5_REVISION_INFORMATION_TIMESTAMP]
 		revision.origin_commit = revisionData[DMAPI5_REVISION_INFORMATION_ORIGIN_COMMIT_SHA]
 	else
 		TGS_ERROR_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_REVISION] from runtime information!")
 
-	own_take_all(src, "test_merges")
+	own_take_all(src, nameof(test_merges))
 	var/list/test_merge_json = runtime_information[DMAPI5_RUNTIME_INFORMATION_TEST_MERGES]
 	if(istype(test_merge_json))
 		for(var/entry in test_merge_json)
@@ -112,11 +112,11 @@
 			tm.head_commit = entry[DMAPI5_TEST_MERGE_PULL_REQUEST_REVISION]
 			tm.comment = entry[DMAPI5_TEST_MERGE_COMMENT]
 
-			own_add(src, "test_merges", tm)
+			own_add(src, nameof(test_merges), tm)
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_TEST_MERGES] from runtime information!")
 
-	own_take_all(src, "chat_channels")
+	own_take_all(src, nameof(chat_channels))
 	DecodeChannels(runtime_information)
 
 	initialized = TRUE
@@ -312,11 +312,11 @@
 	TGS_DEBUG_LOG("DecodeChannels()")
 	var/list/chat_channels_json = chat_update_json[DMAPI5_CHAT_UPDATE_CHANNELS]
 	if(istype(chat_channels_json))
-		own_take_all(src, "chat_channels")
+		own_take_all(src, nameof(chat_channels))
 		for(var/channel_json in chat_channels_json)
 			var/datum/tgs_chat_channel/channel = DecodeChannel(channel_json)
 			if(channel)
-				own_add(src, "chat_channels", channel)
+				own_add(src, nameof(chat_channels), channel)
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_CHAT_UPDATE_CHANNELS] from channel update!")
 

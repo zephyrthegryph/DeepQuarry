@@ -149,13 +149,13 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 /// Old attack_self.
 /obj/item/taperoll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!get_start())
-		rel_set(src, "start", get_turf(src))
+		rel_set(src, nameof(start), get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
 		update_icon()
 	else
-		rel_set(src, "end", get_turf(src))
+		rel_set(src, nameof(end), get_turf(src))
 		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
-			rel_clear(src, "start")
+			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
 			return TRUE
@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				if(istype(window) && !window.is_fulltile())
 					possible_dirs |= window.dir
 			if(!possible_dirs)
-				rel_clear(src, "start")
+				rel_clear(src, nameof(start))
 				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
 				return TRUE
@@ -192,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
 				TP.update_icon()
-			rel_clear(src, "start")
+			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
 			return TRUE
@@ -241,7 +241,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				break
 			cur = get_step_towards(cur,get_end())
 		if (!can_place)
-			rel_clear(src, "start")
+			rel_clear(src, nameof(start))
 			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
 			return TRUE
@@ -285,7 +285,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			if(cur == get_end())
 				break
 			cur = get_step_towards(cur,get_end())
-		rel_clear(src, "start")
+		rel_clear(src, nameof(start))
 		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
 		return TRUE

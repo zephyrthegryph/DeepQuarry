@@ -174,13 +174,13 @@
 /mob/living/proc/set_body_effect_origin(path, atom/origin)
 	if(isnull(origin))
 		if(body_effect_origins && (path in body_effect_origins))
-			own_put(src, "body_effect_origins", path, null)
+			own_put(src, nameof(body_effect_origins), path, null)
 			if(!length(body_effect_origins))
-				own_clear(src, "body_effect_origins", OWN_DELETE)
+				own_clear(src, nameof(body_effect_origins), OWN_DELETE)
 		return
 	var/datum/body_effect_origin/O = new
-	rel_set(O, "origin", origin)
-	own_put(src, "body_effect_origins", path, O)
+	rel_set(O, nameof(O.origin), origin)
+	own_put(src, nameof(body_effect_origins), path, O)
 
 /mob/living/proc/body_effect_state(path)
 	return body_effect_data?[path]

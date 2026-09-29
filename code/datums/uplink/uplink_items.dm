@@ -11,14 +11,14 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	// The uplink owns its categories (a sorted list) and its items (built at boot); items_assoc and
 	// each category's items are plain indexes into uplink.items.
 	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
-		own_add(src, "categories", category)
+		own_add(src, nameof(categories), category)
 
 	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
 			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
 			continue
 
-		own_add(src, "items", item)
+		own_add(src, nameof(items), item)
 		items_assoc[item.type] = item
 
 		for(var/datum/uplink_category/category in categories)
@@ -209,4 +209,6 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 
 /// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
-SHARED(/datum/uplink, items_assoc)
+/datum/uplink/declare_ownership(decl)
+	..()
+	shared(decl, nameof(items_assoc))

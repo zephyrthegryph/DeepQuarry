@@ -20,5 +20,9 @@
 
 // Viewing is two-sided: showing an appearance to a mob lists each in the other, and either end
 // dying drops it from the other's list (the client image comes off in hide()).
-REL_PAIR_LIST(/atom, alt_appearances_viewing, viewers)
-REL_PAIR_LIST(/datum/alternate_appearance, viewers, alt_appearances_viewing)
+/atom/declare_ownership(decl)
+	..()
+	rel(decl, nameof(alt_appearances_viewing), list = TRUE, pair = nameof(/datum/alternate_appearance::viewers))
+/datum/alternate_appearance/declare_ownership(decl)
+	..()
+	rel(decl, nameof(viewers), list = TRUE, pair = nameof(/atom::alt_appearances_viewing))

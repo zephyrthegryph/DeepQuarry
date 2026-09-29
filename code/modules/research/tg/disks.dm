@@ -13,7 +13,7 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk/Initialize(mapload)
 	. = ..()
 	if(!stored_research())
-		proto_set(src, "stored_research_static", new /datum/techweb/disk)
+		proto_set(src, nameof(stored_research_static), new /datum/techweb/disk)
 	randpixel_xy()
 
 /obj/item/disk/tech_disk/debug
@@ -21,7 +21,7 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	proto_set(src, "stored_research_static", locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin))
+	proto_set(src, nameof(stored_research_static), locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin))
 	return ..()
 
 MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
@@ -53,4 +53,6 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-PROTO(/obj/item/disk/tech_disk, stored_research_static)
+/obj/item/disk/tech_disk/declare_ownership(decl)
+	..()
+	proto(decl, nameof(stored_research_static))

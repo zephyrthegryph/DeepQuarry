@@ -36,8 +36,8 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
 			chambered.forceMove(get_turf(src))
-			own_take_member(src, "loaded", chambered)
-			rel_clear(src, "chambered")
+			own_take_member(src, nameof(loaded), chambered)
+			rel_clear(src, nameof(chambered))
 		else
 			to_chat(user, span_notice("You work the bolt open."))
 	else

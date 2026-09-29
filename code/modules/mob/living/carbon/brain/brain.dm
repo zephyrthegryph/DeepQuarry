@@ -46,7 +46,7 @@
 		real_name = identity().real_name
 		name = real_name
 	if(identity().get_dna())
-		own_set(src, "dna", identity().get_dna().Clone())
+		own_set(src, nameof(dna), identity().get_dna().Clone())
 	if(identity().languages)
 		languages = identity().languages
 	else
@@ -134,4 +134,6 @@
 		EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 		to_chat(src, span_notice("New notification has been sent."))
 
-REL(/mob/living/carbon/brain, container) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob
+/mob/living/carbon/brain/declare_ownership(decl)
+	..()
+	rel(decl, nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

@@ -26,8 +26,8 @@
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		E.set_dir(dir)
 		SK.forceMove(E)
-		own_move(SK, E, "part") // CONTAINED: moved in first
-		rel_set(SK, "master", E)
+		own_move(SK, E, nameof(E.part)) // CONTAINED: moved in first
+		rel_set(SK, nameof(SK.master), E)
 		replace_with(src, E)
 	return TRUE
 

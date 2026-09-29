@@ -40,9 +40,9 @@
 		return null
 	// Update the wearer view before delegating (existing callers expect this side-effect).
 	if(ishuman(has_suit()?.loc))
-		rel_set(src, "wearer", has_suit().loc)
+		rel_set(src, nameof(wearer), has_suit().loc)
 	else
-		rel_clear(src, "wearer")
+		rel_clear(src, nameof(wearer))
 	var/mob/living/carbon/human/H = wearer
 	if(!ishuman(H))
 		return null
@@ -53,7 +53,7 @@
 /obj/item/clothing/accessory/proc/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	rel_set(src, "has_suit", S)
+	rel_set(src, nameof(has_suit), S)
 	src.forceMove(S)
 	has_suit().add_overlay(get_inv_overlay())
 
@@ -78,8 +78,8 @@
 	// Clear both sides of the ownership relation. Qdel may delete an accessory
 	// directly rather than going through clothing.remove_accessory().
 	GLOB.accessory_slot_registry.remove_modifiers(src, old_suit)
-	own_take_member(old_suit, "accessories", src)
-	rel_clear(src, "has_suit")
+	own_take_member(old_suit, nameof(old_suit.accessories), src)
+	rel_clear(src, nameof(has_suit))
 	if(QDELETED(src))
 		return
 	if(user && !issilicon(user))
@@ -489,7 +489,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/clothing/mask/breath))
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
-		rel_set(src, "breathmask", I)
+		rel_set(src, nameof(breathmask), I)
 		breath_masked = TRUE
 		user.drop_from_inventory(I, drop_location())
 		I.forceMove(src)
@@ -501,7 +501,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	if(breath_masked && breathmask())
 		to_chat(user, span_notice("You pull [breathmask()] out from behind [src], and it drops to your feet."))
 		breathmask().forceMove(drop_location())
-		rel_clear(src, "breathmask")
+		rel_clear(src, nameof(breathmask))
 		breath_masked = FALSE
 		item_flags &= ~AIRTIGHT
 		item_flags |= FLEXIBLEMATERIAL
@@ -629,7 +629,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/choker/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	rel_set(src, "has_suit", S)
+	rel_set(src, nameof(has_suit), S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -667,7 +667,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /obj/item/clothing/accessory/collar/on_attached(obj/item/clothing/S, mob/user)
 	if(!istype(S))
 		return
-	rel_set(src, "has_suit", S)
+	rel_set(src, nameof(has_suit), S)
 	setUniqueSpeciesSprite()
 	..(S, user)
 
@@ -730,12 +730,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
 

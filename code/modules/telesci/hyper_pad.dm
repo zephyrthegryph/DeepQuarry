@@ -34,8 +34,10 @@
 // Its linked pads go with it.
 
 // Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
-REL_KEYED(/obj/machinery/hyperpad/centre, linked_pad, map_pad_link_id, /obj/machinery/hyperpad/centre)
-KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
+/obj/machinery/hyperpad/centre/declare_ownership(decl)
+	..()
+	rel(decl, nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/hyperpad/centre)
+	rel(decl, keyed = nameof(map_pad_id))
 
 /// Always usable, powered or not.
 /obj/machinery/hyperpad/operable(additional_flags = 0)
@@ -125,8 +127,8 @@ KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			own_add(src, "linked", new_pad) // the centre's pieces go with it
-			rel_set(new_pad, "primary", src)
+			own_add(src, nameof(linked), new_pad) // the centre's pieces go with it
+			rel_set(new_pad, nameof(new_pad.primary), src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1
 		if(length(linked) == 8)

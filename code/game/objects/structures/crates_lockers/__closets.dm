@@ -559,7 +559,7 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 		update_icon()
 		return
 	if(!door_obj)
-		own_set(src, "door_obj", new /obj/effect/overlay/closet_door)
+		own_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
 	vis_contents |= door_obj
 	door_obj.icon = icon
 	door_obj.icon_state = "door_front"

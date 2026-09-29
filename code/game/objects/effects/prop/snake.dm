@@ -26,10 +26,10 @@
 /obj/effect/temporary_effect/pulse/snake/Initialize(mapload, atom/hunt_target, atom/Creator)
 	. = ..()
 	if(hunt_target)
-		rel_set(src, "hunting", hunt_target)
+		rel_set(src, nameof(hunting), hunt_target)
 
 	if(Creator)
-		rel_set(src, "creator", Creator)
+		rel_set(src, nameof(creator), Creator)
 
 /obj/effect/temporary_effect/pulse/snake/pulse_loop()	// Override needed unfortunately to handle the possibility of not finding a target turf.
 	snake_pulse_wait()
@@ -110,7 +110,7 @@
 		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
-	rel_set(src, "hunting", locate_in_list(range(7, src), /mob/living))
+	rel_set(src, nameof(hunting), locate_in_list(range(7, src), /mob/living))
 	..()
 
 /*

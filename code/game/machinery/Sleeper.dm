@@ -19,7 +19,9 @@
 	findsleeper()
 	return ..()
 
-REL_PAIR(/obj/machinery/sleep_console, sleeper, console)
+/obj/machinery/sleep_console/declare_ownership(decl)
+	..()
+	rel(decl, nameof(sleeper), pair = nameof(/obj/machinery/sleeper::console))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// sleeper's own field is the occupant's environment, same as before the
@@ -38,8 +40,8 @@ REL_PAIR(/obj/machinery/sleep_console, sleeper, console)
 	for(var/direction in GLOB.cardinal) // Loop through every direction
 		sleepernew = locate(/obj/machinery/sleeper, get_step(src, direction)) // Try to find a scanner in that direction
 		if(sleepernew)
-			rel_set(src, "sleeper", sleepernew)
-			rel_set(sleepernew, "console", src)
+			rel_set(src, nameof(sleeper), sleepernew)
+			rel_set(sleepernew, nameof(sleepernew.console), src)
 			break
 
 
@@ -130,7 +132,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("opera
 	default_apply_parts()
 	update_icon()
 
-REL_PAIR(/obj/machinery/sleeper, console, sleeper)
+/obj/machinery/sleeper/declare_ownership(decl)
+	..()
+	rel(decl, nameof(console), pair = nameof(/obj/machinery/sleep_console::sleeper))
+	own(decl, nameof(beaker), policy = OWN_CONTAINED)
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0
@@ -426,7 +431,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 		if(!beaker)
 			user.drop_item()
 			I.forceMove(src)
-			own_set(src, "beaker", I) // CONTAINED: in contents first
+			own_set(src, nameof(beaker), I) // CONTAINED: in contents first
 			act_message(user, src, MSG_SELF(span_notice("You add  [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds  [I] to %T%.")))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))
@@ -564,7 +569,7 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, "beaker")
+		own_take(src, nameof(beaker))
 		toggle_filter()
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
@@ -597,5 +602,3 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 /obj/machinery/sleeper/survival_pod/Initialize(mapload)
 	. = ..()
 	RefreshParts(1)
-
-OWN(/obj/machinery/sleeper, beaker, OWN_CONTAINED)

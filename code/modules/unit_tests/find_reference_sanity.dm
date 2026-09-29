@@ -7,11 +7,13 @@
 	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
-REL(/atom/movable/ref_holder, test)
+/atom/movable/ref_holder/declare_ownership(decl)
+	..()
+	rel(decl, nameof(test))
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
-	rel_clear(src, "static_test")
+	rel_clear(src, nameof(static_test))
 	..()
 
 /atom/movable/ref_test
@@ -19,7 +21,9 @@ REL(/atom/movable/ref_holder, test)
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-REL(/atom/movable/ref_test, self_ref)
+/atom/movable/ref_test/declare_ownership(decl)
+	..()
+	rel(decl, nameof(self_ref))
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
@@ -42,8 +46,8 @@ REL(/atom/movable/ref_test, self_ref)
 	SSgarbage.should_save_refs = TRUE
 
 	//Set up for the first round of tests
-	rel_set(testbed, "test", victim)
-	rel_add(testbed, "test_list", victim)
+	rel_set(testbed, nameof(testbed.test), victim)
+	rel_add(testbed, nameof(testbed.test_list), victim)
 	testbed.test_assoc_list["baseline"] = victim // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 
 	var/refcount = refcount(victim)
@@ -81,7 +85,7 @@ REL(/atom/movable/ref_test, self_ref)
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's get a bit esoteric
-	rel_set(victim, "self_ref", victim)
+	rel_set(victim, nameof(victim.self_ref), victim)
 	var/list/to_find = list(victim)
 	testbed.test_list += list(to_find) // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 	var/list/to_find_assoc = list(victim)
@@ -136,7 +140,7 @@ REL(/atom/movable/ref_test, self_ref)
 	SSgarbage.should_save_refs = TRUE
 
 	//Lets check static vars now, since those can be a real headache
-	rel_set(testbed, "static_test", victim)
+	rel_set(testbed, nameof(testbed.static_test), victim)
 
 	//Yes we do actually need to do this. The searcher refuses to read weird lists
 	//And global.vars is a really weird list

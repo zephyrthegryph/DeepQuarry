@@ -17,8 +17,8 @@
 	C.set_dir(dir)
 	if(part)
 		part.forceMove(loc)
-		rel_clear(part, "master")
-		own_take(src, "part")
+		rel_clear(part, nameof(part.master))
+		own_take(src, nameof(part))
 	replace_with(src, C)
 	return TRUE
 
@@ -75,4 +75,6 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair/e_chair, \
 	INTERACT_VERB("Toggle Electric Chair", PROC_REF(e_chair_toggle_effect)), \
 )
 
-OWN(/obj/structure/bed/chair/e_chair, part, OWN_CONTAINED)
+/obj/structure/bed/chair/e_chair/declare_ownership(decl)
+	..()
+	own(decl, nameof(part), policy = OWN_CONTAINED)

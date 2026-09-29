@@ -22,13 +22,13 @@
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
-	rel_set(src, "target", new_target)
+	rel_set(src, nameof(target), new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
 
 /obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	rel_clear(src, "target")
+	rel_clear(src, nameof(target))
 	if(QDELETED(src))
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
@@ -110,7 +110,7 @@
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
-		rel_set(signal, "source", src)
+		rel_set(signal, nameof(signal.source), src)
 		signal.transmission_method = TRANSMISSION_RADIO
 		signal.data = list(
 			"tag" = id,
@@ -172,12 +172,12 @@
 		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
-		rel_add(src, "pipes_on_turf", pipe)
+		rel_add(src, nameof(pipes_on_turf), pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))
-	rel_remove(src, "pipes_on_turf", target_ref())
-	rel_add(src, "pipes_on_turf", target_ref())
+	rel_remove(src, nameof(pipes_on_turf), target_ref())
+	rel_add(src, nameof(pipes_on_turf), target_ref())
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -195,7 +195,7 @@
 	id = ask.text
 	var/obj/item/multitool/multitool = ask.tool.get_multitool()
 	if(multitool)
-		rel_set(multitool, "connectable", src)
+		rel_set(multitool, nameof(multitool.connectable), src)
 	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS

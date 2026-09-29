@@ -330,7 +330,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		var/obj/item/organ/external/O = organs_by_name[limb]
 		limb_exists[O.organ_tag] = 1
 
-	proto_set(src, "species", GLOB.all_species[new_species])
+	proto_set(src, nameof(species), GLOB.all_species[new_species])
 	species.create_organs(src)
 
 	// A copy: deleting a limb that was missing before takes it out of the cache.
@@ -607,7 +607,7 @@ TYPE_TABLE(/datum/species/shapeshifter, shared_table_vars, list("assisted_langs"
 		return
 
 	dna.base_species = new_species
-	var/datum/species/own_species = proto_private(src, "species") // never write through to a registered species
+	var/datum/species/own_species = proto_private(src, nameof(species)) // never write through to a registered species
 	own_species.base_species = new_species
 	GLOB.wrapped_species_by_ref["\ref[src]"] = new_species
 	if (visible)

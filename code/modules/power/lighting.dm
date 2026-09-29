@@ -81,7 +81,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell()].")), MSG_OTHERS("%U% removes [cell()] from %T%!"))
 		user.put_in_hands(cell())
 		cell().update_icon()
-		own_take(src, "cell") // it left for the user's hands
+		own_take(src, nameof(cell)) // it left for the user's hands
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -104,7 +104,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
 		W.forceMove(src)
-		own_set(src, "cell", W)
+		own_set(src, nameof(cell), W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -164,7 +164,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 	if(cell())
 		finished_light.latent_cell_charge = null
 		cell().forceMove(finished_light)
-		own_transfer(src, "cell", finished_light, "cell")
+		own_transfer(src, nameof(cell), finished_light, nameof(finished_light.cell))
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -517,7 +517,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
 		latent_bulb = FALSE
-		own_set(src, "installed_light", new light_type(src))
+		own_set(src, nameof(installed_light), new light_type(src))
 		installed_light.status = status
 		installed_light.switchcount = switchcount
 		installed_light.rigged = rigged
@@ -534,7 +534,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	if(!isnull(latent_cell_charge))
 		var/charge = latent_cell_charge
 		latent_cell_charge = null
-		own_set(src, "cell", new /obj/item/cell/emergency_light(src))
+		own_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
 		cell.charge = charge
 	return cell
 
@@ -598,7 +598,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	update_from_bulb(L)
 	latent_bulb = FALSE
 	L.forceMove(src) //Move it into the socket!
-	own_set(src, "installed_light", L) // CONTAINED: in our contents first
+	own_set(src, nameof(installed_light), L) // CONTAINED: in our contents first
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	update()
@@ -614,7 +614,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	//. = new light_type(src.loc, src)
 
 	switchcount = 0
-	own_take(src, "installed_light")
+	own_take(src, nameof(installed_light))
 	latent_bulb = FALSE
 	set_status(LIGHT_EMPTY)
 	update()
@@ -960,7 +960,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	rel_set(O, "host", user)
+	rel_set(O, nameof(O.host), user)
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()
@@ -1718,8 +1718,12 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1
 	set_on(1)
 	broken()
 
-OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)
-OWN(/obj/machinery/light_construct, cell, OWN_CONTAINED)
+/obj/machinery/light/declare_ownership(decl)
+	..()
+	own(decl, nameof(installed_light), policy = OWN_CONTAINED)
+/obj/machinery/light_construct/declare_ownership(decl)
+	..()
+	own(decl, nameof(cell), policy = OWN_CONTAINED)
 
 /// the newlight this refers to: a relation view, null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light

@@ -287,7 +287,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 		if(!host.lastKnownIP)
 			host.lastKnownIP = b2h_ip
 
-	own_clear(src, "host_brain", OWN_DELETE)
+	own_clear(src, nameof(host_brain), OWN_DELETE)
 	// End horrible ip swapping code for bans
 
 /mob/living/simple_mob/animal/borer/proc/leave_host()
@@ -312,8 +312,8 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	ckey = candidate.ckey
 
 	if(candidate.mind)
-		rel_set(src, "mind", candidate.mind)
-		rel_set(candidate.mind, "current", src)
+		rel_set(src, nameof(mind), candidate.mind)
+		rel_set(candidate.mind, nameof(/datum/forms::current), src)
 		mind.assigned_role = JOB_CORTICAL_BORER
 		mind.special_role = JOB_CORTICAL_BORER
 
@@ -329,7 +329,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/borer/extra_huds(datum/hud/hud,icon/ui_style,list/hud_elements)
 	// Chem hud
-	own_set(src, "borer_chem_display", new /atom/movable/screen/borer/chems())
+	own_set(src, nameof(borer_chem_display), new /atom/movable/screen/borer/chems())
 	borer_chem_display.screen_loc = ui_ling_chemical_display
 	borer_chem_display.icon_state = "ling_chems"
 	hud_elements |= borer_chem_display

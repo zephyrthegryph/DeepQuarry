@@ -154,13 +154,13 @@
 			C.d1 = 0
 			C.d2 = direction
 			C.icon_state = "[C.d1]-[C.d2]"
-			rel_set(C, "breaker_box", src)
+			rel_set(C, nameof(C.breaker_box), src)
 			C.power_register()
 
 	else
 		icon_state = icon_state_off
 		for(var/obj/structure/cable/C in src.loc)
-			rel_clear(C, "breaker_box")
+			rel_clear(C, nameof(C.breaker_box))
 			qdel(C)
 
 // Used by RCON to toggle the breaker box.

@@ -24,9 +24,9 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	EXPIRY_SET(src, endtime, time, CLOCK_WORLD)
-	rel_set(src, "origin", beam_origin)
+	rel_set(src, nameof(origin), beam_origin)
 	origin_oldloc =	get_turf(origin())
-	rel_set(src, "target", beam_target)
+	rel_set(src, nameof(target), beam_target)
 	target_oldloc = get_turf(target())
 	sleep_time = beam_sleep_time
 	if(origin_oldloc == origin() && target_oldloc == target())
@@ -61,7 +61,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 	finished = TRUE
 
 /datum/beam/proc/Reset()
-	own_clear(src, "elements", OWN_DELETE)
+	own_clear(src, nameof(elements), OWN_DELETE)
 
 
 /datum/beam/proc/Draw()
@@ -91,8 +91,8 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 		if(beam_color)
 			X.color = beam_color
 
-		rel_set(X, "owner", src)
-		own_add(src, "elements", X)
+		rel_set(X, nameof(X.owner), src)
+		own_add(src, nameof(elements), X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
 		//cropped by a transparent box of length-N pixel size

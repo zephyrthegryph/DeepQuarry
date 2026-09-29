@@ -178,7 +178,7 @@ APPEARANCE_TEMPLATE(/obj/structure/closet/secure_closet, "closed_{appearance_loc
 	. = ..()
 	self_del = del_self
 	if(mind_target)
-		rel_set(src, "owner", mind_target)
+		rel_set(src, nameof(owner), mind_target)
 		name = "Owned by [owner_ref().name]"
 		if(owner_ref().current)
 			var/icon/I = get_flat_icon(owner_ref().current, dir=SOUTH, no_anim=TRUE)

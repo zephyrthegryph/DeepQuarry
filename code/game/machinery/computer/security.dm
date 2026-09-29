@@ -72,7 +72,7 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(scan))
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
@@ -92,7 +92,7 @@
 	if(!user.unEquip(held))
 		return FALSE
 	held.forceMove(src)
-	own_set(src, "scan", held)
+	own_set(src, nameof(scan), held)
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
 	return TRUE
@@ -192,9 +192,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/secure_data, "temp:text", "authenticated
 	if(!..())
 		return FALSE
 	if(!(active1() in GLOB.data_core.general))
-		rel_clear(src, "active1")
+		rel_clear(src, nameof(active1))
 	if(!(active2() in GLOB.data_core.security))
-		rel_clear(src, "active2")
+		rel_clear(src, nameof(active2))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/secure_data, "cleartemp", ui_act_cleartemp)
@@ -209,13 +209,13 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_scan)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
 			ui.user.drop_item()
 			I.forceMove(src)
-			own_set(src, "scan", I)
+			own_set(src, nameof(/obj/item/extrapolator::scan), I)
 
 UI_ACT(/obj/machinery/computer/secure_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_login)
@@ -233,8 +233,8 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_login)
 		var/mob/living/silicon/robot/R = ui.user
 		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		rel_clear(src, "active1")
-		rel_clear(src, "active2")
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+		rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 		screen = SEC_DATA_R_LIST
 
 UI_ACT(/obj/machinery/computer/secure_data, "logout", ui_act_logout)
@@ -247,11 +247,11 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_logout)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	screen = null
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
 UI_ACT(/obj/machinery/computer/secure_data, "screen", ui_act_screen, UI_ARG_NUM("screen"))
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_screen)
@@ -260,8 +260,8 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_screen)
 		return FALSE
 	. = TRUE
 	screen = clamp(params["screen"] || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 
 UI_ACT(/obj/machinery/computer/secure_data, "del_all", ui_act_del_all)
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_del_all)
@@ -333,8 +333,8 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_d_rec)
 			security_record = M
 			break
 
-	rel_set(src, "active1", general_record)
-	rel_set(src, "active2", security_record)
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active1), general_record)
+	rel_set(src, nameof(/obj/machinery/computer/med_data::active2), security_record)
 	screen = SEC_DATA_RECORD
 
 UI_ACT(/obj/machinery/computer/secure_data, "new", ui_act_new)
@@ -356,8 +356,8 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_new)
 		R.fields["ma_crim_d"]	= "No major crime convictions."
 		R.fields["notes"]		= "No notes."
 		R.fields["notes"]		= "No notes."
-		own_add(GLOB.data_core, "security", R)
-		rel_set(src, "active2", R)
+		own_add(GLOB.data_core, nameof(/datum/datacore::security), R)
+		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 		screen = SEC_DATA_RECORD
 		set_temp("Security record created.", "success")
 
@@ -382,22 +382,22 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_search)
 	if(!(authenticated))
 		return FALSE
 	. = TRUE
-	rel_clear(src, "active1")
-	rel_clear(src, "active2")
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active1))
+	rel_clear(src, nameof(/obj/machinery/computer/med_data::active2))
 	var/t1 = lowertext(params["t1"] || "")
 	if(!length(t1))
 		return
 
 	for(var/datum/data/record/R in GLOB.data_core.general)
 		if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-			rel_set(src, "active1", R)
+			rel_set(src, nameof(/obj/machinery/computer/med_data::active1), R)
 			break
 	if(!active1())
 		set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 		return
 	for(var/datum/data/record/E in GLOB.data_core.security)
 		if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
-			rel_set(src, "active2", E)
+			rel_set(src, nameof(/obj/machinery/computer/med_data::active2), E)
 			break
 	screen = SEC_DATA_RECORD
 
@@ -652,7 +652,9 @@ DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure
 
 #undef FIELD
 
-OWN(/obj/machinery/computer/secure_data, scan, OWN_CONTAINED)
+/obj/machinery/computer/secure_data/declare_ownership(decl)
+	..()
+	own(decl, nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active1() as /datum/data/record

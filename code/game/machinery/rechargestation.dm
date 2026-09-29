@@ -36,7 +36,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, li
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	rel_set(src, "cell", default_use_hicell()) // component_parts owns the cell; this is a view onto it
+	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10).
@@ -143,7 +143,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, li
 				if(wornrig.chest)
 					var/obj/item/clothing/suit/space/rig/rigchest = wornrig.chest
 					if(weld_rate && rigchest.damage && cell.checked_use(weld_power_use * weld_rate * CELLRATE))
-						own_clear(rigchest, "breaches", OWN_DELETE)
+						own_clear(rigchest, nameof(rigchest.breaches), OWN_DELETE)
 						rigchest.calc_breach_damage()
 						to_chat(H, span_notice("[rigchest] is repaired!"))
 				if(wornrig.cell)
@@ -261,7 +261,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/recharge_station, MACHINE_PIPELINE, li
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
 	materialize_parts()
-	rel_set(src, "cell", locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
+	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
 	charging_power = 40000 + 40000 * cap_rating
 	restore_power_active = 10000 + 15000 * cap_rating
@@ -408,4 +408,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYP
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
 
-REL(/obj/machinery/recharge_station, cell) // component_parts owns the cell
+/obj/machinery/recharge_station/declare_ownership(decl)
+	..()
+	rel(decl, nameof(cell)) // component_parts owns the cell

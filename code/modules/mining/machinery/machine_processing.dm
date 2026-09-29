@@ -24,14 +24,16 @@
 
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
-	rel_set(src, "machine", locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
+	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
-		rel_set(machine(), "console", src)
+		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
 
-OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
+/obj/machinery/mineral/processing_unit_console/declare_ownership(decl)
+	..()
+	own(decl, nameof(inserted_id), policy = OWN_SPILL)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(
@@ -52,7 +54,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 		return TRUE
 	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
 		I.forceMove(src)
-		own_set(src, "inserted_id", I)
+		own_set(src, nameof(inserted_id), I)
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -146,7 +148,7 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_logoff)
 	if(!inserted_id)
 		return
 	ui.user.put_in_hands(inserted_id)
-	own_take(src, "inserted_id")
+	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	. = TRUE
 
 UI_ACT(/obj/machinery/mineral/processing_unit_console, "claim", ui_act_claim)
@@ -166,7 +168,7 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
 	if(istype(I))
 		ui.user.drop_item()
 		I.forceMove(src)
-		own_set(src, "inserted_id", I)
+		own_set(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id), I)
 	else
 		to_chat(ui.user, span_warning("No valid ID."))
 	. = TRUE
@@ -227,10 +229,10 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
 	// TODO - Eschew input/output machinery and just use dirs ~Leshana
 	//Locate our output and input machinery.
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, nameof(input), locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, nameof(output), locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(src.output_marker()) break
 	watch_input(input_marker())
 

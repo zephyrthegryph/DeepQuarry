@@ -19,9 +19,11 @@ OM_FIELD(/obj/machinery/computer/pod, timing, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("timing", "operable"))
 
 // Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
-REL_KEYED(/obj/machinery/computer/pod, connected, id, /obj/machinery/mass_driver)
-REL_KEYED_LIST(/obj/machinery/computer/pod, pod_doors, id, /obj/machinery/door/blast)
-REL_KEYED_LIST(/obj/machinery/computer/pod, pod_drivers, id, /obj/machinery/mass_driver)
+/obj/machinery/computer/pod/declare_ownership(decl)
+	..()
+	rel(decl, nameof(connected), keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
+	rel(decl, nameof(pod_doors), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
+	rel(decl, nameof(pod_drivers), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
 
 /obj/machinery/computer/pod/proc/alarm()
 	if(!operable())

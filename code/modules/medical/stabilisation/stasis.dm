@@ -159,9 +159,9 @@
 		return FALSE
 	if(key)
 		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
-		own_put(src, "stasis_sources", key, null)
+		own_put(src, nameof(stasis_sources), key, null)
 		if(!length(stasis_sources))
-			own_clear(src, "stasis_sources", OWN_DELETE)
+			own_clear(src, nameof(stasis_sources), OWN_DELETE)
 	if(stasis_type)
 		var/static/hold_serial = 0
 		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE
@@ -169,8 +169,8 @@
 		var/datum/stasis_hold/hold = new
 		hold.stasis_type = stasis_type
 		if(source)
-			rel_set(hold, "source", source)
-		own_put(src, "stasis_sources", key, hold)
+			rel_set(hold, nameof(hold.source), source)
+		own_put(src, nameof(stasis_sources), key, hold)
 		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
 	invalidate_factors()
 	om_changed(src, CHANGE_MOB_CONDITIONS)

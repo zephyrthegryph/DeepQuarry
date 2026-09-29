@@ -219,7 +219,7 @@
 	var/static/list/offsets = list(45, 45, 20, 10)
 	for(var/j = 0, j <4, j++)
 		var/obj/item/projectile/energy/slow_orb/shot = new(get_turf(src))
-		rel_set(shot, "firer", src)
+		rel_set(shot, nameof(shot.firer), src)
 		shot.fire(sd)
 		sd += 90
 	sd += pick(offsets)

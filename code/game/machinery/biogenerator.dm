@@ -60,8 +60,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 /obj/machinery/biogenerator/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(1000)
-	own_set(src, "reagents", R)
-	rel_set(R, "my_atom", src)
+	own_set(src, nameof(reagents), R)
+	rel_set(R, nameof(R.my_atom), src)
 
 	default_apply_parts()
 
@@ -146,7 +146,7 @@ UI_ACT(/obj/machinery/biogenerator, "detach", ui_act_detach)
 UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_detach)
 	if(beaker)
 		beaker.forceMove(loc)
-		own_take(src, "beaker")
+		own_take(src, nameof(/obj/machinery/biogenerator::beaker))
 		update_icon()
 	return TRUE
 
@@ -235,7 +235,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 		else
 			user.remove_from_mob(O)
 			O.forceMove(src)
-			own_set(src, "beaker", O)
+			own_set(src, nameof(beaker), O)
 	else if(processing)
 		to_chat(user, span_notice("\The [src] is currently processing."))
 	else if(istype(O, /obj/item/storage/bag/plants))
@@ -327,4 +327,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
 
-OWN(/obj/machinery/biogenerator, beaker, OWN_CONTAINED)
+/obj/machinery/biogenerator/declare_ownership(decl)
+	..()
+	own(decl, nameof(beaker), policy = OWN_CONTAINED)

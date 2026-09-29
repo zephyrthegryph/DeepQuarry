@@ -24,7 +24,7 @@
 
 /datum/identification/New(obj/new_holder)
 	ASSERT(new_holder)
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 	record_true_identity() // Get all the identifying features from the holder.
 	update_name() // Then hide them for awhile if needed.
 

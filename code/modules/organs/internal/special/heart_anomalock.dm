@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(core || W.loc != user)
 		return
 	user.unEquip(W, TRUE, src)
-	own_set(src, "core", W)
+	own_set(src, nameof(core), W)
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(!core)
 		return
 	balloon_alert(user, "core removed")
-	var/obj/item/removed_core = own_take(src, "core") // unowned before it goes to the hands
+	var/obj/item/removed_core = own_take(src, nameof(core)) // unowned before it goes to the hands
 	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !issilicon(user))
 		user.put_in_hands(removed_core)

@@ -286,8 +286,8 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
-		rel_set(src, "owner", loc)
-		own_add(owner, "vore_organs", src)
+		rel_set(src, nameof(owner), loc)
+		own_add(owner, nameof(owner.vore_organs), src)
 		belly_reschedule()
 
 // The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.
@@ -487,7 +487,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		count += release_specific_contents(AM, silent = TRUE)
 
 	//Clean up our own business
-	rel_clear(src, "items_preserved")
+	rel_clear(src, nameof(items_preserved))
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -540,7 +540,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		COOLDOWN_START(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	belly_release_to(M, drop_location())
-	rel_remove(src, "items_preserved", M)
+	rel_remove(src, nameof(items_preserved), M)
 
 	//Special treatment for absorbed prey
 	if(isliving(M))
@@ -655,7 +655,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		om_unsuspend(M.tf_mob_holder, M.tf_mob_holder)
 		M.tf_mob_holder.forceMove(M.loc)
 		M.tf_mob_holder.forceMove(M.loc)
-		own_clear(M.tf_mob_holder, "vore_organs", OWN_DELETE)
+		own_clear(M.tf_mob_holder, nameof(/mob::vore_organs), OWN_DELETE)
 		M.tf_mob_holder.mob_belly_transfer(M)
 
 	if(M.tf_mob_holder)
@@ -674,7 +674,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				var/obj/item/organ/internal/mmi_holder/MMI = W
 				var/obj/item/mmi/brainbox = MMI.removed()
 				if(brainbox)
-					rel_add(src, "items_preserved", brainbox)
+					rel_add(src, nameof(items_preserved), brainbox)
 					hasMMI = brainbox // Adjust how MMI's are handled
 			for(var/slot in slots)
 				var/obj/item/I = M.get_equipped_item(slot)
@@ -683,9 +683,9 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 					if(contaminates)
 						I.gurgle_contaminate(contents, contamination_flavor, contamination_color) //We do an initial contamination pass to get stuff like IDs wet.
 					if(item_digest_mode == IM_HOLD)
-						rel_add(src, "items_preserved", I)
+						rel_add(src, nameof(items_preserved), I)
 					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // Allow pills to digest in bellies
-						rel_add(src, "items_preserved", I)
+						rel_add(src, nameof(items_preserved), I)
 
 	//Reagent transfer
 	if(ishuman(owner))
@@ -732,12 +732,12 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.forceMove(src)
-				rel_add(src, "items_preserved", R.mmi)
+				rel_add(src, nameof(items_preserved), R.mmi)
 				hasMMI = R.mmi
 				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
 				view.remove_language(LANGUAGE_ROBOT_TALK)
-				own_take(R, "mmi")
+				own_take(R, nameof(R.mmi))
 		else if(!R.shell) // Shells don't have brainmobs in their MMIs.
 			to_chat(R, span_danger("Oops! Something went very wrong, your MMI was unable to receive your mind. You have been ghosted. Please make a bug report so we can fix this bug."))
 		if(R.shell) // Let the standard procedure for shells handle this.
@@ -745,14 +745,14 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			return
 
 	if(istype(hasMMI))
-		own_set(hasMMI, "body_backup", M)
+		own_set(hasMMI, nameof(hasMMI.body_backup), M)
 		om_suspend(M, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
-			own_set(G, "body_backup", M)
+			own_set(G, nameof(G.body_backup), M)
 			om_suspend(M, M)
 			slot_remove(M, G)
 		else
@@ -852,7 +852,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	// 26 lenient overrides that don't declare the keyword, so a keyword call trips DreamChecker.
 	var/digested = item.digest_act(src, touchable_amount, 0, delta_factor)
 	if(digested == FALSE)
-		rel_add(src, "items_preserved", item)
+		rel_add(src, nameof(items_preserved), item)
 	else
 		owner_adjust_nutrition((nutrition_percent / 100) * 5 * digested)
 		digested = TRUE
@@ -914,7 +914,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(I.gurgled && target.contaminates)
 			I.wash(CLEAN_WASH)
 			I.gurgle_contaminate(target.contents, target.contamination_flavor, target.contamination_color)
-	rel_remove(src, "items_preserved", content)
+	rel_remove(src, nameof(items_preserved), content)
 	if(!silent)
 		handle_visual_update()
 
@@ -1173,14 +1173,14 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
 					qdel(V)
-				own_take_all(O, "possessed_voice")
+				own_take_all(O, nameof(O.possessed_voice))
 			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
 				D.inhabit_item(V, null, V.tf_mob_holder)
 				qdel(V)
-			own_take_all(O, "possessed_voice")
+			own_take_all(O, nameof(O.possessed_voice))
 	return TRUE
 
 /obj/belly/proc/owner_adjust_nutrition(amount = 0)

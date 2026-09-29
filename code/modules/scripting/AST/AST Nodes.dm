@@ -97,7 +97,7 @@
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	own_set(src, "id", istext(ident) ? new /datum/node/identifier(ident) : ident)
+	own_set(src, nameof(id), istext(ident) ? new /datum/node/identifier(ident) : ident)
 
 /datum/node/expression/value/variable/ToString()
 	return src.id.ToString()
@@ -110,7 +110,7 @@
 
 /datum/node/expression/value/reference/New(value)
 	.=..()
-	rel_set(src, "value", value)
+	rel_set(src, nameof(value), value)
 
 /datum/node/expression/value/reference/ToString()
 	return "ref: [src.value()] ([src.value().type])"

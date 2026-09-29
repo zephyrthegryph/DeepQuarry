@@ -34,8 +34,8 @@
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
-	rel_set(src, "materializer", new_materializer)
-	rel_set(src, "flight_plan", new_flight_plan)
+	rel_set(src, nameof(materializer), new_materializer)
+	rel_set(src, nameof(flight_plan), new_flight_plan)
 	if(fast_mode)
 		tick_budget = GENERATED_STATION_TICK_BUDGET_FAST
 	var/static/next_timer_id = 0
@@ -124,13 +124,13 @@
 	if(failed || !materializer().result)
 		failed = TRUE
 		failure_reason = materializer().last_failure_details || phase
-		rel_clear(src, "materialization")
+		rel_clear(src, nameof(materialization))
 		return null
 	// Hand-off: the materializer owns its result only while building it, so it lets go here
 	// (deleting the materializer afterwards must not delete the station it built). The expedition
 	// site adopts it (own_set) when it is published.
-	var/datum/generated_station_materialization/done = own_take(materializer(), "result")
-	rel_set(src, "materialization", done)
+	var/datum/generated_station_materialization/done = own_take(materializer(), nameof(/datum/crafting_recipe::result))
+	rel_set(src, nameof(materialization), done)
 	checkpoint("Station materialization complete", 62)
 	return done
 

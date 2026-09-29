@@ -35,9 +35,9 @@
 	if(returnerrors.len)
 		return returnerrors
 
-	own_set(src, "interpreter", new /datum/n_Interpreter/TCS_Interpreter(program))
+	own_set(src, nameof(interpreter), new /datum/n_Interpreter/TCS_Interpreter(program))
 	interpreter.persist	= 1
-	rel_set(interpreter, "Compiler", src)
+	rel_set(interpreter, nameof(interpreter.Compiler), src)
 
 	return returnerrors
 
@@ -62,7 +62,7 @@
 	if(om_busy(src))
 		return TRUE
 
-	rel_set(interpreter, "container", src)
+	rel_set(interpreter, nameof(interpreter.container), src)
 
 	interpreter.SetVar("PI"		, 	3.141592653)	// value of pi
 	interpreter.SetVar("E" 		, 	2.718281828)	// value of e

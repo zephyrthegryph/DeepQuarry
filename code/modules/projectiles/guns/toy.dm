@@ -246,7 +246,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state
 		if(length(loaded) >= max_shells)
 			break
 		D.forceMove(src)
-		own_add(src, "loaded", D)
+		own_add(src, nameof(loaded), D)
 		moveElement(loaded, length(loaded), 1)
 		success = 1
 	if(success)

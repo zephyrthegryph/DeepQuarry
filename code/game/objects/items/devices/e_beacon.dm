@@ -88,5 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 		return TRUE
 	return FALSE
 
-OWN(/obj/item/emergency_beacon, gps, OWN_CONTAINED)
+/obj/item/emergency_beacon/declare_ownership(decl)
+	..()
+	own(decl, nameof(gps), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/emergency_beacon, "gps", /obj/item/gps/emergency_beacon)

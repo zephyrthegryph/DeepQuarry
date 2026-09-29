@@ -95,9 +95,11 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 	return result
 
 /obj/machinery/rnd/dismantle()
-	var/obj/item/our_item = own_take(src, "loaded_item")
+	var/obj/item/our_item = own_take(src, nameof(loaded_item))
 	if(our_item)
 		our_item.forceMove(drop_location())
 	. = ..()
 
-OWN(/obj/machinery/rnd, loaded_item, OWN_SPILL)
+/obj/machinery/rnd/declare_ownership(decl)
+	..()
+	own(decl, nameof(loaded_item), policy = OWN_SPILL)

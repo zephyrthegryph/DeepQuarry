@@ -30,8 +30,8 @@
 		S = new overmind.blob_type.spore_type(src.loc, src)
 		S.faction = overmind.blob_type.faction
 		if(istype(S))
-			rel_set(S, "overmind", overmind)
-			rel_add(overmind, "blob_mobs", S)
+			rel_set(S, nameof(S.overmind), overmind)
+			rel_add(overmind, nameof(overmind.blob_mobs), S)
 			if(overmind.blob_type.ranged_spores)
 				S.projectiletype = overmind.blob_type.spore_projectile
 				S.projectilesound = overmind.blob_type.spore_firesound
@@ -42,7 +42,7 @@
 			// spores is a pair list with /mob/living/simple_mob/blob.factory (blob.dm); a mob
 			// without that var is not counted.
 			if(istype(S, /mob/living/simple_mob/blob))
-				rel_set(S, "factory", src)
+				rel_set(S, nameof(S.factory), src)
 		S.update_icons()
 
 /obj/structure/blob/factory/sluggish // Capable of producing MORE spores, but quite a bit slower than normal.

@@ -43,8 +43,8 @@
 		var/datum/generated_station_materialization/materialized = materializer.materialize(spec, world.maxz, origin_x, origin_y)
 		TEST_ASSERT_NOTNULL(materialized, "Repeated generated-station materialization failed for seed [seed]")
 		var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_LOW)
-		own_set(site, "station_spec", spec)
-		own_set(site, "station_materialization", materialized)
+		own_set(site, nameof(site.station_spec), spec)
+		own_set(site, nameof(site.station_materialization), materialized)
 		TEST_ASSERT(site.initialize_generated_station_runtime(), "Repeated station failed runtime initialization for seed [seed]")
 		TEST_ASSERT(site.initialize_generated_station_infrastructure(), "Repeated station failed infrastructure initialization for seed [seed]")
 		var/atom_count = 0

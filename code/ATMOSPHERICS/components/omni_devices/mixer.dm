@@ -72,14 +72,14 @@
 
 /// Derived view: output and the input ports, recomputed from the owned ports' modes.
 /obj/machinery/atmospherics/omni/mixer/proc/rebuild_port_roles()
-	rel_clear(src, "output")
-	rel_clear(src, "inputs")
+	rel_clear(src, nameof(output))
+	rel_clear(src, nameof(inputs))
 	for(var/datum/omni_port/P as anything in ports)
 		switch(P.mode)
 			if(ATM_INPUT)
-				rel_add(src, "inputs", P)
+				rel_add(src, nameof(inputs), P)
 			if(ATM_OUTPUT)
-				rel_set(src, "output", P)
+				rel_set(src, nameof(output), P)
 
 /obj/machinery/atmospherics/omni/mixer/proc/mapper_set()
 	return (tag_north_con || tag_south_con || tag_east_con || tag_west_con)
@@ -370,5 +370,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
 
-REL(/obj/machinery/atmospherics/omni/mixer, output)
-REL_LIST(/obj/machinery/atmospherics/omni/mixer, inputs)
+/obj/machinery/atmospherics/omni/mixer/declare_ownership(decl)
+	..()
+	rel(decl, nameof(output))
+	rel(decl, nameof(inputs), list = TRUE)

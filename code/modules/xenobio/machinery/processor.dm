@@ -59,7 +59,7 @@
 // Ejects all the things out of the machine.
 /obj/machinery/processor/proc/empty()
 	for(var/atom/movable/AM in to_be_processed)
-		rel_remove(src, "to_be_processed", AM)
+		rel_remove(src, nameof(to_be_processed), AM)
 		AM.forceMove(get_turf(src))
 
 // Ejects all the things out of the machine.
@@ -70,7 +70,7 @@
 		to_chat(user, span_warning("\The [src] cannot process \the [AM] at this time."))
 		play_sfx(src, SFX_MACHINES_BUZZ_SIGH, vary = TRUE)
 		return
-	rel_add(src, "to_be_processed", AM)
+	rel_add(src, nameof(to_be_processed), AM)
 	AM.forceMove(src)
 	act_message(user, AM, others = span_infoplain(span_bold("%U%") + " places %T% inside \the [src]."))
 
@@ -98,17 +98,17 @@
 			play_sfx(src, SFX_EFFECTS_SPLAT)
 			S.cores--
 			return STEP_REPEAT(1 SECOND)
-		rel_remove(src, "to_be_processed", S)
+		rel_remove(src, nameof(to_be_processed), S)
 		qdel(S)
 		return STEP_REPEAT(1 SECOND)
 	if(ishuman(AM))
 		play_sfx(src, SFX_EFFECTS_SPLAT)
-		rel_remove(src, "to_be_processed", AM)
+		rel_remove(src, nameof(to_be_processed), AM)
 		qdel(AM)
 		monkeys_recycled++
 		return STEP_REPEAT(1 SECOND)
 	if(AM)
-		rel_remove(src, "to_be_processed", AM)
+		rel_remove(src, nameof(to_be_processed), AM)
 		return STEP_REPEAT(0)
 	if(monkeys_recycled >= monkeys_per_cube)
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))

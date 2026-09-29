@@ -48,16 +48,16 @@
 /datum/om/behaviour/swarming/proc/pair(atom/movable/AM, atom/movable/other)
 	if(QDELETED(other))
 		return
-	rel_add(AM, "swarm_members", other)
+	rel_add(AM, nameof(AM.swarm_members), other)
 	swarm(AM)
 
 /// Unpairs `AM` from every swarm-mate; mates left alone stop swarming.
 /datum/om/behaviour/swarming/proc/leave_all(atom/movable/AM)
 	for(var/atom/movable/other as anything in AM.swarm_members?.Copy())
-		rel_remove(other, "swarm_members", AM)
+		rel_remove(other, nameof(other.swarm_members), AM)
 		if(!length(other.swarm_members))
 			unswarm(other)
-	rel_clear(AM, "swarm_members")
+	rel_clear(AM, nameof(AM.swarm_members))
 	unswarm(AM)
 
 /datum/om/behaviour/swarming/proc/swarm(atom/movable/owner)
@@ -70,4 +70,6 @@
 		animate(owner, pixel_x = owner.pixel_x - owner.swarm_offset_x, pixel_y = owner.pixel_y - owner.swarm_offset_y, time = 2)
 		owner.is_swarming = FALSE
 
-REL_LIST(/atom/movable, swarm_members)
+/atom/movable/declare_ownership(decl)
+	..()
+	rel(decl, nameof(swarm_members), list = TRUE)

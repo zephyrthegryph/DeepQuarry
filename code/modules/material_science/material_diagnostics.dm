@@ -53,8 +53,8 @@
 
 /datum/material_service/proc/unregister_diagnostics()
 	om_unhook(owner(), list(/datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby, /datum/om/event/examine), src)
-	rel_clear(src, "monitor_tool")
-	rel_clear(src, "monitor_user")
+	rel_clear(src, nameof(monitor_tool))
+	rel_clear(src, nameof(monitor_user))
 	last_reading = null
 
 /datum/material_service/proc/examine_service(datum/source, datum/om/event/examine/event)
@@ -81,8 +81,8 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!user.Adjacent(owner()) || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return ITEM_INTERACT_BLOCKING
-	rel_set(src, "monitor_tool", tool)
-	rel_set(src, "monitor_user", user)
+	rel_set(src, nameof(monitor_tool), tool)
+	rel_set(src, nameof(monitor_user), user)
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
@@ -254,8 +254,8 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	var/obj/item/multitool/tool = monitor_tool
 	var/mob/living/user = monitor_user
 	if(!tool || !istype(user) || user.incapacitated() || !user.Adjacent(owner()) || !user.item_is_in_hands(tool))
-		rel_clear(src, "monitor_tool")
-		rel_clear(src, "monitor_user")
+		rel_clear(src, nameof(monitor_tool))
+		rel_clear(src, nameof(monitor_user))
 		return FALSE
 	if(monitor_configuration != owner().material_configuration_revision)
 		monitor_configuration = owner().material_configuration_revision

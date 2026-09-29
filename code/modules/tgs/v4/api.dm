@@ -84,11 +84,11 @@
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		own_set(src, "cached_revision", new /datum/tgs_revision_information)
+		own_set(src, nameof(cached_revision), new /datum/tgs_revision_information)
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
-	own_take_all(src, "cached_test_merges")
+	own_take_all(src, nameof(cached_test_merges))
 	var/list/json = cached_json["testMerges"]
 	for(var/entry in json)
 		var/datum/tgs_revision_information/test_merge/tm = new
@@ -107,7 +107,7 @@
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		own_add(src, "cached_test_merges", tm)
+		own_add(src, nameof(cached_test_merges), tm)
 
 	return TRUE
 

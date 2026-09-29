@@ -149,7 +149,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 /obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!giver && user.unEquip(held))
 		held.forceMove(src)
-		own_set(src, "giver", held)
+		own_set(src, nameof(giver), held)
 		SStgui.update_uis(src)
 	else if(giver)
 		to_chat(user, span_warning("There is already ID card inside."))
@@ -169,7 +169,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 			user.put_in_hands(giver)
 		else
 			giver.forceMove(src.loc)
-		own_take(src, "giver")
+		own_take(src, nameof(giver))
 		LAZYCLEARLIST(accesses)
 	else
 		to_chat(user, span_warning("There is nothing to remove from the console."))
@@ -245,16 +245,16 @@ UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_id)
 			giver.forceMove(ui.user.loc)
 			if(!ui.user.get_active_hand())
 				ui.user.put_in_hands(giver)
-			own_take(src, "giver")
+			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		else
 			giver.forceMove(src.loc)
-			own_take(src, "giver")
+			own_take(src, nameof(/obj/machinery/computer/guestpass::giver))
 		LAZYCLEARLIST(accesses)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 			I.forceMove(src)
-			own_set(src, "giver", I)
+			own_set(src, nameof(/obj/machinery/computer/guestpass::giver), I)
 	add_fingerprint(ui.user)
 	return TRUE
 
@@ -316,4 +316,6 @@ UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_issue)
 	else
 		to_chat(user, span_warning("Invalid duration."))
 
-OWN(/obj/machinery/computer/guestpass, giver, OWN_CONTAINED)
+/obj/machinery/computer/guestpass/declare_ownership(decl)
+	..()
+	own(decl, nameof(giver), policy = OWN_CONTAINED)

@@ -17,13 +17,17 @@
 
 // The owner mob owns the link (owned_soul_links); soul_owner is the one-sided back view. Sharers
 // are plain relations both ways (a multi-sharer link names several), kept in step by the procs below.
-REL_LIST(/mob/living, shared_soul_links)
-REL_LIST(/datum/soul_link/multi_sharer, soul_sharers)
+/mob/living/declare_ownership(decl)
+	..()
+	rel(decl, nameof(shared_soul_links), list = TRUE)
+/datum/soul_link/multi_sharer/declare_ownership(decl)
+	..()
+	rel(decl, nameof(soul_sharers), list = TRUE)
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)
-		rel_clear(src, "soul_sharer")
-		rel_remove(sharer, "shared_soul_links", src)
+		rel_clear(src, nameof(soul_sharer))
+		rel_remove(sharer, nameof(sharer.shared_soul_links), src)
 
 // Used to assign variables, called primarily by soullink()
 // Override this to create more unique soullinks (Eg: 1->Many relationships)
@@ -31,10 +35,10 @@ REL_LIST(/datum/soul_link/multi_sharer, soul_sharers)
 /datum/soul_link/proc/parse_args(mob/living/owner, mob/living/sharer)
 	if(!owner || !sharer)
 		return FALSE
-	rel_set(src, "soul_owner", owner)
-	rel_set(src, "soul_sharer", sharer)
-	own_add(owner, "owned_soul_links", src)
-	rel_add(sharer, "shared_soul_links", src)
+	rel_set(src, nameof(soul_owner), owner)
+	rel_set(src, nameof(soul_sharer), sharer)
+	own_add(owner, nameof(owner.owned_soul_links), src)
+	rel_add(sharer, nameof(sharer.shared_soul_links), src)
 	return TRUE
 
 // Runs after /living death()
@@ -61,16 +65,16 @@ REL_LIST(/datum/soul_link/multi_sharer, soul_sharers)
 /datum/soul_link/multi_sharer/parse_args(mob/living/owner, list/sharers)
 	if(!owner || !LAZYLEN(sharers))
 		return FALSE
-	rel_set(src, "soul_owner", owner)
-	own_add(owner, "owned_soul_links", src)
+	rel_set(src, nameof(soul_owner), owner)
+	own_add(owner, nameof(owner.owned_soul_links), src)
 	for(var/mob/living/L as anything in sharers)
-		rel_add(src, "soul_sharers", L)
-		rel_add(L, "shared_soul_links", src)
+		rel_add(src, nameof(soul_sharers), L)
+		rel_add(L, nameof(L.shared_soul_links), src)
 	return TRUE
 
 /datum/soul_link/multi_sharer/remove_soul_sharer(mob/living/sharer)
-	rel_remove(src, "soul_sharers", sharer)
-	rel_remove(sharer, "shared_soul_links", src)
+	rel_remove(src, nameof(soul_sharers), sharer)
+	rel_remove(sharer, nameof(sharer.shared_soul_links), src)
 
 /////////////////
 // SHARED FATE //

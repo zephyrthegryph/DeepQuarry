@@ -17,7 +17,7 @@
 */
 /datum/n_Interpreter/proc/Load(datum/node/BlockDefinition/GlobalBlock/program)
 	ASSERT(program)
-	own_set(src, "program", program)
+	own_set(src, nameof(program), program)
 	CreateGlobalScope()
 
 /*
@@ -62,22 +62,22 @@
 	if(!istext(name))
 		return
 	if(!object)
-		own_put(globalScope, "functions", name, path) // a proc path: plain data in the owned lookup
+		own_put(globalScope, nameof(globalScope.functions), name, path) // a proc path: plain data in the owned lookup
 		return
 	var/datum/node/statement/FunctionDefinition/S = new()
 	S.func_name		= name
 	S.parameters	= params
-	own_set(S, "block", new /datum/node/BlockDefinition/FunctionBlock())
+	own_set(S, nameof(S.block), new /datum/node/BlockDefinition/FunctionBlock())
 	S.block.SetVar("src", object)
 	var/datum/node/expression/FunctionCall/C = new()
 	C.func_name	= path
-	own_set(C, "object", new /datum/node/identifier("src"))
+	own_set(C, nameof(C.object), new /datum/node/identifier("src"))
 	for(var/p in params)
-		own_add(C, "parameters", new/datum/node/expression/value/variable(p))
+		own_add(C, nameof(C.parameters), new/datum/node/expression/value/variable(p))
 	var/datum/node/statement/ReturnStatement/R=new()
-	own_set(R, "value", C)
+	own_set(R, nameof(R.value), C)
 	LAZYADD(S.block.statements, R)
-	own_put(globalScope, "functions", name, S)
+	own_put(globalScope, nameof(globalScope.functions), name, S)
 /*
 	Proc: VarExists
 	Checks whether a global variable with the specified name exists.
@@ -122,7 +122,7 @@
 		stmt.func_name  = func.func_name
 		// The call owns its argument nodes: wrap each raw value (Eval() unwraps them again).
 		for(var/p in params)
-			own_add(stmt, "parameters", script_value_node(p))
+			own_add(stmt, nameof(stmt.parameters), script_value_node(p))
 		return RunFunction(stmt)
 	else
 		return call(func)(arglist(params))

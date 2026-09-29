@@ -107,7 +107,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 		cell.add_fingerprint(user)
 		cell.update_icon()
 
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		set_on(0)
 		set_light(0)
 		to_chat(user, "You remove the power cell")
@@ -141,7 +141,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 			else
 				user.drop_item()
 				W.forceMove(src)
-				own_set(src, "cell", W)
+				own_set(src, nameof(cell), W)
 				to_chat(user, "You insert the power cell.")
 	update_icon()
 	return TRUE
@@ -176,4 +176,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
-OWN(/obj/machinery/floodlight, cell, OWN_CONTAINED)
+/obj/machinery/floodlight/declare_ownership(decl)
+	..()
+	own(decl, nameof(cell), policy = OWN_CONTAINED)

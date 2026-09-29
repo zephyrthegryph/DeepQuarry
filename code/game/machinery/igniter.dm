@@ -136,10 +136,16 @@ DAMAGE_REACTION(/obj/machinery/sparker, DAMAGE_EMP, PROC_REF(sparker_emp))
 /// Sparkers and igniters sharing our id (keyed).
 /obj/machinery/button/ignition/var/list/obj/machinery/sparker/controlled_sparkers
 /obj/machinery/button/ignition/var/list/obj/machinery/igniter/controlled_igniters
-REL_KEYED_LIST(/obj/machinery/button/ignition, controlled_sparkers, id, /obj/machinery/sparker)
-REL_KEYED_LIST(/obj/machinery/button/ignition, controlled_igniters, id, /obj/machinery/igniter)
-KEYED_TARGET(/obj/machinery/sparker, id)
-KEYED_TARGET(/obj/machinery/igniter, id)
+/obj/machinery/button/ignition/declare_ownership(decl)
+	..()
+	rel(decl, nameof(controlled_sparkers), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/sparker)
+	rel(decl, nameof(controlled_igniters), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/igniter)
+/obj/machinery/sparker/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id))
+/obj/machinery/igniter/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id))
 
 /obj/machinery/button/ignition/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)

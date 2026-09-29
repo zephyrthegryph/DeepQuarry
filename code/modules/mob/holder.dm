@@ -76,7 +76,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 		return
 	ASSERT(ismob(held))
 	. = ..()
-	rel_set(src, "held_mob", held)
+	rel_set(src, nameof(held_mob), held)
 	original_vis_flags = held.vis_flags
 	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
 	vis_contents += held
@@ -90,7 +90,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 		held_mob.transform = original_transform
 		held_mob.update_transform()
 		held_mob.vis_flags = original_vis_flags
-		rel_clear(src, "held_mob")
+		rel_clear(src, nameof(held_mob))
 		invisibility = INVISIBILITY_ABSTRACT
 		schedule_cleanup_check() // once the move is over
 	..()

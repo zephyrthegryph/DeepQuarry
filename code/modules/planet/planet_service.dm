@@ -53,9 +53,9 @@ GLOBAL_DATUM_INIT(planet_service, /datum/world_service/planets, new)
 		if(!istype(P))
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			rel_add(P, "planet_walls", T)
+			rel_add(P, nameof(P.planet_walls), T)
 		else if(istype(T, /turf/simulated) && T.is_outdoors())
-			rel_add(P, "planet_floors", T)
+			rel_add(P, nameof(P.planet_floors), T)
 			P.weather_holder.apply_to_turf(T)
 
 /datum/world_service/planets/proc/removeTurf(turf/T,is_edge)
@@ -64,9 +64,9 @@ GLOBAL_DATUM_INIT(planet_service, /datum/world_service/planets, new)
 		if(!P)
 			return
 		if(istype(T, /turf/unsimulated/wall/planetary))
-			rel_remove(P, "planet_walls", T)
+			rel_remove(P, nameof(P.planet_walls), T)
 		else
-			rel_remove(P, "planet_floors", T)
+			rel_remove(P, nameof(P.planet_floors), T)
 			P.weather_holder.remove_from_turf(T)
 			P.sun_holder.remove_from_turf(T)
 

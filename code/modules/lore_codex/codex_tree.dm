@@ -9,7 +9,7 @@
 	var/list/readers
 
 /datum/codex_tree/New(new_holder, new_root_type)
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 	root_type = new_root_type
 	generate_pages()
 	..()
@@ -22,17 +22,17 @@
 	var/list/history
 
 /datum/codex_reader/proc/visit(datum/lore/codex/new_page, record_history)
-	rel_set(src, "page", new_page)
+	rel_set(src, nameof(page), new_page)
 	if(record_history && new_page)
-		rel_remove(src, "history", new_page)
-		rel_add(src, "history", new_page)
+		rel_remove(src, nameof(history), new_page)
+		rel_add(src, nameof(history), new_page)
 
 /// The reader state for `user`, made on first use.
 /datum/codex_tree/proc/reader_of(mob/user) as /datum/codex_reader
 	var/key = "[user]"
 	var/datum/codex_reader/R = LAZYACCESS(readers, key)
 	if(!R)
-		R = own_put(src, "readers", key, new /datum/codex_reader)
+		R = own_put(src, nameof(readers), key, new /datum/codex_reader)
 	return R
 
 /// `user`'s current page, or null.
@@ -41,7 +41,7 @@
 	return R?.page
 
 /datum/codex_tree/proc/generate_pages()
-	own_set(src, "home", new root_type(src)) // This will also generate the others.
+	own_set(src, nameof(home), new root_type(src)) // This will also generate the others.
 	indexed_pages = home.index_page() // changed from current_page to home.
 
 // Changes current_page to its parent, assuming one exists.
@@ -78,12 +78,12 @@
 	var/list/H = R.history
 	if(length(H) > 1)
 		if(H[length(H)] == D)
-			rel_remove(R, "history", D) // This gets rid of the current page in the history.
+			rel_remove(R, nameof(R.history), D) // This gets rid of the current page in the history.
 			if(length(R.history) == 1)
 				go_to_page(R.history[1], TRUE, user)
 				return
 		var/datum/lore/codex/previous = R.history[length(R.history)] // the previous page that we want to go to
-		rel_remove(R, "history", previous)
+		rel_remove(R, nameof(R.history), previous)
 		go_to_page(previous, TRUE, user)
 	else
 		go_to_page(H[length(H)], TRUE, user)

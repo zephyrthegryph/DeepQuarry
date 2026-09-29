@@ -90,8 +90,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 			return 0
 
 		if(D in known_targets)
-			rel_remove(src, "known_targets", D)	// Move the last hacked item to the newest end
-			rel_add(src, "known_targets", D)
+			rel_remove(src, nameof(known_targets), D)	// Move the last hacked item to the newest end
+			rel_add(src, nameof(known_targets), D)
 			return 1
 		to_chat(user, span_notice("You begin hacking \the [D]..."))
 		// On average hackin takes ~15 seconds. Fairly small random span to discourage people from simply aborting and trying again
@@ -115,7 +115,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 		return
 	to_chat(user, span_notice("Your hacking attempt was succesful!"))
 	user.playsound_local(get_turf(src), 'sound/runtime/instruments/piano/An6.ogg', 50)
-	rel_add(src, "known_targets", D)	// The newly hacked target goes at the newest end
+	rel_add(src, nameof(known_targets), D)	// The newly hacked target goes at the newest end
 	afterattack(D, user)
 
 /obj/item/multitool/hacktool/proc/attempt_hack_timed_done(mob/user, obj/structure/closet/crate/secure/A)
@@ -133,13 +133,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 	if(max_known_targets < 1) max_known_targets = 1
 	// Cut away the oldest items if the capacity has been reached
 	while(length(known_targets) > max_known_targets)
-		rel_remove(src, "known_targets", known_targets[1])
+		rel_remove(src, nameof(known_targets), known_targets[1])
 
 /datum/tgui_state/default/must_hack
 	var/obj/item/multitool/hacktool/hacktool
 
 /datum/tgui_state/default/must_hack/New(hacktool)
-	rel_set(src, "hacktool", hacktool)
+	rel_set(src, nameof(hacktool), hacktool)
 	..()
 
 /datum/tgui_state/default/must_hack/can_use_topic(src_object, mob/user)

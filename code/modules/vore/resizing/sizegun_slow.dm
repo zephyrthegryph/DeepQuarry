@@ -129,7 +129,7 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 		to_chat(user, span_warning("\the [target] is immune to resizing."))
 
 	// Start the effects
-	rel_set(src, "current_target", target)
+	rel_set(src, nameof(current_target), target)
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/effects/beam_vr.dmi', icon_state = "zappy1", time = 6000)
 	var/filter = filter(type = "outline", size = 1, color = "#00FF00")
 	target.filters += filter
@@ -146,9 +146,9 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 	// The beam steps every 0.3 s while busy (DECLARE_REPEAT; S10b: was a stoplag() loop) until
 	// should_stop(). The target, user, hand and beam are relation views on the gun, so a deleted
 	// target or user still reaches sizegun_finish() and the effects are cleaned up.
-	rel_set(src, "scan_user", user)
-	rel_set(src, "scan_hand", active_hand)
-	rel_set(src, "scan_beam_effect", scan_beam)
+	rel_set(src, nameof(scan_user), user)
+	rel_set(src, nameof(scan_hand), active_hand)
+	rel_set(src, nameof(scan_beam_effect), scan_beam)
 	beam_state = list(previous_scale, filter, box_segments, user.client)
 	set_busy(TRUE)
 	if(should_stop(L, user, active_hand))
@@ -185,10 +185,10 @@ APPEARANCE_TEMPLATE(/obj/item/slow_sizegun, "{base_icon_state}-{sizeshift_mode}{
 	var/datum/beam/scan_beam = scan_beam_effect
 	beam_state = null
 	set_busy(FALSE)
-	rel_clear(src, "current_target")
-	rel_clear(src, "scan_user")
-	rel_clear(src, "scan_hand")
-	rel_clear(src, "scan_beam_effect")
+	rel_clear(src, nameof(current_target))
+	rel_clear(src, nameof(scan_user))
+	rel_clear(src, nameof(scan_hand))
+	rel_clear(src, nameof(scan_beam_effect))
 	if(!state)
 		return
 	var/previous_scale = state[1]

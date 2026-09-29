@@ -16,7 +16,7 @@ somewhere on that shuttle. Subtypes of these can be then used to perform ship ov
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(src))
-		rel_set(src, "linked", sector)
+		rel_set(src, nameof(linked), sector)
 		return 1
 
 /obj/machinery/computer/ship/proc/sync_linked(user = null)

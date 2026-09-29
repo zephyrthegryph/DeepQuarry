@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		else//fits in new one
 			user.remove_from_mob(I)
 			I.forceMove(src)//I.loc=src
-			own_set(src, "ec_cartridge", I)
+			own_set(src, nameof(ec_cartridge), I)
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
 	return INTERACTION_HANDLED_PASS
@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		set_active(0)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
-		own_take(src, "ec_cartridge")
+		own_take(src, nameof(ec_cartridge))
 		update_icon()
 	return TRUE
 

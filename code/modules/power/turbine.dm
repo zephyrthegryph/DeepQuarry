@@ -107,8 +107,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 /obj/machinery/compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "gas_contained", new /datum/gas_mixture())
-	rel_set(src, "inturf", get_step(src, dir))
+	own_set(src, nameof(gas_contained), new /datum/gas_mixture())
+	rel_set(src, nameof(inturf), get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
 		stat_add(BROKEN)
@@ -120,7 +120,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 /obj/machinery/compressor/proc/locate_machinery()
 	if(turbine())
 		return
-	rel_set(src, "turbine", locate_within(get_step(src, get_dir(inturf(), src)), /obj/machinery/power/turbine))
+	rel_set(src, nameof(turbine), locate_within(get_step(src, get_dir(inturf(), src)), /obj/machinery/power/turbine))
 	if(turbine())
 		turbine().locate_machinery()
 
@@ -162,9 +162,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 
 /obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		rel_clear(src, "turbine")
+		rel_clear(src, nameof(turbine))
 		if(anchored)
-			rel_set(src, "inturf", get_step(src, dir))
+			rel_set(src, nameof(inturf), get_step(src, dir))
 			locate_machinery()
 			if(turbine())
 				to_chat(user, span_notice("Turbine connected."))
@@ -237,7 +237,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	. = ..()
 	default_apply_parts()
 	// The outlet is pointed at the direction of the turbine component
-	rel_set(src, "outturf", get_step(src, dir))
+	rel_set(src, nameof(outturf), get_step(src, dir))
 	locate_machinery()
 	if(!compressor())
 		stat_add(BROKEN)
@@ -249,7 +249,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 /obj/machinery/power/turbine/proc/locate_machinery()
 	if(compressor())
 		return
-	rel_set(src, "compressor", locate_within(get_step(src, get_dir(outturf(), src)), /obj/machinery/compressor))
+	rel_set(src, nameof(compressor), locate_within(get_step(src, get_dir(outturf(), src)), /obj/machinery/compressor))
 	if(compressor())
 		compressor().locate_machinery()
 
@@ -262,9 +262,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		rel_clear(src, "compressor")
+		rel_clear(src, nameof(compressor))
 		if(anchored)
-			rel_set(src, "outturf", get_step(src, dir))
+			rel_set(src, nameof(outturf), get_step(src, dir))
 			locate_machinery()
 			if(compressor())
 				to_chat(user, span_notice("Compressor connected."))
@@ -357,11 +357,11 @@ UI_ACT_PROC(/obj/machinery/power/turbine, ui_act_start_stop)
 		return
 	for(var/obj/machinery/compressor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.comp_id == id)
-			rel_set(src, "compressor", C)
-	rel_clear(src, "doors")
+			rel_set(src, nameof(compressor), C)
+	rel_clear(src, nameof(doors))
 	for(var/obj/machinery/door/blast/P in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
-			rel_add(src, "doors", P)
+			rel_add(src, nameof(doors), P)
 
 /obj/machinery/computer/turbine_computer/declare_interactions(list/into)
 	into += list(
@@ -475,4 +475,6 @@ UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_doors)
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
 	return turbine
 
-REL_LIST(/obj/machinery/computer/turbine_computer, doors)
+/obj/machinery/computer/turbine_computer/declare_ownership(decl)
+	..()
+	rel(decl, nameof(doors), list = TRUE)

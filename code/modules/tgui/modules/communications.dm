@@ -41,7 +41,7 @@
 
 /datum/tgui_module/communications/New(host)
 	. = ..()
-	own_set(src, "crew_announcement", new /datum/announcement/priority())
+	own_set(src, nameof(crew_announcement), new /datum/announcement/priority())
 	crew_announcement.newscast = TRUE
 
 /datum/tgui_module/communications/ui_prepare(mob/user, datum/tgui/ui)
@@ -187,7 +187,7 @@ UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=cu
 		return
 
 	var/datum/signal/status_signal = new
-	rel_set(status_signal, "source", source)
+	rel_set(status_signal, nameof(status_signal.source), source)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

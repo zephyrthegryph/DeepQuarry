@@ -47,7 +47,7 @@
 	..()
 	clear_every_clients_images()
 	qdel_all_images()
-	rel_clear(src, "clients")
+	rel_clear(src, nameof(clients))
 
 /obj/effect/fake_attacker/proc/create_images_from(atom/clone)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -66,7 +66,7 @@
 /obj/effect/fake_attacker/proc/append_client(client/C)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(C)
-		rel_add(src, "clients", C)
+		rel_add(src, nameof(clients), C)
 	assign_image_to_client(C)
 
 /obj/effect/fake_attacker/proc/assign_image_to_client(client/C)
@@ -178,7 +178,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 	return M
 
 /obj/effect/fake_attacker/human/proc/set_target(mob/M)
-	rel_set(src, "target", M)
+	rel_set(src, nameof(target), M)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
@@ -214,4 +214,6 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
 		qdel(src)
 
-REL_LIST(/obj/effect/fake_attacker, clients)
+/obj/effect/fake_attacker/declare_ownership(decl)
+	..()
+	rel(decl, nameof(clients), list = TRUE)

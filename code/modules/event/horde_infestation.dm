@@ -17,7 +17,7 @@
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels)) //No spawns on welded vents
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
-				rel_add(src, "vents", temp_vent)
+				rel_add(src, nameof(vents), temp_vent)
 
 	if(prob(50)) //50/50 chance on spiders or metroids.
 		log_game("Hord event, spiders selected.")
@@ -48,7 +48,7 @@
 				if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change to 10 from 50 in order for spawns to work.
 					var/area/A = get_area(temp_vent)
 					if(!(A.flag_check(AREA_FORBID_EVENTS)))
-						rel_add(src, "vents", temp_vent)
+						rel_add(src, nameof(vents), temp_vent)
 
 		while((spawncount >= 1) && length(vents))
 			var/obj/vent = DEFAULTPICK(vents, null)
@@ -59,7 +59,7 @@
 				/obj/effect/spider/eggcluster/royal/space = 1
 				))
 			new spawn_spiderlings(vent.loc) // No nurses //Oh my JESUS CHRIST, this slipped past me. Literally no nurses. Well guess what, nurses are back.
-			rel_remove(src, "vents", vent)
+			rel_remove(src, nameof(vents), vent)
 			spawncount--
 	if(metroids)
 		while((spawncount >= 1) && length(vents))
@@ -72,10 +72,10 @@
 				/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
-			own_add(src, "alive_metroids", new spawn_metroids(get_turf(vent)))
-			rel_remove(src, "vents", vent)
+			own_add(src, nameof(alive_metroids), new spawn_metroids(get_turf(vent)))
+			rel_remove(src, nameof(vents), vent)
 			spawncount--
-		rel_clear(src, "vents")
+		rel_clear(src, nameof(vents))
 
 /datum/event/horde_infestation/end()
 	if(spiders)

@@ -265,7 +265,7 @@
 		return
 	M.put_in_active_hand(G)
 	G.synch()
-	rel_set(src, "LAssailant", M)
+	rel_set(src, nameof(LAssailant), M)
 
 	M.do_attack_animation(src)
 	play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
@@ -521,7 +521,7 @@
 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %THEIR% [organ.name]!")))
 	else
 		act_message(user, src, MSG_SELF(span_filter_notice("You start applying pressure to %T%'s [organ.name]!")), 			MSG_OTHERS(span_filter_notice("%U% starts applying pressure to %T%'s [organ.name]!")))
-	rel_set(organ, "applied_pressure", user)
+	rel_set(organ, nameof(organ.applied_pressure), user)
 
 	//apply pressure as long as they stay still and keep grabbing
 	//This USED to have a 'target_zone' check that never actually worked so whatever.
@@ -542,7 +542,7 @@
 	var/obj/item/organ/external/organ = task.target
 	if(!organ)
 		return
-	rel_clear(organ, "applied_pressure")
+	rel_clear(organ, nameof(organ.applied_pressure))
 	if(!user)
 		return
 	if(user == src)
@@ -556,7 +556,7 @@
 
 
 /mob/living/carbon/human/proc/set_default_attack(datum/unarmed_attack/u_attack)
-	rel_set(src, "default_attack", u_attack) // an attack the species owns
+	rel_set(src, nameof(default_attack), u_attack) // an attack the species owns
 
 /mob/living/carbon/human/proc/perform_cpr(mob/living/carbon/human/reviver)
 	// Check for sanity

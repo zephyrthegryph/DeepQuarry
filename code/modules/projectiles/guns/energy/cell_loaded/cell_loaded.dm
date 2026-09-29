@@ -64,7 +64,7 @@
 		else
 			to_chat(loc,span_warning("\The [src] is now firing [new_batt.type_name]."))
 
-	rel_set(src, "chambered", new_batt)
+	rel_set(src, nameof(chambered), new_batt)
 	update_charge()
 	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
@@ -99,7 +99,7 @@
 		switch_to(ammo_magazine.stored_ammo[1])
 
 /obj/item/gun/projectile/cell_loaded/unload_ammo(mob/user, allow_dump=1)
-	rel_clear(src, "chambered")
+	rel_clear(src, nameof(chambered))
 	return ..()
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -165,7 +165,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 			return
 		user.remove_from_mob(B)
 		B.forceMove(src)
-		own_add(src, "stored_ammo", B)
+		own_add(src, nameof(stored_ammo), B)
 		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()

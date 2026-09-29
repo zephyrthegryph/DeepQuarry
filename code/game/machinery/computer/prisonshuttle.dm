@@ -129,7 +129,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1311)
 	if(!frequency) return
 	var/datum/signal/status_signal = new
-	rel_set(status_signal, "source", src)
+	rel_set(status_signal, nameof(status_signal.source), src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 	frequency.post_signal(src, status_signal)

@@ -30,9 +30,9 @@
 
 /// Generates and fills new action groups with our mob's current actions
 /datum/hud/proc/build_action_groups()
-	own_set(src, "listed_actions", new /datum/action_group/listed(src))
-	own_set(src, "palette_actions", new /datum/action_group/palette(src))
-	rel_clear(src, "floating_actions")
+	own_set(src, nameof(listed_actions), new /datum/action_group/listed(src))
+	own_set(src, nameof(palette_actions), new /datum/action_group/palette(src))
+	rel_clear(src, nameof(floating_actions))
 	for(var/datum/action/action as anything in mymob().actions)
 		var/atom/movable/screen/movable/action_button/button = action.button_for(src)
 		if(!button)

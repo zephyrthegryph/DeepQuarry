@@ -182,7 +182,7 @@
 	for(var/datum/contract_requirement/requirement in contract.requirements?.Copy())
 		if(requirement.name in list("Signed operating charter", "Signed operational contact"))
 			continue
-		own_remove(contract, "requirements", requirement)
+		own_remove(contract, nameof(contract.requirements), requirement)
 	contract.configure_red_operation(profile_id)
 	var/list/brief = agent_red_brief(contract.agent_faction)
 	contract.title = brief["title"]

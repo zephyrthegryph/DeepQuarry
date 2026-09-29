@@ -568,4 +568,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 	return material_rad_insulation(implicit_material?.name, RAD_BLAST_DOOR_THICKNESS_MM, RAD_EXTREME_INSULATION)
 
 // Buttons and consoles find blast doors by id (REL_KEYED sources).
-KEYED_TARGET(/obj/machinery/door/blast, id)
+/obj/machinery/door/blast/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id))

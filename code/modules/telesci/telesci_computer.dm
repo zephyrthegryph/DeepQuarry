@@ -30,8 +30,10 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
-OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
-OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
+/obj/machinery/computer/telescience/declare_ownership(decl)
+	..()
+	own(decl, nameof(inserted_gps), policy = OWN_SPILL)
+	own(decl, nameof(crystals), policy = OWN_SPILL)
 
 // its crystals are ejected.
 /obj/machinery/computer/telescience/on_destroy(force)
@@ -47,7 +49,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		own_add(src, "crystals", new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
+		own_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /obj/machinery/computer/telescience/declare_interactions(list/into)
 	into += list(
@@ -74,7 +76,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	if(!user.unEquip(W))
 		return TRUE
 	W.forceMove(src)
-	own_move(W, src, "crystals")
+	own_move(W, src, nameof(crystals))
 	act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s crystal slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s crystal slot."))
 	return TRUE
 
@@ -88,7 +90,7 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 /obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!inserted_gps)
-		own_set(src, "inserted_gps", W)
+		own_set(src, nameof(inserted_gps), W)
 		user.unEquip(W)
 		W.forceMove(src)
 		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
@@ -98,8 +100,8 @@ OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
 		return ITEM_INTERACT_BLOCKING
-	rel_set(src, "telepad", multitool.connectable())
-	rel_clear(multitool, "connectable")
+	rel_set(src, nameof(telepad), multitool.connectable())
+	rel_clear(multitool, nameof(multitool.connectable))
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -175,7 +177,7 @@ UI_ACT(/obj/machinery/computer/telescience, "ejectGPS", ui_act_ejectgps)
 UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_ejectgps)
 	if(inserted_gps)
 		inserted_gps.forceMove(loc)
-		own_take(src, "inserted_gps")
+		own_take(src, nameof(/obj/machinery/computer/telescience::inserted_gps))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/telescience, "setMemory", ui_act_setmemory)
@@ -265,7 +267,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
-		own_set(src, "last_tele_data", proj_data)
+		own_set(src, nameof(last_tele_data), proj_data)
 
 		var/trueX = proj_data.dest_x
 		var/trueY = proj_data.dest_y
@@ -277,7 +279,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 		var/spawn_time = round(proj_data.time) * 10
 
 		var/turf/target = locate(trueX, trueY, z_co)
-		rel_set(src, "last_target", target)
+		rel_set(src, nameof(last_target), target)
 		flick("pad-beam", telepad())
 
 		if(spawn_time > 15) // 1.5 seconds
@@ -316,7 +318,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I as anything in own_take_all(src, "crystals"))
+	for(var/obj/item/I as anything in own_take_all(src, nameof(crystals)))
 		I.forceMove(src.loc)
 	distance = 0
 

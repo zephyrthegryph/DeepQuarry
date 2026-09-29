@@ -277,7 +277,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon/changeling, \
 /obj/item/card/id/syndicate/changeling/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		rel_set(src, "registered_user", loc)
+		rel_set(src, nameof(registered_user), loc)
 	access = null
 
 EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
@@ -295,7 +295,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/syndicate/changeling, \
 
 /obj/item/card/id/syndicate/changeling/Click() //Since we can't hold it in our hands, and attack_hand() doesn't work if it in inventory...
 	if(!registered_user())
-		rel_set(src, "registered_user", usr)
+		rel_set(src, nameof(registered_user), usr)
 		usr.set_id_info(src)
 	tgui_interact(registered_user())
 	..()

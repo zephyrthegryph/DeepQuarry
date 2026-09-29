@@ -307,7 +307,7 @@
 
 /obj/dq_input_probe/proc/note(handler, mob/user)
 	last_handler = handler
-	rel_set(src, "last_user", user)
+	rel_set(src, nameof(last_user), user)
 
 /// Each kind of Use the router can reach, declared as interactions that record which one ran.
 DECLARE_INTERACTIONS(/obj/dq_input_probe, \
@@ -354,12 +354,12 @@ DECLARE_INTERACTIONS(/obj/dq_input_probe, \
 DECLARE_INTERACTIONS(/obj/item/dq_input_probe_item, INTERACT_USE(null, PROC_REF(probe_self)))
 
 /obj/item/dq_input_probe_item/proc/probe_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_set(src, "self_used_by", user)
+	rel_set(src, nameof(self_used_by), user)
 
 /// Clicks through the router as a mob; returns the handler the probe saw for that mob.
 /datum/unit_test/proc/dq_route(mob/user, obj/dq_input_probe/probe, params)
 	probe.last_handler = null
-	rel_clear(probe, "last_user")
+	rel_clear(probe, nameof(probe.last_user))
 	user.next_click = 0
 	GLOB.input_router.route_click(user, probe, params)
 	return probe.last_user == user ? probe.last_handler : null

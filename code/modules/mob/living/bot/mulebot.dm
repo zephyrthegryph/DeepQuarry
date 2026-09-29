@@ -45,7 +45,7 @@
 	var/turf/T = get_turf(loc)
 	var/obj/machinery/navbeacon/N = locate_on(T, /obj/machinery/navbeacon)
 	if(N)
-		rel_set(src, "home", T)
+		rel_set(src, nameof(home), T)
 		homeName = N.location
 	else
 		homeName = "Unset"
@@ -159,7 +159,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	return TRUE
 
 /mob/living/bot/mulebot/proc/home_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
-	rel_set(src, "home", get_turf(ask.choices[ask.choice]))
+	rel_set(src, nameof(home), get_turf(ask.choices[ask.choice]))
 	homeName = ask.choice
 
 /// Old attackby: the bot's item handling (old ..()), then an icon refresh. A FALSE result still reaches the attack.
@@ -177,7 +177,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	switch(command)
 		if("Home")
 			resetTarget()
-			rel_set(src, "target", home)
+			rel_set(src, nameof(target), home)
 			targetName = "Home"
 		if("SetD")
 			var/list/beaconlist = GetBeaconList()
@@ -192,7 +192,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 
 /mob/living/bot/mulebot/proc/destination_tag_chosen(datum/om/prompt/choice/mulebot_beacon/ask)
 	resetTarget()
-	rel_set(src, "target", get_turf(ask.choices[ask.choice]))
+	rel_set(src, nameof(target), get_turf(ask.choices[ask.choice]))
 	targetName = ask.choice
 
 /mob/living/bot/mulebot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -245,7 +245,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 			), "automation:[REF(src)]:delivery:[world.time]", src)
 		resetTarget()
 		if(auto_return && home && (loc != home))
-			rel_set(src, "target", home)
+			rel_set(src, nameof(target), home)
 			targetName = "Home"
 
 /mob/living/bot/mulebot/confirmTarget()
@@ -255,7 +255,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	..()
 	if(!target_path.len && target != home) // I presume that target is not null
 		resetTarget()
-		rel_set(src, "target", home)
+		rel_set(src, nameof(target), home)
 		targetName = "Home"
 
 /mob/living/bot/mulebot/stepToTarget()
@@ -345,7 +345,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.
 		return
 	C.forceMove(src)
-	own_set(src, "load", C)
+	own_set(src, nameof(load), C)
 
 	C.pixel_y += 9
 	if(C.layer < layer)
@@ -365,7 +365,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	if(dirn)
 		step(load, dirn)
 
-	own_take(src, "load")
+	own_take(src, nameof(load))
 
 	for(var/atom/movable/AM in contents_of(src))
 		if(AM == botcard || AM == access_scanner)
@@ -391,4 +391,6 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 /mob/living/bot/mulebot/handle_micro_bump_other() // Can't drive over micros or macros regardless of intent.
 	return 0
 
-OWN(/mob/living/bot/mulebot, load, OWN_CONTAINED)
+/mob/living/bot/mulebot/declare_ownership(decl)
+	..()
+	own(decl, nameof(load), policy = OWN_CONTAINED)

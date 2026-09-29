@@ -75,10 +75,10 @@
 		stack_trace("ai_brain instantiated with no owner")
 		qdel(src)
 		return
-	rel_set(src, "holder", owner)
-	own_set(src, "model", new /datum/world_model(owner))
+	rel_set(src, nameof(holder), owner)
+	own_set(src, nameof(model), new /datum/world_model(owner))
 	target_selector_chain = list(/datum/target_selector/closest)
-	rel_set(src, "home_turf", get_turf(owner))
+	rel_set(src, nameof(home_turf), get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
 	om_hook(holder, /datum/om/event/mob_statchange, src, PROC_REF(on_stat_change))
 	om_hook(holder, /datum/om/event/living_injured, src, PROC_REF(on_holder_injured))
@@ -112,7 +112,7 @@
 	return leader
 
 /datum/ai_brain/proc/set_leader(mob/new_leader)
-	rel_set(src, "leader", new_leader)
+	rel_set(src, nameof(leader), new_leader)
 
 /// The atom granting behaviour `btype`, or null (innate, or the source was deleted).
 /datum/ai_brain/proc/behavior_source(btype)
@@ -240,7 +240,7 @@
 		return
 	var/list/old = effective_behaviors
 	effective_behaviors = list()
-	rel_clear(src, "behavior_sources")
+	rel_clear(src, nameof(behavior_sources))
 
 	// Innate behaviors via the mob's getter — falls back to the default factory
 	// for simple_mobs that haven't been hand-tuned yet.
@@ -257,7 +257,7 @@
 		if(granted)
 			var/source_ref = ref(I) // effective_behaviors keeps the ref text only; the source itself is behavior_sources
 			for(var/btype as anything in granted)
-				rel_add(src, "behavior_sources", I)
+				rel_add(src, nameof(behavior_sources), I)
 				effective_behaviors[btype] = source_ref
 
 	// Modifier-granted (statuses, buffs).
@@ -265,7 +265,7 @@
 		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				rel_add(src, "behavior_sources", holder)
+				rel_add(src, nameof(behavior_sources), holder)
 				effective_behaviors[btype] = ref(holder)
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
@@ -357,7 +357,7 @@
 		// Re-face the new target so the mob's sprite reorients immediately
 		// instead of waiting for the next step.
 		if(active_target() != best_target)
-			rel_set(src, "active_target", best_target)
+			rel_set(src, nameof(active_target), best_target)
 			if(holder && best_target)
 				holder.face_atom(best_target)
 		return TRUE
@@ -369,8 +369,8 @@
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	active_behavior_type = btype
-	rel_set(src, "active_target", target)
-	rel_set(src, "active_source", source)
+	rel_set(src, nameof(active_target), target)
+	rel_set(src, nameof(active_source), source)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
@@ -384,8 +384,8 @@
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null
-	rel_clear(src, "active_target")
-	rel_clear(src, "active_source")
+	rel_clear(src, nameof(active_target))
+	rel_clear(src, nameof(active_source))
 	// Defensive: if a behavior's start() runtimed before releasing its hold, the
 	// brain would lock up. stop_active is the funnel for every termination,
 	// so always release the hold here regardless of blocks_reselection.
@@ -446,7 +446,7 @@
 			break
 	if(new_threat != primary_threat)
 		var/old = primary_threat
-		rel_set(src, "primary_threat", new_threat)
+		rel_set(src, nameof(primary_threat), new_threat)
 		OM_EMIT(holder, /datum/om/event/dqai_target_changed, new_threat, old)
 		sync_fast_processing()
 
@@ -455,7 +455,7 @@
 /datum/ai_brain/proc/drop_primary_threat()
 	lose_threat_at = 0
 	var/old = primary_threat
-	rel_clear(src, "primary_threat")
+	rel_clear(src, nameof(primary_threat))
 	if(holder)
 		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 	if(active_behavior_type)
@@ -491,7 +491,7 @@
 		if(entry["expires"] && ELAPSED_SINCE(src, entry["expires"], CLOCK_WORLD) > 0)
 			personal -= ref(other)
 			UNSETEMPTY(personal)
-			rel_remove(src, "personal_mobs", other)
+			rel_remove(src, nameof(personal_mobs), other)
 		else
 			return entry["disp"]
 	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
@@ -515,7 +515,7 @@
 	if(!other)
 		return
 	LAZYINITLIST(personal)
-	rel_add(src, "personal_mobs", other)
+	rel_add(src, nameof(personal_mobs), other)
 	personal[ref(other)] = list(
 		"disp" = disposition,
 		"expires" = duration ? world.time + duration : 0,
@@ -538,7 +538,7 @@
 			LAZYADD(expired, ref)
 		else if(entry && entry["expires"] && entry["expires"] < now)
 			LAZYADD(expired, ref)
-			rel_remove(src, "personal_mobs", M)
+			rel_remove(src, nameof(personal_mobs), M)
 	if(expired)
 		personal -= expired
 	UNSETEMPTY(personal)
@@ -598,7 +598,7 @@
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			var/mob/old = primary_threat
-			rel_set(src, "primary_threat", attacker)
+			rel_set(src, nameof(primary_threat), attacker)
 			OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	OM_EMIT(holder, /datum/om/event/dqai_damage_taken, amount, injury_kind, attacker)
 	dispatch_behavior_signal(DQAI_TRIGGER_DAMAGE_TAKEN, amount, injury_kind, attacker)
@@ -647,5 +647,7 @@
 /datum/ai_brain/proc/home_turf() as /turf
 	return home_turf
 
-REL_LIST(/datum/ai_brain, behavior_sources)
-REL_LIST(/datum/ai_brain, personal_mobs)
+/datum/ai_brain/declare_ownership(decl)
+	..()
+	rel(decl, nameof(behavior_sources), list = TRUE)
+	rel(decl, nameof(personal_mobs), list = TRUE)

@@ -76,9 +76,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		return INITIALIZE_HINT_QDEL
 
 	if(!newparent)
-		rel_set(src, "parent", src)
+		rel_set(src, nameof(parent), src)
 	else
-		rel_set(src, "parent", newparent)
+		rel_set(src, nameof(parent), newparent)
 
 	if(!GLOB.plant_service)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
@@ -86,7 +86,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 
 	if(!istype(newseed))
 		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
-	proto_set(src, "seed_static", seed_shareable(newseed)) // vines share their seed
+	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
 
@@ -358,4 +358,6 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
 
-PROTO(/obj/effect/plant, seed_static)
+/obj/effect/plant/declare_ownership(decl)
+	..()
+	proto(decl, nameof(seed_static))

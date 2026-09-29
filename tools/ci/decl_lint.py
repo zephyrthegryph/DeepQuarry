@@ -7,7 +7,7 @@ ratcheted shrink-only by site fingerprint in tools/ci/decl_baseline.txt.
 
 Initialize() (and on_materialize() where noted):
     init_reagents      create_reagents( / reagents.add_reagent(        -> DECLARE_REAGENTS
-    init_new_child     `own_set(src, "var", new ...)` / `own_add(src, "var", new ...)`: an owned
+    init_new_child     `own_set(src, nameof(var), new ...)` / `own_add(src, nameof(var), new ...)`: an owned
                        child made in Initialize()                        -> DECLARE_DEFAULT_CHILD
     init_gas           `air_contents = new` / .adjust_gas(              -> DECLARE_GAS
     init_registry      registry_join( with src / GLOB.x[...] = src      -> DECLARE_REGISTRY
@@ -63,7 +63,7 @@ INIT_RULES = [
     ("init_visuals", re.compile(r"\badd_overlay\s*\(|\bcut_overlays\s*\(|^\s*(?:src\.)?icon_state\s*=")),
 ]
 MATERIALIZE_RULES = [r for r in INIT_RULES if r[0] in ("init_scheduling", "init_service", "init_registry")]
-NEW_INTO = re.compile(r"^\s*own_(?:set|add)\(\s*src\s*,\s*\"(\w+)\"\s*,\s*new\b")
+NEW_INTO = re.compile(r"^\s*own_(?:set|add)\(\s*src\s*,\s*(?:\"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:\"|\))\s*,\s*new\b")
 DESTROY_RULES = [
     ("destroy_drop", re.compile(r"\bdump_contents\s*\(|\bfor\s*\(\s*var/[\w/]+\s+in\s+(?:src\.)?contents\b.*|\bfor\s*\(\s*var/[\w/]+\s+in\s+contents_of\(\s*src\s*\)")),
     ("destroy_registry", re.compile(r"\bregistry_leave\s*\(|\bGLOB\.\w+\s*-=\s*src\b")),
@@ -71,7 +71,7 @@ DESTROY_RULES = [
     ("destroy_unbind", re.compile(r"\bdisconnect_from_network\s*\(|\bvg_\w*unbind\w*\s*\(")),
     ("destroy_effects", re.compile(r"\bvisible_message\s*\(|\bplaysound\s*\(|\bnew\s+/obj/[\w/]+\s*\(\s*(?:loc|src\.loc|get_turf\([^)]*\)|T)\s*\)")),
 ]
-QDEL_VAR = re.compile(r"\bown_(?:clear|take|take_all)\(\s*src\s*,\s*\"(\w+)\"|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)")
+QDEL_VAR = re.compile(r"\bown_(?:clear|take|take_all)\(\s*src\s*,\s*(?:\"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:\"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)")
 RULES = [r for r, _ in INIT_RULES] + ["init_new_child", "destroy_qdel_owned"] + [r for r, _ in DESTROY_RULES]
 
 
@@ -88,7 +88,7 @@ def read(full):
         return f.read().replace("\r", "").split("\n")
 
 
-OWN_WRITE = re.compile(r"\bown_(?:set|add|put|transfer|move)\([^,]+,\s*\"(\w+)\"")
+OWN_WRITE = re.compile(r"\bown_(?:set|add|put|transfer|move)\([^,]+,\s*(?:\"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:\"|\))")
 
 
 def owned_vars(files):

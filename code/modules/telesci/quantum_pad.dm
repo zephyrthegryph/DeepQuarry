@@ -28,8 +28,10 @@
 
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
-REL_KEYED(/obj/machinery/power/quantumpad, linked_pad, map_pad_link_id, /obj/machinery/power/quantumpad)
-KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
+/obj/machinery/power/quantumpad/declare_ownership(decl)
+	..()
+	rel(decl, nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/power/quantumpad)
+	rel(decl, keyed = nameof(map_pad_id))
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
@@ -89,12 +91,12 @@ KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
 	if(panel_open)
-		rel_set(multitool, "connectable", src)
+		rel_set(multitool, nameof(multitool.connectable), src)
 		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
 		return ITEM_INTERACT_SUCCESS
 	if(!istype(multitool.connectable(), /obj/machinery/power/quantumpad))
 		return ITEM_INTERACT_BLOCKING
-	rel_set(src, "linked_pad", multitool.connectable())
+	rel_set(src, nameof(linked_pad), multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -138,7 +140,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
 		if(linked_pad())
-			rel_clear(linked_pad(), "linked_pad")
+			rel_clear(linked_pad(), nameof(/obj/machinery/hyperpad/centre::linked_pad))
 		// ition End
 		return TRUE
 

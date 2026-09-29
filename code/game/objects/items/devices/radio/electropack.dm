@@ -42,13 +42,13 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 
 		user.drop_from_inventory(W)
 		W.forceMove(A)
-		rel_set(W, "master", A)
-		own_set(A, "part1", W)
+		rel_set(W, nameof(W.master), A)
+		own_set(A, nameof(A.part1), W)
 
 		user.drop_from_inventory(src)
 		forceMove(A)
-		rel_set(src, "master", A)
-		own_set(A, "part2", src)
+		rel_set(src, nameof(master), A)
+		own_set(A, nameof(A.part2), src)
 
 		user.put_in_hands(A)
 		A.add_fingerprint(user)

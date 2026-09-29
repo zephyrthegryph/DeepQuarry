@@ -653,7 +653,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!door())
 		var/turf/dT = get_step(src,dir)
-		rel_set(src, "door", locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
+		rel_set(src, nameof(door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(door())
 		door().glass = !door().glass
 		door().opacity = !door().opacity
@@ -712,7 +712,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		rel_set(src, "target_light", locate_within(dT, /obj/machinery/light))
+		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
 		target_light().update()

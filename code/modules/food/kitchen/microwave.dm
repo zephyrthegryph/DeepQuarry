@@ -82,11 +82,11 @@
 	. = ..()
 
 	create_reagents(100)
-	rel_set(reagents, "my_atom", src)
+	rel_set(reagents, nameof(reagents.my_atom), src)
 
 	default_apply_parts()
 
-	own_set(src, "soundloop", new /datum/looping_sound/microwave(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
 	update_icon()
 
 
@@ -622,7 +622,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
 			qdel(H.held_mob)
-			rel_clear(H, "held_mob")
+			rel_clear(H, nameof(H.held_mob))
 			qdel(H)
 
 	. = ..()

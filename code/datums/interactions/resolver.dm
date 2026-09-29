@@ -18,9 +18,9 @@
 	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
-	rel_set(src, "actor", actor)
-	rel_set(src, "target", target)
-	rel_set(src, "held", held)
+	rel_set(src, nameof(actor), actor)
+	rel_set(src, nameof(target), target)
+	rel_set(src, nameof(held), held)
 
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)

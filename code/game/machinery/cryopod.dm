@@ -284,12 +284,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	find_control_computer()
 
 /obj/machinery/cryopod/proc/find_control_computer(urgent=0)
-	rel_clear(src, "control_computer")
+	rel_clear(src, nameof(control_computer))
 
 	var/area/my_area = get_area(src)
-	rel_set(src, "control_computer", locate_in_area(my_area, /obj/machinery/computer/cryopod))
+	rel_set(src, nameof(control_computer), locate_in_area(my_area, /obj/machinery/computer/cryopod))
 	if(!control_computer()) //Fallback to old method.
-		rel_set(src, "control_computer", locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
+		rel_set(src, nameof(control_computer), locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
 	if(!control_computer() && urgent && COOLDOWN_FINISHED(src, no_computer_message_cooldown))
@@ -852,7 +852,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-OWN(/obj/machinery/cryopod, announce, OWN_CONTAINED)
+/obj/machinery/cryopod/declare_ownership(decl)
+	..()
+	own(decl, nameof(announce), policy = OWN_CONTAINED)
 
 /// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

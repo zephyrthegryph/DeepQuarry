@@ -112,7 +112,9 @@ GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
 
 /// The declarations are boot-time singletons (sys_periodic_defs()): shared, never owned.
 REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def))
-SHARED(/datum/sys_periodic_table, while_def)
+/datum/sys_periodic_table/declare_ownership(decl)
+	..()
+	shared(decl, nameof(while_def))
 
 /proc/registry_sys_periodic_def(datum/D)
 	return (D in sys_periodic_defs()) ? D : null
@@ -129,7 +131,7 @@ SHARED(/datum/sys_periodic_table, while_def)
 		if(D.cadence)
 			if(depth > while_depth)
 				while_depth = depth
-				shared_set(T, "while_def", D)
+				shared_set(T, nameof(T.while_def), D)
 			continue
 		if(!repeat_depth)
 			repeat_depth = list()
@@ -253,7 +255,7 @@ OWN_TIMER(/datum, sys_repeat)
 	if(!T)
 		return null
 	if(T.while_def && !sys_periodic_def_valid(D, T.while_def))
-		shared_set(T, "while_def", null)
+		shared_set(T, nameof(T.while_def), null)
 	for(var/proc_name in T.repeats?.Copy())
 		var/datum/sys_periodic_def/R = T.repeats[proc_name]
 		if(!hascall(D, proc_name))

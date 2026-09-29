@@ -93,7 +93,9 @@
 	var/obj/item/tourniquet/tourniquet
 
 // Owned: a cinched tourniquet sits in the limb and is deleted with it.
-OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
+/obj/item/organ/external/declare_ownership(decl)
+	..()
+	own(decl, nameof(tourniquet), policy = OWN_DELETE)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).
@@ -105,7 +107,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 /// Clear a tourniquet that is no longer physically on this limb, restoring flow.
 /obj/item/organ/external/proc/release_lost_tourniquet()
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, "tourniquet")
+	own_take(src, nameof(tourniquet))
 	if(T)
 		T.applied_at = null
 	log_game("TOURNIQUET: [T] left [key_name(owner)]'s [name] without being loosened; flow restored.")
@@ -132,7 +134,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 	if(tourniquet || !istype(T))
 		return FALSE
 	T.forceMove(src)
-	own_move(T, src, "tourniquet") // from whatever holds it now (a kit, a scenario, a hand)
+	own_move(T, src, nameof(tourniquet)) // from whatever holds it now (a kit, a scenario, a hand)
 	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()
 	update_damages()
@@ -162,7 +164,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 	if(!tourniquet)
 		return null
 	var/obj/item/tourniquet/T = tourniquet
-	own_take(src, "tourniquet")
+	own_take(src, nameof(tourniquet))
 	var/minutes = T.applied_at ? round((world.time - T.applied_at) / (1 MINUTES), 0.1) : 0
 	T.applied_at = null
 	if(T.loc == src)

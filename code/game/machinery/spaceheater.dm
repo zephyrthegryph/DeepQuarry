@@ -133,7 +133,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 	var/obj/item/cell/C = held
 	user.drop_item()
 	C.forceMove(src)
-	own_set(src, "cell", C) // CONTAINED: in contents first
+	own_set(src, nameof(cell), C) // CONTAINED: in contents first
 	C.add_fingerprint(user)
 	act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))
 	power_change()
@@ -211,7 +211,7 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellremove)
 		cell.update_icon()
 		ui.user.put_in_hands(cell)
 		cell.add_fingerprint(ui.user)
-		own_take(src, "cell")
+		own_take(src, nameof(/obj/mecha::cell))
 		power_change()
 		. = TRUE
 
@@ -222,7 +222,7 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 		if(istype(C))
 			ui.user.drop_item()
 			C.forceMove(src)
-			own_set(src, "cell", C) // CONTAINED: in contents first
+			own_set(src, nameof(/obj/mecha::cell), C) // CONTAINED: in contents first
 			C.add_fingerprint(ui.user)
 			power_change()
 			act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
@@ -279,4 +279,6 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 #undef DEFAULT_HEATING_POWER
 
 
-OWN(/obj/machinery/space_heater, cell, OWN_CONTAINED)
+/obj/machinery/space_heater/declare_ownership(decl)
+	..()
+	own(decl, nameof(cell), policy = OWN_CONTAINED)

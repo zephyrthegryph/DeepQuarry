@@ -34,7 +34,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 			M.put_in_hands(imp)
 		to_chat(M, span_notice("You remove \the [imp] from \the [src]."))
 		name = "implanter"
-		own_take(src, "imp")
+		own_take(src, nameof(imp))
 
 	update()
 
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 			BITSET(H.hud_updateflag, IMPLOYAL_HUD)
 			BITSET(H.hud_updateflag, BACKUP_HUD) // Backup HUD updates
 
-	own_take(src, "imp")
+	own_take(src, nameof(imp))
 	update()
 
 /obj/item/implanter/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
@@ -152,10 +152,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/compressed, "imp", /obj/item/implant/c
 		if (c.scanned())
 			to_chat(user, span_warning("Something is already scanned inside the implant!"))
 			return
-		rel_set(c, "scanned", A)
+		rel_set(c, nameof(c.scanned), A)
 		if(istype(A, /obj/item/storage))
 			to_chat(user, span_warning("You can't store \the [A.name] in this!"))
-			rel_clear(c, "scanned")
+			rel_clear(c, nameof(c.scanned))
 			return
 		if(ishuman(A.loc))
 			var/mob/living/carbon/human/H = A.loc
@@ -184,7 +184,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/v
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-OWN(/obj/item/implanter, imp, OWN_CONTAINED)
+/obj/item/implanter/declare_ownership(decl)
+	..()
+	own(decl, nameof(imp), policy = OWN_CONTAINED)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/implanter, \

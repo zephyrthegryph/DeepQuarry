@@ -78,7 +78,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
-	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -127,11 +127,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	own_add(src, "pda_msgs", new/datum/data_pda_msg(recipient,sender,message))
+	own_add(src, nameof(pda_msgs), new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	own_add(src, "rc_msgs", new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
+	own_add(src, nameof(rc_msgs), new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -325,9 +325,9 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.msg_cargo = msg_cargo
 		BR.msg_service = msg_service
 		// The feedback datums move over one by one (the replacement takes the list over).
-		own_clear(BR, "feedback", OWN_DELETE)
-		for(var/datum/entry as anything in own_take_all(src, "feedback"))
-			own_add(BR, "feedback", entry)
+		own_clear(BR, nameof(BR.feedback), OWN_DELETE)
+		for(var/datum/entry as anything in own_take_all(src, nameof(feedback)))
+			own_add(BR, nameof(BR.feedback), entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
 	return ..()
@@ -337,7 +337,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		if(FV.get_variable() == variable)
 			return FV
 	var/datum/feedback_variable/FV = new(variable)
-	own_add(src, "feedback", FV)
+	own_add(src, nameof(feedback), FV)
 	return FV
 
 /obj/machinery/blackbox_recorder/proc/get_round_feedback()

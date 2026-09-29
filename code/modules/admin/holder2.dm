@@ -122,7 +122,7 @@ GLOBAL_PROTECT(href_token)
 	if (deadmined)
 		activate()
 
-	rel_set(src, "owner", client)
+	rel_set(src, nameof(owner), client)
 	owner().holder = src
 	owner().add_admin_verbs()
 	om_revoke(owner(), GRANT_VERB, /client/proc/readmin, src)
@@ -140,7 +140,7 @@ GLOBAL_PROTECT(href_token)
 		owner().remove_admin_verbs()
 		// owner.init_verbs() //re-initialize the verb list
 		owner().holder = null
-		rel_clear(src, "owner")
+		rel_clear(src, nameof(owner))
 
 /// Returns the feedback forum thread for the admin holder's owner, as according to DB.
 /datum/admins/proc/feedback_link()
@@ -305,6 +305,6 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 
 /// Replaces our ranks (a relation list) with `new_ranks`.
 /datum/admins/proc/set_ranks(list/datum/admin_rank/new_ranks)
-	rel_clear(src, "ranks")
+	rel_clear(src, nameof(ranks))
 	for(var/datum/admin_rank/rank as anything in new_ranks)
-		rel_add(src, "ranks", rank)
+		rel_add(src, nameof(ranks), rank)

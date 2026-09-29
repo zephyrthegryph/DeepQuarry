@@ -14,11 +14,13 @@
 	if(new_partner)
 		pair(new_partner)
 
-REL_PAIR(/obj/effect/overmap/bluespace_rift, partner, partner)
+/obj/effect/overmap/bluespace_rift/declare_ownership(decl)
+	..()
+	rel(decl, nameof(partner), pair = nameof(/obj/effect/overmap/bluespace_rift::partner))
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))
-		rel_set(src, "partner", new_partner) // REL_PAIR(partner, partner): names us back
+		rel_set(src, nameof(partner), new_partner) // REL_PAIR(partner, partner): names us back
 
 /obj/effect/overmap/bluespace_rift/proc/take_this(atom/movable/AM)
 	paused = TRUE

@@ -30,9 +30,9 @@
 		return TRUE
 	if(chambered)
 		chambered.forceMove(get_turf(src))
-		rel_clear(src, "chambered")
+		rel_clear(src, nameof(chambered))
 		var/obj/item/ammo_casing/C = loaded[1]
-		own_take_member(src, "loaded", C)
+		own_take_member(src, nameof(loaded), C)
 
 	if(!retracted_bolt)
 		to_chat(user, span_notice("You cycle back the bolt on [src], ejecting the casing and allowing you to reload."))

@@ -64,7 +64,7 @@
 	if(!held_card)
 		user.drop_item()
 		O.forceMove(src)
-		own_set(src, "held_card", O)
+		own_set(src, nameof(held_card), O)
 
 		SStgui.update_uis(src)
 
@@ -211,7 +211,7 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_insert_card)
 
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(held_card)
-		own_take(src, "held_card")
+		own_take(src, nameof(/obj/machinery/account_database::held_card))
 
 	else
 		var/obj/item/I = ui.user.get_active_hand()
@@ -219,19 +219,19 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_insert_card)
 			var/obj/item/card/id/C = I
 			ui.user.drop_item()
 			C.forceMove(src)
-			own_set(src, "held_card", C)
+			own_set(src, nameof(/obj/machinery/account_database::held_card), C)
 	return TRUE
 
 UI_ACT(/obj/machinery/account_database, "view_account_detail", ui_act_view_account_detail, UI_ARG_NUM("account_index"))
 UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_account_detail)
 	var/index = params["account_index"]
 	if(index && index <= REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		rel_set(src, "detailed_account_view", REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
+		rel_set(src, nameof(/obj/machinery/account_database::detailed_account_view), REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)[index])
 	return TRUE
 
 UI_ACT(/obj/machinery/account_database, "view_accounts_list", ui_act_view_accounts_list)
 UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_accounts_list)
-	rel_clear(src, "detailed_account_view")
+	rel_clear(src, nameof(/obj/machinery/account_database::detailed_account_view))
 	creating_new_account = 0
 	return TRUE
 
@@ -327,7 +327,9 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
 	P.info = text
 	state("The terminal prints out a report.")
 
-OWN(/obj/machinery/account_database, held_card, OWN_CONTAINED)
+/obj/machinery/account_database/declare_ownership(decl)
+	..()
+	own(decl, nameof(held_card), policy = OWN_CONTAINED)
 
 /// the detailed_account_view this refers to (a relation view: null once it is deleted).
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account

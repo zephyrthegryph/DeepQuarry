@@ -104,7 +104,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 		return
 
 	var/datum/signal/signal = new
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
 	radio_connection().post_signal(src, signal)
@@ -155,7 +155,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	var/mob/M = src.loc

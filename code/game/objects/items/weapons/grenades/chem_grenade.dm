@@ -29,14 +29,14 @@ DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 		if(detonator)
 			detonator.detached()
 			user.put_in_hands(detonator)
-			own_take(src, "detonator")
+			own_take(src, nameof(detonator))
 			det_time = null
 			stage=0
 			icon_state = initial(icon_state)
 		else if(length(beakers))
 			for(var/obj/B in beakers)
 				if(istype(B))
-					own_take_member(src, "beakers", B)
+					own_take_member(src, nameof(beakers), B)
 					user.put_in_hands(B)
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 	if(stage > 1 && !active && clown_check(user))
@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2)
 		user.remove_from_mob(det)
 		det.forceMove(src)
-		own_set(src, "detonator", det)
+		own_set(src, nameof(detonator), det)
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
 			det_time = 10*T.time
@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				user.drop_item()
 				W.forceMove(src)
-				own_move(W, src, "beakers")
+				own_move(W, src, nameof(beakers))
 				stage = 1
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else

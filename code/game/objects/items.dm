@@ -202,7 +202,7 @@ OWN_TIMER(/obj/item, tip_timer)
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
 
-	rel_remove(src, "actions", source)
+	rel_remove(src, nameof(actions), source)
 
 /// Adds an item action to our list of item actions.
 /// Item actions are actions linked to our item, that are granted to mobs who equip us.
@@ -217,7 +217,7 @@ OWN_TIMER(/obj/item, tip_timer)
 	else
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
-	rel_add(src, "actions", action)
+	rel_add(src, nameof(actions), action)
 	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
@@ -233,7 +233,7 @@ OWN_TIMER(/obj/item, tip_timer)
 		return
 
 	om_unhook(action, /datum/om/event/qdeleting, src)
-	rel_remove(src, "actions", action)
+	rel_remove(src, nameof(actions), action)
 	qdel(action)
 
 // Check if target is reasonable for us to operate on.
@@ -1094,16 +1094,16 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
-	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
+	rel_set(new_voice, nameof(new_voice.mind), candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
-	rel_clear(candidate, "mind") // Remove the mind from the mob to avoid issues with multi TF interactions
+	rel_clear(candidate, nameof(/mob::mind)) // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
-	own_add(src, "possessed_voice", new_voice)
+	own_add(src, nameof(possessed_voice), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/change_name, src) // No changing your name! Bad!
 	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/hang_up, src) // Also you can't hang up. You are the item!
@@ -1129,7 +1129,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
 	return I?.hidden_uplink
 
-OWN(/obj/item, hidden_uplink, OWN_CONTAINED)
+/obj/item/declare_ownership(decl)
+	..()
+	own(decl, nameof(hidden_uplink), policy = OWN_CONTAINED)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ

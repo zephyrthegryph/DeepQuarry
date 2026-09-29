@@ -102,7 +102,7 @@ UI_ACT_PROC(/obj/machinery/computer/drone_control, ui_act_search_fab)
 		if(fab.has_stat(NOPOWER))
 			continue
 
-		rel_set(src, "dronefab", fab)
+		rel_set(src, nameof(/obj/machinery/computer/drone_control::dronefab), fab)
 		to_chat(ui.user, span_notice("Drone fabricator located."))
 		return
 
@@ -114,7 +114,7 @@ UI_ACT_PROC(/obj/machinery/computer/drone_control, ui_act_toggle_fab)
 		return
 
 	if(get_dist(src,dronefab) > 3)
-		rel_clear(src, "dronefab")
+		rel_clear(src, nameof(/obj/machinery/computer/drone_control::dronefab))
 		to_chat(ui.user, span_danger("Unable to locate drone fabricator."))
 		return
 

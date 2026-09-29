@@ -11,9 +11,9 @@
 
 /obj/machinery/mineral/stacking_unit_console/Initialize(mapload)
 	. = ..()
-	rel_set(src, "machine", locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
+	rel_set(src, nameof(machine), locate_in_list(range(5,src), /obj/machinery/mineral/stacking_machine))
 	if (machine())
-		rel_set(machine(), "console", src)
+		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		//Silently failing and causing mappers to scratch their heads while runtiming isn't ideal.
 		stack_trace(span_danger("Warning: Stacking machine console at [src.x], [src.y], [src.z] could not find its machine!"))
@@ -97,10 +97,10 @@ UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
 		LAZYSET(stack_paths, s_matname, stack_path)
 
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, nameof(input), locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, nameof(output), locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(src.output_marker()) break
 	watch_input(input_marker())
 

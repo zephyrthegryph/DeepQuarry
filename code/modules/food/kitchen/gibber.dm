@@ -30,7 +30,7 @@
 		var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
 		if(input_obj)
 			if(isturf(input_obj.loc))
-				rel_set(src, "input_plate", input_obj.loc)
+				rel_set(src, nameof(input_plate), input_obj.loc)
 				gib_throw_dir = i
 				qdel(input_obj)
 				break

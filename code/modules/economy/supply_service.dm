@@ -81,7 +81,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/world_service/supply/proc/reset_shift_economy_tracking()
-	own_clear(src, "service_invoices", OWN_DELETE)
+	own_clear(src, nameof(service_invoices), OWN_DELETE)
 	service_invoice_counter = 0
 	service_accounting_period = 1
 	currency_created = 0
@@ -573,7 +573,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 				if(MA.export_sale(EC, FALSE))
 					things_sold_successfully += MA
 
-			own_add(src, "exported_crates", EC)
+			own_add(src, nameof(exported_crates), EC)
 			distribute_export_revenue(EC)
 			EC.value += base_value
 
@@ -594,7 +594,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 			adm.sales_destination = EC.sales_destination
 			adm.sales_eligible_value = EC.sales_eligible_value
 			adm.sales_producer_percentages = EC.sales_producer_percentages?.Copy()
-			own_add(src, "adm_export_history", adm)
+			own_add(src, nameof(adm_export_history), adm)
 
 			qdel(MA)
 
@@ -869,7 +869,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
 	release_market_order_reservation(O)
 	log_admin("[key_name(user)] has deleted supply order [REF(O)] [O] from the user-side order history.")
-	own_take_member(src, "order_history", O)
+	own_take_member(src, nameof(order_history), O)
 
 // Will generate a new, requested order, for the given supply pack type
 /datum/world_service/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
@@ -940,8 +940,8 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	adm_order.ordered_at = new_order.ordered_at
 	adm_order.status = new_order.status
 
-	own_add(src, "order_history", new_order)
-	own_add(src, "adm_order_history", adm_order)
+	own_add(src, nameof(order_history), new_order)
+	own_add(src, nameof(adm_order_history), adm_order)
 	return new_order
 
 // Will delete the specified export receipt from the user-side list
@@ -958,7 +958,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	if(!(E in exported_crates))
 		return
 	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
-	own_take_member(src, "exported_crates", E)
+	own_take_member(src, nameof(exported_crates), E)
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
@@ -1054,7 +1054,8 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 
 /// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
 /// clears by itself when that shuttle is deleted).
-REL(/datum/world_service/supply, shuttle)
-
-/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
-SHARED(/datum/world_service/supply, supply_pack)
+/datum/world_service/supply/declare_ownership(decl)
+	..()
+	rel(decl, nameof(shuttle))
+	/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
+	shared(decl, nameof(supply_pack))

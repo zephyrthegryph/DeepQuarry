@@ -17,7 +17,7 @@
 /datum/search_object/New(client/owner, atom/item)
 	. = ..()
 
-	rel_set(src, "item", item)
+	rel_set(src, nameof(item), item)
 	name = item.name
 	if(isobj(item))
 		path = item.type

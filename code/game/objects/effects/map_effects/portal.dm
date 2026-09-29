@@ -61,7 +61,9 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/portal_distance_x = 0 // How far the portal is from the left edge, in tiles.
 	var/portal_distance_y = 0 // How far the portal is from the top edge.
 
-REL_PAIR(/obj/effect/map_effect/portal, counterpart, counterpart)
+/obj/effect/map_effect/portal/declare_ownership(decl)
+	..()
+	rel(decl, nameof(counterpart), pair = nameof(/obj/effect/map_effect/portal::counterpart))
 
 // Called when something touches the portal, and usually teleports them to the other side.
 /obj/effect/map_effect/portal/Crossed(atom/movable/AM)
@@ -159,7 +161,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			current_T = get_step(current_T, dir_to_search)
 			var/obj/effect/map_effect/portal/line/line = locate_on(current_T, /obj/effect/map_effect/portal/line)
 			if(line)
-				rel_set(line, "my_master", src) // the pair adds it to portal_lines (lines are mapped, not owned)
+				rel_set(line, nameof(line.my_master), src) // the pair adds it to portal_lines (lines are mapped, not owned)
 			else
 				break
 
@@ -172,14 +174,14 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 			continue
 
 		if(M.portal_id == src.portal_id)
-			rel_set(src, "counterpart", M)
-			rel_set(M, "counterpart", src)
+			rel_set(src, nameof(counterpart), M)
+			rel_set(M, nameof(M.counterpart), src)
 			if(length(portal_lines))
 				for(var/i = 1 to length(portal_lines))
 					var/obj/effect/map_effect/portal/line/our_line = LAZYACCESS(portal_lines, i)
 					var/obj/effect/map_effect/portal/line/their_line = LAZYACCESS(M.portal_lines, i)
-					rel_set(our_line, "counterpart", their_line)
-					rel_set(their_line, "counterpart", our_line)
+					rel_set(our_line, nameof(our_line.counterpart), their_line)
+					rel_set(their_line, nameof(their_line.counterpart), our_line)
 			break
 
 	if(!counterpart)
@@ -306,8 +308,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	name = "portal line"
 	var/obj/effect/map_effect/portal/master/my_master = null
 
-REL_PAIR(/obj/effect/map_effect/portal/line, my_master, portal_lines)
-REL_PAIR_LIST(/obj/effect/map_effect/portal/master, portal_lines, my_master)
+/obj/effect/map_effect/portal/line/declare_ownership(decl)
+	..()
+	rel(decl, nameof(my_master), pair = nameof(/obj/effect/map_effect/portal/master::portal_lines))
+/obj/effect/map_effect/portal/master/declare_ownership(decl)
+	..()
+	rel(decl, nameof(portal_lines), list = TRUE, pair = nameof(/obj/effect/map_effect/portal/line::my_master))
 
 /obj/effect/map_effect/portal/line/side_a
 	name = "portal line A"

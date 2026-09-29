@@ -253,7 +253,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
 	user.drop_item()
 	IH.forceMove(src)
-	own_set(src, "helmet", IH)
+	own_set(src, nameof(helmet), IH)
 
 	update_icon()
 	return TRUE
@@ -274,7 +274,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
 	user.drop_item()
 	IS.forceMove(src)
-	own_set(src, "suit", IS)
+	own_set(src, nameof(suit), IS)
 
 	update_icon()
 	return TRUE
@@ -395,11 +395,11 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_dispense)
 		if("helmet")
 			if(helmet)
 				helmet.forceMove(get_turf(src))
-				own_take(src, "helmet")
+				own_take(src, nameof(/obj/item/rig::helmet))
 		if("suit")
 			if(suit)
 				suit.forceMove(get_turf(src))
-				own_take(src, "suit")
+				own_take(src, nameof(/obj/machinery/suit_cycler::suit))
 	. = TRUE
 
 UI_ACT(/obj/machinery/suit_cycler, "department", ui_act_department, UI_ARG_VALUE("department"))
@@ -526,7 +526,7 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_uv)
 	if(!suit || !suit.damage || !suit.can_breach)
 		return
 
-	own_clear(suit, "breaches", OWN_DELETE)
+	own_clear(suit, nameof(suit.breaches), OWN_DELETE)
 	suit.calc_breach_damage()
 
 	return
@@ -589,8 +589,10 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_uv)
 	apply_paintjob()
 	finished_job(user)
 
-OWN(/obj/machinery/suit_cycler, suit, OWN_CONTAINED)
-OWN(/obj/machinery/suit_cycler, helmet, OWN_CONTAINED)
+/obj/machinery/suit_cycler/declare_ownership(decl)
+	..()
+	own(decl, nameof(suit), policy = OWN_CONTAINED)
+	own(decl, nameof(helmet), policy = OWN_CONTAINED)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department

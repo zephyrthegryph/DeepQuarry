@@ -46,7 +46,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 		dismantleFloor(old_turf())
 	layPipe(old_turf(), direction, old_dir)
 
-	rel_set(src, "old_turf", loc)
+	rel_set(src, nameof(old_turf), loc)
 	old_dir = turn(direction, 180)
 
 /obj/machinery/pipelayer/declare_interactions(list/into)
@@ -79,7 +79,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 		om_ask(user, /datum/om/prompt/confirm, PROC_REF(eject_answered), message = "Do you want to eject all the metal in \the [src]?", title = "Eject?", requires = PROMPT_ADJACENT)
 		return TRUE
 	set_on(!on)
-	rel_set(src, "old_turf", get_turf(src))
+	rel_set(src, nameof(old_turf), get_turf(src))
 	old_dir = dir
 	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
 	return TRUE

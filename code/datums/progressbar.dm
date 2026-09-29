@@ -39,7 +39,7 @@
 		qdel(src)
 		return
 	goal = goal_number
-	rel_set(src, "bar_loc", target)
+	rel_set(src, nameof(bar_loc), target)
 	location_type = bar_loc().type
 
 	var/list/icon_offsets = target.get_oversized_icon_offsets()
@@ -49,7 +49,7 @@
 	bar = image('icons/effects/progressbar.dmi', bar_loc(), "prog_bar_0", pixel_x = offset_x)
 	bar.plane = PLANE_PLAYER_HUD //Swap to SET_PLANE_EXPLICIT(bar, LAYER_HUD_ITEM, User) if we ever get the plane update
 	bar.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
-	rel_set(src, "user", User)
+	rel_set(src, nameof(user), User)
 
 	var/mob/bar_user = user
 	LAZYADDASSOCLIST(bar_user.progressbars, bar_loc, src)
@@ -57,7 +57,7 @@
 	listindex = bars.len
 
 	if(user().client)
-		rel_set(src, "user_client", user().client)
+		rel_set(src, nameof(user_client), user().client)
 		add_prog_bar_image_to_client()
 
 	om_hook(user(), /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
@@ -94,7 +94,7 @@
 
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
-	rel_clear(src, "user")
+	rel_clear(src, nameof(user))
 	qdel(src)
 
 ///Removes the progress bar image from the user_client and nulls the variable, if it exists.
@@ -104,7 +104,7 @@
 	if(!user_client()) //Disconnected, already gone.
 		return
 	user_client().images -= bar
-	rel_clear(src, "user_client")
+	rel_clear(src, nameof(user_client))
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
 /datum/progressbar/proc/on_user_login(datum/source, datum/om/event/mob_login/event)
@@ -116,7 +116,7 @@
 		clean_user_client()
 	if(!user().client) //Clients can vanish at any time, the bastards.
 		return
-	rel_set(src, "user_client", user().client)
+	rel_set(src, nameof(user_client), user().client)
 	add_prog_bar_image_to_client()
 
 ///Adds a smoothly-appearing progress bar image to the player's screen.

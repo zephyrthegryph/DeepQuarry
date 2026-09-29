@@ -78,7 +78,7 @@
 	var/has_hunted_unlucky = FALSE
 
 /obj/effect/immovablerod/proc/TakeFlight(turf/end)
-	rel_set(src, "despawn_loc", end)
+	rel_set(src, nameof(despawn_loc), end)
 	walk_towards(src, despawn_loc(), 1)
 	explosion(loc, 2, 3, 5) // start out with a bang
 

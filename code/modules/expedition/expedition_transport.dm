@@ -65,7 +65,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(shuttle.myship())
 	var/datum/expedition_site/site = GLOB.expedition_service.plot_for_vessel(user, vessel, src)
 	if(site)
-		rel_set(src, "active_expedition", site)
+		rel_set(src, nameof(active_expedition), site)
 		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)
 
 /// The site this landing zone belongs to (a relation view).
@@ -82,7 +82,15 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 
 // The site owns its landing waypoint and overmap sector (implicit OWN); their site vars are plain
 // one-sided views. The console and the site name each other (a true two-sided pair).
-REL(/obj/effect/overmap/visitable/sector/expedition, site)
-REL(/obj/effect/shuttle_landmark/automatic/clearing/expedition, site)
-REL_PAIR(/datum/expedition_site, origin_console, active_expedition)
-REL_PAIR(/obj/machinery/computer/shuttle_control/explore, active_expedition, origin_console)
+/obj/effect/overmap/visitable/sector/expedition/declare_ownership(decl)
+	..()
+	rel(decl, nameof(site))
+/obj/effect/shuttle_landmark/automatic/clearing/expedition/declare_ownership(decl)
+	..()
+	rel(decl, nameof(site))
+/datum/expedition_site/declare_ownership(decl)
+	..()
+	rel(decl, nameof(origin_console), pair = nameof(/obj/machinery/computer/shuttle_control/explore::active_expedition))
+/obj/machinery/computer/shuttle_control/explore/declare_ownership(decl)
+	..()
+	rel(decl, nameof(active_expedition), pair = nameof(/datum/expedition_site::origin_console))

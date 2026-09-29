@@ -44,6 +44,6 @@ DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null
 
 /obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)
 	if(!atmos_control)
-		own_set(src, "atmos_control", new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
+		own_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
 	return atmos_control
 

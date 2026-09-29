@@ -942,8 +942,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 #undef MAXCOIL
 
 /// A cable is a member of its material overlay's cables (two-sided); deleting it leaves the list.
-REL_PAIR(/obj/structure/cable, material_overlay, cables)
-REL_PAIR_LIST(/datum/material_power_overlay, cables, material_overlay)
+/obj/structure/cable/declare_ownership(decl)
+	..()
+	rel(decl, nameof(material_overlay), pair = nameof(/datum/material_power_overlay::cables))
+/datum/material_power_overlay/declare_ownership(decl)
+	..()
+	rel(decl, nameof(cables), list = TRUE, pair = nameof(/obj/structure/cable::material_overlay))
 
 /// The breaker box this cable belongs to: a relation view, null once that box is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox

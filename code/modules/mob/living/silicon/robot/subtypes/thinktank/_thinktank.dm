@@ -56,8 +56,10 @@
 		/obj/machinery/power/supermatter
 	)
 
-REL(/mob/living/silicon/robot/platform, recharging)
-REL_LIST(/mob/living/silicon/robot/platform, stored_atoms)
+/mob/living/silicon/robot/platform/declare_ownership(decl)
+	..()
+	rel(decl, nameof(recharging))
+	rel(decl, nameof(stored_atoms), list = TRUE)
 
 /mob/living/silicon/robot/platform/Login()
 	. = ..()
@@ -127,7 +129,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 /mob/living/silicon/robot/platform/setup_module()
 	..()
 	if(ispath(module, /obj/item/robot_module))
-		own_set(src, "module", new module(src))
+		own_set(src, nameof(module), new module(src))
 
 /mob/living/silicon/robot/platform/module_reset(notify = TRUE)
 	return FALSE
@@ -156,7 +158,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 
 			var/obj/item/cell/recharging_atom = recharging
 			if(QDELETED(recharging_atom) || recharging_atom.loc != src)
-				rel_clear(src, "recharging")
+				rel_clear(src, nameof(recharging))
 				return
 
 			if(recharging_atom.percent() < 100)

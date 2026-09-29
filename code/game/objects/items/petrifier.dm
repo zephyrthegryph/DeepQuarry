@@ -15,7 +15,7 @@
 
 /obj/item/petrifier/Initialize(mapload, to_link)
 	. = ..()
-	rel_set(src, "linked", to_link)
+	rel_set(src, nameof(linked), to_link)
 
 DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/petrifier/proc/can_fire)))
 

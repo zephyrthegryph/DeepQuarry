@@ -124,7 +124,7 @@
 
 /obj/item/ducttape/proc/attach(obj/item/W)
 	W.forceMove(src)
-	own_move(W, src, "stuck") // CONTAINED: moved in first
+	own_move(W, src, nameof(stuck)) // CONTAINED: moved in first
 	icon_state = W.icon_state + "_taped"
 	name = W.name + " (taped)"
 	overlays = W.overlays
@@ -139,7 +139,7 @@
 	user.drop_from_inventory(src)
 	stuck.forceMove(get_turf(src))
 	user.put_in_hands(stuck)
-	own_take(src, "stuck")
+	own_take(src, nameof(stuck))
 	overlays = null
 	consume(src, user)
 	return TRUE
@@ -201,4 +201,6 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
 
-OWN(/obj/item/ducttape, stuck, OWN_CONTAINED)
+/obj/item/ducttape/declare_ownership(decl)
+	..()
+	own(decl, nameof(stuck), policy = OWN_CONTAINED)

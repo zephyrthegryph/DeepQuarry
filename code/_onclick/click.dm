@@ -125,7 +125,7 @@
 	LE.icon = 'icons/effects/genetics.dmi'
 	LE.icon_state = "eyelasers"
 	play_sfx(src, SFX_WEAPONS_TASER2)
-	rel_set(LE, "firer", src)
+	rel_set(LE, nameof(LE.firer), src)
 	LE.preparePixelProjectile(A, src, params)
 	LE.fire()
 

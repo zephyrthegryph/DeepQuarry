@@ -69,8 +69,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, TYPE_PROC_REF(/atom, appearance
 
 /// Neon signs sharing our id (keyed).
 /obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs
-REL_KEYED_LIST(/obj/machinery/button/neonsign, controlled_signs, id, /obj/machinery/neonsign)
-KEYED_TARGET(/obj/machinery/neonsign, id)
+/obj/machinery/button/neonsign/declare_ownership(decl)
+	..()
+	rel(decl, nameof(controlled_signs), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/neonsign)
+/obj/machinery/neonsign/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id))
 
 /obj/machinery/button/neonsign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)

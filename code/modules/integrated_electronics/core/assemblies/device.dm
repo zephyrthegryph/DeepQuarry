@@ -12,7 +12,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/el
 
 /obj/item/assembly/electronic_assembly/Initialize(mapload)
 	. = ..()
-	rel_set(EA, "holder", src)
+	rel_set(EA, nameof(EA.holder), src)
 
 
 EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
@@ -80,8 +80,8 @@ APPEARANCE_TEMPLATE(/obj/item/assembly/electronic_assembly, "{initial(icon_state
 	. = ..()
 	var/obj/item/integrated_circuit/built_in/device_input/input = new(src)
 	var/obj/item/integrated_circuit/built_in/device_output/output = new(src)
-	rel_set(input, "assembly", src)
-	rel_set(output, "assembly", src)
+	rel_set(input, nameof(input.assembly), src)
+	rel_set(output, nameof(output.assembly), src)
 
 // The holder device owns us (its EA default child); holder is a plain relation back.
 

@@ -26,14 +26,14 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 	if(istype(user))
 		user.stop_aiming(no_message=1)
 	user.drop_from_inventory(I, target = src)
-	own_set(src, "holstered", I) // CONTAINED: in our contents first
+	own_set(src, nameof(holstered), I) // CONTAINED: in our contents first
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	own_take(src, "holstered")
+	own_take(src, nameof(holstered))
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.
@@ -256,4 +256,6 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 
 TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
 
-OWN(/obj/item/clothing/accessory/holster, holstered, OWN_CONTAINED)
+/obj/item/clothing/accessory/holster/declare_ownership(decl)
+	..()
+	own(decl, nameof(holstered), policy = OWN_CONTAINED)

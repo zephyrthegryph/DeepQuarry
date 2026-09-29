@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
-		rel_set(src, "mybag", W)
+		rel_set(src, nameof(mybag), W)
 		return TRUE
 	return FALSE
 
@@ -83,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		return FALSE
 	mybag().forceMove(get_turf(user))
 	user.put_in_hands(mybag())
-	rel_clear(src, "mybag")
+	rel_clear(src, nameof(mybag))
 	return TRUE
 
 //-------------------------------------------

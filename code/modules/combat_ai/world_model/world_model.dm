@@ -38,10 +38,10 @@
 
 /datum/world_model/New(mob/living/owner)
 	if(owner)
-		rel_set(src, "owner", owner)
-	rel_clear(src, "visible_hostiles")
-	rel_clear(src, "visible_friendlies")
-	rel_clear(src, "visible_neutrals")
+		rel_set(src, nameof(owner), owner)
+	rel_clear(src, nameof(visible_hostiles))
+	rel_clear(src, nameof(visible_friendlies))
+	rel_clear(src, nameof(visible_neutrals))
 
 /datum/world_model/proc/get_owner()
 	return owner
@@ -54,11 +54,11 @@
 		return
 
 	visible_hostiles ||= list()
-	rel_clear(src, "visible_hostiles")
+	rel_clear(src, nameof(visible_hostiles))
 	visible_friendlies ||= list()
-	rel_clear(src, "visible_friendlies")
+	rel_clear(src, nameof(visible_friendlies))
 	visible_neutrals ||= list()
-	rel_clear(src, "visible_neutrals")
+	rel_clear(src, nameof(visible_neutrals))
 
 	var/range = brain.vision_range
 	for(var/mob/living/M in view(range, owner))
@@ -68,11 +68,11 @@
 			continue
 		var/disposition = brain.disposition_to(M)
 		if(disposition <= DQ_DISPOSITION_HOSTILE)
-			rel_add(src, "visible_hostiles", M)
+			rel_add(src, nameof(visible_hostiles), M)
 		else if(disposition >= DQ_DISPOSITION_FRIENDLY)
-			rel_add(src, "visible_friendlies", M)
+			rel_add(src, nameof(visible_friendlies), M)
 		else
-			rel_add(src, "visible_neutrals", M)
+			rel_add(src, nameof(visible_neutrals), M)
 
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	trim_old_damage()
@@ -91,8 +91,8 @@
 	recent_damage_events += list(list(amount, injury_kind, attacker ? "[attacker]" : null, world.time))
 	recent_damage_total += amount
 	if(attacker)
-		rel_set(src, "last_attacker", attacker)
-		rel_set(src, "last_known_threat_turf", get_turf(attacker))
+		rel_set(src, nameof(last_attacker), attacker)
+		rel_set(src, nameof(last_known_threat_turf), get_turf(attacker))
 
 /// Drop damage entries older than 10 seconds.
 /datum/world_model/proc/trim_old_damage()
@@ -123,7 +123,7 @@
 	if(!hazard)
 		return
 	LAZYINITLIST(known_hazards)
-	rel_add(src, "hazard_atoms", hazard)
+	rel_add(src, nameof(hazard_atoms), hazard)
 	known_hazards += list(list(ref(hazard), severity, world.time + duration))
 
 /datum/world_model/proc/trim_old_hazards()
@@ -135,7 +135,7 @@
 		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0 || !(hazard in hazard_atoms))
 			known_hazards.Cut(i, i + 1)
 			if(hazard in hazard_atoms)
-				rel_remove(src, "hazard_atoms", hazard)
+				rel_remove(src, nameof(hazard_atoms), hazard)
 	UNSETEMPTY(known_hazards)
 
 /datum/world_model/proc/get_last_attacker()
@@ -155,4 +155,6 @@
 	L["visible_neutrals"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
 
-REL_LIST(/datum/world_model, hazard_atoms)
+/datum/world_model/declare_ownership(decl)
+	..()
+	rel(decl, nameof(hazard_atoms), list = TRUE)

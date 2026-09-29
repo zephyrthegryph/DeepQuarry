@@ -55,7 +55,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 
 /obj/machinery/firework_launcher/proc/interaction_load_star(mob/user, obj/item/firework_star/O, datum/interaction/interaction)
 	if(user.unEquip(O, 0, src))
-		rel_set(src, "loaded_star", O)
+		rel_set(src, nameof(loaded_star), O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
 		update_icon()
@@ -85,7 +85,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 		return TRUE
 	else
 		loaded_star().forceMove(get_turf(src))
-		rel_clear(src, "loaded_star")
+		rel_clear(src, nameof(loaded_star))
 		add_fingerprint(user)
 		update_icon()
 	return TRUE
@@ -123,7 +123,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/firework_launcher, "launcher{loaded_star?1:0}
 	play_sfx(get_turf(src), SFX_WEAPONS_RPG)
 	loaded_star().trigger_firework(WH)
 	qdel(loaded_star())
-	rel_clear(src, "loaded_star")
+	rel_clear(src, nameof(loaded_star))
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
 	update_icon()

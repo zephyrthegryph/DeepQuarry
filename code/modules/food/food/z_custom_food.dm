@@ -48,7 +48,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTER
 		if(S.reagents)
 			S.reagents.trans_to_holder(reagents,S.reagents.total_volume)
 
-		own_add(src, "ingredients", S)
+		own_add(src, nameof(ingredients), S)
 
 		if(src.addTop)
 			cut_overlay(topping)

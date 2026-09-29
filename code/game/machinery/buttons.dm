@@ -103,11 +103,11 @@
 	var/neutral = ask.yes
 	var/mobtype = ask.mobtype
 	var/mob/living/simple_mob/old_mob = mobspawned()
-	rel_clear(src, "mobspawned")
+	rel_clear(src, nameof(mobspawned))
 	QDEL_NULL(old_mob)
-	rel_set(src, "mobspawned", new mobtype(get_turf(GLOB.button_mob_spawner_landmark[link])))
+	rel_set(src, nameof(mobspawned), new mobtype(get_turf(GLOB.button_mob_spawner_landmark[link])))
 	if(!istype(mobspawned(), /mob/living/simple_mob))
-		rel_clear(src, "mobspawned")
+		rel_clear(src, nameof(mobspawned))
 		return TRUE
 	mobspawned().voremob_loaded = TRUE
 	mobspawned().init_vore()

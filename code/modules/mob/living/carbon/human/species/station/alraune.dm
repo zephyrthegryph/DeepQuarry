@@ -215,7 +215,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 	fruit_gland.fruit_type = ask.choice
 	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/alraune_fruit_pick, src)
 	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/alraune_fruit_reagent, src)
-	rel_set(fruit_gland, "organ_owner", src)
+	rel_set(fruit_gland, nameof(fruit_gland.organ_owner), src)
 	fruit_gland.emote_descriptor = list("fruit right off of [fruit_gland.organ_owner]!", "a fruit from [fruit_gland.organ_owner]!")
 
 /mob/living/carbon/human/proc/alraune_fruit_pick()

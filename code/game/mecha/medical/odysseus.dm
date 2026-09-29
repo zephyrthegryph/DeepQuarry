@@ -121,4 +121,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/medical/odysseus, "hud", /obj/item/clothing/gla
 /obj/mecha/medical/odysseus/
 	minimum_penetration = 0
 
-OWN(/obj/mecha/medical/odysseus, hud, OWN_CONTAINED)
+/obj/mecha/medical/odysseus/declare_ownership(decl)
+	..()
+	own(decl, nameof(hud), policy = OWN_CONTAINED)

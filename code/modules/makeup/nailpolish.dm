@@ -110,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
-	own_set(src, "nail_polish", polish)
+	own_set(src, nameof(nail_polish), polish)
 	owner?.update_icons_body()
 
 /obj/item/nailpolish_remover

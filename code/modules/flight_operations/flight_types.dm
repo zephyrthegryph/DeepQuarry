@@ -141,11 +141,11 @@
 
 /datum/flight_plan/New(datum/flight_vessel/new_vessel, datum/flight_destination/new_origin, datum/flight_destination/new_destination)
 	..()
-	rel_set(src, "vessel", new_vessel)
-	rel_set(src, "origin", new_origin)
-	rel_set(src, "destination", new_destination)
+	rel_set(src, nameof(vessel), new_vessel)
+	rel_set(src, nameof(origin), new_origin)
+	rel_set(src, nameof(destination), new_destination)
 	if(destination())
-		rel_add(destination(), "active_plans", src)
+		rel_add(destination(), nameof(/datum/flight_destination::active_plans), src)
 	EXPIRY_STAMP(src, created_at, CLOCK_WORLD)
 	id = "flight-[REF(src)]"
 	if(destination()?.expedition() && destination().expedition().z_level <= 0)
@@ -159,14 +159,14 @@
 
 /datum/flight_plan/proc/release_leases(release_assignment = FALSE)
 	if(destination())
-		rel_remove(destination(), "active_plans", src)
+		rel_remove(destination(), nameof(/datum/flight_destination::active_plans), src)
 	if(arrival_port()?.reserved_by == src)
-		rel_clear(arrival_port(), "reserved_by")
+		rel_clear(arrival_port(), nameof(/datum/flight_port::reserved_by))
 	if(release_assignment && destination()?.expedition()?.assigned_flight_vessel() == vessel)
-		rel_clear(destination().expedition(), "assigned_flight_vessel")
-		rel_clear(destination().expedition(), "assigned_shuttle")
+		rel_clear(destination().expedition(), nameof(/datum/expedition_site::assigned_flight_vessel))
+		rel_clear(destination().expedition(), nameof(/datum/expedition_site::assigned_shuttle))
 		if(vessel?.active_expedition() == destination().expedition())
-			rel_clear(vessel, "active_expedition")
+			rel_clear(vessel, nameof(vessel.active_expedition))
 
 /datum/flight_plan/proc/state_name()
 	switch(state)
@@ -189,12 +189,12 @@
 		fail("Vessel lacks the capabilities required for this destination.")
 		return FALSE
 	if(destination().kind == FLIGHT_DEST_STATION)
-		rel_set(src, "arrival_port", GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, nameof(arrival_port), GLOB.flight_service.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible station berth is available.")
 			return FALSE
 	if(destination().kind == FLIGHT_DEST_VESSEL)
-		rel_set(src, "arrival_port", GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, nameof(arrival_port), GLOB.flight_service.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible arrival port is available.")
 			return FALSE
@@ -266,4 +266,6 @@
 	return active_expedition
 
 
-REL_LIST(/datum/flight_destination, active_plans)
+/datum/flight_destination/declare_ownership(decl)
+	..()
+	rel(decl, nameof(active_plans), list = TRUE)

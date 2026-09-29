@@ -12,7 +12,7 @@
 /obj/item/rig_module/device/Initialize(mapload)
 	. = ..()
 	if(device_type)
-		own_set(src, "device", new device_type(src))
+		own_set(src, nameof(device), new device_type(src))
 
 /obj/item/rig_module/device/engage(atom/target)
 	if(!..() || !device)
@@ -157,12 +157,14 @@
 	/// The stamp not currently mounted as `device`; the two swap on toggle.
 	var/obj/item/stamp/spare_stamp
 
-OWN(/obj/item/rig_module/device/stamp, spare_stamp, OWN_CONTAINED)
+/obj/item/rig_module/device/stamp/declare_ownership(decl)
+	..()
+	own(decl, nameof(spare_stamp), policy = OWN_CONTAINED)
 
 /obj/item/rig_module/device/stamp/Initialize(mapload)
 	. = ..()
-	own_set(src, "device", new /obj/item/stamp/internalaffairs(src))
-	own_set(src, "spare_stamp", new /obj/item/stamp/denied(src))
+	own_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
+	own_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
 
 /obj/item/rig_module/device/stamp/engage(atom/target)
 	if(!..() || !device)
@@ -171,14 +173,16 @@ OWN(/obj/item/rig_module/device/stamp, spare_stamp, OWN_CONTAINED)
 	if(!target)
 		if(!spare_stamp)
 			return 1
-		var/obj/item/mounted = own_take(src, "device")
-		var/obj/item/spare = own_take(src, "spare_stamp")
-		own_set(src, "device", spare)
-		own_set(src, "spare_stamp", mounted)
+		var/obj/item/mounted = own_take(src, nameof(device))
+		var/obj/item/spare = own_take(src, nameof(spare_stamp))
+		own_set(src, nameof(device), spare)
+		own_set(src, nameof(spare_stamp), mounted)
 		if(istype(device, /obj/item/stamp/denied))
 			to_chat(holder.wearer(), span_notice("Switched to denied stamp."))
 		else
 			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
 
-OWN(/obj/item/rig_module/device, device, OWN_CONTAINED)
+/obj/item/rig_module/device/declare_ownership(decl)
+	..()
+	own(decl, nameof(device), policy = OWN_CONTAINED)

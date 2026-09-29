@@ -11,13 +11,13 @@
 
 /area/looking_glass/Initialize(mapload)
 	. = ..()
-	rel_set(src, "our_landmark", locate_within(src, /obj/effect/landmark/looking_glass))
+	rel_set(src, nameof(our_landmark), locate_within(src, /obj/effect/landmark/looking_glass))
 	if(!our_landmark())
 		log_mapping("Looking glass area [name] couldn't find a landmark")
 	for(var/turf/simulated/floor/looking_glass/lgt in area_contents_of_type(src, /turf/simulated/floor/looking_glass))
-		rel_add(src, "our_turfs", lgt)
+		rel_add(src, nameof(our_turfs), lgt)
 		if(lgt.optional)
-			rel_add(src, "our_optional_turfs", lgt)
+			rel_add(src, nameof(our_optional_turfs), lgt)
 
 /area/looking_glass/Entered(atom/movable/AM)
 	if(isliving(AM))

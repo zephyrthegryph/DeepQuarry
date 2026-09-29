@@ -162,7 +162,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))
-		rel_set(src, "my_case", loc)
+		rel_set(src, nameof(my_case), loc)
 
 /obj/item/projectile/proc/Range()
 	range--
@@ -197,9 +197,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
-		own_clear(src, "beam_segments", OWN_DELETE)
-		own_add(src, "beam_segments", pcache) //record start.
-		rel_set(src, "beam_index", pcache)
+		own_clear(src, nameof(beam_segments), OWN_DELETE)
+		own_add(src, nameof(beam_segments), pcache) //record start.
+		rel_set(src, nameof(beam_index), pcache)
 
 /obj/item/projectile/proc/process_hitscan()
 	var/safety = range * 3
@@ -239,11 +239,11 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				pixel_x = trajectory.return_px()
 				pixel_y = trajectory.return_py()
 			forcemoved = TRUE
-			rel_set(src, "hitscan_last", loc)
+			rel_set(src, nameof(hitscan_last), loc)
 		else if(T != loc)
 			before_move()
 			step_towards(src, T)
-			rel_set(src, "hitscan_last", loc)
+			rel_set(src, nameof(hitscan_last), loc)
 			after_move()
 		if(can_hit_target(original(), permutated))
 			Bump(original())
@@ -277,7 +277,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(!A || (!isturf(A) && !isturf(A.loc)))
 		return FALSE
 	homing = TRUE
-	rel_set(src, "homing_target", A)
+	rel_set(src, nameof(homing_target), A)
 	homing_offset_x = rand(homing_inaccuracy_min, homing_inaccuracy_max)
 	homing_offset_y = rand(homing_inaccuracy_min, homing_inaccuracy_max)
 	if(prob(50))
@@ -355,7 +355,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			return
 	if(isnum(angle))
 		setAngle(angle)
-	rel_set(src, "starting", get_turf(src))
+	rel_set(src, nameof(starting), get_turf(src))
 	if(!starting)
 		qdel(src)
 		return
@@ -372,7 +372,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
-	own_set(src, "trajectory", new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
+	own_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
 	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	permutated = list()
 	originalRange = range
@@ -401,8 +401,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	own_add(src, "beam_segments", pcache)
-	rel_set(src, "beam_index", pcache)
+	own_add(src, nameof(beam_segments), pcache)
+	rel_set(src, nameof(beam_index), pcache)
 
 //Spread is FORCED!
 /obj/item/projectile/proc/preparePixelProjectile(atom/target, atom/source, params, spread = 0)
@@ -419,8 +419,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(get_turf(source))
 	trajectory_ignore_forcemove = FALSE
-	rel_set(src, "starting", curloc)
-	rel_set(src, "original", target)
+	rel_set(src, nameof(starting), curloc)
+	rel_set(src, nameof(original), target)
 	if(targloc)
 		yo = targloc.y - curloc.y
 		xo = targloc.x - curloc.x
@@ -477,8 +477,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/old_style_target(atom/target, atom/source)
 	if(!source)
 		source = get_turf(src)
-	rel_set(src, "starting", get_turf(source))
-	rel_set(src, "original", target)
+	rel_set(src, nameof(starting), get_turf(source))
+	rel_set(src, nameof(original), target)
 	setAngle(Get_Angle(source, target))
 
 /// A hitscan draws its tracers from its trajectory and beam points before phase 4 deletes them.
@@ -491,7 +491,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // its casing forgets it.
 
 /obj/item/projectile/proc/cleanup_beam_segments()
-	own_clear(src, "beam_segments", OWN_DELETE) // beam_index names one of these: its view clears
+	own_clear(src, nameof(beam_segments), OWN_DELETE) // beam_index names one of these: its view clears
 	if(beam_index())
 		qdel(beam_index())
 
@@ -509,7 +509,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/datum/point/end_point
 	if(trajectory && beam_index())
 		end_point = trajectory.copy_to()
-		own_add(src, "beam_segments", end_point) // refused while we are being destroyed (guard.dm)
+		own_add(src, nameof(beam_segments), end_point) // refused while we are being destroyed (guard.dm)
 	generate_hitscan_tracers(null, null, impacting, end_point)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE, datum/point/end_point)
@@ -534,7 +534,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
-		own_add(drawn, "beam_components", thing)
+		own_add(drawn, nameof(drawn.beam_components), thing)
 	if(impacting && impact_type && duration > 0)
 		var/datum/point/p = points[length(points)]
 		var/atom/movable/thing = new impact_type
@@ -544,7 +544,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
-		own_add(drawn, "beam_components", thing)
+		own_add(drawn, nameof(drawn.beam_components), thing)
 	om_qdel_after(drawn, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer
@@ -770,7 +770,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	// Safe to add the target to the list that is soon to be poofed. No double jeopardy, pixel projectiles.
 	if(islist(impacted_mobs))
-		rel_add(src, "impacted_mobs", target_mob)
+		rel_add(src, nameof(impacted_mobs), target_mob)
 
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)
@@ -815,9 +815,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		om_qdel_after(src, 1)
 		return //fire returns nothing, so neither do we need to
 
-	rel_set(src, "original", target)
+	rel_set(src, nameof(original), target)
 	def_zone = check_zone(target_zone)
-	rel_set(src, "firer", user)
+	rel_set(src, nameof(firer), user)
 	var/direct_target
 	if(get_turf(target) == get_turf(src))
 		direct_target = target
@@ -862,14 +862,14 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	shot_from = launcher.name
 	silenced |= launcher.silenced // Silent bullets (e.g., BBs) are always silent
 	if(user)
-		rel_set(src, "firer", user)
+		rel_set(src, nameof(firer), user)
 
 	return launch_projectile(target, target_zone, user, params, angle_override, forced_spread)
 
 /obj/item/projectile/proc/launch_projectile_from_turf(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
-	rel_set(src, "original", target)
+	rel_set(src, nameof(original), target)
 	def_zone = check_zone(target_zone)
-	rel_set(src, "firer", user)
+	rel_set(src, nameof(firer), user)
 	var/direct_target
 	if(get_turf(target) == get_turf(src))
 		direct_target = target

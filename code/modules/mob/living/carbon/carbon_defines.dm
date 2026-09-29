@@ -39,4 +39,6 @@
 // A mob's species is copy-on-write (doc/rewrite/ownership.md sec 3): the registered
 // GLOB.all_species singleton until traits or a custom base make it a private copy, which the mob
 // owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
-PROTO(/mob/living/carbon, species)
+/mob/living/carbon/declare_ownership(decl)
+	..()
+	proto(decl, nameof(species))

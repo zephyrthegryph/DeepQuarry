@@ -41,7 +41,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 /obj/machinery/computer/aifixer/proc/interaction_use_card(mob/user, obj/item/aicard/card, datum/interaction/interaction)
 	if(occupier())
 		if(card.grab_ai(occupier(), user))
-			rel_clear(src, "occupier")
+			rel_clear(src, nameof(occupier))
 	else if(card.carded_ai())
 		var/mob/living/silicon/ai/new_occupant = card.carded_ai()
 		to_chat(new_occupant, span_notice("You have been transferred into a stationary terminal. Sadly there is no remote access from here."))
@@ -49,7 +49,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/aifixer, MACHINE_PIPELINE, "resto
 		new_occupant.forceMove(src)
 		new_occupant.cancel_camera()
 		new_occupant.control_disabled = TRUE
-		rel_set(src, "occupier", new_occupant)
+		rel_set(src, nameof(occupier), new_occupant)
 		card.clear()
 		update_icon()
 	else

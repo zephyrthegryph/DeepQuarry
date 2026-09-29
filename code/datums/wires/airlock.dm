@@ -63,7 +63,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_set_id_tag)
 	if(isnull(new_id))
 		return
 	if(new_id)
-		keyed_set_id(A, "id_tag", new_id) // re-links the keyed relations matching on it
+		keyed_set_id(A, nameof(/datum/embedded_program::id_tag), new_id) // re-links the keyed relations matching on it
 		return TRUE
 
 UI_ACT(/datum/wires/airlock, "set_frequency", ui_act_set_frequency, UI_ARG_NUM("freq"))

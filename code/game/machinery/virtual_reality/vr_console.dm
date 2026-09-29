@@ -55,7 +55,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "smoke", new /datum/effect/effect/system/smoke_spread/bad)
+	own_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
 	update_icon()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).
@@ -120,7 +120,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/vr_sleeper, "{base_state}{appearance_occupied
 		return ITEM_INTERACT_BLOCKING
 	if(occupant && avatar())
 		avatar().exit_vr()
-		rel_clear(src, "avatar")
+		rel_clear(src, nameof(avatar))
 		perform_exit()
 	return ..()
 
@@ -260,7 +260,7 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 	if(!occupant)
 		return
 
-	rel_clear(src, "avatar")
+	rel_clear(src, nameof(avatar))
 
 	if(occupant.vr_link)
 		occupant.vr_link.exit_vr(FALSE)
@@ -289,9 +289,9 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		return
 
 	if(QDELETED(occupant.vr_link)) //Hardrefs...
-		rel_clear(occupant, "vr_link")
+		rel_clear(occupant, nameof(occupant.vr_link))
 
-	rel_set(src, "avatar", occupant.vr_link)
+	rel_set(src, nameof(avatar), occupant.vr_link)
 	// If they've already enterred VR, and are reconnecting, prompt if they want a new body
 	if(avatar())
 		om_ask(occupant, /datum/om/prompt/confirm, PROC_REF(vr_reuse_answered), message = "You already have a [avatar().stat == DEAD ? "" : "deceased "]Virtual Reality avatar. Would you like to use it?", title = "New avatar", answer_on_no = TRUE, requires = list(/datum/om/check/inside_target))
@@ -304,8 +304,8 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 		vr_reenter(occupant)
 		return
 	// Delink the mob
-	rel_clear(occupant, "vr_link")
-	rel_clear(src, "avatar")
+	rel_clear(occupant, nameof(occupant.vr_link))
+	rel_clear(src, nameof(avatar))
 	vr_choose_avatar(occupant)
 
 /// Asks where the new avatar spawns and whether it is a creature; vr_avatar_chosen() makes it.
@@ -348,9 +348,9 @@ DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
 			break
 
 	if(!perfect_replica)
-		rel_set(src, "avatar", new /mob/living/carbon/human(S, "Virtual Reality Avatar"))
+		rel_set(src, nameof(avatar), new /mob/living/carbon/human(S, "Virtual Reality Avatar"))
 	else
-		rel_set(src, "avatar", new /mob/living/carbon/human(src, occupant.species.name))
+		rel_set(src, nameof(avatar), new /mob/living/carbon/human(src, occupant.species.name))
 
 	// If the user has a non-default (Human) bodyshape, make it match theirs.
 	if(occupant.species.name != "Promethean" && occupant.species.name != "Human" && mirror_first_occupant)

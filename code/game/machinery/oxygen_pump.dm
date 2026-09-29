@@ -81,7 +81,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		own_take(src, "tank")
+		own_take(src, nameof(tank))
 		return TRUE
 	if(!tank)
 		return TRUE
@@ -94,7 +94,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().cozyloop.stop() // Cozy Music
 		if(breather().internals)
 			breather().internals.icon_state = "internal0"
-		rel_clear(src, "breather")
+		rel_clear(src, nameof(breather))
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
 
@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		rel_set(src, "breather", C)
+		rel_set(src, nameof(breather), C)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/proc/attach_mask_finish()
@@ -162,7 +162,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "tank", W)
+			own_set(src, nameof(tank), W)
 			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
 				item = tank)
@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			contained.forceMove(src)
 			breather().cozyloop.stop() // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			rel_clear(src, "breather")
+			rel_clear(src, nameof(breather))
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
@@ -275,7 +275,7 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		rel_set(src, "breather", C)
+		rel_set(src, nameof(breather), C)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/anesthetic/attach_mask_finish()
@@ -325,7 +325,7 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		rel_set(src, "breather", C)
+		rel_set(src, nameof(breather), C)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
 /obj/machinery/oxygen_pump/mobile/anesthetic/attach_mask_finish()
@@ -350,7 +350,7 @@ UI_ACT_PROC(/obj/machinery/oxygen_pump, ui_act_pressure)
 			breather().remove_from_mob(contained)
 			contained.forceMove(src)
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			rel_clear(src, "breather")
+			rel_clear(src, nameof(breather))
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank

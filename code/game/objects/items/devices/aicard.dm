@@ -140,7 +140,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	ai.cancel_camera()
 	ai.control_disabled = 1
 	ai.aiRestorePowerRoutine = 0
-	rel_set(src, "carded_ai", ai)
+	rel_set(src, nameof(carded_ai), ai)
 	ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 
 	if(ai.client)
@@ -156,7 +156,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		carded_ai().canmove = 0
 		carded_ai().carded = 0
 	name = initial(name)
-	rel_clear(src, "carded_ai")
+	rel_clear(src, nameof(carded_ai))
 	update_icon()
 
 /obj/item/aicard/see_emote(mob/living/M, text)

@@ -11,6 +11,9 @@
 
 /// Reverse index: source key (own_key()) -> var name, or a list of var names.
 /datum/var/tmp/list/om_refs_in
+/// Watching sources (rel(..., watch = ...)): source key (own_key()) -> how many watched views of
+/// that source name us. changed() on this datum marks each of them changed.
+/datum/var/tmp/list/rel_watchers
 
 /// z (text) -> turf key (own_key()) -> that turf's reverse index (as om_refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
@@ -246,6 +249,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		source.vars[var_name] = target // ALLOW(api, ownership): the accessor
 		own_field_changed(source, var_name)
 	_rel_index(target, source, var_name)
+	if(entry[OWNE_WATCH])
+		_rel_watch(target, source)
 	var/partner_var = entry[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target))
 		return
@@ -267,6 +272,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			own_field_changed(target, partner_var)
 		TL += source // absent (checked above): a pipeline's thousands of members stay linear
 		_rel_index(source, target, partner_var)
+		if(pentry[OWNE_WATCH])
+			_rel_watch(source, target)
 		return
 	if(theirs == source)
 		return
@@ -275,6 +282,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	target.vars[partner_var] = source // ALLOW(api, ownership): the accessor
 	own_field_changed(target, partner_var)
 	_rel_index(source, target, partner_var)
+	if(pentry[OWNE_WATCH])
+		_rel_watch(source, target)
 
 /// Unlinks source.var_name -> target, and the partner side when it names source.
 /proc/_rel_detach(datum/source, var_name, datum/target, list/entry)
@@ -286,19 +295,53 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		source.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(source, var_name)
 	_rel_unindex(target, source, var_name)
+	if(entry?[OWNE_WATCH])
+		_rel_unwatch(target, source)
 	var/partner_var = entry?[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target) || !(partner_var in target.vars))
 		return
 	var/theirs = target.vars[partner_var]
+	var/unlinked = FALSE
 	if(islist(theirs))
 		var/list/TL = theirs
 		if(source in TL)
 			TL -= source
 			_rel_unindex(source, target, partner_var)
+			unlinked = TRUE
 	else if(theirs == source)
 		target.vars[partner_var] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(target, partner_var)
 		_rel_unindex(source, target, partner_var)
+		unlinked = TRUE
+	if(unlinked && own_table_of(target).entries[partner_var]?[OWNE_WATCH])
+		_rel_unwatch(source, target)
+
+/// `watcher` has a watched view naming `target`: changed(target) now marks `watcher` too.
+/proc/_rel_watch(datum/target, datum/watcher)
+	if(!isdatum(target) || !isdatum(watcher))
+		return
+	var/key = OWN_KEY(watcher)
+	LAZYINITLIST(target.rel_watchers)
+	target.rel_watchers[key] = (target.rel_watchers[key] || 0) + 1
+
+/// One watched view of `watcher` stopped naming `target`.
+/proc/_rel_unwatch(datum/target, datum/watcher)
+	if(!isdatum(target) || !isdatum(watcher) || !target.rel_watchers)
+		return
+	var/key = OWN_KEY(watcher)
+	var/count = target.rel_watchers[key]
+	if(count > 1)
+		target.rel_watchers[key] = count - 1
+	else
+		target.rel_watchers -= key
+		UNSETEMPTY(target.rel_watchers)
+
+/// changed() raised on `target`: marks every live source that watches it through a relation view.
+/proc/rel_notify_watchers(datum/target)
+	for(var/key in target.rel_watchers)
+		var/datum/watcher = own_locate(key)
+		if(isdatum(watcher) && !QDELING(watcher))
+			changed(watcher)
 
 // ---------------------------------------------------------------- reads
 
@@ -340,6 +383,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Phase 4: `D` is dying. Every view naming it is cleared (sources), then every view it holds
 /// stops being indexed on its targets, and its partners stop naming it.
 /proc/rel_teardown(datum/D)
+	D.rel_watchers = null // its watchers' views are cleared below with the rest of the index
 	var/list/index = D.om_refs_in
 	if(index)
 		D.om_refs_in = null
@@ -501,9 +545,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			rel_set(S, name, successor)
 	om_forward_state(original, successor)
 
-/// replace_with(): carries `original`'s FORWARD_STATE vars to `successor` (om_handle_forward()).
+/// replace_with(): carries `original`'s forward-annotated vars (own/rel/..., forward = TRUE) to
+/// `successor` (om_handle_forward()).
 /proc/om_forward_state(datum/original, datum/successor)
-	for(var/name in original.declared_forward_vars())
+	for(var/name in own_table_of(original).forward_vars)
 		if(!(name in successor.vars))
 			continue
 		var/value = original.vars[name]
@@ -533,13 +578,9 @@ GLOBAL_LIST_EMPTY(rel_key_targets)
 /// Target type path (text) -> key value (text) -> flat list (source key, var name).
 GLOBAL_LIST_EMPTY(rel_key_waiters)
 
-/// KEYED_TARGET(PATH, KEY_VAR): the var REL_KEYED sources match against, or null.
-/datum/proc/keyed_target_var()
-	return null
-
 /// On materialize: index src as a keyed target, and link src's keyed views.
 /proc/rel_keyed_materialize(datum/D)
-	var/key_var = D.keyed_target_var()
+	var/key_var = own_table_of(D).keyed_key
 	if(key_var && !isnull(D.vars[key_var]))
 		var/key = "[D.vars[key_var]]"
 		for(var/path in rel_keyed_type_chain(D.type))
@@ -592,7 +633,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 /// On dematerialize: leave the keyed indexes (views naming D clear when it dies; a view to a
 /// dematerialized target is cleared here too, since it left the world).
 /proc/rel_keyed_dematerialize(datum/D)
-	var/key_var = D.keyed_target_var()
+	var/key_var = own_table_of(D).keyed_key
 	if(key_var && !isnull(D.vars[key_var]))
 		var/key = "[D.vars[key_var]]"
 		for(var/path in rel_keyed_type_chain(D.type))
@@ -630,7 +671,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 /// An id can change at runtime (multitool, construction prompts): set it through keyed_set_id() so
 /// the old keyed links drop and the new ones form.
 /// Sets D's id var `key_var` to `new_value` and re-links every keyed relation that matches on it,
-/// whether D is a REL_KEYED source keyed by that var or a KEYED_TARGET indexed by it.
+/// whether D is a keyed source keyed by that var or a keyed target indexed by it.
 /proc/keyed_set_id(datum/D, key_var, new_value)
 	if(!D || D.vars[key_var] == new_value)
 		return
@@ -638,7 +679,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 	if(materialized)
 		rel_keyed_dematerialize(D)
 	// As a target: sources linked to D through their keyed views drop it.
-	if(D.keyed_target_var() == key_var)
+	if(own_table_of(D).keyed_key == key_var)
 		for(var/list/pair as anything in rel_sources(D))
 			var/datum/source = pair[1]
 			var/list/entry = own_table_of(source).entries[pair[2]]

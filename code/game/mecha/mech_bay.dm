@@ -38,7 +38,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list
 /obj/machinery/mech_recharger/Uncrossed(atom/movable/M)
 	. = ..()
 	if(M == charging())
-		rel_clear(src, "charging")
+		rel_clear(src, nameof(charging))
 
 /obj/machinery/mech_recharger/RefreshParts()
 	..()
@@ -52,7 +52,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list
 /obj/machinery/mech_recharger/machine_step()
 	..()
 	if(!charging() || charging().loc != src.loc) // Could be qdel or teleport or something
-		rel_clear(src, "charging")
+		rel_clear(src, nameof(charging))
 		return
 
 	var/done = FALSE
@@ -78,7 +78,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list
 		else
 			done = FALSE
 	if(done)
-		rel_clear(src, "charging")
+		rel_clear(src, nameof(charging))
 
 /obj/machinery/mech_recharger/declare_interactions(list/into)
 	into += list(
@@ -100,7 +100,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mech_recharger, MACHINE_PIPELINE, list
 			mech.occupant_message(span_notice("Now charging..."))
 		else
 			to_chat(M, span_notice("Now charging..."))
-		rel_set(src, "charging", M)
+		rel_set(src, nameof(charging), M)
 	return
 
 /// charging (a relation view: it reads null once the target is deleted).

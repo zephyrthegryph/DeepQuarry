@@ -5,7 +5,9 @@
 	// Mobs who are 'friends' (a relation list: a friend going away drops out).
 	var/list/tamers
 
-REL_LIST(/mob/living/simple_mob, tamers)
+/mob/living/simple_mob/declare_ownership(decl)
+	..()
+	rel(decl, nameof(tamers), list = TRUE)
 
 /mob/living/simple_mob/IIsAlly(mob/living/L)
 	. = ..()
@@ -48,7 +50,7 @@ REL_LIST(/mob/living/simple_mob, tamers)
 	handle_tame_item(O, user)
 
 	if(!(user in tamers))
-		rel_add(src, "tamers", user)
+		rel_add(src, nameof(tamers), user)
 	ai_brain.forget_everything()
 
 /mob/living/simple_mob/proc/handle_tame_item(obj/O, mob/user)

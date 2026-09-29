@@ -16,7 +16,7 @@
 
 /obj/machinery/smartfridge/tcrystal/proc/mod_amount(datum/stored_item/I,mod)
 	if(I.amount + mod <= 0)
-		own_take_member(src, "item_records", I)
+		own_take_member(src, nameof(item_records), I)
 		qdel(I)
 	else
 		I.amount += mod
@@ -31,7 +31,7 @@
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
-		own_add(src, "item_records", item)
+		own_add(src, nameof(item_records), item)
 		consume(O)
 
 /obj/machinery/smartfridge/tcrystal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

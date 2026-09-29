@@ -42,7 +42,7 @@
 	if(!C)
 		return
 	owner = C // a client, not a datum: plain (the client owns us as its tooltips)
-	own_set(src, "tooltip_window", new /datum/tgui_window(C, control))
+	own_set(src, nameof(tooltip_window), new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend
@@ -93,7 +93,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	if(!isnull(last_target()))
 		om_unhook(last_target(), /datum/om/event/qdeleting, src)
 	om_hook(thing, /datum/om/event/qdeleting, src, PROC_REF(on_target_qdel))
-	rel_set(src, "last_target", thing)
+	rel_set(src, nameof(last_target), thing)
 	_revision++
 	queueHide = FALSE
 
@@ -154,7 +154,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 /datum/tooltip/proc/on_target_qdel(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	hide()
-	rel_clear(src, "last_target")
+	rel_clear(src, nameof(last_target))
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
@@ -165,7 +165,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 		return
 	if(last_target())
 		om_unhook(last_target(), /datum/om/event/qdeleting, src)
-	rel_clear(src, "last_target")
+	rel_clear(src, nameof(last_target))
 	_visible = FALSE
 	SStgui.update_uis(src)
 

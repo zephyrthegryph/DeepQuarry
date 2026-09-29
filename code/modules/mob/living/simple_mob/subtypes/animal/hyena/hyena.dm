@@ -93,7 +93,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 
 /mob/living/simple_mob/animal/hyena/proc/drop_hat(mob/user)
 	if(hat)
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(user))
 		update_icon()
 		if(user == src)
@@ -126,7 +126,7 @@ They're also cool, and Rykka/Nyria wrote this uwu
 				var/obj/item/clothing/head/new_hat = get_active_hand()
 				drop_from_inventory(new_hat, src)
 				new_hat.forceMove(src)
-				own_set(src, "hat", new_hat)
+				own_set(src, nameof(hat), new_hat)
 				to_chat(user, span_notice("You put on the hat."))
 				update_icon()
 			return
@@ -150,7 +150,9 @@ They're also cool, and Rykka/Nyria wrote this uwu
 	emote_see = list("sniffs", "looks around", "grooms itself", "rolls around")
 	emote_hear = list("yawns", "cackles", "playfully yaps")
 
-OWN(/mob/living/simple_mob/animal/hyena, hat, OWN_SPILL)
+/mob/living/simple_mob/animal/hyena/declare_ownership(decl)
+	..()
+	own(decl, nameof(hat), policy = OWN_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/hyena, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/hyena/appearance_overlays()

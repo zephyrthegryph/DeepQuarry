@@ -215,7 +215,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		return //Do I even need this sanity check? Nyoro~n
 	else
 		HELMET.forceMove(get_turf(src))
-		own_take(src, "HELMET")
+		own_take(src, nameof(HELMET))
 		return
 
 
@@ -224,7 +224,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		return
 	else
 		SUIT.forceMove(get_turf(src))
-		own_take(src, "SUIT")
+		own_take(src, nameof(SUIT))
 		return
 
 
@@ -233,7 +233,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		return
 	else
 		MASK.forceMove(get_turf(src))
-		own_take(src, "MASK")
+		own_take(src, nameof(MASK))
 		return
 
 
@@ -242,13 +242,13 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 	islocked = 0 //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
-		own_take(src, "SUIT")
+		own_take(src, nameof(SUIT))
 	if(HELMET)
 		HELMET.forceMove(get_turf(src))
-		own_take(src, "HELMET")
+		own_take(src, nameof(HELMET))
 	if(MASK)
 		MASK.forceMove(get_turf(src))
-		own_take(src, "MASK")
+		own_take(src, nameof(MASK))
 	if(OCCUPANT)
 		eject_occupant(OCCUPANT)
 	return
@@ -322,13 +322,13 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		else //It was supercycling, destroy everything
 			if(HELMET)
 				qdel(HELMET)
-				own_take(src, "HELMET")
+				own_take(src, nameof(HELMET))
 			if(SUIT)
 				qdel(SUIT)
-				own_take(src, "SUIT")
+				own_take(src, nameof(SUIT))
 			if(MASK)
 				qdel(MASK)
-				own_take(src, "MASK")
+				own_take(src, nameof(MASK))
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1
 			isopen = 1
@@ -456,7 +456,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		user.drop_item()
 		S.forceMove(src)
-		own_set(src, "SUIT", S)
+		own_set(src, nameof(SUIT), S)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
@@ -469,7 +469,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		user.drop_item()
 		H.forceMove(src)
-		own_set(src, "HELMET", H)
+		own_set(src, nameof(HELMET), H)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
@@ -482,7 +482,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		user.drop_item()
 		M.forceMove(src)
-		own_set(src, "MASK", M)
+		own_set(src, nameof(MASK), M)
 		update_icon()
 		return TRUE
 	update_icon()

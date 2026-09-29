@@ -18,7 +18,7 @@
 		if(O.acronym)
 			P.keywords.Add(O.acronym)
 		P.data = O.desc
-		own_add(src, "children", P)
+		own_add(src, nameof(children), P)
 
 /datum/lore/codex/category/auto_org/tsc
 	name = "Trans-Stellar Corporations"

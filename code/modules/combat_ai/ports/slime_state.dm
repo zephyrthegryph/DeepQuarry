@@ -26,7 +26,7 @@
 		stack_trace("slime_state instantiated with no owner")
 		qdel(src)
 		return
-	rel_set(src, "holder", owner)
+	rel_set(src, nameof(holder), owner)
 	..()
 
 // ---------------------------------------------------------------------------

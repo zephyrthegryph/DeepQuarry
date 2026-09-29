@@ -189,7 +189,7 @@
 		log_game("[player.key] was selected for [role_text] by lottery, but they have not joined the game.")
 		return 0
 
-	rel_add(src, "pending_antagonists", player)
+	rel_add(src, nameof(pending_antagonists), player)
 	log_game("[player.key] has been selected for [role_text] by lottery.")
 
 	//Ensure that antags with ANTAG_OVERRIDE_JOB do not occupy job slots.
@@ -207,7 +207,7 @@
 		return
 
 	for(var/datum/mind/player in pending_antagonists)
-		rel_remove(src, "pending_antagonists", player)
+		rel_remove(src, nameof(pending_antagonists), player)
 		add_antagonist(player,0,0,1)
 
 //Resets all pending_antagonists, clearing their special_role (and assigned_role if ANTAG_OVERRIDE_JOB is set)
@@ -216,7 +216,7 @@
 		if(flags & ANTAG_OVERRIDE_JOB)
 			player.assigned_role = null
 		player.special_role = null
-	rel_clear(src, "pending_antagonists")
+	rel_clear(src, nameof(pending_antagonists))
 
 /// Leader (a relation view).
 /datum/antagonist/proc/leader() as /datum/mind

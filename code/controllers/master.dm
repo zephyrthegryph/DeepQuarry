@@ -670,7 +670,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	var/list/subsystems_to_check
 
 	//setup the stack overflow detector
-	own_set(src, "stack_end_detector", new /datum/stack_end_detector())
+	own_set(src, nameof(stack_end_detector), new /datum/stack_end_detector())
 	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
 	canary.use_variable()
 	//the actual loop.

@@ -31,12 +31,14 @@
 	var/list/air_alarms
 
 // The area's air alarms (members leave when they die) and its elected main alarm.
-REL_LIST(/area, air_alarms)
-REL(/area, main_air_alarm)
+/area/declare_ownership(decl)
+	..()
+	rel(decl, nameof(air_alarms), list = TRUE)
+	rel(decl, nameof(main_air_alarm))
 
 /area/proc/elect_main_air_alarm(exclude_self = FALSE)
 	// loop through all sensors to update the area's sensor list as well
-	rel_clear(src, "main_air_alarm")
+	rel_clear(src, nameof(main_air_alarm))
 	var/list/checks = list()
 	for(var/obj/machinery/alarm/AA in air_alarms)
 		if(exclude_self && AA == src)
@@ -46,7 +48,7 @@ REL(/area, main_air_alarm)
 	if(!checks.len)
 		return
 	var/obj/machinery/alarm/new_main = pick(checks)
-	rel_set(src, "main_air_alarm", new_main)
+	rel_set(src, nameof(main_air_alarm), new_main)
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
 			om_changed(AA, CHANGE_MACHINE_SETTINGS)
@@ -151,11 +153,11 @@ REL(/area, main_air_alarm)
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	set_wires(new /datum/wires/alarm(src))
-	rel_add(alarm_area_ref(), "air_alarms", src)
+	rel_add(alarm_area_ref(), nameof(/area::air_alarms), src)
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
-	own_set(src, "soundloop", new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 
 
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.
@@ -163,7 +165,7 @@ REL(/area, main_air_alarm)
 	. = ..()
 	if(!alarm_area_ref())
 		return
-	rel_remove(alarm_area_ref(), "air_alarms", src)
+	rel_remove(alarm_area_ref(), nameof(/area::air_alarms), src)
 	if(alarm_area_ref().main_air_alarm == src)
 		alarm_area_ref().elect_main_air_alarm(TRUE)
 
@@ -581,7 +583,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection())
@@ -589,7 +591,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = command
 	signal.data["tag"] = target
@@ -646,7 +648,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		return
 
 	var/datum/signal/alert_signal = new
-	rel_set(alert_signal, "source", src)
+	rel_set(alert_signal, nameof(alert_signal.source), src)
 	alert_signal.transmission_method = TRANSMISSION_RADIO
 	alert_signal.data["zone"] = alarm_area_ref().name
 	alert_signal.data["type"] = "Atmospheric"

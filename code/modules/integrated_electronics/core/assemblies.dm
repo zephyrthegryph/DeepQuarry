@@ -146,7 +146,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 		to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
 		return TRUE
 	if(!export_view)
-		own_set(src, "export_view", new /datum/ic_export_view(src))
+		own_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
 	export_view.tgui_interact(user)
 	return TRUE
 
@@ -157,7 +157,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 	var/tmp/obj/item/electronic_assembly/host_assembly
 
 /datum/ic_export_view/New(obj/item/electronic_assembly/assembly)
-	rel_set(src, "host_assembly", assembly)
+	rel_set(src, nameof(host_assembly), assembly)
 
 /datum/ic_export_view/proc/assembly() as /obj/item/electronic_assembly
 	return host_assembly
@@ -192,7 +192,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_cell)
 		to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
 		return FALSE
 	var/turf/T = get_turf(src)
-	var/obj/item/cell/device/removed = own_take(src, "battery")
+	var/obj/item/cell/device/removed = own_take(src, nameof(/obj/item/electronic_assembly::battery))
 	removed.forceMove(T)
 	play_sfx(T, SFX_ITEMS_CROWBAR)
 	to_chat(ui.user, span_notice("You pull 	he [removed] out of 	he [src]'s power supplier."))
@@ -219,11 +219,11 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
 
 	// Wiring the same pin will unwire it
 	if(pin2 in pin1.linked)
-		rel_remove(pin1, "linked", pin2)
-		rel_remove(pin2, "linked", pin1)
+		rel_remove(pin1, nameof(/datum/integrated_io::linked), pin2)
+		rel_remove(pin2, nameof(/datum/integrated_io::linked), pin1)
 	else
-		rel_add(pin1, "linked", pin2)
-		rel_add(pin2, "linked", pin1)
+		rel_add(pin1, nameof(/datum/integrated_io::linked), pin2)
+		rel_add(pin2, nameof(/datum/integrated_io::linked), pin1)
 
 	return TRUE
 
@@ -238,9 +238,9 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
 		return
 
 	for(var/datum/integrated_io/other as anything in pin1.linked)
-		rel_remove(other, "linked", pin1)
+		rel_remove(other, nameof(/datum/integrated_io::linked), pin1)
 
-	rel_clear(pin1, "linked")
+	rel_clear(pin1, nameof(/datum/integrated_io::linked))
 
 	return TRUE
 
@@ -363,14 +363,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 	if(!IC.forceMove(src))
 		return FALSE
 
-	rel_set(IC, "assembly", src)
+	rel_set(IC, nameof(IC.assembly), src)
 
 	return TRUE
 
 // Non-interactive version of above that always succeeds, intended for build-in circuits that get added on assembly initialization.
 /obj/item/electronic_assembly/proc/force_add_circuit(obj/item/integrated_circuit/IC)
 	IC.forceMove(src)
-	rel_set(IC, "assembly", src)
+	rel_set(IC, nameof(IC.assembly), src)
 
 /obj/item/electronic_assembly/afterattack(atom/target, mob/user, proximity)
 	var/scanned = FALSE
@@ -414,7 +414,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 			// Trying to unlock
 			if(locked_by() && id_card.registered_name == locked_by().registered_name)
 				locked = FALSE
-				rel_clear(src, "locked_by")
+				rel_clear(src, nameof(locked_by))
 				to_chat(user, span_notice("You unlock \the [src]."))
 				update_icon()
 			else
@@ -423,7 +423,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 		else
 			// Trying to lock
 			locked = TRUE
-			rel_set(src, "locked_by", id_card)
+			rel_set(src, nameof(locked_by), id_card)
 			to_chat(user, span_notice("You lock \the [src]. Now only your ID card can unlock it."))
 			update_icon()
 			return TRUE
@@ -452,7 +452,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, TYPE_PROC_REF(/atom, appe
 		var/obj/item/cell/device/cell = I
 		user.drop_item(cell)
 		cell.forceMove(src)
-		own_set(src, "battery", cell)
+		own_set(src, nameof(battery), cell)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		to_chat(user, span_notice("You slot \the [cell] inside \the [src]'s power supplier."))
 		tgui_interact(user)
@@ -583,7 +583,9 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 /obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
 
-OWN(/obj/item/electronic_assembly, battery, OWN_CONTAINED)
+/obj/item/electronic_assembly/declare_ownership(decl)
+	..()
+	own(decl, nameof(battery), policy = OWN_CONTAINED)
 
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id

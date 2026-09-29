@@ -32,7 +32,7 @@
 
 /datum/gear/utility/implant/generic/New()
 	..()
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/implant_location)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/implant_location)
 
 /datum/gear/utility/implant/eal
 	display_name = "vocal synthesizer, EAL"

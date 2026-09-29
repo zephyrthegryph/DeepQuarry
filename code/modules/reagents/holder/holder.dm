@@ -20,7 +20,7 @@
 	reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 	reagent_by_id = reagent_list
 	maximum_volume = max
-	rel_set(src, "my_atom", A)
+	rel_set(src, nameof(my_atom), A)
 
 // The id index is a plain lookup over the reagents reagent_list owns (never owned itself:
 // a reagent has one owner). Its members die through reagent_list; del_reagent() keeps it in sync.
@@ -168,13 +168,13 @@
 	if(D)
 		var/datum/reagent/R = new D.type()
 		own_reagent_lists()
-		own_add(src, "reagent_list", R)
+		own_add(src, nameof(reagent_list), R)
 		// Only update reagent_by_id if no entry exists yet for this id.
 		// Blood incompatibility may create multiple datums with the same id; the first one
 		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.
 		if(!reagent_by_id[id])
 			reagent_by_id[id] = R
-		rel_set(R, "holder", src)
+		rel_set(R, nameof(R.holder), src)
 		R.volume = amount
 		R.initialize_data(data)
 		SetViruses(R,data)
@@ -234,7 +234,7 @@
 /datum/reagents/proc/del_reagent(id)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		own_take_member(src, "reagent_list", current) // qdel'd below, after the index is fixed up
+		own_take_member(src, nameof(reagent_list), current) // qdel'd below, after the index is fixed up
 		// If another datum with the same id remains (e.g. second blood species entry),
 		// promote it into reagent_by_id so O(1) lookups still work for that id.
 		var/datum/reagent/replacement = null
@@ -525,7 +525,7 @@
 /atom/proc/create_reagents(max_vol, reagents_type = /datum/reagents)
 	if(!ispath(reagents_type))
 		reagents_type = /datum/reagents
-	own_set(src, "reagents", new reagents_type(max_vol, src))
+	own_set(src, nameof(reagents), new reagents_type(max_vol, src))
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID
@@ -613,6 +613,6 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 /// The caller still calls update_total() and friends.
 /datum/reagents/proc/adopt_reagent(datum/reagent/R)
 	own_reagent_lists()
-	own_move(R, src, "reagent_list")
+	own_move(R, src, nameof(reagent_list))
 	if(!reagent_by_id[R.id])
 		reagent_by_id[R.id] = R

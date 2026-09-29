@@ -80,7 +80,7 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 	// A pair: setting our side sets new_mob.persistent_client, and unlinks our old mob and
 	// new_mob's old persistent client.
-	rel_set(src, "mob", new_mob)
+	rel_set(src, nameof(mob), new_mob)
 
 /// Writes all of the `played_names` into an HTML-escaped string.
 /datum/persistent_client/proc/get_played_names()
@@ -125,5 +125,9 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// LC-refs: the actions granted to this player on each login are theirs.
 
-REL_PAIR(/datum/persistent_client, mob, persistent_client)
-REL_PAIR(/mob, persistent_client, mob)
+/datum/persistent_client/declare_ownership(decl)
+	..()
+	rel(decl, nameof(mob), pair = nameof(/mob::persistent_client))
+/mob/declare_ownership(decl)
+	..()
+	rel(decl, nameof(persistent_client), pair = nameof(/datum/persistent_client::mob))

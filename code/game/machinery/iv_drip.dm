@@ -46,13 +46,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/iv_drip, TYPE_PROC_REF(/atom, appearance_
 
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
-		rel_clear(src, "attached")
+		rel_clear(src, nameof(attached))
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
-		rel_set(src, "attached", over_object)
+		rel_set(src, nameof(attached), over_object)
 		update_icon()
 
 
@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 	user.drop_item()
 	W.forceMove(src)
-	own_set(src, "beaker", W)
+	own_set(src, nameof(beaker), W)
 	to_chat(user, "You attach \the [W] to \the [src].")
 	update_icon()
 	return TRUE
@@ -85,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	new /obj/item/stack/rods(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, "beaker")
+		own_take(src, nameof(beaker))
 	qdel(src)
 
 /obj/machinery/iv_drip/machine_step()
@@ -95,7 +95,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			rel_clear(src, "attached")
+			rel_clear(src, nameof(attached))
 			update_icon()
 			return PROCESS_KILL
 
@@ -159,7 +159,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	own_take(src, "beaker")
+	own_take(src, nameof(beaker))
 	update_icon()
 	return TRUE
 
@@ -193,7 +193,9 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		return TRUE
 	return ..()
 
-OWN(/obj/machinery/iv_drip, beaker, OWN_CONTAINED)
+/obj/machinery/iv_drip/declare_ownership(decl)
+	..()
+	own(decl, nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human

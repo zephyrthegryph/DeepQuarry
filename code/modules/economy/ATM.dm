@@ -52,7 +52,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atm, MACHINE_PIPELINE, "has_mains_power")
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
 		if(ticks_left_timeout <= 0)
-			rel_clear(src, "authenticated_account")
+			rel_clear(src, nameof(authenticated_account))
 	if(ticks_left_locked_down > 0)
 		ticks_left_locked_down--
 		if(ticks_left_locked_down <= 0)
@@ -111,9 +111,9 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 	if(!held_card())
 		user.drop_item()
 		idcard.forceMove(src)
-		rel_set(src, "held_card", idcard)
+		rel_set(src, nameof(held_card), idcard)
 		if(authenticated_account() && held_card().associated_account_number != authenticated_account().account_number)
-			rel_clear(src, "authenticated_account")
+			rel_clear(src, nameof(authenticated_account))
 	return TRUE
 
 /// The old attackby's spacecash branch: deposit cash into the authenticated account.
@@ -207,7 +207,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_insert_card)
 			var/obj/item/I = ui.user.get_active_hand()
 			if(istype(I, /obj/item/card/id))
 				ui.user.drop_item(src)
-				rel_set(src, "held_card", I)
+				rel_set(src, nameof(/obj/machinery/account_database::held_card), I)
 	. = TRUE
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
@@ -218,7 +218,7 @@ UI_ACT(/obj/machinery/atm, "logout", ui_act_logout)
 UI_ACT_PROC(/obj/machinery/atm, ui_act_logout)
 	if(held_card())
 		release_held_id(ui.user)
-	rel_clear(src, "authenticated_account")
+	rel_clear(src, nameof(/obj/machinery/atm::authenticated_account))
 	. = TRUE
 
 	// Balance statement
@@ -354,7 +354,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 	if(!tried_account_num)
 		scan_user(ui.user)
 	else
-		rel_set(src, "authenticated_account", attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
+		rel_set(src, nameof(/obj/machinery/atm::authenticated_account), attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
 
 	if(!authenticated_account())
 		number_incorrect_tries++
@@ -373,7 +373,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 					T.source_terminal = machine_id
 					T.date = GLOB.current_date_string
 					T.time = stationtime2text()
-					own_add(failed_account, "transaction_log", T)
+					own_add(failed_account, nameof(/datum/money_account::transaction_log), T)
 			else
 				to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 				previous_account_number = tried_account_num
@@ -393,7 +393,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_attempt_auth)
 		T.source_terminal = machine_id
 		T.date = GLOB.current_date_string
 		T.time = stationtime2text()
-		own_add(authenticated_account(), "transaction_log", T)
+		own_add(authenticated_account(), nameof(/datum/money_account::transaction_log), T)
 
 		to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
 
@@ -499,7 +499,7 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_withdrawal)
 				var/obj/item/pda/P = human_user.get_equipped_item(SLOT_ID_ID)
 				I = P.id
 			if(I)
-				rel_set(src, "authenticated_account", attempt_account_access(I.associated_account_number))
+				rel_set(src, nameof(authenticated_account), attempt_account_access(I.associated_account_number))
 
 // put the currently held id on the ground or in the hand of the user
 /obj/machinery/atm/proc/release_held_id(mob/living/carbon/human/human_user as mob)
@@ -507,11 +507,11 @@ UI_ACT_PROC(/obj/machinery/atm, ui_act_withdrawal)
 		return
 
 	held_card().forceMove(src.loc)
-	rel_clear(src, "authenticated_account")
+	rel_clear(src, nameof(authenticated_account))
 
 	if(ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(held_card())
-	rel_clear(src, "held_card")
+	rel_clear(src, nameof(held_card))
 
 /obj/machinery/atm/proc/spawn_ewallet(sum, loc, mob/living/carbon/human/human_user as mob)
 	var/obj/item/spacecash/ewallet/E = new /obj/item/spacecash/ewallet(loc)

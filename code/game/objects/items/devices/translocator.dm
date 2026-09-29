@@ -41,14 +41,16 @@
 
 	flags |= NOBLUDGEON
 	if(!power_source) // no cell_type
-		own_set(src, "power_source", new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
+		own_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 	rebuild_radial_images()
 
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.
-REL_LIST(/obj/item/perfect_tele, beacons)
+/obj/item/perfect_tele/declare_ownership(decl)
+	..()
+	rel(decl, nameof(beacons), list = TRUE)
 
 /// The beacon in `beacons` named `name`, or null.
 /obj/item/perfect_tele/proc/find_beacon(name)
@@ -63,7 +65,7 @@ REL_LIST(/obj/item/perfect_tele, beacons)
 		return
 	for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
 		if(nb.tele_network == loc_network)
-			rel_add(src, "beacons", nb)
+			rel_add(src, nameof(beacons), nb)
 	loc_network = null //Consumed
 
 DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -122,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele, \
 	if((user.get_inactive_hand() == src || ignore_inactive_hand_check) && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		own_take(src, "power_source")
+		own_take(src, nameof(power_source))
 		update_icon()
 	else
 		to_chat(user,span_notice("[src] does not have a power cell."))
@@ -163,7 +165,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		rel_set(src, "destination", find_beacon(choice))
+		rel_set(src, nameof(destination), find_beacon(choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
@@ -184,9 +186,9 @@ This device records all warnings given and teleport events for admin review in c
 
 	var/obj/item/perfect_tele_beacon/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	rel_set(nb, "tele_hand", src)
+	rel_set(nb, nameof(nb.tele_hand), src)
 	nb.creator = user.ckey
-	rel_add(src, "beacons", nb)
+	rel_add(src, nameof(beacons), nb)
 	beacons_left--
 	if(isliving(user))
 		var/mob/living/L = user
@@ -196,7 +198,7 @@ This device records all warnings given and teleport events for admin review in c
 
 /obj/item/perfect_tele/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !power_source)
-		own_set(src, "power_source", W)
+		own_set(src, nameof(power_source), W)
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		user.unEquip(power_source)
 		power_source.forceMove(src)
@@ -207,7 +209,7 @@ This device records all warnings given and teleport events for admin review in c
 		var/obj/item/perfect_tele_beacon/tb = W
 		if(tb in beacons)
 			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
-			rel_remove(src, "beacons", tb)
+			rel_remove(src, nameof(beacons), tb)
 			consume(tb, user)
 			beacons_left++
 		else
@@ -324,7 +326,7 @@ This device records all warnings given and teleport events for admin review in c
 	if (!ignore_fail_chance)
 		if(prob(failure_chance) && length(beacons) >= 2)
 			var/list/wrong_choices = beacons - destination()
-			rel_set(src, "destination", pick(wrong_choices))
+			rel_set(src, nameof(destination), pick(wrong_choices))
 			to_chat(user,span_warning("\The [src] malfunctions and sends you to the wrong beacon!"))
 
 	//Destination beacon vore checking

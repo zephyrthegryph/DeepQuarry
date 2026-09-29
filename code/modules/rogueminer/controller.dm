@@ -109,7 +109,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
-		own_add(src, "all_zones", new /datum/rogue/zonemaster(A))
+		own_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
 	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
 /// One difficulty decay (DECLARE_REPEAT while decaying; may also be called by hand).
@@ -151,7 +151,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in ready_zones)
 		GLOB.rm_controller.dbg("RMC(mc): Finite state machine broken.")
 
-	own_add(src, "clean_zones", ZM)
+	own_add(src, nameof(clean_zones), ZM)
 
 /datum/controller/rogue/proc/mark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -160,7 +160,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in clean_zones)
 		GLOB.rm_controller.dbg("RMC(mr): Finite state machine broken.")
 
-	own_add(src, "ready_zones", ZM)
+	own_add(src, nameof(ready_zones), ZM)
 
 /datum/controller/rogue/proc/unmark_clean(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -169,7 +169,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(!(ZM in clean_zones))
 		GLOB.rm_controller.dbg("RMC(umc): Finite state machine broken.")
 
-	own_take_member(src, "clean_zones", ZM)
+	own_take_member(src, nameof(clean_zones), ZM)
 
 /datum/controller/rogue/proc/unmark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -178,7 +178,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(!(ZM in ready_zones))
 		GLOB.rm_controller.dbg("RMC(umr): Finite state machine broken.")
 
-	own_take_member(src, "ready_zones", ZM)
+	own_take_member(src, nameof(ready_zones), ZM)
 
 /datum/controller/rogue/proc/prepare_new_zone()
 	var/datum/rogue/zonemaster/ZM_target

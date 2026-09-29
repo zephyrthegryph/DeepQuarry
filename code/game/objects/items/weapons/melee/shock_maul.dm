@@ -170,7 +170,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, TYPE_PROC_REF(/atom, appeara
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				own_set(src, "bcell", W)
+				own_set(src, nameof(bcell), W)
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()
 			else
@@ -193,7 +193,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, "bcell")
+			own_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()
@@ -307,4 +307,6 @@ DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp)
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-OWN(/obj/item/melee/shock_maul, bcell, OWN_CONTAINED)
+/obj/item/melee/shock_maul/declare_ownership(decl)
+	..()
+	own(decl, nameof(bcell), policy = OWN_CONTAINED)

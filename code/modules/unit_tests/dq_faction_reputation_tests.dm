@@ -75,7 +75,7 @@
 	account.owner_name = "Stable Reputation Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("stable_reputation_tester")
-	rel_set(test_mind, "initial_account", account)
+	rel_set(test_mind, nameof(test_mind.initial_account), account)
 	var/mob/living/carbon/human/first_body = new(test_turf)
 	test_mind.transfer_to(first_body)
 	var/list/affiliations = list()
@@ -95,7 +95,7 @@
 
 	var/personal_key = "[account.account_number]"
 	var/datum/faction_reputation_ledger/personal_ledger = GLOB.station_faction_relations.personal_ledgers[personal_key]
-	own_take_member(GLOB.station_faction_relations, "personal_ledgers", personal_key)
+	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::personal_ledgers), personal_key)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(second_body)
 	qdel(first_body)
@@ -112,7 +112,7 @@
 	account.owner_name = "Agency Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("agency_tester")
-	rel_set(test_mind, "initial_account", account)
+	rel_set(test_mind, nameof(test_mind.initial_account), account)
 	var/mob/living/carbon/human/test_agent = new(test_turf)
 	test_mind.transfer_to(test_agent)
 	var/datum/faction_reputation_ledger/ledger = GLOB.station_faction_relations.get_personal_ledger(account.account_number)
@@ -150,8 +150,8 @@
 	TEST_ASSERT(GLOB.station_faction_relations.refresh_agent_tier(record), "qualified accredited agent did not reach trusted status")
 	TEST_ASSERT("agent_red_exfiltration" in SScontracts.agent_contract_definition_ids(record), "trusted non-Syndicate agent was not offered a faction-appropriate red mandate")
 	var/personal_key = "[account.account_number]"
-	own_take_member(GLOB.station_faction_relations, "agent_records", personal_key)
-	own_take_member(GLOB.station_faction_relations, "personal_ledgers", personal_key)
+	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::agent_records), personal_key)
+	own_take_member(GLOB.station_faction_relations, nameof(/datum/station_faction_relations::personal_ledgers), personal_key)
 	registry_leave(REGISTRY_MONEY_ACCOUNTS, account)
 	qdel(record)
 	qdel(test_agent)
@@ -228,7 +228,7 @@
 	account.owner_name = "Operation Terms Tester"
 	registry_join(REGISTRY_MONEY_ACCOUNTS, account)
 	var/datum/mind/test_mind = new("operation_terms_tester")
-	rel_set(test_mind, "initial_account", account)
+	rel_set(test_mind, nameof(test_mind.initial_account), account)
 	var/mob/living/carbon/human/agent = new(test_turf)
 	test_mind.transfer_to(agent)
 	var/datum/contract/faction_agent/registered = new

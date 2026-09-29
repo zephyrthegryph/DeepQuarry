@@ -139,7 +139,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 
 	helm.forceMove(src)
 	helm.set_light_flags(helm.light_flags | LIGHT_ATTACHED)
-	own_set(src, "hood", helm)
+	own_set(src, nameof(hood), helm)
 
 /obj/item/clothing/suit/space/void/proc/remove_helmet()
 	if(!hood)
@@ -147,7 +147,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 
 	hood.forceMove(get_turf(src))
 	hood.set_light_flags(hood.light_flags & ~LIGHT_ATTACHED)
-	own_take(src, "hood")
+	own_take(src, nameof(hood))
 
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)
 	if(..())
@@ -239,10 +239,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	var/obj/item/removing = null
 	if(tank)
 		removing = tank
-		own_take(src, "tank")
+		own_take(src, nameof(tank))
 	else
 		removing = cooler
-		own_take(src, "cooler")
+		own_take(src, nameof(cooler))
 	to_chat(H, span_danger("You press the emergency release, ejecting \the [removing] from your suit."))
 	play_sfx(src.loc, SFX_MACHINES_CLICK, 1.5)
 	removing.canremove = TRUE
@@ -271,7 +271,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You attach \the [W] to \the [src]'s boot mounts.")
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "boots", W)
+			own_set(src, nameof(boots), W)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/tank))
 		if(tank)
@@ -282,7 +282,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "tank", W)
+			own_set(src, nameof(tank), W)
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/suit_cooling_unit))
 		if(cooler)
@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 			to_chat(user, "You insert \the [W] into \the [src]'s storage compartment.")
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "cooler", W)
+			own_set(src, nameof(cooler), W)
 		return INTERACTION_HANDLED_PASS
 
 	return FALSE
@@ -414,12 +414,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "tank")
+			own_take(src, nameof(tank))
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "cooler")
+			own_take(src, nameof(cooler))
 		else if(choice == hood)
 			to_chat(user, "You detach \the [hood] from \the [src]'s helmet mount.")
 			remove_helmet()
@@ -428,7 +428,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "boots")
+			own_take(src, nameof(boots))
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
@@ -449,17 +449,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 			to_chat(user, "You pop \the [tank] out of \the [src]'s storage compartment.")
 			tank.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "tank")
+			own_take(src, nameof(tank))
 		else if(choice == cooler)
 			to_chat(user, "You pop \the [cooler] out of \the [src]'s storage compartment.")
 			cooler.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "cooler")
+			own_take(src, nameof(cooler))
 		else if(choice == boots)
 			to_chat(user, "You detach \the [boots] from \the [src]'s boot mounts.")
 			boots.forceMove(get_turf(src))
 			playsound(src, tool.usesound, 50, 1)
-			own_take(src, "boots")
+			own_take(src, nameof(boots))
 	else
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
@@ -495,6 +495,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 /obj/item/clothing/suit/space/void
 	can_breach = 0
 
-OWN(/obj/item/clothing/suit/space/void, boots, OWN_CONTAINED)
-OWN(/obj/item/clothing/suit/space/void, tank, OWN_CONTAINED)
-OWN(/obj/item/clothing/suit/space/void, cooler, OWN_CONTAINED)
+/obj/item/clothing/suit/space/void/declare_ownership(decl)
+	..()
+	own(decl, nameof(boots), policy = OWN_CONTAINED)
+	own(decl, nameof(tank), policy = OWN_CONTAINED)
+	own(decl, nameof(cooler), policy = OWN_CONTAINED)

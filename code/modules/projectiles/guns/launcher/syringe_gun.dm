@@ -25,7 +25,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/syringe_cartridge, TYPE_PROC_REF(/atom, appear
 		if(syringe())
 			to_chat(user, span_warning("[src] already has a syringe loaded!"))
 			return INTERACTION_HANDLED_PASS
-		rel_set(src, "syringe", I)
+		rel_set(src, nameof(syringe), I)
 		to_chat(user, span_notice("You carefully insert [syringe()] into [src]."))
 		user.remove_from_mob(syringe())
 		syringe().forceMove(src)
@@ -45,7 +45,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 		to_chat(user, span_notice("You remove [syringe()] from [src]."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.put_in_hands(syringe())
-		rel_clear(src, "syringe")
+		rel_clear(src, nameof(syringe))
 		sharp = initial(sharp)
 		name = initial(name)
 		update_icon()
@@ -100,7 +100,9 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 	special_handling = TRUE
 
 // Loaded cartridges sit in the gun's contents; next is a view of the one on the bolt.
-OWN(/obj/item/gun/launcher/syringe, darts, OWN_CONTAINED)
+/obj/item/gun/launcher/syringe/declare_ownership(decl)
+	..()
+	own(decl, nameof(darts), policy = OWN_CONTAINED)
 
 /obj/item/gun/launcher/syringe/consume_next_projectile()
 	if(next())
@@ -110,8 +112,8 @@ OWN(/obj/item/gun/launcher/syringe, darts, OWN_CONTAINED)
 
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
-	own_take_member(src, "darts", next()) // fired: it flies off on its own
-	rel_clear(src, "next")
+	own_take_member(src, nameof(darts), next()) // fired: it flies off on its own
+	rel_clear(src, nameof(next))
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
 /obj/item/gun/launcher/syringe/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
@@ -121,12 +123,12 @@ OWN(/obj/item/gun/launcher/syringe, darts, OWN_CONTAINED)
 	if(next())
 		act_message(user, src, MSG_SELF(span_warning("You unlatch and carefully relax the bolt on %T%, unloading the spring.")), \
 			MSG_OTHERS("%U% unlatches and carefully relaxes the bolt on %T%."))
-		rel_clear(src, "next")
+		rel_clear(src, nameof(next))
 	else if(length(darts))
 		play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 		act_message(user, src, MSG_SELF(span_warning("You draw back the bolt on %T%, loading the spring!")), \
 			MSG_OTHERS("%U% draws back the bolt on %T%, clicking it into place."))
-		rel_set(src, "next", LAZYACCESS(darts, 1))
+		rel_set(src, nameof(next), LAZYACCESS(darts, 1))
 	add_fingerprint(user)
 
 DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_REF(interaction_hand)))
@@ -141,7 +143,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
 			return TRUE
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
-		own_take_member(src, "darts", C)
+		own_take_member(src, nameof(darts), C)
 		user.put_in_hands(C)
 		act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
@@ -158,7 +160,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		own_add(src, "darts", C) //add to the end
+		own_add(src, nameof(darts), C) //add to the end
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		return INTERACTION_HANDLED_PASS
 	return ..()

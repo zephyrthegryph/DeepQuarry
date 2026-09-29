@@ -147,11 +147,13 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		master.show_message(rendered, type)
 	return
 
-REL_LIST(/obj/machinery/hologram/holopad, masters)
+/obj/machinery/hologram/holopad/declare_ownership(decl)
+	..()
+	rel(decl, nameof(masters), list = TRUE)
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars
-	rel_set(hologram, "master", A) // So you can reference the master AI from in the hologram procs
+	rel_set(hologram, nameof(hologram.master), A) // So you can reference the master AI from in the hologram procs
 	hologram.icon = A.holo_icon
 	hologram.pixel_x = 16 - round(A.holo_icon.Width() / 2) // centers the hologram on the tile
 	// hologram.mouse_opacity = 0//So you can't click on it. // Removal
@@ -172,12 +174,12 @@ REL_LIST(/obj/machinery/hologram/holopad, masters)
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
-	own_add(src, "holograms", hologram)
-	rel_add(src, "masters", A)
+	own_add(src, nameof(holograms), hologram)
+	rel_add(src, nameof(masters), A)
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"
 	flick("holopadload", src)
-	rel_set(A, "holo", src)
+	rel_set(A, nameof(A.holo), src)
 	if(LAZYLEN(masters))
 		MACHINE_WAKE(src)
 
@@ -188,11 +190,11 @@ REL_LIST(/obj/machinery/hologram/holopad, masters)
 
 /obj/machinery/hologram/holopad/proc/clear_holo(mob/living/silicon/ai/user)
 	if(user.holo == src)
-		rel_clear(user, "holo")
+		rel_clear(user, nameof(user.holo))
 	var/obj/effect/overlay/aiholo/old_holo = hologram_of(user)
 	if(old_holo)
-		own_remove(src, "holograms", old_holo)//Get rid of user's hologram
-	rel_remove(src, "masters", user) //Discard AI from the list of those who use holopad
+		own_remove(src, nameof(holograms), old_holo)//Get rid of user's hologram
+	rel_remove(src, nameof(masters), user) //Discard AI from the list of those who use holopad
 	if(!LAZYLEN(masters))//If no users left
 		set_light(0)			//pad lighting (hologram lighting will be handled automatically since its owner was deleted)
 		icon_state = "holopad0"

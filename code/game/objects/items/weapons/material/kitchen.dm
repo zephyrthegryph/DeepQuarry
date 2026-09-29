@@ -54,7 +54,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 	if(loading.food_inserted_micros && loading.food_inserted_micros.len)
 		if(!food_inserted_micros)
-			own_set(src, "food_inserted_micros", list())
+			own_set(src, nameof(food_inserted_micros), list())
 
 		for(var/mob/living/F in loading.food_inserted_micros)
 			var/do_transfer = FALSE
@@ -68,7 +68,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 			if(do_transfer)
 				F.forceMove(src) // leaving the food's contents releases it from food_inserted_micros (OWN_SPILL)
-				own_add(src, "food_inserted_micros", F)
+				own_add(src, nameof(food_inserted_micros), F)
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
@@ -98,7 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
 		if(food_inserted_micros && food_inserted_micros.len)
 			for(var/mob/living/F in food_inserted_micros)
-				own_take_member(src, "food_inserted_micros", F)
+				own_take_member(src, nameof(food_inserted_micros), F)
 				if(!can_food_vore(M, F))
 					F.forceMove(get_turf(src))
 				else
@@ -130,7 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 /obj/item/material/kitchen/utensil/container_resist(mob/living/M)
 	if(food_inserted_micros)
-		own_take_member(src, "food_inserted_micros", M)
+		own_take_member(src, nameof(food_inserted_micros), M)
 	if(isdisposalpacket(loc))
 		M.forceMove(loc)
 	else
@@ -222,4 +222,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-OWN(/obj/item/material/kitchen/utensil, food_inserted_micros, OWN_SPILL)
+/obj/item/material/kitchen/utensil/declare_ownership(decl)
+	..()
+	own(decl, nameof(food_inserted_micros), policy = OWN_SPILL)

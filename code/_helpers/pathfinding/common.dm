@@ -63,9 +63,9 @@ GLOBAL_DATUM_INIT(generic_pathfinding_actor, /atom/movable/pathfinding_predicate
 	var/list/ss13_with_access
 
 /datum/pathfinding/New(atom/movable/actor, turf/start, turf/goal, target_distance, max_path_length)
-	rel_set(src, "actor", actor)
-	rel_set(src, "start", start)
-	rel_set(src, "goal", goal)
+	rel_set(src, nameof(actor), actor)
+	rel_set(src, nameof(start), start)
+	rel_set(src, nameof(goal), goal)
 	//legacy .target reference removed (no equivalent on /datum/ai_brain).
 	src.max_path_length = max_path_length
 

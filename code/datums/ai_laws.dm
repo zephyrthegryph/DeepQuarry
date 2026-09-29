@@ -57,20 +57,20 @@
 		return
 
 	for(var/ion_law in ion_laws)
-		rel_add(src, "sorted_laws", ion_law)
+		rel_add(src, nameof(sorted_laws), ion_law)
 
 	if(zeroth_law)
-		rel_add(src, "sorted_laws", zeroth_law)
+		rel_add(src, nameof(sorted_laws), zeroth_law)
 
 	var/index = 1
 	for(var/datum/ai_law/inherent_law in inherent_laws)
 		inherent_law.index = index++
 		if(length(supplied_laws) < inherent_law.index || !istype(supplied_laws[inherent_law.index], /datum/ai_law))
-			rel_add(src, "sorted_laws", inherent_law)
+			rel_add(src, nameof(sorted_laws), inherent_law)
 
 	for(var/datum/ai_law/AL in supplied_laws)
 		if(istype(AL))
-			rel_add(src, "sorted_laws", AL)
+			rel_add(src, nameof(sorted_laws), AL)
 
 /datum/ai_laws/proc/sync(mob/living/silicon/S, full_sync = 1)
 	// Add directly to laws to avoid log-spam
@@ -110,12 +110,12 @@
 	if(!law)
 		return
 
-	own_set(src, "zeroth_law", new /datum/ai_law/zero(law))
+	own_set(src, nameof(zeroth_law), new /datum/ai_law/zero(law))
 	if(law_borg) //Making it possible for slaved borgs to see a different law 0 than their AI. --NEO
-		own_set(src, "zeroth_law_borg", new /datum/ai_law/zero(law_borg))
+		own_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
 	else
-		own_clear(src, "zeroth_law_borg", OWN_DELETE)
-	rel_clear(src, "sorted_laws")
+		own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_ion_law(law)
 	if(!law)
@@ -126,11 +126,11 @@
 			return
 
 	var/new_law = new/datum/ai_law/ion(law)
-	own_add(src, "ion_laws", new_law)
+	own_add(src, nameof(ion_laws), new_law)
 	if(state_ion.len < length(ion_laws))
 		state_ion += 1
 
-	rel_clear(src, "sorted_laws")
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_inherent_law(law)
 	if(!law)
@@ -141,11 +141,11 @@
 			return
 
 	var/new_law = new/datum/ai_law/inherent(law)
-	own_add(src, "inherent_laws", new_law)
+	own_add(src, nameof(inherent_laws), new_law)
 	if(state_inherent.len < length(inherent_laws))
 		state_inherent += 1
 
-	rel_clear(src, "sorted_laws")
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/add_supplied_law(number, law)
 	if(!law)
@@ -167,11 +167,11 @@
 			state_supplied += 1
 
 	var/new_law = new/datum/ai_law/supplied(law, number)
-	own_put(src, "supplied_laws", number, new_law)
+	own_put(src, nameof(supplied_laws), number, new_law)
 	if(state_supplied.len < length(supplied_laws))
 		state_supplied += 1
 
-	rel_clear(src, "sorted_laws")
+	rel_clear(src, nameof(sorted_laws))
 
 /****************
 *	Remove Laws	*
@@ -194,7 +194,7 @@
 /datum/ai_law/supplied/delete_law(datum/ai_laws/laws)
 	var/index = laws.supplied_laws.Find(src)
 	if(index)
-		own_put(laws, "supplied_laws", index, "")
+		own_put(laws, nameof(laws.supplied_laws), index, "")
 		laws.state_supplied[index] = 1
 
 /// Deletes `law` from this set's owned law list `var_name`, shifting its state flags down.
@@ -205,26 +205,26 @@
 		own_remove(src, var_name, law)
 		for(index, index < state.len, index++)
 			state[index] = state[index+1]
-	rel_clear(src, "sorted_laws")
+	rel_clear(src, nameof(sorted_laws))
 
 /****************
 *	Clear Laws	*
 ****************/
 /datum/ai_laws/proc/clear_zeroth_laws()
-	own_clear(src, "zeroth_law", OWN_DELETE)
-	own_clear(src, "zeroth_law_borg", OWN_DELETE)
+	own_clear(src, nameof(zeroth_law), OWN_DELETE)
+	own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
 
 /datum/ai_laws/proc/clear_ion_laws()
-	own_clear(src, "ion_laws", OWN_DELETE)
-	rel_clear(src, "sorted_laws")
+	own_clear(src, nameof(ion_laws), OWN_DELETE)
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_inherent_laws()
-	own_clear(src, "inherent_laws", OWN_DELETE)
-	rel_clear(src, "sorted_laws")
+	own_clear(src, nameof(inherent_laws), OWN_DELETE)
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/clear_supplied_laws()
-	own_clear(src, "supplied_laws", OWN_DELETE)
-	rel_clear(src, "sorted_laws")
+	own_clear(src, nameof(supplied_laws), OWN_DELETE)
+	rel_clear(src, nameof(sorted_laws))
 
 /datum/ai_laws/proc/get_formatted_laws()
 	sort_laws()
@@ -311,4 +311,6 @@
 	L = L ? L.Copy() : list()
 	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
-REL_LIST(/datum/ai_laws, sorted_laws)
+/datum/ai_laws/declare_ownership(decl)
+	..()
+	rel(decl, nameof(sorted_laws), list = TRUE)

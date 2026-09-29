@@ -69,16 +69,16 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "cor
 /mob/living/simple_mob/mechanical/technomancer_golem/place_spell_in_hand(path)
 	if(!path || !ispath(path))
 		return FALSE
-	own_clear(src, "active_spell", OWN_DELETE)
+	own_clear(src, nameof(active_spell), OWN_DELETE)
 
-	own_set(src, "active_spell", new path(src))
+	own_set(src, nameof(active_spell), new path(src))
 
 /mob/living/simple_mob/mechanical/technomancer_golem/verb/test_giving_spells()
 	om_ask(usr, /datum/om/prompt/choice, PROC_REF(test_spell_chosen), choices = known_spells, title = "Give spell", message = "What spell?", optional = TRUE)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/proc/test_spell_chosen(datum/om/prompt/choice/ask)
 	if(isnull(ask.choice))
-		own_clear(src, "active_spell", OWN_DELETE)
+		own_clear(src, nameof(active_spell), OWN_DELETE)
 		return
 	place_spell_in_hand(known_spells[ask.choice])
 
@@ -157,4 +157,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/golem, mob_organ_hit_zones, list("helmet"
 	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
 	value = CATALOGUER_REWARD_MEDIUM
 
-OWN(/mob/living/simple_mob/mechanical/technomancer_golem, active_spell, OWN_CONTAINED)
+/mob/living/simple_mob/mechanical/technomancer_golem/declare_ownership(decl)
+	..()
+	own(decl, nameof(active_spell), policy = OWN_CONTAINED)

@@ -266,7 +266,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	var/list/entries
 
 /datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
-	rel_set(src, "target", target)
+	rel_set(src, nameof(target), target)
 	src.kind = kind
 	src.level = level
 	src.both_edges = both_edges
@@ -278,8 +278,12 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	return src
 
 /// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
-REL_PAIR(/datum/native_watch/heat, target, heat_watches)
-REL_PAIR_LIST(/atom, heat_watches, target)
+/datum/native_watch/heat/declare_ownership(decl)
+	..()
+	rel(decl, nameof(target), pair = nameof(/atom::heat_watches))
+/atom/declare_ownership(decl)
+	..()
+	rel(decl, nameof(heat_watches), list = TRUE, pair = nameof(/datum/native_watch/heat::target))
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))
@@ -310,7 +314,7 @@ REL_PAIR_LIST(/atom, heat_watches, target)
 		vg_heat_unwatch(!isturf(target), live_index, live_generation)
 	live = FALSE
 	body = null
-	rel_clear(src, "target") // two-sided: the target's heat_watches lets go too
+	rel_clear(src, nameof(target)) // two-sided: the target's heat_watches lets go too
 
 /// The target's body changed (created, or released at rest): follow it.
 /datum/native_watch/heat/proc/relink()

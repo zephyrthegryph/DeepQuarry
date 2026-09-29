@@ -25,7 +25,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 	. = ..()
 	if(deployed)
 		update_icon()
-	own_set(src, "ghost_reporter", new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
+	own_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
 		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
@@ -62,7 +62,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 		var/mob/our_entity = captured_entity
 		if(our_entity && (our_entity.loc == src))
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			rel_clear(src, "captured_entity")
+			rel_clear(src, nameof(captured_entity))
 			our_entity.forceMove(get_turf(src))
 			update_icon()
 			return
@@ -98,7 +98,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 		var/mob/our_entity = captured_entity
 		if(our_entity && our_entity.loc != src)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			rel_clear(src, "captured_entity")
+			rel_clear(src, nameof(captured_entity))
 			announce_escape(our_entity)
 			update_icon()
 
@@ -145,7 +145,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ghost_trap, TYPE_PROC_REF(/atom, appearance_ov
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
 	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
-	rel_clear(src, "captured_entity")
+	rel_clear(src, nameof(captured_entity))
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
-	rel_set(src, "captured_entity", passing_entity)
+	rel_set(src, nameof(captured_entity), passing_entity)
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity
@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		var/mob/our_entity = captured_entity
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			rel_clear(src, "captured_entity")
+			rel_clear(src, nameof(captured_entity))
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)
 			return
 

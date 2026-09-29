@@ -146,7 +146,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 	if(!attached())
 		return
 	visible_message("\The [attached()] is taken off \the [src]")
-	rel_clear(src, "attached")
+	rel_clear(src, nameof(attached))
 	update_icon()
 
 /obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
@@ -169,7 +169,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 		return
 	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
-	rel_set(src, "attached", target)
+	rel_set(src, nameof(attached), target)
 	update_icon()
 
 /obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
@@ -182,8 +182,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 		contained.forceMove(src)
 	else
 		qdel(contained)
-		own_set(src, "contained", new mask_type(src))
-	rel_clear(src, "breather")
+		own_set(src, nameof(contained), new mask_type(src))
+	rel_clear(src, nameof(breather))
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
 	return
@@ -232,7 +232,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				act_message(user, src, MSG_SELF(span_warning("You remove \the [tank] from %T%.")), \
 					MSG_OTHERS(span_warningplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 				user.put_in_hands(tank)
-				own_take(src, "tank")
+				own_take(src, nameof(tank))
 				set_valve_opened(FALSE)
 				update_icon()
 				return
@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
-				own_take(src, "beaker")
+				own_take(src, nameof(beaker))
 				update_icon()
 
 /obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -286,7 +286,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(C.equip_to_slot_if_possible(contained, SLOT_ID_MASK))
 			if(tank)
 				tank.forceMove(C)
-			rel_set(src, "breather", C)
+			rel_set(src, nameof(breather), C)
 			return TRUE
 
 /obj/structure/medical_stand/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user)
@@ -336,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "tank", W)
+			own_set(src, nameof(tank), W)
 			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
 			update_icon()
@@ -348,7 +348,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 			return TRUE
 		user.drop_item()
 		W.forceMove(src)
-		own_set(src, "beaker", W)
+		own_set(src, nameof(beaker), W)
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
 		return TRUE
@@ -403,9 +403,9 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				contained.forceMove(src)
 			else
 				qdel(contained)
-				own_set(src, "contained", new mask_type (src))
+				own_set(src, nameof(contained), new mask_type (src))
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
-			rel_clear(src, "breather")
+			rel_clear(src, nameof(breather))
 			update_icon()
 			return
 		if(valve_opened)
@@ -425,7 +425,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(!Adjacent(attached()))
 			visible_message("The needle is ripped out of [src.attached()], doesn't that hurt?")
 			attached().injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			rel_clear(src, "attached")
+			rel_clear(src, nameof(attached))
 			update_icon()
 
 	if(beaker)

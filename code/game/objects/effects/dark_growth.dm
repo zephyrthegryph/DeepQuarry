@@ -77,7 +77,7 @@
 	layer = ABOVE_TURF_LAYER
 
 /obj/effect/dark/proc/unlinked()
-	rel_clear(src, "linked_node") // the pair takes us out of the node's children_effects
+	rel_clear(src, nameof(linked_node)) // the pair takes us out of the node's children_effects
 	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
@@ -91,7 +91,7 @@
 	if(isspace(loc))
 		return INITIALIZE_HINT_QDEL
 
-	rel_set(src, "linked_node", node)
+	rel_set(src, nameof(linked_node), node)
 
 /obj/structure/prop/dark_node
 	name = "crystal cluster"
@@ -118,8 +118,12 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 		dark_tile.unlinked()
 	..()
 
-REL_PAIR(/obj/effect/dark, linked_node, children_effects)
-REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
+/obj/effect/dark/declare_ownership(decl)
+	..()
+	rel(decl, nameof(linked_node), pair = nameof(/obj/structure/prop/dark_node::children_effects))
+/obj/structure/prop/dark_node/declare_ownership(decl)
+	..()
+	rel(decl, nameof(children_effects), list = TRUE, pair = nameof(/obj/effect/dark::linked_node))
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1
@@ -163,7 +167,7 @@ REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
 				continue
 			if(dark_tile.linked_node)
 				continue
-			rel_set(dark_tile, "linked_node", src) // the pair adds it to children_effects
+			rel_set(dark_tile, nameof(dark_tile.linked_node), src) // the pair adds it to children_effects
 		until_full_process = 4
 
 	for(var/obj/effect/dark/dark_tile as anything in children_effects)

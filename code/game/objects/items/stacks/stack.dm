@@ -562,5 +562,7 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 	return ..()
 
 
-SHARED(/obj/item/stack, recipes)
-REL_LIST(/obj/item/stack, synths)
+/obj/item/stack/declare_ownership(decl)
+	..()
+	shared(decl, nameof(recipes))
+	rel(decl, nameof(synths), list = TRUE)

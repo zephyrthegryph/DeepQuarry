@@ -56,7 +56,7 @@
 	deadline_duration = 35 MINUTES
 	title = "Rare Case: [target_condition_name]"
 	description = "The registry has identified a clinically uncommon presentation of [target_condition_name]. With [target_name]'s consent, submit a baseline body scan, treat the condition, wait at least one minute, submit a follow-up scan demonstrating at least 50% improvement, and include the completed case narrative."
-	rel_set(src, "evidence_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
+	rel_set(src, nameof(evidence_requirement), new /datum/contract_requirement/event_count(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	evidence_requirement.name = "Authenticated longitudinal case packet"
 	evidence_requirement.description = "Fax the signed consent, completed case narrative, and genuine baseline/follow-up body-scanner reports to [CONTRACT_FAX_CASE_REGISTRY]."
 	add_requirement(evidence_requirement)
@@ -88,7 +88,7 @@
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
 	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
-	rel_set(src, "consent_record", paper)
+	rel_set(src, nameof(consent_record), paper)
 	return TRUE
 
 /datum/contract/medical_case_report/proc/print_consent_revocation(turf/location, issuer_account)

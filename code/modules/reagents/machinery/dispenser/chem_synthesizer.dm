@@ -186,13 +186,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	C.forceMove(src)
-	own_put(src, "cartridges", C.label, C)
+	own_put(src, nameof(cartridges), C.label, C)
 	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
 	MACHINE_WAKE(src)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
-	. = own_take_member(src, "cartridges", label)
+	. = own_take_member(src, nameof(cartridges), label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)
@@ -238,7 +238,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
-	own_set(src, "catalyst", RC) // CONTAINED: in our contents first
+	own_set(src, nameof(catalyst), RC) // CONTAINED: in our contents first
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	update_icon()
 
@@ -390,7 +390,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_eject_catalyst)
 	// Removes the catalyst bottle from the machine.
 	if(!busy && catalyst)
 		catalyst.forceMove(get_turf(src))
-		own_take(src, "catalyst")
+		own_take(src, nameof(/obj/machinery/chemical_synthesizer::catalyst))
 		update_icon()
 
 UI_ACT(/obj/machinery/chemical_synthesizer, "toggle_catalyst", ui_act_toggle_catalyst)
@@ -837,5 +837,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-OWN(/obj/machinery/chemical_synthesizer, catalyst, OWN_CONTAINED)
+/obj/machinery/chemical_synthesizer/declare_ownership(decl)
+	..()
+	own(decl, nameof(catalyst), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

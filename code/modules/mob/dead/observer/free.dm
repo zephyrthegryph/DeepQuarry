@@ -34,7 +34,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 
 	//Their objectives cleanup
 	if(src.mind.objectives.len)
-		own_clear(src.mind, "objectives", OWN_DELETE)
+		own_clear(src.mind, nameof(/datum/expedition_mission::objectives), OWN_DELETE)
 		src.mind.special_role = null
 
 	//Cut the PDA manifest (ugh)

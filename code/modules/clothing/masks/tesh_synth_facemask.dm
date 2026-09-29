@@ -20,11 +20,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/synthfacemask, PERIODIC_SECOND, "
 	var/mob/living/carbon/human/H = loc
 	if(istype(H) && H.get_equipped_item(SLOT_ID_MASK) == src)
 		canremove = FALSE
-		rel_set(src, "maskmaster", H)
+		rel_set(src, nameof(maskmaster), H)
 
 /obj/item/clothing/mask/synthfacemask/dropped(mob/user, equipping, slot)
 	canremove = TRUE
-	rel_clear(src, "maskmaster")
+	rel_clear(src, nameof(maskmaster))
 	..()
 
 TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(), list(REQ_ON(PRED_TARGET, /obj/item/clothing/mask/synthfacemask/proc/robotic_head, "you must have a compatible robotic head to install this upgrade"))))
@@ -65,7 +65,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, TYPE_PROC_REF(/at
 
 /datum/gear/mask/synthface/New()
 	..()
-	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
+	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon

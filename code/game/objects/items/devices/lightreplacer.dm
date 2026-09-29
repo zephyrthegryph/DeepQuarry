@@ -189,7 +189,7 @@ APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
-				own_clear(target, "installed_light", OWN_DELETE) //Remove the light! (its glass went into the shards)
+				own_clear(target, nameof(target.installed_light), OWN_DELETE) //Remove the light! (its glass went into the shards)
 				target.latent_bulb = FALSE
 				target.update()
 

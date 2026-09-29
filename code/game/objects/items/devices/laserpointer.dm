@@ -32,9 +32,9 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	. = ..()
 	if(ispath(laser_path))
-		own_set(src, "diode", new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
+		own_set(src, nameof(diode), new laser_path(src)) // ALLOW(decl): diode from an Initialize argument
 	else
-		own_set(src, "diode", new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
+		own_set(src, nameof(diode), new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
 	if(!pointer_icon_state)
 		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
 
@@ -54,7 +54,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	if(!diode)
 		user.drop_item()
 		W.forceMove(src)
-		own_set(src, "diode", W)
+		own_set(src, nameof(diode), W)
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))
@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	own_take(src, "diode")
+	own_take(src, nameof(diode))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
@@ -225,7 +225,9 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			set_recharging(FALSE)
 			recharge_locked = FALSE
 
-OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)
+/obj/item/laser_pointer/declare_ownership(decl)
+	..()
+	own(decl, nameof(diode), policy = OWN_CONTAINED)
 
 OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
 // The battery trickles back while recharging.

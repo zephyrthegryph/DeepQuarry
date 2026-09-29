@@ -17,7 +17,7 @@
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
 
-	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air_contents), new /datum/gas_mixture)
 	air_contents.set_volume(200)
 
 /// Arms this device's own eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()):
@@ -82,7 +82,7 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			rel_set(src, "node", target)
+			rel_set(src, nameof(node), target)
 			break
 
 	update_icon()
@@ -97,7 +97,7 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 /obj/machinery/atmospherics/unary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	invalidate_gas_dependencies()
 	if(network == old_network)
-		rel_set(src, "network", new_network)
+		rel_set(src, nameof(network), new_network)
 
 	return 1
 
@@ -111,17 +111,17 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 
 /obj/machinery/atmospherics/unary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		atmos_air_set(src, "air_contents", network_air)
+		atmos_air_set(src, nameof(air_contents), network_air)
 
 /obj/machinery/atmospherics/unary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air_contents == network_air)
-		atmos_air_set(src, "air_contents", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air_contents), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
 	invalidate_gas_dependencies()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		rel_clear(src, "node")
+		rel_clear(src, nameof(node))
 
 	update_icon()
 	update_underlays()
@@ -169,4 +169,6 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 	register_gas_dependencies()
 
 
-PROTO(/obj/machinery/atmospherics/unary, air_contents)
+/obj/machinery/atmospherics/unary/declare_ownership(decl)
+	..()
+	proto(decl, nameof(air_contents))

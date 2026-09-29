@@ -133,12 +133,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 		if(self.turns_since_scan > 5)
 			self.turns_since_scan = 0
 			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, "movement_target")
+				rel_clear(self, nameof(self.movement_target))
 			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, "movement_target")
+				rel_clear(self, nameof(self.movement_target))
 				for(var/obj/item/reagent_containers/food/snacks/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, "movement_target", S)
+						rel_set(self, nameof(self.movement_target), S)
 						break
 			if(self.movement_target)
 				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
@@ -253,5 +253,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 //You monster.
 TYPE_TABLE(/datum/decl/mob_organ_names/corgi, mob_organ_hit_zones, list("head", "body", "left foreleg", "right foreleg", "left hind leg", "right hind leg", "tail", "heart"))
 
-OWN(/mob/living/simple_mob/animal/passive/dog, inventory_head, OWN_SPILL)
-OWN(/mob/living/simple_mob/animal/passive/dog, inventory_back, OWN_SPILL)
+/mob/living/simple_mob/animal/passive/dog/declare_ownership(decl)
+	..()
+	own(decl, nameof(inventory_head), policy = OWN_SPILL)
+	own(decl, nameof(inventory_back), policy = OWN_SPILL)

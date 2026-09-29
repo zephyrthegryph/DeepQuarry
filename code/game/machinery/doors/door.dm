@@ -140,7 +140,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
-	rel_add(src, "autoclose_blockers", blocker)
+	rel_add(src, nameof(autoclose_blockers), blocker)
 	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
 	schedule_door_timer()
@@ -148,7 +148,7 @@ OWN_TIMER(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
 		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	rel_clear(src, "autoclose_blockers")
+	rel_clear(src, nameof(autoclose_blockers))
 
 /obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
 	EVENT_HANDLER

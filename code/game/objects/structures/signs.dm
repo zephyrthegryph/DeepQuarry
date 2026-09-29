@@ -1602,8 +1602,8 @@
 	if(flag_size)
 		P.icon_state = "[flag_path]_l"
 		var/obj/structure/sign/flag/P2 = new(user.loc)
-		rel_set(P, "linked_flag", P2)
-		rel_set(P2, "linked_flag", P)
+		rel_set(P, nameof(P.linked_flag), P2)
+		rel_set(P2, nameof(P2.linked_flag), P)
 		P2.icon_state = "[flag_path]_r"
 		P2.dir = P.dir
 		switch(P2.dir)
@@ -1631,7 +1631,9 @@
 	P.flagtype = type
 	consume(src, user)
 
-REL_PAIR(/obj/structure/sign/flag, linked_flag, linked_flag)
+/obj/structure/sign/flag/declare_ownership(decl)
+	..()
+	rel(decl, nameof(linked_flag), pair = nameof(/obj/structure/sign/flag::linked_flag))
 
 DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_blast))
 /// A flag that survives a blast is torn.

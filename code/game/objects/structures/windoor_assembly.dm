@@ -140,7 +140,7 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	W.forceMove(src)
 	to_chat(user,span_notice("You've installed the airlock electronics!"))
 	step = 2
-	own_set(src, "electronics", W)
+	own_set(src, nameof(electronics), W)
 
 /obj/structure/windoor_assembly/proc/attackby_timed_failed2(datum/om/task/timed/windoor_assembly_attackby/task)
 	var/obj/item/W = task.W
@@ -213,7 +213,7 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	to_chat(user,span_notice("You've removed the airlock electronics!"))
 	step = 1
 	var/obj/item/airlock_electronics/ae = electronics
-	own_take(src, "electronics")
+	own_take(src, nameof(electronics))
 	ae.forceMove(src.loc)
 
 /obj/structure/windoor_assembly/crowbar_act(mob/user, obj/item/W)
@@ -257,7 +257,7 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 		else
 			windoor.req_access = src.electronics.conf_access
 		src.electronics.forceMove(windoor)
-		own_transfer(src, "electronics", windoor, "electronics")
+		own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
 	else
 		var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
 		if(src.facing == "l")
@@ -278,7 +278,7 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 		else
 			windoor.req_access = src.electronics.conf_access
 		src.electronics.forceMove(windoor)
-		own_transfer(src, "electronics", windoor, "electronics")
+		own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
 
 	qdel(src)
 
@@ -316,4 +316,6 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	update_icon()
 	return
 
-OWN(/obj/structure/windoor_assembly, electronics, OWN_CONTAINED)
+/obj/structure/windoor_assembly/declare_ownership(decl)
+	..()
+	own(decl, nameof(electronics), policy = OWN_CONTAINED)

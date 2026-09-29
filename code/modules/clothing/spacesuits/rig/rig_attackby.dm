@@ -3,7 +3,7 @@
 		return
 	to_chat(user, "You install \the [mod] into \the [src].")
 	mod.forceMove(src)
-	own_add(src, "installed_modules", mod)
+	own_add(src, nameof(installed_modules), mod)
 	mod.installed(src)
 	update_icon()
 
@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 			if(!user.unEquip(W))
 				return INTERACTION_HANDLED_PASS
 
-			own_set(src, "air_supply", W)
+			own_set(src, nameof(air_supply), W)
 			W.forceMove(src)
 			to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 			return INTERACTION_HANDLED_PASS
@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You jack \the [W] into \the [src]'s battery mount.")
 			W.forceMove(src)
-			own_set(src, "cell", W)
+			own_set(src, nameof(cell), W)
 			return INTERACTION_HANDLED_PASS
 
 		return INTERACTION_HANDLED_PASS
@@ -140,7 +140,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/tank/removed_tank = air_supply
 	user.put_in_hands(removed_tank)
-	own_take(src, "air_supply")
+	own_take(src, nameof(air_supply))
 	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
@@ -167,7 +167,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		for(var/obj/item/rig_module/module in installed_modules)
 			module.deactivate()
 		user.put_in_hands(cell)
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		return ITEM_INTERACT_SUCCESS
 	var/list/possible_removals = list()
 	for(var/obj/item/rig_module/module in installed_modules)
@@ -183,7 +183,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(!removed)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You detach \the [removed] from \the [src].")
-	own_take_member(src, "installed_modules", removed)
+	own_take_member(src, nameof(installed_modules), removed)
 	removed.forceMove(get_turf(src))
 	removed.removed()
 	update_icon()

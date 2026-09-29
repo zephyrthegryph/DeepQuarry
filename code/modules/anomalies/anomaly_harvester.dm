@@ -102,7 +102,7 @@
 /obj/machinery/anomaly_harvester/wrench_act(mob/user, obj/item/tool)
 	. = ..()
 	if(. & ITEM_INTERACT_SUCCESS)
-		rel_clear(src, "harvested")
+		rel_clear(src, nameof(harvested))
 
 /obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
 	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.
@@ -114,11 +114,11 @@
 	if(stats.attached_harvester)
 		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester
 		if(harvester)
-			rel_clear(harvester, "harvested")
+			rel_clear(harvester, nameof(harvester.harvested))
 			harvester.update_icon()
-		rel_clear(stats, "attached_harvester")
-	rel_set(src, "harvested", anom)
-	rel_set(stats, "attached_harvester", src)
+		rel_clear(stats, nameof(stats.attached_harvester))
+	rel_set(src, nameof(harvested), anom)
+	rel_set(stats, nameof(stats.attached_harvester), src)
 	play_sfx(src, SFX_MACHINES_BOOBEEBEEP, 1.5, vary = TRUE)
 	return TRUE
 

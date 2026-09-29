@@ -215,7 +215,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, TYP
 	if(open_maw && !stat && obstacle != previous)
 		om_after(src, 1, PROC_REF(bump_eat), obstacle) // a tick later, after the bump settles
 	else
-		rel_clear(src, "currentlyEating")
+		rel_clear(src, nameof(currentlyEating))
 		. = ..(obstacle)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -240,7 +240,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)
 	if(currentlyEating != obstacle)
-		rel_set(src, "currentlyEating", obstacle)
+		rel_set(src, nameof(currentlyEating), obstacle)
 	ai_busy_begin()
 	AttemptToEat(obstacle)
 
@@ -261,7 +261,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_finished(success)
 	if(success)
-		rel_clear(src, "currentlyEating")
+		rel_clear(src, nameof(currentlyEating))
 	ai_busy_end()
 
 /mob/living/simple_mob/animal/space/space_worm/proc/eat_wall_done(turf/simulated/wall/W)
@@ -330,8 +330,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	if(!attachement)
 		return
 
-	rel_set(src, "previous", attachement)
-	rel_set(attachement, "next", src)
+	rel_set(src, nameof(previous), attachement)
+	rel_set(attachement, nameof(attachement.next), src)
 
 	return
 
@@ -339,7 +339,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	var/mob/living/simple_mob/animal/space/space_worm/head/newHead = new severed_head_type(loc,0)
 	var/mob/living/simple_mob/animal/space/space_worm/newHeadPrevious = previous
 
-	rel_clear(src, "previous") //so that no extra heads are spawned
+	rel_clear(src, nameof(previous)) //so that no extra heads are spawned
 
 	newHead.Attach(newHeadPrevious)
 

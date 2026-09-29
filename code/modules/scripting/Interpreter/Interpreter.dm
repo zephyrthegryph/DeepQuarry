@@ -69,20 +69,20 @@
 	Raises a runtime error.
 */
 /datum/n_Interpreter/proc/RaiseError(datum/runtimeError/e)
-	own_set(e, "stack", functions.Copy())
+	own_set(e, nameof(e.stack), functions.Copy())
 	e.stack.Push(curFunction())
 	src.HandleError(e)
 
 /datum/n_Interpreter/proc/CreateScope(datum/node/BlockDefinition/B)
 	var/datum/scope/S = new(B, curScope())
 	scopes.Push(curScope())
-	rel_set(src, "curScope_ref", S)
+	rel_set(src, nameof(curScope_ref), S)
 	return S
 
 /datum/n_Interpreter/proc/CreateGlobalScope()
 	scopes.Clear()
 	var/datum/scope/S = new(program, null)
-	own_set(src, "globalScope", S)
+	own_set(src, nameof(globalScope), S)
 	return S
 
 /*
@@ -93,17 +93,17 @@ Runs each statement in a block of code.
 	var/is_global = istype(Block, /datum/node/BlockDefinition/GlobalBlock)
 	if(!is_global)
 		if(scope)
-			rel_set(src, "curScope_ref", scope)
+			rel_set(src, nameof(curScope_ref), scope)
 		else
 			CreateScope(Block)
 	else
 		if(!persist)
 			CreateGlobalScope()
-		rel_set(src, "curScope_ref", globalScope)
+		rel_set(src, nameof(curScope_ref), globalScope)
 
 	RunStatements(Block, 1)
 
-	rel_set(src, "curScope_ref", scopes.Pop())
+	rel_set(src, nameof(curScope_ref), scopes.Pop())
 
 /// The script's sleep(time): suspends the run after the current statement (see <yield_for>).
 /datum/n_Interpreter/proc/script_sleep(time)
@@ -125,9 +125,9 @@ Runs each statement in a block of code.
 		switch(frame[1])
 			if("block")
 				scopes.Push(curScope())
-				rel_set(src, "curScope_ref", frame[4])
+				rel_set(src, nameof(curScope_ref), frame[4])
 				RunStatements(frame[2], frame[3])
-				rel_set(src, "curScope_ref", scopes.Pop())
+				rel_set(src, nameof(curScope_ref), scopes.Pop())
 			if("while")
 				RunWhile(frame[2], frame[3], frame[3] - 1)
 			if("func")
@@ -249,7 +249,7 @@ Runs a function block or a proc with the arguments specified in the script.
 			//else
 			//	unspecified param
 			AssignVariable(def.parameters[i], new/datum/node/expression/value/literal(Eval(val)), S)
-		rel_set(src, "curFunction_ref", stmt)
+		rel_set(src, nameof(curFunction_ref), stmt)
 		RunBlock(def.block, S)
 		if(!isnull(yield_for))
 			PushResume(list("func")) // the return handling runs when the run resumes
@@ -284,7 +284,7 @@ Checks a condition and runs either the if block or else block.
 /datum/n_Interpreter/proc/FinishFunction()
 	status &= ~RETURNING
 	returnVal=null
-	rel_set(src, "curFunction_ref", functions.Pop())
+	rel_set(src, nameof(curFunction_ref), functions.Pop())
 	cur_recursion--
 
 /*
@@ -379,7 +379,7 @@ S     - The scope the variable resides in. If it is null, a scope with the varia
 	if(istext(value) || isnum(value) || isnull(value))	value = new/datum/node/expression/value/literal(value)
 	else if(!istype(value) && isobject(value))			value = new/datum/node/expression/value/reference(value)
 	//TODO: check for invalid name
-	own_put(S, "variables", "[name]", value)
+	own_put(S, nameof(S.variables), "[name]", value)
 
 #undef RETURNING
 #undef BREAKING

@@ -113,7 +113,7 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	update_target()
 
 /obj/structure/disposaloutlet/proc/update_target()
-	rel_set(src, "target", get_ranged_target_turf(src, dir, 10))
+	rel_set(src, nameof(target), get_ranged_target_turf(src, dir, 10))
 
 #undef OUTLET_SCREWED
 #undef OUTLET_UNSCREWED

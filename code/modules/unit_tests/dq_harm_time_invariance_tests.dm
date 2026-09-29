@@ -62,7 +62,7 @@
 	prey.food_vore = TRUE
 	var/obj/item/clothing/mask/chewable/candy/lolli/lolli = new(pred)
 	prey.forceMove(lolli)
-	own_set(lolli, "victims", list(prey))
+	own_set(lolli, nameof(lolli.victims), list(prey))
 	lolli.spitout(0)
 	var/obj/belly/B = pred.vore_selected
 	TEST_ASSERT_EQUAL(prey.loc, B, "the lollipop's captive should end up in the belly")

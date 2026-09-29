@@ -37,7 +37,7 @@
 	var/offline_vision_restriction = 1
 
 /datum/rig_power_system/New(obj/item/rig/new_holder)
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 
 /*
  * proc/get_environment_temperature()
@@ -147,7 +147,7 @@
 	else if(offline)
 		offline = 0
 		if(istype(W) && !W.wearing_rig)
-			own_set(W, "wearing_rig", holder())
+			own_set(W, nameof(W.wearing_rig), holder())
 		if(!istype(holder(), /obj/item/rig/protean))
 			holder().slowdown = initial(holder().slowdown)
 

@@ -8,8 +8,10 @@
 	var/keep = "kept"
 
 POOL_DECLARE(/datum/pool_test_item)
-POOL_RESET(/datum/pool_test_item, held)
-POOL_RESET(/datum/pool_test_item, count)
+/datum/pool_test_item/declare_ownership(decl)
+	..()
+	own(decl, nameof(held), pool_reset = TRUE)
+	own(decl, nameof(count), pool_reset = TRUE)
 
 /datum/pool_test_item/proc/touch()
 	POOL_ASSERT_LIVE(src)
@@ -28,7 +30,7 @@ POOL_RESET(/datum/pool_test_item, count)
 	TEST_ASSERT(istype(item), "pool_take() should hand out the pooled type")
 	TEST_ASSERT_EQUAL(item.pool_state, POOL_STATE_TAKEN, "a taken object is marked taken")
 	var/datum/other = new /datum
-	rel_set(item, "held", other)
+	rel_set(item, nameof(item.held), other)
 	item.count = 9
 	item.keep = "changed"
 	item.release()

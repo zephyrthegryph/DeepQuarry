@@ -16,7 +16,7 @@
 			continue
 		if(!temp_vent.welded && temp_vent.network && (temp_vent.loc.z in using_map.station_levels))
 			if(temp_vent.network.normal_members.len > 10) //Most our networks are 40. SM is 4 and toxins is 2. This needed to change in order to spawn.
-				rel_add(src, "vents", temp_vent)
+				rel_add(src, nameof(vents), temp_vent)
 
 /datum/event/grub_infestation/announce()
 	GLOB.command_announcement.Announce("Solargrubs detected coming aboard [station_name()]. Please clear them out before this starts to affect productivity. All crew efforts are appreciated and encouraged.", "Lifesign Alert", new_sound = ANNOUNCER_MSG_UNIDENTIFIED_LIFESIGNS)
@@ -26,9 +26,9 @@
 		var/obj/vent = DEFAULTPICK(vents, null)
 		var/mob/living/simple_mob/animal/solargrub_larva/larva = new(get_turf(vent))
 		larva.tracked = TRUE
-		rel_remove(src, "vents", vent)
+		rel_remove(src, nameof(vents), vent)
 		spawncount--
-	rel_clear(src, "vents")
+	rel_clear(src, nameof(vents))
 
 /datum/event/grub_infestation/end()
 	var/list/area_names = list()

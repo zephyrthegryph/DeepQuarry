@@ -51,7 +51,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 
 /mob/living/carbon/alien/diona/Initialize(mapload)
 	. = ..()
-	proto_set(src, "species", GLOB.all_species[SPECIES_DIONA])
+	proto_set(src, nameof(species), GLOB.all_species[SPECIES_DIONA])
 	add_language(LANGUAGE_ROOTGLOBAL)
 	add_language(LANGUAGE_GALCOM)
 	om_grant(src, GRANT_VERB, /mob/living/carbon/alien/diona/proc/merge, src)
@@ -63,7 +63,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 /mob/living/carbon/alien/diona/proc/wear_hat(obj/item/new_hat)
 	if(hat)
 		return
-	own_set(src, "hat", new_hat)
+	own_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
 	update_icons()
 
@@ -75,4 +75,6 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 	if(prob(1))
 		D.emote(pick("scratch","jump","chirp","roll"))
 
-OWN(/mob/living/carbon/alien/diona, hat, OWN_SPILL)
+/mob/living/carbon/alien/diona/declare_ownership(decl)
+	..()
+	own(decl, nameof(hat), policy = OWN_SPILL)

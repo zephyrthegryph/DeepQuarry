@@ -10,7 +10,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/cold)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/cold)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -20,7 +20,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/flu/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/flu)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/flu)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -30,7 +30,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/blobspores/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/blobspores)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/blobspores)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -40,7 +40,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/macrophages/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/macrophage)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/macrophage)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -50,7 +50,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/random)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -60,6 +60,6 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor/Initialize(mapload)
 	. = ..()
-	own_add(src, "diseases", new /datum/affliction/contagion/engineered/random/minor)
+	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random/minor)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)

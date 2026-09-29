@@ -49,9 +49,11 @@ Pipelines + Other Objects -> Pipe network
 	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
 
-REL(/obj/machinery/atmospherics, node1)
-REL(/obj/machinery/atmospherics, node2)
-REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
+/obj/machinery/atmospherics/declare_ownership(decl)
+	..()
+	rel(decl, nameof(node1))
+	rel(decl, nameof(node2))
+	rel(decl, nameof(network_memberships), list = TRUE, pair = nameof(/datum/pipe_network::normal_members))
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)

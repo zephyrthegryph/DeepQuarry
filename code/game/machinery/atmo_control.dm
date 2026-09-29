@@ -120,7 +120,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 	invalidate_gas_dependencies()
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
@@ -213,7 +213,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 	id_tag = ask.text
 	var/obj/item/multitool/M = ask.tool
 	if(istype(M) && M.loc == user)
-		rel_set(M, "connectable", src)
+		rel_set(M, nameof(M.connectable), src)
 		to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 #undef ONOFF_TOGGLE
 
@@ -269,7 +269,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/general_air_control, "merge:ui_data_obj_
 /obj/machinery/computer/general_air_control/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/static/list/options = list("Sensors", "Frequency", "Cancel")
@@ -473,7 +473,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_a
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(/datum/admin_rank::source), src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -625,7 +625,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(/datum/admin_rank::source), src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -734,7 +734,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/computer/general_air_control/fuel_injectio
 
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		rel_set(signal, "source", src)
+		rel_set(signal, nameof(signal.source), src)
 
 		signal.data = list(
 			"tag" = device_tag,
@@ -776,7 +776,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_r
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(/datum/admin_rank::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"status" = 1,
@@ -798,7 +798,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_t
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(/datum/admin_rank::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"power_toggle" = 1,
@@ -815,7 +815,7 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_i
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(/datum/admin_rank::source), src)
 	signal.data = list(
 		"tag" = device_tag,
 		"inject" = 1,

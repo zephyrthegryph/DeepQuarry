@@ -37,11 +37,11 @@
 	var/needs_update = LIGHTING_NO_UPDATE
 
 /datum/light_source/New(atom/owner, atom/top)
-	rel_set(src, "source_atom", owner) // Set our new owner (it owns us in its `light` var).
-	rel_add(source_atom, "light_sources", src)
-	rel_set(src, "top_atom", top)
+	rel_set(src, nameof(source_atom), owner) // Set our new owner (it owns us in its `light` var).
+	rel_add(source_atom, nameof(source_atom.light_sources), src)
+	rel_set(src, nameof(top_atom), top)
 	if (top_atom != source_atom)
-		rel_add(top_atom, "light_sources", src)
+		rel_add(top_atom, nameof(top_atom.light_sources), src)
 
 	// A turf, never the top atom itself: holding a movable here until the first update_corners()
 	// kept a top atom deleted in the meantime alive -> hard delete -> GC_FAILURE_HARD_LOOKUP search.
@@ -78,12 +78,12 @@
 	// This top atom is different.
 	if (new_top_atom && new_top_atom != top_atom)
 		if(top_atom != source_atom && top_atom.light_sources) // Remove ourselves from the light sources of that top atom.
-			rel_remove(top_atom, "light_sources", src)
+			rel_remove(top_atom, nameof(top_atom.light_sources), src)
 
-		rel_set(src, "top_atom", new_top_atom)
+		rel_set(src, nameof(top_atom), new_top_atom)
 
 		if (top_atom != source_atom)
-			rel_add(top_atom, "light_sources", src) // Add ourselves to the light sources of our new top atom.
+			rel_add(top_atom, nameof(top_atom.light_sources), src) // Add ourselves to the light sources of our new top atom.
 
 	EFFECT_UPDATE(LIGHTING_CHECK_UPDATE)
 
@@ -198,7 +198,7 @@
 		update = TRUE
 
 	if (!top_atom)
-		rel_set(src, "top_atom", source_atom)
+		rel_set(src, nameof(top_atom), source_atom)
 		update = TRUE
 
 	if (!light_range || !light_power)
@@ -315,6 +315,8 @@
 // atom.light_sources is a relation list view of the sources lighting from it (as source or top
 // atom), kept in step by New() and update(). effect_str (corner -> strength) and corner.affecting
 // are the engine's own symmetric links (see the ALLOW notes above).
-REL_LIST(/atom, light_sources)
+/atom/declare_ownership(decl)
+	..()
+	rel(decl, nameof(light_sources), list = TRUE)
 
 

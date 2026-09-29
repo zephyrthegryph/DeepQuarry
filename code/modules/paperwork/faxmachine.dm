@@ -77,7 +77,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	scan.forceMove(loc)
 	if(ishuman(L) && !L.get_active_hand())
 		L.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(scan))
 	authenticated = null
 	return TRUE
 
@@ -204,13 +204,13 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_scan)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
 			ui.user.drop_item()
 			I.forceMove(src)
-			own_set(src, "scan", I)
+			own_set(src, nameof(/obj/item/extrapolator::scan), I)
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "login", ui_act_login, UI_ARG_NUM("login_type"))
@@ -235,7 +235,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_logout)
 		scan.forceMove(loc)
 		if(ishuman(ui.user) && !ui.user.get_active_hand())
 			ui.user.put_in_hands(scan)
-		own_take(src, "scan")
+		own_take(src, nameof(/obj/item/extrapolator::scan))
 	authenticated = null
 	return TRUE
 
@@ -251,7 +251,7 @@ UI_ACT_OVERRIDE(/obj/machinery/photocopier/faxmachine, ui_act_remove)
 		copyitem.forceMove(loc)
 		ui.user.put_in_hands(copyitem)
 		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, "copyitem")
+		own_take(src, nameof(/obj/machinery/photocopier::copyitem))
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "send_automated_staff_request", ui_act_send_automated_staff_request)
@@ -344,7 +344,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /obj/machinery/photocopier/faxmachine/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	own_set(src, "scan", held)
+	own_set(src, nameof(scan), held)
 	return TRUE
 
 /datum/interaction/machine_item/faxmachine_insert_toner
@@ -663,4 +663,6 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
 	sendcooldown = 0
 
-OWN(/obj/machinery/photocopier/faxmachine, scan, OWN_CONTAINED)
+/obj/machinery/photocopier/faxmachine/declare_ownership(decl)
+	..()
+	own(decl, nameof(scan), policy = OWN_CONTAINED)

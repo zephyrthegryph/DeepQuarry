@@ -116,14 +116,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "faultreporter", new /obj/item/radio/intercom{channels=list("Supply")}(null))
+	own_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
 	make_climbable()
 
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
 		cell.forceMove(loc)
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 	return ..()
 
 /obj/machinery/mining/drill/get_cell()
@@ -179,7 +179,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		while(length(resource_field) && !harvesting.resources)
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			rel_remove(src, "resource_field", harvesting)
+			rel_remove(src, nameof(resource_field), harvesting)
 			if(length(resource_field)) // runtime protection
 				harvesting = DEFAULTPICK(resource_field, null)
 			else
@@ -224,7 +224,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			rel_remove(src, "resource_field", harvesting)
+			rel_remove(src, nameof(resource_field), harvesting)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		set_active(0)
@@ -259,7 +259,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		else
 			user.drop_item()
 			O.forceMove(src)
-			own_set(src, "cell", O)
+			own_set(src, nameof(cell), O)
 			materialize_parts()
 			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")
@@ -302,7 +302,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 
 	if (panel_open && cell && user.Adjacent(src))
 		balloon_alert(user, "you take out \the [cell]")
-		var/obj/item/cell/removed = own_take(src, "cell")
+		var/obj/item/cell/removed = own_take(src, nameof(cell))
 		user.put_in_hands(removed)
 		return TRUE
 	else if(need_player_check)
@@ -411,7 +411,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 /obj/machinery/mining/drill/proc/get_resource_field()
 
-	rel_clear(src, "resource_field")
+	rel_clear(src, nameof(resource_field))
 	gas_field = list()
 	need_update_field = 0
 	drill_moles_per_tick = 0
@@ -427,7 +427,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 			mine_turf = locate(tx + ix, ty + iy, T.z)
 			if(!istype(mine_turf, /turf/space/))
 				if(mine_turf && mine_turf.turf_resource_types & TURF_HAS_MINERALS)
-					rel_add(src, "resource_field", mine_turf)
+					rel_add(src, nameof(resource_field), mine_turf)
 				// gas mining
 				if(istype(mine_turf,/turf/simulated/floor/gas_crack))
 					// Get gasses the cracks around us could give!
@@ -546,7 +546,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 
 	for(var/thing in contents_of(T))
 		if(istype(thing, /obj/machinery/mining/drill))
-			rel_set(src, "connected", thing)
+			rel_set(src, nameof(connected), thing)
 			break
 
 	if(!connected())
@@ -564,12 +564,16 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 	icon_state = "mining_brace"
 
 	var/obj/machinery/mining/drill/drill = connected()
-	rel_clear(src, "connected") // leaves the drill's supports too (the pair)
+	rel_clear(src, nameof(connected)) // leaves the drill's supports too (the pair)
 	drill.check_supports()
 
 /// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
 	return connected
 
-REL_PAIR(/obj/machinery/mining/brace, connected, supports)
-REL_PAIR_LIST(/obj/machinery/mining/drill, supports, connected)
+/obj/machinery/mining/brace/declare_ownership(decl)
+	..()
+	rel(decl, nameof(connected), pair = nameof(/obj/machinery/mining/drill::supports))
+/obj/machinery/mining/drill/declare_ownership(decl)
+	..()
+	rel(decl, nameof(supports), list = TRUE, pair = nameof(/obj/machinery/mining/brace::connected))

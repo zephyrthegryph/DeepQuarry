@@ -71,8 +71,8 @@ EXTEND_INTERACTIONS(/obj/item/tank/phoron, INTERACT_ITEM(null, PROC_REF(phoron_t
 		var/obj/item/flamethrower/F = W
 		if ((!F.status)||(F.ptank))
 			return INTERACTION_HANDLED_PASS
-		rel_set(src, "master", F)
-		own_set(F, "ptank", src)
+		rel_set(src, nameof(master), F)
+		own_set(F, nameof(F.ptank), src)
 		user.remove_from_mob(src)
 		forceMove(F)
 		F.update_icon()

@@ -176,7 +176,7 @@
 	if(old)
 		fresh.merge(old)
 		. = 1
-	own_put(src, "stored", "\ref [A]", fresh)
+	own_put(src, nameof(stored), "\ref [A]", fresh)
 
 /obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
@@ -236,7 +236,7 @@
 	if(isnull(_answer_k217))
 		return
 	if (_answer_k217 == "Yes")
-		own_clear(src, "stored", OWN_DELETE)
+		own_clear(src, nameof(stored), OWN_DELETE)
 		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced

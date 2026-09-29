@@ -109,7 +109,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
-		rel_add(src, "prey_excludes", target)
+		rel_add(src, nameof(prey_excludes), target)
 		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), target)
 	// DQEdit: legacy if-block emptied.
 
@@ -135,7 +135,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	release_vore_contents()
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))
-			rel_add(src, "prey_excludes", L)
+			rel_add(src, nameof(prey_excludes), L)
 			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
 	return TRUE
 
@@ -211,7 +211,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	/// The help-touchers she remembers (a relation list).
 	var/list/petters
 
-REL_LIST(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, petters)
+/mob/living/simple_mob/vore/pakkun/snapdragon/snappy/declare_ownership(decl)
+	..()
+	rel(decl, nameof(petters), list = TRUE)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
 
@@ -219,12 +221,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERA
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/proc/snappy_interaction_hand(mob/living/carbon/human/M, obj/item/held, datum/interaction/interaction)
 	if(!(M in petters))
 		to_chat(M, span_notice("\The [src] gets a mischievous glint in her eye!!"))
-		rel_add(src, "petters", M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
+		rel_add(src, nameof(petters), M) //YOU HAVE OFFERED YOURSELF TO THE LIZARD
 	return FALSE
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/lay_down()
 	if(LAZYLEN(petters) && prob(50) && !resting) //50% chance she'll forgive a random person when she takes a nap
-		rel_remove(src, "petters", pick(petters))
+		rel_remove(src, nameof(petters), pick(petters))
 	..()
 
 /mob/living/simple_mob/vore/pakkun/snapdragon/snappy/load_default_bellies()

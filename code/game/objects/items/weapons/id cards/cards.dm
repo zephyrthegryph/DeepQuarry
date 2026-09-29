@@ -284,7 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/card/id/synthetic/borg/Initialize(mapload)
 	. = ..()
 	if(isrobot(loc))
-		rel_set(src, "robot_owner", loc)
+		rel_set(src, nameof(robot_owner), loc)
 		registered_name = robot_owner().braintype
 		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 

@@ -46,8 +46,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 		if(isnull(response))
 			return TRUE
 		if(response == "Portal Here")
-			rel_set(src, "target", new type(get_turf(user), src))
-			rel_set(target, "target", src)
+			rel_set(src, nameof(target), new type(get_turf(user), src))
+			rel_set(target, nameof(/obj/singularity/::target), src)
 			target.icon_state = icon_state
 			var/letsportal = rerun_ask(user, "k41", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type for these portals?", title = "Change portal", choices = list("No","Yes"))
 			if(isnull(letsportal))
@@ -58,8 +58,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 				target.icon_state = portal_icon_selection
 		if(response == "Target Here")
 			var/obj/structure/portal_target/newtarg = new(get_turf(user))
-			rel_set(src, "target", newtarg)
-			rel_set(newtarg, "target", src)
+			rel_set(src, nameof(target), newtarg)
+			rel_set(newtarg, nameof(newtarg.target), src)
 			var/letsportal = rerun_ask(user, "k50", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type?", title = "Change portal", choices = list("No","Yes"))
 			if(isnull(letsportal))
 				return TRUE

@@ -30,12 +30,12 @@
 		return null
 	if(reactive_icon)
 		qdel(reactive_icon)
-	own_set(src, "reactive_icon", new type(src, icon_prefix, directions, range, triggering_mobs))
+	own_set(src, nameof(reactive_icon), new type(src, icon_prefix, directions, range, triggering_mobs))
 	return reactive_icon
 
 /datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	src.icon_prefix = icon_prefix
 	src.directions = directions
 	src.range = range
@@ -54,9 +54,9 @@
 			om_unhook(C, /datum/om/event/moved, src)
 	for(var/atom/movable/C as anything in new_containers)
 		om_hook(C, /datum/om/event/moved, src, PROC_REF(on_moved))
-	rel_clear(src, "watched_containers")
+	rel_clear(src, nameof(watched_containers))
 	for(var/atom/movable/C as anything in new_containers)
-		rel_add(src, "watched_containers", C)
+		rel_add(src, nameof(watched_containers), C)
 	var/turf/T = get_turf(owner)
 	var/list/new_turfs = T ? RANGE_TURFS(range, T) : list()
 	for(var/turf/old as anything in watched_turfs)
@@ -200,4 +200,6 @@
 		return TRUE
 	return FALSE
 
-REL_LIST(/datum/reactive_icon_update, watched_containers)
+/datum/reactive_icon_update/declare_ownership(decl)
+	..()
+	rel(decl, nameof(watched_containers), list = TRUE)

@@ -8,7 +8,7 @@
 	var/talk_chance = 10
 
 /datum/talking_atom/New(atom/holder)
-	rel_set(src, "holder_atom", holder)
+	rel_set(src, nameof(holder_atom), holder)
 	init()
 
 /datum/talking_atom/proc/init()

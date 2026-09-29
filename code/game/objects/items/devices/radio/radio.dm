@@ -53,7 +53,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -84,7 +84,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 		GLOB.radio_service.remove_object(src, frequency)
 		for (var/ch_name in channels)
 			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-	rel_clear(src, "radio_connection")
+	rel_clear(src, nameof(radio_connection))
 	return ..()
 
 /obj/item/radio/LateInitialize()
@@ -668,7 +668,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	if(!keyslot)
 		user.drop_item()
 		W.forceMove(src)
-		own_set(src, "keyslot", W)
+		own_set(src, nameof(keyslot), W)
 
 	recalculateChannels()
 	return TRUE
@@ -681,7 +681,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	keyslot.forceMove(get_turf(user))
-	own_take(src, "keyslot")
+	own_take(src, nameof(keyslot))
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
 	playsound(src, tool.usesound, 50, TRUE)
@@ -881,7 +881,9 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 
 DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
-OWN(/obj/item/radio/borg, keyslot, OWN_CONTAINED)
+/obj/item/radio/borg/declare_ownership(decl)
+	..()
+	own(decl, nameof(keyslot), policy = OWN_CONTAINED)
 
 /// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency

@@ -15,15 +15,15 @@
 	. = ..()
 
 	// Grab any mapped notices.
-	own_take_all(src, "notices")
+	own_take_all(src, nameof(notices))
 	for(var/obj/item/paper/note in get_turf(src))
 		note.forceMove(src)
-		own_add(src, "notices", note)
+		own_add(src, nameof(notices), note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 	// notices in contents
 	for(var/obj/item/paper/note in contents)
-		own_add(src, "notices", note)
+		own_add(src, nameof(notices), note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 
@@ -32,14 +32,14 @@
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
 		paper.forceMove(src)
-		own_move(paper, src, "notices") // it may come from another holder (a bundle, a clipboard)
+		own_move(paper, src, nameof(notices)) // it may come from another holder (a bundle, a clipboard)
 		if(!skip_icon_update)
 			update_icon()
 
 /obj/structure/noticeboard/proc/remove_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper) && paper.loc == src)
 		paper.dropInto(loc)
-		own_take_member(src, "notices", paper)
+		own_take_member(src, nameof(notices), paper)
 		SSpersistence.forget_value(paper, /datum/persistent/paper)
 		if(!skip_icon_update)
 			update_icon()

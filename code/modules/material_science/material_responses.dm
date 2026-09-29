@@ -62,8 +62,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
 		qdel(src)
 		return
-	rel_set(src, "parent", new_parent)
-	own_set(new_parent, "material_response", src)
+	rel_set(src, nameof(parent), new_parent)
+	own_set(new_parent, nameof(new_parent.material_response), src)
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form

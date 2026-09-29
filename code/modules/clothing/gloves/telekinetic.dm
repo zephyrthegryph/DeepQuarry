@@ -34,7 +34,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 		if(cell)
 			cell.update_icon()
 			user.put_in_hands(cell)
-			own_take(src, "cell")
+			own_take(src, nameof(cell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)
 			return TRUE
@@ -46,7 +46,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/telekinetic, \
 		if(!cell)
 			user.drop_item()
 			W.forceMove(src)
-			own_set(src, "cell", W)
+			own_set(src, nameof(cell), W)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			play_sfx(src, SFX_MACHINES_BUTTON)
 		else

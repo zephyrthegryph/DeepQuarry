@@ -28,7 +28,9 @@
 	var/list/integrated_tool_images
 
 /// The selected tool: one of cyborg_integrated_tools, which owns it.
-REL(/obj/item/robotic_multibelt, selected_item)
+/obj/item/robotic_multibelt/declare_ownership(decl)
+	..()
+	rel(decl, nameof(selected_item))
 
 /obj/item/robotic_multibelt/item_ctrl_click(mob/user)
 	if(selected_item)
@@ -65,7 +67,7 @@ REL(/obj/item/robotic_multibelt, selected_item)
 	for(var/path in cyborg_integrated_tools)
 		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
 			if(!cyborg_integrated_tools[path])
-				own_put(src, "cyborg_integrated_tools", path, new path(src))
+				own_put(src, nameof(cyborg_integrated_tools), path, new path(src))
 		var/obj/item/I = integrated_tool_at(path)
 		I.canremove = FALSE
 
@@ -120,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	icon = chosen_item.icon
 	icon_state = chosen_item.icon_state
 	color = chosen_item.color
-	rel_set(src, "selected_item", chosen_item)
+	rel_set(src, nameof(selected_item), chosen_item)
 
 /obj/item/robotic_multibelt/dropped(mob/user, equipping, slot)
 	..()
@@ -128,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	original_state()
 
 /obj/item/robotic_multibelt/proc/original_state(mob/user)
-	rel_clear(src, "selected_item")
+	rel_clear(src, nameof(selected_item))
 	icon = initial(icon)
 	icon_state = initial(icon_state)
 
@@ -426,7 +428,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	if(!amount)
 		return
 
-	own_add(module, "synths", new synth_path(amount))
+	own_add(module, nameof(module.synths), new synth_path(amount))
 	update_material_multibelts()
 
 /mob/living/silicon/robot/proc/update_material_multibelts()
@@ -454,7 +456,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/datum/matter_synth/synth in module.synths)
 		if(istype(synth, synth_path))
-			own_remove(module, "synths", synth)
+			own_remove(module, nameof(module.synths), synth)
 	update_material_multibelts()
 
 //The Material Dispenser Multibelt
@@ -514,13 +516,13 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		else
 			integrated_tools_by_name -= our_item.name
 			integrated_tool_images -= our_item.name
-			own_remove(src, "cyborg_integrated_tools", our_item)
+			own_remove(src, nameof(cyborg_integrated_tools), our_item)
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
 		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
-			rel_add(current_stack, "synths", linked_synth)
-		own_add(src, "cyborg_integrated_tools", current_stack)
+			rel_add(current_stack, nameof(current_stack.synths), linked_synth)
+		own_add(src, nameof(cyborg_integrated_tools), current_stack)
 
 	. = ..()
 
@@ -578,8 +580,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	var/special_handling = FALSE
 
 /// The selected pocket (one of `pockets`) or item.
-REL(/obj/item/gripper, current_pocket)
-REL(/obj/item/gripper, our_robot)
+/obj/item/gripper/declare_ownership(decl)
+	..()
+	rel(decl, nameof(current_pocket))
+	rel(decl, nameof(our_robot))
 
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE
@@ -593,12 +597,12 @@ TYPE_TABLE(/obj/item/storage/internal/gripper, hold_spec, list(HOLD_MAX_SIZE(ITE
 		for(var/i = 1, i <= total_pockets, i++)
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
 			new_pocket.name = "Pocket [i]"
-			own_add(src, "pockets", new_pocket)
-	rel_set(src, "current_pocket", peek(pockets))
+			own_add(src, nameof(pockets), new_pocket)
+	rel_set(src, nameof(current_pocket), peek(pockets))
 	if(isrobot(loc.loc)) //We're in the module.
-		rel_set(src, "our_robot", loc.loc)
+		rel_set(src, nameof(our_robot), loc.loc)
 	else if(isrobot(loc)) //We spawned in the robot's module slots...Weird, but whatever.
-		rel_set(src, "our_robot", loc)
+		rel_set(src, nameof(our_robot), loc)
 	else //We were in neither. Let's qdel ourselves.
 		return INITIALIZE_HINT_QDEL
 	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))
@@ -746,7 +750,7 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()
-	rel_set(src, "R", loc.loc)
+	rel_set(src, nameof(R), loc.loc)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
 /obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)

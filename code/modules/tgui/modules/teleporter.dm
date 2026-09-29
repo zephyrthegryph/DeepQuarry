@@ -66,7 +66,7 @@ UI_ACT_PROC(/datum/tgui_module/teleport_control, ui_act_select_target)
 	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 		return FALSE
 
-	rel_set(src, "locked", L[desc])
+	rel_set(src, nameof(/datum/cinematic::locked), L[desc])
 	locked_name = desc
 	return TRUE
 

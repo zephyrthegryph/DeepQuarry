@@ -197,7 +197,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 /obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
 	user.drop_item()
 	W.forceMove(src)
-	rel_add(src, "stored_materials", W)
+	rel_add(src, nameof(stored_materials), W)
 	act_message(user, src, others = span_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
@@ -413,7 +413,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				rel_add(src, "stored_materials", inserted_mob)
+				rel_add(src, nameof(stored_materials), inserted_mob)
 				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
@@ -434,7 +434,7 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	rel_add(src, "stored_materials", W)
+	rel_add(src, nameof(stored_materials), W)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
@@ -683,7 +683,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				rel_add(src, "stored_materials", inserted_mob)
+				rel_add(src, nameof(stored_materials), inserted_mob)
 				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
@@ -702,7 +702,7 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	rel_add(src, "stored_materials", W)
+	rel_add(src, nameof(stored_materials), W)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 

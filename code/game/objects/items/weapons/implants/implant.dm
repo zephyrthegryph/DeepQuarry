@@ -44,7 +44,7 @@
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
 		// reverse list on a bare mob the way an organ's `implants` is one.
-		rel_set(src, "imp_in", source)
+		rel_set(src, nameof(imp_in), source)
 		forceMove(source)
 
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction
 			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(src)
 		forceMove(implanter)
-		own_set(implanter, "imp", src)
+		own_set(implanter, nameof(implanter.imp), src)
 		implanter.update()
 	else
 		return FALSE
@@ -391,8 +391,8 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implant/chem/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(50)
-	own_set(src, "reagents", R)
-	rel_set(R, "my_atom", src)
+	own_set(src, nameof(reagents), R)
+	rel_set(R, nameof(R.my_atom), src)
 
 /obj/item/implant/chem/trigger(emote, source as mob)
 	if(emote == "deathgasp")

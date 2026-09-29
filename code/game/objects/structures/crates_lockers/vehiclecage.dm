@@ -27,7 +27,7 @@
 /obj/structure/vehiclecage/Initialize(mapload)
 	. = ..()
 	if(my_vehicle_type)
-		rel_set(src, "my_vehicle", new my_vehicle_type(src))
+		rel_set(src, nameof(my_vehicle), new my_vehicle_type(src))
 		for(var/obj/I in get_turf(src))
 			if(I.density || I.anchored || I == src || !I.simulated || !istype(I, my_vehicle_type))
 				continue
@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appeara
 		if(AM.simulated)
 			AM.forceMove(T)
 
-	rel_clear(src, "my_vehicle")
+	rel_clear(src, nameof(my_vehicle))
 	act_message(user, src, MSG_SELF(span_notice("You finally release %T%.")), \
 		MSG_OTHERS(span_notice("%U% release %T%.")), \
 		MSG_BLIND(span_notice("You hear creaking metal.")))

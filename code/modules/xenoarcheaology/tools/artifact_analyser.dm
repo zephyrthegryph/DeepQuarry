@@ -30,9 +30,9 @@
 
 /obj/machinery/artifact_analyser/proc/reconnect_scanner()
 	//connect to a nearby scanner pad
-	rel_set(src, "owned_scanner", locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
+	rel_set(src, nameof(owned_scanner), locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		rel_set(src, "owned_scanner", locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
+		rel_set(src, nameof(owned_scanner), locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 
 /obj/machinery/artifact_analyser/declare_interactions(list/into)
 	into += list(
@@ -105,14 +105,14 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 			else
 				for(var/otype in priority_objects)
 					if(istype(O, otype))
-						rel_set(src, "scanned_object", O)
+						rel_set(src, nameof(/obj/machinery/artifact_analyser::scanned_object), O)
 						break
 				if(scanned_object())
 					break
 				else
 					secondary_priority = O
 		if(secondary_priority && !scanned_object())
-			rel_set(src, "scanned_object", secondary_priority)
+			rel_set(src, nameof(/obj/machinery/artifact_analyser::scanned_object), secondary_priority)
 		if(!scanned_object())
 			atom_say("Unable to isolate scan target.")
 		else
@@ -155,7 +155,7 @@ UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
 		var/obj/machinery/artifact/A = scanned_object()
 		A.set_anchored(FALSE)
 		A.in_use = 0
-	rel_clear(src, "scanned_object")
+	rel_clear(src, nameof(scanned_object))
 
 //hardcoded responses, oh well
 /obj/machinery/artifact_analyser/proc/get_scan_info(obj/scanned_obj)

@@ -44,14 +44,20 @@
 		color = null
 	..()
 
-REL_PAIR(/mob/living/simple_mob/blob, overmind, blob_mobs)
-REL_PAIR_LIST(/mob/observer/blob, blob_mobs, overmind)
-REL_PAIR(/mob/living/simple_mob/blob, factory, spores)
-REL_PAIR_LIST(/obj/structure/blob/factory, spores, factory)
+/mob/living/simple_mob/blob/declare_ownership(decl)
+	..()
+	rel(decl, nameof(overmind), pair = nameof(/mob/observer/blob::blob_mobs))
+	rel(decl, nameof(factory), pair = nameof(/obj/structure/blob/factory::spores))
+/mob/observer/blob/declare_ownership(decl)
+	..()
+	rel(decl, nameof(blob_mobs), list = TRUE, pair = nameof(/mob/living/simple_mob/blob::overmind))
+/obj/structure/blob/factory/declare_ownership(decl)
+	..()
+	rel(decl, nameof(spores), list = TRUE, pair = nameof(/mob/living/simple_mob/blob::factory))
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
-		rel_set(src, "overmind", B.overmind)
+		rel_set(src, nameof(overmind), B.overmind)
 		faction = B.overmind.blob_type.faction
 		update_icon()
 

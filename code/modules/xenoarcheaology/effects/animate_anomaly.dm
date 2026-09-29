@@ -19,7 +19,7 @@
 	var/atom/masterholder = get_master_holder()
 	if(utilizer) //We are in an artifact utilizer! Just run from whoever touched us last!
 		masterholder = utilizer
-		rel_set(src, "target", utilizer.last_user_touched())
+		rel_set(src, nameof(target), utilizer.last_user_touched())
 		return
 
 	if(!target() || target().z != masterholder.z || get_dist(target(), masterholder) > effectrange)
@@ -34,7 +34,7 @@
 				if(get_dist(masterholder, L) < get_dist(masterholder, ClosestMob))
 					ClosestMob = L
 
-		rel_set(src, "target", ClosestMob)
+		rel_set(src, nameof(target), ClosestMob)
 
 /datum/artifact_effect/animate_anomaly/DoEffectTouch(mob/living/user)
 	var/atom/holder = get_master_holder()

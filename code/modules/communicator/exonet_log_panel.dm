@@ -7,7 +7,7 @@
 	var/tmp/mob/observer/dead/host
 
 /datum/exonet_log_panel/New(mob/observer/dead/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: its host's panel cache lets go.
 /datum/exonet_log_panel/lifecycle_dematerialize()
@@ -38,7 +38,7 @@ UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{l
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)
-		own_set(src, "dq_exonet_log_panel_cache", new /datum/exonet_log_panel(src))
+		own_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
 

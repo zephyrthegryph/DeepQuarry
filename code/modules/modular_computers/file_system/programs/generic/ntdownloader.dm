@@ -54,7 +54,7 @@
 		generate_network_log("Began downloading file [PRG.filename].[PRG.filetype] from unspecified server.")
 		hacked_download = 0
 
-	own_set(src, "downloaded_file", PRG.clone())
+	own_set(src, nameof(downloaded_file), PRG.clone())
 
 /datum/computer_file/program/ntnetdownload/proc/check_file_download(filename)
 	//returns 1 if file can be downloaded, returns 0 if download prohibited
@@ -76,7 +76,7 @@
 	if(!downloaded_file)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
+	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -87,7 +87,7 @@
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
-	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
+	own_clear(src, nameof(downloaded_file), OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -130,7 +130,7 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
 	if(downloaderror)
 		download_completion = 0
 		download_netspeed = 0
-		own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
+		own_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), OWN_DELETE) // null already when store_file() took it
 		downloaderror = ""
 	return TRUE
 
@@ -138,7 +138,7 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnetdownload, "merge:ui_data_datum
 
 /// The computed part of /datum/computer_file/program/ntnetdownload's window data (declared on its UI_DATA row).
 /datum/computer_file/program/ntnetdownload/proc/ui_data_datum_computer_file_program_ntnetdownload(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	rel_set(src, "my_computer", computer())
+	rel_set(src, nameof(my_computer), computer())
 	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
 

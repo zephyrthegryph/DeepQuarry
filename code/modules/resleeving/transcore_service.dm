@@ -69,27 +69,27 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 /datum/world_service/transcore/proc/process_implants(resumed = 0)
 	if (!resumed)
 		// Create a flat list of every implant in every db with a value of the db they're in
-		rel_clear(src, "current_run")
+		rel_clear(src, nameof(current_run))
 		for(var/key in databases)
 			var/datum/transcore_db/db = databases[key]
 			for(var/obj/item/implant/backup/imp as anything in db.implants)
-				rel_add(src, "current_run", imp)
+				rel_add(src, nameof(current_run), imp)
 
 	while(length(current_run))
 		var/obj/item/implant/backup/imp = current_run[length(current_run)]
-		rel_remove(src, "current_run", imp)
+		rel_remove(src, nameof(current_run), imp)
 		var/datum/transcore_db/db = imp.our_db()
 
 		//Remove if not in a human anymore (a deleted implant already left both lists).
 		if(!isorgan(imp.loc))
-			rel_remove(db, "implants", imp)
+			rel_remove(db, nameof(db.implants), imp)
 			continue
 
 		//We're in an organ, at least.
 		var/obj/item/organ/external/EO = imp.loc
 		var/mob/living/carbon/human/H = EO.owner
 		if(!H)
-			rel_remove(db, "implants", imp)
+			rel_remove(db, nameof(db.implants), imp)
 			continue
 
 		//In a human
@@ -108,15 +108,15 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 /datum/world_service/transcore/proc/process_backups(resumed = 0)
 	if (!resumed)
 		// Create a flat list of every implant in every db with a value of the db they're in
-		rel_clear(src, "current_run")
+		rel_clear(src, nameof(current_run))
 		for(var/key in databases)
 			var/datum/transcore_db/db = databases[key]
 			for(var/name in db.backed_up)
-				rel_add(src, "current_run", db.backed_up[name])
+				rel_add(src, nameof(current_run), db.backed_up[name])
 
 	while(length(current_run))
 		var/datum/transhuman/mind_record/curr_MR = current_run[length(current_run)]
-		rel_remove(src, "current_run", curr_MR)
+		rel_remove(src, nameof(current_run), curr_MR)
 
 		//Invalid record
 		if(!curr_MR)
@@ -271,25 +271,25 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 // Called from mind_record to add itself to the transcore.
 /datum/transcore_db/proc/add_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	own_put(src, "backed_up", MR.mindname, MR)
-	own_set(src, "backed_up", sortAssoc(backed_up))
+	own_put(src, nameof(backed_up), MR.mindname, MR)
+	own_set(src, nameof(backed_up), sortAssoc(backed_up))
 
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	own_transfer(src, "backed_up", src, "has_left", "[MR.mindname]", "[MR.mindname]")
+	own_transfer(src, nameof(backed_up), src, nameof(has_left), "[MR.mindname]", "[MR.mindname]")
 	EXPIRY_STAMP(MR, cryo_at, CLOCK_WORLD)
 
 // Called from body_record to add itself to the transcore.
 /datum/transcore_db/proc/add_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	own_put(src, "body_scans", BR.mydna.name, BR) // deletes a record it replaces
-	own_set(src, "body_scans", sortAssoc(body_scans))
+	own_put(src, nameof(body_scans), BR.mydna.name, BR) // deletes a record it replaces
+	own_set(src, nameof(body_scans), sortAssoc(body_scans))
 
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana
 /datum/transcore_db/proc/remove_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	var/datum/transhuman/body_record/removed = own_take_member(src, "body_scans", "[BR.mydna.name]")
+	var/datum/transhuman/body_record/removed = own_take_member(src, nameof(body_scans), "[BR.mydna.name]")
 	if(removed && !QDELETED(removed))
 		qdel(removed) // the database owned it; nothing else keeps a removed record
 
@@ -300,7 +300,7 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 	GLOB.global_announcer.autosay("An emergency core dump has been initiated!", "TransCore Oversight", "Medical")
 
 	for(var/name in backed_up.Copy())
-		own_transfer(src, "backed_up", disk, "stored", name, name) // the disk owns the dumped records
+		own_transfer(src, nameof(backed_up), disk, nameof(disk.stored), name, name) // the disk owns the dumped records
 	core_dumped = TRUE
 	return length(disk.stored)
 
@@ -320,5 +320,9 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 /datum/om/behaviour/world/transcore/service()
 	return GLOB.transcore_service
 
-REL_LIST(/datum/world_service/transcore, current_run)
-REL_LIST(/datum/transcore_db, implants)
+/datum/world_service/transcore/declare_ownership(decl)
+	..()
+	rel(decl, nameof(current_run), list = TRUE)
+/datum/transcore_db/declare_ownership(decl)
+	..()
+	rel(decl, nameof(implants), list = TRUE)

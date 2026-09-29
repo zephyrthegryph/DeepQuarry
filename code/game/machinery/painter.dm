@@ -48,7 +48,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/gear_painter, "colormate{inserted?_active:}")
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "operable", list("0" = list(APPEARANCE_ICON_STATE = "colormate_off")))
 DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "colormate_open")))
 
-OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
+/obj/machinery/gear_painter/declare_ownership(decl)
+	..()
+	own(decl, nameof(inserted), policy = OWN_SPILL)
 
 /obj/machinery/gear_painter/declare_interactions(list/into)
 	into += list(
@@ -85,7 +87,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
 	user.drop_from_inventory(I)
 	I.forceMove(src)
-	own_set(src, "inserted", I)
+	own_set(src, nameof(inserted), I)
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -95,7 +97,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	if(user)
 		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
 	victim.forceMove(src)
-	own_set(src, "inserted", victim)
+	own_set(src, nameof(inserted), victim)
 
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE
@@ -126,7 +128,7 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
-	own_take(src, "inserted")
+	own_take(src, nameof(inserted))
 	update_icon()
 	SStgui.update_uis(src)
 

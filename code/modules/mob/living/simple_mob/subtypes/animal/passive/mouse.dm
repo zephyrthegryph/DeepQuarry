@@ -87,7 +87,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 		holder_type = /obj/item/holder/mouse/black
 
 	if(prob(40))
-		own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
+		own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -229,7 +229,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 	. = ..()
 	name = initial(name)
 	desc = initial(desc)
-	own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
+	own_add(src, nameof(rat_diseases), new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology/Crossed(atom/movable/AM)
 	. = ..()

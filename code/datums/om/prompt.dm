@@ -16,7 +16,9 @@
 /datum/om/prompt/var/datum/ui
 
 /// The prompt and the tgui input showing it point at each other.
-REL_PAIR(/datum/om/prompt, ui, om_prompt)
+/datum/om/prompt/declare_ownership(decl)
+	..()
+	rel(decl, nameof(ui), pair = nameof(/datum/tgui_alert/om::om_prompt))
 
 /// Shows the prompt to `user`. TRUE when it is waiting on an answer.
 /datum/om/prompt/proc/open(mob/user)
@@ -160,7 +162,9 @@ REL_PAIR(/datum/om/prompt, ui, om_prompt)
 /datum/tgui_alert/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_alert/om, om_prompt, ui)
+/datum/tgui_alert/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_alert/om/set_choice(choice)
 	. = ..()
@@ -179,7 +183,9 @@ REL_PAIR(/datum/tgui_alert/om, om_prompt, ui)
 /datum/tgui_list_input/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_list_input/om, om_prompt, ui)
+/datum/tgui_list_input/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_list_input/om/set_choice(choice)
 	. = ..()
@@ -198,7 +204,9 @@ REL_PAIR(/datum/tgui_list_input/om, om_prompt, ui)
 /datum/tgui_input_text/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_input_text/om, om_prompt, ui)
+/datum/tgui_input_text/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_input_text/om/set_entry(entry)
 	. = ..()
@@ -217,7 +225,9 @@ REL_PAIR(/datum/tgui_input_text/om, om_prompt, ui)
 /datum/tgui_input_number/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_input_number/om, om_prompt, ui)
+/datum/tgui_input_number/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_input_number/om/set_entry(entry)
 	. = ..()
@@ -236,7 +246,9 @@ REL_PAIR(/datum/tgui_input_number/om, om_prompt, ui)
 /datum/tgui_color_picker/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_color_picker/om, om_prompt, ui)
+/datum/tgui_color_picker/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_color_picker/om/set_choice(choice)
 	. = ..()
@@ -255,7 +267,9 @@ REL_PAIR(/datum/tgui_color_picker/om, om_prompt, ui)
 /datum/tgui_checkbox_input/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_checkbox_input/om, om_prompt, ui)
+/datum/tgui_checkbox_input/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_checkbox_input/om/set_choices(list/selections)
 	. = ..()
@@ -276,7 +290,9 @@ REL_PAIR(/datum/tgui_checkbox_input/om, om_prompt, ui)
 /datum/tgui_input_colormatrix/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_input_colormatrix/om, om_prompt, ui)
+/datum/tgui_input_colormatrix/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 /datum/tgui_input_colormatrix/om/set_entry(entry)
 	. = ..()
@@ -301,7 +317,9 @@ REL_PAIR(/datum/tgui_input_colormatrix/om, om_prompt, ui)
 /datum/tgui_bitfield_input/om
 	var/datum/om/prompt/om_prompt
 
-REL_PAIR(/datum/tgui_bitfield_input/om, om_prompt, ui)
+/datum/tgui_bitfield_input/om/declare_ownership(decl)
+	..()
+	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
 
 UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/om, ui_act_submit)
 	// Answer before the window closes: closing it means cancel.

@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
+					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
 
 			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					rel_remove(GLOB.xenoarch_service, "digsite_spawning_turfs", T)
+					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::digsite_spawning_turfs), T)
 
 		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
@@ -137,7 +137,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			own_add(src, "positive_locations", D)
+			own_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -153,7 +153,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			own_add(src, "positive_locations", D)
+			own_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
@@ -209,7 +209,7 @@ UI_ACT(/obj/item/depth_scanner, "select", ui_act_select, UI_ARG_NUM("select"))
 UI_ACT_PROC(/obj/item/depth_scanner, ui_act_select)
 	var/index = params["select"]
 	if(index && index <= LAZYLEN(positive_locations))
-		rel_set(src, "current", LAZYACCESS(positive_locations, index))
+		rel_set(src, nameof(/datum/forms::current), LAZYACCESS(positive_locations, index))
 	return TRUE
 
 UI_ACT(/obj/item/depth_scanner, "clear", ui_act_clear, UI_ARG_NUM("clear"))
@@ -218,11 +218,11 @@ UI_ACT_PROC(/obj/item/depth_scanner, ui_act_clear)
 	if(index)
 		if(index <= LAZYLEN(positive_locations))
 			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-			rel_clear(src, "current")
-			own_remove(src, "positive_locations", D) // deletes the scan
+			rel_clear(src, nameof(/datum/forms::current))
+			own_remove(src, nameof(/obj/item/depth_scanner::positive_locations), D) // deletes the scan
 	else
-		rel_clear(src, "current")
-		own_clear(src, "positive_locations", OWN_DELETE)
+		rel_clear(src, nameof(/datum/forms::current))
+		own_clear(src, nameof(/obj/item/depth_scanner::positive_locations), OWN_DELETE)
 	return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
@@ -270,7 +270,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/beacon_locator, PERIODIC_SLOW, "locating")
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							rel_set(src, "target_radio", R)
+							rel_set(src, nameof(target_radio), R)
 
 				set_scan_ticks(0)
 				if(target_radio())
@@ -309,7 +309,7 @@ UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "me
 
 UI_ACT(/obj/item/beacon_locator, "reset_tracking", ui_act_reset_tracking)
 UI_ACT_PROC(/obj/item/beacon_locator, ui_act_reset_tracking)
-	rel_clear(src, "target_radio")
+	rel_clear(src, nameof(/obj/item/beacon_locator::target_radio))
 	set_scan_ticks(1)
 	return TRUE
 

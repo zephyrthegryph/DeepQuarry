@@ -179,7 +179,7 @@ UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
 		var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
 		switch(params["module_mode"])
 			if("select")
-				rel_set(src, "selected_module", module)
+				rel_set(src, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
 				. = TRUE
 			if("engage")
 				module.engage()

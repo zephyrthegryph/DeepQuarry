@@ -22,13 +22,21 @@
 /datum/dq_decl_kinds_inner
 	var/list/owners
 
-REL_PAIR_LIST(/datum/dq_decl_kinds_owner, members, back)
-REL_PAIR(/datum/dq_decl_kinds_member, back, members)
-REL_LIST(/datum/dq_decl_kinds_member, names)
-REL(/datum/dq_decl_kinds_owner, hub)
-REL(/datum/dq_decl_kinds_hub, slot)
-REL(/datum/dq_decl_kinds_hub, inner)
-REL_LIST(/datum/dq_decl_kinds_inner, owners)
+/datum/dq_decl_kinds_owner/declare_ownership(decl)
+	..()
+	rel(decl, nameof(members), list = TRUE, pair = nameof(/datum/dq_decl_kinds_member::back))
+	rel(decl, nameof(hub))
+/datum/dq_decl_kinds_member/declare_ownership(decl)
+	..()
+	rel(decl, nameof(back), pair = nameof(/datum/dq_decl_kinds_owner::members))
+	rel(decl, nameof(names), list = TRUE)
+/datum/dq_decl_kinds_hub/declare_ownership(decl)
+	..()
+	rel(decl, nameof(slot))
+	rel(decl, nameof(inner))
+/datum/dq_decl_kinds_inner/declare_ownership(decl)
+	..()
+	rel(decl, nameof(owners), list = TRUE)
 
 /datum/unit_test/dq_lifecycle_declared_kinds
 
@@ -40,17 +48,17 @@ REL_LIST(/datum/dq_decl_kinds_inner, owners)
 	var/datum/dq_decl_kinds_hub/hub = new
 	var/datum/dq_decl_kinds_inner/inner = new
 
-	rel_add(owner, "members", first)
-	rel_set(second, "back", owner)
+	rel_add(owner, nameof(owner.members), first)
+	rel_set(second, nameof(second.back), owner)
 	TEST_ASSERT_EQUAL(first.back, owner, "REL_PAIR_LIST sets the member's partner side")
 	TEST_ASSERT((second in owner.members), "REL_PAIR sets the owner's list side")
-	rel_add(first, "names", owner)
-	rel_add(first, "names", other)
-	rel_set(hub, "slot", owner)
-	rel_set(hub, "inner", inner)
-	rel_set(owner, "hub", hub)
-	rel_add(inner, "owners", owner)
-	rel_add(inner, "owners", other)
+	rel_add(first, nameof(first.names), owner)
+	rel_add(first, nameof(first.names), other)
+	rel_set(hub, nameof(hub.slot), owner)
+	rel_set(hub, nameof(hub.inner), inner)
+	rel_set(owner, nameof(owner.hub), hub)
+	rel_add(inner, nameof(inner.owners), owner)
+	rel_add(inner, nameof(inner.owners), other)
 
 	qdel(owner)
 

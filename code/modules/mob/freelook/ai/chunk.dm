@@ -15,7 +15,7 @@
 
 		var/turf/point = locate(src.x + 8, src.y + 8, src.z)
 		if(get_dist(point, c) > 24)
-			rel_remove(src, "cameras", c)
+			rel_remove(src, nameof(cameras), c)
 
 		for(var/turf/t in c.can_see())
 			visible[t] = t
@@ -29,7 +29,7 @@
 /datum/chunk/camera/New(loc, x, y, z)
 	for(var/obj/machinery/camera/c in range(16, locate(x + 8, y + 8, z)))
 		if(c.can_use())
-			rel_add(src, "cameras", c)
+			rel_add(src, nameof(cameras), c)
 	..()
 
 /mob/living/silicon/proc/provides_camera_vision()

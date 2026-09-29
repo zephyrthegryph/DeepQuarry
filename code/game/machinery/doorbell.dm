@@ -54,7 +54,7 @@ DECLARE_APPEARANCE(/obj/machinery/doorbell_chime, "panel_open", list("1" = list(
 	var/obj/item/multitool/multitool = tool
 	if(multitool.connectable() && istype(multitool.connectable(), /obj/machinery/button/doorbell))
 		var/obj/machinery/button/doorbell/button = multitool.connectable()
-		keyed_set_id(src, "id_tag", button.id) // joins the button's keyed chimes
+		keyed_set_id(src, nameof(id_tag), button.id) // joins the button's keyed chimes
 		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -117,8 +117,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
-REL_KEYED_LIST(/obj/machinery/button/doorbell, chimes, id, /obj/machinery/doorbell_chime)
-KEYED_TARGET(/obj/machinery/doorbell_chime, id_tag)
+/obj/machinery/button/doorbell/declare_ownership(decl)
+	..()
+	rel(decl, nameof(chimes), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/doorbell_chime)
+/obj/machinery/doorbell_chime/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id_tag))
 
 /obj/machinery/button/doorbell/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
@@ -152,7 +156,7 @@ KEYED_TARGET(/obj/machinery/doorbell_chime, id_tag)
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/M = tool
-	rel_set(M, "connectable", src)
+	rel_set(M, nameof(M.connectable), src)
 	to_chat(user, span_notice("You save the data in \the [M]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 

@@ -94,19 +94,19 @@ UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_TEX
 UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
 	for(var/obj/machinery/telecomms/T in servers)
 		if(T.id == params["id"])
-			rel_set(src, "SelectedServer", T)
+			rel_set(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer), T)
 			break
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/server, "mainmenu", ui_act_mainmenu)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_mainmenu)
-	rel_clear(src, "SelectedServer")
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/server, "release", ui_act_release)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_release)
-	rel_clear(src, "servers")
-	rel_clear(src, "SelectedServer")
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::servers))
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/server::SelectedServer))
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/server, "scan", ui_act_scan)
@@ -117,7 +117,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
 
 	for(var/obj/machinery/telecomms/server/T in range(25, src))
 		if(T.network == network)
-			rel_add(src, "servers", T)
+			rel_add(src, nameof(/obj/machinery/computer/telecomms/server::servers), T)
 
 	if(!length(servers))
 		set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
@@ -137,7 +137,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
 			return
 		var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
 		set_temp("DELETED ENTRY: [D.name]", "bad")
-		own_remove(SelectedServer(), "log_entries", D)
+		own_remove(SelectedServer(), nameof(/obj/machinery/telecomms/server::log_entries), D)
 	else
 		set_temp("FAILED: NO SELECTED MACHINE", "bad")
 	. = TRUE
@@ -161,7 +161,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_cleartemp)
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		rel_clear(src, "servers")
+		rel_clear(src, nameof(servers))
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE

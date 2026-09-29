@@ -21,7 +21,7 @@
 	var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 	TEST_ASSERT_NOTNULL(torso, "setup: the human has a torso")
 	torso.robotize()
-	rel_clear(H, "synthetic") // the chassis record is cosmetic data, not the biology
+	rel_clear(H, nameof(H.synthetic)) // the chassis record is cosmetic data, not the biology
 	TEST_ASSERT_EQUAL(H.biology(), BIOLOGY_SYNTHETIC, "a robotic torso makes the body synthetic")
 	TEST_ASSERT(HAS_SYNTHETIC_BIOLOGY(H), "HAS_SYNTHETIC_BIOLOGY reads the body")
 	TEST_ASSERT_NULL(H.robolimb_model(), "robolimb_model() is the chassis record only")
@@ -91,12 +91,12 @@
 /datum/unit_test/dq_k_b_d25_single_heat_writer/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/stomach/machine/S = allocate(/obj/item/organ/internal/stomach/machine)
-	rel_set(S, "owner", H)
+	rel_set(S, nameof(S.owner), H)
 	H.robobody_count = 3
 	var/before = H.bodytemperature
 	S.handle_organ_proc_special()
 	TEST_ASSERT_EQUAL(H.bodytemperature, before, "the machine stomach writes no chassis heat")
-	rel_clear(S, "owner")
+	rel_clear(S, nameof(S.owner))
 
 /// P2-S11: nutrition writers clamp.
 /datum/unit_test/dq_k_b_s11_nutrition_writers_clamp

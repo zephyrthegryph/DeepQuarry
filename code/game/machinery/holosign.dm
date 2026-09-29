@@ -77,8 +77,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holosign, TYPE_PROC_REF(/atom, appearance
 
 /// Holosigns sharing our id (keyed).
 /obj/machinery/button/holosign/var/list/obj/machinery/holosign/controlled_signs
-REL_KEYED_LIST(/obj/machinery/button/holosign, controlled_signs, id, /obj/machinery/holosign)
-KEYED_TARGET(/obj/machinery/holosign, id)
+/obj/machinery/button/holosign/declare_ownership(decl)
+	..()
+	rel(decl, nameof(controlled_signs), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/holosign)
+/obj/machinery/holosign/declare_ownership(decl)
+	..()
+	rel(decl, keyed = nameof(id))
 
 /obj/machinery/button/holosign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)

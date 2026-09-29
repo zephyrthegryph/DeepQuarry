@@ -10,7 +10,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	if(!opened)
 		if(recharging)
 			var/obj/item/recharging_atom = recharging
-			rel_clear(src, "recharging")
+			rel_clear(src, nameof(recharging))
 			if(!QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
@@ -29,7 +29,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 			to_chat(user, span_warning("\The [src] already has \a [recharging] inserted into its recharging port."))
 		else if(user.unEquip(W))
 			W.forceMove(src)
-			rel_set(src, "recharging", W)
+			rel_set(src, nameof(recharging), W)
 			recharge_complete = FALSE
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%'s recharging port."), item = W)
 		return TRUE

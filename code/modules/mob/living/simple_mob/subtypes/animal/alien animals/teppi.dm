@@ -815,10 +815,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	T.stop_pulling()
 	if(current_affinity >= 50)
 		var/tumby = vore_selected
-		rel_set(src, "vore_selected", friend_zone)
+		rel_set(src, nameof(vore_selected), friend_zone)
 		ai_busy_end()
 		..()
-		rel_set(src, "vore_selected", tumby)
+		rel_set(src, nameof(vore_selected), tumby)
 		return
 	else if(current_affinity <= -50)
 		vore_selected.digest_mode = DM_DIGEST
