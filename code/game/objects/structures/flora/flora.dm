@@ -329,9 +329,8 @@
 /obj/structure/flora/pottedplant/proc/attackby_timed_done2(datum/om/task/timed/pottedplant_attackby/task)
 	var/obj/item/I = task.I
 	var/mob/user = task.actor
-	user.drop_from_inventory(I, src)
-	I.forceMove(src)
-	own_set(src, "stored_item", I)
+	if(!own_set(src, nameof(src.stored_item), I, user = user))
+		return
 	act_message(user, src, others = "[icon2html(src,viewers(src))] [icon2html(I,viewers(src))] %U% places [I] into %T%.")
 
 /obj/structure/flora/pottedplant/proc/attackby_timed_failed2(datum/om/task/timed/pottedplant_attackby/task)

@@ -69,9 +69,8 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 		if(scanmod)
 			to_chat(user, span_warning("There's already [scanmod] installed! Remove it first."))
 			return INTERACTION_HANDLED_PASS
-		user.remove_from_mob(I)
-		I.forceMove(src)
-		own_set(src, "scanmod", I)
+		if(!own_set(src, nameof(src.scanmod), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You install [scanmod] into [src]."))
 		update_fail_chance()
 	else

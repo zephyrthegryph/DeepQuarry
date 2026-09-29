@@ -82,13 +82,13 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 	else
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " inserts \a [held] into %T%."))
 
-	user.drop_from_inventory(held)
-	held.forceMove(src)
 	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
+	if(!own_set(src, nameof(src.cur_assembly), held, user = user))
+		own_set(src, nameof(src.cur_assembly), old_assembly)
+		return TRUE
 	if(old_assembly)
 		old_assembly.forceMove(get_turf(src))
 		user.put_in_hands(old_assembly)
-	own_set(src, "cur_assembly", held)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
 		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))

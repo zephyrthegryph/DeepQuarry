@@ -212,9 +212,8 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		user.drop_item()
-		item.forceMove(src)
-		own_set(src, "beaker", item)
+		if(!own_set(src, nameof(src.beaker), item, user = user))
+			return TRUE
 		act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 		SStgui.update_uis(src)
 		return TRUE
@@ -352,9 +351,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		return FALSE
 	if(connected())
 		if(!disk)
-			user.drop_item()
-			I.forceMove(src)
-			own_set(src, "disk", I)
+			if(!own_set(src, nameof(src.disk), I, user = user))
+				return FALSE
 			to_chat(user, "You insert [I].")
 			SStgui.update_uis(src) // update all UIs attached to src
 	else

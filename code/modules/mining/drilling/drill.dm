@@ -257,9 +257,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		if(cell)
 			balloon_alert(user, "the drill already has a cell installed.")
 		else
-			user.drop_item()
-			O.forceMove(src)
-			own_set(src, "cell", O)
+			if(!own_set(src, nameof(src.cell), O, user = user))
+				return TRUE
 			materialize_parts()
 			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")

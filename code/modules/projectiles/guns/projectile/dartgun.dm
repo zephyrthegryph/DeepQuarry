@@ -111,9 +111,8 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun, "{base_state}{appearance_s
 			to_chat(user, span_blue("[src] already has [max_beakers] beakers in it - another one isn't going to fit!"))
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/reagent_containers/glass/beaker/B = I
-		user.drop_item()
-		B.forceMove(src)
-		own_add(src, "beakers", B)
+		if(!own_add(src, nameof(src.beakers), B, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1
