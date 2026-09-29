@@ -63,6 +63,7 @@ def timestamp_names():
         if "EXPIRY" in raw:
             names.update(m.group(1) for m in DECL.finditer(raw))
     names.discard("name")
+    names.discard("time")  # would match every `world.time`
     return names
 
 

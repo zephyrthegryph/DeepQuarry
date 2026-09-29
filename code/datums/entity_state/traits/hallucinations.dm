@@ -38,7 +38,7 @@
 	var/med_vol = get_med_volume(human_guy)
 
 	if(!episode["in_episode"])
-		if(world.time > episode["next_episode_begin"])
+		if(ELAPSED_SINCE(src, episode["next_episode_begin"], CLOCK_WORLD) > 0)
 			episode["meds_at_beginning"] = med_vol
 			episode["in_episode"] = TRUE
 
@@ -55,7 +55,7 @@
 			episode["meds_at_end"] = TRUE
 
 	else
-		if(world.time > episode["next_episode_end"])
+		if(ELAPSED_SINCE(src, episode["next_episode_end"], CLOCK_WORLD) > 0)
 			episode["meds_at_end"] = med_vol
 			episode["in_episode"] = FALSE
 			var/break_length_dev = med_vol ? break_length_meds_dev : break_length_nomeds_dev

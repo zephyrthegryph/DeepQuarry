@@ -227,7 +227,7 @@
 	var/list/baseline
 	var/list/followup
 	for(var/list/evidence as anything in scans)
-		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || evidence["scan_time"] > world.time)
+		if(evidence["subject_id"] != report.target_ref || evidence["scan_time"] < report.consent_time || BEFORE(packet, evidence["scan_time"], CLOCK_WORLD))
 			continue
 		var/severity = medical_snapshot_condition_severity(evidence["snapshot"], report.target_condition_type)
 		if(isnum(severity) && severity >= MEDICAL_RARE_CASE_MINIMUM_SEVERITY)

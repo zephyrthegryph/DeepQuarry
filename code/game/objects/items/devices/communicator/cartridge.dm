@@ -117,7 +117,7 @@
 			if(!istype(user)) // Invalid ref
 				return
 
-			if(world.time < internal_data["supply_reqtime"])
+			if(BEFORE(src, internal_data["supply_reqtime"], CLOCK_WORLD))
 				visible_message(span_warning("[src] flashes, \"[internal_data["supply_reqtime"] - world.time] seconds remaining until another requisition form may be printed.\""))
 				return
 
