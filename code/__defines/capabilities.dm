@@ -11,6 +11,11 @@
 /// The entry refuses while locked.
 #define LOCK CAP_LOCKED
 
+// ---- layers ----
+/// layer = CAP_NO_LAYER: the capability draws nothing (a DMI without that state). DM substitutes the
+/// default for an explicit null argument, so null can't mean "none".
+#define CAP_NO_LAYER "__none"
+
 // ---- change channels a capability raises ----
 /// A capability's state changed (cap_state bit or its data datum).
 #define CHANGE_CAPABILITY CHANGE_EXPLICIT
@@ -66,3 +71,5 @@
 #define TYPE_DERIVES_VERBS (1<<2)
 /// Not yet known: the type's first refresh fills in LOOK and VERBS.
 #define TYPE_DERIVES_PENDING (1<<3)
+/// type_verbs() lists something.
+#define TYPE_DERIVES_TYPE_VERBS (1<<4)
