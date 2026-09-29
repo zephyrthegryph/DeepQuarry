@@ -1,10 +1,14 @@
 # sys_lint baseline for tools/ci/sys_rules/dx_reactive.py (doc/rewrite/systems.md); shrink-only, target 0
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+dx_untracked_read	code/game/machinery/computer/supply.dm	if(shuttle.shuttle_docking_controller)
+dx_untracked_read	code/game/machinery/computer/supply.dm	switch(shuttle.shuttle_docking_controller.get_docking_status())
 dx_untracked_read	code/game/machinery/computer/supply.dm	switch(shuttle.moving_status)
 dx_untracked_read	code/game/machinery/computer/supply.dm	for(var/datum/supply_order/S in GLOB.supply_service.order_history)
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/cargo_market_counterparty/market_seller = GLOB.supply_service.market_counterparties?[S.market_counterparty_id]
+dx_untracked_read	code/game/machinery/computer/supply.dm	"status" = S.status,
+dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Supply Pack", "entry" = S.name),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Charged", "entry" = S.paid_amount ? "[S.paid_amount] Thalers" : "Unpaid"),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Seller", "entry" = GLOB.supply_service.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Index", "entry" = S.index),
@@ -17,7 +21,11 @@ dx_untracked_read	code/game/machinery/computer/supply.dm	for(var/datum/exported_
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/cargo_market_counterparty/market_buyer = GLOB.supply_service.market_counterparties?[E.market_counterparty_id]
 dx_untracked_read	code/game/machinery/computer/supply.dm	"contents" = E.contents,
 dx_untracked_read	code/game/machinery/computer/supply.dm	"error" = E.contents["error"],
+dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Name", "entry" = E.name),
+dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Value", "entry" = E.value),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Buyer", "entry" = GLOB.supply_service.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Market premium", "entry" = E.market_premium)
 dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/department/primary_department = SSjob.get_primary_department_of_job(human_user.job)
+dx_untracked_read	code/game/machinery/computer/supply.dm	if(primary_department?.name in GLOB.department_accounts)
+dx_untracked_read	code/game/machinery/computer/supply.dm	department = primary_department.name
 dx_untracked_read	code/game/machinery/computer/supply.dm	data["personal_balance"] = personal_account?.money || 0

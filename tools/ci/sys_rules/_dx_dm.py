@@ -241,14 +241,19 @@ def procs_in(rel, raw_lines, clean=None):
     out = []
     i, n = 0, len(clean)
     while i < n:
-        m = PROC_HEAD.match(clean[i].rstrip())
+        head, last = clean[i].rstrip(), i
+        # A head continued with `\` (discouraged, but it exists): join its lines.
+        while head.endswith("\\") and last + 1 < n and head[:1] == "/":
+            last += 1
+            head = head[:-1] + " " + clean[last].strip()
+        m = PROC_HEAD.match(head)
         if not m or "/var/" in m.group(1) + "/":
             i += 1
             continue
         path = m.group(1) or "/"
         if path in ("/proc", "/verb"):
             path = "/"  # `/proc/x(` is a global proc
-        start = i + 1
+        start = last + 1
         j = start
         while j < n and (not clean[j].strip() or clean[j][:1] in " \t"):
             j += 1
@@ -312,9 +317,17 @@ class Tree:
         self.files = files
         self.raw = dict(files)
         self.clean = {rel: sanitize(lines) for rel, lines in files}
+        self._texts = {}
         self._procs = None
         self._type_vars = None
         self._by_name = None
+
+    def raw_text(self, rel):
+        """The file's raw text (joined once), for cheap substring prefilters."""
+        text = self._texts.get(rel)
+        if text is None:
+            text = self._texts[rel] = "\n".join(self.raw[rel])
+        return text
 
     @property
     def procs(self):
@@ -454,9 +467,10 @@ def pick_arg(args, index, name):
     return None
 
 
-def enclosing_call(text, i):
+def enclosing_call(text, i, member=False):
     """For the expression starting at text[i]: (name, positional index, named-arg key) of the
-    innermost call it is a direct argument of, or None."""
+    innermost call it is a direct argument of, or None. With member=True a fourth element says
+    whether the call is a member call (`x.name(`, `x?.name(`, `x:name(`)."""
     depth, commas = 0, 0
     j = i - 1
     while j >= 0:
@@ -480,7 +494,10 @@ def enclosing_call(text, i):
                     elif text[k] == "," and d2 == 0:
                         seg_start = k + 1
                 key = re.match(r"\s*([A-Za-z_]\w*)\s*=(?!=)", text[seg_start:i])
-                return m.group(1), commas, key.group(1) if key else None
+                got = (m.group(1), commas, key.group(1) if key else None)
+                if member:
+                    got += (text[:m.start()].rstrip().endswith((".", ":")),)
+                return got
             depth -= 1
         elif c == "," and depth == 0:
             commas += 1

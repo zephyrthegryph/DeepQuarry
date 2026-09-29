@@ -17035,7 +17035,7 @@ old_field	code/game/machinery/machinery_fields.dm	OM_FIELD_SETTER(/atom, density
 old_field	code/game/machinery/machinery_fields.dm	OM_FIELD_SETTER(/obj/machinery, density, CHANGE_MACHINE_SETTINGS)
 old_field	code/game/machinery/machinery_fields.dm	OM_FLAG_FIELD(/obj/vehicle, stat, 0, CHANGE_EXPLICIT)
 old_field	code/game/machinery/machinery_fields.dm	OM_FIELD_SETTER(/obj/machinery, use_power, CHANGE_MACHINE_SETTINGS)
-old_field	code/game/machinery/machinery_fields.dm	OM_DERIVE_FIELD(/atom, get_integrity, CHANGE_INTEGRITY)
+old_field	code/game/machinery/machinery_fields.dm	OM_DERIVE_FIELD(/atom, get_integrity, list(CHANGE_INTEGRITY))
 old_field	code/game/machinery/magnet.dm	OM_FIELD(/obj/machinery/magnetic_controller, path_moving, FALSE, CHANGE_MACHINE_SETTINGS)
 old_field	code/game/machinery/paradox.dm	OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
 old_field	code/game/machinery/rechargestation.dm	OM_DERIVE_FIELD(/obj/machinery/recharge_station, unbroken, list("stat"))

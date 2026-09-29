@@ -90,3 +90,6 @@ define_sanity_output.txt
 /.tool_matches.txt
 /.rustydream-*
 /.build-temp/
+
+# tools/ci/doc_snippets.py --write: the doc/rewrite dm blocks, compiled only with -DDOC_SNIPPETS
+/tools/ci/generated/

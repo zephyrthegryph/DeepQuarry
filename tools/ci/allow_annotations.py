@@ -34,6 +34,7 @@ LINTS = {
     "check_grep": "tools/ci/check_grep.sh (same line only)",
     "containment": "tools/ci/containment_lint.py",
     "cooldown": "tools/ci/cooldown_lint.py",
+    "doc_snippets": "tools/ci/doc_snippets.py (a doc/rewrite dm block calling a name that doesn't exist)",
     "decl": "tools/ci/decl_lint.py (Initialize()/on_destroy() work a lifecycle declaration now does)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "interactions": "tools/ci/interactions_lint.py (DECLARE_INTERACTIONS replacing an ancestor's specs)",
@@ -50,7 +51,7 @@ LINTS = {
     "spatial": "tools/ci/spatial_lint.py",
     "tracked": "tools/ci/tracked_lint.py (writes to a TRACKED var outside its setter; target 0)",
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
-    "ui_actions": "tools/ci/ui_actions_lint.py (ui_ parameters no act() sends, or used before validation)",
+    "ui_actions": "tools/ci/ui_actions_lint.py (act_ parameters no act() sends, or used before validation)",
 }
 
 

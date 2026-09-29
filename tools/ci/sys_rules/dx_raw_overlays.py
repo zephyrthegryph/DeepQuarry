@@ -32,9 +32,9 @@ EXEMPT = (
 )
 
 
-def scan_file(rel, lines):
+def scan_file(rel, lines, clean=None):
     found = []
-    for number, code in enumerate(dm.sanitize(lines), 1):
+    for number, code in enumerate(clean if clean is not None else dm.sanitize(lines), 1):
         if RAW.search(code):
             found.append((rel, number))
     return found
@@ -42,10 +42,11 @@ def scan_file(rel, lines):
 
 def scan(files):
     out = {rule: [] for rule in RULES}
+    tree = dm.tree(files)
     for rel, lines in files:
-        if rel in EXEMPT:
+        if rel in EXEMPT or "overlay" not in tree.raw_text(rel):
             continue
-        out["dx_raw_overlays"].extend(scan_file(rel, lines))
+        out["dx_raw_overlays"].extend(scan_file(rel, lines, tree.clean[rel]))
     return out
 
 

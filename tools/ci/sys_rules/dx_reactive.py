@@ -9,9 +9,10 @@ Rules:
         - draw(datum/look/look), should_run(), hidden_verbs(), tgui_data() on any type;
         - draw/gate/ui_data/examine/hidden_verbs on a /datum/capability subtype;
         - any proc named by `needs = PROC_REF(x)` / `TYPE_PROC_REF(T, x)` somewhere in the tree.
-      A read is fine when the var is declared `TRACKED(type, var, ...)` or has a hand-written
-      `set_<var>()` proc somewhere, or its root is a relation var declared with a watch (a REL*
-      declaration or rel() call naming the var with WATCH / watch =).
+      A read is fine when the var is declared `TRACKED(type, var, ...)` or registered with
+      `SETTER(type, var)` somewhere (its setter calls changed()), or its root is a relation var
+      declared with a watch (a REL* declaration or rel() call naming the var with WATCH / watch =).
+      A proc merely named set_<var> doesn't count: only a registered setter is known to mark.
   dx_caps_instance_read (M3)
       capabilities() reads an instance var (`src.x`, or a bare name that is a var of the type, its
       path ancestors or a DM builtin). capabilities() is built ONCE per type, so the first
@@ -24,15 +25,15 @@ Rules:
 
 Static approximations (documented limits):
   - Types are unknown, so tracking is by VAR NAME: TRACKED(/obj/a, charge) also covers a read of
-    `charge` on an unrelated type. A hand-written set_<var>() counts the same way.
+    `charge` on an unrelated type. SETTER(T, v) counts the same way.
   - Own reads: `src.x`, a bare var name, and `holder.x` inside a capability proc (the holder is the
-    capability's own object: the dispatcher marks it). In `a.b.c`, b is own only when a is src (or
-    the holder); a bare `cell.charge` reads `charge` on another object.
+    capability's own object: the dispatcher marks it), and reads through a local alias of either
+    (`var/obj/machinery/M = holder` / `= src`). In `a.b.c`, b is own only when a is own; a bare
+    `cell.charge` reads `charge` on another object.
   - Context roots are not state: user, look, entry, data, ui, state, world, global, GLOB (only its
     member after the global var), and subsystem/define roots (SSx, ALL_CAPS of 3+ chars).
   - Chains after a call or an index (`get_area(src).power`, `L[1].x`) are not seen; `len`, `type`
     and `parent_type` are never state.
-  - A local alias of src (`var/obj/machinery/M = src; M.x`) counts as another object (ALLOW it).
   - The core has no relation watch option yet, so until one ships no relation counts as watched.
   - M5 writes: a bare `v = ` counts only in procs of the timed type, its ancestors or subtypes
     (and not where v is a param or local); `X.v = ` counts anywhere (name-based).
@@ -60,7 +61,8 @@ NEVER_STATE = {"len", "type", "parent_type"}
 GLOBAL_ROOT = re.compile(r"^(?:SS[a-z]\w*|[A-Z][A-Z0-9_]{2,})$")
 
 NEEDS = re.compile(r"\bneeds\s*=\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\))")
-TRACKED = re.compile(r"^\s*TRACKED\(\s*/[\w/]+\s*,\s*(\w+)\s*,")
+TRACKED = re.compile(r"^\s*(?:TRACKED\(\s*/[\w/]+\s*,\s*(\w+)\s*,|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))")
+ALIAS = re.compile(r"\bvar/(?:[\w/]+/)?(\w+)\s*=\s*(\w+)\s*$")
 WATCH_REL = re.compile(r"^\s*REL\w*\(\s*/[\w/]+\s*,\s*(\w+)\b[^\n]*\bWATCH\w*|\brel\(\s*nameof\(\s*(?:[\w.]+\.|/[\w/]+::)?(\w+)\s*\)[^\n]*\bwatch\s*=")
 CHAIN = re.compile(r"(?<![\w.\]\)\"'/:])([A-Za-z_]\w*)((?:\s*\??\.\s*[A-Za-z_]\w*)+)")
 SEGMENT = re.compile(r"\??\.\s*([A-Za-z_]\w*)")
@@ -197,31 +199,41 @@ def timed_writes(proc, timed):
     return out
 
 
+def own_roots_of(proc):
+    """src, the holder (a capability proc's first parameter) and local aliases of either."""
+    roots = {"src"}
+    if proc.path.startswith("/datum/capability") and proc.params:
+        roots.add(proc.params[0])
+    for _n, text in proc.lines():
+        m = ALIAS.search(text.rstrip())
+        if m and m.group(2) in roots:
+            roots.add(m.group(1))
+    return roots
+
+
 def analyse(files):
-    cleaned = {rel: dm.sanitize(lines) for rel, lines in files}
-    raw = dict(files)
-    procs_list = dm.procs(files, cleaned)
-    table = dm.type_vars(files, cleaned)
+    tree = dm.tree(files)
+    cleaned, raw = tree.clean, tree.raw
+    procs_list = tree.procs
+    table = tree.type_vars
     needs_names, tracked, watched = set(), set(), set()
     for rel, clean in cleaned.items():
         for line in clean:
-            for m in NEEDS.finditer(line):
-                needs_names.add(m.group(1) or m.group(2))
-            t = TRACKED.match(line)
-            if t:
-                tracked.add(t.group(1))
-            w = WATCH_REL.search(line)
-            if w:
-                watched.add(w.group(1) or w.group(2))
-    for proc in procs_list:
-        if proc.name.startswith("set_"):
-            tracked.add(proc.name[4:])
+            if "needs" in line:
+                for m in NEEDS.finditer(line):
+                    needs_names.add(m.group(1) or m.group(2))
+            if "TRACKED(" in line or "SETTER(" in line:
+                t = TRACKED.match(line)
+                if t:
+                    tracked.add(t.group(1) or t.group(2))
+            if "REL" in line or "rel(" in line:
+                w = WATCH_REL.search(line)
+                if w:
+                    watched.add(w.group(1) or w.group(2))
     out = {rule: [] for rule in RULES}
     for proc in procs_list:
         if is_reactive(proc, needs_names):
-            own_roots = {"src"}
-            if proc.path.startswith("/datum/capability") and proc.params:
-                own_roots.add(proc.params[0])
+            own_roots = own_roots_of(proc)
             for number, text in proc.lines():
                 bad = []
                 for name in foreign_reads(text, own_roots):
@@ -262,12 +274,20 @@ FIXTURE = """
 	var/charge = 0
 	var/maxcharge = 100
 	var/rigged = FALSE
+	var/sealed = FALSE
+	var/label_text
 TRACKED(/obj/item/cell, charge, CHANGE_EXPLICIT)
+SETTER(/obj/item/cell, sealed)
+
+/obj/item/cell/proc/set_label_text(value)
+	label_text = value
 
 /obj/cap_fixture/meter/draw(datum/look/look)
 	..()
 	look.gauge("charge", cell.charge / 100)
 	look.overlay("rigged", when = cell.rigged)
+	look.overlay("sealed", when = cell.sealed)
+	look.overlay("label", when = cell.label_text)
 	look.state(level ? "on" : "off")
 
 /obj/cap_fixture/meter/should_run()
@@ -278,18 +298,20 @@ TRACKED(/obj/item/cell, charge, CHANGE_EXPLICIT)
 
 /obj/cap_fixture/meter/capabilities()
 	. = ..()
-	. += slot(nameof(cell), /obj/item/cell, needs = PROC_REF(has_cell))
-	. += gauge(level = level)
-	. += lock(access = src.req_access)
-	. += panel(name = "panel")
+	. += cap_slot(nameof(cell), /obj/item/cell, needs = PROC_REF(has_cell))
+	. += cap_gauge(level = level)
+	. += cap_lock(access = src.req_access)
+	. += cap_panel(name = "panel")
 	var/list/extra = list()
 	. += extra
 
 /datum/capability/meter/draw(atom/holder, datum/look/look)
 	var/obj/cap_fixture/meter/M = holder
+	var/obj/item/cell/C = M.cell
 	look.overlay("x", when = holder.level)
 	look.overlay("y", when = M.level)
 	look.overlay("z", when = "[holder.cell.charge]")
+	look.overlay("w", when = C.rigged)
 
 /datum/capability/meter/gate(atom/holder, mob/user, datum/interaction/entry)
 	if(user.stat || entry.behind)
@@ -318,13 +340,16 @@ def selftest():
         hits = [k + 1 for k, line in enumerate(lines) if snippet in line]
         return hits[nth]
 
-    # H4: cell.rigged in draw and in the needs proc; M.level in the capability draw. cell.charge is
-    # TRACKED; holder.level is own; holder.cell.charge is tracked; user./entry. are context.
-    assert by["dx_untracked_read"] == sorted([at('when = cell.rigged'), at("return cell?.maxcharge"),
-                                              at("return cell.rigged"), at("when = M.level")]), by
+    # H4: cell.rigged in draw and in the needs proc, cell.label_text (set_label_text() is not a
+    # registered setter), C.rigged in the capability draw (C is the holder's cell, not an alias).
+    # cell.charge is TRACKED and cell.sealed has a SETTER; holder.level and M.level (M aliases the
+    # holder) are own; holder.cell.charge is tracked; user./entry. are context.
+    assert by["dx_untracked_read"] == sorted([at('when = cell.rigged'), at("when = cell.label_text"),
+                                              at("return cell?.maxcharge"), at("return cell.rigged"),
+                                              at("when = C.rigged")]), by
     # M3: `level = level` reads level; src.req_access reads; nameof(cell)/PROC_REF(has_cell), the
     # named keys and the local `extra` do not.
-    assert by["dx_caps_instance_read"] == sorted([at(". += gauge(level = level)"), at("lock(access = src.req_access)")]), by
+    assert by["dx_caps_instance_read"] == sorted([at(". += cap_gauge(level = level)"), at("cap_lock(access = src.req_access)")]), by
     # M5: the bare write in zap(), and M.emp_disabled in other(); not the setter, not the local.
     assert by["dx_timed_write"] == sorted([at("\temp_disabled = FALSE"), at("M.emp_disabled = TRUE")]), by
     return "dx_reactive"

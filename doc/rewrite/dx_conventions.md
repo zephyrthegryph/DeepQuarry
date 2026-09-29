@@ -49,9 +49,9 @@ TRACKED(/obj/machinery/atmospherics/binary/pump, target_pressure, CHANGE_MACHINE
 ```dm fragment
 /obj/machinery/power/apc/capabilities()
 	. = ..()
-	. += wall_machine(board = /obj/item/circuitboard/apc)
-	. += slot(nameof(cell), /obj/item/cell, behind = COVER)
-	. += emag(say = "You short out the APC's access lock.", effect = PROC_REF(emag_unlock))
+	. += cap_cover(open_tool = TOOL_CROWBAR, locked_by = LOCK)
+	. += cap_slot(nameof(cell), /obj/item/cell, behind = COVER)
+	. += cap_emag(say = "You short out the APC's access lock.", effect = PROC_REF(emag_unlock))
 ```
 
 - **Built once and shared.** `/atom/proc/capabilities()` returns a list. It is built once per type
@@ -152,7 +152,7 @@ gating vars are `key`, `behind`, `locked_by`, `needs`, `else_say`, `works_broken
 	. = ..()
 	.["pressure"] = target_pressure
 
-/obj/machinery/atmospherics/binary/pump/proc/ui_set_pressure(mob/user, pressure)
+/obj/machinery/atmospherics/binary/pump/proc/act_set_pressure(mob/user, pressure)
 	pressure = ui_number(pressure, 0, MAX_PUMP_PRESSURE)
 	if(isnull(pressure))
 		return refuse(user, "That isn't a pressure.")
@@ -161,22 +161,29 @@ gating vars are `key`, `behind`, `locked_by`, `needs`, `else_say`, `works_broken
 
 - **`tgui_data()` is a plain override** that calls `..()`, so capabilities add their data. It is
   pushed automatically on change.
-- **An action is a proc named `ui_<action>(mob/user, named args...)`.** The dispatcher calls
-  `call(src, "ui_[action]")(arglist(list("user" = user) + params))`. An argument name the proc
-  doesn't declare is a runtime, which the dispatcher catches, logs and refuses.
+- **An action is a proc named `act_<action>(mob/user, named args...)`.** Only `act_*` procs are
+  client actions; `ui_*` procs are framework hooks and are never reachable from a client. The
+  action name and every key go through `ui_action_key()` (lowercase; hyphens and camelCase become
+  snake_case; anything but `[A-Za-z0-9_-]` is rejected), so `act('bolt-toggle', {targetState})`
+  reaches `act_bolt_toggle(mob/user, target_state)`. The client's params become named arguments,
+  then the reserved names (`user`, `src`, `usr`, `ui`, `state`) are written last, so a payload can
+  never set them. An argument name the proc doesn't declare is a runtime, which the dispatcher
+  catches, logs and refuses.
 - **Validation.** DM doesn't enforce the argument types, so the body validates them with
   `ui_number(x, min, max)`, `ui_text(x, max_length)`, `ui_choice(x, list)`,
   `ui_ref(x, list, type)` and `ui_bool(x)`, and refuses with `refuse(user, text)`. The first use of
-  every parameter must be one of those validators (or `!!x`, `switch(x)`, or a compare against a
-  constant); a helper proc that validates its own parameter first counts.
+  every parameter must be one of those validators (or `!!x`, `switch(x)`, `islist(x)`, or a
+  compare against a constant); handing it straight to a helper proc counts only when the helper
+  validates its own parameter first.
 - **Every parameter is client-facing.** Each parameter except `user` must be sent by some TSX
   `act()`. An internal flag (`force`, `silent`) goes on a separate internal proc, since a client
   could set any parameter by naming it.
 - **Gating and logging.** `ui_allowed(mob/user, action)` is the type-wide gate. `ui_logged()` is
   a per-type list mapping actions to log levels.
-- **CI** (`ui_actions_lint.py`) checks that every TSX `act()` names an existing `ui_` proc with
-  matching argument names, that every parameter is sent by some `act()` (C1), and that each is
-  validated before use (C2).
+- **CI** (`ui_actions_lint.py`, which reads `ui_action_key()`'s rules out of `ui_actions.dm`)
+  checks that every TSX `act()` of a migrated interface names an existing `act_` proc with
+  matching argument names after normalisation, that every parameter is sent by some `act()` (C1),
+  and that each is validated before use (C2).
 - **Removed:** `DECLARE_UI`, `UI_ACT*`, `UI_DATA*`, `UI_ARG_*` and the generated tables.
 
 ## 6. Prompts
@@ -229,29 +236,39 @@ Every old form is banned once its migration lands, each with a baseline of 0.
 - **`dx_old_forms`:** the removed macros listed above.
 - **`dx_manual_refresh`:** `update_icon()`, `SStgui.update_uis(src)` or `om_changed()` in
   gameplay code.
-- **`dx_manual_fingerprint_log`:** fingerprint or log calls in dispatched handlers.
-- **`dx_manual_transfer`:** `drop_item()`/`forceMove(src)` around `own_set`.
-- **`dx_raw_delay`:** decisecond literals.
-- **`dx_string_names`:** a string literal where a var name goes (the second argument of
-  `own_*`/`rel_*`/`om_set`/`timed_set`/`time_left`/`timed_cancel`); ratcheted.
+- **`dx_manual_fingerprint_log`:** `add_fingerprint`/`log_game`/`log_admin`/`message_admins` in an
+  `act_*` proc or a capability entry handler (the dispatcher records successes); ratcheted.
+- **`dx_manual_transfer`:** `drop_item()`/`unEquip()`/`remove_from_mob()` or `forceMove(src)`/
+  `loc = src` within a few lines of `own_set`/`own_add`/`own_put`; ratcheted.
+- **`dx_raw_delay`:** a numeric literal other than 0, not scaled by a time define, in the delay of
+  `after`/`om_after*`/`addtimer`/`do_after`/`COOLDOWN_START`, `timed_set(for_time =)` or a
+  constructor's `delay =`; ratcheted.
+- **`dx_string_names`:** a string literal where a var name goes (the var-name argument of every
+  global `own_*`/`rel_*` accessor, `om_set`, `timed_set`, `time_left`, `timed_cancel`); ratcheted.
+- **`dx_constructor_shadow`:** a type proc or verb named like a global `cap_*` constructor or a
+  preset, which a bare call inside `capabilities()` would reach first (review 2, H7).
 - **`dx_raw_overlays`:** `add_overlay`/`cut_overlay(s)`/`overlays +=`/`overlays -=` outside the
   look builder and the legacy appearance runtime; ratcheted.
 - **`dx_untracked_read`:** a reactive proc (`draw`, `should_run`, `hidden_verbs`, `tgui_data`,
   a capability's `draw`/`gate`/`ui_data`/`examine`/`hidden_verbs`, a `needs =` proc) reads another
-  object's var that isn't TRACKED (or `set_<var>`) or reached through a watched relation. Static:
-  matched by var name; `tools/ci/sys_rules/dx_reactive.py` lists the limits.
+  object's var that isn't TRACKED (or registered with `SETTER`) or reached through a watched
+  relation. Static: matched by var name; `tools/ci/sys_rules/dx_reactive.py` lists the limits.
 - **`dx_caps_instance_read`:** `capabilities()` reads an instance var.
 - **`dx_timed_write`:** a var handed to `timed_set()` written other than through it or its setter.
-- **`ui_actions_lint`:** a TSX `act()` that doesn't match a `ui_` proc; a `ui_` parameter no
-  `act()` sends (`ui_unsent_param`); a `ui_` parameter used before a validator
-  (`ui_unvalidated_param`).
+- **`ui_actions_lint`:** a TSX `act()` that doesn't match an `act_` proc (after `ui_action_key()`);
+  an `act_` parameter no `act()` sends (`ui_unsent_param`); an `act_` parameter used before a
+  validator (`ui_unvalidated_param`).
+- **`cap_bits_lint`:** a `CAP_*` bit allocated outside `cap_bits.dm`, a shared or out-of-range bit,
+  or a raw `cap_state` write outside `cap_set()`.
 - **Purity (DreamChecker):** `should_run()` and the capability `draw`/`gate`/`ui_data`/`examine`/
   `hidden_verbs` hooks carry `SHOULD_BE_PURE(TRUE)`. `/atom/draw()` and `/atom/hidden_verbs()` don't
   yet, because `caps_of()` memoizes through a shared_cache, and neither does `tgui_data()`, whose
   legacy overrides write state.
 - **`allow_tags`:** an unregistered `ALLOW()` tag.
-- **`doc_snippets`:** a complete ```` ```dm ```` block in `doc/rewrite` that doesn't compile.
-  ```` ```dm before ```` and ```` ```dm fragment ```` blocks are skipped.
+- **`doc_snippets`:** a complete ```` ```dm ```` block in `doc/rewrite` that doesn't compile
+  (`python tools/ci/doc_snippets.py --write`, then build with `-DDOC_SNIPPETS`), and a call in any
+  complete or ```` ```dm fragment ```` block to a name that doesn't exist (ratcheted).
+  ```` ```dm before ```` blocks are skipped.
 
 ## 10. Audit issues and their fixes
 

@@ -1,0 +1,3 @@
+# sys_lint baseline for tools/ci/sys_rules/dx_constructor_shadow.py (doc/rewrite/systems.md); shrink-only, target 0
+dx_constructor_shadow	code/modules/library/lib_items.dm	/obj/item/barcodescanner/proc/computer() as /obj/machinery/librarycomp
+dx_constructor_shadow	code/modules/modular_computers/file_system/program.dm	/datum/computer_file/program/proc/computer() as /obj/item/modular_computer

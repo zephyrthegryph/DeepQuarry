@@ -133,6 +133,7 @@
 /datum/capability/slot/proc/adopt(atom/holder, obj/item/item, mob/user)
 	if(ismob(item.loc))
 		var/mob/carrier = item.loc
+		// ALLOW(sys_dx_manual_transfer): adopt() is the one-call transfer itself until own_set(user =) lands (framework review 2, M1)
 		if(!carrier.unEquip(item, target = holder))
 			to_chat(user, span_warning("\The [item] is stuck to your hand!"))
 			return FALSE
