@@ -883,7 +883,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		visible_message(span_boldwarning("[U] rips [selection] out of [src]'s body."),span_boldwarning("[U] rips [selection] out of your body."))
 	valid_objects = get_visible_implants(0)
 	if(valid_objects.len == 1) //Yanking out last object - removing verb.
-		remove_verb(src, /mob/proc/yank_out_object)
+		om_revoke(src, GRANT_VERB, /mob/proc/yank_out_object, src)
 		clear_alert("embeddedobject")
 
 	if(ishuman(src))

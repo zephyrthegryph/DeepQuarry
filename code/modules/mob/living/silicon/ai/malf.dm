@@ -10,9 +10,9 @@
 	hacked_apcs = list()
 	recalc_cpu()
 
-	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_hardware())
-	add_verb(src, new/datum/game_mode/malfunction/verb/ai_select_research())
-	add_verb(src, new/datum/game_mode/malfunction/verb/ai_help())
+	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_select_hardware, src)
+	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_select_research, src)
+	om_grant(src, GRANT_VERB, /datum/game_mode/malfunction/verb/ai_help, src)
 
 	// And greet user with some OOC info.
 	to_chat(user, "You are malfunctioning, you do not have to follow any laws.")

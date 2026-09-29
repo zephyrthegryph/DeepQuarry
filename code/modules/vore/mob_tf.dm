@@ -175,7 +175,7 @@
 		var/mob/living/new_mob
 		if(shapeshifting && src.tf_form)
 			new_mob = src.tf_form
-			add_verb(new_mob,/mob/living/proc/shapeshift_form)
+			om_grant(new_mob, GRANT_VERB, /mob/living/proc/shapeshift_form, new_mob)
 			new_mob.tf_form = src
 			new_mob.forceMove(src.loc)
 			visible_message(span_warning("[src] twists and contorts, shapeshifting into a different form!"))

@@ -782,7 +782,7 @@ EXTEND_INTERACTIONS(/obj/item/fluff/dragor_dot, INTERACT_USE(null, PROC_REF(drag
 /// Old attack_self: its owner gains the gender shapeshift verb.
 /obj/item/fluff/dragor_dot/proc/dragor_dot_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.ckey == "pontifexminimus")
-		add_verb(user, /mob/living/carbon/human/proc/shapeshifter_select_gender)
+		om_grant(user, GRANT_VERB, /mob/living/carbon/human/proc/shapeshifter_select_gender, user)
 	else
 		return
 

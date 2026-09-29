@@ -1341,7 +1341,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		return 0 //something is terribly wrong
 
 	if (!bloody_hands)
-		remove_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, src)
 
 	if (get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(src, span_warning("Your [get_equipped_item(SLOT_ID_GLOVES)] are getting in the way."))

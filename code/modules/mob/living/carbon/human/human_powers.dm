@@ -180,8 +180,8 @@
 			qdel(Org)
 
 		// Purge the diona verbs.
-		remove_verb(src, /mob/living/carbon/human/proc/diona_split_nymph)
-		remove_verb(src, /mob/living/carbon/human/proc/regenerate)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, src)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, src)
 
 		for(var/obj/item/organ/external/E in organs.Copy()) // Just fall apart.
 			E.droplimb(TRUE)

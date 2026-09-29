@@ -2066,7 +2066,7 @@
 	industrial_use = REFINERYEXPORT_REASON_COSMETIC
 
 /datum/reagent/glamour/affect_blood(mob/living/carbon/target, removed)
-	add_verb(target, /mob/living/carbon/human/proc/enter_cocoon)
+	om_grant(target, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, target)
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()

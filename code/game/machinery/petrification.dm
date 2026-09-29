@@ -128,12 +128,13 @@
 	G.was_rayed = TRUE
 
 	if (can_unpetrify)
-		add_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
+		om_grant(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, G)
 		comp?.cooldown = 0
 	else
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_pause)
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+		if(comp) // the gargoyle trait grants these; a permanent statue loses them
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, comp)
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause, comp)
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy, comp)
 		comp?.cooldown = INFINITY
 
 	if (!petrifier)

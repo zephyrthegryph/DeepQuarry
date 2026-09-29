@@ -110,7 +110,7 @@
 
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()
-	verbs += /obj/item/storage/wallet/poly/proc/change_color
+	om_grant(src, GRANT_VERB, /obj/item/storage/wallet/poly/proc/change_color, src)
 	color = get_random_colour()
 	update_icon()
 

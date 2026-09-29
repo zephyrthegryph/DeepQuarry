@@ -666,8 +666,8 @@
 			qdel(Org)
 
 		// Purge the diona verbs.
-		remove_verb(H, /mob/living/carbon/human/proc/diona_split_nymph)
-		remove_verb(H, /mob/living/carbon/human/proc/regenerate)
+		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, H)
+		om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, H)
 
 		return
 

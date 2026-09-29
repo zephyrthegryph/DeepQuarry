@@ -277,12 +277,10 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 		return
 
 	if(length(user.mind.special_verbs))
-		for(var/V in user.mind.special_verbs)
-			remove_verb(user, V)
+		om_revoke_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
 
 	if(length(stored_swap().mind.special_verbs))
-		for(var/V in stored_swap().mind.special_verbs)
-			remove_verb(stored_swap(), V)
+		om_revoke_each(stored_swap(), GRANT_VERB, stored_swap().mind.special_verbs, stored_swap().mind)
 
 	var/mob/observer/dead/ghost = stored_swap().ghostize(0)
 	ghost.spell_list = stored_swap().spell_list
@@ -291,15 +289,13 @@ EXTEND_INTERACTIONS(/obj/item/spellbook/oneuse, \
 	stored_swap().spell_list = user.spell_list
 
 	if(length(stored_swap().mind.special_verbs))
-		for(var/V in user.mind.special_verbs)
-			add_verb(user, V)
+		om_grant_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
 
 	transfer_mind(ghost.mind, user, "spellbook body swap", force = TRUE)
 	user.spell_list = ghost.spell_list
 
 	if(length(user.mind.special_verbs))
-		for(var/V in user.mind.special_verbs)
-			add_verb(user, V)
+		om_grant_each(user, GRANT_VERB, user.mind.special_verbs, user.mind)
 
 	to_chat(stored_swap(), span_warning("You're suddenly somewhere else... and someone else?!"))
 	to_chat(user, span_warning("Suddenly you're staring at [src] again... where are you, who are you?!"))

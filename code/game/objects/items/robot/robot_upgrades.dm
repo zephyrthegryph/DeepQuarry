@@ -168,7 +168,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		to_chat(user, span_warning("There's no space for another size alteration module!"))
 		return FALSE
 
-	add_verb(R, /mob/living/proc/set_size)
+	om_grant(R, GRANT_VERB, /mob/living/proc/set_size, R)
 	to_chat(R, span_notice("Size adjustments active!"))
 	return TRUE
 

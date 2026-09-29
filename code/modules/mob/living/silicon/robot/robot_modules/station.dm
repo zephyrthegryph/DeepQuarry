@@ -178,10 +178,10 @@ DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 	LAZYCLEARLIST(added_networks)
 
 /obj/item/robot_module/proc/add_subsystems(mob/living/silicon/robot/R)
-	add_verb(R, subsystems)
+	om_grant_each(R, GRANT_VERB, subsystems, src)
 
 /obj/item/robot_module/proc/remove_subsystems(mob/living/silicon/robot/R)
-	remove_verb(R, subsystems)
+	om_revoke_each(R, GRANT_VERB, subsystems, src)
 
 /obj/item/robot_module/proc/apply_status_flags(mob/living/silicon/robot/R)
 	if(!can_be_pushed)

@@ -1432,11 +1432,12 @@ DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
-	add_verb(owner, /mob/proc/insidePanel)
+	om_grant(owner, GRANT_VERB, /mob/proc/insidePanel, src)
 	if(!owner.vorePanel)
 		owner.vorePanel = new(owner)
 
-// takes the panel verb and panel back from its owner. Hooks, the screen icon
+// takes the panel back from its owner (the panel verb is granted with this button as
+// source, so its deletion revokes it). Hooks, the screen icon
 // (owned; it leaves client screens in its own teardown) and the owner <->
 // vore_panel_button pair are core work.
 /datum/vore_panel_button/on_destroy(force)
@@ -1445,7 +1446,6 @@ DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 		var/datum/hud/HUD = M?.hud_used
 		LAZYREMOVE(HUD?.other_important, screen_icon)
 	if(M)
-		remove_verb(M, /mob/proc/insidePanel)
 		QDEL_NULL(M.vorePanel)
 	..()
 

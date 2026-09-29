@@ -41,7 +41,7 @@
 	add_verb(src,/mob/proc/nme_vore)
 	add_verb(src,/mob/proc/nsay_vore_ch)
 	add_verb(src,/mob/proc/nme_vore_ch)
-	add_verb(src,/mob/proc/enter_soulcatcher)
+	om_grant(src, GRANT_VERB, /mob/proc/enter_soulcatcher, src)
 
 	if(!length(voice_sounds_list))
 		if(client.prefs.read_preference(/datum/preference/text/human/voice_sound))

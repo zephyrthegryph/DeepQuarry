@@ -38,7 +38,7 @@
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
 	if(camera_networks)
-		verbs |= /obj/item/clothing/head/helmet/space/proc/toggle_camera
+		om_grant(src, GRANT_VERB, /obj/item/clothing/head/helmet/space/proc/toggle_camera, src)
 
 	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')

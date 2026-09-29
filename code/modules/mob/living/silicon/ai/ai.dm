@@ -104,12 +104,12 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	can_be_antagged = TRUE
 
 /mob/living/silicon/ai/proc/add_ai_verbs()
-	add_verb(src, GLOB.ai_verbs_default)
-	add_verb(src, silicon_subsystems)
+	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
+	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
 
 /mob/living/silicon/ai/proc/remove_ai_verbs()
-	remove_verb(src, GLOB.ai_verbs_default)
-	remove_verb(src, silicon_subsystems)
+	om_revoke_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
+	om_revoke_each(src, GRANT_VERB, silicon_subsystems, src)
 
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
@@ -199,7 +199,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	new /obj/machinery/ai_powersupply(src)
 
 	if(CONFIG_GET(flag/allow_ai_shells))
-		add_verb(src, /mob/living/silicon/ai/proc/deploy_to_shell_act)
+		om_grant(src, GRANT_VERB, /mob/living/silicon/ai/proc/deploy_to_shell_act, src)
 
 	create_eyeobj()
 	if(eyeobj)

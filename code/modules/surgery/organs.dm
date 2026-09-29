@@ -228,8 +228,8 @@
 	// D21: through set_species() (languages, verbs, components, factors, body invalidation),
 	// keeping the host body's organs.
 	target.set_species(SPECIES_DIONA, keep_organs = TRUE)
-	add_verb(target, /mob/living/carbon/human/proc/diona_split_nymph)
-	add_verb(target, /mob/living/carbon/human/proc/regenerate)
+	om_grant(target, GRANT_VERB, /mob/living/carbon/human/proc/diona_split_nymph, target)
+	om_grant(target, GRANT_VERB, /mob/living/carbon/human/proc/regenerate, target)
 	log_game("SURGERY: [key_name(user)] installed a nymph into [key_name(target)]")
 	target.pick_new_form_name(TRUE)
 
