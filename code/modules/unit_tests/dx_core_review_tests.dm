@@ -270,3 +270,11 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	var/steps = F.steps
 	scheduler_advance(2.5)
 	TEST_ASSERT_EQUAL(F.steps, steps, "stopped once should_run() is FALSE")
+
+/// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
+/proc/dx_cap_ui_data(atom/A, mob/user, cap_type)
+	var/list/data = list()
+	A.caps_ui_data(user, data)
+	var/datum/capability/C = cap_of_all(A, cap_type)
+	var/list/caps = data["caps"]
+	return (C && caps) ? (caps[C.ui_key()] || list()) : list()

@@ -41,8 +41,7 @@
 	TEST_ASSERT_EQUAL(A.icon_state, "axe1", "drawn wielded")
 	TEST_ASSERT_EQUAL(A.item_state, "axe1", "held sprite wielded")
 	TEST_ASSERT("It is held in both hands." in A.caps_examine(H), "examine says wielded")
-	var/list/data = list()
-	A.caps_ui_data(H, data)
+	var/list/data = dx_cap_ui_data(A, H, /datum/capability/two_handed)
 	TEST_ASSERT(data["wielded"], "UI data says wielded")
 
 	TEST_ASSERT(A.attack_self(H), "self-use again unwields")
