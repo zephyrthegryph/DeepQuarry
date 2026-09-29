@@ -1,0 +1,96 @@
+// Core state as declared fields (doc/rewrite/systems.md §2, machinery_fields.dm): the stat
+// bitfield raises the channel of each bit that changed, once per change; operable() follows it;
+// the core fields and hand-written setters are registered with their family channels.
+
+/// Counts raises of `mask` on `E` recorded since `sched.test_raises` was armed, and disarms it.
+/datum/unit_test/proc/dq_sys_fields_count_raises(datum/om/scheduler/sched, datum/E, mask)
+	. = 0
+	for(var/list/raise as anything in sched.test_raises)
+		if(raise[1] == E && (raise[2] & mask))
+			.++
+
+/// stat_add()/stat_remove()/set_stat() write the bits, raise only on a change, and raise the
+/// channel of the bit that changed (BROKEN -> CHANGE_MACHINE_BROKEN, NOPOWER -> CHANGE_MACHINE_POWER).
+/datum/unit_test/dq_sys_fields_stat_flag_setters
+
+/datum/unit_test/dq_sys_fields_stat_flag_setters/Run()
+	var/obj/machinery/M = allocate(/obj/machinery)
+	M.set_stat(0)
+	var/datum/om/rec/rec = om_rec_of(M)
+	var/datum/om/scheduler/sched = rec.sched
+	M.om_listen |= CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER
+
+	sched.test_raises = list()
+	TEST_ASSERT(M.stat_add(BROKEN), "stat_add() of a new bit returned FALSE")
+	TEST_ASSERT(!M.stat_add(BROKEN), "stat_add() of a set bit returned TRUE")
+	TEST_ASSERT(M.has_stat(BROKEN), "has_stat(BROKEN) after stat_add(BROKEN)")
+	TEST_ASSERT(!M.has_stat(NOPOWER), "has_stat(NOPOWER) with only BROKEN set")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN), 1, "BROKEN raises for one change and one no-op")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_POWER), 0, "a BROKEN change raised the power channel")
+
+	sched.test_raises = list()
+	TEST_ASSERT(M.stat_add(NOPOWER), "stat_add(NOPOWER) returned FALSE")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_POWER), 1, "NOPOWER raises the power channel")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN), 0, "a NOPOWER change raised the broken channel")
+
+	sched.test_raises = list()
+	TEST_ASSERT(M.stat_remove(BROKEN | NOPOWER), "stat_remove() of set bits returned FALSE")
+	TEST_ASSERT(!M.stat_remove(BROKEN), "stat_remove() of a clear bit returned TRUE")
+	TEST_ASSERT(!M.has_stat(MACHINE_STAT_ANY), "bits left after stat_remove()")
+	TEST_ASSERT(!M.set_stat(0), "set_stat() to the same value returned TRUE")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER), 1, "one raise for one combined change")
+	sched.test_raises = null
+
+/// operable() is FALSE while any of NOPOWER, BROKEN, MAINT, EMPED is set, and honours extra bits.
+/datum/unit_test/dq_sys_fields_operable
+
+/datum/unit_test/dq_sys_fields_operable/Run()
+	var/obj/machinery/M = allocate(/obj/machinery)
+	M.set_stat(0)
+	TEST_ASSERT(M.operable(), "a machine with no condition bits is not operable")
+	for(var/bit in list(NOPOWER, BROKEN, MAINT, EMPED))
+		M.set_stat(bit)
+		TEST_ASSERT(!M.operable(), "operable() with stat [bit]")
+	M.set_stat(POWEROFF)
+	TEST_ASSERT(M.operable(), "POWEROFF alone should not make a machine inoperable")
+	TEST_ASSERT(!M.operable(POWEROFF), "operable(POWEROFF) with POWEROFF set")
+
+/// The registry knows the core fields with their family channels, the derived operable field and
+/// the registered hand-written setters (anchored, density, use_power).
+/datum/unit_test/dq_sys_fields_registered
+
+/datum/unit_test/dq_sys_fields_registered/Run()
+	var/datum/om/registry/reg = om_registry()
+	var/list/F = reg.fields_of(/obj/machinery/recharger)
+	TEST_ASSERT_EQUAL(F["on"], CHANGE_MACHINE_SETTINGS, "on channel")
+	TEST_ASSERT_EQUAL(F["locked"], CHANGE_MACHINE_MODE, "locked channel")
+	TEST_ASSERT_EQUAL(F["stat"], CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, "stat channel")
+	TEST_ASSERT_EQUAL(F["operable"], CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER, "operable channel")
+	TEST_ASSERT(F["anchored"] & CHANGE_MACHINE_ANCHORED, "anchored does not raise CHANGE_MACHINE_ANCHORED on a machine")
+	TEST_ASSERT(F["density"] & CHANGE_MACHINE_SETTINGS, "density does not raise CHANGE_MACHINE_SETTINGS on a machine")
+	TEST_ASSERT(F["use_power"] & CHANGE_MACHINE_SETTINGS, "use_power does not raise CHANGE_MACHINE_SETTINGS")
+	var/list/mob_fields = reg.fields_of(/mob/living)
+	TEST_ASSERT(mob_fields["anchored"] & CHANGE_MOB_CAN_MOVE, "anchored does not raise CHANGE_MOB_CAN_MOVE on a mob")
+
+/// The hand-written setters registered as fields raise their family channel on a change only.
+/datum/unit_test/dq_sys_fields_custom_setters_raise
+
+/datum/unit_test/dq_sys_fields_custom_setters_raise/Run()
+	var/obj/machinery/M = allocate(/obj/machinery)
+	var/datum/om/rec/rec = om_rec_of(M)
+	var/datum/om/scheduler/sched = rec.sched
+	M.om_listen |= CHANGE_MACHINE_ANCHORED | CHANGE_MACHINE_SETTINGS
+	M.set_anchored(FALSE)
+	M.set_density(FALSE)
+	M.set_use_power(USE_POWER_IDLE)
+	sched.test_raises = list()
+	M.set_anchored(TRUE)
+	M.set_anchored(TRUE)
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_ANCHORED), 1, "set_anchored raises once per change")
+	sched.test_raises = list()
+	M.set_density(TRUE)
+	M.set_density(TRUE)
+	TEST_ASSERT(M.set_use_power(USE_POWER_ACTIVE), "set_use_power() of a change returned FALSE")
+	TEST_ASSERT_EQUAL(M.use_power, USE_POWER_ACTIVE, "set_use_power() did not write")
+	TEST_ASSERT_EQUAL(dq_sys_fields_count_raises(sched, M, CHANGE_MACHINE_SETTINGS), 2, "set_density + set_use_power raise once each")
+	sched.test_raises = null
