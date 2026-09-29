@@ -24,7 +24,9 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "cell", default_use_hicell())
+	// The cell is a view: the stock cell is a component part, an inserted one sits in contents
+	// (owned by the ledger slot), so the pump never owns it through this var.
+	rel_set(src, "cell", default_use_hicell())
 
 	add_hose_connector(/datum/hose_connector/output)
 
@@ -46,7 +48,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
 	own_set(src, "reagents", R)
 
-	own_set(src, "cell", locate_within(src, /obj/item/cell))
+	rel_set(src, "cell", locate_within(src, /obj/item/cell))
 
 /obj/machinery/pump/update_icon()
 	..()
@@ -154,7 +156,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
 	user.drop_from_inventory(W, src)
-	own_set(src, "cell", W) // Link the cell to us
+	rel_set(src, "cell", W) // Link the cell to us
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()
@@ -171,7 +173,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
 		cell.update_icon()
-		own_take(src, "cell")
+		rel_clear(src, "cell")
 		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE

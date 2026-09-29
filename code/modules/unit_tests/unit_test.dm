@@ -506,13 +506,16 @@ REL_LIST(/datum/unit_test, allocated)
 			arguments = list(run_loc_floor_bottom_left)
 		else if (arguments[1] == null)
 			arguments[1] = run_loc_floor_bottom_left
-	var/instance
+	var/datum/instance
 	// Byond will throw an index out of bounds if arguments is empty in that arglist call. Sigh
 	if(length(arguments))
 		instance = new type(arglist(arguments))
 	else
 		instance = new type()
-	rel_add(src, "allocated", instance)
+	// A type that deletes itself while initializing (a gripper with no robot, a spawner) has
+	// nothing left to clean up, and a relation link to a dying entity is refused.
+	if(!QDELETED(instance))
+		rel_add(src, "allocated", instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a

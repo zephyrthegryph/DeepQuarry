@@ -74,7 +74,12 @@
 	var/fault = dq_test_mind_fault(M, view, I, H)
 	TEST_ASSERT_NULL(fault, "after brain removal: [fault]")
 	TEST_ASSERT_EQUAL(view.real_name, I.real_name, "the view shows the character's name")
-	TEST_ASSERT_EQUAL(view.dna, I.dna(), "the view reads the character's DNA datum, not a clone")
+	// One owner per DNA datum (ownership.md O1/O3): the body owns the character's DNA, so the
+	// view owns a copy of it rather than sharing the body's datum.
+	TEST_ASSERT_NOTNULL(view.dna, "the view carries the character's DNA")
+	TEST_ASSERT(view.dna != I.dna(), "the view owns its own DNA copy, not the body's datum")
+	TEST_ASSERT_EQUAL(view.dna.unique_enzymes, I.dna().unique_enzymes, "the view's DNA copy is the character's DNA")
+	TEST_ASSERT_EQUAL(view.dna.real_name, I.dna().real_name, "the view's DNA copy carries the character's name")
 	TEST_ASSERT_EQUAL(view.languages, I.languages, "the view reads the character's language list, not a copy")
 	TEST_ASSERT_EQUAL(view.identity().ooc_notes, "notes of Brain Donor", "OOC notes are read through the identity")
 	TEST_ASSERT_EQUAL(view.container, brain, "the view lives in its host organ")
