@@ -31,11 +31,11 @@
 	else
 		existing = new/datum/alarm(origin, source, duration, severity, hidden)
 		new_alarm = 1
-		own_add(src, "alarms", existing)
+		own_add(src, nameof(alarms), existing)
 
 	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)
-		own_set(src, "alarms", dd_sortedObjectList(alarms))
+		own_set(src, nameof(alarms), dd_sortedObjectList(alarms))
 		on_alarm_change(existing, ALARM_RAISED)
 
 	return new_alarm
@@ -85,7 +85,7 @@
 /datum/alarm_handler/proc/check_alarm_cleared(datum/alarm/alarm)
 	if ((alarm.end_time && ELAPSED_SINCE(src, alarm.end_time, CLOCK_WORLD) > 0) || !length(alarm.sources))
 		on_alarm_change(alarm, ALARM_CLEARED)
-		own_remove(src, "alarms", alarm) // destroys it
+		own_remove(src, nameof(alarms), alarm) // destroys it
 		return 1
 	return 0
 

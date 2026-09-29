@@ -29,7 +29,7 @@
 		animation.icon = 'icons/mob/mob.dmi'
 		animation.plane = MOB_PLANE
 		animation.layer = ABOVE_MOB_LAYER
-		rel_set(animation, "master", holder)
+		rel_set(animation, nameof(animation.master), holder)
 		target.extinguish_mob()
 		if(target?.buckled_to())
 			var/atom/movable/_tmp_buck_42 = target?.buckled_to()
@@ -91,9 +91,11 @@
 
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
-	rel_set(src, "last_valid_turf", get_turf(loc))
+	rel_set(src, nameof(last_valid_turf), get_turf(loc))
 
-OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
+/obj/effect/dummy/spell_jaunt/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return
@@ -102,7 +104,7 @@ OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 		loc = newLoc // ALLOW(containment): jaunt holder abstract move: must not trigger Entered/Crossed
 		var/turf/T = get_turf(loc)
 		if(!T.contains_dense_objects())
-			rel_set(src, "last_valid_turf", T)
+			rel_set(src, nameof(last_valid_turf), T)
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0

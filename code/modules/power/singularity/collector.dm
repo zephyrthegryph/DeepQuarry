@@ -79,9 +79,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	also_requires = list(REQ_BECAUSE(REQ_ANCHORED, "it needs to be secured to the floor first"), REQ_FIELD_NOT("P", "there's already a phoron tank loaded"))
 
 /obj/machinery/power/rad_collector/proc/interaction_load_tank(mob/user, obj/item/tank/phoron/W, datum/interaction/interaction)
-	user.drop_item()
-	W.forceMove(src)
-	own_set(src, "P", W)
+	if(!own_set(src, nameof(src.P), W, user = user))
+		return TRUE
 	update_icons()
 	return TRUE
 
@@ -144,7 +143,7 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 		return
 	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
-	own_take(src, "P") // dropped on the floor
+	own_take(src, nameof(P)) // dropped on the floor
 	if(active)
 		toggle_power()
 	else
@@ -186,4 +185,6 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
 	return P
 
-OWN(/obj/machinery/power/rad_collector, P, OWN_SPILL)
+/obj/machinery/power/rad_collector/ownership()
+	. = ..()
+	. += owns(nameof(P), policy = OWN_SPILL)

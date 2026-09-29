@@ -33,7 +33,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 		if(held())
 			to_chat(user, "\The [held()] falls out!")
 			held().forceMove(get_turf(user))
-			rel_clear(src, "held")
+			rel_clear(src, nameof(held))
 	else
 		icon_state = "[base_icon]"
 
@@ -46,7 +46,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 			to_chat(user, "You slip [O] into [src].")
 			user.drop_item()
 			O.forceMove(src)
-			rel_set(src, "held", O)
+			rel_set(src, nameof(held), O)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

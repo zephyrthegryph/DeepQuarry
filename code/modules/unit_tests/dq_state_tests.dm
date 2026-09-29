@@ -131,7 +131,7 @@
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	own_set(probe, "ref_value", owned) // the owned codec: the probe owns it
+	own_set(probe, nameof(probe.ref_value), owned) // the owned codec: the probe owns it
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)
@@ -217,7 +217,7 @@
 	// A relation view naming the box is accounted for: collapse parks it under the box's handle
 	// slot and it re-links on materialize (ownership.md 4.4), so it does not block.
 	var/datum/dq_state_holder/holder = new
-	rel_set(holder, "held", box)
+	rel_set(holder, nameof(holder.held), box)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a relation view naming the box should not block collapse: [jointext(blockers, "; ")]")
 	qdel(holder)
@@ -356,12 +356,12 @@
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
 	gem.inside_flavor = "a test room"
-	rel_set(gem, "linked_belly", copy)
+	rel_set(gem, nameof(gem.linked_belly), copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")
 	var/list/gem_vars = gem_blob[STATE_KEY_VARS]
 	TEST_ASSERT_EQUAL(gem_vars["linked_belly"], "Tummy", "the linked belly should be saved by name")
-	rel_clear(gem, "linked_belly")
+	rel_clear(gem, nameof(gem.linked_belly))
 	var/obj/soulgem/gem_copy = state_materialize(json_decode(json_encode(gem_blob)), pred, NONE, errors)
 	TEST_ASSERT_EQUAL(gem_copy?.inside_flavor, "a test room", "soulgem text should round trip")
 	TEST_ASSERT(gem_copy?.linked_belly()?.name == "Tummy", "the soulgem should relink the belly by name")
@@ -389,6 +389,6 @@
 	var/list/errors = list()
 	TEST_ASSERT_NULL(state_serialize(paper, NONE, errors), "a paper with a pinned contract document should refuse serialization")
 	TEST_ASSERT(length(errors), "the pinned refusal should say why")
-	own_take(paper, "contract_document")
+	own_take(paper, nameof(paper.contract_document))
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")

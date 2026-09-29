@@ -396,24 +396,24 @@
 /// Rebuilds unarmed_attacks from unarmed_types. Call it on a mob's private copy
 /// (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/update_attack_types()
-	own_clear(src, "unarmed_attacks", OWN_DELETE)
+	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
 	for(var/u_type in unarmed_types)
-		own_add(src, "unarmed_attacks", new u_type())
+		own_add(src, nameof(unarmed_attacks), new u_type())
 
 /datum/species/New()
 	share_type_tables()
 	if(hud_type)
-		own_set(src, "hud", new hud_type())
+		own_set(src, nameof(hud), new hud_type())
 	else
-		own_set(src, "hud", new /datum/hud_data())
+		own_set(src, nameof(hud), new /datum/hud_data())
 
 	//If the species has eyes, they are the default vision organ
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	own_take_all(src, "unarmed_attacks")
+	own_take_all(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
-		own_add(src, "unarmed_attacks", new u_type())
+		own_add(src, nameof(unarmed_attacks), new u_type())
 
 	update_sort_hint()
 
@@ -528,7 +528,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		qdel(stray)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		qdel(stray)
-	rel_clear(H, "bad_external_organs")
+	rel_clear(H, nameof(H.bad_external_organs))
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()
@@ -832,10 +832,10 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 /// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
-	own_clear(src, "unarmed_attacks", OWN_DELETE)
+	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
-		own_add(src, "unarmed_attacks", new u_type())
+		own_add(src, nameof(unarmed_attacks), new u_type())
 
 /// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
 /// /datum/shadekin and /datum/xenochimera.
@@ -926,7 +926,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 
 	//Set up a mob. The mob's species is PROTO: the copy becomes its private copy, and the private
 	// copy it replaces (often src itself, still read below) is deleted.
-	proto_set(H, "species", new_copy)
+	proto_set(H, nameof(H.species), new_copy)
 	H.invalidate_factors()
 	H.icon_state = new_copy.get_bodytype()
 

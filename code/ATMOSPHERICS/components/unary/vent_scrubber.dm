@@ -145,7 +145,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter_in))
+	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter_in))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/broadcast_status()
 	if(!radio_connection)
@@ -153,7 +153,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 	signal.data = list(
 		"area" = area_uid,
 		"tag" = id_tag,

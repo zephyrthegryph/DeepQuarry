@@ -27,7 +27,7 @@
 		qdel(affected_turf.lighting_object, force = TRUE)
 		stack_trace("a lighting object was assigned to a turf that already had a lighting object!")
 
-	rel_set(affected_turf, "lighting_object", src)
+	rel_set(affected_turf, nameof(affected_turf.lighting_object), src)
 	affected_turf.set_luminosity(0)
 
 	if(CONFIG_GET(number/starlight))
@@ -45,7 +45,7 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 	if(needs_update)
 		SSlighting.objects_queue -= src
 	if (isturf(affected_turf))
-		rel_clear(affected_turf, "lighting_object")
+		rel_clear(affected_turf, nameof(affected_turf.lighting_object))
 		affected_turf.set_luminosity(1)
 		affected_turf.underlays -= current_underlay
 	..()

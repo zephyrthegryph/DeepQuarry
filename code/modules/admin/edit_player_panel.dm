@@ -23,8 +23,8 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 
 /datum/edit_player_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	rel_set(src, "holder", owner_holder)
-	rel_set(src, "target", target_mob)
+	rel_set(src, nameof(holder), owner_holder)
+	rel_set(src, nameof(target), target_mob)
 
 // leaves the per-admin panel index.
 /datum/edit_player_panel/lifecycle_dematerialize()

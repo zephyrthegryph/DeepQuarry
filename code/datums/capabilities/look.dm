@@ -50,12 +50,26 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 	icon_state = name
 	touched = TRUE
 
-/// An overlay icon_state (or an image / mutable_appearance), added only `when` is true.
-/datum/look/proc/overlay(name, when = TRUE)
+/// An overlay icon_state (or an image / mutable_appearance), added only `when` is true. `icon`
+/// draws the state from another icon file than the holder's (one shared image per icon and state).
+/datum/look/proc/overlay(name, when = TRUE, icon)
 	touched = TRUE
 	if(!when || isnull(name))
 		return
-	LAZYADD(overlays, name)
+	LAZYADD(overlays, icon ? look_image(icon, name) : name)
+
+/// Drops a layer a capability drew (the holder's own draw() knows its sprite has no such state in
+/// this state): every overlay or glow named `name` added so far.
+/datum/look/proc/hide(name)
+	touched = TRUE
+	if(overlays)
+		overlays -= name
+		if(!length(overlays))
+			overlays = null
+	if(glows)
+		glows -= name
+		if(!length(glows))
+			glows = null
 
 /// A gauge overlay: "[name][step]" for level (0..1) quantised to 0..levels. Null level: nothing.
 /datum/look/proc/gauge(name, level, levels = 4)
@@ -76,6 +90,16 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 /datum/look/proc/set_icon(file)
 	icon = file
 	touched = TRUE
+
+/// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
+/proc/look_image(icon, name)
+	var/static/list/cache = list()
+	var/key = "[icon]:[name]"
+	var/image/I = cache[key]
+	if(!I)
+		I = image(icon = icon, icon_state = name)
+		cache[key] = I
+	return I
 
 /datum/look/proc/set_color(value)
 	color = value
@@ -269,3 +293,45 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
 #undef LOOK_SET_LIGHT
+
+
+// ---- transient visuals: look_flash() ----
+
+/atom
+	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
+	var/tmp/list/look_flashes
+	/// The base state look_flash(as_state = TRUE) is showing now, or null.
+	var/tmp/look_flash_state
+
+/**
+ * Shows `state` on A for `duration` (an overlay, or the base icon_state with as_state = TRUE), then
+ * takes it back: a transient visual needs no var and no draw() branch of its own. Re-flashing the same
+ * state restarts its time.
+ *	look_flash(src, "pointer_flash", 0.5 SECONDS)
+ */
+/proc/look_flash(atom/A, state, duration, as_state = FALSE)
+	if(QDELETED(A) || !state || duration <= 0)
+		return
+	if(as_state)
+		A.look_flash_state = state
+	else
+		LAZYSET(A.look_flashes, state, TRUE)
+	changed(A)
+	var/token = "[state]:[++GLOB.look_flash_seq]"
+	LAZYSET(A.look_flash_tokens, state, token)
+	after(A, duration, GLOBAL_PROC_REF(look_flash_end), A, state, token, as_state)
+
+GLOBAL_VAR_INIT(look_flash_seq, 0)
+
+/atom/var/tmp/list/look_flash_tokens
+
+/proc/look_flash_end(atom/A, state, token, as_state)
+	if(QDELETED(A) || A.look_flash_tokens?[state] != token)
+		return
+	LAZYREMOVE(A.look_flash_tokens, state)
+	if(as_state)
+		if(A.look_flash_state == state)
+			A.look_flash_state = null
+	else
+		LAZYREMOVE(A.look_flashes, state)
+	changed(A)

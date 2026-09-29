@@ -130,7 +130,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 		to_chat(user, span_warning("\The [target] is no longer valid to scan with \the [src]."))
 		play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 
-	rel_clear(src, "partial_scanned")
+	rel_clear(src, nameof(partial_scanned))
 	partial_scan_time = 0
 	scan_cleanup(target, user, effects)
 
@@ -143,7 +143,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	play_sfx(src, SFX_MACHINES_BUZZ_TWO)
 	color_box(effects[3], "#FF0000", 3)
 	if(target)
-		rel_set(src, "partial_scanned", target)
+		rel_set(src, nameof(partial_scanned), target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
 	om_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
 	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)

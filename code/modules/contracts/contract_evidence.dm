@@ -17,10 +17,10 @@
 	if(!subject)
 		return
 	if(subject.mind)
-		rel_set(src, "subject_mind", subject.mind)
+		rel_set(src, nameof(subject_mind), subject.mind)
 		account_number = subject.mind.initial_account()?.account_number
 	display_name = subject.real_name
-	rel_set(src, "body", subject)
+	rel_set(src, nameof(body), subject)
 
 /datum/contract_subject_identity/proc/current_mob() as /mob/living
 	if(subject_mind)

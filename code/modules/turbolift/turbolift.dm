@@ -27,7 +27,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
-	rel_clear(src, "target_floor")
+	rel_clear(src, nameof(target_floor))
 	if(!fire_mode)
 		open_doors()
 
@@ -75,7 +75,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	for(var/datum/turbolift_floor/floor in queued_floors)
 		if(floor.ext_panel)
 			floor.ext_panel.reset()
-	rel_clear(src, "queued_floors")
+	rel_clear(src, nameof(queued_floors))
 
 // Update the icons of all exterior panels (after we change modes etc)
 /datum/turbolift/proc/update_ext_panel_icons()
@@ -118,7 +118,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				if(target_floor())
 					// TODO - This logic copied from old processor.  Would be better to have error states.
 					target_floor().ext_panel.reset()
-					rel_clear(src, "target_floor")
+					rel_clear(src, nameof(target_floor))
 				set_busy_state(null)
 				return
 			else if(!next_process)
@@ -148,8 +148,8 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	if(!target_floor())
 		if(!queued_floors || !length(queued_floors))
 			return 0
-		rel_set(src, "target_floor", LAZYACCESS(queued_floors, 1))
-		rel_remove(src, "queued_floors", target_floor())
+		rel_set(src, nameof(target_floor), LAZYACCESS(queued_floors, 1))
+		rel_remove(src, nameof(queued_floors), target_floor())
 		if(current_floor_index < floors.Find(target_floor()))
 			moving_upwards = 1
 		else
@@ -179,7 +179,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 
 		playsound(control_panel_interior, origin.arrival_sound, 50, 1)
 		target_floor().arrived(src)
-		rel_clear(src, "target_floor")
+		rel_clear(src, nameof(target_floor))
 
 		EXPIRY_SET(src, next_process, 15, CLOCK_WORLD)
 		set_busy_state(LIFT_WAITING_A)
@@ -210,7 +210,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
 		GLOB.machine_service.power_reregister(get_area_turfs(destination))
 
-	rel_set(src, "current_floor", next_floor)
+	rel_set(src, nameof(current_floor), next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")
 
 	EXPIRY_SET(src, next_process, (next_floor.delay_time || move_delay), CLOCK_WORLD)
@@ -220,7 +220,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	if(!floor || !(floor in floors) || (floor in queued_floors))
 		return // STOP PRESSING THE BUTTON.
 	floor.pending_move(src)
-	rel_add(src, "queued_floors", floor)
+	rel_add(src, nameof(queued_floors), floor)
 	set_busy_state(LIFT_MOVING)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.

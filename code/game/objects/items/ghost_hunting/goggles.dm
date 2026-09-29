@@ -20,7 +20,7 @@
 /obj/item/clothing/glasses/ghost/Initialize(mapload)
 	. = ..()
 	if(static_vision)
-		rel_set(src, "overlay", GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
+		rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 
 /obj/item/clothing/glasses/ghost/advanced
 	name = "improved spectral field analysis goggles"

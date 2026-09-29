@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 			to_chat(user, span_filter_notice("You wipe the disk data."))
 			name = initial(name)
 			desc = initial(name)
-			own_clear(src, "genes", OWN_DELETE)
+			own_clear(src, nameof(genes), OWN_DELETE)
 			genesource = "unknown"
 	return TRUE
 
@@ -66,8 +66,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	..()
 */
 
-OWN(/obj/machinery/botany, seed, OWN_SPILL)
-OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
+/obj/machinery/botany/ownership()
+	. = ..()
+	. += owns(nameof(seed), policy = OWN_SPILL)
+	. += owns(nameof(loaded_disk), policy = OWN_SPILL)
 
 /obj/machinery/botany/machine_step()
 
@@ -100,7 +102,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 		if(loaded_disk)
 			loaded_disk.forceMove(get_turf(src))
 			visible_message(span_filter_notice("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk]."))
-			own_take(src, "loaded_disk")
+			own_take(src, nameof(loaded_disk))
 
 /obj/machinery/botany/declare_interactions(list/into)
 	into += list(
@@ -127,9 +129,8 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
-		user.drop_from_inventory(W)
-		W.forceMove(src)
-		own_set(src, "seed", W)
+		if(!own_set(src, nameof(src.seed), W, user = user))
+			return TRUE
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
@@ -169,9 +170,8 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 	return TRUE
 
 /obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	user.drop_from_inventory(W)
-	W.forceMove(src)
-	own_set(src, "loaded_disk", W)
+	if(!own_set(src, nameof(src.loaded_disk), W, user = user))
+		return TRUE
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
 
@@ -250,7 +250,7 @@ UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
 	seed.update_seed()
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
 
-	own_take(src, "seed")
+	own_take(src, nameof(/datum/generated_station_spec::seed))
 	return TRUE
 
 UI_ACT(/obj/machinery/botany, "eject_disk", ui_act_eject_disk)
@@ -259,7 +259,7 @@ UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_disk)
 		return
 	loaded_disk.forceMove(get_turf(src))
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [loaded_disk].")
-	own_take(src, "loaded_disk")
+	own_take(src, nameof(/obj/machinery/botany::loaded_disk))
 	return TRUE
 
 UI_ACT(/obj/machinery/botany/extractor, "scan_genome", ui_act_scan_genome)
@@ -275,7 +275,7 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_scan_genome)
 		degradation = 0
 
 	consume(seed)
-	own_take(src, "seed")
+	own_take(src, nameof(/datum/generated_station_spec::seed))
 	return TRUE
 
 UI_ACT(/obj/machinery/botany/extractor, "get_gene", ui_act_get_gene, UI_ARG_TEXT("get_gene"))
@@ -289,7 +289,7 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 	var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 	if(!P)
 		return
-	own_add(loaded_disk, "genes", P) // get_gene() makes a fresh copy: the disk owns it
+	own_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
 
 	loaded_disk.genesource = "[genetics().display_name]"
 	if(!genetics().roundstart)
@@ -302,7 +302,7 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 	degradation += rand(20,60)
 	if(degradation >= 100)
 		failed_task = 1
-		proto_set(src, "genetics_static", null)
+		proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
 		degradation = 0
 	return TRUE
 
@@ -310,7 +310,7 @@ UI_ACT(/obj/machinery/botany/extractor, "clear_buffer", ui_act_clear_buffer)
 UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
 	if(!genetics())
 		return
-	proto_set(src, "genetics_static", null)
+	proto_set(src, nameof(/obj/machinery/botany/extractor::genetics_static), null)
 	degradation = 0
 	return TRUE
 
@@ -371,7 +371,7 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 		if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
 			set_active(FALSE)
 			return
-		proto_set(seed, "seed_static", modified_seed)
+		proto_set(seed, nameof(/obj/effect/plant::seed_static), modified_seed)
 		seed.seed_type = seed.seed().name
 		seed.update_seed()
 
@@ -392,4 +392,6 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
 
-PROTO(/obj/machinery/botany/extractor, genetics_static)
+/obj/machinery/botany/extractor/ownership()
+	. = ..()
+	. += proto(nameof(genetics_static))

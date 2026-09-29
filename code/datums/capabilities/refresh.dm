@@ -24,6 +24,28 @@
 
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
+/// A custom interval (deciseconds) for periodic_step() instead of a shared cadence (the old
+/// DECLARE_REPEAT delay): runs every interval while should_run() holds. A type var.
+/datum/var/periodic_interval = null
+
+OWN_TIMER(/datum, periodic_interval)
+
+/// Starts or stops D's custom-interval step to match should_run().
+/proc/periodic_interval_update(datum/D)
+	var/want = !!D.should_run()
+	var/pending = om_timer_slot_pending(D, "periodic_interval")
+	if(want && !pending)
+		after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+	else if(!want && pending)
+		om_cancel_timer_slot(D, "periodic_interval")
+
+/// One custom-interval step; re-arms while should_run() holds (the framework's timer, not game code).
+/proc/periodic_interval_fire(datum/D)
+	if(QDELETED(D) || !D.periodic_interval)
+		return
+	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
+		return
+	after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
@@ -31,6 +53,15 @@
 	if(!E || QDELING(E))
 		return
 	om_changed(E, channel)
+	refresh_mark(E, channel)
+
+/// Queues E's refresh (and its drawing owners', H2). changed() and om_changed() both come here.
+/proc/refresh_mark(datum/E, channel)
+	if(!E || QDELING(E))
+		return
+	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
+	if(E == GLOB.refresh_applying)
+		return
 #if defined(UNIT_TESTS)
 	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
 	if(E == GLOB.refresh_running)
@@ -40,6 +71,12 @@
 			stack_trace(msg)
 #endif
 	refresh_trace_note(E, channel)
+	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
+	// E's first mark this frame, so two entities watching each other stop after one round.
+	if(E.rel_watchers && !E.refresh_queued)
+		E.refresh_queued = TRUE
+		GLOB.refresh_queue += E
+		rel_notify_watchers(E)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		D.refresh_bits |= channel
@@ -54,9 +91,13 @@
 		D = owner
 
 GLOBAL_LIST_EMPTY(refresh_queue)
+/// Refreshes run so far (the dx_refresh benchmark reads it).
+GLOBAL_VAR_INIT(refresh_bench_drained, 0)
 /// The entity whose refresh is running now (the self-mark detector reads it).
 GLOBAL_DATUM(refresh_running, /datum)
 GLOBAL_VAR_INIT(refresh_self_mark_expected, FALSE)
+/// The atom whose look is being applied now: marks it raises meanwhile are its own presentation.
+GLOBAL_DATUM(refresh_applying, /atom)
 /// Self-mark reports this round (the detector test reads them).
 GLOBAL_LIST_EMPTY(refresh_self_marks)
 
@@ -97,6 +138,8 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 /atom/proc/draw(datum/look/look)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "draw"))
+		GLOB.derive_probe_found |= TYPE_DERIVES_LOOK
 	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
 
@@ -107,8 +150,26 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 
 /// The verbs to hide right now. Call ..() (capabilities hide theirs). Re-evaluated on change.
 /atom/proc/hidden_verbs()
+	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "hidden_verbs"))
+		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
 	return caps_hidden_verbs()
+
+// ---- what a type derives, decided by its declared overrides (never by one instance's result) ----
+
+/// Set while a type's first refresh probes which derived procs it overrides.
+GLOBAL_VAR_INIT(derive_probing, FALSE)
+/// TYPE_DERIVES_* found by the probe: the base proc was reached through a type's override.
+GLOBAL_VAR_INIT(derive_probe_found, 0)
+
+/// Whether `caller` (the proc that called a base derived proc) is an override of `name`: the base was
+/// reached through a type's own draw()/hidden_verbs() calling ..(), not directly by the engine.
+/proc/derive_called_by_override(callee/caller, name)
+	if(!caller)
+		return FALSE
+	var/path = "[caller.proc]"
+	return copytext(path, -(length(name) + 1)) == "/[name]"
 
 /// Side effects of a state change (a Rust device sync, a network rebuild), coalesced to once per
 /// frame. `bits` are the channels raised since the last refresh. Never call it by hand.
@@ -139,6 +200,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		done[D] = TRUE
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
+		GLOB.refresh_bench_drained++
 		try
 			refresh_one(D, bits)
 		catch(var/exception/e)
@@ -193,16 +255,28 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		var/flags = type_derive_flags(A)
 		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
 		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs
-		var/drew = may_draw ? !isnull(refresh_look(A)) : FALSE
-		var/hid = may_hide ? length(refresh_verbs(A)) : FALSE
-		if(flags & TYPE_DERIVES_PENDING)
-			type_derive_record(A, drew, hid)
+		var/probing = flags & TYPE_DERIVES_PENDING
+		if(probing)
+			GLOB.derive_probing = TRUE
+			GLOB.derive_probe_found = 0
+		if(may_draw)
+			refresh_look(A)
+		if(may_hide)
+			refresh_verbs(A)
+		if(probing)
+			GLOB.derive_probing = FALSE
+			// Type-pure: the type overrides draw()/hidden_verbs() or it doesn't, whatever this
+			// instance's state drew or hid (review: never record a negative from one result).
+			type_derive_record(A, GLOB.derive_probe_found & TYPE_DERIVES_LOOK, GLOB.derive_probe_found & TYPE_DERIVES_VERBS)
 		refresh_sweep_track(A)
 	if(LAZYLEN(D.open_tguis))
 		SStgui.update_uis(D)
 	D.on_state_changed(bits)
 
 /proc/refresh_periodic(datum/D)
+	if(D.periodic_interval)
+		periodic_interval_update(D)
+		return
 	if(!D.periodic_cadence)
 		return
 	var/want = !!D.should_run()
@@ -217,6 +291,11 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)
+	// Transient flashes (look_flash()) sit on top of whatever draw() described.
+	if(A.look_flash_state)
+		L.state(A.look_flash_state)
+	for(var/state in A.look_flashes)
+		L.overlay(state)
 	if(!L.touched)
 		if(apply && !isnull(A.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
@@ -226,7 +305,10 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		return null
 	var/key = L.change_key()
 	if(apply && key != A.look_key)
+		var/atom/outer = GLOB.refresh_applying
+		GLOB.refresh_applying = A
 		L.apply_to(A)
+		GLOB.refresh_applying = outer
 		A.look_key = key
 	return key
 
@@ -293,7 +375,9 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			continue
 		GLOB.refresh_sweep_index++
 		scanned++
-		if(A.refresh_queued)
+		// Queued here, or by a declared appearance watch (a stat or density change) whose
+		// update_icon() on this same lane marks it: its refresh is pending, not missed.
+		if(A.refresh_queued || A.appearance_queued)
 			continue
 #if !defined(UNIT_TESTS)
 		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))

@@ -33,7 +33,7 @@
 /datum/artifact_effect/New(datum/artifact_master/newmaster)
 	..()
 
-	rel_set(src, "master", newmaster)
+	rel_set(src, nameof(master), newmaster)
 	effect = rand(EFFECT_TOUCH, MAX_EFFECT) //This can be overwritten per artifact, in case you want one to only be touch, aura, or pulse!
 	trigger = rand(TRIGGER_TOUCH, MAX_TRIGGER) //Same for this! You can make artifacts that can ONLY be activated through XYZ!
 

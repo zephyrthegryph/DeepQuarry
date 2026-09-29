@@ -11,13 +11,13 @@
 
 /datum/shuttle/autodock/ferry/New(_name)
 	if(landmark_station_tag)
-		rel_set(src, "landmark_station", SSshuttles.get_landmark(landmark_station_tag))
+		rel_set(src, nameof(landmark_station), SSshuttles.get_landmark(landmark_station_tag))
 	if(landmark_offsite_tag)
-		rel_set(src, "landmark_offsite", SSshuttles.get_landmark(landmark_offsite_tag))
+		rel_set(src, nameof(landmark_offsite), SSshuttles.get_landmark(landmark_offsite_tag))
 
 	..(_name, get_location_waypoint(location))
 
-	rel_set(src, "next_location", get_location_waypoint(!location))
+	rel_set(src, nameof(next_location), get_location_waypoint(!location))
 
 
 //Gets the shuttle landmark associated with the given location (defaults to current location)
@@ -45,7 +45,7 @@
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()
 	..()
-	rel_set(src, "next_location", get_location_waypoint(!location))
+	rel_set(src, nameof(next_location), get_location_waypoint(!location))
 
 // Ferry shuttles should generally always be able to dock.  So read the docking codes off of the target.
 /datum/shuttle/autodock/ferry/update_docking_target(obj/effect/shuttle_landmark/location)

@@ -76,7 +76,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 		return
 	ASSERT(ismob(held))
 	. = ..()
-	rel_set(src, "held_mob", held)
+	rel_set(src, nameof(held_mob), held)
 	original_vis_flags = held.vis_flags
 	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
 	vis_contents += held
@@ -90,7 +90,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 		held_mob.transform = original_transform
 		held_mob.update_transform()
 		held_mob.vis_flags = original_vis_flags
-		rel_clear(src, "held_mob")
+		rel_clear(src, nameof(held_mob))
 		invisibility = INVISIBILITY_ABSTRACT
 		schedule_cleanup_check() // once the move is over
 	..()
@@ -116,7 +116,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
 	if(!om_timer_slot_pending(src, "cleanup_timer"))
-		om_after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
+		after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
 
 /obj/item/holder/proc/cleanup_check()
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))

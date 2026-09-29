@@ -65,30 +65,30 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	if(chassis)
 		if(equip_type)
 			if(equip_type == EQUIP_HULL)
-				rel_remove(chassis, "hull_equipment", src)
+				rel_remove(chassis, nameof(chassis.hull_equipment), src)
 				listclearnulls(chassis.hull_equipment)
 			if(equip_type == EQUIP_WEAPON)
-				rel_remove(chassis, "weapon_equipment", src)
+				rel_remove(chassis, nameof(chassis.weapon_equipment), src)
 				listclearnulls(chassis.weapon_equipment)
 			if(equip_type == EQUIP_UTILITY)
-				rel_remove(chassis, "utility_equipment", src)
+				rel_remove(chassis, nameof(chassis.utility_equipment), src)
 				listclearnulls(chassis.utility_equipment)
 			if(equip_type == EQUIP_SPECIAL)
-				rel_remove(chassis, "special_equipment", src)
+				rel_remove(chassis, nameof(chassis.special_equipment), src)
 				listclearnulls(chassis.special_equipment)
 			// ition begin: MICROMECHS
 			if(equip_type == EQUIP_MICRO_UTILITY)
-				rel_remove(chassis, "micro_utility_equipment", src)
+				rel_remove(chassis, nameof(chassis.micro_utility_equipment), src)
 				listclearnulls(chassis.micro_utility_equipment)
 			if(equip_type == EQUIP_MICRO_WEAPON)
-				rel_remove(chassis, "micro_weapon_equipment", src)
+				rel_remove(chassis, nameof(chassis.micro_weapon_equipment), src)
 				listclearnulls(chassis.micro_weapon_equipment)
 			// ition end: MICROMECHS
-		rel_remove(chassis, "universal_equipment", src)
-		rel_remove(chassis, "equipment", src)
+		rel_remove(chassis, nameof(chassis.universal_equipment), src)
+		rel_remove(chassis, nameof(chassis.equipment), src)
 		listclearnulls(chassis.equipment)
 		if(chassis.selected == src)
-			rel_clear(chassis, "selected")
+			rel_clear(chassis, nameof(chassis.selected))
 		src.update_chassis_page()
 		chassis.occupant_message(span_red("The [src] is destroyed!"))
 		chassis.log_append_to_last("[src] is destroyed.",1)
@@ -179,29 +179,29 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
 	var/has_equipped = 0
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
-		rel_add(M, "hull_equipment", src)
+		rel_add(M, nameof(M.hull_equipment), src)
 		has_equipped = 1
 	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip && !has_equipped)
-		rel_add(M, "weapon_equipment", src)
+		rel_add(M, nameof(M.weapon_equipment), src)
 		has_equipped = 1
 	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip && !has_equipped)
-		rel_add(M, "utility_equipment", src)
+		rel_add(M, nameof(M.utility_equipment), src)
 		has_equipped = 1
 	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip && !has_equipped)
-		rel_add(M, "special_equipment", src)
+		rel_add(M, nameof(M.special_equipment), src)
 		has_equipped = 1
 	// ition begin: MICROMECHS
 	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip && !has_equipped)
-		rel_add(M, "micro_utility_equipment", src)
+		rel_add(M, nameof(M.micro_utility_equipment), src)
 		has_equipped = 1
 	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip && !has_equipped)
-		rel_add(M, "micro_weapon_equipment", src)
+		rel_add(M, nameof(M.micro_weapon_equipment), src)
 		has_equipped = 1
 	// ition end: MICROMECHS
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
-		rel_add(M, "universal_equipment", src)
-	rel_add(M, "equipment", src)
-	rel_set(src, "chassis", M)
+		rel_add(M, nameof(M.universal_equipment), src)
+	rel_add(M, nameof(M.equipment), src)
+	rel_set(src, nameof(chassis), M)
 	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
@@ -210,7 +210,7 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 
 	M.mecha_log_message("[src] initialized.")
 	if(!M.selected)
-		rel_set(M, "selected", src)
+		rel_set(M, nameof(M.selected), src)
 	src.update_chassis_page()
 	return
 
@@ -225,29 +225,29 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 	moveto = moveto || get_turf(chassis)
 	if(!chassis.slot_remove(src, moveto))
 		forceMove(moveto)
-	rel_remove(chassis, "equipment", src)
-	rel_remove(chassis, "universal_equipment", src)
+	rel_remove(chassis, nameof(chassis.equipment), src)
+	rel_remove(chassis, nameof(chassis.universal_equipment), src)
 	if(equip_type)
 		switch(equip_type)
 			if(EQUIP_HULL)
-				rel_remove(chassis, "hull_equipment", src)
+				rel_remove(chassis, nameof(chassis.hull_equipment), src)
 			if(EQUIP_WEAPON)
-				rel_remove(chassis, "weapon_equipment", src)
+				rel_remove(chassis, nameof(chassis.weapon_equipment), src)
 			if(EQUIP_UTILITY)
-				rel_remove(chassis, "utility_equipment", src)
+				rel_remove(chassis, nameof(chassis.utility_equipment), src)
 			if(EQUIP_SPECIAL)
-				rel_remove(chassis, "special_equipment", src)
+				rel_remove(chassis, nameof(chassis.special_equipment), src)
 			// ition begin: MICROMECHS
 			if(EQUIP_MICRO_UTILITY)//CHOMPstation edit - This was improperly named bugging detaching on my equipment fix.
-				rel_remove(chassis, "micro_utility_equipment", src)
+				rel_remove(chassis, nameof(chassis.micro_utility_equipment), src)
 			if(EQUIP_MICRO_WEAPON)
-				rel_remove(chassis, "micro_weapon_equipment", src)
+				rel_remove(chassis, nameof(chassis.micro_weapon_equipment), src)
 			// ition end: MICROMECHS
 	if(chassis.selected == src)
-		rel_clear(chassis, "selected")
+		rel_clear(chassis, nameof(chassis.selected))
 	update_chassis_page()
 	chassis.mecha_log_message("[src] removed from equipment.")
-	rel_clear(src, "chassis")
+	rel_clear(src, nameof(chassis))
 	set_ready_state(TRUE)
 	enable_special = FALSE
 	return

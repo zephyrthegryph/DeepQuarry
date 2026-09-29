@@ -51,10 +51,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/maneuvering_jets, "jets", /obj/item/t
 
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()
-	rel_set(jets, "holder", holder)
+	rel_set(jets, nameof(jets.holder), holder)
 	jets.ion_trail.set_up(holder)
 
 /obj/item/rig_module/maneuvering_jets/removed()
 	..()
-	rel_clear(jets, "holder")
+	rel_clear(jets, nameof(jets.holder))
 	jets.ion_trail.set_up(jets)

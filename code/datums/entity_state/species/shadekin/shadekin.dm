@@ -100,8 +100,8 @@
 	if(!isliving(new_owner) || issilicon(new_owner))
 		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
 		return
-	rel_set(src, "owner", new_owner) // one-sided back view: the mob owns us in its shadekin var
-	own_set(owner, "shadekin", src)
+	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in its shadekin var
+	own_set(owner, nameof(owner.shadekin), src)
 	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.
@@ -144,7 +144,7 @@
 
 /// Removes this mob's shadekin state, if any.
 /mob/living/proc/remove_shadekin()
-	own_clear(src, "shadekin", OWN_DELETE)
+	own_clear(src, nameof(shadekin), OWN_DELETE)
 
 // revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/shadekin/lifecycle_prerelease()
@@ -367,4 +367,6 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 /datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.shadekin?.handle_comp()
 
-REL_LIST(/datum/shadekin, active_dark_maws)
+/datum/shadekin/relations()
+	. = ..()
+	. += rel_many(nameof(active_dark_maws))

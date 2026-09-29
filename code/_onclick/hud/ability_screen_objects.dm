@@ -15,7 +15,7 @@
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		rel_set(src, "my_mob", loc)
+		rel_set(src, nameof(my_mob), loc)
 		update_abilities(0, loc)
 		overlays.Add(closed_state)
 	else
@@ -99,20 +99,20 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 
 
 	var/atom/movable/screen/ability/new_button = new /atom/movable/screen/ability
-	rel_set(new_button, "ability_master", src)
+	rel_set(new_button, nameof(new_button.ability_master), src)
 
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
 	new_button.update_icon()
-	own_add(src, "ability_objects", new_button)
+	own_add(src, nameof(ability_objects), new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	own_remove(src, "ability_objects", ability)
+	own_remove(src, nameof(ability_objects), ability)
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)
@@ -240,14 +240,14 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/A = new /atom/movable/screen/ability/verb_based()
-	rel_set(A, "ability_master", src)
+	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, "ability_objects", A)
+	own_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -264,14 +264,14 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/changeling/A = new /atom/movable/screen/ability/verb_based/changeling()
-	rel_set(A, "ability_master", src)
+	rel_set(A, nameof(A.ability_master), src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, "ability_objects", A)
+	own_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -297,11 +297,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	if(get_ability_by_instance(object_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/obj_based/technomancer/A = new /atom/movable/screen/ability/obj_based/technomancer()
-	rel_set(A, "ability_master", src)
-	rel_set(A, "object", object_given)
+	rel_set(A, nameof(A.ability_master), src)
+	rel_set(A, nameof(A.object), object_given)
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
-	own_add(src, "ability_objects", A)
+	own_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 

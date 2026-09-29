@@ -29,7 +29,7 @@
 		"cargo" = new /obj/item/pda/multicaster/cargo(src),
 		"civilian" = new /obj/item/pda/multicaster/civilian(src))
 
-	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

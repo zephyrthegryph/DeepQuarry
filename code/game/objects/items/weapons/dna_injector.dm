@@ -22,8 +22,8 @@
 
 /obj/item/dnainjector/Initialize(mapload) // Traitgenes edit - Moved to init
 	if(datatype && block)
-		own_set(src, "buf", new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
-		own_set(buf, "dna", new /datum/dna)
+		own_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
+		own_set(buf, nameof(buf.dna), new /datum/dna)
 		buf.types = datatype
 		buf.dna.ResetSE()
 		SetValue(src.value)

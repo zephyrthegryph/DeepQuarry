@@ -10,7 +10,7 @@
 
 /// A member of the owner's list, naming it back two ways.
 /datum/dq_decl_kinds_member
-	var/datum/dq_decl_kinds_owner/back
+	var/datum/dq_decl_kinds_owner/leader
 	var/list/names
 
 /// Reached through the owner's hub; names the owner in `slot`.
@@ -22,13 +22,21 @@
 /datum/dq_decl_kinds_inner
 	var/list/owners
 
-REL_PAIR_LIST(/datum/dq_decl_kinds_owner, members, back)
-REL_PAIR(/datum/dq_decl_kinds_member, back, members)
-REL_LIST(/datum/dq_decl_kinds_member, names)
-REL(/datum/dq_decl_kinds_owner, hub)
-REL(/datum/dq_decl_kinds_hub, slot)
-REL(/datum/dq_decl_kinds_hub, inner)
-REL_LIST(/datum/dq_decl_kinds_inner, owners)
+/datum/dq_decl_kinds_owner/relations()
+	. = ..()
+	. += rel_many(nameof(members), back = nameof(/datum/dq_decl_kinds_member::leader))
+	. += rel_one(nameof(hub))
+/datum/dq_decl_kinds_member/relations()
+	. = ..()
+	. += rel_one(nameof(leader), back = nameof(/datum/dq_decl_kinds_owner::members))
+	. += rel_many(nameof(names))
+/datum/dq_decl_kinds_hub/relations()
+	. = ..()
+	. += rel_one(nameof(slot))
+	. += rel_one(nameof(inner))
+/datum/dq_decl_kinds_inner/relations()
+	. = ..()
+	. += rel_many(nameof(owners))
 
 /datum/unit_test/dq_lifecycle_declared_kinds
 
@@ -40,22 +48,22 @@ REL_LIST(/datum/dq_decl_kinds_inner, owners)
 	var/datum/dq_decl_kinds_hub/hub = new
 	var/datum/dq_decl_kinds_inner/inner = new
 
-	rel_add(owner, "members", first)
-	rel_set(second, "back", owner)
-	TEST_ASSERT_EQUAL(first.back, owner, "REL_PAIR_LIST sets the member's partner side")
+	rel_add(owner, nameof(owner.members), first)
+	rel_set(second, nameof(second.leader), owner)
+	TEST_ASSERT_EQUAL(first.leader, owner, "rel_many(back =) sets the member's partner side")
 	TEST_ASSERT((second in owner.members), "REL_PAIR sets the owner's list side")
-	rel_add(first, "names", owner)
-	rel_add(first, "names", other)
-	rel_set(hub, "slot", owner)
-	rel_set(hub, "inner", inner)
-	rel_set(owner, "hub", hub)
-	rel_add(inner, "owners", owner)
-	rel_add(inner, "owners", other)
+	rel_add(first, nameof(first.names), owner)
+	rel_add(first, nameof(first.names), other)
+	rel_set(hub, nameof(hub.slot), owner)
+	rel_set(hub, nameof(hub.inner), inner)
+	rel_set(owner, nameof(owner.hub), hub)
+	rel_add(inner, nameof(inner.owners), owner)
+	rel_add(inner, nameof(inner.owners), other)
 
 	qdel(owner)
 
-	TEST_ASSERT_NULL(first.back, "a pair member's view back clears")
-	TEST_ASSERT_NULL(second.back, "a pair member set from its own side clears")
+	TEST_ASSERT_NULL(first.leader, "a pair member's view back clears")
+	TEST_ASSERT_NULL(second.leader, "a pair member set from its own side clears")
 	TEST_ASSERT(!(owner in first.names), "the dying entity leaves a member's list view")
 	TEST_ASSERT((other in first.names), "a list view keeps its other entries")
 	TEST_ASSERT_NULL(owner.members, "the owner's own list view drops")

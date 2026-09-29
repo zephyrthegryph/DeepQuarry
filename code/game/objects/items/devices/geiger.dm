@@ -86,9 +86,9 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 
 	if (scanning)
 		if(!geiger_sound)
-			own_set(src, "geiger_sound", new /datum/geiger_sound(src))
+			own_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
 	else
-		own_clear(src, "geiger_sound", OWN_DELETE)
+		own_clear(src, nameof(geiger_sound), OWN_DELETE)
 
 	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
@@ -180,7 +180,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	. = ..()
 	if(scanning)
 		if(!geiger_sound)
-			own_set(src, "geiger_sound", new /datum/geiger_sound/wall(src)) // ALLOW(decl): only while scanning
+			own_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): only while scanning
 
 DECLARE_APPEARANCE(/obj/item/geiger/wall, "appearance_geiger_level", list( \
 	"0" = list(APPEARANCE_ICON_STATE = "geiger_wall-p"), \

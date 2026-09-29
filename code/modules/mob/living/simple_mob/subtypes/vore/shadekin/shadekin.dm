@@ -130,7 +130,7 @@ DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
 
 /mob/living/simple_mob/shadekin/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"

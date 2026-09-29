@@ -24,7 +24,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 			CollectTiles(old_turf())
 
 
-	rel_set(src, "old_turf", loc)
+	rel_set(src, nameof(old_turf), loc)
 
 /obj/machinery/floorlayer/declare_interactions(list/into)
 	into += list(
@@ -86,7 +86,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	if(selected)
 		to_chat(user, span_notice("You remove [selected] from \the [src]."))
 		selected.forceMove(loc)
-		own_take(src, "T")
+		own_take(src, nameof(T))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
@@ -96,7 +96,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
 	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc == src)
-		own_set(src, "T", selected)
+		own_set(src, nameof(T), selected)
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
@@ -119,7 +119,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
-		own_set(src, "T", tile)
+		own_set(src, nameof(T), tile)
 		return 1
 	return 0
 
@@ -137,9 +137,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	return 1
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
-	tile.forceMove(src)
 	if(!T)
-		own_set(src, "T", tile)
+		own_set(src, nameof(src.T), tile, into = TRUE)
+	else
+		tile.forceMove(src)
 
 	SortStacks()
 
@@ -147,7 +148,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)
 
-OWN(/obj/machinery/floorlayer, T, OWN_CONTAINED)
+/obj/machinery/floorlayer/ownership()
+	. = ..()
+	. += owns(nameof(T), policy = OWN_CONTAINED)
 
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf

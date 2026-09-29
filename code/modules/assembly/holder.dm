@@ -25,16 +25,10 @@
 	if(D.secured || D2.secured)
 		return FALSE
 
-	if(user)
-		user.remove_from_mob(D)
-		user.remove_from_mob(D2)
-
-	rel_set(D, "holder", src)
-	rel_set(D2, "holder", src)
-	D.forceMove(src)
-	D2.forceMove(src)
-	own_set(src, "a_left", D)
-	own_set(src, "a_right", D2)
+	rel_set(D, nameof(D.holder), src)
+	rel_set(D2, nameof(D2.holder), src)
+	own_set(src, nameof(src.a_left), D, user = user, into = TRUE)
+	own_set(src, nameof(src.a_right), D2, user = user, into = TRUE)
 	name = "[D.name]-[D2.name] assembly"
 	update_icon()
 	user.put_in_hands(src)
@@ -162,13 +156,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 		if(!T)
 			return TRUE
 		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
-		var/obj/item/assembly/left = own_take(src, "a_left")
-		var/obj/item/assembly/right = own_take(src, "a_right")
+		var/obj/item/assembly/left = own_take(src, nameof(a_left))
+		var/obj/item/assembly/right = own_take(src, nameof(a_right))
 		if(left)
-			rel_clear(left, "holder")
+			rel_clear(left, nameof(left.holder))
 			left.forceMove(T)
 		if(right)
-			rel_clear(right, "holder")
+			rel_clear(right, nameof(right.holder))
 			right.forceMove(T)
 		consume(src, user)
 	return TRUE
@@ -201,15 +195,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 
 	var/obj/item/assembly/igniter/ign = new(src)
 	ign.set_secured(TRUE)
-	rel_set(ign, "holder", src)
+	rel_set(ign, nameof(ign.holder), src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
 	tmr.set_secured(TRUE)
-	rel_set(tmr, "holder", src)
+	rel_set(tmr, nameof(tmr.holder), src)
 
-	own_set(src, "a_left", tmr)
-	own_set(src, "a_right", ign)
+	own_set(src, nameof(a_left), tmr)
+	own_set(src, nameof(a_right), ign)
 	secured = 1
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"
@@ -254,8 +248,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
 
-OWN(/obj/item/assembly_holder, a_left, OWN_CONTAINED)
-OWN(/obj/item/assembly_holder, a_right, OWN_CONTAINED)
+/obj/item/assembly_holder/ownership()
+	. = ..()
+	. += owns(nameof(a_left), policy = OWN_CONTAINED)
+	. += owns(nameof(a_right), policy = OWN_CONTAINED)
 
 /// the special_assembly this refers to (a relation view: null once it is deleted).
 /obj/item/assembly_holder/proc/special_assembly() as /obj

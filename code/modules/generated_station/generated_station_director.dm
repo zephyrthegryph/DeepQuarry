@@ -61,13 +61,13 @@
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
-	rel_set(src, "simulation", new_simulation)
+	rel_set(src, nameof(simulation), new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
-	own_take_all(src, "reports")
+	own_take_all(src, nameof(reports))
 	local_knowledge = list()
-	own_take_all(src, "squads")
-	own_take_all(src, "orders")
+	own_take_all(src, nameof(squads))
+	own_take_all(src, nameof(orders))
 	dirty_departments = list()
 	for(var/department_id in simulation()?.departments)
 		department_connected[department_id] = TRUE
@@ -141,7 +141,7 @@
 	report.confidence = clamp(confidence, 0, 100)
 	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
-	own_put(src, "reports", report.id, report)
+	own_put(src, nameof(reports), report.id, report)
 	source_knowledge[report.id] = report
 	process_dirty()
 	if(strategic_online && department_connected[source_department_id])
@@ -171,7 +171,7 @@
 	for(var/department_id in local_knowledge)
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
-	own_take_member(src, "reports", report_id)
+	own_take_member(src, nameof(reports), report_id)
 	qdel(report)
 
 /datum/generated_station_director/proc/department_knows(department_id, report_id)
@@ -204,7 +204,7 @@
 	var/datum/generated_station_squad/squad = new
 	squad.id = "squad-[next_squad_id++]"
 	squad.department_id = department_id
-	own_put(src, "squads", squad.id, squad)
+	own_put(src, nameof(squads), squad.id, squad)
 	return squad
 
 /datum/generated_station_director/proc/issue_order(squad_id, report_id, kind, global_coordination = FALSE)
@@ -225,7 +225,7 @@
 	order.global_coordination = global_coordination
 	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
-	own_put(src, "orders", order.id, order)
+	own_put(src, nameof(orders), order.id, order)
 	squad.active_order_id = order.id
 	defense_runtime()?.apply_order(order)
 	return order
@@ -238,7 +238,7 @@
 	var/datum/generated_station_squad/squad = squads?[order.squad_id]
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
-	own_take_member(src, "orders", order.id)
+	own_take_member(src, nameof(orders), order.id)
 	qdel(order)
 	return TRUE
 

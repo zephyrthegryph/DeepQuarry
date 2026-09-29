@@ -55,12 +55,12 @@
 	if(isliving(holder.loc))
 		holder = holder.loc
 	if(length(nearby_mobs))
-		rel_clear(src, "nearby_mobs")
+		rel_clear(src, nameof(nearby_mobs))
 	var/turf/T = get_turf(holder)
 
 	for(var/mob/living/L in oview(effectrange, T))
 		if(!L.stat && L.mind)
-			rel_add(src, "nearby_mobs", L)
+			rel_add(src, nameof(nearby_mobs), L)
 
 	if(ELAPSED(src, last_bloodcall, CLOCK_WORLD) >= bloodcall_interval && LAZYLEN(nearby_mobs))
 		var/mob/living/carbon/human/M = DEFAULTPICK(nearby_mobs, null)

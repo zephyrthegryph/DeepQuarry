@@ -60,14 +60,14 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	ASSERT(!control())
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
 		return 0
-	rel_set(src, "control", SC)
+	rel_set(src, nameof(control), SC)
 	return 1
 
 //set the control of the panel to null and removes it from the control list of the previous control computer if needed
 /obj/machinery/power/solar/proc/unset_control()
 	if(control())
 		control().remove_panel(src)
-	rel_clear(src, "control")
+	rel_clear(src, nameof(control))
 
 /obj/machinery/power/solar/declare_interactions(list/into)
 	into += list(
@@ -347,15 +347,15 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 	if(P in connected_panels) // Just in case it was already in there
 		connected_power -= P.controller_supply
 	P.controller_supply = sgen
-	rel_add(src, "connected_panels", P)
+	rel_add(src, nameof(connected_panels), P)
 	connected_power += sgen
 
 /obj/machinery/power/solar_control/proc/remove_panel(obj/machinery/power/solar/P)
 	if(P in connected_panels)
 		connected_power -= P.controller_supply
 		P.controller_supply = 0
-	rel_remove(src, "connected_panels", P)
-	rel_remove(src, "solar_pending", P) // leave the solar service's current pass
+	rel_remove(src, nameof(connected_panels), P)
+	rel_remove(src, nameof(solar_pending), P) // leave the solar service's current pass
 
 /obj/machinery/power/solar_control/proc/get_connected_panels()
 	RETURN_TYPE(/list)
@@ -397,7 +397,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				if(!connected_tracker()) //if there's already a tracker connected to the computer don't add another
 					var/obj/machinery/power/tracker/T = M
 					if(!T.control()) //i.e unconnected
-						rel_set(src, "connected_tracker", T)
+						rel_set(src, nameof(connected_tracker), T)
 						T.set_control(src)
 
 //called by the sun controller, update the facing angle (either manually or via tracking) and rotates the panels accordingly
@@ -466,7 +466,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
-		own_set(A, "circuit", M)
+		own_set(A, nameof(A.circuit), M)
 		A.state = 3
 		A.icon_state = "computer_3"
 		A.set_anchored(TRUE)
@@ -478,7 +478,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 			C.forceMove(src.loc)
-		own_set(A, "circuit", M)
+		own_set(A, nameof(A.circuit), M)
 		A.state = 4
 		A.icon_state = "computer_4"
 		A.set_anchored(TRUE)

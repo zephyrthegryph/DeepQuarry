@@ -185,7 +185,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		next_car = next_car.lead()
 
 	//latch with src as the follower
-	rel_set(src, "lead", T) // REL_PAIR: T's tow names us
+	rel_set(src, nameof(lead), T) // REL_PAIR: T's tow names us
 	set_dir(lead().dir)
 
 	if(user)
@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		return
 
 	var/obj/vehicle/train/old_lead = lead()
-	rel_clear(src, "lead") // the pair: old_lead's tow clears too
+	rel_clear(src, nameof(lead)) // the pair: old_lead's tow clears too
 	old_lead.update_stats()
 
 	to_chat(user, span_blue("You unhitch [src] from [old_lead]."))
@@ -239,7 +239,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		//check for cyclic train.
 		if (T.tow() == src)
 			var/obj/vehicle/train/old_lead = lead()
-			rel_clear(src, "lead") // the pair: old_lead's tow clears too
+			rel_clear(src, nameof(lead)) // the pair: old_lead's tow clears too
 			old_lead?.update_stats()
 			update_stats()
 			return
@@ -266,5 +266,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
 	return lead
 
-REL_PAIR(/obj/vehicle/train, lead, tow)
-REL_PAIR(/obj/vehicle/train, tow, lead)
+/obj/vehicle/train/relations()
+	. = ..()
+	. += rel_one(nameof(lead), back = nameof(/obj/vehicle/train::tow))
+	. += rel_one(nameof(tow), back = nameof(/obj/vehicle/train::lead))

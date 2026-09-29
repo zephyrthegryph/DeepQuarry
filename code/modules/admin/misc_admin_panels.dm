@@ -18,8 +18,8 @@
 
 /datum/mind_memory_panel/New(datum/mind/src_mind, mob/recipient_mob)
 	..()
-	rel_set(src, "source", src_mind)
-	rel_set(src, "recipient", recipient_mob)
+	rel_set(src, nameof(source), src_mind)
+	rel_set(src, nameof(recipient), recipient_mob)
 
 DECLARE_UI_STATE(/datum/mind_memory_panel, GLOB.tgui_always_state)
 
@@ -62,7 +62,7 @@ UI_DATA_REPLACE(/datum/mind_memory_panel, "merge:ui_data_datum_mind_memory_panel
 
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
 	..()
-	rel_set(src, "holder", owner_holder)
+	rel_set(src, nameof(holder), owner_holder)
 
 DECLARE_UI_STATE(/datum/tag_menu_panel, ADMIN_STATE(R_ADMIN))
 
@@ -205,7 +205,7 @@ UI_DATA_REPLACE(/datum/dq_investigate_panel, "merge:ui_data_datum_dq_investigate
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
-	rel_set(src, "holder", owner_holder)
+	rel_set(src, nameof(holder), owner_holder)
 
 DECLARE_UI_STATE(/datum/unban_panel, ADMIN_STATE(R_ADMIN))
 
@@ -314,8 +314,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	rel_set(src, "holder", owner_holder)
-	rel_set(src, "target", target_mob)
+	rel_set(src, nameof(holder), owner_holder)
+	rel_set(src, nameof(target), target_mob)
 
 // leaves the per-admin panel index.
 /datum/jobban_panel/lifecycle_dematerialize()
@@ -540,7 +540,7 @@ UI_DATA_REPLACE(/datum/dq_vending_log_panel, "merge:ui_data_datum_dq_vending_log
 
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()
-	rel_set(src, "our_comp", comp)
+	rel_set(src, nameof(our_comp), comp)
 	books = book_rows || list()
 	error_msg = error || ""
 

@@ -54,7 +54,10 @@ TRACKED(/datum/dx_core_child, level, CHANGE_EFFECTS)
 	var/slept_done = FALSE
 	var/list/form_answers
 
-OWN(/obj/cap_fixture/dx_core, child, OWN_DELETE)
+/obj/cap_fixture/dx_core/ownership()
+	. = ..()
+	. += owns(nameof(child), policy = OWN_DELETE)
+
 TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_core/capabilities()
@@ -89,6 +92,7 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 /obj/cap_fixture/dx_core/proc/dx_sleepy(mob/user)
 	sleep(1)
 	slept_done = TRUE
+	return TRUE
 
 /obj/cap_fixture/dx_core/child/capabilities()
 	. = ..()
@@ -157,9 +161,11 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	if(isnull(value))
 		return refuse(user, "That isn't a number.")
 	src.value = value
+	return TRUE
 
 /datum/dx_ui_host/proc/act_record(mob/user)
 	logged_calls++
+	return TRUE
 
 // ---------------------------------------------------------------- 1. capabilities()
 

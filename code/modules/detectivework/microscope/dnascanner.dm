@@ -48,7 +48,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/dnaforensics, MACHINE_PIPELINE, "scanning"
 	var/obj/item/forensics/swab/swab = W
 	if(istype(swab) && swab.is_used())
 		user.unEquip(W)
-		rel_set(src, "bloodsamp", swab)
+		rel_set(src, nameof(bloodsamp), swab)
 		swab.forceMove(src)
 		to_chat(user, span_notice("You insert [W] into [src]."))
 		update_icon()
@@ -108,14 +108,14 @@ UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_ejectitem)
 	. = TRUE
 	if(bloodsamp())
 		bloodsamp().forceMove(loc)
-		rel_clear(src, "bloodsamp")
+		rel_clear(src, nameof(/obj/machinery/dnaforensics::bloodsamp))
 		set_scanning(FALSE)
 		update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
 /obj/machinery/dnaforensics/machine_step()
 	if(!bloodsamp() || bloodsamp().loc != src)
-		rel_clear(src, "bloodsamp")
+		rel_clear(src, nameof(bloodsamp))
 		set_scanning(FALSE)
 	else if(scanner_progress >= 100)
 		complete_scan()

@@ -617,7 +617,7 @@
 /area/survivalpod/superpose/MechFabShip)
 "qK" = (
 /obj/machinery/vending/robotics{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null
 	},
 /obj/effect/floor_decal/industrial/outline/yellow,

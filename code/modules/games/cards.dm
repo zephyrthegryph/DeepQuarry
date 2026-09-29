@@ -40,14 +40,14 @@
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]num"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				own_add(src, "cards", pcard)
+				own_add(src, nameof(cards), pcard)
 
 			for(var/number in list("jack","queen","king"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]col"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				own_add(src, "cards", pcard) // Make it so.
+				own_add(src, nameof(cards), pcard) // Make it so.
 
 		init_jokers()
 
@@ -57,7 +57,7 @@
 		pcard = new()
 		pcard.name = "joker"
 		pcard.card_icon = "joker"
-		own_add(src, "cards", pcard)
+		own_add(src, nameof(cards), pcard)
 
 /obj/item/deck/cards/Initialize(mapload)
 	. = ..()
@@ -69,7 +69,7 @@
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src)
 			for(var/datum/playingcard/P in H.cards?.Copy())
-				own_transfer(H, "cards", src, "cards", P)
+				own_transfer(H, nameof(H.cards), src, nameof(cards), P)
 			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
 			return INTERACTION_HANDLED_PASS
@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	if(!H || !user) return
 
 	var/datum/playingcard/P = cards[1]
-	own_transfer(src, "cards", H, "cards", P)
+	own_transfer(src, nameof(cards), H, nameof(H.cards), P)
 	H.parentdeck = src
 	H.update_icon()
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			var/TDN = copytext(to_draw, 1, length(to_draw) - 3)
 			var/datum/playingcard/P = cards[i]
 			if(TDN == P.name)
-				own_transfer(src, "cards", H, "cards", P)
+				own_transfer(src, nameof(cards), H, nameof(H.cards), P)
 				H.parentdeck = src
 				break
 	H.update_icon()
@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	for(i = 0, i < dcard, i++)
 		if(!length(cards))
 			break
-		own_transfer(src, "cards", H, "cards", cards[1])
+		own_transfer(src, nameof(cards), H, nameof(H.cards), cards[1])
 		H.parentdeck = src
 		H.concealed = 1
 		H.update_icon()
@@ -319,7 +319,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src.parentdeck) // Prevent cardmixing
 			for(var/datum/playingcard/P in cards?.Copy())
-				own_transfer(src, "cards", H, "cards", P)
+				own_transfer(src, nameof(cards), H, nameof(H.cards), P)
 			H.concealed = src.concealed
 			consume(src, user)
 			H.update_icon()
@@ -342,11 +342,11 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /obj/item/deck/proc/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/unshuffled = own_take_all(src, "cards")
+		var/list/unshuffled = own_take_all(src, nameof(cards))
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P
-			own_add(src, "cards", P)
+			own_add(src, nameof(cards), P)
 		act_message(user, src, others = span_notice("%U% shuffles %T%."))
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
@@ -404,7 +404,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 	var/obj/item/hand/H = new()
 
 	for(var/datum/playingcard/P as anything in cards?.Copy())
-		own_transfer(src, "cards", H, "cards", P)
+		own_transfer(src, nameof(cards), H, nameof(H.cards), P)
 	H.parentdeck = src.parentdeck
 	user.drop_item()
 	consume(src, user)
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		var/discarding = card.name
 
 		var/obj/item/hand/H = new(src.loc)
-		own_transfer(src, "cards", H, "cards", card)
+		own_transfer(src, nameof(cards), H, nameof(H.cards), card)
 		H.concealed = 0
 		H.parentdeck = src.parentdeck
 		H.update_icon()
@@ -512,7 +512,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 	var/obj/item/hand/H = new(get_turf(src))
 	user.put_in_hands(H)
-	own_transfer(src, "cards", H, "cards", card)
+	own_transfer(src, nameof(cards), H, nameof(H.cards), card)
 	H.parentdeck = src.parentdeck
 	H.concealed = src.concealed
 	H.update_icon()

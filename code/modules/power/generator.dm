@@ -34,7 +34,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/Initialize(mapload)
-	own_set(src, "soundloop", new /datum/looping_sound/generator(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
 	make_rotatable()
 	..() //Not returned, because...
@@ -54,25 +54,25 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/generator, MACHINE_PIPELINE, "anchor
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
 	clear_gas_dependencies()
-	rel_clear(src, "circ1")
-	rel_clear(src, "circ2")
+	rel_clear(src, nameof(circ1))
+	rel_clear(src, nameof(circ2))
 	if(src.loc && anchored)
 		if(src.dir & (EAST|WEST))
-			rel_set(src, "circ1", locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
-			rel_set(src, "circ2", locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, nameof(circ1), locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, nameof(circ2), locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2())
 				if(circ1().dir != NORTH || circ2().dir != SOUTH)
-					rel_clear(src, "circ1")
-					rel_clear(src, "circ2")
+					rel_clear(src, nameof(circ1))
+					rel_clear(src, nameof(circ2))
 
 		else if(src.dir & (NORTH|SOUTH))
-			rel_set(src, "circ1", locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
-			rel_set(src, "circ2", locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, nameof(circ1), locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, nameof(circ2), locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2() && (circ1().dir != EAST || circ2().dir != WEST))
-				rel_clear(src, "circ1")
-				rel_clear(src, "circ2")
+				rel_clear(src, nameof(circ1))
+				rel_clear(src, nameof(circ2))
 
 /// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
 /// dependency filter made.

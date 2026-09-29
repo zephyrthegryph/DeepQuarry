@@ -62,8 +62,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
 		qdel(src)
 		return
-	rel_set(src, "parent", new_parent)
-	own_set(new_parent, "material_response", src)
+	rel_set(src, nameof(parent), new_parent)
+	own_set(new_parent, nameof(new_parent.material_response), src)
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form
@@ -186,7 +186,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
 		if(om_timer_slot_pending(src, "scintillation_timer"))
 			om_cancel_timer_slot(src, "scintillation_timer")
-		om_after_slot(src, "scintillation_timer", 5 SECONDS, PROC_REF(end_scintillation))
+		after_slot(src, "scintillation_timer", 5 SECONDS, PROC_REF(end_scintillation))
 
 /datum/material_response/proc/end_scintillation()
 	var/obj/item/item = parent

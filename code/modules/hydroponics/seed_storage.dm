@@ -7,15 +7,18 @@
 	var/ID
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
-OWN(/datum/seed_pile, seeds, OWN_SPILL)
+/datum/seed_pile/ownership()
+	. = ..()
+	. += owns(nameof(seeds), policy = OWN_SPILL)
+	. += proto(nameof(seed_type_static))
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1
 	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
 	var/datum/seed/S = O.seed()
-	proto_set(src, "seed_type_static", (!S || is_registered(S)) ? S : S.copy_line())
-	own_add(src, "seeds", O)
+	proto_set(src, nameof(seed_type_static), (!S || is_registered(S)) ? S : S.copy_line())
+	own_add(src, nameof(seeds), O)
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
@@ -430,15 +433,15 @@ UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
 	var/obj/O = pick(N.seeds)
 	if(O)
 		--N.amount
-		own_take_member(N, "seeds", O)
+		own_take_member(N, nameof(/datum/seed_pile::seeds), O)
 		if(N.amount <= 0 || N.seeds.len <= 0)
-			own_take_member(src, "piles", N)
-			own_take_member(src, "piles_contra", N)
+			own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
+			own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 			qdel(N)
 		O.forceMove(src.loc)
 	else
-		own_take_member(src, "piles", N)
-		own_take_member(src, "piles_contra", N)
+		own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
+		own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 		qdel(N)
 	return TRUE
 
@@ -449,8 +452,8 @@ UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_purge)
 		return
 	for(var/obj/O in N.seeds)
 		qdel(O)
-	own_take_member(src, "piles", N)
-	own_take_member(src, "piles_contra", N)
+	own_take_member(src, nameof(/obj/machinery/seed_storage::piles), N)
+	own_take_member(src, nameof(/obj/machinery/seed_storage::piles_contra), N)
 	qdel(N)
 	return TRUE
 
@@ -510,22 +513,22 @@ DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount
-				own_add(N, "seeds", (O))
+				own_add(N, nameof(N.seeds), (O))
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		own_add(src, "piles_contra", new /datum/seed_pile(O, newID))
+		own_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
 		if (N.matches(O))
 			++N.amount
-			own_add(N, "seeds", (O))
+			own_add(N, nameof(N.seeds), (O))
 			return
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	own_add(src, "piles", new /datum/seed_pile(O, newID))
+	own_add(src, nameof(piles), new /datum/seed_pile(O, newID))
 
 	return
 
@@ -651,5 +654,3 @@ DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 /// The pile's seed (PROTO): a registered line, or its own snapshot.
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return seed_type_static
-
-PROTO(/datum/seed_pile, seed_type_static)

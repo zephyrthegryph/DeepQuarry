@@ -11,12 +11,21 @@
 	var/datum/species/species
 	var/released = 0
 
-REL_PAIR(/datum/own_test_holder, partner, holder)
-REL_PAIR(/datum/own_test_partner, holder, partner)
-REL_PAIR_LIST(/datum/own_test_holder, members, group)
-REL_PAIR(/datum/own_test_member, group, members)
-REL_SET(/datum/own_test_holder, peers)
-PROTO(/datum/own_test_holder, species)
+/datum/own_test_holder/ownership()
+	. = ..()
+	. += proto(nameof(species))
+
+/datum/own_test_holder/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/own_test_partner::holder))
+	. += rel_many(nameof(members), back = nameof(/datum/own_test_member::group))
+	. += rel_many(nameof(peers), back = nameof(/datum/own_test_holder::peers))
+/datum/own_test_partner/relations()
+	. = ..()
+	. += rel_one(nameof(holder), back = nameof(/datum/own_test_holder::partner))
+/datum/own_test_member/relations()
+	. = ..()
+	. += rel_one(nameof(group), back = nameof(/datum/own_test_holder::members))
 
 /datum/own_test_holder/on_owned_release(var_name, datum/child)
 	. = ..()
@@ -36,12 +45,16 @@ PROTO(/datum/own_test_holder, species)
 	var/key = "k1"
 	var/obj/own_test_keyed_target/target
 
-REL_KEYED(/obj/own_test_keyed_source, target, key, /obj/own_test_keyed_target)
+/obj/own_test_keyed_source/relations()
+	. = ..()
+	. += rel_one(nameof(target), keyed = nameof(key), keyed_target = /obj/own_test_keyed_target)
 
 /obj/own_test_keyed_target
 	var/id = "k1"
 
-KEYED_TARGET(/obj/own_test_keyed_target, id)
+/obj/own_test_keyed_target/relations()
+	. = ..()
+	. += rel_key(nameof(id))
 
 /datum/unit_test/ownership_own_accessors
 
@@ -50,33 +63,33 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	GLOB.dq_lifecycle_report_capture = capture
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, "child", A)
+	own_set(H, nameof(H.child), A)
 	TEST_ASSERT_EQUAL(H.child, A, "own_set writes the var")
 	TEST_ASSERT_EQUAL(owner_of(A), H, "the owner is stamped on the child")
 	TEST_ASSERT_EQUAL(owner_slot_of(A), "child", "the owner's var is stamped on the child")
 	var/datum/own_test_child/B = new
-	own_set(H, "child", B)
+	own_set(H, nameof(H.child), B)
 	TEST_ASSERT(QDELETED(A), "own_set destroys the value it replaces (DELETE policy)")
 	TEST_ASSERT(H.released >= 1, "the owned-child release hook ran")
-	var/datum/own_test_child/taken = own_take(H, "child")
+	var/datum/own_test_child/taken = own_take(H, nameof(H.child))
 	TEST_ASSERT_EQUAL(taken, B, "own_take returns the value")
 	TEST_ASSERT(isnull(H.child) && isnull(owner_of(B)), "own_take detaches and unstamps")
-	own_add(H, "children", B)
-	own_put(H, "values", "a", new /datum/own_test_child)
+	own_add(H, nameof(H.children), B)
+	own_put(H, nameof(H.values), "a", new /datum/own_test_child)
 	TEST_ASSERT(B in H.children, "own_add adds to the owned list")
 	var/datum/own_test_holder/H2 = new
-	own_transfer(H, "children", H2, "child", B)
+	own_transfer(H, nameof(H.children), H2, nameof(H2.child), B)
 	TEST_ASSERT_EQUAL(H2.child, B, "own_transfer moves a list member into another owner's var")
 	TEST_ASSERT_EQUAL(owner_of(B), H2, "the move restamps the owner")
 	TEST_ASSERT(!length(H.children), "the source list no longer holds it")
 	TEST_ASSERT(!length(capture), "no reports for legal moves: [json_encode(capture)]")
 	// Double ownership is refused.
-	own_set(H, "child", B)
+	own_set(H, nameof(H.child), B)
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "already owned"), "adopting a value another holder owns is reported: [json_encode(capture)]")
 	TEST_ASSERT_EQUAL(owner_of(B), H2, "the refused adoption leaves the owner alone")
 	capture.Cut()
 	// own_move finds the current owner itself.
-	own_move(B, H, "child")
+	own_move(B, H, nameof(H.child))
 	TEST_ASSERT(H.child == B && isnull(H2.child), "own_move transfers from whatever owns it")
 	var/datum/own_test_child/V = H.values["a"]
 	qdel(H)
@@ -91,7 +104,7 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	var/list/capture = list()
 	GLOB.dq_lifecycle_report_capture = capture
 	var/datum/own_test_holder/H = new
-	own_set(H, "child", new /datum/own_test_child)
+	own_set(H, nameof(H.child), new /datum/own_test_child)
 	dq_lifecycle_clear_links(H) // phase 4
 	var/datum/own_test_child/late = new
 	H.child = late // ALLOW(ownership): the test re-sets an owned var after phase 4
@@ -106,7 +119,7 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 /datum/unit_test/ownership_orphan_audit/Run()
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	own_set(H, "child", A)
+	own_set(H, nameof(H.child), A)
 	H.child = null // ALLOW(ownership): the test drops an owned value without the accessors
 	var/list/lines = own_audit(quiet = TRUE)
 	var/found = FALSE
@@ -124,28 +137,28 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	GLOB.dq_lifecycle_report_capture = capture
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/T = new
-	rel_set(H, "view", T)
+	rel_set(H, nameof(H.view), T)
 	TEST_ASSERT_EQUAL(H.view, T, "rel_set writes the view")
 	qdel(T)
 	TEST_ASSERT(isnull(H.view), "the target's death clears the view")
 	// Pairs set both sides; exclusivity unlinks the old partner.
 	var/datum/own_test_partner/P1 = new
 	var/datum/own_test_partner/P2 = new
-	rel_set(H, "partner", P1)
+	rel_set(H, nameof(H.partner), P1)
 	TEST_ASSERT_EQUAL(P1.holder, H, "a pair sets the partner's side")
-	rel_set(P2, "holder", H)
+	rel_set(P2, nameof(P2.holder), H)
 	TEST_ASSERT(H.partner == P2 && isnull(P1.holder), "linking a new partner unlinks the old one on both sides")
 	// 1:N pairs.
 	var/datum/own_test_member/M1 = new
 	var/datum/own_test_member/M2 = new
-	rel_set(M1, "group", H)
-	rel_add(H, "members", M2)
+	rel_set(M1, nameof(M1.group), H)
+	rel_add(H, nameof(H.members), M2)
 	TEST_ASSERT((M1 in H.members) && M2.group == H, "either side of a 1:N pair links both")
 	qdel(M1)
 	TEST_ASSERT(!(M1 in H.members), "a member's death leaves the list")
 	// Symmetric membership.
 	var/datum/own_test_holder/Q = new
-	rel_add(H, "peers", Q)
+	rel_add(H, nameof(H.peers), Q)
 	TEST_ASSERT((Q in H.peers) && (H in Q.peers), "REL_SET links both ends")
 	// The source's death clears its partners' sides.
 	qdel(H)
@@ -155,7 +168,7 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	var/datum/own_test_holder/H3 = new
 	var/datum/own_test_child/dying = new
 	dying.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
-	rel_set(H3, "view", dying)
+	rel_set(H3, nameof(H3.view), dying)
 	dying.gc_destroyed = null
 	TEST_ASSERT(isnull(H3.view), "a link to an entity being destroyed is refused")
 	GLOB.dq_lifecycle_report_capture = null
@@ -171,16 +184,16 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 /datum/unit_test/ownership_turf_views_z_release/Run()
 	var/datum/own_test_holder/H = new
 	var/turf/T = run_loc_floor_bottom_left
-	rel_set(H, "view", T)
+	rel_set(H, nameof(H.view), T)
 	TEST_ASSERT_EQUAL(H.view, T, "a turf can be a relation target")
 	var/list/by_turf = GLOB.rel_turf_index["[T.z]"]
 	TEST_ASSERT(by_turf && by_turf[own_key(T)], "a view naming a turf is indexed under its z-level")
-	rel_clear(H, "view")
+	rel_clear(H, nameof(H.view))
 	var/list/index = by_turf ? by_turf[own_key(T)] : null
 	TEST_ASSERT(!index || !index[own_key(H)], "clearing the view leaves the turf index")
 	// Releasing a z-level clears every view naming its turfs. The test map's own z-level holds the
 	// harness's views too, so the release is exercised on a private key with this turf's entry.
-	rel_set(H, "view", T)
+	rel_set(H, nameof(H.view), T)
 	var/list/entry = by_turf[own_key(T)]
 	var/fake_z = 90000 + T.z
 	GLOB.rel_turf_index["[fake_z]"] = list("[own_key(T)]" = list("[own_key(H)]" = "view"))
@@ -201,14 +214,14 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 /datum/unit_test/ownership_proto/Run()
 	var/datum/own_test_holder/H = new
 	var/datum/species/proto = GLOB.all_species[SPECIES_HUMAN]
-	proto_set(H, "species", proto)
-	TEST_ASSERT(!proto_is_private(H, "species"), "a registered prototype is shared")
-	var/datum/species/mine = proto_private(H, "species")
-	TEST_ASSERT(mine != proto && proto_is_private(H, "species"), "proto_private makes an owned private copy")
-	TEST_ASSERT(proto_private(H, "species") == mine, "and returns the same copy afterwards")
-	proto_set(H, "species", proto)
+	proto_set(H, nameof(H.species), proto)
+	TEST_ASSERT(!proto_is_private(H, nameof(H.species)), "a registered prototype is shared")
+	var/datum/species/mine = proto_private(H, nameof(H.species))
+	TEST_ASSERT(mine != proto && proto_is_private(H, nameof(H.species)), "proto_private makes an owned private copy")
+	TEST_ASSERT(proto_private(H, nameof(H.species)) == mine, "and returns the same copy afterwards")
+	proto_set(H, nameof(H.species), proto)
 	TEST_ASSERT(QDELETED(mine), "proto_set deletes the private copy it replaces")
-	var/datum/species/second = proto_private(H, "species")
+	var/datum/species/second = proto_private(H, nameof(H.species))
 	qdel(H)
 	TEST_ASSERT(QDELETED(second) && !QDELETED(proto), "teardown deletes private copies only")
 
@@ -224,7 +237,7 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	var/list/capture = list()
 	GLOB.dq_lifecycle_report_capture = capture
 	var/datum/own_test_holder/H = new
-	shared_set(H, "view", copy)
+	shared_set(H, nameof(H.view), copy)
 	GLOB.dq_lifecycle_report_capture = null
 	TEST_ASSERT(length(capture) && findtext(capture[1], "not a registered instance"), "shared_set refuses an unregistered value: [json_encode(capture)]")
 	H.view = null // ALLOW(ownership): test cleanup of a deliberately wrong write
@@ -237,8 +250,8 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	A.label = "original"
-	own_set(A, "grandchild", new /datum/own_test_child)
-	own_set(H, "child", A)
+	own_set(A, nameof(A.grandchild), new /datum/own_test_child)
+	own_set(H, nameof(H.child), A)
 	var/datum/own_test_holder/H2 = new
 	var/datum/own_test_child/C = entity_clone(A, H2, "child")
 	TEST_ASSERT(C && C != A, "entity_clone makes a new entity")
@@ -301,7 +314,7 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	// Parking and unparking a handle slot (latent collapse / re-materialize).
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
-	rel_set(H, "view", A)
+	rel_set(H, nameof(H.view), A)
 	var/h = om_handle(A)
 	var/id = om_handle_park(A)
 	qdel(A)
@@ -356,7 +369,7 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 	om_rec_of(H)
 	H.om_listen |= CHANGE_MACHINE_SETTINGS
 	sched.test_raises = list()
-	rel_set(H, "watched", T)
+	rel_set(H, nameof(H.watched), T)
 	TEST_ASSERT(own_test_raised(sched, H), "a relation write to a declared field raises its channel")
 	sched.test_raises = list()
 	qdel(T)
@@ -370,3 +383,173 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 		if(raise[1] == E && (raise[2] & CHANGE_MACHINE_SETTINGS))
 			return TRUE
 	return FALSE
+
+// ---- ownership() / relations() entries: policies, rel_link pairs, hooks, watch ----
+
+/datum/own_test_policy_holder
+	var/obj/spilled
+	var/obj/conditional
+	var/datum/own_test_child/by_proc
+	var/datum/own_test_child/plain
+	var/keep_it = FALSE
+
+/datum/own_test_policy_holder/ownership()
+	. = ..()
+	. += owns(nameof(spilled), policy = OWN_SPILL)
+	. += owns(nameof(conditional), policy = OWN_SPILL, if_var = nameof(keep_it), else_policy = OWN_DELETE)
+	. += owns(nameof(by_proc), policy_proc = TYPE_PROC_REF(/datum/own_test_policy_holder, by_proc_policy))
+	. += owns(nameof(plain), policy = OWN_NONE, keep_after_destroy = TRUE)
+
+/datum/own_test_policy_holder/proc/by_proc_policy()
+	return keep_it ? OWN_CONTAINED : OWN_DELETE
+
+/datum/unit_test/ownership_declared_policies
+
+/datum/unit_test/ownership_declared_policies/Run()
+	var/datum/own_test_policy_holder/H = new
+	var/datum/own_table/table = own_table_of(H)
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.spilled), table.entries[nameof(H.spilled)]), OWN_SPILL, "policy = sets the policy")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_DELETE, "else_policy applies while if_var is false")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_DELETE, "policy_proc is asked")
+	H.keep_it = TRUE
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_SPILL, "policy applies while if_var is true")
+	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_CONTAINED, "policy_proc answers from state")
+	TEST_ASSERT(isnull(table.entries[nameof(H.plain)]), "an annotation-only owns(policy = OWN_NONE) declares no kind")
+	TEST_ASSERT(nameof(H.plain) in table.keep_vars, "keep_after_destroy is recorded")
+	qdel(H)
+
+/datum/own_test_watch_target
+	var/power_level = 0
+	var/label = "x"
+TRACKED(/datum/own_test_watch_target, power_level, CHANGE_EFFECTS)
+
+/datum/own_test_watch_holder
+	var/datum/own_test_watch_target/watched
+	var/datum/own_test_watch_target/unwatched
+
+/datum/own_test_watch_holder/relations()
+	. = ..()
+	. += rel_one(nameof(watched), watch = list(nameof(/datum/own_test_watch_target::power_level)))
+	. += rel_one(nameof(unwatched))
+
+/datum/unit_test/ownership_watched_relation
+
+/datum/unit_test/ownership_watched_relation/Run()
+	var/datum/own_test_watch_holder/H = new
+	var/datum/own_test_watch_target/T = new
+	var/datum/own_test_watch_target/U = new
+	rel_link(H, nameof(H.watched), T)
+	rel_link(H, nameof(H.unwatched), U)
+	refresh_flush()
+	TEST_ASSERT(!H.refresh_queued, "nothing queued after the flush")
+	U.set_power_level(3)
+	TEST_ASSERT(!H.refresh_queued, "a change on an unwatched relation does not mark the holder")
+	refresh_flush()
+	T.set_power_level(5)
+	TEST_ASSERT(H.refresh_queued, "a setter on the watched target marks the holder changed")
+	refresh_flush()
+	rel_unlink(H, nameof(H.watched), T)
+	T.set_power_level(7)
+	TEST_ASSERT(!H.refresh_queued, "an unlinked target no longer marks the holder")
+	refresh_flush()
+	qdel(T)
+	qdel(U)
+	qdel(H)
+
+/datum/unit_test/ownership_rel_link_pairs
+
+/datum/unit_test/ownership_rel_link_pairs/Run()
+	var/datum/own_test_holder/H = new
+	var/datum/own_test_partner/P = new
+	var/datum/own_test_member/M = new
+	var/datum/own_test_holder/H2 = new
+	// back = on a rel_one(): one call writes both sides.
+	TEST_ASSERT_EQUAL(rel_link(H, nameof(H.partner), P), P, "rel_link returns the target")
+	TEST_ASSERT_EQUAL(P.holder, H, "rel_link on a rel_one(back =) sets the other side")
+	// back = on a rel_many(): the many side is a list, the one side single.
+	rel_link(M, nameof(M.group), H)
+	TEST_ASSERT(M in H.members, "linking the one side adds us to the other's rel_many()")
+	TEST_ASSERT(rel_unlink(H, nameof(H.members), M), "rel_unlink reports the unlink")
+	TEST_ASSERT(isnull(M.group) && !(M in H.members), "rel_unlink clears both sides")
+	// rel_many(back = this var): symmetric membership.
+	rel_link(H, nameof(H.peers), H2)
+	TEST_ASSERT((H2 in H.peers) && (H in H2.peers), "a symmetric rel_many() lists each in the other")
+	rel_unlink(H2, nameof(H2.peers))
+	TEST_ASSERT(!(H2 in H.peers) && !length(H2.peers), "rel_unlink with no target empties both sides")
+	TEST_ASSERT(!rel_unlink(H, nameof(H.partner), M), "unlinking something not linked is refused")
+	qdel(P)
+	TEST_ASSERT(isnull(H.partner), "the partner's death clears the view")
+	qdel(M)
+	qdel(H2)
+	qdel(H)
+
+/datum/own_test_hook_holder
+	var/datum/own_test_child/subject
+	var/datum/own_test_child/tracked
+	var/list/unlinked
+
+/datum/own_test_hook_holder/relations()
+	. = ..()
+	. += rel_one(nameof(subject), other_deleted = DELETE_ME)
+	. += rel_one(nameof(tracked), on_unlink = PROC_REF(tracked_gone))
+
+/datum/own_test_hook_holder/proc/tracked_gone(datum/other)
+	LAZYADD(unlinked, other)
+
+/datum/unit_test/ownership_rel_hooks
+
+/datum/unit_test/ownership_rel_hooks/Run()
+	var/datum/own_test_hook_holder/H = new
+	var/datum/own_test_child/T1 = new
+	var/datum/own_test_child/T2 = new
+	rel_link(H, nameof(H.tracked), T1)
+	rel_link(H, nameof(H.tracked), T2)
+	TEST_ASSERT(length(H.unlinked) == 1 && H.unlinked[1] == T1, "replacing a link runs on_unlink with the old target")
+	qdel(T2)
+	TEST_ASSERT(isnull(H.tracked), "the target's death clears the view")
+	TEST_ASSERT(length(H.unlinked) == 2 && H.unlinked[2] == T2, "the target's death runs on_unlink with the dying target")
+	rel_link(H, nameof(H.tracked), T1)
+	rel_unlink(H, nameof(H.tracked), T1)
+	TEST_ASSERT(length(H.unlinked) == 3 && H.unlinked[3] == T1, "rel_unlink runs on_unlink")
+	H.unlinked = null
+	var/datum/own_test_child/S = new
+	rel_link(H, nameof(H.subject), S)
+	qdel(S)
+	TEST_ASSERT(QDELETED(H), "other_deleted = DELETE_ME deletes the holder with the other end")
+	qdel(T1)
+
+/datum/own_test_keep_holder
+	var/datum/own_test_child/kept
+
+/datum/own_test_keep_holder/ownership()
+	. = ..()
+	. += owns(nameof(kept), policy = OWN_KEEP)
+
+/datum/unit_test/ownership_keep_policy
+
+/datum/unit_test/ownership_keep_policy/Run()
+	var/datum/own_test_keep_holder/H = new
+	var/datum/own_test_child/C = new
+	own_set(H, nameof(H.kept), C)
+	TEST_ASSERT_EQUAL(owner_of(C), H, "an OWN_KEEP value is owned while its holder lives")
+	qdel(H)
+	TEST_ASSERT(!QDELETED(C), "OWN_KEEP: the value outlives its holder")
+	TEST_ASSERT(isnull(owner_of(C)), "OWN_KEEP: the value is released at teardown")
+	qdel(C)
+
+/// A slot capability owns its var: the type declares nothing in ownership().
+/obj/cap_fixture/own_slot_holder
+	var/obj/item/cell/cell
+
+/obj/cap_fixture/own_slot_holder/capabilities()
+	. = ..()
+	. += cap_slot(nameof(cell), /obj/item/cell)
+
+/datum/unit_test/ownership_capability_owned
+
+/datum/unit_test/ownership_capability_owned/Run()
+	var/obj/cap_fixture/own_slot_holder/H = allocate(/obj/cap_fixture/own_slot_holder)
+	var/list/entry = own_table_of(H).entries[nameof(H.cell)]
+	TEST_ASSERT_NOTNULL(entry, "the slot capability's owned() declares its var in the holder's table")
+	TEST_ASSERT_EQUAL(entry[OWNE_KIND], OWNK_OWN, "the slot var is owned")
+	TEST_ASSERT_EQUAL(entry[OWNE_ARG], OWN_CONTAINED, "the slot var is owned CONTAINED")

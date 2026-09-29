@@ -48,7 +48,7 @@
 	var/atom/movable/screen/popup/ad = new popup_type()
 	ad.screen_loc = ad.get_random_screen_location()
 	src.screen |= ad
-	rel_set(ad, "holder", src)
+	rel_set(ad, nameof(ad.holder), src)
 
 /client/proc/create_fake_ad_popup_multiple(popup_type, popup_amount)
 	if(!src)

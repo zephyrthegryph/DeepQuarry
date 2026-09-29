@@ -68,8 +68,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
-	own_set(src, "rmat", new /datum/remote_materials( \
+	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
+	own_set(src, nameof(rmat), new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_events = list( \
@@ -269,7 +269,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 		atom_say("Obstruction cleared. The fabrication of [stored_part] is now complete.")
 		stored_part.forceMove(exit)
-		own_take(src, "stored_part")
+		own_take(src, nameof(stored_part))
 
 	if(!process_queue)
 		return
@@ -314,7 +314,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	if(exit.density)
 		atom_say("Error! The part outlet is obstructed.")
 		desc = "It's trying to dispense the fabricated [dispensed_design.name], but the part outlet is obstructed."
-		own_set(src, "stored_part", built_part)
+		own_set(src, nameof(stored_part), built_part)
 		return FALSE
 
 	atom_say("The fabrication of [built_part] is now complete.")
@@ -574,4 +574,6 @@ DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 
-OWN(/obj/machinery/mecha_part_fabricator_tg, stored_part, OWN_CONTAINED)
+/obj/machinery/mecha_part_fabricator_tg/ownership()
+	. = ..()
+	. += owns(nameof(stored_part), policy = OWN_CONTAINED)

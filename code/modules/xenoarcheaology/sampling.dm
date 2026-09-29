@@ -95,7 +95,7 @@
 						artifact_distance = cur_dist + rand() * 2 - 1
 						artifact_id = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
+					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
 
 /obj/item/core_sampler
 	name = "core sampler"
@@ -150,7 +150,7 @@
 			to_chat(user, span_warning("The core sampler is out of sample bags."))
 		else
 			//create a new sample bag which we'll fill with rock samples
-			own_set(src, "filled_bag", new /obj/item/evidencebag(src))
+			own_set(src, nameof(filled_bag), new /obj/item/evidencebag(src))
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
@@ -159,7 +159,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			own_set(R, "geological_data_static", geo_data.copy())
+			own_set(R, nameof(R.geological_data_static), geo_data.copy())
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -187,7 +187,7 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 			success = M.put_in_inactive_hand(filled_bag)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
-		own_take(src, "filled_bag")
+		own_take(src, nameof(filled_bag))
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))

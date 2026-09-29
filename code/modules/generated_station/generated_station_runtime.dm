@@ -72,11 +72,11 @@
 /datum/generated_station_director/proc/register_defender(mob/living/defender)
 	if(!defender || QDELETED(defender))
 		return FALSE
-	rel_add(src, "registered_defenders", defender)
+	rel_add(src, nameof(registered_defenders), defender)
 	return TRUE
 
 /datum/generated_station_director/proc/unregister_defender(mob/living/defender)
-	rel_remove(src, "registered_defenders", defender)
+	rel_remove(src, nameof(registered_defenders), defender)
 
 /datum/generated_station_director/proc/medical_heal(mob/living/defender, amount)
 	if(!(defender in registered_defenders) || simulation().department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
@@ -175,9 +175,9 @@
 /datum/expedition_site/proc/initialize_generated_station_runtime()
 	if(!station_spec || station_simulation)
 		return FALSE
-	own_set(src, "station_simulation", new /datum/generated_station_simulation(station_spec))
-	own_set(src, "station_director", new /datum/generated_station_director(station_simulation))
-	own_take_all(src, "station_controls")
+	own_set(src, nameof(station_simulation), new /datum/generated_station_simulation(station_spec))
+	own_set(src, nameof(station_director), new /datum/generated_station_director(station_simulation))
+	own_take_all(src, nameof(station_controls))
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node
@@ -201,7 +201,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, "station_controls", control)
+		own_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
 		qdel(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
@@ -235,7 +235,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, "station_controls", control)
+		own_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
 	return TRUE
 
@@ -248,11 +248,11 @@
 	if(!station_materialization)
 		return FALSE
 	var/datum/generated_station_materializer/repairer = new
-	own_set(repairer, "result", station_materialization)
+	own_set(repairer, nameof(repairer.result), station_materialization)
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	own_take(repairer, "result")
+	own_take(repairer, nameof(repairer.result))
 	qdel(repairer)
 	return succeeded
 

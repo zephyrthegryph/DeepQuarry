@@ -52,6 +52,7 @@
 
 /// Attaches C to A (and runs its init). Refuses a key A already has.
 /proc/add_capability(atom/A, datum/capability/C)
+	C = cap_intern(C)
 	if(cap_of_all(A, C.key))
 		return FALSE
 	LAZYADD(A.cap_extras, C)
@@ -77,10 +78,7 @@
 
 /// cap_of() over the type's capabilities and the extras.
 /proc/cap_of_all(atom/A, key)
-	for(var/datum/capability/C as anything in caps_all(A))
-		if(C.key == key || (ispath(key) && istype(C, key)))
-			return C
-	return null
+	return cap_of(A, key)
 
 /// The interaction entries of A's extras (the resolver adds them to the type's candidates).
 /proc/cap_extra_interactions(atom/A)

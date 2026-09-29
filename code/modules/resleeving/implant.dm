@@ -37,7 +37,7 @@
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
 		BITSET(H.hud_updateflag, BACKUP_HUD)
-		rel_add(our_db(), "implants", src)
+		rel_add(our_db(), nameof(/datum/transcore_db::implants), src)
 
 		return 1
 
@@ -62,7 +62,7 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 	. = ..()
 	for(var/i = 1 to max_implants)
 		var/obj/item/implant/backup/imp = new(src, db_key)
-		own_add(src, "imps", imp)
+		own_add(src, nameof(imps), imp)
 		imp.germ_level = 0
 	update()
 
@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 		to_chat(user, span_notice("You eject a backup implant."))
 		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
 		imp.forceMove(get_turf(user))
-		own_take_member(src, "imps", imp)
+		own_take_member(src, nameof(imps), imp)
 		user.put_in_any_hand_if_possible(imp)
 		update()
 	else
@@ -95,9 +95,8 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 /// Old attackby.
 /obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
 	if(LAZYLEN(imps) < max_implants)
-		user.unEquip(W)
-		W.forceMove(src)
-		own_add(src, "imps", W)
+		if(!own_add(src, nameof(src.imps), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		W.germ_level = 0
 		update()
 		to_chat(user, span_notice("You load \the [W] into \the [src]."))
@@ -119,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
 		if(imp.handle_implant(M,user.zone_sel.selecting))
 			imp.post_implant(M)
-			own_take_member(src, "imps", imp)
+			own_take_member(src, nameof(imps), imp)
 			add_attack_logs(user,M,"Implanted backup implant")
 
 		update()

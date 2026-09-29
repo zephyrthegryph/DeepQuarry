@@ -83,7 +83,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
 	user.drop_item()
 	O.forceMove(src)
-	rel_set(src, "auth", O)
+	rel_set(src, nameof(auth), O)
 	add_fingerprint(user)
 	return TRUE
 
@@ -272,13 +272,13 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
 	if(auth())
 		auth().forceMove(src.loc)
 		yes_code = 0
-		rel_clear(src, "auth")
+		rel_clear(src, nameof(/obj/machinery/nuclearbomb::auth))
 	else
 		var/obj/item/I = usr.get_active_hand()
 		if(istype(I, /obj/item/disk/nuclear))
 			usr.drop_item()
 			I.forceMove(src)
-			rel_set(src, "auth", I)
+			rel_set(src, nameof(/obj/machinery/nuclearbomb::auth), I)
 	return TRUE
 
 UI_ACT(/obj/machinery/nuclearbomb, "type", ui_act_type, UI_ARG_TEXT("key"))

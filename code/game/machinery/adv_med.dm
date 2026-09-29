@@ -28,7 +28,9 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-REL_PAIR(/obj/machinery/bodyscanner, console, scanner)
+/obj/machinery/bodyscanner/relations()
+	. = ..()
+	. += rel_one(nameof(console), back = nameof(/obj/machinery/body_scanconsole::scanner))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -316,7 +318,9 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 	. = ..()
 	findscanner()
 
-REL_PAIR(/obj/machinery/body_scanconsole, scanner, console)
+/obj/machinery/body_scanconsole/relations()
+	. = ..()
+	. += rel_one(nameof(scanner), back = nameof(/obj/machinery/bodyscanner::console))
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
@@ -330,12 +334,11 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	var/obj/item/multitool/multitool = tool
 	if(istype(multitool.connectable(), /obj/machinery/bodyscanner))
 		var/obj/machinery/bodyscanner/body_scanner = multitool.connectable()
-		rel_set(src, "scanner", body_scanner)
-		rel_set(body_scanner, "console", src)
+		rel_set(src, nameof(scanner), body_scanner)
 		to_chat(user, span_warning("You link [src] to [body_scanner]!"))
 	else
 		to_chat(user, span_warning("You store [src] in [multitool]'s buffer!"))
-		rel_set(multitool, "connectable", src)
+		rel_set(multitool, nameof(multitool.connectable), src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/body_scanconsole/power_change()
@@ -512,8 +515,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/body_scanconsole, TYPE_PROC_REF(/atom, ap
 	for(dir in list(NORTH, EAST, SOUTH, WEST)) // Loop through every direction
 		bodyscannernew = locate(/obj/machinery/bodyscanner, get_step(src, dir)) // Try to find a scanner in that direction
 		if(bodyscannernew)
-			rel_set(src, "scanner", bodyscannernew)
-			rel_set(bodyscannernew, "console", src)
+			rel_set(src, nameof(scanner), bodyscannernew)
 			set_dir(get_dir(src, bodyscannernew))
 			return
 	return

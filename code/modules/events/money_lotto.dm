@@ -18,7 +18,7 @@
 			T.date = GLOB.current_date_string
 			T.time = stationtime2text()
 			T.source_terminal = "Sif TCD Terminal #[rand(111,333)]"
-			own_add(D, "transaction_log", T)
+			own_add(D, nameof(D.transaction_log), T)
 
 			deposit_success = 1
 

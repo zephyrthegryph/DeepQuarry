@@ -115,7 +115,7 @@ UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_toggle_breaker)
 // Parameters: None
 // Description: Refreshes local list of known devices.
 /datum/tgui_module/rcon/proc/FindDevices()
-	rel_clear(src, "known_SMESs")
+	rel_clear(src, nameof(known_SMESs))
 
 	var/z = get_z(tgui_host())
 	var/list/map_levels = using_map.get_map_levels(z)
@@ -124,14 +124,14 @@ UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_toggle_breaker)
 		if(!(SMES.z in map_levels))
 			continue
 		if(SMES.RCon_tag && (SMES.RCon_tag != "NO_TAG") && SMES.RCon)
-			rel_add(src, "known_SMESs", SMES)
+			rel_add(src, nameof(known_SMESs), SMES)
 
-	rel_clear(src, "known_breakers")
+	rel_clear(src, nameof(known_breakers))
 	for(var/obj/machinery/power/breakerbox/breaker in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(breaker.z in map_levels))
 			continue
 		if(breaker.RCon_tag != "NO_TAG")
-			rel_add(src, "known_breakers", breaker)
+			rel_add(src, nameof(known_breakers), breaker)
 
 /datum/tgui_module/rcon/ntos
 	ntos = TRUE

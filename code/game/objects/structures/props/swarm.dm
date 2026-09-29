@@ -84,7 +84,7 @@
 				break
 
 		if(!has_beam)
-			own_add(src, "active_beams", Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
+			own_add(src, nameof(active_beams), Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 
 		if(S.cell)
 			S.cell.give(rand(30, 120))

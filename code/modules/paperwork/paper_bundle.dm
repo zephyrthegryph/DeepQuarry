@@ -42,7 +42,7 @@
 		for(var/obj/O in W)
 			O.forceMove(src)
 			O.add_fingerprint(user)
-			rel_add(src, "pages", O)
+			rel_add(src, nameof(pages), O)
 
 		to_chat(user, span_notice("You add \the [W.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 		consume(W, user)
@@ -72,9 +72,9 @@
 	// pages is an ordered relation list: rebuild it in the new order through the accessors.
 	var/list/ordered = pages ? pages.Copy() : list()
 	ordered.Insert(clamp(index, 1, length(ordered) + 1), sheet)
-	rel_clear(src, "pages")
+	rel_clear(src, nameof(pages))
 	for(var/obj/item/ordered_sheet as anything in ordered)
-		rel_add(src, "pages", ordered_sheet)
+		rel_add(src, nameof(pages), ordered_sheet)
 
 	if(index <= page)
 		page++
@@ -185,7 +185,7 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
 		return TRUE
 	var/obj/item/W = pages[page]
 	usr.put_in_hands(W)
-	rel_remove(src, "pages", pages[page])
+	rel_remove(src, nameof(/datum/radial_menu::pages), pages[page])
 	to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
 	if(length(pages) <= 1)
 		var/obj/item/paper/P = pages[1]

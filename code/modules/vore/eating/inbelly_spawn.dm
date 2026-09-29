@@ -29,7 +29,7 @@
 	om_ask(pred, /datum/om/prompt/choice, PROC_REF(belly_picked), title = "Belly Choice", message = "Choose Target Belly", choices = pred.vore_organs)
 
 /datum/om/flow/inbelly_spawn/proc/belly_picked(datum/om/prompt/choice/ask)
-	rel_set(src, "belly", ask.choice)
+	rel_set(src, nameof(belly), ask.choice)
 	// Extra caution never hurts
 	if(belly.digest_mode == DM_DIGEST)
 		stage = "digest"
@@ -163,10 +163,10 @@
 
 	if(prey && prey.key && !stat && soulgem.flag_check(SOULGEM_ACTIVE | SOULGEM_CATCHING_GHOSTS, TRUE))
 		if(!prey.mind) //No mind yet, aka haven't played in this round.
-			rel_set(prey, "mind", new /datum/mind(prey.key))
+			rel_set(prey, nameof(prey.mind), new /datum/mind(prey.key))
 
 		prey.mind.name = prey.name
-		rel_set(prey.mind, "current", prey)
+		rel_set(prey.mind, nameof(/datum/forms::current), prey)
 		prey.mind.active = TRUE
 
 		soulgem.catch_mob(prey) //This will result in the prey being deleted so...
@@ -194,10 +194,10 @@
 	//Final check since we waited for input a couple times.
 	if(prey && prey.key && !stat && nif && SC)
 		if(!prey.mind) //No mind yet, aka haven't played in this round.
-			rel_set(prey, "mind", new /datum/mind(prey.key))
+			rel_set(prey, nameof(prey.mind), new /datum/mind(prey.key))
 
 		prey.mind.name = prey.name
-		rel_set(prey.mind, "current", prey)
+		rel_set(prey.mind, nameof(/datum/forms::current), prey)
 		prey.mind.active = TRUE
 
 		SC.catch_mob(prey) //This will result in the prey being deleted so...

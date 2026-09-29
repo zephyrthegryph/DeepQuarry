@@ -1,7 +1,7 @@
 /// The mob this crafting menu belongs to (the holder's `crafting` var points back at us).
 /datum/personal_crafting/New(mob/owner)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	if(ismob(owner))
 		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
 
@@ -15,7 +15,7 @@
 	C.icon = H.ui_style
 	C.color = H.ui_color
 	C.alpha = H.ui_alpha
-	own_add(H, "other_important", C)
+	own_add(H, nameof(H.other_important), C)
 	CL.screen += C
 	om_hook(C, /datum/om/event/click, src, PROC_REF(on_button_click))
 

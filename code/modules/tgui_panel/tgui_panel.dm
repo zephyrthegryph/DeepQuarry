@@ -17,8 +17,8 @@
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
 /datum/tgui_panel/New(client/client, id)
-	rel_set(src, "client", client)
-	own_set(src, "window", new /datum/tgui_window(client, id))
+	rel_set(src, nameof(client), client)
+	own_set(src, nameof(window), new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 
 /datum/tgui_panel/Del()

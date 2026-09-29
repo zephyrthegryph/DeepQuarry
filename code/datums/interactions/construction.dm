@@ -99,7 +99,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 
 /// Registers an edge with this graph and gives it an id and a name.
 /datum/construction_graph/proc/add_edge(datum/interaction/construction/edge)
-	rel_set(edge, "graph", src) // the graph owns its edges (edges_by_id); graph is the back view
+	rel_set(edge, nameof(edge.graph), src) // the graph owns its edges (edges_by_id); graph is the back view
 	if(length(edge_requires))
 		edge.requires = (edge.requires || list()) + edge_requires
 	if(!edge.id)
@@ -111,11 +111,11 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 		edge.id = "[base_id]#[n]"
 	if(!edge.name)
 		edge.name = capitalize(edge.step_text)
-	own_add(src, "edges", edge)
+	own_add(src, nameof(edges), edge)
 	var/edge_index = length(edges)
 	edges_by_id[edge.id] = edge_index
 	if(edge.from_state == CONSTRUCTION_ANY_STATE)
-		rel_add(src, "wildcard_edges", edge)
+		rel_add(src, nameof(wildcard_edges), edge)
 	else
 		var/state_key = "[edge.from_state]"
 		var/list/state_indices = edges_by_state[state_key]
@@ -294,7 +294,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	rel_set(src, "compiled", dq_predicate_for("construction:[id]", spec, "construction edge [id]")) // a shared cached predicate
+	rel_set(src, nameof(compiled), dq_predicate_for("construction:[id]", spec, "construction edge [id]")) // a shared cached predicate
 	return compiled
 
 /datum/interaction/construction/why_not(mob/actor, atom/target, obj/item/held)
@@ -315,7 +315,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /datum/interaction/construction/proc/alt_predicate()
 	if(compiled_alt || !length(requires))
 		return compiled_alt
-	rel_set(src, "compiled_alt", dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")) // a shared cached predicate
+	rel_set(src, nameof(compiled_alt), dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")) // a shared cached predicate
 	return compiled_alt
 
 /// Whether `held` is one of the items standing in for the tool.

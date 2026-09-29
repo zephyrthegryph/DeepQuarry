@@ -28,14 +28,14 @@
 	if(target() && executed)
 		target().dos_overload += dos_speed
 		if(!target().operable())
-			rel_remove(target(), "dos_sources", src)
-			rel_clear(src, "target")
+			rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
+			rel_clear(src, nameof(target))
 			error = "Connection to destination relay lost."
 
 /datum/computer_file/program/ntnet_dos/kill_program(forced)
 	if(target())
-		rel_remove(target(), "dos_sources", src)
-		rel_clear(src, "target")
+		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
+		rel_clear(src, nameof(target))
 	executed = 0
 
 	..(forced)
@@ -68,15 +68,15 @@ UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_target_relay", ui_act_prg_ta
 UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_target_relay)
 	for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
 		if(R.uid == params["targid"])
-			rel_set(src, "target", R)
+			rel_set(src, nameof(/datum/accessory_stat_modifier::target), R)
 			break
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_reset", ui_act_prg_reset)
 UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_reset)
 	if(target())
-		rel_remove(target(), "dos_sources", src)
-		rel_clear(src, "target")
+		rel_remove(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
+		rel_clear(src, nameof(/datum/accessory_stat_modifier::target))
 	executed = FALSE
 	error = ""
 	return TRUE
@@ -85,7 +85,7 @@ UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_execute", ui_act_prg_execute
 UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_execute)
 	if(target())
 		executed = TRUE
-		rel_add(target(), "dos_sources", src)
+		rel_add(target(), nameof(/obj/machinery/ntnet_relay::dos_sources), src)
 		if(GLOB.ntnet_global.intrusion_detection_enabled)
 			var/obj/item/computer_hardware/network_card/network_card = computer().network_card
 			GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")

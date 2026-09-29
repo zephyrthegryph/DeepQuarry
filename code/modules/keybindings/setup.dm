@@ -8,7 +8,7 @@
 /mob/proc/set_focus(datum/new_focus)
 	if(focus == new_focus)
 		return
-	rel_set(src, "focus", new_focus)
+	rel_set(src, nameof(focus), new_focus)
 
 /// Turns a keys bitfield into text showing all bits set
 /proc/keys2text(keys)

@@ -36,8 +36,8 @@
 
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
-	rel_set(src, "client", client)
-	own_set(src, "window", new /datum/tgui_window(client, id))
+	rel_set(src, nameof(client), client)
+	own_set(src, nameof(window), new /datum/tgui_window(client, id))
 	winset(client, "tgui_say", "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE

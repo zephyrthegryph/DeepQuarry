@@ -193,8 +193,8 @@ UI_ACT_PROC(/datum/pai_software/med_records, ui_act_select)
 			for(var/datum/data/record/E in GLOB.data_core.medical)
 				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 					M = E
-			rel_set(P, "medicalActive1", R)
-			rel_set(P, "medicalActive2", M)
+			rel_set(P, nameof(/mob/living/silicon/pai::medicalActive1), R)
+			rel_set(P, nameof(/mob/living/silicon/pai::medicalActive2), M)
 	else
 		P.medical_cannotfind = 1
 	return 1
@@ -246,19 +246,19 @@ UI_ACT_PROC(/datum/pai_software/sec_records, ui_act_select)
 		var/datum/data/record/R = record
 		var/datum/data/record/S = null
 		if (!( GLOB.data_core.general.Find(R) ))
-			rel_clear(P, "securityActive1")
-			rel_clear(P, "securityActive2")
+			rel_clear(P, nameof(/mob/living/silicon/pai::securityActive1))
+			rel_clear(P, nameof(/mob/living/silicon/pai::securityActive2))
 			P.security_cannotfind = 1
 		else
 			P.security_cannotfind = 0
 			for(var/datum/data/record/E in GLOB.data_core.security)
 				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
 					S = E
-			rel_set(P, "securityActive1", R)
-			rel_set(P, "securityActive2", S)
+			rel_set(P, nameof(/mob/living/silicon/pai::securityActive1), R)
+			rel_set(P, nameof(/mob/living/silicon/pai::securityActive2), S)
 	else
-		rel_clear(P, "securityActive1")
-		rel_clear(P, "securityActive2")
+		rel_clear(P, nameof(/mob/living/silicon/pai::securityActive1))
+		rel_clear(P, nameof(/mob/living/silicon/pai::securityActive2))
 		P.security_cannotfind = 1
 	return TRUE
 
@@ -297,14 +297,14 @@ UI_ACT(/datum/pai_software/door_jack, "jack", ui_act_jack)
 UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_jack)
 	var/mob/living/silicon/pai/P = ui.user
 	if(P.cable && P.cable.machine())
-		rel_set(P, "hackdoor", P.cable.machine())
+		rel_set(P, nameof(/mob/living/silicon/pai::hackdoor), P.cable.machine())
 		P.hackloop()
 	return 1
 
 UI_ACT(/datum/pai_software/door_jack, "cancel", ui_act_cancel)
 UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cancel)
 	var/mob/living/silicon/pai/P = ui.user
-	rel_clear(P, "hackdoor")
+	rel_clear(P, nameof(/mob/living/silicon/pai::hackdoor))
 	return 1
 
 UI_ACT(/datum/pai_software/door_jack, "cable", ui_act_cable)
@@ -312,7 +312,7 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 	var/mob/living/silicon/pai/P = ui.user
 	var/turf/T = get_turf(P)
 	P.hack_aborted = 0
-	own_set(P, "cable", new /obj/item/pai_cable(T))
+	own_set(P, nameof(/obj/machinery/cablelayer::cable), new /obj/item/pai_cable(T))
 	for(var/mob/M in viewers(T))
 		M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
 						span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
@@ -329,8 +329,8 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 	if(!istype(D))
 		hack_aborted = 1
 		hackprogress = 0
-		rel_clear(cable, "machine")
-		rel_clear(src, "hackdoor")
+		rel_clear(cable, nameof(cable.machine))
+		rel_clear(src, nameof(hackdoor))
 		return
 	hack_tick()
 
@@ -341,13 +341,13 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 	else
 		hack_aborted = 1
 		hackprogress = 0
-		rel_clear(src, "hackdoor")
+		rel_clear(src, nameof(hackdoor))
 		return REPEAT_STOP
 	if(hackprogress >= 1000)
 		hackprogress = 0
 		hackdoor.open()
-		rel_clear(cable, "machine")
-		rel_clear(src, "hackdoor")
+		rel_clear(cable, nameof(cable.machine))
+		rel_clear(src, nameof(hackdoor))
 		return REPEAT_STOP
 
 /datum/pai_software/atmosphere_sensor

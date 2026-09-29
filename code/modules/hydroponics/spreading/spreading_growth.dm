@@ -11,7 +11,7 @@
 
 /obj/effect/plant/proc/update_neighbors()
 	// Update our list of valid neighboring turfs.
-	rel_clear(src, "neighbors")
+	rel_clear(src, nameof(neighbors))
 	for(var/turf/simulated/floor in get_cardinal_neighbors())
 		if(get_dist(parent(), floor) > spread_distance)
 			continue
@@ -31,7 +31,7 @@
 
 		if(!Adjacent(floor) || !floor.Enter(src))
 			continue
-		rel_add(src, "neighbors", floor)
+		rel_add(src, nameof(neighbors), floor)
 
 	if(length(neighbors))
 		GLOB.plant_service.add_plant(src)	//if we have neighbours again, start processing
@@ -40,7 +40,7 @@
 	var/turf/T = get_turf(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
 		if(neighbor.seed() == src.seed())
-			rel_remove(neighbor, "neighbors", T)
+			rel_remove(neighbor, nameof(neighbor.neighbors), T)
 
 /// One delayed spread to a random neighbour (process() spaces them a few deciseconds apart).
 /obj/effect/plant/proc/spread_once()
@@ -70,7 +70,7 @@
 		if(health > max_health)
 			health = max_health
 	else if(health == max_health && !plant)
-		own_set(src, "plant", new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
+		own_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
 		plant.dir = src.dir
 		plant.transform = src.transform
 		plant.age = seed().get_trait(TRAIT_MATURATION)-1
@@ -140,7 +140,7 @@
 		if(!istype(check_turf))
 			continue
 		for(var/obj/effect/plant/neighbor in contents_of(check_turf))
-			rel_add(neighbor, "neighbors", check_turf)
+			rel_add(neighbor, nameof(neighbor.neighbors), check_turf)
 			GLOB.plant_service.add_plant(neighbor)
 	expire(1)
 
@@ -185,6 +185,6 @@
 	// Update neighboring squares.
 	for(var/obj/effect/plant/neighbor in range(1, child.loc)) //can use the actual final child loc now
 		if(child.seed() == neighbor.seed()) //neighbors of different seeds will continue to try to overrun each other
-			rel_remove(neighbor, "neighbors", target_turf)
+			rel_remove(neighbor, nameof(neighbor.neighbors), target_turf)
 
 	child.finish_spreading()

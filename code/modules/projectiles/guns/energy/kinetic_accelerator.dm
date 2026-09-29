@@ -133,7 +133,7 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 		. += A
 
 /obj/item/gun/energy/kinetic_accelerator/proc/modify_projectile(obj/item/projectile/kinetic/K)
-	rel_set(K, "kinetic_gun", src) //do something special on-hit, easy!
+	rel_set(K, nameof(K.kinetic_gun), src) //do something special on-hit, easy!
 	for(var/A in get_modkits())
 		var/obj/item/borg/upgrade/modkit/M = A
 		M.modify_projectile(K)
@@ -203,7 +203,7 @@ OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	var/carried = max(1, loc.ConflictElementCount(CONFLICT_ELEMENT_KA))
 
 	om_cancel_timer_slot(src, "recharge_timerid")
-	om_after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
+	after_slot(src, "recharge_timerid", recharge_time * carried, PROC_REF(reload))
 
 /obj/item/gun/energy/kinetic_accelerator/proc/reload()
 	power_supply.give(power_supply.maxcharge)
@@ -381,7 +381,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 			user.drop_from_inventory(src, KA)
 			to_chat(user, span_notice("You install the modkit."))
 			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
-			rel_add(KA, "modkits", src)
+			rel_add(KA, nameof(KA.modkits), src)
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))
 	else
@@ -389,7 +389,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 		. = FALSE
 
 /obj/item/borg/upgrade/modkit/proc/uninstall(obj/item/gun/energy/kinetic_accelerator/KA, forcemove = TRUE)
-	rel_remove(KA, "modkits", src)
+	rel_remove(KA, nameof(KA.modkits), src)
 	if(forcemove)
 		forceMove(get_turf(KA))
 

@@ -77,7 +77,7 @@
 				else
 					name = capitalize(pick(GLOB.first_names_female)) + " " + capitalize(pick(GLOB.last_names))
 
-		rel_set(src, "mind", M.mind) //we don't transfer the mind but we keep a reference to it.
+		rel_set(src, nameof(mind), M.mind) //we don't transfer the mind but we keep a reference to it.
 
 		// Fix for naked ghosts.
 		// Unclear why this isn't being grabbed by appearance.
@@ -100,7 +100,7 @@
 	animate(src, pixel_y = 2, time = 10, loop = -1)
 	animate(pixel_y = default_pixel_y, time = 10, loop = -1)
 	. = ..()
-	rel_set(src, "visualnet", GLOB.ghostnet)
+	rel_set(src, nameof(visualnet), GLOB.ghostnet)
 
 /mob/observer/dead/proc/checkStatic()
 	return !(check_rights_for(src.client, R_ADMIN|R_FUN|R_EVENT|R_SERVER) || (client && client.buildmode) || isbelly(loc))
@@ -282,7 +282,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 			return
 	mind.current.ajourn=0
 	mind.current.key = key
-	rel_clear(mind.current, "teleop")
+	rel_clear(mind.current, nameof(/mob::teleop))
 	if(istype(mind.current.loc, /obj/structure/morgue))
 		var/obj/structure/morgue/M = mind.current.loc
 		M.update(1)
@@ -713,7 +713,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(blood_picked), title = "Blood Choice", message = "What blood would you like to use?", choices = choices)
 
 /datum/om/flow/bloody_doodle/proc/blood_picked(datum/om/prompt/choice/ask)
-	rel_set(src, "blood", ask.choice)
+	rel_set(src, nameof(blood), ask.choice)
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(direction_picked), title = "Tile selection", message = "Which way?", choices = list("Here","North","South","East","West"))
 
 /datum/om/flow/bloody_doodle/proc/direction_picked(datum/om/prompt/choice/ask)

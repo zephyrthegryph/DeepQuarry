@@ -162,10 +162,9 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 
 /// H5: an entity that marks itself during its own refresh is reported.
 /datum/unit_test/dx_review_self_mark/Run()
-	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
-	refresh_flush()
-	var/before = length(GLOB.refresh_self_marks)
 	GLOB.refresh_self_mark_expected = TRUE
+	var/before = length(GLOB.refresh_self_marks)
+	var/obj/cap_fixture/dx_review_selfmark/F = allocate(/obj/cap_fixture/dx_review_selfmark)
 	changed(F)
 	refresh_flush()
 	GLOB.refresh_self_mark_expected = FALSE
@@ -239,3 +238,43 @@ TRACKED(/obj/cap_fixture/dx_review, tracked_value, CHANGE_EFFECTS)
 	changed(F)
 	refresh_flush()
 	TEST_ASSERT(!F.light_range, "the light went off when the look stopped setting it")
+
+/obj/cap_fixture/dx_review_interval
+	periodic_interval = 1 SECONDS
+	var/running = FALSE
+	var/steps = 0
+
+/obj/cap_fixture/dx_review_interval/should_run()
+	return running
+
+/obj/cap_fixture/dx_review_interval/periodic_step(delta)
+	steps++
+
+/// periodic_interval: a custom-interval step that runs while should_run() holds (the DECLARE_REPEAT replacement).
+/datum/unit_test/om/dx_review_periodic_interval
+
+/datum/unit_test/om/dx_review_periodic_interval/run_om(list/made)
+	var/obj/cap_fixture/dx_review_interval/F = new
+	made += F
+	refresh_flush()
+	TEST_ASSERT(!om_timer_slot_pending(F, "periodic_interval"), "not armed while should_run() is FALSE")
+	F.running = TRUE
+	changed(F)
+	refresh_flush()
+	TEST_ASSERT(om_timer_slot_pending(F, "periodic_interval"), "armed once should_run() holds")
+	scheduler_advance(2.5)
+	TEST_ASSERT(F.steps >= 2, "stepped every interval ([F.steps])")
+	F.running = FALSE
+	changed(F)
+	refresh_flush()
+	var/steps = F.steps
+	scheduler_advance(2.5)
+	TEST_ASSERT_EQUAL(F.steps, steps, "stopped once should_run() is FALSE")
+
+/// The UI data one capability of A contributes (tgui_data nests it under data["caps"][ui_key()]).
+/proc/dx_cap_ui_data(atom/A, mob/user, cap_type)
+	var/list/data = list()
+	A.caps_ui_data(user, data)
+	var/datum/capability/C = cap_of_all(A, cap_type)
+	var/list/caps = data["caps"]
+	return (C && caps) ? (caps[C.ui_key()] || list()) : list()

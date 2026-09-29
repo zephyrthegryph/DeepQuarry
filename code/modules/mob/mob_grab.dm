@@ -52,7 +52,7 @@
 	hud.icon_state = "reinforce"
 	icon_state = "grabbed" // ALLOW(decl): only set once the grab link succeeds
 	hud.name = "reinforce grab"
-	rel_set(hud, "master_ref", src)
+	rel_set(hud, nameof(hud.master_ref), src)
 
 	adjust_position()
 

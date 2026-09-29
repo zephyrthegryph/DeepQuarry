@@ -21,7 +21,7 @@
 /obj/structure/closet/proc/connect_bluespace(list/exits)
 	for(var/atom/exit_point as anything in exits)
 		if(!QDELETED(exit_point))
-			rel_add(src, "bluespace_exit_points", exit_point)
+			rel_add(src, nameof(bluespace_exit_points), exit_point)
 	om_attach(src, /datum/om/behaviour/bluespace_connection)
 
 /// Joins the permanent network of bluespace lockers (GLOB.bslockers).
@@ -94,9 +94,9 @@
 	if(bluespace_permanent)
 		return TRUE
 	if(removed_exit)
-		rel_remove(src, "bluespace_exit_points", removed_exit)
+		rel_remove(src, nameof(bluespace_exit_points), removed_exit)
 	if(!length(bluespace_exits())) // No exit points left, bluespace connection severed.
-		rel_clear(src, "bluespace_exit_points")
+		rel_clear(src, nameof(bluespace_exit_points))
 		om_detach(src, /datum/om/behaviour/bluespace_connection)
 	return TRUE
 
@@ -121,4 +121,6 @@
 /datum/om/behaviour/proc/on_closet_closed(datum/E, datum/om/event/closet_closed/event)
 	return
 
-REL_LIST(/obj/structure/closet, bluespace_exit_points)
+/obj/structure/closet/relations()
+	. = ..()
+	. += rel_many(nameof(bluespace_exit_points))

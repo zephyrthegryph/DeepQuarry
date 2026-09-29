@@ -353,7 +353,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 	spec.layout_archetype = metadata["layout_archetype"]
 	spec.layout_aesthetic_score = metadata["aesthetic_score"]
 	for(var/datum/generated_station_department_definition/catalog_definition in generated_station_department_catalog())
-		own_add(spec, "department_definitions", catalog_definition)
+		own_add(spec, nameof(spec.department_definitions), catalog_definition)
 	var/list/definitions = list()
 	for(var/datum/generated_station_department_definition/definition in spec.department_definitions)
 		definitions[definition.id] = definition
@@ -367,11 +367,11 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			return generated_station_rust_decode_failure(spec, errors, "Invalid or duplicate department record.")
 		var/datum/generated_station_department_instance/department = new
 		department.id = id
-		rel_set(department, "definition_static", definitions[definition_id])
+		rel_set(department, nameof(department.definition_static), definitions[definition_id])
 		department.desired_area = row["desired_area"]
 		department.layout_node_id = row["node_id"]
 		departments[id] = department
-		own_add(spec, "departments", department)
+		own_add(spec, nameof(spec.departments), department)
 	var/list/nodes = list()
 	for(var/list/row in node_rows)
 		if(!islist(row))
@@ -388,7 +388,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		node.frontage_spine_vertical = !!row["frontage_spine_vertical"]
 		node.frontage_spine_coordinate = row["frontage_spine_coordinate"]
 		nodes[id] = node
-		own_add(spec, "layout_nodes", node)
+		own_add(spec, nameof(spec.layout_nodes), node)
 	var/list/rooms = list()
 	for(var/list/row in room_rows)
 		if(!islist(row))
@@ -428,7 +428,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		room.rust_room_id = row["rust_room_id"]
 		room.frontage_x = row["frontage_x"]; room.frontage_y = row["frontage_y"]
 		rooms[id] = room
-		own_add(node, "room_program", room)
+		own_add(node, nameof(node.room_program), room)
 	var/list/tile_classes = list()
 	var/list/tile_owners = list()
 	var/list/tile_zones = list()
@@ -456,7 +456,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			if(!node || tile_classes[key] != "maintenance_floor" || !istext(row["from_zone"]) || !length(row["from_zone"]) || !istext(row["to_zone"]) || !length(row["to_zone"]))
 				return generated_station_rust_decode_failure(spec, errors, "Maintenance door has invalid ownership or zone metadata.")
 			var/datum/generated_station_maintenance_door/maintenance_door = new(direction, node.id, row["from_zone"], row["to_zone"])
-			own_put(spec, "maintenance_doors", "[x],[y]", maintenance_door)
+			own_put(spec, nameof(spec.maintenance_doors), "[x],[y]", maintenance_door)
 			continue
 		if(!node)
 			return generated_station_rust_decode_failure(spec, errors, "Door references an unknown node owner.")
@@ -474,16 +474,16 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 		var/datum/generated_station_door_socket/socket = new(x, y, direction, row["kind"], row["from_zone"], row["to_zone"])
 		var/datum/generated_station_room_allocation/room = from_room
 		if(room)
-			own_add(room, "door_sockets", socket)
+			own_add(room, nameof(room.door_sockets), socket)
 		else
 			var/assigned_vestibule = FALSE
 			for(var/datum/generated_station_eva_vestibule/vestibule in node.eva_vestibules)
 				if(vestibule.id == row["from_zone"] || vestibule.id == row["to_zone"])
-					own_add(vestibule, "door_sockets", socket)
+					own_add(vestibule, nameof(vestibule.door_sockets), socket)
 					assigned_vestibule = TRUE
 					break
 			if(!assigned_vestibule)
-				own_add(node, "frontage_sockets", socket)
+				own_add(node, nameof(node.frontage_sockets), socket)
 	var/list/edge_ids = list()
 	for(var/list/row in edge_rows)
 		var/edge_kind = islist(row) ? generated_station_rust_edge_kind(row["kind"]) : 0
@@ -498,7 +498,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 			if(!islist(point) || length(point) != 2 || !generated_station_rust_integer(point[1], 1, width) || !generated_station_rust_integer(point[2], 1, height))
 				return generated_station_rust_decode_failure(spec, errors, "Edge contains an invalid path coordinate.")
 			edge.path += list(list(point[1], point[2]))
-		own_add(spec, "layout_edges", edge)
+		own_add(spec, nameof(spec.layout_edges), edge)
 	if(!generated_station_rust_decode_content(spec, rooms, content_room_rows, fixture_rows, network_rows, root["content_quality"], errors))
 		qdel(spec)
 		return null
@@ -590,7 +590,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				return FALSE
 			fixture.required_access["[access_point["x"] + 1],[access_point["y"] + 1]"] = TRUE
 		fixture_ids_seen["[fixture.id]"] = TRUE
-		own_add(spec, "fixture_blueprint", fixture)
+		own_add(spec, nameof(spec.fixture_blueprint), fixture)
 	for(var/list/row in network_rows)
 		if(!islist(row) || !istext(row["id"]) || !length(row["id"]) || !istext(row["kind"]) || !length(row["kind"]) || !islist(row["backbone"]) || !islist(row["endpoint_fixture_ids"]))
 			errors += "Rust content blueprint contains an invalid network record."
@@ -610,7 +610,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 				errors += "Rust network [row["id"]] references an unknown endpoint fixture."
 				return FALSE
 			network.endpoint_fixture_ids += fixture_id
-		own_add(spec, "network_blueprint", network)
+		own_add(spec, nameof(spec.network_blueprint), network)
 	spec.content_quality = islist(quality) ? quality.Copy() : list()
 	return TRUE
 
@@ -689,7 +689,7 @@ GLOBAL_LIST_INIT(generated_station_rust_fixture_ids, list(
 					target = new
 					target.id = vestibule_id
 					target.department_node_id = node.id
-					own_add(node, "eva_vestibules", target)
+					own_add(node, nameof(node.eva_vestibules), target)
 				target.tiles[key] = TRUE
 			else if(room)
 				if(room.department_node_id != node.id || run["zone"] != room.id)

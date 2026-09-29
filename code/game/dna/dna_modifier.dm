@@ -109,9 +109,9 @@
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		rel_clear(src, "occupant")
+		rel_clear(src, nameof(occupant))
 		return
-	rel_set(src, "occupant", L)
+	rel_set(src, nameof(occupant), L)
 
 /obj/machinery/dna_scannernew/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
@@ -212,9 +212,8 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		user.drop_item()
-		item.forceMove(src)
-		own_set(src, "beaker", item)
+		if(!own_set(src, nameof(src.beaker), item, user = user))
+			return TRUE
 		act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 		SStgui.update_uis(src)
 		return TRUE
@@ -259,7 +258,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	// release contents
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, "beaker")
+		own_take(src, nameof(beaker))
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
 		slot_remove(WC, get_turf(src))
@@ -268,7 +267,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	for(var/dirfind in GLOB.cardinal)
 		var/obj/machinery/computer/scan_consolenew/console = locate(/obj/machinery/computer/scan_consolenew, get_step(src, dirfind))
 		if(console && console.connected() == src)
-			rel_clear(console, "connected")
+			rel_clear(console, nameof(console.connected))
 			SStgui.close_uis(console)
 			break
 	. = ..()
@@ -352,9 +351,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		return FALSE
 	if(connected())
 		if(!disk)
-			user.drop_item()
-			I.forceMove(src)
-			own_set(src, "disk", I)
+			if(!own_set(src, nameof(src.disk), I, user = user))
+				return FALSE
 			to_chat(user, "You insert [I].")
 			SStgui.update_uis(src) // update all UIs attached to src
 	else
@@ -368,14 +366,14 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	for(var/i=0;i<3;i++)
 		// Traitgenes Use bodyrecords
 		var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-		own_set(R, "mydna", new /datum/dna2/record)
+		own_set(R, nameof(R.mydna), new /datum/dna2/record)
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
-		own_put(src, "buffers", i+1, R)
+		own_put(src, nameof(buffers), i+1, R)
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
-		rel_set(src, "connected", locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
+		rel_set(src, nameof(connected), locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
 		if(connected())
 			break
 
@@ -391,7 +389,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	var/id = text2num(copytext(blk,1,pos))
 	if(!id) return 0
 	I.block = id
-	own_set(I, "buf", buffer)
+	own_set(I, nameof(I.buf), buffer)
 	return 1
 
 /obj/machinery/computer/scan_consolenew
@@ -597,7 +595,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectoccupant)
 	if(!disk)
 		return TRUE
 	disk.forceMove(get_turf(src))
-	own_take(src, "disk")
+	own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
 // Transfer Buffer Management
 
 UI_ACT(/obj/machinery/computer/scan_consolenew, "bufferOption", ui_act_bufferoption, UI_ARG_NUM("block"), UI_ARG_NUM("id"), UI_ARG_TEXT("option"))
@@ -622,17 +620,17 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 					var/mob/living/carbon/human/H = WC
 					databuf.mydna.dna.real_name = H.dna.real_name
 					databuf.mydna.gender = H.gender
-				own_put(src, "buffers", bufferId, databuf)
+				own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, databuf)
 			return TRUE
 		if("clear")
 			play_sfx(src, SFX_KEYBOARD)
 			// Traitgenes Storing the entire body record
 			var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-			own_set(R, "mydna", new /datum/dna2/record)
+			own_set(R, nameof(/datum/transhuman/body_record::mydna), new /datum/dna2/record)
 			R.mydna.dna = new
 			R.mydna.dna.ResetUI()
 			R.mydna.dna.ResetSE()
-			own_put(src, "buffers", bufferId, R)
+			own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, R)
 			return TRUE
 		if("changeLabel")
 			play_sfx(src, SFX_KEYBOARD)
@@ -665,14 +663,14 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 			databuf.init_from_br(disk.stored)
 			databuf.mydna.types = DNA2_BUF_SE // structurals only
-			own_put(src, "buffers", bufferId, databuf)
+			own_put(src, nameof(/obj/machinery/computer/scan_consolenew::buffers), bufferId, databuf)
 		if("saveDisk")
 			play_sfx(src, SFX_KEYBOARD)
 			if(isnull(disk)) // Traitgenes Removed readonly
 				return TRUE
 			var/datum/transhuman/body_record/buf = buffers[bufferId]
 			// Traitgenes Properly clone records
-			own_set(disk, "stored", new /datum/transhuman/body_record())
+			own_set(disk, nameof(/datum/stored_item::stored), new /datum/transhuman/body_record())
 			disk.stored.init_from_br(buf)
 			disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
 			disk.name = "Body Design Disk ('[buf.mydna.name]')"
@@ -690,7 +688,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_wipedisk)
 	// Traitgenes Storing the entire body record
 	if(isnull(disk))
 		return TRUE
-	own_clear(disk, "stored", OWN_DELETE)
+	own_clear(disk, nameof(/datum/stored_item::stored), OWN_DELETE)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectDisk", ui_act_ejectdisk)
@@ -699,7 +697,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 	if(!disk)
 		return TRUE
 	disk.forceMove(get_turf(src))
-	own_take(src, "disk")
+	own_take(src, nameof(/obj/machinery/computer/scan_consolenew::disk))
 	return TRUE
 
 /**
@@ -724,7 +722,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
-		own_set(I, "buf", buf.mydna.copy())
+		own_set(I, nameof(I.buf), buf.mydna.copy())
 	return I
 
 /**
@@ -891,8 +889,12 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 
 /////////////////////////// DNA MACHINES
 
-OWN(/obj/machinery/dna_scannernew, beaker, OWN_CONTAINED)
-OWN(/obj/machinery/computer/scan_consolenew, disk, OWN_CONTAINED)
+/obj/machinery/dna_scannernew/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/computer/scan_consolenew/ownership()
+	. = ..()
+	. += owns(nameof(disk), policy = OWN_CONTAINED)
 
 /// connected: a relation view, null once the scanner is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew

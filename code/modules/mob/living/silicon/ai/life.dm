@@ -23,7 +23,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 		return ctx.abort()
 
 	if(self.stat != CONSCIOUS)
-		rel_clear(self, "cameraFollow")
+		rel_clear(self, nameof(self.cameraFollow))
 		self.reset_perspective()
 		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 
@@ -129,7 +129,7 @@ OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
 	cancel_power_restore()
-	om_after_slot(src, "power_restore_timer", delay, PROC_REF(power_restore_step), step)
+	after_slot(src, "power_restore_timer", delay, PROC_REF(power_restore_step), step)
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
 	if(om_timer_slot_pending(src, "power_restore_timer"))

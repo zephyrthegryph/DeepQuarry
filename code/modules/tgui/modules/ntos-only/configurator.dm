@@ -8,7 +8,7 @@ UI_DATA(/datum/tgui_module/computer_configurator, "merge:ui_data_datum_tgui_modu
 
 /// The computed part of /datum/tgui_module/computer_configurator's window data (declared on its UI_DATA row).
 /datum/tgui_module/computer_configurator/proc/ui_data_datum_tgui_module_computer_configurator(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	rel_set(src, "movable", tgui_host())
+	rel_set(src, nameof(movable), tgui_host())
 	// No computer connection, we can't get data from that.
 	if(!istype(movable(), /obj/item/modular_computer))
 		return 0

@@ -31,7 +31,7 @@
 /datum/event2/event/grid_check/set_up()
 	// no turbines under LINDA (see get_overpower); engine stays null
 	// and start() will no-op the power_spike branch.
-	rel_clear(src, "engine")
+	rel_clear(src, nameof(engine))
 
 /datum/event2/event/grid_check/start()
 	// This sets off a chain of events that lead to the actual grid check (or perhaps worse).

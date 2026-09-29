@@ -58,7 +58,7 @@ How they spawn stuff is decided by behaviour vars, which are explained below
 		animation.icon = 'icons/effects/effects.dmi'
 		animation.plane = OBJ_PLANE
 		animation.layer = ABOVE_JUNK_LAYER
-		rel_set(animation, "master", summoned_object)
+		rel_set(animation, nameof(animation.master), summoned_object)
 
 		for(var/varName in newVars)
 			if(varName in summoned_object.vars)

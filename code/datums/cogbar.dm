@@ -21,8 +21,8 @@
 	var/cogiconstate
 
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
-	rel_set(src, "user", user)
-	rel_set(src, "user_client", user.client)
+	rel_set(src, nameof(user), user)
+	rel_set(src, nameof(user_client), user.client)
 	src.cogicon = cogicon
 	src.cogiconstate = cogiconstate
 	var/list/icon_offsets = user.get_oversized_icon_offsets()
@@ -58,7 +58,7 @@
 		unique = TRUE,
 		alpha = 0,
 	)
-	rel_set(src, "cog", cog)
+	rel_set(src, nameof(cog), cog)
 	cog.pixel_y = ICON_SIZE_Y + offset_y
 	animate(cog, alpha = user().alpha, time = COGBAR_ANIMATION_TIME)
 

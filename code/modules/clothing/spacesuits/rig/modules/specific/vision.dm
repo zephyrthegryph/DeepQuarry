@@ -17,43 +17,43 @@
 	mode = "night vision"
 
 /datum/rig_vision/nvg/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/night)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/night)
 
 /datum/rig_vision/thermal
 	mode = "thermal scanner"
 
 /datum/rig_vision/thermal/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/thermal)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/thermal)
 
 /datum/rig_vision/meson
 	mode = "meson scanner"
 
 /datum/rig_vision/meson/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/meson)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/meson)
 
 /datum/rig_vision/graviton
 	mode = "graviton scanner"
 
 /datum/rig_vision/graviton/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/graviton)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/graviton)
 
 /datum/rig_vision/sechud
 	mode = "security HUD"
 
 /datum/rig_vision/sechud/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/security)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/security)
 
 /datum/rig_vision/medhud
 	mode = "medical HUD"
 
 /datum/rig_vision/medhud/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/health)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/hud/health)
 
 /datum/rig_vision/material
 	mode = "material scanner"
 
 /datum/rig_vision/material/New()
-	own_set(src, "glasses", new /obj/item/clothing/glasses/material)
+	own_set(src, nameof(glasses), new /obj/item/clothing/glasses/material)
 
 /obj/item/rig_module/vision
 
@@ -205,7 +205,7 @@
 // There should only ever be one vision module installed in a suit.
 /obj/item/rig_module/vision/installed()
 	..()
-	rel_set(holder, "visor", src)
+	rel_set(holder, nameof(holder.visor), src)
 
 
 /obj/item/rig_module/vision/engage()
@@ -222,7 +222,7 @@
 		vision_index++
 		if(vision_index > vision_modes.len)
 			vision_index = 1
-		rel_set(src, "vision", vision_modes[vision_index])
+		rel_set(src, nameof(vision), vision_modes[vision_index])
 
 		to_chat(holder.wearer(), span_blue("You cycle your sensors to <b>[vision.mode]</b> mode."))
 	else
@@ -246,11 +246,11 @@
 	vision_index = 1
 	// vision_modes starts as a list of types; it becomes the module's owned instances.
 	var/list/mode_types = vision_modes.Copy()
-	own_clear(src, "vision_modes") // the type list holds no children yet: this only empties it
+	own_clear(src, nameof(vision_modes)) // the type list holds no children yet: this only empties it
 	for(var/vision_mode in mode_types)
-		var/datum/rig_vision/vision_datum = own_add(src, "vision_modes", new vision_mode)
+		var/datum/rig_vision/vision_datum = own_add(src, nameof(vision_modes), new vision_mode)
 		if(!vision)
-			rel_set(src, "vision", vision_datum)
+			rel_set(src, nameof(vision), vision_datum)
 
 
 // vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.

@@ -36,7 +36,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 /datum/lore/news/proc/find_station_newspaper()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		if(F.channel_name == "Vir News Network")
-			rel_set(src, "station_newspaper", F)
+			rel_set(src, nameof(station_newspaper), F)
 			break
 
 

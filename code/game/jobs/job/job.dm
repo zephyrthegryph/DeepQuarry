@@ -121,7 +121,7 @@
 			remembered_info += span_bold("Your account was created:") + " [T.time], [T.date] at [T.source_terminal]<br>"
 		H.mind.store_memory(remembered_info)
 
-		rel_set(H.mind, "initial_account", M)
+		rel_set(H.mind, nameof(/datum/mind::initial_account), M)
 
 	to_chat(H, span_boldnotice("Your account number is: [M.account_number], your account pin is: [M.remote_access_pin]"))
 

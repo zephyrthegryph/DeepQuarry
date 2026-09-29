@@ -15,7 +15,8 @@
 // (data["caps"][ui_key]["item"] = {name, ref} or null). Insert and eject run through cap_dispatch(),
 // so an ask_*() inside a slot hook re-validates and the dispatcher records the action once. The item
 // moves with one ownership transfer: out of the hand, slot or container it is in, into the holder,
-// adopted with own_set() (own_take() on the way out). Holder hooks, compared with nameof(var):
+// adopted with own_set() (own_take() on the way out). The slot owns its var (owned():
+// owns(var, policy = OWN_CONTAINED)): the holder type declares nothing for it in ownership(). Holder hooks, compared with nameof(var):
 // slot_refusal(), slot_inserted(), slot_eject_refusal(), slot_ejecting(), slot_ejected(). From code:
 // slot_insert(nameof(var), item, user) and slot_eject(nameof(var), user).
 
@@ -57,7 +58,8 @@
  * eject_needs + eject_else_say (the eject only), name, eject_name, insert_msg, eject_msg, full_msg,
  * swap_msg (templates or /datum/msg types; null for silence), eject_via, eject_drop, ungated,
  * when_full, no_insert, examine_held, examine_empty, layer (the overlay while filled; CAP_NO_LAYER:
- * none), ui_key, slot_type (a /datum/capability/slot subtype: a bundle's own slot, cell_bay()).
+ * none), ui_key; slot_type: a /datum/capability/slot subtype for a library capability built on
+ * the slot (cap_cell_holder()).
  */
 /proc/cap_slot(var_name, accepts = /obj/item, behind = NONE, blocked_by = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, layer = CAP_NO_LAYER, eject_needs, eject_else_say = "you can't do that right now", name, eject_name, insert_msg = "You insert %I% into %T%.", eject_msg = "You remove %I% from %T%.", full_msg = "%T% already holds %I%.", swap_msg = "You swap %I% out of %T%.", eject_via = SLOT_VIA_ALT, eject_drop = FALSE, ungated = FALSE, when_full = SLOT_FULL_REFUSE, no_insert = FALSE, examine_held = null, examine_empty = null, ui_key = "", slot_type = /datum/capability/slot)
 	var/datum/capability/slot/cap = new slot_type
@@ -128,17 +130,13 @@
 	var/text = msg_fill(message, user, holder, item)
 	to_chat(user, warning ? span_warning(text) : span_notice(text))
 
+/// The slot owns its var: the item sits in the holder's contents (its ledger slot decides at teardown).
+/datum/capability/slot/owned()
+	return list(owns(slot_var, policy = OWN_CONTAINED))
+
 /// The one-call transfer in: out of the hand, slot or container it is in, into holder, adopted.
 /datum/capability/slot/proc/adopt(atom/holder, obj/item/item, mob/user)
-	if(ismob(item.loc))
-		var/mob/carrier = item.loc
-		if(!carrier.unEquip(item, target = holder))
-			to_chat(user, span_warning("\The [item] is stuck to your hand!"))
-			return FALSE
-	if(item.loc != holder)
-		item.forceMove(holder)
-	own_set(holder, slot_var, item)
-	return holder.vars[slot_var] == item
+	return !isnull(own_set(holder, slot_var, item, user = user, into = TRUE))
 
 /// Puts `item` into the slot on `holder`. TRUE when it went in, UI_REFUSED when the input is used but
 /// refused, FALSE when the slot declines (SLOT_FULL_PASS, SLOT_REFUSED_PASS, a type it doesn't accept)

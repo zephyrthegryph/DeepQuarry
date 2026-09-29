@@ -197,14 +197,16 @@
 	// every subsystem (machine_first_wakes_flush()), before the first air fire, instead of
 	// thousands of zero-delay timers draining for minutes after the round starts.
 	if(GLOB.machine_first_wakes_bulk)
-		rel_add(om_global_owner(), "machine_first_wakes", M)
+		rel_add(om_global_owner(), nameof(/datum/om/global_owner::machine_first_wakes), M)
 		return
-	om_after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
+	after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
 
 /// Machines waiting for the boot bulk first-wake pass, in join order. A relation list on the global
 /// owner: a deleted machine drops out on its own (its relation teardown), nothing takes it out.
 /datum/om/global_owner/var/list/obj/machinery/machine_first_wakes
-REL_LIST(/datum/om/global_owner, machine_first_wakes)
+/datum/om/global_owner/relations()
+	. = ..()
+	. += rel_many(nameof(machine_first_wakes))
 /// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
 GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
@@ -216,7 +218,7 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/queued = owner.machine_first_wakes?.Copy() || list()
 	// Emptied up front: each materialize_wakes() then leaves an empty queue in O(1).
-	rel_clear(owner, "machine_first_wakes")
+	rel_clear(owner, nameof(owner.machine_first_wakes))
 	var/start = REALTIMEOFDAY
 	var/ran = 0
 	for(var/obj/machinery/M as anything in queued)
@@ -695,7 +697,9 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// The item being recharged.
 OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-OWN(/obj/machinery/recharger, charging, OWN_SPILL)
+/obj/machinery/recharger/ownership()
+	. = ..()
+	. += owns(nameof(charging), policy = OWN_SPILL)
 /// The cell being charged.
 OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
 /// TRUE while the fire alarm's countdown runs.

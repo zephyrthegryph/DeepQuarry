@@ -143,7 +143,7 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 		if(istype(wrapped(), /obj/structure/closet))
 			var/obj/structure/closet/O = wrapped()
 			O.sealed = 0
-		rel_clear(src, "wrapped")
+		rel_clear(src, nameof(wrapped))
 	..()
 
 /obj/item/smallDelivery
@@ -278,7 +278,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-OWN(/obj/item/smallDelivery, wrapped, OWN_CONTAINED)
+/obj/item/smallDelivery/ownership()
+	. = ..()
+	. += owns(nameof(wrapped), policy = OWN_CONTAINED)
 
 /// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj

@@ -16,7 +16,9 @@
 	//Simple variable to prevent me from doing attack_hand in both this and the child computer
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
-REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
+/obj/machinery/computer/area_atmos/relations()
+	. = ..()
+	. += rel_many(nameof(connectedscrubbers))
 
 /// The connected scrubber with this id, or null.
 /obj/machinery/computer/area_atmos/proc/scrubber_by_id(scrub_id)
@@ -44,7 +46,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/area_atmos, "merge:ui_data_obj_machinery
 	var/list/working = list()
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as anything in connectedscrubbers)
 		if(!validscrubber(scrubber))
-			rel_remove(src, "connectedscrubbers", scrubber)
+			rel_remove(src, nameof(connectedscrubbers), scrubber)
 			continue
 		working.Add(list(list(
 			"id" = "[scrubber.id]",
@@ -63,7 +65,7 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_toggle)
 	var/scrub_id = params["id"]
 	var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
 	if(!validscrubber(S))
-		rel_remove(src, "connectedscrubbers", S)
+		rel_remove(src, nameof(/obj/machinery/computer/area_atmos::connectedscrubbers), S)
 		return TRUE
 	S.set_on(!S.on)
 	MACHINE_WAKE(S)
@@ -91,7 +93,7 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)
 		if(!validscrubber(S))
-			rel_remove(src, "connectedscrubbers", S)
+			rel_remove(src, nameof(connectedscrubbers), S)
 			continue
 		S.set_on(on)
 		MACHINE_WAKE(S)
@@ -103,12 +105,12 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
 	return TRUE
 
 /obj/machinery/computer/area_atmos/proc/scanscrubbers()
-	rel_clear(src, "connectedscrubbers")
+	rel_clear(src, nameof(connectedscrubbers))
 
 	var/found = 0
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in range(range, src.loc))
 		found = 1
-		rel_add(src, "connectedscrubbers", scrubber)
+		rel_add(src, nameof(connectedscrubbers), scrubber)
 
 	if(!found)
 		status = "ERROR: No scrubber found!"
@@ -121,12 +123,12 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
 	zone = "This computer is working in a wired network limited to this area."
 
 /obj/machinery/computer/area_atmos/area/scanscrubbers(mob/user)
-	rel_clear(src, "connectedscrubbers")
+	rel_clear(src, nameof(connectedscrubbers))
 
 	var/found = 0
 	var/area/A = get_area(src)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in area_contents_of_type(A, /obj/machinery/portable_atmospherics/powered/scrubber/huge))
-		rel_add(src, "connectedscrubbers", scrubber)
+		rel_add(src, nameof(connectedscrubbers), scrubber)
 		found = 1
 
 	if(!found)
@@ -160,11 +162,11 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
 	else
 		EXPIRY_STAMP(src, last_scan, CLOCK_WORLD)
 
-	rel_clear(src, "connectedscrubbers")
+	rel_clear(src, nameof(connectedscrubbers))
 
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber in world)
 		if(scrubber.scrub_id == src.scrub_id)
-			rel_add(src, "connectedscrubbers", scrubber)
+			rel_add(src, nameof(connectedscrubbers), scrubber)
 
 	SStgui.update_uis(src)
 

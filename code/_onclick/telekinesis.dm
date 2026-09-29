@@ -115,7 +115,7 @@ DECLARE_INTERACTIONS(/obj/item/tk_grab, INTERACT_USE(null, PROC_REF(interaction_
 	if(target.anchored || !isturf(target.loc))
 		consume(src, user)
 		return
-	rel_set(src, "focus", target)
+	rel_set(src, nameof(focus), target)
 	update_icon()
 	apply_focus_overlay()
 	return

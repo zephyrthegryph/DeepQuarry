@@ -13,7 +13,7 @@
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		own_add(src, "containers", new /obj/item/reagent_containers/glass/bottle/biomass(src))
+		own_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.
@@ -42,7 +42,7 @@
 
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_BACK)
-			rel_set(H, "internal", H.get_equipped_item(SLOT_ID_BACK))
+			rel_set(H, nameof(H.internal), H.get_equipped_item(SLOT_ID_BACK))
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"
 
@@ -162,7 +162,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
+	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 
@@ -193,7 +193,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 /obj/machinery/transhuman/synthprinter/machine_step()
 	if(has_stat(NOPOWER))
 		set_busy(0)
-		rel_clear(src, "current_br")
+		rel_clear(src, nameof(current_br))
 		update_icon()
 		return
 
@@ -210,7 +210,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	if(stored_material[MAT_STEEL] < body_cost || stored_material[MAT_GLASS] < body_cost)
 		return 0
 
-	rel_set(src, "current_br", BR)
+	rel_set(src, nameof(current_br), BR)
 	set_busy(5)
 	update_icon()
 
@@ -222,7 +222,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE,
 	var/datum/transhuman/body_record/current_project = current_br
 	if(!current_project)
 		set_busy(0)
-		rel_clear(src, "current_br")
+		rel_clear(src, nameof(current_br))
 		update_icon()
 		return
 
@@ -338,7 +338,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
+	own_clear(src, nameof(component_parts), OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 
@@ -351,7 +351,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/transhuman/synthprinter, "pod_{appearance_mod
 
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	rel_set(src, "sleever_occupant", H) // null clears it
+	rel_set(src, nameof(sleever_occupant), H) // null clears it
 
 /obj/machinery/transhuman/resleever/proc/get_occupant()
 	RETURN_TYPE(/mob/living/carbon/human)

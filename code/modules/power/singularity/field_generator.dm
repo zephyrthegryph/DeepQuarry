@@ -309,10 +309,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 		if(!locate_on(T, /obj/machinery/containment_field))
 			var/obj/machinery/containment_field/CF = new/obj/machinery/containment_field(T)
 			CF.set_master(src,G)
-			rel_add(src, "fields", CF)
-			rel_add(G, "fields", CF)
+			rel_add(src, nameof(fields), CF)
+			rel_add(G, nameof(G.fields), CF)
 			CF.set_dir(field_dir)
-	rel_add(src, "connected_gens", G) // symmetric: G lists us too
+	rel_add(src, nameof(connected_gens), G) // symmetric: G lists us too
 
 /obj/machinery/field_generator/proc/cleanup()
 	clean_up = 1
@@ -322,7 +322,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 			continue
 		qdel(F)
 	for(var/obj/machinery/field_generator/FG as anything in connected_gens?.Copy())
-		rel_remove(src, "connected_gens", FG) // symmetric: FG forgets us too
+		rel_remove(src, nameof(connected_gens), FG) // symmetric: FG forgets us too
 		if (QDELETED(FG))
 			continue
 		if(!FG.clean_up)//Makes the other gens clean up as well
@@ -353,5 +353,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 	. = ..()
 	update_icon()
 
-REL_LIST(/obj/machinery/field_generator, fields)
-REL_SET(/obj/machinery/field_generator, connected_gens)
+/obj/machinery/field_generator/relations()
+	. = ..()
+	. += rel_many(nameof(fields))
+	. += rel_many(nameof(connected_gens), back = nameof(/obj/machinery/field_generator::connected_gens))

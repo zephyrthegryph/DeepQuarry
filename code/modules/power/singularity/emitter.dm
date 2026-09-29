@@ -143,7 +143,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/emitter, MACHINE_PIPELINE, list(
 
 		var/obj/item/projectile/beam/emitter/A = get_emitter_beam()
 		A.damage = round(desired_beam/EMITTER_DAMAGE_POWER_TRANSFER)
-		rel_set(A, "firer", src)
+		rel_set(A, nameof(A.firer), src)
 		A.fire(dir2angle(dir))
 
 /obj/machinery/power/emitter/proc/construction_tool_act(mob/user, obj/item/W, tool_quality)

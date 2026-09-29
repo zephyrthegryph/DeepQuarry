@@ -134,7 +134,7 @@
 	else
 		act_message(M, src, MSG_SELF("%T% flickers in your hand and emits a little tone."), MSG_OTHERS("%T% flickers in %U%'s hand and emits a little tone."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_OUT)
-		rel_clear(src, "owner")
+		rel_clear(src, nameof(owner))
 
 //Let's make inviting ghosts be an option you can do instead of an automatic thing!
 /// A command to the bound mob. Re-checked on the answer: the crystal is still carried by its owner and still bound.
@@ -237,7 +237,7 @@ OWN_TIMER(/obj/item/capture_crystal, cooldown_icon)
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
 	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-	om_after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
+	after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
@@ -287,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/claim_answered(datum/om/prompt/confirm/ask)
 	var/mob/living/user = ask.answerer
 	if(ask.yes && !owner && bound_mob && bound_mob != user)
-		rel_set(src, "owner", user)
+		rel_set(src, nameof(owner), user)
 	use_crystal(user)
 
 /obj/item/capture_crystal/proc/use_crystal(mob/living/user)
@@ -317,12 +317,12 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	knowyoursignals(M, U)
-	rel_set(src, "owner", U)
+	rel_set(src, nameof(owner), U)
 	if(isanimal(M))
 		var/mob/living/simple_mob/S = M
 		S.revivedby = U.name
 	if(!bound_mob)
-		rel_set(src, "bound_mob", M)
+		rel_set(src, nameof(bound_mob), M)
 		bound_mob.capture_caught = TRUE
 		persist_storable = FALSE
 	desc = "A glowing crystal in what appears to be some kind of steel housing."
@@ -441,8 +441,8 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	om_unhook(bound_mob, /datum/om/event/qdeleting, src)
 	om_unhook(owner, /datum/om/event/qdeleting, src)
 	bound_mob.capture_caught = FALSE
-	rel_clear(src, "bound_mob")
-	rel_clear(src, "owner")
+	rel_clear(src, nameof(bound_mob))
+	rel_clear(src, nameof(owner))
 	active = FALSE
 	persist_storable = TRUE
 	update_icon()
@@ -450,7 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 /obj/item/capture_crystal/proc/owner_was_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	om_unhook(owner, /datum/om/event/qdeleting, src)
-	rel_clear(src, "owner")
+	rel_clear(src, nameof(owner))
 	active = FALSE
 	update_icon()
 
@@ -461,7 +461,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
-		rel_set(src, "bound_mob", new spawn_mob_type(src)) //Well let's spawn it then!
+		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
 		bound_mob.faction = user.faction
 		spawn_mob_type = null
 		capture(bound_mob, user)
@@ -469,7 +469,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
-			rel_set(src, "owner", user)
+			rel_set(src, nameof(owner), user)
 			if(isanimal(bound_mob))
 				var/mob/living/simple_mob/S = bound_mob
 				S.revivedby = user.name
@@ -531,7 +531,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		to_chat(U, span_notice("\The [src] clicks unsatisfyingly."))
 		active = FALSE
 		update_icon()
-		rel_clear(src, "owner")
+		rel_clear(src, nameof(owner))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 
 //Let's try to call our mob back!
@@ -998,9 +998,9 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		to_chat(U, span_warning("This creature is not suitable for capture."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
-	rel_set(src, "owner", U)
+	rel_set(src, nameof(owner), U)
 	if(!bound_mob)
-		rel_set(src, "bound_mob", M)
+		rel_set(src, nameof(bound_mob), M)
 		bound_mob.capture_caught = TRUE
 		persist_storable = FALSE
 	desc = "A silent, unassuming crystal in what appears to be some kind of steel housing. This one seems to be cheaply made and can only handle a willing mind."
@@ -1011,7 +1011,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 		return
 	if(spawn_mob_type && !bound_mob)			//We don't already have a mob, but we know what kind of mob we want
-		rel_set(src, "bound_mob", new spawn_mob_type(src)) //Well let's spawn it then!
+		rel_set(src, nameof(bound_mob), new spawn_mob_type(src)) //Well let's spawn it then!
 		bound_mob.faction = user.faction
 		spawn_mob_type = null
 		capture(bound_mob, user)
@@ -1019,7 +1019,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 		act_message(user, src, MSG_SELF("%T% grows warm in your hand, something inside is awake."), MSG_OTHERS("%T% clicks, and then emits a small chime."))
 		active = TRUE
 		if(!owner)								//Do we have an owner? It's pretty unlikely that this would ever happen! But it happens, let's claim the crystal.
-			rel_set(src, "owner", user)
+			rel_set(src, nameof(owner), user)
 			if(isanimal(bound_mob))
 				var/mob/living/simple_mob/S = bound_mob
 				S.revivedby = user.name

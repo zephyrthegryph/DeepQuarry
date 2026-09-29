@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 
 /obj/item/clothing/glasses/meson/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.meson)
+	rel_set(src, nameof(overlay), GLOB.global_hud.meson)
 
 /obj/item/clothing/glasses/meson/prescription
 	name = "prescription mesons"
@@ -161,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(gla
 
 /obj/item/clothing/glasses/science/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.science)
+	rel_set(src, nameof(overlay), GLOB.global_hud.science)
 
 /obj/item/clothing/glasses/goggles
 	name = "goggles"
@@ -191,7 +191,7 @@ TYPE_TABLE(/obj/item/clothing/glasses/night/vox, fit_spec, list(REQ_FITS_BODYTYP
 
 /obj/item/clothing/glasses/night/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.nvg)
+	rel_set(src, nameof(overlay), GLOB.global_hud.nvg)
 
 /obj/item/clothing/glasses/eyepatch
 	name = "eyepatch"
@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 
 /obj/item/clothing/glasses/material/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.material)
+	rel_set(src, nameof(overlay), GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/material/prescription
 	name = "prescription optical material scanner"
@@ -285,7 +285,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/eyepatchwhite, \
 
 /obj/item/clothing/glasses/graviton/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.material)
+	rel_set(src, nameof(overlay), GLOB.global_hud.material)
 
 /obj/item/clothing/glasses/regular
 	name = "prescription glasses"
@@ -580,7 +580,7 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/thermal, DAMAGE_EMP, PROC_REF(thermal
 
 /obj/item/clothing/glasses/thermal/Initialize(mapload)
 	. = ..()
-	rel_set(src, "overlay", GLOB.global_hud.thermal)
+	rel_set(src, nameof(overlay), GLOB.global_hud.thermal)
 
 /obj/item/clothing/glasses/thermal/syndi	//These are now a traitor item, concealed as mesons.	-Pete
 	name = "optical meson scanner"

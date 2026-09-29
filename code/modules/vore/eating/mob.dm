@@ -108,12 +108,17 @@
 
 	var/max_voreoverlay_alpha = 255
 
-OWN(/mob, soulgem, OWN_CONTAINED)
-// A mob owns its bellies (vore_organs, deleted with it); the selected / spontaneous / previewed
-// bellies are relation views onto bellies (previewing_belly names a predator's belly).
-REL(/mob, vore_selected)
-REL(/mob, spont_belly_front)
-REL(/mob, spont_belly_rear)
-REL(/mob, spont_belly_left)
-REL(/mob, spont_belly_right)
-REL(/mob, previewing_belly)
+/mob/ownership()
+	. = ..()
+	. += owns(nameof(soulgem), policy = OWN_CONTAINED)
+
+/mob/relations()
+	. = ..()
+	// A mob owns its bellies (vore_organs, deleted with it); the selected / spontaneous / previewed
+	// bellies are relation views onto bellies (previewing_belly names a predator's belly).
+	. += rel_one(nameof(vore_selected))
+	. += rel_one(nameof(spont_belly_front))
+	. += rel_one(nameof(spont_belly_rear))
+	. += rel_one(nameof(spont_belly_left))
+	. += rel_one(nameof(spont_belly_right))
+	. += rel_one(nameof(previewing_belly))

@@ -121,7 +121,7 @@
 		act_message(user, src, others = span_danger("%U% tears off %I% from %T%'s [suit.name]!"), item = A)
 	add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
 	A.on_removed(user)
-	own_take_member(suit, "accessories", A)
+	own_take_member(suit, nameof(suit.accessories), A)
 	update_inv_w_uniform()
 	return
 /datum/om/task/timed/human_handle_strip_human2
@@ -214,7 +214,7 @@
 /mob/living/carbon/human/proc/toggle_internals(mob/living/user)
 	if(internal)
 		internal.add_fingerprint(user)
-		rel_clear(src, "internal")
+		rel_clear(src, nameof(internal))
 		if(internals)
 			internals.icon_state = "internal0"
 	else
@@ -223,11 +223,11 @@
 			return
 		// Find an internal source.
 		if(istype(get_equipped_item(SLOT_ID_BACK), /obj/item/tank))
-			rel_set(src, "internal", get_equipped_item(SLOT_ID_BACK))
+			rel_set(src, nameof(internal), get_equipped_item(SLOT_ID_BACK))
 		else if(istype(get_equipped_item(SLOT_ID_SUIT_STORAGE), /obj/item/tank))
-			rel_set(src, "internal", get_equipped_item(SLOT_ID_SUIT_STORAGE))
+			rel_set(src, nameof(internal), get_equipped_item(SLOT_ID_SUIT_STORAGE))
 		else if(istype(get_equipped_item(SLOT_ID_BELT), /obj/item/tank))
-			rel_set(src, "internal", get_equipped_item(SLOT_ID_BELT))
+			rel_set(src, nameof(internal), get_equipped_item(SLOT_ID_BELT))
 
 	if(internal)
 		act_message(src, null, others = span_warning("%U% is now running on internals!"))

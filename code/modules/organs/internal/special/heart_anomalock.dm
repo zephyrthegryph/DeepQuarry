@@ -45,11 +45,11 @@ OWN_TIMER(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/add_lightning_overlay(time_to_last = 10 SECONDS)
 	if(lightning_overlay)
-		om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
+		after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 		return
 	lightning_overlay = mutable_appearance(icon = 'icons/effects/effects.dmi', icon_state = "lightning")
 	owner.add_overlay(lightning_overlay)
-	om_after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
+	after_slot(src, "lightning_timer", time_to_last, PROC_REF(clear_lightning_overlay), owner)
 
 /obj/item/organ/internal/heart/machine/anomalock/proc/clear_lightning_overlay(mob/organ_owner)
 	organ_owner?.cut_overlay(lightning_overlay)
@@ -109,8 +109,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 /obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
 	if(core || W.loc != user)
 		return
-	user.unEquip(W, TRUE, src)
-	own_set(src, "core", W)
+	if(!own_set(src, nameof(src.core), W, user = user))
+		return
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()
@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(!core)
 		return
 	balloon_alert(user, "core removed")
-	var/obj/item/removed_core = own_take(src, "core") // unowned before it goes to the hands
+	var/obj/item/removed_core = own_take(src, nameof(core)) // unowned before it goes to the hands
 	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !issilicon(user))
 		user.put_in_hands(removed_core)

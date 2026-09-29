@@ -35,7 +35,7 @@
 /obj/soulgem/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		rel_set(src, "owner", loc)
+		rel_set(src, nameof(owner), loc)
 
 /// Saves the linked belly by name, and relinks it to the owner's belly of that name.
 /datum/state_codec/soulgem_belly
@@ -48,7 +48,7 @@
 	var/obj/soulgem/gem = owner
 	if(gem.apply_stored_belly(encoded, TRUE))
 		return
-	rel_clear(gem, "linked_belly")
+	rel_clear(gem, nameof(gem.linked_belly))
 	gem.owner()?.recalculate_vis()
 
 /obj/soulgem/proc/apply_stored_belly(belly_string, skip_unreg = FALSE)
@@ -60,14 +60,14 @@
 
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
-	own_clear(target, "soulgem", OWN_DELETE)
+	own_clear(target, nameof(/mob::soulgem), OWN_DELETE)
 	var/mob/living/old_owner = owner()
 	forceMove(target)
-	rel_set(src, "owner", target)
+	rel_set(src, nameof(owner), target)
 	if(old_owner && old_owner.soulgem == src)
-		own_transfer(old_owner, "soulgem", target, "soulgem")
+		own_transfer(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
 	else
-		own_set(target, "soulgem", src)
+		own_set(target, nameof(/mob::soulgem), src)
 
 // Cleaning up our refs before deletion
 
@@ -137,13 +137,13 @@
 	if(isbrain(owner())) return
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
-	rel_set(brainmob, "gem", src)
-	rel_set(brainmob, "container", src)
+	rel_set(brainmob, nameof(brainmob.gem), src)
+	rel_set(brainmob, nameof(brainmob.container), src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, "brainmobs", brainmob)
+	own_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
@@ -155,7 +155,7 @@
 		brainmob.ext_deaf = FALSE
 		brainmob.ext_blind = FALSE
 		brainmob.parent_mob = TRUE
-		rel_set(src, "own_mind", brainmob.mind)
+		rel_set(src, nameof(own_mind), brainmob.mind)
 		om_grant(brainmob, GRANT_VERB_HIDE, /mob/proc/enter_soulcatcher, brainmob) //No recursive self capturing...
 		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/transfer_self, brainmob)
 		om_grant(brainmob, GRANT_VERB, /mob/living/carbon/brain/caught_soul/vore/proc/reenter_body, brainmob)
@@ -208,7 +208,7 @@
 	if(owner().mind)
 		catch_mob(owner(), taken_over_name)
 	self.mind.transfer_to(owner())
-	rel_clear(src, "own_mind")
+	rel_clear(src, nameof(own_mind))
 	taken_over_name = null
 	qdel(self)
 
@@ -262,9 +262,9 @@
 // Updates the selected soul after an interaction which rleased, deleted or transferred the previous one
 /obj/soulgem/proc/update_selected_soul()
 	if(length(brainmobs) > 1)
-		rel_set(src, "selected_soul", brainmobs[1])
+		rel_set(src, nameof(selected_soul), brainmobs[1])
 	else
-		rel_clear(src, "selected_soul")
+		rel_clear(src, nameof(selected_soul))
 
 // Backup toggling
 /obj/soulgem/proc/soulgem_backup()
@@ -304,18 +304,18 @@
 /obj/soulgem/proc/update_linked_belly(obj/belly, skip_unreg = FALSE)
 	if(!belly && linked_belly())
 		om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
-		rel_clear(src, "linked_belly")
+		rel_clear(src, nameof(linked_belly))
 		return
 	if(!isbelly(belly))
 		return
 	if(!linked_belly())
-		rel_set(src, "linked_belly", belly)
+		rel_set(src, nameof(linked_belly), belly)
 		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
 		return
 	if(belly != linked_belly())
 		if(!skip_unreg)
 			om_unhook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src)
-		rel_set(src, "linked_belly", belly)
+		rel_set(src, nameof(linked_belly), belly)
 		om_hook(linked_belly(), /datum/om/event/before/belly_update_vore_fx, src, PROC_REF(on_belly_vore_fx_event))
 
 // Handles the vore fx updates for the captured souls
@@ -361,7 +361,7 @@
 	if(!selected_soul()) return
 	take_control(selected_soul())
 	if(owner().mind == own_mind())
-		rel_clear(src, "own_mind")
+		rel_clear(src, nameof(own_mind))
 		taken_over_name = null
 
 // Give back control of the body to the owner
@@ -374,7 +374,7 @@
 	if(!self)
 		return
 	take_control(self)
-	rel_clear(src, "own_mind")
+	rel_clear(src, nameof(own_mind))
 	taken_over_name = null
 
 /obj/soulgem/proc/take_control(mob/M)
@@ -386,7 +386,7 @@
 	catch_mob(owner(), taken_over_name)
 	taken_over_name = M.name
 	M.mind.transfer_to(owner())
-	own_take_member(src, "brainmobs", M)
+	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
 	qdel(M)
@@ -459,19 +459,19 @@
 			to_chat(owner(), span_notice("You scan yourself to transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			if(M.mind == own_mind())
-				rel_clear(src, "own_mind")
+				rel_clear(src, nameof(own_mind))
 			mate.get_mind(M)
 	else if(istype(target, /obj/item/mmi))
 		var/obj/item/mmi/mm = target
 		if(!mm.get_occupant()?.mind)
 			if(M.mind == own_mind())
-				rel_clear(src, "own_mind")
+				rel_clear(src, nameof(own_mind))
 			to_chat(owner(), span_notice("You transfer the soul into the [target]!"))
 			to_chat(M, span_notice("[transfer_message]"))
 			mm.take_identity(M, TRUE)
 	else
 		return
-	own_take_member(src, "brainmobs", M)
+	own_take_member(src, nameof(brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
 	qdel(M)
@@ -491,11 +491,11 @@
 	if(!(gem.owner().soulcatcher_pref_flags & SOULCATCHER_ALLOW_TRANSFER))
 		return
 	if(M.mind == own_mind())
-		rel_clear(src, "own_mind")
-	own_take_member(src, "brainmobs", M)
-	rel_set(M, "gem", gem)
-	rel_set(M, "container", gem)
-	own_add(gem, "brainmobs", M)
+		rel_clear(src, nameof(own_mind))
+	own_take_member(src, nameof(brainmobs), M)
+	rel_set(M, nameof(M.gem), gem)
+	rel_set(M, nameof(M.container), gem)
+	own_add(gem, nameof(gem.brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
 
@@ -509,7 +509,7 @@
 
 // Release all captured souls as ghosts
 /obj/soulgem/proc/release_mobs()
-	rel_clear(src, "selected_soul")
+	rel_clear(src, nameof(selected_soul))
 	if(!length(brainmobs)) return
 	for(var/mob/M in brainmobs)
 		release_mob(M)
@@ -518,7 +518,7 @@
 /obj/soulgem/proc/release_mob(mob/M)
 	if(is_taken_over()) return FALSE
 	to_chat(M, span_notice("[release_message]"))
-	own_take_member(src, "brainmobs", M)
+	own_take_member(src, nameof(brainmobs), M)
 	M.ghostize(FALSE)
 	qdel(M)
 	return TRUE
@@ -549,7 +549,7 @@
 		if(_answer_a3 != "Yes")
 			return release_mob(M)
 	to_chat(M, span_danger("[delete_message]"))
-	own_take_member(src, "brainmobs", M)
+	own_take_member(src, nameof(brainmobs), M)
 	var/mob/observer/dead/ghost = M.ghostize(FALSE)
 	ghost.abandon_mob()
 	qdel(M)

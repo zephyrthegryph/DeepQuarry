@@ -48,7 +48,7 @@
 
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
-		rel_set(src, "factory", my_factory) // the pair adds us to factory.spores
+		rel_set(src, nameof(factory), my_factory) // the pair adds us to factory.spores
 	return ..()
 
 // Destroy() drops the body out before letting go.
@@ -127,9 +127,9 @@
 	attacktext = list("clawed")
 
 	H.forceMove(src)
-	rel_set(src, "infested", H)
+	rel_set(src, nameof(infested), H)
 
-	own_set(src, "say_list", new /datum/say_list/infested())
+	own_set(src, nameof(say_list), new /datum/say_list/infested())
 
 	update_icons()
 	visible_message(span_warning("The corpse of [H.name] suddenly rises!"))

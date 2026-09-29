@@ -19,7 +19,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/datum/remote_materials/rmat
 
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	own_set(src, "rmat", new /datum/remote_materials( \
+	own_set(src, nameof(rmat), new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_flags = MATCONTAINER_NO_INSERT \
@@ -114,9 +114,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
 				return TRUE
 		set_busy(TRUE)
-		user.drop_item()
-		O.forceMove(src)
-		own_set(src, "loaded_item", O)
+		if(!own_set(src, nameof(src.loaded_item), O, user = user))
+			return TRUE
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)
@@ -246,7 +245,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 
 ///Drops the loaded item where it can and nulls it.
 /obj/machinery/rnd/destructive_analyzer/proc/unload_item()
-	var/obj/item/current_item = own_take(src, "loaded_item")
+	var/obj/item/current_item = own_take(src, nameof(loaded_item))
 	if(!current_item)
 		return FALSE
 	current_item.forceMove(drop_location())
@@ -266,7 +265,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)
 	// Destroy items inside
-	own_take(src, "loaded_item") // destroyed below
+	own_take(src, nameof(loaded_item)) // destroyed below
 	var/list/destructing = list()
 	destructing += current_item
 	for(var/atom/movable/AM in contents_of(current_item))

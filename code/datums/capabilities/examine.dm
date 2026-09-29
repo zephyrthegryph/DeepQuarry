@@ -9,5 +9,6 @@
 
 /// The state lines after the description. Override with `. = ..()` then `. += "..."`.
 /atom/proc/examine_lines(mob/user)
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return caps_examine(user)

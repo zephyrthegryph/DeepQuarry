@@ -12,10 +12,10 @@
 	using.icon_state = (m_intent == I_RUN ? "running" : "walking")
 	using.screen_loc = ui_acti
 	using.layer = HUD_LAYER
-	own_add(HUD, "adding", using)
-	rel_set(HUD, "move_intent", using) // owned by HUD.adding
+	own_add(HUD, nameof(HUD.adding), using)
+	rel_set(HUD, nameof(HUD.move_intent), using) // owned by HUD.adding
 
-	own_set(src, "healths", new /atom/movable/screen())
+	own_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = HUD.ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"

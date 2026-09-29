@@ -114,7 +114,7 @@
 			to_chat(L, span_warning("\The [src] ignores you."))
 			return
 
-	rel_set(src, "friend", L)
+	rel_set(src, nameof(friend), L)
 	face_atom(L)
 	to_chat(L, span_notice("\The [src] is now your friend!"))
 	visible_emote(pick("nips [friend].", "brushes against [friend].", "tugs on [friend].", "chrrrrs."))

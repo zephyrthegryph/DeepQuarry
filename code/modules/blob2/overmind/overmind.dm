@@ -42,10 +42,10 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 	name = new_name
 	real_name = new_name
 	if(desired_blob_type)
-		own_set(src, "blob_type", new desired_blob_type())
+		own_set(src, nameof(blob_type), new desired_blob_type())
 	else
 		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		own_set(src, "blob_type", new BT())
+		own_set(src, nameof(blob_type), new BT())
 	color = blob_type.complementary_color
 	if(blob_core())
 		blob_core().update_icon()
@@ -63,12 +63,12 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/on_destroy(force)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
-			rel_clear(B, "overmind")
+			rel_clear(B, nameof(B.overmind))
 			B.update_icon() //reset anything that was ours
 
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
-			rel_clear(BM, "overmind")
+			rel_clear(BM, nameof(BM.overmind))
 			BM.update_icons()
 
 	..()
@@ -175,4 +175,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	return default_language_static
 
 // blob_type is owned (implicit OWN, own_set in Initialize); blob_mobs names spawned mobs.
-REL_LIST(/mob/observer/blob, blob_mobs)
+/mob/observer/blob/relations()
+	. = ..()
+	. += rel_many(nameof(blob_mobs))

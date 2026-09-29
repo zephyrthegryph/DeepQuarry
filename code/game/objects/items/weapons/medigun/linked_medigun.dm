@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 		to_chat(user, span_warning("You are too far away from \the [target] to heal them, Or they are not in view. Get closer."))
 		return
 
-	rel_set(src, "current_target", target)
+	rel_set(src, nameof(current_target), target)
 	busy = MEDIGUN_BUSY
 	update_icon()
 	var/myicon = "medbeam_basic"
@@ -135,7 +135,7 @@ EXTEND_INTERACTIONS(/obj/item/bork_medigun/linked, INTERACT_USE(null, PROC_REF(i
 
 	action_cancelled = FALSE
 	busy = MEDIGUN_IDLE
-	rel_clear(src, "current_target")
+	rel_clear(src, nameof(current_target))
 
 	// Now clean up the effects.
 	update_icon()

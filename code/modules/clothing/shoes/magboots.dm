@@ -81,12 +81,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	if(slot && slot != SLOT_ID_SHOES)
 		return ..()
 	set_slowdown()
-	rel_set(src, "wearer", H)
+	rel_set(src, nameof(wearer), H)
 	..()
 
 /obj/item/clothing/shoes/magboots/dropped(mob/user, equipping, slot)
 	..()
-	rel_clear(src, "wearer")
+	rel_clear(src, nameof(wearer))
 
 	var/mob/living/carbon/human/H = user
 	if(!ishuman(H))
@@ -95,7 +95,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
 	if(equipping && (slot == SLOT_ID_SHOES))
 		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
-			own_set(src, "shoes", H.get_equipped_item(SLOT_ID_SHOES))
+			own_set(src, nameof(shoes), H.get_equipped_item(SLOT_ID_SHOES))
 			H.unEquip(shoes, TRUE, src)
 			to_chat(user, "You slip \the [src] on over \the [shoes].")
 		return
@@ -103,7 +103,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	if(shoes)
 		if(!H.equip_to_slot_if_possible(shoes, SLOT_ID_SHOES, FALSE, TRUE, TRUE, TRUE))
 			shoes.forceMove(get_turf(src))
-		own_take(src, "shoes")
+		own_take(src, nameof(shoes))
 
 /obj/item/clothing/shoes/magboots/examine(mob/user)
 	. = ..()

@@ -50,9 +50,9 @@
 */
 /datum/n_Parser/proc/NextToken()
 	if(index>=tokens.len)
-		rel_clear(src, "curToken_ref")
+		rel_clear(src, nameof(curToken_ref))
 	else
-		rel_set(src, "curToken_ref", tokens[++index])
+		rel_set(src, nameof(curToken_ref), tokens[++index])
 	return curToken()
 
 /*
@@ -70,14 +70,14 @@
 */
 /datum/n_Parser/nS_Parser/New(tokens[], datum/n_scriptOptions/options)
 	src.tokens=tokens
-	rel_set(src, "options_ref", options)
-	rel_set(src, "curBlock_ref", global_block)
+	rel_set(src, nameof(options_ref), options)
+	rel_set(src, nameof(curBlock_ref), global_block)
 	return ..()
 
 /datum/n_Parser/nS_Parser/Parse()
 	ASSERT(tokens)
 	for(,src.index<=src.tokens.len, src.index++)
-		rel_set(src, "curToken_ref", tokens[index])
+		rel_set(src, nameof(curToken_ref), tokens[index])
 		switch(curToken().type)
 			if(/datum/token/keyword)
 				var/datum/n_Keyword/kw=options().keywords[curToken().value]
@@ -88,76 +88,76 @@
 			if(/datum/token/word)
 				var/datum/token/ntok
 				if(index+1>tokens.len)
-					own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
+					own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 					continue
 				ntok=tokens[index+1]
 				if(!istype(ntok, /datum/token/symbol))
-					own_add(src, "errors", new/datum/scriptError/BadToken(ntok))
+					own_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
 				if(ntok.value=="(")
 					ParseFunctionStatement()
 				else if(options().assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
-					own_add(src, "errors", new/datum/scriptError/BadToken(ntok))
+					own_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
 				if(!istype(curToken(), /datum/token/end))
-					own_add(src, "errors", new/datum/scriptError/ExpectedToken(";", curToken()))
+					own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(";", curToken()))
 					continue
 			if(/datum/token/symbol)
 				if(curToken().value=="}")
 					if(!EndBlock())
-						own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
+						own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 						continue
 				else
-					own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
+					own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 					continue
 			if(/datum/token/end)
-				own_add(src, "warnings", new/datum/scriptError/BadToken(curToken()))
+				own_add(src, nameof(warnings), new/datum/scriptError/BadToken(curToken()))
 				continue
 			else
-				own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
+				own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 				return
 	return global_block
 
 /datum/n_Parser/nS_Parser/proc/CheckToken(val, type, err=1, skip=1)
 	if(curToken().value!=val || !istype(curToken(),type))
 		if(err)
-			own_add(src, "errors", new/datum/scriptError/ExpectedToken(val, curToken()))
+			own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(val, curToken()))
 		return 0
 	if(skip)NextToken()
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/AddBlock(datum/node/BlockDefinition/B)
 	blocks.Push(curBlock())
-	rel_set(src, "curBlock_ref", B)
+	rel_set(src, nameof(curBlock_ref), B)
 
 /datum/n_Parser/nS_Parser/proc/EndBlock()
 	if(curBlock()==global_block) return 0
-	rel_set(src, "curBlock_ref", blocks.Pop())
+	rel_set(src, nameof(curBlock_ref), blocks.Pop())
 	return 1
 
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
 	var/name=curToken().value
 	if(!options().IsValidID(name))
-		own_add(src, "errors", new/datum/scriptError/InvalidID(curToken()))
+		own_add(src, nameof(errors), new/datum/scriptError/InvalidID(curToken()))
 		return
 	NextToken()
 	var/t=options().binary_operators[options().assign_operators[curToken().value]]
 	var/datum/node/statement/VariableAssignment/stmt=new()
-	own_set(stmt, "var_name", new /datum/node/identifier(name))
+	own_set(stmt, nameof(stmt.var_name), new /datum/node/identifier(name))
 	NextToken()
 	if(t)
-		own_set(stmt, "value", new t())
+		own_set(stmt, nameof(stmt.value), new t())
 		stmt.value:exp=new/datum/node/expression/value/variable(stmt.var_name)
 		stmt.value:exp2=ParseExpression()
 	else
-		own_set(stmt, "value", ParseExpression())
+		own_set(stmt, nameof(stmt.value), ParseExpression())
 	LAZYADD(curBlock().statements, stmt)
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()
 	if(!istype(curToken(), /datum/token/word))
-		own_add(src, "errors", new/datum/scriptError("Bad identifier in function call."))
+		own_add(src, nameof(errors), new/datum/scriptError("Bad identifier in function call."))
 		return
 	var/datum/node/statement/FunctionCall/stmt=new
 	stmt.func_name=curToken().value
@@ -171,14 +171,14 @@
 			CRASH("Something TERRIBLE has gone wrong in ParseFunctionStatement ;__;")
 
 		if(!curToken())
-			own_add(src, "errors", new/datum/scriptError/EndOfFile())
+			own_add(src, nameof(errors), new/datum/scriptError/EndOfFile())
 			return
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			LAZYADD(curBlock().statements, stmt)
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()
-		own_add(stmt, "parameters", P) // the parser made it: the call statement owns it
+		own_add(stmt, nameof(stmt.parameters), P) // the parser made it: the call statement owns it
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
 

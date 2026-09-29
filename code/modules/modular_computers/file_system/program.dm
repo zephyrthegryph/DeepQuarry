@@ -40,7 +40,7 @@
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()
 	if(comp && istype(comp))
-		rel_set(src, "computer", comp)
+		rel_set(src, nameof(computer), comp)
 
 /datum/computer_file/program/tgui_host()
 	return computer().tgui_host()
@@ -135,9 +135,9 @@
 // When implementing new program based device, use this to run the program.
 /datum/computer_file/program/proc/run_program(mob/living/user)
 	if(can_run(user, 1) || !requires_access_to_run)
-		rel_set(computer(), "active_program", src)
+		rel_set(computer(), nameof(/obj/item/modular_computer::active_program), src)
 		if(tguimodule_path)
-			own_set(src, "TM", new tguimodule_path(src))
+			own_set(src, nameof(TM), new tguimodule_path(src))
 			// Prefer the card inserted into the computer's card slot for access checks;
 			// fall back to the user's own access if no card is slotted.
 			var/obj/item/card/id/auth_card = computer()?.card_slot?.stored_card()
@@ -155,7 +155,7 @@
 		generate_network_log("Connection to [network_destination] closed.")
 	if(TM)
 		SStgui.close_uis(TM)
-	own_clear(src, "TM", OWN_DELETE)
+	own_clear(src, nameof(TM), OWN_DELETE)
 	return 1
 
 /datum/computer_file/program/ui_assets(mob/user)
@@ -213,10 +213,10 @@ UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
 	if(!computer().active_program())
 		return
 
-	rel_add(computer(), "idle_threads", computer().active_program())
+	rel_add(computer(), nameof(/obj/item/modular_computer::idle_threads), computer().active_program())
 	program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 
-	rel_clear(computer(), "active_program")
+	rel_clear(computer(), nameof(/obj/item/modular_computer::active_program))
 	computer().update_icon()
 	ui.close()
 

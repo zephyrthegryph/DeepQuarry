@@ -51,7 +51,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, 
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			own_put(src, "known_sectors", S.name, R)
+			own_put(src, nameof(known_sectors), S.name, R)
 
 /obj/machinery/computer/ship/helm/machine_step()
 	..()
@@ -196,7 +196,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_add)
 				return FALSE
 			R.fields["x"] = CLAMP(newx, 1, world.maxx)
 			R.fields["y"] = CLAMP(newy, 1, world.maxy)
-	own_put(src, "known_sectors", sec_name, R)
+	own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), sec_name, R)
 	. = TRUE
 	add_fingerprint(ui.user)
 	if(. && !issilicon(ui.user))
@@ -206,7 +206,7 @@ UI_ACT(/obj/machinery/computer/ship/helm, "remove", ui_act_remove, UI_ARG_REF("r
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_remove)
 	var/datum/computer_file/data/waypoint/R = params["remove"]
 	if(istype(R) && LAZYACCESS(known_sectors, R.fields["name"]) == R) // only our own entries
-		own_put(src, "known_sectors", R.fields["name"], null) // disposes of the owned record
+		own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R.fields["name"], null) // disposes of the owned record
 	. = TRUE
 	add_fingerprint(ui.user)
 	if(. && !issilicon(ui.user))

@@ -97,7 +97,7 @@
 
 	user.drop_item()
 	cuffs.forceMove(src)
-	rel_set(src, "chained", cuffs)
+	rel_set(src, nameof(chained), cuffs)
 	slowdown = 15
 	icon_state = "orange1"
 
@@ -109,7 +109,7 @@
 
 	slowdown = initial(slowdown)
 	icon_state = "orange"
-	rel_clear(src, "chained")
+	rel_clear(src, nameof(chained))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
 	INTERACT_USE("Remove cuffs", PROC_REF(orange_shoes_uncuff_self)), \

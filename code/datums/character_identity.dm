@@ -38,7 +38,7 @@
 /datum/character_identity/proc/get_dna()
 	RETURN_TYPE(/datum/dna)
 	if(QDELETED(dna()))
-		rel_clear(src, "dna")
+		rel_clear(src, nameof(dna))
 	return dna()
 
 /// Does the character carry a persistent trait of `effect_type` (or a subtype)?
@@ -67,7 +67,7 @@
 /mob/living/proc/bind_identity(datum/character_identity/I)
 	if(!I)
 		return
-	rel_set(src, "identity", I)
+	rel_set(src, nameof(identity), I)
 	on_identity_bound()
 
 /// Per-type sync hook for bind_identity(). By default a mob only records its
@@ -84,7 +84,7 @@
 /// printed from one gets it here, when its mind arrives.
 /mob/living/carbon/human/on_identity_bound()
 	..()
-	rel_set(identity(), "dna", dna)
+	rel_set(identity(), nameof(/mob::dna), dna)
 	if(identity().flavor_texts)
 		flavor_texts = identity().flavor_texts
 	else
@@ -105,9 +105,9 @@
 /mob/living/proc/share_identity(datum/character_identity/I)
 	if(!I)
 		return
-	rel_set(src, "identity", I)
+	rel_set(src, nameof(identity), I)
 	if(mind)
-		own_set(mind, "identity", I)
+		own_set(mind, nameof(mind.identity), I)
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
@@ -132,7 +132,7 @@
 	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		own_set(src, "identity", L.identity())
+		own_set(src, nameof(identity), L.identity())
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------

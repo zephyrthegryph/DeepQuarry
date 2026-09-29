@@ -22,10 +22,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_sweeper)
 	if(params["close"])
 		if(!voresweeper)
 			return FALSE
-		own_clear(src, "voresweeper", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), OWN_DELETE)
 		return TRUE
 	if(!voresweeper)
-		own_set(src, "voresweeper", new /datum/board_game/vore_sweeper(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), new /datum/board_game/vore_sweeper(pda()))
 	voresweeper.tgui_interact(ui.user)
 	return TRUE
 
@@ -34,10 +34,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_four_row)
 	if(params["close"])
 		if(!fourrow)
 			return FALSE
-		own_clear(src, "fourrow", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::fourrow), OWN_DELETE)
 		return TRUE
 	if(!fourrow)
-		own_set(src, "fourrow", new /datum/board_game/four_row(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::fourrow), new /datum/board_game/four_row(pda()))
 	fourrow.tgui_interact(ui.user)
 	return TRUE
 
@@ -46,10 +46,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_space_battle)
 	if(params["close"])
 		if(!spacebattle)
 			return FALSE
-		own_clear(src, "spacebattle", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), OWN_DELETE)
 		return TRUE
 	if(!spacebattle)
-		own_set(src, "spacebattle", new /datum/board_game/space_battle(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), new /datum/board_game/space_battle(pda()))
 	spacebattle.tgui_interact(ui.user)
 	return TRUE
 
@@ -58,10 +58,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_rgp_dice)
 	if(params["close"])
 		if(!rpgdice)
 			return FALSE
-		own_clear(src, "rpgdice", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), OWN_DELETE)
 		return TRUE
 	if(!rpgdice)
-		own_set(src, "rpgdice", new /datum/board_game/rpg_dice(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), new /datum/board_game/rpg_dice(pda()))
 	rpgdice.tgui_interact(ui.user)
 	return TRUE
 
@@ -70,10 +70,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_chess)
 	if(params["close"])
 		if(!chess)
 			return FALSE
-		own_clear(src, "chess", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::chess), OWN_DELETE)
 		return TRUE
 	if(!chess)
-		own_set(src, "chess", new /datum/board_game/chess(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::chess), new /datum/board_game/chess(pda()))
 	chess.tgui_interact(ui.user)
 	return TRUE
 
@@ -82,10 +82,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_checkers)
 	if(params["close"])
 		if(!checkers)
 			return FALSE
-		own_clear(src, "checkers", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::checkers), OWN_DELETE)
 		return TRUE
 	if(!checkers)
-		own_set(src, "checkers", new /datum/board_game/checkers(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::checkers), new /datum/board_game/checkers(pda()))
 	checkers.tgui_interact(ui.user)
 	return TRUE
 
@@ -94,10 +94,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_nine_mens_morris)
 	if(params["close"])
 		if(!ninemens)
 			return FALSE
-		own_clear(src, "ninemens", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::ninemens), OWN_DELETE)
 		return TRUE
 	if(!ninemens)
-		own_set(src, "ninemens", new /datum/board_game/nine_mens(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::ninemens), new /datum/board_game/nine_mens(pda()))
 	ninemens.tgui_interact(ui.user)
 	return TRUE
 
@@ -106,10 +106,10 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_tic_tac_toe)
 	if(params["close"])
 		if(!tictactoe)
 			return FALSE
-		own_clear(src, "tictactoe", OWN_DELETE)
+		own_clear(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), OWN_DELETE)
 		return TRUE
 	if(!tictactoe)
-		own_set(src, "tictactoe", new /datum/board_game/four_row/tic_tac_toe(pda()))
+		own_set(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), new /datum/board_game/four_row/tic_tac_toe(pda()))
 	tictactoe.tgui_interact(ui.user)
 	return TRUE
 

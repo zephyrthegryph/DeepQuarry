@@ -146,7 +146,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 	for(var/cz = uz;cz<=ez;cz++)
 
 		var/datum/turbolift_floor/cfloor = new()
-		own_add(lift, "floors", cfloor)
+		own_add(lift, nameof(lift.floors), cfloor)
 
 		var/list/floor_turfs = list()
 		// Update the appropriate turfs.
@@ -197,18 +197,18 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 					var/obj/machinery/door/airlock/lift/newdoor = new door_type(checking)
 					var/obj/machinery/door/firedoor/glass/firedoor = new firedoor_type(checking) //ition for fire doors
 					if(internal)
-						rel_set(newdoor, "lift", lift) // REL_PAIR: adds it to lift.doors too
+						rel_set(newdoor, nameof(newdoor.lift), lift) // REL_PAIR: adds it to lift.doors too
 					else
-						rel_add(cfloor, "doors", newdoor)
-						rel_set(newdoor, "floor", cfloor)
-						rel_add(cfloor, "doors", firedoor) //ition for fire doors
-						rel_set(firedoor, "turbolift_floor", cfloor)
+						rel_add(cfloor, nameof(cfloor.doors), newdoor)
+						rel_set(newdoor, nameof(newdoor.floor), cfloor)
+						rel_add(cfloor, nameof(cfloor.doors), firedoor) //ition for fire doors
+						rel_set(firedoor, nameof(firedoor.turbolift_floor), cfloor)
 						firedoor.glass = cfloor //ition for fire doors
 
 		// Place exterior control panel.
 		var/turf/placing = locate(ext_panel_x, ext_panel_y, cz)
 		var/obj/structure/lift/button/panel_ext = new(placing, lift)
-		rel_set(panel_ext, "floor", cfloor) // REL_PAIR: sets cfloor.ext_panel too
+		rel_set(panel_ext, nameof(panel_ext.floor), cfloor) // REL_PAIR: sets cfloor.ext_panel too
 		panel_ext.set_dir(udir)
 
 
@@ -238,8 +238,8 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 
 	// Place lift panel.
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
-	own_set(lift, "control_panel_interior", new /obj/structure/lift/panel(T, lift))
+	own_set(lift, nameof(lift.control_panel_interior), new /obj/structure/lift/panel(T, lift))
 	lift.control_panel_interior.set_dir(udir)
-	rel_set(lift, "current_floor", lift.floors[1])
+	rel_set(lift, nameof(lift.current_floor), lift.floors[1])
 
 	lift.open_doors()

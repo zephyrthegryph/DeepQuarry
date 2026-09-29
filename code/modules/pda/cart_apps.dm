@@ -39,7 +39,7 @@ UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
 		return
 
 	var/datum/signal/status_signal = new
-	rel_set(status_signal, "source", src)
+	rel_set(status_signal, nameof(status_signal.source), src)
 	status_signal.transmission_method = 1
 	status_signal.data["command"] = command
 
@@ -121,7 +121,7 @@ UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
 	var/datum/tgui_module/power_monitor/power_monitor
 
 /datum/data/pda/app/power/New()
-	own_set(src, "power_monitor", new /datum/tgui_module/power_monitor(src))
+	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor(src))
 	. = ..()
 
 
@@ -165,12 +165,12 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
 
 UI_ACT(/datum/data/pda/app/crew_records, "Back", ui_act_back)
 UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
-	rel_clear(src, "general_records")
+	rel_clear(src, nameof(/datum/data/pda/app/crew_records::general_records))
 	has_back = 0
 	return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
-	rel_set(src, "general_records", R)
+	rel_set(src, nameof(general_records), R)
 	has_back = 1
 
 /datum/data/pda/app/crew_records/medical
@@ -195,7 +195,7 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.medical)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			rel_set(src, "medical_records", E)
+			rel_set(src, nameof(medical_records), E)
 			break
 
 /datum/data/pda/app/crew_records/security
@@ -220,7 +220,7 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.security)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			rel_set(src, "security_records", E)
+			rel_set(src, nameof(security_records), E)
 			break
 
 /datum/data/pda/app/supply

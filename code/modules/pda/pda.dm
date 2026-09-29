@@ -226,7 +226,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)
-		rel_set(P, "pda", src)
+		rel_set(P, nameof(P.pda), src)
 
 /obj/item/pda/proc/detonate_act(obj/item/pda/P)
 	//TODO: sometimes these attacks show up on the message server
@@ -299,7 +299,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		own_take(src, "id")
+		own_take(src, nameof(id))
 
 /obj/item/pda/proc/remove_pen()
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
@@ -322,7 +322,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
-		rel_clear(src, "notifying_programs")
+		rel_clear(src, nameof(notifying_programs))
 		cut_overlay("pda-r")
 		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
@@ -370,10 +370,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		var/mob/M = loc
 		M.put_in_hands(cartridge)
 	if (cartridge.radio)
-		rel_clear(cartridge.radio, "hostpda")
+		rel_clear(cartridge.radio, nameof(/obj/item/radio/integrated::hostpda))
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
-	own_take(src, "cartridge")
+	own_take(src, nameof(cartridge))
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
@@ -385,16 +385,16 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			return 1
 		else
 			var/obj/item/I = user.get_active_hand()
-			if (istype(I, /obj/item/card/id) && user.unEquip(I))
-				I.forceMove(src)
-				own_set(src, "id", I)
+			if (istype(I, /obj/item/card/id))
+				own_set(src, nameof(src.id), I, user = user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
-		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
-			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
-			I.forceMove(src)
-			own_set(src, "id", I)
+		if (istype(I, /obj/item/card/id) && I:registered_name)
+			var/obj/old_id = own_take(src, nameof(src.id)) // handed back below, not disposed of
+			if(!own_set(src, nameof(src.id), I, user = user))
+				own_set(src, nameof(src.id), old_id)
+				return 0
 			user.put_in_hands(old_id)
 			return 1
 	return 0
@@ -413,14 +413,13 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// Old attackby.
 /obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		own_set(src, "cartridge", C)
-		user.drop_item()
-		cartridge.forceMove(src)
+		if(!own_set(src, nameof(src.cartridge), C, user = user))
+			return INTERACTION_HANDLED_PASS
 		cartridge.update_programs(src)
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
 		if(cartridge.radio)
-			rel_set(cartridge.radio, "hostpda", src)
+			rel_set(cartridge.radio, nameof(/obj/item/radio/integrated::hostpda), src)
 
 	else if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
@@ -441,8 +440,8 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 					add_overlay("pda-id")
 			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
-		user.drop_item(src)
-		own_set(src, "pai", C)
+		if(!own_set(src, nameof(src.pai), C, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))
@@ -527,7 +526,9 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
 // Its ID drops out when it is destroyed, unless flagged (delete_id) to go with it.
-OWN_IF(/obj/item/pda, id, OWN_DELETE, delete_id, OWN_SPILL)
+/obj/item/pda/ownership()
+	. = ..()
+	. += owns(nameof(id), policy = OWN_DELETE, if_var = nameof(delete_id), else_policy = OWN_SPILL)
 
 /// The scanmode this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode

@@ -40,12 +40,12 @@
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
 		alert.add_overlay(I)
-		rel_set(alert, "master_ref", new_master)
+		rel_set(alert, nameof(alert.master_ref), new_master)
 	else
 		alert.icon_state = "[initial(alert.icon_state)][severity]"
 		alert.severity = severity
 
-	own_put(src, "alerts", category, alert)
+	own_put(src, nameof(alerts), category, alert)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 	alert.transform = matrix(32, 6, MATRIX_TRANSLATE)
@@ -66,7 +66,7 @@
 	if(!alert)
 		return 0
 
-	own_take_member(src, "alerts", category)
+	own_take_member(src, nameof(alerts), category)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 		client.screen -= alert
@@ -422,7 +422,7 @@ so as to remain in compliance with the most up-to-date laws."
 
 	// Open a new chat with the user
 	var/datum/ticket_chat/TC = new()
-	rel_set(TC, "T", usr.client.current_ticket())
+	rel_set(TC, nameof(TC.T), usr.client.current_ticket())
 	TC.tgui_interact(usr.client.mob)
 
 // PRIVATE = only edit, use, or override these if you're editing the system as a whole

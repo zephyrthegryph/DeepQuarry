@@ -88,7 +88,7 @@
 		else if(!entering_vent)
 			escaping_attempts += 1
 			if(escaping_attempts >= 5)
-				rel_clear(src, "entry_vent")
+				rel_clear(src, nameof(entry_vent))
 				escaping = FALSE //We tried and failed...
 				escaping_attempts = 0
 				audible_message("[src] stops squirming around.")
@@ -98,7 +98,7 @@
 	if(removed)
 		for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 			if(!v.welded)
-				rel_set(src, "entry_vent", v)
+				rel_set(src, nameof(entry_vent), v)
 				audible_message("[src] tries to slither away!")
 				walk_to(src, v, 1, 5)
 				escaping = TRUE

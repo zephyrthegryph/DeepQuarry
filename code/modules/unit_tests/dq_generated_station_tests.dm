@@ -4,19 +4,19 @@
 	var/datum/generated_station_department_definition/engineering = new
 	engineering.id = "engineering"
 	engineering.minimum_area = 20
-	own_add(engineering, "provisions", new /datum/generated_station_capability_provision("power", 2))
+	own_add(engineering, nameof(engineering.provisions), new /datum/generated_station_capability_provision("power", 2))
 	var/datum/generated_station_department_definition/medical = new
 	medical.id = "medical"
 	medical.minimum_area = 10
-	own_add(medical, "requirements", new /datum/generated_station_capability_requirement("power", 1))
+	own_add(medical, nameof(medical.requirements), new /datum/generated_station_capability_requirement("power", 1))
 	var/datum/generated_station_department_instance/engineering_instance = new
 	engineering_instance.id = "engineering-1"
-	rel_set(engineering_instance, "definition_static", engineering)
+	rel_set(engineering_instance, nameof(engineering_instance.definition_static), engineering)
 	engineering_instance.desired_area = 24
 	engineering_instance.layout_node_id = "engineering-node"
 	var/datum/generated_station_department_instance/medical_instance = new
 	medical_instance.id = "medical-1"
-	rel_set(medical_instance, "definition_static", medical)
+	rel_set(medical_instance, nameof(medical_instance.definition_static), medical)
 	medical_instance.desired_area = 12
 	medical_instance.layout_node_id = "medical-node"
 	var/datum/generated_station_layout_node/engineering_node = new
@@ -43,14 +43,14 @@
 	spec.maximum_area = 50
 	spec.grid_width = 20
 	spec.grid_height = 12
-	own_clear(spec, "departments", OWN_DELETE)
-	own_add(spec, "departments", engineering_instance)
-	own_add(spec, "departments", medical_instance)
-	own_clear(spec, "layout_nodes", OWN_DELETE)
-	own_add(spec, "layout_nodes", engineering_node)
-	own_add(spec, "layout_nodes", medical_node)
-	own_clear(spec, "layout_edges", OWN_DELETE)
-	own_add(spec, "layout_edges", hall)
+	own_clear(spec, nameof(spec.departments), OWN_DELETE)
+	own_add(spec, nameof(spec.departments), engineering_instance)
+	own_add(spec, nameof(spec.departments), medical_instance)
+	own_clear(spec, nameof(spec.layout_nodes), OWN_DELETE)
+	own_add(spec, nameof(spec.layout_nodes), engineering_node)
+	own_add(spec, nameof(spec.layout_nodes), medical_node)
+	own_clear(spec, nameof(spec.layout_edges), OWN_DELETE)
+	own_add(spec, nameof(spec.layout_edges), hall)
 	var/datum/generated_station_validation_result/result = spec.validate()
 	TEST_ASSERT(result.is_valid(), "A complete station contract failed validation")
 	qdel(result)
@@ -64,15 +64,15 @@
 	var/datum/generated_station_department_definition/department_definition = new
 	department_definition.id = "isolated"
 	department_definition.minimum_area = 10
-	own_add(department_definition, "requirements", new /datum/generated_station_capability_requirement("atmosphere", 1))
-	own_add(department_definition, "requirements", new /datum/generated_station_capability_requirement("optional-network", 1, TRUE))
+	own_add(department_definition, nameof(department_definition.requirements), new /datum/generated_station_capability_requirement("atmosphere", 1))
+	own_add(department_definition, nameof(department_definition.requirements), new /datum/generated_station_capability_requirement("optional-network", 1, TRUE))
 	var/datum/generated_station_department_instance/department = new
 	department.id = "isolated-1"
-	rel_set(department, "definition_static", department_definition)
+	rel_set(department, nameof(department.definition_static), department_definition)
 	department.desired_area = 5
 	department.layout_node_id = "missing-node"
 	var/datum/generated_station_spec/spec = new
-	own_add(spec, "departments", department)
+	own_add(spec, nameof(spec.departments), department)
 	var/datum/generated_station_validation_result/result = spec.validate()
 	TEST_ASSERT(!result.is_valid(), "An invalid station contract passed validation")
 	TEST_ASSERT(result.count_severity(GENERATED_STATION_ISSUE_ERROR) >= 3, "Validation omitted required contract errors")

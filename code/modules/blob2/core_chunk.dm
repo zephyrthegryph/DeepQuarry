@@ -33,7 +33,7 @@ DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 		name = "inert [initial(name)]"
 
 	else
-		own_set(src, "blob_type", new parentblob.type)
+		own_set(src, nameof(blob_type), new parentblob.type)
 		name = "[blob_type.name] [initial(name)]"
 
 	if(blob_type)
@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 		// The new overmind gets its own instance: this chunk keeps (and deletes) its own.
 		var/datum/blob_type/copy = new blob_type.type
 		copy.faction = blob_type.faction
-		own_set(NC.overmind, "blob_type", copy)
+		own_set(NC.overmind, nameof(/mob/observer/blob::blob_type), copy)
 		NC.overmind.blob_core().update_icon()
 		return TRUE
 

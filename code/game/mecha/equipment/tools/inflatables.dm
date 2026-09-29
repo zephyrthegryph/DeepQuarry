@@ -14,7 +14,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Initialize(mapload)
 	. = ..()
-	rel_set(src, "my_deployer", my_tool)
+	rel_set(src, nameof(my_deployer), my_tool)
 
 TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, "toggle_deployable_mode", PROC_REF(topic_toggle_deployable_mode))
 

@@ -66,7 +66,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	has_projectiles = null
 	for(var/angle in angles)
 		var/obj/item/projectile/P = new fires_projectile(src)
-		rel_set(P, "firer", src)
+		rel_set(P, nameof(P.firer), src)
 		P.damage = angles[angle]
 		P.accuracy = 350
 		P.dispersion = 0
@@ -312,7 +312,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	has_projectiles = null
 	if(total_damage)
 		var/obj/item/projectile/P = new fires_projectile(src)
-		rel_set(P, "firer", src)
+		rel_set(P, nameof(P.firer), src)
 		P.damage = total_damage
 		P.accuracy = 350
 		P.dispersion = 0

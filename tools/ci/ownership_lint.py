@@ -24,8 +24,19 @@ contradicts itself or a declaration. It checks:
   handle          om_handle()/om_resolve() or a `*_handle` var outside the core: a content var
                   naming an entity is a relation.
   unknown_var     an accessor naming a var (by string) that the receiver's type doesn't have.
+  string_name     an accessor naming its var with a string literal: var names are nameof(var) /
+                  nameof(x.var) / nameof(/type::var), so the compiler checks them.
   removed         the deleted forms: DECLARE_REF, OM_STATIC_TYPE, REFKIND_*, link_set/link_clear,
-                  WEAK_LIST_*, weak_list_live, DuplicateObject.
+                  WEAK_LIST_*, weak_list_live, DuplicateObject, and the declaration macros that
+                  ownership()/relations() replaced (OWN, OWN_POLICY, OWN_IF, SHARED, PROTO, REL,
+                  REL_LIST, REL_PAIR, REL_PAIR_LIST, REL_SET, REL_KEYED, REL_KEYED_LIST,
+                  KEYED_TARGET, KEEP_AFTER_DESTROY, POOL_RESET, FORWARD_STATE) with their procs
+                  (declared_ownership, own_declare, keyed_target_var, declared_keep_vars,
+                  declared_pool_reset, declared_forward_vars, declare_ownership).
+
+Declarations are read from `/type/ownership()` and `/type/relations()` overrides: each body line
+`. += owns(nameof(v), policy = ...)`, `shares(...)`, `proto(...)`, `rel_one(...)` or `rel_many(...)`
+declares v on the type.
 
 A site kept on purpose carries `// ALLOW(ownership): <reason>` (tools/ci/allow_annotations.py).
 
@@ -64,12 +75,18 @@ MEMBER = re.compile(r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/
 OM_FIELD_DECL = re.compile(r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,")
 ABS_MEMBER = re.compile(r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
 TYPED_NAME = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
-DECL = re.compile(r"^(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEEP_AFTER_DESTROY|POOL_RESET)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*(?:,\s*(.*?))?\)\s*$")
+DECLARE_HEAD = re.compile(r"^(/[\w/]+)/(?:ownership|relations)\(\)")
+DECLARE_CALL = re.compile(r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$")
+# An accessor's var-name argument: a string literal (banned, `string_name`) or nameof(v) /
+# nameof(x.v) / nameof(/type::v). Group: the var name.
+VAR_ARG = r"(?:\"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:\"|\))"
 REGISTRY = re.compile(r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,")
-ACCESSOR = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*\"(\w+)\"")
-TRANSFER_DEST = re.compile(r"\bown_transfer\([^,]+,\s*\"\w+\"\s*,\s*([\w.]+)\s*,\s*\"(\w+)\"")
+ACCESSOR = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*" + VAR_ARG)
+TRANSFER_DEST = re.compile(r"\bown_transfer\([^,]+,\s*" + VAR_ARG.replace("(\\w+)", "\\w+") + r"\s*,\s*([\w.]+)\s*,\s*" + VAR_ARG)
+STRING_NAME = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()\"]|\([^()]*\))*,\s*\"\w+\""
+                         r"|\b(own_move)\((?:[^,()\"]|\([^()]*\))*,(?:[^,()\"]|\([^()]*\))*,\s*\"\w+\"")
 OWN_FUNCS = {"own_set", "own_take", "own_add", "own_remove", "own_put", "own_take_member", "own_clear", "own_transfer"}
-REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear"}
+REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"}
 PROTO_FUNCS = {"proto_set", "proto_private"}
 
 WRITE_ASSIGN = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
@@ -79,7 +96,8 @@ WRITE_MACRO = re.compile(r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSO
 CALLBACK = re.compile(r"\bCALLBACK\(")
 HANDLE_CALL = re.compile(r"\bom_(handle|resolve|handle_of|handle_is|resolve_all)\(")
 HANDLE_VAR = re.compile(r"^\s*var/(?:[\w]+/)*(\w+_handle)\b|^(/[\w/]+?)/var/(?:[\w]+/)*(\w+_handle)\b")
-REMOVED = re.compile(r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs)\b")
+REMOVED = re.compile(r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs|declared_ownership|own_declare|keyed_target_var|declared_keep_vars|declared_pool_reset|declared_forward_vars|declare_ownership)\b"
+                     r"|\b(?:OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)(?=\()")
 LOCAL_DECL = re.compile(r"\bvar/(?:[\w]+/)*(\w+)")
 
 
@@ -142,19 +160,46 @@ class Index:
         self.members.setdefault(owner, {})[name] = (vtype, is_list)
         self.name_decls[name].append((owner, vtype, is_list))
 
+    def add_decl(self, owner, func, name, opts, r, no):
+        """One entry in owner's ownership()/relations() list: recorded under the kind's old macro name
+        (the checks below key on it). An own() with no policy only annotates: no kind."""
+        opts = opts or ""
+        if func == "owns":
+            if "policy_proc" in opts:
+                macro = "OWN_POLICY"
+            elif "if_var" in opts:
+                macro = "OWN_IF"
+            elif re.search(r"\bpolicy\s*=\s*OWN_NONE\b", opts):
+                macro = "ANNOTATE"
+            else:
+                macro = "OWN"
+        elif func == "shares":
+            macro = "SHARED"
+        elif func in ("rel_one", "rel_many"):
+            macro = "REL"
+        else:
+            macro = func.upper()
+        self.decls[owner][name] = (macro, opts, r, no)
+
     def index_file(self, r, raw, code):
         current = None
+        declaring = None
         for no, line in enumerate(code, 1):
             if line and line[0] in "\"'":
                 continue  # the tail of a multi-line string, not a new top-level line
-            if line and not line[0].isspace():
-                stripped = raw[no - 1].strip()
-                m = DECL.match(stripped)
+            if declaring and line and line[0].isspace():
+                m = DECLARE_CALL.match(raw[no - 1])
                 if m:
-                    self.decls[m.group(2)][m.group(3)] = (m.group(1), m.group(4) or "", r, no)
+                    self.add_decl(declaring, m.group(1), m.group(2), m.group(3), r, no)
+                continue
+            declaring = None
+            if line and not line[0].isspace():
+                m = DECLARE_HEAD.match(line)
+                if m:
+                    declaring = m.group(1)
                     current = None
                     continue
-                m = REGISTRY.match(stripped)
+                m = REGISTRY.match(raw[no - 1].strip())
                 if m:
                     self.registry.append(m.group(1))
                     continue
@@ -331,6 +376,16 @@ def main(argv=None):
     for (r, no, msg) in UNKNOWN_VARS:
         report("unknown_var", r, no, msg)
 
+    for r, (raw, code) in idx.files.items():
+        for no, line in enumerate(code, 1):
+            # code_only() blanks string contents, so match the raw line where the code line has a call
+            if "(" not in line:
+                continue
+            hit = STRING_NAME.search(raw[no - 1].split("//", 1)[0])
+            # the call itself must be code (a name inside a string or comment is blanked in `line`)
+            if hit and re.search(r"%s\(" % (hit.group(1) or hit.group(2)), line) and not allowed(raw, no, "ownership"):
+                report("string_name", r, no, "%s(): name the var with nameof(), not a string" % (hit.group(1) or hit.group(2)))
+
     decl_kind_of = {"OWN": "OWN", "OWN_POLICY": "OWN", "OWN_IF": "OWN", "SHARED": "SHARED", "PROTO": "PROTO",
                     "REL": "REL", "REL_LIST": "REL", "REL_PAIR": "REL", "REL_PAIR_LIST": "REL", "REL_SET": "REL",
                     "REL_KEYED": "REL", "REL_KEYED_LIST": "REL"}
@@ -435,7 +490,7 @@ def main(argv=None):
             c = code[no - 1] if no - 1 < len(code) else ""
             if REMOVED.search(c) and not r.startswith("tools/"):
                 if not allowed(raw, no, "ownership"):
-                    report("removed", r, no, "%s was removed (doc/rewrite/ownership.md)" % REMOVED.search(c).group(1))
+                    report("removed", r, no, "%s was removed (doc/rewrite/ownership.md)" % REMOVED.search(c).group(0))
             if CALLBACK.search(c) and not r.startswith(CALLBACK_OK) and not allowed(raw, no, "ownership"):
                 report("callback", r, no, "CALLBACK outside the core: use om_after() (arguments held as handles)")
             if not r.startswith(HANDLE_OK):

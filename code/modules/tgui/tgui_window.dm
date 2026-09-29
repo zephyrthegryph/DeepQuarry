@@ -67,7 +67,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
  */
 /datum/tgui_window/New(client/client, id, pooled = FALSE)
 	src.id = id
-	rel_set(src, "client", client)
+	rel_set(src, nameof(client), client)
 	src.client().tgui_windows[id] = src
 	src.pooled = pooled
 	if(pooled)
@@ -99,7 +99,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 	#endif
 	if(!client())
 		return
-	rel_set(src, "asset_generation", SStgui.get_current_asset_generation())
+	rel_set(src, nameof(asset_generation), SStgui.get_current_asset_generation())
 	var/list/resolved_assets = list()
 	var/include_tgui_shell = FALSE
 	for(var/datum/asset/asset in assets)
@@ -286,7 +286,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 		#endif
 	generation++
 	locked = TRUE
-	rel_set(src, "locked_by", ui)
+	rel_set(src, nameof(locked_by), ui)
 	visible = FALSE
 
 /**
@@ -299,7 +299,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 	if(locked)
 		sent_assets = list()
 	locked = FALSE
-	rel_clear(src, "locked_by")
+	rel_clear(src, nameof(locked_by))
 
 /**
  * public
@@ -311,7 +311,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
  * to support multiple subscribers.
  */
 /datum/tgui_window/proc/subscribe(datum/object, delegate)
-	rel_set(src, "subscriber_object", object)
+	rel_set(src, nameof(subscriber_object), object)
 	subscriber_delegate = delegate
 
 /**
@@ -320,7 +320,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
  * Unsubscribes the datum. Do not forget to call this when cleaning up.
  */
 /datum/tgui_window/proc/unsubscribe(datum/object)
-	rel_clear(src, "subscriber_object")
+	rel_clear(src, nameof(subscriber_object))
 	subscriber_delegate = null
 
 /**
@@ -643,7 +643,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 		"count" = chunk_count,
 		"chunks" = list(),
 	)
-	om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+	after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/append_payload_chunk(payload_id, chunk)
 	var/list/payload = LAZYACCESS(oversized_payloads, payload_id)
@@ -661,7 +661,7 @@ OWN_TIMER(/datum/tgui_window, payload_timeout)
 			return
 		on_message(message_type, json_decode(final_payload), list("type" = message_type, "payload" = final_payload, "tgui" = TRUE, "window_id" = id))
 	else
-		om_after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
+		after_slot(src, "payload_timeout:[payload_id]", 10 SECONDS, PROC_REF(remove_oversized_payload), payload_id)
 
 /datum/tgui_window/proc/remove_oversized_payload(payload_id)
 	LAZYREMOVE(oversized_payloads, payload_id)

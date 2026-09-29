@@ -49,9 +49,9 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 	var/tele_z
 
 /obj/effect/simple_portal/coords/handle_teleport(atom/movable/AM)
-	rel_clear(src, "destination")
+	rel_clear(src, nameof(destination))
 	if(!isnull(tele_x) && !isnull(tele_y) && !isnull(tele_z))
-		rel_set(src, "destination", locate(tele_x,tele_y,tele_z))
+		rel_set(src, nameof(destination), locate(tele_x,tele_y,tele_z))
 	. = ..()
 
 /obj/effect/simple_portal/linked
@@ -60,19 +60,19 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 	var/portal_id
 
 /obj/effect/simple_portal/linked/handle_teleport(atom/movable/AM)
-	rel_clear(src, "destination")
+	rel_clear(src, nameof(destination))
 	update_icon()
 	if(linked_portal() && icon_state == "portal")
 		var/rel_x = round(rand(-1,1))
 		var/rel_y = round(rand(-1,1))
 		var/movingdir = get_dir(AM,src)
 		if(!isnull(movingdir))
-			rel_set(src, "destination", get_step(get_turf(linked_portal()),movingdir))
+			rel_set(src, nameof(destination), get_step(get_turf(linked_portal()),movingdir))
 		else
 			while(rel_x == 0 && rel_y == 0)
 				rel_x = round(rand(-1,1))
 				rel_y = round(rand(-1,1))
-			rel_set(src, "destination", locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+			rel_set(src, nameof(destination), locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
 		if(!valid_destination(destination()))
 			var/list/possible_x = shuffle(list(-1,0,1))
 			var/list/possible_y = shuffle(list(-1,0,1))
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 				for(rel_y in possible_y)
 					if(rel_x == 0 && rel_y == 0)
 						continue
-					rel_set(src, "destination", locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+					rel_set(src, nameof(destination), locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
 					if(valid_destination(destination()))
 						break
 	. = ..()
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 		return "SET PORTAL ID FIRST"
 	for(var/obj/effect/simple_portal/linked/candidate in REGISTRY_MEMBERS(REGISTRY_SIMPLE_PORTALS))
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
-			rel_set(src, "linked_portal", candidate)
+			rel_set(src, nameof(linked_portal), candidate)
 			break
 	update_icon()
 

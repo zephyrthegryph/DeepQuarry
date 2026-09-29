@@ -124,9 +124,9 @@
 		cable_turfs = list()
 
 		for(C in world)
-			rel_clear(src, "T")
+			rel_clear(src, nameof(T))
 
-			rel_set(src, "T", get_turf(C))
+			rel_set(src, nameof(T), get_turf(C))
 			var/area/A = get_area(T)
 			if(T && (T.z in zs_to_test) && !(A.type in exempt_from_wires))
 				if(C.color == GLOB.possible_cable_coil_colours[color])

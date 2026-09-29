@@ -3,35 +3,9 @@
 	anim_length_before_finalize = 3
 	icon = 'icons/obj/doors/angled/tgmc/generic.dmi'
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock/angled_tgmc, TYPE_PROC_REF(/atom, appearance_overlays), list("get_integrity"))
-/obj/machinery/door/airlock/angled_tgmc/appearance_overlays()
-	. = list()
-	if(density)
-		if(locked && lights && src.arePowerSystemsOn())
-			icon_state = "door_locked"
-		else
-			icon_state = "door_closed"
-		if(p_open || welded)
-			if(p_open)
-				. += "panel_open"
-			if (!has_stat(NOPOWER))
-				if(has_stat(BROKEN))
-					. += "sparks_broken"
-				else if (get_integrity() < max_integrity * 3/4)
-					. += "sparks_damaged"
-			if(welded)
-				. += "welded"
-		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
-			. += "sparks_damaged"
-	else if (locked)
-		icon_state = "o_door_locked"
-		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			. += "sparks_open"
-	else
-		icon_state = "door_open"
-		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			. += "sparks_open"
-	return .
+/// These sprites show the bolts on an open door too.
+/obj/machinery/door/airlock/angled_tgmc/open_state()
+	return is_bolted(src) ? "o_door_locked" : "door_open"
 
 /obj/machinery/door/airlock/angled_tgmc/cell
 	icon = 'icons/obj/doors/angled/tgmc/celldoor.dmi'

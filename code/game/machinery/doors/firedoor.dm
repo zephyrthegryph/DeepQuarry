@@ -74,7 +74,9 @@
 			areas_added += A
 
 // A lift floor's firedoor: one-sided view (the floor lists it in its own doors REL_LIST).
-REL(/obj/machinery/door/firedoor, turbolift_floor)
+/obj/machinery/door/firedoor/relations()
+	. = ..()
+	. += rel_one(nameof(turbolift_floor))
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
@@ -127,7 +129,7 @@ REL(/obj/machinery/door/firedoor, turbolift_floor)
 		. += "These people have opened \the [src] during an alert: [users_to_open_string]."
 
 /obj/machinery/door/firedoor/Bumped(atom/AM)
-	if(p_open || operating)
+	if(panel_is_open(src) || operating)
 		return
 	if(!density)
 		return ..()

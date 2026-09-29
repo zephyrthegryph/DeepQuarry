@@ -76,7 +76,7 @@
 
 /mob/living/simple_mob/vore/gryphon/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/gryphon/beak(src)
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 	B.affects_vore_sprites = FALSE
 	B.own_emote_lists()
 	B.emote_lists[DM_HOLD] = list("You get pushed around the creature's maw, that tongue pressing you against the roof of its mouth and humming as it savors your taste",
@@ -145,7 +145,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/proc/toggle_
 /mob/living/simple_mob/vore/gryphon/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
+		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 0
 
 /datum/say_list/gryphon

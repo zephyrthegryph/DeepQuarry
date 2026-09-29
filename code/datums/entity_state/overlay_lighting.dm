@@ -88,20 +88,20 @@
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
 	var/datum/overlay_lighting/light = new(new_owner, _range, _power, _color, starts_on, is_directional)
-	own_set(new_owner, "overlay_light", light)
+	own_set(new_owner, nameof(new_owner.overlay_light), light)
 	light.attach()
 	return light
 
 /datum/overlay_lighting/New(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
 	..()
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	var/atom/movable/movable_parent = owner
 
-	own_set(src, "visible_mask", new /obj/effect/overlay/light_visible())
+	own_set(src, nameof(visible_mask), new /obj/effect/overlay/light_visible())
 	if(is_directional)
 		directional = TRUE
-		own_set(src, "directional_atom", new /obj/effect/abstract/directional_lighting())
-		own_set(src, "cone", new /obj/effect/overlay/light_cone())
+		own_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
+		own_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
 		cone_hint_x = movable_parent.light_cone_x_offset
 		cone_hint_y = movable_parent.light_cone_y_offset
 		set_direction(movable_parent.dir)
@@ -165,17 +165,17 @@
 	set_holder(null)
 	clean_old_turfs()
 	if(owner?.overlay_light == src)
-		own_take(owner, "overlay_light")
-	rel_clear(src, "owner")
+		own_take(owner, nameof(owner.overlay_light))
+	rel_clear(src, nameof(owner))
 	// The mask, cone and directional atom refuse any delete that isn't
 	// forced (only we may delete them). Phase 4's owned-var sweep qdels
 	// without force, so release them here, forced, before it runs.
 	qdel(visible_mask, TRUE)
-	own_take(src, "visible_mask")
+	own_take(src, nameof(visible_mask))
 	qdel(directional_atom, TRUE)
-	own_take(src, "directional_atom")
+	own_take(src, nameof(directional_atom))
 	qdel(cone, TRUE)
-	own_take(src, "cone")
+	own_take(src, nameof(cone))
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()
@@ -229,7 +229,7 @@
 		return
 
 	. = parent_attached_to()
-	rel_set(src, "parent_attached_to", new_parent_attached_to)
+	rel_set(src, nameof(parent_attached_to), new_parent_attached_to)
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
 		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
@@ -256,7 +256,7 @@
 				om_unhook(current_holder(), /datum/om/event/atom_dir_change, src)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
-	rel_set(src, "current_holder", new_holder)
+	rel_set(src, nameof(current_holder), new_holder)
 	if(new_holder == null)
 		clean_old_turfs()
 		return

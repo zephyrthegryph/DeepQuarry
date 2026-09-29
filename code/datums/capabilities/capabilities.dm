@@ -11,6 +11,7 @@
 /// per type and cached: `. = ..()` then `. += ...`; `. = without(., /datum/capability/x)` drops one.
 /// Pure: read no instance state here.
 /atom/proc/capabilities()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -53,7 +54,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
 /proc/cap_of(atom/A, key)
-	for(var/datum/capability/C as anything in caps_of(A))
+	for(var/datum/capability/C as anything in caps_all(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			return C
 	return null
@@ -80,6 +81,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// Sets or clears `bits` on A through the change path. TRUE when the state changed.
 /proc/cap_set(atom/A, bits, on)
+	if(isnull(on))
+		CRASH("cap_set: `on` is required (TRUE to set, FALSE to clear) for [A?.type]")
 	var/was = A.cap_state
 	if(on)
 		A.cap_state |= bits
@@ -135,6 +138,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
  *			. += /obj/item/healthanalyzer/proc/toggle_adv
  */
 /atom/proc/type_verbs()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -160,7 +164,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		for(var/datum/capability/C as anything in caps_of(src))
 			C.on_holder_init(src, mapload)
 			cap_join_systems(src, C)
-	if(flags || periodic_cadence)
+	if(flags || periodic_cadence || periodic_interval)
 		changed(src)
 
 /// TYPE_DERIVES_* known so far for A's type. A type seen for the first time is TYPE_DERIVES_PENDING
@@ -197,6 +201,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /atom/proc/caps_destroy()
+	if(timed_until)
+		timed_cancel_all(src)
 	var/flags = GLOB.type_derives_cache[type]
 	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !cap_data && !cap_extras)
 		return
@@ -264,7 +270,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /**
  * Why `entry` (a capability entry of A) can't run for user now, or null. Order: broken, unpowered,
  * behind (needs the bits SET), blocked_by (needs them CLEAR: "only while the cover is closed"),
- * locked_by, needs, then every capability's gate() (the cover, the lock, a slot's rules).
+ * locked_by, needs (global chk_* refs or holder procs: library/checks.dm), then every capability's gate() (the cover, the lock, a slot's rules).
  */
 /proc/cap_gate_reason(atom/A, mob/user, obj/item/held, datum/interaction/capability/entry)
 	if(!entry.works_broken && is_broken(A))
@@ -276,6 +282,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
+	if(entry.cooldown && A.entry_cooldowns?[entry.id] > world.time)
+		return "it isn't ready yet"
 	if(entry.blocked_by & A.cap_state)
 		var/present = entry.blocked_by & A.cap_state
 		if(present & CAP_COVER_OPEN)
@@ -285,14 +293,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		return "you can't do that in its current state"
 	if(entry.locked_by && (A.cap_state & entry.locked_by))
 		return "it's locked"
-	if(entry.needs)
-		var/list/needs = islist(entry.needs) ? entry.needs : list(entry.needs)
-		for(var/proc_ref in needs)
-			var/result = call(A, proc_ref)(user, held)
-			if(istext(result))
-				return result
-			if(!result)
-				return entry.else_say || "you can't do that right now"
+	var/needs_reason = cap_needs_reason(A, user, held, entry.needs, entry.else_say)
+	if(needs_reason)
+		return needs_reason
 	for(var/datum/capability/C as anything in caps_all(A))
 		var/reason = C.gate(A, user, entry)
 		if(reason)
@@ -317,9 +320,15 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/works_broken = FALSE
 	var/works_unpowered = FALSE
 	var/log
+	/// Deciseconds after a success before this entry works again on the same holder (a per-holder,
+	/// per-entry cooldown owned by the framework: no COOLDOWN_DECLARE trio in the type).
+	var/cooldown
 	/// Whether the handler takes the held item: (mob/user, obj/item/held, ...). hand() handlers are
 	/// (mob/user, ...); tool()/use_on()/insert() and library item entries pass `held`.
 	var/passes_held = TRUE
+	/// Whether the handler also gets its capability as the named arg `cap` (review 2 M15: a handler
+	/// that serves several capability instances is told which, never looks it up after a sleep).
+	var/passes_cap = FALSE
 	/// Form fields (choice_field()/text_field()/number_field()): asked in order, answers passed by name.
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
@@ -327,6 +336,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// A proc on the holder, () -> whether this entry is offered at all on this instance (not a refusal:
 	/// the entry doesn't exist for it). Cheap, no actor.
 	var/applies
+	/// The entry never touches the holder's live parts (cap_electrify() doesn't zap it).
+	var/insulated = FALSE
 
 /// Keyed by the entry itself: two capabilities can build entries with one id (the same handler
 /// and name) but different selectors (anchor(tool = TOOL_WRENCH) vs anchor(tool = TOOL_SCREWDRIVER)).
@@ -361,9 +372,23 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
 
+/atom
+	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
+	var/tmp/list/entry_cooldowns
+
+/// Starts entry E's cooldown on A (after a success).
+/proc/cap_entry_cooldown_start(atom/A, datum/interaction/capability/E)
+	if(!E?.cooldown || QDELETED(A))
+		return
+	LAZYSET(A.entry_cooldowns, E.id, world.time + E.cooldown)
+
 /// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
 /// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
+/// The default asks each capability's own before_entry() (cap_electrify() zaps here).
 /atom/proc/before_entry(mob/user, datum/interaction/capability/entry, obj/item/held)
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.before_entry(src, user, held, entry))
+			return FALSE // stopped (the capability told the user)
 	return TRUE
 
 /// TRUE while none of this atom's capability entries are offered at all (a frozen airlock): input
@@ -377,6 +402,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	var/list/named = list("user" = ctx.user)
 	if(E.passes_held)
 		named["held"] = ctx.held
+	if(E.passes_cap)
+		named["cap"] = E.cap
 	if(length(E.form))
 		return cap_dispatch_form(ctx, named)
 	return dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
@@ -395,6 +422,10 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		named["held"] = ctx.held
 	else
 		named -= "held"
+	if(E.passes_cap)
+		named["cap"] = E.cap
+	else
+		named -= "cap"
 	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
 
 /**
@@ -446,7 +477,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return list(entry)
 
 /// Shared constructor body for hand()/tool()/use_on()/insert().
-/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_entry(entry_kind, name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, list/form, held_type, tool_quality, delay, priority, stance, name_proc, applies, blocked_by, cooldown, fuel = 0, volume)
 	var/datum/capability/entry/C = new
 	var/datum/interaction/capability/E = new
 	E.name = name
@@ -455,6 +486,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	E.behind = behind
 	E.blocked_by = blocked_by
 	E.passes_held = entry_kind != "hand"
+	E.cooldown = cooldown
 	E.locked_by = locked_by
 	E.needs = needs
 	E.else_say = else_say
@@ -463,6 +495,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	E.log = log
 	E.form = form
 	E.name_proc = name_proc
+	// Reach, as every resolver-native interaction has it: the empty-hand path asks the resolver
+	// before it checks adjacency.
+	E.requires = list(REQ_INTERACTION_REACH)
 	E.applies = applies
 	E.priority = priority || 0
 	E.stance = stance
@@ -474,7 +509,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.default_action = INPUT_ACTION_USE
 		if("tool")
 			E.tool = tool_quality
-			E.duration = delay || 0
+			E.tool_amount = fuel || 0
+			if(!isnull(volume))
+				E.tool_volume = volume
 			E.category = INTERACTION_CAT_MAINTAIN
 			E.default_action = INPUT_ACTION_USE
 		if("use_on")
@@ -485,6 +522,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.held_type = held_type
 			E.category = INTERACTION_CAT_INSERT
 			E.default_action = INPUT_ACTION_USE
+	E.duration = delay || 0
 	E.apply_stance_tags()
 	C.entry = E
 	C.key = E.id
@@ -494,17 +532,43 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	return C
 
 /// An empty-hand action: hand("Toggle", PROC_REF(toggle)). Handler (mob/user).
-/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
-	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, null, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_hand(name, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay, cooldown)
+	return cap_entry("hand", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, null, delay, priority, stance, name_proc, applies, blocked_by, cooldown)
 
 /// A tool action: tool("Unbolt", TOOL_WRENCH, PROC_REF(unbolt), delay = 2 SECONDS). Handler (mob/user, obj/item/held).
-/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
-	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by)
+/// `fuel`: welder fuel (or other tool resource) used; `volume`: the tool sound's volume (0 for none).
+/proc/cap_tool(name, quality, handler, delay, behind = NONE, locked_by = NONE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, fuel = 0, volume, cooldown)
+	return cap_entry("tool", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, null, quality, delay, priority, null, name_proc, applies, blocked_by, fuel = fuel, volume = volume, cooldown = cooldown)
 
 /// Using a held item of `held_type` on the holder, which keeps the item. Handler (mob/user, obj/item/held).
-/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE)
-	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, stance, name_proc, applies, blocked_by)
+/proc/cap_use_on(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = FALSE, log, list/form, priority, stance, name_proc, applies, blocked_by = NONE, delay, cooldown)
+	return cap_entry("use_on", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, stance, name_proc, applies, blocked_by, cooldown)
 
 /// Putting a held item of `held_type` into the holder (the handler adopts it: own_set moves it).
-/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE)
-	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, null, priority, null, name_proc, applies, blocked_by)
+/proc/cap_insert(name, held_type, handler, behind = NONE, locked_by = NONE, needs, else_say, works_broken = FALSE, works_unpowered = TRUE, log, list/form, priority, name_proc, applies, blocked_by = NONE, delay, cooldown)
+	return cap_entry("insert", name, handler, behind, locked_by, needs, else_say, works_broken, works_unpowered, log, form, held_type, null, delay, priority, null, name_proc, applies, blocked_by, cooldown)
+
+// ---- periodic work from capabilities (cadence / cap_should_run / cap_periodic_step) ----
+
+/// Any capability with periodic work that wants to run keeps the holder stepping.
+/atom/should_run()
+	. = ..()
+	if(. || !(type_derive_flags(src) & TYPE_DERIVES_CAPS))
+		return
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.cadence && C.cap_should_run(src))
+			return TRUE
+	return FALSE
+
+/// Steps every capability whose periodic work wants to run. A type with its own periodic_step()
+/// calls ..() to keep its capabilities stepping.
+/atom/periodic_step(delta)
+	if(!(type_derive_flags(src) & TYPE_DERIVES_CAPS))
+		return PROCESS_KILL
+	var/stepped = FALSE
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.cadence && C.cap_should_run(src))
+			C.cap_periodic_step(src, delta)
+			stepped = TRUE
+	if(!stepped)
+		return PROCESS_KILL

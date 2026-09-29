@@ -218,7 +218,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -226,7 +226,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/binary/dp_vent_pump, MACH
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"tag" = id,

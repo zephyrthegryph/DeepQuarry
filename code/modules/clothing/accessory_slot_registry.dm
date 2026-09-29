@@ -40,7 +40,7 @@
 	var/registry_key
 
 /datum/accessory_stat_modifier/New(obj/item/clothing/new_target, label_str)
-	rel_set(src, "target", new_target)
+	rel_set(src, nameof(target), new_target)
 	if(label_str)
 		label = label_str
 
@@ -141,11 +141,11 @@
 	if(!istype(accessory) || !istype(clothing) || !istype(modifier))
 		return
 
-	rel_set(modifier, "target", clothing)
+	rel_set(modifier, nameof(modifier.target), clothing)
 	modifier.apply(clothing)
 
 	modifier.registry_key = "[REF(accessory)]:[REF(clothing)]"
-	own_move(modifier, src, "active_modifiers")
+	own_move(modifier, src, nameof(active_modifiers))
 
 /*
  * proc/remove_modifiers(obj/item/clothing/accessory/accessory,
@@ -163,7 +163,7 @@
 		if(mod.registry_key != key)
 			continue
 		mod.revert(clothing)
-		own_remove(src, "active_modifiers", mod)
+		own_remove(src, nameof(active_modifiers), mod)
 
 // remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/on_destroy(force)

@@ -90,7 +90,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
 	add_nearby_terminals()
-	own_set(src, "soundloop", new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
 	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())
@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/obj/item/smes_coil/C = locate_in_list(component_parts, /obj/item/smes_coil)
 		if(isnull(C))
 			break
-		own_take_member(src, "component_parts", C)
+		own_take_member(src, nameof(component_parts), C)
 		qdel(C)
 		cur_coils--
 	// Rebuild from mapper's coils
@@ -133,7 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		if (cur_coils < max_coils)
 			var/obj/item/W = parts_found[i]
 			cur_coils++
-			own_add(src, "component_parts", W)
+			own_add(src, nameof(component_parts), W)
 			W.forceMove(src)
 	RefreshParts()
 
@@ -147,8 +147,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/turf/T = get_step(src, d)
 		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master())
-				rel_add(src, "terminals", term)
-				rel_set(term, "master", src)
+				rel_add(src, nameof(terminals), term)
+				rel_set(term, nameof(term.master), src)
 				term.connect_to_network(FALSE)
 	power_sync()
 
@@ -158,8 +158,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	return TRUE
 
 /obj/machinery/power/smes/disconnect_terminal(obj/machinery/power/terminal/term)
-	rel_remove(src, "terminals", term)
-	rel_clear(term, "master")
+	rel_remove(src, nameof(terminals), term)
+	rel_clear(term, nameof(term.master))
 	power_sync()
 
 /obj/machinery/power/smes/power_registered()
@@ -340,9 +340,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 		return
 	var/obj/machinery/power/terminal/smes_input/term = new(tempLoc)
 	term.set_dir(tempDir)
-	rel_set(term, "master", src)
+	rel_set(term, nameof(term.master), src)
 	term.connect_to_network()
-	rel_add(src, "terminals", term)
+	rel_add(src, nameof(terminals), term)
 	power_sync()
 	act_message(user, src, MSG_SELF(span_filter_notice(span_notice("You added cables to %T%."))), \
 		MSG_OTHERS(span_filter_notice(span_notice("[user.name] has added cables to %T%."))))
@@ -483,7 +483,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	new /obj/item/stack/cable_coil(loc, 10)
 	act_message(user, null, MSG_SELF(span_filter_notice(span_notice("You cut the cables and dismantle the power terminal."))), \
 		MSG_OTHERS(span_filter_notice(span_notice("[user.name] cut the cables and dismantled the power terminal."))))
-	rel_remove(src, "terminals", term)
+	rel_remove(src, nameof(terminals), term)
 	qdel(term)
 
 DECLARE_UI(/obj/machinery/power/smes, "Smes")

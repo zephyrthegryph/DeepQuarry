@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	for(var/datum/pai_sprite/sprite as anything in subtypesof(/datum/pai_sprite))
 		if(!initial(sprite.sprite_icon) || initial(sprite.hidden))
 			continue
-		own_put(src, "pai_chassis_sprites", initial(sprite.name), new sprite())
+		own_put(src, nameof(pai_chassis_sprites), initial(sprite.name), new sprite())
 
 	log_world("pAI service initialized: [length(GLOB.pai_software_by_key)] software, [length(pai_chassis_sprites)] chassis.")
 
@@ -42,7 +42,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 
 /datum/world_service/pai/service_step(resumed)
 	if(!resumed)
-		rel_clear(src, "pai_ghosts")
+		rel_clear(src, nameof(pai_ghosts))
 		current_run = REGISTRY_COPY(REGISTRY_OBSERVERS)
 
 	while(length(current_run))
@@ -55,7 +55,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 			continue
 
 		// Create candidate
-		rel_add(src, "pai_ghosts", ghost)
+		rel_add(src, nameof(pai_ghosts), ghost)
 	return TRUE
 
 /datum/world_service/pai/proc/get_chassis_list()
@@ -245,6 +245,8 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	asked -= ghost_ref
 
-REL_LIST(/datum/world_service/pai, pai_ghosts)
+/datum/world_service/pai/relations()
+	. = ..()
+	. += rel_many(nameof(pai_ghosts))
 
 #undef PAI_DELAY_TIME

@@ -22,13 +22,13 @@ DECLARE_PERIODIC_WHILE(/datum/mini_hud, PERIODIC_SECOND, "needs_processing")
 /datum/mini_hud/proc/apply_to_hud(datum/hud/other)
 	if(main_hud())
 		unapply_to_hud(main_hud())
-	rel_set(src, "main_hud", other)
+	rel_set(src, nameof(main_hud), other)
 	main_hud().apply_minihud(src)
 
 // Remove from a real /datum/hud
 /datum/mini_hud/proc/unapply_to_hud()
 	main_hud()?.remove_minihud(src)
-	rel_clear(src, "main_hud")
+	rel_clear(src, nameof(main_hud))
 
 // Update the hud
 /datum/mini_hud/periodic_step()

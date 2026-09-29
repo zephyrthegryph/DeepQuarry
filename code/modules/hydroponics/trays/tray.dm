@@ -224,7 +224,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	..()
 	if(!ov_lowhealth)
 		setup_overlays()
-	own_set(src, "temp_chem_holder", new /obj())
+	own_set(src, nameof(temp_chem_holder), new /obj())
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()
@@ -238,7 +238,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
 		return
-	om_after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
+	after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	MACHINE_WAKE(src)
@@ -285,7 +285,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 				if(seed)
 					var/datum/seed/mutated = seed.diverge_mutate_gene(G.gene(), get_turf(loc))	//get_turf just in case it's not in a turf.
 					if(mutated && mutated != seed)
-						proto_set(src, "seed", mutated)
+						proto_set(src, nameof(seed), mutated)
 			else
 				mutate(1)
 				return
@@ -305,7 +305,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 				var/datum/seed/pruned = seed.diverge()
 				if(!pruned)
 					return
-				proto_set(src, "seed", pruned)
+				proto_set(src, nameof(seed), pruned)
 				T.visible_message(span_infoplain(span_bold("\The [seed.display_name]") + " quivers!"))
 				seed.chems -= c
 			return
@@ -419,7 +419,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 	if(!seed.get_trait(TRAIT_HARVEST_REPEAT))
 		yield_mod = 0
-		proto_set(src, "seed", null)
+		proto_set(src, nameof(seed), null)
 		dead = 0
 		age = 0
 		sampled = 0
@@ -437,7 +437,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		to_chat(user, span_filter_notice("You can't remove the dead plant while the lid is shut."))
 		return
 
-	proto_set(src, "seed", null)
+	proto_set(src, nameof(seed), null)
 	dead = 0
 	sampled = 0
 	age = 0
@@ -457,8 +457,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	//Remove the seed if something is already planted.
 	if(seed)
 		previous_plant = seed.display_name
-		proto_set(src, "seed", null)
-	proto_set(src, "seed", GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
+		proto_set(src, nameof(seed), null)
+	proto_set(src, nameof(seed), GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
 	if(!seed) return //Weed does not exist, someone fucked up.
 
 	dead = 0
@@ -493,7 +493,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 		var/datum/seed/mutant = seed.diverge()
 		if(!mutant) // TRAIT_IMMUTABLE
 			return
-		proto_set(src, "seed", mutant)
+		proto_set(src, nameof(seed), mutant)
 		seed.mutate(severity,get_turf(src))
 
 	return
@@ -549,7 +549,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	var/previous_plant = seed.display_name
 	var/newseed = seed.get_mutant_variant()
 	if(newseed in GLOB.plant_service.seeds)
-		proto_set(src, "seed", GLOB.plant_service.seeds[newseed])
+		proto_set(src, nameof(seed), GLOB.plant_service.seeds[newseed])
 	else
 		return
 
@@ -797,4 +797,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 #undef AGE_MOD_MAX
 
 /// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
-PROTO(/obj/machinery/portable_atmospherics/hydroponics, seed)
+/obj/machinery/portable_atmospherics/hydroponics/ownership()
+	. = ..()
+	. += proto(nameof(seed))

@@ -11,7 +11,7 @@
 /datum/event/pda_spam/proc/pick_message_server()
 	for(var/obj/machinery/message_server/MS in REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 		if(MS.active)
-			rel_set(src, "useMS", MS)
+			rel_set(src, nameof(useMS), MS)
 			break
 
 /datum/event/pda_spam/tick()
@@ -20,13 +20,13 @@
 		kill()
 		return
 	if(!node())
-		rel_set(src, "node", get_exonet_node())
+		rel_set(src, nameof(node), get_exonet_node())
 
 	if(!node() || !node().on || !node().allow_external_PDAs)
 		return
 
 	if(!useMS() || !useMS().active)
-		rel_clear(src, "useMS")
+		rel_clear(src, nameof(useMS))
 		pick_message_server()
 
 	if(useMS())

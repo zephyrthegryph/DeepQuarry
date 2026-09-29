@@ -645,7 +645,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/windowtint, "light{active}")
 /obj/machinery/button/windowtint/proc/store_in_multitool(mob/user, obj/item/multitool/multitool)
 	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
-		rel_set(multitool, "connectable", src)
+		rel_set(multitool, nameof(multitool.connectable), src)
 		multitool.update_icon()
 
 /obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)

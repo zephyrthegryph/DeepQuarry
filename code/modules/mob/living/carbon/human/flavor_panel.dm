@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 	var/mob/living/carbon/human/host
 
 /datum/flavor_panel/New(mob/living/carbon/human/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/flavor_panel/lifecycle_dematerialize()

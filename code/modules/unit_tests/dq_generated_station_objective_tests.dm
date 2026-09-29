@@ -4,16 +4,16 @@
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(5150)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
-	own_set(site, "station_spec", spec)
-	own_set(site, "station_simulation", new /datum/generated_station_simulation(spec))
-	own_take_all(site, "station_controls")
+	own_set(site, nameof(site.station_spec), spec)
+	own_set(site, nameof(site.station_simulation), new /datum/generated_station_simulation(spec))
+	own_take_all(site, nameof(site.station_controls))
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/obj/machinery/generated_station_department_control/control = new(null)
 		control.station_id = spec.id
 		control.department_id = department.id
-		own_add(site, "station_controls", control)
+		own_add(site, nameof(site.station_controls), control)
 	var/datum/expedition_mission/station_assault/mission = new(EXP_DIFF_MED)
-	own_set(site, "mission", mission)
+	own_set(site, nameof(site.mission), mission)
 	mission.populate(site)
 	TEST_ASSERT(mission.has_viable_objectives(), "Station assault did not bind required objectives to department controls")
 
@@ -54,13 +54,13 @@
 	var/datum/generated_station_planner/planner = new
 	var/datum/generated_station_spec/spec = planner.plan(6160)
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
-	own_set(site, "station_spec", spec)
-	own_set(site, "station_simulation", new /datum/generated_station_simulation(spec))
+	own_set(site, nameof(site.station_spec), spec)
+	own_set(site, nameof(site.station_simulation), new /datum/generated_station_simulation(spec))
 	var/obj/machinery/generated_station_department_control/control = new(null)
 	control.station_id = spec.id
 	control.department_id = "engineering-1"
-	own_clear(site, "station_controls", OWN_DELETE)
-	own_add(site, "station_controls", control)
+	own_clear(site, nameof(site.station_controls), OWN_DELETE)
+	own_add(site, nameof(site.station_controls), control)
 	var/datum/expedition_objective/generated_department/preserve_engineering/objective = new(FALSE)
 	objective.populate(site)
 	site.station_simulation.set_integrity("engineering-1", 0)

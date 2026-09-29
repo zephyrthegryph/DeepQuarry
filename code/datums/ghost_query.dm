@@ -27,7 +27,7 @@
 /datum/ghost_query/proc/finish_query()
 	for(var/mob/observer/dead/D as anything in candidates.Copy())
 		if(!evaluate_candidate(D))
-			rel_remove(src, "candidates", D)
+			rel_remove(src, nameof(candidates), D)
 	finished = TRUE
 	OM_EMIT(src, /datum/om/event/ghost_query_complete)
 
@@ -92,7 +92,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Accept their nomination
-				rel_add(src, "candidates", D)
+				rel_add(src, nameof(candidates), D)
 				if(cutoff_number && candidates.len >= cutoff_number)
 					finished = TRUE // Finish now if we're full.
 

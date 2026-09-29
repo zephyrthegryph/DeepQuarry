@@ -16,7 +16,7 @@
 
 /datum/computer_file/program/comm/New(obj/item/modular_computer/comp = null)
 	..()
-	own_set(src, "message_core", new /datum/comm_message_listener)
+	own_set(src, nameof(message_core), new /datum/comm_message_listener)
 
 
 /datum/computer_file/program/comm/clone()

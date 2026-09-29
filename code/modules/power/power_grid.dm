@@ -298,11 +298,11 @@
 		GLOB.machine_service.power_material_overlays -= region_id
 
 /datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
-	rel_add(src, "cables", C) // two-sided: sets C.material_overlay
+	rel_add(src, nameof(cables), C) // two-sided: sets C.material_overlay
 	invalidate_material_cache()
 
 /datum/material_power_overlay/proc/remove_cable(obj/structure/cable/C)
-	rel_remove(src, "cables", C)
+	rel_remove(src, nameof(cables), C)
 	invalidate_material_cache()
 
 /// Books `watts` delivered to `consumer` this interval, at its vertex.
@@ -318,7 +318,7 @@
 	material_cache_dirty = TRUE
 
 /datum/material_power_overlay/proc/release_material_cables()
-	rel_clear(src, "cables") // two-sided: each cable's material_overlay lets go
+	rel_clear(src, nameof(cables)) // two-sided: each cable's material_overlay lets go
 
 /datum/material_power_overlay/proc/rebuild_material_cache()
 	material_cache_dirty = FALSE
@@ -327,10 +327,10 @@
 		for(var/entity in vg_power_region_members(region_id))
 			var/obj/structure/cable/C = SSvg.entity_lookup(entity)
 			if(istype(C) && C.power_entity == entity)
-				rel_add(src, "cables", C)
+				rel_add(src, nameof(cables), C)
 	// Demand booked so far is keyed by the old graph's vertices: it can't carry over.
 	material_consumers = null
-	own_set(src, "material_graph", new /datum/material_power_graph)
+	own_set(src, nameof(material_graph), new /datum/material_power_graph)
 	material_graph.build(cables, region_id)
 
 /// Supply by vertex for the solver: each bound machine's registered rate, at its vertex.

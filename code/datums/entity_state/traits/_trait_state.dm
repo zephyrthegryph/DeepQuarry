@@ -23,7 +23,7 @@
 
 /datum/trait_state/New(mob/living/owner)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 
 /// Called once after New() with the extra add_trait_state() args. Return FALSE when the state
 /// can't live on this mob (was COMPONENT_INCOMPATIBLE); it is then deleted without attaching.
@@ -83,7 +83,7 @@
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
 		qdel(S)
 		return null
-	own_add(src, "trait_states", S)
+	own_add(src, nameof(trait_states), S)
 	S.attach()
 	return S
 
@@ -92,5 +92,5 @@
 	var/datum/trait_state/S = get_trait_state(state_type)
 	if(!S)
 		return FALSE
-	own_remove(src, "trait_states", S)
+	own_remove(src, nameof(trait_states), S)
 	return TRUE

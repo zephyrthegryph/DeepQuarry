@@ -32,52 +32,52 @@ TOPIC_ACTION(/datum/antagonist/traitor, "spawn_uplink", PROC_REF(topic_spawn_upl
 
 	if(istype(traitor.current, /mob/living/silicon))
 		var/datum/objective/assassinate/kill_objective = new
-		rel_set(kill_objective, "owner", traitor)
+		rel_set(kill_objective, nameof(kill_objective.owner), traitor)
 		kill_objective.find_target()
-		own_add(traitor, "objectives", kill_objective)
+		own_add(traitor, nameof(traitor.objectives), kill_objective)
 
 		var/datum/objective/survive/survive_objective = new
-		rel_set(survive_objective, "owner", traitor)
-		own_add(traitor, "objectives", survive_objective)
+		rel_set(survive_objective, nameof(survive_objective.owner), traitor)
+		own_add(traitor, nameof(traitor.objectives), survive_objective)
 
 		if(prob(10))
 			var/datum/objective/block/block_objective = new
-			rel_set(block_objective, "owner", traitor)
-			own_add(traitor, "objectives", block_objective)
+			rel_set(block_objective, nameof(block_objective.owner), traitor)
+			own_add(traitor, nameof(traitor.objectives), block_objective)
 	else
 		switch(rand(1,100))
 			if(1 to 33)
 				var/datum/objective/assassinate/kill_objective = new
-				rel_set(kill_objective, "owner", traitor)
+				rel_set(kill_objective, nameof(kill_objective.owner), traitor)
 				kill_objective.find_target()
-				own_add(traitor, "objectives", kill_objective)
+				own_add(traitor, nameof(traitor.objectives), kill_objective)
 			if(34 to 50)
 				var/datum/objective/brig/brig_objective = new
-				rel_set(brig_objective, "owner", traitor)
+				rel_set(brig_objective, nameof(brig_objective.owner), traitor)
 				brig_objective.find_target()
-				own_add(traitor, "objectives", brig_objective)
+				own_add(traitor, nameof(traitor.objectives), brig_objective)
 			if(51 to 66)
 				var/datum/objective/harm/harm_objective = new
-				rel_set(harm_objective, "owner", traitor)
+				rel_set(harm_objective, nameof(harm_objective.owner), traitor)
 				harm_objective.find_target()
-				own_add(traitor, "objectives", harm_objective)
+				own_add(traitor, nameof(traitor.objectives), harm_objective)
 			else
 				var/datum/objective/steal/steal_objective = new
-				rel_set(steal_objective, "owner", traitor)
+				rel_set(steal_objective, nameof(steal_objective.owner), traitor)
 				steal_objective.find_target()
-				own_add(traitor, "objectives", steal_objective)
+				own_add(traitor, nameof(traitor.objectives), steal_objective)
 		switch(rand(1,100))
 			if(1 to 100)
 				if (!(locate_in_list(traitor.objectives, /datum/objective/escape)))
 					var/datum/objective/escape/escape_objective = new
-					rel_set(escape_objective, "owner", traitor)
-					own_add(traitor, "objectives", escape_objective)
+					rel_set(escape_objective, nameof(escape_objective.owner), traitor)
+					own_add(traitor, nameof(traitor.objectives), escape_objective)
 
 			else
 				if (!(locate_in_list(traitor.objectives, /datum/objective/hijack)))
 					var/datum/objective/hijack/hijack_objective = new
-					rel_set(hijack_objective, "owner", traitor)
-					own_add(traitor, "objectives", hijack_objective)
+					rel_set(hijack_objective, nameof(hijack_objective.owner), traitor)
+					own_add(traitor, nameof(traitor.objectives), hijack_objective)
 	return
 
 /datum/antagonist/traitor/equip(mob/living/carbon/human/traitor_mob)
@@ -159,7 +159,7 @@ TOPIC_ACTION(/datum/antagonist/traitor, "spawn_uplink", PROC_REF(topic_spawn_upl
 				freq += 1
 		freq = freqlist[rand(1, freqlist.len)]
 		var/obj/item/uplink/hidden/T = new(R, traitor_mob.mind)
-		own_set(target_radio, "hidden_uplink", T) // the uplink sits in the radio's contents
+		own_set(target_radio, nameof(target_radio.hidden_uplink), T) // the uplink sits in the radio's contents
 		target_radio.traitor_frequency = freq
 		to_chat(traitor_mob, "A portable object teleportation relay has been installed in your [R.name] [loc]. Simply dial the frequency [format_frequency(freq)] to unlock its hidden features.")
 		traitor_mob.mind.store_memory(span_bold("Radio Freq:") + " [format_frequency(freq)] ([R.name] [loc]).")
@@ -168,7 +168,7 @@ TOPIC_ACTION(/datum/antagonist/traitor, "spawn_uplink", PROC_REF(topic_spawn_upl
 		// generate a passcode if the uplink is hidden in a PDA
 		var/pda_pass = "[rand(100,999)] [pick("Alpha","Bravo","Delta","Omega")]"
 		var/obj/item/uplink/hidden/T = new(R, traitor_mob.mind)
-		own_set(R, "hidden_uplink", T) // the uplink sits in the PDA's contents
+		own_set(R, nameof(R.hidden_uplink), T) // the uplink sits in the PDA's contents
 		var/obj/item/pda/P = R
 		P.lock_code = pda_pass
 		to_chat(traitor_mob, "A portable object teleportation relay has been installed in your [R.name] [loc]. Simply enter the code \"[pda_pass]\" into the ringtone select to unlock its hidden features.")

@@ -12,7 +12,7 @@
 	var/atom/target
 
 /datum/interaction_menu/New(client/owner)
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 
@@ -22,8 +22,8 @@
 		return FALSE
 	var/client/player = user.client
 	if(!player.interaction_menu)
-		own_set(player, "interaction_menu", new /datum/interaction_menu(player))
-	rel_set(player.interaction_menu, "target", target)
+		own_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
+	rel_set(player.interaction_menu, nameof(/datum/accessory_stat_modifier::target), target)
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
 	player.interaction_menu.tgui_interact(user)
 	return TRUE

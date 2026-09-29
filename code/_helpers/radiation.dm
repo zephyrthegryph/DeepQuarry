@@ -35,7 +35,7 @@
 		return
 
 	var/datum/radiation_pulse_information/pulse_information = new
-	rel_set(pulse_information, "source_ref", source)
+	rel_set(pulse_information, nameof(/datum/contract_damage_report::source_ref), source)
 	pulse_information.max_range = max_range
 	pulse_information.threshold = threshold
 	pulse_information.chance = chance
@@ -43,7 +43,7 @@
 	pulse_information.strength = strength
 	// Targets (living mobs and the collector, geiger and radiovoltaic registries)
 	// are collected and traced in one Rust call when the pulse first processes.
-	own_add(GLOB.radiation_service, "processing", pulse_information)
+	own_add(GLOB.radiation_service, nameof(/datum/controller/master::processing), pulse_information)
 
 	return TRUE
 

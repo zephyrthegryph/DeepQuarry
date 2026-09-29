@@ -49,7 +49,7 @@
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
 	.=..()
-	own_set(src, "idc", new /obj/item/card/id(src))
+	own_set(src, nameof(idc), new /obj/item/card/id(src))
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())
@@ -104,7 +104,7 @@
 	set_pin_data(IC_OUTPUT, 1, null)
 
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		rel_clear(src, "last_known_position")
+		rel_clear(src, nameof(last_known_position))
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -126,7 +126,7 @@
 		return
 
 	if(A in view(start))
-		rel_set(src, "last_known_position", goal)
+		rel_set(src, nameof(last_known_position), goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))
@@ -180,7 +180,7 @@
 
 	// Reset last known position when target changes
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		rel_clear(src, "last_known_position")
+		rel_clear(src, nameof(last_known_position))
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -200,7 +200,7 @@
 
 	// Update last known position when target is visible
 	if(A in view(start))
-		rel_set(src, "last_known_position", goal)
+		rel_set(src, nameof(last_known_position), goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))

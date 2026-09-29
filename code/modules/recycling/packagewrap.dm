@@ -29,11 +29,9 @@
 			to_chat(user, span_warning("You need more paper."))
 			return
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(get_turf(O.loc))	//Aaannd wrap it up!
-		if(!istype(O.loc, /turf))
-			if(user.client)
-				user.client.screen -= O
-		O.forceMove(P)
-		own_set(P, "wrapped", O) // CONTAINED: in P first
+		if(!own_set(P, nameof(P.wrapped), O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
+			qdel(P)
+			return
 		P.w_class = O.w_class
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))
@@ -68,7 +66,7 @@
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
 		P.icon_state = "deliverycrate"
-		rel_set(P, "wrapped", O)
+		rel_set(P, nameof(P.wrapped), O)
 		O.forceMove(P)
 		src.amount -= 3
 		wrap_used()
@@ -85,7 +83,7 @@
 		if(O.opened)
 			return
 		var/obj/structure/bigDelivery/P = new /obj/structure/bigDelivery(get_turf(O.loc))
-		rel_set(P, "wrapped", O)
+		rel_set(P, nameof(P.wrapped), O)
 		O.sealed = 1
 		O.forceMove(P)
 		src.amount -= 3

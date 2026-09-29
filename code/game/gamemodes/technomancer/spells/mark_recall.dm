@@ -15,8 +15,8 @@
 	var/turf/T
 
 /datum/technomancer_marker/New(mob/user)
-	rel_set(src, "caster", user)
-	rel_set(src, "T", get_turf(user))
+	rel_set(src, nameof(caster), user)
+	rel_set(src, nameof(T), get_turf(user))
 	I = image('icons/goonstation/featherzone.dmi', T(), "spawn-wall")
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
@@ -55,12 +55,12 @@
 		var/datum/technomancer_marker/marker = technomancer_marker_of(user)
 		//They have one in the list
 		if(istype(marker))
-			own_remove(GLOB.antag_service, "mark_spells", marker)
+			own_remove(GLOB.antag_service, nameof(/datum/world_service/antag::mark_spells), marker)
 			to_chat(user, span_notice("Your mark is moved from its old position to \the [get_turf(user)] under you."))
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		own_add(GLOB.antag_service, "mark_spells", new /datum/technomancer_marker(user))
+		own_add(GLOB.antag_service, nameof(/datum/world_service/antag::mark_spells), new /datum/technomancer_marker(user))
 		adjust_instability(5)
 		return 1
 	else

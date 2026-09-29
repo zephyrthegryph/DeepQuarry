@@ -44,11 +44,11 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			own_set(src, "active_weapon", new active_weapon(src, src)) // ALLOW(decl): constructor arguments
-			rel_set(active_weapon, "power_supply", bcell)
+			own_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): constructor arguments
+			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 		else
-			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
-			rel_set(active_weapon, "power_supply", bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
+			own_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
+			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
 	update_icon()
 
 /// If the shield gen is active; it drains power while it is.
@@ -141,12 +141,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		else if(!istype(W, /obj/item/cell/device/weapon)) //Weapon cells only!
 			to_chat(user, span_notice("This cell will not fit in the device."))
 		else
-			if(!user.unEquip(W))
+			if(!own_set(src, nameof(src.bcell), W, user = user))
 				return TRUE
-			W.forceMove(src)
-			own_set(src, "bcell", W)
 			if(active_weapon)
-				rel_set(active_weapon, "power_supply", bcell)
+				rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
@@ -165,10 +163,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
-	own_take(src, "bcell")
+	own_take(src, nameof(bcell))
 	if(active_weapon)
 		reattach_gun()
-		rel_clear(active_weapon, "power_supply")
+		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -191,10 +189,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
 	var/mob/user = ask.answerer
 	fx_sparks(src, 5)
-	own_clear(src, "bcell", OWN_DELETE)
+	own_clear(src, nameof(bcell), OWN_DELETE)
 	if(active_weapon)
 		reattach_gun()
-		rel_clear(active_weapon, "power_supply")
+		rel_clear(active_weapon, nameof(active_weapon.power_supply))
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -288,10 +286,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 			if(active_weapon) //Retract the gun. There's about to be no cell anymore.
 				reattach_gun()
-				rel_clear(active_weapon, "power_supply")
+				rel_clear(active_weapon, nameof(active_weapon.power_supply))
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
-			own_take(src, "bcell")
+			own_take(src, nameof(bcell))
 			set_shield_active(0)
 			return
 
@@ -368,8 +366,8 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
-	rel_set(src, "linked_generator", shield_gen)
-	rel_set(src, "power_supply", shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
+	rel_set(src, nameof(linked_generator), shield_gen)
+	rel_set(src, nameof(power_supply), shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))
@@ -568,7 +566,9 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/security, "shieldpack_se
 	return linked_generator
 
 // The generator gun runs off the generator's cell: a view, not an owned cell.
-REL(/obj/item/gun/energy/gun/generator, power_supply)
+/obj/item/gun/energy/gun/generator/relations()
+	. = ..()
+	. += rel_one(nameof(power_supply))
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

@@ -114,7 +114,7 @@
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/Initialize(mapload)
 	. = ..()
-	own_set(src, "med_analyzer", new /obj/item/healthanalyzer/advanced)
+	own_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
 
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/augment_action()

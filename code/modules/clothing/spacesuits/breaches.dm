@@ -59,7 +59,7 @@
 		if(B.class <= amount_left)
 			amount_left -= B.class
 			valid_breaches -= B
-			own_take_member(src, "breaches", B)
+			own_take_member(src, nameof(breaches), B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -107,13 +107,13 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		own_add(src, "breaches", B)
+		own_add(src, nameof(breaches), B)
 
 		B.class = min(amount,5)
 
 		B.breach_type = breach_type
 		B.update_descriptor()
-		rel_set(B, "holder", src)
+		rel_set(B, nameof(B.holder), src)
 
 		if(B.breach_type == BRUTE)
 			T.visible_message(span_warning("\A [B.descriptor] opens up on [src]!"))
@@ -135,7 +135,7 @@
 
 	for(var/datum/breach/B in breaches)
 		if(!B.class)
-			own_take_member(src, "breaches", B)
+			own_take_member(src, nameof(breaches), B)
 			qdel(B)
 		else
 			damage += B.class

@@ -43,7 +43,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 				new_port.mode = tag_west
 		if(new_port.mode > 0)
 			initialize_directions |= d
-		own_add(src, "ports", new_port)
+		own_add(src, nameof(ports), new_port)
 
 	build_icons()
 
@@ -265,7 +265,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 			continue
 		for(var/obj/machinery/atmospherics/target in get_step(src, P.dir))
 			if(can_be_node(target, 1))
-				rel_set(P, "node", target)
+				rel_set(P, nameof(P.node), target)
 				break
 
 	for(var/datum/omni_port/P in ports)
@@ -283,7 +283,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 /obj/machinery/atmospherics/omni/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == old_network)
-			rel_set(P, "network", new_network)
+			rel_set(P, nameof(P.network), new_network)
 
 	return 1
 
@@ -299,19 +299,19 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/omni, MACHINE_PIPELINE, l
 /obj/machinery/atmospherics/omni/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference)
-			atmos_air_set(P, "air", network_air)
+			atmos_air_set(P, nameof(P.air), network_air)
 
 /obj/machinery/atmospherics/omni/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference && P.air == network_air)
-			atmos_air_set(P, "air", detached_pipenet_air(network_air, 200, network_volume))
+			atmos_air_set(P, nameof(P.air), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			rust_release_network_wrapper(P.network)
-			rel_clear(P, "node")
+			rel_clear(P, nameof(P.node))
 			P.update = 1
 			break
 

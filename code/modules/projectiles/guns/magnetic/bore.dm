@@ -61,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 		if(cell && removable_components)
 			removing = cell
-			own_take(src, "cell")
+			own_take(src, nameof(cell))
 
 		if(removing)
 			user.put_in_hands(removing)
@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
-	own_take(src, "manipulator")
+	own_take(src, nameof(manipulator))
 	update_icon()
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
@@ -138,8 +138,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))
 				return
-			own_set(src, "manipulator", thing)
-			user.drop_from_inventory(manipulator, src)
+			if(!own_set(src, nameof(src.manipulator), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = manipulator)
@@ -232,7 +232,7 @@ OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHA
 
 /obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
 	. = ..()
-	own_set(src, "soundloop", new /datum/looping_sound/small_motor(list(src), 0))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
 
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)

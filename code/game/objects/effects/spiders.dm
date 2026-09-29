@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 		for(var/i=0, i<num, i++)
 			var/obj/effect/spider/spiderling/spiderling = new spider_type(src.loc, src)
 			if(O)
-				rel_add(O, "implants", spiderling)
+				rel_add(O, nameof(O.implants), spiderling)
 			spiderling.faction = faction
 		qdel(src)
 
@@ -184,7 +184,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
-			rel_clear(src, "entry_vent")
+			rel_clear(src, nameof(entry_vent))
 	else if(entry_vent())
 		if(get_dist(src, entry_vent()) <= 1)
 			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent())
@@ -199,7 +199,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		if(amount_grown < 0) amount_grown = 1
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
-			rel_remove(O, "implants", src)
+			rel_remove(O, nameof(O.implants), src)
 			src.forceMove(O.owner ? O.owner.loc : O.loc)
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)
@@ -226,7 +226,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
 		forceMove(entry)
-		rel_clear(src, "entry_vent")
+		rel_clear(src, nameof(entry_vent))
 		return
 
 	if(prob(50))
@@ -237,10 +237,10 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
 		forceMove(entry)
-		rel_clear(src, "entry_vent")
+		rel_clear(src, nameof(entry_vent))
 		return
 	forceMove(exit_vent.loc)
-	rel_clear(src, "entry_vent")
+	rel_clear(src, nameof(entry_vent))
 	var/area/new_area = get_area(loc)
 	if(new_area)
 		new_area.Entered(src)
@@ -259,7 +259,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 				if(!v.welded)
-					rel_set(src, "entry_vent", v)
+					rel_set(src, nameof(entry_vent), v)
 					walk_to(src, entry_vent(), 5)
 					break
 		if(amount_grown >= 100)
@@ -308,7 +308,9 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
-OWN(/obj/effect/spider/cocoon, contents, OWN_SPILL)
+/obj/effect/spider/cocoon/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

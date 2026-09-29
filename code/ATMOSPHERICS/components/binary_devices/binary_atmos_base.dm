@@ -12,8 +12,8 @@
 /obj/machinery/atmospherics/binary/Initialize(mapload)
 	. = ..()
 
-	atmos_air_set(src, "air1", new /datum/gas_mixture)
-	atmos_air_set(src, "air2", new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air1), new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air2), new /datum/gas_mixture)
 
 	air1.set_volume(200)
 	air2.set_volume(200)
@@ -57,9 +57,9 @@
 
 /obj/machinery/atmospherics/binary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		rel_set(src, "network1", new_network)
+		rel_set(src, nameof(network1), new_network)
 	if(network2 == old_network)
-		rel_set(src, "network2", new_network)
+		rel_set(src, nameof(network2), new_network)
 
 	return 1
 
@@ -75,24 +75,24 @@
 
 /obj/machinery/atmospherics/binary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		atmos_air_set(src, "air1", network_air)
+		atmos_air_set(src, nameof(air1), network_air)
 	if(network2 == reference)
-		atmos_air_set(src, "air2", network_air)
+		atmos_air_set(src, nameof(air2), network_air)
 
 /obj/machinery/atmospherics/binary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air1 == network_air)
-		atmos_air_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air1), detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air2 == network_air)
-		atmos_air_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air2), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/binary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	update_icon()
 	update_underlays()
@@ -101,5 +101,7 @@
 
 
 
-PROTO(/obj/machinery/atmospherics/binary, air1)
-PROTO(/obj/machinery/atmospherics/binary, air2)
+/obj/machinery/atmospherics/binary/ownership()
+	. = ..()
+	. += proto(nameof(air1))
+	. += proto(nameof(air2))

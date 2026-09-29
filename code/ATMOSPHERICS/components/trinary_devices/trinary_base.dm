@@ -20,9 +20,9 @@
 /obj/machinery/atmospherics/trinary/Initialize(mapload)
 	. = ..()
 
-	atmos_air_set(src, "air1", new /datum/gas_mixture)
-	atmos_air_set(src, "air2", new /datum/gas_mixture)
-	atmos_air_set(src, "air3", new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air1), new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air2), new /datum/gas_mixture)
+	atmos_air_set(src, nameof(air3), new /datum/gas_mixture)
 
 	air1.set_volume(200)
 	air2.set_volume(200)
@@ -95,11 +95,11 @@
 
 /obj/machinery/atmospherics/trinary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		rel_set(src, "network1", new_network)
+		rel_set(src, nameof(network1), new_network)
 	if(network2 == old_network)
-		rel_set(src, "network2", new_network)
+		rel_set(src, nameof(network2), new_network)
 	if(network3 == old_network)
-		rel_set(src, "network3", new_network)
+		rel_set(src, nameof(network3), new_network)
 
 	return 1
 
@@ -117,32 +117,32 @@
 
 /obj/machinery/atmospherics/trinary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		atmos_air_set(src, "air1", network_air)
+		atmos_air_set(src, nameof(air1), network_air)
 	if(network2 == reference)
-		atmos_air_set(src, "air2", network_air)
+		atmos_air_set(src, nameof(air2), network_air)
 	if(network3 == reference)
-		atmos_air_set(src, "air3", network_air)
+		atmos_air_set(src, nameof(air3), network_air)
 
 /obj/machinery/atmospherics/trinary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air1 == network_air)
-		atmos_air_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air1), detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air2 == network_air)
-		atmos_air_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air2), detached_pipenet_air(network_air, 200, network_volume))
 	if(network3 == reference && air3 == network_air)
-		atmos_air_set(src, "air3", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, nameof(air3), detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/trinary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	else if(reference==node3)
 		rust_release_network_wrapper(network3)
-		rel_clear(src, "node3")
+		rel_clear(src, nameof(node3))
 
 	update_underlays()
 
@@ -217,6 +217,8 @@
 
 
 
-PROTO(/obj/machinery/atmospherics/trinary, air1)
-PROTO(/obj/machinery/atmospherics/trinary, air2)
-PROTO(/obj/machinery/atmospherics/trinary, air3)
+/obj/machinery/atmospherics/trinary/ownership()
+	. = ..()
+	. += proto(nameof(air1))
+	. += proto(nameof(air2))
+	. += proto(nameof(air3))

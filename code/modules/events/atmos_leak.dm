@@ -50,7 +50,7 @@
 			log_game("atmos_leak event: Rejected [A] because it has no clear turfs.")
 			continue
 		target_area = A
-		rel_set(src, "target_turf", pick(turfs))
+		rel_set(src, nameof(target_turf), pick(turfs))
 
 	// If we can't find a good target, give up
 	if(!target_area())

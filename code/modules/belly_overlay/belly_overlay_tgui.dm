@@ -17,7 +17,7 @@
 	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
-	rel_set(src, "owner", M)
+	rel_set(src, nameof(owner), M)
 
 // hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/on_destroy(force)
@@ -39,7 +39,7 @@ DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 	return new /datum/tgui_window(user.client, "mapwindow.belly_overlay")
 
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
-	own_set(src, "active_ui", ui)
+	own_set(src, nameof(active_ui), ui)
 
 UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
 
@@ -189,7 +189,7 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		own_set(M, "belly_overlay_tgui", new /datum/belly_overlay_tgui(M))
+		own_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob

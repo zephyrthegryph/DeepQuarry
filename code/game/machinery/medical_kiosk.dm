@@ -69,12 +69,12 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 	return default_part_replacement(user, O) ? TRUE : FALSE
 
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
-	rel_set(src, "active_user", user)
+	rel_set(src, nameof(active_user), user)
 	update_icon()
 	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
-	rel_clear(src, "active_user")
+	rel_clear(src, nameof(active_user))
 	update_icon()
 	set_use_power(USE_POWER_IDLE)
 

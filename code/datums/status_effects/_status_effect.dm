@@ -47,12 +47,12 @@
 /// Returning FALSE from on_apply will stop on_creation and self-delete the effect.
 /datum/status_effect/proc/on_creation(mob/living/new_owner, ...)
 	if(new_owner)
-		rel_set(src, "owner", new_owner)
+		rel_set(src, nameof(owner), new_owner)
 	if(QDELETED(owner) || !on_apply())
 		qdel(src)
 		return
 	if(owner)
-		own_add(owner, "status_effects", src)
+		own_add(owner, nameof(owner.status_effects), src)
 		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
 
 	if(duration == INFINITY)
@@ -66,8 +66,8 @@
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
-		rel_set(new_alert, "attached_effect", src) //so the alert can reference us, if it needs to
-		rel_set(src, "linked_alert", new_alert) //so we can reference the alert, if we need to
+		rel_set(new_alert, nameof(new_alert.attached_effect), src) //so the alert can reference us, if it needs to
+		rel_set(src, nameof(linked_alert), new_alert) //so we can reference the alert, if we need to
 		update_shown_duration()
 
 	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
@@ -89,7 +89,7 @@
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)
 	if(owner)
-		rel_clear(src, "linked_alert")
+		rel_clear(src, nameof(linked_alert))
 		owner.clear_alert(id)
 		on_remove()
 	..()
@@ -163,10 +163,10 @@
 /// or when a status effect with on_remove_on_mob_delete
 /// set to FALSE has its mob deleted
 /datum/status_effect/proc/be_replaced()
-	rel_clear(src, "linked_alert")
+	rel_clear(src, nameof(linked_alert))
 	owner.clear_alert(id)
-	own_take_member(owner, "status_effects", src)
-	rel_clear(src, "owner")
+	own_take_member(owner, nameof(owner.status_effects), src)
+	rel_clear(src, nameof(owner))
 	qdel(src)
 
 /// Called before being fully removed (before on_remove)

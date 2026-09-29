@@ -1001,7 +1001,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 		def_zone = pick(BP_TORSO, BP_GROIN)
 
 	//Shooting Code:
-	rel_set(A, "firer", src)
+	rel_set(A, nameof(A.firer), src)
 	A.old_style_target(target)
 	A.launch_projectile_from_turf(target, def_zone, src)
 

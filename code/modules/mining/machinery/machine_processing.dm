@@ -24,14 +24,16 @@
 
 /obj/machinery/mineral/processing_unit_console/Initialize(mapload)
 	. = ..()
-	rel_set(src, "machine", locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
+	rel_set(src, nameof(machine), locate_in_list(range(5, src), /obj/machinery/mineral/processing_unit))
 	if (machine())
-		rel_set(machine(), "console", src)
+		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
 
-OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
+/obj/machinery/mineral/processing_unit_console/ownership()
+	. = ..()
+	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(
@@ -50,9 +52,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
 	if(!powered())
 		return TRUE
-	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
-		I.forceMove(src)
-		own_set(src, "inserted_id", I)
+	if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -146,7 +146,7 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_logoff)
 	if(!inserted_id)
 		return
 	ui.user.put_in_hands(inserted_id)
-	own_take(src, "inserted_id")
+	own_take(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id))
 	. = TRUE
 
 UI_ACT(/obj/machinery/mineral/processing_unit_console, "claim", ui_act_claim)
@@ -164,9 +164,7 @@ UI_ACT(/obj/machinery/mineral/processing_unit_console, "insert", ui_act_insert)
 UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
 	var/obj/item/card/id/I = ui.user.get_active_hand()
 	if(istype(I))
-		ui.user.drop_item()
-		I.forceMove(src)
-		own_set(src, "inserted_id", I)
+		own_set(src, nameof(src.inserted_id), I, user = ui.user)
 	else
 		to_chat(ui.user, span_warning("No valid ID."))
 	. = TRUE
@@ -227,10 +225,10 @@ UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
 	// TODO - Eschew input/output machinery and just use dirs ~Leshana
 	//Locate our output and input machinery.
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, nameof(input), locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(src.input_marker()) break
 	for (var/dir in GLOB.cardinal)
-		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, nameof(output), locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(src.output_marker()) break
 	watch_input(input_marker())
 

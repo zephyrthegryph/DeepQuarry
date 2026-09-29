@@ -17,12 +17,12 @@
 /datum/experiment/physical/perform_experiment_actions(datum/experiment_handler/experiment_handler, atom/target)
 	if(currently_scanned_atom)
 		unregister_events()
-	rel_set(src, "currently_scanned_atom", target)
-	rel_set(src, "linked_experiment_handler", experiment_handler)
+	rel_set(src, nameof(currently_scanned_atom), target)
+	rel_set(src, nameof(linked_experiment_handler), experiment_handler)
 	if(register_events())
 		return TRUE
-	rel_clear(src, "currently_scanned_atom")
-	rel_clear(src, "linked_experiment_handler")
+	rel_clear(src, nameof(currently_scanned_atom))
+	rel_clear(src, nameof(linked_experiment_handler))
 	return FALSE
 
 /**

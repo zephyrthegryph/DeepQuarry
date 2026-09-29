@@ -20,6 +20,10 @@
 /// Ids only grow and entries are only appended or cut, so the list is sorted by id
 /// (om_timer_index() binary-searches it).
 #define OM_TIMER_STRIDE 6
+/// Timer flags (the record's 6th field): the proc is a global proc.
+#define OM_TIMER_GLOBAL (1<<0)
+/// A deleted captured argument is passed as null (after()) instead of dropping the call.
+#define OM_TIMER_NULLS_FOR_GONE (1<<1)
 
 /datum/om/rec/var/list/timers
 /// The soonest due time in rec.timers (timer-clock ds), or null with no timers. Kept in step by
@@ -256,6 +260,11 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 /// (for om_cancel_timer()), or 0 if E or an argument is already gone. E null: the global owner.
 /proc/om_after(datum/E, delay, proc_ref, ...)
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
+	return om_after_list(E, delay, proc_ref, call_args, FALSE)
+
+/// om_after()'s body. nulls_for_gone: a captured datum argument deleted before the timer fires is
+/// passed as null instead of dropping the call (after(): cleanup that must still run).
+/proc/om_after_list(datum/E, delay, proc_ref, list/call_args, nulls_for_gone = FALSE)
 	if(isnull(E))
 		E = om_global_owner()
 	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
@@ -274,7 +283,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/local = om_timer_local(rec)
 	var/id = ++rec.timer_seq
 	var/due = local + max(delay, 0)
-	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, om_proc_is_global(proc_ref)))
+	LAZYADD(rec.timers, list(id, due, proc_ref, captured, positions, (om_proc_is_global(proc_ref) ? OM_TIMER_GLOBAL : 0) | (nulls_for_gone ? OM_TIMER_NULLS_FOR_GONE : 0)))
 	if(isnull(rec.timer_soonest) || due < rec.timer_soonest)
 		rec.timer_soonest = due
 		om_timers_arm(rec)
@@ -311,7 +320,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 
 /// Schedules `proc_ref` after `delay` (as om_after()) into E's timer slot `slot`, replacing any
 /// timer pending there. Returns TRUE if scheduled. E null: the global owner.
-/proc/om_after_slot(datum/E, slot, delay, proc_ref, ...)
+/proc/after_slot(datum/E, slot, delay, proc_ref, ...)
 	if(isnull(E))
 		E = om_global_owner()
 	om_timer_slot_check(E, slot)
@@ -734,11 +743,12 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/proc_ref = T[best + 2]
 		var/list/captured = T[best + 3]
 		var/list/positions = T[best + 4]
-		var/is_global = T[best + 5]
+		var/timer_flags = T[best + 5]
+		var/is_global = !!(timer_flags & OM_TIMER_GLOBAL)
 		T.Cut(best, best + OM_TIMER_STRIDE)
 		if(!length(T))
 			rec.timers = null
-		if(!om_resolve_captured(captured, positions))
+		if(!om_resolve_captured(captured, positions, !!(timer_flags & OM_TIMER_NULLS_FOR_GONE)))
 			rec.sched.timers_dropped++
 			log_qdel("OM: dropped timer [proc_ref] on [E] ([E.type]): a captured argument was deleted before it fired")
 			continue

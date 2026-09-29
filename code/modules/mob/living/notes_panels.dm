@@ -10,7 +10,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 	var/mob/living/host
 
 /datum/private_notes_panel/New(mob/living/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/private_notes_panel/lifecycle_dematerialize()
@@ -76,7 +76,7 @@ UI_ACT_PROC(/datum/private_notes_panel, ui_act_save)
 	var/mob/living/host
 
 /datum/ooc_notes_panel/New(mob/living/host_mob)
-	rel_set(src, "host", host_mob)
+	rel_set(src, nameof(host), host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/ooc_notes_panel/lifecycle_dematerialize()

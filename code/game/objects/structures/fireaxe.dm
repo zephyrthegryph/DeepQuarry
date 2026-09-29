@@ -77,9 +77,8 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 			if(O:wielded)
 				O:wielded = 0
 				O.update_icon()
-			user.remove_from_mob(O)
-			O.forceMove(src)
-			own_set(src, "fireaxe", O)
+			if(!own_set(src, nameof(src.fireaxe), O, user = user))
+				return TRUE
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()
 		else
@@ -125,7 +124,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 	if(open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, "fireaxe")
+			own_take(src, nameof(fireaxe))
 			to_chat (user, span_notice("You take the fire axe from the [name]."))
 			add_fingerprint(user)
 			update_icon()
@@ -144,7 +143,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 	if(open && fireaxe)
 		fireaxe.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove the fire axe."))
-		own_take(src, "fireaxe")
+		own_take(src, nameof(fireaxe))
 		update_icon()
 		return TRUE
 	attack_hand(user)
@@ -179,7 +178,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 	if (open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			own_take(src, "fireaxe")
+			own_take(src, nameof(fireaxe))
 			to_chat(user, span_notice("You take the Fire axe from the [name]."))
 		else
 			to_chat(user, span_notice("The [name] is empty."))
@@ -208,4 +207,6 @@ APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{o
 /obj/structure/fireaxecabinet/empty
 	fireaxe_type = null
 
-OWN(/obj/structure/fireaxecabinet, fireaxe, OWN_CONTAINED)
+/obj/structure/fireaxecabinet/ownership()
+	. = ..()
+	. += owns(nameof(fireaxe), policy = OWN_CONTAINED)

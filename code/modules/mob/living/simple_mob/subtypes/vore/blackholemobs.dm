@@ -667,7 +667,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 /mob/living/simple_mob/vore/blackhole_obelisk/Initialize(mapload)
 	. = ..()
 	obelisk_lure_messages = GLOB.obelisk_lure_messages
-	own_set(src, "loopy", new /datum/looping_sound/obelisk(list(src),FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, nameof(loopy), new /datum/looping_sound/obelisk(list(src),FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	loopy.start()
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/handle_hungry()

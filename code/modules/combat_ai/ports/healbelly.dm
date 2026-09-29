@@ -167,7 +167,7 @@ TYPE_TABLE(/datum/ai_behavior/healbelly_heal_ally, get_player_verb_info, list( \
 	if(istype(SM, /mob/living/simple_mob/vore/bigdragon))
 		var/mob/living/simple_mob/vore/bigdragon/BG = SM
 		if(BG.gut2)
-			rel_set(BG, "vore_selected", BG.gut2)
+			rel_set(BG, nameof(BG.vore_selected), BG.gut2)
 
 // ---------------------------------------------------------------------------
 // Leopardmander — the canonical Sivian healbelly drake. Docile, nom_mob,

@@ -30,9 +30,9 @@
 		var/client/client = eye.GetViewerClient()
 		if(client)
 			if(length(obscured)) client.images += obscured
-	rel_add(eye, "visibleChunks", src)
+	rel_add(eye, nameof(eye.visibleChunks), src)
 	visible++
-	rel_add(src, "seenby", eye)
+	rel_add(src, nameof(seenby), eye)
 	if(changed && !updating)
 		update()
 
@@ -43,8 +43,8 @@
 		var/client/client = eye.GetViewerClient()
 		if(client)
 			client.images -= obscured
-	rel_remove(eye, "visibleChunks", src)
-	rel_remove(src, "seenby", eye)
+	rel_remove(eye, nameof(eye.visibleChunks), src)
+	rel_remove(src, nameof(seenby), eye)
 	if(visible > 0)
 		visible--
 
@@ -105,7 +105,7 @@
 			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/eye/m as anything in seenby)
 				if(!m)
-					rel_remove(src, "seenby", m)
+					rel_remove(src, nameof(seenby), m)
 					continue
 				var/client/client = m.GetViewerClient()
 				if(client)

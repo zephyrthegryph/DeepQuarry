@@ -133,12 +133,12 @@
 		"stacking_console_use", // code/modules/mining/machinery/machine_stacking.dm: needs a linked machine on the map, excluded from dq_i7_bulk_capture.dm's snapshot
 		// I7: verb-category and drag/enter ids without an `entry`, so the snapshot-coverage
 		// check (which requires `entry`) never sees them even when a snapshot exists.
-		"aiupload_access_internals", "card_eject_id", "cash_register_open_box_verb", "centrifuge_isolate_reagents", "centrifuge_isolate_reagents_bottle", "centrifuge_isolate_reagents_canisters", "cryopod_eject", "cryopod_enter", "disposal_force_eject", "distillery_toggle_mixing", "distillery_toggle_power", "drill_unload", "faxmachine_remove_card", "faxmachine_request_roles", "firework_launcher_eject", "food_replicator_eject_beaker", "fuel_compressor_eject_sheet", "guestpass_eject_id", "hydroponics_remove_label", "hydroponics_set_light", "hydroponics_toggle_lid", "implantchair_get_out", "implantchair_move_inside", "material_furnace_eject_contents", "mixer_set_rotation", "nuclearbomb_make_deployable", "papershredder_empty", "particle_smasher_eject_contents", "pod_syndicate_open_ui", "processor_eject", "reagent_filter_flip", "reagent_filter_set_filter", "reagent_furnace_flip", "reagent_furnace_set_filter", "reagent_refinery_set_transfer_amount", "recharge_station_eject", "recharge_station_enter", "secure_data_eject_id", "security_station_map", "suit_cycler_leave", "suit_storage_get_out", "suit_storage_move_inside", "teleporter_computer_set_id", "transportpod_eject", "transportpod_enter", "vending_check_logs", "vr_sleeper_alien_eject", "vr_sleeper_climb_in", "vr_sleeper_eject", "washing_machine_climb_out", "washing_machine_start_washing", "wheel_of_fortune_setinterval",
+		"aiupload_access_internals", "card_eject_id", "cash_register_open_box_verb", "centrifuge_isolate_reagents", "centrifuge_isolate_reagents_bottle", "centrifuge_isolate_reagents_canisters", "cryopod_eject", "cryopod_enter", "disposal_force_eject", "distillery_toggle_mixing", "distillery_toggle_power", "drill_unload", "faxmachine_remove_card", "faxmachine_request_roles", "firework_launcher_eject", "food_replicator_eject_beaker", "fuel_compressor_eject_sheet", "guestpass_eject_id", "hydroponics_remove_label", "hydroponics_set_light", "hydroponics_toggle_lid", "implantchair_get_out", "implantchair_move_inside", "material_furnace_eject_contents", "mixer_set_rotation", "nuclearbomb_make_deployable", "papershredder_empty", "particle_smasher_eject_contents", "pod_syndicate_open_ui", "processor_eject", "reagent_filter_flip", "reagent_filter_set_filter", "reagent_furnace_flip", "reagent_furnace_set_filter", "reagent_refinery_set_transfer_amount", "recharge_station_eject", "recharge_station_enter", "secure_data_eject_id", "security_station_map", "suit_cycler_leave", "suit_storage_get_out", "suit_storage_move_inside", "teleporter_computer_set_id", "transportpod_eject", "transportpod_enter", "vr_sleeper_alien_eject", "vr_sleeper_climb_in", "vr_sleeper_eject", "washing_machine_climb_out", "washing_machine_start_washing", "wheel_of_fortune_setinterval",
 	)
 
 /// Type-local entries: stance-declared interactions run from the one proc that names them
-/// (airlock.dm, windowdoor.dm, robot.dm keep the defines file-local).
-/datum/unit_test/dq_interaction_definitions/var/static/list/type_local_entries = list("airlock_ctrl", "airlock_weld", "airlock_pry", "windoor_weld", "robot_crowbar", "robot_welder")
+/// (windowdoor.dm and robot.dm keep the defines file-local; the airlock's ctrl entries are capability entries).
+/datum/unit_test/dq_interaction_definitions/var/static/list/type_local_entries = list("windoor_weld", "robot_crowbar", "robot_welder")
 
 /datum/unit_test/dq_interaction_definitions/Run()
 	var/list/seen = list()
@@ -352,7 +352,6 @@
 		/obj/machinery/autolathe,
 		/obj/machinery/washing_machine,
 		/obj/machinery/pipelayer,
-		/obj/machinery/vending,
 		/obj/machinery/dq_maint_probe,
 	)
 	var/static/list/expected = list(
@@ -380,14 +379,6 @@
 		"/obj/machinery/pipelayer|robot|screwdriver => machine_panel,gen_robot_interaction_swallow|machine_part_replacement:needs a rapid part exchange device,pipelayer_recycle_pipe:needs a pipe,pipelayer_load_metal:needs an item,pipelayer_toggle:it doesn't work without metal",
 		"/obj/machinery/pipelayer|ghost|screwdriver => |",
 		"/obj/machinery/pipelayer|ai|none => |",
-		"/obj/machinery/vending|human|none => vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,machine_anchor:needs a wrench,vending_id_dispatch:needs an item,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin,vending_stock:needs an item",
-		"/obj/machinery/vending|human|screwdriver => vending_stock,vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|human|crowbar => vending_stock,vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|human|wrench => machine_anchor,vending_stock,vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|human|welder => vending_stock,vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|robot|screwdriver => gen_robot_interaction_swallow,vending_stock,vending_use,vending_check_logs|emag_gated:needs a cryptographic sequencer,machine_anchor:needs a wrench,vending_id_dispatch:not possible right now,vending_refill:needs a vending refill cartridge,vending_fake_coin:needs a Coin,vending_coin:needs a Coin",
-		"/obj/machinery/vending|ghost|screwdriver => gen_observer_interaction_as_touch|",
-		"/obj/machinery/vending|ai|none => |",
 		"/obj/machinery/dq_maint_probe|human|none => |machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|screwdriver => machine_panel|machine_deconstruct:needs a crowbar,machine_anchor:needs a wrench,machine_repair:needs a welder",
 		"/obj/machinery/dq_maint_probe|human|crowbar => |machine_panel:needs a screwdriver,machine_deconstruct:the maintenance panel is closed,machine_anchor:needs a wrench,machine_repair:needs a welder",

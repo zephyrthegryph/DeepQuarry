@@ -13,12 +13,17 @@
 	var/obj/item/held
 	var/datum/interaction/entry
 	var/datum/tgui/ui
+	/// Extra `needs` (ask_*(needs =)): re-run on the answer, like an entry's, against the target.
+	var/list/ask_needs
 	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
 	var/returned = FALSE
+	/// A target was given (a null target means "none", never "deleted").
+	var/had_target = FALSE
 
 /datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/interaction/entry, datum/tgui/ui)
 	src.user = user
 	src.target = target
+	had_target = !isnull(target)
 	src.held = held
 	src.entry = entry
 	src.ui = ui
@@ -27,10 +32,15 @@
 /datum/dispatch_context/proc/invalid_reason()
 	if(QDELETED(user))
 		return "you are gone"
-	if(QDELETED(target))
+	// The target is optional (a native verb, a Topic, world code): only a target that existed and was
+	// deleted since refuses. Consciousness is not assumed: ghosts and admins answer prompts too; an
+	// action that needs a conscious user says so in its needs (chk_conscious).
+	if(had_target && QDELETED(target))
 		return "it's gone"
-	if(user.stat != CONSCIOUS)
-		return "you can't do that now"
+	if(ask_needs)
+		var/needs_reason = cap_needs_reason(target, user, held, ask_needs)
+		if(needs_reason)
+			return needs_reason
 	if(ui)
 		if(ui.status != STATUS_INTERACTIVE)
 			return "you can't use it from here any more"
@@ -92,6 +102,8 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 	changed(target)
 	if(dispatch_succeeded(result))
 		dispatch_record(ctx.user, target, action_name, log, null)
+		if(istype(ctx.entry, /datum/interaction/capability) && isatom(target))
+			cap_entry_cooldown_start(target, ctx.entry)
 	return result
 
 /// Handler failures this round (the dispatch tests read them).
@@ -111,7 +123,15 @@ GLOBAL_LIST_EMPTY(dispatch_last_record)
 /proc/refuse(mob/user, text)
 	if(user && text)
 		to_chat(user, span_warning(text))
+		#ifdef UNIT_TESTS
+		var/list/capture = GLOB.refuse_capture
+		capture?.Add(list(list(user, text)))
+		#endif
 	return UI_REFUSED
+
+/// Test builds: while a test sets this to a list, refuse() also appends list(user, text) to it.
+/// Declared in every build so the linter, which reads the tests without UNIT_TESTS, resolves it.
+GLOBAL_VAR(refuse_capture)
 
 /**
  * The fingerprint and the declared log line for a successful dispatch. log: LOG_GAME, LOG_ADMIN or

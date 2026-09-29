@@ -30,7 +30,7 @@
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	own_set(src, "camera", new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
+	own_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
 
 
@@ -72,10 +72,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
-			rel_remove(input, "paired_cameras", src)
+			rel_remove(input, nameof(input.paired_cameras), src)
 			to_chat(user, span_notice("You unpair \the [input] from \the [src]."))
 		else
-			rel_add(input, "paired_cameras", src)
+			rel_add(input, nameof(input.paired_cameras), src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -211,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	var/tmp/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
 
 /datum/tgui_module/camera/intcircuit/New(host)
-	rel_set(src, "owner_circuit", host)
+	rel_set(src, nameof(owner_circuit), host)
 	// Pass an empty network list - we override get_available_cameras
 	..(host, list("intcircuit_dummy"))
 	access_based = FALSE
@@ -238,7 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 
 /// Switching cameras forgets the last turf first, then the module switches as usual.
 UI_ACT_OVERRIDE(/datum/tgui_module/camera/intcircuit, ui_act_switch_camera)
-	rel_clear(src, "last_camera_turf")
+	rel_clear(src, nameof(/datum/tgui_module/appearance_changer::last_camera_turf))
 	return ..()
 
 /// The owner_circuit this refers to (a relation view: null once that is deleted).

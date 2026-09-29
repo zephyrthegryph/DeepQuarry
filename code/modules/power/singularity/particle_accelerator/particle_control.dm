@@ -62,12 +62,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_accelerator/control_box, MACHINE_
 			part.strength = null
 			part.powered = 0
 			part.update_icon()
-		rel_clear(src, "connected_parts")
+		rel_clear(src, nameof(connected_parts))
 		return
 	if(!part_scan())
 		set_use_power(USE_POWER_IDLE)
 		set_active(0)
-		rel_clear(src, "connected_parts")
+		rel_clear(src, nameof(connected_parts))
 
 APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearance_state}")
 
@@ -137,7 +137,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 		src.set_dir(F.dir)
 		break
 
-	rel_clear(src, "connected_parts")
+	rel_clear(src, nameof(connected_parts))
 	assembled = 0
 	var/ldir = turn(dir,90)
 	var/rdir = turn(dir,-90)
@@ -179,7 +179,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 
 	var/obj/structure/particle_accelerator/PA = locate_on(T, /obj/structure/particle_accelerator)
 	if(istype(PA, type) && PA.connect_master(src) && PA.report_ready(src))
-		rel_add(src, "connected_parts", PA)
+		rel_add(src, nameof(connected_parts), PA)
 		return 1
 	return 0
 
@@ -264,4 +264,6 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_stren
 	. = ..()
 	update_icon()
 
-REL_LIST(/obj/machinery/particle_accelerator/control_box, connected_parts)
+/obj/machinery/particle_accelerator/control_box/relations()
+	. = ..()
+	. += rel_many(nameof(connected_parts))

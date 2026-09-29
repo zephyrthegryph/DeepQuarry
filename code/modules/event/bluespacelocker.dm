@@ -16,11 +16,11 @@
 	for(var/i in 1 to 15)
 		if(entry_point())
 			continue
-		rel_set(src, "entry_point", pick_locker(pickable_areas))
+		rel_set(src, nameof(entry_point), pick_locker(pickable_areas))
 	for(var/i in 1 to 15)
 		if(exit_point())
 			continue
-		rel_set(src, "exit_point", pick_locker(pickable_areas, TRUE, TRUE))
+		rel_set(src, nameof(exit_point), pick_locker(pickable_areas, TRUE, TRUE))
 
 	if(entry_point() && exit_point())
 		announceWhen = rand(10 SECONDS, 2 MINUTES)

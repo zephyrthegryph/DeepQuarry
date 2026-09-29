@@ -27,7 +27,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
 	. = BB
-	own_take(src, "BB")
+	own_take(src, nameof(BB))
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	update_icon()
 
@@ -61,8 +61,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 	var/obj/item/ammo_casing/bullet = next_shell(box, task.floor)
 	if(!bullet)
 		return STEP_DONE
-	bullet.forceMove(box)
-	own_add(box, "stored_ammo", bullet)
+	own_add(box, nameof(box.stored_ammo), bullet, into = TRUE)
 	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
@@ -186,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_o
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
-				own_add(src, "stored_ammo", new ammo_type(src))
+				own_add(src, nameof(stored_ammo), new ammo_type(src))
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
@@ -217,9 +216,8 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
-		user.remove_from_mob(C)
-		C.forceMove(src)
-		own_add(src, "stored_ammo", C)
+		if(!own_add(src, nameof(src.stored_ammo), C, user = user))
+			return
 		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W
@@ -234,7 +232,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
 		AC.forceMove(src)
-		own_transfer(L, "stored_ammo", src, "stored_ammo", AC) //move this casing from the clip's loaded list to ours
+		own_transfer(L, nameof(L.stored_ammo), src, nameof(stored_ammo), AC) //move this casing from the clip's loaded list to ours
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
 		L.update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
@@ -254,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		for(var/obj/item/ammo_casing/C in stored_ammo)
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
-		own_take_all(src, "stored_ammo")
+		own_take_all(src, nameof(stored_ammo))
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
@@ -267,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		if(user.get_inactive_hand() == src)
 			if(length(stored_ammo))
 				var/obj/item/ammo_casing/C = stored_ammo[length(stored_ammo)]
-				own_take_member(src, "stored_ammo", C)
+				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
@@ -289,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	// The new rounds go to the head of the list, in order.
 	var/head = 1
 	for(var/obj/item/ammo_casing/new_round as anything in rounds)
-		if(own_add(src, "stored_ammo", new_round))
+		if(own_add(src, nameof(stored_ammo), new_round))
 			moveElement(stored_ammo, length(stored_ammo), head++)
 
 /obj/item/ammo_magazine/pickup(mob/user)
@@ -379,7 +377,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 		if(isliving(user) && Adjacent(user))
 			if(length(stored_ammo))
 				var/obj/item/ammo_casing/C = stored_ammo[length(stored_ammo)]
-				own_take_member(src, "stored_ammo", C)
+				own_take_member(src, nameof(stored_ammo), C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()

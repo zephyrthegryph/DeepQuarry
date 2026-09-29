@@ -75,7 +75,7 @@ GLOBAL_DATUM_INIT(overmap_event_handler, /datum/decl/overmap_event_handler, new)
 		E.endWhen = INFINITY
 		// TODO - Leshana - Note: event.setup() is called before these are set!
 		E.affecting_z = ship.map_z.Copy()
-		rel_set(E, "victim", ship)
+		rel_set(E, nameof(E.victim), ship)
 
 /datum/decl/overmap_event_handler/proc/stop_hazard(obj/effect/overmap/visitable/ship/ship, obj/effect/overmap/event/hazard)
 	for(var/event_type in hazard.events)

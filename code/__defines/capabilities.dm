@@ -2,6 +2,47 @@
 // Runtime: code/datums/capabilities/.
 
 // ---- cap_state bits: ALL allocated in code/__defines/cap_bits.dm (tools/ci/cap_bits_lint.py) ----
+// ---- storage categories (L1: the one allocation of HOLDS_* bits) ----
+// A cap_storage() holder's `holds` is a mask of these; an item's `storage_class` says which it is.
+// can_hold rule (storage.dm): HOLDS_ANY takes anything that fits; otherwise an item fits when
+// (holds & HOLDS_TOOLS) and it has tool qualities, or (item.storage_class & holds) != 0.
+// DM bitfields are safe to 24 bits.
+/// Anything with a tool quality (no storage_class needed).
+#define HOLDS_TOOLS (1<<0)
+/// Cable, flashlights, meters, circuit boards, engineering consumables.
+#define HOLDS_ENGINEERING (1<<1)
+/// Medicine, bandages, scanners, pill bottles.
+#define HOLDS_MEDICAL (1<<2)
+/// Food and drink.
+#define HOLDS_FOOD (1<<3)
+/// Magazines, casings, cells for weapons.
+#define HOLDS_AMMO (1<<4)
+/// Small weapons (knives, batons, holstered guns).
+#define HOLDS_WEAPONS (1<<5)
+/// Paper, pens, folders, stamps, photos.
+#define HOLDS_PAPERWORK (1<<6)
+/// Clothing and accessories.
+#define HOLDS_CLOTHING (1<<7)
+/// Seeds and plant produce.
+#define HOLDS_BOTANY (1<<8)
+/// Ore, sheets and raw materials.
+#define HOLDS_MINING (1<<9)
+/// Beakers, bottles, vials and other reagent containers.
+#define HOLDS_CHEMISTRY (1<<10)
+/// Science samples, slimes cores, disks.
+#define HOLDS_SCIENCE (1<<11)
+/// Cuffs, flashes, evidence bags.
+#define HOLDS_SECURITY (1<<12)
+/// Cleaning supplies.
+#define HOLDS_JANITORIAL (1<<13)
+/// Cigarettes, lighters, matches.
+#define HOLDS_SMOKABLES (1<<14)
+/// ID cards, cash, coins.
+#define HOLDS_CARDS (1<<15)
+/// Power cells.
+#define HOLDS_CELLS (1<<16)
+/// Every category, and anything with no category at all: only size and space limit it.
+#define HOLDS_ANY ((1<<24) - 1)
 
 // ---- gating keywords: behind = COVER|PANEL, locked_by = LOCK ----
 /// The entry is only reachable with the cover open.
@@ -73,6 +114,17 @@
 #define TYPE_DERIVES_PENDING (1<<3)
 /// type_verbs() lists something.
 #define TYPE_DERIVES_TYPE_VERBS (1<<4)
+
+// ---- periodic cadences (periodic_cadence = CADENCE_*; periodic_step(delta) gets the interval in ds) ----
+/// Every 2 seconds.
+#define CADENCE_SLOW /datum/om/pipeline/periodic/slow
+/// Every second.
+#define CADENCE_SECOND /datum/om/pipeline/periodic/second
+/// Every 0.2 seconds (continuous lanes need a reason).
+#define CADENCE_FAST /datum/om/pipeline/periodic/fast
+
+/// /datum/capability/condition `blocks`: the condition refuses every other capability entry of its holder.
+#define ALL_ENTRIES "all_entries"
 
 // ---- power_channels() / powered_by() / cell_bay() / cap_wall_mount() ----
 /// power_channels(): channel indices (Rust's channel order).

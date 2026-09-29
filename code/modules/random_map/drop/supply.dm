@@ -57,8 +57,8 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 	var/static/list/open_orders = list()
 
 /datum/supply_drop_order/New(mob/admin)
-	rel_set(src, "admin", admin)
-	rel_add(src, "open_orders", src)
+	rel_set(src, nameof(admin), admin)
+	rel_add(src, nameof(open_orders), src)
 
 /// The ordering admin (null once that mob is deleted).
 /datum/supply_drop_order/proc/admin() as /mob
@@ -66,7 +66,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 
 /datum/supply_drop_order/lifecycle_dematerialize()
 	..()
-	rel_remove(src, "open_orders", src)
+	rel_remove(src, nameof(open_orders), src)
 
 /// Asks the admin a supply drop question. `on_cancel` runs on the order when the window is closed.
 /datum/supply_drop_order/proc/ask(prompt_type, message, on_answer, on_cancel, list/choices)

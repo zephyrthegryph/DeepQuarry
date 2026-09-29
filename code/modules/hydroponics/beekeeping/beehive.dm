@@ -94,7 +94,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_
 	update_icon()
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	rel_add(src, "frames", held)
+	rel_add(src, nameof(frames), held)
 	return TRUE
 
 /datum/interaction/machine_item/beehive_bee_pack

@@ -79,9 +79,9 @@
 		old_object.MouseExited(over_location, over_control, params)
 
 	if(over_object)
-		rel_set(src, "last_hovored", over_object)
+		rel_set(src, nameof(last_hovored), over_object)
 	else
-		rel_clear(src, "last_hovored")
+		rel_clear(src, nameof(last_hovored))
 	over_object?.MouseEntered(over_location, over_control, params)
 
 /atom/movable/screen/movable/action_button/MouseEntered(location, control, params)
@@ -94,7 +94,7 @@
 	return ..()
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
-	rel_clear(src, "last_hovored")
+	rel_clear(src, nameof(last_hovored))
 	if(!can_use(usr))
 		return
 	var/datum/hud/our_hud = usr.hud_used
@@ -261,7 +261,7 @@
 	update_name()
 
 /atom/movable/screen/button_palette/proc/set_hud(datum/hud/our_hud)
-	rel_set(src, "our_hud", our_hud)
+	rel_set(src, nameof(our_hud), our_hud)
 	refresh_owner()
 
 /atom/movable/screen/button_palette/proc/update_name()
@@ -303,7 +303,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	if(om_timer_slot_pending(src, "color_timer_id"))
 		return
 	add_atom_colour(color, TEMPORARY_COLOUR_PRIORITY) //We unfortunately cannot animate matrix colors. Curse you lummy it would be ~~non~~trivial to interpolate between the two valuessssssssss
-	om_after_slot(src, "color_timer_id", 2 SECONDS, PROC_REF(remove_color), color)
+	after_slot(src, "color_timer_id", 2 SECONDS, PROC_REF(remove_color), color)
 
 /atom/movable/screen/button_palette/proc/remove_color(list/to_remove)
 	remove_atom_colour(TEMPORARY_COLOUR_PRIORITY, to_remove)
@@ -376,7 +376,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 /atom/movable/screen/palette_scroll/proc/set_hud(datum/hud/our_hud)
-	rel_set(src, "our_hud", our_hud)
+	rel_set(src, nameof(our_hud), our_hud)
 	refresh_owner()
 
 /atom/movable/screen/palette_scroll/proc/refresh_owner()
@@ -435,7 +435,7 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	..()
 
 /atom/movable/screen/action_landing/proc/set_owner(datum/action_group/owner)
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	refresh_owner()
 
 /atom/movable/screen/action_landing/proc/refresh_owner()

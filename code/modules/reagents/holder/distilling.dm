@@ -52,7 +52,7 @@
 	if(heat_set_levels ~= levels && !isnull(heat_set_watch))
 		return
 	if(isnull(heat_set_watch))
-		own_set(src, "heat_set_watch", heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound)))
+		own_set(src, nameof(heat_set_watch), heat_watch_set(src, my_atom, PROC_REF(on_reaction_bound)))
 		if(isnull(heat_set_watch))
 			return
 	for(var/i in 1 to length(levels))
@@ -62,7 +62,7 @@
 	heat_set_levels = levels
 
 /datum/reagents/distilling/proc/unwatch_reaction_temperatures()
-	own_clear(src, "heat_set_watch", OWN_DELETE)
+	own_clear(src, nameof(heat_set_watch), OWN_DELETE)
 	heat_set_levels = null
 
 /// The holder's temperature crossed a reaction bound: react now.

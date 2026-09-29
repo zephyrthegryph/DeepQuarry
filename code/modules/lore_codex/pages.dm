@@ -9,8 +9,8 @@
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
-	rel_set(src, "holder", new_holder)
-	rel_set(src, "parent", new_parent)
+	rel_set(src, nameof(holder), new_holder)
+	rel_set(src, nameof(parent), new_parent)
 	add_content()
 	if(name)
 		keywords.Add(name)
@@ -55,7 +55,7 @@
 /datum/lore/codex/category/New()
 	..()
 	for(var/type in children)
-		own_add(src, "child_pages", new type(holder(), src))
+		own_add(src, nameof(child_pages), new type(holder(), src))
 
 /datum/lore/codex/category/index_page()
 	// First, get our own keywords.

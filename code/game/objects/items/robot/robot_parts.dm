@@ -115,38 +115,33 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	if(istype(W, /obj/item/robot_parts/l_leg))
 		if(src.l_leg)	return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "l_leg", W)
+		if(!own_set(src, nameof(src.l_leg), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
 		if(src.r_leg)	return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "r_leg", W)
+		if(!own_set(src, nameof(src.r_leg), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
 		if(src.l_arm)	return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "l_arm", W)
+		if(!own_set(src, nameof(src.l_arm), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
 		if(src.r_arm)	return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "r_arm", W)
+		if(!own_set(src, nameof(src.r_arm), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
 		if(src.chest)	return INTERACTION_HANDLED_PASS
 		if(W:wires_const && W:cell)
-			user.drop_item()
-			W.forceMove(src)
-			own_set(src, "chest", W)
+			if(!own_set(src, nameof(src.chest), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			src.update_icon()
 		else if(!W:wires_const)
 			to_chat(user, span_warning("You need to attach wires_const to it first!"))
@@ -156,9 +151,8 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 	if(istype(W, /obj/item/robot_parts/head))
 		if(src.head)	return INTERACTION_HANDLED_PASS
 		if(W:flash2 && W:flash1)
-			user.drop_item()
-			W.forceMove(src)
-			own_set(src, "head", W)
+			if(!own_set(src, nameof(src.head), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			src.update_icon()
 		else
 			to_chat(user, span_warning("You need to attach a flash to it first!"))
@@ -200,10 +194,8 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE, TRUE)
 			if(!O)	return INTERACTION_HANDLED_PASS
 
-			user.drop_item()
-			W.forceMove(O) // CONTAINED: in the robot's contents before own_set()
-
-			own_set(O, "mmi", W)
+			if(!own_set(O, nameof(O.mmi), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			O.post_mmi_setup()
 			O.invisibility = INVISIBILITY_NONE
 			O.custom_name = created_name
@@ -216,7 +208,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 				for(var/datum/language/L in O.identity().languages)
 					O.add_language(L.name)
 			O.job = JOB_CYBORG
-			var/obj/item/cell/chest_cell = own_take(chest, "cell") // detach from the chest first: set_cell() adopts it
+			var/obj/item/cell/chest_cell = own_take(chest, nameof(chest.cell)) // detach from the chest first: set_cell() adopts it
 			chest_cell?.forceMove(O) // the borg's cell is CONTAINED
 			O.set_cell(chest_cell)
 			W.forceMove(O)//Should fix cybros run time erroring when blown up. It got deleted before, along with the frame.
@@ -241,9 +233,8 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 			to_chat(user, span_warning("You have already inserted a cell!"))
 			return INTERACTION_HANDLED_PASS
 		else
-			user.drop_item()
-			W.forceMove(src)
-			own_set(src, "cell", W)
+			if(!own_set(src, nameof(src.cell), W, user = user))
+				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_notice("You insert the cell!"))
 	if(istype(W, /obj/item/stack/cable_coil))
 		if(src.wires_const)
@@ -271,14 +262,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		to_chat(user, span_notice("You have already inserted the eyes!"))
 		return
 	else if(src.flash1)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "flash2", W)
+		if(!own_set(src, nameof(src.flash2), W, user = user))
+			return
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 	else
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "flash1", W)
+		if(!own_set(src, nameof(src.flash1), W, user = user))
+			return
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 
 
@@ -291,12 +280,18 @@ DECLARE_EMAG_REPEATABLE(/obj/item/robot_parts, PROC_REF(on_emag), null)
 		sabotaged = 1
 		return 1
 
-OWN(/obj/item/robot_parts/chest, cell, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/head, flash1, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/head, flash2, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, l_arm, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, r_arm, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, l_leg, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, r_leg, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, chest, OWN_CONTAINED)
-OWN(/obj/item/robot_parts/robot_suit, head, OWN_CONTAINED)
+/obj/item/robot_parts/chest/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
+/obj/item/robot_parts/head/ownership()
+	. = ..()
+	. += owns(nameof(flash1), policy = OWN_CONTAINED)
+	. += owns(nameof(flash2), policy = OWN_CONTAINED)
+/obj/item/robot_parts/robot_suit/ownership()
+	. = ..()
+	. += owns(nameof(l_arm), policy = OWN_CONTAINED)
+	. += owns(nameof(r_arm), policy = OWN_CONTAINED)
+	. += owns(nameof(l_leg), policy = OWN_CONTAINED)
+	. += owns(nameof(r_leg), policy = OWN_CONTAINED)
+	. += owns(nameof(chest), policy = OWN_CONTAINED)
+	. += owns(nameof(head), policy = OWN_CONTAINED)

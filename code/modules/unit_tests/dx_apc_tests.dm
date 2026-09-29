@@ -9,7 +9,7 @@
 
 /obj/machinery/power/apc/dx_test/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED
-	own_set(src, "cell", new cell_type(src))
+	own_set(src, nameof(cell), new cell_type(src))
 	cell.charge = cell.maxcharge
 
 /obj/machinery/power/apc/dx_test/ui_allowed(mob/user, action)
@@ -17,7 +17,7 @@
 
 /// The cell would spill onto the test block (OWN_SPILL): the test APC takes it along.
 /obj/machinery/power/apc/dx_test/on_destroy(force)
-	var/obj/item/cell/C = own_take(src, "cell")
+	var/obj/item/cell/C = own_take(src, nameof(cell))
 	if(C)
 		qdel(C)
 	..()
@@ -39,7 +39,9 @@
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/slot/cell_bay), "a cell bay")
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/power_channels), "power channels")
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/wall_mount), "a wall mount")
-	TEST_ASSERT_EQUAL(wall_board_of(A), /obj/item/module/power_control, "the wall mount names the board")
+	TEST_ASSERT_NULL(cap_of(A, /datum/capability/deconstruct), "no machine-frame dismantling")
+	TEST_ASSERT_NULL(cap_of(A, /datum/capability/powered), "no dark layer")
+	TEST_ASSERT_EQUAL(cap_of(A, /datum/capability/lock).layer_name, CAP_NO_LAYER, "the APC's lock replaced the hatch's in place (drawn as a glow)")
 	TEST_ASSERT(is_locked(A), "the ID lock starts engaged (cap_state default)")
 	TEST_ASSERT(A in cap_system_members(/datum/cap_system/power, POWER_ROLE_AREA_SUPPLY), "powered_by() joined the power system as an area supply")
 	TEST_ASSERT_EQUAL(cap_system_role(A, /datum/cap_system/power), POWER_ROLE_AREA_SUPPLY, "with its role")
@@ -53,7 +55,7 @@
 	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
 	var/datum/interaction/capability/cover = cap_test_entry(A, "cover:[TOOL_CROWBAR]")
 	TEST_ASSERT_NOTNULL(cover, "a crowbar cover")
-	TEST_ASSERT_EQUAL(cap_gate_reason(A, H, null, cover), "the cover is locked and cannot be opened", "locked with a charged cell")
+	TEST_ASSERT_EQUAL(cap_gate_reason(A, H, null, cover), "the cover is locked", "locked with a charged cell")
 	A.cell.charge = 0
 	TEST_ASSERT_NULL(cap_gate_reason(A, H, null, cover), "a flat cell lets it open")
 	A.cell.charge = A.cell.maxcharge
@@ -61,7 +63,12 @@
 	TEST_ASSERT_NULL(cap_gate_reason(A, H, null, cover), "the cover lock off lets it open")
 	A.stat_add(BROKEN)
 	cap_set(A, CAP_BROKEN, TRUE)
-	TEST_ASSERT_EQUAL(cap_gate_reason(A, H, null, cover), "it's broken", "a broken closed APC can't be pried open")
+	TEST_ASSERT(cap_gate_reason(A, H, null, cover), "a broken closed APC can't be pried open")
+	cap_set(A, CAP_BROKEN, FALSE)
+	A.stat_remove(BROKEN)
+	cap_set(A, CAP_COVER_OPEN, TRUE)
+	A.has_electronics = APC_HAS_ELECTRONICS_WIRED
+	TEST_ASSERT_EQUAL(cap_gate_reason(A, H, null, cover), "take the power control board out first", "the cover can't close on an unsecured board")
 
 /// The wire panel only with the cover closed; the wires only behind the open panel.
 /datum/unit_test/dx_apc_panel_and_wires/Run()

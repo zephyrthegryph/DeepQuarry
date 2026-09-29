@@ -57,17 +57,17 @@ UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:un
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(tgui_host()))
-		rel_set(src, "linked", sector)
+		rel_set(src, nameof(linked), sector)
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
-	rel_add(src, "watchers", user)
+	rel_add(src, nameof(watchers), user)
 	user.set_viewsize(world.view + extra_view)
 	if(!map_view_used)
 		map_view_used = TRUE
 
 /datum/tgui_module/ship/unlook(mob/user)
-	rel_remove(src, "watchers", user)
+	rel_remove(src, nameof(watchers), user)
 	user.set_viewsize() // reset to default
 	if(map_view_used)
 		map_view_used = FALSE
@@ -171,7 +171,7 @@ DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|
 	. = ..()
 	if(!istype(new_linked))
 		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-	rel_set(src, "linked", new_linked)
+	rel_set(src, nameof(linked), new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM
 	// ALLOW(spatial): world search
@@ -182,11 +182,11 @@ DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			own_put(src, "known_sectors", S.name, R)
+			own_put(src, nameof(known_sectors), S.name, R)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
-			rel_set(src, "sensors", S)
+			rel_set(src, nameof(sensors), S)
 			break
 
 /datum/tgui_module/ship/fullmonty/relaymove(mob/user, direction)
@@ -341,14 +341,14 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_add)
 	if(!R)
 		return TRUE
 	R.fields["name"] = sec_name
-	own_put(src, "known_sectors", sec_name, R)
+	own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), sec_name, R)
 	. = TRUE
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "remove", ui_act_remove, UI_ARG_REF("remove", null, /datum/computer_file/data/waypoint))
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_remove)
 	var/datum/computer_file/data/waypoint/R = params["remove"]
 	if(istype(R) && known_sectors?[R.fields["name"]] == R) // only one of our own entries
-		own_put(src, "known_sectors", R.fields["name"], null) // removes and disposes of it
+		own_put(src, nameof(/datum/tgui_module/ship/fullmonty::known_sectors), R.fields["name"], null) // removes and disposes of it
 	. = TRUE
 
 UI_ACT(/datum/tgui_module/ship/fullmonty, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))

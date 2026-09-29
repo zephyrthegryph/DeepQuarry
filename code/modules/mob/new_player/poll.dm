@@ -25,7 +25,7 @@
 	if(!client)
 		return
 	if(!privacy_poll_dialog)
-		own_set(src, "privacy_poll_dialog", new /datum/privacy_poll_dialog(src))
+		own_set(src, nameof(privacy_poll_dialog), new /datum/privacy_poll_dialog(src))
 	privacy_poll_dialog.tgui_interact(src)
 
 /datum/polloption
@@ -36,7 +36,7 @@
 	if(!SSdbcore.IsConnected() || !client)
 		return
 	if(!poll_browser_dialog)
-		own_set(src, "poll_browser_dialog", new /datum/poll_browser_dialog(src))
+		own_set(src, nameof(poll_browser_dialog), new /datum/poll_browser_dialog(src))
 	else
 		poll_browser_dialog.refresh_poll_list()
 	poll_browser_dialog.tgui_interact(src)
@@ -47,7 +47,7 @@
 	if(!client)
 		return
 	if(!poll_browser_dialog)
-		own_set(src, "poll_browser_dialog", new /datum/poll_browser_dialog(src))
+		own_set(src, nameof(poll_browser_dialog), new /datum/poll_browser_dialog(src))
 	if(isnum(pollid) && pollid > 0)
 		poll_browser_dialog.selected_pollid = pollid
 	poll_browser_dialog.tgui_interact(src)

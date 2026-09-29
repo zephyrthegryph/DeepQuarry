@@ -8,7 +8,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 /datum/event/money_hacker/setup()
 	EXPIRY_SET(src, end_time, 6000, CLOCK_WORLD)
 	if(REGISTRY_COUNT(REGISTRY_MONEY_ACCOUNTS))
-		rel_set(src, "affected_account", pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
+		rel_set(src, nameof(affected_account), pick(REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS)))
 
 		GLOB.account_hack_attempted = 1
 	else
@@ -55,7 +55,7 @@ GLOBAL_VAR_INIT(account_hack_attempted, 0)
 		T.source_terminal = pick("","[pick("Biesel","New Gibson")] GalaxyNet Terminal #[rand(111,999)]","your mums place","nantrasen high CommanD")
 
 		var/datum/money_account/account = affected_account()
-		own_add(account, "transaction_log", T)
+		own_add(account, nameof(account.transaction_log), T)
 
 	else
 		//crew wins

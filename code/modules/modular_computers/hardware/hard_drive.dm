@@ -83,8 +83,8 @@
 	if(F in stored_files)
 		return 0
 
-	own_move(F, src, "stored_files")
-	rel_set(F, "holder", src)
+	own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files))
+	rel_set(F, nameof(/datum/computer_file/::holder), src)
 	recalculate_size()
 	return 1
 
@@ -107,7 +107,7 @@
 		return 0
 
 	if(F in stored_files)
-		own_take_member(src, "stored_files", F) // detached: the caller re-stores or deletes it
+		own_take_member(src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files), F) // detached: the caller re-stores or deletes it
 		recalculate_size()
 		return 1
 	else

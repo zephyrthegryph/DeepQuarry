@@ -38,7 +38,7 @@
 /obj/machinery/power/apc/angled/hidden
 	alarms_hidden = TRUE
 
-/obj/machinery/power/apc/angled/wall_mount_orient()
+/obj/machinery/power/apc/angled/wall_mount_orient(offset)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 24 : -24)
 	pixel_y = (dir & 3) ? (dir == 1 ? 20 : -20) : 0
 
@@ -130,18 +130,26 @@ APPEARANCE_NONE(/obj/machinery/power/apc) // ALLOW(sys_dx_old_forms): drops the 
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/capabilities()
-	. = wall_machine(board = /obj/item/module/power_control)
+	. = wall_machine(board = /obj/item/module/power_control, repair_tool = NONE)
 	. += maintenance_hatch(/datum/wires/apc, access = ACCESS_ENGINE_EQUIP, cover_locked_while = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 	. += cell_bay(nameof(cell))
 	. += power_channels()
 	. += powered_by(/datum/cap_system/power, role = POWER_ROLE_AREA_SUPPLY)
 	. += apc_steps()
+	// Not an APC's: it isn't dismantled into a machine frame, and has no dark sprite (its own steps and
+	// draw() cover both).
+	. = without(., /datum/capability/deconstruct)
+	. = without(., /datum/capability/powered)
 
-/// The APC's own entries: the emag, the frame and electronics steps, the touch, the alt-click lock and
-/// the bash (everything its bundles don't cover).
+/// The APC's own entries: the frame and electronics steps, the touch, the alt-click lock and the bash
+/// (everything its bundles don't cover), plus its versions of the hatch's lock (drawn as its own glow),
+/// emag (the old wait and refusals; the bluescreen layer, drawn under everything) and cover rules (the
+/// cover can't close on an unsecured board). A same-key capability replaces the bundle's in place.
 /obj/machinery/power/apc/proc/apc_steps()
 	return list(
-		cap_layer_order(cap_emag(say = "You emag the APC interface.", effect = PROC_REF(on_emag), delay = 0.6 SECONDS, blocked_by = COVER | PANEL, needs = PROC_REF(emag_ok), log = LOG_GAME, layer = "emagged"), 10),
+		cap_lock(access = list(ACCESS_ENGINE_EQUIP), blocked_by = COVER | PANEL, layer = CAP_NO_LAYER),
+		cap_layer_order(cap_emag(say = "You emag the APC interface.", effect = PROC_REF(on_emag), delay = 0.6 SECONDS, blocked_by = COVER | PANEL, needs = PROC_REF(emag_ok), log = LOG_GAME, layer = "emagged"), 0),
+		cap_hatch_rules(PROC_REF(cover_holds)),
 		cap_entry_costs(cap_tool("Remove power control board", TOOL_CROWBAR, PROC_REF(remove_board), delay = 5 SECONDS, behind = COVER, needs = PROC_REF(board_removable), priority = 15, applies = PROC_REF(board_unsecured)), start = /datum/msg/start/apc/remove_board, volume = 50),
 		cap_entry_costs(cap_entry_delay(cap_use_on("Insert power control board", /obj/item/module/power_control, PROC_REF(insert_board), behind = COVER, needs = PROC_REF(board_fits), works_broken = TRUE, works_unpowered = TRUE, priority = 20, applies = PROC_REF(no_board)), 1 SECOND), start = /datum/msg/start/apc/insert_board),
 		cap_tool("Secure electronics", TOOL_SCREWDRIVER, PROC_REF(toggle_board_secure), behind = COVER, needs = PROC_REF(board_securable), name_proc = PROC_REF(board_secure_name)),
@@ -489,7 +497,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	if(building)
 		set_dir(ndir)
 		area = get_area(src)
-		rel_set(area(), "apc", src)
+		rel_set(area(), nameof(/area::apc), src)
 		cap_set(src, CAP_COVER_OPEN, TRUE)
 		operating = 0
 		name = "[area().name] APC"
@@ -502,9 +510,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-OWN(/obj/machinery/power/apc, cell, OWN_SPILL)
-REL_PAIR(/obj/machinery/power/apc, hacker, hacked_apcs)
-REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
+/obj/machinery/power/apc/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_SPILL)
+
+/obj/machinery/power/apc/relations()
+	. = ..()
+	. += rel_one(nameof(hacker), back = nameof(/mob/living/silicon/ai::hacked_apcs))
+/mob/living/silicon/ai/relations()
+	. = ..()
+	. += rel_many(nameof(hacked_apcs), back = nameof(/obj/machinery/power/apc::hacker))
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()
@@ -519,7 +534,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
-		rel_clear(area(), "apc")
+		rel_clear(area(), nameof(/area::apc))
 		area().power_light  = 0
 		area().power_equip  = 0
 		area().power_environ = 0
@@ -627,14 +642,14 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	adjust_charge(cell.charge - get_charge())
 
 /obj/machinery/power/apc/proc/make_terminal()
-	own_set(src, "terminal", new /obj/machinery/power/terminal(loc))
+	own_set(src, nameof(terminal), new /obj/machinery/power/terminal(loc))
 	terminal.set_dir(dir)
-	rel_set(terminal, "master", src)
+	rel_set(terminal, nameof(terminal.master), src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
 	if(cell_type)
-		own_set(src, "cell", new cell_type(src))
+		own_set(src, nameof(cell), new cell_type(src))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 		sync_cell_charge()
 
@@ -646,7 +661,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	else
 		area = get_area_name(areastring)
 		name = "\improper [area().name] APC"
-	rel_set(area(), "apc", src)
+	rel_set(area(), nameof(/area::apc), src)
 
 	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
@@ -1024,8 +1039,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
-		rel_clear(terminal, "master")
-		own_take(src, "terminal")
+		rel_clear(terminal, nameof(terminal.master))
+		own_take(src, nameof(terminal))
 	wake_for_power_dependency()
 	changed(src)
 
@@ -1062,7 +1077,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
 	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
-	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
+	rel_set(src, nameof(hacker), A) // two-sided: lists us in A.hacked_apcs
 	set_locked(1)
 	changed(src)
 	return 1
@@ -1093,7 +1108,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.
-	rel_clear(src, "hacker") // two-sided: leaves the AI's hacked_apcs
+	rel_clear(src, nameof(hacker)) // two-sided: leaves the AI's hacked_apcs
 	set_emagged(FALSE)
 	changed(src)
 	update()
@@ -1156,8 +1171,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 	var/area/NA = get_area(src)
 	if(NA != area())
 		if(area().apc == src)
-			rel_clear(area(), "apc")
-		rel_set(NA, "apc", src)
+			rel_clear(area(), nameof(/area::apc))
+		rel_set(NA, nameof(/area::apc), src)
 		area = NA
 		name = "[area().name] APC"
 	update()

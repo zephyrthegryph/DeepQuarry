@@ -26,9 +26,10 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 
 /// Writes V on D through its setter (or directly, then changed()). Framework use only.
 /proc/timed_write(datum/D, var_name, value)
-	var/setter = "set_[var_name]"
-	if(hascall(D, setter))
-		call(D, setter)(value)
+	// Only a registered setter (TRACKED / SETTER): a proc merely named set_<x> may take other args.
+	if(hascall(D, "__setter_[var_name]"))
+		call(D, "set_[var_name]")(value)
+		changed(D)
 		return
 	if(D.vars[var_name] == value)
 		return
@@ -36,6 +37,10 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	changed(D)
 
 /proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_WORLD, keep_longer = FALSE, revert_to)
+	if(isnull(for_time))
+		CRASH("timed_set: for_time is required ([D?.type].[var_name]); write through the setter for a permanent change")
+	if(for_time <= 0)
+		return FALSE // a zero or negative duration changes nothing (never a permanent write)
 	if(!D || QDELING(D) || !(var_name in D.vars))
 		CRASH("timed_set: [D?.type] has no var [var_name]")
 	var/list/pending = D.timed_until?[var_name]
@@ -54,9 +59,9 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(clock == CLOCK_WORLD)
 		// Real time runs on the global owner. It holds a ref text, not D, so the timer never keeps a
 		// deleted holder alive; the token check drops a stale or reused ref.
-		om_after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
+		after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
 	else
-		om_after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
+		after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
 	return TRUE
 
 /proc/timed_expire_ref(ref_text, var_name, token)
@@ -79,14 +84,20 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 /**
  * A delayed action (the third time form, next to timed_set() and COOLDOWN_*): calls proc_ref on E after
  * delay, as a dispatched call (E is marked changed afterwards). Owned by E: E's teardown cancels it.
+ * The call still runs when a datum ARGUMENT was deleted meanwhile: that argument arrives as null, so
+ * cleanup (vend_ready = TRUE) always happens; the handler checks its args (null policy). Only E's own
+ * deletion drops the call.
  * Returns the OM timer id (never store it in a var; use timed_set() for state that must revert).
  *	after(src, vend_delay, PROC_REF(finish_vend), product, user)
  */
 /proc/after(datum/E, delay, proc_ref, ...)
-	var/list/call_args = list(E, delay, proc_ref)
-	if(length(args) > 3)
-		call_args += args.Copy(4)
-	return om_after(arglist(call_args))
+	return om_after_list(E, delay, proc_ref, length(args) > 3 ? args.Copy(4) : null, nulls_for_gone = TRUE)
+
+/// after() for a pure effect that makes no sense once any datum argument is gone: the call is dropped
+/// (counted and logged by the scheduler). DM rejects an undeclared named argument on a variadic proc, so
+/// this is its own proc rather than an after(drop_if_gone = TRUE) option.
+/proc/after_if_alive(datum/E, delay, proc_ref, ...)
+	return om_after_list(E, delay, proc_ref, length(args) > 3 ? args.Copy(4) : null, nulls_for_gone = FALSE)
 
 /// Deciseconds until var_name reverts (0 when nothing is pending), on the clock it was set on.
 /proc/time_left(datum/D, var_name)
@@ -112,3 +123,9 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 #undef TIMED_PRIOR
 #undef TIMED_CLOCK
 #undef TIMED_SET_VALUE
+
+/// Cancels every pending timed revert of D (its teardown: world-clock slots live on the global owner).
+/proc/timed_cancel_all(datum/D)
+	for(var/var_name in D.timed_until)
+		timed_cancel(D, var_name)
+	D.timed_until = null

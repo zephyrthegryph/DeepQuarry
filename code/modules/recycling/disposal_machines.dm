@@ -672,7 +672,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
-	own_set(src, "air_contents", new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
+	own_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
 	flushing = FALSE
 
 	// now reset disposal state
@@ -693,7 +693,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			om_after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
+			after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	if(mode == DISPOSALMODE_CHARGING && operable() && can_pressurize_from(loc.return_air()))

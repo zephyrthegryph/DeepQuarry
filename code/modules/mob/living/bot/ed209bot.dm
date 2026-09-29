@@ -65,7 +65,7 @@
 	play_sfx(src, emagged ? SFX_WEAPONS_LASER : SFX_WEAPONS_TASER, volume = 50)
 	var/obj/item/projectile/P = new projectile(loc)
 
-	rel_set(P, "firer", src)
+	rel_set(P, nameof(P.firer), src)
 	P.old_style_target(A)
 	P.fire()
 

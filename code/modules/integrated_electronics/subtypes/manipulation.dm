@@ -32,11 +32,10 @@
 		if(installed_gun)
 			to_chat(user, span_warning("There's already a weapon installed."))
 			return INTERACTION_HANDLED_PASS
-		user.drop_from_inventory(gun)
 		size += gun.w_class
 		complexity = complexity * gun.w_class //Max complexity that a case can reach is 240. This means a small gun = 60 complexity, normal = 90, large = 120. This means you could fit 3 small guns, 2 normal guns, or 1 large gun in the circuit.
-		gun.forceMove(src)
-		own_set(src, "installed_gun", gun)
+		if(!own_set(src, nameof(src.installed_gun), gun, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You slide \the [gun] into the firing mechanism."))
 		play_sfx(src, SFX_ITEMS_CROWBAR)
 	else
@@ -56,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 		size = initial(size)
 		complexity = initial(complexity)
 		play_sfx(src, SFX_ITEMS_CROWBAR)
-		own_take(src, "installed_gun")
+		own_take(src, nameof(installed_gun))
 	else
 		to_chat(user, span_notice("There's no weapon to remove from the mechanism."))
 	return TRUE
@@ -222,7 +221,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
-	own_set(src, "attached_grenade", G)
+	own_set(src, nameof(attached_grenade), G)
 	om_hook(attached_grenade, /datum/om/event/qdeleting, src, PROC_REF(detach_grenade))
 	size += G.w_class
 	desc += " \An [attached_grenade] is attached to it!"
@@ -232,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 	if(!attached_grenade)
 		return
 	om_unhook(attached_grenade, /datum/om/event/qdeleting, src)
-	own_take(src, "attached_grenade")
+	own_take(src, nameof(attached_grenade))
 	size = initial(size)
 	desc = initial(desc)
 
@@ -271,4 +270,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 		target.resize(size/100)
 	activate_pin(2)
 
-OWN(/obj/item/integrated_circuit/manipulation/weapon_firing, installed_gun, OWN_CONTAINED)
+/obj/item/integrated_circuit/manipulation/weapon_firing/ownership()
+	. = ..()
+	. += owns(nameof(installed_gun), policy = OWN_CONTAINED)
