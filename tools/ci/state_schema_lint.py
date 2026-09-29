@@ -9,9 +9,11 @@ finds those vars statically:
     A saved var on a latent-safe type (or one of its ancestors) whose declared
     type is an object (`var/datum/...`, `var/obj/...`, `var/list/datum/...`,
     ...) must be `tmp`, or be given a codec in the type's `state_codecs()`, or
-    hold a registry singleton the serializer encodes by ID, or carry
-    `// ALLOW(state_ref): <reason>` on its declaration (or the comment line
-    above it; tools/ci/allow_annotations.py).
+    hold a registry singleton the serializer encodes by ID (REGISTRY_TYPE), or
+    have an ownership kind the serializer derives a codec from
+    (doc/rewrite/ownership.md sec 6): declared OWN / PROTO / REL / SHARED, or
+    written through the ownership accessors (own_* / rel_* / proto_*). There is
+    no annotation to keep a var without one.
 
 A type is latent-safe when a type block sets `latent_safe = TRUE`; subtypes
 inherit it by path until one sets `latent_safe = FALSE`.
@@ -35,12 +37,22 @@ REF_ROOTS = ("/datum", "/atom", "/obj", "/mob", "/turf", "/area", "/image",
              "/icon", "/client", "/sound", "/matrix", "/mutable_appearance",
              "/savefile", "/regex", "/database", "/exception", "/callback",
              "/decl")
-# Types the serializer encodes by registry ID (code/datums/state/codecs.dm,
-# /datum/state_codec/registry). Keep in step with state_registry_id().
-REGISTRY_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/species")
-# Frozen definition / registry types that are never deleted (DECLARE_REF(..., DEF),
-# doc/rewrite/lifecycle.md sec 4). A var whose declared type is under one of these
-# is an implicit DECLARE_REF(..., DEF): the declared-refs lints accept it with no declaration.
+# Types the serializer encodes by registry ID: every REGISTRY_TYPE (code/datums/ownership/registry_types.dm).
+def _registry_types():
+    found = []
+    path = os.path.join(ROOT, "code", "datums", "ownership", "registry_types.dm")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            for line in handle:
+                m = re.match(r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,", line)
+                if m:
+                    found.append(m.group(1))
+    return tuple(found) + ("/decl",)
+
+
+REGISTRY_TYPES = _registry_types()
+# Frozen definition / registry types that are never deleted: registered singletons
+# (doc/rewrite/ownership.md sec 2). A var typed as one of these is implicitly SHARED.
 # The one list; add a type only when no instance of it is ever qdel'd or made per
 # holder. /datum/species is left out on purpose: produceCopy() makes per-mob copies.
 DEF_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/language",
@@ -257,16 +269,30 @@ def chain(path):
     return out
 
 
-_RAW = {}
+_OWNERSHIP = {}
 
 
-def kept(v):
-    """True if var decl `v` carries ALLOW(state_ref) on its declaration."""
-    from allow_annotations import allowed
-    if v.path not in _RAW:
-        with open(v.path, encoding="utf-8", errors="replace") as f:
-            _RAW[v.path] = f.read().split("\n")
-    return allowed(_RAW[v.path], v.line, "state_ref")
+def ownership_kind(owner, name):
+    """The ownership kind (OWN / PROTO / REL / SHARED) of `owner`.`name`, declared or inferred from
+    accessor writes (tools/ci/ownership_lint.py's index), or None."""
+    if "idx" not in _OWNERSHIP:
+        import ownership_lint
+        idx = ownership_lint.Index()
+        idx.load()
+        _OWNERSHIP["idx"] = idx
+        usage = {}
+        for r, (raw, code) in idx.files.items():
+            for m in ownership_lint.ACCESSOR.finditer("\n".join(raw)):
+                func = m.group(1)
+                kind = "OWN" if func.startswith("own_") else "REL" if func.startswith("rel_") else "PROTO" if func.startswith("proto_") else "SHARED"
+                usage.setdefault(m.group(3), set()).add(kind)
+        _OWNERSHIP["usage"] = usage
+    idx = _OWNERSHIP["idx"]
+    d = idx.decl(owner, name)
+    if d:
+        return d[1]
+    kinds = _OWNERSHIP["usage"].get(name)
+    return sorted(kinds)[0] if kinds else None
 
 
 def dm_files():
@@ -308,7 +334,7 @@ def main(argv):
             total_saved_ref += len(refs)
             print(f"{base}: {len(vs)} vars, {len(tmp)} tmp, {len(refs)} saved reference vars")
             for v in refs:
-                tag = "kept" if kept(v) else "codec" if has_codec(v.owner, v.name, v.owner) else "OPEN"
+                tag = "owned" if ownership_kind(v.owner, v.name) else "codec" if has_codec(v.owner, v.name, v.owner) else "OPEN"
                 print(f"    {v.name} ({'list of ' if v.is_list else ''}{v.vtype}) {v.path}:{v.line} [{tag}]")
         print(f"total: {total_tmp} tmp, {total_saved_ref} saved reference vars on base types")
         return 0
@@ -324,7 +350,7 @@ def main(argv):
                 if has_codec(a, v.name, t):
                     continue
                 entry = f"{a}/{v.name}"
-                if kept(v):
+                if ownership_kind(a, v.name):
                     used.add(entry)
                     continue
                 if (a, v.name) in checked:
@@ -332,8 +358,8 @@ def main(argv):
                 checked.add((a, v.name))
                 failures.append(f"{v.path}:{v.line}: {entry} holds a reference "
                                 f"({'list of ' if v.is_list else ''}{v.vtype}) and is saved on latent-safe {t}; "
-                                "make it tmp, give it a codec in state_codecs(), or mark it `// ALLOW(state_ref): <reason>`")
-    print(f"state schema lint: {len(safe_types)} latent-safe types, {len(used)} kept vars (ALLOW(state_ref)), {len(failures)} problems")
+                                "make it tmp, give it a codec in state_codecs(), or give it an ownership kind (own_set/rel_set/proto_set)")
+    print(f"state schema lint: {len(safe_types)} latent-safe types, {len(used)} vars with an ownership codec, {len(failures)} problems")
     for f in failures:
         print(f)
     return 1 if failures else 0

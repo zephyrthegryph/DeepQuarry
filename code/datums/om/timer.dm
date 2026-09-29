@@ -585,7 +585,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 
 /// om_run() without waiting: the call runs in its own stack (INVOKE_ASYNC for a stored spec).
 /proc/om_run_async(list/spec, ...)
-	set waitfor = FALSE
+	set waitfor = FALSE // ALLOW(scheduler): the async half of a stored call spec, as /datum/callback/InvokeAsync() was
 	return om_run(arglist(args))
 
 /// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
