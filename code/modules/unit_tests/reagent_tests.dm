@@ -291,5 +291,5 @@
 		for(var/tag in R.treatment_tags)
 			TEST_ASSERT(GLOB.dq_treatment_tag_names[tag], "[Rpath]: treatment_tags key \"[tag]\" is not a valid TREAT_* tag.")
 			var/potency = R.treatment_tags[tag]
-			TEST_ASSERT(isnum(potency) && potency > 0, "[Rpath]: treatment_tags[\"[tag]\"] must be a positive number, got [potency].")
+			TEST_ASSERT(isnum(potency) && potency > 0, "[Rpath]: treatment_tags entry [tag] must be a positive number, got [potency].")
 	TEST_ASSERT(checked > 0, "no reagent declares treatment_tags; the check found nothing to validate")
