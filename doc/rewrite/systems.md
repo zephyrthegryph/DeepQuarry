@@ -285,6 +285,56 @@ EMP_DISABLE(/obj/machinery/camera, 90 SECONDS, "emped")        // sets field, ex
   point overrides (`bullet_act`, `emp_act`, `ex_act`, `fire_act`, `blob_act`) that do a fixed thing.
 - Lint `sys_entry_override`.
 
+**As built (rewrite/sys-damage).**
+
+- Macros (`code/__defines/sys_damage_reactions.dm`), stored in the type's lifecycle declaration
+  table (built once per type, accumulating down the tree; a subtype changes an inherited reaction
+  by overriding the reaction proc):
+  - `DAMAGE_REACTION(T, trigger, PROC_REF(x))` runs `x(packet)` before the sink;
+    `DAMAGE_REACTION_AFTER(T, trigger, PROC_REF(x))` after it, only if the holder survived.
+    A trigger is a packet kind (`DAMAGE_BLUNT` .. `DAMAGE_PAIN`: fires when the packet carries
+    some) or an entry (`DAMAGE_PROJECTILE`, `DAMAGE_EMP`, `DAMAGE_EXPLOSION`, `DAMAGE_THROWN`,
+    `DAMAGE_BLOB`, `DAMAGE_GENERIC_ATTACK`, `DAMAGE_WEAPON`, `DAMAGE_ELECTROCUTE`: fires on every hit
+    through it). A proc returning `DAMAGE_REACTION_BLOCK` (or deleting the holder) stops the hit.
+    Shared procs: `TYPE_PROC_REF(/atom, damage_reaction_block)` / `damage_reaction_qdel`
+    (`PROC_REF` can't name an `/atom` proc from a subtype's declaration).
+  - `REFLECTS(T, kinds, chance)`: kinds are projectile paths or `BRUTE`/`BURN`; chance is a number
+    or a var name. Checked first in `/atom/bullet_act()` and `/mob/living/bullet_act()`
+    (`reflect_projectile()`), which return `PROJECTILE_CONTINUE`.
+  - `EMP_DISABLE(T, duration, "field")`: the field is an `EXPIRY_DECLARE`d var (CLOCK_WORLD). An
+    unblocked EMP sets it to duration / severity (not extended while down), adds `EMPED` on
+    machinery and calls `emp_disable_changed(TRUE)`; an `EXPIRY_ON_LAPSE` hook (§17, registered with
+    `skip_unset` so unset holders arm no timer at materialize) clears both and calls
+    `emp_disable_changed(FALSE)`.
+- Packet: `entry` (DAMAGE_ENTRY_*) and `severity` fields; `DAMAGE_PACKET_BLOCKED`. Every adapter
+  (`receive_projectile/weapon_hit/thrown/generic_attack/explosion/emp/shock/blob`, mob blob) stamps
+  its entry. `receive_damage()` is now `SHOULD_NOT_OVERRIDE`: reactions, then `damage_sink()` (the
+  old overridable sink, renamed in mecha, blob, spawner, modular computer, shield and living).
+  A type with no reactions pays one cached table read.
+- Entries that land nothing still fire their reactions: `react_to_entry()` / `react_to_packet()`
+  run them on an empty packet without the sink (zero-damage and ion rounds, `/obj/emp_act` on types
+  with no `emp_integrity_factor`, non-integrity `receive_explosion()`, unarmed generic attacks).
+  Mobs: `/mob/living/emp_act()` fires DAMAGE_EMP reactions after the BF_EMP_SHIFT check (a block
+  returns EMP_PROTECT_SELF to the family override), and the new `/mob/living/ex_act()` fires
+  DAMAGE_EXPLOSION reactions; the family explosion ladders (human, silicon, simple mob) chain it
+  first and stop when it blocks.
+- Lint `sys_entry_override` (`tools/ci/sys_rules/damage_reactions.py`, header has the exact
+  definition): an override of `bullet_act`/`emp_act`/`ex_act`/`fire_act`/`blob_act`/`hitby`/
+  `attack_generic`/`electrocute_act` is flagged unless it is procedural, i.e. it (P1) reads a
+  parameter other than severity/recursive/forced, (P2) returns a hit-flow value, or (P3) writes a
+  parameter or passes the parent anything but its own parameters. Pass-throughs, bare immunities,
+  side effects reading at most severity and the reflect boilerplate are all flagged. The adapter
+  roots (/atom, /atom/movable, /obj, /turf, /mob, /mob/living) aren't scanned. 221 sites at the
+  start; 0 now, empty baseline.
+- ALLOWs: `/obj/item/storage/emp_act` (virtual contents must be made real before the base
+  recursion reaches contents; a reaction runs after it).
+- Behaviour notes: EMP_DISABLE outages are exactly duration / severity (the ±2 s jitter and the ARF
+  generator's severity-independent 5-7.5 s are gone); types that replaced bullet_act without the
+  parent now run the projectile's `on_hit()` before their blocking reaction; the laser pointer
+  calls `camera_disrupt()` instead of a forced camera `emp_act`; the clonepod, flash, sleeper and
+  multicaster no longer take an EMP twice (they called the parent twice).
+- Test: `code/modules/unit_tests/dq_sys_damage_reactions_tests.dm`.
+
 ## 13. Emag as an interaction
 
 ```dm

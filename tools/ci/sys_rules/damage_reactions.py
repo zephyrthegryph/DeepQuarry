@@ -1,7 +1,8 @@
 """Declared damage reactions (doc/rewrite/systems.md section 12).
 
 entry_override: an override of a damage entry point (bullet_act, emp_act, ex_act, fire_act,
-blob_act, hitby, attack_generic, electrocute_act) that does a *fixed thing*: something that does
+blob_act, hitby, attack_generic, electrocute_act, and the packet adapters receive_emp,
+receive_ionic, receive_explosion, receive_blob, receive_shock) that does a *fixed thing*: something that does
 not depend on the hit beyond its entry and severity, so a declaration says it instead
 (DAMAGE_REACTION / REFLECTS / EMP_DISABLE, or a protection flag). Precisely, an override is
 flagged unless it is *procedural*, i.e. at least one of:
@@ -40,7 +41,9 @@ RULES = {
 }
 
 ENTRIES = ("bullet_act", "emp_act", "ex_act", "fire_act", "blob_act", "hitby", "attack_generic",
-           "electrocute_act")
+           "electrocute_act",
+           # the packet adapters the entries call; overriding one to do a fixed thing is the same shape
+           "receive_emp", "receive_ionic", "receive_explosion", "receive_blob", "receive_shock")
 ADAPTER_ROOTS = {"/atom", "/atom/movable", "/obj", "/turf", "/mob", "/mob/living"}
 FREE_PARAMS = {"severity", "recursive", "forced"}
 

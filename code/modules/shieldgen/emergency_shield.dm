@@ -214,17 +214,20 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EXPLOSION, PROC_REF(shieldgen_b
 	if(packet.severity == 2 && prob(15))
 		malfunction = TRUE
 
-/// EMPs eat into the generator's remaining integrity and scramble it.
-/obj/machinery/shieldgen/receive_emp(severity)
-	switch(severity)
+DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
+
+/// EMPs eat into the generator's remaining integrity and scramble it (instead of the plain ionic hit).
+/obj/machinery/shieldgen/proc/emp_scramble(datum/damage_packet/packet)
+	switch(packet.severity)
 		if(1)
-			. = deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
+			deal_damage(DAMAGE_IONIC, get_integrity() / 2, flags = DAMAGE_PACKET_SILENT) //cut health in half
 			malfunction = 1
 			set_locked(pick(0,1))
 		if(2)
 			if(prob(50))
-				. = deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
+				deal_damage(DAMAGE_IONIC, get_integrity() * 0.7, flags = DAMAGE_PACKET_SILENT) //chop off a third of the health
 				malfunction = 1
+	return DAMAGE_REACTION_BLOCK
 
 /obj/machinery/shieldgen/declare_interactions(list/into)
 	into += list(
