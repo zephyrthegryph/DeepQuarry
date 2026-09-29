@@ -52,3 +52,10 @@ branch first so sub-workers build on it.
   hubs; when you add a `.dm`, add its `#include` to `deepquarry.dme` in sorted position.
 - References (handles, relations, rosters, weak lists) are owned by the `rewrite/own` lead:
   don't redesign them.
+
+## Lint completeness (lead rule)
+Each lint must catch the **whole** old pattern, not one line shape. If the old pattern has a
+declaration, writes and reads (e.g. an expiry var: `var/x_until`, `x_until = world.time + N`,
+`world.time > x_until`), the lint flags all three; converting only one shape is a half-state and
+must fail the lint. Before calling a system done, list every shape the old pattern takes and
+confirm the rule flags each.
