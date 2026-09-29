@@ -113,10 +113,10 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 		edge.id = "[base_id]#[n]"
 	if(!edge.name)
 		edge.name = capitalize(edge.step_text)
-	edges += edge
-	edges_by_id[edge.id] = edge
+	own_add(src, "edges", edge)
+	own_put(src, "edges_by_id", edge.id, edge)
 	if(edge.from_state == CONSTRUCTION_ANY_STATE)
-		wildcard_edges += edge
+		own_add(src, "wildcard_edges", edge)
 	else
 		LAZYADD(edges_by_state["[edge.from_state]"], edge)
 	return edge

@@ -25,7 +25,7 @@
 					old_item.forceMove(L.loc)
 
 			if(duration)
-				LAZYADD(summoned_items, new_item) //we store it in a list to remove later
+				rel_add(src, "summoned_items", new_item) //we store it in a list to remove later
 
 	if(duration)
 		om_after(src, duration, PROC_REF(unsummon_items))

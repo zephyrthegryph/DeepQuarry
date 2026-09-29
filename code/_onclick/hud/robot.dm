@@ -84,7 +84,7 @@
 	using.screen_loc = ui_movi
 	using.color = HUD.ui_color
 	using.alpha = HUD.ui_alpha
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 	own_set(HUD, "move_intent", using)
 
 //Health

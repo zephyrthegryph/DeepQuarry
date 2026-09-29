@@ -23,7 +23,7 @@ fundamental differences
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	LAZYADD(cooking_objs, new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
+	own_add(src, "cooking_objs", new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	cooking = FALSE
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)

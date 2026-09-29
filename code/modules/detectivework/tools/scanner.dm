@@ -176,7 +176,7 @@
 	if(old)
 		fresh.merge(old)
 		. = 1
-	stored["\ref [A]"] = fresh
+	own_put(src, "stored", "\ref [A]", fresh)
 
 /obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

@@ -107,7 +107,7 @@
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		lleill_ability_datums.Add(LP)
+		own_add(src, "lleill_ability_datums", LP)
 
 /datum/species/shapeshifter/hanner/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))

@@ -1595,7 +1595,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		old_ai.connected_robots -= src
 	rel_set(src, "connected_ai", new_ai)
 	if(new_ai)
-		new_ai.connected_robots |= src
+		rel_add(new_ai, "connected_robots", src)
 		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
 		om_hook(new_ai, /datum/om/event/qdeleting, src, PROC_REF(on_master_deleted))
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")

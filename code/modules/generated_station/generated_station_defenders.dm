@@ -133,7 +133,7 @@
 	defender.ai_brain?.set_hostile(FALSE)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
-	agents += agent
+	own_add(src, "agents", agent)
 	squad.add_member(REF(defender))
 	director().register_defender(defender)
 	return agent

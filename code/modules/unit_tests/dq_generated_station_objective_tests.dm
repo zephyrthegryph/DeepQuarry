@@ -11,7 +11,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(null)
 		control.station_id = spec.id
 		control.department_id = department.id
-		site.station_controls += control
+		own_add(site, "station_controls", control)
 	var/datum/expedition_mission/station_assault/mission = new(EXP_DIFF_MED)
 	own_set(site, "mission", mission)
 	mission.populate(site)

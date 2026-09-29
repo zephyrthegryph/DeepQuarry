@@ -337,7 +337,7 @@
 	..()
 	layers = list()
 	for(var/list/spec as anything in layer_specs())
-		layers += new /datum/protean_blob_layer(arglist(spec))
+		own_add(src, "layers", new /datum/protean_blob_layer(arglist(spec)))
 
 /// Constructor arguments for each layer, in draw order.
 /datum/protean_blob_style/layered/proc/layer_specs()

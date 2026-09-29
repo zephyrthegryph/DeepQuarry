@@ -136,7 +136,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(!istype(parent_limb))
 		return
 	rel_set(src, "parent", parent_limb)
-	LAZYOR(parent_limb.children, src)
+	rel_add(parent_limb, "children", src)
 
 /// Left `holder`'s child or organ slot.
 /obj/item/organ/proc/unlink_from_holder(atom/holder)
@@ -170,7 +170,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 			M.organs = list()
 		if(!M.organs_by_name)
 			M.organs_by_name = list()
-		M.organs |= part
+		rel_add(M, "organs", part)
 		M.organs_by_name[part.organ_tag] = part
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 

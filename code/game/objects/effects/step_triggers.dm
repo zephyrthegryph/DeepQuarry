@@ -44,7 +44,7 @@
 		if(immobilize)
 			M.canmove = 0
 
-	affecting.Add(AM)
+	rel_add(src, "affecting", AM)
 	throw_next(AM, 0)
 
 /// Moves AM one tile every `speed` until it runs out of tiles or hits a stopper.

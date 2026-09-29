@@ -141,7 +141,7 @@
 	report.confidence = clamp(confidence, 0, 100)
 	report.created_at = world.time
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
-	reports[report.id] = report
+	own_put(src, "reports", report.id, report)
 	source_knowledge[report.id] = report
 	process_dirty()
 	if(strategic_online && department_connected[source_department_id])
@@ -153,7 +153,7 @@
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)
 	if(!strategic_online || !report || report.is_expired() || !department_connected[report.source_department_id])
 		return FALSE
-	global_knowledge[report.id] = report
+	own_put(src, "global_knowledge", report.id, report)
 	for(var/department_id in local_knowledge)
 		if(department_connected[department_id])
 			var/list/knowledge = local_knowledge[department_id]
@@ -202,7 +202,7 @@
 	var/datum/generated_station_squad/squad = new
 	squad.id = "squad-[next_squad_id++]"
 	squad.department_id = department_id
-	squads[squad.id] = squad
+	own_put(src, "squads", squad.id, squad)
 	return squad
 
 /datum/generated_station_director/proc/issue_order(squad_id, report_id, kind, global_coordination = FALSE)
@@ -223,7 +223,7 @@
 	order.global_coordination = global_coordination
 	order.created_at = world.time
 	order.state = GENERATED_STATION_ORDER_ACTIVE
-	orders[order.id] = order
+	own_put(src, "orders", order.id, order)
 	squad.active_order_id = order.id
 	defense_runtime()?.apply_order(order)
 	return order

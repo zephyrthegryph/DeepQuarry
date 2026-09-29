@@ -272,7 +272,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /area/var/list/power_machines
 
 /area/proc/power_subscribe(obj/machinery/M)
-	LAZYADD(power_machines, M)
+	rel_add(src, "power_machines", M)
 
 /area/proc/power_unsubscribe(obj/machinery/M)
 	LAZYREMOVE(power_machines, M)

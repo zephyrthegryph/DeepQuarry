@@ -86,7 +86,7 @@
 /datum/event/spacefish_migration/proc/spawn_one_fish(loc)
 	var/mob/living/simple_mob/animal/M = new fish_type(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_fish_destruction))
-	LAZYADD(spawned_fish, M)
+	own_add(src, "spawned_fish", M)
 	return M
 
 // Counts living fish spawned by this event.

@@ -402,7 +402,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	beam_segments[beam_index()] = pcache
+	own_put(src, "beam_segments", beam_index(), pcache)
 	rel_set(src, "beam_index", pcache)
 	beam_segments[beam_index()] = null
 
@@ -510,7 +510,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/finalize_hitscan_and_generate_tracers(impacting = TRUE)
 	if(trajectory && beam_index())
 		var/datum/point/pcache = trajectory.copy_to()
-		beam_segments[beam_index()] = pcache
+		own_put(src, "beam_segments", beam_index(), pcache)
 	generate_hitscan_tracers(null, null, impacting)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE)
@@ -530,7 +530,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
-		beam_components.beam_components += thing
+		own_add(beam_components, "beam_components", thing)
 	if(impacting && impact_type && duration > 0)
 		var/datum/point/p = beam_segments[beam_segments[beam_segments.len]]
 		var/atom/movable/thing = new impact_type
@@ -540,7 +540,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
-		beam_components.beam_components += thing
+		own_add(beam_components, "beam_components", thing)
 	// The drawn tracers belong to their timer now, not to us (phase 4 would delete them at once).
 	var/datum/beam_components_cache/drawn = beam_components
 	own_take(src, "beam_components")
@@ -765,7 +765,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	// Safe to add the target to the list that is soon to be poofed. No double jeopardy, pixel projectiles.
 	if(islist(impacted_mobs))
-		LAZYOR(impacted_mobs, target_mob)
+		rel_add(src, "impacted_mobs", target_mob)
 
 	if(result == PROJECTILE_FORCE_MISS)
 		if(!silenced)

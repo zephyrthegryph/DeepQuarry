@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 		for(var/i=0, i<num, i++)
 			var/obj/effect/spider/spiderling/spiderling = new spider_type(src.loc, src)
 			if(O)
-				LAZYADD(O.implants, spiderling)
+				rel_add(O, "implants", spiderling)
 			spiderling.faction = faction
 		qdel(src)
 

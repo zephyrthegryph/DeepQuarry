@@ -67,7 +67,7 @@
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	C.forceMove(src)
-	cartridges[C.label] = C
+	own_put(src, "cartridges", C.label, C)
 	cartridges = sortAssoc(cartridges)
 	SStgui.update_uis(src)
 

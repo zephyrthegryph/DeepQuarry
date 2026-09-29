@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	if(istype(I, /obj/item/bedsheet))
 		user.drop_item()
 		I.forceMove(src)
-		sheets.Add(I)
+		rel_add(src, "sheets", I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.

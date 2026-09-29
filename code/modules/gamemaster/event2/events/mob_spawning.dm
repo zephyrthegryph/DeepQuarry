@@ -81,7 +81,7 @@
 /datum/event2/event/mob_spawning/proc/spawn_one_mob(new_loc, mob_type)
 	var/mob/living/simple_mob/M = new mob_type(new_loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_mob_destruction))
-	LAZYADD(spawned_mobs, M)
+	rel_add(src, "spawned_mobs", M)
 	return M
 
 // Counts living simple_mobs spawned by this event.

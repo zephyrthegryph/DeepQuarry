@@ -240,7 +240,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		item_records.Add(I)
+		own_add(src, "item_records", I)
 	I.add_product(O)
 	SStgui.update_uis(src)
 	update_icon()

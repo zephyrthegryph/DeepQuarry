@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 			return
 		user.remove_from_mob(B)
 		B.forceMove(src)
-		stored_ammo.Add(B)
+		own_add(src, "stored_ammo", B)
 		update_icon()
 	playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 	update_icon()

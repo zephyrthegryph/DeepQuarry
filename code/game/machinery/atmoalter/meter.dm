@@ -170,7 +170,7 @@
 		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
-		LAZYOR(pipes_on_turf, pipe)
+		rel_add(src, "pipes_on_turf", pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))

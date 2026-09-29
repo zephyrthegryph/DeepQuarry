@@ -26,7 +26,7 @@
 /obj/structure/morgue/proc/get_occupants()
 	LAZYCLEARLIST(occupants)
 	for(var/mob/living/carbon/human/H in contents)
-		LAZYADD(occupants, H)
+		rel_add(src, "occupants", H)
 	for(var/obj/structure/closet/body_bag/B in contents)
 		LAZYADD(occupants, B.get_occupants())
 

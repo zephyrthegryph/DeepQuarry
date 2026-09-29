@@ -326,7 +326,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_THRESHOLD
-		watchable += node
+		own_add(src, "watchable", node)
 	return node
 
 /datum/predicate_compiler/proc/compile_band(list/clause, negate)
@@ -348,7 +348,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.outside = negate
 	if(channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_BAND
-		watchable += node
+		own_add(src, "watchable", node)
 	return node
 
 /datum/predicate_compiler/proc/compile_rel(list/clause, negate)
@@ -375,7 +375,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.property_b = def_b.id
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def_a.id) && channel_backed(def_b.id))
 		node.watch_kind = PRED_WATCH_DIFFERENCE
-		watchable += node
+		own_add(src, "watchable", node)
 	return node
 
 /proc/dq_pred_valid_cmp(op)

@@ -423,7 +423,7 @@
 	var/obj/machinery/media/jukebox/ghost/jukebox = target
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-	LAZYADD(jukebox.custom_tracks, new /datum/track(url, title, duration, ask.text, genre))
+	own_add(jukebox, "custom_tracks", new /datum/track(url, title, duration, ask.text, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	if(!check_rights(R_FUN|R_ADMIN))

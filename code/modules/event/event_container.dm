@@ -14,7 +14,7 @@
 /datum/event_container/proc/add_disabled_events(list/disabled_events)
 	for(var/datum/event_meta/EM in disabled_events)
 		EM.enabled = 0
-		available_events += EM
+		rel_add(src, "available_events", EM)
 
 /datum/event_container/mundane/New()
 	available_events = list(

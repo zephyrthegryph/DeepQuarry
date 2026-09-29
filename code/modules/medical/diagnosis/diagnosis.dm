@@ -50,7 +50,7 @@
 				existing.band = F.band
 			qdel(F)
 			return existing
-	LAZYADD(findings, F)
+	own_add(src, "findings", F)
 	return F
 
 /// Findings of `kind` (DIAG_FINDING_*), or every finding.

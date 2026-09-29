@@ -72,7 +72,7 @@
 /datum/generated_station_director/proc/register_defender(mob/living/defender)
 	if(!defender || QDELETED(defender))
 		return FALSE
-	LAZYOR(registered_defenders, defender)
+	rel_add(src, "registered_defenders", defender)
 	return TRUE
 
 /datum/generated_station_director/proc/unregister_defender(mob/living/defender)
@@ -201,7 +201,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		station_controls += control
+		own_add(src, "station_controls", control)
 		controlled_departments[department.id] = TRUE
 		qdel(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
@@ -235,7 +235,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		station_controls += control
+		own_add(src, "station_controls", control)
 		controlled_departments[department.id] = TRUE
 	return TRUE
 

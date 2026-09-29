@@ -279,7 +279,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		if(players > 0)
 			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
-					site.participants |= L
+					rel_add(site, "participants", L)
 			site.last_occupied = world.time
 			continue
 		if(site.status >= EXP_STATUS_ACTIVE)
@@ -354,7 +354,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		APC.set_dir(WEST)
 		rel_set(emergency_area, "apc", APC)
-		materialization.infrastructure += APC
+		own_add(materialization, "infrastructure", APC)
 		if(APC.terminal)
 			materialization.infrastructure += APC.terminal
 	var/list/light_sockets = list(
@@ -371,7 +371,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		light.set_dir(socket[2])
 		light.pixel_x = socket[3]
 		light.pixel_y = socket[4]
-		materialization.infrastructure += light
+		own_add(materialization, "infrastructure", light)
 	emergency_area.power_change()
 
 // Generate a site, optionally bound to a mission. Returns the site (or null).
@@ -612,7 +612,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		flight_plan.generation_stage = "Validating objectives and approach"
 
 	site.status = EXP_STATUS_READY
-	sites["[z]"] = site
+	own_put(src, "sites", "[z]", site)
 	demand()
 	GLOB.flight_service?.register_expedition(site)
 	log_world("Expedition: generated [site.name] on z[z] (seed [generation_seed], difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")

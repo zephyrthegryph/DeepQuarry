@@ -42,7 +42,7 @@
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
-	LAZYOR(controlled_mobs, L)
+	rel_add(src, "controlled_mobs", L)
 
 /obj/item/spell/control/proc/deselect(mob/living/L)
 	if(!(L in controlled_mobs))

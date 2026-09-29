@@ -416,7 +416,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	prize_list += new /datum/data/mining_equipment(name, path, cost)
+	own_add(src, "prize_list", new /datum/data/mining_equipment(name, path, cost))
 
 /obj/machinery/mineral/equipment_vendor/ex_act(severity, target)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread

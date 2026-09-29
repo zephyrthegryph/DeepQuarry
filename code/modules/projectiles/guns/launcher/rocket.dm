@@ -27,7 +27,7 @@
 		if(length(rockets) < max_rockets)
 			user.drop_item()
 			I.forceMove(src)
-			LAZYADD(rockets, I)
+			rel_add(src, "rockets", I)
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))
 		else

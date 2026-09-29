@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 
 		// Warn the owner when it sees a new mob.
 		if(!(L in seen_mobs))
-			seen_mobs += L
+			rel_add(src, "seen_mobs", L)
 			newly_seen_mobs += L
 
 	if(newly_seen_mobs.len && owner) // Yell at our owner if someone new shows up.

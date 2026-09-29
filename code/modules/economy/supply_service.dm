@@ -559,7 +559,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 				if(MA.export_sale(EC, FALSE))
 					things_sold_successfully += MA
 
-			exported_crates += EC
+			own_add(src, "exported_crates", EC)
 			distribute_export_revenue(EC)
 			EC.value += base_value
 
@@ -580,7 +580,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 			adm.sales_destination = EC.sales_destination
 			adm.sales_eligible_value = EC.sales_eligible_value
 			adm.sales_producer_percentages = EC.sales_producer_percentages?.Copy()
-			adm_export_history += adm
+			own_add(src, "adm_export_history", adm)
 
 			qdel(MA)
 
@@ -926,8 +926,8 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	adm_order.ordered_at = new_order.ordered_at
 	adm_order.status = new_order.status
 
-	order_history += new_order
-	adm_order_history += adm_order
+	own_add(src, "order_history", new_order)
+	own_add(src, "adm_order_history", adm_order)
 	return new_order
 
 // Will delete the specified export receipt from the user-side list

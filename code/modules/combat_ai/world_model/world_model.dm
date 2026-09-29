@@ -68,11 +68,11 @@
 			continue
 		var/disposition = brain.disposition_to(M)
 		if(disposition <= DQ_DISPOSITION_HOSTILE)
-			visible_hostiles += M
+			rel_add(src, "visible_hostiles", M)
 		else if(disposition >= DQ_DISPOSITION_FRIENDLY)
-			visible_friendlies += M
+			rel_add(src, "visible_friendlies", M)
 		else
-			visible_neutrals += M
+			rel_add(src, "visible_neutrals", M)
 
 	last_update = world.time
 	trim_old_damage()

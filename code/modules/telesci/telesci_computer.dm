@@ -46,7 +46,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		LAZYADD(crystals, new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
+		own_add(src, "crystals", new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /obj/machinery/computer/telescience/declare_interactions(list/into)
 	into += list(
@@ -70,7 +70,7 @@ OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 		return TRUE
 	if(!user.unEquip(W))
 		return TRUE
-	LAZYADD(crystals, W)
+	rel_add(src, "crystals", W)
 	W.forceMove(src)
 	user.visible_message("[user] inserts [W] into \the [src]'s crystal slot.", span_notice("You insert [W] into \the [src]'s crystal slot."))
 	return TRUE

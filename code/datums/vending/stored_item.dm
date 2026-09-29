@@ -118,7 +118,7 @@
 		return TRUE
 	if(!product.move_into(stored, CONTAINER_SLOT_STOCK))
 		product.forceMove(stored)
-	LAZYADD(instances, product)
+	rel_add(src, "instances", product)
 	return TRUE
 
 /// Restock: adds latent copies. Nothing is created.

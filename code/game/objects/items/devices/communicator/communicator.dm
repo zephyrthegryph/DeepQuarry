@@ -267,11 +267,11 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	for(var/obj/item/communicator/comm in REGISTRY_MEMBERS(REGISTRY_COMMUNICATORS))
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
-		LAZYOR(src.known_devices, comm)
+		rel_add(src, "known_devices", comm)
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
-		LAZYOR(src.known_devices, O)
+		rel_add(src, "known_devices", O)
 
 // Proc: get_connection_to_tcomms()
 // Parameters: None

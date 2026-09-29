@@ -31,9 +31,9 @@
 	for(var/i in 1 to max_symptoms)
 		var/datum/viral_trait/chosen_symptom = pick_n_take(possible_symptoms)
 		if(chosen_symptom)
-			symptoms += new chosen_symptom
+			own_add(src, "symptoms", new chosen_symptom)
 	for(var/guaranteed_symptom in guaranteed_symptoms)
-		symptoms += new guaranteed_symptom
+		own_add(src, "symptoms", new guaranteed_symptom)
 	if(!mute)
 		virus_modifiers |= IMMUTABLE
 	Finalize()

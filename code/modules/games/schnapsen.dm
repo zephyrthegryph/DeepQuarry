@@ -26,4 +26,4 @@
 			else
 				P.card_icon = "[colour]col"
 			P.back_icon = "card_back"
-			cards += P
+			own_add(src, "cards", P)

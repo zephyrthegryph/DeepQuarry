@@ -11,7 +11,7 @@
 
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if((GG.z in zLevels) && GG.on)
-			LAZYADD(generators, GG)
+			rel_add(src, "generators", GG)
 
 	if(length(generators))
 		endWhen = rand(5 MINUTES, 20 MINUTES)

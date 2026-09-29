@@ -43,7 +43,7 @@
 	if(starts_loaded)
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
 			for(var/i in 1 to max_shells)
-				loaded += new ammo_type(src)
+				own_add(src, "loaded", new ammo_type(src))
 			if(random_start_ammo)
 				loaded.Cut(0,rand(0,max_shells))
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
@@ -606,7 +606,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 						break
 					if(C.caliber == caliber)
 						C.forceMove(src)
-						loaded += C
+						own_add(src, "loaded", C)
 						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)

@@ -185,7 +185,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	C.forceMove(src)
-	cartridges[C.label] = C
+	own_put(src, "cartridges", C.label, C)
 	cartridges = sortAssoc(cartridges)
 	MACHINE_WAKE(src)
 	SStgui.update_uis(src)

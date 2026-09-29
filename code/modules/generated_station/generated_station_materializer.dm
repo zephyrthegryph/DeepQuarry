@@ -201,7 +201,7 @@
 /datum/generated_station_materialization/proc/register_owned_furnishing_atom(atom/movable/furnishing)
 	if(!furnishing || (furnishing in owned_furnishing_atoms))
 		return
-	owned_furnishing_atoms += furnishing
+	own_add(src, "owned_furnishing_atoms", furnishing)
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
@@ -566,7 +566,7 @@
 				configure_department_airlock(airlock, department_for_node(nodes_by_id[intent.owner_id]))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
-			result.doors += airlock
+			own_add(result, "doors", airlock)
 			result.door_count++
 		if(i < length(tiles) && generation_checkpoint("Installing planned doors", 45))
 			return i + 1
@@ -829,7 +829,7 @@
 			ChangeArea(door_turf, A)
 			var/obj/machinery/door/airlock/airlock = new(door_turf)
 			airlock.set_dir(direction)
-			result.doors += airlock
+			own_add(result, "doors", airlock)
 			result.door_count++
 			return TRUE
 	return FALSE
@@ -883,7 +883,7 @@
 			module.footprint_y1 = module.y1
 			module.footprint_x2 = module.x2
 			module.footprint_y2 = module.y2
-			result.modules += module
+			own_add(result, "modules", module)
 	return TRUE
 
 /// Gives every planned room an independent area and therefore its own APC,
@@ -943,7 +943,7 @@
 				var/list/parts = splittext(key, ",")
 				solution.reserve_circulation(text2num(parts[1]), text2num(parts[2]))
 			solutions_by_native_id["[room.rust_room_id]"] = solution
-			result.room_solutions += solution
+			own_add(result, "room_solutions", solution)
 	return synthesize_fixtures(1)
 
 /// The Rust fixtures, one at a time from `cursor`: the next cursor, null when done, FALSE on a
@@ -989,7 +989,7 @@
 			placement.x = fixture.x
 			placement.y = fixture.y
 			placement.dir = fixture.direction
-			solution.placements += placement
+			own_add(solution, "placements", placement)
 	synthesis_rooms = null
 	synthesis_solutions = null
 	return null
@@ -1086,7 +1086,7 @@
 			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
-			result.control_landmarks += core
+			own_add(result, "control_landmarks", core)
 
 /// Transit cannot overwrite a department reservation; department frontages are opened later as doors.
 /datum/generated_station_materializer/proc/claim_transit_tile(local_x, local_y, floor_type)
@@ -1363,7 +1363,7 @@
 	var/obj/machinery/door/airlock/airlock = new(T)
 	airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 	configure_department_airlock(airlock, department)
-	result.doors += airlock
+	own_add(result, "doors", airlock)
 	result.door_count++
 
 /// Applies the generated station's department access policy to an entrance.

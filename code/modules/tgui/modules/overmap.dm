@@ -183,7 +183,7 @@
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			LAZYSET(known_sectors, S.name, R)
+			own_put(src, "known_sectors", S.name, R)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
@@ -348,7 +348,7 @@
 			if(!R)
 				return TRUE
 			R.fields["name"] = sec_name
-			LAZYSET(known_sectors, sec_name, R)
+			own_put(src, "known_sectors", sec_name, R)
 			. = TRUE
 
 		if("remove")

@@ -103,7 +103,7 @@
 
 			for(var/obj/machinery/telecomms/T in range(25, src))
 				if(T.network == network)
-					LAZYADD(machinelist, T)
+					rel_add(src, "machinelist", T)
 
 			if(!length(machinelist))
 				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")

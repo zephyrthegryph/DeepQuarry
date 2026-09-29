@@ -17,9 +17,9 @@
 	//Adds turfs to the valid)turfs list, used for spawning.
 	if(mobcountmax || floracountmax || semirandom)
 		for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
-			LAZYOR(valid_spawn_turfs, F)
+			rel_add(src, "valid_spawn_turfs", F)
 		for(var/turf/unsimulated/floor/F in area_contents_of_type(src, /turf/unsimulated/floor))
-			LAZYOR(valid_spawn_turfs, F)
+			rel_add(src, "valid_spawn_turfs", F)
 
 /area/LateInitialize()
 	. = ..()

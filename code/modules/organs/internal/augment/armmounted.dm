@@ -216,7 +216,7 @@
 
 		for(var/path in integrated_tools)
 			if(!integrated_tools[path])
-				integrated_tools[path] = new path(src)
+				own_put(src, "integrated_tools", path, new path(src))
 			var/obj/item/I = integrated_tools[path]
 			I.canremove = FALSE
 			I.toolspeed = toolspeed
@@ -230,7 +230,7 @@
 				for(var/datum/matter_synth/MS as anything in synths)
 					rel_add(S, "synths", MS)
 				S.uses_charge = length(synths)
-			integrated_tools_by_name[Tool.name] = Tool
+			own_put(src, "integrated_tools_by_name", Tool.name, Tool)
 			integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
 
 /// Deploys `tool` as the integrated object. Every tool stays in integrated_tools, so the one put

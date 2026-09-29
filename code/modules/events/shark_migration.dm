@@ -71,7 +71,7 @@
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_shark_destruction))
-	LAZYADD(spawned_shark, M)
+	own_add(src, "spawned_shark", M)
 	return M
 
 // Counts living shark spawned by this event.

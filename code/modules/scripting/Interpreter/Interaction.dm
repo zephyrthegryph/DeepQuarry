@@ -73,11 +73,11 @@
 	C.func_name	= path
 	own_set(C, "object", new /datum/node/identifier("src"))
 	for(var/p in params)
-		C.parameters += new/datum/node/expression/value/variable(p)
+		own_add(C, "parameters", new/datum/node/expression/value/variable(p))
 	var/datum/node/statement/ReturnStatement/R=new()
 	own_set(R, "value", C)
 	LAZYADD(S.block.statements, R)
-	globalScope.functions[name] = S
+	own_put(globalScope, "functions", name, S)
 /*
 	Proc: VarExists
 	Checks whether a global variable with the specified name exists.

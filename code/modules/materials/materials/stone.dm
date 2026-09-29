@@ -18,7 +18,7 @@
 
 /datum/material/stone/generate_recipes()
 	..()
-	recipes += new /datum/stack_recipe("planting bed", /obj/machinery/portable_atmospherics/hydroponics/soil, 3, time = 10, one_per_turf = 1, on_floor = 1, recycle_material = "[name]")
+	own_add(src, "recipes", new /datum/stack_recipe("planting bed", /obj/machinery/portable_atmospherics/hydroponics/soil, 3, time = 10, one_per_turf = 1, on_floor = 1, recycle_material = "[name]"))
 
 /datum/material/stone/marble
 	name = MAT_MARBLE

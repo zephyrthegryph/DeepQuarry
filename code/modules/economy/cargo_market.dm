@@ -418,7 +418,7 @@
 			continue
 		var/datum/cargo_market_counterparty/counterparty = new counterparty_type
 		counterparty.rotate_cover()
-		market_counterparties[counterparty.id] = counterparty
+		own_put(src, "market_counterparties", counterparty.id, counterparty)
 	refresh_cargo_market()
 
 /datum/world_service/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
@@ -481,7 +481,7 @@
 			listing.stock = rand(1, 4)
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
-			market_listings[listing.id] = listing
+			own_put(src, "market_listings", listing.id, listing)
 		var/list/profile_paths = counterparty.buyer_profiles().Copy()
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
@@ -494,7 +494,7 @@
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
 			bid.cover_name = counterparty.active_cover_name
-			market_bids[bid.id] = bid
+			own_put(src, "market_bids", bid.id, bid)
 	next_market_refresh = expiry
 
 /datum/world_service/supply/proc/process_cargo_market()
@@ -677,7 +677,7 @@
 		transaction.trace_strength = CLAMP(round((8 + sqrt(max(0, transaction.value)) / 3 + (reservation_key ? 5 : 0)) * risk_multiplier), 1, CARGO_MARKET_TRACE_LIMIT)
 		GLOB.station_faction_relations.add_agent_exposure(transaction.principal_account, counterparty.faction_id, max(1, round(transaction.trace_strength / 5)), "Encrypted market traffic accumulated forensic metadata.", transaction.id)
 	log_game("Cargo market [transaction.id]: [transaction_type] [transaction.value] Thalers with [counterparty?.name || counterparty_id] by account [account_number || "unknown"] (cover: [transaction.cover_name || "none"], reservation: [reservation_key || "none"]).")
-	market_transactions += transaction
+	own_add(src, "market_transactions", transaction)
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
 		var/datum/cargo_market_transaction/oldest = market_transactions[1]
 		market_transactions.Cut(1, 2)
@@ -802,7 +802,7 @@
 	listing.cover_name = counterparty.active_cover_name
 	listing.reservation_key = reservation_key
 	listing.reserved_account = reserved_account
-	market_listings[listing.id] = listing
+	own_put(src, "market_listings", listing.id, listing)
 	return listing
 
 /datum/world_service/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
@@ -818,7 +818,7 @@
 	bid.cover_name = counterparty.active_cover_name
 	bid.reservation_key = reservation_key
 	bid.reserved_account = reserved_account
-	market_bids[bid.id] = bid
+	own_put(src, "market_bids", bid.id, bid)
 	return bid
 
 /datum/world_service/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)

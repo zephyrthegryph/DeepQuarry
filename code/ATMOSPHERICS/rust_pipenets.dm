@@ -588,8 +588,8 @@
 			MACHINE_WAKE(pipe) // a pipe with DM work (HE pipes) re-evaluates on joining; others don't listen
 			pipeline.volume += pipe.volume
 			if(pipe.leaking)
-				pipeline.leaks |= pipe
-				network.leaks |= pipe
+				rel_add(pipeline, "leaks", pipe)
+				rel_add(network, "leaks", pipe)
 		network.add_line_member(pipeline)
 
 // Fixed pipes are one conductive Rust port regardless of sprite geometry.

@@ -289,7 +289,7 @@
 	T.ChangeTurf(/turf/simulated/floor/plating, tell_universe = FALSE)
 	ChangeArea(T, transit)
 	var/obj/machinery/door/airlock/door = new(T)
-	materialized.doors += door
+	own_add(materialized, "doors", door)
 	var/datum/generated_station_validation_result/validation = materialized.validate_architecture()
 	TEST_ASSERT(!validation.is_valid(), "Architecture validator accepted a door and hallway terminating at the map boundary")
 	var/found_door_error = FALSE

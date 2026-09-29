@@ -4,11 +4,11 @@
 	var/datum/generated_station_department_definition/engineering = new
 	engineering.id = "engineering"
 	engineering.minimum_area = 20
-	engineering.provisions += new /datum/generated_station_capability_provision("power", 2)
+	own_add(engineering, "provisions", new /datum/generated_station_capability_provision("power", 2))
 	var/datum/generated_station_department_definition/medical = new
 	medical.id = "medical"
 	medical.minimum_area = 10
-	medical.requirements += new /datum/generated_station_capability_requirement("power", 1)
+	own_add(medical, "requirements", new /datum/generated_station_capability_requirement("power", 1))
 	var/datum/generated_station_department_instance/engineering_instance = new
 	engineering_instance.id = "engineering-1"
 	rel_set(engineering_instance, "definition_static", engineering)
@@ -59,15 +59,15 @@
 	var/datum/generated_station_department_definition/department_definition = new
 	department_definition.id = "isolated"
 	department_definition.minimum_area = 10
-	department_definition.requirements += new /datum/generated_station_capability_requirement("atmosphere", 1)
-	department_definition.requirements += new /datum/generated_station_capability_requirement("optional-network", 1, TRUE)
+	own_add(department_definition, "requirements", new /datum/generated_station_capability_requirement("atmosphere", 1))
+	own_add(department_definition, "requirements", new /datum/generated_station_capability_requirement("optional-network", 1, TRUE))
 	var/datum/generated_station_department_instance/department = new
 	department.id = "isolated-1"
 	rel_set(department, "definition_static", department_definition)
 	department.desired_area = 5
 	department.layout_node_id = "missing-node"
 	var/datum/generated_station_spec/spec = new
-	spec.departments += department
+	own_add(spec, "departments", department)
 	var/datum/generated_station_validation_result/result = spec.validate()
 	TEST_ASSERT(!result.is_valid(), "An invalid station contract passed validation")
 	TEST_ASSERT(result.count_severity(GENERATED_STATION_ISSUE_ERROR) >= 3, "Validation omitted required contract errors")

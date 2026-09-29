@@ -62,7 +62,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 	if(!bullet)
 		return STEP_DONE
 	bullet.forceMove(box)
-	box.stored_ammo.Add(bullet)
+	own_add(box, "stored_ammo", bullet)
 	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
@@ -184,7 +184,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
-				stored_ammo += new ammo_type(src)
+				own_add(src, "stored_ammo", new ammo_type(src))
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
@@ -217,7 +217,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		stored_ammo.Add(C)
+		own_add(src, "stored_ammo", C)
 		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W

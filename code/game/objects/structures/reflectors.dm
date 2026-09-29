@@ -341,7 +341,7 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 
 /datum/material/steel/generate_recipes()
 	..()
-	recipes += new/datum/stack_recipe("reflector frame", /obj/structure/reflector, 5, time = 25, one_per_turf = TRUE, on_floor = TRUE)
+	own_add(src, "recipes", new/datum/stack_recipe("reflector frame", /obj/structure/reflector, 5, time = 25, one_per_turf = TRUE, on_floor = TRUE))
 
 /datum/supply_pack/eng/reflector
 	name = "Reflector crate"

@@ -24,9 +24,9 @@
 // All syndie modules get these, and the base borg items (flash, crowbar, etc).
 /obj/item/robot_module/robot/syndicate/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/pinpointer/shuttle/merc(src)
-	src.modules += new /obj/item/melee/robotic/blade/syndicate(src)
-	src.modules += new /obj/item/multitool/ai_detector/cyborg(src)
+	own_add(src, "modules", new /obj/item/pinpointer/shuttle/merc(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/blade/syndicate(src))
+	own_add(src, "modules", new /obj/item/multitool/ai_detector/cyborg(src))
 
 	var/datum/matter_synth/cloth = new /datum/matter_synth/cloth(40000)
 	own_add(src, "synths", cloth)
@@ -37,7 +37,7 @@
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.forceMove(src)
-	src.modules += robot_id
+	own_add(src, "modules", robot_id)
 
 /obj/item/robot_module/robot/syndicate/adjust_gps(obj/item/gps/robot/robot_gps)
 	robot_gps.long_range = TRUE
@@ -51,14 +51,14 @@
 
 /obj/item/robot_module/robot/syndicate/protector/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/shield_projector/rectangle/weak(src)
-	src.modules += new /obj/item/gun/energy/robotic/laser/dakkalaser(src)
-	src.modules += new /obj/item/handcuffs/cyborg(src)
-	src.modules += new /obj/item/melee/robotic/baton(src)
+	own_add(src, "modules", new /obj/item/shield_projector/rectangle/weak(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/laser/dakkalaser(src))
+	own_add(src, "modules", new /obj/item/handcuffs/cyborg(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/baton(src))
 
-	src.modules += new /obj/item/dogborg/sleeper/K9/syndie(src)
-	src.modules += new /obj/item/dogborg/pounce(src)
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/K9/syndie(src))
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
 
 // 95% engi-borg and 15% roboticist.
 /obj/item/robot_module/robot/syndicate/mechanist
@@ -67,24 +67,24 @@
 /obj/item/robot_module/robot/syndicate/mechanist/create_equipment(mob/living/silicon/robot/robot)
 	..()
 	// General engineering/hacking.
-	src.modules += new /obj/item/borg/sight/meson(src)
-	src.modules += new /obj/item/weldingtool/electric/mounted/cyborg(src)
-	src.modules += new /obj/item/tool/screwdriver/cyborg(src)
-	src.modules += new /obj/item/tool/wrench/cyborg(src)
-	src.modules += new /obj/item/tool/wirecutters/cyborg(src)
-	src.modules += new /obj/item/multitool/ai_detector(src)
-	src.modules += new /obj/item/pickaxe/plasmacutter(src)
-	src.modules += new /obj/item/rcd/electric/mounted/borg/lesser(src) // Can't eat rwalls to prevent AI core cheese.
-	src.modules += new /obj/item/melee/robotic/blade/ionic(src)
+	own_add(src, "modules", new /obj/item/borg/sight/meson(src))
+	own_add(src, "modules", new /obj/item/weldingtool/electric/mounted/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/screwdriver/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/wrench/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/wirecutters/cyborg(src))
+	own_add(src, "modules", new /obj/item/multitool/ai_detector(src))
+	own_add(src, "modules", new /obj/item/pickaxe/plasmacutter(src))
+	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg/lesser(src)) // Can't eat rwalls to prevent AI core cheese.
+	own_add(src, "modules", new /obj/item/melee/robotic/blade/ionic(src))
 
 	// FBP repair.
-	src.modules += new /obj/item/robotanalyzer(src)
-	src.modules += new /obj/item/shockpaddles/robot/jumper(src)
-	src.modules += new /obj/item/gripper/no_use/organ/robotics(src)
+	own_add(src, "modules", new /obj/item/robotanalyzer(src))
+	own_add(src, "modules", new /obj/item/shockpaddles/robot/jumper(src))
+	own_add(src, "modules", new /obj/item/gripper/no_use/organ/robotics(src))
 
 	// Hacking other things.
-	src.modules += new /obj/item/card/robot/syndi(src)
-	src.modules += new /obj/item/card/emag/borg(src)
+	own_add(src, "modules", new /obj/item/card/robot/syndi(src))
+	own_add(src, "modules", new /obj/item/card/emag/borg(src))
 
 	// Materials.
 	var/datum/matter_synth/nanite = new /datum/matter_synth/nanite(10000)
@@ -100,16 +100,16 @@
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
 	rel_add(N, "synths", nanite)
-	src.modules += N
+	own_add(src, "modules", N)
 
 	var/obj/item/dogborg/sleeper/compactor/syndie/MD = new /obj/item/dogborg/sleeper/compactor/syndie(src)
 	rel_set(MD, "metal", metal)
 	rel_set(MD, "glass", glass)
-	src.modules += MD
+	own_add(src, "modules", MD)
 
-	src.modules += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
 
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
 
 
 
@@ -120,21 +120,21 @@
 
 /obj/item/robot_module/robot/syndicate/combat_medic/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/healthanalyzer/phasic(src)
-	src.modules += new /obj/item/reagent_containers/borghypo/merc(src)
+	own_add(src, "modules", new /obj/item/healthanalyzer/phasic(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/borghypo/merc(src))
 
 	// Surgery things.
-	src.modules += new /obj/item/autopsy_scanner(src)
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
-	src.modules += new /obj/item/gripper/medical(src)
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
+	own_add(src, "modules", new /obj/item/autopsy_scanner(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
+	own_add(src, "modules", new /obj/item/gripper/medical(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
 
 	// General healing.
-	src.modules += new /obj/item/shockpaddles/robot/combat(src)
-	src.modules += new /obj/item/reagent_containers/dropper(src) // Allows borg to fix necrosis apparently
-	src.modules += new /obj/item/reagent_containers/syringe(src)
-	src.modules += new /obj/item/roller_holder(src)
+	own_add(src, "modules", new /obj/item/shockpaddles/robot/combat(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/dropper(src)) // Allows borg to fix necrosis apparently
+	own_add(src, "modules", new /obj/item/reagent_containers/syringe(src))
+	own_add(src, "modules", new /obj/item/roller_holder(src))
 
 	// Materials.
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(15000)
@@ -152,12 +152,12 @@
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
 	rel_add(S, "synths", medicine)
-	src.modules += O
-	src.modules += B
-	src.modules += S
+	own_add(src, "modules", O)
+	own_add(src, "modules", B)
+	own_add(src, "modules", S)
 
-	src.modules += new /obj/item/dogborg/sleeper/syndie(src)
-	src.modules += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/syndie(src))
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/syndicate/combat_medic/respawn_consumable(mob/living/silicon/robot/R, amount)
 
@@ -175,13 +175,13 @@
 
 /obj/item/robot_module/robot/syndicate/ninja/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/dogborg/sleeper/K9/syndie(src)
-	src.modules += new /obj/item/dogborg/pounce(src)
-	src.modules += new /obj/item/gripper/syndicate(src)
-	src.modules += new /obj/item/robotic_multibelt/syndicate(src)
-	src.modules += new /obj/item/robotic_multibelt/syndicate(src)
-	src.modules += new /obj/item/melee/robotic/blade/ninja(src)
-	src.modules += new /obj/item/borg/cloak(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/K9/syndie(src))
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
+	own_add(src, "modules", new /obj/item/gripper/syndicate(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/syndicate(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/syndicate(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/blade/ninja(src))
+	own_add(src, "modules", new /obj/item/borg/cloak(src))
 	//Removes the default sblade
 	var/obj/item/melee/robotic/blade/syndicate/sblade = locate_in_list(src.modules, /obj/item/melee/robotic/blade/syndicate)
 	if(sblade)

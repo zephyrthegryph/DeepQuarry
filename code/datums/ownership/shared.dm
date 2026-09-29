@@ -36,17 +36,16 @@
 GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 #endif
 
-/// A stable text digest of D's vars (lists by content, datums by type and ref).
+/// D's vars as name -> stable text digest (lists by content, datums by type and ref).
 /proc/def_freeze_digest(datum/D)
-	var/list/parts = list()
+	. = list()
 	for(var/name in D.vars)
 		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "cached_ref"))
 			continue
 		var/value = D.vars[name]
 		if(!issaved(value) && !islist(value))
 			continue
-		parts += "[name]=[def_freeze_value(value, 2)]"
-	return md5(jointext(parts, ";"))
+		.[name] = md5(def_freeze_value(value, 2))
 
 /proc/def_freeze_value(value, depth)
 	if(islist(value))
@@ -87,9 +86,14 @@ GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 	#ifdef UNIT_TESTS
 	for(var/datum/D as anything in def_freeze_instances())
 		var/key = "[D.type] [ref(D)]"
-		var/old = GLOB.def_freeze_snapshot[key]
-		if(isnull(old))
+		var/list/old = GLOB.def_freeze_snapshot[key]
+		if(!islist(old))
 			continue
-		if(old != def_freeze_digest(D))
-			. += "DEF FROZEN: [D.type] ([ref(D)]) was written after boot"
+		var/list/now = def_freeze_digest(D)
+		var/list/changed = list()
+		for(var/name in now)
+			if(old[name] != now[name])
+				changed += name
+		if(length(changed))
+			. += "DEF FROZEN: [D.type] ([ref(D)]) was written after boot: [jointext(changed, ", ")]"
 	#endif

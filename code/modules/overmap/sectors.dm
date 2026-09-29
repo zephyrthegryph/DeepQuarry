@@ -191,7 +191,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	if(shuttle_name)
 		LAZYINITLIST(restricted_waypoints); LAZYADD(restricted_waypoints[shuttle_name], landmark)
 	else
-		LAZYADD(generic_waypoints, landmark)
+		rel_add(src, "generic_waypoints", landmark)
 
 /obj/effect/overmap/visitable/proc/remove_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	if(shuttle_name)

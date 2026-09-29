@@ -184,13 +184,13 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					return INTERACTION_HANDLED_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
-				LAZYADD(bank, w)
+				rel_add(src, "bank", w)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [w]."))
 		if("item")
 			if(istype(O, /obj))
 				user.drop_item()
 				O.forceMove(src.contents)
-				LAZYADD(bank, O)
+				rel_add(src, "bank", O)
 				visible_message(span_notice("\The [src] accepts \the [user]'s [O]."))
 	return INTERACTION_HANDLED_PASS
 

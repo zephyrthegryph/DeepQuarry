@@ -92,14 +92,14 @@
 	mark.icon = 'icons/effects/64x64.dmi'
 	mark.icon_state = "mapper_none"
 	mark.layer = 10
-	LAZYSET(icon_image_cache, "bad", mark)
+	own_put(src, "icon_image_cache", "bad", mark)
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	LAZYSET(map_image_cache, "bad", tmp)
+	own_put(src, "map_image_cache", "bad", tmp)
 
 	if(uses_power && cell_type)
 		own_set(src, "cell", new cell_type(src))
@@ -275,7 +275,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			LAZYSET(map_image_cache, map_cache_key, tmp)
+			own_put(src, "map_image_cache", map_cache_key, tmp)
 
 	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
@@ -331,7 +331,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
 				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				LAZYSET(icon_image_cache, marker_cache_key, mark)
+				own_put(src, "icon_image_cache", marker_cache_key, mark)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -359,7 +359,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.icon_state = "beacon"
 			mark.layer = 1
-			LAZYSET(icon_image_cache, marker_cache_key, mark)
+			own_put(src, "icon_image_cache", marker_cache_key, mark)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)

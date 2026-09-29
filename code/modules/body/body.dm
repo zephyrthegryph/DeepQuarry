@@ -132,7 +132,7 @@
 	rel_set(A, "body", src)
 	rel_set(A, "owner", owner)
 	rel_set(A, "location", location)
-	LAZYADD(afflictions, A)
+	rel_add(src, "afflictions", A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)

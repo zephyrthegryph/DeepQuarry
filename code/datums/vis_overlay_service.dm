@@ -34,14 +34,14 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		overlay = vis_overlay_cache[.]
 		if(!overlay)
 			overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
-			vis_overlay_cache[.] = overlay
+			own_put(src, "vis_overlay_cache", ., overlay)
 		else
 			overlay.unused = 0
 	else
 		overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 		overlay.cache_expiration = -1
 		var/cache_id = "\ref[overlay]@{[world.time]}"
-		vis_overlay_cache[cache_id] = overlay
+		own_put(src, "vis_overlay_cache", cache_id, overlay)
 		. = overlay
 	thing.vis_contents += overlay
 
@@ -51,7 +51,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	if(!thing.managed_vis_overlays)
 		thing.managed_vis_overlays = list(overlay)
 	else
-		thing.managed_vis_overlays += overlay
+		rel_add(thing, "managed_vis_overlays", overlay)
 	return overlay
 
 /datum/world_service/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)

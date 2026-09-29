@@ -51,7 +51,7 @@
 			reset_parents()
 			break
 		recursion++
-		LAZYADD(parents, cur_parent)
+		rel_add(src, "parents", cur_parent)
 		om_hook(cur_parent, /datum/om/event/atom_exited, src, PROC_REF(on_parent_exited))
 		om_hook(cur_parent, /datum/om/event/qdeleting, src, PROC_REF(on_qdel))
 		// Because the turf is not considered to be in the heirarchy by the relay, picking

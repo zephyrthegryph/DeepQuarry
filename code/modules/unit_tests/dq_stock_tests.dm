@@ -32,7 +32,7 @@
 	var/turf/floor = dq_containment_floor()
 	TEST_ASSERT_NOTNULL(floor, "a clean floor")
 	var/obj/machinery/vending/dq_stock_test/V = new(floor)
-	made += V
+	own_add(src, "made", V)
 	var/path = /obj/item/dq_containment_test
 
 	// Records and their deltas.
@@ -59,7 +59,7 @@
 	// Done-when: nothing is materialized, before or after a vend.
 	TEST_ASSERT_EQUAL(dq_stock_count_in(V, path), 0, "no product exists inside at boot")
 	var/obj/item/vended = R.get_product(floor)
-	made += vended
+	own_add(src, "made", vended)
 	TEST_ASSERT(istype(vended, path) && vended.loc == floor, "vending made one real item on the floor")
 	TEST_ASSERT_EQUAL(R.get_amount(), 4, "vending took one")
 	TEST_ASSERT_EQUAL(dq_stock_count_in(V, path), 0, "vending did not materialize the rest")
@@ -78,7 +78,7 @@
 
 	// An item with state of its own stays real, in the stock slot.
 	var/obj/item/marked = new path(floor)
-	made += marked
+	own_add(src, "made", marked)
 	marked.desc = "a unique one"
 	TEST_ASSERT(R.add_product(marked), "stocked a marked item")
 	TEST_ASSERT(!QDELETED(marked) && marked.loc == V, "a unique item stays real inside")
@@ -107,7 +107,7 @@
 	var/turf/floor = dq_containment_floor()
 	TEST_ASSERT_NOTNULL(floor, "a clean floor")
 	var/obj/machinery/smartfridge/F = new(floor)
-	made += F
+	own_add(src, "made", F)
 	var/path = /obj/item/dq_containment_test
 
 	for(var/i in 1 to 4)
@@ -137,12 +137,12 @@
 	TEST_ASSERT_EQUAL(R.get_amount(), 2, "two left")
 	for(var/obj/item/I in turf_contents_of_type(floor, /obj/item))
 		if(I.type == path)
-			made += I
+			own_add(src, "made", I)
 	TEST_ASSERT_EQUAL(dq_stock_count_in(F, path), 0, "vending did not materialize the rest")
 
 	// Items that can't collapse (contents, processing) stay real.
 	var/obj/item/busy = new path(floor)
-	made += busy
+	own_add(src, "made", busy)
 	new /obj/item/paper(busy)
 	F.stock(busy)
 	TEST_ASSERT(!QDELETED(busy) && busy.loc == F, "an item with contents stays real")
@@ -154,7 +154,7 @@
 	TEST_ASSERT(busy.loc == floor, "the real one spilled")
 	for(var/obj/item/I in turf_contents_of_type(floor, /obj/item))
 		if(I.type == path)
-			made += I
+			own_add(src, "made", I)
 
 // ---- Stacks: sheets fold regardless of amount ----
 
@@ -166,7 +166,7 @@
 	var/turf/floor = dq_containment_floor()
 	TEST_ASSERT_NOTNULL(floor, "a clean floor")
 	var/obj/machinery/smartfridge/sheets/F = new(floor)
-	made += F
+	own_add(src, "made", F)
 	// Material stacks don't serialize yet (their recipes list has no codec), so
 	// they stay real; a stack type that does serialize folds into the count.
 	var/obj/item/stack/material/steel/probe = new(null, 10)
@@ -178,6 +178,6 @@
 	TEST_ASSERT_EQUAL(dq_stock_count_in(F, /obj/item/stack/material/steel), collapses ? 0 : 2, "stacks collapse only when they serialize")
 	F.vend(R, 25)
 	var/obj/item/stack/material/steel/S = locate_on(floor, /obj/item/stack/material/steel)
-	made += S
+	own_add(src, "made", S)
 	TEST_ASSERT(S && S.get_amount() == 25, "vended one stack of 25")
 	TEST_ASSERT_EQUAL(R.get_amount(), 15, "15 left")

@@ -4,7 +4,7 @@
 /obj/item/communicator/proc/add_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	LAZYOR(communicating, comm)
+	rel_add(src, "communicating", comm)
 	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	update_icon()
@@ -84,7 +84,7 @@
 	log_game(msg)
 	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	LAZYADD(voice_mobs, new_voice)
+	own_add(src, "voice_mobs", new_voice)
 	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
@@ -173,7 +173,7 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.voice_invites, src)
+		rel_add(comm, "voice_invites", src)
 
 	if(!who)
 		return

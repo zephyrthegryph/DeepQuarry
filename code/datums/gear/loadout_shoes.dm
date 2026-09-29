@@ -88,7 +88,7 @@
 	for(var/lace in typesof(/obj/item/clothing/shoes/laceup))
 		var/obj/item/clothing/shoes/laceup/lace_type = lace
 		laces[initial(lace_type.name)] = lace_type
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(laces)))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(laces)))
 
 /datum/gear/shoes/green
 	display_name = "shoes, green"
@@ -128,7 +128,7 @@
 	for(var/hitop in typesof(/obj/item/clothing/shoes/hitops))
 		var/obj/item/clothing/shoes/hitops/hitop_type = hitop
 		hitops[initial(hitop_type.name)] = hitop_type
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(hitops)))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(hitops)))
 
 /datum/gear/shoes/flipflops
 	display_name = "flip flops"
@@ -180,7 +180,7 @@
 		//"cowboy boots, green"=/obj/item/clothing/shoes/boots/cowboy/green,
 		//"cowboy boots, blue"=/obj/item/clothing/shoes/boots/cowboy/blue
 	)
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
 
 /datum/gear/shoes/jungle
 	display_name = "jungle boots"

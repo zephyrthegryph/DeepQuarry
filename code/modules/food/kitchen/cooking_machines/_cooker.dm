@@ -68,7 +68,7 @@
 	. = ..()
 	cooking_objs = list()
 	for (var/i = 0, i < max_contents, i++)
-		LAZYADD(cooking_objs, new /datum/cooking_item/(new container_type(src)))
+		own_add(src, "cooking_objs", new /datum/cooking_item/(new container_type(src)))
 	cooking = FALSE
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead

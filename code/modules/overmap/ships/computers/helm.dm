@@ -49,7 +49,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			LAZYSET(known_sectors, S.name, R)
+			own_put(src, "known_sectors", S.name, R)
 
 /obj/machinery/computer/ship/helm/machine_step()
 	..()
@@ -206,7 +206,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 						return FALSE
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
-			LAZYSET(known_sectors, sec_name, R)
+			own_put(src, "known_sectors", sec_name, R)
 			. = TRUE
 
 		if("remove")

@@ -179,5 +179,5 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 	b2y1 = pixel_y + pick(1,1,1,1,2,2,3,3,4)
 	b2y2 = pixel_y - pick(1,1,1,1,2,2,3,3,4)
 
-	LAZYADD(Target.bulletholes, src)
+	rel_add(Target, "bulletholes", src)
 

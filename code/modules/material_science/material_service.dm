@@ -228,7 +228,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
 		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
 		// it holds, on the doomed owner and on its turf and holders alike.
-		batch.material_service_watch_keys += om_watch_entity_key(src)
+		rel_add(batch, "material_service_watch_keys", om_watch_entity_key(src))
 		rel_clear(src, "monitor_tool")
 		rel_clear(src, "monitor_user")
 		last_reading = null

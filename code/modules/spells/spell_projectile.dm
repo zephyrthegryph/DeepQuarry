@@ -20,7 +20,7 @@
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
-		LAZYADD(trails, trail)
+		own_add(src, "trails", trail)
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
 		trail.density = FALSE

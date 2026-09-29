@@ -44,7 +44,7 @@
 		if(user)
 			user.remove_from_mob(C)
 		C.forceMove(H)
-		H.stored_ammo += C
+		own_add(H, "stored_ammo", C)
 	H.update_icon()
 	return H
 
@@ -70,7 +70,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 			var/obj/item/ammo_casing/C = other.stored_ammo[other.stored_ammo.len]
 			other.stored_ammo -= C
 			C.forceMove(src)
-			stored_ammo += C
+			own_add(src, "stored_ammo", C)
 			moved++
 		if(moved)
 			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [stored_ammo.len]."))

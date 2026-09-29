@@ -189,7 +189,7 @@
 		log_game("[player.key] was selected for [role_text] by lottery, but they have not joined the game.")
 		return 0
 
-	LAZYOR(pending_antagonists, player)
+	rel_add(src, "pending_antagonists", player)
 	log_game("[player.key] has been selected for [role_text] by lottery.")
 
 	//Ensure that antags with ANTAG_OVERRIDE_JOB do not occupy job slots.

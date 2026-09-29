@@ -132,7 +132,7 @@
 	dq_ledger(box)
 	item.latent_touched_at = world.time - (box.latent_idle_delay * 2)
 	TEST_ASSERT(can_be_latent(item), "should be eligible with no viewers")
-	LAZYADD(box.open_tguis, new /datum) // stand in for an open tgui/browse window
+	own_add(box, "open_tguis", new /datum) // stand in for an open tgui/browse window
 	TEST_ASSERT(!can_be_latent(item), "an open window on the holder must block collapse")
 	qdel(box.open_tguis[1])
 	box.open_tguis = null
@@ -236,12 +236,12 @@
 	var/list/boxes = list()
 	for(var/i in 1 to 4)
 		var/obj/item/dq_latency_test_box/box = new(floor)
-		made += box
+		own_add(src, "made", box)
 		boxes += box
 		dq_ledger(box)
 		for(var/j in 1 to 3)
 			var/obj/item/dq_latency_test_item/item = new(box)
-			made += item
+			own_add(src, "made", item)
 
 	for(var/step in 1 to 150)
 		var/obj/item/dq_latency_test_box/box = pick(boxes)

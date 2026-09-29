@@ -191,7 +191,7 @@
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
 			qdel(D)
 			continue
-		destinations += D
+		own_add(src, "destinations", D)
 
 	// Now start the process of connecting all of them.
 	for(var/datum/shuttle_destination/D in destinations)

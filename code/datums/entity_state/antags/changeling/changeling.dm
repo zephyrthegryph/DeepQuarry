@@ -389,7 +389,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	geneticpoints -= Thepower.genomecost
 
-	LAZYADD(purchased_powers, Thepower)
+	rel_add(src, "purchased_powers", Thepower)
 
 	if(Thepower.genomecost > 0)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")

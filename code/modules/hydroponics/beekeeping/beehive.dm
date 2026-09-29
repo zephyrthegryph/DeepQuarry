@@ -85,7 +85,7 @@
 	update_icon()
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	frames.Add(held)
+	rel_add(src, "frames", held)
 	return TRUE
 
 /datum/interaction/machine_item/beehive_bee_pack

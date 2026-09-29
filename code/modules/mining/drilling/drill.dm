@@ -264,7 +264,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 			O.forceMove(src)
 			own_set(src, "cell", O)
 			materialize_parts()
-			component_parts += O
+			own_add(src, "component_parts", O)
 			balloon_alert(user, "you install \the [O]")
 		return TRUE
 	return FALSE
@@ -432,7 +432,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 			mine_turf = locate(tx + ix, ty + iy, T.z)
 			if(!istype(mine_turf, /turf/space/))
 				if(mine_turf && mine_turf.turf_resource_types & TURF_HAS_MINERALS)
-					LAZYADD(resource_field, mine_turf)
+					rel_add(src, "resource_field", mine_turf)
 				// gas mining
 				if(istype(mine_turf,/turf/simulated/floor/gas_crack))
 					// Get gasses the cracks around us could give!

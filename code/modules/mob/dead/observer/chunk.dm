@@ -11,9 +11,9 @@
 		var/client/client = ghost.client
 		if(client)
 			if(length(obscured)) client.images += obscured
-	ghost.visibleChunks += src
+	rel_add(ghost, "visibleChunks", src)
 	visible++
-	LAZYADD(seenby, ghost)
+	rel_add(src, "seenby", ghost)
 	if(changed && !updating)
 		update()
 

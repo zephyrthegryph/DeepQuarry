@@ -73,4 +73,4 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 						var/obj/item/O = A
 						if(dq_get_was_bloodied(O) && !(O.blood_overlay in O.overlays))
 							O.add_overlay(O.blood_overlay)
-							LAZYOR(reset_objects, O)
+							rel_add(src, "reset_objects", O)

@@ -174,5 +174,5 @@ BONUS
 			if(S == src)
 				continue
 			S.stopped = TRUE
-			LAZYADD(captives, S)
+			rel_add(src, "captives", S)
 		used = TRUE

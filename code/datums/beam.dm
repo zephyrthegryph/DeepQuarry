@@ -88,7 +88,7 @@
 			X.color = beam_color
 
 		rel_set(X, "owner", src)
-		LAZYOR(elements, X)
+		own_add(src, "elements", X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
 		//cropped by a transparent box of length-N pixel size

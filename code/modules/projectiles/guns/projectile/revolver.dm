@@ -240,7 +240,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to secondary_max_shells)
-		secondary_loaded += new secondary_ammo_type(src)
+		own_add(src, "secondary_loaded", new secondary_ammo_type(src))
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
 

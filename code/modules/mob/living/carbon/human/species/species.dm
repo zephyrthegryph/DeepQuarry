@@ -396,7 +396,7 @@
 /datum/species/proc/update_attack_types()
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 /datum/species/New()
 	share_type_tables()
@@ -411,7 +411,7 @@
 
 	unarmed_attacks = list()
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 	update_sort_hint()
 
@@ -821,7 +821,7 @@
 	unarmed_attacks = list()
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 /// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
 /// /datum/shadekin and /datum/xenochimera.

@@ -31,7 +31,7 @@
 
 		if(!Adjacent(floor) || !floor.Enter(src))
 			continue
-		LAZYOR(neighbors, floor)
+		rel_add(src, "neighbors", floor)
 
 	if(length(neighbors))
 		GLOB.plant_service.add_plant(src)	//if we have neighbours again, start processing
@@ -140,7 +140,7 @@
 		if(!istype(check_turf))
 			continue
 		for(var/obj/effect/plant/neighbor in contents_of(check_turf))
-			LAZYOR(neighbor.neighbors, check_turf)
+			rel_add(neighbor, "neighbors", check_turf)
 			GLOB.plant_service.add_plant(neighbor)
 	expire(1)
 

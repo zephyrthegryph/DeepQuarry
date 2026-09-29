@@ -20,7 +20,7 @@
 		// Delaminating, not within coverage, not on a tile.
 		if(S.grav_pulling || S.exploded || !(S.z in valid_z_levels) || !istype(S.loc, /turf/))
 			continue
-		supermatters.Add(S)
+		rel_add(src, "supermatters", S)
 
 	if(!(active() in supermatters))
 		rel_clear(src, "active")

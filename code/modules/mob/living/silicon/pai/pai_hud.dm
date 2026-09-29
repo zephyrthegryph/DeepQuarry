@@ -102,7 +102,7 @@
 	combat_button.icon = ui_style
 	combat_button.alpha = ui_alpha
 	combat_button.layer = LAYER_HUD_ITEM
-	HUD.adding += combat_button
+	rel_add(HUD, "adding", combat_button)
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -112,7 +112,7 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 	own_set(HUD, "move_intent", using)
 
 	//Resist button

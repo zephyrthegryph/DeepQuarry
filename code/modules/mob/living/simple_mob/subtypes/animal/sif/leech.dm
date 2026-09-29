@@ -304,7 +304,7 @@
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 			rel_set(src, "host_bodypart", H.get_organ(infest_target))
-			LAZYOR(host_bodypart.implants, src)
+			rel_add(host_bodypart, "implants", src)
 
 		return
 	else

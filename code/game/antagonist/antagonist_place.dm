@@ -3,7 +3,7 @@
 		starting_locations = list()
 		for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(L.name == landmark_id)
-				LAZYOR(starting_locations, get_turf(L))
+				rel_add(src, "starting_locations", get_turf(L))
 
 /datum/antagonist/proc/announce_antagonist_spawn()
 

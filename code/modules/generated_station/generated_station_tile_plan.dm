@@ -89,7 +89,7 @@
 
 /datum/generated_station_tile_plan/proc/fill_column(x)
 	for(var/y in 1 to grid_height)
-		tiles[coordinate_key(x, y)] = new /datum/generated_station_tile_intent(x, y)
+		own_put(src, "tiles", coordinate_key(x, y), new /datum/generated_station_tile_intent(x, y))
 
 
 /datum/generated_station_tile_plan/proc/coordinate_key(local_x, local_y)
@@ -271,7 +271,7 @@
 			var/east = tile(intent.local_x + 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 			var/west = tile(intent.local_x - 1, intent.local_y)?.structure_kind == GENERATED_STATION_TILE_HULL
 			if((north || south) && (east || west) && (north + south + east + west == 2))
-				hull_corners += intent
+				rel_add(src, "hull_corners", intent)
 		if(n < count && generation_owner()?.generation_checkpoint("Closing station hull corners", 30))
 			return list(3, n + 1)
 	for(var/datum/generated_station_tile_intent/intent in hull_corners)

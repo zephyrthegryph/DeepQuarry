@@ -30,9 +30,9 @@
 		var/client/client = eye.GetViewerClient()
 		if(client)
 			if(length(obscured)) client.images += obscured
-	eye.visibleChunks += src
+	rel_add(eye, "visibleChunks", src)
 	visible++
-	LAZYADD(seenby, eye)
+	rel_add(src, "seenby", eye)
 	if(changed && !updating)
 		update()
 

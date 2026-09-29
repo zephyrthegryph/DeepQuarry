@@ -45,7 +45,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 	capabilities = list()
 	power_areas = list()
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)
-		departments[department.id] = new /datum/generated_station_department_runtime(department)
+		own_put(src, "departments", department.id, new /datum/generated_station_department_runtime(department))
 	configure_default_resources()
 	// Joins the runtime registry (filed by station id) now that the spec is set; the destroy
 	// transaction leaves it in phase 2.

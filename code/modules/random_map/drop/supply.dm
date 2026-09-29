@@ -58,7 +58,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 
 /datum/supply_drop_order/New(mob/admin)
 	rel_set(src, "admin", admin)
-	open_orders += src
+	rel_add(src, "open_orders", src)
 
 /// The ordering admin (null once that mob is deleted).
 /datum/supply_drop_order/proc/admin() as /mob

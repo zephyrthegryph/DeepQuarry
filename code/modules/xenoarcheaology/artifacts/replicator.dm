@@ -198,7 +198,7 @@
 		return TRUE
 	user.drop_item()
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	src.visible_message(span_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
 
@@ -411,7 +411,7 @@
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				stored_materials.Add(inserted_mob)
+				rel_add(src, "stored_materials", inserted_mob)
 				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
 				return TRUE
 		else
@@ -432,7 +432,7 @@
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
 
@@ -676,7 +676,7 @@
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				stored_materials.Add(inserted_mob)
+				rel_add(src, "stored_materials", inserted_mob)
 				src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [inserted_mob] into \the [src]."))
 				return TRUE
 		else
@@ -695,7 +695,7 @@
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
 

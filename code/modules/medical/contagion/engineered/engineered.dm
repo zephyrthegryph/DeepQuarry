@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 /datum/affliction/contagion/engineered/New(process = TRUE, datum/affliction/contagion/engineered/D)
 	if(istype(D))
 		for(var/datum/viral_trait/S in D.symptoms)
-			symptoms += new S.type
+			own_add(src, "symptoms", new S.type)
 	else
 		D = null
 
@@ -418,10 +418,10 @@ GLOBAL_LIST_INIT(advance_cures, list(
 		return
 
 	if(length(symptoms) < (VIRUS_SYMPTOM_LIMIT - 1) + rand(-1, 1))
-		symptoms += S
+		own_add(src, "symptoms", S)
 	else
 		RemoveSymptom(pick(symptoms))
-		symptoms += S
+		own_add(src, "symptoms", S)
 	Refresh()
 
 // Simply removes the symptom.

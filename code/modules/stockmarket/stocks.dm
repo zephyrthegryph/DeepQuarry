@@ -47,7 +47,7 @@
 	var/datum/industry/industry = null
 
 /datum/stock/proc/addEvent(datum/stockEvent/E)
-	events |= E
+	own_add(src, "events", E)
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
@@ -237,7 +237,7 @@
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	LAZYADD(borrow_brokers, B)
+	own_add(src, "borrow_brokers", B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -264,7 +264,7 @@
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
 	LAZYREMOVE(borrow_brokers, B)
-	LAZYADD(borrows, B)
+	rel_add(src, "borrows", B)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))

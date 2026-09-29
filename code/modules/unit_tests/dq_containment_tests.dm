@@ -155,9 +155,9 @@
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
 	var/atom/movable/H = new path(floor)
-	made += H
-	holders += H
-	things += H
+	own_add(src, "made", H)
+	rel_add(src, "holders", H)
+	rel_add(src, "things", H)
 	if(istype(H, /obj/structure/closet))
 		var/obj/structure/closet/C = H
 		C.storage_capacity = istype(C, /obj/structure/closet/crate) ? 6 : 200
@@ -170,8 +170,8 @@
 	else
 		path = pick(/obj/item/dq_containment_test, /obj/item/dq_containment_test/glass, /obj/item/dq_containment_test/wood, /obj/item/paper)
 	var/atom/movable/T = new path(where || floor)
-	made += T
-	things += T
+	own_add(src, "made", T)
+	rel_add(src, "things", T)
 	return T
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/live_holders()

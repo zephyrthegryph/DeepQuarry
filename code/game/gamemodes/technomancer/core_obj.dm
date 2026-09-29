@@ -178,7 +178,7 @@
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	LAZYADD(spells, spell)
+	own_add(src, "spells", spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 

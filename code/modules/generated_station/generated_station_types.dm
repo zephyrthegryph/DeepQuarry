@@ -245,7 +245,7 @@
 
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
-	issues += new /datum/generated_station_validation_issue(severity, code, message, subject_id)
+	own_add(src, "issues", new /datum/generated_station_validation_issue(severity, code, message, subject_id))
 
 /datum/generated_station_validation_result/proc/is_valid()
 	for(var/datum/generated_station_validation_issue/issue in issues)

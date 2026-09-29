@@ -12,7 +12,7 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 	var/datum/uniqueness_generator/generator = generators[generator_type]
 	if(!generator)
 		generator = new generator_type()
-		generators[generator_type] = generator
+		own_put(src, "generators", generator_type, generator)
 	var/list/generator_args = args.Copy() // Cannot cut args directly, BYOND complains about it being readonly.
 	generator_args -= generator_type
 	return generator.Generate(arglist(generator_args))

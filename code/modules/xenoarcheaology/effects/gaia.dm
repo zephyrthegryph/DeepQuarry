@@ -39,7 +39,7 @@
 		if(prob(30))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			LAZYOR(my_glitterflies, G)
+			own_add(src, "my_glitterflies", G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -53,7 +53,7 @@
 		if(prob(2))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			LAZYOR(my_glitterflies, G)
+			own_add(src, "my_glitterflies", G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -67,7 +67,7 @@
 		if(prob(10))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			LAZYOR(my_glitterflies, G)
+			own_add(src, "my_glitterflies", G)
 
 			G.ai_brain.returns_home = TRUE
 

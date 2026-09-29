@@ -22,7 +22,7 @@
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(V.z in using_map.station_levels))
 			continue
-		LAZYADD(vending_machines, V)
+		rel_add(src, "vending_machines", V)
 
 	if(!length(vending_machines))
 		log_game("Brand intelligence event: Could not find any vending machines on station Z levels. Aborting.")
@@ -77,7 +77,7 @@
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
 	LAZYREMOVE(vending_machines, V)
-	LAZYADD(infected_vending_machines, V)
+	rel_add(src, "infected_vending_machines", V)
 	V.shut_up = FALSE
 	V.shoot_inventory = TRUE
 

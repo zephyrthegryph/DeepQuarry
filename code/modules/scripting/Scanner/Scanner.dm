@@ -164,7 +164,7 @@
 							buf+=char
 			if("\n")
 				. = new/datum/token/string(buf, line, COL)
-				errors+=new/datum/scriptError("Unterminated string. Newline reached.", .)
+				own_add(src, "errors", new/datum/scriptError("Unterminated string. Newline reached.", .))
 				line++
 				linepos=codepos
 				break
@@ -223,7 +223,7 @@ Reads a number into a token.
 		char=copytext(code, codepos, codepos+1)
 	var/datum/token/number/T=new(buf, line, COL)
 	if(isnull(text2num(buf)))
-		errors+=new/datum/scriptError("Bad number: ", T)
+		own_add(src, "errors", new/datum/scriptError("Bad number: ", T))
 		T.value=0
 	codepos-- //allow main Scan() proc to read the next character
 	return T
@@ -270,7 +270,7 @@ Reads a comment and outputs the type of comment
 			if(expectedend) expectedend = 0
 
 		if(comm == 2)
-			errors+=new/datum/scriptError/UnterminatedComment()
+			own_add(src, "errors", new/datum/scriptError/UnterminatedComment())
 
 #undef COL
 

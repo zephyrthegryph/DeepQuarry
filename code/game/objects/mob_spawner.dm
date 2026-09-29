@@ -166,7 +166,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 /obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
-		LAZYADD(mobs_in_range, AM)
+		rel_add(src, "mobs_in_range", AM)
 
 /obj/structure/mob_spawner/scanner/proc/CheckProximity(atom/movable/AM,turf/new_loc)
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))

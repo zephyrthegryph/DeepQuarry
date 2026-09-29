@@ -509,7 +509,7 @@
 				continue
 			owner.register_furnishing(movable)
 			if(istype(movable, /obj/machinery/door))
-				owner.doors |= movable
+				own_add(owner, "doors", movable)
 			created = TRUE
 	qdel(template)
 	return created
@@ -556,7 +556,7 @@
 	var/obj/machinery/door/window/access = new(access_turf)
 	access.set_dir(EAST)
 	owner.register_furnishing(access)
-	owner.doors |= access
+	own_add(owner, "doors", access)
 	return TRUE
 
 /datum/generated_room_fragment/reception_corner/build_constraints()

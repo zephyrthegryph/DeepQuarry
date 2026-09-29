@@ -75,7 +75,7 @@
 		owner.body.add_affliction(W, src)
 	else
 		rel_set(W, "location", src)
-		LAZYADD(detached_afflictions, W)
+		own_add(src, "detached_afflictions", W)
 	W.sync()
 	integrity_dirty = TRUE
 
@@ -161,7 +161,7 @@
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
 		rel_set(A, "location", O)
-		LAZYADD(O.detached_afflictions, A)
+		own_add(O, "detached_afflictions", A)
 
 /// The organ joined this body: adopt what it carries. Called only by
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.

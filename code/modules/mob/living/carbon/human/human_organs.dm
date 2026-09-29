@@ -56,7 +56,7 @@
 		self.bad_external_organs.Cut()
 		for(var/obj/item/organ/external/Ex in self.organs)
 			if(Ex.need_process())
-				self.bad_external_organs += Ex
+				rel_add(self, "bad_external_organs", Ex)
 
 	//processing internal organs is pretty cheap, do that first.
 	for(var/obj/item/organ/I in self.internal_organ_list())

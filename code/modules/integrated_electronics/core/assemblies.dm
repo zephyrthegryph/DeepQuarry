@@ -190,8 +190,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 				LAZYREMOVE(pin1.linked, pin2)
 				LAZYREMOVE(pin2.linked, pin1)
 			else
-				LAZYOR(pin1.linked, pin2)
-				LAZYOR(pin2.linked, pin1)
+				rel_add(pin1, "linked", pin2)
+				rel_add(pin2, "linked", pin1)
 
 			return TRUE
 

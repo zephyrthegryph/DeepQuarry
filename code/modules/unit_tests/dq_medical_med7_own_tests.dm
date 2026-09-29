@@ -120,7 +120,7 @@
 	var/obj/item/organ/external/arm/arm = allocate(/obj/item/organ/external/arm)
 	var/datum/affliction/tissue_necrosis/N = new(arm)
 	rel_set(N, "location", arm)
-	LAZYADD(arm.detached_afflictions, N)
+	own_add(arm, "detached_afflictions", N)
 	arm.clear_necrosis()
 	var/list/remaining = arm.afflictions_here()
 	var/datum/affliction/tissue_necrosis/left = locate_in_list(remaining, /datum/affliction/tissue_necrosis)

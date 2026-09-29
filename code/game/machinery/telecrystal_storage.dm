@@ -31,7 +31,7 @@
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
-		item_records.Add(item)
+		own_add(src, "item_records", item)
 		consume(O)
 
 /obj/machinery/smartfridge/tcrystal/tgui_act(action, params, datum/tgui/ui)

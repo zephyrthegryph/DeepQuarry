@@ -236,7 +236,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/adopted
 	if(!isnull(dest_key))
 		adopted = own_put(dest, dest_var, dest_key, value)
-	else if(islist(dest.vars[dest_var]) || (!isnull(member) && isnull(dest.vars[dest_var])))
+	else if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
 		adopted = own_add(dest, dest_var, value)
 	else
 		adopted = own_set(dest, dest_var, value)

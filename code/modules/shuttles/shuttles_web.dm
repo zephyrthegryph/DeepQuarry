@@ -438,7 +438,7 @@
 
 		for(var/new_dest in destinations)
 			var/datum/shuttle_destination/D = new new_dest(WM)
-			WM.destinations += D
+			own_add(WM, "destinations", D)
 
 			for(var/type_to_link in D.routes_to_make)
 				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)

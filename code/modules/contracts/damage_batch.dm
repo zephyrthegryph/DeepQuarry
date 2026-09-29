@@ -74,7 +74,7 @@
 	var/datum/contract_damage_report/report = pending_damage_reports[key]
 	if(!report)
 		report = new(source)
-		pending_damage_reports[key] = report
+		own_put(src, "pending_damage_reports", key, report)
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 

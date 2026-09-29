@@ -115,7 +115,7 @@
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		B.forceMove(src)
-		LAZYADD(beakers, B)
+		rel_add(src, "beakers", B)
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1

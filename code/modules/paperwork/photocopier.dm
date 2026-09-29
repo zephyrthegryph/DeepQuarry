@@ -374,7 +374,7 @@
 		else if(istype(W, /obj/item/photo))
 			W = photocopy(W)
 		W.forceMove(p)
-		p.pages += W
+		rel_add(p, "pages", W)
 
 	p.forceMove(src.loc)
 	p.update_icon()

@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 	user.drop_item()
 	i.forceMove(src)
 	to_chat(user, span_notice("You put [i] in [src]."))
-	LAZYADD(papers, i)
+	rel_add(src, "papers", i)
 	update_icon()
 	amount++
 	return INTERACTION_HANDLED_PASS

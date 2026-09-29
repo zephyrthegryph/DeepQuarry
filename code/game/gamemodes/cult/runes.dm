@@ -117,7 +117,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
 
-	LAZYOR(converting, target)
+	rel_add(src, "converting", target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
 	convert_tick(attacker, target, waiting_for_input, 0)
 	return 1

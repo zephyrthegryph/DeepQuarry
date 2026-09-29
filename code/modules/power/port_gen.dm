@@ -629,7 +629,7 @@
 	// Rebuild from mapper's parts
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
-		component_parts.Add(W)
+		own_add(src, "component_parts", W)
 		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 

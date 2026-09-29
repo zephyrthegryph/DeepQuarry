@@ -328,7 +328,7 @@
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
 	if(flushed.loc == loc)
 		flushed.forceMove(src)
-		LAZYADD(currently_held_objects, flushed)
+		rel_add(src, "currently_held_objects", flushed)
 
 	if(flush_completed) //Flushed it all.
 		om_after(src, 1 SECOND, PROC_REF(flush_send), currently_held_objects)

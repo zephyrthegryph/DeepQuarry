@@ -51,8 +51,8 @@
 	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
-		LAZYADD(sources, AS)
-		LAZYSET(sources_assoc, source, AS)
+		own_add(src, "sources", AS)
+		own_put(src, "sources_assoc", source, AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)

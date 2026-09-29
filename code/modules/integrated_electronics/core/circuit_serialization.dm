@@ -488,8 +488,8 @@
 				connection_exists = TRUE
 
 			if(!connection_exists)
-				LAZYOR(source_pin.linked, target_pin)
-				LAZYOR(target_pin.linked, source_pin)
+				rel_add(source_pin, "linked", target_pin)
+				rel_add(target_pin, "linked", source_pin)
 
 #undef ASSEMBLY_PREFIX
 #undef CIRCUIT_PREFIX

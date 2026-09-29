@@ -32,7 +32,7 @@
 
 /datum/rule_binding/proc/keep_watch(datum/native_watch/W)
 	if(W)
-		LAZYADD(world_watches, W)
+		rel_add(src, "world_watches", W)
 	return W
 
 /proc/dq_rx_id()
@@ -136,7 +136,7 @@
 		for(var/datum/native_watch/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
 				LAZYREMOVE(node.watches, old)
-		LAZYADD(node.watches, W)
+		own_add(node, "watches", W)
 	return W
 
 /proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)

@@ -674,7 +674,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				var/obj/item/organ/internal/mmi_holder/MMI = W
 				var/obj/item/mmi/brainbox = MMI.removed()
 				if(brainbox)
-					LAZYOR(items_preserved, brainbox)
+					rel_add(src, "items_preserved", brainbox)
 					hasMMI = brainbox // Adjust how MMI's are handled
 			for(var/slot in slots)
 				var/obj/item/I = M.get_equipped_item(slot)
@@ -683,9 +683,9 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 					if(contaminates)
 						I.gurgle_contaminate(contents, contamination_flavor, contamination_color) //We do an initial contamination pass to get stuff like IDs wet.
 					if(item_digest_mode == IM_HOLD)
-						LAZYOR(items_preserved, I)
+						rel_add(src, "items_preserved", I)
 					else if(item_digest_mode == IM_DIGEST_FOOD && !(istype(I,/obj/item/reagent_containers/food) || istype(I,/obj/item/organ) || istype(I,/obj/item/reagent_containers/pill))) // Allow pills to digest in bellies
-						LAZYOR(items_preserved, I)
+						rel_add(src, "items_preserved", I)
 
 	//Reagent transfer
 	if(ishuman(owner))
@@ -852,7 +852,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	// 26 lenient overrides that don't declare the keyword, so a keyword call trips DreamChecker.
 	var/digested = item.digest_act(src, touchable_amount, 0, delta_factor)
 	if(digested == FALSE)
-		LAZYOR(items_preserved, item)
+		rel_add(src, "items_preserved", item)
 	else
 		owner_adjust_nutrition((nutrition_percent / 100) * 5 * digested)
 		digested = TRUE

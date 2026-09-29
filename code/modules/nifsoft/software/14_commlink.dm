@@ -96,7 +96,7 @@ OWN(/obj/item/nif, comm, OWN_DELETE)
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.voice_invites, src)
+		rel_add(comm, "voice_invites", src)
 
 	if(!who)
 		return
@@ -116,7 +116,7 @@ OWN(/obj/item/nif, comm, OWN_DELETE)
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.im_contacts, src)
+		rel_add(comm, "im_contacts", src)
 		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 

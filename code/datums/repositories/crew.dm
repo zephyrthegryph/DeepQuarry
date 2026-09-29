@@ -16,7 +16,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 	var/datum/cache_entry/cache_entry = cache_data[z_level]
 	if(!cache_entry)
 		cache_entry = new/datum/cache_entry
-		cache_data[z_level] = cache_entry
+		own_put(src, "cache_data", z_level, cache_entry)
 
 	if(world.time < cache_entry.timestamp)
 		return cache_entry.data

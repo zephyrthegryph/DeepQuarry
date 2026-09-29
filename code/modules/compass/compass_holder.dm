@@ -83,7 +83,7 @@
 	if(!wp)
 		wp = new /datum/compass_waypoint()
 	wp.set_values(label, heading_x, heading_y, heading_z, label_color)
-	LAZYSET(compass_waypoints, id, wp)
+	own_put(src, "compass_waypoints", id, wp)
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/recalculate_heading(rebuild_icon = TRUE)

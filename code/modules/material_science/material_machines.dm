@@ -111,7 +111,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		to_chat(user, span_warning("You cannot let go of [stock]."))
 		return TRUE
 	stock.forceMove(src)
-	LAZYADD(feedstock, stock)
+	rel_add(src, "feedstock", stock)
 	visible_message(span_notice("[user] loads [stock] into [src]."))
 	return TRUE
 
@@ -130,7 +130,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		to_chat(user, span_warning("You cannot let go of [item]."))
 		return TRUE
 	item.forceMove(src)
-	LAZYADD(carbon_feed, item)
+	rel_add(src, "carbon_feed", item)
 	visible_message(span_notice("[user] adds carbon to [src]'s charge."))
 	return TRUE
 

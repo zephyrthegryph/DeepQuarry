@@ -228,7 +228,7 @@
 					forceMove(T)
 					visible_message(span_warning("[src] is pinned to the wall by [O]!"),span_warning("You are pinned to the wall by [O]!"))
 					src.anchored = TRUE
-					LAZYADD(src.pinned, O)
+					rel_add(src, "pinned", O)
 
 /mob/living/proc/on_throw_vore_special(pred = TRUE, mob/living/target)
 	return

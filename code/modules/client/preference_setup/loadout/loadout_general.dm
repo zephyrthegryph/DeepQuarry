@@ -23,4 +23,4 @@
 	"Pill Bottle (Bliss)" = /obj/item/storage/pill_bottle/happy,
 	"Pill Bottle (Aphrodisiac)" = /obj/item/storage/pill_bottle/aphrodisiac
 	)
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(medications))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(medications))

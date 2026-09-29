@@ -64,7 +64,7 @@ REL(/obj/item/robotic_multibelt, selected_item)
 	for(var/path in cyborg_integrated_tools)
 		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
 			if(!cyborg_integrated_tools[path])
-				cyborg_integrated_tools[path] = new path(src)
+				own_put(src, "cyborg_integrated_tools", path, new path(src))
 		else
 			cyborg_integrated_tools[path] = path
 		var/obj/item/I = cyborg_integrated_tools[path]
@@ -506,7 +506,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		var/obj/item/stack/current_stack = new stack_to_add(src)
 		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
 			rel_add(current_stack, "synths", linked_synth)
-		cyborg_integrated_tools += current_stack
+		own_add(src, "cyborg_integrated_tools", current_stack)
 
 	. = ..()
 

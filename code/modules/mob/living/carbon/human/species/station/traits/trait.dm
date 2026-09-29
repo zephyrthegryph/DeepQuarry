@@ -79,7 +79,7 @@
 		H.set_sdisabilities(H.sdisabilities | (sdisability)) // bitflag
 	add_verb(H, /mob/living/carbon/human/proc/trait_tutorial)
 	if(special_env)
-		LAZYADD(S.env_traits, src)
+		rel_add(S, "env_traits", src)
 	if(added_component_path && !species_state_has(H, added_component_path))
 		species_state_add(H, added_component_path)
 	if(added_behaviour_path)

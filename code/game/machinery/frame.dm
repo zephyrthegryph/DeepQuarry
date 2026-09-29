@@ -398,13 +398,13 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
 					CC.update_icon()
 					CP.use(camt)
-					components += CC
+					own_add(src, "components", CC)
 					req_components[I] -= camt
 					update_desc()
 					break
 				user.drop_item()
 				P.forceMove(src)
-				components += P
+				own_add(src, "components", P)
 				req_components[I]--
 				update_desc()
 				break
@@ -435,7 +435,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				LAZYADD(components, NS)
+				own_add(src, "components", NS)
 				req_components[I] -= camt
 				break
 
@@ -445,7 +445,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		else
 			user.drop_item()
 			P.forceMove(src)
-		LAZYADD(components, P)
+		own_add(src, "components", P)
 		req_components[I]--
 		break
 

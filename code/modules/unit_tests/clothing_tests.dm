@@ -29,7 +29,7 @@
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
 		om_hook(H, /datum/om/event/unittest_data, src, PROC_REF(get_signal_data))
-		test_humans[body_type] = H
+		own_put(src, "test_humans", body_type, H)
 	#endif
 
 	var/list/scan = subtypesof(/obj/item/clothing)

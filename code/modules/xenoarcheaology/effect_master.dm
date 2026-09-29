@@ -115,7 +115,7 @@
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
 		if(istype(holder(), my_effect.req_type))
-			my_effects += my_effect
+			own_add(src, "my_effects", my_effect)
 
 		else
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
@@ -150,7 +150,7 @@
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
 			if(istype(holder(), new_effect.req_type))
-				my_effects += new_effect
+				own_add(src, "my_effects", new_effect)
 
 	else
 		generate_effects()
@@ -189,7 +189,7 @@
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
 			if(istype(holder(), AE.req_type))
-				my_effects += AE
+				own_add(src, "my_effects", AE)
 				effect_generation_chance -= 30
 			else
 				rel_set(AE, "master", src)
@@ -200,7 +200,7 @@
 		effect_generation_chance /= 2
 
 		if(prob(effect_generation_chance))
-			my_effects += new chosen_path(src)
+			own_add(src, "my_effects", new chosen_path(src))
 
 		effect_generation_chance = round(effect_generation_chance)
 

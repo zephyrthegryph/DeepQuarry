@@ -703,11 +703,11 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 /area/redgate/stardog/flesh_abyss/EvalValidSpawnTurfs()
 	for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
 		if(istype(F, /turf/simulated/floor/flesh))
-			LAZYOR(valid_spawn_turfs, F)
+			rel_add(src, "valid_spawn_turfs", F)
 
 		if(include_enzyme)
 			if(istype(F, /turf/simulated/floor/water/digestive_enzymes))
-				LAZYOR(valid_spawn_turfs, F)
+				rel_add(src, "valid_spawn_turfs", F)
 
 /area/redgate/stardog/flesh_abyss/spawn_flora_on_turf()
 	if(!spawnstuff)
@@ -1065,7 +1065,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	. = ..()
 	var/area/redgate/stardog/eyes/e = get_area(src)
 	if(istype(e,/area/redgate/stardog/eyes))
-		LAZYOR(e.our_eyes, src)
+		rel_add(e, "our_eyes", src)
 
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"
@@ -1087,7 +1087,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 
 /obj/effect/dog_teleporter/Initialize(mapload)
 	. = ..()
-	dog_teleporters |= src
+	rel_add(src, "dog_teleporters", src)
 	do_setup()
 	if(icon_state == "exit_b")	//♪♫Blinded by the light♪♫
 		set_light(5, 1, "#ffffff")

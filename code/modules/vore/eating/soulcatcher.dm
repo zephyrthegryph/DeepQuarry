@@ -143,7 +143,7 @@
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	brainmobs |= brainmob
+	own_add(src, "brainmobs", brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
@@ -495,7 +495,7 @@
 	brainmobs -= M
 	rel_set(M, "gem", gem)
 	rel_set(M, "container", gem)
-	gem.brainmobs += M
+	own_add(gem, "brainmobs", M)
 	if(M == selected_soul())
 		update_selected_soul()
 

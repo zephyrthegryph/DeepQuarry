@@ -74,14 +74,18 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 			internal++
 		if(edge.target == O)
 			internal++
-	// Three references are this proc's: `O`, the argument path through rec, and refcount()'s own.
-	return refcount(O) - internal <= own_audit_refcount_overhead()
+	// One reference is this proc's own `O`; the overhead is what the scheduler holds for an armed
+	// entity (measured on a probe the same way).
+	return refcount(O) - internal - 1 <= own_audit_refcount_overhead()
 
 /// References own_audit_rec_dropped() itself holds while counting, measured once on a probe.
 /proc/own_audit_refcount_overhead()
 	var/static/overhead
 	if(isnull(overhead))
 		var/datum/own_audit_probe/probe = new
+		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
+		// references to it (its deadline) are part of the measured overhead.
+		om_after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
 		var/datum/om/rec/rec = om_rec_of(probe)
 		var/internal = 1
 		for(var/name in rec.vars)
@@ -95,6 +99,9 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 	return overhead
 
 /datum/own_audit_probe
+
+/datum/own_audit_probe/proc/noop()
+	return
 
 /// Test builds: the periodic audit (started from the unit-test world's start).
 /proc/own_audit_periodic()

@@ -45,7 +45,7 @@
 		alert.icon_state = "[initial(alert.icon_state)][severity]"
 		alert.severity = severity
 
-	LAZYSET(alerts, category, alert)
+	own_put(src, "alerts", category, alert)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 	alert.transform = matrix(32, 6, MATRIX_TRANSLATE)

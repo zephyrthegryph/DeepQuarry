@@ -1687,7 +1687,7 @@
 	var/datum/medical_trial_participant/participant = new(identity.id, list(), TRUE, 0)
 	participant.dose = MEDICAL_TRIAL_MINIMUM_DOSE
 	participant.exposure_time = world.time - MEDICAL_TRIAL_OBSERVATION_TIME
-	trial.participants[identity.id] = participant
+	own_put(trial, "participants", identity.id, participant)
 	var/list/baseline = list("subject_id" = identity.id, "scan_time" = participant.exposure_time, "snapshot" = list(), "operator_account" = 0)
 	var/list/trial_markers = list()
 	trial_markers[trial.id] = 1

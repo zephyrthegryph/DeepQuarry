@@ -38,7 +38,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	system.kind = FLIGHT_DEST_SYSTEM
 	system.body_radius = 5
 	system.body_color = "#ffd36a"
-	destinations[system.id] = system
+	own_put(src, "destinations", system.id, system)
 	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
 	normalize_celestial_hierarchy()
@@ -103,7 +103,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	if(istype(target, /obj/effect/overmap/visitable/ship/exploration_carrier))
 		destination.orbit_radius = 19
 		destination.orbit_phase = 42
-	destinations[destination.id] = destination
+	own_put(src, "destinations", destination.id, destination)
 	destination_by_target[REF(target)] = destination.id
 	return destination
 
@@ -178,7 +178,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	destination.body_color = "#ffc45c"
 	destination.surface_latitude = rand(-75, 75)
 	destination.surface_longitude = rand(-180, 180)
-	destinations[destination.id] = destination
+	own_put(src, "destinations", destination.id, destination)
 	if(destination.target())
 		destination_by_target[REF(destination.target())] = destination.id
 	site.flight_destination_id = destination.id
@@ -221,7 +221,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		var/obj/effect/overmap/visitable/ship/landable/landable = ship
 		rel_set(vessel, "shuttle", SSshuttles.shuttles[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
-	vessels[vessel.id] = vessel
+	own_put(src, "vessels", vessel.id, vessel)
 	vessel_by_ship[REF(ship)] = vessel.id
 	ship.flight_vessel_id = vessel.id
 	register_destination(ship)
@@ -303,7 +303,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		rel_set(port, "landmark", landmark)
 		if(host_id == station_id)
 			port.berth_group = "southern-cross-hangar-three"
-		ports[port.id] = port
+		own_put(src, "ports", port.id, port)
 		port_by_landmark[REF(landmark)] = port.id
 
 /datum/world_service/flight/proc/sync_vessel_ports()
@@ -362,7 +362,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
 	own_set(vessel, "active_plan", plan) // the vessel owns its active plan; plans is the service's id lookup
-	plans[plan.id] = plan
+	own_put(src, "plans", plan.id, plan)
 	return plan
 
 /datum/world_service/flight/service_step(resumed)

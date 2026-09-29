@@ -429,7 +429,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			L.fields["exploit_record"] = H.exploit_record
 		else
 			L.fields["exploit_record"] = "No additional information acquired."
-		locked += L
+		rel_add(src, "locked", L)
 	return
 
 /proc/generate_record_id()
@@ -474,9 +474,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	G.fields["photo-west"] = "'data:image/png;base64,[icon2base64(side)]'"
 	G.fields["notes"] = "No notes found."
 	if(hidden)
-		hidden_general += G
+		own_add(src, "hidden_general", G)
 	else
-		general += G
+		own_add(src, "general", G)
 		SSjob.update_limit(JOB_ANOMALY, general.len)
 
 	return G
@@ -496,9 +496,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	R.fields["ma_crim_d"]	= "No major crime convictions."
 	R.fields["notes"]		= "No notes."
 	if(hidden)
-		hidden_security += R
+		own_add(src, "hidden_security", R)
 	else
-		security += R
+		own_add(src, "security", R)
 
 	return R
 
@@ -523,9 +523,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	M.fields["cdi_d"]		= "No diseases have been diagnosed at the moment."
 	M.fields["notes"] = "No notes found."
 	if(hidden)
-		hidden_medical += M
+		own_add(src, "hidden_medical", M)
 	else
-		medical += M
+		own_add(src, "medical", M)
 
 	return M
 

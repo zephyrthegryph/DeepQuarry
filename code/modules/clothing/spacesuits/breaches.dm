@@ -107,7 +107,7 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		LAZYADD(breaches, B)
+		own_add(src, "breaches", B)
 
 		B.class = min(amount,5)
 

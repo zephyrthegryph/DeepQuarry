@@ -28,7 +28,7 @@
 	var/list/communicators = list()
 	for(var/obj/item/communicator_type as anything in typesof(/obj/item/communicator) - list(/obj/item/communicator/integrated,/obj/item/communicator/commlink)) // Remove Commlink
 		communicators[initial(communicator_type.name)] = communicator_type
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(sortAssoc(communicators)))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(communicators)))
 
 /datum/gear/utility/camera
 	display_name = "camera"
@@ -110,7 +110,7 @@
 	"Purple Flashlight" = /obj/item/flashlight/color/purple,
 	"Orange Flashlight" = /obj/item/flashlight/color/orange
 	)
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(flashlights))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(flashlights))
 
 /datum/gear/utility/battery
 	display_name = "cell, device"
@@ -141,7 +141,7 @@
 		"wheelchair" = /obj/item/wheelchair,
 		"motorized wheelchair" = /obj/item/wheelchair/motor
 	)
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(wheelchairs))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(wheelchairs))
 
 /datum/gear/utility/lantern
 	display_name = "lantern"
@@ -172,7 +172,7 @@ modular computers
 
 /datum/gear/utility/customtablet/New()
 	..()
-	LAZYADD(gear_tweaks, new /datum/gear_tweak/tablet())
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/tablet())
 
 /datum/gear/utility/cheaplaptop
 	display_name = "laptop computer, cheap"
@@ -191,7 +191,7 @@ modular computers
 
 /datum/gear/utility/customlaptop/New()
 	..()
-	LAZYADD(gear_tweaks, new /datum/gear_tweak/laptop())
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/laptop())
 
 //////////Language Translators
 
@@ -227,7 +227,7 @@ modular computers
 	"akhani" = /obj/item/universal_translator/limited/akhani,
 	"alai" = /obj/item/universal_translator/limited/alai
 	)
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(translators))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(translators))
 
 /datum/gear/utility/saddlebag
 	display_name = "saddle bag, horse"

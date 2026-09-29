@@ -293,7 +293,7 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 			var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 			if(!P)
 				return
-			LAZYADD(loaded_disk.genes, P)
+			rel_add(loaded_disk, "genes", P)
 
 			loaded_disk.genesource = "[genetics().display_name]"
 			if(!genetics().roundstart)

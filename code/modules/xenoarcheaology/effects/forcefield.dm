@@ -22,7 +22,7 @@
 		var/turf/T = get_turf(holder)
 		while(length(created_field) < 16)
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T.z))
-			LAZYADD(created_field, E)
+			own_add(src, "created_field", E)
 			E.set_strength(1)
 			E.density = TRUE
 			E.anchored = TRUE
@@ -46,7 +46,7 @@
 		while(length(created_field) < 16)
 			//for now, just instantly respawn the fields when they get destroyed
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T))
-			LAZYADD(created_field, E)
+			own_add(src, "created_field", E)
 			E.anchored = TRUE
 			E.density = TRUE
 			E.invisibility = INVISIBILITY_NONE

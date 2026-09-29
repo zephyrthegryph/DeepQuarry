@@ -20,7 +20,7 @@
 	if(start_y%2!=0) start_y++
 
 	// Create the origin cell to start us off.
-	LAZYADD(openlist, new /datum/maze_cell(start_x,start_y))
+	own_add(src, "openlist", new /datum/maze_cell(start_x,start_y))
 
 	while(length(openlist))
 		// Grab a maze point to use and remove it from the open list.
@@ -62,4 +62,4 @@
 	LAZYSET(checked_coord_cache, "[tx]-[ty]", 1)
 	map[get_map_cell(tx,ty)] = DOOR_CHAR
 	var/datum/maze_cell/new_cell = new(tx,ty,nx,ny)
-	LAZYOR(openlist, new_cell)
+	own_add(src, "openlist", new_cell)

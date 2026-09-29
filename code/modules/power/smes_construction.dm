@@ -73,16 +73,16 @@
 // 1M Charge, 150K I/O
 /obj/machinery/power/smes/buildable/outpost_substation/Initialize(mapload)
 	. = ..()
-	component_parts += new /obj/item/smes_coil/weak(src)
+	own_add(src, "component_parts", new /obj/item/smes_coil/weak(src))
 	recalc_coils()
 
 // This one is pre-installed on engineering shuttle. Allows rapid charging/discharging for easier transport of power to outpost
 // 11M Charge, 2.5M I/O
 /obj/machinery/power/smes/buildable/power_shuttle/Initialize(mapload)
 	. = ..()
-	component_parts += new /obj/item/smes_coil/super_io(src)
-	component_parts += new /obj/item/smes_coil/super_io(src)
-	component_parts += new /obj/item/smes_coil(src)
+	own_add(src, "component_parts", new /obj/item/smes_coil/super_io(src))
+	own_add(src, "component_parts", new /obj/item/smes_coil/super_io(src))
+	own_add(src, "component_parts", new /obj/item/smes_coil(src))
 	recalc_coils()
 
 // Pre-installed and pre-charged SMES hidden from the station, for use in submaps.
@@ -152,13 +152,13 @@
 /obj/machinery/power/smes/buildable/Initialize(mapload)
 	. = ..()
 	component_parts = list()
-	component_parts += new /obj/item/stack/cable_coil(src,30)
+	own_add(src, "component_parts", new /obj/item/stack/cable_coil(src,30))
 	set_wires(new /datum/wires/smes(src))
 
 	// Allows for mapped-in SMESs with larger capacity/IO
 	if(mapload)
 		for(var/i = 1, i <= cur_coils, i++)
-			component_parts += new /obj/item/smes_coil(src)
+			own_add(src, "component_parts", new /obj/item/smes_coil(src))
 		recalc_coils()
 
 // Proc: attack_hand()
@@ -402,7 +402,7 @@
 		to_chat(user, "You install the coil into the SMES unit!")
 		user.drop_item()
 		cur_coils ++
-		component_parts += W
+		own_add(src, "component_parts", W)
 		W.forceMove(src)
 		recalc_coils()
 	else

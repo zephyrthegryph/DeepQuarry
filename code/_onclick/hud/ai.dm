@@ -15,7 +15,7 @@
 	using.icon_state = "ai_core"
 	using.screen_loc = ui_ai_core
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Camera list
 	using = new /atom/movable/screen()
@@ -24,7 +24,7 @@
 	using.icon_state = "camera"
 	using.screen_loc = ui_ai_camera_list
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Track
 	using = new /atom/movable/screen()
@@ -33,7 +33,7 @@
 	using.icon_state = "track"
 	using.screen_loc = ui_ai_track_with_camera
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Camera light
 	using = new /atom/movable/screen()
@@ -42,7 +42,7 @@
 	using.icon_state = "camera_light"
 	using.screen_loc = ui_ai_camera_light
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Crew Monitoring
 	using = new /atom/movable/screen()
@@ -51,7 +51,7 @@
 	using.icon_state = "crew_monitor"
 	using.screen_loc = ui_ai_crew_monitor
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Crew Manifest
 	using = new /atom/movable/screen()
@@ -60,7 +60,7 @@
 	using.icon_state = "manifest"
 	using.screen_loc = ui_ai_crew_manifest
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Alerts
 	using = new /atom/movable/screen()
@@ -69,7 +69,7 @@
 	using.icon_state = "alerts"
 	using.screen_loc = ui_ai_alerts
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Announcement
 	using = new /atom/movable/screen()
@@ -78,7 +78,7 @@
 	using.icon_state = "announcement"
 	using.screen_loc = ui_ai_announcement
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Shuttle
 	using = new /atom/movable/screen()
@@ -87,7 +87,7 @@
 	using.icon_state = "call_shuttle"
 	using.screen_loc = ui_ai_shuttle
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Laws
 	using = new /atom/movable/screen()
@@ -96,7 +96,7 @@
 	using.icon_state = "state_laws"
 	using.screen_loc = ui_ai_state_laws
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //PDA Messenger
 	using = new /atom/movable/screen()
@@ -105,7 +105,7 @@
 	using.icon_state = "pda_receive"
 	using.screen_loc = ui_ai_pda_log
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Take image
 	using = new /atom/movable/screen()
@@ -114,7 +114,7 @@
 	using.icon_state = "take_picture"
 	using.screen_loc = ui_ai_take_picture
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //View images
 	using = new /atom/movable/screen()
@@ -123,7 +123,7 @@
 	using.icon_state = "view_images"
 	using.screen_loc = ui_ai_view_images
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Multicamera mode
 
@@ -133,7 +133,7 @@
 	using.icon_state = "multicam"
 	using.screen_loc = ui_ai_multicam
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Add multicamera camera
 	using = new /atom/movable/screen()
@@ -142,7 +142,7 @@
 	using.icon_state = "new_cam"
 	using.screen_loc = ui_ai_add_multicam
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 //Up and Down
 	using = new /atom/movable/screen()
@@ -151,7 +151,7 @@
 	using.icon_state = "up"
 	using.screen_loc = ui_ai_updown
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen()
 	using.name = "Move Down"
@@ -159,7 +159,7 @@
 	using.icon_state = "down"
 	using.screen_loc = ui_ai_updown
 	using.layer = SCREEN_LAYER
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 
 	if(client && apply_to_client)
 		client.screen = list()

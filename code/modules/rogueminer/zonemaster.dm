@@ -181,7 +181,7 @@
 		else
 			M.turf_resource_types |= TURF_HAS_ORE
 			M.make_ore()
-		LAZYADD(mineral_rocks, M)
+		rel_add(src, "mineral_rocks", M)
 		//If above difficulty threshold make rare ore instead (M.turf_resource_types |= TURF_HAS_RARE_ORE)
 	//Increase with difficulty etc
 
@@ -305,7 +305,7 @@
 			GLOB.rm_controller.dbg("ZM(p): Picked [mobchoice] to spawn.")
 			var/mob/living/newmob = new mobchoice(get_turf(SP))
 			newmob.faction = FACTION_ASTEROID_BELT
-			LAZYADD(spawned_mobs, newmob)
+			rel_add(src, "spawned_mobs", newmob)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.

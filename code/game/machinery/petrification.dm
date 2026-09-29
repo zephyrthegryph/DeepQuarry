@@ -276,7 +276,7 @@
 				P.able_to_unpetrify = able_to_unpetrify
 				P.discard_clothes = discard_clothes
 				rel_set(P, "target", target_ref())
-				LAZYSET(remotes, target_ref(), P)
+				own_put(src, "remotes", target_ref(), P)
 				ui.user.put_in_hands(P)
 			return TRUE
 	return TRUE

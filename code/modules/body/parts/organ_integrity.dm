@@ -102,7 +102,7 @@
 	if(owner?.body)
 		owner.body.add_affliction(L, src)
 	else
-		LAZYADD(detached_afflictions, L)
+		own_add(src, "detached_afflictions", L)
 	L.add_damage(amount)
 	return L
 

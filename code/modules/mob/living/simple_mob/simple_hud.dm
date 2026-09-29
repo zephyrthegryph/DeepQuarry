@@ -61,7 +61,7 @@
 	using.icon = ui_style
 	using.color = ui_color
 	using.alpha = ui_alpha
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 	hud_elements |= using
 
 	//Move intent (walk/run)
@@ -72,7 +72,7 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	HUD.adding += using
+	own_add(HUD, "adding", using)
 	own_set(HUD, "move_intent", using)
 
 	//Resist button
@@ -172,7 +172,7 @@
 		using.screen_loc = ui_equip
 		using.color = ui_color
 		using.alpha = ui_alpha
-		HUD.adding += using
+		own_add(HUD, "adding", using)
 
 		//Hand slots themselves
 		inv_box = new /atom/movable/screen/inventory/hand()
@@ -187,7 +187,7 @@
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
 		own_set(HUD, "r_hand_hud_object", inv_box)
-		HUD.adding += inv_box
+		own_add(HUD, "adding", inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
@@ -202,7 +202,7 @@
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
 		own_set(HUD, "l_hand_hud_object", inv_box)
-		HUD.adding += inv_box
+		own_add(HUD, "adding", inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
 		//Swaphand titlebar
@@ -213,7 +213,7 @@
 		using.screen_loc = ui_swaphand1
 		using.color = ui_color
 		using.alpha = ui_alpha
-		HUD.adding += using
+		own_add(HUD, "adding", using)
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
@@ -222,7 +222,7 @@
 		using.screen_loc = ui_swaphand2
 		using.color = ui_color
 		using.alpha = ui_alpha
-		HUD.adding += using
+		own_add(HUD, "adding", using)
 
 		//Throw button
 		own_set(src, "throw_icon", new /atom/movable/screen())

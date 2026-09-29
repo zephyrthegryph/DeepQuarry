@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 			return INTERACTION_HANDLED_PASS
 		if(!user.drop_from_inventory(form, src))
 			return INTERACTION_HANDLED_PASS
-		LAZYADD(freight_form_paper, form)
+		rel_add(src, "freight_form_paper", form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
 		return INTERACTION_HANDLED_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)

@@ -133,7 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		if (cur_coils < max_coils)
 			var/obj/item/W = parts_found[i]
 			cur_coils++
-			component_parts.Add(W)
+			own_add(src, "component_parts", W)
 			W.forceMove(src)
 	RefreshParts()
 
@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/turf/T = get_step(src, d)
 		for(var/obj/machinery/power/terminal/smes_input/term in turf_contents_of_type(T, /obj/machinery/power/terminal/smes_input))
 			if(term && term.dir == turn(d, 180) && !term.master())
-				LAZYOR(terminals, term)
+				rel_add(src, "terminals", term)
 				rel_set(term, "master", src)
 				term.connect_to_network(FALSE)
 	power_sync()
@@ -331,7 +331,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	term.set_dir(tempDir)
 	rel_set(term, "master", src)
 	term.connect_to_network()
-	LAZYOR(terminals, term)
+	own_add(src, "terminals", term)
 	power_sync()
 	user.visible_message(\
 			span_filter_notice(span_notice("[user.name] has added cables to the [src].")),\

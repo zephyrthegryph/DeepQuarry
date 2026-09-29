@@ -379,7 +379,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 			user.drop_from_inventory(src, KA)
 			to_chat(user, span_notice("You install the modkit."))
 			playsound(loc, 'sound/items/Screwdriver.ogg', 100, 1)
-			LAZYADD(KA.modkits, src)
+			rel_add(KA, "modkits", src)
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))
 	else

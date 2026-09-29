@@ -43,7 +43,7 @@ REL(/atom/movable/ref_test, self_ref)
 
 	//Set up for the first round of tests
 	rel_set(testbed, "test", victim)
-	testbed.test_list += victim
+	rel_add(testbed, "test_list", victim)
 	testbed.test_assoc_list["baseline"] = victim
 
 	var/refcount = refcount(victim)

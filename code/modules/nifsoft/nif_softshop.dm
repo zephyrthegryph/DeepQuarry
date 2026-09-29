@@ -85,7 +85,7 @@
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
-			product_records.Add(product)
+			own_add(src, "product_records", product)
 
 /obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
 	. = ..()

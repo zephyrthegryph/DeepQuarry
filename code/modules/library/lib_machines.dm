@@ -194,15 +194,15 @@
 
 		for(var/path in subtypesof(/obj/item/book/codex/lore))
 			var/obj/item/book/C = new path(null)
-			all_books[C.name] = C
+			own_put(src, "all_books", C.name, C)
 
 		for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
 			var/obj/item/book/B = new path(null)
-			all_books[B.title] = B
+			own_put(src, "all_books", B.title, B)
 
 		for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
 			var/obj/item/book/M = new path(null)
-			all_books[M.title] = M
+			own_put(src, "all_books", M.title, M)
 
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher

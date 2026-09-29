@@ -225,7 +225,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	personal_ledgers = list()
 	agent_records = list()
 	for(var/department in get_reputation_departments())
-		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
+		own_put(src, "department_ledgers", department, new /datum/faction_reputation_ledger(reputations))
 
 
 /datum/station_faction_relations/proc/get_reputation_departments()
@@ -246,7 +246,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	var/datum/faction_reputation_ledger/ledger = department_ledgers[department]
 	if(!ledger && create && istext(department) && length(department))
 		ledger = new(reputations)
-		department_ledgers[department] = ledger
+		own_put(src, "department_ledgers", department, ledger)
 	return ledger
 
 /datum/station_faction_relations/proc/get_personal_ledger(account_number, create = TRUE, list/initial_values) as /datum/faction_reputation_ledger
@@ -256,7 +256,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	var/datum/faction_reputation_ledger/ledger = personal_ledgers[key]
 	if(!ledger && create)
 		ledger = new(initial_values)
-		personal_ledgers[key] = ledger
+		own_put(src, "personal_ledgers", key, ledger)
 	return ledger
 
 /proc/get_station_faction_reputation(faction_id)
@@ -362,7 +362,7 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 	record.faction_id = faction_id
 	rel_set(record, "agent_mind", user.mind)
 	record.candidate_started_at = world.time
-	agent_records["[account.account_number]"] = record
+	own_put(src, "agent_records", "[account.account_number]", record)
 	var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
 	log_game("[key_name(user)] opened exclusive faction vetting with [faction?.name || faction_id].")
 	SScontracts?.queue_agent_vetting(account.account_number, faction_id)

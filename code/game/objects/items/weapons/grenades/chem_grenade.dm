@@ -89,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
 				user.drop_item()
 				W.forceMove(src)
-				LAZYADD(beakers, W)
+				own_add(src, "beakers", W)
 				stage = 1
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else

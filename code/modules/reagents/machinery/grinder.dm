@@ -96,7 +96,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 				continue
 			failed = 0
 			bag.remove_from_storage(G, src)
-			LAZYADD(holdingitems, G)
+			own_add(src, "holdingitems", G)
 			if(holdingitems && length(holdingitems) >= limit)
 				break
 
@@ -128,7 +128,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 
 	user.remove_from_mob(O)
 	O.forceMove(src)
-	LAZYADD(holdingitems, O)
+	own_add(src, "holdingitems", O)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O

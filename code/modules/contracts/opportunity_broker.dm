@@ -244,7 +244,7 @@
 		if(existing.id == signal.id)
 			qdel(signal)
 			return null
-	signals += signal
+	own_add(src, "signals", signal)
 	return signal
 
 /datum/contract_opportunity_rule/proc/forward_context(event_field, context_field = null)

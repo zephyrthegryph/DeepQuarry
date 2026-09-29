@@ -318,7 +318,7 @@
 	newsign.data["connection"] = connection
 
 
-	newsign.data["radio"] = hradio
+	own_put(newsign, "data", "radio", hradio)
 	newsign.data["vmessage"] = message
 	newsign.data["vname"] = source
 	newsign.data["vmask"] = 0

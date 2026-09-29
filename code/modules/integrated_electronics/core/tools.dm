@@ -39,7 +39,7 @@
 		if(io.holder().assembly() && io.holder().assembly() != selected_io.holder().assembly())
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io.holder()] need to be inside the same assembly."))
 			return
-		LAZYOR(selected_io.linked, io)
+		rel_add(selected_io, "linked", io)
 		LAZYOR(io.linked, selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
@@ -221,8 +221,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io().holder()] need to be inside the same assembly."))
 			return
 		var/datum/integrated_io/selected = selected_io()
-		LAZYOR(selected.linked, io)
-		LAZYOR(io.linked, selected)
+		rel_add(selected, "linked", io)
+		rel_add(io, "linked", selected)
 
 		to_chat(user, span_notice("You connect \the [selected_io().holder()]'s [selected_io().name] to \the [io.holder()]'s [io.name]."))
 		selected_io().holder().interact(user) // This is to update the UI.

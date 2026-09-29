@@ -56,19 +56,19 @@
 /datum/computer_file/data/email_account/proc/receive_mail(datum/computer_file/data/email_message/received_message, relayed)
 	received_message.set_timestamp()
 	if(!GLOB.ntnet_global.intrusion_detection_enabled)
-		inbox.Add(received_message)
+		rel_add(src, "inbox", received_message)
 		return 1
 	// Spam filters may occassionally let something through, or mark something as spam that isn't spam.
 	if(received_message.spam)
 		if(prob(98))
-			spam.Add(received_message)
+			rel_add(src, "spam", received_message)
 		else
-			inbox.Add(received_message)
+			rel_add(src, "inbox", received_message)
 	else
 		if(prob(1))
-			spam.Add(received_message)
+			rel_add(src, "spam", received_message)
 		else
-			inbox.Add(received_message)
+			rel_add(src, "inbox", received_message)
 	return 1
 
 // Address namespace (@internal-services.nt) for email addresses with special purpose only!.

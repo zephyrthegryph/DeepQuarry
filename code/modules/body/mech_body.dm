@@ -255,7 +255,7 @@
 	var/datum/mech_affliction/A = affliction_for(id)
 	if(!A || (A in host.afflictions))
 		return FALSE
-	LAZYADD(host.afflictions, A)
+	rel_add(host, "afflictions", A)
 	A.on_afflicted(host)
 	return TRUE
 

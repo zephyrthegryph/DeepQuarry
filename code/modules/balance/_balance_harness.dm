@@ -68,7 +68,7 @@
 /// Spawns `type` at the scenario site and tracks it for cleanup.
 /datum/balance_scenario/proc/spawn_thing(type)
 	var/atom/movable/thing = new type(site)
-	LAZYADD(spawned, thing)
+	own_add(src, "spawned", thing)
 	return thing
 
 /// Deletes everything the scenario spawned (between trials and at the end).

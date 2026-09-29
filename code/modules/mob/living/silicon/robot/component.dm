@@ -324,7 +324,7 @@
 	for(var/slot in 1 to ROBOT_SLOT_COUNT)
 		var/component_type = types[slot]
 		var/datum/robot_component/C = new component_type(src, slot)
-		components[slot] = C
+		own_put(src, "components", slot, C)
 		if(slot == ROBOT_SLOT_POWER)
 			continue
 		if(C.internal)
@@ -371,7 +371,7 @@
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
-		LAZYADD(afflictions, A)
+		own_add(src, "afflictions", A)
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()

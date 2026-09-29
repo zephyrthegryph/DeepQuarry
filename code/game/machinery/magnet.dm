@@ -205,7 +205,7 @@
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				LAZYADD(magnets, M)
+				rel_add(src, "magnets", M)
 
 	if(GLOB.radio_service)
 		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
@@ -218,7 +218,7 @@
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				LAZYADD(magnets, M)
+				rel_add(src, "magnets", M)
 	return PROCESS_KILL
 
 /obj/machinery/magnetic_controller/declare_interactions(list/into)

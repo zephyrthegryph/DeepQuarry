@@ -32,4 +32,4 @@
 			P.name = "[rarity] [P.name]"
 			P.card_icon += "_[rarity]"
 		P.back_icon = "card_back_cardemon"
-		cards += P
+		own_add(src, "cards", P)

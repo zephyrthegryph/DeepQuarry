@@ -1122,7 +1122,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 				var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 				for(var/obj/item/implant/backup/BI in backup_implants)
 					BI.forceMove(torso)
-					LAZYADD(torso.implants, BI)
+					rel_add(torso, "implants", BI)
 
 /datum/reagent/nif_repair_nanites
 	name = REAGENT_NIFREPAIRNANITES

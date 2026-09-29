@@ -40,7 +40,7 @@
 		for(var/obj/O in contents_of(A))
 			LAZYOR(hit, O)
 		for(var/mob/living/M in contents_of(A))
-			LAZYOR(hit, M)
+			rel_add(src, "hit", M)
 	return ..()
 
 /obj/item/projectile/test/fire(angle, atom/direct_target)

@@ -25,7 +25,7 @@
 		return 0
 	if(!can_become_antag(player, ignore_role))
 		return 0
-	LAZYOR(current_antagonists, player)
+	rel_add(src, "current_antagonists", player)
 
 	if(faction_verb && player.current)
 		add_verb(player.current, faction_verb)
@@ -41,7 +41,7 @@
 
 	// Handle only adding a mind and not bothering with gear etc.
 	if(nonstandard_role_type)
-		LAZYOR(faction_members, player)
+		rel_add(src, "faction_members", player)
 		to_chat(player.current, span_danger(span_large("You are \a [nonstandard_role_type]!")))
 		player.special_role = nonstandard_role_type
 		if(nonstandard_role_msg)

@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		LAZYADD(darts, C) //add to the end
+		rel_add(src, "darts", C) //add to the end
 		user.visible_message("[user] inserts \a [C] into [src].", span_notice("You insert \a [C] into [src]."))
 		return INTERACTION_HANDLED_PASS
 	return ..()

@@ -236,13 +236,13 @@
 	if(!recipes)
 		recipes = list()
 		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			recipes += new D
+			own_add(src, "recipes", new D)
 	else
 		for(var/datum/particle_smasher_recipe/D in recipes)
 			qdel(D)
 		recipes.Cut()
 		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			recipes += new D
+			own_add(src, "recipes", new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 

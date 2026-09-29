@@ -351,7 +351,7 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 		LAZYCLEARLIST(special_equipment)
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
-				LAZYADD(WR.crowbar_salvage, E)
+				rel_add(WR, "crowbar_salvage", E)
 				E.forceMove(WR)
 				E.equip_ready = TRUE
 			else
@@ -363,18 +363,18 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 			if(istype(C))
 				C.damage_part(rand(10, 20))
 				C.detach()
-				LAZYADD(WR.crowbar_salvage, C)
+				rel_add(WR, "crowbar_salvage", C)
 				C.forceMove(WR)
 
 		// cell and tank leave our ownership and become the wreck's salvage.
 		var/obj/item/cell/salvaged_cell = own_take(src, "cell")
 		if(salvaged_cell)
-			LAZYADD(WR.crowbar_salvage, salvaged_cell)
+			rel_add(WR, "crowbar_salvage", salvaged_cell)
 			salvaged_cell.forceMove(WR)
 			salvaged_cell.charge = rand(0, salvaged_cell.charge)
 		var/obj/item/tank/salvaged_tank = own_take(src, "internal_tank")
 		if(salvaged_tank)
-			LAZYADD(WR.crowbar_salvage, salvaged_tank)
+			rel_add(WR, "crowbar_salvage", salvaged_tank)
 			salvaged_tank.forceMove(WR)
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
@@ -1112,7 +1112,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
-		LAZYOR(Test.hit, occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
+		rel_add(Test, "hit", occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)

@@ -25,4 +25,4 @@
 			P.card_icon = "spaceball_standard"
 		P.back_icon = "card_back_spaceball"
 
-		cards += P
+		own_add(src, "cards", P)

@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		LAZYADD(cooking_objs, CI)
+		own_add(src, "cooking_objs", CI)
 		user.visible_message(span_infoplain(span_bold("\The [user]") + " puts \the [I] into \the [src]."))
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE

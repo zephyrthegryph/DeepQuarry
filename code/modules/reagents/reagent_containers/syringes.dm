@@ -527,7 +527,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 	. = ..()
 	if(prob(75))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(1, 3), rand(7, 9), 2, infected = src)
-		LAZYSET(viruses, "old", list(new_disease))
+		own_put(src, "viruses", "old", list(new_disease))
 
 #undef SYRINGE_DRAW
 #undef SYRINGE_INJECT

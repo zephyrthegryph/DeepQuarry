@@ -85,12 +85,12 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 	var/datum/error_viewer/error_source/error_source = LAZYACCESS(error_sources, erroruid)
 	if (!error_source)
 		error_source = new(e)
-		LAZYSET(error_sources, erroruid, error_source)
+		own_put(src, "error_sources", erroruid, error_source)
 
 	var/datum/error_viewer/error_entry/error_entry = new(e, desclines, skip_count)
 	rel_set(error_entry, "error_source", error_source)
-	errors += error_entry
-	error_source.errors += error_entry
+	own_add(src, "errors", error_entry)
+	own_add(error_source, "errors", error_entry)
 	if (skip_count)
 		return // Skip notifying admins about skipped errors.
 

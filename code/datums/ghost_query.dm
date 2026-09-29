@@ -94,7 +94,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Accept their nomination
-				candidates.Add(D)
+				rel_add(src, "candidates", D)
 				if(cutoff_number && candidates.len >= cutoff_number)
 					finished = TRUE // Finish now if we're full.
 

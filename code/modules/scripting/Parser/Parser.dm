@@ -88,18 +88,18 @@
 			if(/datum/token/word)
 				var/datum/token/ntok
 				if(index+1>tokens.len)
-					errors+=new/datum/scriptError/BadToken(curToken())
+					own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
 					continue
 				ntok=tokens[index+1]
 				if(!istype(ntok, /datum/token/symbol))
-					errors+=new/datum/scriptError/BadToken(ntok)
+					own_add(src, "errors", new/datum/scriptError/BadToken(ntok))
 					continue
 				if(ntok.value=="(")
 					ParseFunctionStatement()
 				else if(options().assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
-					errors+=new/datum/scriptError/BadToken(ntok)
+					own_add(src, "errors", new/datum/scriptError/BadToken(ntok))
 					continue
 				if(!istype(curToken(), /datum/token/end))
 					errors+=new/datum/scriptError/ExpectedToken(";", curToken())
@@ -107,23 +107,23 @@
 			if(/datum/token/symbol)
 				if(curToken().value=="}")
 					if(!EndBlock())
-						errors+=new/datum/scriptError/BadToken(curToken())
+						own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
 						continue
 				else
-					errors+=new/datum/scriptError/BadToken(curToken())
+					own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
 					continue
 			if(/datum/token/end)
-				LAZYADD(warnings, new/datum/scriptError/BadToken(curToken()))
+				own_add(src, "warnings", new/datum/scriptError/BadToken(curToken()))
 				continue
 			else
-				errors+=new/datum/scriptError/BadToken(curToken())
+				own_add(src, "errors", new/datum/scriptError/BadToken(curToken()))
 				return
 	return global_block
 
 /datum/n_Parser/nS_Parser/proc/CheckToken(val, type, err=1, skip=1)
 	if(curToken().value!=val || !istype(curToken(),type))
 		if(err)
-			errors+=new/datum/scriptError/ExpectedToken(val, curToken())
+			own_add(src, "errors", new/datum/scriptError/ExpectedToken(val, curToken()))
 		return 0
 	if(skip)NextToken()
 	return 1
@@ -140,7 +140,7 @@
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
 	var/name=curToken().value
 	if(!options().IsValidID(name))
-		errors+=new/datum/scriptError/InvalidID(curToken())
+		own_add(src, "errors", new/datum/scriptError/InvalidID(curToken()))
 		return
 	NextToken()
 	var/t=options().binary_operators[options().assign_operators[curToken().value]]
@@ -157,7 +157,7 @@
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()
 	if(!istype(curToken(), /datum/token/word))
-		errors+=new/datum/scriptError("Bad identifier in function call.")
+		own_add(src, "errors", new/datum/scriptError("Bad identifier in function call."))
 		return
 	var/datum/node/statement/FunctionCall/stmt=new
 	stmt.func_name=curToken().value
@@ -171,14 +171,14 @@
 			CRASH("Something TERRIBLE has gone wrong in ParseFunctionStatement ;__;")
 
 		if(!curToken())
-			errors+=new/datum/scriptError/EndOfFile()
+			own_add(src, "errors", new/datum/scriptError/EndOfFile())
 			return
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			LAZYADD(curBlock().statements, stmt)
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()
-		stmt.parameters+=P
+		rel_add(stmt, "parameters", P)
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
 

@@ -212,7 +212,7 @@
 	if(!floor || !(floor in floors) || (floor in queued_floors))
 		return // STOP PRESSING THE BUTTON.
 	floor.pending_move(src)
-	LAZYOR(queued_floors, floor)
+	rel_add(src, "queued_floors", floor)
 	busy_state = LIFT_MOVING
 	om_task_periodic(src, PERIODIC_SECOND)
 

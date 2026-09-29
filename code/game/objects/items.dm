@@ -216,7 +216,7 @@
 	else
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
-	LAZYADD(actions, action)
+	rel_add(src, "actions", action)
 	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
@@ -1106,7 +1106,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
-	possessed_voice.Add(new_voice)
+	own_add(src, "possessed_voice", new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
 	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!

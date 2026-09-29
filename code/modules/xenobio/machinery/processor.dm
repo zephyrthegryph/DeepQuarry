@@ -72,7 +72,7 @@
 		to_chat(user, span_warning("\The [src] cannot process \the [AM] at this time."))
 		playsound(src, 'sound/machines/buzz-sigh.ogg', 50, 1)
 		return
-	LAZYADD(to_be_processed, AM)
+	rel_add(src, "to_be_processed", AM)
 	AM.forceMove(src)
 	visible_message(span_infoplain(span_bold("\The [user]") + " places [AM] inside \the [src]."))
 

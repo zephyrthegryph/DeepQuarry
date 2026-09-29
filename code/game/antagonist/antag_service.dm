@@ -140,7 +140,7 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 /datum/world_service/antag/proc/populate_antag_type_list()
 	for(var/antag_type in subtypesof(/datum/antagonist))
 		var/datum/antagonist/antag_daturn = new antag_type
-		all_antag_types[antag_daturn.id] = antag_daturn
+		own_put(src, "all_antag_types", antag_daturn.id, antag_daturn)
 		all_antag_spawnpoints[antag_daturn.landmark_id] = list()
 		antag_names_to_ids[antag_daturn.role_text] = antag_daturn.id
 

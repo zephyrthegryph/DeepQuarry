@@ -60,7 +60,7 @@
 
 	for(var/mob/living/L in oview(effectrange, T))
 		if(!L.stat && L.mind)
-			LAZYOR(nearby_mobs, L)
+			rel_add(src, "nearby_mobs", L)
 
 	if(world.time - bloodcall_interval >= last_bloodcall && LAZYLEN(nearby_mobs))
 		var/mob/living/carbon/human/M = DEFAULTPICK(nearby_mobs, null)

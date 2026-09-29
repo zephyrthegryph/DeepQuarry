@@ -139,7 +139,7 @@
 			C.move_into(new_coil, CONTAINER_SLOT_INTERNALS)
 		new_coil.component_parts = list()
 		for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
-			new_coil.component_parts += I
+			own_add(new_coil, "component_parts", I)
 		new_coil.RefreshParts()
 
 		new_coil.anchored = anchored

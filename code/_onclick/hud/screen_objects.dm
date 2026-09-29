@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!overlay_object)
 		overlay_object = new
 		overlay_object.icon_state = "[choice]"
-		hover_overlays_cache[choice] = overlay_object
+		own_put(src, "hover_overlays_cache", choice, overlay_object)
 	vis_contents += overlay_object
 
 /obj/effect/overlay/zone_sel

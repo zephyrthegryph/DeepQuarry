@@ -260,7 +260,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 			if(!length(gridLines)) // Skip it if only blank lines exist.
 				continue
 
-			gridSets += gridSet
+			own_add(src, "gridSets", gridSet)
 
 			if(gridLines[length(gridLines)] == "")
 				gridLines.Cut(length(gridLines)) // Remove only one blank line at the end.

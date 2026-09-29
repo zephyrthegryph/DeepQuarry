@@ -30,7 +30,7 @@
 	valid_apcs = list()
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in affecting_z)
-			valid_apcs.Add(A)
+			rel_add(src, "valid_apcs", A)
 	endWhen = (severity * 60) + startWhen
 
 /datum/event/electrical_storm/tick()

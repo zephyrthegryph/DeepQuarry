@@ -18,12 +18,12 @@
 	notices = list()
 	for(var/obj/item/paper/note in get_turf(src))
 		note.forceMove(src)
-		LAZYADD(notices, note)
+		own_add(src, "notices", note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 	// notices in contents
 	for(var/obj/item/paper/note in contents)
-		LAZYADD(notices, note)
+		own_add(src, "notices", note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 
@@ -31,7 +31,7 @@
 
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
-		LAZYDISTINCTADD(notices, paper)
+		own_add(src, "notices", paper)
 		paper.forceMove(src)
 		if(!skip_icon_update)
 			update_icon()

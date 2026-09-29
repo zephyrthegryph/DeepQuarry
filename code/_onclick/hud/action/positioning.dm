@@ -11,7 +11,7 @@
 		if(SCRN_OBJ_IN_PALETTE)
 			palette_actions.insert_action(button)
 		else // If we don't have it as a define, this is a screen_loc, and we should be floating
-			floating_actions += button
+			own_add(src, "floating_actions", button)
 			button.screen_loc = position
 			position = SCRN_OBJ_FLOATING
 
@@ -26,7 +26,7 @@
 		if(SCRN_OBJ_IN_PALETTE)
 			palette_actions.insert_action(button, palette_actions.index_of(relative_to))
 		if(SCRN_OBJ_FLOATING) // If we don't have it as a define, this is a screen_loc, and we should be floating
-			floating_actions += button
+			own_add(src, "floating_actions", button)
 			var/client/our_client = mymob().client
 			if(!our_client)
 				position_action(button, button.linked_action().default_button_position)

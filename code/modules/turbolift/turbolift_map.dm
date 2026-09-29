@@ -127,7 +127,7 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 	for(var/cz = uz;cz<=ez;cz++)
 
 		var/datum/turbolift_floor/cfloor = new()
-		lift.floors += cfloor
+		own_add(lift, "floors", cfloor)
 
 		var/list/floor_turfs = list()
 		// Update the appropriate turfs.

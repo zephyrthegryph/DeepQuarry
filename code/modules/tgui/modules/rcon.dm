@@ -117,14 +117,14 @@
 		if(!(SMES.z in map_levels))
 			continue
 		if(SMES.RCon_tag && (SMES.RCon_tag != "NO_TAG") && SMES.RCon)
-			known_SMESs.Add(SMES)
+			rel_add(src, "known_SMESs", SMES)
 
 	known_breakers = new /list()
 	for(var/obj/machinery/power/breakerbox/breaker in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(breaker.z in map_levels))
 			continue
 		if(breaker.RCon_tag != "NO_TAG")
-			known_breakers.Add(breaker)
+			rel_add(src, "known_breakers", breaker)
 
 /datum/tgui_module/rcon/ntos
 	ntos = TRUE

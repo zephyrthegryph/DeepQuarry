@@ -635,8 +635,8 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		src.forceMove(B)
 		P.forceMove(B)
 
-		B.pages.Add(src)
-		B.pages.Add(P)
+		rel_add(B, "pages", src)
+		rel_add(B, "pages", P)
 		B.update_icon()
 
 	else if(istype(P, /obj/item/pen))

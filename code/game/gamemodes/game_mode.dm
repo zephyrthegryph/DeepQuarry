@@ -219,7 +219,7 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 			antag.attempt_spawn() //select antags to be spawned
 		antag.finalize_spawn() //actually spawn antags
 		if(antag.is_latejoin_template())
-			LAZYOR(latejoin_templates, antag)
+			rel_add(src, "latejoin_templates", antag)
 
 	if(GLOB.emergency_shuttle_service && auto_recall_shuttle)
 		GLOB.emergency_shuttle_service.auto_recall = TRUE

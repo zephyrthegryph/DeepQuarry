@@ -62,7 +62,7 @@
 	forms = list()
 	var/list/types = get_form_types()
 	for(var/form_type in types)
-		forms[form_type] = new form_type()
+		own_put(src, "forms", form_type, new form_type())
 	rel_set(src, "current", forms[types[1]])
 	attach()
 

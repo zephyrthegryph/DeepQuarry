@@ -449,7 +449,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 	if(!connections)
 		connections = list(src)
 	else
-		connections |= src
+		rel_add(src, "connections", src)
 	if(istype(src, /obj/structure/table/rack))
 		return connections
 

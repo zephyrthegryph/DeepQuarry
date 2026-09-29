@@ -70,7 +70,7 @@
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options[option.id])
 		return FALSE
-	options[option.id] = option
+	own_put(src, "options", option.id, option)
 	if(make_default || !default_option_id)
 		default_option_id = option.id
 	return TRUE
@@ -278,7 +278,7 @@
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
 /datum/contract/proc/audit(category, detail)
-	audit_log += new /datum/contract_audit_entry(category, detail)
+	own_add(src, "audit_log", new /datum/contract_audit_entry(category, detail))
 
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
@@ -297,7 +297,7 @@
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
 	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses[clause.id] || !length(clause.options))
 		return FALSE
-	negotiation_clauses[clause.id] = clause
+	own_put(src, "negotiation_clauses", clause.id, clause)
 	negotiation_selections[clause.id] = clause.default_option_id
 	return TRUE
 

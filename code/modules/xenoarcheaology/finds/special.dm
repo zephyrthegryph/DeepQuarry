@@ -69,7 +69,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
-				LAZYADD(nearby_mobs, M)
+				rel_add(src, "nearby_mobs", M)
 
 	//suck up some blood to gain power
 	if(world.time - last_eat > eat_interval)
@@ -99,7 +99,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
-			LAZYADD(shadow_wights, new /obj/effect/shadow_wight(src.loc))
+			own_add(src, "shadow_wights", new /obj/effect/shadow_wight(src.loc))
 			playsound(src, 'sound/effects/ghost.ogg', 50, 1, -3)
 			charges -= 0.1
 
@@ -131,7 +131,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	last_bloodcall = world.time
 	if(istype(M))
 		playsound(src, pick('sound/hallucinations/wail.ogg','sound/hallucinations/veryfar_noise.ogg','sound/hallucinations/far_noise.ogg'), 50, 1, -3)
-		LAZYADD(nearby_mobs, M)
+		rel_add(src, "nearby_mobs", M)
 
 		var/target = length(M.organs_by_name) ? pick(M.organs_by_name) : null
 		M.injure(INJURY_CUT, rand(5, 10), target, src)

@@ -406,7 +406,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		if(istype(I, /obj/item/circuitboard))
 			own_set(src, "circuit", I)
 		else
-			component_parts += I
+			own_add(src, "component_parts", I)
 
 /obj/machinery/proc/operable(additional_flags = 0)
 	return !inoperable(additional_flags)
@@ -547,7 +547,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		qdel(C)
 		C = new /obj/item/cell/high(src)
 		C.move_into(src, CONTAINER_SLOT_INTERNALS)
-		component_parts += C
+		own_add(src, "component_parts", C)
 		RefreshParts()
 		return C
 
@@ -576,7 +576,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 						R.insert_item(A, user, TRUE)
 						component_parts -= A
 						B.move_into(src, CONTAINER_SLOT_INTERNALS, user)
-						component_parts += B
+						own_add(src, "component_parts", B)
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
 						parts_replaced = TRUE
 						break

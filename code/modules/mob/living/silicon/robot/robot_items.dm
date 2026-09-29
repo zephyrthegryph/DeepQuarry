@@ -81,7 +81,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 					break
 
 				I.forceMove(src)
-				LAZYADD(carrying, I)
+				rel_add(src, "carrying", I)
 				add_overlay(image("icon" = I.icon, "icon_state" = I.icon_state, "layer" = 30 + I.layer))
 				addedSomething = 1
 		if ( addedSomething )

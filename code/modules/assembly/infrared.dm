@@ -73,7 +73,7 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 		if(!step(I, I.dir)) //Try to take a step in that direction
 			return //Couldn't, oh well, we hit a wall or something. Beam should qdel itself in it's Bump().
 		I.density = FALSE
-		i_beams |= I
+		own_add(src, "i_beams", I)
 		I.visible = visible
 
 /// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven

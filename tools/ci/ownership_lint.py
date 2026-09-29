@@ -239,6 +239,25 @@ def receiver_type(idx, chain, owner, local_types):
 
 
 RAW_SITES = []
+OBJLIST_WRITES = ("+=", "|=", "[]=", "LAZYADD", "LAZYOR", "LAZYSET", "LAZYDISTINCTADD", "LAZYINSERT", ".Add", ".Insert")
+OBJ_TOKEN = re.compile(r"(?<![\w.\"])(src|new|[A-Za-z_]\w*)(?![\w.\[(?:])")
+
+
+REGISTRY_ROOTS = ()
+
+
+def puts_object(rhs, local_types, owner):
+    """True when the written value (or key) is recognisably an entity: src, a new expression, or a
+    local/argument declared with an entity type."""
+    text = rhs.split("//", 1)[0]
+    for m in OBJ_TOKEN.finditer(text):
+        tok = m.group(1)
+        if tok == "src" or tok == "new":
+            return True
+        t = local_types.get(tok)
+        if t and under(t, ENTITY_ROOTS) and not under(t, REGISTRY_ROOTS):
+            return True
+    return False
 UNKNOWN_VARS = []
 
 
@@ -252,6 +271,8 @@ def main(argv=None):
 
     idx = Index()
     idx.load()
+    global REGISTRY_ROOTS
+    REGISTRY_ROOTS = tuple(idx.registry)
 
     # ---- the assignment index: accessor usage per var name and receiver type
     for r, (raw, code) in idx.files.items():
@@ -405,20 +426,22 @@ def main(argv=None):
                     continue
                 if op == "=" and line[m.end():].lstrip().startswith("="):
                     continue
-                hits.append((chain, name, op))
+                hits.append((chain, name, op, line[m.end():]))
             for m in WRITE_INDEX.finditer(line):
                 if not m.group(1) and m.group(2) in local_types:
                     continue
-                hits.append((m.group(1), m.group(2), "[]="))
+                key_and_value = line[m.start():m.end()]
+                key_and_value = key_and_value[key_and_value.find("[") + 1:key_and_value.rfind("]")] + " " + line[m.end():]
+                hits.append((m.group(1), m.group(2), "[]=", key_and_value))
             for m in WRITE_METHOD.finditer(line):
                 if not m.group(1) and m.group(2) in local_types:
                     continue
-                hits.append((m.group(1), m.group(2), "." + m.group(3)))
+                hits.append((m.group(1), m.group(2), "." + m.group(3), line[m.end():]))
             for m in WRITE_MACRO.finditer(line):
                 if not m.group(2) and m.group(3) in local_types:
                     continue
-                hits.append((m.group(2), m.group(3), m.group(1)))
-            for chain, name, how in hits:
+                hits.append((m.group(2), m.group(3), m.group(1), line[m.end():]))
+            for chain, name, how, rhs in hits:
                 if name in ("src", "usr", "loc", "contents", "vars", "overlays", "underlays", "vis_contents", "verbs", "screen", "images"):
                     continue
                 rtype = receiver_type(idx, chain, owner, local_types)
@@ -428,6 +451,12 @@ def main(argv=None):
                     kind, dtype = unknown_receiver_kind(name), None
                 else:
                     continue
+                if not kind and rtype and how in OBJLIST_WRITES and puts_object(rhs, local_types, owner):
+                    # An untyped list var collecting entities (src, a new object, an entity-typed local):
+                    # an object-keyed roster, which is an owned or relation list.
+                    got = idx.member(rtype, name)
+                    if got and got[2]:
+                        kind, dtype = "list", got[0]
                 if not kind:
                     continue
                 if allowed(raw, no, "ownership"):

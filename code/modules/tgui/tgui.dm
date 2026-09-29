@@ -77,7 +77,7 @@
 	src.state_static = src_object.tgui_state()
 	rel_set(src, "parent_ui", parent_ui)
 	if(parent_ui)
-		parent_ui.children += src
+		rel_add(parent_ui, "children", src)
 	// Deprecated
 	if(ui_x && ui_y)
 		src.window_size = list(ui_x, ui_y)

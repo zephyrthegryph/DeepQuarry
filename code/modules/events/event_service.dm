@@ -54,7 +54,7 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 	var/datum/event_container/EC = event_containers[E.severity]
 	var/datum/event_meta/EM = E.event_meta()
 	if(EM.add_to_queue)
-		EC.available_events += EM
+		rel_add(EC, "available_events", EM)
 
 	log_game("Event '[EM.name]' has completed at [stationtime2text()].")
 

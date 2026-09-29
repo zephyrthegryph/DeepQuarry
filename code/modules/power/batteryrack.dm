@@ -150,7 +150,7 @@
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	LAZYADD(internal_cells, C)
+	own_add(src, "internal_cells", C)
 	if(user)
 		user.drop_from_inventory(C)
 	C.forceMove(src)

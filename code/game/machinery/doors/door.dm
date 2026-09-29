@@ -141,7 +141,7 @@
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
-	LAZYADD(autoclose_blockers, blocker)
+	rel_add(src, "autoclose_blockers", blocker)
 	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
 	schedule_door_timer()

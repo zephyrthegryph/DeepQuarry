@@ -40,7 +40,7 @@
 	things_in_range = range(7, src)
 	LAZYCLEARLIST(fields_in_range) // rebuild fresh each tick so in-range fields don't accumulate as duplicates
 	for (var/obj/effect/fusion_em_field/FFF in things_in_range)
-		LAZYADD(fields_in_range, FFF)
+		rel_add(src, "fields_in_range", FFF)
 
 	listclearnulls(active_field)
 	listclearnulls(fields_in_range)
@@ -59,7 +59,7 @@
 /obj/machinery/power/hydromagnetic_trap/proc/Link() //discover our EM field
 	var/obj/effect/fusion_em_field/FFF
 	for(FFF in fields_in_range)
-		LAZYADD(active_field, FFF)
+		rel_add(src, "active_field", FFF)
 		active = 1
 	return
 

@@ -248,7 +248,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 				return 0
 		S.reagents.trans_to_obj(src, S.reagents.total_volume)
 		S.forceMove(src)
-		syringes += S
+		own_add(src, "syringes", S)
 		occupant_message("Syringe loaded.")
 		update_equip_info()
 		return 1

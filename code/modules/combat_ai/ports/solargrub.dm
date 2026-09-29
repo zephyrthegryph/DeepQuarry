@@ -187,7 +187,7 @@
 	// so we spread out instead of re-nesting it. Mirrors post_melee_attack's
 	// ignored_targets ring (cap 4).
 	LV.attack_target(M)
-	LAZYADD(LV.dq_ignored_machines, M)
+	rel_add(LV, "dq_ignored_machines", M)
 	if(LAZYLEN(LV.dq_ignored_machines) > 3)
 		LV.dq_ignored_machines.Cut(1, 2)
 	return DQ_BEHAVIOR_DONE

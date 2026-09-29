@@ -48,7 +48,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 		if(!farEnough) //If they did, let's not crowd the area with digsites. Skip this rock, even if it rolled well.
 			continue
 
-		digsite_spawning_turfs.Add(M) //This rock was lucky enough to be selected and not near any other sites!
+		rel_add(src, "digsite_spawning_turfs", M) //This rock was lucky enough to be selected and not near any other sites!
 
 		var/digsite = get_random_digsite_type() //What type of artifact site is this? Dictates what items will spawn.
 		var/target_digsite_size = rand(DIGSITESIZE_LOWER, DIGSITESIZE_UPPER) //What the minimum size our digsite will be.
@@ -98,7 +98,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 
 			//have a chance for an artifact to spawn here, but not in animal or plant digsites
 			if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
-				artifact_spawning_turfs.Add(archeo_turf)
+				rel_add(src, "artifact_spawning_turfs", archeo_turf)
 
 		//Larger maps will convince byond this is an infinite loop, so let go for a second
 		CHECK_TICK
@@ -141,7 +141,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 		if(!farEnough)
 			continue
 
-		digsite_spawning_turfs.Add(M) //This rock was lucky enough to be selected and not near any other sites!
+		rel_add(src, "digsite_spawning_turfs", M) //This rock was lucky enough to be selected and not near any other sites!
 
 		var/digsite = get_random_digsite_type() //What type of artifact site is this? Dictates what items will spawn.
 		var/target_digsite_size = rand(DIGSITESIZE_LOWER, DIGSITESIZE_UPPER) //What the minimum size our digsite will be.
@@ -191,7 +191,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 
 			//have a chance for an artifact to spawn here, but not in animal or plant digsites
 			if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
-				artifact_spawning_turfs.Add(archeo_turf)
+				rel_add(src, "artifact_spawning_turfs", archeo_turf)
 
 		//Larger maps will convince byond this is an infinite loop, so let go for a second
 		CHECK_TICK

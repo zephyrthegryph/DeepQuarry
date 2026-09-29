@@ -47,7 +47,7 @@
 	wake_automatic_shutoff_valves(parent?.network)
 	if(parent)
 		if(leaking)
-			parent.leaks |= src
+			rel_add(parent, "leaks", src)
 		else
 			parent.leaks -= src
 		if(parent.network)

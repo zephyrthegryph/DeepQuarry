@@ -97,7 +97,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
 	new_voice.real_name = "cursed sword"
-	LAZYADD(voice_mobs, new_voice)
+	own_add(src, "voice_mobs", new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 

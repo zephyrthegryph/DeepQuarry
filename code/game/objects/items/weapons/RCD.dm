@@ -365,7 +365,7 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index]))
+	own_put(src, "effects", A, new /obj/effect/constructing_effect(get_turf(A), time_taken, modes[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)

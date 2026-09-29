@@ -262,7 +262,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
 		if(check_ownership(E.holder()))
-			LAZYOR(engines, E)
+			rel_add(src, "engines", E)
 
 /obj/effect/overmap/visitable/ship/proc/get_landed_info()
 	return "This ship cannot land."

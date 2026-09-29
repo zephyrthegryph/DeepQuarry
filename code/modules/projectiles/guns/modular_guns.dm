@@ -31,9 +31,9 @@
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
 	guncomponents = list()
-	LAZYADD(guncomponents, new /obj/item/stock_parts/capacitor)
-	LAZYADD(guncomponents, new /obj/item/stock_parts/micro_laser)
-	LAZYADD(guncomponents, new /obj/item/stock_parts/manipulator)
+	own_add(src, "guncomponents", new /obj/item/stock_parts/capacitor)
+	own_add(src, "guncomponents", new /obj/item/stock_parts/micro_laser)
+	own_add(src, "guncomponents", new /obj/item/stock_parts/manipulator)
 	CheckParts()
 	FireModeModify()
 
@@ -84,7 +84,7 @@
 		to_chat(user, span_warning("You can't add any more capacitors!"))
 		return
 	user.drop_item()
-	LAZYADD(guncomponents, O)
+	rel_add(src, "guncomponents", O)
 	O.forceMove(src)
 	to_chat(user, span_notice("You add a component to the [src]"))
 	CheckParts()

@@ -107,7 +107,7 @@
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		cached_test_merges += tm
+		own_add(src, "cached_test_merges", tm)
 
 	return TRUE
 

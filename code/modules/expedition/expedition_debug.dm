@@ -72,7 +72,7 @@
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time
 	site.last_occupied = world.time
-	sites["[z]"] = site
+	own_put(src, "sites", "[z]", site)
 	demand()
 	return site
 

@@ -109,7 +109,7 @@
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
-		stocks += S
+		own_add(src, "stocks", S)
 		LAZYSET(last_read, S, list())
 
 /datum/stockMarket/proc/market_tick()
@@ -127,7 +127,7 @@
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	LAZYADD(logs, L)
+	own_add(src, "logs", L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

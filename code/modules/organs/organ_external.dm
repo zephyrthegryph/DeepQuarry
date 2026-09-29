@@ -150,7 +150,7 @@
 /datum/om/relation/slot/implant_site/on_link(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
 	if(istype(source) && istype(target))
 		rel_set(source, "part", target)
-		LAZYADD(target.implants, source)
+		rel_add(target, "implants", source)
 		rel_set(source, "imp_in", target.owner)
 
 /datum/om/relation/slot/implant_site/on_unlink(obj/item/implant/source, obj/item/organ/external/target, datum/om/edge/edge)
@@ -1488,7 +1488,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		return 0
 	if(!silent)
 		owner.visible_message(span_danger("\The [W] sticks in the wound!"))
-	LAZYADD(implants, W)
+	rel_add(src, "implants", W)
 	owner.embedded_flag = 1
 	add_verb(owner, /mob/proc/yank_out_object)
 	owner.throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)

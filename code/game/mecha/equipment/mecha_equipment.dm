@@ -177,28 +177,28 @@
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
 	var/has_equipped = 0
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
-		LAZYADD(M.hull_equipment, src)
+		rel_add(M, "hull_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip && !has_equipped)
-		LAZYADD(M.weapon_equipment, src)
+		rel_add(M, "weapon_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip && !has_equipped)
-		LAZYADD(M.utility_equipment, src)
+		rel_add(M, "utility_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip && !has_equipped)
-		LAZYADD(M.special_equipment, src)
+		rel_add(M, "special_equipment", src)
 		has_equipped = 1
 	// ition begin: MICROMECHS
 	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip && !has_equipped)
-		LAZYADD(M.micro_utility_equipment, src)
+		rel_add(M, "micro_utility_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip && !has_equipped)
-		LAZYADD(M.micro_weapon_equipment, src)
+		rel_add(M, "micro_weapon_equipment", src)
 		has_equipped = 1
 	// ition end: MICROMECHS
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
-		LAZYADD(M.universal_equipment, src)
-	M.equipment += src
+		rel_add(M, "universal_equipment", src)
+	rel_add(M, "equipment", src)
 	rel_set(src, "chassis", M)
 	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
 		forceMove(M) // the equipment lists above already committed; guarantee the move

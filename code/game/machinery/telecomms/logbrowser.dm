@@ -118,7 +118,7 @@
 
 			for(var/obj/machinery/telecomms/server/T in range(25, src))
 				if(T.network == network)
-					LAZYADD(servers, T)
+					rel_add(src, "servers", T)
 
 			if(!length(servers))
 				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")

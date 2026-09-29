@@ -112,7 +112,7 @@
 			tm.head_commit = entry[DMAPI5_TEST_MERGE_PULL_REQUEST_REVISION]
 			tm.comment = entry[DMAPI5_TEST_MERGE_COMMENT]
 
-			test_merges += tm
+			own_add(src, "test_merges", tm)
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_RUNTIME_INFORMATION_TEST_MERGES] from runtime information!")
 
@@ -316,7 +316,7 @@
 		for(var/channel_json in chat_channels_json)
 			var/datum/tgs_chat_channel/channel = DecodeChannel(channel_json)
 			if(channel)
-				chat_channels += channel
+				own_add(src, "chat_channels", channel)
 	else
 		TGS_WARNING_LOG("Failed to decode [DMAPI5_CHAT_UPDATE_CHANNELS] from channel update!")
 

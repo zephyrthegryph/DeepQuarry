@@ -227,7 +227,7 @@
 			rel_set(trigger, "provider", provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
-			triggers += trigger
+			own_add(src, "triggers", trigger)
 		else if(dm_key(band.property))
 			add_key(band.property)
 		return
@@ -244,7 +244,7 @@
 			rel_set(trigger, "provider", a)
 			trigger.property_b = rel.property_b
 			rel_set(trigger, "provider_b", b)
-			triggers += trigger
+			own_add(src, "triggers", trigger)
 			return
 		if(b || dm_key(rel.property_b))
 			// Dynamic on the right: flip it so the dynamic side is on the left.
@@ -282,7 +282,7 @@
 		error("threshold [property] against [value_property]: the level must be a static property")
 	if(provider && (op == PRED_CMP_EQ || op == PRED_CMP_NE))
 		error("[property] compared with == or !=; a watch needs a threshold or a band")
-	triggers += trigger
+	own_add(src, "triggers", trigger)
 
 /datum/rule_compiler/proc/add_key(property)
 	var/key_kind = dm_key(property)
@@ -295,7 +295,7 @@
 	trigger.kind = RULE_TRIGGER_KEY
 	trigger.property = property
 	trigger.key_kind = key_kind
-	triggers += trigger
+	own_add(src, "triggers", trigger)
 
 /// a op b  <=>  b (mirror op) a.
 /proc/dq_rule_mirror_cmp(op)

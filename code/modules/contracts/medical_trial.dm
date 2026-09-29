@@ -151,7 +151,7 @@
 		if(matching_class >= 2)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
-	participants[identity.id] = participant
+	own_put(src, "participants", identity.id, participant)
 	om_hook(subject, /datum/om/event/mob_death, src, PROC_REF(on_participant_death))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")

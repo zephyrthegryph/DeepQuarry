@@ -136,7 +136,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 /obj/item/gun/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to length(firemodes))
-		LAZYSET(firemodes, i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
+		own_put(src, "firemodes", i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
 
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy

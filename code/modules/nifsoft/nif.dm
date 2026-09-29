@@ -162,7 +162,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		LAZYADD(parent.implants, src)
+		rel_add(parent, "implants", src)
 		om_after(src, 1, PROC_REF(quick_install), H)
 		return TRUE
 
@@ -473,11 +473,11 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			return FALSE
 
 	wear(new_soft.wear)
-	nifsofts[new_soft.list_pos] = new_soft
+	own_put(src, "nifsofts", new_soft.list_pos, new_soft)
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)
-		LAZYADD(nifsofts_life, new_soft)
+		rel_add(src, "nifsofts_life", new_soft)
 
 	return TRUE
 
@@ -528,7 +528,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		return FALSE
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		LAZYADD(nifsofts_life, soft)
+		rel_add(src, "nifsofts_life", soft)
 
 	power_usage += soft.a_drain
 
@@ -726,7 +726,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	var/obj/item/organ/external/eo = task.eo
 	user.unEquip(src)
 	forceMove(eo)
-	eo.implants |= src
+	rel_add(eo, "implants", src)
 	implant(T)
 	playsound(T,'sound/effects/slime_squish.ogg',50,1)
 

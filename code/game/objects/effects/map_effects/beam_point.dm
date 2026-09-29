@@ -93,7 +93,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		return FALSE
 
 	var/datum/beam/new_beam = Beam(beam_target, beam_icon_state, beam_icon, beam_time, beam_max_distance, beam_type, beam_sleep_time)
-	LAZYADD(my_beams, new_beam)
+	rel_add(src, "my_beams", new_beam)
 	if(beam_creation_sound)
 		playsound(src, beam_creation_sound, 70, 1)
 
