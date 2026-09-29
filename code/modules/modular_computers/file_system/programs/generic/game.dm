@@ -119,74 +119,77 @@
 /**
  * This is tgui's replacement for Topic(). It handles any user input from the UI.
  */
-/datum/computer_file/program/game/tgui_act(action, list/params, datum/tgui/ui)
-	if(..()) // Always call parent in tgui_act, it handles making sure the user is allowed to interact with the UI.
-		return TRUE
+UI_ACT(/datum/computer_file/program/game, "Attack", ui_act_attack)
+UI_ACT_PROC(/datum/computer_file/program/game, ui_act_attack)
+	var/attackamt = 0 //Spam prevention.
+	if(pause_state == FALSE)
+		attackamt = rand(2,6) // + rand(0, gamerSkill)
+	pause_state = TRUE
+	heads_up = "You attack for [attackamt] damage."
+	play_sfx(computer().loc, SFX_ARCADE_HIT)
+	boss_hp -= attackamt
+	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	return TRUE
 
+UI_ACT(/datum/computer_file/program/game, "Heal", ui_act_heal)
+UI_ACT_PROC(/datum/computer_file/program/game, ui_act_heal)
+	var/healamt = 0 //More Spam Prevention.
+	var/healcost = 0
+	if(pause_state == FALSE)
+		healamt = rand(6,8) // + rand(0, gamerSkill)
+		var/maxPointCost = 3
+		healcost = rand(1, maxPointCost)
+	pause_state = TRUE
+	heads_up = "You heal for [healamt] damage."
+	play_sfx(computer().loc, SFX_ARCADE_HEAL)
+	player_hp += healamt
+	player_mp -= healcost
+	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/game, "Recharge_Power", ui_act_recharge_power)
+UI_ACT_PROC(/datum/computer_file/program/game, ui_act_recharge_power)
+	var/rechargeamt = 0 //As above.
+	if(pause_state == FALSE)
+		rechargeamt = rand(4,7) // + rand(0, gamerSkill)
+	pause_state = TRUE
+	heads_up = "You regain [rechargeamt] magic power."
+	play_sfx(computer().loc, SFX_ARCADE_MANA)
+	player_mp += rechargeamt
+	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/game, "Dispense_Tickets", ui_act_dispense_tickets)
+UI_ACT_PROC(/datum/computer_file/program/game, ui_act_dispense_tickets)
 	var/obj/item/computer_hardware/nano_printer/printer
 	if(computer())
 		printer = computer().nano_printer
+	if(!printer)
+		to_chat(ui.user, span_notice("Hardware error: A printer is required to redeem tickets."))
+		return
+	if(printer.stored_paper <= 0)
+		to_chat(ui.user, span_notice("Hardware error: Printer is out of paper."))
+		return
+	else
+		computer().visible_message(span_infoplain(span_bold("\The [computer()]") + " prints out paper."))
+		if(ticket_count >= 1)
+			new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
+			to_chat(ui.user, span_notice("[src] dispenses a ticket!"))
+			ticket_count -= 1
+			printer.stored_paper -= 1
+		else
+			to_chat(ui.user, span_notice("You don't have any stored tickets!"))
+		return TRUE
 
-	switch(action)
-		if("Attack")
-			var/attackamt = 0 //Spam prevention.
-			if(pause_state == FALSE)
-				attackamt = rand(2,6) // + rand(0, gamerSkill)
-			pause_state = TRUE
-			heads_up = "You attack for [attackamt] damage."
-			play_sfx(computer().loc, SFX_ARCADE_HIT)
-			boss_hp -= attackamt
-			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
-			return TRUE
-		if("Heal")
-			var/healamt = 0 //More Spam Prevention.
-			var/healcost = 0
-			if(pause_state == FALSE)
-				healamt = rand(6,8) // + rand(0, gamerSkill)
-				var/maxPointCost = 3
-				healcost = rand(1, maxPointCost)
-			pause_state = TRUE
-			heads_up = "You heal for [healamt] damage."
-			play_sfx(computer().loc, SFX_ARCADE_HEAL)
-			player_hp += healamt
-			player_mp -= healcost
-			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
-			return TRUE
-		if("Recharge_Power")
-			var/rechargeamt = 0 //As above.
-			if(pause_state == FALSE)
-				rechargeamt = rand(4,7) // + rand(0, gamerSkill)
-			pause_state = TRUE
-			heads_up = "You regain [rechargeamt] magic power."
-			play_sfx(computer().loc, SFX_ARCADE_MANA)
-			player_mp += rechargeamt
-			om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
-			return TRUE
-		if("Dispense_Tickets")
-			if(!printer)
-				to_chat(ui.user, span_notice("Hardware error: A printer is required to redeem tickets."))
-				return
-			if(printer.stored_paper <= 0)
-				to_chat(ui.user, span_notice("Hardware error: Printer is out of paper."))
-				return
-			else
-				computer().visible_message(span_infoplain(span_bold("\The [computer()]") + " prints out paper."))
-				if(ticket_count >= 1)
-					new /obj/item/stack/arcadeticket((get_turf(computer())), 1)
-					to_chat(ui.user, span_notice("[src] dispenses a ticket!"))
-					ticket_count -= 1
-					printer.stored_paper -= 1
-				else
-					to_chat(ui.user, span_notice("You don't have any stored tickets!"))
-				return TRUE
-		if("Start_Game")
-			game_active = TRUE
-			boss_hp = 45
-			player_hp = 30
-			player_mp = 10
-			heads_up = "You stand before [boss_name]! Prepare for battle!"
-			program_icon_state = "arcade"
-			boss_id = rand(1,6)
-			pause_state = FALSE
-			if(istype(computer(), /obj/item/modular_computer))
-				computer().update_icon()
+UI_ACT(/datum/computer_file/program/game, "Start_Game", ui_act_start_game)
+UI_ACT_PROC(/datum/computer_file/program/game, ui_act_start_game)
+	game_active = TRUE
+	boss_hp = 45
+	player_hp = 30
+	player_mp = 10
+	heads_up = "You stand before [boss_name]! Prepare for battle!"
+	program_icon_state = "arcade"
+	boss_id = rand(1,6)
+	pause_state = FALSE
+	if(istype(computer(), /obj/item/modular_computer))
+		computer().update_icon()

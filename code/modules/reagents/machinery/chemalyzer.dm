@@ -96,11 +96,7 @@
 	tgui_interact(user) // Show last analysis
 	return TRUE
 
-/obj/machinery/chemical_analyzer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ChemAnalyzerPro", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/chemical_analyzer, "ChemAnalyzerPro")
 
 /obj/machinery/chemical_analyzer/tgui_data(mob/user)
 	var/list/data = list()

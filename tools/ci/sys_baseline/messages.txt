@@ -948,7 +948,6 @@ visible_pair	code/modules/mob/living/bot/medbot.dm	visible_message(span_danger("
 visible_pair	code/modules/mob/living/bot/medbot.dm	user.visible_message(span_danger("[user] tips over [src]!"), span_danger("You tip [src] over!"))
 visible_pair	code/modules/mob/living/bot/medbot.dm	user.visible_message(span_notice("[user] sets [src] right-side up!"), span_green("You set [src] right-side up!"))
 visible_pair	code/modules/mob/living/bot/medbot.dm	visible_message(span_notice("[src] manages to [pick("writhe", "wriggle", "wiggle")] enough to right itself."))
-visible_pair	code/modules/mob/living/bot/mulebot.dm	visible_message("[ui.user] switches [on ? "on" : "off"] [src].")
 visible_pair	code/modules/mob/living/bot/mulebot.dm	visible_message(span_warning("[src] knocks over [M]!"))
 visible_pair	code/modules/mob/living/bot/mulebot.dm	visible_message(span_danger("[src] blows apart!"))
 visible_pair	code/modules/mob/living/bot/secbot.dm	visible_message(span_warning("\The [H] was prodded by \the [src] with a stun baton!"))

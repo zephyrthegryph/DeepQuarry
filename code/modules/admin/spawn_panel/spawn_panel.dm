@@ -53,11 +53,7 @@
 	. = ..()
 	offset = list("X" = 0, "Y" = 0, "Z" = 0)
 
-/datum/spawnpanel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SpawnPanel")
-		ui.open()
+DECLARE_UI(/datum/spawnpanel, "SpawnPanel")
 
 /datum/spawnpanel/tgui_close(mob/user)
 	. = ..()
@@ -67,119 +63,133 @@
 /datum/spawnpanel/tgui_state(mob/user)
 	return ADMIN_STATE(R_SPAWN)
 
-/datum/spawnpanel/tgui_act(action, params, datum/tgui/ui)
-	if(..() || !check_rights_for(ui.user.client, R_SPAWN))
+/datum/spawnpanel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
 		return FALSE
+	if(!check_rights_for(ui.user.client, R_SPAWN))
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("select-new-DMI")
-			var/icon/new_icon = input("Select a new icon file:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
-			if(new_icon)
-				selected_atom_icon = new_icon
-				available_icon_states = icon_states(selected_atom_icon)
-				if(!(selected_atom_icon_state in available_icon_states))
-					selected_atom_icon_state = available_icon_states[1]
-			return TRUE
+UI_ACT(/datum/spawnpanel, "select-new-DMI", ui_act_select_new_dmi)
+UI_ACT_PROC(/datum/spawnpanel, ui_act_select_new_dmi)
+	var/icon/new_icon = input("Select a new icon file:", "Icon") as null|icon // ALLOW(scheduler): file uploads need the BYOND file dialog
+	if(new_icon)
+		selected_atom_icon = new_icon
+		available_icon_states = icon_states(selected_atom_icon)
+		if(!(selected_atom_icon_state in available_icon_states))
+			selected_atom_icon_state = available_icon_states[1]
+	return TRUE
 
-		if("set-apply-icon-override")
-			apply_icon_override = !!params["value"]
-			return TRUE
+UI_ACT(/datum/spawnpanel, "set-apply-icon-override", ui_act_set_apply_icon_override, UI_ARG_BOOL("value"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_set_apply_icon_override)
+	apply_icon_override = !!params["value"]
+	return TRUE
 
-		if("reset-DMI-icon")
-			selected_atom_icon = null
-			selected_atom_icon_state = null
-			if(selected_atom)
-				var/atom/selected_type = selected_atom
-				selected_atom_icon = initial(selected_type.icon)
-				selected_atom_icon_state = initial(selected_type.icon_state)
-				available_icon_states = icon_states(selected_atom_icon)
-			else
-				available_icon_states = list()
-			return TRUE
+UI_ACT(/datum/spawnpanel, "reset-DMI-icon", ui_act_reset_dmi_icon)
+UI_ACT_PROC(/datum/spawnpanel, ui_act_reset_dmi_icon)
+	selected_atom_icon = null
+	selected_atom_icon_state = null
+	if(selected_atom)
+		var/atom/selected_type = selected_atom
+		selected_atom_icon = initial(selected_type.icon)
+		selected_atom_icon_state = initial(selected_type.icon_state)
+		available_icon_states = icon_states(selected_atom_icon)
+	else
+		available_icon_states = list()
+	return TRUE
 
-		if("select-new-icon-state")
-			selected_atom_icon_state = params["new_state"]
-			return TRUE
+UI_ACT(/datum/spawnpanel, "select-new-icon-state", ui_act_select_new_icon_state, UI_ARG_VALUE("new_state"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_select_new_icon_state)
+	selected_atom_icon_state = params["new_state"]
+	return TRUE
 
-		if("reset-icon-state")
-			selected_atom_icon_state = null
-			if(selected_atom)
-				var/atom/selected_type = selected_atom
-				selected_atom_icon_state = initial(selected_type.icon_state)
-			return TRUE
+UI_ACT(/datum/spawnpanel, "reset-icon-state", ui_act_reset_icon_state)
+UI_ACT_PROC(/datum/spawnpanel, ui_act_reset_icon_state)
+	selected_atom_icon_state = null
+	if(selected_atom)
+		var/atom/selected_type = selected_atom
+		selected_atom_icon_state = initial(selected_type.icon_state)
+	return TRUE
 
-		if("set-icon-size")
-			atom_icon_size = params["size"]
-			return TRUE
+UI_ACT(/datum/spawnpanel, "set-icon-size", ui_act_set_icon_size, UI_ARG_VALUE("size"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_set_icon_size)
+	atom_icon_size = params["size"]
+	return TRUE
 
-		if("reset-icon-size")
-			atom_icon_size = 100
-			return TRUE
+UI_ACT(/datum/spawnpanel, "reset-icon-size", ui_act_reset_icon_size)
+UI_ACT_PROC(/datum/spawnpanel, ui_act_reset_icon_size)
+	atom_icon_size = 100
+	return TRUE
 
-		if("get-icon-states")
-			available_icon_states = icon_states(selected_atom_icon)
-			return TRUE
+UI_ACT(/datum/spawnpanel, "get-icon-states", ui_act_get_icon_states)
+UI_ACT_PROC(/datum/spawnpanel, ui_act_get_icon_states)
+	available_icon_states = icon_states(selected_atom_icon)
+	return TRUE
 
-		if("selected-atom-changed")
-			var/path = text2path(params["newObj"])
-			if(path)
-				var/atom/temp_atom = path
-				selected_atom_icon = initial(temp_atom.icon)
-				selected_atom_icon_state = initial(temp_atom.icon_state)
-				available_icon_states = icon_states(selected_atom_icon)
-				selected_atom = temp_atom
-			return TRUE
+UI_ACT(/datum/spawnpanel, "selected-atom-changed", ui_act_selected_atom_changed, UI_ARG_PATH("newObj", /datum))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_selected_atom_changed)
+	var/path = params["newObj"]
+	if(path)
+		var/atom/temp_atom = path
+		selected_atom_icon = initial(temp_atom.icon)
+		selected_atom_icon_state = initial(temp_atom.icon_state)
+		available_icon_states = icon_states(selected_atom_icon)
+		selected_atom = temp_atom
+	return TRUE
 
-		if("create-atom-action")
-			var/list/spawn_params = list(
-				"selected_atom" = selected_atom,
-				"offset" = params["offset"],
-				"atom_dir" = text2num(params["dir"]) || 1,
-				"atom_amount" = text2num(params["atom_amount"]) || 1,
-				"atom_name" = params["atom_name"],
-				"where_target_type" = params["where_target_type"] || WHERE_FLOOR_BELOW_MOB,
-				"atom_icon_size" = params["atom_icon_size"],
-				"offset_type" = params["offset_type"] || OFFSET_RELATIVE,
-				"apply_icon_override" = apply_icon_override,
-				)
+UI_ACT(/datum/spawnpanel, "create-atom-action", ui_act_create_atom_action, UI_ARG_NUM("atom_amount"), UI_ARG_VALUE("atom_icon_size"), UI_ARG_VALUE("atom_name"), UI_ARG_NUM("dir"), UI_ARG_VALUE("offset"), UI_ARG_VALUE("offset_type"), UI_ARG_VALUE("selected_atom_icon"), UI_ARG_VALUE("selected_atom_icon_state"), UI_ARG_VALUE("where_target_type"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_create_atom_action)
+	var/list/spawn_params = list(
+		"selected_atom" = selected_atom,
+		"offset" = params["offset"],
+		"atom_dir" = params["dir"] || 1,
+		"atom_amount" = params["atom_amount"] || 1,
+		"atom_name" = params["atom_name"],
+		"where_target_type" = params["where_target_type"] || WHERE_FLOOR_BELOW_MOB,
+		"atom_icon_size" = params["atom_icon_size"],
+		"offset_type" = params["offset_type"] || OFFSET_RELATIVE,
+		"apply_icon_override" = apply_icon_override,
+		)
 
-			if(apply_icon_override)
-				spawn_params["selected_atom_icon"] = selected_atom_icon
-				spawn_params["selected_atom_icon_state"] = selected_atom_icon_state
+	if(apply_icon_override)
+		spawn_params["selected_atom_icon"] = selected_atom_icon
+		spawn_params["selected_atom_icon_state"] = selected_atom_icon_state
 
-			spawn_atom(spawn_params, ui.user)
-			return TRUE
+	spawn_atom(spawn_params, ui.user)
+	return TRUE
 
-		if("toggle-precise-mode")
-			var/precise_type = params["newPreciseType"]
-			if(precise_type == PRECISE_MODE_TARGET && params["where_target_type"])
-				where_target_type = params["where_target_type"]
-			toggle_precise_mode(precise_type, ui.user)
-			return TRUE
+UI_ACT(/datum/spawnpanel, "toggle-precise-mode", ui_act_toggle_precise_mode, UI_ARG_VALUE("newPreciseType"), UI_ARG_VALUE("where_target_type"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_toggle_precise_mode)
+	var/precise_type = params["newPreciseType"]
+	if(precise_type == PRECISE_MODE_TARGET && params["where_target_type"])
+		where_target_type = params["where_target_type"]
+	toggle_precise_mode(precise_type, ui.user)
+	return TRUE
 
-		if("update-settings")
-			if(params["atom_amount"])
-				atom_amount = text2num(params["atom_amount"])
-			if(params["atom_dir"])
-				atom_dir = text2num(params["atom_dir"])
-			if(params["offset"])
-				var/list/temp_offset = params["offset"]
-				offset["X"] = temp_offset[1]
-				offset["Y"] = temp_offset[2]
-				offset["Z"] = temp_offset[3]
-			if(params["atom_name"])
-				atom_name = params["atom_name"]
-			if(params["where_target_type"])
-				where_target_type = params["where_target_type"]
-			if(params["offset_type"])
-				offset_type = params["offset_type"]
-			if(params["atom_icon_size"])
-				atom_icon_size = text2num(params["atom_icon_size"])
-			if(params["selected_atom_icon"])
-				selected_atom_icon = params["selected_atom_icon"]
-			if(params["selected_atom_icon_state"])
-				selected_atom_icon_state = params["selected_atom_icon_state"]
-			return TRUE
+UI_ACT(/datum/spawnpanel, "update-settings", ui_act_update_settings, UI_ARG_NUM("atom_amount"), UI_ARG_NUM("atom_dir"), UI_ARG_NUM("atom_icon_size"), UI_ARG_VALUE("atom_name"), UI_ARG_LIST("offset"), UI_ARG_VALUE("offset_type"), UI_ARG_VALUE("selected_atom_icon"), UI_ARG_VALUE("selected_atom_icon_state"), UI_ARG_VALUE("where_target_type"))
+UI_ACT_PROC(/datum/spawnpanel, ui_act_update_settings)
+	if(params["atom_amount"])
+		atom_amount = params["atom_amount"]
+	if(params["atom_dir"])
+		atom_dir = params["atom_dir"]
+	if(params["offset"])
+		var/list/temp_offset = params["offset"]
+		offset["X"] = temp_offset[1]
+		offset["Y"] = temp_offset[2]
+		offset["Z"] = temp_offset[3]
+	if(params["atom_name"])
+		atom_name = params["atom_name"]
+	if(params["where_target_type"])
+		where_target_type = params["where_target_type"]
+	if(params["offset_type"])
+		offset_type = params["offset_type"]
+	if(params["atom_icon_size"])
+		atom_icon_size = params["atom_icon_size"]
+	if(params["selected_atom_icon"])
+		selected_atom_icon = params["selected_atom_icon"]
+	if(params["selected_atom_icon_state"])
+		selected_atom_icon_state = params["selected_atom_icon_state"]
+	return TRUE
 
 /datum/spawnpanel/proc/toggle_precise_mode(precise_type, mob/user)
 	precise_mode = precise_type

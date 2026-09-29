@@ -99,12 +99,7 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 /obj/structure/filingcabinet/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
 
-/obj/structure/filingcabinet/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "FileCabinet", name)
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/obj/structure/filingcabinet, "FileCabinet")
 
 /obj/structure/filingcabinet/tgui_data(mob/user)
 	var/list/data = list()
@@ -118,18 +113,13 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 
 	return data
 
-/obj/structure/filingcabinet/tgui_act(action, params)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("remove_object")
-			var/obj/item/content = locate_within(src, params["ref"])
-			if(istype(content) && (content.loc == src) && usr.Adjacent(src))
-				usr.put_in_hands(content)
-				open_animation()
-				SStgui.update_uis(src)
+UI_ACT(/obj/structure/filingcabinet, "remove_object", ui_act_remove_object, UI_ARG_REF("ref", "contents", /obj/item))
+UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
+	var/obj/item/content = params["ref"]
+	if(istype(content) && (content.loc == src) && usr.Adjacent(src))
+		usr.put_in_hands(content)
+		open_animation()
+		SStgui.update_uis(src)
 
 /obj/structure/filingcabinet/proc/open_animation()
 	flick("[initial(icon_state)]-open",src)

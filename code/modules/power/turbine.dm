@@ -302,17 +302,14 @@
 	)
 	..()
 
-/obj/machinery/power/turbine/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	. = ..()
-	if(!Adjacent(user) && !issilicon(user))
-		return
-	if(!operable())
-		return
+DECLARE_UI(/obj/machinery/power/turbine, "Turbine")
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Turbine", name)
-		ui.open()
+/obj/machinery/power/turbine/ui_prepare(mob/user, datum/tgui/ui)
+	if(!Adjacent(user) && !issilicon(user))
+		return FALSE
+	if(!operable())
+		return FALSE
+	return TRUE
 
 /obj/machinery/power/turbine/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
@@ -321,17 +318,12 @@
 		"starter" = compressor()?.starter
 	)
 
-/obj/machinery/power/turbine/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("start_stop")
-			if(!compressor())
-				return FALSE
-			compressor().set_starter(!compressor().starter)
-			return TRUE
+UI_ACT(/obj/machinery/power/turbine, "start_stop", ui_act_start_stop)
+UI_ACT_PROC(/obj/machinery/power/turbine, ui_act_start_stop)
+	if(!compressor())
+		return FALSE
+	compressor().set_starter(!compressor().starter)
+	return TRUE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Turbine Computer
@@ -387,11 +379,7 @@
 	held_type = /obj/item
 	effect = /atom/proc/interaction_swallow
 
-/obj/machinery/computer/turbine_computer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TurbineControl", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/turbine_computer, "TurbineControl")
 
 /obj/machinery/computer/turbine_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
@@ -414,30 +402,32 @@
 
 	return data
 
-/obj/machinery/computer/turbine_computer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/turbine_computer, "power-on", ui_act_power_on)
+UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_power_on)
+	if(compressor() && compressor().turbine())
+		compressor().set_starter(TRUE)
+		. = TRUE
 
-	switch(action)
-		if("power-on")
-			if(compressor() && compressor().turbine())
-				compressor().set_starter(TRUE)
-				. = TRUE
-		if("power-off")
-			if(compressor() && compressor().turbine())
-				compressor().set_starter(FALSE)
-				. = TRUE
-		if("reconnect")
-			locate_machinery()
-			. = TRUE
-		if("doors")
-			door_status = !door_status
-			for(var/obj/machinery/door/blast/D in om_resolve_all(src.doors))
-				if (door_status)
-					D.close()
-				else
-					D.open()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/turbine_computer, "power-off", ui_act_power_off)
+UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_power_off)
+	if(compressor() && compressor().turbine())
+		compressor().set_starter(FALSE)
+		. = TRUE
+
+UI_ACT(/obj/machinery/computer/turbine_computer, "reconnect", ui_act_reconnect)
+UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_reconnect)
+	locate_machinery()
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/turbine_computer, "doors", ui_act_doors)
+UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_doors)
+	door_status = !door_status
+	for(var/obj/machinery/door/blast/D in om_resolve_all(src.doors))
+		if (door_status)
+			D.close()
+		else
+			D.open()
+	. = TRUE
 
 #undef COMPFRICTION
 #undef COMPSTARTERLOAD

@@ -5,46 +5,47 @@
 /datum/access_viewer
 	var/focused_obj
 
-/datum/access_viewer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AccessViewer", "Access Viewer")
-		ui.open()
+DECLARE_UI(/datum/access_viewer, "AccessViewer", UI_TITLE("Access Viewer"))
 
 /datum/access_viewer/tgui_state(mob/user)
 	return ADMIN_STATE(R_DEBUG)
 
-/datum/access_viewer/tgui_act(action, params, datum/tgui/ui)
-	if(..() || !check_rights_for(ui.user.client, R_DEBUG))
+/datum/access_viewer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
 		return FALSE
-
 	var/obj/machinery/req_thing = om_resolve(focused_obj)
+	if(!check_rights_for(ui.user.client, R_DEBUG))
+		return FALSE
 	if(!req_thing)
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("req_all")
-			var/set_id = text2num(params["set_id"])
-			if(!set_id)
-				return FALSE
-			// Copy first: access lists are shared between objects (intern_access_lists()).
-			req_thing.req_access = req_thing.req_access ? req_thing.req_access.Copy() : list()
-			if(set_id in req_thing.req_access)
-				req_thing.req_access -= set_id
-			else
-				req_thing.req_access += set_id
-			return TRUE
+UI_ACT(/datum/access_viewer, "req_all", ui_act_req_all, UI_ARG_NUM("set_id"))
+UI_ACT_PROC(/datum/access_viewer, ui_act_req_all)
+	var/obj/machinery/req_thing = om_resolve(focused_obj)
+	var/set_id = params["set_id"]
+	if(!set_id)
+		return FALSE
+	// Copy first: access lists are shared between objects (intern_access_lists()).
+	req_thing.req_access = req_thing.req_access ? req_thing.req_access.Copy() : list()
+	if(set_id in req_thing.req_access)
+		req_thing.req_access -= set_id
+	else
+		req_thing.req_access += set_id
+	return TRUE
 
-		if("req_one")
-			var/set_id = text2num(params["set_id"])
-			if(!set_id)
-				return FALSE
-			req_thing.req_one_access = req_thing.req_one_access ? req_thing.req_one_access.Copy() : list()
-			if(set_id in req_thing.req_one_access)
-				req_thing.req_one_access -= set_id
-			else
-				req_thing.req_one_access += set_id
-			return TRUE
+UI_ACT(/datum/access_viewer, "req_one", ui_act_req_one, UI_ARG_NUM("set_id"))
+UI_ACT_PROC(/datum/access_viewer, ui_act_req_one)
+	var/obj/machinery/req_thing = om_resolve(focused_obj)
+	var/set_id = params["set_id"]
+	if(!set_id)
+		return FALSE
+	req_thing.req_one_access = req_thing.req_one_access ? req_thing.req_one_access.Copy() : list()
+	if(set_id in req_thing.req_one_access)
+		req_thing.req_one_access -= set_id
+	else
+		req_thing.req_one_access += set_id
+	return TRUE
 
 /datum/access_viewer/tgui_static_data(mob/user)
 	var/list/data = list()

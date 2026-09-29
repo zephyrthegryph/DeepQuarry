@@ -92,12 +92,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 		return TRUE
 	return FALSE
 
-/obj/machinery/computer/med_data/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MedicalRecords", "Medical Records") // 800, 380
-		ui.open()
-		ui.set_autoupdate(FALSE)
+DECLARE_UI(/obj/machinery/computer/med_data, "MedicalRecords", UI_TITLE("Medical Records"))
 
 /obj/machinery/computer/med_data/tgui_data(mob/user)
 	var/data[0]
@@ -186,165 +181,229 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 	data["modal"] = tgui_modal_data(src)
 	return data
 
-/obj/machinery/computer/med_data/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/med_data/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!GLOB.data_core.general.Find(active1()))
 		active1_handle = null
 	if(!GLOB.data_core.medical.Find(active2()))
 		active2_handle = null
+	return TRUE
 
+UI_ACT(/obj/machinery/computer/med_data, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_cleartemp)
 	. = TRUE
-	if(tgui_act_modal(action, params))
-		return
+	temp = null
 
-	switch(action)
-		if("cleartemp")
-			temp = null
-		if("scan")
-			if(scan)
-				scan.forceMove(loc)
-				if(ishuman(ui.user) && !ui.user.get_active_hand())
-					ui.user.put_in_hands(scan)
-				scan = null
-			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id))
-					ui.user.drop_item()
-					I.forceMove(src)
-					scan = I
-		if("login")
-			var/login_type = text2num(params["login_type"])
-			if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
-				if(check_access(scan))
-					authenticated = scan.registered_name
-					rank = scan.assignment
-			else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
-				authenticated = ui.user.name
-				rank = JOB_AI
-			else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
-				authenticated = ui.user.name
-				var/mob/living/silicon/robot/R = ui.user
-				rank = "[R.modtype] [R.braintype]"
-			if(authenticated)
-				active1_handle = null
-				active2_handle = null
-				screen = MED_DATA_R_LIST
-		else
-			. = FALSE
+UI_ACT(/obj/machinery/computer/med_data, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)
+	. = TRUE
+	if(scan)
+		scan.forceMove(loc)
+		if(ishuman(ui.user) && !ui.user.get_active_hand())
+			ui.user.put_in_hands(scan)
+		scan = null
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id))
+			ui.user.drop_item()
+			I.forceMove(src)
+			scan = I
 
-	if(.)
-		return
-
+UI_ACT(/obj/machinery/computer/med_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_login)
+	. = TRUE
+	var/login_type = params["login_type"]
+	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
+		if(check_access(scan))
+			authenticated = scan.registered_name
+			rank = scan.assignment
+	else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
+		authenticated = ui.user.name
+		rank = JOB_AI
+	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
+		authenticated = ui.user.name
+		var/mob/living/silicon/robot/R = ui.user
+		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		. = TRUE
-		switch(action)
-			if("logout")
-				if(scan)
-					scan.forceMove(loc)
-					if(ishuman(ui.user) && !ui.user.get_active_hand())
-						ui.user.put_in_hands(scan)
-					scan = null
-				authenticated = null
-				screen = null
-				active1_handle = null
-				active2_handle = null
-			if("screen")
-				screen = clamp(text2num(params["screen"]) || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
-				active1_handle = null
-				active2_handle = null
-			if("vir")
-				var/datum/data/record/v = locate(params["vir"])
-				if(!istype(v))
-					return FALSE
-				tgui_modal_message(src, "virus", "", null, v.fields["tgui_description"])
-			if("del_all")
-				for(var/datum/data/record/R in GLOB.data_core.medical)
-					qdel(R)
-				set_temp("All medical records deleted.")
-			if("del_r")
-				if(active2())
-					set_temp("Medical record deleted.")
-					qdel(active2())
-			if("d_rec")
-				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!GLOB.data_core.general.Find(general_record))
-					set_temp("Record not found.", "danger")
-					return
+		active1_handle = null
+		active2_handle = null
+		screen = MED_DATA_R_LIST
 
-				var/datum/data/record/medical_record
-				for(var/datum/data/record/M in GLOB.data_core.medical)
-					if(M.fields["name"] == general_record.fields["name"] && M.fields["id"] == general_record.fields["id"])
-						medical_record = M
-						break
+UI_ACT(/obj/machinery/computer/med_data, "logout", ui_act_logout)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_logout)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(scan)
+		scan.forceMove(loc)
+		if(ishuman(ui.user) && !ui.user.get_active_hand())
+			ui.user.put_in_hands(scan)
+		scan = null
+	authenticated = null
+	screen = null
+	active1_handle = null
+	active2_handle = null
 
-				active1_handle = om_handle(general_record)
-				active2_handle = om_handle(medical_record)
-				screen = MED_DATA_RECORD
-			if("sync_r")
-				if(active2())
-					set_temp(client_update_record(src,ui.user))
-			if("edit_notes")
-				// The modal input in tgui is busted for this sadly...
-				om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
-			if("new")
-				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
-					var/datum/data/record/R = new /datum/data/record()
-					R.fields["name"] = active1().fields["name"]
-					R.fields["id"] = active1().fields["id"]
-					R.name = "Medical Record #[R.fields["id"]]"
-					R.fields["b_type"] = "Unknown"
-					R.fields["blood_reagent"] = "Unknown"
-					R.fields["b_dna"] = "Unknown"
-					R.fields["mi_dis"] = "None"
-					R.fields["mi_dis_d"] = "No minor disabilities have been declared."
-					R.fields["ma_dis"] = "None"
-					R.fields["ma_dis_d"] = "No major disabilities have been diagnosed."
-					R.fields["alg"] = "None"
-					R.fields["alg_d"] = "No allergies have been detected in this patient."
-					R.fields["cdi"] = "None"
-					R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
-					R.fields["notes"] = "No notes."
-					GLOB.data_core.medical += R
-					active2_handle = om_handle(R)
-					screen = MED_DATA_RECORD
-					set_temp("Medical record created.", "success")
-			if("del_c")
-				var/index = text2num(params["del_c"] || "")
-				if(!index || !istype(active2(), /datum/data/record))
-					return
+UI_ACT(/obj/machinery/computer/med_data, "screen", ui_act_screen, UI_ARG_NUM("screen"))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_screen)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	screen = clamp(params["screen"] || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
+	active1_handle = null
+	active2_handle = null
 
-				var/list/comments = active2().fields["comments"]
-				index = clamp(index, 1, length(comments))
-				if(comments[index])
-					comments.Cut(index, index + 1)
-			if("search")
-				active1_handle = null
-				active2_handle = null
-				var/t1 = lowertext(params["t1"] || "")
-				if(!length(t1))
-					return
+UI_ACT(/obj/machinery/computer/med_data, "vir", ui_act_vir, UI_ARG_REF("vir", null, /datum/data/record))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_vir)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/datum/data/record/v = params["vir"]
+	if(!istype(v))
+		return FALSE
+	tgui_modal_message(src, "virus", "", null, v.fields["tgui_description"])
 
-				for(var/datum/data/record/R in GLOB.data_core.medical)
-					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["b_dna"]))
-						active2_handle = om_handle(R)
-						break
-				if(!active2())
-					set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
-					return
-				for(var/datum/data/record/E in GLOB.data_core.general)
-					if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
-						active1_handle = om_handle(E)
-						break
-				screen = MED_DATA_RECORD
-			if("print_p")
-				if(!printing)
-					printing = TRUE
-					SStgui.update_uis(src)
-					om_after(src, 5 SECONDS, PROC_REF(print_finish))
-			else
-				return FALSE
+UI_ACT(/obj/machinery/computer/med_data, "del_all", ui_act_del_all)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_all)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	for(var/datum/data/record/R in GLOB.data_core.medical)
+		qdel(R)
+	set_temp("All medical records deleted.")
+
+UI_ACT(/obj/machinery/computer/med_data, "del_r", ui_act_del_r)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_r)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(active2())
+		set_temp("Medical record deleted.")
+		qdel(active2())
+
+UI_ACT(/obj/machinery/computer/med_data, "d_rec", ui_act_d_rec, UI_ARG_REF("d_rec", null, /datum/data/record))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_d_rec)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/datum/data/record/general_record = params["d_rec"]
+	if(!GLOB.data_core.general.Find(general_record))
+		set_temp("Record not found.", "danger")
+		return
+
+	var/datum/data/record/medical_record
+	for(var/datum/data/record/M in GLOB.data_core.medical)
+		if(M.fields["name"] == general_record.fields["name"] && M.fields["id"] == general_record.fields["id"])
+			medical_record = M
+			break
+
+	active1_handle = om_handle(general_record)
+	active2_handle = om_handle(medical_record)
+	screen = MED_DATA_RECORD
+
+UI_ACT(/obj/machinery/computer/med_data, "sync_r", ui_act_sync_r)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_sync_r)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(active2())
+		set_temp(client_update_record(src,ui.user))
+
+UI_ACT(/obj/machinery/computer/med_data, "edit_notes", ui_act_edit_notes)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_edit_notes)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+		// The modal input in tgui is busted for this sadly...
+	om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
+
+UI_ACT(/obj/machinery/computer/med_data, "new", ui_act_new)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_new)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
+		var/datum/data/record/R = new /datum/data/record()
+		R.fields["name"] = active1().fields["name"]
+		R.fields["id"] = active1().fields["id"]
+		R.name = "Medical Record #[R.fields["id"]]"
+		R.fields["b_type"] = "Unknown"
+		R.fields["blood_reagent"] = "Unknown"
+		R.fields["b_dna"] = "Unknown"
+		R.fields["mi_dis"] = "None"
+		R.fields["mi_dis_d"] = "No minor disabilities have been declared."
+		R.fields["ma_dis"] = "None"
+		R.fields["ma_dis_d"] = "No major disabilities have been diagnosed."
+		R.fields["alg"] = "None"
+		R.fields["alg_d"] = "No allergies have been detected in this patient."
+		R.fields["cdi"] = "None"
+		R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
+		R.fields["notes"] = "No notes."
+		GLOB.data_core.medical += R
+		active2_handle = om_handle(R)
+		screen = MED_DATA_RECORD
+		set_temp("Medical record created.", "success")
+
+UI_ACT(/obj/machinery/computer/med_data, "del_c", ui_act_del_c, UI_ARG_NUM("del_c"))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_del_c)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/index = params["del_c"]
+	if(!index || !istype(active2(), /datum/data/record))
+		return
+
+	var/list/comments = active2().fields["comments"]
+	index = clamp(index, 1, length(comments))
+	if(comments[index])
+		comments.Cut(index, index + 1)
+
+UI_ACT(/obj/machinery/computer/med_data, "search", ui_act_search, UI_ARG_TEXT("t1"))
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_search)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	active1_handle = null
+	active2_handle = null
+	var/t1 = lowertext(params["t1"] || "")
+	if(!length(t1))
+		return
+
+	for(var/datum/data/record/R in GLOB.data_core.medical)
+		if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["b_dna"]))
+			active2_handle = om_handle(R)
+			break
+	if(!active2())
+		set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
+		return
+	for(var/datum/data/record/E in GLOB.data_core.general)
+		if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
+			active1_handle = om_handle(E)
+			break
+	screen = MED_DATA_RECORD
+
+UI_ACT(/obj/machinery/computer/med_data, "print_p", ui_act_print_p)
+UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_print_p)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(!printing)
+		printing = TRUE
+		SStgui.update_uis(src)
+		om_after(src, 5 SECONDS, PROC_REF(print_finish))
 
 /obj/machinery/computer/med_data/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
 	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
@@ -378,64 +437,53 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 	requires = PROMPT_ADJACENT
 	var/datum/data/record/record
 
-/**
- * Called in tgui_act() to process modal actions
- *
- * Arguments:
- * * action - The action passed by tgui
- * * params - The params passed by tgui
- */
-/obj/machinery/computer/med_data/proc/tgui_act_modal(action, params)
+DECLARE_UI_MODAL(/obj/machinery/computer/med_data)
+
+/obj/machinery/computer/med_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
-	var/id = params["id"] // The modal's ID
-	var/list/arguments = istext(params["arguments"]) ? json_decode(params["arguments"]) : params["arguments"]
-	switch(tgui_modal_act(src, action, params))
-		if(TGUI_MODAL_OPEN)
-			switch(id)
-				if("edit")
-					var/field = arguments["field"]
-					if(!length(field) || !field_edit_questions[field])
-						return
-					var/question = field_edit_questions[field]
-					var/choices = field_edit_choices[field]
-					if(length(choices))
-						tgui_modal_choice(src, id, question, arguments = arguments, value = arguments["value"], choices = choices)
-					else
-						tgui_modal_input(src, id, question, arguments = arguments, value = arguments["value"])
-				if("add_c")
-					tgui_modal_input(src, id, "Please enter your message:")
-				else
-					return FALSE
-		if(TGUI_MODAL_ANSWER)
-			var/answer = params["answer"]
-			switch(id)
-				if("edit")
-					var/field = arguments["field"]
-					if(!length(field) || !field_edit_questions[field])
-						return
-					var/list/choices = field_edit_choices[field]
-					if(length(choices) && !(answer in choices))
-						return
-
-					if(field == "age")
-						answer = text2num(answer)
-
-					if(istype(active2(), /datum/data/record) && (field in active2().fields))
-						active2().fields[field] = answer
-					else if(istype(active1(), /datum/data/record) && (field in active1().fields))
-						active1().fields[field] = answer
-				if("add_c")
-					if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
-						return
-					active2().fields["comments"] += list(list(
-						header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
-						text = answer
-					))
-				else
-					return FALSE
+	switch(id)
+		if("edit")
+			var/field = arguments["field"]
+			if(!length(field) || !field_edit_questions[field])
+				return
+			var/question = field_edit_questions[field]
+			var/choices = field_edit_choices[field]
+			if(length(choices))
+				tgui_modal_choice(src, id, question, arguments = arguments, value = arguments["value"], choices = choices)
+			else
+				tgui_modal_input(src, id, question, arguments = arguments, value = arguments["value"])
+		if("add_c")
+			tgui_modal_input(src, id, "Please enter your message:")
 		else
 			return FALSE
 
+/obj/machinery/computer/med_data/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	. = TRUE
+	switch(id)
+		if("edit")
+			var/field = arguments["field"]
+			if(!length(field) || !field_edit_questions[field])
+				return
+			var/list/choices = field_edit_choices[field]
+			if(length(choices) && !(answer in choices))
+				return
+
+			if(field == "age")
+				answer = text2num(answer)
+
+			if(istype(active2(), /datum/data/record) && (field in active2().fields))
+				active2().fields[field] = answer
+			else if(istype(active1(), /datum/data/record) && (field in active1().fields))
+				active1().fields[field] = answer
+		if("add_c")
+			if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
+				return
+			active2().fields["comments"] += list(list(
+				header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
+				text = answer
+			))
+		else
+			return FALSE
 /**
  * Called when the print timer finishes
  */

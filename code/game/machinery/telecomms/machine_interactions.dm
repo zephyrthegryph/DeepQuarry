@@ -102,11 +102,7 @@
 			return STATUS_CLOSE
 	. = ..()
 
-/obj/machinery/telecomms/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TelecommsMultitoolMenu", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/telecomms, "TelecommsMultitoolMenu")
 
 // Off-Site Relays
 //
@@ -150,9 +146,6 @@
 
 // The topic for Additional Options. Use this for checking href links for your specific option.
 // Example of how to use below.
-/obj/machinery/telecomms/proc/Options_Act(action, params)
-	return
-
 // RELAY
 
 /obj/machinery/telecomms/relay/Options_Menu()
@@ -165,28 +158,28 @@
 	data["receiving"] = receiving
 	return data
 
-/obj/machinery/telecomms/relay/Options_Act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/telecomms/relay, "receive", ui_act_receive)
+UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_receive)
+	. = TRUE
+	receiving = !receiving
+	set_temp("-% Receiving mode changed. %-", "average")
 
-	switch(action)
-		if("receive")
-			. = TRUE
-			receiving = !receiving
-			set_temp("-% Receiving mode changed. %-", "average")
-		if("broadcast")
-			. = TRUE
-			broadcasting = !broadcasting
-			set_temp("-% Broadcasting mode changed. %-", "average")
-		if("change_listening")
-			. = TRUE
-			//Lock to the station OR lock to the current position!
-			//You need at least two receivers and two broadcasters for this to work, this includes the machine.
-			var/result = toggle_level()
-			if(result)
-				set_temp("-% [src]'s signal has been successfully changed.", "average")
-			else
-				set_temp("-% [src] could not lock it's signal onto the station. Two broadcasters or receivers required.", "average")
+UI_ACT(/obj/machinery/telecomms/relay, "broadcast", ui_act_broadcast)
+UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_broadcast)
+	. = TRUE
+	broadcasting = !broadcasting
+	set_temp("-% Broadcasting mode changed. %-", "average")
+
+UI_ACT(/obj/machinery/telecomms/relay, "change_listening", ui_act_change_listening)
+UI_ACT_PROC(/obj/machinery/telecomms/relay, ui_act_change_listening)
+	. = TRUE
+	//Lock to the station OR lock to the current position!
+	//You need at least two receivers and two broadcasters for this to work, this includes the machine.
+	var/result = toggle_level()
+	if(result)
+		set_temp("-% [src]'s signal has been successfully changed.", "average")
+	else
+		set_temp("-% [src] could not lock it's signal onto the station. Two broadcasters or receivers required.", "average")
 
 // BUS
 
@@ -196,14 +189,10 @@
 	data["change_freq"] = change_frequency
 	return data
 
-/obj/machinery/telecomms/bus/Options_Act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("change_freq")
-			. = TRUE
-			om_ask(ui.user, /datum/om/prompt/number/telecomms_change_frequency, PROC_REF(change_frequency_entered), title = "[src]", default = network)
+UI_ACT(/obj/machinery/telecomms/bus, "change_freq", ui_act_change_freq)
+UI_ACT_PROC(/obj/machinery/telecomms/bus, ui_act_change_freq)
+	. = TRUE
+	om_ask(ui.user, /datum/om/prompt/number/telecomms_change_frequency, PROC_REF(change_frequency_entered), title = "[src]", default = network)
 
 /// A cancel turns frequency changing off.
 /datum/om/prompt/number/telecomms_change_frequency
@@ -246,15 +235,11 @@
 /obj/machinery/telecomms/broadcaster
 	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 
-/obj/machinery/telecomms/broadcaster/Options_Act(action, params)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("range")
-			var/new_range = params["range"]
-			overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
-			update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
+UI_ACT(/obj/machinery/telecomms/broadcaster, "range", ui_act_range, UI_ARG_NUM("range"))
+UI_ACT_PROC(/obj/machinery/telecomms/broadcaster, ui_act_range)
+	var/new_range = params["range"]
+	overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
+	update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
 
 // RECEIVER
 /obj/machinery/telecomms/receiver/Options_Menu()
@@ -268,95 +253,99 @@
 /obj/machinery/telecomms/receiver
 	interact_offline = TRUE // because you can accidentally nuke power grids with these, need to be able to fix mistake
 
-/obj/machinery/telecomms/receiver/Options_Act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/telecomms/receiver, "range", ui_act_range, UI_ARG_NUM("range"))
+UI_ACT_PROC(/obj/machinery/telecomms/receiver, ui_act_range)
+	var/new_range = params["range"]
+	overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
+	update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
 
-	switch(action)
-		if("range")
-			var/new_range = params["range"]
-			overmap_range = clamp(new_range, overmap_range_min, overmap_range_max)
-			update_idle_power_usage(initial(idle_power_usage)**(overmap_range+1))
+/obj/machinery/telecomms/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	add_fingerprint(user)
+	return TRUE
 
-/obj/machinery/telecomms/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/telecomms, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_toggle)
+	src.toggled = !src.toggled
+	set_temp("-% [src] has been [src.toggled ? "activated" : "deactivated"].", "average")
+	update_power()
+	. = TRUE
 
-	var/obj/item/multitool/P = get_multitool(ui.user)
+UI_ACT(/obj/machinery/telecomms, "id", ui_act_id)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_id)
+	om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(id_entered), title = "[src]", message = "Specify the new ID for this machine", default = id)
+	. = TRUE
 
-	switch(action)
-		if("toggle")
-			src.toggled = !src.toggled
-			set_temp("-% [src] has been [src.toggled ? "activated" : "deactivated"].", "average")
-			update_power()
-			. = TRUE
+UI_ACT(/obj/machinery/telecomms, "network", ui_act_network)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_network)
+	om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(network_entered), title = "[src]", message = "Specify the new network for this machine. This will break all current links.", default = network, max_length = 15)
+	. = TRUE
 
-		if("id")
-			om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(id_entered), title = "[src]", message = "Specify the new ID for this machine", default = id)
-			. = TRUE
+UI_ACT(/obj/machinery/telecomms, "freq", ui_act_freq)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_freq)
+	om_ask(ui.user, /datum/om/prompt/number/telecomms_setting, PROC_REF(filter_frequency_entered), title = "[src]", message = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", max = 9999)
+	. = TRUE
 
-		if("network")
-			om_ask(ui.user, /datum/om/prompt/text/telecomms_setting, PROC_REF(network_entered), title = "[src]", message = "Specify the new network for this machine. This will break all current links.", default = network, max_length = 15)
-			. = TRUE
+UI_ACT(/obj/machinery/telecomms, "delete", ui_act_delete, UI_ARG_NUM("delete"))
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_delete)
+	var/x = params["delete"]
+	set_temp("-% Removed frequency filter [x] %-", "average")
+	LAZYREMOVE(freq_listening, x)
+	. = TRUE
 
-		if("freq")
-			om_ask(ui.user, /datum/om/prompt/number/telecomms_setting, PROC_REF(filter_frequency_entered), title = "[src]", message = "Specify a new frequency to filter (GHz). Decimals assigned automatically.", max = 9999)
-			. = TRUE
+UI_ACT(/obj/machinery/telecomms, "unlink", ui_act_unlink, UI_ARG_NUM("unlink"))
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_unlink)
+	var/unlink_index = params["unlink"]
+	if(unlink_index >= 1 && unlink_index <= length(links))
+		var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink_index)
+		set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
 
-		if("delete")
-			var/x = text2num(params["delete"])
-			set_temp("-% Removed frequency filter [x] %-", "average")
-			LAZYREMOVE(freq_listening, x)
-			. = TRUE
+		// Remove link entries from both T and src.
 
-		if("unlink")
-			var/unlink_index = text2num(params["unlink"])
-			if(unlink_index >= 1 && unlink_index <= length(links))
-				var/obj/machinery/telecomms/T = LAZYACCESS(links, unlink_index)
-				set_temp("-% Removed \ref[T] [T.name] from linked entities. %-", "average")
-
-				// Remove link entries from both T and src.
-
-				if(src in T.links)
-					LAZYREMOVE(T.links, src)
-				LAZYREMOVE(links, T)
-				. = TRUE
-
-		if("link")
-			if(P)
-				if(P.buffer() && P.buffer() != src)
-					if(!(src in P.buffer().links))
-						LAZYADD(P.buffer().links, src)
-
-					if(!(P.buffer() in src.links))
-						LAZYADD(src.links, P.buffer())
-
-					set_temp("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-", "average")
-
-				else
-					set_temp("-% Unable to acquire buffer %-", "average")
-				. = TRUE
-
-		if("buffer")
-			if(P)
-				P.buffer_handle = om_handle(src)
-				set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
-			. = TRUE
-
-		if("flush")
-			if(P)
-				set_temp("-% Buffer successfully flushed. %-", "average")
-				P.buffer_handle = null
-			. = TRUE
-
-		if("cleartemp")
-			temp = null
-			. = TRUE
-
-	if(Options_Act(action, params))
+		if(src in T.links)
+			LAZYREMOVE(T.links, src)
+		LAZYREMOVE(links, T)
 		. = TRUE
 
-	add_fingerprint(ui.user)
+UI_ACT(/obj/machinery/telecomms, "link", ui_act_link)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_link)
+	var/obj/item/multitool/P = get_multitool(ui.user)
+	if(P)
+		if(P.buffer() && P.buffer() != src)
+			if(!(src in P.buffer().links))
+				LAZYADD(P.buffer().links, src)
+
+			if(!(P.buffer() in src.links))
+				LAZYADD(src.links, P.buffer())
+
+			set_temp("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-", "average")
+
+		else
+			set_temp("-% Unable to acquire buffer %-", "average")
+		. = TRUE
+
+UI_ACT(/obj/machinery/telecomms, "buffer", ui_act_buffer)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_buffer)
+	var/obj/item/multitool/P = get_multitool(ui.user)
+	if(P)
+		P.buffer_handle = om_handle(src)
+		set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
+	. = TRUE
+
+UI_ACT(/obj/machinery/telecomms, "flush", ui_act_flush)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_flush)
+	var/obj/item/multitool/P = get_multitool(ui.user)
+	if(P)
+		set_temp("-% Buffer successfully flushed. %-", "average")
+		P.buffer_handle = null
+	. = TRUE
+
+UI_ACT(/obj/machinery/telecomms, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/telecomms, ui_act_cleartemp)
+	temp = null
+	. = TRUE
+
 
 /// A telecomms machine setting; re-checked on the answer: the answerer can still access the machine.
 /datum/om/prompt/text/telecomms_setting

@@ -167,12 +167,7 @@ DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/rdconsole_tg/tgui_interact(mob/user, datum/tgui/ui = null)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if (!ui)
-		ui = new(user, src, "Techweb", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/rdconsole_tg, "Techweb")
 
 /obj/machinery/computer/rdconsole_tg/ui_assets(mob/user)
 	return list(
@@ -321,77 +316,82 @@ DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 		"id_cache" = flat_id_cache,
 	)
 
-/obj/machinery/computer/rdconsole_tg/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if (.)
-		return
-
+/obj/machinery/computer/rdconsole_tg/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(usr)
-
 	// Check if the console is locked to block any actions occuring
 	if (locked && action != "toggleLock")
 		atom_say("Console is locked, cannot perform further actions.")
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "toggleLock", ui_act_togglelock)
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_togglelock)
+	if(allowed(usr))
+		set_locked(!locked)
+	else
+		to_chat(usr, span_boldwarning("Unauthorized Access."))
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "researchNode", ui_act_researchnode, UI_ARG_VALUE("node_id"))
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_researchnode)
+	research_node(params["node_id"], usr)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "enqueueNode", ui_act_enqueuenode, UI_ARG_VALUE("node_id"))
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_enqueuenode)
+	enqueue_node(params["node_id"], usr)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "dequeueNode", ui_act_dequeuenode, UI_ARG_VALUE("node_id"))
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_dequeuenode)
+	dequeue_node(params["node_id"], usr)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "ejectDisk", ui_act_ejectdisk, UI_ARG_VALUE("type"))
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_ejectdisk)
+	eject_disk(params["type"])
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "uploadDisk", ui_act_uploaddisk, UI_ARG_VALUE("type"))
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_uploaddisk)
+	if(params["type"] == RND_DESIGN_DISK)
+		if(QDELETED(d_disk))
+			atom_say("No design disk inserted!")
+			return TRUE
+		for(var/D in d_disk.blueprints)
+			if(D)
+				stored_research.add_design(D, TRUE)
+		atom_say("Uploading blueprints from disk.")
+		d_disk.on_upload(stored_research, src)
 		return TRUE
-
-	switch (action)
-		if ("toggleLock")
-			if(allowed(usr))
-				set_locked(!locked)
-			else
-				to_chat(usr, span_boldwarning("Unauthorized Access."))
+	if(params["type"] == RND_TECH_DISK)
+		if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
+			atom_say("Servers busy!")
+			return
+		if (QDELETED(t_disk))
+			atom_say("No tech disk inserted!")
 			return TRUE
+		COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
+		atom_say("Uploading technology disk.")
+		t_disk.stored_research().copy_research_to(stored_research)
+	return TRUE
 
-		if ("researchNode")
-			research_node(params["node_id"], usr)
-			return TRUE
+//Tech disk-only action.
 
-		if ("enqueueNode")
-			enqueue_node(params["node_id"], usr)
-			return TRUE
-
-		if ("dequeueNode")
-			dequeue_node(params["node_id"], usr)
-			return TRUE
-
-		if("ejectDisk")
-			eject_disk(params["type"])
-			return TRUE
-
-		if("uploadDisk")
-			if(params["type"] == RND_DESIGN_DISK)
-				if(QDELETED(d_disk))
-					atom_say("No design disk inserted!")
-					return TRUE
-				for(var/D in d_disk.blueprints)
-					if(D)
-						stored_research.add_design(D, TRUE)
-				atom_say("Uploading blueprints from disk.")
-				d_disk.on_upload(stored_research, src)
-				return TRUE
-			if(params["type"] == RND_TECH_DISK)
-				if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
-					atom_say("Servers busy!")
-					return
-				if (QDELETED(t_disk))
-					atom_say("No tech disk inserted!")
-					return TRUE
-				COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
-				atom_say("Uploading technology disk.")
-				t_disk.stored_research().copy_research_to(stored_research)
-			return TRUE
-
-		//Tech disk-only action.
-		if("loadTech")
-			if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
-				atom_say("Servers busy!")
-				return
-			if(QDELETED(t_disk))
-				atom_say("No tech disk inserted!")
-				return
-			COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
-			atom_say("Downloading to technology disk.")
-			stored_research.copy_research_to(t_disk.stored_research())
-			return TRUE
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "loadTech", ui_act_loadtech)
+UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_loadtech)
+	if(!COOLDOWN_FINISHED(src, cooldowncopy)) // prevents MC hang
+		atom_say("Servers busy!")
+		return
+	if(QDELETED(t_disk))
+		atom_say("No tech disk inserted!")
+		return
+	COOLDOWN_START(src, cooldowncopy, 5 SECONDS)
+	atom_say("Downloading to technology disk.")
+	stored_research.copy_research_to(t_disk.stored_research())
+	return TRUE
 
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)
 	if(type == RND_DESIGN_DISK && d_disk)

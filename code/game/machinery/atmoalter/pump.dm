@@ -132,11 +132,7 @@
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortablePump", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/portable_atmospherics/powered/pump, "PortablePump")
 
 
 /obj/machinery/portable_atmospherics/powered/pump/tgui_state(mob/user)
@@ -166,41 +162,44 @@
 
 	return data
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
+	set_on(!on)
+	if(on)
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
+	. = 1
+	update_icon()
 
-	switch(action)
-		if("power")
-			set_on(!on)
-			if(on)
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
-			. = 1
-		if("direction")
-			direction_out = !direction_out
-			. = 1
-		if("eject")
-			if(holding)
-				holding.forceMove(loc)
-				holding = null
-			. = 1
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "reset")
-				pressure = initial(target_pressure)
-				. = TRUE
-			else if(pressure == "min")
-				pressure = pressuremin
-				. = TRUE
-			else if(pressure == "max")
-				pressure = pressuremax
-				. = TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				target_pressure = clamp(round(pressure), pressuremin, pressuremax)
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "direction", ui_act_direction)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_direction)
+	direction_out = !direction_out
+	. = 1
+	update_icon()
 
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_eject)
+	if(holding)
+		holding.forceMove(loc)
+		holding = null
+	. = 1
+	update_icon()
+
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "reset")
+		pressure = initial(target_pressure)
+		. = TRUE
+	else if(pressure == "min")
+		pressure = pressuremin
+		. = TRUE
+	else if(pressure == "max")
+		pressure = pressuremax
+		. = TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		target_pressure = clamp(round(pressure), pressuremin, pressuremax)
 	update_icon()
 
 

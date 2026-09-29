@@ -26,8 +26,8 @@
 
 DECLARE_REF(/obj/machinery/computer/security, "camera", OWNED, null)
 
-/obj/machinery/computer/security/tgui_interact(mob/user, datum/tgui/ui = null)
-	camera.tgui_interact(user, ui)
+/obj/machinery/computer/security/ui_redirect(mob/user)
+	return camera
 
 /obj/machinery/computer/security/tgui_state(mob/user)
 	return GLOB.tgui_camera_view

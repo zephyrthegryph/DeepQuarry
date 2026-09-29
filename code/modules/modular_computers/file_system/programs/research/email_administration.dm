@@ -61,86 +61,92 @@
 
 	return data
 
-/datum/computer_file/program/email_administration/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
-	// High security - can only be operated when the user has an ID with access on them.
+/datum/computer_file/program/email_administration/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/obj/item/card/id/I = ui.user.GetIdCard()
 	if(!istype(I) || !(ACCESS_NETWORK in I.GetAccess()))
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/email_administration, "back", ui_act_back)
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_back)
+	if(error)
+		error = ""
+	else if(current_message())
+		current_message_handle = null
+	else
+		current_account_handle = null
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/email_administration, "ban", ui_act_ban)
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_ban)
+	var/obj/item/card/id/I = ui.user.GetIdCard()
+	if(!current_account())
 		return TRUE
 
-	switch(action)
-		if("back")
-			if(error)
-				error = ""
-			else if(current_message())
-				current_message_handle = null
-			else
-				current_account_handle = null
-			return TRUE
+	current_account().suspended = !current_account().suspended
+	GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended by SA [I.registered_name] ([I.assignment]).")
+	error = "Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended."
+	return TRUE
 
-		if("ban")
-			if(!current_account())
-				return TRUE
+UI_ACT(/datum/computer_file/program/email_administration, "changepass", ui_act_changepass)
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_changepass)
+	var/obj/item/card/id/I = ui.user.GetIdCard()
+	if(!current_account())
+		return TRUE
 
-			current_account().suspended = !current_account().suspended
-			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended by SA [I.registered_name] ([I.assignment]).")
-			error = "Account [current_account().login] has been [current_account().suspended ? "" : "un" ]suspended."
-			return TRUE
+	var/newpass = act_ask(ui.user, action, params, ui, "k96", /datum/om/prompt/text, message = "Enter new password for account [current_account().login]", title = "Password", max_length = 100)
+	if(isnull(newpass))
+		return
+	if(!newpass)
+		return TRUE
+	current_account().password = newpass
+	GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Password for account [current_account().login] has been changed by SA [I.registered_name] ([I.assignment]).")
+	return TRUE
 
-		if("changepass")
-			if(!current_account())
-				return TRUE
+UI_ACT(/datum/computer_file/program/email_administration, "viewmail", ui_act_viewmail, UI_ARG_NUM("viewmail"))
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewmail)
+	if(!current_account())
+		return TRUE
 
-			var/newpass = act_ask(ui.user, action, params, ui, "k96", /datum/om/prompt/text, message = "Enter new password for account [current_account().login]", title = "Password", max_length = 100)
-			if(isnull(newpass))
-				return
-			if(!newpass)
-				return TRUE
-			current_account().password = newpass
-			GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: SA-EDIT Password for account [current_account().login] has been changed by SA [I.registered_name] ([I.assignment]).")
-			return TRUE
+	for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
+		if(received_message.uid == params["viewmail"])
+			current_message_handle = om_handle(received_message)
+			break
+	return TRUE
 
-		if("viewmail")
-			if(!current_account())
-				return TRUE
+UI_ACT(/datum/computer_file/program/email_administration, "viewaccount", ui_act_viewaccount, UI_ARG_NUM("viewaccount"))
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_viewaccount)
+	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
+		if(email_account.uid == params["viewaccount"])
+			current_account_handle = om_handle(email_account)
+			break
+	return TRUE
 
-			for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
-				if(received_message.uid == text2num(params["viewmail"]))
-					current_message_handle = om_handle(received_message)
-					break
-			return TRUE
+UI_ACT(/datum/computer_file/program/email_administration, "newaccount", ui_act_newaccount)
+UI_ACT_PROC(/datum/computer_file/program/email_administration, ui_act_newaccount)
+	var/newdomain = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice, message = "Pick domain:", title = "Domain name", choices = using_map.usable_email_tlds)
+	if(isnull(newdomain))
+		return
+	if(!newdomain)
+		return TRUE
+	var/newlogin = act_ask(ui.user, action, params, ui, "k124", /datum/om/prompt/text, message = "Pick account name (@[newdomain]):", title = "Account name", max_length = 100)
+	if(isnull(newlogin))
+		return
+	if(!newlogin)
+		return TRUE
 
-		if("viewaccount")
-			for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
-				if(email_account.uid == text2num(params["viewaccount"]))
-					current_account_handle = om_handle(email_account)
-					break
-			return TRUE
+	var/complete_login = "[newlogin]@[newdomain]"
+	if(GLOB.ntnet_global.does_email_exist(complete_login))
+		error = "Error creating account: An account with same address already exists."
+		return TRUE
 
-		if("newaccount")
-			var/newdomain = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice, message = "Pick domain:", title = "Domain name", choices = using_map.usable_email_tlds)
-			if(isnull(newdomain))
-				return
-			if(!newdomain)
-				return TRUE
-			var/newlogin = act_ask(ui.user, action, params, ui, "k124", /datum/om/prompt/text, message = "Pick account name (@[newdomain]):", title = "Account name", max_length = 100)
-			if(isnull(newlogin))
-				return
-			if(!newlogin)
-				return TRUE
-
-			var/complete_login = "[newlogin]@[newdomain]"
-			if(GLOB.ntnet_global.does_email_exist(complete_login))
-				error = "Error creating account: An account with same address already exists."
-				return TRUE
-
-			var/datum/computer_file/data/email_account/new_account = new/datum/computer_file/data/email_account()
-			new_account.login = complete_login
-			new_account.password = GenerateKey()
-			error = "Email [new_account.login] has been created, with generated password [new_account.password]"
-			return TRUE
+	var/datum/computer_file/data/email_account/new_account = new/datum/computer_file/data/email_account()
+	new_account.login = complete_login
+	new_account.password = GenerateKey()
+	error = "Email [new_account.login] has been created, with generated password [new_account.password]"
+	return TRUE
 
 /// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/email_administration/proc/current_account() as /datum/computer_file/data/email_account

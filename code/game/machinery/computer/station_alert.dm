@@ -52,8 +52,8 @@ DECLARE_REF(/obj/machinery/computer/station_alert, "alarm_monitor", OWNED, null)
 /obj/machinery/computer/station_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/computer/station_alert/tgui_interact(mob/user)
-	alarm_monitor.tgui_interact(user)
+/obj/machinery/computer/station_alert/ui_redirect(mob/user)
+	return alarm_monitor
 
 /obj/machinery/computer/station_alert/proc/update_console_icon()
 	if(operable())

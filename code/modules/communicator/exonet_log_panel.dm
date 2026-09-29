@@ -18,13 +18,12 @@
 /datum/exonet_log_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/exonet_log_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/exonet_log_panel, "ExonetLog", UI_TITLE("Exonet Message Log"))
+
+/datum/exonet_log_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host() || user != host())
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ExonetLog", "Exonet Message Log")
-		ui.open()
+		return FALSE
+	return TRUE
 
 /datum/exonet_log_panel/tgui_data(mob/user)
 	var/list/data = list()

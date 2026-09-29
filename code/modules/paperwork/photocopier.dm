@@ -37,11 +37,7 @@
 	)
 	..()
 
-/obj/machinery/photocopier/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Photocopier", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
 
 /obj/machinery/photocopier/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -57,49 +53,51 @@
 
 	return data
 
-/obj/machinery/photocopier/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/photocopier, "make_copy", ui_act_make_copy)
+UI_ACT_PROC(/obj/machinery/photocopier, ui_act_make_copy)
+	om_after(src, 0, PROC_REF(copy_operation), ui.user)
+	. = TRUE
 
-	switch(action)
-		if("make_copy")
-			om_after(src, 0, PROC_REF(copy_operation), ui.user)
-			. = TRUE
-		if("remove")
-			if(copyitem)
-				copyitem.forceMove(ui.user.loc)
-				ui.user.put_in_hands(copyitem)
-				to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-				copyitem = null
-			else if(has_buckled_mobs())
-				to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
-			. = TRUE
-		if("set_copies")
-			copies = clamp(text2num(params["num_copies"]), 1, maxcopies)
-			. = TRUE
-		if("ai_photo")
-			if(!issilicon(ui.user))
-				return
-			if(!operable())
-				return
+UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
+UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
+	if(copyitem)
+		copyitem.forceMove(ui.user.loc)
+		ui.user.put_in_hands(copyitem)
+		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
+		copyitem = null
+	else if(has_buckled_mobs())
+		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
+	. = TRUE
 
-			if(toner >= 5)
-				var/mob/living/silicon/tempAI = ui.user
-				var/obj/item/camera/siliconcam/camera = tempAI.aiCamera
+UI_ACT(/obj/machinery/photocopier, "set_copies", ui_act_set_copies, UI_ARG_NUM("num_copies"))
+UI_ACT_PROC(/obj/machinery/photocopier, ui_act_set_copies)
+	copies = clamp(params["num_copies"], 1, maxcopies)
+	. = TRUE
 
-				if(!camera)
-					return
-				var/obj/item/photo/selection = camera.selectpicture(ui.user)
-				if (!selection)
-					return
+UI_ACT(/obj/machinery/photocopier, "ai_photo", ui_act_ai_photo)
+UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
+	if(!issilicon(ui.user))
+		return
+	if(!operable())
+		return
 
-				var/obj/item/photo/p = photocopy(selection)
-				if (p.desc == "")
-					p.desc += "Copied by [tempAI.name]"
-				else
-					p.desc += " - Copied by [tempAI.name]"
-				toner -= 5
-			. = TRUE
+	if(toner >= 5)
+		var/mob/living/silicon/tempAI = ui.user
+		var/obj/item/camera/siliconcam/camera = tempAI.aiCamera
+
+		if(!camera)
+			return
+		var/obj/item/photo/selection = camera.selectpicture(ui.user)
+		if (!selection)
+			return
+
+		var/obj/item/photo/p = photocopy(selection)
+		if (p.desc == "")
+			p.desc += "Copied by [tempAI.name]"
+		else
+			p.desc += " - Copied by [tempAI.name]"
+		toner -= 5
+	. = TRUE
 
 /// Makes `copies` copies, one after another (each a few steps on the machine's timers).
 /obj/machinery/photocopier/proc/copy_operation(mob/user)

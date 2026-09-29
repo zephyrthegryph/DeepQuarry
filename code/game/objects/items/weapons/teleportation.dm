@@ -37,11 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/locator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Locator", "Persistent Signal Locator")
-		ui.open()
+DECLARE_UI(/obj/item/locator, "Locator", UI_TITLE("Persistent Signal Locator"))
 
 /obj/item/locator/tgui_data(mob/user)
 	var/list/data = list()
@@ -61,62 +57,67 @@ DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_
 		return "weak"
 	return "very weak"
 
-/obj/item/locator/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
-	if(usr.stat || usr.restrained())
-		return TRUE
+/obj/item/locator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/turf/current_location = get_turf(usr)
+	if(usr.stat || usr.restrained())
+		return FALSE
 	if(!current_location || current_location.z == 3)
 		to_chat(usr, "The [src] is malfunctioning.")
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/locator, "freq", ui_act_freq, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/item/locator, ui_act_freq)
+	frequency += params["delta"]
+	frequency = sanitize_frequency(frequency)
+	return TRUE
+
+UI_ACT(/obj/item/locator, "clear", ui_act_clear)
+UI_ACT_PROC(/obj/item/locator, ui_act_clear)
+	last_beacons = null
+	last_implants = null
+	last_location = null
+	return TRUE
+
+UI_ACT(/obj/item/locator, "refresh", ui_act_refresh)
+UI_ACT_PROC(/obj/item/locator, ui_act_refresh)
+	var/turf/sr = get_turf(src)
+	if(!sr)
 		return TRUE
-	switch(action)
-		if("freq")
-			frequency += text2num(params["delta"])
-			frequency = sanitize_frequency(frequency)
-			return TRUE
-		if("clear")
-			last_beacons = null
-			last_implants = null
-			last_location = null
-			return TRUE
-		if("refresh")
-			var/turf/sr = get_turf(src)
-			if(!sr)
-				return TRUE
-			var/list/b = list()
-			for(var/obj/item/radio/beacon/W in REGISTRY_MEMBERS(REGISTRY_BEACONS))
-				if(W.frequency != frequency)
-					continue
-				var/turf/tr = get_turf(W)
-				if(!tr || tr.z != sr.z)
-					continue
-				var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
-				b += list(list(
-					"id" = W.code,
-					"direction" = dir2text(get_dir(sr, tr)),
-					"strength" = strength_label(distance),
-				))
-			var/list/i = list()
-			for(var/obj/item/implant/tracking/W in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
-				if(!W.implanted || !(istype(W.loc, /obj/item/organ/external) || ismob(W.loc) || W.malfunction) || is_vore_jammed(W))
-					continue
-				var/turf/tr = get_turf(W)
-				if(!tr || tr.z != sr.z)
-					continue
-				var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
-				if(distance >= 20)
-					continue
-				i += list(list(
-					"id" = W.id,
-					"direction" = dir2text(get_dir(sr, tr)),
-					"strength" = strength_label(distance),
-				))
-			last_beacons = b
-			last_implants = i
-			last_location = "[sr.x], [sr.y], [sr.z]"
-			return TRUE
+	var/list/b = list()
+	for(var/obj/item/radio/beacon/W in REGISTRY_MEMBERS(REGISTRY_BEACONS))
+		if(W.frequency != frequency)
+			continue
+		var/turf/tr = get_turf(W)
+		if(!tr || tr.z != sr.z)
+			continue
+		var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
+		b += list(list(
+			"id" = W.code,
+			"direction" = dir2text(get_dir(sr, tr)),
+			"strength" = strength_label(distance),
+		))
+	var/list/i = list()
+	for(var/obj/item/implant/tracking/W in REGISTRY_MEMBERS(REGISTRY_TRACKING_IMPLANTS))
+		if(!W.implanted || !(istype(W.loc, /obj/item/organ/external) || ismob(W.loc) || W.malfunction) || is_vore_jammed(W))
+			continue
+		var/turf/tr = get_turf(W)
+		if(!tr || tr.z != sr.z)
+			continue
+		var/distance = max(abs(tr.x - sr.x), abs(tr.y - sr.y))
+		if(distance >= 20)
+			continue
+		i += list(list(
+			"id" = W.id,
+			"direction" = dir2text(get_dir(sr, tr)),
+			"strength" = strength_label(distance),
+		))
+	last_beacons = b
+	last_implants = i
+	last_location = "[sr.x], [sr.y], [sr.z]"
+	return TRUE
 
 
 /*

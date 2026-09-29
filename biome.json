@@ -22,6 +22,7 @@
 			"tgui/public/tgui.html",
 			"!tgui/packages/tgfont/dist",
 			"!tgui/packages/tgui-setup/helpers.js",
+			"!tgui/packages/tgui/interfaces/generated",
 			"!**/bun.lock"
 		]
 	},

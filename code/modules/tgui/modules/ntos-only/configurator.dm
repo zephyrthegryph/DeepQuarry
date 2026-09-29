@@ -37,15 +37,12 @@
 	data["hardware"] = all_entries
 	return data
 
-/datum/tgui_module/computer_configurator/tgui_act(action, params)
-	if(..())
-		return
-	switch(action)
-		if("PC_toggle_component")
-			var/obj/item/computer_hardware/H = movable().find_hardware_by_name(params["name"])
-			if(H && istype(H))
-				H.enabled = !H.enabled
-			. = TRUE
+UI_ACT(/datum/tgui_module/computer_configurator, "PC_toggle_component", ui_act_pc_toggle_component, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/datum/tgui_module/computer_configurator, ui_act_pc_toggle_component)
+	var/obj/item/computer_hardware/H = movable().find_hardware_by_name(params["name"])
+	if(H && istype(H))
+		H.enabled = !H.enabled
+	. = TRUE
 
 /// LC-refs: the movable this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/computer_configurator/proc/movable() as /obj/item/modular_computer

@@ -263,11 +263,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		data["vocal"] = vocal
 	return data
 
-/mob/living/bot/medbot/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Medbot", name)
-		ui.open()
+DECLARE_UI(/mob/living/bot/medbot, "Medbot")
 
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
 /mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
@@ -286,54 +282,74 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 
-/mob/living/bot/medbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/mob/living/bot/medbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
+UI_ACT(/mob/living/bot/medbot, "power", ui_act_power)
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_power)
 	. = TRUE
-	switch(action)
-		if("power")
-			if(!access_scanner.allowed(ui.user))
-				return FALSE
-			if(on)
-				turn_off()
-			else
-				turn_on()
+	if(!access_scanner.allowed(ui.user))
+		return FALSE
+	if(on)
+		turn_off()
+	else
+		turn_on()
 
+UI_ACT(/mob/living/bot/medbot, "adj_urgency", ui_act_adj_urgency, UI_ARG_NUM("val"))
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_urgency)
+	. = TRUE
 	if(locked && !issilicon(ui.user))
 		return TRUE
+	var/rank = params["val"]
+	if(isnull(rank))
+		return FALSE
+	min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
+	. = TRUE
 
-	switch(action)
-		if("adj_urgency")
-			var/rank = text2num(params["val"])
-			if(isnull(rank))
-				return FALSE
-			min_urgency = clamp(round(rank), MEDBOT_MIN_URGENCY, MEDBOT_MAX_URGENCY)
-			. = TRUE
+UI_ACT(/mob/living/bot/medbot, "adj_inject", ui_act_adj_inject, UI_ARG_NUM("val", MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION))
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_adj_inject)
+	. = TRUE
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	injection_amount = params["val"]
+	. = TRUE
 
-		if("adj_inject")
-			injection_amount = clamp(text2num(params["val"]), MEDBOT_MIN_INJECTION, MEDBOT_MAX_INJECTION)
-			. = TRUE
+UI_ACT(/mob/living/bot/medbot, "use_beaker", ui_act_use_beaker)
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_use_beaker)
+	. = TRUE
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	use_beaker = !use_beaker
+	. = TRUE
 
-		if("use_beaker")
-			use_beaker = !use_beaker
-			. = TRUE
+UI_ACT(/mob/living/bot/medbot, "eject", ui_act_eject)
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_eject)
+	. = TRUE
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	if(reagent_glass)
+		reagent_glass.forceMove(get_turf(src))
+		reagent_glass = null
+	. = TRUE
 
-		if("eject")
-			if(reagent_glass)
-				reagent_glass.forceMove(get_turf(src))
-				reagent_glass = null
-			. = TRUE
+UI_ACT(/mob/living/bot/medbot, "togglevoice", ui_act_togglevoice)
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_togglevoice)
+	. = TRUE
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	vocal = !vocal
+	. = TRUE
 
-		if("togglevoice")
-			vocal = !vocal
-			. = TRUE
-
-		if("declaretreatment")
-			declare_treatment = !declare_treatment
-			. = TRUE
+UI_ACT(/mob/living/bot/medbot, "declaretreatment", ui_act_declaretreatment)
+UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
+	. = TRUE
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	declare_treatment = !declare_treatment
+	. = TRUE
 
 /mob/living/bot/medbot/emag_act(remaining_uses, mob/user)
 	. = ..()

@@ -3,11 +3,7 @@
 /obj/item/holowarrant/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/holowarrant/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Holowarrant", "Holographic Warrant")
-		ui.open()
+DECLARE_UI(/obj/item/holowarrant, "Holowarrant", UI_TITLE("Holographic Warrant"))
 
 /obj/item/holowarrant/tgui_data(mob/user)
 	var/list/data = list()

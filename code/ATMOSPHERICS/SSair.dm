@@ -605,12 +605,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 /datum/controller/subsystem/air/tgui_state(mob/user)
 	return ADMIN_STATE(R_DEBUG)
 
-/datum/controller/subsystem/air/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AtmosControlPanel", "Atmospherics Debug")
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/datum/controller/subsystem/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
 
 /datum/controller/subsystem/air/tgui_data(mob/user)
 	var/list/data = list()
@@ -633,31 +628,37 @@ GLOBAL_LIST_EMPTY(colored_images)
 	data["showing_user"] = user.hud_used.atmos_debug_overlays
 	return data
 
-/datum/controller/subsystem/air/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	var/mob/user = ui?.user
+/datum/controller/subsystem/air/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!user || !check_rights_for(user.client, R_DEBUG))
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/controller/subsystem/air, "move-to-target", ui_act_move_to_target, UI_ARG_REF("spot", null, /turf))
+UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_move_to_target)
+	var/turf/target = params["spot"]
+	if(!target)
 		return
-	switch(action)
-		if("move-to-target")
-			var/turf/target = locate(params["spot"])
-			if(!target)
-				return
-			user.forceMove(target)
-		if("toggle-freeze")
-			can_fire = !can_fire
-			return TRUE
-		// toggle_show_group / toggle_show_all removed — excited groups live in the
-		// Rust arena and have no DM turf_list to display/hide.
-		if("toggle_show_all")
-			display_all_groups = !display_all_groups
-			return TRUE
-		if("toggle_user_display")
-			user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
-			if(user.hud_used.atmos_debug_overlays)
-				user.client.images += GLOB.colored_images
-			else
-				user.client.images -= GLOB.colored_images
-			return TRUE
+	user.forceMove(target)
+
+UI_ACT(/datum/controller/subsystem/air, "toggle-freeze", ui_act_toggle_freeze)
+UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_freeze)
+	can_fire = !can_fire
+	return TRUE
+// toggle_show_group / toggle_show_all removed — excited groups live in the
+// Rust arena and have no DM turf_list to display/hide.
+
+UI_ACT(/datum/controller/subsystem/air, "toggle_show_all", ui_act_toggle_show_all)
+UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_show_all)
+	display_all_groups = !display_all_groups
+	return TRUE
+
+UI_ACT(/datum/controller/subsystem/air, "toggle_user_display", ui_act_toggle_user_display)
+UI_ACT_PROC(/datum/controller/subsystem/air, ui_act_toggle_user_display)
+	user.hud_used.atmos_debug_overlays = !user.hud_used.atmos_debug_overlays
+	if(user.hud_used.atmos_debug_overlays)
+		user.client.images += GLOB.colored_images
+	else
+		user.client.images -= GLOB.colored_images
+	return TRUE

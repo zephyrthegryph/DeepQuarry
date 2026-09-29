@@ -15,12 +15,10 @@
 /datum/error_viewer/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_DEBUG)
 
-/datum/error_viewer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ensure_back_pointer()
-		ui = new(user, src, "ErrorViewer", "Error Viewer")
-		ui.open()
+DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
+
+/datum/error_viewer/ui_opening(mob/user, datum/tgui/ui)
+	ensure_back_pointer()
 
 /datum/error_viewer/proc/ensure_back_pointer()
 	return
@@ -96,61 +94,73 @@
 		data["usr_loc_z"] = usr_loc().z
 	return data
 
-/datum/error_viewer/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("refresh")
-			SStgui.update_uis(src)
-			return TRUE
-		if("set_mode")
-			dq_linear = "[params["mode"]]" == "linear"
-			SStgui.update_uis(src)
-			return TRUE
-		if("navigate")
-			var/ref = "[params["ref"]]"
-			var/datum/error_viewer/EV = locate(ref)
-			if(istype(EV))
-				EV.dq_back_to_handle = om_handle(src)
-				EV.dq_linear = dq_linear
-				EV.tgui_interact(ui.user)
-			return TRUE
-		if("back")
-			if(dq_back_to())
-				dq_back_to().tgui_interact(ui.user)
-			return TRUE
-		if("vv_usr")
-			if(istype(src, /datum/error_viewer/error_entry))
-				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_ref)
-					ui.user.client?.vv_topic(list("Vars" = E.usr_ref), TRUE)
-			return TRUE
-		if("pp_usr")
-			if(istype(src, /datum/error_viewer/error_entry))
-				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_ref)
-					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
-			return TRUE
-		if("follow_usr")
-			if(istype(src, /datum/error_viewer/error_entry))
-				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_ref)
-					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
-			return TRUE
-		if("vv_usr_loc")
-			if(istype(src, /datum/error_viewer/error_entry))
-				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_loc())
-					var/ref = "[REF(E.usr_loc())]"
-					ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
-			return TRUE
-		if("jmp_usr_loc")
-			if(istype(src, /datum/error_viewer/error_entry))
-				var/datum/error_viewer/error_entry/E = src
-				if(E.usr_loc())
-					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
-			return TRUE
+UI_ACT(/datum/error_viewer, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/error_viewer, ui_act_refresh)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "set_mode", ui_act_set_mode, UI_ARG_TEXT("mode"))
+UI_ACT_PROC(/datum/error_viewer, ui_act_set_mode)
+	dq_linear = "[params["mode"]]" == "linear"
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "navigate", ui_act_navigate, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/error_viewer, ui_act_navigate)
+	var/ref = "[params["ref"]]"
+	var/datum/error_viewer/EV = locate(ref)
+	if(istype(EV))
+		EV.dq_back_to_handle = om_handle(src)
+		EV.dq_linear = dq_linear
+		EV.tgui_interact(ui.user)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "back", ui_act_back)
+UI_ACT_PROC(/datum/error_viewer, ui_act_back)
+	if(dq_back_to())
+		dq_back_to().tgui_interact(ui.user)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "vv_usr", ui_act_vv_usr)
+UI_ACT_PROC(/datum/error_viewer, ui_act_vv_usr)
+	if(istype(src, /datum/error_viewer/error_entry))
+		var/datum/error_viewer/error_entry/E = src
+		if(E.usr_ref)
+			ui.user.client?.vv_topic(list("Vars" = E.usr_ref), TRUE)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "pp_usr", ui_act_pp_usr)
+UI_ACT_PROC(/datum/error_viewer, ui_act_pp_usr)
+	if(istype(src, /datum/error_viewer/error_entry))
+		var/datum/error_viewer/error_entry/E = src
+		if(E.usr_ref)
+			ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayeropts" = E.usr_ref))
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "follow_usr", ui_act_follow_usr)
+UI_ACT_PROC(/datum/error_viewer, ui_act_follow_usr)
+	if(istype(src, /datum/error_viewer/error_entry))
+		var/datum/error_viewer/error_entry/E = src
+		if(E.usr_ref)
+			ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservefollow" = E.usr_ref))
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "vv_usr_loc", ui_act_vv_usr_loc)
+UI_ACT_PROC(/datum/error_viewer, ui_act_vv_usr_loc)
+	if(istype(src, /datum/error_viewer/error_entry))
+		var/datum/error_viewer/error_entry/E = src
+		if(E.usr_loc())
+			var/ref = "[REF(E.usr_loc())]"
+			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
+	return TRUE
+
+UI_ACT(/datum/error_viewer, "jmp_usr_loc", ui_act_jmp_usr_loc)
+UI_ACT_PROC(/datum/error_viewer, ui_act_jmp_usr_loc)
+	if(istype(src, /datum/error_viewer/error_entry))
+		var/datum/error_viewer/error_entry/E = src
+		if(E.usr_loc())
+			ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
+	return TRUE
 
 /// LC-refs: the dq_back_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/error_viewer/proc/dq_back_to() as /datum/error_viewer

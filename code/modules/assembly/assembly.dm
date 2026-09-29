@@ -111,8 +111,7 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 /obj/item/assembly/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state
 
-/obj/item/assembly/tgui_interact(mob/user, datum/tgui/ui)
-	return // tgui goes here
+
 
 /obj/item/assembly/tgui_host()
 	if(istype(loc, /obj/item/assembly_holder))

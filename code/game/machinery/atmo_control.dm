@@ -247,11 +247,7 @@
 
 	LAZYSET(sensor_information, id_tag, signal.data)
 
-/obj/machinery/computer/general_air_control/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GeneralAtmoControl", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/general_air_control, "GeneralAtmoControl")
 
 /obj/machinery/computer/general_air_control/tgui_data(mob/user)
 	var/list/data = list()
@@ -446,21 +442,28 @@
 	else
 		..(signal)
 
-/obj/machinery/computer/general_air_control/large_tank_control/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "adj_pressure", ui_act_adj_pressure, UI_ARG_NUM("adj_pressure", 0, 50*ONE_ATMOSPHERE))
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_act_adj_pressure)
+	if(isnull(params["adj_pressure"]))
+		return FALSE
+	pressure_setting = params["adj_pressure"]
+	return TRUE
 
-	switch(action)
-		if("adj_pressure")
-			var/new_pressure = text2num(params["adj_pressure"])
-			pressure_setting = between(0, new_pressure, 50*ONE_ATMOSPHERE)
-			return TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "adj_input_flow_rate", ui_act_adj_input_flow_rate, UI_ARG_NUM("adj_input_flow_rate", 0, ATMOS_DEFAULT_VOLUME_PUMP + 500))
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_act_adj_input_flow_rate)
+	if(isnull(params["adj_input_flow_rate"]))
+		return FALSE
+	input_flow_setting = params["adj_input_flow_rate"] //default flow rate limit for air injectors
+	return TRUE
 
-		if("adj_input_flow_rate")
-			var/new_flow = text2num(params["adj_input_flow_rate"])
-			input_flow_setting = between(0, new_flow, ATMOS_DEFAULT_VOLUME_PUMP + 500) //default flow rate limit for air injectors
-			return TRUE
-
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "in_refresh_status", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "in_toggle_injector", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "in_set_flowrate", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "out_refresh_status", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "out_toggle_power", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/large_tank_control, "out_set_pressure", ui_act_tank_command)
+/// The injector / vent commands: one radio signal each.
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_act_tank_command)
 	if(!radio_connection())
 		return FALSE
 	var/datum/signal/signal = new
@@ -470,35 +473,24 @@
 		if("in_refresh_status")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "status" = 1)
-			. = TRUE
-
 		if("in_toggle_injector")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "power_toggle" = 1)
-			. = TRUE
-
 		if("in_set_flowrate")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "set_volume_rate" = "[input_flow_setting]")
-			. = TRUE
-
 		if("out_refresh_status")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "status" = 1)
-			. = TRUE
-
 		if("out_toggle_power")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "power_toggle" = 1)
-			. = TRUE
-
 		if("out_set_pressure")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "set_internal_pressure" = "[pressure_setting]")
-			. = TRUE
-
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	return TRUE
 
 /obj/machinery/computer/general_air_control/large_tank_control/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
@@ -600,21 +592,28 @@
 	else
 		..(signal)
 
-/obj/machinery/computer/general_air_control/supermatter_core/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "adj_pressure", ui_act_adj_pressure, UI_ARG_NUM("adj_pressure", 0, 10*ONE_ATMOSPHERE))
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act_adj_pressure)
+	if(isnull(params["adj_pressure"]))
+		return FALSE
+	pressure_setting = params["adj_pressure"]
+	return TRUE
 
-	switch(action)
-		if("adj_pressure")
-			var/new_pressure = text2num(params["adj_pressure"])
-			pressure_setting = between(0, new_pressure, 10*ONE_ATMOSPHERE)
-			return TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "adj_input_flow_rate", ui_act_adj_input_flow_rate, UI_ARG_NUM("adj_input_flow_rate", 0, ATMOS_DEFAULT_VOLUME_PUMP + 500))
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act_adj_input_flow_rate)
+	if(isnull(params["adj_input_flow_rate"]))
+		return FALSE
+	input_flow_setting = params["adj_input_flow_rate"] //default flow rate limit for air injectors
+	return TRUE
 
-		if("adj_input_flow_rate")
-			var/new_flow = text2num(params["adj_input_flow_rate"])
-			input_flow_setting = between(0, new_flow, ATMOS_DEFAULT_VOLUME_PUMP + 500) //default flow rate limit for air injectors
-			return TRUE
-
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "in_refresh_status", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "in_toggle_injector", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "in_set_flowrate", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "out_refresh_status", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "out_toggle_power", ui_act_tank_command)
+UI_ACT(/obj/machinery/computer/general_air_control/supermatter_core, "out_set_pressure", ui_act_tank_command)
+/// The injector / vent commands: one radio signal each.
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act_tank_command)
 	if(!radio_connection())
 		return FALSE
 	var/datum/signal/signal = new
@@ -624,35 +623,24 @@
 		if("in_refresh_status")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "status" = 1)
-			. = TRUE
-
 		if("in_toggle_injector")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "power_toggle" = 1)
-			. = TRUE
-
 		if("in_set_flowrate")
 			input_info = null
 			signal.data = list ("tag" = input_tag, "set_volume_rate" = "[input_flow_setting]")
-			. = TRUE
-
 		if("out_refresh_status")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "status" = 1)
-			. = TRUE
-
 		if("out_toggle_power")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "power_toggle" = 1)
-			. = TRUE
-
 		if("out_set_pressure")
 			output_info = null
 			signal.data = list ("tag" = output_tag, "set_external_pressure" = "[pressure_setting]", "checks" = 1)
-			. = TRUE
-
 	signal.data["sigtype"]="command"
 	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	return TRUE
 
 /obj/machinery/computer/general_air_control/supermatter_core/multitool_act(mob/user, obj/item/W)
 	. = ITEM_INTERACT_SUCCESS
@@ -769,64 +757,63 @@
 	else
 		..(signal)
 
-/obj/machinery/computer/general_air_control/fuel_injection/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "refresh_status", ui_act_refresh_status)
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_refresh_status)
+	device_info = null
+	if(!radio_connection())
+		return FALSE
 
-	switch(action)
-		if("refresh_status")
-			device_info = null
-			if(!radio_connection())
-				return FALSE
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO //radio signal
+	signal.source_handle = om_handle(src)
+	signal.data = list(
+		"tag" = device_tag,
+		"status" = 1,
+		"sigtype"="command"
+	)
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	. = TRUE
 
-			var/datum/signal/signal = new
-			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
-			signal.data = list(
-				"tag" = device_tag,
-				"status" = 1,
-				"sigtype"="command"
-			)
-			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_automation", ui_act_toggle_automation)
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_toggle_automation)
+	automation = !automation
+	MACHINE_WAKE(src)
+	. = TRUE
 
-		if("toggle_automation")
-			automation = !automation
-			MACHINE_WAKE(src)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "toggle_injector", ui_act_toggle_injector)
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_toggle_injector)
+	device_info = null
+	if(!radio_connection())
+		return FALSE
 
-		if("toggle_injector")
-			device_info = null
-			if(!radio_connection())
-				return FALSE
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO //radio signal
+	signal.source_handle = om_handle(src)
+	signal.data = list(
+		"tag" = device_tag,
+		"power_toggle" = 1,
+		"sigtype"="command"
+	)
 
-			var/datum/signal/signal = new
-			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
-			signal.data = list(
-				"tag" = device_tag,
-				"power_toggle" = 1,
-				"sigtype"="command"
-			)
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	. = TRUE
 
-			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/general_air_control/fuel_injection, "injection", ui_act_injection)
+UI_ACT_PROC(/obj/machinery/computer/general_air_control/fuel_injection, ui_act_injection)
+	if(!radio_connection())
+		return FALSE
 
-		if("injection")
-			if(!radio_connection())
-				return FALSE
+	var/datum/signal/signal = new
+	signal.transmission_method = TRANSMISSION_RADIO //radio signal
+	signal.source_handle = om_handle(src)
+	signal.data = list(
+		"tag" = device_tag,
+		"inject" = 1,
+		"sigtype"="command"
+	)
 
-			var/datum/signal/signal = new
-			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
-			signal.data = list(
-				"tag" = device_tag,
-				"inject" = 1,
-				"sigtype"="command"
-			)
-
-			radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
-			. = TRUE
+	radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
+	. = TRUE
 
 #undef SENSOR_PRESSURE
 #undef SENSOR_TEMPERATURE

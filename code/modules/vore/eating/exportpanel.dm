@@ -5,21 +5,14 @@
 /datum/vore_look/export_panel/proc/open_export_panel(mob/user)
 	tgui_interact(user)
 
-/datum/vore_look/export_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VorePanelExport", "Vore Export Panel")
-		ui.open()
-		ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/vore_look/export_panel, "VorePanelExport", UI_TITLE("Vore Export Panel"))
 
 /datum/vore_look/export_panel/tgui_fallback(payload)
 	if(..())
 		return TRUE
 
 
-/datum/vore_look/export_panel/tgui_act(action, params)
-	if(..())
-		return TRUE
+
 
 /datum/vore_look/export_panel/tgui_data(mob/user)
 	var/list/data = list()

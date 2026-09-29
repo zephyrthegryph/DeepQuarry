@@ -378,14 +378,13 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 	INTERACT_VERB("Move INSIDE", PROC_REF(resleever_verb_move_inside)), \
 )
 
-/obj/machinery/transhuman/resleever/tgui_interact(mob/user, datum/tgui/ui = null)
-	if(!operable())
-		return
+DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resleever"))
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ResleevingPod", "Resleever")
-		ui.open()
+/obj/machinery/transhuman/resleever/ui_prepare(mob/user, datum/tgui/ui)
+	if(!operable())
+		return FALSE
+
+	return TRUE
 
 /obj/machinery/transhuman/resleever/tgui_data(mob/user)
 	var/list/data = list()

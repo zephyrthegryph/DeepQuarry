@@ -68,20 +68,18 @@
 		"internalTemplateName" = "EscapePodConsole",
 	)
 
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "manual_arm", ui_act_manual_arm)
+UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, ui_act_manual_arm)
+	pod().arming_controller().arm()
+	. = TRUE
 
-	switch(action)
-		if("manual_arm")
-			pod().arming_controller().arm()
-			. = TRUE
-		if("force_launch")
-			if(pod().can_force())
-				pod().force_launch(src)
-			else if(GLOB.emergency_shuttle_service.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
-				pod().launch(src)
-			. = TRUE
+UI_ACT(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "force_launch", ui_act_force_launch)
+UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, ui_act_force_launch)
+	if(pod().can_force())
+		pod().force_launch(src)
+	else if(GLOB.emergency_shuttle_service.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
+		pod().launch(src)
+	. = TRUE
 
 //This controller is for the escape pod berth (station side)
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth

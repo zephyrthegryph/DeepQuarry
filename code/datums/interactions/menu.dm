@@ -36,11 +36,7 @@ DECLARE_REF(/datum/interaction_menu, "owner_handle", BACK_HANDLE, "interaction_m
 /datum/interaction_menu/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/interaction_menu/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "InteractionMenu")
-		ui.open()
+DECLARE_UI(/datum/interaction_menu, "InteractionMenu")
 
 /datum/interaction_menu/tgui_data(mob/user)
 	var/atom/target = target()
@@ -89,46 +85,53 @@ DECLARE_REF(/datum/interaction_menu, "owner_handle", BACK_HANDLE, "interaction_m
 	if(target != user && isliving(user))
 		. += list(list("id" = INPUT_ACTION_POINT, "name" = "Point at"))
 
-/datum/interaction_menu/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	var/mob/user = ui.user
+/datum/interaction_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/atom/target = target()
 	if(!user || !target)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/interaction_menu, "run", ui_act_run, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/datum/interaction_menu, ui_act_run)
+	var/atom/target = target()
+	ui.close()
+	run_chosen_interaction(user, target, params["id"])
+	return TRUE
+
+UI_ACT(/datum/interaction_menu, "action", ui_act_action, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
+	var/atom/target = target()
+	var/action_id = params["id"]
+	var/valid = FALSE
+	for(var/list/entry as anything in interaction_menu_actions(user, target))
+		if(entry["id"] == action_id)
+			valid = TRUE
+			break
+	if(!valid)
 		return
-	switch(action)
-		if("run")
-			ui.close()
-			run_chosen_interaction(user, target, params["id"])
-			return TRUE
-		if("action")
-			var/action_id = params["id"]
-			var/valid = FALSE
-			for(var/list/entry as anything in interaction_menu_actions(user, target))
-				if(entry["id"] == action_id)
-					valid = TRUE
-					break
-			if(!valid)
-				return
-			ui.close()
-			var/datum/input_adapter/adapter = user.input_adapter()
-			var/handler = adapter.handler_for(action_id)
-			if(handler)
-				call(user, handler)(target, "")
-			return TRUE
-		if("verb")
-			var/verb_name = params["name"]
-			if(!interaction_menu_can_reach(user, target))
-				to_chat(user, span_warning("You are too far from \the [target]."))
-				return
-			for(var/procpath/target_verb as anything in target.verbs)
-				if(target_verb?.name != verb_name || target_verb.hidden)
-					continue
-				ui.close()
-				log_input("Input: [key_name(user)] used the verb [verb_name] on [target] ([target.type]) from the interaction menu.")
-				call(target, target_verb)()
-				return TRUE
+	ui.close()
+	var/datum/input_adapter/adapter = user.input_adapter()
+	var/handler = adapter.handler_for(action_id)
+	if(handler)
+		call(user, handler)(target, "")
+	return TRUE
+
+UI_ACT(/datum/interaction_menu, "verb", ui_act_verb, UI_ARG_TEXT("name"))
+UI_ACT_PROC(/datum/interaction_menu, ui_act_verb)
+	var/atom/target = target()
+	var/verb_name = params["name"]
+	if(!interaction_menu_can_reach(user, target))
+		to_chat(user, span_warning("You are too far from \the [target]."))
+		return
+	for(var/procpath/target_verb as anything in target.verbs)
+		if(target_verb?.name != verb_name || target_verb.hidden)
+			continue
+		ui.close()
+		log_input("Input: [key_name(user)] used the verb [verb_name] on [target] ([target.type]) from the interaction menu.")
+		call(target, target_verb)()
+		return TRUE
 
 /// Whether a legacy verb on `target` can be run from the Menu: the popup offered verbs on things in reach.
 /proc/interaction_menu_can_reach(mob/user, atom/target)

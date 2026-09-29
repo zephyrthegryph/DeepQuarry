@@ -33,11 +33,7 @@
 	toggle = 0
 	default = 1
 
-/datum/pai_software/directives/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "pAIDirectives", name, parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/directives, "pAIDirectives")
 
 /datum/pai_software/directives/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
@@ -49,29 +45,32 @@
 
 	return data
 
-/datum/pai_software/directives/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/directives/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/silicon/pai/P = ui.user
 	if(!istype(P))
-		return TRUE
-	if(..())
-		return TRUE
+		return FALSE
+	return TRUE
 
-	if(action == "getdna")
-		var/mob/living/M = P.loc
+UI_ACT(/datum/pai_software/directives, "getdna", ui_act_getdna)
+UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
+	var/mob/living/silicon/pai/P = ui.user
+	var/mob/living/M = P.loc
 
-		var/count = 0
-		// Find the carrier
-		while(!isliving(M))
-			if(!M || !M.loc || count > 6)
-				//For a runtime where M ends up in nullspace (similar to bluespace but less colourful)
-				to_chat(src, span_infoplain("You are not being carried by anyone!"))
-				return 0
-			M = M.loc
-			count++
+	var/count = 0
+	// Find the carrier
+	while(!isliving(M))
+		if(!M || !M.loc || count > 6)
+			//For a runtime where M ends up in nullspace (similar to bluespace but less colourful)
+			to_chat(src, span_infoplain("You are not being carried by anyone!"))
+			return 0
+		M = M.loc
+		count++
 
-		// Check the carrier
-		om_ask(M, /datum/om/prompt/confirm/pai_dna_sample, PROC_REF(dna_sample_answered), asker = P, pai = P)
-		return TRUE
+	// Check the carrier
+	om_ask(M, /datum/om/prompt/confirm/pai_dna_sample, PROC_REF(dna_sample_answered), asker = P, pai = P)
+	return TRUE
 
 /// A pAI asks its carrier for a DNA sample. The answer proc runs on no too (the pAI is told).
 /datum/om/prompt/confirm/pai_dna_sample
@@ -107,8 +106,8 @@
 	toggle = 0
 	default = 1
 
-/datum/pai_software/radio_config/tgui_interact(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui/parent_ui)
-	return user.radio.tgui_interact(user, parent_ui = parent_ui)
+/datum/pai_software/radio_config/ui_redirect(mob/living/silicon/pai/user)
+	return user.radio
 
 /datum/pai_software/crew_manifest
 	name = "Crew Manifest"
@@ -117,11 +116,7 @@
 	toggle = 0
 	default = 1		//Comes with the communicator already, also why not
 
-/datum/pai_software/crew_manifest/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "CrewManifest", name, parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/crew_manifest, "CrewManifest")
 
 /datum/pai_software/crew_manifest/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -137,8 +132,8 @@
 	toggle = 0
 	default = 1		//Can already be accessed through verbs, and also why not
 
-/datum/pai_software/messenger/tgui_interact(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui/parent_ui)
-	return user.pda.tgui_interact(user, parent_ui = parent_ui)
+/datum/pai_software/messenger/ui_redirect(mob/living/silicon/pai/user)
+	return user.pda
 
 /datum/pai_software/med_records
 	name = "Medical Records"
@@ -146,11 +141,7 @@
 	id = "med_records"
 	toggle = 0
 
-/datum/pai_software/med_records/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "pAIMedrecords", name, parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/med_records, "pAIMedrecords")
 
 /datum/pai_software/med_records/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -172,29 +163,33 @@
 
 	return data
 
-/datum/pai_software/med_records/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
+/datum/pai_software/med_records/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/silicon/pai/P = ui.user
 	if(!istype(P))
-		return
+		return FALSE
+	return TRUE
 
-	if(action == "select")
-		var/datum/data/record/record = locate(params["select"])
-		if(record)
-			var/datum/data/record/R = record
-			var/datum/data/record/M = null
-			if (!( GLOB.data_core.general.Find(R) ))
-				P.medical_cannotfind = 1
-			else
-				P.medical_cannotfind = 0
-				for(var/datum/data/record/E in GLOB.data_core.medical)
-					if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-						M = E
-				P.medicalActive1 = R
-				P.medicalActive2 = M
-		else
+UI_ACT(/datum/pai_software/med_records, "select", ui_act_select, UI_ARG_REF("select", null, /datum/data/record))
+UI_ACT_PROC(/datum/pai_software/med_records, ui_act_select)
+	var/mob/living/silicon/pai/P = ui.user
+	var/datum/data/record/record = params["select"]
+	if(record)
+		var/datum/data/record/R = record
+		var/datum/data/record/M = null
+		if (!( GLOB.data_core.general.Find(R) ))
 			P.medical_cannotfind = 1
-		return 1
+		else
+			P.medical_cannotfind = 0
+			for(var/datum/data/record/E in GLOB.data_core.medical)
+				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
+					M = E
+			P.medicalActive1 = R
+			P.medicalActive2 = M
+	else
+		P.medical_cannotfind = 1
+	return 1
 
 /datum/pai_software/sec_records
 	name = "Security Records"
@@ -202,11 +197,7 @@
 	id = "sec_records"
 	toggle = 0
 
-/datum/pai_software/sec_records/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "pAISecrecords", name, parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/sec_records, "pAISecrecords")
 
 /datum/pai_software/sec_records/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -228,33 +219,37 @@
 
 	return data
 
-/datum/pai_software/sec_records/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
+/datum/pai_software/sec_records/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/silicon/pai/P = ui.user
 	if(!istype(P))
-		return
+		return FALSE
+	return TRUE
 
-	if(action == "select")
-		var/datum/data/record/record = locate(params["select"])
-		if(record)
-			var/datum/data/record/R = record
-			var/datum/data/record/S = null
-			if (!( GLOB.data_core.general.Find(R) ))
-				P.securityActive1 = null
-				P.securityActive2 = null
-				P.security_cannotfind = 1
-			else
-				P.security_cannotfind = 0
-				for(var/datum/data/record/E in GLOB.data_core.security)
-					if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-						S = E
-				P.securityActive1 = R
-				P.securityActive2 = S
-		else
+UI_ACT(/datum/pai_software/sec_records, "select", ui_act_select, UI_ARG_REF("select", null, /datum/data/record))
+UI_ACT_PROC(/datum/pai_software/sec_records, ui_act_select)
+	var/mob/living/silicon/pai/P = ui.user
+	var/datum/data/record/record = params["select"]
+	if(record)
+		var/datum/data/record/R = record
+		var/datum/data/record/S = null
+		if (!( GLOB.data_core.general.Find(R) ))
 			P.securityActive1 = null
 			P.securityActive2 = null
 			P.security_cannotfind = 1
-		return TRUE
+		else
+			P.security_cannotfind = 0
+			for(var/datum/data/record/E in GLOB.data_core.security)
+				if ((E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
+					S = E
+			P.securityActive1 = R
+			P.securityActive2 = S
+	else
+		P.securityActive1 = null
+		P.securityActive2 = null
+		P.security_cannotfind = 1
+	return TRUE
 
 /datum/pai_software/door_jack
 	name = "Door Jack"
@@ -262,11 +257,7 @@
 	id = "door_jack"
 	toggle = 0
 
-/datum/pai_software/door_jack/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "pAIDoorjack", "Door Jack", parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/door_jack, "pAIDoorjack", UI_TITLE("Door Jack"))
 
 /datum/pai_software/door_jack/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -280,28 +271,38 @@
 
 	return data
 
-/datum/pai_software/door_jack/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+/datum/pai_software/door_jack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/silicon/pai/P = ui.user
-	if(!istype(P) || ..())
-		return TRUE
+	if(!istype(P))
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("jack")
-			if(P.cable && P.cable.machine())
-				P.hackdoor = P.cable.machine()
-				P.hackloop()
-			return 1
-		if("cancel")
-			P.hackdoor = null
-			return 1
-		if("cable")
-			var/turf/T = get_turf(P)
-			P.hack_aborted = 0
-			P.cable = new /obj/item/pai_cable(T)
-			for(var/mob/M in viewers(T))
-				M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
-								span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
-			return 1
+UI_ACT(/datum/pai_software/door_jack, "jack", ui_act_jack)
+UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_jack)
+	var/mob/living/silicon/pai/P = ui.user
+	if(P.cable && P.cable.machine())
+		P.hackdoor = P.cable.machine()
+		P.hackloop()
+	return 1
+
+UI_ACT(/datum/pai_software/door_jack, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cancel)
+	var/mob/living/silicon/pai/P = ui.user
+	P.hackdoor = null
+	return 1
+
+UI_ACT(/datum/pai_software/door_jack, "cable", ui_act_cable)
+UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
+	var/mob/living/silicon/pai/P = ui.user
+	var/turf/T = get_turf(P)
+	P.hack_aborted = 0
+	P.cable = new /obj/item/pai_cable(T)
+	for(var/mob/M in viewers(T))
+		M.show_message(span_warning("A port on [P] opens to reveal [P.cable], which promptly falls to the floor."), 3,
+						span_warning("You hear the soft click of something light and hard falling to the ground."), 2)
+	return 1
 
 /mob/living/silicon/pai/proc/hackloop()
 	var/turf/T = get_turf(src)
@@ -341,11 +342,7 @@
 	id = "atmos_sense"
 	toggle = 0
 
-/datum/pai_software/atmosphere_sensor/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "pAIAtmos", name, parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/atmosphere_sensor, "pAIAtmos")
 
 /datum/pai_software/atmosphere_sensor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -415,11 +412,7 @@
 	id = "signaller"
 	toggle = 0
 
-/datum/pai_software/signaller/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Signaler", "Signaler", parent_ui)
-		ui.open()
+DECLARE_UI(/datum/pai_software/signaller, "Signaler", UI_TITLE("Signaler"))
 
 /datum/pai_software/signaller/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -433,33 +426,47 @@
 
 	return data
 
-/datum/pai_software/signaller/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/datum/pai_software/signaller, "signal", ui_act_signal)
+UI_ACT_PROC(/datum/pai_software/signaller, ui_act_signal)
+	var/mob/living/silicon/pai/pai = ui.user
+	if(!istype(pai))
+		return
+	var/obj/item/radio/integrated/signal/R = pai.sradio
+	R.send_signal("ACTIVATE")
+	for(var/mob/O in hearers(1, R.loc))
+		O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 
-	var/mob/living/silicon/pai/user = ui.user
-	if(istype(user))
-		var/obj/item/radio/integrated/signal/R = user.sradio
+UI_ACT(/datum/pai_software/signaller, "freq", ui_act_freq, UI_ARG_VALUE("freq"))
+UI_ACT_PROC(/datum/pai_software/signaller, ui_act_freq)
+	var/mob/living/silicon/pai/pai = ui.user
+	if(!istype(pai))
+		return
+	var/obj/item/radio/integrated/signal/R = pai.sradio
+	var/frequency = unformat_frequency(params["freq"])
+	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	R.set_frequency(frequency)
+	. = TRUE
 
-		switch(action)
-			if("signal")
-				R.send_signal("ACTIVATE")
-				for(var/mob/O in hearers(1, R.loc))
-					O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
-			if("freq")
-				var/frequency = unformat_frequency(params["freq"])
-				frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				R.set_frequency(frequency)
-				. = TRUE
-			if("code")
-				R.code = clamp(round(text2num(params["code"])), 1, 100)
-				. = TRUE
-			if("reset")
-				if(params["reset"] == "freq")
-					R.set_frequency(initial(R.frequency))
-				else
-					R.code = initial(R.code)
-				. = TRUE
+UI_ACT(/datum/pai_software/signaller, "code", ui_act_code, UI_ARG_NUM("code", 1, 100))
+UI_ACT_PROC(/datum/pai_software/signaller, ui_act_code)
+	var/mob/living/silicon/pai/pai = ui.user
+	if(!istype(pai))
+		return
+	var/obj/item/radio/integrated/signal/R = pai.sradio
+	R.code = round(params["code"])
+	. = TRUE
+
+UI_ACT(/datum/pai_software/signaller, "reset", ui_act_reset, UI_ARG_TEXT("reset"))
+UI_ACT_PROC(/datum/pai_software/signaller, ui_act_reset)
+	var/mob/living/silicon/pai/pai = ui.user
+	if(!istype(pai))
+		return
+	var/obj/item/radio/integrated/signal/R = pai.sradio
+	if(params["reset"] == "freq")
+		R.set_frequency(initial(R.frequency))
+	else
+		R.code = initial(R.code)
+	. = TRUE
 
 /datum/pai_software/deathalarm
 	name = "Death Alarm"

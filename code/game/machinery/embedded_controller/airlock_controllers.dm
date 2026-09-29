@@ -51,26 +51,26 @@
 
 	return data
 
-/obj/machinery/embedded_controller/radio/airlock/tgui_act(action, params)
-	. = ..()
-	if(.)
-		return
-
+/obj/machinery/embedded_controller/radio/airlock/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!panel_open)
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("edit_tag")
-			var/datum/embedded_program/airlock/airlock_program = program
+UI_ACT(/obj/machinery/embedded_controller/radio/airlock, "edit_tag", ui_act_edit_tag, UI_ARG_TEXT("tag"))
+UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_edit_tag)
+	var/datum/embedded_program/airlock/airlock_program = program
 
-			var/tag = params["tag"]
-			var/current = airlock_program.get_tag(tag)
-			om_ask(usr, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
-			return TRUE
+	var/tag = params["tag"]
+	var/current = airlock_program.get_tag(tag)
+	om_ask(usr, /datum/om/prompt/text/airlock_tag, PROC_REF(airlock_tag_entered), message = "What would you like to set [tag] to?", title = "New [tag]?", default = current, max_length = 30, tag_name = tag)
+	return TRUE
 
-		if("set_frequency")
-			set_frequency(sanitize_frequency(text2num(params["freq"]), RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
-			return TRUE
+UI_ACT(/obj/machinery/embedded_controller/radio/airlock, "set_frequency", ui_act_set_frequency, UI_ARG_NUM("freq"))
+UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_set_frequency)
+	set_frequency(sanitize_frequency(params["freq"], RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+	return TRUE
 
 /datum/om/prompt/text/airlock_tag
 	requires = PROMPT_USABLE

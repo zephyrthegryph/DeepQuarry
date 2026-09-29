@@ -12,15 +12,12 @@
 /datum/computer_file/program/fishing/tgui_data(mob/user)
 	return get_header_data()
 
-/datum/computer_file/program/fishing/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/computer_file/program/fishing, "lose", ui_act_lose)
+UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_lose)
+	play_sfx(computer(), SFX_ARCADE_LOSE)
+	. = TRUE
 
-	switch(action)
-		if("lose")
-			play_sfx(computer(), SFX_ARCADE_LOSE)
-			. = TRUE
-		if("win")
-			play_sfx(computer(), SFX_ARCADE_WIN)
-			. = TRUE
+UI_ACT(/datum/computer_file/program/fishing, "win", ui_act_win)
+UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_win)
+	play_sfx(computer(), SFX_ARCADE_WIN)
+	. = TRUE

@@ -78,11 +78,7 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 /obj/item/photo/proc/show(mob/user as mob)
 	tgui_interact(user)
 
-/obj/item/photo/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Photo", name)
-		ui.open()
+DECLARE_UI(/obj/item/photo, "Photo")
 
 /obj/item/photo/tgui_data(mob/user)
 	var/list/data = list()

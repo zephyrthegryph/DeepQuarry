@@ -107,127 +107,187 @@
 
 	return formatted
 
-/datum/tgui_module/cardmod/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
-
+/datum/tgui_module/cardmod/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/computer_file/program/card_mod/program = host()
-	if(!istype(program))
-		return TRUE
 	var/obj/item/modular_computer/computer = tgui_host()
+	if(!istype(program))
+		return FALSE
 	if(!istype(computer))
-		return TRUE
+		return FALSE
+	return TRUE
 
+UI_ACT(/datum/tgui_module/cardmod, "mode", ui_act_mode, UI_ARG_NUM("mode_target", 0, 1))
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_mode)
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	mod_mode = params["mode_target"]
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
+
+UI_ACT(/datum/tgui_module/cardmod, "print", ui_act_print)
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_print)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
 	var/obj/item/card/id/user_id_card = ui.user.GetIdCard()
 	var/obj/item/card/id/id_card
 	if(computer.card_slot)
 		id_card = computer.card_slot.stored_card()
+	if(computer && computer.nano_printer) //This option should never be called if there is no printer
+		if(!mod_mode)
+			if(program.can_run(ui.user, 1))
+				var/report_text = {"<h4>Access Report</h4>
+							<u>Prepared By:</u> [user_id_card.registered_name ? user_id_card.registered_name : "Unknown"]<br>
+							<u>For:</u> [id_card.registered_name ? id_card.registered_name : "Unregistered"]<br>
+							<hr>
+							<u>Assignment:</u> [id_card.assignment]<br>
+							<u>Account Number:</u> #[id_card.associated_account_number]<br>
+							<u>Blood Type:</u> [id_card.blood_type]<br><br>
+							<u>Access:</u><br>
+						"}
 
-	switch(action)
-		if("mode")
-			mod_mode = clamp(text2num(params["mode_target"]), 0, 1)
-			. = TRUE
-		if("print")
-			if(computer && computer.nano_printer) //This option should never be called if there is no printer
-				if(!mod_mode)
-					if(program.can_run(ui.user, 1))
-						var/report_text = {"<h4>Access Report</h4>
-									<u>Prepared By:</u> [user_id_card.registered_name ? user_id_card.registered_name : "Unknown"]<br>
-									<u>For:</u> [id_card.registered_name ? id_card.registered_name : "Unregistered"]<br>
-									<hr>
-									<u>Assignment:</u> [id_card.assignment]<br>
-									<u>Account Number:</u> #[id_card.associated_account_number]<br>
-									<u>Blood Type:</u> [id_card.blood_type]<br><br>
-									<u>Access:</u><br>
-								"}
+				var/known_access_rights = SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM)
+				for(var/A in id_card.GetAccess())
+					if(A in known_access_rights)
+						report_text += "  [SSaccess.get_access_desc(A)]"
 
-						var/known_access_rights = SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM)
-						for(var/A in id_card.GetAccess())
-							if(A in known_access_rights)
-								report_text += "  [SSaccess.get_access_desc(A)]"
-
-						if(!computer.nano_printer.print_text(report_text,"access report"))
-							to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
-							return
-						else
-							computer.visible_message(span_bold("\The [computer]") + " prints out paper.")
+				if(!computer.nano_printer.print_text(report_text,"access report"))
+					to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
+					return
 				else
-					var/report_text = {"<h4>Crew Manifest</h4>
-									<br>
-									[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
-									"}
-					if(!computer.nano_printer.print_text(report_text,text("crew manifest ([])", stationtime2text())))
-						to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
-						return
-					else
-						computer.visible_message(span_bold("\The [computer]") + " prints out paper.")
-			. = TRUE
-		if("modify")
-			if(computer && computer.card_slot)
-				if(id_card)
-					GLOB.data_core.manifest_modify(id_card.registered_name, id_card.assignment, id_card.rank)
-				computer.proc_eject_id(ui.user)
-			. = TRUE
-		if("terminate")
-			if(computer && program.can_run(ui.user, 1) && id_card)
-				id_card.assignment = "Dismissed" // setting adjustment
-				id_card.access = list()
-			. = TRUE
-		if("reg")
-			if(computer && program.can_run(ui.user, 1) && id_card)
-				var/temp_name = sanitizeName(params["reg"], allow_numbers = TRUE)
-				if(temp_name)
-					id_card.registered_name = temp_name
-				else
-					computer.visible_message(span_notice("[computer] buzzes rudely."))
-			. = TRUE
-		if("account")
-			if(computer && program.can_run(ui.user, 1) && id_card)
-				var/account_num = text2num(params["account"])
-				id_card.associated_account_number = account_num
-			. = TRUE
-		if("assign")
-			if(computer && program.can_run(ui.user, 1) && id_card)
-				var/t1 = params["assign_target"]
-				if(t1 == "Custom")
-					var/temp_t = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a custom job assignment.", title = "Assignment", default = id_card.assignment, max_length = 45)
-					if(isnull(temp_t))
-						return
-					//let custom jobs function as an impromptu alt title, mainly for sechuds
-					if(temp_t)
-						id_card.assignment = temp_t
-				else
-					var/list/access = list()
-					if(is_centcom)
-						access = SSaccess.get_centcom_access(t1)
-					else
-						var/datum/job/jobdatum
-						for(var/jobtype in typesof(/datum/job))
-							var/datum/job/J = new jobtype
-							if(ckey(J.title) == ckey(t1))
-								jobdatum = J
-								break
-						if(!jobdatum)
-							to_chat(ui.user, span_warning("No log exists for this job: [t1]"))
-							return
+					computer.visible_message(span_bold("\The [computer]") + " prints out paper.")
+		else
+			var/report_text = {"<h4>Crew Manifest</h4>
+							<br>
+							[GLOB.data_core ? GLOB.data_core.get_manifest(0) : ""]
+							"}
+			if(!computer.nano_printer.print_text(report_text,text("crew manifest ([])", stationtime2text())))
+				to_chat(ui.user, span_notice("Hardware error: Printer was unable to print the file. It may be out of paper."))
+				return
+			else
+				computer.visible_message(span_bold("\The [computer]") + " prints out paper.")
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
 
-						access = jobdatum.get_access()
+UI_ACT(/datum/tgui_module/cardmod, "modify", ui_act_modify)
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_modify)
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && computer.card_slot)
+		if(id_card)
+			GLOB.data_core.manifest_modify(id_card.registered_name, id_card.assignment, id_card.rank)
+		computer.proc_eject_id(ui.user)
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
 
-					id_card.access = access
-					id_card.assignment = t1
-					id_card.rank = t1
+UI_ACT(/datum/tgui_module/cardmod, "terminate", ui_act_terminate)
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_terminate)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && program.can_run(ui.user, 1) && id_card)
+		id_card.assignment = "Dismissed" // setting adjustment
+		id_card.access = list()
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
 
-			. = TRUE
-		if("access")
-			if(computer && program.can_run(ui.user, 1) && id_card)
-				var/access_type = text2num(params["access_target"])
-				var/access_allowed = text2num(params["allowed"])
-				if(access_type in SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM))
-					id_card.access -= access_type
-					if(!access_allowed)
-						id_card.access += access_type
-			. = TRUE
+UI_ACT(/datum/tgui_module/cardmod, "reg", ui_act_reg, UI_ARG_TEXT("reg"))
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_reg)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && program.can_run(ui.user, 1) && id_card)
+		var/temp_name = sanitizeName(params["reg"], allow_numbers = TRUE)
+		if(temp_name)
+			id_card.registered_name = temp_name
+		else
+			computer.visible_message(span_notice("[computer] buzzes rudely."))
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
 
+UI_ACT(/datum/tgui_module/cardmod, "account", ui_act_account, UI_ARG_NUM("account"))
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_account)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && program.can_run(ui.user, 1) && id_card)
+		var/account_num = params["account"]
+		id_card.associated_account_number = account_num
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
+
+UI_ACT(/datum/tgui_module/cardmod, "assign", ui_act_assign, UI_ARG_TEXT("assign_target"))
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_assign)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && program.can_run(ui.user, 1) && id_card)
+		var/t1 = params["assign_target"]
+		if(t1 == "Custom")
+			var/temp_t = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Enter a custom job assignment.", title = "Assignment", default = id_card.assignment, max_length = 45)
+			if(isnull(temp_t))
+				return
+			//let custom jobs function as an impromptu alt title, mainly for sechuds
+			if(temp_t)
+				id_card.assignment = temp_t
+		else
+			var/list/access = list()
+			if(is_centcom)
+				access = SSaccess.get_centcom_access(t1)
+			else
+				var/datum/job/jobdatum
+				for(var/jobtype in typesof(/datum/job))
+					var/datum/job/J = new jobtype
+					if(ckey(J.title) == ckey(t1))
+						jobdatum = J
+						break
+				if(!jobdatum)
+					to_chat(ui.user, span_warning("No log exists for this job: [t1]"))
+					return
+
+				access = jobdatum.get_access()
+
+			id_card.access = access
+			id_card.assignment = t1
+			id_card.rank = t1
+
+	. = TRUE
+	if(id_card)
+		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")
+
+UI_ACT(/datum/tgui_module/cardmod, "access", ui_act_access, UI_ARG_NUM("access_target"), UI_ARG_NUM("allowed"))
+UI_ACT_PROC(/datum/tgui_module/cardmod, ui_act_access)
+	var/datum/computer_file/program/card_mod/program = host()
+	var/obj/item/modular_computer/computer = tgui_host()
+	var/obj/item/card/id/id_card
+	if(computer.card_slot)
+		id_card = computer.card_slot.stored_card()
+	if(computer && program.can_run(ui.user, 1) && id_card)
+		var/access_type = params["access_target"]
+		var/access_allowed = params["allowed"]
+		if(access_type in SSaccess.get_access_ids(ACCESS_TYPE_STATION|ACCESS_TYPE_CENTCOM))
+			id_card.access -= access_type
+			if(!access_allowed)
+				id_card.access += access_type
+	. = TRUE
 	if(id_card)
 		id_card.name = text("[id_card.registered_name]'s ID Card ([id_card.assignment])")

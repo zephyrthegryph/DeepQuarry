@@ -16,11 +16,7 @@
 	)
 	..()
 
-/obj/machinery/computer/mecha/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MechaControlConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/mecha, "MechaControlConsole")
 
 /obj/machinery/computer/mecha/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -38,32 +34,31 @@
 
 	return data
 
-/obj/machinery/computer/mecha/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/mecha, "send_message", ui_act_send_message, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
+UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_send_message)
+	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
+	if(istype(MT))
+		om_ask(ui.user, /datum/om/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), tracker = MT)
+	return TRUE
 
-	switch(action)
-		if("send_message")
-			var/obj/item/mecha_parts/mecha_tracking/MT = locate(params["mt"])
-			if(istype(MT))
-				om_ask(ui.user, /datum/om/prompt/text/mecha_tracker_message, PROC_REF(mecha_message_entered), tracker = MT)
-			return TRUE
+UI_ACT(/obj/machinery/computer/mecha, "shock", ui_act_shock, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
+UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_shock)
+	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
+	if(istype(MT))
+		MT.shock()
+	return TRUE
 
-		if("shock")
-			var/obj/item/mecha_parts/mecha_tracking/MT = locate(params["mt"])
-			if(istype(MT))
-				MT.shock()
-			return TRUE
+UI_ACT(/obj/machinery/computer/mecha, "get_log", ui_act_get_log, UI_ARG_REF("mt", null, /obj/item/mecha_parts/mecha_tracking))
+UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_get_log)
+	var/obj/item/mecha_parts/mecha_tracking/MT = params["mt"]
+	if(istype(MT))
+		stored_data = MT.get_mecha_log()
+	return TRUE
 
-		if("get_log")
-			var/obj/item/mecha_parts/mecha_tracking/MT = locate(params["mt"])
-			if(istype(MT))
-				stored_data = MT.get_mecha_log()
-			return TRUE
-
-		if("clear_log")
-			stored_data = null
-			return TRUE
+UI_ACT(/obj/machinery/computer/mecha, "clear_log", ui_act_clear_log)
+UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_clear_log)
+	stored_data = null
+	return TRUE
 
 /datum/om/prompt/text/mecha_tracker_message
 	title = "Transmit message"

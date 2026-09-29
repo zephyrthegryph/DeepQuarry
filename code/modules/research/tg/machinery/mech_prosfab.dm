@@ -55,35 +55,32 @@
 
 	return data
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species", ui_act_species)
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_species)
+	var/new_species = act_ask(ui.user, action, params, ui, "k65", /datum/om/prompt/choice, message = "Select a new species", title = "Prosfab Species Selection", choices = species_types)
+	if(isnull(new_species))
 		return
+	if(new_species && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+		species = new_species
+	return TRUE
 
-	switch(action)
-		if("species")
-			var/new_species = act_ask(ui.user, action, params, ui, "k65", /datum/om/prompt/choice, message = "Select a new species", title = "Prosfab Species Selection", choices = species_types)
-			if(isnull(new_species))
-				return
-			if(new_species && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				species = new_species
-			return TRUE
-		if("manufacturer")
-			var/list/new_manufacturers = list()
-			for(var/A in GLOB.all_robolimbs)
-				var/datum/robolimb/R = GLOB.all_robolimbs[A]
-				if(R.unavailable_to_build)
-					continue
-				if(species in R.species_cannot_use)
-					continue
-				new_manufacturers += A
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "manufacturer", ui_act_manufacturer)
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufacturer)
+	var/list/new_manufacturers = list()
+	for(var/A in GLOB.all_robolimbs)
+		var/datum/robolimb/R = GLOB.all_robolimbs[A]
+		if(R.unavailable_to_build)
+			continue
+		if(species in R.species_cannot_use)
+			continue
+		new_manufacturers += A
 
-			var/new_manufacturer = act_ask(ui.user, action, params, ui, "k79", /datum/om/prompt/choice, message = "Select a new manufacturer", title = "Prosfab Species Selection", choices = new_manufacturers)
-			if(isnull(new_manufacturer))
-				return
-			if(new_manufacturer && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
-				manufacturer = new_manufacturer
-			return TRUE
+	var/new_manufacturer = act_ask(ui.user, action, params, ui, "k79", /datum/om/prompt/choice, message = "Select a new manufacturer", title = "Prosfab Species Selection", choices = new_manufacturers)
+	if(isnull(new_manufacturer))
+		return
+	if(new_manufacturer && tgui_status(ui.user, state) == STATUS_INTERACTIVE)
+		manufacturer = new_manufacturer
+	return TRUE
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/declare_interactions(list/into)
 	into += list(

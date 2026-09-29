@@ -123,12 +123,7 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_input_colormatrix/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ColorMate")
-		ui.set_autoupdate(FALSE) //This might be a bit intensive, better to not update it every few ticks
-		ui.open()
+DECLARE_UI(/datum/tgui_input_colormatrix, "ColorMate")
 
 /datum/tgui_input_colormatrix/tgui_close(mob/user)
 	. = ..()
@@ -173,61 +168,75 @@
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-/datum/tgui_input_colormatrix/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if (.)
-		return
-	switch(action)
-		if("switch_modes")
-			if(matrix_only && active_mode < 3)
-				return FALSE
-			active_mode = text2num(params["mode"])
-			return TRUE
-		if("choose_color")
-			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), title = "[title] colour picking", message = "Choose a color: ", default = activecolor, ui_refresh = src)
-			return TRUE
-		if("paint")
-			if(!do_paint(ui.user, !was_path))
-				return TRUE
-			set_entry(color_matrix_last)
-			temp = "Painted Successfully!"
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("drop")
-			temp = ""
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("clear")
-			target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
-			play_sfx(src, SFX_EFFECTS_SPRAY3)
-			temp = "Cleared Successfully!"
-			color_matrix_last = DEFAULT_COLORMATRIX
-			update_tgui_static_data(ui.user, ui)
-			return TRUE
-		if("set_matrix_color")
-			color_matrix_last[params["color"]] = params["value"]
-			return TRUE
-		if("set_matrix_string")
-			if(params["value"])
-				var/list/colours = splittext(params["value"], ",")
-				if(length(colours) > 12)
-					colours.Cut(13)
-				for(var/i = 1, i <= length(colours), i++)
-					var/number = text2num(colours[i])
-					if(isnum(number))
-						color_matrix_last[i] = clamp(number, -10, 10)
-			return TRUE
-		if("set_hue")
-			build_hue = clamp(text2num(params["buildhue"]), 0, 360)
-			return TRUE
-		if("set_sat")
-			build_sat = clamp(text2num(params["buildsat"]), -10, 10)
-			return TRUE
-		if("set_val")
-			build_val = clamp(text2num(params["buildval"]), -10, 10)
-			return TRUE
+UI_ACT(/datum/tgui_input_colormatrix, "switch_modes", ui_act_switch_modes, UI_ARG_NUM("mode"))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_switch_modes)
+	if(matrix_only && active_mode < 3)
+		return FALSE
+	active_mode = params["mode"]
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "choose_color", ui_act_choose_color)
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_choose_color)
+	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), title = "[title] colour picking", message = "Choose a color: ", default = activecolor, ui_refresh = src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "paint", ui_act_paint)
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_paint)
+	if(!do_paint(ui.user, !was_path))
+		return TRUE
+	set_entry(color_matrix_last)
+	temp = "Painted Successfully!"
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "drop", ui_act_drop)
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_drop)
+	temp = ""
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "clear", ui_act_clear)
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_clear)
+	target().remove_atom_colour(FIXED_COLOUR_PRIORITY)
+	play_sfx(src, SFX_EFFECTS_SPRAY3)
+	temp = "Cleared Successfully!"
+	color_matrix_last = DEFAULT_COLORMATRIX
+	update_tgui_static_data(ui.user, ui)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_VALUE("color"), UI_ARG_VALUE("value"))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_color)
+	color_matrix_last[params["color"]] = params["value"]
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_string", ui_act_set_matrix_string, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_string)
+	if(params["value"])
+		var/list/colours = splittext(params["value"], ",")
+		if(length(colours) > 12)
+			colours.Cut(13)
+		for(var/i = 1, i <= length(colours), i++)
+			var/number = text2num(colours[i])
+			if(isnum(number))
+				color_matrix_last[i] = clamp(number, -10, 10)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "set_hue", ui_act_set_hue, UI_ARG_NUM("buildhue", 0, 360))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_hue)
+	build_hue = params["buildhue"]
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "set_sat", ui_act_set_sat, UI_ARG_NUM("buildsat", -10, 10))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_sat)
+	build_sat = params["buildsat"]
+	return TRUE
+
+UI_ACT(/datum/tgui_input_colormatrix, "set_val", ui_act_set_val, UI_ARG_NUM("buildval", -10, 10))
+UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_val)
+	build_val = params["buildval"]
+	return TRUE
 
 /datum/tgui_input_colormatrix/proc/color_chosen(datum/om/prompt/color/ask)
 	activecolor = ask.picked_color

@@ -447,11 +447,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 		return STATUS_CLOSE
 	return ..()
 
-/datum/changeling_panel/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src,"ChangelingPanel", "Changeling Evolution Panel", parent_ui)
-		ui.open()
+DECLARE_UI(/datum/changeling_panel, "ChangelingPanel", UI_TITLE("Changeling Evolution Panel"))
 
 /datum/changeling_panel/tgui_data(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
@@ -471,14 +467,9 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 	return data
 
-/datum/changeling_panel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("evolve_power")
-			comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
-			return TRUE
+UI_ACT(/datum/changeling_panel, "evolve_power", ui_act_evolve_power, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/changeling_panel, ui_act_evolve_power)
+	comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
 	return TRUE
 
 /// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.

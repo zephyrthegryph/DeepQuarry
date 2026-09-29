@@ -42,9 +42,9 @@
 		atmos_control.emagged = 1
 		return 1
 
-/obj/machinery/computer/atmoscontrol/tgui_interact(mob/user)
+/obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)
 	if(!atmos_control)
 		atmos_control = new(src, req_access, req_one_access, monitored_alarm_ids)
-	atmos_control.tgui_interact(user)
+	return atmos_control
 
 DECLARE_REF(/obj/machinery/computer/atmoscontrol, "atmos_control", OWNED, null)

@@ -82,74 +82,76 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/telecomms/server/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TelecommsLogBrowser", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/telecomms/server, "TelecommsLogBrowser")
 
-/obj/machinery/computer/telecomms/server/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+/obj/machinery/computer/telecomms/server/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	add_fingerprint(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
+	for(var/obj/machinery/telecomms/T in servers)
+		if(T.id == params["id"])
+			SelectedServer_handle = om_handle(T)
+			break
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/server, "mainmenu", ui_act_mainmenu)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_mainmenu)
+	SelectedServer_handle = null
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/server, "release", ui_act_release)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_release)
+	servers = list()
+	SelectedServer_handle = null
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/server, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_scan)
+	if(length(servers) > 0)
+		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 		return TRUE
 
-	add_fingerprint(ui.user)
+	for(var/obj/machinery/telecomms/server/T in range(25, src))
+		if(T.network == network)
+			LAZYADD(servers, T)
 
-	switch(action)
-		if("view")
-			for(var/obj/machinery/telecomms/T in servers)
-				if(T.id == params["id"])
-					SelectedServer_handle = om_handle(T)
-					break
-			. = TRUE
+	if(!length(servers))
+		set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
+	else
+		set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
+	. = TRUE
 
-		if("mainmenu")
-			SelectedServer_handle = null
-			. = TRUE
+UI_ACT(/obj/machinery/computer/telecomms/server, "delete", ui_act_delete, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_delete)
+	if(!allowed(ui.user) && !emagged)
+		to_chat(ui.user, span_warning("ACCESS DENIED."))
+		return
 
-		if("release")
-			servers = list()
-			SelectedServer_handle = null
-			. = TRUE
+	if(SelectedServer())
+		var/idx = params["id"]
+		if(!idx || idx < 1 || idx > length(SelectedServer().log_entries))
+			return
+		var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
+		set_temp("DELETED ENTRY: [D.name]", "bad")
+		LAZYREMOVE(SelectedServer().log_entries, D)
+		qdel(D)
+	else
+		set_temp("FAILED: NO SELECTED MACHINE", "bad")
+	. = TRUE
 
-		if("scan")
-			if(length(servers) > 0)
-				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-				return TRUE
+UI_ACT(/obj/machinery/computer/telecomms/server, "network", ui_act_network)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_network)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
+	. = TRUE
 
-			for(var/obj/machinery/telecomms/server/T in range(25, src))
-				if(T.network == network)
-					LAZYADD(servers, T)
-
-			if(!length(servers))
-				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
-			else
-				set_temp("[length(servers)] SERVERS PROBED & BUFFERED", "good")
-			. = TRUE
-
-		if("delete")
-			if(!allowed(ui.user) && !emagged)
-				to_chat(ui.user, span_warning("ACCESS DENIED."))
-				return
-
-			if(SelectedServer())
-				var/idx = text2num(params["id"])
-				if(!idx || idx < 1 || idx > length(SelectedServer().log_entries))
-					return
-				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
-				set_temp("DELETED ENTRY: [D.name]", "bad")
-				LAZYREMOVE(SelectedServer().log_entries, D)
-				qdel(D)
-			else
-				set_temp("FAILED: NO SELECTED MACHINE", "bad")
-			. = TRUE
-
-		if("network")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
-			. = TRUE
-
-		if("cleartemp")
-			temp = null
-			. = TRUE
+UI_ACT(/obj/machinery/computer/telecomms/server, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_cleartemp)
+	temp = null
+	. = TRUE
 
 /obj/machinery/computer/telecomms/server/proc/network_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer

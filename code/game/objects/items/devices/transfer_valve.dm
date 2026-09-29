@@ -81,11 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/transfer_valve/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TransferValve", name) // 460, 320
-		ui.open()
+DECLARE_UI(/obj/item/transfer_valve, "TransferValve")
 
 /obj/item/transfer_valve/tgui_data(mob/user)
 	var/list/data = list()
@@ -95,28 +91,47 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 	data["valve"] = valve_open
 	return data
 
-/obj/item/transfer_valve/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
+UI_ACT(/obj/item/transfer_valve, "tankone", ui_act_tankone)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tankone)
 	. = TRUE
-	switch(action)
-		if("tankone")
-			remove_tank(tank_one)
-		if("tanktwo")
-			remove_tank(tank_two)
-		if("toggle")
-			toggle_valve()
-		if("device")
-			if(attached_device)
-				attached_device.attack_self(ui.user)
-		if("remove_device")
-			if(attached_device)
-				attached_device.forceMove(get_turf(src))
-				attached_device.holder_handle = null
-				attached_device = null
-				update_icon()
-		else
-			. = FALSE
+	remove_tank(tank_one)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "tanktwo", ui_act_tanktwo)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tanktwo)
+	. = TRUE
+	remove_tank(tank_two)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_toggle)
+	. = TRUE
+	toggle_valve()
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "device", ui_act_device)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_device)
+	. = TRUE
+	if(attached_device)
+		attached_device.attack_self(ui.user)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "remove_device", ui_act_remove_device)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_remove_device)
+	. = TRUE
+	if(attached_device)
+		attached_device.forceMove(get_turf(src))
+		attached_device.holder_handle = null
+		attached_device = null
+		update_icon()
 	if(.)
 		update_icon()
 		add_fingerprint(ui.user)

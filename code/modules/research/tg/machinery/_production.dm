@@ -203,11 +203,7 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	)
 
-/obj/machinery/rnd/production/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Fabricator")
-		ui.open()
+DECLARE_UI(/obj/machinery/rnd/production, "Fabricator")
 
 /obj/machinery/rnd/production/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -314,103 +310,91 @@ DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 			"meltingPoint" = mat.melting_point,
 		)
 
-/obj/machinery/rnd/production/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
+UI_ACT(/obj/machinery/rnd/production, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id", 64))
+UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_remove_mat)
+	var/datum/material/material = GLOB.name_to_material[params["id"]]
+	if(!istype(material))
 		return
 
-	switch(action)
-		if("remove_mat")
-			var/datum/material/material = GLOB.name_to_material[params["id"]]
-			if(!istype(material))
-				return
+	var/amount = params["amount"]
+	if(isnull(amount))
+		return
 
-			var/amount = params["amount"]
-			if(isnull(amount))
-				return
+	//we use initial(active_power_usage) because higher tier parts will have higher active usage but we have no benifit from it
+	if(!use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * initial(active_power_usage))))
+		atom_say("No power to dispense sheets")
+		return
 
-			amount = text2num(amount)
-			if(isnull(amount))
-				return
+	materials.eject_sheets(material, amount)
+	return TRUE
 
-			//we use initial(active_power_usage) because higher tier parts will have higher active usage but we have no benifit from it
-			if(!use_power_oneoff(ROUND_UP((amount / MAX_STACK_SIZE) * 0.4 * initial(active_power_usage))))
-				atom_say("No power to dispense sheets")
-				return
+UI_ACT(/obj/machinery/rnd/production, "build", ui_act_build, UI_ARG_NUM("amount", 1, 50), UI_ARG_LIST("materialSlots"), UI_ARG_TEXT("ref", 256))
+UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
+	if(busy)
+		atom_say("Warning: fabricator is busy!")
+		return
 
-			materials.eject_sheets(material, amount)
-			return TRUE
+	//validate design
+	var/design_id = params["ref"]
+	if(!design_id)
+		return
+	var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? GLOB.research_service.techweb_design_by_id(design_id) : null
+	if(!istype(design))
+		return FALSE
+	if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))
+		atom_say("This fabricator does not have the necessary keys to decrypt this design.")
+		return FALSE
+	if(design.build_type && !(design.build_type & allowed_buildtypes))
+		atom_say("This fabricator does not have the necessary manipulation systems for this design.")
+		return FALSE
 
-		if("build")
-			if(busy)
-				atom_say("Warning: fabricator is busy!")
-				return
+	//validate print quantity
+	var/print_quantity = params["amount"]
+	if(isnull(print_quantity))
+		return
 
-			//validate design
-			var/design_id = params["ref"]
-			if(!design_id)
-				return
-			var/datum/design_techweb/design = LAZYACCESS(stored_research.researched_designs, design_id) ? GLOB.research_service.techweb_design_by_id(design_id) : null
-			if(!istype(design))
-				return FALSE
-			if(!(isnull(allowed_department_flags) || (design.departmental_flags & allowed_department_flags)))
-				atom_say("This fabricator does not have the necessary keys to decrypt this design.")
-				return FALSE
-			if(design.build_type && !(design.build_type & allowed_buildtypes))
-				atom_say("This fabricator does not have the necessary manipulation systems for this design.")
-				return FALSE
+	// Material-selectable designs let the user pick which loaded material to use.
+	var/list/chosen_materials = params["materialSlots"] || list()
+	if(design.material_template && !design.material_choice_valid(chosen_materials))
+		atom_say("Select valid materials for every required construction slot.")
+		return FALSE
+	var/list/effective_mats = design.effective_materials(chosen_materials)
 
-			//validate print quantity
-			var/print_quantity = params["amount"]
-			if(isnull(print_quantity))
-				return
-			print_quantity = text2num(print_quantity)
-			if(isnull(print_quantity))
-				return
-			print_quantity = clamp(print_quantity, 1, 50)
+	//efficiency for this design, stacks use exact materials
+	var/coefficient = build_efficiency(design.build_path)
 
-			// Material-selectable designs let the user pick which loaded material to use.
-			var/list/chosen_materials = design.material_choices_from_params(params)
-			if(design.material_template && !design.material_choice_valid(chosen_materials))
-				atom_say("Select valid materials for every required construction slot.")
-				return FALSE
-			var/list/effective_mats = design.effective_materials(chosen_materials)
+	//check for materials
+	if(!materials.can_use_resource())
+		return
+	if(!materials.mat_container().has_materials(effective_mats, coefficient, print_quantity))
+		atom_say("Not enough materials to complete prototype[print_quantity > 1 ? "s" : ""].")
+		return FALSE
 
-			//efficiency for this design, stacks use exact materials
-			var/coefficient = build_efficiency(design.build_path)
+	//compute power & time to print 1 item
+	var/charge_per_item = 0
+	for(var/material in effective_mats)
+		charge_per_item += effective_mats[material]
+	charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * coefficient * active_power_usage)
+	var/build_time_per_item = (design.construction_time * design.lathe_time_factor * efficiency_coeff) ** 0.8
 
-			//check for materials
-			if(!materials.can_use_resource())
-				return
-			if(!materials.mat_container().has_materials(effective_mats, coefficient, print_quantity))
-				atom_say("Not enough materials to complete prototype[print_quantity > 1 ? "s" : ""].")
-				return FALSE
+	//start production
+	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+	current_producer_account = producer_id?.associated_account_number || 0
+	busy = TRUE
+	SStgui.update_uis(src)
+	print_sound.start()
+	if(production_animation)
+		icon_state = production_animation
+	var/turf/target_location
+	if(drop_direction)
+		target_location = get_step(src, drop_direction)
+		if(iswall(target_location))
+			target_location = get_turf(src)
+	else
+		target_location = get_turf(src)
+	om_after(src, build_time_per_item, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials)
 
-			//compute power & time to print 1 item
-			var/charge_per_item = 0
-			for(var/material in effective_mats)
-				charge_per_item += effective_mats[material]
-			charge_per_item = ROUND_UP((charge_per_item / (MAX_STACK_SIZE * SHEET_MATERIAL_AMOUNT)) * coefficient * active_power_usage)
-			var/build_time_per_item = (design.construction_time * design.lathe_time_factor * efficiency_coeff) ** 0.8
-
-			//start production
-			var/obj/item/card/id/producer_id = ui.user.GetIdCard()
-			current_producer_account = producer_id?.associated_account_number || 0
-			busy = TRUE
-			SStgui.update_uis(src)
-			print_sound.start()
-			if(production_animation)
-				icon_state = production_animation
-			var/turf/target_location
-			if(drop_direction)
-				target_location = get_step(src, drop_direction)
-				if(iswall(target_location))
-					target_location = get_turf(src)
-			else
-				target_location = get_turf(src)
-			om_after(src, build_time_per_item, PROC_REF(do_make_item), design, print_quantity, build_time_per_item, coefficient, charge_per_item, target_location, chosen_materials)
-
-			return TRUE
+	return TRUE
 
 /**
  * Callback for start_making, actually makes the item

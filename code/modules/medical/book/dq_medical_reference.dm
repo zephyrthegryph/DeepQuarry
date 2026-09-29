@@ -39,11 +39,7 @@ EXTEND_INTERACTIONS(/obj/item/book/dq_medical_reference, INTERACT_USE("Read", PR
 /obj/item/book/dq_medical_reference/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
 
-/obj/item/book/dq_medical_reference/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DQMedicalBook", name)
-		ui.open()
+DECLARE_UI(/obj/item/book/dq_medical_reference, "DQMedicalBook")
 
 /obj/item/book/dq_medical_reference/tgui_data(mob/user)
 	var/list/data = list()

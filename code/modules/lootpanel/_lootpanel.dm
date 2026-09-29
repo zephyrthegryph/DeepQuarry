@@ -25,12 +25,7 @@
 	reset_contents()
 	..()
 
-/datum/lootpanel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "LootPanel")
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/datum/lootpanel, "LootPanel")
 
 /datum/lootpanel/tgui_close(mob/user)
 	. = ..()
@@ -57,18 +52,9 @@
 
 	return STATUS_INTERACTIVE
 
-/datum/lootpanel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("grab")
-			return grab(usr, params)
-		if("refresh")
-			return populate_contents()
-
-	return FALSE
+UI_ACT(/datum/lootpanel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/lootpanel, ui_act_refresh)
+	return populate_contents()
 
 /// LC-refs: the source_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/lootpanel/proc/source_turf() as /turf

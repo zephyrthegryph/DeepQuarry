@@ -61,18 +61,18 @@
 		"chassis_thumbs" = chassis_thumbs,
 	)
 
-/datum/preference_editor/robot_chassis/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_module")
-			var/value = params["value"]
-			if(value && !(value in GLOB.robot_modules))
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/text/human/robot_module, value || "")
-			// Reset chassis when the module changes — the previously-chosen sprite
-			// may not belong to the new module's catalog.
-			preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, "")
-			return PREF_UPDATE_ACCEPTED
-		if("set_chassis")
-			preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, params["value"] || "")
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/robot_chassis, "set_module", ui_act_set_module, UI_ARG_VALUE("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/robot_chassis, ui_act_set_module)
+	var/value = params["value"]
+	if(value && !(value in GLOB.robot_modules))
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/text/human/robot_module, value || "")
+	// Reset chassis when the module changes — the previously-chosen sprite
+	// may not belong to the new module's catalog.
+	preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, "")
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/robot_chassis, "set_chassis", ui_act_set_chassis, UI_ARG_VALUE("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/robot_chassis, ui_act_set_chassis)
+	preferences.update_preference_by_type(/datum/preference/text/human/robot_chassis, params["value"] || "")
+	return PREF_UPDATE_ACCEPTED

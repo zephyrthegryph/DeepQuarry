@@ -65,31 +65,31 @@
 
 	open_legacy(user)
 
-/datum/tgui_module/player_notes/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/player_notes, "show_player_info", ui_act_show_player_info, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_show_player_info)
+	var/datum/tgui_module/player_notes_info/A = new(src)
+	A.key = params["name"]
+	A.tgui_interact(ui.user)
 
-	switch(action)
-		if("show_player_info")
-			var/datum/tgui_module/player_notes_info/A = new(src)
-			A.key = params["name"]
-			A.tgui_interact(ui.user)
+UI_ACT(/datum/tgui_module/player_notes, "filter_player_notes", ui_act_filter_player_notes)
+UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_filter_player_notes)
+	var/input = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
+	if(isnull(input))
+		return
+	current_filter = input
 
-		if("filter_player_notes")
-			var/input = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
-			if(isnull(input))
-				return
-			current_filter = input
+UI_ACT(/datum/tgui_module/player_notes, "set_page", ui_act_set_page, UI_ARG_VALUE("index"))
+UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_set_page)
+	var/page = params["index"]
+	current_page = page
 
-		if("set_page")
-			var/page = params["index"]
-			current_page = page
+UI_ACT(/datum/tgui_module/player_notes, "clear_player_info_filter", ui_act_clear_player_info_filter)
+UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_clear_player_info_filter)
+	current_filter = ""
 
-		if("clear_player_info_filter")
-			current_filter = ""
-
-		if("open_legacy_ui")
-			open_legacy(ui.user)
+UI_ACT(/datum/tgui_module/player_notes, "open_legacy_ui", ui_act_open_legacy_ui)
+UI_ACT_PROC(/datum/tgui_module/player_notes, ui_act_open_legacy_ui)
+	open_legacy(ui.user)
 
 /datum/tgui_module/player_notes/tgui_data(mob/user)
 	var/list/data = list()
@@ -128,32 +128,30 @@
 	var/datum/admins/A = GLOB.admin_datums[user.ckey]
 	A.show_player_info_legacy(user, key)
 
-/datum/tgui_module/player_notes_info/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/player_notes_info, "cahngekey", ui_act_cahngekey, UI_ARG_TEXT("ckey"))
+UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_cahngekey)
+	key = sanitize(params["ckey"])
+	return TRUE
 
-	switch(action)
-		if("cahngekey")
-			key = sanitize(params["ckey"])
-			return TRUE
+UI_ACT(/datum/tgui_module/player_notes_info, "add_player_info", ui_act_add_player_info, UI_ARG_VALUE("ckey"))
+UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_add_player_info)
+	var/key = params["ckey"]
+	var/add = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Write your comment below.", title = "Add Player Info", multiline = TRUE, max_length = MAX_TGUI_INPUT)
+	if(isnull(add))
+		return
+	if(!add)
+		return FALSE
 
-		if("add_player_info")
-			var/key = params["ckey"]
-			var/add = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/text, message = "Write your comment below.", title = "Add Player Info", multiline = TRUE, max_length = MAX_TGUI_INPUT)
-			if(isnull(add))
-				return
-			if(!add)
-				return FALSE
+	notes_add(key,add,ui.user)
+	return TRUE
 
-			notes_add(key,add,ui.user)
-			return TRUE
+UI_ACT(/datum/tgui_module/player_notes_info, "remove_player_info", ui_act_remove_player_info, UI_ARG_VALUE("ckey"), UI_ARG_VALUE("index"))
+UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_remove_player_info)
+	var/key = params["ckey"]
+	var/index = params["index"]
 
-		if("remove_player_info")
-			var/key = params["ckey"]
-			var/index = params["index"]
-
-			notes_del(key, index)
-			return TRUE
+	notes_del(key, index)
+	return TRUE
 
 /datum/tgui_module/player_notes_info/tgui_data(mob/user)
 	var/list/data = list()

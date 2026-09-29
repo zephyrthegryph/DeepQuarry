@@ -88,43 +88,41 @@
 		"perks" = perks,
 	)
 
-/datum/preference_editor/mind_body/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("add_perk")
-			var/perk_path = text2path(params["perk_path"])
-			if(!perk_path)
-				return PREF_UPDATE_REJECTED
-			var/datum/perk/P = GLOB.all_perks?[perk_path]
-			if(!P)
-				return PREF_UPDATE_REJECTED
-			var/list_type = perk_list_type_for(P)
-			if(!list_type)
-				return PREF_UPDATE_REJECTED
-			var/list/current = preferences.read_preference(list_type) || list()
-			if(perk_path in current)
-				return PREF_UPDATE_UNCHANGED
-			current += perk_path
-			preferences.update_preference_by_type(list_type, current)
-			return PREF_UPDATE_ACCEPTED
+UI_ACT(/datum/preference_editor/mind_body, "add_perk", ui_act_add_perk, UI_ARG_PATH("perk_path", /datum))
+UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_add_perk)
+	var/perk_path = params["perk_path"]
+	if(!perk_path)
+		return PREF_UPDATE_REJECTED
+	var/datum/perk/P = GLOB.all_perks?[perk_path]
+	if(!P)
+		return PREF_UPDATE_REJECTED
+	var/list_type = perk_list_type_for(P)
+	if(!list_type)
+		return PREF_UPDATE_REJECTED
+	var/list/current = preferences.read_preference(list_type) || list()
+	if(perk_path in current)
+		return PREF_UPDATE_UNCHANGED
+	current += perk_path
+	preferences.update_preference_by_type(list_type, current)
+	return PREF_UPDATE_ACCEPTED
 
-		if("remove_perk")
-			var/perk_path = text2path(params["perk_path"])
-			if(!perk_path)
-				return PREF_UPDATE_REJECTED
-			var/datum/perk/P = GLOB.all_perks?[perk_path]
-			if(!P)
-				return PREF_UPDATE_REJECTED
-			var/list_type = perk_list_type_for(P)
-			if(!list_type)
-				return PREF_UPDATE_REJECTED
-			var/list/current = preferences.read_preference(list_type) || list()
-			if(!(perk_path in current))
-				return PREF_UPDATE_UNCHANGED
-			current -= perk_path
-			preferences.update_preference_by_type(list_type, current)
-			return PREF_UPDATE_ACCEPTED
-
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/mind_body, "remove_perk", ui_act_remove_perk, UI_ARG_PATH("perk_path", /datum))
+UI_ACT_PREF_PROC(/datum/preference_editor/mind_body, ui_act_remove_perk)
+	var/perk_path = params["perk_path"]
+	if(!perk_path)
+		return PREF_UPDATE_REJECTED
+	var/datum/perk/P = GLOB.all_perks?[perk_path]
+	if(!P)
+		return PREF_UPDATE_REJECTED
+	var/list_type = perk_list_type_for(P)
+	if(!list_type)
+		return PREF_UPDATE_REJECTED
+	var/list/current = preferences.read_preference(list_type) || list()
+	if(!(perk_path in current))
+		return PREF_UPDATE_UNCHANGED
+	current -= perk_path
+	preferences.update_preference_by_type(list_type, current)
+	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/mind_body/proc/perk_list_type_for(datum/perk/P)
 	switch(P.perk_kind)

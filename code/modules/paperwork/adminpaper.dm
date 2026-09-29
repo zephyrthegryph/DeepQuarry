@@ -86,11 +86,7 @@
 	generateHeader(ask.choice)
 	tgui_interact(ask.answerer)
 
-/obj/item/paper/admin/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AdminPaper", name)
-		ui.open()
+DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
 
 /obj/item/paper/admin/tgui_data(mob/user)
 	var/list/data = list()
@@ -104,44 +100,60 @@
 	data["is_crayon"] = !!isCrayon
 	return data
 
-/obj/item/paper/admin/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+UI_ACT(/obj/item/paper/admin, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
+UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_field)
 	. = ..()
 	if(.)
 		return
-	switch(action)
-		if("write_field")
-			admin_write("[params["id"]]", usr)
-			return TRUE
-		if("write_end")
-			admin_write("end", usr)
-			return TRUE
-		if("confirm")
-			switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
-				if("Yes")
-					if(headerOn)
-						info = header + info
-					if(footerOn)
-						info += footer
-					updateinfolinks()
-					SStgui.close_uis(src)
-					admindatum().faxCallback(src, destination())
-			return TRUE
-		if("penmode")
-			isCrayon = !isCrayon
-			return TRUE
-		if("cancel")
+	admin_write("[params["id"]]", usr)
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "write_end", ui_act_write_end)
+UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
+	. = ..()
+	if(.)
+		return
+	admin_write("end", usr)
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
+	switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
+		if("Yes")
+			if(headerOn)
+				info = header + info
+			if(footerOn)
+				info += footer
+			updateinfolinks()
 			SStgui.close_uis(src)
-			qdel(src)
-			return TRUE
-		if("clear")
-			clearpaper()
-			return TRUE
-		if("toggleheader")
-			headerOn = !headerOn
-			return TRUE
-		if("togglefooter")
-			footerOn = !footerOn
-			return TRUE
+			admindatum().faxCallback(src, destination())
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "penmode", ui_act_penmode)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_penmode)
+	isCrayon = !isCrayon
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "cancel", ui_act_cancel)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
+	SStgui.close_uis(src)
+	qdel(src)
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "clear", ui_act_clear)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_clear)
+	clearpaper()
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "toggleheader", ui_act_toggleheader)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_toggleheader)
+	headerOn = !headerOn
+	return TRUE
+
+UI_ACT(/obj/item/paper/admin, "togglefooter", ui_act_togglefooter)
+UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
+	footerOn = !footerOn
+	return TRUE
 
 // Admin variant uses no pen/range checks (admins fax from anywhere) and
 // always pencode-parses with the chosen crayon flag.

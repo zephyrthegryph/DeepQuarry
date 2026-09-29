@@ -17,7 +17,8 @@
  */
 
 /datum/proc/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui/parent_ui = null, custom_state = null)
-	return FALSE // Not implemented.
+	// The declared UI model (doc/rewrite/systems.md section 3): DECLARE_UI rows open the window.
+	return ui_open(src, user, ui, parent_ui, custom_state)
 
 /**
  * public
@@ -30,7 +31,7 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return list() // Not implemented.
+	return ui_declared_data(src, user) // UI_DATA fields; overrides add to it with . = ..()
 
 /**
  * public
@@ -94,10 +95,8 @@
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE
-	if(action == "change_ui_state")
-		var/mob/living/user = ui.user
-		//write_preferences will make sure it's valid for href exploits.
-		user.client.prefs.write_preference(GLOB.preference_entries[/datum/preference/choiced/tgui_layout], params["new_state"])
+	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
+	return ui_dispatch(src, action, params, ui, state)
 
 /**
  * public

@@ -94,11 +94,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/radio/electropack/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Electropack", name, parent_ui)
-		ui.open()
+DECLARE_UI(/obj/item/radio/electropack, "Electropack")
 
 /obj/item/radio/electropack/tgui_data(mob/user)
 	return list(
@@ -108,25 +104,30 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 		"code" = code,
 	)
 
-/obj/item/radio/electropack/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/obj/item/radio/electropack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!can_use(usr))
-		return
+		return FALSE
 	usr.set_machine(src)
-	switch(action)
-		if("power")
-			on = !on
-			icon_state = "electropack[on]"
-			return TRUE
-		if("freq")
-			var/delta = text2num("[params["delta"]]")
-			if(isnum(delta))
-				set_frequency(sanitize_frequency(frequency + delta))
-			return TRUE
-		if("code")
-			var/delta = text2num("[params["delta"]]")
-			if(isnum(delta))
-				code = clamp(round(code + delta), 1, 100)
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/radio/electropack, "power", ui_act_power)
+UI_ACT_PROC(/obj/item/radio/electropack, ui_act_power)
+	on = !on
+	icon_state = "electropack[on]"
+	return TRUE
+
+UI_ACT(/obj/item/radio/electropack, "freq", ui_act_freq, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/item/radio/electropack, ui_act_freq)
+	var/delta = params["delta"]
+	if(isnum(delta))
+		set_frequency(sanitize_frequency(frequency + delta))
+	return TRUE
+
+UI_ACT(/obj/item/radio/electropack, "code", ui_act_code, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/item/radio/electropack, ui_act_code)
+	var/delta = params["delta"]
+	if(isnum(delta))
+		code = clamp(round(code + delta), 1, 100)
+	return TRUE

@@ -164,11 +164,7 @@
 /obj/machinery/atmospherics/trinary/atmos_filter/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/atmospherics/trinary/atmos_filter/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AtmosFilter", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/trinary/atmos_filter, "AtmosFilter")
 
 /obj/machinery/atmospherics/trinary/atmos_filter/tgui_data(mob/user)
 	var/list/data = list()
@@ -189,42 +185,46 @@
 
 	return data
 
-/obj/machinery/atmospherics/trinary/atmos_filter/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_power)
+	set_use_power(!use_power)
+	add_fingerprint(ui.user)
+	update_icon()
+	MACHINE_WAKE(src) // settings: re-evaluate the filter now
 
-	switch(action)
-		if("power")
-			set_use_power(!use_power)
-		if("rate")
-			var/rate = params["rate"]
-			if(rate == "max")
-				rate = air1.return_volume()
-				. = TRUE
-			else if(text2num(rate) != null)
-				rate = text2num(rate)
-				. = TRUE
-			if(.)
-				set_flow_rate = clamp(rate, 0, air1.return_volume())
-		if("filter")
-			. = TRUE
-			filter_type = text2num(params["filterset"])
-			filtered_out.Cut()	//no need to create new lists unnecessarily
-			switch(filter_type)
-				if(0) //removing hydrocarbons
-					filtered_out += GAS_PHORON
-					filtered_out += "oxygen_agent_b"
-				if(1) //removing O2
-					filtered_out += GAS_O2
-				if(2) //removing N2
-					filtered_out += GAS_N2
-				if(3) //removing CO2
-					filtered_out += GAS_CO2
-				if(4)//removing N2O
-					filtered_out += GAS_N2O
-				if(5)//removing CH4
-					filtered_out += GAS_CH4
+UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "rate", ui_act_rate, UI_ARG_VALUE("rate"))
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_rate)
+	var/rate = params["rate"]
+	if(rate == "max")
+		rate = air1.return_volume()
+		. = TRUE
+	else if(isnum(rate))
+		. = TRUE
+	if(.)
+		set_flow_rate = clamp(rate, 0, air1.return_volume())
+	add_fingerprint(ui.user)
+	update_icon()
+	MACHINE_WAKE(src) // settings: re-evaluate the filter now
 
+UI_ACT(/obj/machinery/atmospherics/trinary/atmos_filter, "filter", ui_act_filter, UI_ARG_NUM("filterset"))
+UI_ACT_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, ui_act_filter)
+	. = TRUE
+	filter_type = params["filterset"]
+	filtered_out.Cut()	//no need to create new lists unnecessarily
+	switch(filter_type)
+		if(0) //removing hydrocarbons
+			filtered_out += GAS_PHORON
+			filtered_out += "oxygen_agent_b"
+		if(1) //removing O2
+			filtered_out += GAS_O2
+		if(2) //removing N2
+			filtered_out += GAS_N2
+		if(3) //removing CO2
+			filtered_out += GAS_CO2
+		if(4)//removing N2O
+			filtered_out += GAS_N2O
+		if(5)//removing CH4
+			filtered_out += GAS_CH4
 	add_fingerprint(ui.user)
 	update_icon()
 	MACHINE_WAKE(src) // settings: re-evaluate the filter now

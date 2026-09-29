@@ -63,11 +63,7 @@
 /obj/machinery/computer/arcade/orion_trail/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/machinery/computer/arcade/orion_trail/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OrionTrail", "The Orion Trail")
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/arcade/orion_trail, "OrionTrail", UI_TITLE("The Orion Trail"))
 
 /obj/machinery/computer/arcade/orion_trail/tgui_data(mob/user)
 	var/list/data = list()
@@ -102,39 +98,47 @@
 	data["screen"] = ORION_SCREEN_START
 	return data
 
-/obj/machinery/computer/arcade/orion_trail/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("menu")
-			orion_menu(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("new_game")
-			orion_newgame(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("continue")
-			orion_continue(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("blackhole_continue")
-			orion_blackhole(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("blackhole_around")
-			orion_pastblack(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("killcrew")
-			orion_killcrew(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("close")
-			ui.user?.unset_machine()
-			SStgui.close_uis(src)
-			return TRUE
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "menu", ui_act_menu)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_menu)
+	orion_menu(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "new_game", ui_act_new_game)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_new_game)
+	orion_newgame(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "continue", ui_act_continue)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_continue)
+	orion_continue(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_continue", ui_act_blackhole_continue)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_continue)
+	orion_blackhole(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "blackhole_around", ui_act_blackhole_around)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_blackhole_around)
+	orion_pastblack(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "killcrew", ui_act_killcrew)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_killcrew)
+	orion_killcrew(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/arcade/orion_trail, "close", ui_act_close)
+UI_ACT_PROC(/obj/machinery/computer/arcade/orion_trail, ui_act_close)
+	ui.user?.unset_machine()
+	SStgui.close_uis(src)
+	return TRUE
 
 
 #undef ORION_STATUS_START

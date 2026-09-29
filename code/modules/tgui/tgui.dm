@@ -51,6 +51,8 @@
 	var/partial_packets
 	/// If the window should be closed with other windows when requested
 	var/closeable = TRUE
+	/// OM handle of the host this window is bound to with om_ui_bind() (declared UI model).
+	var/tmp/om_bound_handle
 
 /**
  * public
@@ -248,6 +250,10 @@
 		user.unset_machine()
 
 	state_static = null
+	var/datum/bound = om_resolve(om_bound_handle)
+	if(bound)
+		om_ui_unbind(src, bound)
+	om_bound_handle = null
 	if(parent_ui())
 		parent_ui().children -= src
 	parent_ui_handle = null
@@ -437,9 +443,9 @@
 			+ "world.time: [world.time]")
 		close(can_be_suspended = FALSE)
 		return
-	// Update through a normal call to ui_interact
+	// Update through the declared UI's refresh (its ui_prepare() hook, then the push)
 	if(status != STATUS_DISABLED && (autoupdate || force))
-		src_object().tgui_interact(user, src, parent_ui())
+		ui_refresh(src_object(), user, src)
 		return
 	// Update status only
 	var/needs_update = process_status()

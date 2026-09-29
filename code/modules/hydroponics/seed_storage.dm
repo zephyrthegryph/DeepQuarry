@@ -273,7 +273,9 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/seed_storage/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
+
+/obj/machinery/seed_storage/ui_prepare(mob/user, datum/tgui/ui)
 	if(!seeds_initialized)
 		for(var/typepath in starting_seeds)
 			var/amount = LAZYACCESS(starting_seeds, typepath)
@@ -291,10 +293,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 				add(O, 1)
 		seeds_initialized = 1
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SeedStorage", name)
-		ui.open()
+	return TRUE
 
 /obj/machinery/seed_storage/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -407,40 +406,47 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 
 	return data
 
-/obj/machinery/seed_storage/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-	var/ID = text2num(params["id"])
-
+/// The pile the UI's id names, among those this storage shows.
+/obj/machinery/seed_storage/proc/pile_by_id(id)
 	var/list/piles_to_check = piles
 	if(hacked || emagged)
 		piles_to_check = piles + piles_contra
-
 	for(var/datum/seed_pile/N in piles_to_check)
-		if(N.ID == ID)
-			if(action == "vend")
-				var/obj/O = pick(N.seeds)
-				if(O)
-					--N.amount
-					N.seeds -= O
-					if(N.amount <= 0 || N.seeds.len <= 0)
-						piles -= N
-						LAZYREMOVE(piles_contra, N)
-						qdel(N)
-					O.forceMove(src.loc)
-				else
-					piles -= N
-					LAZYREMOVE(piles_contra, N)
-					qdel(N)
-				return TRUE
-			else if(action == "purge")
-				for(var/obj/O in N.seeds)
-					qdel(O)
-				piles -= N
-				LAZYREMOVE(piles_contra, N)
-				qdel(N)
-				return TRUE
-			break
+		if(N.ID == id)
+			return N
+	return null
+
+UI_ACT(/obj/machinery/seed_storage, "vend", ui_act_vend, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_vend)
+	var/datum/seed_pile/N = pile_by_id(params["id"])
+	if(!N)
+		return
+	var/obj/O = pick(N.seeds)
+	if(O)
+		--N.amount
+		N.seeds -= O
+		if(N.amount <= 0 || N.seeds.len <= 0)
+			piles -= N
+			LAZYREMOVE(piles_contra, N)
+			qdel(N)
+		O.forceMove(src.loc)
+	else
+		piles -= N
+		LAZYREMOVE(piles_contra, N)
+		qdel(N)
+	return TRUE
+
+UI_ACT(/obj/machinery/seed_storage, "purge", ui_act_purge, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/machinery/seed_storage, ui_act_purge)
+	var/datum/seed_pile/N = pile_by_id(params["id"])
+	if(!N)
+		return
+	for(var/obj/O in N.seeds)
+		qdel(O)
+	piles -= N
+	LAZYREMOVE(piles_contra, N)
+	qdel(N)
+	return TRUE
 
 /obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)

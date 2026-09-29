@@ -135,79 +135,73 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 
 	return data
 
-/obj/machinery/biogenerator/tgui_interact(mob/user, datum/tgui/ui = null)
-	// Open the window
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Biogenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/biogenerator, "Biogenerator")
 
-/obj/machinery/biogenerator/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/obj/machinery/biogenerator, "activate", ui_act_activate)
+UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_activate)
+	activate(ui.user)
+	return TRUE
 
-	switch(action)
-		if("activate")
-			activate(ui.user)
-			return TRUE
-		if("detach")
-			if(beaker)
-				beaker.forceMove(loc)
-				beaker = null
-				update_icon()
-			return TRUE
-		if("purchase")
-			var/category = params["cat"] // meow
-			var/name = params["name"]
-			var/amount = params["amount"]
+UI_ACT(/obj/machinery/biogenerator, "detach", ui_act_detach)
+UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_detach)
+	if(beaker)
+		beaker.forceMove(loc)
+		beaker = null
+		update_icon()
+	return TRUE
 
-			if(!(category in item_list) || !(name in item_list[category]) || !isnum(amount)) // Not trying something that's not in the list, are you?
-				return FALSE
+UI_ACT(/obj/machinery/biogenerator, "purchase", ui_act_purchase, UI_ARG_NUM("amount"), UI_ARG_VALUE("cat"), UI_ARG_VALUE("name"))
+UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
+	var/category = params["cat"] // meow
+	var/name = params["name"]
+	var/amount = params["amount"]
 
-			var/datum/data/biogenerator_item/bi = item_list[category][name]
+	if(!(category in item_list) || !(name in item_list[category]) || !isnum(amount)) // Not trying something that's not in the list, are you?
+		return FALSE
 
-			if(!istype(bi))
-				var/datum/data/biogenerator_reagent/br = item_list[category][name]
-				if(!istype(br))
-					return FALSE
-				if(!beaker)
-					return FALSE
-				if(amount <= 0 || amount > br.reagent_amt)
-					return FALSE
-				var/cost = round(br.cost / build_eff)
-				if(cost < 1) //No going below 1 cost.
-					cost = 1
-				if(cost * amount > points)
-					to_chat(ui.user, span_danger("Insufficient biomass."))
-					return FALSE
-				var/amt_to_actually_dispense = round(min(beaker.reagents.get_free_space(), amount))
-				if(amt_to_actually_dispense <= 0)
-					to_chat(ui.user, span_danger("The loaded beaker is full!"))
-					return FALSE
-				points -= cost * amt_to_actually_dispense
-				beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
-				play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
-				return FALSE
+	var/datum/data/biogenerator_item/bi = item_list[category][name]
 
-			if(amount <= 0 || amount > bi.equipment_amt)
-				return FALSE
+	if(!istype(bi))
+		var/datum/data/biogenerator_reagent/br = item_list[category][name]
+		if(!istype(br))
+			return FALSE
+		if(!beaker)
+			return FALSE
+		if(amount <= 0 || amount > br.reagent_amt)
+			return FALSE
+		var/cost = round(br.cost / build_eff)
+		if(cost < 1) //No going below 1 cost.
+			cost = 1
+		if(cost * amount > points)
+			to_chat(ui.user, span_danger("Insufficient biomass."))
+			return FALSE
+		var/amt_to_actually_dispense = round(min(beaker.reagents.get_free_space(), amount))
+		if(amt_to_actually_dispense <= 0)
+			to_chat(ui.user, span_danger("The loaded beaker is full!"))
+			return FALSE
+		points -= cost * amt_to_actually_dispense
+		beaker.reagents.add_reagent(br.reagent_id, amt_to_actually_dispense)
+		play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
+		return FALSE
 
-			var/cost = round(bi.cost / build_eff)
-			if(cost > points)
-				to_chat(ui.user, span_danger("Insufficient biomass."))
-				return FALSE
+	if(amount <= 0 || amount > bi.equipment_amt)
+		return FALSE
 
-			points -= cost * amount
-			if(ispath(bi.equipment_path, /obj/item/stack))
-				new bi.equipment_path(loc, amount)
-				play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
-				return TRUE
+	var/cost = round(bi.cost / build_eff)
+	if(cost > points)
+		to_chat(ui.user, span_danger("Insufficient biomass."))
+		return FALSE
 
-			for(var/i in 1 to amount)
-				new bi.equipment_path(loc)
-				play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
-			return TRUE
+	points -= cost * amount
+	if(ispath(bi.equipment_path, /obj/item/stack))
+		new bi.equipment_path(loc, amount)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
+		return TRUE
+
+	for(var/i in 1 to amount)
+		new bi.equipment_path(loc)
+		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
+	return TRUE
 
 /obj/machinery/biogenerator/on_reagent_change()			//When the reagents change, change the icon as well.
 	update_icon()

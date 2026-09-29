@@ -32,30 +32,34 @@
 			"can_plot_expedition" = shuttle.moving_status == SHUTTLE_IDLE && can_plot_expedition()
 		)
 
-/obj/machinery/computer/shuttle_control/explore/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/shuttle_control/explore/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(ui.user, span_warning("Unable to establish link with the shuttle."))
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("plot_expedition")
-			plot_expedition(ui.user, shuttle)
-			return TRUE
-		if("pick")
-			var/list/possible_d = shuttle.get_possible_destinations()
-			var/D
-			if(possible_d.len)
-				var/_answer_k52 = act_ask(ui.user, action, params, ui, "k52", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d)
-				if(isnull(_answer_k52))
-					return
-				D = _answer_k52
-			else
-				to_chat(ui.user,span_warning("No valid landing sites in range."))
-			possible_d = shuttle.get_possible_destinations()
-			if(CanInteract(ui.user, GLOB.tgui_default_state) && (D in possible_d))
-				shuttle.set_destination(possible_d[D])
-			return TRUE
+UI_ACT(/obj/machinery/computer/shuttle_control/explore, "plot_expedition", ui_act_plot_expedition)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_plot_expedition)
+	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
+	plot_expedition(ui.user, shuttle)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/shuttle_control/explore, "pick", ui_act_pick)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/explore, ui_act_pick)
+	var/datum/shuttle/autodock/overmap/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/list/possible_d = shuttle.get_possible_destinations()
+	var/D
+	if(possible_d.len)
+		var/_answer_k52 = act_ask(ui.user, action, params, ui, "k52", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = possible_d)
+		if(isnull(_answer_k52))
+			return
+		D = _answer_k52
+	else
+		to_chat(ui.user,span_warning("No valid landing sites in range."))
+	possible_d = shuttle.get_possible_destinations()
+	if(CanInteract(ui.user, GLOB.tgui_default_state) && (D in possible_d))
+		shuttle.set_destination(possible_d[D])
+	return TRUE

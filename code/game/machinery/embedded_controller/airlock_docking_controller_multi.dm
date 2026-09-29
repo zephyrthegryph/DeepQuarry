@@ -29,9 +29,6 @@
 		"internalTemplateName" = "DockingConsoleMulti",
 	)
 
-/obj/machinery/embedded_controller/radio/docking_port_multi/tgui_act(action, params)
-	return ..() // Apparently we swallow all input (this is corrected legacy code)
-
 //a docking port based on an airlock
 // This is the actual controller that will be commanded by the master defined above
 /obj/machinery/embedded_controller/radio/airlock/docking_port_multi

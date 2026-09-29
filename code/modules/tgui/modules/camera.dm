@@ -92,31 +92,29 @@ DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null
 
 DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 
-/datum/tgui_module/camera/tgui_interact(mob/user, datum/tgui/ui = null)
+/datum/tgui_module/camera/ui_prepare(mob/user, datum/tgui/ui)
 	if(!user.client)
-		return
-
-	// Update UI
-	ui = SStgui.try_update_ui(user, src, ui)
-
+		return FALSE
 	// Update the camera, showing static if necessary and updating data if the location has moved.
 	update_active_camera_screen()
+	return TRUE
 
-	if(!ui)
-		var/user_ref = REF(user)
-		var/is_living = isliving(user)
-		// Ghosts shouldn't count towards concurrent users, which produces
-		// an audible terminal_on click.
-		if(is_living)
-			LAZYADD(concurrent_users, user_ref)
-		// Turn on the console
-		if(length(concurrent_users) == 1 && is_living)
-			play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_ON, 0.5, vary = FALSE)
-		// Open UI
-		ui = new(user, src, tgui_id, name)
-		ui.open()
-		// Register map objects
-		cam_screen_tg.display_to(user, ui.window())
+/datum/tgui_module/camera/ui_opening(mob/user, datum/tgui/ui)
+	..()
+	var/user_ref = REF(user)
+	var/is_living = isliving(user)
+	// Ghosts shouldn't count towards concurrent users, which produces
+	// an audible terminal_on click.
+	if(is_living)
+		LAZYADD(concurrent_users, user_ref)
+	// Turn on the console
+	if(length(concurrent_users) == 1 && is_living)
+		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_ON, 0.5, vary = FALSE)
+
+/datum/tgui_module/camera/ui_opened(mob/user, datum/tgui/ui)
+	..()
+	// Register map objects
+	cam_screen_tg.display_to(user, ui.window())
 
 /datum/tgui_module/camera/tgui_data()
 	var/list/data = list()
@@ -143,54 +141,56 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 		data["allNetworks"] |= C.network
 	return data
 
-/datum/tgui_module/camera/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/datum/tgui_module/camera/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(action && !issilicon(ui.user))
 		play_sfx(tgui_host(), SFX_TERMINAL_TYPE)
+	return TRUE
 
-	if(action == "switch_camera")
-		var/c_tag = params["name"]
-		var/list/cameras = get_available_cameras(ui.user)
-		var/obj/machinery/camera/C = cameras["[ckey(c_tag)]"]
-		if(active_camera())
-			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-		if(C)
-			active_camera_handle = om_handle(C)
+UI_ACT(/datum/tgui_module/camera, "switch_camera", ui_act_switch_camera, UI_ARG_TEXT("name"))
+UI_ACT_PROC(/datum/tgui_module/camera, ui_act_switch_camera)
+	var/c_tag = params["name"]
+	var/list/cameras = get_available_cameras(ui.user)
+	var/obj/machinery/camera/C = cameras["[ckey(c_tag)]"]
+	if(active_camera())
+		om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+	if(C)
+		active_camera_handle = om_handle(C)
+		dq_add_recursive_move(active_camera())
+		om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
+	playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
+	update_active_camera_screen()
+	return TRUE
+
+UI_ACT(/datum/tgui_module/camera, "pan", ui_act_pan, UI_ARG_VALUE("dir"))
+UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
+	var/dir = params["dir"]
+	var/turf/T = get_turf(active_camera())
+	for(var/i in 1 to 10)
+		T = get_step(T, dir)
+	if(T)
+		var/obj/machinery/camera/target
+		var/best_dist = INFINITY
+
+		var/list/possible_cameras = get_available_cameras(ui.user)
+		for(var/obj/machinery/camera/C in get_area(T))
+			if(!possible_cameras["[ckey(C.c_tag)]"])
+				continue
+			var/dist = get_dist(C, T)
+			if(dist < best_dist)
+				best_dist = dist
+				target = C
+
+		if(target)
+			if(active_camera())
+				om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
+			active_camera_handle = om_handle(target)
 			dq_add_recursive_move(active_camera())
 			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
-		playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
-		update_active_camera_screen()
-		return TRUE
-
-	if(action == "pan")
-		var/dir = params["dir"]
-		var/turf/T = get_turf(active_camera())
-		for(var/i in 1 to 10)
-			T = get_step(T, dir)
-		if(T)
-			var/obj/machinery/camera/target
-			var/best_dist = INFINITY
-
-			var/list/possible_cameras = get_available_cameras(ui.user)
-			for(var/obj/machinery/camera/C in get_area(T))
-				if(!possible_cameras["[ckey(C.c_tag)]"])
-					continue
-				var/dist = get_dist(C, T)
-				if(dist < best_dist)
-					best_dist = dist
-					target = C
-
-			if(target)
-				if(active_camera())
-					om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-				active_camera_handle = om_handle(target)
-				dq_add_recursive_move(active_camera())
-				om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
-				playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
-				update_active_camera_screen()
-				. = TRUE
+			playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
+			update_active_camera_screen()
+			. = TRUE
 
 /// Event wrapper: the watched camera (or something carrying it) moved.
 /datum/tgui_module/camera/proc/on_active_camera_moved_event(datum/source, datum/om/event/movable_attempted_move/event)

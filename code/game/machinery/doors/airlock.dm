@@ -457,14 +457,7 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/door/airlock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, datum/tgui_state/custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AiAirlock", name)
-		ui.open()
-	if(custom_state)
-		ui.set_state(custom_state)
-	return TRUE
+DECLARE_UI(/obj/machinery/door/airlock, "AiAirlock")
 
 /obj/machinery/door/airlock/tgui_data(mob/user)
 	var/list/data = list()
@@ -697,65 +690,105 @@ About the new airlock wires panel:
 	playsound(src, knock_unpowered_sound, 50, 0, 3)
 	return CLICK_ACTION_SUCCESS
 
-/obj/machinery/door/airlock/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/door/airlock/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!user_allowed(ui.user))
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("disrupt-main")
-			if(!main_power_lost_until)
-				loseMainPower()
-				update_icon()
-			else
-				to_chat(ui.user, span_warning("Main power is already offline."))
-			. = TRUE
-		if("disrupt-backup")
-			if(!backup_power_lost_until)
-				loseBackupPower()
-				update_icon()
-			else
-				to_chat(ui.user, span_warning("Backup power is already offline."))
-			. = TRUE
-		if("shock-restore")
-			electrify(0, 1)
-			. = TRUE
-		if("shock-temp")
-			electrify(30, 1)
-			. = TRUE
-		if("shock-perm")
-			electrify(-1, 1)
-			. = TRUE
-		if("idscan-toggle")
-			set_idscan(aiDisabledIdScanner, 1)
-			. = TRUE
-		// if("emergency-toggle")
-		// 	toggle_emergency(ui.user)
-		// 	. = TRUE
-		if("bolt-toggle")
-			toggle_bolt(ui.user)
-			. = TRUE
-		if("light-toggle")
-			if(wires.is_cut(WIRE_BOLT_LIGHT))
-				to_chat(ui.user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
-				return
-			lights = !lights
-			update_icon()
-			. = TRUE
-		if("safe-toggle")
-			set_safeties(!safe, 1)
-			. = TRUE
-		if("speed-toggle")
-			if(wires.is_cut(WIRE_SPEED))
-				to_chat(ui.user, "The timing wire is cut - Cannot alter timing.")
-				return
-			normalspeed = !normalspeed
-			. = TRUE
-		if("open-close")
-			user_toggle_open(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/door/airlock, "disrupt-main", ui_act_disrupt_main)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_disrupt_main)
+	if(!main_power_lost_until)
+		loseMainPower()
+		update_icon()
+	else
+		to_chat(ui.user, span_warning("Main power is already offline."))
+	. = TRUE
+	update_icon()
+	return TRUE
 
+UI_ACT(/obj/machinery/door/airlock, "disrupt-backup", ui_act_disrupt_backup)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_disrupt_backup)
+	if(!backup_power_lost_until)
+		loseBackupPower()
+		update_icon()
+	else
+		to_chat(ui.user, span_warning("Backup power is already offline."))
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "shock-restore", ui_act_shock_restore)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_restore)
+	electrify(0, 1)
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "shock-temp", ui_act_shock_temp)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_temp)
+	electrify(30, 1)
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "shock-perm", ui_act_shock_perm)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_shock_perm)
+	electrify(-1, 1)
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "idscan-toggle", ui_act_idscan_toggle)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_idscan_toggle)
+	set_idscan(aiDisabledIdScanner, 1)
+	. = TRUE
+// if("emergency-toggle")
+// 	toggle_emergency(ui.user)
+// 	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "bolt-toggle", ui_act_bolt_toggle)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_bolt_toggle)
+	toggle_bolt(ui.user)
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "light-toggle", ui_act_light_toggle)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_light_toggle)
+	if(wires.is_cut(WIRE_BOLT_LIGHT))
+		to_chat(ui.user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
+		return
+	lights = !lights
+	update_icon()
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "safe-toggle", ui_act_safe_toggle)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_safe_toggle)
+	set_safeties(!safe, 1)
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "speed-toggle", ui_act_speed_toggle)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_speed_toggle)
+	if(wires.is_cut(WIRE_SPEED))
+		to_chat(ui.user, "The timing wire is cut - Cannot alter timing.")
+		return
+	normalspeed = !normalspeed
+	. = TRUE
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/door/airlock, "open-close", ui_act_open_close)
+UI_ACT_PROC(/obj/machinery/door/airlock, ui_act_open_close)
+	user_toggle_open(ui.user)
+	. = TRUE
 	update_icon()
 	return TRUE
 

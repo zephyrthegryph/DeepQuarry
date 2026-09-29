@@ -113,11 +113,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/paper_bundle/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PaperBundle", name)
-		ui.open()
+DECLARE_UI(/obj/item/paper_bundle, "PaperBundle")
 
 /obj/item/paper_bundle/tgui_data(mob/user)
 	var/list/data = list()
@@ -146,47 +142,53 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 		data["page_info"] = ""
 	return data
 
-/obj/item/paper_bundle/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/paper_bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!((src?.loc == usr) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == usr))))
 		to_chat(usr, span_notice("You need to hold it in hands!"))
-		return TRUE
+		return FALSE
 	usr.set_machine(src)
+	return TRUE
+
+UI_ACT(/obj/item/paper_bundle, "next_page", ui_act_next_page)
+UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
 	var/obj/item/in_hand = usr.get_active_hand()
-	switch(action)
-		if("next_page")
-			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-				insert_sheet_at(usr, page + 1, in_hand)
-			else if(page != pages.len)
-				page++
-				play_sfx(src, SFX_PAGETURN)
-			return TRUE
-		if("prev_page")
-			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-				insert_sheet_at(usr, page, in_hand)
-			else if(page > 1)
-				page--
-				play_sfx(src, SFX_PAGETURN)
-			return TRUE
-		if("remove")
-			if(!pages.len)
-				return TRUE
-			var/obj/item/W = pages[page]
-			usr.put_in_hands(W)
-			pages.Remove(pages[page])
-			to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
-			if(pages.len <= 1)
-				var/obj/item/paper/P = pages[1]
-				usr.drop_from_inventory(src)
-				usr.put_in_hands(P)
-				qdel(src)
-				return TRUE
-			if(page > pages.len)
-				page = pages.len
-			update_icon()
-			return TRUE
+	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
+		insert_sheet_at(usr, page + 1, in_hand)
+	else if(page != pages.len)
+		page++
+		play_sfx(src, SFX_PAGETURN)
+	return TRUE
+
+UI_ACT(/obj/item/paper_bundle, "prev_page", ui_act_prev_page)
+UI_ACT_PROC(/obj/item/paper_bundle, ui_act_prev_page)
+	var/obj/item/in_hand = usr.get_active_hand()
+	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
+		insert_sheet_at(usr, page, in_hand)
+	else if(page > 1)
+		page--
+		play_sfx(src, SFX_PAGETURN)
+	return TRUE
+
+UI_ACT(/obj/item/paper_bundle, "remove", ui_act_remove)
+UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
+	if(!pages.len)
+		return TRUE
+	var/obj/item/W = pages[page]
+	usr.put_in_hands(W)
+	pages.Remove(pages[page])
+	to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
+	if(pages.len <= 1)
+		var/obj/item/paper/P = pages[1]
+		usr.drop_from_inventory(src)
+		usr.put_in_hands(P)
+		qdel(src)
+		return TRUE
+	if(page > pages.len)
+		page = pages.len
+	update_icon()
+	return TRUE
 
 /// Old Rename bundle verb.
 /obj/item/paper_bundle/proc/paper_bundle_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)

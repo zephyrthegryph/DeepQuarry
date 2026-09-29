@@ -352,12 +352,11 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	// Finally, check against the allowed experiment types
 	return is_type_in_list(experiment, allowed_experiments)
 
-/datum/experiment_handler/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if (!ui)
-		var/atom/parent_atom = owner
-		ui = new(user, src, "ExperimentConfigure", "[parent_atom ? "[parent_atom.name] | " : ""]Experiment Configuration")
-		ui.open()
+DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
+
+/datum/experiment_handler/ui_title(mob/user)
+	var/atom/parent_atom = owner
+	return "[parent_atom ? "[parent_atom.name] | " : ""]Experiment Configuration"
 
 /datum/experiment_handler/tgui_static_data(mob/user)
 	. = ..()
@@ -403,33 +402,37 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 			)
 			.["experiments"] += list(data)
 
-/datum/experiment_handler/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if (.)
+UI_ACT(/datum/experiment_handler, "select_server", ui_act_select_server, UI_ARG_REF("ref", null, /datum/techweb))
+UI_ACT_PROC(/datum/experiment_handler, ui_act_select_server)
+	. = TRUE
+	var/datum/techweb/new_techweb = params["ref"]
+	if (new_techweb)
+		link_techweb(new_techweb)
 		return
-	switch (action)
-		if ("select_server")
-			. = TRUE
-			var/datum/techweb/new_techweb = locate(params["ref"])
-			if (new_techweb)
-				link_techweb(new_techweb)
-				return
-		if ("clear_server")
-			. = TRUE
-			unlink_techweb()
-		if ("select_experiment")
-			. = TRUE
-			// Don't allow selection for always actives (no concept of active)
-			if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
-				return
-			var/datum/experiment/experiment = locate(params["ref"])
-			if (experiment)
-				link_experiment(experiment)
-		if ("clear_experiment")
-			. = TRUE
-			unlink_experiment()
-		if("start_experiment_callback")
-			start_experiment_callback.Invoke(selected_experiment())
+
+UI_ACT(/datum/experiment_handler, "clear_server", ui_act_clear_server)
+UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_server)
+	. = TRUE
+	unlink_techweb()
+
+UI_ACT(/datum/experiment_handler, "select_experiment", ui_act_select_experiment, UI_ARG_REF("ref", null, /datum/experiment))
+UI_ACT_PROC(/datum/experiment_handler, ui_act_select_experiment)
+	. = TRUE
+	// Don't allow selection for always actives (no concept of active)
+	if (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE)
+		return
+	var/datum/experiment/experiment = params["ref"]
+	if (experiment)
+		link_experiment(experiment)
+
+UI_ACT(/datum/experiment_handler, "clear_experiment", ui_act_clear_experiment)
+UI_ACT_PROC(/datum/experiment_handler, ui_act_clear_experiment)
+	. = TRUE
+	unlink_experiment()
+
+UI_ACT(/datum/experiment_handler, "start_experiment_callback", ui_act_start_experiment_callback)
+UI_ACT_PROC(/datum/experiment_handler, ui_act_start_experiment_callback)
+	start_experiment_callback.Invoke(selected_experiment())
 
 DECLARE_REF(/datum/experiment_handler, "start_experiment_callback", OWNED, null)
 

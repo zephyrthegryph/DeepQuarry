@@ -38,11 +38,7 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/newspaper/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Newspaper", "The Griffon")
-		ui.open()
+DECLARE_UI(/obj/item/newspaper, "Newspaper", UI_TITLE("The Griffon"))
 
 /obj/item/newspaper/tgui_data(mob/user)
 	var/list/data = list()
@@ -79,31 +75,29 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 		data["wanted"] = null
 	return data
 
-/obj/item/newspaper/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("next_page")
-			if(curr_page == pages + 1)
-				return TRUE
-			if(curr_page == pages)
-				screen = 2
-			else if(curr_page == 0)
-				screen = 1
-			curr_page++
-			play_sfx(src, SFX_PAGETURN)
-			return TRUE
-		if("prev_page")
-			if(curr_page == 0)
-				return TRUE
-			if(curr_page == 1)
-				screen = 0
-			else if(curr_page == pages + 1)
-				screen = 1
-			curr_page--
-			play_sfx(src, SFX_PAGETURN)
-			return TRUE
+UI_ACT(/obj/item/newspaper, "next_page", ui_act_next_page)
+UI_ACT_PROC(/obj/item/newspaper, ui_act_next_page)
+	if(curr_page == pages + 1)
+		return TRUE
+	if(curr_page == pages)
+		screen = 2
+	else if(curr_page == 0)
+		screen = 1
+	curr_page++
+	play_sfx(src, SFX_PAGETURN)
+	return TRUE
+
+UI_ACT(/obj/item/newspaper, "prev_page", ui_act_prev_page)
+UI_ACT_PROC(/obj/item/newspaper, ui_act_prev_page)
+	if(curr_page == 0)
+		return TRUE
+	if(curr_page == 1)
+		screen = 0
+	else if(curr_page == pages + 1)
+		screen = 1
+	curr_page--
+	play_sfx(src, SFX_PAGETURN)
+	return TRUE
 
 /// Old attackby.
 /obj/item/newspaper/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

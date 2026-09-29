@@ -12,29 +12,26 @@
 		"message1" = message1 ? message1 : "(none)",
 		"message2" = message2 ? message2 : "(none)")
 
-/datum/data/pda/app/status_display/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-	switch(action)
-		if("Status")
-			switch(params["statdisp"])
-				if("message")
-					post_status("message", message1, message2)
-				if("alert")
-					post_status("alert", params["alert"])
-				if("setmsg1")
-					var/_answer_k26 = act_ask(ui.user, action, params, ui, "k26", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = message1)
-					if(isnull(_answer_k26))
-						return
-					message1 = _answer_k26
-				if("setmsg2")
-					var/_answer_k28 = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = message2)
-					if(isnull(_answer_k28))
-						return
-					message2 = _answer_k28
-				else
-					post_status(params["statdisp"])
-			return TRUE
+UI_ACT(/datum/data/pda/app/status_display, "Status", ui_act_status, UI_ARG_VALUE("alert"), UI_ARG_TEXT("statdisp"))
+UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
+	switch(params["statdisp"])
+		if("message")
+			post_status("message", message1, message2)
+		if("alert")
+			post_status("alert", params["alert"])
+		if("setmsg1")
+			var/_answer_k26 = act_ask(ui.user, action, params, ui, "k26", /datum/om/prompt/text, message = "Line 1", title = "Enter Message Text", default = message1)
+			if(isnull(_answer_k26))
+				return
+			message1 = _answer_k26
+		if("setmsg2")
+			var/_answer_k28 = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/text, message = "Line 2", title = "Enter Message Text", default = message2)
+			if(isnull(_answer_k28))
+				return
+			message2 = _answer_k28
+		else
+			post_status(params["statdisp"])
+	return TRUE
 
 /datum/data/pda/app/status_display/proc/post_status(command, data1, data2)
 	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
@@ -75,29 +72,45 @@
 		data["maxFrequency"] = RADIO_HIGH_FREQ
 		data["code"] = R.code
 
-/datum/data/pda/app/signaller/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/// The cartridge's signaller radio, if it has one.
+/datum/data/pda/app/signaller/proc/signal_radio()
 	if(pda().cartridge && istype(pda().cartridge.radio, /obj/item/radio/integrated/signal))
-		var/obj/item/radio/integrated/signal/R = pda().cartridge.radio
+		return pda().cartridge.radio
+	return null
 
-		switch(action)
-			if("signal")
-				R.send_signal("ACTIVATE")
-			if("freq")
-				var/frequency = unformat_frequency(params["freq"])
-				frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-				R.set_frequency(frequency)
-				. = TRUE
-			if("code")
-				R.code = clamp(round(text2num(params["code"])), 1, 100)
-				. = TRUE
-			if("reset")
-				if(params["reset"] == "freq")
-					R.set_frequency(initial(R.frequency))
-				else
-					R.code = initial(R.code)
-				. = TRUE
+UI_ACT(/datum/data/pda/app/signaller, "signal", ui_act_signal)
+UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_signal)
+	var/obj/item/radio/integrated/signal/R = signal_radio()
+	R?.send_signal("ACTIVATE")
+
+UI_ACT(/datum/data/pda/app/signaller, "freq", ui_act_freq, UI_ARG_VALUE("freq", 16))
+UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_freq)
+	var/obj/item/radio/integrated/signal/R = signal_radio()
+	if(!R)
+		return
+	var/frequency = unformat_frequency(params["freq"])
+	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	R.set_frequency(frequency)
+	return TRUE
+
+UI_ACT(/datum/data/pda/app/signaller, "code", ui_act_code, UI_ARG_INT("code", 1, 100))
+UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_code)
+	var/obj/item/radio/integrated/signal/R = signal_radio()
+	if(!R || isnull(params["code"]))
+		return
+	R.code = params["code"]
+	return TRUE
+
+UI_ACT(/datum/data/pda/app/signaller, "reset", ui_act_reset, UI_ARG_TEXT("reset", 16))
+UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
+	var/obj/item/radio/integrated/signal/R = signal_radio()
+	if(!R)
+		return
+	if(params["reset"] == "freq")
+		R.set_frequency(initial(R.frequency))
+	else
+		R.code = initial(R.code)
+	return TRUE
 
 /datum/data/pda/app/power
 	name = "Power Monitor"
@@ -116,15 +129,15 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))
 
-/datum/data/pda/app/power/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-	if(power_monitor.tgui_act(action, params, ui, state))
-		return TRUE
-	switch(action)
-		if("Back")
-			power_monitor.active_sensor = null
-			return TRUE
+UI_ACT(/datum/data/pda/app/power, "Back", ui_act_back)
+UI_ACT_PROC(/datum/data/pda/app/power, ui_act_back)
+	power_monitor.active_sensor = null
+	return TRUE
+
+/// Every other action is the embedded power monitor's.
+UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
+/datum/data/pda/app/power/proc/ui_forward_to_monitor(mob/user, action)
+	return power_monitor
 
 /datum/data/pda/app/crew_records
 	var/tmp/general_records_handle
@@ -144,19 +157,18 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 		data["records"] = null
 		return null
 
-/datum/data/pda/app/crew_records/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-	switch(action)
-		if("Records")
-			var/datum/data/record/R = locate(params["target"])
-			if(R && (R in GLOB.data_core.general))
-				load_records(R)
-			return TRUE
-		if("Back")
-			general_records_handle = null
-			has_back = 0
-			return TRUE
+UI_ACT(/datum/data/pda/app/crew_records, "Records", ui_act_records, UI_ARG_REF("target", null, /datum/data/record))
+UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
+	var/datum/data/record/R = params["target"]
+	if(R && (R in GLOB.data_core.general))
+		load_records(R)
+	return TRUE
+
+UI_ACT(/datum/data/pda/app/crew_records, "Back", ui_act_back)
+UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
+	general_records_handle = null
+	has_back = 0
+	return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
 	general_records_handle = om_handle(R)

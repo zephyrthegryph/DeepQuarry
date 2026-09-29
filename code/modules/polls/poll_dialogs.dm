@@ -37,36 +37,23 @@ DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
 /datum/privacy_poll_dialog/tgui_data(mob/user)
 	return list("answered" = answered)
 
-/datum/privacy_poll_dialog/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PrivacyPoll", "Player Poll — Privacy")
-		ui.open()
+DECLARE_UI(/datum/privacy_poll_dialog, "PrivacyPoll", UI_TITLE("Player Poll — Privacy"))
 
 /datum/privacy_poll_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/privacy_poll_dialog/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-
-	if(action != "vote" || !owner)
-		return
-
+UI_ACT(/datum/privacy_poll_dialog, "vote", ui_act_vote, UI_ARG_CHOICE("choice", list(PRIVACY_OPTION_LATER, PRIVACY_OPTION_SIGNED, PRIVACY_OPTION_ANONYMOUS, PRIVACY_OPTION_NOSTATS, PRIVACY_OPTION_ABSTAIN)))
+UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
 	var/choice = params["choice"]
-	if(!choice)
+	if(!owner || !choice)
 		return
-
 	if(!SSdbcore.IsConnected())
 		return
-
 	if(choice == PRIVACY_OPTION_LATER)
 		SStgui.close_uis(src)
 		qdel(src)
 		return TRUE
-
 	var/option
 	switch(choice)
 		if(PRIVACY_OPTION_SIGNED)
@@ -77,9 +64,6 @@ DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
 			option = "NOSTATS"
 		if(PRIVACY_OPTION_ABSTAIN)
 			option = "ABSTAIN"
-		else
-			return
-
 	record_vote(option)
 	return TRUE
 
@@ -131,11 +115,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
 /datum/poll_browser_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/poll_browser_dialog/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PollBrowser", "Player Polls")
-		ui.open()
+DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
 
 /datum/poll_browser_dialog/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -151,7 +131,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
 		return
 	var/isadmin = check_rights_for(owner.client, R_HOLDER) ? 1 : 0
 	// Adminonly clause is a static fragment of the query selected at
-	// build-time � not user input. The Now() BETWEEN comparison takes no
+	// build-time � not user input. The Now() BETWEEN comparison takes no
 	// parameters. Parameterised queries below for any user-derived value.
 	var/datum/db_query/q = SSdbcore.NewQuery(
 		"SELECT id, question FROM erro_poll_question WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime",
@@ -334,88 +314,95 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
 	qdel(q)
 	return out
 
-/datum/poll_browser_dialog/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/poll_browser_dialog/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!owner)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/poll_browser_dialog, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_refresh)
+	refresh_poll_list()
+	if(selected_pollid)
+		load_poll_detail(selected_pollid)
+	return TRUE
+
+UI_ACT(/datum/poll_browser_dialog, "select", ui_act_select, UI_ARG_NUM("id"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_select)
+	var/id = params["id"]
+	if(!isnum(id))
 		return
+	selected_pollid = id
+	selected_detail = null
+	load_poll_detail(id)
+	return TRUE
 
-	switch(action)
-		if("refresh")
-			refresh_poll_list()
-			if(selected_pollid)
-				load_poll_detail(selected_pollid)
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "back", ui_act_back)
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_back)
+	selected_pollid = null
+	selected_detail = null
+	return TRUE
 
-		if("select")
-			var/id = text2num("[params["id"]]")
-			if(!isnum(id))
-				return
-			selected_pollid = id
-			selected_detail = null
-			load_poll_detail(id)
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "vote_option", ui_act_vote_option, UI_ARG_NUM("optionid"), UI_ARG_NUM("pollid"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_option)
+	var/pollid = params["pollid"]
+	var/optionid = params["optionid"]
+	if(isnum(pollid) && isnum(optionid))
+		owner.vote_on_poll(pollid, optionid)
+	return TRUE
 
-		if("back")
-			selected_pollid = null
-			selected_detail = null
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "vote_text", ui_act_vote_text, UI_ARG_NUM("pollid"), UI_ARG_TEXT("replytext"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_text)
+	var/pollid = params["pollid"]
+	var/replytext = "[params["replytext"]]"
+	if(isnum(pollid) && length(replytext))
+		owner.log_text_poll_reply(pollid, replytext)
+	return TRUE
 
-		if("vote_option")
-			var/pollid = text2num("[params["pollid"]]")
-			var/optionid = text2num("[params["optionid"]]")
-			if(isnum(pollid) && isnum(optionid))
-				owner.vote_on_poll(pollid, optionid)
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "vote_text_abstain", ui_act_vote_text_abstain, UI_ARG_NUM("pollid"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_text_abstain)
+	var/pollid = params["pollid"]
+	if(isnum(pollid))
+		owner.log_text_poll_reply(pollid, "ABSTAIN")
+	return TRUE
 
-		if("vote_text")
-			var/pollid = text2num("[params["pollid"]]")
-			var/replytext = "[params["replytext"]]"
-			if(isnum(pollid) && length(replytext))
-				owner.log_text_poll_reply(pollid, replytext)
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "vote_numval", ui_act_vote_numval, UI_ARG_NUM("pollid"), UI_ARG_LIST("ratings"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_numval)
+	var/pollid = params["pollid"]
+	if(!isnum(pollid))
+		return
+	var/list/ratings = params["ratings"]
+	if(!islist(ratings))
+		return
+	for(var/optionid_str in ratings)
+		var/optionid = text2num("[optionid_str]")
+		if(!isnum(optionid))
+			continue
+		var/raw = "[ratings[optionid_str]]"
+		var/rating
+		if(raw == "abstain" || !length(raw))
+			rating = null
+		else
+			rating = text2num(raw)
+			if(!isnum(rating))
+				continue
+		owner.vote_on_numval_poll(pollid, optionid, rating)
+	return TRUE
 
-		if("vote_text_abstain")
-			var/pollid = text2num("[params["pollid"]]")
-			if(isnum(pollid))
-				owner.log_text_poll_reply(pollid, "ABSTAIN")
-			return TRUE
-
-		if("vote_numval")
-			var/pollid = text2num("[params["pollid"]]")
-			if(!isnum(pollid))
-				return
-			var/list/ratings = params["ratings"]
-			if(!islist(ratings))
-				return
-			for(var/optionid_str in ratings)
-				var/optionid = text2num("[optionid_str]")
-				if(!isnum(optionid))
-					continue
-				var/raw = "[ratings[optionid_str]]"
-				var/rating
-				if(raw == "abstain" || !length(raw))
-					rating = null
-				else
-					rating = text2num(raw)
-					if(!isnum(rating))
-						continue
-				owner.vote_on_numval_poll(pollid, optionid, rating)
-			return TRUE
-
-		if("vote_multi")
-			var/pollid = text2num("[params["pollid"]]")
-			if(!isnum(pollid))
-				return
-			var/list/choices = params["optionids"]
-			if(!islist(choices))
-				return
-			for(var/choice in choices)
-				var/optionid = text2num("[choice]")
-				if(isnum(optionid))
-					owner.vote_on_poll(pollid, optionid, 1)
-			return TRUE
+UI_ACT(/datum/poll_browser_dialog, "vote_multi", ui_act_vote_multi, UI_ARG_LIST("optionids"), UI_ARG_NUM("pollid"))
+UI_ACT_PROC(/datum/poll_browser_dialog, ui_act_vote_multi)
+	var/pollid = params["pollid"]
+	if(!isnum(pollid))
+		return
+	var/list/choices = params["optionids"]
+	if(!islist(choices))
+		return
+	for(var/choice in choices)
+		var/optionid = text2num("[choice]")
+		if(isnum(optionid))
+			owner.vote_on_poll(pollid, optionid, 1)
+	return TRUE
 
 // ============================================================
 // /mob/new_player extensions (re-open type to add per-mob refs)

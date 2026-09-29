@@ -109,34 +109,33 @@
 
 	return data
 
-/datum/tgui_module/late_choices/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-
+/datum/tgui_module/late_choices/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!isnewplayer(ui.user))
-		return
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/tgui_module/late_choices, "join", ui_act_join, UI_ARG_VALUE("job"))
+UI_ACT_PROC(/datum/tgui_module/late_choices, ui_act_join)
 	var/mob/new_player/new_user = ui.user
+	var/job = params["job"]
 
-	switch(action)
-		if("join")
-			var/job = params["job"]
+	if(!CONFIG_GET(flag/enter_allowed))
+		to_chat(new_user, span_notice("There is an administrative lock on entering the game!"))
+		return
+	else if(SSticker && SSticker.mode && SSticker.mode.explosion_in_progress)
+		to_chat(new_user, span_danger("The station is currently exploding. Joining would go poorly."))
+		return
 
-			if(!CONFIG_GET(flag/enter_allowed))
-				to_chat(new_user, span_notice("There is an administrative lock on entering the game!"))
-				return
-			else if(SSticker && SSticker.mode && SSticker.mode.explosion_in_progress)
-				to_chat(new_user, span_danger("The station is currently exploding. Joining would go poorly."))
-				return
+	var/pref_species = new_user.client.prefs.read_preference(/datum/preference/choiced/species)
+	var/datum/species/S = GLOB.all_species[pref_species]
+	if(!is_alien_whitelisted(new_user.client, S))
+		tgui_alert_async(new_user, "You are currently not whitelisted to play [pref_species].")
+		return 0
 
-			var/pref_species = new_user.client.prefs.read_preference(/datum/preference/choiced/species)
-			var/datum/species/S = GLOB.all_species[pref_species]
-			if(!is_alien_whitelisted(new_user.client, S))
-				tgui_alert_async(new_user, "You are currently not whitelisted to play [pref_species].")
-				return 0
+	if(!(S.spawn_flags & SPECIES_CAN_JOIN))
+		tgui_alert_async(new_user,"Your current species, [pref_species], is not available for play on the station.")
+		return 0
 
-			if(!(S.spawn_flags & SPECIES_CAN_JOIN))
-				tgui_alert_async(new_user,"Your current species, [pref_species], is not available for play on the station.")
-				return 0
-
-			new_user.AttemptLateSpawn(job)
+	new_user.AttemptLateSpawn(job)

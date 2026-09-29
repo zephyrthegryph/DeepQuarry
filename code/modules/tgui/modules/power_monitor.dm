@@ -37,20 +37,20 @@
 
 	return data
 
-/datum/tgui_module/power_monitor/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/power_monitor, "clear", ui_act_clear)
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_clear)
+	active_sensor = null
+	. = TRUE
 
-	switch(action)
-		if("clear")
-			active_sensor = null
-			. = TRUE
-		if("refresh")
-			refresh_sensors()
-			. = TRUE
-		if("setsensor")
-			active_sensor = params["id"]
-			. = TRUE
+UI_ACT(/datum/tgui_module/power_monitor, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_refresh)
+	refresh_sensors()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/power_monitor, "setsensor", ui_act_setsensor, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)
+	active_sensor = params["id"]
+	. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()
 	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))

@@ -608,11 +608,7 @@ DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 	Consume(user)
 	return TRUE
 
-/obj/machinery/power/supermatter/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AiSupermatter", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/supermatter, "AiSupermatter")
 
 // This is purely informational UI that may be accessed by AIs or robots
 /obj/machinery/power/supermatter/tgui_data(mob/user)

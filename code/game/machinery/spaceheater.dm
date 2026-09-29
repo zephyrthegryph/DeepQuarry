@@ -176,11 +176,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/space_heater/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SpaceHeater", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/space_heater, "SpaceHeater")
 
 /obj/machinery/space_heater/tgui_data(mob/user)
 	var/list/data = list()
@@ -193,45 +189,46 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 
 	return data
 
-/obj/machinery/space_heater/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/space_heater/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!panel_open)
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("temp")
-			// limit to 0-90 degC
-			set_temperature = clamp(text2num(params["newtemp"]), min_temperature, max_temperature)
+UI_ACT(/obj/machinery/space_heater, "temp", ui_act_temp, UI_ARG_NUM("newtemp"))
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_temp)
+	// limit to 0-90 degC
+	set_temperature = clamp(params["newtemp"], min_temperature, max_temperature)
+	if(state)
+		MACHINE_WAKE(src)
+	. = TRUE
+
+UI_ACT(/obj/machinery/space_heater, "cellremove", ui_act_cellremove)
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellremove)
+	if(cell && !ui.user.get_active_hand())
+		ui.user.visible_message(span_notice("[ui.user] removes [cell] from [src]."), span_notice("You remove [cell] from [src]."))
+		cell.update_icon()
+		ui.user.put_in_hands(cell)
+		cell.add_fingerprint(ui.user)
+		cell = null
+		power_change()
+		. = TRUE
+
+UI_ACT(/obj/machinery/space_heater, "cellinstall", ui_act_cellinstall)
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
+	if(!cell)
+		var/obj/item/cell/C = ui.user.get_active_hand()
+		if(istype(C))
+			ui.user.drop_item()
+			cell = C
+			C.forceMove(src)
+			C.add_fingerprint(ui.user)
+			power_change()
 			if(state)
 				MACHINE_WAKE(src)
-			. = TRUE
-
-		if("cellremove")
-			if(cell && !ui.user.get_active_hand())
-				ui.user.visible_message(span_notice("[ui.user] removes [cell] from [src]."), span_notice("You remove [cell] from [src]."))
-				cell.update_icon()
-				ui.user.put_in_hands(cell)
-				cell.add_fingerprint(ui.user)
-				cell = null
-				power_change()
-				. = TRUE
-
-
-		if("cellinstall")
-			if(!cell)
-				var/obj/item/cell/C = ui.user.get_active_hand()
-				if(istype(C))
-					ui.user.drop_item()
-					cell = C
-					C.forceMove(src)
-					C.add_fingerprint(ui.user)
-					power_change()
-					if(state)
-						MACHINE_WAKE(src)
-					ui.user.visible_message(span_notice("[ui.user] inserts \the [C] into \the [src]."), span_notice("You insert \the [C] into \the [src]."))
-				. = TRUE
+			ui.user.visible_message(span_notice("[ui.user] inserts \the [C] into \the [src]."), span_notice("You insert \the [C] into \the [src]."))
+		. = TRUE
 
 /obj/machinery/space_heater/machine_step()
 	if(!state)

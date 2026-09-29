@@ -7,13 +7,12 @@
 /obj/item/spellbook/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/spellbook/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
+
+/obj/item/spellbook/ui_prepare(mob/user, datum/tgui/ui)
 	if(special_handling)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Spellbook", "The Book of Spells")
-		ui.open()
+		return FALSE
+	return TRUE
 
 /proc/build_spellbook_catalog()
 	var/list/catalog = list(
@@ -60,22 +59,20 @@ GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 	data["noclothes"] = catalog["noclothes"]
 	return data
 
-/obj/item/spellbook/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("clear_temp")
-			temp = null
-			SStgui.update_uis(src)
-			return TRUE
-		if("choose")
-			var/spell_id = params["id"]
-			if(!spell_id)
-				return TRUE
-			choose_spell(ui.user, "[spell_id]", params, ui)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/item/spellbook, "clear_temp", ui_act_clear_temp)
+UI_ACT_PROC(/obj/item/spellbook, ui_act_clear_temp)
+	temp = null
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/spellbook, "choose", ui_act_choose, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/obj/item/spellbook, ui_act_choose)
+	var/spell_id = params["id"]
+	if(!spell_id)
+		return TRUE
+	choose_spell(ui.user, "[spell_id]", params, ui)
+	SStgui.update_uis(src)
+	return TRUE
 
 // spellbook now opens via TGUI panel rather than admin_log_show.
 DECLARE_INTERACTIONS(/obj/item/spellbook, INTERACT_SELF("Read", PROC_REF(interaction_read_spellbook)))

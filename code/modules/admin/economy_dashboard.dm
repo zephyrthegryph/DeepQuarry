@@ -3,11 +3,7 @@
 /datum/economy_dashboard/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_DEBUG)
 
-/datum/economy_dashboard/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EconomyDashboard", "Economy Observatory")
-		ui.open()
+DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Observatory"))
 
 /datum/economy_dashboard/tgui_close(mob/user)
 	SStgui.close_uis(src)

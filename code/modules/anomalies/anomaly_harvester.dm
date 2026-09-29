@@ -160,11 +160,7 @@
 /obj/machinery/anomaly_harvester/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/machinery/anomaly_harvester/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AnomalyHarvester", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/anomaly_harvester, "AnomalyHarvester")
 
 /obj/machinery/anomaly_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/sample_data = list()
@@ -186,23 +182,20 @@
 
 	return data
 
-/obj/machinery/anomaly_harvester/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/obj/machinery/anomaly_harvester, "release_sample", ui_act_release_sample, UI_ARG_REF("ref", "contents", /obj/item/research_sample))
+UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_sample)
+	var/obj/item/research_sample/sample = params["ref"]
+	if(!istype(sample) || (sample.loc != src))
+		return FALSE
+	sample.forceMove(get_turf(src))
+	return TRUE
 
-	switch(action)
-		if("release_sample")
-			var/obj/item/research_sample/sample = locate_within(src, params["ref"])
-			if(!istype(sample) || (sample.loc != src))
-				return FALSE
-			sample.forceMove(get_turf(src))
-			return TRUE
-		if("release_all")
-			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): materialized above
-				sample.forceMove(get_turf(src))
-			return TRUE
+UI_ACT(/obj/machinery/anomaly_harvester, "release_all", ui_act_release_all)
+UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_all)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): materialized above
+		sample.forceMove(get_turf(src))
+	return TRUE
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/anomaly_harvester/step_start_condition()

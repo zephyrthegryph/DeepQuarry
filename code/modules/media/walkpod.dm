@@ -173,11 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 /obj/item/walkpod/proc/getTracksList()
 	return SSmedia_tracks.jukebox_tracks
 
-/obj/item/walkpod/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Jukebox", "PodZu Music Player")
-		ui.open()
+DECLARE_UI(/obj/item/walkpod, "Jukebox", UI_TITLE("PodZu Music Player"))
 
 /obj/item/walkpod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -201,35 +197,39 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 	return data
 
-/obj/item/walkpod/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/walkpod, "change_track", ui_act_change_track, UI_ARG_REF("change_track", "proc:getTracksList", /datum/track))
+UI_ACT_PROC(/obj/item/walkpod, ui_act_change_track)
+	var/datum/track/T = params["change_track"]
+	if(istype(T))
+		current_track_handle = om_handle(T)
+		StartPlaying()
+	return TRUE
 
-	switch(action)
-		if("change_track")
-			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
-			if(istype(T))
-				current_track_handle = om_handle(T)
-				StartPlaying()
-			return TRUE
-		if("loopmode")
-			var/newval = text2num(params["loopmode"])
-			loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
-			return TRUE
-		if("volume")
-			var/newval = text2num(params["val"])
-			volume = clamp(newval, 0, 1)
-			update_music() // To broadcast volume change without restarting song
-			return TRUE
-		if("stop")
-			StopPlaying()
-			return TRUE
-		if("play")
-			if(current_track() == null)
-				to_chat(ui.user, "No track selected.")
-			else
-				StartPlaying()
-			return TRUE
+UI_ACT(/obj/item/walkpod, "loopmode", ui_act_loopmode, UI_ARG_NUM("loopmode"))
+UI_ACT_PROC(/obj/item/walkpod, ui_act_loopmode)
+	var/newval = params["loopmode"]
+	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
+	return TRUE
+
+UI_ACT(/obj/item/walkpod, "volume", ui_act_volume, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/item/walkpod, ui_act_volume)
+	var/newval = params["val"]
+	volume = clamp(newval, 0, 1)
+	update_music() // To broadcast volume change without restarting song
+	return TRUE
+
+UI_ACT(/obj/item/walkpod, "stop", ui_act_stop)
+UI_ACT_PROC(/obj/item/walkpod, ui_act_stop)
+	StopPlaying()
+	return TRUE
+
+UI_ACT(/obj/item/walkpod, "play", ui_act_play)
+UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
+	if(current_track() == null)
+		to_chat(ui.user, "No track selected.")
+	else
+		StartPlaying()
+	return TRUE
 
 // Silly verb
 /// Old Take HeadPods verb: Grab the pair of HeadPods.

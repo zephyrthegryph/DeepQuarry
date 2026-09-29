@@ -4,34 +4,26 @@
 		get_asset_datum(/datum/asset/simple/headers)
 	)
 
-/obj/item/modular_computer/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/modular_computer, "NtosMain", UI_AUTOUPDATE)
+
+/obj/item/modular_computer/ui_prepare(mob/user, datum/tgui/ui)
 	if(!screen_on || !enabled)
-		if(ui)
-			ui.close()
-		return 0
+		return FALSE
 	if(!apc_power(0) && !battery_power(0))
-		if(ui)
-			ui.close()
-		return 0
+		return FALSE
 
 	// If we have an active program switch to it now.
 	if(active_program())
-		if(ui) // This is the main laptop screen. Since we are switching to program's UI close it for now.
-			ui.close()
 		active_program().tgui_interact(user)
-		return
+		return FALSE
 
 	// We are still here, that means there is no program loaded. Load the BIOS/ROM/OS/whatever you want to call it.
 	// This screen simply lists available programs and user may select them.
 	if(!hard_drive || !hard_drive.stored_files || !length(hard_drive.stored_files))
 		visible_message("\The [src] beeps three times, it's screen displaying \"DISK ERROR\" warning.")
-		return // No HDD, No HDD files list or no stored files. Something is very broken.
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NtosMain")
-		ui.set_autoupdate(TRUE)
-		ui.open()
+	return TRUE
 
 /obj/item/modular_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
@@ -77,46 +69,52 @@
 	return data
 
 // Handles user's GUI input
-/obj/item/modular_computer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/modular_computer, "PC_exit", ui_act_pc_exit)
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_exit)
+	kill_program()
+	return TRUE
 
-	switch(action)
-		if("PC_exit")
-			kill_program()
-			return TRUE
-		if("PC_shutdown")
-			shutdown_computer()
-			return TRUE
-		if("PC_minimize")
-			minimize_program(ui.user)
-		if("PC_killprogram")
-			var/prog = params["name"]
-			var/datum/computer_file/program/P = null
-			if(hard_drive)
-				P = hard_drive.find_file_by_name(prog)
+UI_ACT(/obj/item/modular_computer, "PC_shutdown", ui_act_pc_shutdown)
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_shutdown)
+	shutdown_computer()
+	return TRUE
 
-			if(!istype(P) || P.program_state == PROGRAM_STATE_KILLED)
-				return
+UI_ACT(/obj/item/modular_computer, "PC_minimize", ui_act_pc_minimize)
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_minimize)
+	minimize_program(ui.user)
 
-			P.kill_program(1)
-			to_chat(ui.user, span_notice("Program [P.filename].[P.filetype] with PID [rand(100,999)] has been killed."))
+UI_ACT(/obj/item/modular_computer, "PC_killprogram", ui_act_pc_killprogram, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
+	var/prog = params["name"]
+	var/datum/computer_file/program/P = null
+	if(hard_drive)
+		P = hard_drive.find_file_by_name(prog)
+
+	if(!istype(P) || P.program_state == PROGRAM_STATE_KILLED)
+		return
+
+	P.kill_program(1)
+	to_chat(ui.user, span_notice("Program [P.filename].[P.filetype] with PID [rand(100,999)] has been killed."))
+	return TRUE
+
+UI_ACT(/obj/item/modular_computer, "PC_runprogram", ui_act_pc_runprogram, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_runprogram)
+	return run_program(params["name"])
+
+UI_ACT(/obj/item/modular_computer, "PC_setautorun", ui_act_pc_setautorun, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_setautorun)
+	if(!hard_drive)
+		return
+	set_autorun(params["name"])
+	return TRUE
+
+UI_ACT(/obj/item/modular_computer, "PC_Eject_Disk", ui_act_pc_eject_disk, UI_ARG_TEXT("name"))
+UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_eject_disk)
+	var/param = params["name"]
+	switch(param)
+		if("ID")
+			proc_eject_id(ui.user)
 			return TRUE
-		if("PC_runprogram")
-			return run_program(params["name"])
-		if("PC_setautorun")
-			if(!hard_drive)
-				return
-			set_autorun(params["name"])
-			return TRUE
-		if("PC_Eject_Disk")
-			var/param = params["name"]
-			switch(param)
-				if("ID")
-					proc_eject_id(ui.user)
-					return TRUE
-		else
-			return
 
 // Function used by TGUI's to obtain data for header. All relevant entries begin with "PC_"
 /obj/item/modular_computer/proc/get_header_data()

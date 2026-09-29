@@ -59,55 +59,73 @@
 		if(pda().cartridge)
 			data["charges"] = pda().cartridge.charges ? pda().cartridge.charges : 0
 
-/datum/data/pda/app/messenger/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/datum/data/pda/app/messenger/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	unnotify()
+	return TRUE
 
+UI_ACT(/datum/data/pda/app/messenger, "Toggle Messenger", ui_act_toggle_messenger)
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_messenger)
 	. = TRUE
-	switch(action)
-		if("Toggle Messenger")
-			toff = !toff
-		if("Toggle Ringer")//If viewing texts then erase them, if not then toggle silent status
-			notify_silent = !notify_silent
-		if("Clear")//Clears messages
-			if(params["option"] == "All")
-				LAZYCLEARLIST(tnote)
-				LAZYCLEARLIST(conversations)
-			if(params["option"] == "Convo")
-				var/new_tnote[0]
-				for(var/i in tnote)
-					if(i["target"] != active_conversation)
-						new_tnote[++new_tnote.len] = i
-				tnote = new_tnote
-				LAZYREMOVE(conversations, active_conversation)
+	toff = !toff
 
-			active_conversation = null
-		if("Message")
-			var/obj/item/pda/P = locate(params["target"])
-			create_message(ui.user, P)
-			if(params["target"] in conversations)            // Need to make sure the message went through, if not welp.
-				active_conversation = params["target"]
-		if("Select Conversation")
-			var/P = params["target"]
-			for(var/n in conversations)
-				if(P == n)
-					active_conversation = P
-		if("Messenger Plugin")
-			if(!params["target"] || !params["plugin"])
-				return
+UI_ACT(/datum/data/pda/app/messenger, "Toggle Ringer", ui_act_toggle_ringer)
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_toggle_ringer)
+	. = TRUE
+	notify_silent = !notify_silent
 
-			var/obj/item/pda/P = locate(params["target"])
-			if(!P)
-				to_chat(ui.user, "PDA not found.")
+UI_ACT(/datum/data/pda/app/messenger, "Clear", ui_act_clear, UI_ARG_TEXT("option"))
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_clear)
+	. = TRUE
+	if(params["option"] == "All")
+		LAZYCLEARLIST(tnote)
+		LAZYCLEARLIST(conversations)
+	if(params["option"] == "Convo")
+		var/new_tnote[0]
+		for(var/i in tnote)
+			if(i["target"] != active_conversation)
+				new_tnote[++new_tnote.len] = i
+		tnote = new_tnote
+		LAZYREMOVE(conversations, active_conversation)
 
-			var/datum/data/pda/messenger_plugin/plugin = locate(params["plugin"])
-			if(plugin && (plugin in pda().cartridge.messenger_plugins))
-				plugin.messenger_handle = om_handle(src)
-				plugin.user_act(ui.user, P)
-		if("Back")
-			active_conversation = null
+	active_conversation = null
+
+UI_ACT(/datum/data/pda/app/messenger, "Message", ui_act_message, UI_ARG_REF("target", null, /obj/item/pda))
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_message)
+	. = TRUE
+	var/obj/item/pda/P = params["target"]
+	create_message(ui.user, P)
+	if(params["target"] in conversations)            // Need to make sure the message went through, if not welp.
+		active_conversation = params["target"]
+
+UI_ACT(/datum/data/pda/app/messenger, "Select Conversation", ui_act_select_conversation, UI_ARG_VALUE("target"))
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_select_conversation)
+	. = TRUE
+	var/P = params["target"]
+	for(var/n in conversations)
+		if(P == n)
+			active_conversation = P
+
+UI_ACT(/datum/data/pda/app/messenger, "Messenger Plugin", ui_act_messenger_plugin, UI_ARG_REF("plugin", null, /datum/data/pda/messenger_plugin), UI_ARG_REF("target", null, /obj/item/pda))
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_messenger_plugin)
+	. = TRUE
+	if(!params["target"] || !params["plugin"])
+		return
+
+	var/obj/item/pda/P = params["target"]
+	if(!P)
+		to_chat(ui.user, "PDA not found.")
+
+	var/datum/data/pda/messenger_plugin/plugin = params["plugin"]
+	if(plugin && (plugin in pda().cartridge.messenger_plugins))
+		plugin.messenger_handle = om_handle(src)
+		plugin.user_act(ui.user, P)
+
+UI_ACT(/datum/data/pda/app/messenger, "Back", ui_act_back)
+UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_back)
+	. = TRUE
+	active_conversation = null
 
 // Specifically here for the chat message.
 TOPIC_ACTION(/datum/data/pda/app/messenger, "choice=Message", PROC_REF(topic_message), TOPIC_REF("target", /obj/item/pda))

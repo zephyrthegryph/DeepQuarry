@@ -85,11 +85,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/stack/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MaterialStack", name)
-		ui.open()
+DECLARE_UI(/obj/item/stack, "MaterialStack")
 
 /obj/item/stack/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -128,24 +124,20 @@
 /obj/item/stack/tgui_state(mob/user)
 	return GLOB.tgui_hands_state
 
-/obj/item/stack/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/stack, "make", ui_act_make, UI_ARG_NUM("multiplier"), UI_ARG_REF("ref", null, /datum/stack_recipe))
+UI_ACT_PROC(/obj/item/stack, ui_act_make)
+	if(get_amount() < 1)
+		qdel(src)
+		return
 
-	switch(action)
-		if("make")
-			if(get_amount() < 1)
-				qdel(src)
-				return
-
-			var/datum/stack_recipe/R = locate(params["ref"])
-			if(!is_valid_recipe(R, recipes)) //href exploit protection
-				return FALSE
-			var/multiplier = text2num(params["multiplier"])
-			if(!multiplier || (multiplier <= 0)) //href exploit protection
-				return
-			produce_recipe(R, multiplier, ui.user)
-			return TRUE
+	var/datum/stack_recipe/R = params["ref"]
+	if(!is_valid_recipe(R, recipes)) //href exploit protection
+		return FALSE
+	var/multiplier = params["multiplier"]
+	if(!multiplier || (multiplier <= 0)) //href exploit protection
+		return
+	produce_recipe(R, multiplier, ui.user)
+	return TRUE
 
 /obj/item/stack/proc/is_valid_recipe(datum/stack_recipe/R, list/recipe_list)
 	for(var/S in recipe_list)

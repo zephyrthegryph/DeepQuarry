@@ -72,11 +72,7 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 	)
 	..()
 
-/obj/machinery/atmospherics/unary/freezer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GasTemperatureSystem", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
 
 /obj/machinery/atmospherics/unary/freezer/tgui_data(mob/user)
 	// this is the data which will be sent to the ui
@@ -103,25 +99,32 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 
 	return data
 
-/obj/machinery/atmospherics/unary/freezer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "toggleStatus", ui_act_togglestatus)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_togglestatus)
 	. = TRUE
-	switch(action)
-		if("toggleStatus")
-			set_use_power(!use_power)
-			update_icon()
-		if("setGasTemperature")
-			var/amount = text2num(params["temp"])
-			if(amount > 0)
-				set_temperature = min(amount, 1000)
-			else
-				set_temperature = max(amount, 0)
-		if("setPower") //setting power to 0 is redundant anyways
-			var/new_setting = between(0, text2num(params["value"]), 100)
-			set_power_level(new_setting)
+	set_use_power(!use_power)
+	update_icon()
+	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
 
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setGasTemperature", ui_act_setgastemperature, UI_ARG_NUM("temp"))
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setgastemperature)
+	. = TRUE
+	var/amount = params["temp"]
+	if(amount > 0)
+		set_temperature = min(amount, 1000)
+	else
+		set_temperature = max(amount, 0)
+	add_fingerprint(ui.user)
+	if(.)
+		invalidate_gas_dependencies()
+
+UI_ACT(/obj/machinery/atmospherics/unary/freezer, "setPower", ui_act_setpower, UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/freezer, ui_act_setpower)
+	. = TRUE
+	var/new_setting = between(0, params["value"], 100)
+	set_power_level(new_setting)
 	add_fingerprint(ui.user)
 	if(.)
 		invalidate_gas_dependencies()

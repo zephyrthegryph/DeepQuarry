@@ -121,13 +121,12 @@ Thus, the two variables affect pump operation are set in New():
 
 	return 1
 
-/obj/machinery/atmospherics/binary/pump/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/atmospherics/binary/pump, "GasPump")
+
+/obj/machinery/atmospherics/binary/pump/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GasPump", name)
-		ui.open()
+		return FALSE
+	return TRUE
 
 /obj/machinery/atmospherics/binary/pump/tgui_data(mob/user)
 	// this is the data which will be sent to the ui
@@ -206,29 +205,30 @@ Thus, the two variables affect pump operation are set in New():
 	add_fingerprint(user)
 	return TRUE
 
-/obj/machinery/atmospherics/binary/pump/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/atmospherics/binary/pump, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_power)
+	set_use_power(!use_power)
+	set_on(!!use_power)
+	. = TRUE
+	if(.)
+		update_rust_device()
+	add_fingerprint(ui.user)
+	update_icon()
 
-	switch(action)
-		if("power")
-			set_use_power(!use_power)
-			set_on(!!use_power)
-			. = TRUE
-		if("set_press")
-			var/press = params["press"]
-			switch(press)
-				if("min")
-					set_target_pressure(0)
-				if("max")
-					set_target_pressure(max_pressure_setting)
-				if("set")
-					var/new_pressure = act_ask(ui.user, action, params, ui, "k231", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure control", default = get_target_pressure(), max = max_pressure_setting)
-					if(isnull(new_pressure))
-						return
-					set_target_pressure(between(0, new_pressure, max_pressure_setting))
-			. = TRUE
-
+UI_ACT(/obj/machinery/atmospherics/binary/pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)
+	var/press = params["press"]
+	switch(press)
+		if("min")
+			set_target_pressure(0)
+		if("max")
+			set_target_pressure(max_pressure_setting)
+		if("set")
+			var/new_pressure = act_ask(ui.user, action, params, ui, "k231", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure control", default = get_target_pressure(), max = max_pressure_setting)
+			if(isnull(new_pressure))
+				return
+			set_target_pressure(between(0, new_pressure, max_pressure_setting))
+	. = TRUE
 	if(.)
 		update_rust_device()
 	add_fingerprint(ui.user)

@@ -140,15 +140,14 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 /obj/item/integrated_circuit_printer/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
 
-/obj/item/integrated_circuit_printer/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
+
+/obj/item/integrated_circuit_printer/ui_prepare(mob/user, datum/tgui/ui)
+	// Update static data if need be
 	if(dirty_items)
 		update_tgui_static_data(user, ui)
 		dirty_items = FALSE
-
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ICPrinter", name) // 500, 600
-		ui.open()
+	return TRUE
 
 /obj/item/integrated_circuit_printer/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -208,59 +207,61 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 
 	return data
 
-/obj/item/integrated_circuit_printer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+/obj/item/integrated_circuit_printer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	add_fingerprint(ui.user)
+	return TRUE
+
+UI_ACT(/obj/item/integrated_circuit_printer, "import_circuit", ui_act_import_circuit)
+UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_import_circuit)
+	if(!can_clone)
+		to_chat(ui.user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
 		return TRUE
 
-	add_fingerprint(ui.user)
+	if(is_printing) // Should not be possible to reach here.
+		to_chat(ui.user, span_warning("The printer is busy! Please wait for the current print job to finish."))
+		return TRUE
 
-	switch(action)
-		if("import_circuit")
-			if(!can_clone)
-				to_chat(ui.user, span_warning("This printer requires a clone upgrade disk to import circuit designs!"))
-				return TRUE
+	handle_circuit_import(ui.user)
+	return TRUE
 
-			if(is_printing) // Should not be possible to reach here.
-				to_chat(ui.user, span_warning("The printer is busy! Please wait for the current print job to finish."))
-				return TRUE
+UI_ACT(/obj/item/integrated_circuit_printer, "build", ui_act_build, UI_ARG_PATH("build", /datum))
+UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
+	var/build_type = params["build"]
+	if(!build_type || !ispath(build_type))
+		return 1
 
-			handle_circuit_import(ui.user)
-			return TRUE
-		if("build")
-			var/build_type = text2path(params["build"])
-			if(!build_type || !ispath(build_type))
-				return 1
+	var/cost = 1
 
-			var/cost = 1
+	if(ispath(build_type, /obj/item/electronic_assembly))
+		var/obj/item/electronic_assembly/E = build_type
+		cost = round( (E::max_complexity + E::max_components ) / 4)
+	else
+		var/obj/item/I = build_type
+		cost = I::w_class
 
-			if(ispath(build_type, /obj/item/electronic_assembly))
-				var/obj/item/electronic_assembly/E = build_type
-				cost = round( (E::max_complexity + E::max_components ) / 4)
-			else
-				var/obj/item/I = build_type
-				cost = I::w_class
+	var/in_some_category = FALSE
+	for(var/category in circuit_service().circuit_fabricator_recipe_list)
+		if(build_type in circuit_service().circuit_fabricator_recipe_list[category])
+			in_some_category = TRUE
+			break
+	if(!in_some_category)
+		return
 
-			var/in_some_category = FALSE
-			for(var/category in circuit_service().circuit_fabricator_recipe_list)
-				if(build_type in circuit_service().circuit_fabricator_recipe_list[category])
-					in_some_category = TRUE
-					break
-			if(!in_some_category)
-				return
-
-			if(!debug)
-				if(!Adjacent(ui.user))
-					to_chat(ui.user, span_notice("You are too far away from \the [src]."))
-					return 1
-				if(metal - cost < 0)
-					to_chat(ui.user, span_warning("You need [cost] metal to build that!."))
-					return 1
-				metal -= cost
-			var/obj/item/built = new build_type(get_turf(loc))
-			ui.user.put_in_hands(built)
-			to_chat(ui.user, span_notice("[capitalize(built.name)] printed."))
-			play_sfx(src, SFX_ITEMS_JAWS_PRY)
-			return TRUE
+	if(!debug)
+		if(!Adjacent(ui.user))
+			to_chat(ui.user, span_notice("You are too far away from \the [src]."))
+			return 1
+		if(metal - cost < 0)
+			to_chat(ui.user, span_warning("You need [cost] metal to build that!."))
+			return 1
+		metal -= cost
+	var/obj/item/built = new build_type(get_turf(loc))
+	ui.user.put_in_hands(built)
+	to_chat(ui.user, span_notice("[capitalize(built.name)] printed."))
+	play_sfx(src, SFX_ITEMS_JAWS_PRY)
+	return TRUE
 
 /**
  * Imports a circuit design from JSON data

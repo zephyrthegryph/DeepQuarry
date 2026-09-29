@@ -24,13 +24,12 @@
 /datum/mind_memory_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/mind_memory_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/mind_memory_panel, "MindMemory", UI_TITLE("Memory"))
+
+/datum/mind_memory_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(user != recipient())
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MindMemory", "Memory")
-		ui.open()
+		return FALSE
+	return TRUE
 
 /datum/mind_memory_panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -66,11 +65,7 @@
 /datum/tag_menu_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
 
-/datum/tag_menu_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TagMenu", "Tag Menu")
-		ui.open()
+DECLARE_UI(/datum/tag_menu_panel, "TagMenu", UI_TITLE("Tag Menu"))
 
 /datum/tag_menu_panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -102,32 +97,49 @@
 	data["entries"] = rows
 	return data
 
-/datum/tag_menu_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !holder())
-		return
+/datum/tag_menu_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!holder())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_refresh)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "untag", ui_act_untag, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_untag)
 	var/ref = "[params["ref"]]"
-	switch(action)
-		if("refresh")
-			SStgui.update_uis(src)
-			return TRUE
-		if("untag")
-			holder().topic_internal(ui.user, list("_src_" = "holder", "del_tag" = ref))
-			SStgui.update_uis(src)
-			return TRUE
-		if("mark")
-			holder().topic_internal(ui.user, list("_src_" = "holder", "mark_datum" = ref))
-			SStgui.update_uis(src)
-			return TRUE
-		if("vv")
-			ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
-			return TRUE
-		if("pp")
-			holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))
-			return TRUE
-		if("follow")
-			holder().topic_internal(ui.user, list("_src_" = "holder", "adminobs" = ref))
-			return TRUE
+	holder().topic_internal(ui.user, list("_src_" = "holder", "del_tag" = ref))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "mark", ui_act_mark, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_mark)
+	var/ref = "[params["ref"]]"
+	holder().topic_internal(ui.user, list("_src_" = "holder", "mark_datum" = ref))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "vv", ui_act_vv, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_vv)
+	var/ref = "[params["ref"]]"
+	ui.user.client?.vv_topic(list("Vars" = ref), TRUE)
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "pp", ui_act_pp, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_pp)
+	var/ref = "[params["ref"]]"
+	holder().topic_internal(ui.user, list("_src_" = "holder", "playerpanel" = ref))
+	return TRUE
+
+UI_ACT(/datum/tag_menu_panel, "follow", ui_act_follow, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/tag_menu_panel, ui_act_follow)
+	var/ref = "[params["ref"]]"
+	holder().topic_internal(ui.user, list("_src_" = "holder", "adminobs" = ref))
+	return TRUE
 
 // ---- ToRban list ---------------------------------------------------------
 
@@ -141,11 +153,7 @@
 /datum/dq_torban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_SERVER)
 
-/datum/dq_torban_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TorbanList", "Torban")
-		ui.open()
+DECLARE_UI(/datum/dq_torban_panel, "TorbanList", UI_TITLE("Torban"))
 
 /datum/dq_torban_panel/tgui_data(mob/user)
 	return list("addresses" = addresses || list())
@@ -164,12 +172,10 @@
 /datum/dq_investigate_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_SERVER)
 
-/datum/dq_investigate_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "InvestigateLog", "Investigate: [subject]")
-		ui.open()
-	ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/dq_investigate_panel, "InvestigateLog")
+
+/datum/dq_investigate_panel/ui_title(mob/user)
+	return "Investigate: [subject]"
 
 /datum/dq_investigate_panel/tgui_data(mob/user)
 	return list(
@@ -196,13 +202,10 @@
 /datum/unban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
 
-/datum/unban_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		snapshot_bans()
-		ui = new(user, src, "UnbanPanel", "Unban")
-		ui.open()
-	ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
+
+/datum/unban_panel/ui_opening(mob/user, datum/tgui/ui)
+	snapshot_bans()
 
 /datum/unban_panel/proc/snapshot_bans()
 	shown_rows = list()
@@ -250,26 +253,34 @@
 	data["count"] = length(shown_rows)
 	return data
 
-/datum/unban_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !holder())
-		return
+/datum/unban_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!holder())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/unban_panel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/unban_panel, ui_act_refresh)
+	snapshot_bans()
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/unban_panel, "unban", ui_act_unban, UI_ARG_TEXT("key_id"))
+UI_ACT_PROC(/datum/unban_panel, ui_act_unban)
 	var/key_id = "[params["key_id"]]"
-	switch(action)
-		if("refresh")
-			snapshot_bans()
-			SStgui.update_uis(src)
-			return TRUE
-		if("unban")
-			holder().topic_internal(ui.user, list("unbanf" = key_id))
-			snapshot_bans()
-			SStgui.update_uis(src)
-			return TRUE
-		if("edit")
-			holder().topic_internal(ui.user, list("unbane" = key_id))
-			snapshot_bans()
-			SStgui.update_uis(src)
-			return TRUE
+	holder().topic_internal(ui.user, list("unbanf" = key_id))
+	snapshot_bans()
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/unban_panel, "edit", ui_act_edit, UI_ARG_TEXT("key_id"))
+UI_ACT_PROC(/datum/unban_panel, ui_act_edit)
+	var/key_id = "[params["key_id"]]"
+	holder().topic_internal(ui.user, list("unbane" = key_id))
+	snapshot_bans()
+	SStgui.update_uis(src)
+	return TRUE
 
 // (newbanjob unjobbanpanel was dead code — file not in DME; no panel here.)
 
@@ -305,14 +316,15 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 /datum/jobban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD)
 
-/datum/jobban_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/jobban_panel, "JobBanPanel")
+
+/datum/jobban_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!holder() || !target())
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "JobBanPanel", "Job-Ban Panel: [target().name]")
-		ui.open()
-	ui.set_autoupdate(FALSE)
+		return FALSE
+	return TRUE
+
+/datum/jobban_panel/ui_title(mob/user)
+	return "Job-Ban Panel: [target().name]"
 
 /proc/build_jobban_offmap_job_titles()
 	var/list/titles = list()
@@ -445,25 +457,32 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	data["departments"] = departments
 	return data
 
-/datum/jobban_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !holder() || !target())
-		return
-	switch(action)
-		if("toggle_job")
-			var/title = "[params["title"]]"
-			// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
-			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_dept")
-			var/bantype = "[params["bantype"]]"
-			holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
-			SStgui.update_uis(src)
-			return TRUE
-		if("refresh")
-			SStgui.update_uis(src)
-			return TRUE
+/datum/jobban_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!holder() || !target())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/jobban_panel, "toggle_job", ui_act_toggle_job, UI_ARG_TEXT("title"))
+UI_ACT_PROC(/datum/jobban_panel, ui_act_toggle_job)
+	var/title = "[params["title"]]"
+	// use REF() macro (canonical form) instead of legacy \ref[target] interpolation.
+	holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = title, "jobban4" = REF(target())))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/jobban_panel, "toggle_dept", ui_act_toggle_dept, UI_ARG_TEXT("bantype"))
+UI_ACT_PROC(/datum/jobban_panel, ui_act_toggle_dept)
+	var/bantype = "[params["bantype"]]"
+	holder().topic_internal(ui.user, list("_src_" = "holder", "jobban3" = bantype, "jobban4" = REF(target())))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/jobban_panel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/jobban_panel, ui_act_refresh)
+	SStgui.update_uis(src)
+	return TRUE
 
 // ---- Vending log viewer --------------------------------------------------
 
@@ -481,12 +500,10 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 /datum/dq_vending_log_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/datum/dq_vending_log_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VendingLog", "[machine_name] Vending Log")
-		ui.open()
-	ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/dq_vending_log_panel, "VendingLog")
+
+/datum/dq_vending_log_panel/ui_title(mob/user)
+	return "[machine_name] Vending Log"
 
 /datum/dq_vending_log_panel/tgui_data(mob/user)
 	return list(
@@ -516,12 +533,7 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 /datum/dq_delete_book_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
 
-/datum/dq_delete_book_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DeleteBookPanel", "Delete Book")
-		ui.open()
-	ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/dq_delete_book_panel, "DeleteBookPanel", UI_TITLE("Delete Book"))
 
 /datum/dq_delete_book_panel/tgui_data(mob/user)
 	return list(
@@ -530,36 +542,39 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		"sort_by" = our_comp() ? our_comp().sortby : "",
 	)
 
-/datum/dq_delete_book_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !our_comp())
-		return
-	switch(action)
-		if("sort")
-			var/by = "[params["by"]]"
-			our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
-			SStgui.update_uis(src)
-			return TRUE
-		if("order_by_id")
-			our_comp().tgui_act("orderbyid", list(), ui, ui.state())
-			SStgui.update_uis(src)
-			return TRUE
-		if("delete")
-			var/id = "[params["id"]]"
-			our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
-			SStgui.update_uis(src)
-			return TRUE
+/datum/dq_delete_book_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!our_comp())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/dq_delete_book_panel, "sort", ui_act_sort, UI_ARG_TEXT("by"))
+UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_sort)
+	var/by = "[params["by"]]"
+	our_comp().tgui_act("sort", list("field" = by), ui, ui.state())
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/dq_delete_book_panel, "order_by_id", ui_act_order_by_id)
+UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_order_by_id)
+	our_comp().tgui_act("orderbyid", list(), ui, ui.state())
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/dq_delete_book_panel, "delete", ui_act_delete, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_delete)
+	var/id = "[params["id"]]"
+	our_comp().tgui_act("delid", list("id" = id), ui, ui.state())
+	SStgui.update_uis(src)
+	return TRUE
 
 // ---- Syndicate beacon (Virgo) --------------------------------------------
 
 /obj/machinery/syndicate_beacon/virgo/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/machinery/syndicate_beacon/virgo/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SyndicateBeacon", "Ominous Beacon")
-		ui.open()
+DECLARE_UI(/obj/machinery/syndicate_beacon/virgo, "SyndicateBeacon", UI_TITLE("Ominous Beacon"))
 
 /obj/machinery/syndicate_beacon/virgo/tgui_data(mob/user)
 	var/list/data = list()
@@ -583,15 +598,16 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		data["honorific"] = ""
 	return data
 
-/obj/machinery/syndicate_beacon/virgo/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "transfer_supplies")
-		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), "[params["mob_ref"]]")
-		betraitor(ui.user, M)
-		SStgui.update_uis(src)
-		return TRUE
+UI_ACT(/obj/machinery/syndicate_beacon/virgo, "transfer_supplies", ui_act_transfer_supplies, UI_ARG_REF("mob_ref", "proc:ui_source_registry_members_registry_mobs", /mob))
+UI_ACT_PROC(/obj/machinery/syndicate_beacon/virgo, ui_act_transfer_supplies)
+	var/mob/M = params["mob_ref"]
+	betraitor(ui.user, M)
+	SStgui.update_uis(src)
+	return TRUE
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/machinery/syndicate_beacon/virgo/proc/ui_source_registry_members_registry_mobs()
+	return REGISTRY_MEMBERS(REGISTRY_MOBS)
 
 /obj/machinery/syndicate_beacon/virgo/declare_interactions(list/into)
 	into += list(

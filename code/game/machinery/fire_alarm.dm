@@ -277,11 +277,7 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/partyalarm/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PartyAlarm", "Party Button")
-		ui.open()
+DECLARE_UI(/obj/machinery/partyalarm, "PartyAlarm", UI_TITLE("Party Button"))
 
 /obj/machinery/partyalarm/tgui_data(mob/user)
 	var/list/data = list()
@@ -309,27 +305,34 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	return
 
 // Topic dispatch lifted into tgui_act.
-/obj/machinery/partyalarm/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/partyalarm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat || !operable())
-		return TRUE
-	switch(action)
-		if("reset")
-			reset()
-			return TRUE
-		if("alarm")
-			alarm()
-			return TRUE
-		if("time")
-			timing = text2num(params["value"])
-			return TRUE
-		if("tp")
-			var/tp = text2num(params["value"])
-			time += tp
-			time = min(max(round(time), 0), 120)
-			return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/partyalarm, "reset", ui_act_reset)
+UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_reset)
+	reset()
+	return TRUE
+
+UI_ACT(/obj/machinery/partyalarm, "alarm", ui_act_alarm)
+UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_alarm)
+	alarm()
+	return TRUE
+
+UI_ACT(/obj/machinery/partyalarm, "time", ui_act_time, UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_time)
+	timing = params["value"]
+	return TRUE
+
+UI_ACT(/obj/machinery/partyalarm, "tp", ui_act_tp, UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/partyalarm, ui_act_tp)
+	var/tp = params["value"]
+	time += tp
+	time = min(max(round(time), 0), 120)
+	return TRUE
 
 /obj/machinery/firealarm/proc/power_change_settle()
 	update_icon()

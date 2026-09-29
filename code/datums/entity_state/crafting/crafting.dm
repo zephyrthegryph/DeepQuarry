@@ -447,17 +447,15 @@
 	return GLOB.tgui_not_incapacitated_turf_state
 
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
-/datum/personal_crafting/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		cur_category = categories[1]
-		if(islist(categories[cur_category]))
-			var/list/subcats = categories[cur_category]
-			cur_subcategory = subcats[1]
-		else
-			cur_subcategory = CAT_NONE
-		ui = new(user, src, "PersonalCrafting")
-		ui.open()
+DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
+
+/datum/personal_crafting/ui_opening(mob/user, datum/tgui/ui)
+	cur_category = categories[1]
+	if(islist(categories[cur_category]))
+		var/list/subcats = categories[cur_category]
+		cur_subcategory = subcats[1]
+	else
+		cur_subcategory = CAT_NONE
 
 /datum/personal_crafting/tgui_data(mob/user)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
@@ -545,23 +543,25 @@
 	data["crafting_recipes"] = crafting_recipes
 	return data
 
-/datum/personal_crafting/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("make")
-			do_make(ui.user, locate_in_list(GLOB.crafting_recipes, params["recipe"]), params["materialSlots"])
-		if("toggle_recipes")
-			display_craftable_only = !display_craftable_only
-			. = TRUE
-		if("toggle_compact")
-			display_compact = !display_compact
-			. = TRUE
-		if("set_category")
-			cur_category = params["category"]
-			cur_subcategory = params["subcategory"] || ""
-			. = TRUE
+UI_ACT(/datum/personal_crafting, "make", ui_act_make, UI_ARG_VALUE("materialSlots"), UI_ARG_REF("recipe", "glob:crafting_recipes"))
+UI_ACT_PROC(/datum/personal_crafting, ui_act_make)
+	do_make(ui.user, params["recipe"], params["materialSlots"])
+
+UI_ACT(/datum/personal_crafting, "toggle_recipes", ui_act_toggle_recipes)
+UI_ACT_PROC(/datum/personal_crafting, ui_act_toggle_recipes)
+	display_craftable_only = !display_craftable_only
+	. = TRUE
+
+UI_ACT(/datum/personal_crafting, "toggle_compact", ui_act_toggle_compact)
+UI_ACT_PROC(/datum/personal_crafting, ui_act_toggle_compact)
+	display_compact = !display_compact
+	. = TRUE
+
+UI_ACT(/datum/personal_crafting, "set_category", ui_act_set_category, UI_ARG_VALUE("category"), UI_ARG_VALUE("subcategory"))
+UI_ACT_PROC(/datum/personal_crafting, ui_act_set_category)
+	cur_category = params["category"]
+	cur_subcategory = params["subcategory"] || ""
+	. = TRUE
 
 /datum/personal_crafting/proc/do_make(mob/user, datum/crafting_recipe/TR, list/material_choices)
 	if(om_busy(src))

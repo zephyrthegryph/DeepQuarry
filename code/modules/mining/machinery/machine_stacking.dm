@@ -35,11 +35,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/mineral/stacking_unit_console/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MiningStackingConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/mineral/stacking_unit_console, "MiningStackingConsole")
 
 /obj/machinery/mineral/stacking_unit_console/tgui_data(mob/user)
 	var/list/data = ..()
@@ -55,24 +51,21 @@
 	data["stackingAmt"] = machine().stack_amt
 	return data
 
-/obj/machinery/mineral/stacking_unit_console/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/mineral/stacking_unit_console, "change_stack", ui_act_change_stack, UI_ARG_NUM("amt", 1, 50))
+UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_change_stack)
+	machine().stack_amt = params["amt"]
+	machine().wake_mining()
+	. = TRUE
+	add_fingerprint(ui.user)
 
-	switch(action)
-		if("change_stack")
-			machine().stack_amt = clamp(text2num(params["amt"]), 1, 50)
-			machine().wake_mining()
-			. = TRUE
-
-		if("release_stack")
-			var/stack = params["stack"]
-			if(LAZYACCESS(machine().stack_storage, stack) > 0)
-				var/stacktype = LAZYACCESS(machine().stack_paths, stack)
-				new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
-				LAZYSET(machine().stack_storage, stack, 0)
-			. = TRUE
-
+UI_ACT(/obj/machinery/mineral/stacking_unit_console, "release_stack", ui_act_release_stack, UI_ARG_VALUE("stack"))
+UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
+	var/stack = params["stack"]
+	if(LAZYACCESS(machine().stack_storage, stack) > 0)
+		var/stacktype = LAZYACCESS(machine().stack_paths, stack)
+		new stacktype(get_turf(machine().output_marker()), LAZYACCESS(machine().stack_storage, stack))
+		LAZYSET(machine().stack_storage, stack, 0)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /**********************Mineral stacking unit**************************/

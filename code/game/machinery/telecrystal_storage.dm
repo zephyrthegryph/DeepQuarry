@@ -34,18 +34,23 @@
 		item_records.Add(item)
 		consume(O)
 
-/obj/machinery/smartfridge/tcrystal/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/smartfridge/tcrystal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("Release")
-			if(params["amount"])
-				release_crystals(ui.user, params["amount"], params["index"])
-				return TRUE
-			om_ask(ui.user, /datum/om/prompt/number/tcrystal_amount, PROC_REF(crystal_amount_entered), index = params["index"])
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/machinery/smartfridge/tcrystal, "Release", ui_act_release, UI_ARG_VALUE("amount"), UI_ARG_NUM("index"))
+UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
+	// The fridge's own Release runs first, as the old parent-first tgui_act() did.
+	. = ..()
+	if(.)
+		return
+	if(params["amount"])
+		release_crystals(ui.user, params["amount"], params["index"])
+		return TRUE
+	om_ask(ui.user, /datum/om/prompt/number/tcrystal_amount, PROC_REF(crystal_amount_entered), index = params["index"])
+	return TRUE
 
 /// How many crystals to take out. Re-checked on the answer: still next to the fridge.
 /datum/om/prompt/number/tcrystal_amount

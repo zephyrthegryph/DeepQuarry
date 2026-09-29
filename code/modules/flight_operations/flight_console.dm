@@ -15,14 +15,13 @@
 		return ADMIN_STATE(R_ADMIN | R_EVENT | R_DEBUG)
 	return GLOB.tgui_default_state
 
-/datum/flight_operations_ui/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Operations"))
+
+/datum/flight_operations_ui/ui_prepare(mob/user, datum/tgui/ui)
 	if(!resolve_vessel())
 		to_chat(user, span_warning("Flight Operations cannot identify this console's vessel."))
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "FlightOperations", "Flight Operations")
-		ui.open()
+		return FALSE
+	return TRUE
 
 /datum/flight_operations_ui/proc/resolve_ship()
 	if(istype(host(), /obj/machinery/computer/ship))
@@ -140,84 +139,104 @@
 		)
 	return data
 
-/datum/flight_operations_ui/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+/datum/flight_operations_ui/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(!vessel)
 		return FALSE
-	switch(action)
-		if("jump")
-			if(vessel.active_plan)
-				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
-					return FALSE
-				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
-			var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
-			if(!jump_plan || !jump_plan.start())
-				to_chat(ui.user, span_warning("The jump could not be initiated."))
-				return TRUE
-			to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
-			return TRUE
-		if("select_destination")
-			if(vessel.active_plan)
-				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
-					return FALSE
-				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
-			var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
-			if(!plan)
-				to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
-			return TRUE
-		if("engage")
-			if(!vessel.active_plan?.start())
-				to_chat(ui.user, span_warning("The flight plan could not be engaged."))
-			return TRUE
-		if("abort")
-			vessel.active_plan?.request_abort()
-			return TRUE
-		if("abandon_expedition")
-			GLOB.expedition_service.abandon_assignment(ui.user, vessel)
-			return TRUE
-		if("toggle_engines")
-			if(!vessel.ship())
-				return FALSE
-			vessel.ship().engines_state = !vessel.ship().engines_state
-			for(var/datum/ship_engine/engine in vessel.ship().engines)
-				if(vessel.ship().engines_state == !engine.is_on())
-					engine.toggle()
-			return TRUE
-		if("thrust_limit")
-			if(!vessel.ship())
-				return FALSE
-			vessel.ship().thrust_limit = clamp(text2num(params["value"]) / 100, 0, 1)
-			for(var/datum/ship_engine/engine in vessel.ship().engines)
-				engine.set_thrust_limit(vessel.ship().thrust_limit)
-			return TRUE
-	return FALSE
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "jump", ui_act_jump, UI_ARG_VALUE("destination_id"))
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	if(vessel.active_plan)
+		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
+			return FALSE
+		GLOB.flight_service.plans -= vessel.active_plan.id
+		qdel(vessel.active_plan)
+	var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	if(!jump_plan || !jump_plan.start())
+		to_chat(ui.user, span_warning("The jump could not be initiated."))
+		return TRUE
+	to_chat(ui.user, span_notice("Jump sequence engaged for [jump_plan.destination().name]."))
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "select_destination", ui_act_select_destination, UI_ARG_VALUE("destination_id"))
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_select_destination)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	if(vessel.active_plan)
+		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
+			return FALSE
+		GLOB.flight_service.plans -= vessel.active_plan.id
+		qdel(vessel.active_plan)
+	var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	if(!plan)
+		to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "engage", ui_act_engage)
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_engage)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	if(!vessel.active_plan?.start())
+		to_chat(ui.user, span_warning("The flight plan could not be engaged."))
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "abort", ui_act_abort)
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abort)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	vessel.active_plan?.request_abort()
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "abandon_expedition", ui_act_abandon_expedition)
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abandon_expedition)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	GLOB.expedition_service.abandon_assignment(ui.user, vessel)
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "toggle_engines", ui_act_toggle_engines)
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_toggle_engines)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	if(!vessel.ship())
+		return FALSE
+	vessel.ship().engines_state = !vessel.ship().engines_state
+	for(var/datum/ship_engine/engine in vessel.ship().engines)
+		if(vessel.ship().engines_state == !engine.is_on())
+			engine.toggle()
+	return TRUE
+
+UI_ACT(/datum/flight_operations_ui, "thrust_limit", ui_act_thrust_limit, UI_ARG_NUM("value"))
+UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
+	var/datum/flight_vessel/vessel = resolve_vessel()
+	if(!vessel.ship())
+		return FALSE
+	vessel.ship().thrust_limit = clamp(params["value"] / 100, 0, 1)
+	for(var/datum/ship_engine/engine in vessel.ship().engines)
+		engine.set_thrust_limit(vessel.ship().thrust_limit)
+	return TRUE
 
 /obj/machinery/computer/ship
 	var/datum/flight_operations_ui/flight_operations_ui
 
-/obj/machinery/computer/ship/proc/open_flight_operations(mob/user, datum/tgui/ui)
+/// Helm and navigation consoles show the Flight Operations UI.
+/obj/machinery/computer/ship/proc/flight_operations()
 	if(!flight_operations_ui)
 		flight_operations_ui = new(src)
-	flight_operations_ui.tgui_interact(user, ui)
+	return flight_operations_ui
 
-/obj/machinery/computer/ship/helm/tgui_interact(mob/user, datum/tgui/ui)
-	open_flight_operations(user, ui)
+/obj/machinery/computer/ship/helm/ui_redirect(mob/user)
+	return flight_operations()
 
-/obj/machinery/computer/ship/navigation/tgui_interact(mob/user, datum/tgui/ui)
-	open_flight_operations(user, ui)
+/obj/machinery/computer/ship/navigation/ui_redirect(mob/user)
+	return flight_operations()
 
 /obj/machinery/computer/shuttle_control/explore
 	var/datum/flight_operations_ui/flight_operations_ui
 
-/obj/machinery/computer/shuttle_control/explore/tgui_interact(mob/user, datum/tgui/ui)
+/obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)
 	if(!flight_operations_ui)
 		flight_operations_ui = new(src)
-	flight_operations_ui.tgui_interact(user, ui)
+	return flight_operations_ui
 
 DECLARE_REF(/obj/machinery/computer/ship, "flight_operations_ui", OWNED, null)
 

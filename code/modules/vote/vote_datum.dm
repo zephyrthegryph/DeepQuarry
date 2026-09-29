@@ -152,11 +152,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 /datum/vote/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/vote/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VotePanel", "Vote Panel")
-		ui.open()
+DECLARE_UI(/datum/vote, "VotePanel", UI_TITLE("Vote Panel"))
 
 /datum/vote/tgui_data(mob/user)
 	var/list/data = list()
@@ -185,15 +181,10 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 
 	return data
 
-/datum/vote/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return
-
+UI_ACT(/datum/vote, "vote", ui_act_vote, UI_ARG_VALUE("target"))
+UI_ACT_PROC(/datum/vote, ui_act_vote)
 	. = TRUE
-
-	switch(action)
-		if("vote")
-			if(params["target"] in choices)
-				LAZYSET(voted, ui.user.ckey, params["target"])
-			else
-				message_admins(span_warning("User [key_name_admin(ui.user)] spoofed a vote in the vote panel!"))
+	if(params["target"] in choices)
+		LAZYSET(voted, ui.user.ckey, params["target"])
+	else
+		message_admins(span_warning("User [key_name_admin(ui.user)] spoofed a vote in the vote panel!"))

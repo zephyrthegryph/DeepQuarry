@@ -147,11 +147,7 @@
 		return FALSE
 	return (set_flow_rate / input.air.return_volume()) * input.air.total_moles() > MINIMUM_MOLES_TO_FILTER
 
-/obj/machinery/atmospherics/omni/atmos_filter/tgui_interact(mob/user,datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OmniFilter", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/omni/atmos_filter, "OmniFilter")
 
 /obj/machinery/atmospherics/omni/atmos_filter/tgui_data(mob/user)
 	var/list/data = list()
@@ -209,47 +205,63 @@
 		else
 			return null
 
-/obj/machinery/atmospherics/omni/atmos_filter/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/atmospherics/omni/atmos_filter/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	wake_for_state_change()
+	return TRUE
 
-	switch(action)
-		if("power")
-			if(!configuring)
-				set_use_power(!use_power)
-			else
-				set_use_power(USE_POWER_OFF)
-			. = TRUE
-		if("configure")
-			configuring = !configuring
-			if(configuring)
-				set_use_power(USE_POWER_OFF)
-			. = TRUE
-		if("set_flow_rate")
-			if(!configuring || use_power)
-				return
-			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
-			if(isnull(new_flow_rate))
-				return
-			set_flow_rate = between(0, new_flow_rate, max_flow_rate)
-			. = TRUE
-		if("switch_mode")
-			if(!configuring || use_power)
-				return
-			switch_mode(dir_flag(params["dir"]), mode_return_switch(params["mode"]))
-			. = TRUE
-		if("switch_filter")
-			if(!configuring || use_power)
-				return
-			var/new_filter = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/choice, message = "Select filter mode:", title = "Change filter", choices = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4))
-			if(isnull(new_filter))
-				return
-			if(!new_filter)
-				return
-			switch_filter(dir_flag(params["dir"]), mode_return_switch(new_filter))
-			. = TRUE
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_power)
+	if(!configuring)
+		set_use_power(!use_power)
+	else
+		set_use_power(USE_POWER_OFF)
+	. = TRUE
+	wake_for_state_change()
+	update_icon()
 
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "configure", ui_act_configure)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_configure)
+	configuring = !configuring
+	if(configuring)
+		set_use_power(USE_POWER_OFF)
+	. = TRUE
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "set_flow_rate", ui_act_set_flow_rate)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_set_flow_rate)
+	if(!configuring || use_power)
+		return
+	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
+	if(isnull(new_flow_rate))
+		return
+	set_flow_rate = between(0, new_flow_rate, max_flow_rate)
+	. = TRUE
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_VALUE("mode"))
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_mode)
+	if(!configuring || use_power)
+		return
+	switch_mode(dir_flag(params["dir"]), mode_return_switch(params["mode"]))
+	. = TRUE
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_filter", ui_act_switch_filter, UI_ARG_VALUE("dir"))
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
+	if(!configuring || use_power)
+		return
+	var/new_filter = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/choice, message = "Select filter mode:", title = "Change filter", choices = list("None", GASNAME_O2, GASNAME_N2, GASNAME_CO2, GASNAME_PHORON, GASNAME_N2O, GASNAME_CH4))
+	if(isnull(new_filter))
+		return
+	if(!new_filter)
+		return
+	switch_filter(dir_flag(params["dir"]), mode_return_switch(new_filter))
+	. = TRUE
 	wake_for_state_change()
 	update_icon()
 

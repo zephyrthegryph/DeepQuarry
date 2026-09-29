@@ -90,11 +90,10 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/cryopod/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "CryoStorage", storage_name) // Use our own template for our custom data
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/cryopod, "CryoStorage")
+
+/obj/machinery/computer/cryopod/ui_title(mob/user)
+	return storage_name
 
 /obj/machinery/computer/cryopod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -116,47 +115,6 @@
 	data["items"] = items
 
 	return data
-
-/obj/machinery/computer/cryopod/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return
-
-	add_fingerprint(ui.user)
-
-	return FALSE // prevent topic exploits
-	/* Unreachable due to above
-	switch(action)
-		if("item")
-			if(!allow_items)
-				return
-
-			if(!LAZYLEN(frozen_items))
-				to_chat(ui.user, span_notice("There is nothing to recover from storage."))
-				return
-
-			var/obj/item/I = locate(params["ref"]) in frozen_items
-			if(!I)
-				to_chat(ui.user, span_notice("\The [I] is no longer in storage."))
-				return
-
-			visible_message(span_notice("The console beeps happily as it disgorges [I]."))
-
-			I.forceMove(get_turf(src))
-			LAZYREMOVE(frozen_items, I)
-		if("allitems")
-			if(!allow_items)
-				return
-
-			if(!LAZYLEN(frozen_items))
-				to_chat(ui.user, span_notice("There is nothing to recover from storage."))
-				return
-
-			visible_message(span_notice("The console beeps happily as it disgorges the desired objects."))
-
-			for(var/obj/item/I in frozen_items)
-				I.forceMove(get_turf(src))
-				LAZYREMOVE(frozen_items, I)
-	*/
 
 /obj/item/circuitboard/cryopodcontrol
 	name = T_BOARD("Cryogenic Oversight Console")

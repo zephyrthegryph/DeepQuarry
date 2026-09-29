@@ -103,11 +103,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
 	return FLOOR((length(crystals) * telepad().efficiency * powerCoefficient), 1)
 
-/obj/machinery/computer/telescience/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TelesciConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/telescience, "TelesciConsole")
 
 /obj/machinery/computer/telescience/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
@@ -143,58 +139,72 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 
 	return data
 
-/obj/machinery/computer/telescience/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/obj/machinery/computer/telescience/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!telepad() || telepad().panel_open)
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("setrotation")
-			rotation = CLAMP(text2num(params["val"]), -900, 900)
-			rotation = round(rotation, 0.01)
+UI_ACT(/obj/machinery/computer/telescience, "setrotation", ui_act_setrotation, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setrotation)
+	rotation = CLAMP(params["val"], -900, 900)
+	rotation = round(rotation, 0.01)
+	return TRUE
 
-		if("setdistance")
-			distance = CLAMP(text2num(params["val"]), 1, get_max_allowed_distance())
-			distance = FLOOR(distance, 1)
+UI_ACT(/obj/machinery/computer/telescience, "setdistance", ui_act_setdistance, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setdistance)
+	distance = CLAMP(params["val"], 1, get_max_allowed_distance())
+	distance = FLOOR(distance, 1)
+	return TRUE
 
-		if("setz")
-			var/new_z = text2num(params["setz"])
-			if(new_z in using_map.player_levels)
-				z_co = new_z
+UI_ACT(/obj/machinery/computer/telescience, "setz", ui_act_setz, UI_ARG_NUM("setz"))
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setz)
+	var/new_z = params["setz"]
+	if(new_z in using_map.player_levels)
+		z_co = new_z
+	return TRUE
 
-		if("ejectGPS")
-			if(inserted_gps)
-				inserted_gps.forceMove(loc)
-				inserted_gps = null
+UI_ACT(/obj/machinery/computer/telescience, "ejectGPS", ui_act_ejectgps)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_ejectgps)
+	if(inserted_gps)
+		inserted_gps.forceMove(loc)
+		inserted_gps = null
+	return TRUE
 
-		if("setMemory")
-			if(last_target() && inserted_gps)
-				// TODO - What was this even supposed to do??
-				//inserted_gps.locked_location = last_target
-				temp_msg = "Function Deprecated. No action taken."
-			else
-				temp_msg = "Function Deprecated. No action taken."
+UI_ACT(/obj/machinery/computer/telescience, "setMemory", ui_act_setmemory)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_setmemory)
+	if(last_target() && inserted_gps)
+		// TODO - What was this even supposed to do??
+		//inserted_gps.locked_location = last_target
+		temp_msg = "Function Deprecated. No action taken."
+	else
+		temp_msg = "Function Deprecated. No action taken."
+	return TRUE
 
-		if("send")
-			sending = 1
-			teleport(ui.user)
+UI_ACT(/obj/machinery/computer/telescience, "send", ui_act_send)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_send)
+	sending = 1
+	teleport(ui.user)
+	return TRUE
 
-		if("receive")
-			sending = 0
-			teleport(ui.user)
+UI_ACT(/obj/machinery/computer/telescience, "receive", ui_act_receive)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_receive)
+	sending = 0
+	teleport(ui.user)
+	return TRUE
 
-		if("recal")
-			recalibrate()
-			sparks()
-			temp_msg = "NOTICE: Calibration successful."
+UI_ACT(/obj/machinery/computer/telescience, "recal", ui_act_recal)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_recal)
+	recalibrate()
+	sparks()
+	temp_msg = "NOTICE: Calibration successful."
+	return TRUE
 
-		if("eject")
-			eject()
-			temp_msg = "NOTICE: Bluespace crystals ejected."
-		else
-			return FALSE
-
+UI_ACT(/obj/machinery/computer/telescience, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
+	eject()
+	temp_msg = "NOTICE: Bluespace crystals ejected."
 	return TRUE
 
 /obj/machinery/computer/telescience/proc/sparks()

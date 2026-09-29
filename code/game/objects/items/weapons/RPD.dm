@@ -72,12 +72,11 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 /obj/item/pipe_dispenser/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/pipe_dispenser/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
+
+/obj/item/pipe_dispenser/ui_prepare(mob/user, datum/tgui/ui)
 	SetupPipes()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RapidPipeDispenser", name)
-		ui.open()
+	return TRUE
 
 /obj/item/pipe_dispenser/tgui_data(mob/user)
 	var/list/data = list(
@@ -107,43 +106,80 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 
 	return data
 
-/obj/item/pipe_dispenser/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/item/pipe_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
-		return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "color", ui_act_color, UI_ARG_VALUE("paint_color"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_color)
 	var/playeffect = TRUE
-	switch(action)
-		if("color")
-			paint_color = params["paint_color"]
-		if("category")
-			category = text2num(params["category"])
-			switch(category)
-				if(DISPOSALS_CATEGORY)
-					recipe_static = first_disposal
-				if(ATMOS_CATEGORY)
-					recipe_static = first_atmos
-			p_dir = NORTH
-			playeffect = FALSE
-		if("piping_layer")
-			piping_layer = text2num(params["piping_layer"])
-			playeffect = FALSE
-		if("pipe_type")
-			var/static/list/recipes
-			if(!recipes)
-				recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
-			recipe_static = recipes[params["category"]][text2num(params["pipe_type"])]
-			p_dir = NORTH
-		if("setdir")
-			p_dir = text2dir(params["dir"])
-			p_flipped = text2num(params["flipped"])
-			playeffect = FALSE
-		if("mode")
-			var/n = text2num(params["mode"])
-			if(mode & n)
-				mode &= ~n
-			else
-				mode |= n
+	paint_color = params["paint_color"]
+	if(playeffect)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "category", ui_act_category, UI_ARG_NUM("category"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_category)
+	var/playeffect = TRUE
+	category = params["category"]
+	switch(category)
+		if(DISPOSALS_CATEGORY)
+			recipe_static = first_disposal
+		if(ATMOS_CATEGORY)
+			recipe_static = first_atmos
+	p_dir = NORTH
+	playeffect = FALSE
+	if(playeffect)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "piping_layer", ui_act_piping_layer, UI_ARG_NUM("piping_layer"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_piping_layer)
+	var/playeffect = TRUE
+	piping_layer = params["piping_layer"]
+	playeffect = FALSE
+	if(playeffect)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "pipe_type", ui_act_pipe_type, UI_ARG_VALUE("category"), UI_ARG_NUM("pipe_type"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_pipe_type)
+	var/playeffect = TRUE
+	var/static/list/recipes
+	if(!recipes)
+		recipes = GLOB.disposal_pipe_recipes + GLOB.atmos_pipe_recipes
+	recipe_static = recipes[params["category"]][params["pipe_type"]]
+	p_dir = NORTH
+	if(playeffect)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "setdir", ui_act_setdir, UI_ARG_VALUE("dir"), UI_ARG_NUM("flipped"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_setdir)
+	var/playeffect = TRUE
+	p_dir = text2dir(params["dir"])
+	p_flipped = params["flipped"]
+	playeffect = FALSE
+	if(playeffect)
+		fx_sparks(src, 5, FALSE)
+		play_sfx(get_turf(src), SFX_EFFECTS_POP)
+	return TRUE
+
+UI_ACT(/obj/item/pipe_dispenser, "mode", ui_act_mode, UI_ARG_NUM("mode"))
+UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
+	var/playeffect = TRUE
+	var/n = params["mode"]
+	if(mode & n)
+		mode &= ~n
+	else
+		mode |= n
 	if(playeffect)
 		fx_sparks(src, 5, FALSE)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)

@@ -97,11 +97,10 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	reagents.clear_reagents()
 
 // structured TGUI for syringe-gun reagent management.
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MechaSyringeGun", "[name] Reagents")
-		ui.open()
+DECLARE_UI(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "MechaSyringeGun")
+
+/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/ui_title(mob/user)
+	return "[name] Reagents"
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_data(mob/user)
 	var/list/data = list()
@@ -128,33 +127,33 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	data["current_reagents"] = current
 	return data
 
-/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("select_reagents")
-			var/list/picks = params["reagents"]
-			processed_reagents.Cut()
-			var/m = 0
-			for(var/reagent_id in picks)
-				if(m >= synth_speed)
-					break
-				if(reagent_id in known_reagents)
-					processed_reagents += reagent_id
-					m++
-			if(processed_reagents.len)
-				om_task_periodic(src, PERIODIC_FAST)
-				occupant_message("Reagent processing started.")
-				src.mecha_log_message("Reagent processing started.")
-			return TRUE
-		if("purge_reagent")
-			if(params["id"])
-				reagents.del_reagent(params["id"])
-			return TRUE
-		if("purge_all")
-			reagents.clear_reagents()
-			return TRUE
+UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "select_reagents", ui_act_select_reagents, UI_ARG_LIST("reagents"))
+UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_select_reagents)
+	var/list/picks = params["reagents"]
+	processed_reagents.Cut()
+	var/m = 0
+	for(var/reagent_id in picks)
+		if(m >= synth_speed)
+			break
+		if(reagent_id in known_reagents)
+			processed_reagents += reagent_id
+			m++
+	if(processed_reagents.len)
+		om_task_periodic(src, PERIODIC_FAST)
+		occupant_message("Reagent processing started.")
+		src.mecha_log_message("Reagent processing started.")
+	return TRUE
+
+UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_reagent", ui_act_purge_reagent, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_reagent)
+	if(params["id"])
+		reagents.del_reagent(params["id"])
+	return TRUE
+
+UI_ACT(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all", ui_act_purge_all)
+UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge_all)
+	reagents.clear_reagents()
+	return TRUE
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/get_reagents_page()
 	var/output = {"<html>

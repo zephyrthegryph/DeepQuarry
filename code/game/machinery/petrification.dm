@@ -147,11 +147,7 @@
 	)
 	..()
 
-/obj/machinery/petrification/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PetrificationInterface", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/petrification, "PetrificationInterface")
 
 /obj/machinery/petrification/tgui_data(mob/user)
 	var/list/data = list()
@@ -246,39 +242,42 @@
 		return
 	machine.popup_msg(actor, "They declined the request.", FALSE)
 
-/obj/machinery/petrification/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/petrification/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if (ui.user)
 		add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("set_option")
-			if (params["option"])
-				set_input(params["option"], ui.user)
-				SStgui.update_uis(src)
-			return TRUE
-		if("petrify")
-			petrify(ui.user)
-			return TRUE
-		if("remote")
-			if (is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
-				var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
-				if (!QDELETED(PE))
-					PE.visible_message(span_warning("\The [PE] disappears!"))
-					qdel(PE)
-				var/obj/item/petrifier/P = new(loc, src)
-				P.material = material
-				P.identifier = identifier
-				P.adjective = adjective
-				P.tint = tint
-				P.able_to_unpetrify = able_to_unpetrify
-				P.discard_clothes = discard_clothes
-				P.target_handle = om_handle(target_ref())
-				LAZYSET(remotes, target_ref(), P)
-				ui.user.put_in_hands(P)
-			return TRUE
+UI_ACT(/obj/machinery/petrification, "set_option", ui_act_set_option, UI_ARG_VALUE("option"))
+UI_ACT_PROC(/obj/machinery/petrification, ui_act_set_option)
+	if (params["option"])
+		set_input(params["option"], ui.user)
+		SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/petrification, "petrify", ui_act_petrify)
+UI_ACT_PROC(/obj/machinery/petrification, ui_act_petrify)
+	petrify(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/petrification, "remote", ui_act_remote)
+UI_ACT_PROC(/obj/machinery/petrification, ui_act_remote)
+	if (is_valid_target(target_ref()) && istext(material) && istext(identifier) && istext(adjective) && istext(tint))
+		var/obj/item/petrifier/PE = LAZYACCESS(remotes, target_ref())
+		if (!QDELETED(PE))
+			PE.visible_message(span_warning("\The [PE] disappears!"))
+			qdel(PE)
+		var/obj/item/petrifier/P = new(loc, src)
+		P.material = material
+		P.identifier = identifier
+		P.adjective = adjective
+		P.tint = tint
+		P.able_to_unpetrify = able_to_unpetrify
+		P.discard_clothes = discard_clothes
+		P.target_handle = om_handle(target_ref())
+		LAZYSET(remotes, target_ref(), P)
+		ui.user.put_in_hands(P)
 	return TRUE
 
 /obj/item/paper/petrification_notes

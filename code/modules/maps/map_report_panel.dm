@@ -3,11 +3,10 @@
 /datum/map_report/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_DEBUG)
 
-/datum/map_report/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MapReport", "Report for map file [original_path]")
-		ui.open()
+DECLARE_UI(/datum/map_report, "MapReport")
+
+/datum/map_report/ui_title(mob/user)
+	return "Report for map file [original_path]"
 
 /datum/map_report/tgui_data(mob/user)
 	var/list/data = list()

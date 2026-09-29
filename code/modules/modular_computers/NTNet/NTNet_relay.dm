@@ -64,11 +64,7 @@
 		GLOB.ntnet_global.add_log("Quantum relay switched from overload recovery mode to normal operation mode.")
 	..()
 
-/obj/machinery/ntnet_relay/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NTNetRelay", src)
-		ui.open()
+DECLARE_UI(/obj/machinery/ntnet_relay, "NTNetRelay")
 
 /obj/machinery/ntnet_relay/tgui_data(mob/user)
 	var/list/data = list()
@@ -84,26 +80,26 @@
 	)
 	..()
 
-/obj/machinery/ntnet_relay/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/ntnet_relay, "restart", ui_act_restart)
+UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_restart)
+	dos_overload = 0
+	dos_failure = 0
+	update_icon()
+	GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
+	. = TRUE
 
-	switch(action)
-		if("restart")
-			dos_overload = 0
-			dos_failure = 0
-			update_icon()
-			GLOB.ntnet_global.add_log("Quantum relay manually restarted from overload recovery mode to normal operation mode.")
-			. = TRUE
-		if("toggle")
-			enabled = !enabled
-			GLOB.ntnet_global.add_log("Quantum relay manually [enabled ? "enabled" : "disabled"].")
-			update_icon()
-			. = TRUE
-		if("purge")
-			LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
-			GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
-			. = TRUE
+UI_ACT(/obj/machinery/ntnet_relay, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_toggle)
+	enabled = !enabled
+	GLOB.ntnet_global.add_log("Quantum relay manually [enabled ? "enabled" : "disabled"].")
+	update_icon()
+	. = TRUE
+
+UI_ACT(/obj/machinery/ntnet_relay, "purge", ui_act_purge)
+UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
+	LAZYCLEARLIST(GLOB.ntnet_global.banned_nids)
+	GLOB.ntnet_global.add_log("Manual override: Network blacklist cleared.")
+	. = TRUE
 
 /obj/machinery/ntnet_relay/Initialize(mapload)
 	. = ..()

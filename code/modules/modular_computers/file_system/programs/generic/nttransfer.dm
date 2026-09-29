@@ -124,62 +124,67 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 	return data
 
-/datum/computer_file/program/nttransfer/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_downloadfile")
-			for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
-				if(P.unique_token == text2num(params["uid"]))
-					remote_handle = om_handle(P)
-					break
-			if(!remote() || !remote().provided_file())
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
+	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
+		if(P.unique_token == params["uid"])
+			remote_handle = om_handle(P)
+			break
+	if(!remote() || !remote().provided_file())
+		return
+	if(remote().server_password)
+		var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
+		if(isnull(pass))
+			return
+		if(pass != remote().server_password)
+			error = "Incorrect Password"
+			return
+	downloaded_file = remote().provided_file().clone()
+	LAZYADD(remote().connected_clients, src)
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
+	error = ""
+	upload_menu = 0
+	finalize_download()
+	if(src in GLOB.ntnet_global.fileservers)
+		LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
+	for(var/datum/computer_file/program/nttransfer/T in connected_clients)
+		T.crash_download("Remote server has forcibly closed the connection")
+	provided_file_handle = null
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_setpassword", ui_act_prg_setpassword)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_setpassword)
+	var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
+	if(isnull(pass))
+		return
+	if(!pass)
+		return
+	if(pass == "none")
+		server_password = ""
+		return
+	server_password = pass
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadfile", ui_act_prg_uploadfile, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
+	for(var/datum/computer_file/F in computer().hard_drive.stored_files)
+		if(F.uid == params["uid"])
+			if(F.unsendable)
+				error = "I/O Error: File locked."
 				return
-			if(remote().server_password)
-				var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
-				if(isnull(pass))
-					return
-				if(pass != remote().server_password)
-					error = "Incorrect Password"
-					return
-			downloaded_file = remote().provided_file().clone()
-			LAZYADD(remote().connected_clients, src)
-			return TRUE
-		if("PRG_reset")
-			error = ""
-			upload_menu = 0
-			finalize_download()
-			if(src in GLOB.ntnet_global.fileservers)
-				LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
-			for(var/datum/computer_file/program/nttransfer/T in connected_clients)
-				T.crash_download("Remote server has forcibly closed the connection")
-			provided_file_handle = null
-			return TRUE
-		if("PRG_setpassword")
-			var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
-			if(isnull(pass))
-				return
-			if(!pass)
-				return
-			if(pass == "none")
-				server_password = ""
-				return
-			server_password = pass
-			return TRUE
-		if("PRG_uploadfile")
-			for(var/datum/computer_file/F in computer().hard_drive.stored_files)
-				if(F.uid == text2num(params["uid"]))
-					if(F.unsendable)
-						error = "I/O Error: File locked."
-						return
-					provided_file_handle = om_handle(F)
-					LAZYOR(GLOB.ntnet_global.fileservers, src)
-					return
-			error = "I/O Error: Unable to locate file on hard drive."
-			return TRUE
-		if("PRG_uploadmenu")
-			upload_menu = 1
-			return TRUE
+			provided_file_handle = om_handle(F)
+			LAZYOR(GLOB.ntnet_global.fileservers, src)
+			return
+	error = "I/O Error: Unable to locate file on hard drive."
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadmenu", ui_act_prg_uploadmenu)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadmenu)
+	upload_menu = 1
+	return TRUE
 
 DECLARE_REF(/datum/computer_file/program/nttransfer, "downloaded_file", OWNED, null)
 

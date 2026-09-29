@@ -310,84 +310,94 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 	return data
 
-/obj/machinery/computer/shuttle_control/web/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/shuttle_control/web/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(WS))
 		message_admins("ERROR: Shuttle computer ([src]) ([shuttle_tag]) could not find their shuttle in the shuttles list.")
-		return
-
+		return FALSE
 	if(WS.moving_status != SHUTTLE_IDLE)
 		to_chat(ui.user, span_blue("[WS.visible_name] is busy moving."))
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "rename_command", ui_act_rename_command)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_rename_command)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	WS.rename_shuttle(ui.user)
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "dock_command", ui_act_dock_command)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_dock_command)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	if(WS.autopilot)
+		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
+		return
+	WS.dock()
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "undock_command", ui_act_undock_command)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_undock_command)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	if(WS.autopilot)
+		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
+		return
+	WS.undock()
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "toggle_cloaking", ui_act_toggle_cloaking)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_toggle_cloaking)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	if(!WS.can_cloak)
+		return
+	dq_set_cloaked(WS, !dq_get_cloaked(WS))
+	if(dq_get_cloaked(WS))
+		to_chat(ui.user, span_danger("Ship stealth systems have been activated. The station will not be warned of our arrival."))
+	else
+		to_chat(ui.user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "toggle_autopilot", ui_act_toggle_autopilot)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_toggle_autopilot)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	WS.adjust_autopilot(!WS.autopilot)
+
+UI_ACT(/obj/machinery/computer/shuttle_control/web, "traverse", ui_act_traverse, UI_ARG_NUM("traverse"))
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
+	var/datum/shuttle/autodock/web_shuttle/WS = SSshuttles.shuttles[shuttle_tag]
+	if(WS.autopilot)
+		to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
 		return
 
-	switch(action)
-		if("rename_command")
-			WS.rename_shuttle(ui.user)
+	if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
+		to_chat(ui.user, span_red("The ship's drive is inoperable while the engines are charging."))
+		return
 
-		if("dock_command")
-			if(WS.autopilot)
-				to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
-				return
-			WS.dock()
+	var/index = params["traverse"]
+	var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
+	if(!istype(new_route))
+		message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
+		return
 
-		if("undock_command")
-			if(WS.autopilot)
-				to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
-				return
-			WS.undock()
+	if(!check_docking(ui.user, WS))
+		return TRUE
 
-		if("toggle_cloaking")
-			if(!WS.can_cloak)
-				return
-			dq_set_cloaked(WS, !dq_get_cloaked(WS))
-			if(dq_get_cloaked(WS))
-				to_chat(ui.user, span_danger("Ship stealth systems have been activated. The station will not be warned of our arrival."))
-			else
-				to_chat(ui.user, span_danger("Ship stealth systems have been deactivated. The station will be warned of our arrival."))
+	var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
+	if(!istype(target_destination))
+		message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
+		return
 
-		if("toggle_autopilot")
-			WS.adjust_autopilot(!WS.autopilot)
+	WS.next_location_handle = om_handle(target_destination.my_landmark())
+	if(!can_move(WS, ui.user))
+		return
 
-		if("traverse")
-			if(WS.autopilot)
-				to_chat(ui.user, span_warning("The autopilot must be disabled before you can control the vessel manually."))
-				return
+	WS.web_master.future_destination_handle = om_handle(target_destination)
+	to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
+	WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 
-			if(COOLDOWN_TIMELEFT(WS, drive_cooldown) > 0)
-				to_chat(ui.user, span_red("The ship's drive is inoperable while the engines are charging."))
-				return
-
-			var/index = text2num(params["traverse"])
-			var/datum/shuttle_route/new_route = LAZYACCESS(WS.web_master.current_destination().routes, index)
-			if(!istype(new_route))
-				message_admins("ERROR: Shuttle computer was asked to traverse a nonexistant route.")
-				return
-
-			if(!check_docking(ui.user, WS))
-				return TRUE
-
-			var/datum/shuttle_destination/target_destination = new_route.get_other_side(WS.web_master.current_destination())
-			if(!istype(target_destination))
-				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
-				return
-
-			WS.next_location_handle = om_handle(target_destination.my_landmark())
-			if(!can_move(WS, ui.user))
-				return
-
-			WS.web_master.future_destination_handle = om_handle(target_destination)
-			to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
-			WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
-
-			var/travel_time = new_route.travel_time * WS.flight_time_modifier
-			// TODO - Leshana - Change this to use proccess stuff of autodock!
-			if(new_route.interim && new_route.travel_time)
-				WS.long_jump(target_destination.my_landmark(), new_route.interim, travel_time / 10)
-			else
-				WS.short_jump(target_destination.my_landmark())
+	var/travel_time = new_route.travel_time * WS.flight_time_modifier
+	// TODO - Leshana - Change this to use proccess stuff of autodock!
+	if(new_route.interim && new_route.travel_time)
+		WS.long_jump(target_destination.my_landmark(), new_route.interim, travel_time / 10)
+	else
+		WS.short_jump(target_destination.my_landmark())
 
 //check if we're undocked, give option to force launch
 /obj/machinery/computer/shuttle_control/web/proc/check_docking(mob/user, datum/shuttle/autodock/MS)

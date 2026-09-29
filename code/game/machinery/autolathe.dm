@@ -139,11 +139,7 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	flick("autolathe_loading", src)//plays metal insertion animation
 	SStgui.update_uis(src)
 
-/obj/machinery/autolathe/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Autolathe", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/autolathe, "Autolathe")
 
 /**
  * Converts all the designs supported by this autolathe into UI data
@@ -220,17 +216,11 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 
 	return data
 
-/obj/machinery/autolathe/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	add_fingerprint(ui.user)
+UI_ACT(/obj/machinery/autolathe, "make", ui_act_make, UI_ARG_TEXT("id", 256), UI_ARG_NUM("multiplier", 1, 50), UI_ARG_LIST("materialSlots"))
+UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
+	add_fingerprint(user)
 
 	//sanity checks to start printing
-	if(action != "make")
-		stack_trace("unknown autolathe ui_act: [action]")
-		return
-
 	if(disabled)
 		atom_say("Unable to print, voltage mismatch in internal wiring.")
 		return
@@ -259,13 +249,9 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	var/build_count = params["multiplier"]
 	if(isnull(build_count))
 		return
-	build_count = text2num(build_count)
-	if(isnull(build_count))
-		return
-	build_count = clamp(build_count, 1, 50)
 
 	// Material-selectable designs let the user pick which loaded material to use.
-	var/list/chosen_materials = design.material_choices_from_params(params)
+	var/list/chosen_materials = params["materialSlots"] || list()
 	if(design.material_template && !design.material_choice_valid(chosen_materials))
 		atom_say("Select valid materials for every required construction slot.")
 		return
@@ -294,9 +280,9 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	var/build_time_per_item = (design.construction_time * (design.lathe_time_factor)) ** lathe_build_rate
 
 	//do the printing sequentially
-	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+	var/obj/item/card/id/producer_id = user.GetIdCard()
 	current_producer_account = producer_id?.associated_account_number || 0
-	current_producer_department = department_for_mob(ui.user) || DEPARTMENT_ENGINEERING
+	current_producer_department = department_for_mob(user) || DEPARTMENT_ENGINEERING
 	icon_state = "autolathe_n"
 	// play this after all checks passed individually for each item.
 	print_sound.start()

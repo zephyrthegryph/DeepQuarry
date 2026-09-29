@@ -29,11 +29,10 @@
 /obj/item/book/manual/wiki/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/book/manual/wiki/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "WikiBook", title || name)
-		ui.open()
+DECLARE_UI(/obj/item/book/manual/wiki, "WikiBook")
+
+/obj/item/book/manual/wiki/ui_title(mob/user)
+	return title || name
 
 /obj/item/book/manual/wiki/tgui_data(mob/user)
 	return list(
@@ -42,15 +41,12 @@
 		"url" = get_wiki_url(),
 	)
 
-/obj/item/book/manual/wiki/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "open_wiki")
-		var/url = get_wiki_url()
-		if(url && ui.user?.client)
-			ui.user.client << link(url)
-		return TRUE
+UI_ACT(/obj/item/book/manual/wiki, "open_wiki", ui_act_open_wiki)
+UI_ACT_PROC(/obj/item/book/manual/wiki, ui_act_open_wiki)
+	var/url = get_wiki_url()
+	if(url && ui.user?.client)
+		ui.user.client << link(url)
+	return TRUE
 
 /obj/item/book/manual/wiki/engineering_construction
 	name = "Station Repairs and Construction"

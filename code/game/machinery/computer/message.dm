@@ -72,11 +72,7 @@
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
 			linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
-/obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MessageMonitor", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/message_monitor, "MessageMonitor")
 
 /obj/machinery/computer/message_monitor/tgui_data(mob/user)
 	var/list/data = list()
@@ -183,145 +179,222 @@
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
-/obj/machinery/computer/message_monitor/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/message_monitor, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_cleartemp)
+	temp = null
+	. = TRUE
+//Authenticate
 
-	switch(action)
-		if("cleartemp")
-			temp = null
-			. = TRUE
-		//Authenticate
-		if("auth")
-			var/dkey = params["key"]
-			if(dkey && dkey != "")
-				if(linkedServer() && linkedServer().decryptkey == dkey)
-					auth = TRUE
-				else
-					temp = incorrectkey
-			. = TRUE
-		if("deauth")
-			auth = FALSE
-			. = TRUE
-		//Find a server
-		if("find")
-			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
-				om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
-			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-				linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
-				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
-			else
-				temp = noserver
-		//Hack the Console to get the password
-		if("hack")
-			var/mob/living/original = om_resolve(ui.user.mind.original_character)
-			if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
-				hacking = 1
-				update_icon()
-				//Time it takes to bruteforce is dependant on the password length.
-				om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), ui.user)
+UI_ACT(/obj/machinery/computer/message_monitor, "auth", ui_act_auth, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_auth)
+	var/dkey = params["key"]
+	if(dkey && dkey != "")
+		if(linkedServer() && linkedServer().decryptkey == dkey)
+			auth = TRUE
+		else
+			temp = incorrectkey
+	. = TRUE
 
+UI_ACT(/obj/machinery/computer/message_monitor, "deauth", ui_act_deauth)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deauth)
+	auth = FALSE
+	. = TRUE
+//Find a server
+
+UI_ACT(/obj/machinery/computer/message_monitor, "find", ui_act_find)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_find)
+	if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
+		om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
+	else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
+		linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+		set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
+	else
+		temp = noserver
+//Hack the Console to get the password
+
+UI_ACT(/obj/machinery/computer/message_monitor, "hack", ui_act_hack)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_hack)
+	var/mob/living/original = om_resolve(ui.user.mind.original_character)
+	if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
+		hacking = 1
+		update_icon()
+		//Time it takes to bruteforce is dependant on the password length.
+		om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), ui.user)
+
+//Turn the server on/off.
+
+UI_ACT(/obj/machinery/computer/message_monitor, "active", ui_act_active)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_active)
 	if(!auth)
 		return
-
 	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
 		temp = noserver
 		return TRUE
+	linkedServer().active = !linkedServer().active
+	. = TRUE
+//Clears the logs - KEY REQUIRED
 
-	switch(action)
-		//Turn the server on/off.
-		if("active")
-			linkedServer().active = !linkedServer().active
-			. = TRUE
-		//Clears the logs - KEY REQUIRED
-		if("del_pda")
-			linkedServer().pda_msgs = list()
-			set_temp("NOTICE: Logs cleared.", "average")
-			. = TRUE
-		//Clears the request console logs - KEY REQUIRED
-		if("del_rc")
-			linkedServer().rc_msgs = list()
-			set_temp("NOTICE: Logs cleared.", "average")
-			. = TRUE
-		//Change the password - KEY REQUIRED
-		if("pass")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(current_key_entered), message = "Please enter the current decryption key.", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
-			. = TRUE
-		//Delete the log.
-		if("delete")
-			if(params["type"] == "pda")
-				LAZYREMOVE(linkedServer().pda_msgs, locate(params["id"]))
-			else
-				LAZYREMOVE(linkedServer().rc_msgs, locate(params["id"]))
-			set_temp("NOTICE: Log Deleted!", "average")
-			. = TRUE
-		//Fake messaging selection - KEY REQUIRED
-		if("set_sender")
-			customsender = sanitize(params["val"])
-			. = TRUE
-		if("set_sender_job")
-			customjob = sanitize(params["val"])
-			. = TRUE
-		if("set_recipient")
-			var/ref = params["val"]
-			var/obj/item/pda/P = locate(ref)
-			if(!istype(P) || !P.owner || P.hidden)
-				return FALSE
+UI_ACT(/obj/machinery/computer/message_monitor, "del_pda", ui_act_del_pda)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_pda)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	linkedServer().pda_msgs = list()
+	set_temp("NOTICE: Logs cleared.", "average")
+	. = TRUE
+//Clears the request console logs - KEY REQUIRED
 
-			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
-			if(!M || M.toff)
-				return FALSE
-			customrecepient_handle = om_handle(P)
-			. = TRUE
-		if("set_message")
-			custommessage = sanitize(params["val"])
-			. = TRUE
-		if("send_message")
-			if(isnull(customsender) || customsender == "")
-				customsender = "UNKNOWN"
+UI_ACT(/obj/machinery/computer/message_monitor, "del_rc", ui_act_del_rc)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_del_rc)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	linkedServer().rc_msgs = list()
+	set_temp("NOTICE: Logs cleared.", "average")
+	. = TRUE
+//Change the password - KEY REQUIRED
 
-			if(isnull(customrecepient()))
-				set_temp("NOTICE: No recepient selected!", "average")
-				return TRUE
+UI_ACT(/obj/machinery/computer/message_monitor, "pass", ui_act_pass)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_pass)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(current_key_entered), message = "Please enter the current decryption key.", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
+	. = TRUE
+//Delete the log.
 
-			if(isnull(custommessage) || custommessage == "")
-				set_temp("NOTICE: No message entered!", "average")
-				return TRUE
+UI_ACT(/obj/machinery/computer/message_monitor, "delete", ui_act_delete, UI_ARG_REF("id", null), UI_ARG_TEXT("type"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_delete)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	if(params["type"] == "pda")
+		LAZYREMOVE(linkedServer().pda_msgs, params["id"])
+	else
+		LAZYREMOVE(linkedServer().rc_msgs, params["id"])
+	set_temp("NOTICE: Log Deleted!", "average")
+	. = TRUE
+//Fake messaging selection - KEY REQUIRED
 
-			var/obj/item/pda/PDARec = null
-			for(var/obj/item/pda/P in REGISTRY_MEMBERS(REGISTRY_PDAS))
-				if(!P.owner || P.hidden)
-					continue
-				var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
-				if(!M || M.toff)
-					continue
-				if(P.owner == customsender)
-					PDARec = P
-			//Sender isn't faking as someone who exists
-			if(isnull(PDARec))
-				linkedServer().send_pda_message("[customrecepient().owner]", "[customsender]","[custommessage]")
-				var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
-				if(M)
-					M.receive_message(list("sent" = 0, "owner" = customsender, "job" = customjob, "message" = custommessage), null)
-			//Sender is faking as someone who exists
-			else
-				linkedServer().send_pda_message("[customrecepient().owner]", "[PDARec.owner]","[custommessage]")
+UI_ACT(/obj/machinery/computer/message_monitor, "set_sender", ui_act_set_sender, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_sender)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	customsender = sanitize(params["val"])
+	. = TRUE
 
-				var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
-				if(M)
-					M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
-			//Finally..
-			ResetMessage()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/message_monitor, "set_sender_job", ui_act_set_sender_job, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_sender_job)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	customjob = sanitize(params["val"])
+	. = TRUE
 
-		if("addtoken")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(token_entered), title = "Token creation", message = "Enter text you want to be filtered out", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/message_monitor, "set_recipient", ui_act_set_recipient, UI_ARG_REF("val", null, /obj/item/pda))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_recipient)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	var/obj/item/pda/P = params["val"]
+	if(!istype(P) || !P.owner || P.hidden)
+		return FALSE
 
-		if("deltoken")
-			var/tokennum = text2num(params["deltoken"])
-			linkedServer().spamfilter.Cut(tokennum, tokennum + 1)
-			. = TRUE
+	var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
+	if(!M || M.toff)
+		return FALSE
+	customrecepient_handle = om_handle(P)
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/message_monitor, "set_message", ui_act_set_message, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_set_message)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	custommessage = sanitize(params["val"])
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/message_monitor, "send_message", ui_act_send_message)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_send_message)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	if(isnull(customsender) || customsender == "")
+		customsender = "UNKNOWN"
+
+	if(isnull(customrecepient()))
+		set_temp("NOTICE: No recepient selected!", "average")
+		return TRUE
+
+	if(isnull(custommessage) || custommessage == "")
+		set_temp("NOTICE: No message entered!", "average")
+		return TRUE
+
+	var/obj/item/pda/PDARec = null
+	for(var/obj/item/pda/P in REGISTRY_MEMBERS(REGISTRY_PDAS))
+		if(!P.owner || P.hidden)
+			continue
+		var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
+		if(!M || M.toff)
+			continue
+		if(P.owner == customsender)
+			PDARec = P
+	//Sender isn't faking as someone who exists
+	if(isnull(PDARec))
+		linkedServer().send_pda_message("[customrecepient().owner]", "[customsender]","[custommessage]")
+		var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
+		if(M)
+			M.receive_message(list("sent" = 0, "owner" = customsender, "job" = customjob, "message" = custommessage), null)
+	//Sender is faking as someone who exists
+	else
+		linkedServer().send_pda_message("[customrecepient().owner]", "[PDARec.owner]","[custommessage]")
+
+		var/datum/data/pda/app/messenger/M = customrecepient().find_program(/datum/data/pda/app/messenger)
+		if(M)
+			M.receive_message(list("sent" = 0, "owner" = "[PDARec.owner]", "job" = "[customjob]", "message" = "[custommessage]", "target" = "\ref[PDARec]"), "\ref[PDARec]")
+	//Finally..
+	ResetMessage()
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/message_monitor, "addtoken", ui_act_addtoken)
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_addtoken)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(token_entered), title = "Token creation", message = "Enter text you want to be filtered out", requires = PROMPT_USABLE, ui_refresh = src, ui_refresh_if_true = TRUE)
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/message_monitor, "deltoken", ui_act_deltoken, UI_ARG_NUM("deltoken"))
+UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_deltoken)
+	if(!auth)
+		return
+	if(!linkedServer() || linkedServer().stat & (NOPOWER|BROKEN))
+		temp = noserver
+		return TRUE
+	var/tokennum = params["deltoken"]
+	linkedServer().spamfilter.Cut(tokennum, tokennum + 1)
+	. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
 	linkedServer_handle = om_handle(ask.choice)

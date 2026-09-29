@@ -136,12 +136,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 	update_icon()
 	SStgui.update_uis(src)
 
-/obj/machinery/gear_painter/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ColorMate", src.name)
-		ui.set_autoupdate(FALSE) //This might be a bit intensive, better to not update it every few ticks
-		ui.open()
+DECLARE_UI(/obj/machinery/gear_painter, "ColorMate")
 
 /obj/machinery/gear_painter/tgui_data(mob/user)
 	. = list()
@@ -179,54 +174,87 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 		activecolor = ask.picked_color
 		SStgui.update_uis(src)
 
-/obj/machinery/gear_painter/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
+UI_ACT(/obj/machinery/gear_painter, "switch_modes", ui_act_switch_modes, UI_ARG_NUM("mode"))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_switch_modes)
+	if(!(inserted))
 		return
-	if(inserted)
-		switch(action)
-			if("switch_modes")
-				active_mode = text2num(params["mode"])
-				return TRUE
-			if("choose_color")
-				om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), default = activecolor, title = "ColorMate colour picking", message = "Choose a color: ", requires = PROMPT_USABLE)
-				return TRUE
-			if("paint")
-				if(!do_paint(ui.user))
-					return TRUE
-				temp = "Painted Successfully!"
-				return TRUE
-			if("drop")
-				temp = ""
-				drop_item(ui.user)
-				return TRUE
-			if("clear")
-				inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
-				play_sfx(src, SFX_EFFECTS_SPRAY3)
-				temp = "Cleared Successfully!"
-				return TRUE
-			if("set_matrix_color")
-				color_matrix_last[params["color"]] = params["value"]
-				return TRUE
-			if("set_matrix_string")
-				if(params["value"])
-					var/list/colours = splittext(params["value"], ",")
-					if(colours.len > 12)
-						colours.Cut(13)
-					for(var/i = 1, i <= colours.len, i++)
-						var/number = text2num(colours[i])
-						if(isnum(number))
-							color_matrix_last[i] = clamp(number, -10, 10)
-				return TRUE
-			if("set_hue")
-				build_hue = clamp(text2num(params["buildhue"]), 0, 360)
-				return TRUE
-			if("set_sat")
-				build_sat = clamp(text2num(params["buildsat"]), -10, 10)
-				return TRUE
-			if("set_val")
-				build_val = clamp(text2num(params["buildval"]), -10, 10)
-				return TRUE
+	active_mode = params["mode"]
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "choose_color", ui_act_choose_color)
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_choose_color)
+	if(!(inserted))
+		return
+	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(color_chosen), default = activecolor, title = "ColorMate colour picking", message = "Choose a color: ", requires = PROMPT_USABLE)
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "paint", ui_act_paint)
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_paint)
+	if(!(inserted))
+		return
+	if(!do_paint(ui.user))
+		return TRUE
+	temp = "Painted Successfully!"
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "drop", ui_act_drop)
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_drop)
+	if(!(inserted))
+		return
+	temp = ""
+	drop_item(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "clear", ui_act_clear)
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_clear)
+	if(!(inserted))
+		return
+	inserted.remove_atom_colour(FIXED_COLOUR_PRIORITY)
+	play_sfx(src, SFX_EFFECTS_SPRAY3)
+	temp = "Cleared Successfully!"
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_VALUE("color"), UI_ARG_VALUE("value"))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_color)
+	if(!(inserted))
+		return
+	color_matrix_last[params["color"]] = params["value"]
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "set_matrix_string", ui_act_set_matrix_string, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_string)
+	if(!(inserted))
+		return
+	if(params["value"])
+		var/list/colours = splittext(params["value"], ",")
+		if(colours.len > 12)
+			colours.Cut(13)
+		for(var/i = 1, i <= colours.len, i++)
+			var/number = text2num(colours[i])
+			if(isnum(number))
+				color_matrix_last[i] = clamp(number, -10, 10)
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "set_hue", ui_act_set_hue, UI_ARG_NUM("buildhue", 0, 360))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_hue)
+	if(!(inserted))
+		return
+	build_hue = params["buildhue"]
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "set_sat", ui_act_set_sat, UI_ARG_NUM("buildsat", -10, 10))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_sat)
+	if(!(inserted))
+		return
+	build_sat = params["buildsat"]
+	return TRUE
+
+UI_ACT(/obj/machinery/gear_painter, "set_val", ui_act_set_val, UI_ARG_NUM("buildval", -10, 10))
+UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_val)
+	if(!(inserted))
+		return
+	build_val = params["buildval"]
+	return TRUE
 
 /obj/machinery/gear_painter/proc/do_paint(mob/user)
 	var/color_to_use

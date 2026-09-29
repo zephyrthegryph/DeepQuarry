@@ -165,11 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 /obj/item/depth_scanner/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state
 
-/obj/item/depth_scanner/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchDepthScanner", name)
-		ui.open()
+DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 
 /obj/item/depth_scanner/tgui_static_data(mob/user)
 	. = ..()
@@ -205,29 +201,27 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 
 	return data
 
-/obj/item/depth_scanner/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/depth_scanner, "select", ui_act_select, UI_ARG_NUM("select"))
+UI_ACT_PROC(/obj/item/depth_scanner, ui_act_select)
+	var/index = params["select"]
+	if(index && index <= LAZYLEN(positive_locations))
+		current_handle = om_handle(LAZYACCESS(positive_locations, index))
+	return TRUE
 
-	switch(action)
-		if("select")
-			var/index = text2num(params["select"])
-			if(index && index <= LAZYLEN(positive_locations))
-				current_handle = om_handle(LAZYACCESS(positive_locations, index))
-			return TRUE
-		if("clear")
-			var/index = text2num(params["clear"])
-			if(index)
-				if(index <= LAZYLEN(positive_locations))
-					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-					LAZYREMOVE(positive_locations, D)
-					qdel(D)
-					current_handle = null
-			else
-				QDEL_LIST_NULL(positive_locations)
-				positive_locations = list()
-				qdel_handle(current_handle); current_handle = null
-			return TRUE
+UI_ACT(/obj/item/depth_scanner, "clear", ui_act_clear, UI_ARG_NUM("clear"))
+UI_ACT_PROC(/obj/item/depth_scanner, ui_act_clear)
+	var/index = params["clear"]
+	if(index)
+		if(index <= LAZYLEN(positive_locations))
+			var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
+			LAZYREMOVE(positive_locations, D)
+			qdel(D)
+			current_handle = null
+	else
+		QDEL_LIST_NULL(positive_locations)
+		positive_locations = list()
+		qdel_handle(current_handle); current_handle = null
+	return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 /obj/item/beacon_locator
@@ -290,11 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 /obj/item/beacon_locator/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/beacon_locator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BeaconLocator", name)
-		ui.open()
+DECLARE_UI(/obj/item/beacon_locator, "BeaconLocator")
 
 /obj/item/beacon_locator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -310,21 +300,19 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 
 	return data
 
-/obj/item/beacon_locator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/beacon_locator, "reset_tracking", ui_act_reset_tracking)
+UI_ACT_PROC(/obj/item/beacon_locator, ui_act_reset_tracking)
+	scan_ticks = 1
+	target_radio_handle = null
+	om_task_periodic(src, PERIODIC_SLOW)
+	return TRUE
 
-	switch(action)
-		if("reset_tracking")
-			scan_ticks = 1
-			target_radio_handle = null
-			om_task_periodic(src, PERIODIC_SLOW)
-			return TRUE
-		if("setFrequency")
-			var/new_frequency = (text2num(params["freq"]))
-			new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-			frequency = new_frequency
-			return TRUE
+UI_ACT(/obj/item/beacon_locator, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
+UI_ACT_PROC(/obj/item/beacon_locator, ui_act_setfrequency)
+	var/new_frequency = (params["freq"])
+	new_frequency = sanitize_frequency(new_frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	frequency = new_frequency
+	return TRUE
 
 MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 /obj/item/xenoarch_multi_tool

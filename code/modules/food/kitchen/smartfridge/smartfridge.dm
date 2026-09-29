@@ -265,12 +265,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/smartfridge/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SmartVend", name)
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
 
 /obj/machinery/smartfridge/tgui_data(mob/user)
 	. = list()
@@ -287,33 +282,33 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	.["locked"] = locked
 	.["secure"] = is_secure
 
-/obj/machinery/smartfridge/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+/obj/machinery/smartfridge/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	add_fingerprint(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/smartfridge, "Release", ui_act_release, UI_ARG_VALUE("amount"), UI_ARG_NUM("index"))
+UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
+	var/amount = 0
+	if(params["amount"])
+		amount = params["amount"]
+	else
+		var/_answer_k289 = act_ask(ui.user, action, params, ui, "k289", /datum/om/prompt/number, message = "How many items?", title = "How many items would you like to take out?", default = 1)
+		if(isnull(_answer_k289))
+			return
+		amount = _answer_k289
+
+	if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
+		return FALSE
+
+	var/index = params["index"]
+	if(index < 1 || index > LAZYLEN(item_records))
 		return TRUE
 
-	add_fingerprint(ui.user)
-	switch(action)
-		if("Release")
-			var/amount = 0
-			if(params["amount"])
-				amount = params["amount"]
-			else
-				var/_answer_k289 = act_ask(ui.user, action, params, ui, "k289", /datum/om/prompt/number, message = "How many items?", title = "How many items would you like to take out?", default = 1)
-				if(isnull(_answer_k289))
-					return
-				amount = _answer_k289
-
-			if(QDELETED(src) || QDELETED(ui.user) || !ui.user.Adjacent(src))
-				return FALSE
-
-			var/index = text2num(params["index"])
-			if(index < 1 || index > LAZYLEN(item_records))
-				return TRUE
-
-			vend(item_records[index], amount)
-			update_icon()
-			return TRUE
-	return FALSE
+	vend(item_records[index], amount)
+	update_icon()
+	return TRUE
 
 /obj/machinery/smartfridge/proc/throw_item()
 	var/obj/throw_item = null
@@ -338,12 +333,15 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /*
  * Secure Smartfridges
  */
-/obj/machinery/smartfridge/secure/tgui_act(action, params, datum/tgui/ui)
-	if(!operable())
-		return TRUE
-	if(ui.user.contents.Find(src) || (in_range(src, ui.user) && istype(loc, /turf)))
-		if((!allowed(ui.user) && scan_id) && !emagged && locked != -1 && action == "Release")
-			to_chat(ui.user, span_warning("Access denied."))
+/obj/machinery/smartfridge/secure/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	return operable()
+
+UI_ACT_OVERRIDE(/obj/machinery/smartfridge/secure, ui_act_release)
+	if(user.contents.Find(src) || (in_range(src, user) && istype(loc, /turf)))
+		if((!allowed(user) && scan_id) && !emagged && locked != -1)
+			to_chat(user, span_warning("Access denied."))
 			return TRUE
 	return ..()
 

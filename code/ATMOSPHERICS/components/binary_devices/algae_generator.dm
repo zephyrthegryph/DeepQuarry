@@ -192,11 +192,7 @@
 
 	moles_per_tick = initial(moles_per_tick) + (manip_rating**2 - 1)
 
-/obj/machinery/atmospherics/binary/algae_farm/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AlgaeFarm", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/binary/algae_farm, "AlgaeFarm")
 
 /obj/machinery/atmospherics/binary/algae_farm/tgui_data(mob/user)
 	var/list/data = list()
@@ -233,28 +229,30 @@
 
 	return data
 
-/obj/machinery/atmospherics/binary/algae_farm/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/atmospherics/binary/algae_farm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("toggle")
-			if(use_power == USE_POWER_IDLE)
-				set_use_power(USE_POWER_ACTIVE)
-				MACHINE_WAKE(src)
-			else
-				set_use_power(USE_POWER_IDLE)
-			update_icon()
-			. = TRUE
+UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_toggle)
+	if(use_power == USE_POWER_IDLE)
+		set_use_power(USE_POWER_ACTIVE)
+		MACHINE_WAKE(src)
+	else
+		set_use_power(USE_POWER_IDLE)
+	update_icon()
+	. = TRUE
 
-		if("ejectMaterial")
-			var/matName = params["mat"]
-			if(!(matName in stored_material))
-				return
-			eject_materials(matName, 0)
-			MACHINE_WAKE(src)
-			. = TRUE
+UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "ejectMaterial", ui_act_ejectmaterial, UI_ARG_VALUE("mat"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_ejectmaterial)
+	var/matName = params["mat"]
+	if(!(matName in stored_material))
+		return
+	eject_materials(matName, 0)
+	MACHINE_WAKE(src)
+	. = TRUE
 
 // TODO - These should be replaced with materials datum.
 

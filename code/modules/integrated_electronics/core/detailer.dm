@@ -38,11 +38,7 @@
 /obj/item/integrated_electronics/detailer/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
 
-/obj/item/integrated_electronics/detailer/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ICDetailer", name)
-		ui.open()
+DECLARE_UI(/obj/item/integrated_electronics/detailer, "ICDetailer")
 
 /obj/item/integrated_electronics/detailer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -50,17 +46,13 @@
 	data["color_list"] = color_list
 	return data
 
-/obj/item/integrated_electronics/detailer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("change_color")
-			if(!(params["color"] in color_list))
-				return // to prevent href exploits causing runtimes
-			detail_color = color_list[params["color"]]
-			update_icon()
-			return TRUE
+UI_ACT(/obj/item/integrated_electronics/detailer, "change_color", ui_act_change_color, UI_ARG_VALUE("color"))
+UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
+	if(!(params["color"] in color_list))
+		return // to prevent href exploits causing runtimes
+	detail_color = color_list[params["color"]]
+	update_icon()
+	return TRUE
 
 DECLARE_INTERACTIONS(/obj/item/integrated_electronics/detailer, INTERACT_USE(null, PROC_REF(interaction_self)))
 

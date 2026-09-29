@@ -35,22 +35,23 @@
 	if(computer().tesla_link && prob(50))
 		qdel(computer().tesla_link)
 
-/datum/computer_file/program/revelation/tgui_act(action, params)
-	if(..())
+UI_ACT(/datum/computer_file/program/revelation, "PRG_arm", ui_act_prg_arm)
+UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_arm)
+	armed = !armed
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/revelation, "PRG_activate", ui_act_prg_activate)
+UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_activate)
+	activate()
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/revelation, "PRG_obfuscate", ui_act_prg_obfuscate, UI_ARG_VALUE("new_name"))
+UI_ACT_PROC(/datum/computer_file/program/revelation, ui_act_prg_obfuscate)
+	var/newname = params["new_name"]
+	if(!newname)
 		return
-	switch(action)
-		if("PRG_arm")
-			armed = !armed
-			return TRUE
-		if("PRG_activate")
-			activate()
-			return TRUE
-		if("PRG_obfuscate")
-			var/newname = params["new_name"]
-			if(!newname)
-				return
-			filedesc = newname
-			return TRUE
+	filedesc = newname
+	return TRUE
 
 /datum/computer_file/program/revelation/clone()
 	var/datum/computer_file/program/revelation/temp = ..()

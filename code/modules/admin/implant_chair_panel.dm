@@ -20,11 +20,7 @@
 /obj/machinery/implantchair/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/machinery/implantchair/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ImplantChair", "Implanter Status")
-		ui.open()
+DECLARE_UI(/obj/machinery/implantchair, "ImplantChair", UI_TITLE("Implanter Status"))
 
 /obj/machinery/implantchair/tgui_data(mob/user)
 	var/list/data = list()
@@ -40,16 +36,14 @@
 	data["ready"] = !!ready
 	return data
 
-/obj/machinery/implantchair/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("implant")
-			start_implant(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("replenish")
-			start_replenish(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/machinery/implantchair, "implant", ui_act_implant)
+UI_ACT_PROC(/obj/machinery/implantchair, ui_act_implant)
+	start_implant(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/implantchair, "replenish", ui_act_replenish)
+UI_ACT_PROC(/obj/machinery/implantchair, ui_act_replenish)
+	start_replenish(ui.user)
+	SStgui.update_uis(src)
+	return TRUE

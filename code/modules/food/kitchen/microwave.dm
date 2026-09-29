@@ -308,11 +308,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /*******************
 *   Microwave Menu
 ********************/
-/obj/machinery/microwave/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Microwave", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 /obj/machinery/microwave/ui_assets(mob/user)
 	return list(
@@ -378,21 +374,22 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 	return data
 
-/obj/machinery/microwave/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/microwave/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(operating)
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("cook")
-			cook()
-			return TRUE
+UI_ACT(/obj/machinery/microwave, "cook", ui_act_cook)
+UI_ACT_PROC(/obj/machinery/microwave, ui_act_cook)
+	cook()
+	return TRUE
 
-		if("dispose")
-			dispose()
-			return TRUE
+UI_ACT(/obj/machinery/microwave, "dispose", ui_act_dispose)
+UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
+	dispose()
+	return TRUE
 
 /***********************************
 *   Microwave Menu Handling/Cooking

@@ -27,13 +27,12 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 /datum/flavor_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/datum/flavor_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/flavor_panel, "FlavorText", UI_TITLE("Update Flavour Text"))
+
+/datum/flavor_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "FlavorText", "Update Flavour Text")
-		ui.open()
+		return FALSE
+	return TRUE
 
 TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_keys, list("general", "head", "face", "eyes", "torso", "arms", "hands", "legs", "feet"))
 
@@ -64,18 +63,23 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 	data["parts"] = parts
 	return data
 
-/datum/flavor_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !host || ui.user != host)
-		return
-	switch(action)
-		if("edit")
-			var/key = "[params["key"]]"
-			topic_dispatch(host, ui.user, list("flavor_change" = key))
-			SStgui.update_uis(src)
-			return TRUE
-		if("done")
-			topic_dispatch(host, ui.user, list("flavor_change" = "done"))
-			return TRUE
+/datum/flavor_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!host || ui.user != host)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/flavor_panel, "edit", ui_act_edit, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/datum/flavor_panel, ui_act_edit)
+	var/key = "[params["key"]]"
+	topic_dispatch(host, ui.user, list("flavor_change" = key))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/flavor_panel, "done", ui_act_done)
+UI_ACT_PROC(/datum/flavor_panel, ui_act_done)
+	topic_dispatch(host, ui.user, list("flavor_change" = "done"))
+	return TRUE
 
 DECLARE_REF(/datum/flavor_panel, "host", HELD, null)

@@ -179,12 +179,10 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 		return STATUS_CLOSE
 	return STATUS_INTERACTIVE
 
-/datum/controller/master/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(isnull(ui))
-		ui = new /datum/tgui(user, src, "ControllerOverview")
-		ui.open()
-		use_rolling_usage = TRUE
+DECLARE_UI(/datum/controller/master, "ControllerOverview")
+
+/datum/controller/master/ui_opening(mob/user, datum/tgui/ui)
+	use_rolling_usage = TRUE
 
 /datum/controller/master/tgui_close(mob/user)
 	var/valid_found = FALSE
@@ -238,35 +236,33 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 
 	return data
 
-/datum/controller/master/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/datum/controller/master, "toggle_fast_update", ui_act_toggle_fast_update)
+UI_ACT_PROC(/datum/controller/master, ui_act_toggle_fast_update)
+	overview_fast_update = !overview_fast_update
+	return TRUE
 
-	switch(action)
-		if("toggle_fast_update")
-			overview_fast_update = !overview_fast_update
-			return TRUE
+UI_ACT(/datum/controller/master, "set_rolling_length", ui_act_set_rolling_length, UI_ARG_NUM("rolling_length"))
+UI_ACT_PROC(/datum/controller/master, ui_act_set_rolling_length)
+	var/length = params["rolling_length"]
+	if(!length || length < 0)
+		return
+	rolling_usage_length = length SECONDS
+	return TRUE
 
-		if("set_rolling_length")
-			var/length = text2num(params["rolling_length"])
-			if(!length || length < 0)
-				return
-			rolling_usage_length = length SECONDS
-			return TRUE
+UI_ACT(/datum/controller/master, "view_variables", ui_act_view_variables, UI_ARG_REF("ref", "subsystems", /datum/controller/subsystem))
+UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
+	if(!check_rights_for(ui.user.client, R_DEBUG))
+		message_admins(
+			"[key_name(ui.user)] tried to view master controller variables while having improper rights, \
+			this is potentially a malicious exploit and worth noting."
+		)
 
-		if("view_variables")
-			if(!check_rights_for(ui.user.client, R_DEBUG))
-				message_admins(
-					"[key_name(ui.user)] tried to view master controller variables while having improper rights, \
-					this is potentially a malicious exploit and worth noting."
-				)
-
-			var/datum/controller/subsystem/subsystem = locate_in_list(subsystems, params["ref"])
-			if(isnull(subsystem))
-				to_chat(ui.user, span_warning("Failed to locate subsystem."))
-				return
-			SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/debug_variables, subsystem)
-			return TRUE
+	var/datum/controller/subsystem/subsystem = params["ref"]
+	if(isnull(subsystem))
+		to_chat(ui.user, span_warning("Failed to locate subsystem."))
+		return
+	SSadmin_verbs.dynamic_invoke_verb(ui.user, /datum/admin_verb/debug_variables, subsystem)
+	return TRUE
 
 /datum/controller/master/proc/check_and_perform_fast_update()
 	PRIVATE_PROC(TRUE)

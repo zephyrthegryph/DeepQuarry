@@ -140,11 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_se
 
 	return tgui_interact(user)
 
-/obj/item/radio/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Radio", name, parent_ui)
-		ui.open()
+DECLARE_UI(/obj/item/radio, "Radio")
 
 /obj/item/radio/tgui_static_data(mob/user)
 	. = ..()
@@ -237,60 +233,79 @@ DECLARE_INTERACTIONS(/obj/item/radio, INTERACT_USE(null, PROC_REF(interaction_se
 		return STATUS_CLOSE
 	return ..()
 
-/obj/item/radio/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/radio, "setFrequency", ui_act_setfrequency, UI_ARG_NUM("freq"))
+UI_ACT_PROC(/obj/item/radio, ui_act_setfrequency)
+	var/new_frequency = (params["freq"])
+	if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
+		new_frequency = sanitize_frequency(new_frequency)
+	set_frequency(new_frequency)
+	if(item_hidden_uplink(src))
+		if(item_hidden_uplink(src).check_trigger(ui.user, frequency, traitor_frequency))
+			// close the TGUI Radio when the uplink trips (was browse(null)).
+			SStgui.close_uis(src)
+	. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
 
-	switch(action)
-		if("setFrequency")
-			var/new_frequency = (text2num(params["freq"]))
-			if((new_frequency < PUBLIC_LOW_FREQ || new_frequency > PUBLIC_HIGH_FREQ))
-				new_frequency = sanitize_frequency(new_frequency)
-			set_frequency(new_frequency)
-			if(item_hidden_uplink(src))
-				if(item_hidden_uplink(src).check_trigger(ui.user, frequency, traitor_frequency))
-					// close the TGUI Radio when the uplink trips (was browse(null)).
-					SStgui.close_uis(src)
-			. = TRUE
-		if("broadcast")
-			ToggleBroadcast()
-			. = TRUE
-		if("listen")
-			ToggleReception()
-			. = TRUE
-		if("channel")
-			var/chan_name = params["channel"]
-			if(channels[chan_name] & FREQ_LISTENING)
-				channels[chan_name] &= ~FREQ_LISTENING
-			else
-				channels[chan_name] |= FREQ_LISTENING
-			. = TRUE
-		if("specFreq")
-			var/freq = params["channel"]
-			if(has_channel_access(ui.user, freq))
-				set_frequency(text2num(freq))
-			. = TRUE
-		if("subspace")
-			if(subspace_switchable)
-				subspace_transmission = !subspace_transmission
-				if(!subspace_transmission)
-					channels = list()
-					to_chat(ui.user, span_notice("Subspace Transmission is disabled"))
-				else
-					recalculateChannels()
-					to_chat(ui.user, span_notice("Subspace Transmission is enabled"))
-				. = TRUE
-		if("toggleLoudspeaker")
-			if(!subspace_switchable)
-				return
-			loudspeaker = !loudspeaker
+UI_ACT(/obj/item/radio, "broadcast", ui_act_broadcast)
+UI_ACT_PROC(/obj/item/radio, ui_act_broadcast)
+	ToggleBroadcast()
+	. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
 
-			if(loudspeaker)
-				to_chat(ui.user, span_notice("Loadspeaker enabled."))
-			else
-				to_chat(ui.user, span_notice("Loadspeaker disabled."))
-			. = TRUE
+UI_ACT(/obj/item/radio, "listen", ui_act_listen)
+UI_ACT_PROC(/obj/item/radio, ui_act_listen)
+	ToggleReception()
+	. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
 
+UI_ACT(/obj/item/radio, "channel", ui_act_channel, UI_ARG_VALUE("channel"))
+UI_ACT_PROC(/obj/item/radio, ui_act_channel)
+	var/chan_name = params["channel"]
+	if(channels[chan_name] & FREQ_LISTENING)
+		channels[chan_name] &= ~FREQ_LISTENING
+	else
+		channels[chan_name] |= FREQ_LISTENING
+	. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
+
+UI_ACT(/obj/item/radio, "specFreq", ui_act_specfreq, UI_ARG_NUM("channel"))
+UI_ACT_PROC(/obj/item/radio, ui_act_specfreq)
+	var/freq = params["channel"]
+	if(has_channel_access(ui.user, freq))
+		set_frequency(freq)
+	. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
+
+UI_ACT(/obj/item/radio, "subspace", ui_act_subspace)
+UI_ACT_PROC(/obj/item/radio, ui_act_subspace)
+	if(subspace_switchable)
+		subspace_transmission = !subspace_transmission
+		if(!subspace_transmission)
+			channels = list()
+			to_chat(ui.user, span_notice("Subspace Transmission is disabled"))
+		else
+			recalculateChannels()
+			to_chat(ui.user, span_notice("Subspace Transmission is enabled"))
+		. = TRUE
+	if(. && iscarbon(ui.user))
+		play_sfx(src, SFX_BUTTON)
+
+UI_ACT(/obj/item/radio, "toggleLoudspeaker", ui_act_toggleloudspeaker)
+UI_ACT_PROC(/obj/item/radio, ui_act_toggleloudspeaker)
+	if(!subspace_switchable)
+		return
+	loudspeaker = !loudspeaker
+
+	if(loudspeaker)
+		to_chat(ui.user, span_notice("Loadspeaker enabled."))
+	else
+		to_chat(ui.user, span_notice("Loadspeaker disabled."))
+	. = TRUE
 	if(. && iscarbon(ui.user))
 		play_sfx(src, SFX_BUTTON)
 

@@ -85,21 +85,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 		linked().relaymove(user, direction, accellimit)
 		return 1
 
-/obj/machinery/computer/ship/helm/tgui_interact(mob/user, datum/tgui/ui)
-	if(!linked())
-		display_reconnect_dialog(user, "helm")
-		return
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		user.client.register_map_obj(linked().cam_screen)
-		for(var/plane in linked().cam_plane_masters)
-			user.client.register_map_obj(plane)
-		user.client.register_map_obj(linked().cam_background)
-
-		ui = new(user, src, "OvermapHelm", "[linked().name] Helm Control") // 565, 545
-		ui.open()
-		om_after(src, 0.1 SECONDS, PROC_REF(update_map))
 
 /obj/machinery/computer/ship/helm/proc/update_map()
 	linked().update_screen()
@@ -161,140 +147,188 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	data["locations"] = locations
 	return data
 
-/obj/machinery/computer/ship/helm/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/ship/helm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!linked())
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("update_camera_view")
-			if(!COOLDOWN_FINISHED(src, map_refresh_cd))
-				to_chat(ui.user, span_warning("You cannot refresh the map so often."))
+UI_ACT(/obj/machinery/computer/ship/helm, "update_camera_view", ui_act_update_camera_view)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_update_camera_view)
+	if(!COOLDOWN_FINISHED(src, map_refresh_cd))
+		to_chat(ui.user, span_warning("You cannot refresh the map so often."))
+		return
+	update_map()
+	COOLDOWN_START(src, map_refresh_cd, 5 SECONDS)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
+
+UI_ACT(/obj/machinery/computer/ship/helm, "add", ui_act_add, UI_ARG_TEXT("add"))
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_add)
+	var/datum/computer_file/data/waypoint/R = new()
+	var/sec_name = act_ask(ui.user, action, params, ui, "k180", /datum/om/prompt/text, message = "Input navigation entry name", title = "New navigation entry", default = "Sector #[length(known_sectors)]", max_length = MAX_NAME_LEN)
+	if(isnull(sec_name))
+		return
+	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		return FALSE
+	if(!sec_name)
+		sec_name = "Sector #[length(known_sectors)]"
+	R.fields["name"] = sec_name
+	if(sec_name in known_sectors)
+		to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))
+		return TRUE
+	switch(params["add"])
+		if("current")
+			R.fields["x"] = linked().x
+			R.fields["y"] = linked().y
+		if("new")
+			var/newx = act_ask(ui.user, action, params, ui, "k194", /datum/om/prompt/number, message = "Input new entry x coordinate", title = "Coordinate input", default = linked().x, max = world.maxx, min = 1)
+			if(isnull(newx))
 				return
-			update_map()
-			COOLDOWN_START(src, map_refresh_cd, 5 SECONDS)
-			. = TRUE
-		if("add")
-			var/datum/computer_file/data/waypoint/R = new()
-			var/sec_name = act_ask(ui.user, action, params, ui, "k180", /datum/om/prompt/text, message = "Input navigation entry name", title = "New navigation entry", default = "Sector #[length(known_sectors)]", max_length = MAX_NAME_LEN)
-			if(isnull(sec_name))
+			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+				return TRUE
+			var/newy = act_ask(ui.user, action, params, ui, "k197", /datum/om/prompt/number, message = "Input new entry y coordinate", title = "Coordinate input", default = linked().y, max = world.maxy, min = 1)
+			if(isnull(newy))
 				return
 			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
 				return FALSE
-			if(!sec_name)
-				sec_name = "Sector #[length(known_sectors)]"
-			R.fields["name"] = sec_name
-			if(sec_name in known_sectors)
-				to_chat(ui.user, span_warning("Sector with that name already exists, please input a different name."))
-				return TRUE
-			switch(params["add"])
-				if("current")
-					R.fields["x"] = linked().x
-					R.fields["y"] = linked().y
-				if("new")
-					var/newx = act_ask(ui.user, action, params, ui, "k194", /datum/om/prompt/number, message = "Input new entry x coordinate", title = "Coordinate input", default = linked().x, max = world.maxx, min = 1)
-					if(isnull(newx))
-						return
-					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-						return TRUE
-					var/newy = act_ask(ui.user, action, params, ui, "k197", /datum/om/prompt/number, message = "Input new entry y coordinate", title = "Coordinate input", default = linked().y, max = world.maxy, min = 1)
-					if(isnull(newy))
-						return
-					if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-						return FALSE
-					R.fields["x"] = CLAMP(newx, 1, world.maxx)
-					R.fields["y"] = CLAMP(newy, 1, world.maxy)
-			LAZYSET(known_sectors, sec_name, R)
-			. = TRUE
+			R.fields["x"] = CLAMP(newx, 1, world.maxx)
+			R.fields["y"] = CLAMP(newy, 1, world.maxy)
+	LAZYSET(known_sectors, sec_name, R)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("remove")
-			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
-			if(R)
-				LAZYREMOVE(known_sectors, R.fields["name"])
-				qdel(R)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "remove", ui_act_remove, UI_ARG_REF("remove", null, /datum/computer_file/data/waypoint))
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_remove)
+	var/datum/computer_file/data/waypoint/R = params["remove"]
+	if(R)
+		LAZYREMOVE(known_sectors, R.fields["name"])
+		qdel(R)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("setcoord")
-			if(params["setx"])
-				var/newx = act_ask(ui.user, action, params, ui, "k214", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)
-				if(isnull(newx))
-					return
-				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-					return
-				if(newx)
-					dx = CLAMP(newx, 1, world.maxx)
+UI_ACT(/obj/machinery/computer/ship/helm, "setcoord", ui_act_setcoord, UI_ARG_VALUE("setx"), UI_ARG_VALUE("sety"))
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setcoord)
+	if(params["setx"])
+		var/newx = act_ask(ui.user, action, params, ui, "k214", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)
+		if(isnull(newx))
+			return
+		if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+			return
+		if(newx)
+			dx = CLAMP(newx, 1, world.maxx)
 
-			if(params["sety"])
-				var/newy = act_ask(ui.user, action, params, ui, "k221", /datum/om/prompt/number, message = "Input new destiniation y coordinate", title = "Coordinate input", default = dy, max = world.maxy, min = 1)
-				if(isnull(newy))
-					return
-				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-					return
-				if(newy)
-					dy = CLAMP(newy, 1, world.maxy)
-			. = TRUE
+	if(params["sety"])
+		var/newy = act_ask(ui.user, action, params, ui, "k221", /datum/om/prompt/number, message = "Input new destiniation y coordinate", title = "Coordinate input", default = dy, max = world.maxy, min = 1)
+		if(isnull(newy))
+			return
+		if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+			return
+		if(newy)
+			dy = CLAMP(newy, 1, world.maxy)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("setds")
-			dx = text2num(params["x"])
-			dy = text2num(params["y"])
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "setds", ui_act_setds, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setds)
+	dx = params["x"]
+	dy = params["y"]
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("reset")
-			dx = 0
-			dy = 0
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "reset", ui_act_reset)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_reset)
+	dx = 0
+	dy = 0
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("speedlimit")
-			var/newlimit = act_ask(ui.user, action, params, ui, "k239", /datum/om/prompt/number, message = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max = 100000, round_entry = FALSE)
-			if(isnull(newlimit))
-				return
-			if(newlimit)
-				speedlimit = CLAMP(newlimit/1000, 0, 100)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "speedlimit", ui_act_speedlimit)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_speedlimit)
+	var/newlimit = act_ask(ui.user, action, params, ui, "k239", /datum/om/prompt/number, message = "Input new speed limit for autopilot (0 to brake)", title = "Autopilot speed limit", default = speedlimit*1000, max = 100000, round_entry = FALSE)
+	if(isnull(newlimit))
+		return
+	if(newlimit)
+		speedlimit = CLAMP(newlimit/1000, 0, 100)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("accellimit")
-			var/newlimit = act_ask(ui.user, action, params, ui, "k245", /datum/om/prompt/number, message = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000, round_entry = FALSE)
-			if(isnull(newlimit))
-				return
-			if(newlimit)
-				accellimit = max(newlimit/1000, 0)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "accellimit", ui_act_accellimit)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_accellimit)
+	var/newlimit = act_ask(ui.user, action, params, ui, "k245", /datum/om/prompt/number, message = "Input new acceleration limit", title = "Acceleration limit", default = accellimit*1000, round_entry = FALSE)
+	if(isnull(newlimit))
+		return
+	if(newlimit)
+		accellimit = max(newlimit/1000, 0)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("move")
-			var/ndir = text2num(params["dir"])
-			linked().relaymove(ui.user, ndir, accellimit)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "move", ui_act_move, UI_ARG_NUM("dir"))
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_move)
+	var/ndir = params["dir"]
+	linked().relaymove(ui.user, ndir, accellimit)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("brake")
-			linked().decelerate()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "brake", ui_act_brake)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_brake)
+	linked().decelerate()
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("apilot")
-			if(autopilot_disabled)
-				autopilot = FALSE
-			else
-				autopilot = !autopilot
-			if(autopilot)
-				MACHINE_WAKE(src)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "apilot", ui_act_apilot)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_apilot)
+	if(autopilot_disabled)
+		autopilot = FALSE
+	else
+		autopilot = !autopilot
+	if(autopilot)
+		MACHINE_WAKE(src)
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("apilot_lock")
-			autopilot_disabled = !autopilot_disabled
-			autopilot = FALSE
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/helm, "apilot_lock", ui_act_apilot_lock)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_apilot_lock)
+	autopilot_disabled = !autopilot_disabled
+	autopilot = FALSE
+	. = TRUE
+	add_fingerprint(ui.user)
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("manual")
-			if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
-				return FALSE
-			else if(!viewing_overmap(ui.user) && linked())
-				if(!viewers) viewers = list() // List must exist for pass by reference to work
-				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
-			else
-				ui.user.reset_perspective()
-			. = TRUE
-
+UI_ACT(/obj/machinery/computer/ship/helm, "manual", ui_act_manual)
+UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_manual)
+	if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
+		return FALSE
+	else if(!viewing_overmap(ui.user) && linked())
+		if(!viewers) viewers = list() // List must exist for pass by reference to work
+		start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
+	else
+		ui.user.reset_perspective()
+	. = TRUE
 	add_fingerprint(ui.user)
 	if(. && !issilicon(ui.user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
@@ -323,8 +357,8 @@ DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 /obj/machinery/computer/ship/navigation/sync_linked(user)
 	return nav_tgui?.sync_linked()
 
-/obj/machinery/computer/ship/navigation/tgui_interact(mob/user, datum/tgui/ui)
-	return nav_tgui?.tgui_interact(user, ui)
+/obj/machinery/computer/ship/navigation/ui_redirect(mob/user)
+	return nav_tgui
 
 /obj/machinery/computer/ship/navigation/telescreen	//little hacky but it's only used on one ship so it should be okay
 	icon_state = "tele_nav"

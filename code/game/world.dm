@@ -281,6 +281,13 @@ GLOBAL_VAR(restart_counter)
 	setup_autowiki()
 	#endif
 
+	#ifdef UI_TYPES_DUMP
+	// tools/build/lib/ui_types.ts: dump the declared UI tables, then stop.
+	ui_types_dump()
+	// ALLOW(lifecycle): the dump boot ends the world once its file is written, as the autowiki boot does.
+	qdel(world)
+	#endif
+
 /world/proc/HandleTestRun()
 	//trigger things to run the whole process
 	Master.sleep_offline_after_initializations = FALSE

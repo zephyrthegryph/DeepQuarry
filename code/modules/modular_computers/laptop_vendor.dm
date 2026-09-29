@@ -160,57 +160,83 @@
 		return total_price
 	return 0
 
-/obj/machinery/lapvend/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/lapvend, "pick_device", ui_act_pick_device, UI_ARG_NUM("pick"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_pick_device)
+	if(state) // We've already picked a device type
+		return FALSE
+	devtype = params["pick"]
+	set_state(1)
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
 
-	switch(action)
-		if("pick_device")
-			if(state) // We've already picked a device type
-				return FALSE
-			devtype = text2num(params["pick"])
-			set_state(1)
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("clean_order")
-			reset_order()
-			return TRUE
+UI_ACT(/obj/machinery/lapvend, "clean_order", ui_act_clean_order)
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_clean_order)
+	reset_order()
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "confirm_order", ui_act_confirm_order)
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_confirm_order)
 	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
 		return FALSE
-	switch(action)
-		if("confirm_order")
-			set_state(2) // Wait for ID swipe for payment processing
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_cpu")
-			dev_cpu = text2num(params["cpu"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_battery")
-			dev_battery = text2num(params["battery"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_disk")
-			dev_disk = text2num(params["disk"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_netcard")
-			dev_netcard = text2num(params["netcard"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_tesla")
-			dev_tesla = text2num(params["tesla"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_nanoprint")
-			dev_nanoprint = text2num(params["print"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-		if("hw_card")
-			dev_card = text2num(params["card"])
-			fabricate_and_recalc_price(FALSE)
-			return TRUE
-	return FALSE
+	set_state(2) // Wait for ID swipe for payment processing
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_cpu", ui_act_hw_cpu, UI_ARG_NUM("cpu"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_cpu)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_cpu = params["cpu"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_battery", ui_act_hw_battery, UI_ARG_NUM("battery"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_battery)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_battery = params["battery"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_disk", ui_act_hw_disk, UI_ARG_NUM("disk"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_disk)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_disk = params["disk"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_netcard", ui_act_hw_netcard, UI_ARG_NUM("netcard"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_netcard)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_netcard = params["netcard"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_tesla", ui_act_hw_tesla, UI_ARG_NUM("tesla"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_tesla)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_tesla = params["tesla"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_nanoprint", ui_act_hw_nanoprint, UI_ARG_NUM("print"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_nanoprint)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_nanoprint = params["print"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
+
+UI_ACT(/obj/machinery/lapvend, "hw_card", ui_act_hw_card, UI_ARG_NUM("card"))
+UI_ACT_PROC(/obj/machinery/lapvend, ui_act_hw_card)
+	if((state != 1) && devtype) // Following IFs should only be usable when in the Select Loadout mode
+		return FALSE
+	dev_card = params["card"]
+	fabricate_and_recalc_price(FALSE)
+	return TRUE
 
 
 
@@ -221,16 +247,13 @@
 	)
 	..()
 
-/obj/machinery/lapvend/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/lapvend, "ComputerFabricator")
+
+/obj/machinery/lapvend/ui_prepare(mob/user, datum/tgui/ui)
 	if(!operable())
-		if(ui)
-			ui.close()
 		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ComputerFabricator")
-		ui.open()
+	return TRUE
 
 /obj/machinery/lapvend/tgui_data(mob/user)
 	var/list/data = list()

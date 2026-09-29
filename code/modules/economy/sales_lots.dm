@@ -256,11 +256,7 @@
 		return max(1, GLOB.supply_service.export_revenue(item.economic_export_value))
 	return max(5, round(item.w_class * 5))
 
-/obj/machinery/department_storefront/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DepartmentStorefront", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/department_storefront, "DepartmentStorefront")
 
 /obj/machinery/department_storefront/tgui_data(mob/user)
 	var/list/stock = list()
@@ -292,49 +288,57 @@
 		"stock" = stock,
 	)
 
-/obj/machinery/department_storefront/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	var/item_ref = params["ref"]
+/obj/machinery/department_storefront/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	latent_materialize_all() // a walk needs real things (C5)
-	var/obj/item/item = locate_within(src, item_ref) // ALLOW(latent): materialized above
-	switch(action)
-		if("buy")
-			return storefront_purchase(item, ui.user)
-		if("withdraw")
-			if(!item || !storefront_staff_authorized(ui.user))
-				return FALSE
-			storefront_forget_item(item)
-			item.forceMove(get_turf(src))
-			ui.user.put_in_hands(item)
-			return TRUE
-		if("set_price")
-			if(!item || !storefront_staff_authorized(ui.user))
-				return FALSE
-			var/new_price = text2num(params["price"])
-			if(!isnum(new_price) || new_price < 1 || new_price > 100000)
-				return FALSE
-			var/old_price = stock_prices[item_ref]
-			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): materialized above
-				var/matching_ref = REF(matching_item)
-				if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
-					stock_prices[matching_ref] = round(new_price)
-			return TRUE
-		if("set_markup")
-			if(!storefront_staff_authorized(ui.user))
-				return FALSE
-			var/new_markup = text2num(params["markup"])
-			if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
-				return FALSE
-			markup_percent = round(new_markup)
-			latent_materialize_all() // a walk needs real things (C5)
-			for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): materialized above
-				var/stock_ref = REF(stock_item)
-				stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
-			return TRUE
-	return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/department_storefront, "buy", ui_act_buy, UI_ARG_REF("ref", "contents", /obj/item))
+UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_buy)
+	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
+	return storefront_purchase(item, ui.user)
+
+UI_ACT(/obj/machinery/department_storefront, "withdraw", ui_act_withdraw, UI_ARG_REF("ref", "contents", /obj/item))
+UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_withdraw)
+	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
+	if(!item || !storefront_staff_authorized(ui.user))
+		return FALSE
+	storefront_forget_item(item)
+	item.forceMove(get_turf(src))
+	ui.user.put_in_hands(item)
+	return TRUE
+
+UI_ACT(/obj/machinery/department_storefront, "set_price", ui_act_set_price, UI_ARG_NUM("price"), UI_ARG_REF("ref", "contents", /obj/item))
+UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_price)
+	var/obj/item/item = params["ref"] // latent contents are materialized by ui_act_allowed()
+	var/item_ref = item ? REF(item) : null
+	if(!item || !storefront_staff_authorized(ui.user))
+		return FALSE
+	var/new_price = params["price"]
+	if(!isnum(new_price) || new_price < 1 || new_price > 100000)
+		return FALSE
+	var/old_price = stock_prices[item_ref]
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): materialized above
+		var/matching_ref = REF(matching_item)
+		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
+			stock_prices[matching_ref] = round(new_price)
+	return TRUE
+
+UI_ACT(/obj/machinery/department_storefront, "set_markup", ui_act_set_markup, UI_ARG_NUM("markup"))
+UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
+	if(!storefront_staff_authorized(ui.user))
+		return FALSE
+	var/new_markup = params["markup"]
+	if(!isnum(new_markup) || new_markup < -90 || new_markup > 500)
+		return FALSE
+	markup_percent = round(new_markup)
+	latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): materialized above
+		var/stock_ref = REF(stock_item)
+		stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
+	return TRUE
 
 /obj/machinery/department_storefront/proc/storefront_purchase(obj/item/item, mob/living/user)
 	if(!item || !user || get_dist(src, user) > 1 || src.z != user.z)

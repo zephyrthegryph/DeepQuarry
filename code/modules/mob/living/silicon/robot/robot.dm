@@ -622,8 +622,8 @@ OM_TIMER_SLOT(/mob/living/silicon/robot, weapon_lock)
 	if(mind)
 		sprite_name = mind.name
 	if(!selecting_module)
-		var/datum/tgui_module/robot_ui_module/ui = new(src)
-		ui.tgui_interact(src)
+		var/datum/tgui_module/robot_ui_module/menu = new(src)
+		menu.tgui_interact(src)
 
 /mob/living/silicon/robot/proc/update_braintype()
 	if(istype(mmi, /obj/item/mmi/digital/posibrain))

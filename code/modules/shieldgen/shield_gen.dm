@@ -112,11 +112,7 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/shield_gen/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ShieldGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/shield_gen, "ShieldGenerator")
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
 	if(has_stat(BROKEN))
@@ -214,29 +210,33 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 	else
 		average_field_strength = 0
 
-/obj/machinery/shield_gen/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/shield_gen, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_toggle)
+	if (!active && !anchored)
+		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		return
+	toggle()
+	. = TRUE
 
-	switch(action)
-		if("toggle")
-			if (!active && !anchored)
-				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
-				return
-			toggle()
-			. = TRUE
-		if("change_radius")
-			field_radius = clamp(text2num(params["val"]), 0, max_field_radius)
-			. = TRUE
-		if("strengthen_rate")
-			strengthen_rate = clamp(text2num(params["val"]), 0, max_strengthen_rate)
-			. = TRUE
-		if("target_field_strength")
-			target_field_strength = clamp(text2num(params["val"]), 1, max_field_strength)
-			. = TRUE
-		if("z_range")
-			z_range = clamp(text2num(params["val"]), 0, 10)
-			. = TRUE
+UI_ACT(/obj/machinery/shield_gen, "change_radius", ui_act_change_radius, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_change_radius)
+	field_radius = clamp(params["val"], 0, max_field_radius)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "strengthen_rate", ui_act_strengthen_rate, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_strengthen_rate)
+	strengthen_rate = clamp(params["val"], 0, max_strengthen_rate)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "target_field_strength", ui_act_target_field_strength, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_target_field_strength)
+	target_field_strength = clamp(params["val"], 1, max_field_strength)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "z_range", ui_act_z_range, UI_ARG_NUM("val", 0, 10))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_z_range)
+	z_range = params["val"]
+	. = TRUE
 
 /obj/machinery/shield_gen/ex_act(severity)
 	if(active)

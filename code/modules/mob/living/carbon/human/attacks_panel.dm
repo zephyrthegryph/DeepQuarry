@@ -17,13 +17,12 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 /datum/attacks_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/attacks_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/attacks_panel, "AttacksPanel", UI_TITLE("Known Attacks"))
+
+/datum/attacks_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AttacksPanel", "Known Attacks")
-		ui.open()
+		return FALSE
+	return TRUE
 
 /datum/attacks_panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -40,23 +39,32 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 	data["attacks"] = rows
 	return data
 
-/datum/attacks_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !host || ui.user != host)
-		return
-	switch(action)
-		if("set_default")
-			var/datum/unarmed_attack/u_attack = locate_in_list(host.species?.unarmed_attacks, "[params["ref"]]")
-			if(u_attack)
-				host.set_default_attack(u_attack)
-				host.check_attacks()
-			SStgui.update_uis(src)
-			return TRUE
-		if("reset_default")
-			host.set_default_attack(null)
-			host.check_attacks()
-			SStgui.update_uis(src)
-			return TRUE
+/datum/attacks_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!host || ui.user != host)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/attacks_panel, "set_default", ui_act_set_default, UI_ARG_REF("ref", "proc:ui_source_host_species_unarmed_attacks", /datum/unarmed_attack))
+UI_ACT_PROC(/datum/attacks_panel, ui_act_set_default)
+	var/datum/unarmed_attack/u_attack = params["ref"]
+	if(u_attack)
+		host.set_default_attack(u_attack)
+		host.check_attacks()
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/attacks_panel, "reset_default", ui_act_reset_default)
+UI_ACT_PROC(/datum/attacks_panel, ui_act_reset_default)
+	host.set_default_attack(null)
+	host.check_attacks()
+	SStgui.update_uis(src)
+	return TRUE
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/datum/attacks_panel/proc/ui_source_host_species_unarmed_attacks()
+	return host.species?.unarmed_attacks
 
 // Check Attacks verb now opens a structured TGUI panel.
 /mob/living/carbon/human/verb/check_attacks()

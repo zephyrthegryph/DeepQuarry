@@ -145,6 +145,12 @@
 	)
 
 // Actually pop open the player in the background.
+DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
+
+/// Renders in the hidden media browser element open() initializes.
+/datum/media_manager/ui_window(mob/user)
+	return media_window
+
 /datum/media_manager/proc/open()
 	if(!owner())
 		return
@@ -159,11 +165,7 @@
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)
 
-	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
-	if(!ui)
-		ui = new(owner().mob, src, "MediaPlayer", window = media_window)
-		ui.closeable = FALSE
-		ui.open(preinitialized = TRUE)
+	tgui_interact(owner().mob)
 
 // Push a fresh state to the React side; it'll re-sync audio src/volume/time.
 /datum/media_manager/proc/send_update()

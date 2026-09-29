@@ -83,11 +83,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/clipboard/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Clipboard", "Clipboard")
-		ui.open()
+DECLARE_UI(/obj/item/clipboard, "Clipboard", UI_TITLE("Clipboard"))
 
 /obj/item/clipboard/tgui_data(mob/user)
 	var/list/data = list()
@@ -120,65 +116,84 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 	data["items"] = items
 	return data
 
-/obj/item/clipboard/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/clipboard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat || usr.restrained() || loc != usr)
-		return TRUE
-	switch(action)
-		if("remove_pen")
-			if(haspen() && haspen().loc == src)
-				haspen().forceMove(usr.loc)
-				usr.put_in_hands(haspen())
-				haspen_handle = null
-				update_icon()
-			return TRUE
-		if("add_pen")
-			if(!haspen())
-				var/obj/item/pen/W = usr.get_active_hand()
-				if(istype(W, /obj/item/pen))
-					usr.drop_item()
-					W.forceMove(src)
-					haspen_handle = om_handle(W)
-					to_chat(usr, span_notice("You slot the pen into \the [src]."))
-					update_icon()
-			return TRUE
-	var/obj/item/O = locate(params["ref"])
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "remove_pen", ui_act_remove_pen)
+UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
+	if(haspen() && haspen().loc == src)
+		haspen().forceMove(usr.loc)
+		usr.put_in_hands(haspen())
+		haspen_handle = null
+		update_icon()
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "add_pen", ui_act_add_pen)
+UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
+	if(!haspen())
+		var/obj/item/pen/W = usr.get_active_hand()
+		if(istype(W, /obj/item/pen))
+			usr.drop_item()
+			W.forceMove(src)
+			haspen_handle = om_handle(W)
+			to_chat(usr, span_notice("You slot the pen into \the [src]."))
+			update_icon()
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "write", ui_act_write, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/clipboard, ui_act_write)
+	var/obj/item/O = params["ref"]
 	if(!O || O.loc != src)
 		return TRUE
-	switch(action)
-		if("write")
-			if(O == toppaper() && istype(O, /obj/item/paper))
-				var/obj/item/I = usr.get_active_hand()
-				if(istype(I, /obj/item/pen))
-					O.attackby(I, usr)
-			return TRUE
-		if("remove")
-			if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
-				O.forceMove(usr.loc)
-				usr.put_in_hands(O)
-				if(O == toppaper())
-					toppaper_handle = om_handle(locate_within(src, /obj/item/paper))
-				update_icon()
-			return TRUE
-		if("rename")
-			if(istype(O, /obj/item/paper))
-				var/obj/item/paper/p = O
-				p.paper_verb_rename(usr)
-			else if(istype(O, /obj/item/photo))
-				var/obj/item/photo/ph = O
-				ph.photo_verb_rename(usr)
-			return TRUE
-		if("open")
-			switch(params["kind"])
-				if("paper")
-					var/obj/item/paper/p = O
-					p.show_content(usr)
-				if("photo")
-					var/obj/item/photo/ph = O
-					ph.show(usr)
-			return TRUE
+	if(O == toppaper() && istype(O, /obj/item/paper))
+		var/obj/item/I = usr.get_active_hand()
+		if(istype(I, /obj/item/pen))
+			O.attackby(I, usr)
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/clipboard, ui_act_remove)
+	var/obj/item/O = params["ref"]
+	if(!O || O.loc != src)
+		return TRUE
+	if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
+		O.forceMove(usr.loc)
+		usr.put_in_hands(O)
+		if(O == toppaper())
+			toppaper_handle = om_handle(locate_within(src, /obj/item/paper))
+		update_icon()
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/clipboard, ui_act_rename)
+	var/obj/item/O = params["ref"]
+	if(!O || O.loc != src)
+		return TRUE
+	if(istype(O, /obj/item/paper))
+		var/obj/item/paper/p = O
+		p.paper_verb_rename(usr)
+	else if(istype(O, /obj/item/photo))
+		var/obj/item/photo/ph = O
+		ph.photo_verb_rename(usr)
+	return TRUE
+
+UI_ACT(/obj/item/clipboard, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/clipboard, ui_act_open)
+	var/obj/item/O = params["ref"]
+	if(!O || O.loc != src)
+		return TRUE
+	switch(params["kind"])
+		if("paper")
+			var/obj/item/paper/p = O
+			p.show_content(usr)
+		if("photo")
+			var/obj/item/photo/ph = O
+			ph.show(usr)
+	return TRUE
 
 /// LC-refs: The stored pen. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clipboard/proc/haspen() as /obj/item/pen

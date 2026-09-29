@@ -384,11 +384,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	)
 	..()
 
-/obj/machinery/mecha_part_fabricator_tg/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ExosuitFabricatorTg", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/mecha_part_fabricator_tg, "ExosuitFabricatorTg")
 
 /obj/machinery/mecha_part_fabricator_tg/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -455,90 +451,87 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 
 	return data
 
-/obj/machinery/mecha_part_fabricator_tg/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build", ui_act_build, UI_ARG_LIST("designs"), UI_ARG_VALUE("now"))
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build)
+	. = TRUE
+	var/designs = params["designs"]
+	var/obj/item/card/id/producer_id = ui.user.GetIdCard()
+	var/producer_account = producer_id?.associated_account_number || 0
 
-	if(.)
+	if(!islist(designs))
 		return
 
+	for(var/design_id in designs)
+		if(!istext(design_id))
+			continue
+
+		if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(GLOB.research_service.techweb_design_by_id(design_id), illegal_local_designs)))
+			continue
+
+		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
+
+		if(!(design.build_type & fab_type) || design.id != design_id)
+			continue
+
+		add_to_queue(design, producer_account)
+
+	if(params["now"])
+		if(process_queue)
+			return
+
+		process_queue = TRUE
+		om_task_periodic(src, PERIODIC_FAST)
+	return
+
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "del_queue_part", ui_act_del_queue_part, UI_ARG_NUM("index"))
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_del_queue_part)
 	. = TRUE
+	// Delete a specific from the queue
+	var/index = params["index"]
+	remove_from_queue(index)
 
-	switch(action)
-		if("build")
-			var/designs = params["designs"]
-			var/obj/item/card/id/producer_id = ui.user.GetIdCard()
-			var/producer_account = producer_id?.associated_account_number || 0
+	return
 
-			if(!islist(designs))
-				return
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "clear_queue", ui_act_clear_queue)
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_clear_queue)
+	. = TRUE
+	// Delete everything from queue
+	queue.Cut()
+	queue_producer_accounts.Cut()
 
-			for(var/design_id in designs)
-				if(!istext(design_id))
-					continue
+	return
 
-				if(!(LAZYFIND(stored_research().researched_designs, design_id) || is_type_in_list(GLOB.research_service.techweb_design_by_id(design_id), illegal_local_designs)))
-					continue
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build_queue", ui_act_build_queue)
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build_queue)
+	. = TRUE
+	// Build everything in queue
+	if(process_queue)
+		return
 
-				var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
+	process_queue = TRUE
+	om_task_periodic(src, PERIODIC_FAST)
+	return
 
-				if(!(design.build_type & fab_type) || design.id != design_id)
-					continue
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "stop_queue", ui_act_stop_queue)
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_stop_queue)
+	. = TRUE
+	// Pause queue building. Also known as stop.
+	process_queue = FALSE
+	return
 
-				add_to_queue(design, producer_account)
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_VALUE("id"))
+UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)
+	. = TRUE
+	var/datum/material/material = GET_MATERIAL_REF(params["id"])
+	if(!istype(material))
+		return
 
-			if(params["now"])
-				if(process_queue)
-					return
+	var/amount = params["amount"]
+	if(isnull(amount))
+		return
 
-				process_queue = TRUE
-				om_task_periodic(src, PERIODIC_FAST)
-			return
-
-		if("del_queue_part")
-			// Delete a specific from the queue
-			var/index = text2num(params["index"])
-			remove_from_queue(index)
-
-			return
-
-		if("clear_queue")
-			// Delete everything from queue
-			queue.Cut()
-			queue_producer_accounts.Cut()
-
-			return
-
-		if("build_queue")
-			// Build everything in queue
-			if(process_queue)
-				return
-
-			process_queue = TRUE
-			om_task_periodic(src, PERIODIC_FAST)
-			return
-
-		if("stop_queue")
-			// Pause queue building. Also known as stop.
-			process_queue = FALSE
-			return
-
-		if("remove_mat")
-			var/datum/material/material = GET_MATERIAL_REF(params["id"])
-			if(!istype(material))
-				return
-
-			var/amount = params["amount"]
-			if(isnull(amount))
-				return
-
-			amount = text2num(amount)
-			if(isnull(amount))
-				return
-
-			rmat.eject_sheets(material, amount)
-			return TRUE
-
-	return FALSE
+	rmat.eject_sheets(material, amount)
+	return TRUE
 
 /// Local material container hook (/datum/om/event/matcontainer_item_consumed).
 /obj/machinery/mecha_part_fabricator_tg/proc/on_material_insert(datum/source, datum/om/event/matcontainer_item_consumed/event)

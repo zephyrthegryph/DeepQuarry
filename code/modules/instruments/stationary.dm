@@ -39,8 +39,8 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 	tgui_interact(M)
 	return TRUE
 
-/obj/structure/musician/tgui_interact(mob/user)
-	return song.tgui_interact(user)
+/obj/structure/musician/ui_redirect(mob/user)
+	return song
 
 /obj/structure/musician/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag

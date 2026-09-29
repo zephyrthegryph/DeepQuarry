@@ -201,11 +201,7 @@
 /datum/volume_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/volume_panel/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VolumePanel", "Volume Panel")
-		ui.open()
+DECLARE_UI(/datum/volume_panel, "VolumePanel", UI_TITLE("Volume Panel"))
 
 /datum/volume_panel/tgui_data(mob/user)
 	if(!user.client || !user.client.prefs)
@@ -215,23 +211,22 @@
 	data["volume_channels"] = user.client.prefs.read_preference(/datum/preference/volume_channels)
 	return data
 
-/datum/volume_panel/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/datum/volume_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!ui.user?.client?.prefs)
-		return TRUE
+		return FALSE
+	return TRUE
 
+UI_ACT(/datum/volume_panel, "adjust_volume", ui_act_adjust_volume, UI_ARG_TEXT("channel"), UI_ARG_NUM("vol"))
+UI_ACT_PROC(/datum/volume_panel, ui_act_adjust_volume)
 	var/datum/preferences/P = ui.user.client.prefs
 	var/list/volume_channels = P.read_preference(/datum/preference/volume_channels)
-
-	switch(action)
-		if("adjust_volume")
-			var/channel = params["channel"]
-			if(channel in volume_channels)
-				volume_channels["[channel]"] = clamp(params["vol"], 0, 2)
-				P.write_preference_by_type(/datum/preference/volume_channels, volume_channels)
-				return TRUE
+	var/channel = params["channel"]
+	if(channel in volume_channels)
+		volume_channels["[channel]"] = clamp(params["vol"], 0, 2)
+		P.write_preference_by_type(/datum/preference/volume_channels, volume_channels)
+		return TRUE
 
 /client/verb/volume_panel()
 	set name = "Volume Panel"

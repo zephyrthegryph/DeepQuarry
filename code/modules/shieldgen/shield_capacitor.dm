@@ -88,11 +88,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/shield_capacitor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ShieldCapacitor", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/shield_capacitor, "ShieldCapacitor")
 
 /obj/machinery/shield_capacitor/tgui_status(mob/user)
 	if(has_stat(BROKEN))
@@ -143,24 +139,22 @@
 		stored_charge = max_charge
 		return PROCESS_KILL
 
-/obj/machinery/shield_capacitor/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/shield_capacitor, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_toggle)
+	if(!active && !anchored)
+		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		return
+	set_active(!active)
+	if(stored_charge < max_charge)
+		MACHINE_WAKE(src)
+	. = TRUE
 
-	switch(action)
-		if("toggle")
-			if(!active && !anchored)
-				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
-				return
-			set_active(!active)
-			if(stored_charge < max_charge)
-				MACHINE_WAKE(src)
-			. = TRUE
-		if("charge_rate")
-			charge_rate = clamp(text2num(params["rate"]), 10000, max_charge_rate)
-			if(stored_charge < max_charge)
-				MACHINE_WAKE(src)
-			. = TRUE
+UI_ACT(/obj/machinery/shield_capacitor, "charge_rate", ui_act_charge_rate, UI_ARG_NUM("rate"))
+UI_ACT_PROC(/obj/machinery/shield_capacitor, ui_act_charge_rate)
+	charge_rate = clamp(params["rate"], 10000, max_charge_rate)
+	if(stored_charge < max_charge)
+		MACHINE_WAKE(src)
+	. = TRUE
 
 /obj/machinery/shield_capacitor/power_change()
 	if(has_stat(BROKEN))

@@ -41,11 +41,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 		log_data = list()
 	refresh_data()
 
-/datum/player_log_viwer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PlayerLogViewer")
-		ui.open()
+DECLARE_UI(/datum/player_log_viwer, "PlayerLogViewer")
 
 /datum/player_log_viwer/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD)
@@ -65,35 +61,32 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 		"all_clients" = GLOB.persistent_clients_by_ckey,
 	)
 
-/datum/player_log_viwer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/player_log_viwer, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/player_log_viwer, ui_act_refresh)
+	if(refresh_cooldown())
+		return FALSE
+	refresh_data()
+	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
+	update_tgui_static_data(ui.user)
+	return TRUE
 
-	switch(action)
-		if("refresh")
-			if(refresh_cooldown())
-				return FALSE
-			refresh_data()
-			EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
-			update_tgui_static_data(ui.user)
-			return TRUE
-		if("select_client")
-			if(refresh_cooldown())
-				return FALSE
-			var/new_ckey = params["ckey"]
-			if(!(new_ckey in GLOB.persistent_clients_by_ckey))
-				return FALSE
-			target_ckey = new_ckey
-			var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[new_ckey]
-			log_data = selected.logging
-			target_name = selected.mob()?.name
-			special_role = selected.mob()?.mind?.special_role
-			client_view = TRUE
-			refresh_data()
-			EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
-			update_tgui_static_data(ui.user)
-			return TRUE
+UI_ACT(/datum/player_log_viwer, "select_client", ui_act_select_client, UI_ARG_VALUE("ckey"))
+UI_ACT_PROC(/datum/player_log_viwer, ui_act_select_client)
+	if(refresh_cooldown())
+		return FALSE
+	var/new_ckey = params["ckey"]
+	if(!(new_ckey in GLOB.persistent_clients_by_ckey))
+		return FALSE
+	target_ckey = new_ckey
+	var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[new_ckey]
+	log_data = selected.logging
+	target_name = selected.mob()?.name
+	special_role = selected.mob()?.mind?.special_role
+	client_view = TRUE
+	refresh_data()
+	EXPIRY_STAMP(src, last_refresh, CLOCK_WORLD)
+	update_tgui_static_data(ui.user)
+	return TRUE
 
 /datum/player_log_viwer/proc/refresh_cooldown()
 	return (ELAPSED_SINCE(src, last_refresh, CLOCK_WORLD) < 5 SECONDS)

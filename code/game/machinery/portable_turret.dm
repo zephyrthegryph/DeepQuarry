@@ -409,17 +409,16 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	var/area/A = get_area(src)
 	return A && length(A.turret_controls) > 0
 
-/obj/machinery/porta_turret/tgui_interact(mob/user, datum/tgui/ui = null)
+DECLARE_UI(/obj/machinery/porta_turret, "PortableTurret")
+
+/obj/machinery/porta_turret/ui_prepare(mob/user, datum/tgui/ui)
 	if(HasController())
 		to_chat(user, span_notice("[src] can only be controlled using the assigned turret controller."))
-		return
+		return FALSE
 	if(!anchored)
 		to_chat(user, span_notice("[src] has to be secured first!"))
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortableTurret", name, ui_x = 500, ui_y = 400)
-		ui.open()
+		return FALSE
+	return TRUE
 
 /obj/machinery/porta_turret/tgui_data(mob/user)
 	var/list/data = list(
@@ -439,38 +438,80 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	)
 	return data
 
-/obj/machinery/porta_turret/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/obj/machinery/porta_turret/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(isLocked(ui.user))
-		return TRUE
+		return FALSE
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
-	. = TRUE
+	return TRUE
 
-	switch(action)
-		if("power")
-			enabled = !enabled
-		if("lethal")
-			if(lethal_is_configurable)
-				lethal = !lethal
-	if(targetting_is_configurable)
-		switch(action)
-			if("authweapon")
-				check_weapons = !check_weapons
-			if("authaccess")
-				check_access = !check_access
-			if("authnorecord")
-				check_records = !check_records
-			if("autharrest")
-				check_arrest = !check_arrest
-			if("authxeno")
-				check_anomalies = !check_anomalies
-			if("authsynth")
-				check_synth = !check_synth
-			if("authall")
-				check_all = !check_all
-			if("authdown")
-				check_down = !check_down
+UI_ACT(/obj/machinery/porta_turret, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_power)
+	. = TRUE
+	enabled = !enabled
+
+UI_ACT(/obj/machinery/porta_turret, "lethal", ui_act_lethal)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_lethal)
+	. = TRUE
+	if(lethal_is_configurable)
+		lethal = !lethal
+
+UI_ACT(/obj/machinery/porta_turret, "authweapon", ui_act_authweapon)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authweapon)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_weapons = !check_weapons
+
+UI_ACT(/obj/machinery/porta_turret, "authaccess", ui_act_authaccess)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authaccess)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_access = !check_access
+
+UI_ACT(/obj/machinery/porta_turret, "authnorecord", ui_act_authnorecord)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authnorecord)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_records = !check_records
+
+UI_ACT(/obj/machinery/porta_turret, "autharrest", ui_act_autharrest)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_autharrest)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_arrest = !check_arrest
+
+UI_ACT(/obj/machinery/porta_turret, "authxeno", ui_act_authxeno)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authxeno)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_anomalies = !check_anomalies
+
+UI_ACT(/obj/machinery/porta_turret, "authsynth", ui_act_authsynth)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authsynth)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_synth = !check_synth
+
+UI_ACT(/obj/machinery/porta_turret, "authall", ui_act_authall)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authall)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_all = !check_all
+
+UI_ACT(/obj/machinery/porta_turret, "authdown", ui_act_authdown)
+UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
+	. = TRUE
+	if(!(targetting_is_configurable))
+		return FALSE
+	check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
 	om_changed(src, CHANGE_MACHINE_SETTINGS)

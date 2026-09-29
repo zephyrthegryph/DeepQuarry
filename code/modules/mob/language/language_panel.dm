@@ -27,11 +27,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 /datum/languages_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/languages_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "LanguagesPanel", "Known Languages")
-		ui.open()
+DECLARE_UI(/datum/languages_panel, "LanguagesPanel", UI_TITLE("Known Languages"))
 
 /datum/languages_panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -62,25 +58,32 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	data["languages"] = rows
 	return data
 
-/datum/languages_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !host)
-		return
-	switch(action)
-		if("set_default")
-			var/ref = "[params["ref"]]"
-			topic_dispatch(host, ui.user, list("default_lang" = ref))
-			SStgui.update_uis(src)
-			return TRUE
-		if("reset_default")
-			topic_dispatch(host, ui.user, list("default_lang" = "reset"))
-			SStgui.update_uis(src)
-			return TRUE
-		if("edit_key")
-			var/ref = "[params["ref"]]"
-			topic_dispatch(host, ui.user, list("set_lang_key" = ref))
-			SStgui.update_uis(src)
-			return TRUE
+/datum/languages_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!host)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/languages_panel, "set_default", ui_act_set_default, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/languages_panel, ui_act_set_default)
+	var/ref = "[params["ref"]]"
+	topic_dispatch(host, ui.user, list("default_lang" = ref))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/languages_panel, "reset_default", ui_act_reset_default)
+UI_ACT_PROC(/datum/languages_panel, ui_act_reset_default)
+	topic_dispatch(host, ui.user, list("default_lang" = "reset"))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/languages_panel, "edit_key", ui_act_edit_key, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/datum/languages_panel, ui_act_edit_key)
+	var/ref = "[params["ref"]]"
+	topic_dispatch(host, ui.user, list("set_lang_key" = ref))
+	SStgui.update_uis(src)
+	return TRUE
 
 // Known Languages verb now opens a structured TGUI panel.
 /mob/verb/check_languages()

@@ -159,11 +159,7 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 	tgui_interact(user)
 
-/obj/structure/lift/panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Turbolift", name)
-		ui.open()
+DECLARE_UI(/obj/structure/lift/panel, "Turbolift")
 
 /obj/structure/lift/panel/tgui_data(mob/user)
 	var/list/data = list()
@@ -187,24 +183,27 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 	return data
 
-/obj/structure/lift/panel/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/structure/lift/panel, "move_to_floor", ui_act_move_to_floor, UI_ARG_REF("ref", null))
+UI_ACT_PROC(/obj/structure/lift/panel, ui_act_move_to_floor)
+	. = TRUE
+	lift().queue_move_to(params["ref"])
+	if(.)
+		pressed(ui.user)
 
-	switch(action)
-		if("move_to_floor")
-			. = TRUE
-			lift().queue_move_to(locate(params["ref"]))
-		if("toggle_doors")
-			. = TRUE
-			if(lift().doors_are_open())
-				lift().close_doors()
-			else
-				lift().open_doors()
-		if("emergency_stop")
-			. = TRUE
-			lift().emergency_stop()
+UI_ACT(/obj/structure/lift/panel, "toggle_doors", ui_act_toggle_doors)
+UI_ACT_PROC(/obj/structure/lift/panel, ui_act_toggle_doors)
+	. = TRUE
+	if(lift().doors_are_open())
+		lift().close_doors()
+	else
+		lift().open_doors()
+	if(.)
+		pressed(ui.user)
 
+UI_ACT(/obj/structure/lift/panel, "emergency_stop", ui_act_emergency_stop)
+UI_ACT_PROC(/obj/structure/lift/panel, ui_act_emergency_stop)
+	. = TRUE
+	lift().emergency_stop()
 	if(.)
 		pressed(ui.user)
 

@@ -19,11 +19,7 @@
 /datum/event_manager_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)
 
-/datum/event_manager_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EventManagerPanel", "Event Manager")
-		ui.open()
+DECLARE_UI(/datum/event_manager_panel, "EventManagerPanel", UI_TITLE("Event Manager"))
 
 /datum/event_manager_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -101,172 +97,221 @@
 		data["running_events"] = running
 	return data
 
-/// The event container `ref` names (one of the service's severity containers), or null.
-/datum/event_manager_panel/proc/container_from(ref)
-	return locate_in_list(GLOB.event_service.event_containers, ref)
+/// The event containers (the service's severity containers), for the UI's container refs.
+/datum/event_manager_panel/proc/event_containers()
+	return GLOB.event_service.event_containers
 
-/// The event meta `ref` names: one of the selected container's events, or the draft new event.
-/datum/event_manager_panel/proc/meta_from(ref)
+/// The editable event metas, for the UI's meta refs: the selected container's events and the
+/// draft new event.
+/datum/event_manager_panel/proc/editable_metas()
+	. = list()
 	var/datum/event_meta/NE = GLOB.event_service.new_event
-	if(NE && ref == "\ref[NE]")
-		return NE
+	if(NE)
+		. += NE
 	var/datum/event_container/EC = GLOB.event_service.selected_event_container()
-	if(!EC)
-		return null
-	return locate_in_list(EC.available_events, ref)
+	if(EC)
+		. += EC.available_events
 
-/datum/event_manager_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/// Every container's events, for remove_event (checked against the named container).
+/datum/event_manager_panel/proc/all_available_events()
+	. = list()
+	for(var/datum/event_container/EC as anything in GLOB.event_service.event_containers)
+		. += EC.available_events
+
+/// The running events, for the UI's stop_event refs.
+/datum/event_manager_panel/proc/active_events()
+	return GLOB.event_service.active_events()
+
+/datum/event_manager_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!check_rights(R_ADMIN|R_EVENT))
-		return
-	var/mob/user = ui.user
-	var/datum/world_service/events/service = GLOB.event_service
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("pause_all")
-			CONFIG_SET(flag/allow_random_events, !CONFIG_GET(flag/allow_random_events))
-			log_and_message_admins("has [CONFIG_GET(flag/allow_random_events) ? "resumed" : "paused"] countdown for all events.", user)
-			return TRUE
-		if("toggle_report")
-			service.report_at_round_end = !service.report_at_round_end
-			log_and_message_admins("has [service.report_at_round_end ? "enabled" : "disabled"] the round end event report.", user)
-			return TRUE
-		if("inc_timer", "dec_timer")
-			var/datum/event_container/EC = container_from(params["ref"])
-			var/amount = text2num(params["amount"])
-			if(!EC || !isnum(amount))
-				return
-			var/change = 60 * (10 ** clamp(round(amount), 0, 2))
-			if(action == "inc_timer")
-				EC.next_event_time += change
-				log_and_message_admins("increased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
-			else
-				EC.next_event_time -= change
-				log_and_message_admins("decreased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
-			return TRUE
-		if("toggle_pause")
-			var/datum/event_container/EC = container_from(params["ref"])
-			if(!EC)
-				return
-			EC.delayed = !EC.delayed
-			log_and_message_admins("has [EC.delayed ? "paused" : "resumed"] countdown for [GLOB.severity_to_string[EC.severity]] events.", user)
-			return TRUE
-		if("set_interval")
-			var/datum/event_container/EC = container_from(params["ref"])
-			if(!EC)
-				return
-			var/delay = act_ask(user, action, params, ui, "interval", /datum/om/prompt/number, message = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", title = "Set Interval Modifier")
-			if(!isnum(delay) || delay <= 0)
-				return
-			EC.delay_modifier = delay
-			log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].", user)
-			return TRUE
-		if("select_event")
-			var/datum/event_container/EC = container_from(params["ref"])
-			if(!EC)
-				return
-			EC.SelectEvent()
-			return TRUE
-		if("clear_event")
-			var/datum/event_container/EC = container_from(params["ref"])
-			if(!EC)
-				return
-			if(EC.next_event())
-				log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.", user)
-				EC.next_event_handle = null
-			return TRUE
-		if("view_events")
-			var/datum/event_container/EC = container_from(params["ref"])
-			if(!EC)
-				return
-			service.selected_event_container_handle = om_handle(EC)
-			return TRUE
-		if("back")
-			service.selected_event_container_handle = null
-			return TRUE
-		if("stop_event")
-			var/datum/event/E = locate_in_list(service.active_events(), params["ref"])
-			if(!E)
-				return
-			var/answer = act_ask(user, action, params, ui, "stop", /datum/om/prompt/choice/alert, message = "Stopping an event may have unintended side-effects. Continue?", title = "Stopping Event!", choices = list("Yes","No"))
-			if(answer != "Yes" || QDELETED(E))
-				return
-			var/datum/event_meta/EM = E.event_meta()
-			log_and_message_admins("has stopped the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
-			E.kill()
-			return TRUE
-		if("set_name")
-			var/datum/event_meta/EM = meta_from(params["ref"])
-			if(!EM)
-				return
-			var/name = act_ask(user, action, params, ui, "name", /datum/om/prompt/text, message = "Enter event name.", title = "Set Name", max_length = MAX_LNAME_LEN)
-			if(!name)
-				return
-			EM.name = name
-			return TRUE
-		if("set_type")
-			var/datum/event_meta/EM = meta_from(params["ref"])
-			if(!EM)
-				return
-			var/type = act_ask(user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select event type.", title = "Select", choices = service.allEvents)
-			if(!type)
-				return
-			EM.event_type = type
-			return TRUE
-		if("set_weight")
-			var/datum/event_meta/EM = meta_from(params["ref"])
-			if(!EM)
-				return
-			var/weight = act_ask(user, action, params, ui, "weight", /datum/om/prompt/number, message = "Enter weight. A higher value means higher chance for the event of being selected.", title = "Set Weight")
-			if(!isnum(weight) || weight <= 0)
-				return
-			EM.weight = weight
-			if(EM != service.new_event)
-				log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
-			return TRUE
-		if("toggle_oneshot")
-			var/datum/event_meta/EM = meta_from(params["ref"])
-			if(!EM)
-				return
-			EM.one_shot = !EM.one_shot
-			if(EM != service.new_event)
-				log_and_message_admins("has [EM.one_shot ? "set" : "unset"] the oneshot flag for the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
-			return TRUE
-		if("toggle_enabled")
-			var/datum/event_meta/EM = meta_from(params["ref"])
-			if(!EM)
-				return
-			EM.enabled = !EM.enabled
-			log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
-			return TRUE
-		if("remove_event")
-			var/datum/event_container/EC = container_from(params["container_ref"])
-			if(!EC)
-				return
-			var/datum/event_meta/EM = locate_in_list(EC.available_events, params["ref"])
-			if(!EM)
-				return
-			var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
-			if(answer != "Yes")
-				return
-			EC.available_events -= EM
-			log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
-			return TRUE
-		if("add_event")
-			var/datum/event_container/EC = service.selected_event_container()
-			var/datum/event_meta/NE = service.new_event
-			if(!EC || !NE?.name || !NE.event_type)
-				return
-			var/answer = act_ask(user, action, params, ui, "add", /datum/om/prompt/choice/alert, message = "This will add a new event to the rotation. Continue?", title = "Add Event!", choices = list("Yes","No"))
-			if(answer != "Yes" || NE != service.new_event)
-				return
-			NE.severity = EC.severity
-			EC.available_events += NE
-			log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
-			service.new_event = new
-			return TRUE
+UI_ACT(/datum/event_manager_panel, "pause_all", ui_act_pause_all)
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_pause_all)
+	CONFIG_SET(flag/allow_random_events, !CONFIG_GET(flag/allow_random_events))
+	log_and_message_admins("has [CONFIG_GET(flag/allow_random_events) ? "resumed" : "paused"] countdown for all events.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "toggle_report", ui_act_toggle_report)
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_report)
+	var/datum/world_service/events/service = GLOB.event_service
+	service.report_at_round_end = !service.report_at_round_end
+	log_and_message_admins("has [service.report_at_round_end ? "enabled" : "disabled"] the round end event report.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "inc_timer", ui_act_inc_timer, UI_ARG_NUM("amount"), UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT(/datum/event_manager_panel, "dec_timer", ui_act_inc_timer, UI_ARG_NUM("amount"), UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_inc_timer)
+	var/datum/event_container/EC = params["ref"]
+	var/amount = params["amount"]
+	if(!EC || !isnum(amount))
+		return
+	var/change = 60 * (10 ** clamp(round(amount), 0, 2))
+	if(action == "inc_timer")
+		EC.next_event_time += change
+		log_and_message_admins("increased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
+	else
+		EC.next_event_time -= change
+		log_and_message_admins("decreased timer for [GLOB.severity_to_string[EC.severity]] events by [change/600] minute(s).", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "toggle_pause", ui_act_toggle_pause, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_pause)
+	var/datum/event_container/EC = params["ref"]
+	if(!EC)
+		return
+	EC.delayed = !EC.delayed
+	log_and_message_admins("has [EC.delayed ? "paused" : "resumed"] countdown for [GLOB.severity_to_string[EC.severity]] events.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "set_interval", ui_act_set_interval, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_interval)
+	var/datum/event_container/EC = params["ref"]
+	if(!EC)
+		return
+	var/delay = act_ask(user, action, params, ui, "interval", /datum/om/prompt/number, message = "Enter delay modifier. A value less than one means events fire more often, higher than one less often.", title = "Set Interval Modifier")
+	if(!isnum(delay) || delay <= 0)
+		return
+	EC.delay_modifier = delay
+	log_and_message_admins("has set the interval modifier for [GLOB.severity_to_string[EC.severity]] events to [EC.delay_modifier].", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "select_event", ui_act_select_event, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_select_event)
+	var/datum/event_container/EC = params["ref"]
+	if(!EC)
+		return
+	EC.SelectEvent()
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "clear_event", ui_act_clear_event, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_clear_event)
+	var/datum/event_container/EC = params["ref"]
+	if(!EC)
+		return
+	if(EC.next_event())
+		log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.", user)
+		EC.next_event_handle = null
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "view_events", ui_act_view_events, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_view_events)
+	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/event_container/EC = params["ref"]
+	if(!EC)
+		return
+	service.selected_event_container_handle = om_handle(EC)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "back", ui_act_back)
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_back)
+	var/datum/world_service/events/service = GLOB.event_service
+	service.selected_event_container_handle = null
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "stop_event", ui_act_stop_event, UI_ARG_REF("ref", "proc:active_events", /datum/event))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_stop_event)
+	var/datum/event/E = params["ref"]
+	if(!E)
+		return
+	var/answer = act_ask(user, action, params, ui, "stop", /datum/om/prompt/choice/alert, message = "Stopping an event may have unintended side-effects. Continue?", title = "Stopping Event!", choices = list("Yes","No"))
+	if(answer != "Yes" || QDELETED(E))
+		return
+	var/datum/event_meta/EM = E.event_meta()
+	log_and_message_admins("has stopped the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
+	E.kill()
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "set_name", ui_act_set_name, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_name)
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM)
+		return
+	var/name = act_ask(user, action, params, ui, "name", /datum/om/prompt/text, message = "Enter event name.", title = "Set Name", max_length = MAX_LNAME_LEN)
+	if(!name)
+		return
+	EM.name = name
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "set_type", ui_act_set_type, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_type)
+	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM)
+		return
+	var/type = act_ask(user, action, params, ui, "type", /datum/om/prompt/choice, message = "Select event type.", title = "Select", choices = service.allEvents)
+	if(!type)
+		return
+	EM.event_type = type
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "set_weight", ui_act_set_weight, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_weight)
+	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM)
+		return
+	var/weight = act_ask(user, action, params, ui, "weight", /datum/om/prompt/number, message = "Enter weight. A higher value means higher chance for the event of being selected.", title = "Set Weight")
+	if(!isnum(weight) || weight <= 0)
+		return
+	EM.weight = weight
+	if(EM != service.new_event)
+		log_and_message_admins("has changed the weight of the [GLOB.severity_to_string[EM.severity]] event '[EM.name]' to [EM.weight].", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "toggle_oneshot", ui_act_toggle_oneshot, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_oneshot)
+	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM)
+		return
+	EM.one_shot = !EM.one_shot
+	if(EM != service.new_event)
+		log_and_message_admins("has [EM.one_shot ? "set" : "unset"] the oneshot flag for the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "toggle_enabled", ui_act_toggle_enabled, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_enabled)
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM)
+		return
+	EM.enabled = !EM.enabled
+	log_and_message_admins("has [EM.enabled ? "enabled" : "disabled"] the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "remove_event", ui_act_remove_event, UI_ARG_REF("container_ref", "proc:event_containers", /datum/event_container), UI_ARG_REF("ref", "proc:all_available_events", /datum/event_meta))
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_remove_event)
+	var/datum/event_container/EC = params["container_ref"]
+	if(!EC)
+		return
+	var/datum/event_meta/EM = params["ref"]
+	if(!EM || !(EM in EC.available_events))
+		return
+	var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
+	if(answer != "Yes")
+		return
+	EC.available_events -= EM
+	log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
+	return TRUE
+
+UI_ACT(/datum/event_manager_panel, "add_event", ui_act_add_event)
+UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
+	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/event_container/EC = service.selected_event_container()
+	var/datum/event_meta/NE = service.new_event
+	if(!EC || !NE?.name || !NE.event_type)
+		return
+	var/answer = act_ask(user, action, params, ui, "add", /datum/om/prompt/choice/alert, message = "This will add a new event to the rotation. Continue?", title = "Add Event!", choices = list("Yes","No"))
+	if(answer != "Yes" || NE != service.new_event)
+		return
+	NE.severity = EC.severity
+	EC.available_events += NE
+	log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
+	service.new_event = new
+	return TRUE
 
 /datum/world_service/events
 	var/datum/event_manager_panel/tgui_event_manager_panel

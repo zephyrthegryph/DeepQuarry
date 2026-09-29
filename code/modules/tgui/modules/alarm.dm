@@ -96,23 +96,25 @@
 
 	return all_alarms
 
-/datum/tgui_module/alarm_monitor/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
-	// Camera stuff is AI only.
-	// If you're not an AI, this is a read-only UI.
+/datum/tgui_module/alarm_monitor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!isAI(ui.user))
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/tgui_module/alarm_monitor, "switchTo", ui_act_switchto, UI_ARG_REF("camera", "proc:ui_source_registry_members_registry_cameras", /obj/machinery/camera))
+UI_ACT_PROC(/datum/tgui_module/alarm_monitor, ui_act_switchto)
+	var/obj/machinery/camera/C = params["camera"]
+	if(!C)
 		return
 
-	switch(action)
-		if("switchTo")
-			var/obj/machinery/camera/C = locate_in_list(REGISTRY_MEMBERS(REGISTRY_CAMERAS), params["camera"])
-			if(!C)
-				return
+	ui.user.switch_to_camera(C)
+	return 1
 
-			ui.user.switch_to_camera(C)
-			return 1
+/// The list the UI_ARG_REF rows resolve refs in.
+/datum/tgui_module/alarm_monitor/proc/ui_source_registry_members_registry_cameras()
+	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
 /datum/tgui_module/alarm_monitor/tgui_data(mob/user)
 	var/list/data = list()

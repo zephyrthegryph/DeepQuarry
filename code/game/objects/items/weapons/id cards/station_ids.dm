@@ -42,11 +42,7 @@
 /obj/item/card/id/tgui_state(mob/user)
 	return GLOB.tgui_deep_inventory_state
 
-/obj/item/card/id/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "IDCard", name)
-		ui.open()
+DECLARE_UI(/obj/item/card/id, "IDCard")
 
 /obj/item/card/id/proc/update_name()
 	name = "[src.registered_name]'s ID Card ([src.assignment])"

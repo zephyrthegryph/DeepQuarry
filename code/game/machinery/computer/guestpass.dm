@@ -176,11 +176,7 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 		to_chat(user, span_warning("There is nothing to remove from the console."))
 	return TRUE
 
-/obj/machinery/computer/guestpass/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GuestPass", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/guestpass, "GuestPass")
 
 /obj/machinery/computer/guestpass/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -207,76 +203,96 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 
 	return data
 
-/obj/machinery/computer/guestpass/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/guestpass, "mode", ui_act_mode, UI_ARG_VALUE("mode"))
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_mode)
+	set_mode(params["mode"])
+	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("mode")
-			set_mode(params["mode"])
+UI_ACT(/obj/machinery/computer/guestpass, "giv_name", ui_act_giv_name)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_giv_name)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)
+	add_fingerprint(ui.user)
+	return TRUE
 
-		if("giv_name")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)
-		if("reason")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_reason_entered), title = "Reason", message = "Reason why pass is issued", default = reason, requires = PROMPT_USABLE)
-		if("duration")
-			om_ask(ui.user, /datum/om/prompt/number, PROC_REF(pass_duration_entered), title = "Duration", message = "Duration (in minutes) during which pass is valid (up to 360 minutes).", max = 360, min = 0, requires = PROMPT_USABLE)
-		if("access")
-			var/A = text2num(params["access"])
-			if(A in accesses)
-				LAZYREMOVE(accesses, A)
-			else
-				if(A in giver.GetAccess())	//Let's make sure the ID card actually has the access.
-					LAZYADD(accesses, A)
-				else
-					to_chat(ui.user, span_warning("Invalid selection, please consult technical support if there are any issues."))
-					log_admin("[key_name_admin(ui.user)] tried selecting an invalid guest pass terminal option.")
-		if("id")
-			if(giver)
-				if(ishuman(ui.user))
-					giver.forceMove(ui.user.loc)
-					if(!ui.user.get_active_hand())
-						ui.user.put_in_hands(giver)
-					giver = null
-				else
-					giver.forceMove(src.loc)
-					giver = null
-				LAZYCLEARLIST(accesses)
-			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-					I.forceMove(src)
-					giver = I
+UI_ACT(/obj/machinery/computer/guestpass, "reason", ui_act_reason)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_reason)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_reason_entered), title = "Reason", message = "Reason why pass is issued", default = reason, requires = PROMPT_USABLE)
+	add_fingerprint(ui.user)
+	return TRUE
 
-		if("print")
-			var/dat = "<h3>Activity log of guest pass terminal #[uid]</h3><br>"
-			for (var/entry in internal_log)
-				dat += "[entry]<br><hr>"
-			var/obj/item/paper/P = new/obj/item/paper( loc )
-			P.name = "activity log"
-			P.info = dat
+UI_ACT(/obj/machinery/computer/guestpass, "duration", ui_act_duration)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_duration)
+	om_ask(ui.user, /datum/om/prompt/number, PROC_REF(pass_duration_entered), title = "Duration", message = "Duration (in minutes) during which pass is valid (up to 360 minutes).", max = 360, min = 0, requires = PROMPT_USABLE)
+	add_fingerprint(ui.user)
+	return TRUE
 
-		if("issue")
-			if(giver)
-				var/number = add_zero("[rand(0,9999)]", 4)
-				var/entry = "\[[stationtime2text()]\] Pass #[number] issued by [giver.registered_name] ([giver.assignment]) to [giv_name]. Reason: [reason]. Grants access to following areas: "
-				for (var/i=1 to length(accesses))
-					var/A = LAZYACCESS(accesses, i)
-					if(A)
-						var/area = SSaccess.get_access_desc(A)
-						entry += "[i > 1 ? ", [area]" : "[area]"]"
-				entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
-				LAZYADD(internal_log, entry)
+UI_ACT(/obj/machinery/computer/guestpass, "access", ui_act_access, UI_ARG_NUM("access"))
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_access)
+	var/A = params["access"]
+	if(A in accesses)
+		LAZYREMOVE(accesses, A)
+	else
+		if(A in giver.GetAccess())	//Let's make sure the ID card actually has the access.
+			LAZYADD(accesses, A)
+		else
+			to_chat(ui.user, span_warning("Invalid selection, please consult technical support if there are any issues."))
+			log_admin("[key_name_admin(ui.user)] tried selecting an invalid guest pass terminal option.")
+	add_fingerprint(ui.user)
+	return TRUE
 
-				var/obj/item/card/id/guest/pass = new(src.loc)
-				pass.temp_access = LAZYCOPY(accesses)
-				pass.registered_name = giv_name
-				EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
-				pass.reason = reason
-				pass.name = "guest pass #[number]"
-			else
-				to_chat(ui.user, span_warning("Cannot issue pass without issuing ID."))
+UI_ACT(/obj/machinery/computer/guestpass, "id", ui_act_id)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_id)
+	if(giver)
+		if(ishuman(ui.user))
+			giver.forceMove(ui.user.loc)
+			if(!ui.user.get_active_hand())
+				ui.user.put_in_hands(giver)
+			giver = null
+		else
+			giver.forceMove(src.loc)
+			giver = null
+		LAZYCLEARLIST(accesses)
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
+			I.forceMove(src)
+			giver = I
+	add_fingerprint(ui.user)
+	return TRUE
 
+UI_ACT(/obj/machinery/computer/guestpass, "print", ui_act_print)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_print)
+	var/dat = "<h3>Activity log of guest pass terminal #[uid]</h3><br>"
+	for (var/entry in internal_log)
+		dat += "[entry]<br><hr>"
+	var/obj/item/paper/P = new/obj/item/paper( loc )
+	P.name = "activity log"
+	P.info = dat
+	add_fingerprint(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/guestpass, "issue", ui_act_issue)
+UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_issue)
+	if(giver)
+		var/number = add_zero("[rand(0,9999)]", 4)
+		var/entry = "\[[stationtime2text()]\] Pass #[number] issued by [giver.registered_name] ([giver.assignment]) to [giv_name]. Reason: [reason]. Grants access to following areas: "
+		for (var/i=1 to length(accesses))
+			var/A = LAZYACCESS(accesses, i)
+			if(A)
+				var/area = SSaccess.get_access_desc(A)
+				entry += "[i > 1 ? ", [area]" : "[area]"]"
+		entry += ". Expires at [worldtime2stationtime(world.time + duration*10*60)]."
+		LAZYADD(internal_log, entry)
+
+		var/obj/item/card/id/guest/pass = new(src.loc)
+		pass.temp_access = LAZYCOPY(accesses)
+		pass.registered_name = giv_name
+		EXPIRY_SET(pass, expiration_time, duration MINUTES, CLOCK_WORLD)
+		pass.reason = reason
+		pass.name = "guest pass #[number]"
+	else
+		to_chat(ui.user, span_warning("Cannot issue pass without issuing ID."))
 	add_fingerprint(ui.user)
 	return TRUE
 

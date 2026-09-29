@@ -1819,12 +1819,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/active_caller_ref
 	var/active_attack_target_name = ""
 
-/obj/mecha/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MechaInterface", "[name]")
-		ui.autoupdate = TRUE
-		ui.open()
+DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
 
 /obj/mecha/tgui_data(mob/user)
 	var/list/data = list()
@@ -1957,12 +1952,9 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 	return data
 
-/obj/mecha/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
-	// Dispatch each TGUI action by synthesising the legacy href_list that
-	// the mecha's Topic handler already understands.
+/obj/mecha/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/static/list/static_routes = list(
 		"toggle_lights" = "toggle_lights",
 		"rmictoggle" = "rmictoggle",
@@ -1981,69 +1973,95 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	)
 	if(action in static_routes)
 		Topic(null, list("[static_routes[action]]" = "1"))
-		return TRUE
-	switch(action)
-		if("rfreq")
-			Topic(null, list("rfreq" = params["delta"]))
-			return TRUE
-		if("drop_from_cargo")
-			Topic(null, list("drop_from_cargo" = params["ref"]))
-			return TRUE
-		if("detach_equipment")
-			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
-			if(W in equipment)
-				W.detach()
-			return TRUE
-		if("equip_interact")
-			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
-			if(W && (W in equipment))
-				if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
-					W.Topic(null, list("view_stats" = "1"))
-				else if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))
-					W.Topic(null, list("show_reagents" = "1"))
-			return TRUE
-		if("view_main")
-			tgui_subview = "main"
-			return TRUE
-		// Attack-AI sub-view
-		if("ai_use_equipment")
-			var/obj/item/mecha_parts/mecha_equipment/W = locate(params["ref"])
-			var/atom/target = om_resolve(active_caller_ref)
-			if(W && (W in equipment))
-				W.action(target)
-			tgui_subview = "main"
-			return TRUE
-		// Access sub-view
-		if("access_add")
-			var/a = text2num(params["id"])
-			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
-			if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
-				operation_req_access += a
-			return TRUE
-		if("access_del")
-			var/a = text2num(params["id"])
-			if(a in operation_req_access)
-				operation_req_access -= a
-			return TRUE
-		if("access_finish")
-			add_req_access = 0
-			tgui_subview = "main"
-			return TRUE
-		// Maint sub-view
-		if("maint_req_access")
-			var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
-			if(id_card)
-				tgui_subview = "access"
-			return TRUE
-		if("maint_protocol")
-			Topic(null, list("maint_access" = "1"))
-			return TRUE
-		if("maint_set_air")
-			Topic(null, list("set_internal_tank_valve" = "1"))
-			return TRUE
-		if("maint_remove_passenger")
-			Topic(null, list("remove_passenger" = "1"))
-			return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/mecha, "rfreq", ui_act_rfreq, UI_ARG_VALUE("delta"))
+UI_ACT_PROC(/obj/mecha, ui_act_rfreq)
+	Topic(null, list("rfreq" = params["delta"]))
+	return TRUE
+
+UI_ACT(/obj/mecha, "drop_from_cargo", ui_act_drop_from_cargo, UI_ARG_VALUE("ref"))
+UI_ACT_PROC(/obj/mecha, ui_act_drop_from_cargo)
+	Topic(null, list("drop_from_cargo" = params["ref"]))
+	return TRUE
+
+UI_ACT(/obj/mecha, "detach_equipment", ui_act_detach_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
+UI_ACT_PROC(/obj/mecha, ui_act_detach_equipment)
+	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+	if(W in equipment)
+		W.detach()
+	return TRUE
+
+UI_ACT(/obj/mecha, "equip_interact", ui_act_equip_interact, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
+UI_ACT_PROC(/obj/mecha, ui_act_equip_interact)
+	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+	if(W && (W in equipment))
+		if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/sleeper))
+			W.Topic(null, list("view_stats" = "1"))
+		else if(istype(W, /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun))
+			W.Topic(null, list("show_reagents" = "1"))
+	return TRUE
+
+UI_ACT(/obj/mecha, "view_main", ui_act_view_main)
+UI_ACT_PROC(/obj/mecha, ui_act_view_main)
+	tgui_subview = "main"
+	return TRUE
+// Attack-AI sub-view
+
+UI_ACT(/obj/mecha, "ai_use_equipment", ui_act_ai_use_equipment, UI_ARG_REF("ref", null, /obj/item/mecha_parts/mecha_equipment))
+UI_ACT_PROC(/obj/mecha, ui_act_ai_use_equipment)
+	var/obj/item/mecha_parts/mecha_equipment/W = params["ref"]
+	var/atom/target = om_resolve(active_caller_ref)
+	if(W && (W in equipment))
+		W.action(target)
+	tgui_subview = "main"
+	return TRUE
+// Access sub-view
+
+UI_ACT(/obj/mecha, "access_add", ui_act_access_add, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/mecha, ui_act_access_add)
+	var/a = params["id"]
+	var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
+	if(id_card && (a in id_card.GetAccess()) && !(a in operation_req_access))
+		operation_req_access += a
+	return TRUE
+
+UI_ACT(/obj/mecha, "access_del", ui_act_access_del, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/mecha, ui_act_access_del)
+	var/a = params["id"]
+	if(a in operation_req_access)
+		operation_req_access -= a
+	return TRUE
+
+UI_ACT(/obj/mecha, "access_finish", ui_act_access_finish)
+UI_ACT_PROC(/obj/mecha, ui_act_access_finish)
+	add_req_access = 0
+	tgui_subview = "main"
+	return TRUE
+// Maint sub-view
+
+UI_ACT(/obj/mecha, "maint_req_access", ui_act_maint_req_access)
+UI_ACT_PROC(/obj/mecha, ui_act_maint_req_access)
+	var/obj/item/card/id/id_card = om_resolve(active_id_card_ref)
+	if(id_card)
+		tgui_subview = "access"
+	return TRUE
+
+UI_ACT(/obj/mecha, "maint_protocol", ui_act_maint_protocol)
+UI_ACT_PROC(/obj/mecha, ui_act_maint_protocol)
+	Topic(null, list("maint_access" = "1"))
+	return TRUE
+
+UI_ACT(/obj/mecha, "maint_set_air", ui_act_maint_set_air)
+UI_ACT_PROC(/obj/mecha, ui_act_maint_set_air)
+	Topic(null, list("set_internal_tank_valve" = "1"))
+	return TRUE
+
+UI_ACT(/obj/mecha, "maint_remove_passenger", ui_act_maint_remove_passenger)
+UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
+	Topic(null, list("remove_passenger" = "1"))
+	return TRUE
 
 /obj/mecha/proc/report_internal_damage()
 	var/output = null

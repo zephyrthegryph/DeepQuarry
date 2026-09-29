@@ -91,11 +91,7 @@
 	else
 		set_light(0)
 
-/mob/living/bot/secbot/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Secbot", name)
-		ui.open()
+DECLARE_UI(/mob/living/bot/secbot, "Secbot")
 
 /mob/living/bot/secbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -125,44 +121,63 @@
 
 EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/mob/living/bot/secbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return
-
+/mob/living/bot/secbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("power")
-			if(!access_scanner.allowed(ui.user))
-				return FALSE
-			if(on)
-				turn_off()
-			else
-				turn_on()
-			. = TRUE
+UI_ACT(/mob/living/bot/secbot, "power", ui_act_power)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_power)
+	if(!access_scanner.allowed(ui.user))
+		return FALSE
+	if(on)
+		turn_off()
+	else
+		turn_on()
+	. = TRUE
 
+UI_ACT(/mob/living/bot/secbot, "idcheck", ui_act_idcheck)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_idcheck)
 	if(locked && !issilicon(ui.user))
 		return TRUE
+	idcheck = !idcheck
+	. = TRUE
 
-	switch(action)
-		if("idcheck")
-			idcheck = !idcheck
-			. = TRUE
-		if("ignorerec")
-			check_records = !check_records
-			. = TRUE
-		if("ignorearr")
-			check_arrest = !check_arrest
-			. = TRUE
-		if("switchmode")
-			arrest_type = !arrest_type
-			. = TRUE
-		if("patrol")
-			will_patrol = !will_patrol
-			. = TRUE
-		if("declarearrests")
-			declare_arrests = !declare_arrests
-			. = TRUE
+UI_ACT(/mob/living/bot/secbot, "ignorerec", ui_act_ignorerec)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorerec)
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	check_records = !check_records
+	. = TRUE
+
+UI_ACT(/mob/living/bot/secbot, "ignorearr", ui_act_ignorearr)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_ignorearr)
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	check_arrest = !check_arrest
+	. = TRUE
+
+UI_ACT(/mob/living/bot/secbot, "switchmode", ui_act_switchmode)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_switchmode)
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	arrest_type = !arrest_type
+	. = TRUE
+
+UI_ACT(/mob/living/bot/secbot, "patrol", ui_act_patrol)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_patrol)
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	will_patrol = !will_patrol
+	. = TRUE
+
+UI_ACT(/mob/living/bot/secbot, "declarearrests", ui_act_declarearrests)
+UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
+	if(locked && !issilicon(ui.user))
+		return TRUE
+	declare_arrests = !declare_arrests
+	. = TRUE
 
 /mob/living/bot/secbot/emag_act(remaining_uses, mob/user)
 	. = ..()

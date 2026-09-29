@@ -42,8 +42,8 @@ DECLARE_INTERACTIONS(/obj/item/instrument, INTERACT_USE(null, PROC_REF(interacti
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/instrument/tgui_interact(mob/user, datum/tgui/ui)
-	return song.tgui_interact(user)
+/obj/item/instrument/ui_redirect(mob/user)
+	return song
 
 /obj/item/instrument/violin
 	name = "space violin"

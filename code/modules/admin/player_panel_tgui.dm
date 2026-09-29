@@ -18,12 +18,10 @@ DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 /datum/player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
 
-/datum/player_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		snapshot_players()
-		ui = new(user, src, "PlayerPanel", "Player Panel")
-		ui.open()
+DECLARE_UI(/datum/player_panel, "PlayerPanel", UI_TITLE("Player Panel"))
+
+/datum/player_panel/ui_opening(mob/user, datum/tgui/ui)
+	snapshot_players()
 
 /datum/player_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -82,39 +80,60 @@ DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 /datum/player_panel/tgui_data(mob/user)
 	return list("players" = shown_players || list())
 
-/datum/player_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/player_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!owner_admin)
-		return
-	var/mob/target = locate(params["ref"])
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/player_panel, "admin_opts", ui_act_admin_opts, UI_ARG_REF("ref", null, /mob))
+UI_ACT_PROC(/datum/player_panel, ui_act_admin_opts)
+	var/mob/target = params["ref"]
 	if(!ismob(target))
-		return
-	switch(action)
-		if("admin_opts")
-			if(ui.user?.client)
-				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target)
-			return TRUE
-		if("private_message")
-			if(ui.user?.client)
-				ui.user.client.cmd_admin_pm(target)
-			return TRUE
-		if("traitor")
-			if(!SSticker || !SSticker.mode)
-				tgui_alert_async(ui.user, "The game hasn't started yet!")
-				return TRUE
-			if(ui.user?.client)
-				SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_traitor_panel, target)
-			SStgui.update_uis(src)
-			return TRUE
-		if("check_antagonists")
-			owner_admin.open_round_status_panel(ui.user)
-			return TRUE
-		if("refresh")
-			snapshot_players()
-			SStgui.update_uis(src)
-			return TRUE
+		return FALSE
+	if(ui.user?.client)
+		SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_player_panel, target)
+	return TRUE
+
+UI_ACT(/datum/player_panel, "private_message", ui_act_private_message, UI_ARG_REF("ref", null, /mob))
+UI_ACT_PROC(/datum/player_panel, ui_act_private_message)
+	var/mob/target = params["ref"]
+	if(!ismob(target))
+		return FALSE
+	if(ui.user?.client)
+		ui.user.client.cmd_admin_pm(target)
+	return TRUE
+
+UI_ACT(/datum/player_panel, "traitor", ui_act_traitor, UI_ARG_REF("ref", null, /mob))
+UI_ACT_PROC(/datum/player_panel, ui_act_traitor)
+	var/mob/target = params["ref"]
+	if(!ismob(target))
+		return FALSE
+	if(!SSticker || !SSticker.mode)
+		tgui_alert_async(ui.user, "The game hasn't started yet!")
+		return TRUE
+	if(ui.user?.client)
+		SSadmin_verbs.dynamic_invoke_verb(ui.user.client, /datum/admin_verb/show_traitor_panel, target)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/player_panel, "check_antagonists", ui_act_check_antagonists, UI_ARG_REF("ref", null, /mob))
+UI_ACT_PROC(/datum/player_panel, ui_act_check_antagonists)
+	var/mob/target = params["ref"]
+	if(!ismob(target))
+		return FALSE
+	owner_admin.open_round_status_panel(ui.user)
+	return TRUE
+
+UI_ACT(/datum/player_panel, "refresh", ui_act_refresh, UI_ARG_REF("ref", null, /mob))
+UI_ACT_PROC(/datum/player_panel, ui_act_refresh)
+	var/mob/target = params["ref"]
+	if(!ismob(target))
+		return FALSE
+	snapshot_players()
+	SStgui.update_uis(src)
+	return TRUE
 
 /datum/admins
 	var/datum/player_panel/tgui_player_panel

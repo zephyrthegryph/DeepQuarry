@@ -51,11 +51,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/roguezones/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RogueZones", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/roguezones, "RogueZones")
 
 /obj/machinery/computer/roguezones/tgui_data(mob/user)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
@@ -97,17 +93,16 @@
 	data["can_recall_shuttle"] = (shuttle_control() && (shuttle_control().z in using_map.belter_belt_z) && !curZoneOccupied)
 	return data
 
-/obj/machinery/computer/roguezones/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("scan_for_new")
-			scan_for_new_zone()
-			. = TRUE
-		if("recall_shuttle")
-			failsafe_shuttle_recall(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/roguezones, "scan_for_new", ui_act_scan_for_new)
+UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_scan_for_new)
+	scan_for_new_zone()
+	. = TRUE
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/computer/roguezones, "recall_shuttle", ui_act_recall_shuttle)
+UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
+	failsafe_shuttle_recall(ui.user)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/roguezones/proc/scan_for_new_zone()

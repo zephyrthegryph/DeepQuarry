@@ -186,11 +186,7 @@
 	tgui_view = "read"
 	tgui_interact(user)
 
-/obj/item/paper/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Paper", name)
-		ui.open()
+DECLARE_UI(/obj/item/paper, "Paper")
 
 /obj/item/paper/tgui_data(mob/user)
 	var/list/data = list()
@@ -234,17 +230,15 @@
 		cursor = iend + close_len
 	return segs
 
-/obj/item/paper/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("write_field")
-			do_write_action("[params["id"]]", usr)
-			return TRUE
-		if("write_end")
-			do_write_action("end", usr)
-			return TRUE
+UI_ACT(/obj/item/paper, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/obj/item/paper, ui_act_write_field)
+	do_write_action("[params["id"]]", usr)
+	return TRUE
+
+UI_ACT(/obj/item/paper, "write_end", ui_act_write_end)
+UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
+	do_write_action("end", usr)
+	return TRUE
 
 // Shared write-prompt + pencode-parse + commit. Same checks the legacy
 // Topic write branch had — pen-in-hand, RIG fallback, range/loc, fields

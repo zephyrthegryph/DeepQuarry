@@ -2,27 +2,24 @@
 	name = "Shutoff Valve Monitoring"
 	tgui_id = "ShutoffMonitor"
 
-/datum/tgui_module/shutoff_monitor/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_enable", ui_act_toggle_enable, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
+UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_enable)
+	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+	if(!istype(S))
+		return FALSE
+	S.close_on_leaks = !S.close_on_leaks
+	return TRUE
 
-	switch(action)
-		if("toggle_enable")
-			var/obj/machinery/atmospherics/valve/shutoff/S = locate(params["valve"])
-			if(!istype(S))
-				return FALSE
-			S.close_on_leaks = !S.close_on_leaks
-			return TRUE
-
-		if("toggle_open")
-			var/obj/machinery/atmospherics/valve/shutoff/S = locate(params["valve"])
-			if(!istype(S))
-				return FALSE
-			if(S.open)
-				S.close()
-			else
-				S.open()
-			return TRUE
+UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_open", ui_act_toggle_open, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
+UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_open)
+	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+	if(!istype(S))
+		return FALSE
+	if(S.open)
+		S.close()
+	else
+		S.open()
+	return TRUE
 
 /datum/tgui_module/shutoff_monitor/tgui_data(mob/user)
 	var/list/data = list()

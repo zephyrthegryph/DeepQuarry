@@ -76,11 +76,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/aifixer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AiRestorer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/aifixer, "AiRestorer")
 
 /obj/machinery/computer/aifixer/tgui_data(mob/user)
 	var/list/data = list()
@@ -103,26 +99,26 @@
 
 	return data
 
-/obj/machinery/computer/aifixer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/computer/aifixer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!occupier())
 		restoring = FALSE
-
 	if(action)
 		play_sfx(src, SFX_TERMINAL_TYPE)
+	return TRUE
 
-	switch(action)
-		if("PRG_beginReconstruction")
-			if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
-				to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
-				play_sfx(src, SFX_MACHINES_TERMINAL_PROMPT_CONFIRM)
-				restoring = TRUE
-				MACHINE_WAKE(src)
-				var/mob/observer/dead/ghost = occupier().get_ghost()
-				if(ghost)
-					ghost.notify_revive("Your core files are being restored!", source = src)
-				. = TRUE
+UI_ACT(/obj/machinery/computer/aifixer, "PRG_beginReconstruction", ui_act_prg_beginreconstruction)
+UI_ACT_PROC(/obj/machinery/computer/aifixer, ui_act_prg_beginreconstruction)
+	if(occupier() && (occupier().vitality() < 1 || occupier().backup_capacitor() < 100))
+		to_chat(ui.user, span_notice("Reconstruction in progress. This will take several minutes."))
+		play_sfx(src, SFX_MACHINES_TERMINAL_PROMPT_CONFIRM)
+		restoring = TRUE
+		MACHINE_WAKE(src)
+		var/mob/observer/dead/ghost = occupier().get_ghost()
+		if(ghost)
+			ghost.notify_revive("Your core files are being restored!", source = src)
+		. = TRUE
 
 /obj/machinery/computer/aifixer/proc/Fix()
 	use_power(active_power_usage)

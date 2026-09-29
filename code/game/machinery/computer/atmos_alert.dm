@@ -24,11 +24,7 @@
 /obj/machinery/computer/atmos_alert/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
-/obj/machinery/computer/atmos_alert/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AtmosAlertConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/atmos_alert, "AtmosAlertConsole")
 
 /obj/machinery/computer/atmos_alert/tgui_data(mob/user)
 	var/list/data = list()
@@ -64,21 +60,21 @@
 				play_sfx(src, SFX_EFFECTS_COMP_ALERT_CLEAR) // Alarm notifications
 	..()
 
-/obj/machinery/computer/atmos_alert/tgui_act(action, params)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("clear")
-			var/datum/alarm/alarm = locate_in_list(GLOB.atmosphere_alarm.alarms, params["ref"])
-			if(alarm)
-				for(var/datum/alarm_source/alarm_source in alarm.sources)
-					var/obj/machinery/alarm/air_alarm = alarm_source.source
-					if(istype(air_alarm))
-						// I have to leave a note here:
-						// Once upon a time, this called air_alarm.Topic() with a custom topic state
-						// in order to perform three lines of code. In other words, pure insanity.
-						// Whyyyyyyyyyyyyyyyyyyyyyyy.
-						air_alarm.atmos_reset()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/atmos_alert, "clear", ui_act_clear, UI_ARG_REF("ref", "proc:ui_source_glob_atmosphere_alarm_alarms", /datum/alarm))
+UI_ACT_PROC(/obj/machinery/computer/atmos_alert, ui_act_clear)
+	var/datum/alarm/alarm = params["ref"]
+	if(alarm)
+		for(var/datum/alarm_source/alarm_source in alarm.sources)
+			var/obj/machinery/alarm/air_alarm = alarm_source.source
+			if(istype(air_alarm))
+				// I have to leave a note here:
+				// Once upon a time, this called air_alarm.Topic() with a custom topic state
+				// in order to perform three lines of code. In other words, pure insanity.
+				// Whyyyyyyyyyyyyyyyyyyyyyyy.
+				air_alarm.atmos_reset()
+	. = TRUE
 	update_icon()
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/machinery/computer/atmos_alert/proc/ui_source_glob_atmosphere_alarm_alarms()
+	return GLOB.atmosphere_alarm.alarms

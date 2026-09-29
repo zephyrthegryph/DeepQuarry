@@ -393,14 +393,13 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 /obj/machinery/computer/scan_consolenew
 	silicon_use = SILICON_USE_UI
 
-/obj/machinery/computer/scan_consolenew/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/computer/scan_consolenew, "DNAModifier")
+
+/obj/machinery/computer/scan_consolenew/ui_prepare(mob/user, datum/tgui/ui)
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	if(!connected() || user == WC || user.stat)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DNAModifier", name)
-		ui.open()
+		return FALSE
+	return TRUE
 
 /obj/machinery/computer/scan_consolenew/tgui_data(mob/user)
 	// this is the data which will be sent to the ui
@@ -497,197 +496,215 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 
 	return data
 
-/obj/machinery/computer/scan_consolenew/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/computer/scan_consolenew/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!istype(ui.user.loc, /turf))
-		return TRUE
+		return FALSE
 	if(!src || !connected())
-		return TRUE
+		return FALSE
 	if(irradiating) // Make sure that it isn't already irradiating someone...
-		return TRUE
-
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	if(tgui_act_modal(action, params))
+UI_ACT(/obj/machinery/computer/scan_consolenew, "selectMenuKey", ui_act_selectmenukey, UI_ARG_VALUE("key"))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectmenukey)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	var/key = params["key"]
+	if(!(key in list(/*PAGE_UI,*/ PAGE_SE, PAGE_BUFFER, PAGE_REJUVENATORS))) // Traitgenes Body design console is used to edit UIs now
+		return TRUE
+	selected_menu_key = key
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "toggleLock", ui_act_togglelock)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_togglelock)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	if(connected() && connected().get_occupant())
+		connected().locked = !(connected().locked)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "pulseRadiation", ui_act_pulseradiation)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseradiation)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	irradiating = radiation_duration
+	var/lock_state = connected().locked
+	connected().locked = TRUE //lock it
+	om_after(src, radiation_duration SECONDS, PROC_REF(do_pulse), lock_state)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "radiationDuration", ui_act_radiationduration, UI_ARG_NUM("value", 1, 20))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_radiationduration)
+	radiation_duration = params["value"]
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "radiationIntensity", ui_act_radiationintensity, UI_ARG_NUM("value", 1, 10))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_radiationintensity)
+	radiation_intensity = params["value"]
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "injectRejuvenators", ui_act_injectrejuvenators, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_injectrejuvenators)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	if(!connected().get_occupant() || !connected().beaker)
+		return TRUE
+	var/mob/living/carbon/WC = connected()?.get_occupant()
+	var/inject_amount = clamp(round(params["amount"], 5), 0, 50) // round to nearest 5 and clamp to 0-50
+	if(!inject_amount)
+		return TRUE
+	connected().beaker.reagents.trans_to_mob(WC, inject_amount, CHEM_BLOOD)
+	return TRUE
+	////////////////////////////////////////////////////////
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "selectSEBlock", ui_act_selectseblock, UI_ARG_NUM("block"), UI_ARG_NUM("subblock"))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectseblock)
+	play_sfx(src, SFX_KEYBOARD)
+	var/select_block = params["block"]
+	var/select_subblock = params["subblock"]
+	if(!select_block || !select_subblock)
 		return TRUE
 
-	switch(action)
-		if("selectMenuKey")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			var/key = params["key"]
-			if(!(key in list(/*PAGE_UI,*/ PAGE_SE, PAGE_BUFFER, PAGE_REJUVENATORS))) // Traitgenes Body design console is used to edit UIs now
-				return TRUE
-			selected_menu_key = key
-			return TRUE
-		if("toggleLock")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			if(connected() && connected().get_occupant())
-				connected().locked = !(connected().locked)
-			return TRUE
+	selected_se_block = clamp(select_block, 1, DNA_SE_LENGTH)
+	selected_se_subblock = clamp(select_subblock, 1, DNA_BLOCK_SIZE)
+	return TRUE
 
-		if("pulseRadiation")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			irradiating = radiation_duration
-			var/lock_state = connected().locked
-			connected().locked = TRUE //lock it
-			om_after(src, radiation_duration SECONDS, PROC_REF(do_pulse), lock_state)
-			return TRUE
-		if("radiationDuration")
-			radiation_duration = clamp(text2num(params["value"]), 1, 20)
-			return TRUE
-		if("radiationIntensity")
-			radiation_intensity = clamp(text2num(params["value"]), 1, 10)
-			return TRUE
-		if("injectRejuvenators")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			if(!connected().get_occupant() || !connected().beaker)
-				return TRUE
+UI_ACT(/obj/machinery/computer/scan_consolenew, "pulseSERadiation", ui_act_pulseseradiation)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseseradiation)
+	if(!connected()?.get_occupant())
+		return TRUE
+	var/mob/living/carbon/WC = connected()?.get_occupant()
+	play_sfx(src, SFX_KEYBOARD)
+	var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
+
+	irradiating = radiation_duration
+	var/lock_state = connected().locked
+	connected().locked = TRUE //lock it
+
+	//We call the do_irradiate proc here after radation_duration SECONDS
+	om_after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), lock_state, block)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectBeaker", ui_act_ejectbeaker)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectbeaker)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	if(connected().beaker)
+		var/obj/item/reagent_containers/glass/B = connected().beaker
+		B.forceMove(connected().loc)
+		connected().beaker = null
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectOccupant", ui_act_ejectoccupant)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectoccupant)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	connected().eject_occupant()
+	// Eject disk too, because we can't get to the UI otherwise
+	if(!disk)
+		return TRUE
+	disk.forceMove(get_turf(src))
+	disk = null
+// Transfer Buffer Management
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "bufferOption", ui_act_bufferoption, UI_ARG_NUM("block"), UI_ARG_NUM("id"), UI_ARG_TEXT("option"))
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
+	var/bufferOption = params["option"]
+	var/bufferId = params["id"]
+	if(bufferId < 1 || bufferId > 3) // Not a valid buffer id
+		return TRUE
+
+	var/datum/transhuman/body_record/buffer = buffers[bufferId] // Traitgenes Use bodyrecords
+	switch(bufferOption)
+		// Traitgenes Moved SE and UI saves to storing the entire body record
+		if("saveDNA")
+			play_sfx(src, SFX_KEYBOARD) // into console
 			var/mob/living/carbon/WC = connected()?.get_occupant()
-			var/inject_amount = clamp(round(text2num(params["amount"]), 5), 0, 50) // round to nearest 5 and clamp to 0-50
-			if(!inject_amount)
-				return TRUE
-			connected().beaker.reagents.trans_to_mob(WC, inject_amount, CHEM_BLOOD)
+			if(WC && WC.dna)
+				// Traitgenes Properly clone records
+				var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
+				databuf.init_from_mob(WC)
+				databuf.mydna.types = DNA2_BUF_SE // structurals only
+				if(ishuman(WC))
+					var/mob/living/carbon/human/H = WC
+					databuf.mydna.dna.real_name = H.dna.real_name
+					databuf.mydna.gender = H.gender
+				buffers[bufferId] = databuf
 			return TRUE
-	////////////////////////////////////////////////////////
-		if("selectSEBlock") // This chunk of code updates selected block / sub-block based on click (se stands for strutural enzymes)
-			play_sfx(src, SFX_KEYBOARD)
-			var/select_block = text2num(params["block"])
-			var/select_subblock = text2num(params["subblock"])
-			if(!select_block || !select_subblock)
-				return TRUE
-
-			selected_se_block = clamp(select_block, 1, DNA_SE_LENGTH)
-			selected_se_subblock = clamp(select_subblock, 1, DNA_BLOCK_SIZE)
-			return TRUE
-		if("pulseSERadiation")
-			if(!connected()?.get_occupant())
-				return TRUE
-			var/mob/living/carbon/WC = connected()?.get_occupant()
-			play_sfx(src, SFX_KEYBOARD)
-			var/block = WC.dna.GetSESubBlock(selected_se_block,selected_se_subblock)
-
-			irradiating = radiation_duration
-			var/lock_state = connected().locked
-			connected().locked = TRUE //lock it
-
-			//We call the do_irradiate proc here after radation_duration SECONDS
-			om_after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), lock_state, block)
-			return TRUE
-
-		if("ejectBeaker")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			if(connected().beaker)
-				var/obj/item/reagent_containers/glass/B = connected().beaker
-				B.forceMove(connected().loc)
-				connected().beaker = null
-			return TRUE
-		if("ejectOccupant")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			connected().eject_occupant()
-			// Eject disk too, because we can't get to the UI otherwise
-			if(!disk)
-				return TRUE
-			disk.forceMove(get_turf(src))
-			disk = null
-		// Transfer Buffer Management
-		if("bufferOption")
-			var/bufferOption = params["option"]
-			var/bufferId = text2num(params["id"])
-			if(bufferId < 1 || bufferId > 3) // Not a valid buffer id
-				return TRUE
-
-			var/datum/transhuman/body_record/buffer = buffers[bufferId] // Traitgenes Use bodyrecords
-			switch(bufferOption)
-				// Traitgenes Moved SE and UI saves to storing the entire body record
-				if("saveDNA")
-					play_sfx(src, SFX_KEYBOARD) // into console
-					var/mob/living/carbon/WC = connected()?.get_occupant()
-					if(WC && WC.dna)
-						// Traitgenes Properly clone records
-						var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
-						databuf.init_from_mob(WC)
-						databuf.mydna.types = DNA2_BUF_SE // structurals only
-						if(ishuman(WC))
-							var/mob/living/carbon/human/H = WC
-							databuf.mydna.dna.real_name = H.dna.real_name
-							databuf.mydna.gender = H.gender
-						buffers[bufferId] = databuf
-					return TRUE
-				if("clear")
-					play_sfx(src, SFX_KEYBOARD)
-					// Traitgenes Storing the entire body record
-					var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-					R.mydna = new
-					R.mydna.dna = new
-					R.mydna.dna.ResetUI()
-					R.mydna.dna.ResetSE()
-					buffers[bufferId] = R
-					return TRUE
-				if("changeLabel")
-					play_sfx(src, SFX_KEYBOARD)
-					tgui_modal_input(src, "changeBufferLabel", "Please enter the new buffer label:", null, list("id" = bufferId), buffer.mydna.name, TGUI_MODAL_INPUT_MAX_LENGTH_NAME)
-					return TRUE
-				if("transfer")
-					var/mob/living/carbon/WC = connected()?.get_occupant()
-					if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
-						return TRUE
-					irradiating = 2
-					var/lock_state = connected().locked
-					connected().locked = 1//lock it
-					om_after(src, 2 SECONDS, PROC_REF(do_transfer), lock_state, bufferId)
-					return TRUE
-				if("createInjector")
-					if(!injector_ready)
-						return TRUE
-					if(text2num(params["block"]) > 0)
-						var/list/choices = all_dna_blocks(buffer.mydna.dna.SE) // Traitgenes Storing the entire body record, and no more using UIs
-						tgui_modal_choice(src, "createInjectorBlock", "Please select the block to create an injector from:", null, list("id" = bufferId), null, choices)
-					else
-						create_injector(bufferId, TRUE)
-					return TRUE
-				// Traitgenes Storing the entire body record
-				if("loadDisk")
-					play_sfx(src, SFX_KEYBOARD)
-					if(isnull(disk) || !disk.stored)
-						return
-					// Traitgenes Properly clone records
-					var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
-					databuf.init_from_br(disk.stored)
-					databuf.mydna.types = DNA2_BUF_SE // structurals only
-					buffers[bufferId] = databuf
-				if("saveDisk")
-					play_sfx(src, SFX_KEYBOARD)
-					if(isnull(disk)) // Traitgenes Removed readonly
-						return TRUE
-					var/datum/transhuman/body_record/buf = buffers[bufferId]
-					// Traitgenes Properly clone records
-					disk.stored = new /datum/transhuman/body_record()
-					disk.stored.init_from_br(buf)
-					disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
-					disk.name = "Body Design Disk ('[buf.mydna.name]')"
-					return TRUE
-				if("sleeveDisk")
-					play_sfx(src, SFX_KEYBOARD)
-					var/datum/transhuman/body_record/buf = buffers[bufferId]
-					// Send printable record to first sleevepod in area
-					print_sleeve(ui.user, buf)
-					return TRUE
-
-		if("wipeDisk")
+		if("clear")
 			play_sfx(src, SFX_KEYBOARD)
 			// Traitgenes Storing the entire body record
-			if(isnull(disk))
-				return TRUE
-			disk.stored = null
+			var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
+			R.mydna = new
+			R.mydna.dna = new
+			R.mydna.dna.ResetUI()
+			R.mydna.dna.ResetSE()
+			buffers[bufferId] = R
 			return TRUE
-		if("ejectDisk")
-			play_sfx(src, SFX_MACHINES_BUTTON)
-			if(!disk)
-				return TRUE
-			disk.forceMove(get_turf(src))
-			disk = null
+		if("changeLabel")
+			play_sfx(src, SFX_KEYBOARD)
+			tgui_modal_input(src, "changeBufferLabel", "Please enter the new buffer label:", null, list("id" = bufferId), buffer.mydna.name, TGUI_MODAL_INPUT_MAX_LENGTH_NAME)
 			return TRUE
+		if("transfer")
+			var/mob/living/carbon/WC = connected()?.get_occupant()
+			if(!WC || (WC.has_mutation(NOCLONE)) || !WC.dna)
+				return TRUE
+			irradiating = 2
+			var/lock_state = connected().locked
+			connected().locked = 1//lock it
+			om_after(src, 2 SECONDS, PROC_REF(do_transfer), lock_state, bufferId)
+			return TRUE
+		if("createInjector")
+			if(!injector_ready)
+				return TRUE
+			if(params["block"] > 0)
+				var/list/choices = all_dna_blocks(buffer.mydna.dna.SE) // Traitgenes Storing the entire body record, and no more using UIs
+				tgui_modal_choice(src, "createInjectorBlock", "Please select the block to create an injector from:", null, list("id" = bufferId), null, choices)
+			else
+				create_injector(bufferId, TRUE)
+			return TRUE
+		// Traitgenes Storing the entire body record
+		if("loadDisk")
+			play_sfx(src, SFX_KEYBOARD)
+			if(isnull(disk) || !disk.stored)
+				return
+			// Traitgenes Properly clone records
+			var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
+			databuf.init_from_br(disk.stored)
+			databuf.mydna.types = DNA2_BUF_SE // structurals only
+			buffers[bufferId] = databuf
+		if("saveDisk")
+			play_sfx(src, SFX_KEYBOARD)
+			if(isnull(disk)) // Traitgenes Removed readonly
+				return TRUE
+			var/datum/transhuman/body_record/buf = buffers[bufferId]
+			// Traitgenes Properly clone records
+			disk.stored = new /datum/transhuman/body_record()
+			disk.stored.init_from_br(buf)
+			disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
+			disk.name = "Body Design Disk ('[buf.mydna.name]')"
+			return TRUE
+		if("sleeveDisk")
+			play_sfx(src, SFX_KEYBOARD)
+			var/datum/transhuman/body_record/buf = buffers[bufferId]
+			// Send printable record to first sleevepod in area
+			print_sleeve(ui.user, buf)
+			return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "wipeDisk", ui_act_wipedisk)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_wipedisk)
+	play_sfx(src, SFX_KEYBOARD)
+	// Traitgenes Storing the entire body record
+	if(isnull(disk))
+		return TRUE
+	disk.stored = null
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectDisk", ui_act_ejectdisk)
+UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
+	play_sfx(src, SFX_MACHINES_BUTTON)
+	if(!disk)
+		return TRUE
+	disk.forceMove(get_turf(src))
+	disk = null
+	return TRUE
 
 /**
  * Creates a blank injector with the name of the buffer at the given buffer_id
@@ -720,41 +737,28 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 /obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish()
 	injector_ready = TRUE
 
-/**
- * Called in tgui_act() to process modal actions
- *
- * Arguments:
- * * action - The action passed by tgui
- * * params - The params passed by tgui
- */
-/obj/machinery/computer/scan_consolenew/proc/tgui_act_modal(action, params)
+DECLARE_UI_MODAL(/obj/machinery/computer/scan_consolenew)
+
+/obj/machinery/computer/scan_consolenew/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
-	var/id = params["id"] // The modal's ID
-	var/list/arguments = istext(params["arguments"]) ? json_decode(params["arguments"]) : params["arguments"]
-	switch(tgui_modal_act(src, action, params))
-		if(TGUI_MODAL_ANSWER)
-			var/answer = params["answer"]
-			switch(id)
-				if("createInjectorBlock")
-					var/buffer_id = text2num(arguments["id"])
-					if(buffer_id < 1 || buffer_id > length(buffers))
-						return
-					var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
-					var/obj/item/dnainjector/I = create_injector(buffer_id)
-					setInjectorBlock(I, answer, buf.mydna.copy()) // Traitgenes Use bodyrecords
-					I.name += " - Block [answer]" // Traitgenes By default show the block of a block injector
-				if("changeBufferLabel")
-					var/buffer_id = text2num(arguments["id"])
-					if(buffer_id < 1 || buffer_id > length(buffers))
-						return
-					var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
-					buf.mydna.name = answer // Traitgenes Use bodyrecords
-					buffers[buffer_id] = buf
-				else
-					return FALSE
+	switch(id)
+		if("createInjectorBlock")
+			var/buffer_id = text2num(arguments["id"])
+			if(buffer_id < 1 || buffer_id > length(buffers))
+				return
+			var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
+			var/obj/item/dnainjector/I = create_injector(buffer_id)
+			setInjectorBlock(I, answer, buf.mydna.copy()) // Traitgenes Use bodyrecords
+			I.name += " - Block [answer]" // Traitgenes By default show the block of a block injector
+		if("changeBufferLabel")
+			var/buffer_id = text2num(arguments["id"])
+			if(buffer_id < 1 || buffer_id > length(buffers))
+				return
+			var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
+			buf.mydna.name = answer // Traitgenes Use bodyrecords
+			buffers[buffer_id] = buf
 		else
 			return FALSE
-
 /**
  * Triggers sleeve growing in a clonepod within the area
  *

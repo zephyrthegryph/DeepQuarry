@@ -263,11 +263,7 @@
 		return COMPONENT_BLOCK_IRRADIATION
 
 ///TGUI below here
-/datum/trait_state/radiation_effects/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RadiationConfig", "Radiation Config")
-		ui.open()
+DECLARE_UI(/datum/trait_state/radiation_effects, "RadiationConfig", UI_TITLE("Radiation Config"))
 
 /mob/living/proc/radiation_control_panel()
 	set name = "Radiation Control Panel"
@@ -300,22 +296,22 @@
 		return
 	radiation_color = ask.picked_color
 
-/datum/trait_state/radiation_effects/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/datum/trait_state/radiation_effects, "toggle_color", ui_act_toggle_color)
+UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_color)
+	om_ask(ui.user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
+	return FALSE
 
-	switch(action)
-		if("toggle_color")
-			om_ask(ui.user, /datum/om/prompt/color, PROC_REF(radiation_color_picked), message = "Select a color you wish your radioactive glow to be!", default = radiation_color, ui_refresh = src, title = "Color Selector")
-			return FALSE
-		if("toggle_glow")
-			glows = !glows
-			to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
-			return FALSE
-		if("toggle_nutrition")
-			radiation_nutrition = !radiation_nutrition
-			to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
-			return FALSE
+UI_ACT(/datum/trait_state/radiation_effects, "toggle_glow", ui_act_toggle_glow)
+UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_glow)
+	glows = !glows
+	to_chat(owner, span_info("You are [glows ? "now" : "no longer"] glowing."))
+	return FALSE
+
+UI_ACT(/datum/trait_state/radiation_effects, "toggle_nutrition", ui_act_toggle_nutrition)
+UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_nutrition)
+	radiation_nutrition = !radiation_nutrition
+	to_chat(owner, span_info("You are [radiation_nutrition ? "now" : "no longer"] gaining nutrition from radiation."))
+	return FALSE
 
 /datum/trait_state/radiation_effects/proc/create_toony_glow()
 	var/atom/movable/parent_movable = owner

@@ -5,11 +5,7 @@
 /obj/item/tvcamera/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/tvcamera/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EyeBuddy", "Eye Buddy")
-		ui.open()
+DECLARE_UI(/obj/item/tvcamera, "EyeBuddy", UI_TITLE("Eye Buddy"))
 
 /obj/item/tvcamera/tgui_data(mob/user)
 	var/list/data = list()
@@ -20,23 +16,23 @@
 	data["frequency"] = "[format_frequency(radio.frequency)] ([get_frequency_name(radio.frequency)])"
 	return data
 
-/obj/item/tvcamera/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("set_channel")
-			camera_set_channel(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_video")
-			camera_toggle_video(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_audio")
-			camera_toggle_audio(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/item/tvcamera, "set_channel", ui_act_set_channel)
+UI_ACT_PROC(/obj/item/tvcamera, ui_act_set_channel)
+	camera_set_channel(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/tvcamera, "toggle_video", ui_act_toggle_video)
+UI_ACT_PROC(/obj/item/tvcamera, ui_act_toggle_video)
+	camera_toggle_video(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/tvcamera, "toggle_audio", ui_act_toggle_audio)
+UI_ACT_PROC(/obj/item/tvcamera, ui_act_toggle_audio)
+	camera_toggle_audio(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
 
 /obj/item/tvcamera/proc/show_ui(mob/user)
 	tgui_interact(user)
@@ -46,11 +42,7 @@
 /obj/item/clothing/accessory/bodycam/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/clothing/accessory/bodycam/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EyeBuddy", "Eye Buddy")
-		ui.open()
+DECLARE_UI(/obj/item/clothing/accessory/bodycam, "EyeBuddy", UI_TITLE("Eye Buddy"))
 
 /obj/item/clothing/accessory/bodycam/tgui_data(mob/user)
 	var/list/data = list()
@@ -61,23 +53,23 @@
 	data["frequency"] = "[format_frequency(bradio.frequency)] ([get_frequency_name(bradio.frequency)])"
 	return data
 
-/obj/item/clothing/accessory/bodycam/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("set_channel")
-			camera_set_channel(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_video")
-			camera_toggle_video(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_audio")
-			camera_toggle_audio(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/item/clothing/accessory/bodycam, "set_channel", ui_act_set_channel)
+UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_set_channel)
+	camera_set_channel(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/clothing/accessory/bodycam, "toggle_video", ui_act_toggle_video)
+UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_toggle_video)
+	camera_toggle_video(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/item/clothing/accessory/bodycam, "toggle_audio", ui_act_toggle_audio)
+UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_toggle_audio)
+	camera_toggle_audio(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
 
 /obj/item/clothing/accessory/bodycam/proc/show_bodycam_ui(mob/user)
 	tgui_interact(user)

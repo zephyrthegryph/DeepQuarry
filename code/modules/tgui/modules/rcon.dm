@@ -52,46 +52,52 @@
 
 	return data
 
-/datum/tgui_module/rcon/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/rcon, "set_smes_page", ui_act_set_smes_page, UI_ARG_VALUE("index"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_set_smes_page)
+	var/page = params["index"]
+	current_page = page
+	. = TRUE
 
-	switch(action)
-		if("set_smes_page")
-			var/page = params["index"]
-			current_page = page
-			. = TRUE
-		if("smes_in_toggle")
-			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
-			if(SMES)
-				SMES.toggle_input()
-			. = TRUE
-		if("smes_out_toggle")
-			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
-			if(SMES)
-				SMES.toggle_output()
-			. = TRUE
-		if("smes_in_set")
-			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
-			if(SMES)
-				SMES.tgui_set_io(SMES_TGUI_INPUT, params["target"], text2num(params["adjust"]))
-			. = TRUE
-		if("smes_out_set")
-			var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
-			if(SMES)
-				SMES.tgui_set_io(SMES_TGUI_OUTPUT, params["target"], text2num(params["adjust"]))
-			. = TRUE
-		if("toggle_breaker")
-			var/obj/machinery/power/breakerbox/toggle = null
-			for(var/obj/machinery/power/breakerbox/breaker in known_breakers)
-				if(breaker.RCon_tag == params["breaker"])
-					toggle = breaker
-			if(toggle)
-				if(toggle.update_locked)
-					to_chat(ui.user, "The breaker box was recently toggled. Please wait before toggling it again.")
-				else
-					toggle.auto_toggle()
-			. = TRUE
+UI_ACT(/datum/tgui_module/rcon, "smes_in_toggle", ui_act_smes_in_toggle, UI_ARG_VALUE("smes"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_smes_in_toggle)
+	var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
+	if(SMES)
+		SMES.toggle_input()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/rcon, "smes_out_toggle", ui_act_smes_out_toggle, UI_ARG_VALUE("smes"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_smes_out_toggle)
+	var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
+	if(SMES)
+		SMES.toggle_output()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/rcon, "smes_in_set", ui_act_smes_in_set, UI_ARG_NUM("adjust"), UI_ARG_VALUE("smes"), UI_ARG_VALUE("target"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_smes_in_set)
+	var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
+	if(SMES)
+		SMES.tgui_set_io(SMES_TGUI_INPUT, params["target"], params["adjust"])
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/rcon, "smes_out_set", ui_act_smes_out_set, UI_ARG_NUM("adjust"), UI_ARG_VALUE("smes"), UI_ARG_VALUE("target"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_smes_out_set)
+	var/obj/machinery/power/smes/buildable/SMES = GetSMESByTag(params["smes"])
+	if(SMES)
+		SMES.tgui_set_io(SMES_TGUI_OUTPUT, params["target"], params["adjust"])
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/rcon, "toggle_breaker", ui_act_toggle_breaker, UI_ARG_VALUE("breaker"))
+UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_toggle_breaker)
+	var/obj/machinery/power/breakerbox/toggle = null
+	for(var/obj/machinery/power/breakerbox/breaker in known_breakers)
+		if(breaker.RCon_tag == params["breaker"])
+			toggle = breaker
+	if(toggle)
+		if(toggle.update_locked)
+			to_chat(ui.user, "The breaker box was recently toggled. Please wait before toggling it again.")
+		else
+			toggle.auto_toggle()
+	. = TRUE
 
 // Proc: GetSMESByTag()
 // Parameters: 1 (tag - RCON tag of SMES we want to look up)

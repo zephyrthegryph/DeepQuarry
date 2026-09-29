@@ -209,11 +209,7 @@
 
 EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/mob/living/bot/cleanbot/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Cleanbot", name)
-		ui.open()
+DECLARE_UI(/mob/living/bot/cleanbot, "Cleanbot")
 
 /mob/living/bot/cleanbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -230,35 +226,47 @@ EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open contro
 	data["version"] = "v2.0"
 	return data
 
-/mob/living/bot/cleanbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+/mob/living/bot/cleanbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("start")
-			if(on)
-				turn_off()
-			else
-				turn_on()
-			. = TRUE
-		if("blood")
-			blood = !blood
-			. = TRUE
-		if("patrol")
-			will_patrol = !will_patrol
-			patrol_path = null
-			. = TRUE
-		if("vocal")
-			vocal = !vocal
-			. = TRUE
-		if("wet_floors")
-			wet_floors = !wet_floors
-			to_chat(ui.user, span_notice("You twiddle the screw."))
-			. = TRUE
-		if("spray_blood")
-			spray_blood = !spray_blood
-			to_chat(ui.user, span_notice("You press the weird button."))
-			. = TRUE
+	return TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "start", ui_act_start)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_start)
+	if(on)
+		turn_off()
+	else
+		turn_on()
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "blood", ui_act_blood)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_blood)
+	blood = !blood
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "patrol", ui_act_patrol)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_patrol)
+	will_patrol = !will_patrol
+	patrol_path = null
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "vocal", ui_act_vocal)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_vocal)
+	vocal = !vocal
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "wet_floors", ui_act_wet_floors)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_wet_floors)
+	wet_floors = !wet_floors
+	to_chat(ui.user, span_notice("You twiddle the screw."))
+	. = TRUE
+
+UI_ACT(/mob/living/bot/cleanbot, "spray_blood", ui_act_spray_blood)
+UI_ACT_PROC(/mob/living/bot/cleanbot, ui_act_spray_blood)
+	spray_blood = !spray_blood
+	to_chat(ui.user, span_notice("You press the weird button."))
+	. = TRUE
 
 /mob/living/bot/cleanbot/emag_act(remaining_uses, mob/user)
 	. = ..()

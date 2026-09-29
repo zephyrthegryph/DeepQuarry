@@ -9,11 +9,7 @@
 // modified (see code/game/machinery/magnet.dm) to call tgui_interact
 // directly instead of the legacy HTML body.
 
-/obj/machinery/magnetic_controller/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MagneticConsole", "Magnetic Control Console")
-		ui.open()
+DECLARE_UI(/obj/machinery/magnetic_controller, "MagneticConsole", UI_TITLE("Magnetic Control Console"))
 
 /obj/machinery/magnetic_controller/tgui_state(mob/user)
 	return GLOB.tgui_default_state
@@ -41,65 +37,86 @@
 	data["magnets"] = magnet_rows
 	return data
 
-/obj/machinery/magnetic_controller/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/magnetic_controller/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!operable())
-		return
-	var/mob/user = ui?.user
+		return FALSE
 	if(!user)
-		return
+		return FALSE
 	user.set_machine(src)
 	add_fingerprint(user)
+	return TRUE
 
-	switch(action)
-		if("set_frequency")
-			magnet_operation(user, "setfreq")
-			SStgui.update_uis(src)
-			return TRUE
-		if("set_code")
-			// Legacy panel used the same "setfreq" handler for both.
-			magnet_operation(user, "setfreq")
-			SStgui.update_uis(src)
-			return TRUE
-		if("probe")
-			magnet_operation(user, "probe")
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_power")
-			magnet_radio_op(user, "togglepower")
-			SStgui.update_uis(src)
-			return TRUE
-		if("elec_minus")
-			magnet_radio_op(user, "minuselec")
-			SStgui.update_uis(src)
-			return TRUE
-		if("elec_plus")
-			magnet_radio_op(user, "pluselec")
-			SStgui.update_uis(src)
-			return TRUE
-		if("mag_minus")
-			magnet_radio_op(user, "minusmag")
-			SStgui.update_uis(src)
-			return TRUE
-		if("mag_plus")
-			magnet_radio_op(user, "plusmag")
-			SStgui.update_uis(src)
-			return TRUE
-		if("speed_minus")
-			magnet_operation(user, "minusspeed")
-			SStgui.update_uis(src)
-			return TRUE
-		if("speed_plus")
-			magnet_operation(user, "plusspeed")
-			SStgui.update_uis(src)
-			return TRUE
-		if("set_path")
-			magnet_operation(user, "setpath")
-			SStgui.update_uis(src)
-			return TRUE
-		if("toggle_moving")
-			magnet_operation(user, "togglemoving")
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/machinery/magnetic_controller, "set_frequency", ui_act_set_frequency)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_frequency)
+	magnet_operation(user, "setfreq")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "set_code", ui_act_set_code)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_code)
+	// Legacy panel used the same "setfreq" handler for both.
+	magnet_operation(user, "setfreq")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "probe", ui_act_probe)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_probe)
+	magnet_operation(user, "probe")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "toggle_power", ui_act_toggle_power)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_toggle_power)
+	magnet_radio_op(user, "togglepower")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "elec_minus", ui_act_elec_minus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_elec_minus)
+	magnet_radio_op(user, "minuselec")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "elec_plus", ui_act_elec_plus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_elec_plus)
+	magnet_radio_op(user, "pluselec")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "mag_minus", ui_act_mag_minus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_mag_minus)
+	magnet_radio_op(user, "minusmag")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "mag_plus", ui_act_mag_plus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_mag_plus)
+	magnet_radio_op(user, "plusmag")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "speed_minus", ui_act_speed_minus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_speed_minus)
+	magnet_operation(user, "minusspeed")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "speed_plus", ui_act_speed_plus)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_speed_plus)
+	magnet_operation(user, "plusspeed")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "set_path", ui_act_set_path)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_set_path)
+	magnet_operation(user, "setpath")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/magnetic_controller, "toggle_moving", ui_act_toggle_moving)
+UI_ACT_PROC(/obj/machinery/magnetic_controller, ui_act_toggle_moving)
+	magnet_operation(user, "togglemoving")
+	SStgui.update_uis(src)
+	return TRUE

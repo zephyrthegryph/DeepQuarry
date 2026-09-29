@@ -537,74 +537,75 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/data = ..()
 	return data
 
-/datum/preference_middleware/character_setup/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/preference_middleware/character_setup, "dq_select_category", ui_act_dq_select_category, UI_ARG_VALUE("category"), UI_ARG_VALUE("force_catalogs"))
+UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_select_category)
+	dq_ensure_category_cache()
+	var/category_key = params["category"]
+	if(!(category_key in preferences().dq_category_index))
+		return FALSE
+	preferences().dq_active_category = category_key
+	if(params["force_catalogs"])
+		var/window_id = ui?.window()?.id || "unpooled"
+		LAZYINITLIST(preferences().dq_force_catalogs_by_window)
+		preferences().dq_force_catalogs_by_window[window_id] = TRUE
+		if(islist(preferences().dq_window_category_versions?[window_id]))
+			preferences().dq_window_category_versions[window_id] -= category_key
+		if(islist(preferences().dq_window_editor_versions?[window_id]))
+			for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
+				if(!editor.hidden && editor.category == category_key)
+					preferences().dq_window_editor_versions[window_id] -= editor.key
+	return TRUE
 
-	switch(action)
-		if("dq_select_category")
-			dq_ensure_category_cache()
-			var/category_key = params["category"]
-			if(!(category_key in preferences().dq_category_index))
-				return FALSE
-			preferences().dq_active_category = category_key
-			if(params["force_catalogs"])
-				var/window_id = ui?.window()?.id || "unpooled"
-				LAZYINITLIST(preferences().dq_force_catalogs_by_window)
-				preferences().dq_force_catalogs_by_window[window_id] = TRUE
-				if(islist(preferences().dq_window_category_versions?[window_id]))
-					preferences().dq_window_category_versions[window_id] -= category_key
-				if(islist(preferences().dq_window_editor_versions?[window_id]))
-					for(var/datum/preference_editor/editor as anything in GLOB.preference_editors)
-						if(!editor.hidden && editor.category == category_key)
-							preferences().dq_window_editor_versions[window_id] -= editor.key
-			return TRUE
+// Single-pref update from the auto-renderer.
 
-		// Single-pref update from the auto-renderer.
-		if("dq_update_preference")
-			var/key = params["key"]
-			var/value = params["value"]
-			var/datum/preference/pref = GLOB.preference_entries_by_key[key]
-			if(!pref)
-				return FALSE
-			// Hidden / managed / editor-owned prefs are not reachable from the raw wire —
-			// see /datum/preference/proc/is_client_writable.
-			if(!pref.is_client_writable(preferences()))
-				log_world("dq_update_preference: [ui.user?.ckey] attempted to write non-client-writable pref [key]")
-				return FALSE
-			preferences().update_preference(pref, value)
-			return TRUE
+UI_ACT(/datum/preference_middleware/character_setup, "dq_update_preference", ui_act_dq_update_preference, UI_ARG_TEXT("key"), UI_ARG_VALUE("value"))
+UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_update_preference)
+	var/key = params["key"]
+	var/value = params["value"]
+	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
+	if(!pref)
+		return FALSE
+	// Hidden / managed / editor-owned prefs are not reachable from the raw wire —
+	// see /datum/preference/proc/is_client_writable.
+	if(!pref.is_client_writable(preferences()))
+		log_world("dq_update_preference: [ui.user?.ckey] attempted to write non-client-writable pref [key]")
+		return FALSE
+	preferences().update_preference(pref, value)
+	return TRUE
 
-		// Color picker for /datum/preference/color/* widgets. The React side has no
-		// reliable native color input, so it asks BYOND to open tgui_color_picker; the
-		// chosen value is written through the same update_preference path so constraints
-		// and apply-hooks fire identically to a typed write.
-		if("dq_pick_color")
-			var/key = params["key"]
-			var/datum/preference/pref = GLOB.preference_entries_by_key[key]
-			if(!pref)
-				return FALSE
-			if(!pref.is_client_writable(preferences()))
-				return FALSE
-			var/current = preferences().read_preference(pref.type)
-			// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
-			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), receiver = preferences(), title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences(), pref_key = key, ui_refresh = preferences(), ui_refresh_if_true = TRUE)
-			return TRUE
+// Color picker for /datum/preference/color subtypes' widgets. The React side has no
+// reliable native color input, so it asks BYOND to open tgui_color_picker; the
+// chosen value is written through the same update_preference path so constraints
+// and apply-hooks fire identically to a typed write.
 
-		// Atomic multi-pref operation handled by a registered editor.
-		if("dq_editor_action")
-			var/editor_key = params["editor"]
-			var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
-			if(!editor)
-				return FALSE
-			var/result = editor.handle_action(preferences(), params["action"], params["params"], ui.user)
-			// Switching human/robot/pAI mode changes which category groups exist.
-			// Drop the structure cache and bump its version; each pooled browser
-			// receives the new active-category patch on its next update.
-			if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
-				preferences().dq_invalidate_category_cache()
-			return (result == PREF_UPDATE_ACCEPTED)
+UI_ACT(/datum/preference_middleware/character_setup, "dq_pick_color", ui_act_dq_pick_color, UI_ARG_VALUE("key"))
+UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_pick_color)
+	var/key = params["key"]
+	var/datum/preference/pref = GLOB.preference_entries_by_key[key]
+	if(!pref)
+		return FALSE
+	if(!pref.is_client_writable(preferences()))
+		return FALSE
+	var/current = preferences().read_preference(pref.type)
+	// The pick is re-checked (same prefs, still accessible) and written in pref_color_picked().
+	om_ask(ui.user, /datum/om/prompt/color/prefs/entry, TYPE_PROC_REF(/datum/preferences, pref_color_picked), receiver = preferences(), title = "Color", message = "Pick a color", default = current || "#000000", preferences = preferences(), pref_key = key, ui_refresh = preferences(), ui_refresh_if_true = TRUE)
+	return TRUE
+
+// Atomic multi-pref operation handled by a registered editor.
+
+UI_ACT(/datum/preference_middleware/character_setup, "dq_editor_action", ui_act_dq_editor_action, UI_ARG_TEXT("action", 128), UI_ARG_TEXT("editor", 128), UI_ARG_LIST("params"))
+UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_editor_action)
+	var/editor_key = params["editor"]
+	var/datum/preference_editor/editor = GLOB.preference_editors_by_key[editor_key]
+	if(!editor)
+		return FALSE
+	var/result = editor.handle_action(preferences(), params["action"], params["params"], ui.user)
+	// Switching human/robot/pAI mode changes which category groups exist.
+	// Drop the structure cache and bump its version; each pooled browser
+	// receives the new active-category patch on its next update.
+	if(result == PREF_UPDATE_ACCEPTED && editor_key == "species_picker")
+		preferences().dq_invalidate_category_cache()
+	return (result == PREF_UPDATE_ACCEPTED)
 
 /// A colour for one /datum/preference/color entry. Re-checked: the entry is still accessible.
 /datum/om/prompt/color/prefs/entry

@@ -111,11 +111,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/atmospherics/unary/cryo_cell/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Cryo", "Cryo Cell") // 520, 470
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/unary/cryo_cell, "Cryo", UI_TITLE("Cryo Cell"))
 
 /obj/machinery/atmospherics/unary/cryo_cell/tgui_data(mob/user)
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_CRYO)
@@ -155,32 +151,45 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 
 	return data
 
-/obj/machinery/atmospherics/unary/cryo_cell/tgui_act(action, params, datum/tgui/ui)
+/obj/machinery/atmospherics/unary/cryo_cell/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(..() || ui.user == occupant)
-		return TRUE
+	if(ui.user == occupant)
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOn", ui_act_switchon)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchon)
 	. = TRUE
-	switch(action)
-		if("switchOn")
-			set_on(1)
-			MACHINE_WAKE(src)
-			update_icon()
-		if("switchOff")
-			set_on(0)
-			update_icon()
-		if("ejectBeaker")
-			if(beaker)
-				beaker.forceMove(get_step(src.loc, SOUTH))
-				beaker = null
-				update_icon()
-		if("ejectOccupant")
-			if(!occupant || isslime(ui.user) || ispAI(ui.user))
-				return 0 // don't update UIs attached to this object
-			go_out()
-		else
-			return FALSE
+	set_on(1)
+	MACHINE_WAKE(src)
+	update_icon()
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "switchOff", ui_act_switchoff)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_switchoff)
+	. = TRUE
+	set_on(0)
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectBeaker", ui_act_ejectbeaker)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectbeaker)
+	. = TRUE
+	if(beaker)
+		beaker.forceMove(get_step(src.loc, SOUTH))
+		beaker = null
+		update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/atmospherics/unary/cryo_cell, "ejectOccupant", ui_act_ejectoccupant)
+UI_ACT_PROC(/obj/machinery/atmospherics/unary/cryo_cell, ui_act_ejectoccupant)
+	. = TRUE
+	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
+	if(!occupant || isslime(ui.user) || ispAI(ui.user))
+		return 0 // don't update UIs attached to this object
+	go_out()
 	add_fingerprint(ui.user)
 
 /// Old attackby. It never called ..(), so every item stops here.

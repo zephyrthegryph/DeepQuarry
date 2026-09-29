@@ -1145,8 +1145,8 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(selecting_ghostrole)
 		return
 
-	var/datum/tgui_module/ghost_spawn_menu/ui = new(src)
-	ui.tgui_interact(src)
+	var/datum/tgui_module/ghost_spawn_menu/menu = new(src)
+	menu.tgui_interact(src)
 
 /mob/observer/dead/verb/findautoresleever()
 	set category = "Ghost.Join"

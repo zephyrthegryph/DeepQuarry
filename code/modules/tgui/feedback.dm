@@ -1,11 +1,7 @@
 /datum/tgui_feedback
 	var/selected_window
 
-/datum/tgui_feedback/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TguiFeedback", "TGUI Feedback Submission")
-		ui.open()
+DECLARE_UI(/datum/tgui_feedback, "TguiFeedback", UI_TITLE("TGUI Feedback Submission"))
 
 /datum/tgui_feedback/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -26,19 +22,18 @@
 
 	return data
 
-/datum/tgui_feedback/tgui_act(action, params)
-	if(..())
+UI_ACT(/datum/tgui_feedback, "pick_window", ui_act_pick_window, UI_ARG_TEXT("win"))
+UI_ACT_PROC(/datum/tgui_feedback, ui_act_pick_window)
+	if(!params["win"])
 		return
-	switch(action)
-		if("pick_window")
-			if(!params["win"])
-				return
 
-			selected_window = sanitize(params["win"])
-			. = TRUE
-		if("submit")
-			message_admins("TGUI Feedback: Rating [params["rating"]] - Comment: [params["comment"]]")
-			. = TRUE
+	selected_window = sanitize(params["win"])
+	. = TRUE
+
+UI_ACT(/datum/tgui_feedback, "submit", ui_act_submit, UI_ARG_TEXT("comment"), UI_ARG_TEXT("rating"))
+UI_ACT_PROC(/datum/tgui_feedback, ui_act_submit)
+	message_admins("TGUI Feedback: Rating [params["rating"]] - Comment: [params["comment"]]")
+	. = TRUE
 
 /client/verb/tgui_feedback()
 	set name = "Submit TGUI Feedback"

@@ -174,11 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/flamethrower/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Flamethrower", name)
-		ui.open()
+DECLARE_UI(/obj/item/flamethrower, "Flamethrower")
 
 /obj/item/flamethrower/tgui_data(mob/user)
 	var/list/dat = list()
@@ -192,36 +188,41 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 	dat["fuel_kpa"] = check_fuel() ? ptank.air_contents.return_pressure() : 0
 	return dat
 
-/obj/item/flamethrower/tgui_act(action, params, datum/tgui/ui)
+/obj/item/flamethrower/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat || usr.restrained() || usr.lying)
 		return FALSE
-	if(..())
-		return FALSE
+	return TRUE
 
-	switch(action)
-		if("light")
-			if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
-				return FALSE
-			lit = !lit
-			if(lit)
-				om_task_periodic(src, PERIODIC_SLOW)
-				play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
-			else
-				play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
-			update_icon()
-			return TRUE
-		if("amount")
-			throw_amount = text2num(params["amount"])
-			throw_amount = clamp(throw_amount,THROWER_MIN,THROWER_MAX)
-			return TRUE
-		if("remove")
-			if(!ptank)
-				return FALSE
-			usr.put_in_hands(ptank)
-			ptank = null
-			lit = 0
-			update_icon()
-			return TRUE
+UI_ACT(/obj/item/flamethrower, "light", ui_act_light)
+UI_ACT_PROC(/obj/item/flamethrower, ui_act_light)
+	if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
+		return FALSE
+	lit = !lit
+	if(lit)
+		om_task_periodic(src, PERIODIC_SLOW)
+		play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
+	else
+		play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/item/flamethrower, "amount", ui_act_amount, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/obj/item/flamethrower, ui_act_amount)
+	throw_amount = params["amount"]
+	throw_amount = clamp(throw_amount,THROWER_MIN,THROWER_MAX)
+	return TRUE
+
+UI_ACT(/obj/item/flamethrower, "remove", ui_act_remove)
+UI_ACT_PROC(/obj/item/flamethrower, ui_act_remove)
+	if(!ptank)
+		return FALSE
+	usr.put_in_hands(ptank)
+	ptank = null
+	lit = 0
+	update_icon()
+	return TRUE
 
 // Projectile
 /obj/item/projectile/bullet/dragon/flamethrower

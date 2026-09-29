@@ -32,16 +32,16 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 			MACHINE_WAKE(src)
 
 
-/obj/machinery/embedded_controller/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	if(LAZYLEN(valid_actions))
-		if(action in valid_actions)
-			MACHINE_WAKE(src)
-			program.receive_user_command(action)
-			return TRUE
-	if(ui.user)
-		add_fingerprint(ui.user)
+/// The controller's actions are its program's commands, listed per type in valid_actions.
+UI_ACT_FALLBACK(/obj/machinery/embedded_controller, ui_act_program_command)
+UI_ACT_PROC(/obj/machinery/embedded_controller, ui_act_program_command)
+	if(user)
+		add_fingerprint(user)
+	if(!(action in valid_actions))
+		return FALSE
+	MACHINE_WAKE(src)
+	program.receive_user_command(action)
+	return TRUE
 
 /obj/machinery/embedded_controller/machine_step()
 	if(program)
@@ -76,11 +76,7 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/embedded_controller/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EmbeddedController", src)
-		ui.open()
+DECLARE_UI(/obj/machinery/embedded_controller, "EmbeddedController")
 
 //
 // Embedded controller with a radio! (Most things (All things?) use this)

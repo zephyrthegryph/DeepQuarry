@@ -76,11 +76,7 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_input_keycombo/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "KeyComboModal")
-		ui.open()
+DECLARE_UI(/datum/tgui_input_keycombo, "KeyComboModal")
 
 /datum/tgui_input_keycombo/tgui_close(mob/user)
 	. = ..()
@@ -104,20 +100,18 @@
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-/datum/tgui_input_keycombo/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if (.)
-		return
-	switch(action)
-		if("submit")
-			set_entry(params["entry"])
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+UI_ACT(/datum/tgui_input_keycombo, "submit", ui_act_submit, UI_ARG_VALUE("entry"))
+UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_submit)
+	set_entry(params["entry"])
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_keycombo, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_input_keycombo, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_input_keycombo/proc/set_entry(entry)
 	src.entry = entry

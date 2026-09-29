@@ -166,20 +166,13 @@ DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 		get_asset_datum(/datum/asset/spritesheet_batched/maint_vendor) //for the item icons
 	)
 
-/obj/machinery/maint_vendor/tgui_act(action,params,datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/maint_vendor, "purchase", ui_act_purchase, UI_ARG_VALUE("index"))
+UI_ACT_PROC(/obj/machinery/maint_vendor, ui_act_purchase)
+	var/datum/maint_recycler_vendor_entry/entry = product_datums[params["index"]]
+	attempt_purchase(ui.user,entry)
+	return TRUE
 
-	if(action == "purchase")
-		var/datum/maint_recycler_vendor_entry/entry = product_datums[params["index"]]
-		attempt_purchase(ui.user,entry)
-		return TRUE
-
-/obj/machinery/maint_vendor/tgui_interact(mob/user,datum/tgui/ui)
-	ui = SStgui.try_update_ui(user,src,ui)
-	if(!ui)
-		ui = new(user,src,"RecyclerVendor")
-		ui.open()
+DECLARE_UI(/obj/machinery/maint_vendor, "RecyclerVendor")
 
 /obj/machinery/maint_vendor/tgui_close(mob/user)
 	. = ..()

@@ -109,12 +109,7 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	else
 		return GLOB.tgui_default_state
 
-/obj/item/canvas/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Canvas", name)
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/obj/item/canvas, "Canvas")
 
 /// Old attackby.
 /obj/item/canvas/proc/interaction_item(mob/living/user, obj/item/I, datum/interaction/interaction)
@@ -138,27 +133,32 @@ DECLARE_INTERACTIONS(/obj/item/canvas, \
 	. = ..()
 	tgui_interact(user)
 
-/obj/item/canvas/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(. || finalized)
-		return
-	switch(action)
-		if("paint")
-			var/obj/item/I = ui.user.get_active_hand()
-			var/color = get_paint_tool_color(I)
-			if(!color)
-				return FALSE
-			var/x = text2num(params["x"])
-			var/y = text2num(params["y"])
-			if(grid?[x]?[y])
-				grid[x][y] = color
-			used = TRUE
-			update_appearance()
-			. = TRUE
-		if("finalize")
-			. = TRUE
-			if(!finalized)
-				finalize(ui.user)
+/obj/item/canvas/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(finalized)
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/canvas, "paint", ui_act_paint, UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/obj/item/canvas, ui_act_paint)
+	var/obj/item/I = ui.user.get_active_hand()
+	var/color = get_paint_tool_color(I)
+	if(!color)
+		return FALSE
+	var/x = params["x"]
+	var/y = params["y"]
+	if(grid?[x]?[y])
+		grid[x][y] = color
+	used = TRUE
+	update_appearance()
+	. = TRUE
+
+UI_ACT(/obj/item/canvas, "finalize", ui_act_finalize)
+UI_ACT_PROC(/obj/item/canvas, ui_act_finalize)
+	. = TRUE
+	if(!finalized)
+		finalize(ui.user)
 
 /obj/item/canvas/proc/finalize(mob/user)
 	finalized = TRUE

@@ -25,11 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 	tgui_interact(user) //Activates tgui. Bless tgui.
 	return
 
-/obj/item/starcaster_news/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "StarcasterCh", name)
-		ui.open()
+DECLARE_UI(/obj/item/starcaster_news, "StarcasterCh")
 
 /obj/item/starcaster_news/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Mostly ripped off from news_browser.dm
 	var/list/data = list()
@@ -56,25 +52,26 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 
 	return data
 
-/obj/item/starcaster_news/tgui_act(action, list/params, datum/tgui/ui) //Also ripped from news_browser.dm. Bless tgui
-	if(..())
+UI_ACT(/obj/item/starcaster_news, "PRG_openarticle", ui_act_prg_openarticle, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_openarticle)
+	. = TRUE
+	if(loaded_article())
 		return TRUE
-	switch(action)
-		if("PRG_openarticle")
-			. = TRUE
-			if(loaded_article())
-				return TRUE
 
-			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
-				if(N.uid == text2num(params["uid"]))
-					loaded_article_owned = N.clone()
-					break
-		if("PRG_reset")
-			. = TRUE
-			loaded_article_owned = null
-		if("PRG_toggle_archived")
-			. = TRUE
-			show_archived = !show_archived
+	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
+		if(N.uid == params["uid"])
+			loaded_article_owned = N.clone()
+			break
+
+UI_ACT(/obj/item/starcaster_news, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_reset)
+	. = TRUE
+	loaded_article_owned = null
+
+UI_ACT(/obj/item/starcaster_news, "PRG_toggle_archived", ui_act_prg_toggle_archived)
+UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_toggle_archived)
+	. = TRUE
+	show_archived = !show_archived
 
 /// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
 /obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article

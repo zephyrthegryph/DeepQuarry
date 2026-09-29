@@ -112,27 +112,27 @@
 			download_netspeed = NTNETSPEED_ETHERNET
 	download_completion += download_netspeed
 
-/datum/computer_file/program/ntnetdownload/tgui_act(action, params)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_downloadfile")
-			if(!downloaded_file)
-				begin_file_download(params["filename"])
-			else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
-				LAZYADD(downloads_queue, params["filename"])
-			return TRUE
-		if("PRG_removequeued")
-			LAZYREMOVE(downloads_queue, params["filename"])
-			return TRUE
-		if("PRG_reseterror")
-			if(downloaderror)
-				download_completion = 0
-				download_netspeed = 0
-				downloaded_file = null
-				downloaderror = ""
-			return TRUE
-	return FALSE
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_VALUE("filename"))
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_downloadfile)
+	if(!downloaded_file)
+		begin_file_download(params["filename"])
+	else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
+		LAZYADD(downloads_queue, params["filename"])
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_removequeued", ui_act_prg_removequeued, UI_ARG_VALUE("filename"))
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_removequeued)
+	LAZYREMOVE(downloads_queue, params["filename"])
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_reseterror", ui_act_prg_reseterror)
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
+	if(downloaderror)
+		download_completion = 0
+		download_netspeed = 0
+		downloaded_file = null
+		downloaderror = ""
+	return TRUE
 
 /datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
 	my_computer_handle = om_handle(computer())

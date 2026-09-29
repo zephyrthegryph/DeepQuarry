@@ -223,11 +223,7 @@
 		return ..()
 	return STATUS_CLOSE
 
-/obj/machinery/particle_accelerator/control_box/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ParticleAccelerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/particle_accelerator/control_box, "ParticleAccelerator")
 
 /obj/machinery/particle_accelerator/control_box/tgui_data(mob/user)
 	var/list/data = list()
@@ -236,30 +232,34 @@
 	data["strength"] = strength
 	return data
 
-/obj/machinery/particle_accelerator/control_box/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/machinery/particle_accelerator/control_box, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_power)
+	if(wires.is_cut(WIRE_POWER))
 		return
+	toggle_power(ui.user)
+	. = TRUE
+	update_icon()
 
-	switch(action)
-		if("power")
-			if(wires.is_cut(WIRE_POWER))
-				return
-			toggle_power(ui.user)
-			. = TRUE
-		if("scan")
-			part_scan()
-			. = TRUE
-		if("add_strength")
-			if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
-				return
-			add_strength(ui.user)
-			. = TRUE
-		if("remove_strength")
-			if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
-				return
-			remove_strength(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/particle_accelerator/control_box, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_scan)
+	part_scan()
+	. = TRUE
+	update_icon()
 
+UI_ACT(/obj/machinery/particle_accelerator/control_box, "add_strength", ui_act_add_strength)
+UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_add_strength)
+	if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
+		return
+	add_strength(ui.user)
+	. = TRUE
+	update_icon()
+
+UI_ACT(/obj/machinery/particle_accelerator/control_box, "remove_strength", ui_act_remove_strength)
+UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_strength)
+	if(wires.is_cut(WIRE_PARTICLE_STRENGTH))
+		return
+	remove_strength(ui.user)
+	. = TRUE
 	update_icon()
 
 /obj/machinery/particle_accelerator/control_box/pre_mapped

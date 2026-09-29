@@ -30,11 +30,7 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	if(holder())
 		holder().update_icon()
 
-/obj/item/assembly/signaler/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Signaler", name)
-		ui.open()
+DECLARE_UI(/obj/item/assembly/signaler, "Signaler")
 
 /obj/item/assembly/signaler/tgui_data(mob/user)
 	var/list/data = list()
@@ -44,30 +40,34 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 	return data
 
-/obj/item/assembly/signaler/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/assembly/signaler, "signal", ui_act_signal)
+UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_signal)
+	signal()
+	. = TRUE
+	update_icon()
 
-	switch(action)
-		if("signal")
-			signal()
-			. = TRUE
-		if("freq")
-			frequency = unformat_frequency(params["freq"])
-			frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
-			set_frequency(frequency)
-			. = TRUE
-		if("code")
-			code = text2num(params["code"])
-			code = clamp(round(code), 1, 100)
-			. = TRUE
-		if("reset")
-			if(params["reset"] == "freq")
-				set_frequency(initial(frequency))
-			else
-				code = initial(code)
-			. = TRUE
+UI_ACT(/obj/item/assembly/signaler, "freq", ui_act_freq, UI_ARG_VALUE("freq"))
+UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_freq)
+	frequency = unformat_frequency(params["freq"])
+	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
+	set_frequency(frequency)
+	. = TRUE
+	update_icon()
 
+UI_ACT(/obj/item/assembly/signaler, "code", ui_act_code, UI_ARG_NUM("code"))
+UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_code)
+	code = params["code"]
+	code = clamp(round(code), 1, 100)
+	. = TRUE
+	update_icon()
+
+UI_ACT(/obj/item/assembly/signaler, "reset", ui_act_reset, UI_ARG_TEXT("reset"))
+UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
+	if(params["reset"] == "freq")
+		set_frequency(initial(frequency))
+	else
+		code = initial(code)
+	. = TRUE
 	update_icon()
 
 /// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven

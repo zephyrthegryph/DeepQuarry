@@ -57,48 +57,59 @@
 
 ///// MAIN TGUI SCREEN /////
 
-/obj/machinery/computer/stockexchange/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/stockexchange/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if ("logout")
-			logged_in = null
+UI_ACT(/obj/machinery/computer/stockexchange, "logout", ui_act_logout)
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_logout)
+	logged_in = null
 
-		if("stocks_buy")
-			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
-			if (S)
-				buy_some_shares(S, ui.user)
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_buy", ui_act_stocks_buy, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_buy)
+	var/datum/stock/S = params["share"]
+	if (S)
+		buy_some_shares(S, ui.user)
 
-		if("stocks_sell")
-			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
-			if (S)
-				sell_some_shares(S, ui.user)
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_sell", ui_act_stocks_sell, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_sell)
+	var/datum/stock/S = params["share"]
+	if (S)
+		sell_some_shares(S, ui.user)
 
-		if("stocks_check")
-			screen = "logs"
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_check", ui_act_stocks_check)
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_check)
+	screen = "logs"
 
-		if("stocks_archive")
-			var/datum/stock/S = locate(params["share"])
-			if(S)
-				current_stock_handle = om_handle(S)
-				screen = "archive"
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_archive", ui_act_stocks_archive, UI_ARG_REF("share", null, /datum/stock))
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_archive)
+	var/datum/stock/S = params["share"]
+	if(S)
+		current_stock_handle = om_handle(S)
+		screen = "archive"
 
-		if("stocks_history")
-			var/datum/stock/S = locate_in_list(GLOB.stockExchange.stocks, params["share"])
-			if (S)
-				S.displayValues(ui.user)
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_history", ui_act_stocks_history, UI_ARG_REF("share", "proc:ui_source_glob_stockexchange_stocks", /datum/stock))
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_history)
+	var/datum/stock/S = params["share"]
+	if (S)
+		S.displayValues(ui.user)
 
-		if("stocks_backbutton")
-			current_stock_handle = null
-			screen = "stocks"
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_backbutton", ui_act_stocks_backbutton)
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_backbutton)
+	current_stock_handle = null
+	screen = "stocks"
 
-		if("stocks_cycle_view")
-			vmode++
-			if (vmode > 1)
-				vmode = 0
+UI_ACT(/obj/machinery/computer/stockexchange, "stocks_cycle_view", ui_act_stocks_cycle_view)
+UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
+	vmode++
+	if (vmode > 1)
+		vmode = 0
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()
+	return GLOB.stockExchange.stocks
 
 /obj/machinery/computer/stockexchange/tgui_data(mob/user)
 	var/list/data = list()
@@ -260,11 +271,7 @@
 
 	return data
 
-/obj/machinery/computer/stockexchange/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "StockExchange")
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/stockexchange, "StockExchange")
 
 ///// PROCS /////
 

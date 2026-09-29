@@ -18,11 +18,7 @@ DECLARE_REF(/datum/admins, "tgui_game_panel", PAIR, "owner_admin")
 /datum/game_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
 
-/datum/game_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GamePanel", "Game Panel")
-		ui.open()
+DECLARE_UI(/datum/game_panel, "GamePanel", UI_TITLE("Game Panel"))
 
 /datum/game_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -34,29 +30,35 @@ DECLARE_REF(/datum/admins, "tgui_game_panel", PAIR, "owner_admin")
 		"secret_mode" = GLOB.master_mode == "secret",
 	)
 
-/datum/game_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/game_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!owner_admin || !ui.user?.client || !check_rights_for(ui.user.client, R_ADMIN))
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("change_mode")
-			owner_admin.topic_internal(ui.user, list("c_mode" = "1"))
-			SStgui.update_uis(src)
-			return TRUE
-		if("force_secret")
-			owner_admin.topic_internal(ui.user, list("f_secret" = "1"))
-			SStgui.update_uis(src)
-			return TRUE
-		if("spawn_panel")
-			owner_admin.topic_internal(ui.user, list("spawn_panel" = "1"))
-			return TRUE
-		if("vsc")
-			var/setting = "[params["setting"]]"
-			owner_admin.topic_internal(ui.user, list("vsc" = setting))
-			return TRUE
+UI_ACT(/datum/game_panel, "change_mode", ui_act_change_mode)
+UI_ACT_PROC(/datum/game_panel, ui_act_change_mode)
+	owner_admin.topic_internal(ui.user, list("c_mode" = "1"))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_panel, "force_secret", ui_act_force_secret)
+UI_ACT_PROC(/datum/game_panel, ui_act_force_secret)
+	owner_admin.topic_internal(ui.user, list("f_secret" = "1"))
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/game_panel, "spawn_panel", ui_act_spawn_panel)
+UI_ACT_PROC(/datum/game_panel, ui_act_spawn_panel)
+	owner_admin.topic_internal(ui.user, list("spawn_panel" = "1"))
+	return TRUE
+
+UI_ACT(/datum/game_panel, "vsc", ui_act_vsc, UI_ARG_TEXT("setting"))
+UI_ACT_PROC(/datum/game_panel, ui_act_vsc)
+	var/setting = "[params["setting"]]"
+	owner_admin.topic_internal(ui.user, list("vsc" = setting))
+	return TRUE
 
 /datum/admins
 	var/datum/game_panel/tgui_game_panel

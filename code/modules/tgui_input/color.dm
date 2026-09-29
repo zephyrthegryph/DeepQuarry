@@ -79,12 +79,10 @@
 	while (!choice && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_color_picker/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ColorPickerModal")
-		ui.open()
-		ui.set_autoupdate(timeout > 0)
+DECLARE_UI(/datum/tgui_color_picker, "ColorPickerModal")
+
+/datum/tgui_color_picker/ui_opening(mob/user, datum/tgui/ui)
+	ui.set_autoupdate(timeout > 0)
 
 /datum/tgui_color_picker/tgui_close(mob/user)
 	if(user)
@@ -110,42 +108,44 @@
 		.["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	.["presets"] = preset_colors
 
-/datum/tgui_color_picker/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if (.)
+UI_ACT(/datum/tgui_color_picker, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
+UI_ACT_PROC(/datum/tgui_color_picker, ui_act_submit)
+	var/raw_data = lowertext(params["entry"])
+	var/hex = sanitize_hexcolor(raw_data)
+	if (!hex)
 		return
-	switch(action)
-		if("submit")
-			var/raw_data = lowertext(params["entry"])
-			var/hex = sanitize_hexcolor(raw_data)
-			if (!hex)
-				return
-			set_choice(hex)
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("null")
-			set_choice(null)
-			SStgui.close_uis(src)
-			return TRUE
-		if("preset")
-			var/raw_data = lowertext(params["color"])
-			var/index = text2num(params["index"])
-			var/list/entries = splittext(preset_colors, ";")
-			while(LAZYLEN(entries) < 20)
-				entries += "#FFFFFF"
-			if(LAZYLEN(entries) > 20)
-				entries.Cut(21)
-			var/hex = sanitize_hexcolor(raw_data)
-			if (!hex || !isnum(index) || entries[index] == hex)
-				return
-			entries[index] = hex
-			preset_colors = entries.Join(";")
-			return TRUE
+	set_choice(hex)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_color_picker, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_color_picker, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_color_picker, "null", ui_act_null)
+UI_ACT_PROC(/datum/tgui_color_picker, ui_act_null)
+	set_choice(null)
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_color_picker, "preset", ui_act_preset, UI_ARG_TEXT("color"), UI_ARG_NUM("index"))
+UI_ACT_PROC(/datum/tgui_color_picker, ui_act_preset)
+	var/raw_data = lowertext(params["color"])
+	var/index = params["index"]
+	var/list/entries = splittext(preset_colors, ";")
+	while(LAZYLEN(entries) < 20)
+		entries += "#FFFFFF"
+	if(LAZYLEN(entries) > 20)
+		entries.Cut(21)
+	var/hex = sanitize_hexcolor(raw_data)
+	if (!hex || !isnum(index) || entries[index] == hex)
+		return
+	entries[index] = hex
+	preset_colors = entries.Join(";")
+	return TRUE
 
 /datum/tgui_color_picker/proc/set_choice(choice)
 	src.choice = choice

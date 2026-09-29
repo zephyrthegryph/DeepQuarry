@@ -67,57 +67,58 @@
 /obj/machinery/computer/telecomms/monitor/proc/telemonitor_powered(mob/actor, atom/target, obj/item/held)
 	return operable()
 
-/obj/machinery/computer/telecomms/monitor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TelecommsMachineBrowser", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/telecomms/monitor, "TelecommsMachineBrowser")
 
-/obj/machinery/computer/telecomms/monitor/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+/obj/machinery/computer/telecomms/monitor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	add_fingerprint(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "view", ui_act_view, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_view)
+	for(var/obj/machinery/telecomms/T in machinelist)
+		if(T.id == params["id"])
+			SelectedMachine_handle = om_handle(T)
+			break
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "mainmenu", ui_act_mainmenu)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_mainmenu)
+	SelectedMachine_handle = null
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "release", ui_act_release)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_release)
+	machinelist = list()
+	SelectedMachine_handle = null
+	. = TRUE
+
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_scan)
+	if(length(machinelist) > 0)
+		set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
 		return TRUE
 
-	add_fingerprint(ui.user)
+	for(var/obj/machinery/telecomms/T in range(25, src))
+		if(T.network == network)
+			LAZYADD(machinelist, T)
 
-	switch(action)
-		if("view")
-			for(var/obj/machinery/telecomms/T in machinelist)
-				if(T.id == params["id"])
-					SelectedMachine_handle = om_handle(T)
-					break
-			. = TRUE
+	if(!length(machinelist))
+		set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
+	else
+		set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
+	. = TRUE
 
-		if("mainmenu")
-			SelectedMachine_handle = null
-			. = TRUE
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "network", ui_act_network)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_network)
+	om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
+	. = TRUE
 
-		if("release")
-			machinelist = list()
-			SelectedMachine_handle = null
-			. = TRUE
-
-		if("scan")
-			if(length(machinelist) > 0)
-				set_temp("FAILED: CANNOT PROBE WHEN BUFFER FULL", "bad")
-				return TRUE
-
-			for(var/obj/machinery/telecomms/T in range(25, src))
-				if(T.network == network)
-					LAZYADD(machinelist, T)
-
-			if(!length(machinelist))
-				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
-			else
-				set_temp("[length(machinelist)] ENTITIES LOCATED & BUFFERED", "good")
-			. = TRUE
-
-		if("network")
-			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(network_entered), message = "Which network do you want to view?", title = "Comm Monitor", default = network, max_length = 15, requires = PROMPT_USABLE)
-			. = TRUE
-
-		if("cleartemp")
-			temp = null
-			. = TRUE
+UI_ACT(/obj/machinery/computer/telecomms/monitor, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_cleartemp)
+	temp = null
+	. = TRUE
 
 /obj/machinery/computer/telecomms/monitor/proc/network_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer

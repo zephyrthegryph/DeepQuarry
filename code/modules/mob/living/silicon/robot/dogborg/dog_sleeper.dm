@@ -281,11 +281,10 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 /obj/item/dogborg/sleeper/tgui_state(mob/user)
 	return GLOB.tgui_conscious_state
 
-/obj/item/dogborg/sleeper/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "RobotSleeper", "[name] Console")
-		ui.open()
+DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
+
+/obj/item/dogborg/sleeper/ui_title(mob/user)
+	return "[name] Console"
 
 /obj/item/dogborg/sleeper/tgui_static_data(mob/user)
 	var/list/data = ..()
@@ -361,67 +360,81 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 		"techweb_name" = handler?.linked_web() ? "[handler.linked_web().id] / [handler.linked_web().organization]" : null
 	)
 	return data
-/obj/item/dogborg/sleeper/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/item/dogborg/sleeper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(ui.user == patient)
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("eject")
-			go_out()
-			return TRUE
-		if("clean")
-			if(cleaning)
-				return FALSE
-			cleaning = TRUE
-			drain(startdrain)
-			om_task_periodic(src, PERIODIC_SLOW)
-			update_patient()
-			if(patient)
-				to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
-			return TRUE
-		if("analyze")
-			med_analyzer.scan_mob(patient,hound)
-			return TRUE
-		if("port")
-			var/new_port = params["value"]
-			if(!(new_port in list("disposal", "ingestion")))
-				return FALSE
-			eject_port = new_port
-			return TRUE
-		if("ingest")
-			vore_ingest_all()
-			return TRUE
-		if("deliveryslot")
-			var/new_tag = params["value"]
-			if(!(new_tag in deliverylists))
-				return FALSE
-			delivery_tag = new_tag
-			return TRUE
-		if("slot_eject")
-			if(!length(deliverylists[delivery_tag]))
-				return FALSE
-			hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
-			for(var/atom/movable/content in deliverylists[delivery_tag])
-				content.forceMove(get_turf(src))
-			play_sfx(src, SFX_EFFECTS_SPLAT)
-			update_patient()
-			deliverylists[delivery_tag].Cut()
-			return TRUE
-		if("inject")
-			if(!patient || (patient.stat & DEAD))
-				to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
-				return FALSE
-			var/selected_reagent = params["value"]
-			if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
-				return FALSE
-			if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
-				inject_chem(ui.user, selected_reagent)
-			else
-				to_chat(ui.user, span_notice("ERROR: Subject is not in stable condition for injections."))
-			return TRUE
+UI_ACT(/obj/item/dogborg/sleeper, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_eject)
+	go_out()
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "clean", ui_act_clean)
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_clean)
+	if(cleaning)
+		return FALSE
+	cleaning = TRUE
+	drain(startdrain)
+	om_task_periodic(src, PERIODIC_SLOW)
+	update_patient()
+	if(patient)
+		to_chat(patient, span_danger("[hound.name]'s [src.name] fills with caustic enzymes around you!"))
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "analyze", ui_act_analyze)
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_analyze)
+	med_analyzer.scan_mob(patient,hound)
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "port", ui_act_port, UI_ARG_VALUE("value"))
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_port)
+	var/new_port = params["value"]
+	if(!(new_port in list("disposal", "ingestion")))
+		return FALSE
+	eject_port = new_port
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "ingest", ui_act_ingest)
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_ingest)
+	vore_ingest_all()
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "deliveryslot", ui_act_deliveryslot, UI_ARG_VALUE("value"))
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_deliveryslot)
+	var/new_tag = params["value"]
+	if(!(new_tag in deliverylists))
+		return FALSE
+	delivery_tag = new_tag
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "slot_eject", ui_act_slot_eject)
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
+	if(!length(deliverylists[delivery_tag]))
+		return FALSE
+	hound.visible_message(span_warning("[hound.name] empties out their cargo compartment via their [eject_port] port."), span_notice("You empty your cargo compartment via your [eject_port] port."))
+	for(var/atom/movable/content in deliverylists[delivery_tag])
+		content.forceMove(get_turf(src))
+	play_sfx(src, SFX_EFFECTS_SPLAT)
+	update_patient()
+	deliverylists[delivery_tag].Cut()
+	return TRUE
+
+UI_ACT(/obj/item/dogborg/sleeper, "inject", ui_act_inject, UI_ARG_VALUE("value"))
+UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
+	if(!patient || (patient.stat & DEAD))
+		to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))
+		return FALSE
+	var/selected_reagent = params["value"]
+	if(!(selected_reagent in TYPE_TABLE_GET(src, sleeper_injection_chems)))
+		return FALSE
+	if(selected_reagent == REAGENT_ID_INAPROVALINE || patient.vitality() > min_vitality)
+		inject_chem(ui.user, selected_reagent)
+	else
+		to_chat(ui.user, span_notice("ERROR: Subject is not in stable condition for injections."))
+	return TRUE
 
 /obj/item/dogborg/sleeper/proc/inject_chem(mob/user, chem)
 	if(patient && patient.reagents)

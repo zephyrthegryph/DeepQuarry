@@ -92,11 +92,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 /obj/machinery/suit_storage_unit/tgui_state(mob/user)
 	return GLOB.tgui_notcontained_state
 
-/obj/machinery/suit_storage_unit/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SuitStorageUnit", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/suit_storage_unit, "SuitStorageUnit")
 
 /obj/machinery/suit_storage_unit/tgui_data()
 	var/mob/living/carbon/human/OCCUPANT = slot_item_real(OCCUPANT_SLOT_SUIT_STORAGE)
@@ -129,43 +125,71 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 		data["occupied"] = FALSE
 	return data
 
-/obj/machinery/suit_storage_unit/tgui_act(action, params, datum/tgui/ui) //I fucking HATE this proc
-	if(..() || isUV || isbroken)
-		return TRUE
+/obj/machinery/suit_storage_unit/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(isUV || isbroken)
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("door")
-			toggle_open(ui.user)
-			. = TRUE
-		if("dispense")
-			switch(params["item"])
-				if("helmet")
-					dispense_helmet(ui.user)
-				if("mask")
-					dispense_mask(ui.user)
-				if("suit")
-					dispense_suit(ui.user)
-			. = TRUE
-		if("uv")
-			start_UV(ui.user)
-			. = TRUE
-		if("lock")
-			toggle_lock(ui.user)
-			. = TRUE
-		if("eject_guy")
-			eject_occupant(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/suit_storage_unit, "door", ui_act_door)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_door)
+	toggle_open(ui.user)
+	. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/suit_storage_unit, "dispense", ui_act_dispense, UI_ARG_TEXT("item"))
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_dispense)
+	switch(params["item"])
+		if("helmet")
+			dispense_helmet(ui.user)
+		if("mask")
+			dispense_mask(ui.user)
+		if("suit")
+			dispense_suit(ui.user)
+	. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/suit_storage_unit, "uv", ui_act_uv)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_uv)
+	start_UV(ui.user)
+	. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/suit_storage_unit, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_lock)
+	toggle_lock(ui.user)
+	. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/suit_storage_unit, "eject_guy", ui_act_eject_guy)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_eject_guy)
+	eject_occupant(ui.user)
+	. = TRUE
 
 	// Panel Open stuff
-	if(!. && panelopen)
-		switch(action)
-			if("toggleUV")
-				toggleUV(ui.user)
-				. = TRUE
-			if("togglesafeties")
-				togglesafeties(ui.user)
-				. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/suit_storage_unit, "toggleUV", ui_act_toggleuv)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_toggleuv)
+	if(!(!. && panelopen))
+		return FALSE
+	toggleUV(ui.user)
+	. = TRUE
+	update_icon()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/suit_storage_unit, "togglesafeties", ui_act_togglesafeties)
+UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
+	if(!(!. && panelopen))
+		return FALSE
+	togglesafeties(ui.user)
+	. = TRUE
 	update_icon()
 	add_fingerprint(ui.user)
 

@@ -34,11 +34,7 @@ DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_pan
 /datum/view_variables_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
 
-/datum/view_variables_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ViewVariables", "Variables")
-		ui.open()
+DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
 
 /// Parses the legacy "<option value='[link]'>[name]</option>" strings into
 /// typed (name, link) records. Separator rows ("---") and the empty-link
@@ -155,35 +151,40 @@ DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_pan
 
 	return data
 
-/datum/view_variables_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/view_variables_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!owner())
-		return
-	switch(action)
-		if("refresh")
-			var/datum/refresh_target = thing
-			if(refresh_target && !QDELETED(refresh_target))
-				owner().debug_variables(refresh_target)
-			SStgui.update_uis(src)
-			return TRUE
-		if("forward_topic")
-			// The variable HTML and dropdown links all use the byond:// scheme
-			// dispatched through /client.Topic with _src_=vars (or _src_=holder
-			// for some operations). dispatch_forwarded_topic mirrors what the
-			// browser would do.
-			dispatch_forwarded_topic(ui.user, thing, "[params["href"]]")
-			SStgui.update_uis(src)
-			return TRUE
-		if("dropdown_select")
-			// React passes us the chosen option's link string verbatim. The
-			// link is already a fully-formed byond:// querystring.
-			var/href_str = "[params["link"]]"
-			if(length(href_str))
-				dispatch_forwarded_topic(ui.user, thing, href_str)
-				SStgui.update_uis(src)
-			return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/view_variables_panel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/view_variables_panel, ui_act_refresh)
+	var/datum/refresh_target = thing
+	if(refresh_target && !QDELETED(refresh_target))
+		owner().debug_variables(refresh_target)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/view_variables_panel, "forward_topic", ui_act_forward_topic, UI_ARG_TEXT("href"))
+UI_ACT_PROC(/datum/view_variables_panel, ui_act_forward_topic)
+	// The variable HTML and dropdown links all use the byond:// scheme
+	// dispatched through /client.Topic with _src_=vars (or _src_=holder
+	// for some operations). dispatch_forwarded_topic mirrors what the
+	// browser would do.
+	dispatch_forwarded_topic(ui.user, thing, "[params["href"]]")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/view_variables_panel, "dropdown_select", ui_act_dropdown_select, UI_ARG_TEXT("link"))
+UI_ACT_PROC(/datum/view_variables_panel, ui_act_dropdown_select)
+	// React passes us the chosen option's link string verbatim. The
+	// link is already a fully-formed byond:// querystring.
+	var/href_str = "[params["link"]]"
+	if(length(href_str))
+		dispatch_forwarded_topic(ui.user, thing, href_str)
+		SStgui.update_uis(src)
+	return TRUE
 
 /client/proc/debug_variables(datum/thing in world)
 	if(!usr.client || !check_rights_for(usr.client, R_HOLDER))

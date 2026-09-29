@@ -10,56 +10,60 @@
 	/// Initial search value from the latest command
 	var/init_value = null
 
-/datum/spawn_menu/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if (!ui)
-		ui = new(user, src, "SpawnSearch")
-		ui.open()
+DECLARE_UI(/datum/spawn_menu, "SpawnSearch")
 
 /datum/spawn_menu/tgui_state(mob/user)
 	return ADMIN_STATE(R_SPAWN)
 
-/datum/spawn_menu/tgui_act(action, params, datum/tgui/ui)
-	if (..() || !check_rights_for(ui.user.client, R_SPAWN))
+/datum/spawn_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
 		return FALSE
+	if(!check_rights_for(ui.user.client, R_SPAWN))
+		return FALSE
+	return TRUE
 
-	switch (action)
-		if ("setRegexSearch")
-			regex_search = params["regexSearch"]
-			return TRUE
+UI_ACT(/datum/spawn_menu, "setRegexSearch", ui_act_setregexsearch, UI_ARG_VALUE("regexSearch"))
+UI_ACT_PROC(/datum/spawn_menu, ui_act_setregexsearch)
+	regex_search = params["regexSearch"]
+	return TRUE
 
-		if ("setNameSearch")
-			name_search = params["searchNames"]
-			return TRUE
+UI_ACT(/datum/spawn_menu, "setNameSearch", ui_act_setnamesearch, UI_ARG_VALUE("searchNames"))
+UI_ACT_PROC(/datum/spawn_menu, ui_act_setnamesearch)
+	name_search = params["searchNames"]
+	return TRUE
 
-		if ("setFancyTypes")
-			fancy_types = params["fancyTypes"]
-			return TRUE
+UI_ACT(/datum/spawn_menu, "setFancyTypes", ui_act_setfancytypes, UI_ARG_VALUE("fancyTypes"))
+UI_ACT_PROC(/datum/spawn_menu, ui_act_setfancytypes)
+	fancy_types = params["fancyTypes"]
+	return TRUE
 
-		if ("setIncludeAbstracts")
-			include_abstracts = params["includeAbstracts"]
-			return TRUE
+UI_ACT(/datum/spawn_menu, "setIncludeAbstracts", ui_act_setincludeabstracts, UI_ARG_VALUE("includeAbstracts"))
+UI_ACT_PROC(/datum/spawn_menu, ui_act_setincludeabstracts)
+	include_abstracts = params["includeAbstracts"]
+	return TRUE
 
-		if ("spawn")
-			var/path = text2path(params["type"])
-			if (!path)
-				return TRUE
-			var/amount = clamp(text2num(params["amount"]) || 1, 1, ADMIN_SPAWN_CAP)
-			var/turf/target_turf = get_turf(ui.user)
-			if(ispath(path, /turf))
-				target_turf.ChangeTurf(path)
-			else
-				for(var/i in 1 to amount)
-					var/atom/spawned = new path(target_turf)
-					spawned.flags |= ADMIN_SPAWNED
+UI_ACT(/datum/spawn_menu, "spawn", ui_act_spawn, UI_ARG_NUM("amount"), UI_ARG_PATH("type", /datum))
+UI_ACT_PROC(/datum/spawn_menu, ui_act_spawn)
+	var/path = params["type"]
+	if (!path)
+		return TRUE
+	var/amount = clamp(params["amount"] || 1, 1, ADMIN_SPAWN_CAP)
+	var/turf/target_turf = get_turf(ui.user)
+	if(ispath(path, /turf))
+		target_turf.ChangeTurf(path)
+	else
+		for(var/i in 1 to amount)
+			var/atom/spawned = new path(target_turf)
+			spawned.flags |= ADMIN_SPAWNED
 
-			log_admin("[key_name(ui.user)] spawned [amount] x [path] at [AREACOORD(ui.user)]")
-			SStgui.close_uis(src)
-			return TRUE
+	log_admin("[key_name(ui.user)] spawned [amount] x [path] at [AREACOORD(ui.user)]")
+	SStgui.close_uis(src)
+	return TRUE
 
-		if ("cancel")
-			SStgui.close_uis(src)
-			return TRUE
+UI_ACT(/datum/spawn_menu, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/spawn_menu, ui_act_cancel)
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/spawn_menu/tgui_data(mob/user)
 	var/list/data = list()

@@ -3,6 +3,8 @@
 
 /obj/item/electronic_assembly
 	name = "electronic assembly"
+	/// The export window's view (made on first export).
+	var/tmp/datum/ic_export_view/export_view
 	desc = "It's a case, for building small electronics with."
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/integrated_electronics/electronic_setups.dmi'
@@ -96,11 +98,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/tgui_state(mob/user)
 	return GLOB.tgui_physical_state
 
-/obj/item/electronic_assembly/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ICAssembly", name, parent_ui)
-		ui.open()
+DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 
 /obj/item/electronic_assembly/ui_assets(mob/user)
 	return list(
@@ -139,117 +137,145 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 
 	return data
 
-/obj/item/electronic_assembly/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+UI_ACT(/obj/item/electronic_assembly, "export_circuit", ui_act_export_circuit)
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
+	if(!LAZYLEN(contents))
+		to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
 		return TRUE
+	if(!export_view)
+		export_view = new(src)
+	export_view.tgui_interact(user)
+	return TRUE
 
-	switch(action)
-		if("export_circuit")
-			if(!LAZYLEN(contents))
-				to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
-				return TRUE
-			var/datum/tgui/window = new(ui.user, src, "ICExport", "Circuit Export")
-			window.open()
-			return TRUE
+/// The assembly's export window, a second window next to its editor.
+/datum/ic_export_view
+	var/tmp/assembly_handle
 
-		// Actual assembly actions
-		if("rename")
-			electronic_assembly_verb_rename(ui.user)
-			return TRUE
+/datum/ic_export_view/New(obj/item/electronic_assembly/assembly)
+	assembly_handle = om_handle(assembly)
 
-		if("remove_cell")
-			if(!battery)
-				to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
-				return FALSE
-			var/turf/T = get_turf(src)
-			battery.forceMove(T)
-			play_sfx(T, SFX_ITEMS_CROWBAR)
-			to_chat(ui.user, span_notice("You pull \the [battery] out of \the [src]'s power supplier."))
-			battery = null
-			return TRUE
+/datum/ic_export_view/proc/assembly() as /obj/item/electronic_assembly
+	return om_resolve(assembly_handle)
 
-		// Circuit actions
-		if("wire_internal")
-			var/datum/integrated_io/pin1 = locate(params["pin1"])
-			if(!istype(pin1))
-				return
-			var/datum/integrated_io/pin2 = locate(params["pin2"])
-			if(!istype(pin2))
-				return
+DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
 
-			var/obj/item/integrated_circuit/holder1 = pin1.holder()
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
-				return
+/datum/ic_export_view/tgui_host(mob/user)
+	return assembly() || src
 
-			var/obj/item/integrated_circuit/holder2 = pin2.holder()
-			if(!istype(holder2) || holder2.loc != src || holder2.assembly() != src)
-				return
+/datum/ic_export_view/tgui_state(mob/user)
+	return assembly()?.tgui_state(user) || ..()
 
-			// Wiring the same pin will unwire it
-			if(pin2 in pin1.linked)
-				LAZYREMOVE(pin1.linked, pin2)
-				LAZYREMOVE(pin2.linked, pin1)
-			else
-				LAZYOR(pin1.linked, pin2)
-				LAZYOR(pin2.linked, pin1)
+/datum/ic_export_view/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	return assembly()?.tgui_data(user, ui, state) || list()
 
-			return TRUE
+/datum/ic_export_view/tgui_static_data(mob/user)
+	return assembly()?.tgui_static_data(user) || list()
 
-		if("remove_all_wires")
-			var/datum/integrated_io/pin1 = locate(params["pin"])
-			if(!istype(pin1))
-				return
+// Actual assembly actions
 
-			var/obj/item/integrated_circuit/holder1 = pin1.holder()
-			if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
-				return
+UI_ACT(/obj/item/electronic_assembly, "rename", ui_act_rename)
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_rename)
+	electronic_assembly_verb_rename(ui.user)
+	return TRUE
 
-			for(var/datum/integrated_io/other as anything in pin1.linked)
-				LAZYREMOVE(other.linked, pin1)
+UI_ACT(/obj/item/electronic_assembly, "remove_cell", ui_act_remove_cell)
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_cell)
+	if(!battery)
+		to_chat(ui.user, span_warning("There's no power cell to remove from \the [src]."))
+		return FALSE
+	var/turf/T = get_turf(src)
+	battery.forceMove(T)
+	play_sfx(T, SFX_ITEMS_CROWBAR)
+	to_chat(ui.user, span_notice("You pull \the [battery] out of \the [src]'s power supplier."))
+	battery = null
+	return TRUE
 
-			pin1.linked = null
+	// Circuit actions
 
-			return TRUE
+UI_ACT(/obj/item/electronic_assembly, "wire_internal", ui_act_wire_internal, UI_ARG_REF("pin1", null, /datum/integrated_io), UI_ARG_REF("pin2", null, /datum/integrated_io))
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_wire_internal)
+	var/datum/integrated_io/pin1 = params["pin1"]
+	if(!istype(pin1))
+		return
+	var/datum/integrated_io/pin2 = params["pin2"]
+	if(!istype(pin2))
+		return
 
-		if("open_circuit")
-			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
-			if(!istype(C))
-				return
-			C.tgui_interact(ui.user, null, ui)
-			return TRUE
+	var/obj/item/integrated_circuit/holder1 = pin1.holder()
+	if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
+		return
 
-		if("remove_circuit")
-			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
-			if(!istype(C))
-				return
-			C.remove(ui.user)
-			return TRUE
+	var/obj/item/integrated_circuit/holder2 = pin2.holder()
+	if(!istype(holder2) || holder2.loc != src || holder2.assembly() != src)
+		return
 
-		if("update_component_position")
-			var/obj/item/integrated_circuit/C = locate_within(src, params["ref"])
-			if(!istype(C))
-				return FALSE
+	// Wiring the same pin will unwire it
+	if(pin2 in pin1.linked)
+		LAZYREMOVE(pin1.linked, pin2)
+		LAZYREMOVE(pin2.linked, pin1)
+	else
+		LAZYOR(pin1.linked, pin2)
+		LAZYOR(pin2.linked, pin1)
 
-			var/new_x = params["x"]
-			var/new_y = params["y"]
-			if(!isnum(new_x) || !isnum(new_y))
-				return FALSE
+	return TRUE
 
-			// Find existing position entry or create new one
-			var/found = FALSE
-			for(var/list/pos_data in component_positions)
-				if(pos_data["ref"] == REF(C))
-					pos_data["x"] = new_x
-					pos_data["y"] = new_y
-					found = TRUE
-					break
+UI_ACT(/obj/item/electronic_assembly, "remove_all_wires", ui_act_remove_all_wires, UI_ARG_REF("pin", null, /datum/integrated_io))
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_all_wires)
+	var/datum/integrated_io/pin1 = params["pin"]
+	if(!istype(pin1))
+		return
 
-			if(!found)
-				UNTYPED_LIST_ADD(component_positions, list("ref" = REF(C), "x" = new_x, "y" = new_y))
+	var/obj/item/integrated_circuit/holder1 = pin1.holder()
+	if(!istype(holder1) || holder1.loc != src || holder1.assembly() != src)
+		return
 
-			return TRUE
+	for(var/datum/integrated_io/other as anything in pin1.linked)
+		LAZYREMOVE(other.linked, pin1)
 
-	return FALSE
+	pin1.linked = null
+
+	return TRUE
+
+UI_ACT(/obj/item/electronic_assembly, "open_circuit", ui_act_open_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_open_circuit)
+	var/obj/item/integrated_circuit/C = params["ref"]
+	if(!istype(C))
+		return
+	C.tgui_interact(ui.user, null, ui)
+	return TRUE
+
+UI_ACT(/obj/item/electronic_assembly, "remove_circuit", ui_act_remove_circuit, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit))
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_remove_circuit)
+	var/obj/item/integrated_circuit/C = params["ref"]
+	if(!istype(C))
+		return
+	C.remove(ui.user)
+	return TRUE
+
+UI_ACT(/obj/item/electronic_assembly, "update_component_position", ui_act_update_component_position, UI_ARG_REF("ref", "contents", /obj/item/integrated_circuit), UI_ARG_NUM("x"), UI_ARG_NUM("y"))
+UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
+	var/obj/item/integrated_circuit/C = params["ref"]
+	if(!istype(C))
+		return FALSE
+
+	var/new_x = params["x"]
+	var/new_y = params["y"]
+	if(!isnum(new_x) || !isnum(new_y))
+		return FALSE
+
+	// Find existing position entry or create new one
+	var/found = FALSE
+	for(var/list/pos_data in component_positions)
+		if(pos_data["ref"] == REF(C))
+			pos_data["x"] = new_x
+			pos_data["y"] = new_y
+			found = TRUE
+			break
+
+	if(!found)
+		UNTYPED_LIST_ADD(component_positions, list("ref" = REF(C), "x" = new_x, "y" = new_y))
+
+	return TRUE
 // End TGUI
 
 /// Old Rename Circuit verb: Rename your circuit, useful to stay organized.

@@ -97,11 +97,7 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/card/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "IdentificationComputer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/card, "IdentificationComputer")
 
 /obj/machinery/computer/card/tgui_static_data(mob/user)
 	var/list/data =  ..()
@@ -167,112 +163,131 @@
 
 	return data
 
-/obj/machinery/computer/card/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/computer/card, "modify", ui_act_modify)
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_modify)
+	if(modify)
+		GLOB.data_core.manifest_modify(modify.registered_name, modify.assignment, modify.rank)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
+		if(ishuman(ui.user))
+			modify.forceMove(get_turf(src))
+			if(!ui.user.get_active_hand())
+				ui.user.put_in_hands(modify)
+			modify = null
+		else
+			modify.forceMove(get_turf(src))
+			modify = null
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
+			I.forceMove(src)
+			modify = I
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-	switch(action)
-		if("modify")
-			if(modify)
-				GLOB.data_core.manifest_modify(modify.registered_name, modify.assignment, modify.rank)
-				modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
-				if(ishuman(ui.user))
-					modify.forceMove(get_turf(src))
-					if(!ui.user.get_active_hand())
-						ui.user.put_in_hands(modify)
-					modify = null
-				else
-					modify.forceMove(get_turf(src))
-					modify = null
+UI_ACT(/obj/machinery/computer/card, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_scan)
+	if(scan)
+		if(ishuman(ui.user))
+			scan.forceMove(get_turf(src))
+			if(!ui.user.get_active_hand())
+				ui.user.put_in_hands(scan)
+			scan = null
+		else
+			scan.forceMove(get_turf(src))
+			scan = null
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id))
+			ui.user.drop_item()
+			I.forceMove(src)
+			scan = I
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
+
+UI_ACT(/obj/machinery/computer/card, "access", ui_act_access, UI_ARG_NUM("access_target"), UI_ARG_NUM("allowed"))
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_access)
+	if(is_authenticated())
+		var/access_type = params["access_target"]
+		var/access_allowed = params["allowed"]
+		if(access_type in (is_centcom() ? SSaccess.get_all_centcom_access() : SSaccess.get_all_station_access()))
+			modify.access -= access_type
+			if(!access_allowed)
+				modify.access += access_type
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
+
+UI_ACT(/obj/machinery/computer/card, "assign", ui_act_assign, UI_ARG_TEXT("assign_target"))
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_assign)
+	if(is_authenticated() && modify)
+		var/t1 = params["assign_target"]
+		if(t1 == "Custom")
+			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(custom_assignment_entered), title = "Assignment", message = "Enter a custom job assignment.", default = "", max_length = 45, requires = PROMPT_USABLE)
+		else
+			var/list/access = list()
+			if(is_centcom())
+				access = SSaccess.get_centcom_access(t1)
 			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-					I.forceMove(src)
-					modify = I
-			. = TRUE
+				var/datum/job/jobdatum = SSjob.get_job(t1)
+				if(!jobdatum)
+					to_chat(ui.user, span_warning("No log exists for this job: [t1]"))
+					return
+				access = jobdatum.get_access()
 
-		if("scan")
-			if(scan)
-				if(ishuman(ui.user))
-					scan.forceMove(get_turf(src))
-					if(!ui.user.get_active_hand())
-						ui.user.put_in_hands(scan)
-					scan = null
-				else
-					scan.forceMove(get_turf(src))
-					scan = null
-			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id))
-					ui.user.drop_item()
-					I.forceMove(src)
-					scan = I
-			. = TRUE
+			modify.access = access
+			modify.assignment = t1
+			modify.rank = t1
 
-		if("access")
-			if(is_authenticated())
-				var/access_type = text2num(params["access_target"])
-				var/access_allowed = text2num(params["allowed"])
-				if(access_type in (is_centcom() ? SSaccess.get_all_centcom_access() : SSaccess.get_all_station_access()))
-					modify.access -= access_type
-					if(!access_allowed)
-						modify.access += access_type
-			. = TRUE
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-		if("assign")
-			if(is_authenticated() && modify)
-				var/t1 = params["assign_target"]
-				if(t1 == "Custom")
-					om_ask(ui.user, /datum/om/prompt/text, PROC_REF(custom_assignment_entered), title = "Assignment", message = "Enter a custom job assignment.", default = "", max_length = 45, requires = PROMPT_USABLE)
-				else
-					var/list/access = list()
-					if(is_centcom())
-						access = SSaccess.get_centcom_access(t1)
-					else
-						var/datum/job/jobdatum = SSjob.get_job(t1)
-						if(!jobdatum)
-							to_chat(ui.user, span_warning("No log exists for this job: [t1]"))
-							return
-						access = jobdatum.get_access()
+UI_ACT(/obj/machinery/computer/card, "reg", ui_act_reg, UI_ARG_TEXT("reg"))
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_reg)
+	if(is_authenticated())
+		var/temp_name = sanitizeName(params["reg"])
+		if(temp_name)
+			modify.registered_name = temp_name
+		else
+			visible_message(span_notice("[src] buzzes rudely."))
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-					modify.access = access
-					modify.assignment = t1
-					modify.rank = t1
+UI_ACT(/obj/machinery/computer/card, "account", ui_act_account, UI_ARG_NUM("account"))
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_account)
+	if(is_authenticated())
+		var/account_num = params["account"]
+		modify.associated_account_number = account_num
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-			. = TRUE
+UI_ACT(/obj/machinery/computer/card, "mode", ui_act_mode, UI_ARG_NUM("mode_target"))
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_mode)
+	set_mode(params["mode_target"])
+	. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-		if("reg")
-			if(is_authenticated())
-				var/temp_name = sanitizeName(params["reg"])
-				if(temp_name)
-					modify.registered_name = temp_name
-				else
-					visible_message(span_notice("[src] buzzes rudely."))
-			. = TRUE
+UI_ACT(/obj/machinery/computer/card, "print", ui_act_print)
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_print)
+	if(!printing)
+		printing = 1
+		om_after(src, 5 SECONDS, PROC_REF(finish_printing))
+		. = TRUE
+	if(modify)
+		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 
-		if("account")
-			if(is_authenticated())
-				var/account_num = text2num(params["account"])
-				modify.associated_account_number = account_num
-			. = TRUE
+UI_ACT(/obj/machinery/computer/card, "terminate", ui_act_terminate)
+UI_ACT_PROC(/obj/machinery/computer/card, ui_act_terminate)
+	if(is_authenticated())
+		modify.assignment = "Dismissed" // setting adjustment
+		modify.access = list()
 
-		if("mode")
-			set_mode(text2num(params["mode_target"]))
-			. = TRUE
-
-		if("print")
-			if(!printing)
-				printing = 1
-				om_after(src, 5 SECONDS, PROC_REF(finish_printing))
-				. = TRUE
-
-		if("terminate")
-			if(is_authenticated())
-				modify.assignment = "Dismissed" // setting adjustment
-				modify.access = list()
-
-			. = TRUE
-
+	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
 

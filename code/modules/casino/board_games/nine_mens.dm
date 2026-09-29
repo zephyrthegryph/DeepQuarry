@@ -90,11 +90,7 @@
 	var/winner
 	var/phase = GAME_PHASE_PLACING
 
-/datum/board_game/nine_mens/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NineMen", name)
-		ui.open()
+DECLARE_UI(/datum/board_game/nine_mens, "NineMen")
 
 /datum/board_game/nine_mens/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
@@ -117,84 +113,93 @@
 		"ptwo_pieces" = ptwo_pieces
 	)
 
-/datum/board_game/nine_mens/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/board_game/nine_mens, "be_player_one", ui_act_be_player_one)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_one)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(om_resolve(player_one) == ui.user)
+		player_one = null
+		return TRUE
+	player_one = om_handle(ui.user)
+	return TRUE
 
-	switch(action)
-		if("be_player_one")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(om_resolve(player_one) == ui.user)
-				player_one = null
-				return TRUE
-			player_one = om_handle(ui.user)
+UI_ACT(/datum/board_game/nine_mens, "be_player_two", ui_act_be_player_two)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_be_player_two)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(om_resolve(player_two) == ui.user)
+		player_two = null
+		return TRUE
+	player_two = om_handle(ui.user)
+	return TRUE
+
+UI_ACT(/datum/board_game/nine_mens, "swap_players", ui_act_swap_players)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_swap_players)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!om_resolve(player_one) || !om_resolve(player_two))
+		return FALSE
+	var/temp_player = player_one
+	player_one = player_two
+	player_two = temp_player
+
+UI_ACT(/datum/board_game/nine_mens, "clear_game", ui_act_clear_game)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_clear_game)
+	if(game_state == GAME_SETUP)
+		return FALSE
+	reset(TRUE)
+	return TRUE
+
+UI_ACT(/datum/board_game/nine_mens, "start_game", ui_act_start_game)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_start_game)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!om_resolve(player_one) || !om_resolve(player_two))
+		return FALSE
+	game_state = GAME_PLAYER_ONE
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/nine_mens, "play_again", ui_act_play_again)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!om_resolve(player_one) || !om_resolve(player_two))
+		return FALSE
+	reset()
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/nine_mens, "play_again_swapped", ui_act_play_again_swapped)
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_play_again_swapped)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!om_resolve(player_one) || !om_resolve(player_two))
+		return FALSE
+	reset()
+	var/temp_player = player_one
+	player_one = player_two
+	player_two = temp_player
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/nine_mens, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/nine_mens, ui_act_game_action)
+	if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "w")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_TWO
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("be_player_two")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(om_resolve(player_two) == ui.user)
-				player_two = null
-				return TRUE
-			player_two = om_handle(ui.user)
+	if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "b")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_ONE
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("swap_players")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
-				return FALSE
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
-		if("clear_game")
-			if(game_state == GAME_SETUP)
-				return FALSE
-			reset(TRUE)
-			return TRUE
-		if("start_game")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
-				return FALSE
-			game_state = GAME_PLAYER_ONE
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
-				return FALSE
-			reset()
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again_swapped")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
-				return FALSE
-			reset()
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("game_action")
-			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_TWO
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_ONE
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			return FALSE
+	return FALSE
 
 /datum/board_game/nine_mens/proc/reset(full)
 	winner = null
@@ -215,90 +220,89 @@
 	else
 		game_state = GAME_PLAYER_ONE
 
-/datum/board_game/nine_mens/proc/player_actions(action, list/params, mob/user, active_color)
-	switch(action)
-		if("select_figure")
-			var/node = validate_node(params)
-			if(!node)
+UI_SUBACT(/datum/board_game/nine_mens, "game", "select_figure", game_select_figure, UI_ARG_NUM("node_number"))
+UI_SUBACT_PROC(/datum/board_game/nine_mens, game_select_figure)
+	var/node = validate_node(params["node_number"])
+	if(!node)
+		return GAME_ACTION_NONE
+
+	var/piece = current_board[node]
+	if(!piece || piece[1] != extra)
+		return GAME_ACTION_NONE
+
+	selected_node = node
+	update_valid_moves()
+	return GAME_ACTION_SELECT
+
+UI_SUBACT(/datum/board_game/nine_mens, "game", "move_figure", game_move_figure, UI_ARG_NUM("node_number"))
+UI_SUBACT_PROC(/datum/board_game/nine_mens, game_move_figure)
+	var/target_node = validate_node(params["node_number"])
+	if(!target_node)
+		return GAME_ACTION_NONE
+
+	switch(phase)
+		if(GAME_PHASE_PLACING)
+			if(current_board[target_node])
 				return GAME_ACTION_NONE
 
-			var/piece = current_board[node]
-			if(!piece || piece[1] != active_color)
+			current_board[target_node] = extra
+
+			if(extra == "w")
+				if(pone_pieces > 0)
+					pone_pieces--
+			else
+				if(ptwo_pieces > 0)
+					ptwo_pieces--
+
+			if(check_for_mill(target_node, extra))
+				phase = GAME_PHASE_REMOVING
+				update_valid_removals(extra == "w" ? "b" : "w")
+			else
+				if((ptwo_pieces && extra == "w") || (pone_pieces && extra == "b"))
+					phase = GAME_PHASE_PLACING
+				else
+					phase = GAME_PHASE_MOVING
+			return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
+
+		if(GAME_PHASE_MOVING)
+			if(!selected_node)
+				return GAME_ACTION_NONE
+			if(!valid_move(extra, selected_node, target_node))
 				return GAME_ACTION_NONE
 
-			selected_node = node
-			update_valid_moves()
-			return GAME_ACTION_SELECT
+			current_board[target_node] = current_board[selected_node]
+			current_board[selected_node] = null
+			selected_node = null
+			LAZYCLEARLIST(valid_moves)
+			validate_victory(extra)
+			if(game_state < GAME_OVER)
+				if(check_for_mill(target_node, extra))
+					phase = GAME_PHASE_REMOVING
+					update_valid_removals(extra == "w" ? "b" : "w")
+				else
+					phase = GAME_PHASE_MOVING
+			else
+				phase = GAME_PHASE_NONE
 
-		if("move_figure")
-			var/target_node = validate_node(params)
-			if(!target_node)
+			return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
+
+		if(GAME_PHASE_REMOVING)
+			if(!valid_remove(target_node))
 				return GAME_ACTION_NONE
 
-			switch(phase)
-				if(GAME_PHASE_PLACING)
-					if(current_board[target_node])
-						return GAME_ACTION_NONE
+			current_board[target_node] = null
 
-					current_board[target_node] = active_color
+			LAZYCLEARLIST(valid_removes)
+			validate_victory(extra)
+			if(game_state < GAME_OVER)
+				if((ptwo_pieces && extra == "w") || (pone_pieces && extra == "b"))
+					phase = GAME_PHASE_PLACING
+				else
+					phase = GAME_PHASE_MOVING
+			else
+				phase = GAME_PHASE_NONE
 
-					if(active_color == "w")
-						if(pone_pieces > 0)
-							pone_pieces--
-					else
-						if(ptwo_pieces > 0)
-							ptwo_pieces--
-
-					if(check_for_mill(target_node, active_color))
-						phase = GAME_PHASE_REMOVING
-						update_valid_removals(active_color == "w" ? "b" : "w")
-					else
-						if((ptwo_pieces && active_color == "w") || (pone_pieces && active_color == "b"))
-							phase = GAME_PHASE_PLACING
-						else
-							phase = GAME_PHASE_MOVING
-					return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
-
-				if(GAME_PHASE_MOVING)
-					if(!selected_node)
-						return GAME_ACTION_NONE
-					if(!valid_move(active_color, selected_node, target_node))
-						return GAME_ACTION_NONE
-
-					current_board[target_node] = current_board[selected_node]
-					current_board[selected_node] = null
-					selected_node = null
-					LAZYCLEARLIST(valid_moves)
-					validate_victory(active_color)
-					if(game_state < GAME_OVER)
-						if(check_for_mill(target_node, active_color))
-							phase = GAME_PHASE_REMOVING
-							update_valid_removals(active_color == "w" ? "b" : "w")
-						else
-							phase = GAME_PHASE_MOVING
-					else
-						phase = GAME_PHASE_NONE
-
-					return phase == GAME_PHASE_REMOVING ? GAME_ACTION_SELECT : GAME_ACTION_END_TURN
-
-				if(GAME_PHASE_REMOVING)
-					if(!valid_remove(target_node))
-						return GAME_ACTION_NONE
-
-					current_board[target_node] = null
-
-					LAZYCLEARLIST(valid_removes)
-					validate_victory(active_color)
-					if(game_state < GAME_OVER)
-						if((ptwo_pieces && active_color == "w") || (pone_pieces && active_color == "b"))
-							phase = GAME_PHASE_PLACING
-						else
-							phase = GAME_PHASE_MOVING
-					else
-						phase = GAME_PHASE_NONE
-
-					return GAME_ACTION_END_TURN
-
+			return GAME_ACTION_END_TURN
 	return GAME_ACTION_NONE
 
 /datum/board_game/nine_mens/proc/update_valid_moves()
@@ -389,8 +393,7 @@
 				return TRUE
 	return FALSE
 
-/datum/board_game/nine_mens/proc/validate_node(list/params)
-	var/node = text2num(params["node_number"])
+/datum/board_game/nine_mens/proc/validate_node(node)
 
 	if(!isnum(node))
 		return null

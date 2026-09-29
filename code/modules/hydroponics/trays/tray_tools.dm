@@ -38,11 +38,7 @@ DECLARE_REF(/obj/item/analyzer/plant_analyzer, "last_seed", OWNED, null)
 // ALLOW(interactions): its Use opens the plant UI instead of the gas scan
 DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/obj/item/analyzer/plant_analyzer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PlantAnalyzer", name)
-		ui.open()
+DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
 
 /obj/item/analyzer/plant_analyzer/tgui_state(mob/user)
 	return GLOB.tgui_inventory_state
@@ -60,18 +56,16 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 
 	return data
 
-/obj/item/analyzer/plant_analyzer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/analyzer/plant_analyzer, "print", ui_act_print)
+UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_print)
+	print_report(ui.user)
+	return TRUE
 
-	switch(action)
-		if("print")
-			print_report(ui.user)
-			return TRUE
-		if("close")
-			last_seed = null
-			last_reagents = null
-			return TRUE
+UI_ACT(/obj/item/analyzer/plant_analyzer, "close", ui_act_close)
+UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
+	last_seed = null
+	last_reagents = null
+	return TRUE
 
 /obj/item/analyzer/plant_analyzer/afterattack(obj/target, mob/user, flag)
 	if(!flag)

@@ -18,11 +18,7 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 	trait_desc = descriptions
 	trait_tutorial = tutorials
 
-/datum/tgui_module/trait_tutorial_tgui/tgui_interact(mob/living/carbon/human/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, name)
-		ui.open()
+DECLARE_UI(/datum/tgui_module/trait_tutorial_tgui, UI_FROM_VAR("tgui_id"))
 
 /datum/tgui_module/trait_tutorial_tgui/tgui_data(mob/user)
 	var/list/data = list()
@@ -33,15 +29,10 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 	data["selection"] = trait_selected //passes a string
 	return data
 
-/datum/tgui_module/trait_tutorial_tgui/tgui_act(action, params)
-	. = ..()
-	if(.)
-		return
-	if(action == "select_trait")
-		var/selection = params["name"]
-		trait_selected = selection
-
-
+UI_ACT(/datum/tgui_module/trait_tutorial_tgui, "select_trait", ui_act_select_trait, UI_ARG_VALUE("name"))
+UI_ACT_PROC(/datum/tgui_module/trait_tutorial_tgui, ui_act_select_trait)
+	var/selection = params["name"]
+	trait_selected = selection
 	. = TRUE
 
 /datum/tgui_module/trait_tutorial_tgui/tgui_state(mob/user)

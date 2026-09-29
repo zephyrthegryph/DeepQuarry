@@ -98,14 +98,13 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 		sense_proximity(range = range, callback = TYPE_PROC_REF(/atom,HasProximity))
 	sense()
 
-/obj/item/assembly/prox_sensor/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/assembly/prox_sensor, "AssemblyProx")
+
+/obj/item/assembly/prox_sensor/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
 		to_chat(user, span_warning("[src] is unsecured!"))
 		return FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AssemblyProx", name)
-		ui.open()
+	return TRUE
 
 /obj/item/assembly/prox_sensor/tgui_data(mob/user)
 	var/list/data = ..()
@@ -118,29 +117,31 @@ MATERIAL_MIX(/obj/item/assembly/prox_sensor, list(MAT_STEEL = 800, MAT_GLASS = 2
 
 	return data
 
-/obj/item/assembly/prox_sensor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/assembly/prox_sensor, "scanning", ui_act_scanning)
+UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_scanning)
+	toggle_scan()
+	return TRUE
 
-	switch(action)
-		if("scanning")
-			toggle_scan()
-			return TRUE
-		if("timing")
-			timing = !timing
-			update_icon()
-			return TRUE
-		if("set_time")
-			var/real_new_time = 0
-			var/new_time = params["time"]
-			var/list/L = splittext(new_time, ":")
-			if(LAZYLEN(L))
-				for(var/i in 1 to LAZYLEN(L))
-					real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-			else
-				real_new_time = text2num(new_time)
-			time = clamp(real_new_time, 0, 600)
-			return TRUE
-		if("range")
-			range = clamp(params["range"], 1, 5)
-			return TRUE
+UI_ACT(/obj/item/assembly/prox_sensor, "timing", ui_act_timing)
+UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_timing)
+	timing = !timing
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/item/assembly/prox_sensor, "set_time", ui_act_set_time, UI_ARG_VALUE("time"))
+UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_set_time)
+	var/real_new_time = 0
+	var/new_time = params["time"]
+	if(isnum(new_time))
+		real_new_time = new_time
+	else
+		var/list/L = splittext(new_time, ":")
+		for(var/i in 1 to LAZYLEN(L))
+			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
+	time = clamp(real_new_time, 0, 600)
+	return TRUE
+
+UI_ACT(/obj/item/assembly/prox_sensor, "range", ui_act_range, UI_ARG_NUM("range"))
+UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_range)
+	range = clamp(params["range"], 1, 5)
+	return TRUE

@@ -61,11 +61,7 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/implantpad/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ImplantPad", "Implant Mini-Computer")
-		ui.open()
+DECLARE_UI(/obj/item/implantpad, "ImplantPad", UI_TITLE("Implant Mini-Computer"))
 
 /obj/item/implantpad/tgui_data(mob/user)
 	var/list/data = list()
@@ -82,20 +78,21 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 			data["tracking_id"] = T.id
 	return data
 
-/obj/item/implantpad/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/implantpad/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat)
-		return TRUE
+		return FALSE
 	add_fingerprint(usr)
-	switch(action)
-		if("tracking_id")
-			if(!istype(case?.imp, /obj/item/implant/tracking))
-				return TRUE
-			var/obj/item/implant/tracking/T = case.imp
-			T.id += text2num(params["delta"])
-			T.id = clamp(T.id, 1, 1000)
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/implantpad, "tracking_id", ui_act_tracking_id, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/item/implantpad, ui_act_tracking_id)
+	if(!istype(case?.imp, /obj/item/implant/tracking))
+		return TRUE
+	var/obj/item/implant/tracking/T = case.imp
+	T.id += params["delta"]
+	T.id = clamp(T.id, 1, 1000)
+	return TRUE
 
 DECLARE_REF(/obj/item/implantpad, "case", HELD, null)

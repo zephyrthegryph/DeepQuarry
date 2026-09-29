@@ -230,11 +230,10 @@ Book Cart End
 /obj/item/book/proc/display_content(mob/living/user)
 	tgui_interact(user)
 
-/obj/item/book/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Book", title || name)
-		ui.open()
+DECLARE_UI(/obj/item/book, "Book")
+
+/obj/item/book/ui_title(mob/user)
+	return title || name
 
 /obj/item/book/tgui_data(mob/user)
 	var/list/data = list()
@@ -389,11 +388,7 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 	update_icon()
 	tgui_interact(user)
 
-/obj/item/book/bundle/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BookBundle", name)
-		ui.open()
+DECLARE_UI(/obj/item/book/bundle, "BookBundle")
 
 /obj/item/book/bundle/tgui_data(mob/user)
 	var/list/data = list()
@@ -429,25 +424,28 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 		data["page_info"] = ""
 	return data
 
-/obj/item/book/bundle/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/book/bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!((is_in_holder(src, usr)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, usr)))))
 		to_chat(usr, span_notice("You need to hold it in your hands!"))
-		return TRUE
+		return FALSE
 	usr.set_machine(src)
-	switch(action)
-		if("next_page")
-			if(page != pages.len)
-				page++
-				play_sfx(src, SFX_PAGETURN)
-			return TRUE
-		if("prev_page")
-			if(page > 1)
-				page--
-				play_sfx(src, SFX_PAGETURN)
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/book/bundle, "next_page", ui_act_next_page)
+UI_ACT_PROC(/obj/item/book/bundle, ui_act_next_page)
+	if(page != pages.len)
+		page++
+		play_sfx(src, SFX_PAGETURN)
+	return TRUE
+
+UI_ACT(/obj/item/book/bundle, "prev_page", ui_act_prev_page)
+UI_ACT_PROC(/obj/item/book/bundle, ui_act_prev_page)
+	if(page > 1)
+		page--
+		play_sfx(src, SFX_PAGETURN)
+	return TRUE
 
 /*
  * Barcode Scanner

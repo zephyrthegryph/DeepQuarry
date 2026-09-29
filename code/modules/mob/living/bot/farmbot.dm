@@ -29,11 +29,7 @@
 	tank = newTank
 	tank.forceMove(src)
 
-/mob/living/bot/farmbot/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Farmbot", name)
-		ui.open()
+DECLARE_UI(/mob/living/bot/farmbot, "Farmbot")
 
 /mob/living/bot/farmbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = ..()
@@ -79,45 +75,56 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 		om_after(src, rand(30, 50), PROC_REF(emag_takes))
 		return 1
 
-/mob/living/bot/farmbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/mob/living/bot/farmbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("power")
-			if(!access_scanner.allowed(ui.user))
-				return FALSE
-			if(on)
-				turn_off()
-			else
-				turn_on()
-			. = TRUE
+UI_ACT(/mob/living/bot/farmbot, "power", ui_act_power)
+UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_power)
+	if(!access_scanner.allowed(ui.user))
+		return FALSE
+	if(on)
+		turn_off()
+	else
+		turn_on()
+	. = TRUE
 
+UI_ACT(/mob/living/bot/farmbot, "water", ui_act_water)
+UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_water)
 	if(locked)
 		return TRUE
+	waters_trays = !waters_trays
+	. = TRUE
 
-	switch(action)
-		if("water")
-			waters_trays = !waters_trays
-			. = TRUE
-		if("refill")
-			refills_water = !refills_water
-			. = TRUE
-		if("weed")
-			uproots_weeds = !uproots_weeds
-			. = TRUE
-		if("replacenutri")
-			replaces_nutriment = !replaces_nutriment
-			. = TRUE
-		// No automatic hydroponics
-		// if("collect")
-		// 	collects_produce = !collects_produce
-		// 	. = TRUE
-		// if("removedead")
-		// 	removes_dead = !removes_dead
-		// 	. = TRUE
+UI_ACT(/mob/living/bot/farmbot, "refill", ui_act_refill)
+UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_refill)
+	if(locked)
+		return TRUE
+	refills_water = !refills_water
+	. = TRUE
+
+UI_ACT(/mob/living/bot/farmbot, "weed", ui_act_weed)
+UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_weed)
+	if(locked)
+		return TRUE
+	uproots_weeds = !uproots_weeds
+	. = TRUE
+
+UI_ACT(/mob/living/bot/farmbot, "replacenutri", ui_act_replacenutri)
+UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
+	if(locked)
+		return TRUE
+	replaces_nutriment = !replaces_nutriment
+	. = TRUE
+// No automatic hydroponics
+// if("collect")
+// 	collects_produce = !collects_produce
+// 	. = TRUE
+// if("removedead")
+// 	removes_dead = !removes_dead
+// 	. = TRUE
 
 
 /mob/living/bot/farmbot/update_icons()

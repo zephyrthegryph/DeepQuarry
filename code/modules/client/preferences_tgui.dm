@@ -1,17 +1,7 @@
 /datum/preferences
 	COOLDOWN_DECLARE(ui_refresh_cooldown)
 
-/datum/preferences/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	// Preview composition is intentionally not done here. ShowChoices opens the
-	// lightweight UI first and schedules a background render when the cache is cold.
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PreferencesMenu", "Preferences")
-		ui.open()
-	// try_update_ui() can return a previously-created UI whose autoupdate flag
-	// is still TRUE. Preferences payloads are large and only change in response
-	// to explicit actions, so enforce this on both the new and reused paths.
-	ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/preferences, "PreferencesMenu", UI_TITLE("Preferences"))
 
 /datum/preferences/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -89,115 +79,125 @@
 
 	return data
 
-/datum/preferences/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+/// Actions the preferences window has no row for go to its middleware, in order.
+UI_ACT_FORWARD(/datum/preferences, ui_forward_to_middleware)
+/datum/preferences/proc/ui_forward_to_middleware(mob/user, action)
+	return middleware
+
+UI_ACT(/datum/preferences, "load", ui_act_load)
+UI_ACT_PROC(/datum/preferences, ui_act_load)
+	if(!IsGuestKey(ui.user.key))
+		open_load_dialog(ui.user)
+	return TRUE
+
+UI_ACT(/datum/preferences, "save", ui_act_save)
+UI_ACT_PROC(/datum/preferences, ui_act_save)
+	save_character()
+	save_preferences()
+	COOLDOWN_START(src, saved_notification, 1 SECONDS)
+	return TRUE
+
+UI_ACT(/datum/preferences, "reload", ui_act_reload)
+UI_ACT_PROC(/datum/preferences, ui_act_reload)
+	load_preferences(TRUE)
+	load_character()
+	client().prefs_vr.load_vore()
+	sanitize_preferences()
+	return TRUE
+
+UI_ACT(/datum/preferences, "resetslot", ui_act_resetslot)
+UI_ACT_PROC(/datum/preferences, ui_act_resetslot)
+	if(!isnewplayer(ui.user))
+		to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
+		return FALSE
+	var/_answer_k119 = act_ask(ui.user, action, params, ui, "k119", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
+	if(isnull(_answer_k119))
 		return
+	if("Yes" != _answer_k119)
+		return FALSE
+	var/_answer_k121 = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
+	if(isnull(_answer_k121))
+		return
+	if("Yes" != _answer_k121)
+		return FALSE
+	reset_slot()
+	sanitize_preferences()
+	return TRUE
 
-	switch(action)
-		// Slot / persistence actions
-		if("load")
-			if(!IsGuestKey(ui.user.key))
-				open_load_dialog(ui.user)
-			return TRUE
-		if("save")
-			save_character()
-			save_preferences()
-			COOLDOWN_START(src, saved_notification, 1 SECONDS)
-			return TRUE
-		if("reload")
-			load_preferences(TRUE)
-			load_character()
-			client().prefs_vr.load_vore()
-			sanitize_preferences()
-			return TRUE
-		if("resetslot")
-			if(!isnewplayer(ui.user))
-				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
-				return FALSE
-			var/_answer_k119 = act_ask(ui.user, action, params, ui, "k119", /datum/om/prompt/choice/alert, message = "This will reset the current slot. Continue?", title = "Reset current slot?", choices = list("No", "Yes"))
-			if(isnull(_answer_k119))
-				return
-			if("Yes" != _answer_k119)
-				return FALSE
-			var/_answer_k121 = act_ask(ui.user, action, params, ui, "k121", /datum/om/prompt/choice/alert, message = "Are you completely sure that you want to reset this character slot?", title = "Reset current slot?", choices = list("No", "Yes"))
-			if(isnull(_answer_k121))
-				return
-			if("Yes" != _answer_k121)
-				return FALSE
-			reset_slot()
-			sanitize_preferences()
-			return TRUE
-		if("copy")
-			if(!isnewplayer(ui.user))
-				to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
-				return FALSE
-			if(!IsGuestKey(ui.user.key))
-				open_copy_dialog(ui.user)
-			return TRUE
-		if("game_prefs")
-			ui.user.client.game_options()
-			return TRUE
-		if("refresh_character_preview")
-			if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))
-				return FALSE
-			update_preview_icon()
-			update_tgui_static_data(ui.user)
-			COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
-			return TRUE
-		// Cycle Background flips bgstate to the next choice and re-renders the
-		// preview assets so the new BG shows up immediately via the next static_data push.
-		if("cycle_background")
-			var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
-			if(bg && length(bg.bgstate_choices))
-				var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
-				var/idx = bg.bgstate_choices.Find(current)
-				idx = (idx % bg.bgstate_choices.len) + 1
-				update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
-				update_preview_icon()
-				update_tgui_static_data(ui.user)
-			return TRUE
+UI_ACT(/datum/preferences, "copy", ui_act_copy)
+UI_ACT_PROC(/datum/preferences, ui_act_copy)
+	if(!isnewplayer(ui.user))
+		to_chat(ui.user, span_userdanger("You can't change your character slot while being in round."))
+		return FALSE
+	if(!IsGuestKey(ui.user.key))
+		open_copy_dialog(ui.user)
+	return TRUE
 
-		// Pref-value actions
-		if("set_preference")
-			var/requested_preference_key = params["preference"]
-			var/value = params["value"]
+UI_ACT(/datum/preferences, "game_prefs", ui_act_game_prefs)
+UI_ACT_PROC(/datum/preferences, ui_act_game_prefs)
+	ui.user.client.game_options()
+	return TRUE
 
-			for(var/datum/preference_middleware/preference_middleware as anything in middleware)
-				if(preference_middleware.pre_set_preference(ui.user, requested_preference_key, value))
-					return TRUE
+UI_ACT(/datum/preferences, "refresh_character_preview", ui_act_refresh_character_preview)
+UI_ACT_PROC(/datum/preferences, ui_act_refresh_character_preview)
+	if(!COOLDOWN_FINISHED(src, ui_refresh_cooldown))
+		return FALSE
+	update_preview_icon()
+	update_tgui_static_data(ui.user)
+	COOLDOWN_START(src, ui_refresh_cooldown, 5 SECONDS)
+	return TRUE
+// Cycle Background flips bgstate to the next choice and re-renders the
+// preview assets so the new BG shows up immediately via the next static_data push.
 
-			var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
-			if(isnull(requested_preference))
-				return FALSE
+UI_ACT(/datum/preferences, "cycle_background", ui_act_cycle_background)
+UI_ACT_PROC(/datum/preferences, ui_act_cycle_background)
+	var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
+	if(bg && length(bg.bgstate_choices))
+		var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
+		var/idx = bg.bgstate_choices.Find(current)
+		idx = (idx % bg.bgstate_choices.len) + 1
+		update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
+		update_preview_icon()
+		update_tgui_static_data(ui.user)
+	return TRUE
 
-			// SAFETY: `update_preference` performs validation checks
-			if(!update_preference(requested_preference, value))
-				return FALSE
+// Pref-value actions
 
-			return TRUE
-
-		if("set_color_preference")
-			var/requested_preference_key = params["preference"]
-
-			var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
-			if(isnull(requested_preference))
-				return FALSE
-
-			if(!istype(requested_preference, /datum/preference/color))
-				return FALSE
-
-			var/default_value = read_preference(requested_preference.type)
-
-			om_ask(ui.user, /datum/om/prompt/color/prefs/entry, PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key, ui_refresh = src, ui_refresh_if_true = TRUE)
-			return FALSE
+UI_ACT(/datum/preferences, "set_preference", ui_act_set_preference, UI_ARG_VALUE("preference"), UI_ARG_VALUE("value"))
+UI_ACT_PROC(/datum/preferences, ui_act_set_preference)
+	var/requested_preference_key = params["preference"]
+	var/value = params["value"]
 
 	for(var/datum/preference_middleware/preference_middleware as anything in middleware)
-		. = preference_middleware.tgui_act(action, params, ui, state)
-		if(.)
-			return
+		if(preference_middleware.pre_set_preference(ui.user, requested_preference_key, value))
+			return TRUE
 
+	var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
+	if(isnull(requested_preference))
+		return FALSE
+
+	// SAFETY: `update_preference` performs validation checks
+	if(!update_preference(requested_preference, value))
+		return FALSE
+
+	return TRUE
+
+UI_ACT(/datum/preferences, "set_color_preference", ui_act_set_color_preference, UI_ARG_VALUE("preference"))
+UI_ACT_PROC(/datum/preferences, ui_act_set_color_preference)
+	var/requested_preference_key = params["preference"]
+
+	var/datum/preference/requested_preference = GLOB.preference_entries_by_key[requested_preference_key]
+	if(isnull(requested_preference))
+		return FALSE
+
+	if(!istype(requested_preference, /datum/preference/color))
+		return FALSE
+
+	var/default_value = read_preference(requested_preference.type)
+
+	om_ask(ui.user, /datum/om/prompt/color/prefs/entry, PROC_REF(pref_color_picked), message = "Select new color", default = default_value || COLOR_WHITE, preferences = src, pref_key = requested_preference_key, ui_refresh = src, ui_refresh_if_true = TRUE)
 	return FALSE
+
 
 
 /datum/preferences/tgui_close(mob/user)

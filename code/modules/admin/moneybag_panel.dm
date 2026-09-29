@@ -6,26 +6,23 @@
 /obj/item/moneybag/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/obj/item/moneybag/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Moneybag", "Moneybag")
-		ui.open()
+DECLARE_UI(/obj/item/moneybag, "Moneybag", UI_TITLE("Moneybag"))
 
 /obj/item/moneybag/tgui_data(mob/user)
 	return list("counts" = count_coins())
 
-/obj/item/moneybag/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	var/mob/user = ui?.user
+/obj/item/moneybag/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!user)
-		return
+		return FALSE
 	user.set_machine(src)
 	add_fingerprint(user)
-	if(action == "remove")
-		var/coin_type = "[params["coin"]]"
-		moneybag_remove_coin(user, coin_type)
-		SStgui.update_uis(src)
-		return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/moneybag, "remove", ui_act_remove, UI_ARG_TEXT("coin"))
+UI_ACT_PROC(/obj/item/moneybag, ui_act_remove)
+	var/coin_type = "[params["coin"]]"
+	moneybag_remove_coin(user, coin_type)
+	SStgui.update_uis(src)
+	return TRUE

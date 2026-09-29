@@ -213,11 +213,7 @@ GLOBAL_VAR(bomb_set)
 		extended = 1
 	return TRUE
 
-/obj/machinery/nuclearbomb/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NuclearBomb", "Nuclear Fission Explosive")
-		ui.open()
+DECLARE_UI(/obj/machinery/nuclearbomb, "NuclearBomb", UI_TITLE("Nuclear Fission Explosive"))
 
 /obj/machinery/nuclearbomb/tgui_data(mob/user)
 	var/list/data = list()
@@ -258,143 +254,158 @@ GLOBAL_VAR(bomb_set)
 	data["code_display"] = display
 	return data
 
-/obj/machinery/nuclearbomb/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/nuclearbomb/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!usr.canmove || usr.stat || usr.restrained())
-		return TRUE
+		return FALSE
 	if(get_dist(src, usr) > 1 && !isAI(usr))
-		return TRUE
+		return FALSE
 	add_fingerprint(usr)
-	switch(action)
-		if("auth")
-			if(auth())
-				auth().forceMove(src.loc)
-				yes_code = 0
-				auth_handle = null
-			else
-				var/obj/item/I = usr.get_active_hand()
-				if(istype(I, /obj/item/disk/nuclear))
-					usr.drop_item()
-					I.forceMove(src)
-					auth_handle = om_handle(I)
-			return TRUE
-		if("type")
-			if(!auth())
-				return TRUE
-			var/key = params["key"]
-			if(key == "E")
-				if(code == r_code)
-					yes_code = 1
-					code = null
-				else
-					code = "ERROR"
-			else if(key == "R")
-				yes_code = 0
-				code = null
-			else
-				code = "[code][key]"
-				if(length(code) > 5)
-					code = "ERROR"
-			return TRUE
-		if("time")
-			if(!auth() || !yes_code)
-				return TRUE
-			var/delta = text2num(params["delta"])
-			timeleft += delta
-			timeleft = min(max(round(timeleft), 60), 600)
-			return TRUE
-		if("timer")
-			if(!auth() || !yes_code || timing == -1.0)
-				return TRUE
-			if(safety)
-				to_chat(usr, span_warning("The safety is still on."))
-				return TRUE
-			timing = !timing
-			if(timing)
-				if(!lighthack)
-					icon_state = "nuclearbomb2"
-				if(!safety)
-					GLOB.bomb_set = 1
-					set_security_level("delta")
-				else
-					GLOB.bomb_set = 0
-					set_security_level("red")
-			else
-				GLOB.bomb_set = 0
-				set_security_level("red")
-				if(!lighthack)
-					icon_state = "nuclearbomb1"
-			return TRUE
-		if("safety")
-			if(!auth() || !yes_code)
-				return TRUE
-			safety = !safety
-			if(safety)
-				timing = 0
-				GLOB.bomb_set = 0
-				set_security_level("red")
-			return TRUE
-		if("anchor")
-			if(!auth() || !yes_code)
-				return TRUE
-			if(removal_stage == 5)
-				set_anchored(FALSE)
-				visible_message(span_warning("\The [src] makes a highly unpleasant crunching noise. It looks like the anchoring bolts have been cut."))
-				return TRUE
-			set_anchored(!anchored)
-			if(anchored)
-				visible_message(span_warning("With a steely snap, bolts slide out of [src] and anchor it to the flooring."))
-			else
-				visible_message(span_warning("The anchoring bolts slide back into the depths of [src]."))
-			return TRUE
-		if("wire")
-			var/wire = params["wire"]
-			if(!(wire in wires_list))
-				return TRUE
-			var/obj/item/I = usr.get_active_hand()
-			if(!I?.has_tool_quality(TOOL_WIRECUTTER))
-				to_chat(usr, "You need wirecutters!")
-				return TRUE
-			LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
-			if(safety_wire == wire && timing)
-				explode()
-			if(timing_wire == wire)
-				if(!lighthack && icon_state == "nuclearbomb2")
-					icon_state = "nuclearbomb1"
-				timing = 0
-				GLOB.bomb_set = 0
-				set_security_level("red")
-			if(light_wire == wire)
-				lighthack = !lighthack
-			return TRUE
-		if("pulse")
-			var/wire = params["wire"]
-			if(!(wire in wires_list))
-				return TRUE
-			var/obj/item/hand_item = usr.get_active_hand()
-			if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
-				to_chat(usr, "You need a multitool!")
-				return TRUE
-			if(LAZYACCESS(wires_list, wire))
-				to_chat(usr, "You can't pulse a cut wire.")
-				return TRUE
-			if(light_wire == wire)
-				toggle_lighthack()
-				om_after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
-			if(timing_wire == wire && timing)
-				explode()
-			if(safety_wire == wire)
-				toggle_safety()
-				om_after(src, 10 SECONDS, PROC_REF(toggle_safety))
-				if(safety == 1)
-					visible_message(span_notice("The [src] quiets down."))
-					if(!lighthack && icon_state == "nuclearbomb2")
-						icon_state = "nuclearbomb1"
-				else
-					visible_message(span_notice("The [src] emits a quiet whirling noise!"))
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "auth", ui_act_auth)
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
+	if(auth())
+		auth().forceMove(src.loc)
+		yes_code = 0
+		auth_handle = null
+	else
+		var/obj/item/I = usr.get_active_hand()
+		if(istype(I, /obj/item/disk/nuclear))
+			usr.drop_item()
+			I.forceMove(src)
+			auth_handle = om_handle(I)
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "type", ui_act_type, UI_ARG_TEXT("key"))
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_type)
+	if(!auth())
+		return TRUE
+	var/key = params["key"]
+	if(key == "E")
+		if(code == r_code)
+			yes_code = 1
+			code = null
+		else
+			code = "ERROR"
+	else if(key == "R")
+		yes_code = 0
+		code = null
+	else
+		code = "[code][key]"
+		if(length(code) > 5)
+			code = "ERROR"
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "time", ui_act_time, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_time)
+	if(!auth() || !yes_code)
+		return TRUE
+	var/delta = params["delta"]
+	timeleft += delta
+	timeleft = min(max(round(timeleft), 60), 600)
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "timer", ui_act_timer)
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_timer)
+	if(!auth() || !yes_code || timing == -1.0)
+		return TRUE
+	if(safety)
+		to_chat(usr, span_warning("The safety is still on."))
+		return TRUE
+	timing = !timing
+	if(timing)
+		if(!lighthack)
+			icon_state = "nuclearbomb2"
+		if(!safety)
+			GLOB.bomb_set = 1
+			set_security_level("delta")
+		else
+			GLOB.bomb_set = 0
+			set_security_level("red")
+	else
+		GLOB.bomb_set = 0
+		set_security_level("red")
+		if(!lighthack)
+			icon_state = "nuclearbomb1"
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "safety", ui_act_safety)
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_safety)
+	if(!auth() || !yes_code)
+		return TRUE
+	safety = !safety
+	if(safety)
+		timing = 0
+		GLOB.bomb_set = 0
+		set_security_level("red")
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "anchor", ui_act_anchor)
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_anchor)
+	if(!auth() || !yes_code)
+		return TRUE
+	if(removal_stage == 5)
+		set_anchored(FALSE)
+		visible_message(span_warning("\The [src] makes a highly unpleasant crunching noise. It looks like the anchoring bolts have been cut."))
+		return TRUE
+	set_anchored(!anchored)
+	if(anchored)
+		visible_message(span_warning("With a steely snap, bolts slide out of [src] and anchor it to the flooring."))
+	else
+		visible_message(span_warning("The anchoring bolts slide back into the depths of [src]."))
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "wire", ui_act_wire, UI_ARG_VALUE("wire"))
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
+	var/wire = params["wire"]
+	if(!(wire in wires_list))
+		return TRUE
+	var/obj/item/I = usr.get_active_hand()
+	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
+		to_chat(usr, "You need wirecutters!")
+		return TRUE
+	LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
+	if(safety_wire == wire && timing)
+		explode()
+	if(timing_wire == wire)
+		if(!lighthack && icon_state == "nuclearbomb2")
+			icon_state = "nuclearbomb1"
+		timing = 0
+		GLOB.bomb_set = 0
+		set_security_level("red")
+	if(light_wire == wire)
+		lighthack = !lighthack
+	return TRUE
+
+UI_ACT(/obj/machinery/nuclearbomb, "pulse", ui_act_pulse, UI_ARG_VALUE("wire"))
+UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
+	var/wire = params["wire"]
+	if(!(wire in wires_list))
+		return TRUE
+	var/obj/item/hand_item = usr.get_active_hand()
+	if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
+		to_chat(usr, "You need a multitool!")
+		return TRUE
+	if(LAZYACCESS(wires_list, wire))
+		to_chat(usr, "You can't pulse a cut wire.")
+		return TRUE
+	if(light_wire == wire)
+		toggle_lighthack()
+		om_after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
+	if(timing_wire == wire && timing)
+		explode()
+	if(safety_wire == wire)
+		toggle_safety()
+		om_after(src, 10 SECONDS, PROC_REF(toggle_safety))
+		if(safety == 1)
+			visible_message(span_notice("The [src] quiets down."))
+			if(!lighthack && icon_state == "nuclearbomb2")
+				icon_state = "nuclearbomb1"
+		else
+			visible_message(span_notice("The [src] emits a quiet whirling noise!"))
+	return TRUE
 
 /obj/machinery/nuclearbomb/proc/nukehack_win(mob/user as mob)
 	// wire-defusion view of the same TGUI window. Setting wire_view

@@ -241,11 +241,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/power/generator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TEGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/generator, "TEGenerator")
 
 /obj/machinery/power/generator/tgui_data(mob/user)
 	// this is the data which will be sent to the ui

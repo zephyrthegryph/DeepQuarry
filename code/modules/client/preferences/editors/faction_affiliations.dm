@@ -33,12 +33,11 @@
 		"choices" = GLOB.reputation_affiliation_choices,
 	)
 
-/datum/preference_editor/faction_affiliations/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	if(action != "set_affiliation")
-		return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/faction_affiliations, "set_affiliation", ui_act_set_affiliation, UI_ARG_CHOICE("faction", "glob:reputation_factions"), UI_ARG_CHOICE("affiliation", "glob:reputation_affiliation_choices"))
+UI_ACT_PREF_PROC(/datum/preference_editor/faction_affiliations, ui_act_set_affiliation)
 	var/faction_id = params["faction"]
 	var/affiliation = params["affiliation"]
-	if(!(faction_id in GLOB.reputation_factions) || !(affiliation in GLOB.reputation_affiliation_choices))
+	if(isnull(faction_id) || isnull(affiliation))
 		return PREF_UPDATE_REJECTED
 	var/list/current = preferences.read_preference(/datum/preference/faction_affiliations)
 	current = islist(current) ? current.Copy() : list()

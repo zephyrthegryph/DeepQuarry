@@ -180,13 +180,12 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/atmospherics/binary/passive_gate/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/atmospherics/binary/passive_gate, "PressureRegulator")
+
+/obj/machinery/atmospherics/binary/passive_gate/ui_prepare(mob/user, datum/tgui/ui)
 	if(has_stat(BROKEN))
 		return FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PressureRegulator", name)
-		ui.open()
+	return TRUE
 
 /obj/machinery/atmospherics/binary/passive_gate/tgui_data(mob/user)
 	// this is the data which will be sent to the ui
@@ -205,47 +204,58 @@
 
 	return data
 
-/obj/machinery/atmospherics/binary/passive_gate/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "toggle_valve", ui_act_toggle_valve)
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_toggle_valve)
+	. = TRUE
+	unlocked = !unlocked
+	update_icon()
+	if(.)
+		update_rust_device()
+	add_fingerprint(ui.user)
 
-	switch(action)
-		if("toggle_valve")
-			. = TRUE
-			unlocked = !unlocked
-		if("regulate_mode")
-			. = TRUE
-			switch(params["mode"])
-				if("off") regulate_mode = REGULATE_NONE
-				if("input") regulate_mode = REGULATE_INPUT
-				if("output") regulate_mode = REGULATE_OUTPUT
+UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "regulate_mode", ui_act_regulate_mode, UI_ARG_TEXT("mode"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_regulate_mode)
+	. = TRUE
+	switch(params["mode"])
+		if("off") regulate_mode = REGULATE_NONE
+		if("input") regulate_mode = REGULATE_INPUT
+		if("output") regulate_mode = REGULATE_OUTPUT
+	update_icon()
+	if(.)
+		update_rust_device()
+	add_fingerprint(ui.user)
 
-		if("set_press")
-			. = TRUE
-			switch(params["press"])
-				if("min")
-					target_pressure = 0
-				if("max")
-					target_pressure = max_pressure_setting
-				if("set")
-					var/new_pressure = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, max = max_pressure_setting)
-					if(isnull(new_pressure))
-						return
-					src.target_pressure = between(0, new_pressure, max_pressure_setting)
+UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_press)
+	. = TRUE
+	switch(params["press"])
+		if("min")
+			target_pressure = 0
+		if("max")
+			target_pressure = max_pressure_setting
+		if("set")
+			var/new_pressure = act_ask(ui.user, action, params, ui, "k236", /datum/om/prompt/number, message = "Enter new output pressure (0-[max_pressure_setting]kPa)", title = "Pressure Control", default = src.target_pressure, max = max_pressure_setting)
+			if(isnull(new_pressure))
+				return
+			src.target_pressure = between(0, new_pressure, max_pressure_setting)
+	update_icon()
+	if(.)
+		update_rust_device()
+	add_fingerprint(ui.user)
 
-		if("set_flow_rate")
-			. = TRUE
-			switch(params["press"])
-				if("min")
-					set_flow_rate = 0
-				if("max")
-					set_flow_rate = air1.return_volume()
-				if("set")
-					var/new_flow_rate = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, max = air1.return_volume())
-					if(isnull(new_flow_rate))
-						return
-					src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
-
+UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "set_flow_rate", ui_act_set_flow_rate, UI_ARG_TEXT("press"))
+UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_set_flow_rate)
+	. = TRUE
+	switch(params["press"])
+		if("min")
+			set_flow_rate = 0
+		if("max")
+			set_flow_rate = air1.return_volume()
+		if("set")
+			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k247", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[air1.return_volume()]L/s)", title = "Flow Rate Control", default = src.set_flow_rate, max = air1.return_volume())
+			if(isnull(new_flow_rate))
+				return
+			src.set_flow_rate = between(0, new_flow_rate, air1.return_volume())
 	update_icon()
 	if(.)
 		update_rust_device()

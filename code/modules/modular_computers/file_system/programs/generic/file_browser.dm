@@ -16,144 +16,167 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-/datum/computer_file/program/filemanager/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_openfile", ui_act_prg_openfile, UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_openfile)
+	open_file = params["uid"]
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_newtextfile", ui_act_prg_newtextfile)
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_newtextfile)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	var/newname = act_ask(ui.user, action, params, ui, "k33", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "File rename")
+	if(isnull(newname))
+		return
+	if(!newname)
+		return
+	if(HDD.find_file_by_name(newname))
+		error = "I/O error: File already exists."
+		return
+	var/datum/computer_file/data/F = new/datum/computer_file/data/text()
+	F.filename = newname
+	HDD.store_file(F)
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_closefile", ui_act_prg_closefile)
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_closefile)
+	open_file = null
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_clone", ui_act_prg_clone, UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clone)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	var/datum/computer_file/F = HDD.find_file_by_uid(params["uid"])
+	if(!F || !istype(F))
+		return
+	var/datum/computer_file/C = F.clone(1)
+	HDD.store_file(C)
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_edit", ui_act_prg_edit)
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_edit)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	if(!open_file)
+		return
+	var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
+	if(!F || !istype(F))
+		return
+	var/_answer_k63 = act_ask(ui.user, action, params, ui, "k63", /datum/om/prompt/choice/alert, message = "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", title = "Incompatible File", choices = list("No", "Yes"))
+	if(isnull(_answer_k63))
+		return
+	if(F.do_not_edit && (_answer_k63 != "Yes"))
+		return
+
+	var/oldtext = html_decode(F.stored_data)
+	oldtext = replacetext(oldtext, "\[br\]", "\n")
+
+	var/_answer_k69 = act_ask(ui.user, action, params, ui, "k69", /datum/om/prompt/text, message = "Editing file [F.filename].[F.filetype]. You may use most tags used in paper formatting:", title = "Text Editor", default = oldtext, max_length = MAX_TEXTFILE_LENGTH, multiline = TRUE)
+	if(isnull(_answer_k69))
+		return
+	var/newtext = replacetext(_answer_k69, "\n", "\[br\]")
+	if(!newtext)
+		return
+
+	if(F)
+		var/datum/computer_file/data/backup = F.clone()
+		F.holder().remove_file(F)
+		F.stored_data = newtext
+		F.calculate_size()
+		// We can't store the updated file, it's probably too large. Print an error and restore backed up version.
+		// This is mostly intended to prevent people from losing texts they spent lot of time working on due to running out of space.
+		// They will be able to copy-paste the text from error screen and store it in notepad or something.
+		if(!F.holder().store_file(F))
+			error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
+			F.holder().store_file(backup)
 		return TRUE
 
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_printfile", ui_act_prg_printfile)
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_printfile)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	if(!open_file)
+		return
+	var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
+	if(!F || !istype(F))
+		return
+	if(!computer().nano_printer)
+		error = "Missing Hardware: Your computer does not have required hardware to complete this operation."
+		return TRUE
+	if(!computer().nano_printer.print_text(pencode2html(F.stored_data)))
+		error = "Hardware error: Printer was unable to print the file. It may be out of paper."
+		return TRUE
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_deletefile", ui_act_prg_deletefile, UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_deletefile)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
+	if(!file || file.undeletable)
+		return
+	file.holder().remove_file(file)
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_rename", ui_act_prg_rename, UI_ARG_VALUE("new_name"), UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_rename)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return
+	var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
+	if(!file)
+		return
+	var/newname = params["new_name"]
+	if(!newname)
+		return
+	if(file.holder().find_file_by_name(newname))
+		error = "I/O error: File already exists."
+		return TRUE
+	file.filename = newname
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_copytousb", ui_act_prg_copytousb, UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copytousb)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive
+	if(!HDD || !RHDD)
+		return
+	var/datum/computer_file/F = HDD.find_file_by_uid(params["uid"])
+	if(!F)
+		return
+	var/datum/computer_file/C = F.clone(FALSE)
+	if(!RHDD.try_store_file(C))
+		error = "I/O error: File already exists or insufficient space on drive."
+		return TRUE
+	RHDD.store_file(C)
+	return TRUE
 
-	switch(action)
-		if("PRG_openfile")
-			open_file = params["uid"]
-			return TRUE
-		if("PRG_newtextfile")
-			if(!HDD)
-				return
-			var/newname = act_ask(ui.user, action, params, ui, "k33", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "File rename")
-			if(isnull(newname))
-				return
-			if(!newname)
-				return
-			if(HDD.find_file_by_name(newname))
-				error = "I/O error: File already exists."
-				return
-			var/datum/computer_file/data/F = new/datum/computer_file/data/text()
-			F.filename = newname
-			HDD.store_file(F)
-			return TRUE
-		if("PRG_closefile")
-			open_file = null
-			return TRUE
-		if("PRG_clone")
-			if(!HDD)
-				return
-			var/datum/computer_file/F = HDD.find_file_by_uid(params["uid"])
-			if(!F || !istype(F))
-				return
-			var/datum/computer_file/C = F.clone(1)
-			HDD.store_file(C)
-			return TRUE
-		if("PRG_edit")
-			if(!HDD)
-				return
-			if(!open_file)
-				return
-			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
-			if(!F || !istype(F))
-				return
-			var/_answer_k63 = act_ask(ui.user, action, params, ui, "k63", /datum/om/prompt/choice/alert, message = "WARNING: This file is not compatible with editor. Editing it may result in permanently corrupted formatting or damaged data consistency. Edit anyway?", title = "Incompatible File", choices = list("No", "Yes"))
-			if(isnull(_answer_k63))
-				return
-			if(F.do_not_edit && (_answer_k63 != "Yes"))
-				return
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_copyfromusb", ui_act_prg_copyfromusb, UI_ARG_VALUE("uid"))
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copyfromusb)
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive
+	if(!HDD || !RHDD)
+		return
+	var/datum/computer_file/F = RHDD.find_file_by_uid(params["uid"])
+	if(!F || !istype(F))
+		return
+	var/datum/computer_file/C = F.clone(FALSE)
+	if(!HDD.try_store_file(C))
+		error = "I/O error: File already exists or insufficient space on drive."
+		return TRUE
+	HDD.store_file(C)
+	return TRUE
 
-			var/oldtext = html_decode(F.stored_data)
-			oldtext = replacetext(oldtext, "\[br\]", "\n")
-
-			var/_answer_k69 = act_ask(ui.user, action, params, ui, "k69", /datum/om/prompt/text, message = "Editing file [F.filename].[F.filetype]. You may use most tags used in paper formatting:", title = "Text Editor", default = oldtext, max_length = MAX_TEXTFILE_LENGTH, multiline = TRUE)
-			if(isnull(_answer_k69))
-				return
-			var/newtext = replacetext(_answer_k69, "\n", "\[br\]")
-			if(!newtext)
-				return
-
-			if(F)
-				var/datum/computer_file/data/backup = F.clone()
-				F.holder().remove_file(F)
-				F.stored_data = newtext
-				F.calculate_size()
-				// We can't store the updated file, it's probably too large. Print an error and restore backed up version.
-				// This is mostly intended to prevent people from losing texts they spent lot of time working on due to running out of space.
-				// They will be able to copy-paste the text from error screen and store it in notepad or something.
-				if(!F.holder().store_file(F))
-					error = "I/O error: Unable to overwrite file. Hard drive is probably full. You may want to backup your changes before closing this window:<br><br>[html_decode(F.stored_data)]<br><br>"
-					F.holder().store_file(backup)
-				return TRUE
-		if("PRG_printfile")
-			if(!HDD)
-				return
-			if(!open_file)
-				return
-			var/datum/computer_file/data/F = computer().find_file_by_uid(open_file)
-			if(!F || !istype(F))
-				return
-			if(!computer().nano_printer)
-				error = "Missing Hardware: Your computer does not have required hardware to complete this operation."
-				return TRUE
-			if(!computer().nano_printer.print_text(pencode2html(F.stored_data)))
-				error = "Hardware error: Printer was unable to print the file. It may be out of paper."
-				return TRUE
-			return TRUE
-		if("PRG_deletefile")
-			if(!HDD)
-				return
-			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
-			if(!file || file.undeletable)
-				return
-			file.holder().remove_file(file)
-			return TRUE
-		if("PRG_rename")
-			if(!HDD)
-				return
-			var/datum/computer_file/file = computer().find_file_by_uid(params["uid"])
-			if(!file)
-				return
-			var/newname = params["new_name"]
-			if(!newname)
-				return
-			if(file.holder().find_file_by_name(newname))
-				error = "I/O error: File already exists."
-				return TRUE
-			file.filename = newname
-			return TRUE
-		if("PRG_copytousb")
-			if(!HDD || !RHDD)
-				return
-			var/datum/computer_file/F = HDD.find_file_by_uid(params["uid"])
-			if(!F)
-				return
-			var/datum/computer_file/C = F.clone(FALSE)
-			if(!RHDD.try_store_file(C))
-				error = "I/O error: File already exists or insufficient space on drive."
-				return TRUE
-			RHDD.store_file(C)
-			return TRUE
-		if("PRG_copyfromusb")
-			if(!HDD || !RHDD)
-				return
-			var/datum/computer_file/F = RHDD.find_file_by_uid(params["uid"])
-			if(!F || !istype(F))
-				return
-			var/datum/computer_file/C = F.clone(FALSE)
-			if(!HDD.try_store_file(C))
-				error = "I/O error: File already exists or insufficient space on drive."
-				return TRUE
-			HDD.store_file(C)
-			return TRUE
-		if("PRG_clearerror")
-			error = null
-			return TRUE
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_clearerror", ui_act_prg_clearerror)
+UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clearerror)
+	error = null
+	return TRUE
 
 /datum/computer_file/program/filemanager/tgui_data(mob/user)
 	var/list/data = get_header_data()

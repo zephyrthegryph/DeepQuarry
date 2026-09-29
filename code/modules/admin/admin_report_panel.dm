@@ -35,11 +35,10 @@
 /datum/admin_report/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
 
-/datum/admin_report/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AdminReport", title)
-		ui.open()
+DECLARE_UI(/datum/admin_report, "AdminReport")
+
+/datum/admin_report/ui_title(mob/user)
+	return title
 
 /datum/admin_report/tgui_data(mob/user)
 	var/list/data = list()
@@ -52,18 +51,17 @@
 	data["has_host"] = !!forward_host()
 	return data
 
-/datum/admin_report/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "forward_topic")
-		dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
-		SStgui.update_uis(src)
-		return TRUE
-	if(action == "close")
-		SStgui.close_uis(src)
-		qdel(src)
-		return TRUE
+UI_ACT(/datum/admin_report, "forward_topic", ui_act_forward_topic, UI_ARG_TEXT("href"))
+UI_ACT_PROC(/datum/admin_report, ui_act_forward_topic)
+	dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/admin_report, "close", ui_act_close)
+UI_ACT_PROC(/datum/admin_report, ui_act_close)
+	SStgui.close_uis(src)
+	qdel(src)
+	return TRUE
 
 /// Show a report with a list of preformatted lines.
 /proc/dq_admin_report_lines(mob/user, title, list/lines, intro_html = "", datum/host = null)
@@ -107,11 +105,10 @@
 /datum/dq_stock_chart_panel/tgui_state(mob/user)
 	return GLOB.tgui_default_state
 
-/datum/dq_stock_chart_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "StockChart", "Share Value: [stock_name]")
-		ui.open()
+DECLARE_UI(/datum/dq_stock_chart_panel, "StockChart")
+
+/datum/dq_stock_chart_panel/ui_title(mob/user)
+	return "Share Value: [stock_name]"
 
 /datum/dq_stock_chart_panel/tgui_data(mob/user)
 	return list(

@@ -376,11 +376,7 @@
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/power/port_gen/pacman/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortableGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/port_gen/pacman, "PortableGenerator")
 
 /obj/machinery/power/port_gen/pacman/tgui_data(mob/user)
 	var/list/data = list()
@@ -413,30 +409,34 @@
 
 	return data
 
-/obj/machinery/power/port_gen/pacman/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
-
+/obj/machinery/power/port_gen/pacman/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("toggle_power")
-			TogglePower()
-			. = TRUE
+	return TRUE
 
-		if("eject")
-			if(!active)
-				DropFuel()
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "toggle_power", ui_act_toggle_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_toggle_power)
+	TogglePower()
+	. = TRUE
 
-		if("lower_power")
-			if(power_output > 1)
-				power_output--
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_eject)
+	if(!active)
+		DropFuel()
+		. = TRUE
 
-		if("higher_power")
-			if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
-				power_output++
-				. = TRUE
+UI_ACT(/obj/machinery/power/port_gen/pacman, "lower_power", ui_act_lower_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_lower_power)
+	if(power_output > 1)
+		power_output--
+		. = TRUE
+
+UI_ACT(/obj/machinery/power/port_gen/pacman, "higher_power", ui_act_higher_power)
+UI_ACT_PROC(/obj/machinery/power/port_gen/pacman, ui_act_higher_power)
+	if(power_output < max_power_output || (emagged && power_output < round(max_power_output * 2.5)))
+		power_output++
+		. = TRUE
 
 /obj/machinery/power/port_gen/pacman/super
 	name = "S.U.P.E.R.P.A.C.M.A.N.-type Portable Generator"

@@ -110,11 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/storage/secure/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SecureSafe", name)
-		ui.open()
+DECLARE_UI(/obj/item/storage/secure, "SecureSafe")
 
 /obj/item/storage/secure/tgui_data(mob/user)
 	var/list/data = list()
@@ -125,33 +121,30 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 	data["l_set"] = l_set
 	return data
 
-/obj/item/storage/secure/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch (action)
-		if("type")
-			var/digit = params["digit"]
-			if(digit == "E")
-				if ((src.l_set == 0) && (length(src.code) == 5) && (!src.l_setshort) && (src.code != "ERROR"))
-					src.l_code = src.code
-					src.l_set = 1
-				else if ((src.code == src.l_code) && (src.emagged == 0) && (src.l_set == 1))
-					src.locked = 0
-					cut_overlays()
-					add_overlay(icon_opened)
-					src.code = null
-				else
-					src.code = "ERROR"
-			else
-				if ((digit == "R") && (src.emagged == 0) && (!src.l_setshort))
-					src.locked = 1
-					cut_overlays()
-					src.code = null
-					src.close(ui.user)
-				else
-					src.code += text("[]", digit)
-					if (length(src.code) > 5)
-						src.code = "ERROR"
+UI_ACT(/obj/item/storage/secure, "type", ui_act_type, UI_ARG_TEXT("digit"))
+UI_ACT_PROC(/obj/item/storage/secure, ui_act_type)
+	var/digit = params["digit"]
+	if(digit == "E")
+		if ((src.l_set == 0) && (length(src.code) == 5) && (!src.l_setshort) && (src.code != "ERROR"))
+			src.l_code = src.code
+			src.l_set = 1
+		else if ((src.code == src.l_code) && (src.emagged == 0) && (src.l_set == 1))
+			src.locked = 0
+			cut_overlays()
+			add_overlay(icon_opened)
+			src.code = null
+		else
+			src.code = "ERROR"
+	else
+		if ((digit == "R") && (src.emagged == 0) && (!src.l_setshort))
+			src.locked = 1
+			cut_overlays()
+			src.code = null
+			src.close(ui.user)
+		else
+			src.code += text("[]", digit)
+			if (length(src.code) > 5)
+				src.code = "ERROR"
 	src.add_fingerprint(ui.user)
 	. = TRUE
 	return

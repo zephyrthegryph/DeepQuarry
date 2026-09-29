@@ -271,11 +271,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	atom_fix()
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/gravity_generator/main/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "GravityGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/gravity_generator/main, "GravityGenerator")
 
 /obj/machinery/gravity_generator/main/tgui_data(mob/user)
 	var/data[0]
@@ -288,16 +284,12 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	return data
 
-/obj/machinery/gravity_generator/main/tgui_act(action, params, datum/tgui/ui)
-	if((..()))
-		return TRUE
-
-	switch(action)
-		if("gentoggle")
-			breaker = !breaker
-			investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(ui.user)].", "gravity")
-			set_power()
-			return TOPIC_REFRESH
+UI_ACT(/obj/machinery/gravity_generator/main, "gentoggle", ui_act_gentoggle)
+UI_ACT_PROC(/obj/machinery/gravity_generator/main, ui_act_gentoggle)
+	breaker = !breaker
+	investigate_log("was toggled [breaker ? span_green("ON") : span_red("OFF")] by [key_name(ui.user)].", "gravity")
+	set_power()
+	return TOPIC_REFRESH
 
 // Power and Icon States
 

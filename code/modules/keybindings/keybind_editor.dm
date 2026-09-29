@@ -27,11 +27,7 @@ DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor"
 /datum/keybind_editor/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
-/datum/keybind_editor/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "KeybindingEditor")
-		ui.open()
+DECLARE_UI(/datum/keybind_editor, "KeybindingEditor")
 
 /datum/keybind_editor/tgui_static_data(mob/user)
 	var/list/bindings = list()
@@ -75,79 +71,95 @@ DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor"
 		"right_click" = owner()?.right_click_binding(),
 	)
 
-/datum/keybind_editor/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+/datum/keybind_editor/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/preferences/prefs = owner()?.prefs
 	if(!prefs)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "set_profile", ui_act_set_profile, UI_ARG_VALUE("profile"))
+UI_ACT_PROC(/datum/keybind_editor, ui_act_set_profile)
+	if(params["profile"] in KEYBIND_PROFILES)
+		profile = params["profile"]
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "set_right_click", ui_act_set_right_click, UI_ARG_VALUE("binding"))
+UI_ACT_PROC(/datum/keybind_editor, ui_act_set_right_click)
+	var/datum/preferences/prefs = owner()?.prefs
+	var/binding = params["binding"]
+	if(!(binding in RIGHT_CLICK_BINDINGS))
 		return
-	switch(action)
-		if("set_profile")
-			if(params["profile"] in KEYBIND_PROFILES)
-				profile = params["profile"]
-			return TRUE
-		if("set_right_click")
-			var/binding = params["binding"]
-			if(!(binding in RIGHT_CLICK_BINDINGS))
-				return
-			prefs.right_click_binding = binding
-			save_and_apply()
-			return TRUE
-		if("bind")
-			var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
-			var/key = sanitize_keybind_key(params["key"])
-			if(!binding || !key)
-				return
-			var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
-			if(key in keys)
-				return TRUE
-			if(length(keys) >= KEYBIND_MAX_KEYS)
-				to_chat(owner(), span_warning("[binding.name] already has [KEYBIND_MAX_KEYS] keys. Remove one first."))
-				return TRUE
-			// A key does one thing per profile: take it off any other binding first.
-			for(var/other_id in GLOB.keybindings)
-				var/datum/keybinding/other = GLOB.keybindings[other_id]
-				if(other == binding)
-					continue
-				var/list/other_keys = keybinding_keys(other, profile, prefs.key_bindings)
-				if(key in other_keys)
-					other_keys -= key
-					set_keys(prefs, other, other_keys)
-					to_chat(owner(), span_notice("[key] was moved from [other.name]."))
-			keys += key
-			set_keys(prefs, binding, keys)
-			save_and_apply()
-			return TRUE
-		if("unbind")
-			var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
-			if(!binding)
-				return
-			var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
-			keys -= params["key"]
-			set_keys(prefs, binding, keys)
-			save_and_apply()
-			return TRUE
-		if("reset")
-			var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
-			if(!binding)
-				return
-			var/list/profile_overrides = LAZYACCESS(prefs.key_bindings, profile)
-			if(profile_overrides)
-				profile_overrides -= binding.id
-				if(!length(profile_overrides))
-					prefs.key_bindings -= profile
-			if(!length(prefs.key_bindings))
-				prefs.key_bindings = null
-			save_and_apply()
-			return TRUE
-		if("reset_all")
-			if(prefs.key_bindings)
-				prefs.key_bindings -= profile
-				if(!length(prefs.key_bindings))
-					prefs.key_bindings = null
-			save_and_apply()
-			return TRUE
+	prefs.right_click_binding = binding
+	save_and_apply()
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "bind", ui_act_bind, UI_ARG_VALUE("id"), UI_ARG_TEXT("key"))
+UI_ACT_PROC(/datum/keybind_editor, ui_act_bind)
+	var/datum/preferences/prefs = owner()?.prefs
+	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
+	var/key = sanitize_keybind_key(params["key"])
+	if(!binding || !key)
+		return
+	var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
+	if(key in keys)
+		return TRUE
+	if(length(keys) >= KEYBIND_MAX_KEYS)
+		to_chat(owner(), span_warning("[binding.name] already has [KEYBIND_MAX_KEYS] keys. Remove one first."))
+		return TRUE
+	// A key does one thing per profile: take it off any other binding first.
+	for(var/other_id in GLOB.keybindings)
+		var/datum/keybinding/other = GLOB.keybindings[other_id]
+		if(other == binding)
+			continue
+		var/list/other_keys = keybinding_keys(other, profile, prefs.key_bindings)
+		if(key in other_keys)
+			other_keys -= key
+			set_keys(prefs, other, other_keys)
+			to_chat(owner(), span_notice("[key] was moved from [other.name]."))
+	keys += key
+	set_keys(prefs, binding, keys)
+	save_and_apply()
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "unbind", ui_act_unbind, UI_ARG_VALUE("id"), UI_ARG_VALUE("key"))
+UI_ACT_PROC(/datum/keybind_editor, ui_act_unbind)
+	var/datum/preferences/prefs = owner()?.prefs
+	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
+	if(!binding)
+		return
+	var/list/keys = keybinding_keys(binding, profile, prefs.key_bindings)
+	keys -= params["key"]
+	set_keys(prefs, binding, keys)
+	save_and_apply()
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "reset", ui_act_reset, UI_ARG_VALUE("id"))
+UI_ACT_PROC(/datum/keybind_editor, ui_act_reset)
+	var/datum/preferences/prefs = owner()?.prefs
+	var/datum/keybinding/binding = GLOB.keybindings[params["id"]]
+	if(!binding)
+		return
+	var/list/profile_overrides = LAZYACCESS(prefs.key_bindings, profile)
+	if(profile_overrides)
+		profile_overrides -= binding.id
+		if(!length(profile_overrides))
+			prefs.key_bindings -= profile
+	if(!length(prefs.key_bindings))
+		prefs.key_bindings = null
+	save_and_apply()
+	return TRUE
+
+UI_ACT(/datum/keybind_editor, "reset_all", ui_act_reset_all)
+UI_ACT_PROC(/datum/keybind_editor, ui_act_reset_all)
+	var/datum/preferences/prefs = owner()?.prefs
+	if(prefs.key_bindings)
+		prefs.key_bindings -= profile
+		if(!length(prefs.key_bindings))
+			prefs.key_bindings = null
+	save_and_apply()
+	return TRUE
 
 /// Stores a binding's keys for the edited profile. Keys equal to the defaults drop the override.
 /datum/keybind_editor/proc/set_keys(datum/preferences/prefs, datum/keybinding/binding, list/keys)

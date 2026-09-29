@@ -111,14 +111,13 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	if(!holder())
 		visible_message("[icon2html(src,viewers(src))] *beep* *beep*")
 
-/obj/item/assembly/infra/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/assembly/infra, "AssemblyInfrared")
+
+/obj/item/assembly/infra/ui_prepare(mob/user, datum/tgui/ui)
 	if(!secured)
 		to_chat(user, span_warning("[src] is unsecured!"))
 		return FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AssemblyInfrared", name)
-		ui.open()
+	return TRUE
 
 /obj/item/assembly/infra/tgui_data(mob/user)
 	var/list/data = ..()
@@ -128,20 +127,18 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 
 	return data
 
-/obj/item/assembly/infra/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/assembly/infra, "state", ui_act_state)
+UI_ACT_PROC(/obj/item/assembly/infra, ui_act_state)
+	toggle_state()
+	return TRUE
 
-	switch(action)
-		if("state")
-			toggle_state()
-			return TRUE
-		if("visible")
-			visible = !visible
-			for(var/obj/effect/beam/i_beam/I as anything in i_beams)
-				I.visible = visible
-				CHECK_TICK
-			return TRUE
+UI_ACT(/obj/item/assembly/infra, "visible", ui_act_visible)
+UI_ACT_PROC(/obj/item/assembly/infra, ui_act_visible)
+	visible = !visible
+	for(var/obj/effect/beam/i_beam/I as anything in i_beams)
+		I.visible = visible
+		CHECK_TICK
+	return TRUE
 
 /***************************IBeam*********************************/
 
