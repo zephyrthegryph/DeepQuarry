@@ -182,7 +182,7 @@
 	var/datum/alarm/alarm = handler.alarms[1]
 	alarm.cameras = list(source)
 	handler.release_atom(source)
-	TEST_ASSERT(!(source in alarm.sources_assoc), "Released alarm source remained an associative-list key.")
+	TEST_ASSERT(!alarm.source_entry(source), "Released alarm source remained an alarm source entry.")
 	TEST_ASSERT(!(source in alarm.cameras), "Released alarm source remained in an alarm camera cache.")
 	qdel(source)
 	qdel(handler)

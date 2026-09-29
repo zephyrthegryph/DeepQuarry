@@ -482,7 +482,8 @@ def main(argv=None):
                     # An untyped list var collecting entities (src, a new object, an entity-typed local):
                     # an object-keyed roster, which is an owned or relation list.
                     got = idx.member(rtype, name)
-                    if got and got[2]:
+                    d = idx.decl(rtype, name)
+                    if got and got[2] and not (d and d[1] == "SHARED"):
                         kind, dtype = "list", got[0]
                 if not kind:
                     continue

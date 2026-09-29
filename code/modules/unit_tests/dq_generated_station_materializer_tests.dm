@@ -71,7 +71,9 @@
 	spec.grid_width = 44
 	spec.grid_height = 16
 	spec.maximum_area = 704
-	spec.department_definitions = list(command_definition, docking_definition)
+	own_clear(spec, "department_definitions", OWN_DELETE)
+	own_add(spec, "department_definitions", command_definition)
+	own_add(spec, "department_definitions", docking_definition)
 	own_clear(spec, "departments", OWN_DELETE)
 	own_add(spec, "departments", command)
 	own_add(spec, "departments", docking)

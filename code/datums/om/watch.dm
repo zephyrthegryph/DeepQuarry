@@ -284,7 +284,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// Arms (or re-arms) a threshold-band watch on a gas mixture, replacing whatever this
 /// (entity, watch_id) pair previously watched. A crossing invokes `wake_callback` and/or
 /// om_changed(entity, channel).
-/proc/om_watch_arm_bands(datum/entity, watch_id, mixture_id, list/datum/om_watch_band/bands, channel, list/wake_callback)
+/proc/om_watch_arm_bands(datum/entity, watch_id, mixture_id, list/bands, channel, list/wake_callback)
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -294,7 +294,9 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	W.channel = channel
 	W.wake_callback = wake_callback
 	W.mode = OM_WATCH_BANDS
-	W.bands = bands
+	own_clear(W, "bands", OWN_DELETE)
+	for(var/datum/om_watch_band/band as anything in bands) // the watch owns its bands
+		own_add(W, "bands", band)
 	om_watch_register(W)
 	om_watch_index_gas(W, mixture_id)
 	return W
@@ -362,7 +364,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// is invoked automatically by om_watch_recheck(); otherwise the caller passes the fresh value
 /// straight to om_watch_recheck_value(). This is the generic hook for (a) any vg/pipeline
 /// component field and (c) any other computed value: `getter` is an arbitrary proc reference.
-/proc/om_watch_arm_derived(datum/entity, watch_id, list/datum/om_watch_band/bands, channel, list/getter, list/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
+/proc/om_watch_arm_derived(datum/entity, watch_id, list/bands, channel, list/getter, list/wake_callback, list/mixture_ids, interest_mask = GAS_DEPENDENCY_ALL)
 	om_watch_disarm(entity, watch_id)
 	var/datum/om_watch/W = new
 	W.entity_ref = om_handle(entity)
@@ -370,7 +372,9 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	W.channel = channel
 	W.wake_callback = wake_callback
 	W.mode = OM_WATCH_DERIVED
-	W.bands = bands
+	own_clear(W, "bands", OWN_DELETE)
+	for(var/datum/om_watch_band/band as anything in bands) // the watch owns its bands
+		own_add(W, "bands", band)
 	W.value_getter = getter
 	W.interest_mask = interest_mask
 	om_watch_register(W)

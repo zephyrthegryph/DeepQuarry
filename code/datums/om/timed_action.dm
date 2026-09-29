@@ -98,10 +98,10 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/mob/user = actor
 	if(progress)
 		if(user.client)
-			progbar = new(user, duration, target || user)
+			own_set(src, "progbar", new /datum/progressbar(user, duration, target || user))
 			progbar.animate_fill(duration)
 		if(!hidden && duration >= 1 SECONDS)
-			cog = new(user, icon, iconstate)
+			own_set(src, "cog", new /datum/cogbar(user, icon, iconstate))
 	OM_EMIT(user, /datum/om/event/do_after_began)
 
 /// A repeating timed action (steps) shows a fresh bar for each step.
@@ -109,11 +109,12 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/mob/user = actor
 	if(!progress || !istype(user))
 		return
-	if(!QDELETED(progbar))
-		progbar.end_progress(TRUE)
-	progbar = null
+	// The bar fades out on its own and deletes itself (om_qdel_after): handed off, not owned.
+	var/datum/progressbar/old_bar = own_take(src, "progbar")
+	if(!QDELETED(old_bar))
+		old_bar.end_progress(TRUE)
 	if(user.client && delay > 0)
-		progbar = new(user, delay, target || user)
+		own_set(src, "progbar", new /datum/progressbar(user, delay, target || user))
 		progbar.animate_fill(delay)
 
 /datum/om/task/timed/why_not_running()
@@ -172,11 +173,12 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	return om_task_call(src, check_proc) != FALSE
 
 /datum/om/task/timed/proc/timed_action_end(success)
-	if(!QDELETED(progbar))
-		progbar.end_progress(success)
-	progbar = null
-	cog?.remove()
-	cog = null
+	// Both fade out and delete themselves (om_qdel_after): handed off, not owned.
+	var/datum/progressbar/done_bar = own_take(src, "progbar")
+	if(!QDELETED(done_bar))
+		done_bar.end_progress(success)
+	var/datum/cogbar/done_cog = own_take(src, "cog")
+	done_cog?.remove()
 	var/mob/user = actor
 	if(!istype(user))
 		return

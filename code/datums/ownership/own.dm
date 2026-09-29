@@ -259,7 +259,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		return own_transfer(current, value.own_slot, dest, dest_var, islist(cur) ? value : null, dest_key)
 	if(!isnull(dest_key))
 		return own_put(dest, dest_var, dest_key, value)
-	if(islist(dest.vars[dest_var]))
+	if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
 		return own_add(dest, dest_var, value)
 	return own_set(dest, dest_var, value)
 
