@@ -76,9 +76,9 @@
 			if(O:wielded)
 				O:wielded = 0
 				O.update_icon()
-			own_set(src, "fireaxe", O)
 			user.remove_from_mob(O)
 			O.forceMove(src)
+			own_set(src, "fireaxe", O)
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()
 		else

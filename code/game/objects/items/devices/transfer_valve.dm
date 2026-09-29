@@ -23,14 +23,14 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			return TRUE
 
 		if(!tank_one)
-			own_set(src, "tank_one", item)
 			user.drop_item()
 			item.forceMove(src)
+			own_set(src, "tank_one", item)
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
-			own_set(src, "tank_two", item)
 			user.drop_item()
 			item.forceMove(src)
+			own_set(src, "tank_two", item)
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
 			log_game("[key_name_admin(user)] attached both tanks to a transfer valve.")
@@ -47,8 +47,8 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
 			return TRUE
 		user.remove_from_mob(item)
-		own_set(src, "attached_device", A)
 		A.forceMove(src)
+		own_set(src, "attached_device", A)
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
 		rel_set(A, "holder", src)
 		A.toggle_secure()	//this calls update_icon(), which calls update_icon() on the holder (i.e. the bomb).
