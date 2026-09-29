@@ -880,4 +880,4 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 /obj/item/implant/compressed/proc/scanned() as /obj/item
 	return scanned
 
-OWN(/obj/item/implant, part, OWN_CONTAINED)
+// part is the organ the implant sits in: a view kept by the organ's implant slot (containment), not owned.

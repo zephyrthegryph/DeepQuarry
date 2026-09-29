@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 					break
 		if("PRG_reset")
 			. = TRUE
-			own_take(src, "loaded_article_owned")
+			own_clear(src, "loaded_article_owned", OWN_DELETE) // our private clone
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived

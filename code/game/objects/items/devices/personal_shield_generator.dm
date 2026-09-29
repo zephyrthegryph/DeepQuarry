@@ -200,8 +200,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	var/datum/effect/effect/system/spark_spread/sparks = new
 	sparks.set_up(5, 1, src)
 	sparks.start()
-	qdel(bcell)
-	own_take(src, "bcell")
+	own_clear(src, "bcell", OWN_DELETE)
 	if(active_weapon)
 		reattach_gun()
 		rel_clear(active_weapon, "power_supply")

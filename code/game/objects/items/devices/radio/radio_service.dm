@@ -99,8 +99,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 		frequency.remove_listener(device)
 
 		if(!length(frequency.devices))
-			qdel(frequency)
-			own_take_member(src, "frequencies", f_text)
+			own_put(src, "frequencies", f_text, null) // disposes of (deletes) the emptied frequency
 
 	return 1
 

@@ -710,5 +710,5 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 #undef TANK_IDEAL_PRESSURE
 
-REL_PAIR(/obj/item/tankassemblyproxy, tank, proxyassembly)
-OWN(/obj/item/tankassemblyproxy, assembly, OWN_CONTAINED)
+// The tank owns its proxy (implicit OWN); the proxy names the tank back (one-sided REL). The
+// assembly holder sits in the tank's contents, so the proxy only names it (REL view).

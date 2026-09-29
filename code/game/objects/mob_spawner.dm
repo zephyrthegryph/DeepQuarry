@@ -28,8 +28,8 @@
 
 DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 
-// its spawned mobs lose their nest.
-REL_PAIR_LIST(/obj/structure/mob_spawner, spawned_mobs, nest)
+// Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
+REL_LIST(/obj/structure/mob_spawner, spawned_mobs)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()

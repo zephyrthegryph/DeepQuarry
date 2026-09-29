@@ -479,8 +479,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	else
 		return INITIALIZE_HINT_QDEL
 
-REL_PAIR(/obj/item/weldingtool/tubefed, mounted_pack, nozzle)
-REL_PAIR(/obj/item/weldpack, nozzle, mounted_pack)
+// The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
 
 /obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
