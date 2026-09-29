@@ -831,23 +831,19 @@
 	qdel(metrics)
 	return jointext(body, "")
 
-/client/verb/show_generated_station_architecture()
-	set name = "Show Generated Station Architecture"
-	set category = "Debug"
-	if(!check_rights(R_DEBUG))
-		return
+ADMIN_VERB(show_generated_station_architecture, R_DEBUG, "Show Generated Station Architecture", "Show the architecture diagnostic map of the generated station on your z-level.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	var/datum/expedition_site/found_site
 	for(var/key in GLOB.expedition_service?.sites)
 		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]
-		if(site.z_level == mob?.z && site.station_materialization)
+		if(site.z_level == user.mob?.z && site.station_materialization)
 			found_site = site
 			break
 	if(!found_site)
-		to_chat(src, span_warning("There is no generated station on your current z-level."))
+		to_chat(user, span_warning("There is no generated station on your current z-level."))
 		return
 	var/datum/generated_station_validation_result/validation = found_site.station_materialization.validate_architecture(found_site.station_spec)
 	var/html = found_site.station_materialization.diagnostic_minimap_html(validation)
-	mob << browse(html, "window=generated_station_architecture;size=1000x800")
+	user << browse(html, "window=generated_station_architecture;size=1000x800")
 	qdel(validation)
 
 #undef GENERATED_STATION_COMPACTNESS_LIMIT

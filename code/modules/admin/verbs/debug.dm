@@ -737,15 +737,3 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-
-
-/client/proc/reload_configuration()
-	set category = "Debug.Server"
-	set name = "Reload Configuration"
-	set desc = "Force config reload to world default"
-	if(!check_rights(R_DEBUG))
-		return
-	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(reload_configuration_confirmed), title = "Really reset?", message = "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", no_first = TRUE, requires = PROMPT_ADMIN(R_DEBUG))
-
-/client/proc/reload_configuration_confirmed(datum/om/prompt/confirm/ask)
-	config.admin_reload()
