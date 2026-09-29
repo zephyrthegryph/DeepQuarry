@@ -74,7 +74,10 @@
 /// D's ownership table (never null).
 /proc/own_table_of(datum/D)
 	RETURN_TYPE(/datum/own_table)
-	return CACHED_KEY(own_table, D.type, D)
+	// The release fast path in every build: this runs several times per atom at boot (~850k calls
+	// on Southern Cross), and the test-build guard only verifies list values (a table is a datum)
+	// and keys that are not type paths (this one always is).
+	return _CACHED_KEY_FAST(own_table, D.type, D)
 
 DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 
@@ -147,7 +150,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	var/datum/om/registry/R = GLOB?.om_reg
 	if(!R || !holder)
 		return
-	var/channel = R.fields_of(holder.type)[var_name]
+	var/list/fields = R.fields_by_type[holder.type] || R.fields_of(holder.type)
+	var/channel = fields[var_name]
 	if(channel)
 		om_changed(holder, channel)
 

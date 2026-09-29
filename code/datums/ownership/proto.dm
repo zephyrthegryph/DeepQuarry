@@ -10,7 +10,7 @@
 /// TRUE when holder.var_name holds a private copy the holder owns.
 /proc/proto_is_private(datum/holder, var_name)
 	var/datum/value = holder.vars[var_name]
-	return isdatum(value) && value.own_holder_ref == ref(holder) && value.own_slot == var_name
+	return isdatum(value) && value.own_holder_ref == own_key(holder) && value.own_slot == var_name
 
 /// holder.var_name as a private copy the holder may mutate: made (and owned) on first call.
 /proc/proto_private(datum/holder, var_name)

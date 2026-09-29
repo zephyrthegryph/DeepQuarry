@@ -41,7 +41,7 @@ GLOBAL_LIST_EMPTY(def_freeze_snapshot)
 /proc/def_freeze_digest(datum/D)
 	. = list()
 	for(var/name in D.vars)
-		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "cached_ref"))
+		if(name in list("vars", "gc_destroyed", "om_rec", "om_listen", "om_hid", "om_refs_in", "datum_flags", "tag", "own_holder_ref", "own_slot", "own_key_text", "cached_ref"))
 			continue
 		var/value = D.vars[name]
 		if(!issaved(value) && !islist(value))

@@ -59,7 +59,8 @@
 
 // ---------------------------------------------------------------- handles
 //
-// A slot table: slot id -> the datum's \ref text, plus a generation per slot.
+// A slot table: slot id -> the datum's weak key (own_key(): not its ref text, because retained
+// ref strings slow BYOND down), plus a generation per slot.
 // The table holds text, never the datum, so a handle doesn't keep its target
 // alive: a datum BYOND collects without qdel() (a dropped species, a stack
 // canary) simply stops resolving, like one that was qdel()ed.
@@ -99,7 +100,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 			gens.len++
 			id = length(slots)
 			gens[id] = 0
-		slots[id] = REF(D)
+		slots[id] = own_key(D)
 		var/list/types = GLOB.om_handle_types
 		if(length(types) < id)
 			types.len = id
@@ -139,7 +140,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return 0
 	rel_go_dormant(D)
 	var/list/slots = GLOB.om_handle_slots
-	if(id <= length(slots) && slots[id] == REF(D))
+	if(id <= length(slots) && slots[id] == own_key(D))
 		slots[id] = OM_HANDLE_PARKED
 	D.om_hid = 0
 	return id
@@ -152,7 +153,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return FALSE
 	if(D.om_hid)
 		om_handle_release(D)
-	slots[id] = REF(D)
+	slots[id] = own_key(D)
 	var/list/types = GLOB.om_handle_types
 	if(length(types) >= id)
 		types[id] = D.type
@@ -200,7 +201,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/ref = slots[id]
 	if(!ref || ref == OM_HANDLE_PARKED)
 		return null
-	var/datum/D = locate(ref)
+	var/datum/D = own_locate(ref)
 	if(!isdatum(D) || D.om_hid != id)
 		// Collected without qdel(); a new datum may even have the ref now. Free the slot.
 		// A handle is not a reference: when it was the only thing naming its
@@ -230,7 +231,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 		return
 	D.om_hid = 0
 	var/list/slots = GLOB.om_handle_slots
-	if(id > length(slots) || slots[id] != REF(D))
+	if(id > length(slots) || slots[id] != own_key(D))
 		return
 	slots[id] = null
 	GLOB.om_handle_gens[id]++

@@ -25,8 +25,8 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
 
 ### 1.1 Invariants (checked in every build)
 
-- **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's ref
-  text, weak, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
+- **O1 One owner.** An owned entity records its owner on itself: `own_holder_ref` (the owner's weak key,
+  `own_key()`, so owner and child never form a reference cycle) and `own_slot` (the var). Read with
   `owner_of(D)` / `owner_slot_of(D)`; both re-check that the owner still names D. Movables in
   contents are owned by their ledger slot (`containment.md`); an `OWN(..., OWN_CONTAINED)` var
   names one of them.
@@ -109,8 +109,9 @@ dropped. A mob stays real (the serializer refuses mobs) and clones as a fresh in
   its own OM record (the `rec.owner` cycle kept it alive with live timers or hooks). The audit tears
   the record down.
 
-Test builds keep an index of every stamped entity and every rec, audit every 5 minutes and at the
-end of the run (a finding fails the run). Servers audit on demand (admin verb "Ownership Audit").
+The audit walks every live datum (no index: an index cost a weak key per entity at boot). Test
+builds audit every 5 minutes and at the end of the run (a finding fails the run). Servers audit on
+demand (admin verb "Ownership Audit").
 
 ### 1.6 Owned timers (`code/datums/om/timer.dm`)
 
@@ -167,7 +168,15 @@ seeds, contagions (cleanables, infected rooms), network gas, robot and AI sprite
 ### 4.1 Light edges: relation views (`views.dm`)
 
 A view var holds a direct reference (reads are free). The target keeps a lazy weak reverse index,
-`om_refs_in` (source ref text → var names). When either end dies the framework clears its side.
+`om_refs_in` (an alist: source key → var names). When either end dies the framework clears its side.
+
+Weak keys (`own_key()` / `own_locate()` in `own.dm`) name entities in every weak index: owner
+stamps, reverse indexes, keyed links, OM handle slots. A key is the ref spelled in decimal behind a
+fast-varying prefix, cached on the datum; a turf's is its position. Never keep raw ref text alive
+in bulk: BYOND 516's string table degrades on many strings sharing a prefix, and one retained ref
+per entity made boot quadratic. For the same reason big indexes are `alist`s (a plain list inserts
+a new key in linear time), `rel_names()` answers "does this list view name X" from the index, and
+an index prunes stale entries at each doubling rather than every 48 additions.
 
 ```dm
 REL_PAIR(/obj/machinery/sleeper, console, sleeper)             // two-sided, single on this end

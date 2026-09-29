@@ -98,5 +98,9 @@
 /// (own_move), a relation view re-links, anything else is copied.
 #define FORWARD_STATE(PATH, VAR) ##PATH/declared_forward_vars() { . = ..(); LAZYADD(., nameof(PATH::VAR)); }
 
+/// own_key(D) with the cached key read inline (D must be a typed datum var): the hot paths call it
+/// for every link, and nearly every call is a hit.
+#define OWN_KEY(D) (D.own_key_text || own_key(D))
+
 /// Reports an ownership violation (a runtime, so a test fails; captured in tests of the checks).
 #define OWN_REPORT(msg) dq_lifecycle_report("OWN: [msg]")
