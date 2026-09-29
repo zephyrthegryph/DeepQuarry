@@ -41,6 +41,7 @@ for lint in \
 	ui_actions_lint.py \
 	sys_lint.py \
 	tracked_lint.py \
+	derived_reads_lint.py \
 	cap_bits_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
@@ -51,6 +52,11 @@ done
 echo "::group::tracked_lint.py --selftest"
 if ! "$PY" tools/ci/tracked_lint.py --selftest; then
 	failed+=("tracked_lint.py --selftest")
+fi
+echo "::endgroup::"
+echo "::group::derived_reads_lint.py --selftest"
+if ! "$PY" tools/ci/derived_reads_lint.py --selftest; then
+	failed+=("derived_reads_lint.py --selftest")
 fi
 echo "::endgroup::"
 if [ ${#failed[@]} -gt 0 ]; then

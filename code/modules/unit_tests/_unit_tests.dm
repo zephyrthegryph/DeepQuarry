@@ -95,6 +95,7 @@
 #include "type_list_tests.dm"
 #include "dx_core_review_tests.dm"
 #include "dx_core_tests.dm"
+#include "dx_deps_tests.dm"
 #include "dx_condition_tests.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
@@ -361,6 +362,7 @@
 #include "../benchmarks/life_sweep.dm"
 #include "../benchmarks/life_sweep_adapter.dm"
 #include "../benchmarks/dx_refresh.dm"
+#include "../benchmarks/dx_deps.dm"
 #include "../balance/balance_benchmark.dm"
 #endif
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter

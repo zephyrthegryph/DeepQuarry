@@ -33,7 +33,7 @@ GLOBAL_VAR_INIT(timed_token_seq, 0)
 	if(D.vars[var_name] == value)
 		return
 	D.vars[var_name] = value // ALLOW(api): the timed-state writer for a var with no setter
-	changed(D)
+	changed(D, CHANGE_EXPLICIT, var_name)
 
 /proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_WORLD, keep_longer = FALSE, revert_to)
 	if(!D || QDELING(D) || !(var_name in D.vars))

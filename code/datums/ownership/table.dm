@@ -147,6 +147,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// while-declarations gated on it see the change (a relation view cleared because its target died,
 /// an owned child disposed of, a proto swapped). Before the OM registry exists nothing listens.
 /proc/own_field_changed(datum/holder, var_name)
+	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
+	if(GLOB?.derived_read_vars?[var_name])
+		derived_var_touched(holder, var_name)
 	var/datum/om/registry/R = GLOB?.om_reg
 	if(!R || !holder)
 		return
@@ -221,7 +224,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 /// Review 2 M8: an accessor write marks the holder changed (refresh.dm). Writes made while the
 /// globals are still being built (a global datum's New()) come before the refresh queue exists and
 /// before anything is drawn, so they mark nothing.
-/proc/own_mark_changed(datum/holder)
+/proc/own_mark_changed(datum/holder, var_name)
 	if(!islist(GLOB?.refresh_queue))
 		return
-	changed(holder)
+	changed(holder, CHANGE_EXPLICIT, var_name)

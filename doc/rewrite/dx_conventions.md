@@ -73,8 +73,16 @@ Write it the way DM already works:
 ## Derived procs
 
 - **The procs:** `draw(look)`, `should_run()`, `hidden_verbs()`, `tgui_data()` and
-  `on_state_changed(bits)` are plain overrides. The refresh engine re-runs them at the end of the frame
-  after a change.
+  `push_to_rust()` are plain overrides (`on_state_changed(bits)` is the old, channel-based form). The
+  refresh engine re-runs them at the end of the frame after a change.
+- **Declared dependencies.** `derived()` says what each one reads: `runs_while(nameof(v))`,
+  `drawn_from(...)` (draw and hidden verbs), `ui_from(...)`, `rust_push(...)`,
+  `derive(nameof(v), reads...)` for a cached value computed by `derive_<v>()`. A read is a var name
+  (`TRACKED`, derived or a declared relation), `rel(link, nameof(/type::var))`,
+  `rel_each(list_link, nameof(/type::var))` or `factor_dep(BF_X)`. A type that declares anything is
+  exact: a tracked write re-derives only the outputs that read it, once per frame. Capabilities
+  contribute their own reads. Outputs must not write state. `derived_reads_lint.py` checks the bodies
+  (`--fix` edits the block), and the drift audit names a missing read. See `migration_guide.md` A2a.
 - **Only children the owner draws propagate.** An owned child's change marks its owner only when one of
   the owner's capabilities draws it (`draws_var`).
 - **Drift.** The sweep reports `REFRESH DRIFT` and fails test builds.
@@ -111,6 +119,6 @@ Write it the way DM already works:
 
 ## Lints
 
-`cap_bits_lint.py`, `tracked_lint.py`, `ui_actions_lint.py` and `sys_lint.py` (`dx_old_forms`,
+`cap_bits_lint.py`, `tracked_lint.py`, `derived_reads_lint.py`, `ui_actions_lint.py` and `sys_lint.py` (`dx_old_forms`,
 `dx_manual_transfer`, and the dx_* rules from `rewrite/dx-lints`) run in `check_ratchets.sh`. Legacy
 sites are baselined shrink-only. New code is held to 0.

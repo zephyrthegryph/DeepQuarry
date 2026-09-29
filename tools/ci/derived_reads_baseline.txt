@@ -1,0 +1,5 @@
+# Legacy derived-proc reads a type's derived() doesn't declare (tools/ci/derived_reads_lint.py).
+# rule<TAB>file<TAB>normalized line. Shrink-only: after a sweep, `python tools/ci/derived_reads_lint.py --update`.
+undeclared_read	code/game/machinery/computer/supply.dm	var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
+undeclared_read	code/game/machinery/computer/supply.dm	data["contraband"] = can_order_contraband || (authorization & SUP_CONTRABAND)
+undeclared_read	code/modules/benchmarks/dx_refresh.dm	look.gauge("drawer_level", level = bench_level / 20, levels = 4) // changes a key only every 5 steps

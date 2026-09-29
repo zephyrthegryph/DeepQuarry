@@ -35,6 +35,7 @@ LINTS = {
     "containment": "tools/ci/containment_lint.py",
     "cooldown": "tools/ci/cooldown_lint.py",
     "decl": "tools/ci/decl_lint.py (Initialize()/on_destroy() work a lifecycle declaration now does)",
+    "derived_reads": "tools/ci/derived_reads_lint.py (a derived proc reading a var derived() does not declare)",
     "instance_list": "tools/ci/instance_list_lint.py",
     "interactions": "tools/ci/interactions_lint.py (DECLARE_INTERACTIONS replacing an ancestor's specs)",
     "latent": "tools/ci/latent_lint.py",

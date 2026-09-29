@@ -70,6 +70,11 @@
 /datum/capability/charger/proc/cell_holder_of(atom/holder)
 	return cap_of(holder, cell_var ? "slot:[cell_var]" : /datum/capability/slot/cell_holder)
 
+/// cap_should_run() reads the cell in the holder's cell slot.
+/datum/capability/charger/derived_reads(atom/holder)
+	var/datum/capability/slot/cell_holder/H = cell_holder_of(holder)
+	return H ? list(runs_while(H.slot_var)) : null
+
 /// Pure: reads the holder's own state (its cell var, power, broken bit, the capability's bits). A
 /// full cell keeps the lane until removed, which costs one give() of zero per second.
 /datum/capability/charger/cap_should_run(atom/holder)
