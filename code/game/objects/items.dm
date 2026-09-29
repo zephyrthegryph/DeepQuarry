@@ -127,7 +127,7 @@
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
 	/// Used to reference the object's host organ.
-	var/my_augment_handle // ALLOW(ownership): written as a handle by code/modules/organs/internal/augment*.dm; convert with them
+	var/tmp/obj/item/organ/internal/augment/my_augment
 	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
@@ -1132,8 +1132,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
 	return om_resolve(I?.hidden_uplink_handle) // ALLOW(ownership): written as a handle outside code/game/objects (traitor.dm, pda messenger); convert with them
 
-/// The host organ (a handle until its writers convert); a global helper keeps the proc off the base type.
+/// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return om_resolve(I?.my_augment_handle) // ALLOW(ownership): my_augment_handle is written by code/modules/organs (out of scope)
+	return I?.my_augment
 
 // An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.
