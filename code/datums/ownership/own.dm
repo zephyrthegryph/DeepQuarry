@@ -64,7 +64,10 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	D.own_holder_ref = holder_ref
 	D.own_slot = var_name
 	#ifdef UNIT_TESTS
-	GLOB.own_audit_index[ref(D)] = TRUE
+	// Global var init may adopt children before this list exists (GLOB is still being built).
+	var/list/audit_index = GLOB?.own_audit_index
+	if(audit_index)
+		audit_index[ref(D)] = TRUE
 	#endif
 	return TRUE
 
@@ -75,7 +78,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	D.own_holder_ref = null
 	D.own_slot = null
 	#ifdef UNIT_TESTS
-	GLOB.own_audit_index -= ref(D)
+	var/list/audit_index = GLOB?.own_audit_index
+	audit_index?.Remove(ref(D))
 	#endif
 
 /// The policy for holder.var_name's values now (a conditional policy proc or OWN_IF flag resolved).
@@ -143,6 +147,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			if(!ismovable(AM) || AM.loc != holder)
 				OWN_REPORT("[holder.type].[var_name] is CONTAINED: put [value.type] in its contents before own_set()")
 	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	own_field_changed(holder, var_name)
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
 	return value
@@ -154,6 +159,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(isnull(value))
 		return null
 	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+	own_field_changed(holder, var_name)
 	holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
@@ -169,6 +175,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(!islist(L))
 		L = list()
 		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
+		own_field_changed(holder, var_name)
 	L |= value
 	return value
 
@@ -181,6 +188,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	L -= value
 	if(!length(L))
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		own_field_changed(holder, var_name)
 	if(entry)
 		own_dispose(holder, var_name, value, entry)
 	return TRUE
@@ -194,6 +202,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 			return null
 		L = list()
 		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
+		own_field_changed(holder, var_name)
 	var/old = L[key]
 	if(old == value)
 		return value
@@ -221,6 +230,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		L -= value_or_key
 	if(!length(L))
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		own_field_changed(holder, var_name)
 	if(value)
 		holder.on_owned_release(var_name, value)
 	own_unstamp(value)
@@ -273,7 +283,14 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(islist(value) && var_name == "contents")
 		OWN_REPORT("own_take_all on [holder.type].contents: move things out through the ledger")
 		return list()
-	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+	// A list is emptied in place, not nulled: code that reads `L.len` on a list declared `= list()`
+	// keeps working after the take (a lazylist reads the same whether empty or null).
+	if(islist(value))
+		var/list/L = value
+		L.Cut()
+	else
+		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+	own_field_changed(holder, var_name)
 	for(var/datum/child as anything in .)
 		holder.on_owned_release(var_name, child)
 		own_unstamp(child)
@@ -286,14 +303,15 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		return
 	if(!islist(value))
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		own_field_changed(holder, var_name)
 		if(entry)
 			own_dispose(holder, var_name, value, entry, policy)
 		return
 	var/list/L = value
 	var/list/copy = L.Copy()
 	if(var_name != "contents") // built in: its members leave by moving, never by a cut
-		L.Cut()
-		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
+		L.Cut() // emptied in place, not nulled (see own_take_all)
+		own_field_changed(holder, var_name)
 	if(!entry)
 		return
 	for(var/key in copy)
@@ -335,6 +353,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/value = H.vars[var_name]
 	if(value == D)
 		H.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
+		own_field_changed(H, var_name)
 		return
 	if(islist(value))
 		var/list/L = value
@@ -387,6 +406,7 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/current = holder.vars[var_name]
 	if(current == value)
 		holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle release
+		own_field_changed(holder, var_name)
 	else if(islist(current))
 		var/list/L = current
 		L -= value

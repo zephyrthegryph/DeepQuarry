@@ -431,10 +431,33 @@
 		for(var/name in shared)
 			vars[name] = shared[name] // ALLOW(api): species copy and shared-list interning
 		return
+	resolve_limb_table()
 	shared = list()
 	for(var/name in shared_table_vars())
 		shared[name] = vars[name]
 	tables_by_type[type] = shared
+
+/// Fills the per-limb data create_organs() used to write into the table on every spawn: a default
+/// "descriptor" and the "has_children" count. Done once, before the table is interned and frozen,
+/// so spawning a mob never writes into a shared (registered) species table.
+/datum/species/proc/resolve_limb_table()
+	var/list/limbs = list()
+	for(var/limb_type in has_limbs)
+		var/list/organ_data = has_limbs[limb_type]
+		limbs[limb_type] = organ_data.Copy()
+	for(var/limb_type in limbs)
+		limbs[limb_type]["has_children"] = 0
+	for(var/limb_type in limbs)
+		var/list/organ_data = limbs[limb_type]
+		var/obj/item/organ/external/limb_path = organ_data["path"]
+		if(!ispath(limb_path))
+			continue
+		if(!organ_data["descriptor"])
+			organ_data["descriptor"] = initial(limb_path.name)
+		var/parent_tag = initial(limb_path.parent_organ)
+		if(parent_tag && limbs[parent_tag])
+			limbs[parent_tag]["has_children"] = limbs[parent_tag]["has_children"] + 1
+	has_limbs = limbs
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -522,11 +545,10 @@
 			pending -= limb_type
 			placed++
 			var/obj/item/organ/O = new limb_path(H)
-			organ_data["descriptor"] = O.name
-			if(O.parent_organ)
-				organ_data = has_limbs[O.parent_organ]
-				if(organ_data)
-					organ_data["has_children"] = organ_data["has_children"]+1
+			// "has_children" is precomputed (resolve_limb_table); a private copy may keep the built
+			// limb's own name, a registered species' table stays untouched.
+			if(!is_registered(src))
+				organ_data["descriptor"] = O.name
 		if(!placed)
 			log_runtime("PARTS: [name] has_limbs has a parent cycle or a missing parent: [jointext(pending, ", ")]")
 			break

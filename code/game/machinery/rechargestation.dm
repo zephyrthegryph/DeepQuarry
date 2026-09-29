@@ -27,7 +27,7 @@
 /obj/machinery/recharge_station/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "cell", default_use_hicell())
+	rel_set(src, "cell", default_use_hicell()) // component_parts owns the cell; this is a view onto it
 	update_icon()
 
 /// Sealed occupant slot (C8a, containment.md §10).
@@ -257,7 +257,7 @@
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	man_rating += get_part_rating(/obj/item/stock_parts/manipulator)
 	materialize_parts()
-	own_set(src, "cell", locate_in_list(component_parts, /obj/item/cell))
+	rel_set(src, "cell", locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
 	charging_power = 40000 + 40000 * cap_rating
 	restore_power_active = 10000 + 15000 * cap_rating
@@ -402,4 +402,4 @@
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
 
-OWN(/obj/machinery/recharge_station, cell, OWN_CONTAINED)
+REL(/obj/machinery/recharge_station, cell) // component_parts owns the cell

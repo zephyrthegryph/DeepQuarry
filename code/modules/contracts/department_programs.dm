@@ -199,7 +199,7 @@
 		list("key" = "plasma_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0.15),
 		list("key" = "integrity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
 	)
-	own_set(contract, "output_requirement", new /datum/contract_requirement/staged_sustained_event(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
+	rel_set(contract, "output_requirement", new /datum/contract_requirement/staged_sustained_event(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
 	contract.output_requirement.name = "Alternative-fuel output stages"
 	for(var/list/check as anything in output_checks)
 		contract.output_requirement.filter.require_number(check["key"], check["comparator"], check["expected"])

@@ -27,6 +27,7 @@
 	if(!isnull(value) && !is_registered(value))
 		OWN_REPORT("[holder.type].[var_name] is SHARED but [value.type] is not a registered instance (own it, or make the var PROTO)")
 	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	own_field_changed(holder, var_name)
 	return value
 
 // ---------------------------------------------------------------- DEF freeze (test builds)

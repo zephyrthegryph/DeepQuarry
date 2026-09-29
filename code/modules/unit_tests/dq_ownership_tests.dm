@@ -349,3 +349,30 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 /proc/own_rec_audit_make_dropped()
 	var/datum/own_test_child/A = new
 	om_after(A, 10 MINUTES, TYPE_PROC_REF(/datum/own_test_child, test_label))
+
+/datum/own_test_field_holder
+OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, null, CHANGE_MACHINE_SETTINGS)
+
+/datum/unit_test/ownership_framework_writes_raise_fields
+
+/datum/unit_test/ownership_framework_writes_raise_fields/Run()
+	var/datum/own_test_field_holder/H = new
+	var/datum/own_test_child/T = new
+	var/datum/om/scheduler/sched = om_scheduler()
+	om_rec_of(H)
+	H.om_listen |= CHANGE_MACHINE_SETTINGS
+	sched.test_raises = list()
+	rel_set(H, "watched", T)
+	TEST_ASSERT(own_test_raised(sched, H), "a relation write to a declared field raises its channel")
+	sched.test_raises = list()
+	qdel(T)
+	TEST_ASSERT(isnull(H.watched), "the view cleared when its target died")
+	TEST_ASSERT(own_test_raised(sched, H), "the automatic clear of a declared field raises its channel, as the setter would")
+	sched.test_raises = null
+	qdel(H)
+
+/proc/own_test_raised(datum/om/scheduler/sched, datum/E)
+	for(var/list/raise as anything in sched.test_raises)
+		if(raise[1] == E && (raise[2] & CHANGE_MACHINE_SETTINGS))
+			return TRUE
+	return FALSE

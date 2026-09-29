@@ -105,13 +105,16 @@
 /proc/om_edge_views_link(datum/om/relation/R, datum/source, datum/target)
 	if(R.source_view)
 		source.vars[R.source_view] = target // ALLOW(api, ownership): relation view
+		own_field_changed(source, R.source_view)
 	if(R.target_view)
 		target.vars[R.target_view] = source // ALLOW(api, ownership): relation view
+		own_field_changed(target, R.target_view)
 	if(R.undo_list)
 		var/list/L = target.vars[R.undo_list]
 		if(!islist(L))
 			L = list()
 			target.vars[R.undo_list] = L // ALLOW(api, ownership): relation list-undo
+			own_field_changed(target, R.undo_list)
 		L |= source
 	if(R.derived_view && hascall(source, R.derived_view))
 		call(source, R.derived_view)()
@@ -120,14 +123,17 @@
 /proc/om_edge_views_unlink(datum/om/relation/R, datum/source, datum/target)
 	if(R.source_view && source.vars[R.source_view] == target)
 		source.vars[R.source_view] = null // ALLOW(api, ownership): relation view
+		own_field_changed(source, R.source_view)
 	if(R.target_view && target.vars[R.target_view] == source)
 		target.vars[R.target_view] = null // ALLOW(api, ownership): relation view
+		own_field_changed(target, R.target_view)
 	if(R.undo_list)
 		var/list/L = target.vars[R.undo_list]
 		if(islist(L))
 			L -= source
 			if(!length(L))
 				target.vars[R.undo_list] = null // ALLOW(api, ownership): relation list-undo
+				own_field_changed(target, R.undo_list)
 
 /// A member leaves through its own domain proc: the relation's on_member_leave() runs, then the
 /// edge between `member` and `other` (either direction) is unlinked with RELATION_LEFT.

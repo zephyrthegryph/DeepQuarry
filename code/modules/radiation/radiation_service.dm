@@ -37,8 +37,8 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /datum/world_service/radiation/service_step(resumed)
 	flush_shielding()
-	profile_max_queue = max(profile_max_queue, processing.len)
-	while (processing.len)
+	profile_max_queue = max(profile_max_queue, length(processing))
+	while (length(processing))
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
 
 		var/atom/source = pulse_information.source_ref
@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 			profile_pulses_completed++
 			own_remove(src, "processing", pulse_information)
 
-		if (processing.len && TICK_CHECK)
+		if (length(processing) && TICK_CHECK)
 			profile_yields++
 			return FALSE
 	return TRUE
@@ -86,7 +86,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	)
 
 /datum/world_service/radiation/stat_line()
-	return "Pulses:[processing.len]"
+	return "Pulses:[length(processing)]"
 
 /// Sends every dirty turf's combined transmission (the turf's rad_insulation
 /// times that of everything directly on it) to the Rust insulation layer.

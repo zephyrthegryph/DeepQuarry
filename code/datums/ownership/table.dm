@@ -131,6 +131,18 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !islist(value) && !isnull(value))
 					OWN_REPORT("[D.type].[var_name]: REL_SET needs a list var")
 
+/// A framework write changed holder.var_name. When the var is also a declared OM field
+/// (OM_FIELD), its channel is raised exactly as the field's setter would, so stages, watches and
+/// while-declarations gated on it see the change (a relation view cleared because its target died,
+/// an owned child disposed of, a proto swapped). Before the OM registry exists nothing listens.
+/proc/own_field_changed(datum/holder, var_name)
+	var/datum/om/registry/R = GLOB?.om_reg
+	if(!R || !holder)
+		return
+	var/channel = R.fields_of(holder.type)[var_name]
+	if(channel)
+		om_changed(holder, channel)
+
 /// The bare name of a proc path (/obj/foo/proc/bar -> "bar").
 /proc/own_proc_name(proc_path)
 	var/text = "[proc_path]"

@@ -71,7 +71,7 @@
 	department_share = 0
 	contributor_share = 1
 	deadline_duration = 25 MINUTES
-	own_set(src, "action_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
+	rel_set(src, "action_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	action_requirement.name = "Linked study objective"
 	action_requirement.description = "Remittance is contingent upon verified receipt through the station fax or outbound freight network."
 	add_requirement(action_requirement)
