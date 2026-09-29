@@ -87,6 +87,11 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		switch(spec[1])
 			if(TOPIC_SPEC_RIGHTS)
 				if(!check_rights_for(user?.client, spec[2]))
+					// A rights failure on an href is how exploit attempts show up: always tell admins.
+					var/attempt = "[key_name(user)] tried href action '[row[1]]' on [topic_target_type(target)] without [rights2text(spec[2], " ")]"
+					log_admin(attempt)
+					log_href("TOPIC_RIGHTS rejected: [attempt]")
+					message_admins("[key_name_admin(user)] tried href action '[row[1]]' on [topic_target_type(target)] without sufficient rights.")
 					if(user)
 						to_chat(user, span_red("Error: You do not have sufficient rights to do that. You require one of the following flags:[rights2text(spec[2], " ")]."), confidential = TRUE)
 					return null
