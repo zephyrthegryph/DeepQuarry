@@ -22,7 +22,7 @@
 /// The declaration table for D's type, or null when the type declares nothing.
 /proc/lifecycle_decls_of(datum/D)
 	RETURN_TYPE(/datum/lifecycle_decls)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): per-type declaration table (type -> decls or FALSE), not a shared appearance/value cache
 	var/datum/lifecycle_decls/decls = cache[D.type]
 	if(!isnull(decls))
 		return decls || null

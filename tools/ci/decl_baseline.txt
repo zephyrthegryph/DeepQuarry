@@ -308,6 +308,8 @@ init_visuals	code/modules/games/dice.dm	icon_state = "[name][rand(1,sides)]"
 init_visuals	code/modules/generated_station/generated_station_utility_topology.dm	icon_state = generated_icon_state
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
 init_visuals	code/modules/holomap/mapper.dm	icon_state = initial(icon_state) + (in_list ? "_on" : "")
+init_visuals	code/modules/hydroponics/grown.dm	add_overlay(CACHED_KEY(fruit_icon, "rind-[rind_colour]", icon, "fruit_rind", rind_colour))
+init_visuals	code/modules/hydroponics/grown.dm	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/machinery/machine_input_output_plates.dm	icon_state = "blank"
 init_visuals	code/modules/mining/mine_outcrops.dm	add_overlay("[initial(icon_state)]-egg")
