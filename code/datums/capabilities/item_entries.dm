@@ -60,7 +60,7 @@
 
 /// needs: the holder (an item) is on the actor: held or worn.
 /atom/proc/cap_in_inventory(mob/user, obj/item/held)
-	return dq_interaction_in_inventory(user, src, held) ? TRUE : "it's not on you"
+	return dq_interaction_in_inventory(user, src, held) ? TRUE : "you need to be carrying it"
 
 /// The held item used on another atom. Handler on the item: (mob/user, atom/target, ...form answers).
 /// range 1 is adjacent only; a larger range also fires at a target up to that many tiles away (the old
