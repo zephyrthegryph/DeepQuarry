@@ -240,6 +240,8 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 			node.proc_path = clause[3]
 			node.fallback = clause[4]
 			return node
+		if(PRED_OP_FIELD, PRED_OP_ACCESS, PRED_OP_EMAGGED, PRED_OP_ANCHORED, PRED_OP_PANEL)
+			return compile_requirement(clause, negate) // code/datums/sys/requirements.dm
 	error("unknown clause [op]")
 	return null
 

@@ -14,15 +14,11 @@ MATERIAL_MIX(/obj/item/floor_light, list(MAT_STEEL = 2500, MAT_GLASS = 2750))
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "item"
 
-DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interaction_self), REQ_ON_TURF))
 
 /// Old attack_self.
 /obj/item/floor_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/turf/T = get_turf(user)
-	if(!T)
-		to_chat(user, span_warning("You need to be on a floor to install this."))
-		return TRUE
-	new /obj/machinery/floor_light(T)
+	new /obj/machinery/floor_light(get_turf(user))
 	qdel(src)
 	return TRUE
 
@@ -113,21 +109,22 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 /datum/interaction/machine_hand/ungated/floor_light_use
 	id = "floor_light_use"
 	name = "Use"
+	requires = list(
+		REQ_INTERACTION_REACH,
+		REQ_BECAUSE(REQ_ANCHORED, "it must be screwed down first"),
+		REQ_TARGET_STATE(/obj/machinery/floor_light/proc/can_switch),
+	)
 	effect = /obj/machinery/floor_light/proc/interaction_use
 
-/obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!anchored)
-		to_chat(user, span_warning("\The [src] must be screwed down first."))
-		return TRUE
-
+/// Requirement: TRUE, or why the light can't be switched.
+/obj/machinery/floor_light/proc/can_switch(mob/user, atom/target, obj/item/held)
 	if(has_stat(BROKEN))
-		to_chat(user, span_warning("\The [src] is too damaged to be functional."))
-		return TRUE
-
+		return "it's too damaged to be functional"
 	if(has_stat(NOPOWER))
-		to_chat(user, span_warning("\The [src] is unpowered."))
-		return TRUE
+		return "it's unpowered"
+	return TRUE
 
+/obj/machinery/floor_light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	set_on(!on)
 	if(on) set_use_power(USE_POWER_ACTIVE)
 	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
