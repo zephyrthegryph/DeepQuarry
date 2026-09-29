@@ -75,7 +75,7 @@
 		return
 
 	if(gen())
-		LAZYOR(gen().damaged_segments, src)
+		rel_add(gen(), "damaged_segments", src)
 	disabled_for += duration
 
 	set_density(0)
@@ -99,7 +99,7 @@
 		update_visuals()
 		update_nearby_tiles() //Force ZAS update
 		update_explosion_resistance()
-		LAZYREMOVE(gen().damaged_segments, src)
+		rel_remove(gen(), "damaged_segments", src)
 
 /obj/effect/shield/proc/diffuse(duration)
 	// The shield is trying to counter diffusers. Cause lasting stress on the shield.
@@ -108,7 +108,8 @@
 		return
 
 	diffused_for = max(duration, 0)
-	LAZYOR(gen()?.damaged_segments, src)
+	if(gen())
+		rel_add(gen(), "damaged_segments", src)
 
 	set_density(0)
 	update_visuals()
@@ -374,6 +375,6 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 	make_debris()
 	qdel(src)
 
-/// LC-refs: Owning generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owning generator (a relation view: it reads null once the target is deleted).
 /obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator
 	return gen

@@ -509,7 +509,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 
-	rel_set(src, "currentarea", get_area(src.loc))
+	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
 		qdel(src)
 		return TRUE
@@ -591,6 +591,6 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	qdel(src)
 
 
-/// LC-refs: the currentarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the currentarea this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/readybutton/proc/currentarea() as /area
 	return currentarea

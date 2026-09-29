@@ -96,7 +96,7 @@
 
 	var/obj/item/radio/radio = null
 	var/obj/effect/overlay/vis/pinboard
-	var/showing
+	var/atom/showing
 
 	var/enabled = TRUE // on or off
 
@@ -170,7 +170,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 		stop_showing()
 	if(stat & NOPOWER)
 		return
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	if(pinboard)
 		pinboard.vis_contents = list(thing)
 
@@ -178,7 +178,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 	// Reverse of the above
 	if(pinboard)
 		pinboard.vis_contents = null
-	showing = null
+	rel_clear(src, "showing")
 
 /obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(thingref)
 	if(showing == thingref)

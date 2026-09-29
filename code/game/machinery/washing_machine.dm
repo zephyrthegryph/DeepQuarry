@@ -279,6 +279,6 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 #undef BLOODY_CLOSED
 #undef BLOODY_RUNNING
 
-/// LC-refs: crayon -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// crayon (a relation view: it reads null once the target is deleted).
 /obj/machinery/washing_machine/proc/crayon() as /obj
 	return crayon

@@ -278,6 +278,6 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 
 OWN(/obj/item/smallDelivery, wrapped, OWN_CONTAINED)
 
-/// LC-refs: the wrapped this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj
 	return wrapped

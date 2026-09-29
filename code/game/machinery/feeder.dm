@@ -160,6 +160,6 @@
 
 OWN(/obj/machinery/feeder, beaker, OWN_CONTAINED)
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human
 	return attached

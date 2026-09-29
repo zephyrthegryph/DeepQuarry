@@ -19,8 +19,8 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/active1_handle
-	var/active2_handle
+	var/datum/data/record/active1
+	var/datum/data/record/active2
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
@@ -191,9 +191,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 		return TRUE
 
 	if(!GLOB.data_core.general.Find(active1()))
-		active1_handle = null
+		rel_clear(src, "active1")
 	if(!GLOB.data_core.medical.Find(active2()))
-		active2_handle = null
+		rel_clear(src, "active2")
 
 	. = TRUE
 	if(tgui_act_modal(action, params))
@@ -228,8 +228,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				screen = MED_DATA_R_LIST
 		else
 			. = FALSE
@@ -248,12 +248,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 					own_take(src, "scan")
 				authenticated = null
 				screen = null
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("screen")
 				screen = clamp(text2num(params["screen"]) || 0, MED_DATA_R_LIST, MED_DATA_MEDBOT)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("vir")
 				var/datum/data/record/v = locate(params["vir"])
 				if(!istype(v))
@@ -279,8 +279,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 						medical_record = M
 						break
 
-				active1_handle = om_handle(general_record)
-				active2_handle = om_handle(medical_record)
+				rel_set(src, "active1", general_record)
+				rel_set(src, "active2", medical_record)
 				screen = MED_DATA_RECORD
 			if("sync_r")
 				if(active2())
@@ -307,7 +307,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 					R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
 					R.fields["notes"] = "No notes."
 					GLOB.data_core.medical += R
-					active2_handle = om_handle(R)
+					rel_set(src, "active2", R)
 					screen = MED_DATA_RECORD
 					set_temp("Medical record created.", "success")
 			if("del_c")
@@ -320,22 +320,22 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 				if(comments[index])
 					comments.Cut(index, index + 1)
 			if("search")
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				var/t1 = lowertext(params["t1"] || "")
 				if(!length(t1))
 					return
 
 				for(var/datum/data/record/R in GLOB.data_core.medical)
 					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["b_dna"]))
-						active2_handle = om_handle(R)
+						rel_set(src, "active2", R)
 						break
 				if(!active2())
 					set_temp("Medical record not found. You must enter the person's exact name, ID or DNA.", "danger")
 					return
 				for(var/datum/data/record/E in GLOB.data_core.general)
 					if(E.fields["name"] == active2().fields["name"] && E.fields["id"] == active2().fields["id"])
-						active1_handle = om_handle(E)
+						rel_set(src, "active1", E)
 						break
 				screen = MED_DATA_RECORD
 			if("print_p")
@@ -540,10 +540,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 
 OWN(/obj/machinery/computer/med_data, scan, OWN_CONTAINED)
 
-/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/med_data/proc/active1() as /datum/data/record
-	return om_resolve(active1_handle)
+	return active1
 
-/// LC-refs: active2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/med_data/proc/active2() as /datum/data/record
-	return om_resolve(active2_handle)
+	return active2

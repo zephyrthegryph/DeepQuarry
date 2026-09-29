@@ -13,7 +13,7 @@
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
-		rel_set(src, "laws", new using_map.default_law_type)
+		own_set(src, "laws", new using_map.default_law_type)
 
 DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -162,7 +162,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				var/obj/structure/AIcore/deactivated/D = new(loc)
 				om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/obj/structure/AIcore/deactivated, latejoin_answered), receiver = D, subject = D, title = "Latejoin", message = "Would you like this core to be open for latejoining AIs?")
 			else
-				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
+				var/datum/ai_laws/handed_laws = own_take(src, "laws") // the new AI adopts them
+				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 					A.rename_self("ai", 1)
 					for(var/datum/language/L in A.identity().languages)
@@ -320,6 +321,6 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 /obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
 	user?.visible_message(span_bold("\The [user]") + " decides not to unbolt \the [src].")
 
-// laws are handed to the AI built from this core, so they aren't owned here.
+// The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).
 OWN(/obj/structure/AIcore, circuit, OWN_CONTAINED)
 OWN(/obj/structure/AIcore, brain, OWN_CONTAINED)

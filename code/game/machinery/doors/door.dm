@@ -657,6 +657,6 @@
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))
 			D.toggle()
 
-/// LC-refs: c animation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// c animation (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/proc/c_animation() as /atom/movable/overlay
 	return c_animation

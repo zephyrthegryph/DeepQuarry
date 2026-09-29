@@ -419,10 +419,10 @@
 	occupant.enter_vr(avatar())
 
 
-/// LC-refs: avatar -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// avatar (a relation view: it reads null once the target is deleted).
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human
 	return avatar
 
-/// LC-refs: vr mind -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// vr mind (a relation view: it reads null once the target is deleted).
 /obj/machinery/vr_sleeper/proc/vr_mind() as /datum/mind
 	return vr_mind

@@ -24,7 +24,7 @@
 	var/hacked = 0 // Whether to show the hidden songs or not
 	var/freq = 0 // Currently no effect, will return in phase II of mediamanager.
 	var/loop_mode = JUKEMODE_PLAY_ONCE			// Behavior when finished playing a song
-	// ALLOW(object_keyed_lists): paired remotes add and remove themselves (juke_remote pair/unpair)
+	// Paired remotes: REL_PAIR_LIST with each remote's paired_juke (declared in modules/media/juke_remote.dm, w7).
 	var/list/obj/item/juke_remote/remotes
 	var/datum/track/current_track
 
@@ -477,7 +477,7 @@
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
 
-/// LC-refs: current track -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// current track (a relation view: it reads null once the target is deleted).
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return current_track
 

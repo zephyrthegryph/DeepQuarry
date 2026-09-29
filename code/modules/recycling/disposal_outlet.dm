@@ -118,6 +118,6 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 #undef OUTLET_SCREWED
 #undef OUTLET_UNSCREWED
 
-/// LC-refs: this will be where the output objects are 'thrown' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// this will be where the output objects are 'thrown' to. (a relation view: it reads null once the target is deleted).
 /obj/structure/disposaloutlet/proc/target() as /turf
 	return target

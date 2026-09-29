@@ -11,8 +11,10 @@
 	var/tmp/area/linkedholodeck
 	var/tmp/area/target
 	var/active = 0
-	var/list/holographic_objs
-	var/list/holographic_mobs
+	/// Objects the current program projected (a relation view; derez() deletes them).
+	var/list/obj/holographic_objs
+	/// Holocarp the current program spawned (a relation view).
+	var/list/mob/living/simple_mob/animal/space/carp/holodeck/holographic_mobs
 	var/damaged = 0
 	var/safety_disabled = 0
 	var/tmp/mob/last_to_emag
@@ -183,12 +185,15 @@
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()
 	current_program = powerdown_program
-	rel_set(src, "linkedholodeck", locate(projection_area))
+	linkedholodeck = locate(projection_area) // an area: a plain var
 	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 
 //This could all be done better, but it works for now.
 // the holodeck shuts down.
+REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_objs)
+REL_LIST(/obj/machinery/computer/HolodeckControl, holographic_mobs)
+
 /obj/machinery/computer/HolodeckControl/on_destroy(force)
 	emergencyShutdown()
 	..()
@@ -214,7 +219,7 @@
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
 		if (get_area(C.loc) != linkedholodeck())
-			LAZYREMOVE(holographic_mobs, C)
+			rel_remove(src, "holographic_mobs", C)
 			C.derez()
 
 	if(stat & (NOPOWER|BROKEN))
@@ -239,7 +244,7 @@
 				T.hotspot_expose(1000,500,1)
 
 /obj/machinery/computer/HolodeckControl/proc/derez(obj/obj , silent = 1)
-	LAZYREMOVE(holographic_objs, obj)
+	rel_remove(src, "holographic_objs", obj)
 
 	if(obj == null)
 		return
@@ -307,7 +312,7 @@
 		derez(item)
 
 	for(var/mob/living/simple_mob/animal/space/carp/holodeck/C in holographic_mobs)
-		LAZYREMOVE(holographic_mobs, C)
+		rel_remove(src, "holographic_mobs", C)
 		C.derez()
 
 	for(var/obj/effect/decal/cleanable/blood/B in linkedholodeck())
@@ -316,7 +321,12 @@
 	for(var/obj/effect/landmark/L in linkedholodeck())
 		qdel(L)
 
-	holographic_objs = A.copy_contents_to(linkedholodeck(), 1)
+	// The program's objects are cloned into the room (entity_clone, via copy_contents_to()); the
+	// holodeck tracks them in a relation roster and derezzes them itself (derez()) on the next
+	// program or a shutdown. They are world objects players can carry, so they are not owned here;
+	// one destroyed elsewhere just leaves the roster.
+	for(var/obj/holo_obj in A.copy_contents_to(linkedholodeck(), 1))
+		rel_add(src, "holographic_objs", holo_obj)
 	for(var/obj/holo_obj in holographic_objs)
 		holo_obj.alpha *= 0.8 //give holodeck objs a slight transparency
 
@@ -342,11 +352,11 @@
 		if(L.name=="Atmospheric Test Start")
 			om_after(src, 2 SECONDS, PROC_REF(atmos_test_ignite), get_turf(L))
 		if(L.name=="Holocarp Spawn")
-			LAZYADD(holographic_mobs, new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
+			rel_add(src, "holographic_mobs", new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 
 		if(L.name=="Holocarp Spawn Random")
 			if(prob(4)) //With 4 spawn points, carp should only appear 15% of the time.
-				LAZYADD(holographic_mobs, new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
+				rel_add(src, "holographic_mobs", new /mob/living/simple_mob/animal/space/carp/holodeck(L.loc))
 		qdel(L)
 
 		update_projections()
@@ -395,14 +405,14 @@
 		T.set_temperature(5000)  // arena-authoritative; not the stale DM mirror
 		T.hotspot_expose(50000,50000,1)
 
-/// LC-refs: the linkedholodeck this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linkedholodeck this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/linkedholodeck() as /area
 	return linkedholodeck
 
-/// LC-refs: the last_to_emag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_to_emag this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/last_to_emag() as /mob
 	return last_to_emag
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/HolodeckControl/proc/target() as /area
 	return target

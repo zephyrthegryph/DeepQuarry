@@ -137,8 +137,7 @@
 					return
 				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
 				set_temp("DELETED ENTRY: [D.name]", "bad")
-				LAZYREMOVE(SelectedServer().log_entries, D)
-				qdel(D)
+				own_remove(SelectedServer(), "log_entries", D)
 			else
 				set_temp("FAILED: NO SELECTED MACHINE", "bad")
 			. = TRUE
@@ -175,6 +174,6 @@
 /obj/machinery/computer/telecomms/server/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
 
-/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
 	return SelectedServer

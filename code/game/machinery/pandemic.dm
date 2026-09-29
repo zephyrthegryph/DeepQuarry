@@ -233,8 +233,8 @@
 	if(stat & (NOPOWER|BROKEN))
 		return TRUE
 	user.drop_item()
-	own_set(src, "beaker", I)
-	beaker.forceMove(src)
+	I.forceMove(src)
+	own_set(src, "beaker", I) // CONTAINED: in contents first
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"
