@@ -93,6 +93,8 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/perf_history_limit = 12000
 	/// Names of one subsystem dependency cycle found at boot, or null (boot_dependencies.dm).
 	var/boot_dependency_cycle
+	/// Boot DAG errors (a system's need that names no node), or null before boot (kernel/boot.dm).
+	var/list/boot_errors
 	/// Every sample ever recorded, so callers can hold a position that survives trimming.
 	var/perf_samples_total = 0
 	var/perf_tick_top_name = "None"
@@ -379,47 +381,76 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			LAZYOR(dependent.dependencies, subsystem.type)
 		subsystem.dependents = list()
 
-	// Resolves each subsystem's declared dependencies (boot_dependencies.dm).
-	var/list/deps_by_subsystem = list()
+	// Systems are nodes of the same DAG (kernel/boot.dm): a system's `needs` name subsystems or systems.
+	var/list/boot_systems = kernel_boot_systems()
+	var/list/type_to_node = type_to_subsystem.Copy()
+	for(var/datum/system/boot_system as anything in boot_systems)
+		type_to_node[boot_system.type] = boot_system
+	boot_errors = list()
+	var/list/deps_by_node = list()
+	var/list/system_deps = kernel_system_deps(boot_systems, type_to_node, boot_errors)
+	for(var/datum/system/boot_system as anything in system_deps)
+		deps_by_node[boot_system] = system_deps[boot_system]
+
+	// Resolves each subsystem's declared dependencies (boot_dependencies.dm). A dependency is a subsystem or
+	// a system, so a boot a subsystem used to do by hand is a declaration.
 	for(var/datum/controller/subsystem/subsystem as anything in subsystems)
 		var/list/resolved = list()
 		for(var/dependency_type in subsystem.dependencies)
-			if(!ispath(dependency_type, /datum/controller/subsystem))
+			if(!ispath(dependency_type, /datum/controller/subsystem) && !ispath(dependency_type, /datum/system))
 				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an invalid dependency: `[dependency_type]`. Skipping")
 				continue
-			var/datum/controller/subsystem/dependency = type_to_subsystem[dependency_type]
+			var/datum/dependency = type_to_node[dependency_type]
 			if(!dependency)
+				if(ispath(dependency_type, /datum/system))
+					boot_errors += "[subsystem.type] depends on [dependency_type], which is not a boot node"
 				continue
+			var/dependency_stage
+			var/datum/controller/subsystem/dependency_subsystem = istype(dependency, /datum/controller/subsystem) ? dependency : null
+			if(dependency_subsystem)
+				dependency_stage = dependency_subsystem.init_stage
+			else
+				dependency_stage = kernel_system_stage(dependency, deps_by_node)
 			// Not a foolproof failsafe, likely to only prevent any immediate issues if this is only triggered once.
-			if(subsystem.init_stage < dependency.init_stage)
-				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency.init_stage])! Setting init_stage to [dependency.init_stage]")
-				subsystem.init_stage = dependency.init_stage
-			dependency.dependents += subsystem
+			if(subsystem.init_stage < dependency_stage)
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has an init_stage before one of its dependencies (Dependency: `[dependency.type]`, [subsystem.init_stage] < [dependency_stage])! Setting init_stage to [dependency_stage]")
+				subsystem.init_stage = dependency_stage
+			if(dependency_subsystem)
+				dependency_subsystem.dependents += subsystem
 			resolved += dependency
-		deps_by_subsystem[subsystem] = resolved
+		deps_by_node[subsystem] = resolved
+	for(var/boot_error in boot_errors)
+		stack_trace("ERROR: MC: boot: [boot_error]")
+		log_world("ERROR: MC: boot: [boot_error]")
+	var/list/boot_nodes = subsystems + boot_systems
 
 	var/list/cycle = list()
-	var/list/sorted_subsystems = boot_dependency_order(subsystems, deps_by_subsystem, cycle)
+	var/list/sorted_nodes = boot_dependency_order(boot_nodes, deps_by_node, cycle)
 	for(var/i in 1 to length(subsystems))
 		var/datum/controller/subsystem/subsystem = subsystems[i]
 		subsystem.ordering_id = i
 
-	if(length(subsystems) != length(sorted_subsystems))
+	if(length(boot_nodes) != length(sorted_nodes))
 		var/list/usr_msg = list()
-		for(var/datum/controller/subsystem/subsystem as anything in subsystems - sorted_subsystems)
-			usr_msg += subsystem.name
+		for(var/datum/D as anything in boot_nodes - sorted_nodes)
+			usr_msg += "[D.type]"
 		boot_dependency_cycle = jointext(cycle, " -> ")
 		// Can't initialize them if they have circular dependencies, there's no real failsafe here.
-		stack_trace("ERROR: CRITICAL: MC: The following subsystems have circular dependencies: [boot_dependency_cycle]")
-		log_world("ERROR: CRITICAL: MC: subsystem dependency cycle: [boot_dependency_cycle]")
+		stack_trace("ERROR: CRITICAL: MC: The following nodes have circular dependencies: [boot_dependency_cycle]")
+		log_world("ERROR: CRITICAL: MC: boot dependency cycle: [boot_dependency_cycle]")
 		to_chat(world, span_bolddanger("CRITICAL: Failed to initialize [jointext(usr_msg, ", ")]"), MESSAGE_TYPE_DEBUG)
 
-	for (var/datum/controller/subsystem/subsystem as anything in sorted_subsystems)
-		var/subsystem_init_stage = subsystem.init_stage
-		if (!isnum(subsystem_init_stage) || subsystem_init_stage < 1 || subsystem_init_stage > INITSTAGE_MAX || round(subsystem_init_stage) != subsystem_init_stage)
-			stack_trace("ERROR: MC: subsystem `[subsystem.type]` has invalid init_stage: `[subsystem_init_stage]`. Setting to `[INITSTAGE_MAX]`")
-			subsystem_init_stage = subsystem.init_stage = INITSTAGE_MAX
-		stage_sorted_subsystems[subsystem_init_stage] += subsystem
+	for (var/datum/node as anything in sorted_nodes)
+		var/node_init_stage
+		if(istype(node, /datum/system))
+			node_init_stage = kernel_system_stage(node, deps_by_node)
+		else
+			var/datum/controller/subsystem/subsystem = node
+			node_init_stage = subsystem.init_stage
+			if (!isnum(node_init_stage) || node_init_stage < 1 || node_init_stage > INITSTAGE_MAX || round(node_init_stage) != node_init_stage)
+				stack_trace("ERROR: MC: subsystem `[subsystem.type]` has invalid init_stage: `[node_init_stage]`. Setting to `[INITSTAGE_MAX]`")
+				node_init_stage = subsystem.init_stage = INITSTAGE_MAX
+		stage_sorted_subsystems[node_init_stage] += node
 
 	// Sort subsystems by display setting for easy access.
 	var/evaluated_order = 1
@@ -428,11 +459,15 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	for (var/current_init_stage in 1 to INITSTAGE_MAX)
 
 		// Initialize subsystems.
-		for (var/datum/controller/subsystem/subsystem in stage_sorted_subsystems[current_init_stage])
+		for (var/datum/node in stage_sorted_subsystems[current_init_stage])
+			if(istype(node, /datum/system))
+				kernel_boot_system(node)
+				CHECK_TICK
+				continue
+			var/datum/controller/subsystem/subsystem = node
 			subsystem.init_order = evaluated_order
 			evaluated_order++
 			init_subsystem(subsystem)
-			boot_world_services_after(subsystem.type)
 
 			CHECK_TICK
 		current_initializing_subsystem = null
@@ -444,8 +479,9 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 			// Loop.
 			Master.StartProcessing(0)
 
-	// Every machine that materialized during init arms its wakes now, in one pass (machine_pipeline.dm).
-	machine_first_wakes_flush()
+	// Every system's members that joined during init get their first evaluation now, in one pass each
+	// (kernel/system.dm on_members_ready(); the machine service arms first wakes here).
+	kernel_members_ready()
 
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	initializations_seconds = time
@@ -577,6 +613,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 	if(current_runlevel < 1)
 		current_runlevel = old_runlevel
 		CRASH("Attempted to set invalid runlevel: [new_runlevel]")
+	kernel_runlevel_changed()
 
 // Starts the mc, and sticks around to restart it if the loop ever ends.
 /datum/controller/master/proc/StartProcessing(delay)
@@ -820,6 +857,7 @@ UI_ACT_PROC(/datum/controller/master, ui_act_view_variables)
 
 /datum/controller/master/proc/record_performance_tick(usage)
 	usage = max(usage, 0)
+	kernel_latency().note_tick(usage)
 	perf_tick_usage += usage
 	perf_tick_realtime += REALTIMEOFDAY
 	perf_samples_total++

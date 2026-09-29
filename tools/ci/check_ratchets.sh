@@ -47,7 +47,7 @@ for lint in \
 	ui_actions_lint.py \
 	sys_lint.py \
 	tracked_lint.py \
-	derived_reads_lint.py \n	cap_bits_lint.py \n	doc_snippets.py; do
+	derived_reads_lint.py \n	cap_bits_lint.py \n	system_boundary_lint.py \n	doc_snippets.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then
 		failed+=("$lint")

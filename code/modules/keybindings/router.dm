@@ -94,8 +94,14 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 
 /atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
 	if(src)
-		OM_EMIT(src, /datum/om/event/click, location, control, params, usr)
-		usr.ClickOn(src, params)
+		// L0 input (controllers/kernel/latency.dm): near overtime a player's click waits for the next tick's
+		// drain instead of pushing this one over; otherwise it runs on arrival, as it always did.
+		var/datum/kernel_latency/latency = kernel_latency()
+		if(latency.should_queue_click(usr) && latency.enqueue_click(usr, src, location, control, params))
+			return
+		latency.input_immediate++
+		latency.record_input(0)
+		kernel_click_run(usr, location, control, params)
 
 /atom/DblClick(location, control, params)
 	if(src)

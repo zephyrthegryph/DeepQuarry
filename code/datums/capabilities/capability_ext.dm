@@ -130,35 +130,25 @@ GLOBAL_LIST_EMPTY(caps_order_cache)
 
 // ---- system membership (section 6) ----
 
-/// A system capability holders join: iterate `members` instead of scanning atoms.
+/// A system capability holders join: iterate `members` instead of scanning atoms. A cap_system is a
+/// /datum/system (controllers/kernel/system.dm): membership is the kernel's O(1) join and swap-remove,
+/// and the singleton comes from the system registry.
 /datum/cap_system
-	/// Members as an assoc list (atom -> TRUE): joining and leaving are O(1).
-	var/list/members = list()
-
-/datum/cap_system/proc/join(atom/A)
-	members[A] = TRUE
-
-/datum/cap_system/proc/leave(atom/A)
-	members -= A
+	parent_type = /datum/system
+	abstract_type = /datum/cap_system
 
 /// The singleton of a cap_system type.
 /proc/cap_system(path)
 	RETURN_TYPE(/datum/cap_system)
-	var/datum/cap_system/S = GLOB.cap_systems[path]
-	if(!S)
-		S = new path
-		GLOB.cap_systems[path] = S
-	return S
-
-GLOBAL_LIST_EMPTY(cap_systems)
+	return system(path)
 
 /proc/cap_join_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
 		var/datum/cap_system/S = cap_system(path)
-		S.join(A)
+		S.kernel_join(A)
 
 /proc/cap_leave_systems(atom/A, datum/capability/C)
 	for(var/path in C.systems())
 		var/datum/cap_system/S = cap_system(path)
-		S.leave(A)
+		S.kernel_leave(A)
 

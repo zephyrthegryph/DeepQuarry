@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 
 /datum/world_service/antag
 	name = "Antag Job"
-	boot_after = /datum/controller/subsystem/atoms
+	needs = list(/datum/controller/subsystem/atoms)
 
 	var/list/syndicate_code_phrase
 	var/list/syndicate_code_response

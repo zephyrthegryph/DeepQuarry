@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 /datum/world_service/time_track
 	name = "Time Tracking"
 	lane = /datum/om/behaviour/world/time_track
-	boot_after = /datum/controller/subsystem/dbcore
+	needs = list(/datum/controller/subsystem/dbcore)
 
 	var/time_dilation_current = 0
 

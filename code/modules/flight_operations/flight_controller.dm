@@ -7,9 +7,8 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	name = "Flight Operations"
 	lane = /datum/om/behaviour/world/flight
 	// The old subsystem depended on SSshuttles (it registers SSshuttles.ships); boot right after it.
-	boot_after = /datum/controller/subsystem/shuttles
+	needs = list(/datum/controller/subsystem/shuttles, /datum/world_service/expedition)
 	// rebuild_registry() registers any live expedition sites.
-	order_after = list(/datum/world_service/expedition)
 	var/list/destinations = list()
 	var/list/destination_by_target = list()
 	var/list/vessels = list()

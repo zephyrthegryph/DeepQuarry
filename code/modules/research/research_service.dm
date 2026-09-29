@@ -6,7 +6,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	name = "Research"
 	lane = /datum/om/behaviour/world/research
 	// The old subsystem depended on SSmapping; boot right after it, as before.
-	boot_after = /datum/controller/subsystem/mapping
+	needs = list(/datum/controller/subsystem/mapping)
 	/// Income period; must match the lane's `every`.
 	var/income_interval = 1 SECOND
 	//TECHWEB STATIC

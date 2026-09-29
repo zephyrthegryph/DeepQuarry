@@ -144,3 +144,5 @@
 #define CELL_BAY_LOW_PERCENT 15
 /// cap_wall_mount(): pixels from the turf centre into the wall.
 #define WALL_MOUNT_OFFSET 26
+/// Every minute.
+#define CADENCE_MINUTE /datum/om/pipeline/periodic/minute

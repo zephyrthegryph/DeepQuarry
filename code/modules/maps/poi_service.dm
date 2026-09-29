@@ -1,13 +1,13 @@
 // The points of interest world service (fold wave F4; was SSpoints_of_interest). POI loader
 // landmarks queue here as they initialize. The MC loads the boot queue right after SSholomaps
-// (boot_after; air and persistence boot after it). A POI loaded mid-round is placed by
+// (needs; air and persistence boot after it). A POI loaded mid-round is placed by
 // /datum/om/behaviour/world/pois (code/datums/om/world_lanes.dm), parked while the queue is empty.
 GLOBAL_LIST_EMPTY(global_used_pois)
 GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
 /datum/world_service/pois
 	name = "Points of Interest"
-	boot_after = /datum/controller/subsystem/holomaps
+	needs = list(/datum/controller/subsystem/holomaps)
 	lane = /datum/om/behaviour/world/pois
 	on_demand = TRUE
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list()

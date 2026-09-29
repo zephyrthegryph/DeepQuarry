@@ -339,6 +339,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 	// 3. Lanes with guaranteed shares.
 	for(var/lane in 1 to OM_LANE_COUNT)
+		// L3 lanes are shed under an overrun streak (kernel/latency.dm); the borrow pass above still
+		// serves any ring near its staleness bound, and the floor admits one pass a second.
+		if(!kernel_admit_lane(lane))
+			continue
 		limit = min(TICK_USAGE + avail * lane_share[lane], tick_limit)
 		cap = harness_caps ? harness_caps[lane] : 0
 		calls = 0
@@ -353,6 +357,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		if(!run_deadlines(t))
 			done = FALSE
 		for(var/lane in 1 to OM_LANE_COUNT)
+			if(kernel_latency().sheds_lane(lane))
+				continue
 			if(!run_lane_guarded(lane, t))
 				done = FALSE
 	last_run_ms = TICK_USAGE_TO_MS(start)

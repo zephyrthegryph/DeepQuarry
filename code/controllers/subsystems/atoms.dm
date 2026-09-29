@@ -3,7 +3,11 @@ SUBSYSTEM_DEF(atoms)
 	dependencies = list(
 		/datum/controller/subsystem/garbage,
 		/datum/controller/subsystem/mapping,
-		/datum/controller/subsystem/job
+		/datum/controller/subsystem/job,
+		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
+		/datum/world_service/transcore,
+		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
+		/datum/world_service/planets,
 	)
 	flags = SS_NO_FIRE
 
@@ -45,17 +49,13 @@ SUBSYSTEM_DEF(atoms)
 
 /datum/controller/subsystem/atoms/Initialize()
 	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
-	// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
-	boot_world_service(GLOB.transcore_service)
-	// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
-	boot_world_service(GLOB.planet_service)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
-	// Services that set up on the initialized map declare boot_after = SSatoms (pai, xenoarch,
-	// events, night shift, antagonists, radio, crew transfer); the MC boots them next.
+	// Services that set up on the initialized map declare needs = list(/datum/controller/subsystem/atoms) (pai, xenoarch,
+	// events, night shift, antagonists, radio, crew transfer); the boot DAG boots them next.
 	validate_property_registry()
 	// Map load and the initial materialize batch are done: validate the ownership table of every
 	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).

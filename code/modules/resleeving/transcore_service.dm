@@ -15,9 +15,9 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 /datum/world_service/transcore
 	name = "Transcore"
 	lane = /datum/om/behaviour/world/transcore
-	// The old subsystem depended on SSmapping; boot right after it, as before. SSatoms also boots
-	// it explicitly, since mapload resleeving machines register with the databases.
-	boot_after = /datum/controller/subsystem/mapping
+	// The old subsystem depended on SSmapping; boot right after it, as before. SSatoms depends on it,
+	// since mapload resleeving machines register with the databases.
+	needs = list(/datum/controller/subsystem/mapping)
 
 	// THINGS
 	var/overdue_time = 6 MINUTES			// Has to be a multiple of the lane's 3 minute cadence, or else will just round up anyway.
