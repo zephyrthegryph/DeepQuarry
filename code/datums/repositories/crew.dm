@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 	var/list/cache_data
 
 /datum/repository/crew/New()
-	cache_data = list()
+	own_take_all(src, "cache_data")
 	..()
 
 /datum/repository/crew/proc/health_data(zLevel)

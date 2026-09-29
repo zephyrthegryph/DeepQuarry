@@ -36,7 +36,7 @@
 /obj/item/gun/launcher/rocket/consume_next_projectile()
 	if(length(rockets))
 		var/obj/item/ammo_casing/rocket/I = LAZYACCESS(rockets, 1)
-		LAZYREMOVE(rockets, I)
+		rel_remove(src, "rockets", I)
 		return new I.projectile_type(src)
 	return null
 

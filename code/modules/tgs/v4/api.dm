@@ -88,7 +88,7 @@
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
-	cached_test_merges = list()
+	own_take_all(src, "cached_test_merges")
 	var/list/json = cached_json["testMerges"]
 	for(var/entry in json)
 		var/datum/tgs_revision_information/test_merge/tm = new

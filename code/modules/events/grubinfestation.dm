@@ -26,9 +26,9 @@
 		var/obj/vent = DEFAULTPICK(vents, null)
 		var/mob/living/simple_mob/animal/solargrub_larva/larva = new(get_turf(vent))
 		larva.tracked = TRUE
-		LAZYREMOVE(vents, vent)
+		rel_remove(src, "vents", vent)
 		spawncount--
-	LAZYCLEARLIST(vents)
+	rel_clear(src, "vents")
 
 /datum/event/grub_infestation/end()
 	var/list/area_names = list()

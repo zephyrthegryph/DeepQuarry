@@ -157,7 +157,7 @@
 	if(istype(source) && source.part == target)
 		rel_clear(source, "part")
 	if(istype(target))
-		LAZYREMOVE(target.implants, source)
+		rel_remove(target, "implants", source)
 	// Unlike a bare relation, this slot's own drop_policy (DELETE) may
 	// already be what's destroying `source` (its organ is going and takes it
 	// with it) -- writing to a QDELETED datum's own vars is harmless, and
@@ -335,7 +335,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	for(var/datum/affliction/tissue_necrosis/N in afflictions_here())
 		if(N.body)
 			N.body.remove_affliction(N)
-		LAZYREMOVE(detached_afflictions, N)
+		own_take_member(src, "detached_afflictions", N)
 		qdel(N)
 	integrity_dirty = TRUE
 
@@ -739,7 +739,7 @@ This function completely restores a damaged organ to perfect condition.
 		if(istype(implanted_object,/obj/item/implant) || istype(implanted_object,/obj/item/nif)) // We don't want to remove REAL implants. Just shrapnel etc. // NIFs pls
 			continue
 		implanted_object.forceMove(get_turf(src))
-		LAZYREMOVE(implants, implanted_object)
+		rel_remove(src, "implants", implanted_object)
 	if(owner && !owner.has_embedded_objects()) // rejuvenating a detached limb has no owner (D13)
 		owner.clear_alert("embeddedobject")
 
@@ -1559,7 +1559,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			implant.forceMove(get_turf(victim))
 		else
 			implant.forceMove(src)
-	implants = null
+	rel_clear(src, "implants")
 
 /obj/item/organ/external/proc/disfigure(type = "brute")
 	if (disfigured)

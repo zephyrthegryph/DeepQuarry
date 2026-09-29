@@ -62,7 +62,7 @@
 	// Load next shell
 	if(loaded.len)
 		var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
-		loaded -= AC // Remove casing from loaded list.
+		own_take_member(src, "loaded", AC) // Remove casing from loaded list.
 		rel_set(src, "chambered", AC)
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 

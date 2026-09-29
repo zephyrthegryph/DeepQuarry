@@ -376,7 +376,7 @@
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()
 	. = afflictions || list()
-	afflictions = null
+	own_take_all(src, "afflictions")
 
 /// Structural load the part carries (examine, installing checks).
 /datum/carried_afflictions/proc/carried_load()

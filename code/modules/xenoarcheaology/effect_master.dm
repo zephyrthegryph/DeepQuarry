@@ -55,7 +55,7 @@
 	rel_set(src, "holder", new_holder)
 	rel_set(new_holder, "artifact_master", src)
 
-	my_effects = list()
+	own_take_all(src, "my_effects")
 
 	om_task_periodic(src, PERIODIC_SLOW)
 
@@ -128,7 +128,7 @@
 
 	if(to_remove_effect)
 		var/datum/artifact_effect/AE = to_remove_effect
-		my_effects.Remove(to_remove_effect)
+		own_take_member(src, "my_effects", to_remove_effect)
 		qdel(AE)
 
 // its effects go with it.
@@ -140,7 +140,7 @@
 	rel_clear(src, "holder")
 	for(var/datum/artifact_effect/AE in my_effects)
 		rel_clear(AE, "master")
-		my_effects -= AE
+		own_take_member(src, "my_effects", AE)
 		qdel(AE)
 
 	..()

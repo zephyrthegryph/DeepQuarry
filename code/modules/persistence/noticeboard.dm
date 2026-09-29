@@ -15,7 +15,7 @@
 	. = ..()
 
 	// Grab any mapped notices.
-	notices = list()
+	own_take_all(src, "notices")
 	for(var/obj/item/paper/note in get_turf(src))
 		note.forceMove(src)
 		own_add(src, "notices", note)
@@ -39,7 +39,7 @@
 /obj/structure/noticeboard/proc/remove_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper) && paper.loc == src)
 		paper.dropInto(loc)
-		LAZYREMOVE(notices, paper)
+		own_take_member(src, "notices", paper)
 		SSpersistence.forget_value(paper, /datum/persistent/paper)
 		if(!skip_icon_update)
 			update_icon()

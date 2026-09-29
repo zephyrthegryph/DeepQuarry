@@ -263,7 +263,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	for(var/key in sites.Copy())
 		var/datum/expedition_site/site = sites[key]
 		if(!istype(site))
-			sites -= key
+			own_take_member(src, "sites", key)
 			continue
 
 		// Poll mission completion (cheap per-mission check).
@@ -356,7 +356,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		rel_set(emergency_area, "apc", APC)
 		own_add(materialization, "infrastructure", APC)
 		if(APC.terminal)
-			materialization.infrastructure += APC.terminal
+			own_add(materialization, "infrastructure", APC.terminal)
 	var/list/light_sockets = list(
 		list(materialization.world_turf(mid_x, spec.grid_height - 1), NORTH, 0, 26),
 		list(materialization.world_turf(mid_x, 2), SOUTH, 0, -26),
@@ -699,7 +699,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	var/z = site.z_level
 	site.status = EXP_STATUS_EXPIRED
 	// The teardown job owns the site (own_move in its New()) until the wipe finishes.
-	sites -= "[z]"
+	own_take_member(src, "sites", "[z]")
 	if(site.flight_destination_id)
 		GLOB.flight_service?.unregister_destination(site.flight_destination_id)
 	if(site.origin_console() && site.origin_console().active_expedition() == site)

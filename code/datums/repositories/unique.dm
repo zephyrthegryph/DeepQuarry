@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 
 /datum/repository/unique/New()
 	..()
-	generators = list()
+	own_take_all(src, "generators")
 
 /datum/repository/unique/proc/Generate()
 	var/generator_type = args[1]

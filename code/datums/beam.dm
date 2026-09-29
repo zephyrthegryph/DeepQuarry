@@ -57,7 +57,7 @@
 /datum/beam/proc/Reset()
 	for(var/obj/effect/ebeam/B in elements)
 		qdel(B)
-	LAZYCLEARLIST(elements)
+	own_take_all(src, "elements")
 
 
 /datum/beam/proc/Draw()

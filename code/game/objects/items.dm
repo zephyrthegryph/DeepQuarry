@@ -201,7 +201,7 @@
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
 
-	LAZYREMOVE(actions, source)
+	rel_remove(src, "actions", source)
 
 /// Adds an item action to our list of item actions.
 /// Item actions are actions linked to our item, that are granted to mobs who equip us.
@@ -232,7 +232,7 @@
 		return
 
 	om_unhook(action, /datum/om/event/qdeleting, src)
-	LAZYREMOVE(actions, action)
+	rel_remove(src, "actions", action)
 	qdel(action)
 
 // Check if target is reasonable for us to operate on.
@@ -1092,7 +1092,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	//This means the proc can also be manually called by admin commands.
 	//Handle moving the person into the object.
 	if(!possessed_voice) //Create the list for possessed_voice if it doesn't already have one.
-		possessed_voice = list()
+		own_take_all(src, "possessed_voice")
 	if(!warned_of_possession) //Creates a list of warned users.
 		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.

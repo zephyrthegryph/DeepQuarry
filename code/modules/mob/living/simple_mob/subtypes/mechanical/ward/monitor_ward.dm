@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 	// Now get rid of old mobs that left vision.
 	for(var/thing in seen_mobs)
 		if(!(thing in mobs_nearby))
-			seen_mobs -= thing
+			rel_remove(src, "seen_mobs", thing)
 
 	// Check if we need to update icon.
 	if(seen_mobs.len != last_seen_mobs_len)

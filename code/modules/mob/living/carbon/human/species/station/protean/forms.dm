@@ -59,7 +59,7 @@
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
 	rel_set(src, "owner", H)
-	forms = list()
+	own_take_all(src, "forms")
 	var/list/types = get_form_types()
 	for(var/form_type in types)
 		own_put(src, "forms", form_type, new form_type())

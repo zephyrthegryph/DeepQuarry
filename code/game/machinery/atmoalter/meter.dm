@@ -174,8 +174,8 @@
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))
-	LAZYREMOVE(pipes_on_turf, target_ref())
-	LAZYADD(pipes_on_turf, target_ref())
+	rel_remove(src, "pipes_on_turf", target_ref())
+	rel_add(src, "pipes_on_turf", target_ref())
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 

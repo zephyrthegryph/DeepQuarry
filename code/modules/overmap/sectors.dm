@@ -198,7 +198,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		var/list/shuttles = LAZYACCESS(restricted_waypoints, shuttle_name)
 		LAZYREMOVE(shuttles, landmark)
 	else
-		LAZYREMOVE(generic_waypoints, landmark)
+		rel_remove(src, "generic_waypoints", landmark)
 
 /obj/effect/overmap/visitable/proc/get_waypoints(shuttle_name)
 	. = list()

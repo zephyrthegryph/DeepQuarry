@@ -87,7 +87,7 @@
 	..()
 	rel_set(src, "site", new_site)
 	rel_set(src, "director", new_director)
-	agents = list()
+	own_take_all(src, "agents")
 	squads_by_department = list()
 	department_turfs = list()
 	active_patrols = list()
@@ -251,7 +251,7 @@
 	if(squad && agent.defender())
 		squad.member_ids -= REF(agent.defender())
 	director()?.unregister_defender(agent.defender())
-	agents -= agent
+	own_take_member(src, "agents", agent)
 	qdel(agent)
 	if(department_id == "security-1" && director()?.request_security_reserve())
 		om_after(src, 10 SECONDS, PROC_REF(spawn_reinforcement), "security-1")

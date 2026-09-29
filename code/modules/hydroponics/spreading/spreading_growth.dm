@@ -11,7 +11,7 @@
 
 /obj/effect/plant/proc/update_neighbors()
 	// Update our list of valid neighboring turfs.
-	neighbors = list()
+	rel_clear(src, "neighbors")
 	for(var/turf/simulated/floor in get_cardinal_neighbors())
 		if(get_dist(parent(), floor) > spread_distance)
 			continue
@@ -40,7 +40,7 @@
 	var/turf/T = get_turf(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
 		if(neighbor.seed() == src.seed())
-			LAZYREMOVE(neighbor.neighbors, T)
+			rel_remove(neighbor, "neighbors", T)
 
 /// One delayed spread to a random neighbour (process() spaces them a few deciseconds apart).
 /obj/effect/plant/proc/spread_once()
@@ -185,6 +185,6 @@
 	// Update neighboring squares.
 	for(var/obj/effect/plant/neighbor in range(1, child.loc)) //can use the actual final child loc now
 		if(child.seed() == neighbor.seed()) //neighbors of different seeds will continue to try to overrun each other
-			LAZYREMOVE(neighbor.neighbors, target_turf)
+			rel_remove(neighbor, "neighbors", target_turf)
 
 	child.finish_spreading()

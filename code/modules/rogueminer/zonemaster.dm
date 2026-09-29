@@ -351,7 +351,7 @@
 		if(has_minerals == 0)
 			tally += RM_DIFF_VALUE_ORE
 
-	LAZYCLEARLIST(mineral_rocks) //For good measure, to prevent rescoring.
+	rel_clear(src, "mineral_rocks") //For good measure, to prevent rescoring.
 
 	for(var/I = 1, I <= length(spawned_mobs), I++)
 		if(isnull(LAZYACCESS(spawned_mobs, I)))
@@ -363,7 +363,7 @@
 				tally += RM_DIFF_VALUE_MOB
 				GLOB.rm_controller.dbg("ZM(sz): Scoring one mob dead.")
 
-	LAZYCLEARLIST(spawned_mobs)
+	rel_clear(src, "spawned_mobs")
 	original_mobs = 0
 
 	GLOB.rm_controller.adjust_difficulty(tally)
@@ -378,8 +378,8 @@
 	GLOB.rm_controller.unmark_ready(src)
 
 	//Cut these lists so qdel can dereference the things properly
-	LAZYCLEARLIST(mineral_rocks)
-	LAZYCLEARLIST(spawned_mobs)
+	rel_clear(src, "mineral_rocks")
+	rel_clear(src, "spawned_mobs")
 	rel_clear(src, "rockspawns")
 	rel_clear(src, "mobspawns")
 

@@ -231,7 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
-		L.stored_ammo -= AC //Remove this casing from loaded list of the clip.
+		own_take_member(L, "stored_ammo", AC) //Remove this casing from loaded list of the clip.
 		AC.forceMove(src)
 		stored_ammo.Insert(1, AC) //add it to the head of our magazine's list
 		L.update_icon()
@@ -252,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		for(var/obj/item/ammo_casing/C in stored_ammo)
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
-		stored_ammo.Cut()
+		own_take_all(src, "stored_ammo")
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		if(user.get_inactive_hand() == src)
 			if(stored_ammo.len)
 				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
-				stored_ammo-=C
+				own_take_member(src, "stored_ammo", C)
 				user.put_in_hands(C)
 				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 				update_icon()
@@ -371,7 +371,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 		if(isliving(user) && Adjacent(user))
 			if(stored_ammo.len)
 				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
-				stored_ammo-=C
+				own_take_member(src, "stored_ammo", C)
 				user.put_in_hands(C)
 				user.visible_message("\The [user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 				update_icon()

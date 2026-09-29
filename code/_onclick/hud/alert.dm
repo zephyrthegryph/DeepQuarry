@@ -66,7 +66,7 @@
 	if(!alert)
 		return 0
 
-	LAZYREMOVE(alerts, category)
+	own_take_member(src, "alerts", category)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 		client.screen -= alert

@@ -149,7 +149,7 @@
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
 		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	LAZYCLEARLIST(autoclose_blockers)
+	rel_clear(src, "autoclose_blockers")
 
 /obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
 	EVENT_HANDLER

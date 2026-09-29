@@ -333,7 +333,7 @@
 		return
 
 	if(host_bodypart)
-		LAZYREMOVE(host_bodypart.implants, src)
+		rel_remove(host_bodypart, "implants", src)
 		rel_clear(src, "host_bodypart")
 
 	forceMove(get_turf(host))

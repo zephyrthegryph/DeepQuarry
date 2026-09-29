@@ -462,7 +462,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 			if(istype(nextT, /obj/structure/table/rack) || (istype(nextT, /obj/structure/table/bench) && !istype(src, /obj/structure/table/bench)) ||  (!istype(nextT, /obj/structure/table/bench) && istype(src, /obj/structure/table/bench)))
 				continue
 			if(!(nextT in connections))
-				connections |= nextT.get_all_connected_tables(connections)
+				rel_add(src, "connections", nextT.get_all_connected_tables(connections))
 
 	return connections
 

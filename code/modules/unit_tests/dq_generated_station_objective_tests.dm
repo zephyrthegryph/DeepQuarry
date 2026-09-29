@@ -6,7 +6,7 @@
 	var/datum/expedition_site/site = new(world.maxz, EXP_DIFF_MED)
 	own_set(site, "station_spec", spec)
 	own_set(site, "station_simulation", new /datum/generated_station_simulation(spec))
-	site.station_controls = list()
+	own_take_all(site, "station_controls")
 	for(var/datum/generated_station_department_instance/department in spec.departments)
 		var/obj/machinery/generated_station_department_control/control = new(null)
 		control.station_id = spec.id

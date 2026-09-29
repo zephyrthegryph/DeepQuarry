@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 		var/obj/item/paper/P
 		if(length(papers) > 0) //If there's any custom paper on the stack, use that instead of creating a new paper.
 			P = papers[length(papers)]
-			LAZYREMOVE(papers, P)
+			rel_remove(src, "papers", P)
 		else
 			if(response == "Regular")
 				P = new /obj/item/paper

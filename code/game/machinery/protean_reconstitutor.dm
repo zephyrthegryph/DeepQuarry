@@ -50,7 +50,7 @@
 	return gen
 
 /obj/machinery/protean_reconstitutor/Initialize(mapload)
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 	. = ..()
 

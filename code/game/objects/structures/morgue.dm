@@ -24,11 +24,11 @@
 
 
 /obj/structure/morgue/proc/get_occupants()
-	LAZYCLEARLIST(occupants)
+	rel_clear(src, "occupants")
 	for(var/mob/living/carbon/human/H in contents)
 		rel_add(src, "occupants", H)
 	for(var/obj/structure/closet/body_bag/B in contents)
-		LAZYADD(occupants, B.get_occupants())
+		rel_add(src, "occupants", B.get_occupants())
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)

@@ -63,7 +63,7 @@
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
 		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder]) ([holder.type])")
 		reset_parents()
-		LAZYCLEARLIST(parents)
+		rel_clear(src, "parents")
 
 	if(length(parents))
 		//Only need to watch top parent for movement. Everything is covered by Exited
@@ -127,7 +127,7 @@
 
 /datum/recursive_move/proc/reset_parents()
 	unregister_hooks()
-	LAZYCLEARLIST(parents)
+	rel_clear(src, "parents")
 
 //the banana peel of testing stays
 /obj/item/bananapeel/test

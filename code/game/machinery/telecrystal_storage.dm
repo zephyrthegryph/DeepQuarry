@@ -16,7 +16,7 @@
 
 /obj/machinery/smartfridge/tcrystal/proc/mod_amount(datum/stored_item/I,mod)
 	if(I.amount + mod <= 0)
-		item_records.Remove(I)
+		own_take_member(src, "item_records", I)
 		qdel(I)
 	else
 		I.amount += mod

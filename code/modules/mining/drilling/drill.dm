@@ -182,7 +182,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		while(length(resource_field) && !harvesting.resources)
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			LAZYREMOVE(resource_field, harvesting)
+			rel_remove(src, "resource_field", harvesting)
 			if(length(resource_field)) // runtime protection
 				harvesting = DEFAULTPICK(resource_field, null)
 			else
@@ -227,7 +227,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			LAZYREMOVE(resource_field, harvesting)
+			rel_remove(src, "resource_field", harvesting)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		active = 0
@@ -307,7 +307,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 		balloon_alert(user, "you take out \the [cell]")
 		user.put_in_hands(cell)
 		if(component_parts)
-			component_parts -= cell
+			own_take_member(src, "component_parts", cell)
 		own_take(src, "cell")
 		return TRUE
 	else if(need_player_check)
@@ -416,7 +416,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 
 /obj/machinery/mining/drill/proc/get_resource_field()
 
-	resource_field = list()
+	rel_clear(src, "resource_field")
 	gas_field = list()
 	need_update_field = 0
 	drill_moles_per_tick = 0

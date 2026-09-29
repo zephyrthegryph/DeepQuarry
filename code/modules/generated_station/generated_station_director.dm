@@ -63,11 +63,11 @@
 	rel_set(src, "simulation", new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
-	reports = list()
-	global_knowledge = list()
+	own_take_all(src, "reports")
+	own_take_all(src, "global_knowledge")
 	local_knowledge = list()
-	squads = list()
-	orders = list()
+	own_take_all(src, "squads")
+	own_take_all(src, "orders")
 	dirty_departments = list()
 	for(var/department_id in simulation()?.departments)
 		department_connected[department_id] = TRUE
@@ -171,7 +171,7 @@
 	for(var/department_id in local_knowledge)
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
-	reports -= report_id
+	own_take_member(src, "reports", report_id)
 	qdel(report)
 
 /datum/generated_station_director/proc/department_knows(department_id, report_id)
@@ -236,7 +236,7 @@
 	var/datum/generated_station_squad/squad = squads[order.squad_id]
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
-	orders -= order.id
+	own_take_member(src, "orders", order.id)
 	qdel(order)
 	return TRUE
 

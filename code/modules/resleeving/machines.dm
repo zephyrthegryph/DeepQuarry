@@ -159,7 +159,7 @@
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 	update_icon()
 
@@ -341,7 +341,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 	update_icon()
 

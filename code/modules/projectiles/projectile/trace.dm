@@ -35,10 +35,10 @@
 
 /obj/item/projectile/test/Bump(atom/A)
 	if(A != src)
-		LAZYOR(hit, A)
+		rel_add(src, "hit", A)
 	if(isturf(A))
 		for(var/obj/O in contents_of(A))
-			LAZYOR(hit, O)
+			rel_add(src, "hit", O)
 		for(var/mob/living/M in contents_of(A))
 			rel_add(src, "hit", M)
 	return ..()
@@ -47,7 +47,7 @@
 	. = ..()
 	if(direct_target)
 		if(direct_target != src)
-			LAZYOR(hit, direct_target)
+			rel_add(src, "hit", direct_target)
 		. = hit || list()
 
 

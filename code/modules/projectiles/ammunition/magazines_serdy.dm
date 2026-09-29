@@ -15,7 +15,7 @@
 			return FALSE
 		while(L.stored_ammo.len && stored_ammo.len < max_ammo)
 			var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
-			L.stored_ammo -= AC //Remove this casing from loaded list of the clip.
+			own_take_member(L, "stored_ammo", AC) //Remove this casing from loaded list of the clip.
 			AC.forceMove(src)
 			stored_ammo.Insert(1, AC) //add it to the head of our magazine's list
 		L.update_icon()

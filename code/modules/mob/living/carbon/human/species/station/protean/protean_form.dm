@@ -335,7 +335,7 @@
 
 /datum/protean_blob_style/layered/New()
 	..()
-	layers = list()
+	own_take_all(src, "layers")
 	for(var/list/spec as anything in layer_specs())
 		own_add(src, "layers", new /datum/protean_blob_layer(arglist(spec)))
 

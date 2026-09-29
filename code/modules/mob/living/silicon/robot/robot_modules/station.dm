@@ -111,7 +111,7 @@
 
 	robot.scrubbing = FALSE
 
-	modules -= robot.idcard
+	own_take_member(src, "modules", robot.idcard)
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
 	own_take(robot, "module")
@@ -139,10 +139,10 @@
 
 /obj/item/robot_module/proc/rebuild()//Rebuilds the list so it's possible to add/remove items from the module
 	var/list/temp_list = modules
-	modules = list()
+	own_take_all(src, "modules")
 	for(var/obj/O in temp_list)
 		if(O)
-			modules += O
+			own_add(src, "modules", O)
 
 /obj/item/robot_module/proc/add_languages(mob/living/silicon/robot/R)
 	// Stores the languages as they were before receiving the module, and whether they could be synthezized.
@@ -221,7 +221,7 @@
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
 		if(robot.idcard)
-			modules -= robot.idcard
+			own_take_member(src, "modules", robot.idcard)
 			own_clear(robot, "idcard", OWN_DELETE)
 		own_move(new_item, robot, "idcard")
 	own_add(src, "modules", new_item)
@@ -927,7 +927,7 @@
 	own_add(src, "modules", new /obj/item/pipe_dispenser(src))
 
 	own_set(robot, "internals", new/obj/item/tank/jetpack/carbondioxide(src))
-	src.modules += robot.internals
+	own_add(src, "modules", robot.internals)
 
 	var/obj/item/pickaxe/plasmacutter/borg/PC = new /obj/item/pickaxe/plasmacutter/borg(src)
 	own_add(src, "emag", PC)

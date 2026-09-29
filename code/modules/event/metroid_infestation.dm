@@ -37,9 +37,9 @@
 			/mob/living/simple_mob/metroid/juvenile/omega = 1,
 			))
 		own_add(src, "alive_metroids", new spawn_metroids(get_turf(vent)))
-		LAZYREMOVE(vents, vent)
+		rel_remove(src, "vents", vent)
 		spawncount--
-	LAZYCLEARLIST(vents)
+	rel_clear(src, "vents")
 
 /datum/event/metroid_infestation/end()
 	var/list/area_names = list()

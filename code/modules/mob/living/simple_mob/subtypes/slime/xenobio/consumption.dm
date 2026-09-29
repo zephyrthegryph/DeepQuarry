@@ -49,7 +49,7 @@
 		if(LAZYLEN(friends) && prob(1))
 			var/mob/nofriend = pick(friends)
 			if(nofriend)
-				LAZYREMOVE(friends, nofriend)
+				rel_remove(src, "friends", nofriend)
 				say("[nofriend]... food now...")
 
 	if(nutrition <= 0)

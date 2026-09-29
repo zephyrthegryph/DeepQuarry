@@ -76,13 +76,13 @@
 		cure_vender(vender)
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
-	LAZYREMOVE(vending_machines, V)
+	rel_remove(src, "vending_machines", V)
 	rel_add(src, "infected_vending_machines", V)
 	V.shut_up = FALSE
 	V.shoot_inventory = TRUE
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
-	LAZYREMOVE(infected_vending_machines, V)
+	rel_remove(src, "infected_vending_machines", V)
 	V.shut_up = TRUE
 	V.shoot_inventory = FALSE
 

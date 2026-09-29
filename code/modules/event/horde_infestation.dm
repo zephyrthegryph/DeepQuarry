@@ -59,7 +59,7 @@
 				/obj/effect/spider/eggcluster/royal/space = 1
 				))
 			new spawn_spiderlings(vent.loc) // No nurses //Oh my JESUS CHRIST, this slipped past me. Literally no nurses. Well guess what, nurses are back.
-			LAZYREMOVE(vents, vent)
+			rel_remove(src, "vents", vent)
 			spawncount--
 	if(metroids)
 		while((spawncount >= 1) && length(vents))
@@ -73,9 +73,9 @@
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
 			own_add(src, "alive_metroids", new spawn_metroids(get_turf(vent)))
-			LAZYREMOVE(vents, vent)
+			rel_remove(src, "vents", vent)
 			spawncount--
-		LAZYCLEARLIST(vents)
+		rel_clear(src, "vents")
 
 /datum/event/horde_infestation/end()
 	if(spiders)

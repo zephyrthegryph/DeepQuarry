@@ -53,7 +53,7 @@
 	if(force_process || force)
 		// Populate directly from organs that need processing instead of adding all
 		// then pruning the ones that don't (the old "Silly and slow" approach).
-		self.bad_external_organs.Cut()
+		rel_clear(self, "bad_external_organs")
 		for(var/obj/item/organ/external/Ex in self.organs)
 			if(Ex.need_process())
 				rel_add(self, "bad_external_organs", Ex)
@@ -73,7 +73,7 @@
 		if(!E)
 			continue
 		if(!E.need_process())
-			self.bad_external_organs -= E
+			rel_remove(self, "bad_external_organs", E)
 			continue
 		else
 			E.periodic_step()

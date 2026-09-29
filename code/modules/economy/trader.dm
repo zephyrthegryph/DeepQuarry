@@ -227,7 +227,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					a.worth -= amount
 					a.update_icon()
 					if(a.worth <= 0)
-						LAZYREMOVE(bank, a)
+						rel_remove(src, "bank", a)
 						qdel(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
@@ -271,12 +271,12 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				LAZYREMOVE(bank, c)
+				rel_remove(src, "bank", c)
 		if("item")
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				LAZYREMOVE(bank, c)
+				rel_remove(src, "bank", c)
 	if(u_get_refund)
 		visible_message(span_notice("\The [src] drops the banked [welcome_accepts_name]."))
 	else

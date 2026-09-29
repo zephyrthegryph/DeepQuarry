@@ -28,7 +28,7 @@
 	if(!screen)
 		return
 
-	LAZYREMOVE(screens, category)
+	own_take_member(src, "screens", category)
 
 	if(animated)
 		animate(screen, alpha = 0, time = animated)

@@ -146,7 +146,7 @@
 /datum/body/proc/remove_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	LAZYREMOVE(afflictions, A)
+	rel_remove(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
@@ -162,7 +162,7 @@
 /datum/body/proc/unlink_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	LAZYREMOVE(afflictions, A)
+	rel_remove(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)

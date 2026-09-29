@@ -197,16 +197,16 @@
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/Initialize(mapload)
 	. = ..()
 
-	integrated_tools = list()
+	own_take_all(src, "integrated_tools")
 	for(var/path in tool_types())
-		integrated_tools[path] = null
+		own_take_member(src, "integrated_tools", path)
 
 	if(integrated_object)
 		integrated_tools[integrated_object_type] = integrated_object
 
 	if(integrated_tools && integrated_tools.len)
 
-		integrated_tools_by_name = list()
+		own_take_all(src, "integrated_tools_by_name")
 
 		integrated_tool_images = list()
 

@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STAT
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
 	rel_set(src, "spec", new_spec)
-	departments = list()
+	own_take_all(src, "departments")
 	capabilities = list()
 	power_areas = list()
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)

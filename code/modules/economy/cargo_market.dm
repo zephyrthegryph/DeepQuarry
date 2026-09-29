@@ -403,14 +403,14 @@
 	var/market_generation = 0
 
 /datum/world_service/supply/proc/initialize_cargo_market()
-	QDEL_LIST(market_counterparties)
-	QDEL_LIST(market_listings)
-	QDEL_LIST(market_bids)
-	QDEL_LIST(market_transactions)
-	market_counterparties = list()
-	market_listings = list()
-	market_bids = list()
-	market_transactions = list()
+	own_clear(src, "market_counterparties", OWN_DELETE)
+	own_clear(src, "market_listings", OWN_DELETE)
+	own_clear(src, "market_bids", OWN_DELETE)
+	own_clear(src, "market_transactions", OWN_DELETE)
+	own_take_all(src, "market_counterparties")
+	own_take_all(src, "market_listings")
+	own_take_all(src, "market_bids")
+	own_take_all(src, "market_transactions")
 	next_market_id = 1
 	market_generation = 0
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))

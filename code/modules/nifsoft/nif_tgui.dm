@@ -61,7 +61,7 @@
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
-	LAZYADD(HUD.other_important, screen_icon)
+	own_add(HUD, "other_important", screen_icon)
 	user.client?.screen += screen_icon
 
 	add_verb(user, /mob/living/carbon/human/proc/nif_menu)

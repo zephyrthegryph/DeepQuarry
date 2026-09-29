@@ -533,7 +533,7 @@
 	// (pipe_network/lifecycle_unbind()) across members that Rust is rebinding.
 	rel_clear(network, "line_members")
 	rel_clear(network, "normal_members")
-	network.leaks = null
+	rel_clear(network, "leaks")
 	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
 		member.material_service?.environment_changed()
@@ -543,7 +543,7 @@
 		// Likewise the line: no network to destroy, no gas to store back into its pipes.
 		rel_clear(line, "network")
 		atmos_air_set(line, "air", null)
-		line.leaks = null
+		rel_clear(line, "leaks")
 		qdel(line)
 	// The network owns the retired region mixture: destroyed with it.
 	qdel(network)
@@ -581,7 +581,7 @@
 		var/datum/pipeline/pipeline = new
 		atmos_air_set(pipeline, "air", region_air)
 		pipeline.volume = 0
-		pipeline.leaks = list()
+		rel_clear(pipeline, "leaks")
 		rel_set(pipeline, "network", network)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in region_pipes)
 			rel_set(pipe, "parent", pipeline) // two-sided: adds the pipe to pipeline.members

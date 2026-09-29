@@ -121,7 +121,7 @@
 		user.visible_message(span_danger("\The [user] tears off \the [A] from [src]'s [suit.name]!"))
 	add_attack_logs(user,src,"Stripped [A.name] off [suit.name]")
 	A.on_removed(user)
-	suit.accessories -= A
+	own_take_member(suit, "accessories", A)
 	update_inv_w_uniform()
 	return
 /datum/om/task/timed/human_handle_strip_human2

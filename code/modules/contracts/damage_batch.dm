@@ -80,7 +80,7 @@
 
 /datum/controller/subsystem/contracts/proc/flush_damage_reports()
 	var/list/reports = pending_damage_reports
-	pending_damage_reports = null
+	own_take_all(src, "pending_damage_reports")
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++

@@ -41,7 +41,7 @@
 		if(SCRN_OBJ_DEFAULT) // Invalid
 			CRASH("We just tried to hide an action buttion that somehow has the default position as its location, you done fucked up")
 		if(SCRN_OBJ_FLOATING)
-			floating_actions -= button
+			own_take_member(src, "floating_actions", button)
 		if(SCRN_OBJ_IN_LIST)
 			listed_actions.remove_action(button)
 		if(SCRN_OBJ_IN_PALETTE)

@@ -62,7 +62,7 @@
 				S.dry = 1
 				S.name = "dried [S.name]"
 				S.color = "#AAAAAA"
-				I.instances -= S
+				rel_remove(I, "instances", S)
 				S.forceMove(get_turf(src))
 			else
 				var/D = S.dried_type
@@ -75,7 +75,7 @@
 				if(WL.get_amount())
 					WL.forceMove(get_turf(src))
 					WL.dry()
-				I.instances -= WL
+				rel_remove(I, "instances", WL)
 				break
 
 			WL.wetness = max(0, WL.wetness - rand(1, 3))

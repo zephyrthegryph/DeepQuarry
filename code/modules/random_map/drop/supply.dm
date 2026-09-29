@@ -66,7 +66,7 @@ ADMIN_VERB(call_supply_drop, R_FUN, "Call Supply Drop", "Call an immediate suppl
 
 /datum/supply_drop_order/lifecycle_dematerialize()
 	..()
-	open_orders -= src
+	rel_remove(src, "open_orders", src)
 
 /// Asks the admin a supply drop question. `on_cancel` runs on the order when the window is closed.
 /datum/supply_drop_order/proc/ask(prompt_type, message, on_answer, on_cancel, list/choices)

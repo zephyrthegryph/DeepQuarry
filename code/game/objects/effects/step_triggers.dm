@@ -76,7 +76,7 @@
 	throw_next(AM, curtiles)
 
 /obj/effect/step_trigger/thrower/proc/throw_end(atom/movable/AM)
-	affecting.Remove(AM)
+	rel_remove(src, "affecting", AM)
 
 	if(ismob(AM))
 		var/mob/M = AM

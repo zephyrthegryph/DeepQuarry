@@ -198,9 +198,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
-		beam_segments = list()
+		own_take_all(src, "beam_segments")
 		rel_set(src, "beam_index", pcache)
-		beam_segments[beam_index()] = null	//record start.
+		own_take_member(src, "beam_segments", beam_index()) //record start.
 
 /obj/item/projectile/proc/process_hitscan()
 	var/safety = range * 3
@@ -404,7 +404,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
 	own_put(src, "beam_segments", beam_index(), pcache)
 	rel_set(src, "beam_index", pcache)
-	beam_segments[beam_index()] = null
+	own_take_member(src, "beam_segments", beam_index())
 
 //Spread is FORCED!
 /obj/item/projectile/proc/preparePixelProjectile(atom/target, atom/source, params, spread = 0)
@@ -493,8 +493,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 // its casing forgets it.
 
 /obj/item/projectile/proc/cleanup_beam_segments()
-	QDEL_LIST_ASSOC(beam_segments)
-	beam_segments = list()
+	own_clear(src, "beam_segments", OWN_DELETE)
+	own_take_all(src, "beam_segments")
 	qdel(beam_index())
 
 /obj/item/projectile/proc/vol_by_damage()

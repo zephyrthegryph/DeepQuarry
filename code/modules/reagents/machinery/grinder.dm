@@ -209,8 +209,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		return
 	for(var/obj/item/O in holdingitems)
 		O.forceMove(src.loc)
-		LAZYREMOVE(holdingitems, O)
-	LAZYCLEARLIST(holdingitems)
+		own_take_member(src, "holdingitems", O)
+	own_take_all(src, "holdingitems")
 	if(beaker)
 		replace_beaker(user)
 

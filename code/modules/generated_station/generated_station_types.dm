@@ -10,8 +10,8 @@
 
 /datum/generated_station_department_definition/New()
 	..()
-	requirements = list()
-	provisions = list()
+	own_take_all(src, "requirements")
+	own_take_all(src, "provisions")
 
 
 /// A capability consumed by a department. Providers may be implemented later
@@ -81,9 +81,9 @@
 	frontage_reservation = list()
 	local_circulation = list()
 	partition_walls = list()
-	frontage_sockets = list()
-	eva_vestibules = list()
-	room_program = list()
+	own_take_all(src, "frontage_sockets")
+	own_take_all(src, "eva_vestibules")
+	own_take_all(src, "room_program")
 
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
@@ -120,7 +120,7 @@
 /datum/generated_station_room_allocation/New()
 	..()
 	tiles = list()
-	door_sockets = list()
+	own_take_all(src, "door_sockets")
 	content_circulation = list()
 	fixture_ids = list()
 
@@ -201,7 +201,7 @@
 /datum/generated_station_eva_vestibule/New()
 	..()
 	tiles = list()
-	door_sockets = list()
+	own_take_all(src, "door_sockets")
 
 
 /// Abstract relationship between two layout vertices.
@@ -241,7 +241,7 @@
 
 /datum/generated_station_validation_result/New()
 	..()
-	issues = list()
+	own_take_all(src, "issues")
 
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
@@ -300,16 +300,16 @@
 
 /datum/generated_station_spec/New()
 	..()
-	departments = list()
+	own_take_all(src, "departments")
 	department_definitions = list()
-	layout_nodes = list()
-	layout_edges = list()
+	own_take_all(src, "layout_nodes")
+	own_take_all(src, "layout_edges")
 	circulation_tiles = list()
 	maintenance_tiles = list()
-	maintenance_doors = list()
+	own_take_all(src, "maintenance_doors")
 	structural_tiles = list()
-	fixture_blueprint = list()
-	network_blueprint = list()
+	own_take_all(src, "fixture_blueprint")
+	own_take_all(src, "network_blueprint")
 	content_quality = list()
 	fixture_type_registry = list()
 

@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
 			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
-				LAZYREMOVE(required_items, meta)
+				own_take_member(src, "required_items", meta)
 			return 1
 	return 0 // Nothing found if we get here
 

@@ -102,5 +102,5 @@
 	if(!S)
 		return
 	S.forceMove(get_turf(user))
-	crowbar_salvage -= S
+	rel_remove(src, "crowbar_salvage", S)
 	user.visible_message("[user] pries [S] from [src].", "You pry [S] from [src].")

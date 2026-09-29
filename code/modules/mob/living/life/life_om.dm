@@ -155,7 +155,7 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	var/datum/life_z_presence/P = GLOB.life_z_presence[life_z]
 	life_z = 0
 	if(P)
-		P.members -= src
+		rel_remove(P, "members", src)
 		om_unobserve(src, P)
 
 /mob/proc/set_low_priority(value)

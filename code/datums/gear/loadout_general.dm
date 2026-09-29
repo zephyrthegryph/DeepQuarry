@@ -312,7 +312,7 @@
 	toytype["Bone"] = /obj/item/toy/chewtoy/poly
 	toytype["Classic"] = /obj/item/toy/chewtoy/tall/poly
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(toytype))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/ducky
 	display_name = "rubber ducky"

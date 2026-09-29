@@ -1097,7 +1097,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 		return
 	for(var/obj/effect/dog_teleporter/T in dog_teleporters.Copy())
 		if(!istype(T,/obj/effect/dog_teleporter))
-			dog_teleporters -= T
+			rel_remove(src, "dog_teleporters", T)
 			continue
 		if(id == T.id)
 			if(T == src)

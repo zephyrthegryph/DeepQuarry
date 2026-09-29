@@ -108,7 +108,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/beam_point, REGISTRY_BEAM_POINTS)
 		log_mapping("[src] ([src.type] \[[x],[y],[z]\]) was asked to destroy a beam it did not own.")
 		return FALSE
 
-	LAZYREMOVE(my_beams, B)
+	rel_remove(src, "my_beams", B)
 	qdel(B)
 	if(beam_destruction_sound)
 		playsound(src, beam_destruction_sound, 70, 1)

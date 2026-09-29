@@ -387,7 +387,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 		. = FALSE
 
 /obj/item/borg/upgrade/modkit/proc/uninstall(obj/item/gun/energy/kinetic_accelerator/KA, forcemove = TRUE)
-	LAZYREMOVE(KA.modkits, src)
+	rel_remove(KA, "modkits", src)
 	if(forcemove)
 		forceMove(get_turf(KA))
 

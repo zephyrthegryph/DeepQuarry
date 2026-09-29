@@ -11,7 +11,7 @@
 //Used to make smole objects be able to be built from menu
 
 /datum/material/smolebricks/generate_recipes()
-	recipes = list()
+	own_take_all(src, "recipes")
 	own_add(src, "recipes", new/datum/stack_recipe("road straight", /obj/structure/smoletrack/roadS, 1, time = 5))
 	own_add(src, "recipes", new/datum/stack_recipe("road threeway", /obj/structure/smoletrack/roadT, 1, time = 5))
 	own_add(src, "recipes", new/datum/stack_recipe("road turn ", /obj/structure/smoletrack/roadturn, 1, time = 5))

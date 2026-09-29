@@ -35,7 +35,7 @@ DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 		else if(length(beakers))
 			for(var/obj/B in beakers)
 				if(istype(B))
-					LAZYREMOVE(beakers, B)
+					own_take_member(src, "beakers", B)
 					user.put_in_hands(B)
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 	if(stage > 1 && !active && clown_check(user))

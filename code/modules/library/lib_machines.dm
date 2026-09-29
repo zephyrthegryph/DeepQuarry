@@ -190,7 +190,7 @@
 			)
 
 	if(!all_books || !all_books.len)
-		all_books = list()
+		own_take_all(src, "all_books")
 
 		for(var/path in subtypesof(/obj/item/book/codex/lore))
 			var/obj/item/book/C = new path(null)

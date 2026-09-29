@@ -212,7 +212,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
 			if(R)
-				LAZYREMOVE(known_sectors, R.fields["name"])
+				own_take_member(src, "known_sectors", R.fields["name"])
 				qdel(R)
 			. = TRUE
 

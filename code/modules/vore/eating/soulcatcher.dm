@@ -386,7 +386,7 @@
 	catch_mob(owner(), taken_over_name)
 	taken_over_name = M.name
 	M.mind.transfer_to(owner())
-	brainmobs -= M
+	own_take_member(src, "brainmobs", M)
 	if(M == selected_soul())
 		update_selected_soul()
 	qdel(M)
@@ -471,7 +471,7 @@
 			mm.take_identity(M, TRUE)
 	else
 		return
-	brainmobs -= M
+	own_take_member(src, "brainmobs", M)
 	if(M == selected_soul())
 		update_selected_soul()
 	qdel(M)
@@ -492,7 +492,7 @@
 		return
 	if(M.mind == own_mind())
 		rel_clear(src, "own_mind")
-	brainmobs -= M
+	own_take_member(src, "brainmobs", M)
 	rel_set(M, "gem", gem)
 	rel_set(M, "container", gem)
 	own_add(gem, "brainmobs", M)
@@ -518,7 +518,7 @@
 /obj/soulgem/proc/release_mob(mob/M)
 	if(is_taken_over()) return FALSE
 	to_chat(M, span_notice("[release_message]"))
-	brainmobs -= M
+	own_take_member(src, "brainmobs", M)
 	M.ghostize(FALSE)
 	qdel(M)
 	return TRUE
@@ -549,7 +549,7 @@
 		if(_answer_a3 != "Yes")
 			return release_mob(M)
 	to_chat(M, span_danger("[delete_message]"))
-	brainmobs -= M
+	own_take_member(src, "brainmobs", M)
 	var/mob/observer/dead/ghost = M.ghostize(FALSE)
 	ghost.abandon_mob()
 	qdel(M)

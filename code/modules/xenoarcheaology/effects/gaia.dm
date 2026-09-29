@@ -82,6 +82,6 @@
 
 	for(var/mob/living/L in my_glitterflies)
 		if(L.stat == DEAD)
-			LAZYREMOVE(my_glitterflies, L)
+			own_take_member(src, "my_glitterflies", L)
 
 		rel_set(L.ai_brain, "home_turf", get_turf(holder))

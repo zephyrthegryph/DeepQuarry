@@ -55,7 +55,7 @@
 	set_wires(new /datum/wires/shield_generator(src))
 	default_apply_parts()
 
-	mode_list = list()
+	own_take_all(src, "mode_list")
 	for(var/st in subtypesof(/datum/shield_mode))
 		var/datum/shield_mode/SM = new st()
 		own_add(src, "mode_list", SM)

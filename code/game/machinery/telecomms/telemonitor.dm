@@ -92,7 +92,7 @@
 			. = TRUE
 
 		if("release")
-			machinelist = list()
+			rel_clear(src, "machinelist")
 			rel_clear(src, "SelectedMachine")
 			. = TRUE
 
@@ -128,7 +128,7 @@
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		machinelist = list()
+		rel_clear(src, "machinelist")
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE

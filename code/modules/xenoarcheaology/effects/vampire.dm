@@ -55,7 +55,7 @@
 	if(isliving(holder.loc))
 		holder = holder.loc
 	if(length(nearby_mobs))
-		LAZYCLEARLIST(nearby_mobs)
+		rel_clear(src, "nearby_mobs")
 	var/turf/T = get_turf(holder)
 
 	for(var/mob/living/L in oview(effectrange, T))

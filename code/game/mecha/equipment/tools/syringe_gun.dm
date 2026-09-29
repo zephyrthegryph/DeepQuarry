@@ -21,7 +21,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
-	syringes = new
+	own_take_all(src, "syringes")
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	processed_reagents = new
 
@@ -64,7 +64,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	var/obj/item/reagent_containers/syringe/S = syringes[1]
 	S.forceMove(get_turf(chassis))
 	reagents.trans_to_obj(S, min(S.volume, reagents.total_volume))
-	syringes -= S
+	own_take_member(src, "syringes", S)
 	S.icon = 'icons/obj/chemical.dmi'
 	S.icon_state = "syringeproj"
 	playsound(src, 'sound/items/syringeproj.ogg', 50, 1)

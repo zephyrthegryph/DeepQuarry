@@ -116,7 +116,7 @@
 		switch(href_list["operation"])
 
 			if("release")
-				servers = list()
+				rel_clear(src, "servers")
 				screen = 0
 
 			if("mainmenu")
@@ -182,7 +182,7 @@
 
 			network = newnet
 			screen = 0
-			servers = list()
+			rel_clear(src, "servers")
 			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
 /obj/machinery/computer/telecomms/traffic/emag_act(remaining_charges, mob/user)

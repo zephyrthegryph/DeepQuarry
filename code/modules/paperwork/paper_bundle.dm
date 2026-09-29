@@ -42,7 +42,7 @@
 		for(var/obj/O in W)
 			O.forceMove(src)
 			O.add_fingerprint(user)
-			pages.Add(O)
+			rel_add(src, "pages", O)
 
 		to_chat(user, span_notice("You add \the [W.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 		consume(W, user)
@@ -175,7 +175,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 				return TRUE
 			var/obj/item/W = pages[page]
 			usr.put_in_hands(W)
-			pages.Remove(pages[page])
+			rel_remove(src, "pages", pages[page])
 			to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
 			if(pages.len <= 1)
 				var/obj/item/paper/P = pages[1]

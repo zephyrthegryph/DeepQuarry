@@ -192,7 +192,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
 	. = cartridges[label]
-	cartridges -= label
+	own_take_member(src, "cartridges", label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)

@@ -91,7 +91,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()
 	for(var/datum/technomancer/assistance/apprentice/A in assistance_instances)
-		LAZYREMOVE(assistance_instances, A)
+		own_take_member(src, "assistance_instances", A)
 
 // Proc: show_categories()
 // Parameters: 1 (category - the category link to display)

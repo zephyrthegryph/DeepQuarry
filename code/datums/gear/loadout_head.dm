@@ -430,7 +430,7 @@
 	"back bow"=/obj/item/clothing/head/bow/back,
 	"sweet bow"=/obj/item/clothing/head/bow/sweet
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/path(bows), GLOB.gear_tweak_free_color_choice))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/path(bows), GLOB.gear_tweak_free_color_choice))
 
 /datum/gear/head/pilot
 	display_name = "pilot helmets selection"

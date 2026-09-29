@@ -120,7 +120,7 @@ OWN(/obj/item/nif, comm, OWN_DELETE)
 		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
-	LAZYOR(im_contacts, candidate)
+	rel_add(src, "im_contacts", candidate)
 
 	if(!who)
 		return

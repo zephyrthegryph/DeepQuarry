@@ -223,7 +223,7 @@
 	var/atom/movable/removed = task.removed
 	if(!(removed in part.implants))
 		return
-	part.implants -= removed
+	rel_remove(part, "implants", removed)
 	if(!target.has_embedded_objects())
 		target.clear_alert("embeddedobject")
 	BITSET(target.hud_updateflag, IMPLOYAL_HUD)

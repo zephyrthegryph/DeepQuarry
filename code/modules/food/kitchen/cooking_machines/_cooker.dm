@@ -66,7 +66,7 @@
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	cooking_objs = list()
+	own_take_all(src, "cooking_objs")
 	for (var/i = 0, i < max_contents, i++)
 		own_add(src, "cooking_objs", new /datum/cooking_item/(new container_type(src)))
 	cooking = FALSE

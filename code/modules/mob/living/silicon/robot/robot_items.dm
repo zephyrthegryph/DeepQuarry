@@ -113,7 +113,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/robot, "dummy_card", "dummy_card_type")
 
 		for(var/obj/item/I in carrying)
 			I.forceMove(dropspot)
-			LAZYREMOVE(carrying, I)
+			rel_remove(src, "carrying", I)
 			droppedSomething = 1
 			if(!foundtable && isturf(dropspot))
 				// if no table, presume that the person just shittily dropped the tray on the ground and made a mess everywhere!

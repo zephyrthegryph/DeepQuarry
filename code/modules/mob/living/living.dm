@@ -1087,7 +1087,7 @@
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	LAZYADD(HUD.other_important, screen_icon)
+	own_add(HUD, "other_important", screen_icon)
 	user.client?.screen += screen_icon
 
 /datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)

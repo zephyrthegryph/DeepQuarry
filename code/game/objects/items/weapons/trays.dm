@@ -26,7 +26,7 @@
 	cut_overlays()
 	for(var/obj/item/I in carrying)
 		I.forceMove(M.loc)
-		LAZYREMOVE(carrying, I)
+		rel_remove(src, "carrying", I)
 		if(isturf(I.loc))
 			I.scatter_steps(rand(1, 2))
 
@@ -164,6 +164,6 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 		cut_overlays()
 		for(var/obj/item/I in carrying)
 			I.forceMove(loc)
-			LAZYREMOVE(carrying, I)
+			rel_remove(src, "carrying", I)
 			if(noTable)
 				I.scatter_steps(rand(1, 2))

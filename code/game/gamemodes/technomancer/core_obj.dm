@@ -184,7 +184,7 @@
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
-		LAZYREMOVE(spells, spell_to_remove)
+		own_take_member(src, "spells", spell_to_remove)
 		if(wearer)
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
@@ -193,7 +193,7 @@
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		LAZYREMOVE(spells, spell)
+		own_take_member(src, "spells", spell)
 		qdel(spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)

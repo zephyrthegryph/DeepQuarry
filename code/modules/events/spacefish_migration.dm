@@ -99,7 +99,7 @@
 // If fish is bomphed, remove it from the list.
 /datum/event/spacefish_migration/proc/on_fish_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_fish, M)
+	own_take_member(src, "spawned_fish", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/spacefish_migration/end()

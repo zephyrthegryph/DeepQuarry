@@ -687,7 +687,7 @@
 				var/mob/living/voice/possessed_voice = src  // Stupid band-aid fix for OOC escaping object TF
 				if(possessed_voice.item_tf)
 					mind.transfer_to(ourmob)
-					item_to_destroy.possessed_voice -= src
+					own_take_member(item_to_destroy, "possessed_voice", src)
 					qdel(src)
 					ourmob.forceMove(item_to_destroy.loc)
 					qdel(item_to_destroy)
@@ -700,7 +700,7 @@
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
 				return
 			src.mind.transfer_to(ourmob)
-			item_to_destroy.possessed_voice -= src
+			own_take_member(item_to_destroy, "possessed_voice", src)
 			qdel(src)
 			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 			return
@@ -1468,7 +1468,7 @@
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	LAZYADD(HUD.other_important, screen_icon)
+	own_add(HUD, "other_important", screen_icon)
 	user.client?.screen += screen_icon
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)

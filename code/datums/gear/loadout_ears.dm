@@ -59,4 +59,4 @@
 	earringscolour["dangle"] = /obj/item/clothing/ears/earring/dangle
 
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(earringscolour))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)

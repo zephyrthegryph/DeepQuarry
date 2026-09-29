@@ -98,7 +98,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
 		upgrade.forceMove(get_turf(src))
-		LAZYREMOVE(upgrades, upgrade)
+		rel_remove(src, "upgrades", upgrade)
 	return TRUE
 
 /obj/item/camera_assembly/screwdriver_act(mob/user, obj/item/tool)

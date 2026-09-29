@@ -394,7 +394,7 @@
 	var/default_custom_base = SPECIES_HUMAN
 
 /datum/species/proc/update_attack_types()
-	unarmed_attacks = list()
+	own_take_all(src, "unarmed_attacks")
 	for(var/u_type in unarmed_types)
 		own_add(src, "unarmed_attacks", new u_type())
 
@@ -409,7 +409,7 @@
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	unarmed_attacks = list()
+	own_take_all(src, "unarmed_attacks")
 	for(var/u_type in unarmed_types)
 		own_add(src, "unarmed_attacks", new u_type())
 
@@ -818,7 +818,7 @@
 	return
 
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
-	unarmed_attacks = list()
+	own_take_all(src, "unarmed_attacks")
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
 		own_add(src, "unarmed_attacks", new u_type())

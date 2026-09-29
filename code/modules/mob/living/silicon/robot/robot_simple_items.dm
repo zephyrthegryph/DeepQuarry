@@ -497,7 +497,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		if(is_type_in_list(our_item, possible_synths))
 			possible_synths -= our_item.type
 		else
-			cyborg_integrated_tools -= our_item
+			own_take_member(src, "cyborg_integrated_tools", our_item)
 			integrated_tools_by_name -= our_item
 			integrated_tool_images -= our_item
 			qdel(our_item)

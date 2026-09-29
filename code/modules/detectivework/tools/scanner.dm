@@ -236,7 +236,7 @@
 	if(isnull(_answer_k217))
 		return
 	if (_answer_k217 == "Yes")
-		stored = list()
+		own_take_all(src, "stored")
 		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced

@@ -615,7 +615,7 @@
 /datum/gear/uniform/undercoatcolor/New()
 	..()
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(list("white grey undercoat" = "white_grey")))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/cloakcolor
 	display_name = "cloak, recolorable (Teshari)"

@@ -48,7 +48,7 @@
 		normal_member.detach_network_air(src, air, network_volume)
 	// The rosters and each line's `network` view are relations (cleared in phase 4); a
 	// member's reassign_network() is the domain consequence (its network1/2 slot).
-	leaks = null
+	rel_clear(src, "leaks")
 	external_air_volumes = null
 	for(var/obj/machinery/atmospherics/normal_member in old_normal_members)
 		normal_member.reassign_network(src, null)
@@ -91,7 +91,7 @@
 		for(var/obj/machinery/atmospherics/pipe/leak as anything in leaks)
 			var/datum/gas_mixture/environment = leak.loc?.return_air()
 			if(QDELETED(leak) || !leak.leaking || !leak.parent?.air || !environment)
-				leaks -= leak
+				rel_remove(src, "leaks", leak)
 				continue
 			valid_leaks += leak
 			// List union (`+=`) removes duplicate datum values. Several holes in the
@@ -139,7 +139,7 @@
 	volume += giver.volume
 	air.set_volume(max(volume, 1))
 
-	leaks |= giver_leaks
+	rel_add(src, "leaks", giver_leaks)
 
 	for(var/obj/machinery/atmospherics/normal_member in giver_normal_members)
 		normal_member.bind_network_air(giver, air)
@@ -163,7 +163,7 @@
 	// The receiving network now owns every transferred member.  Leaving the
 	// donor's lists populated retained a second copy of the whole pipenet forever.
 	STOP_PROCESSING_PIPENET(giver)
-	giver.leaks = null
+	rel_clear(giver, "leaks")
 	giver.external_air_volumes = null
 	own_clear(giver, "air", OWN_DELETE)
 	giver.sync_gases()

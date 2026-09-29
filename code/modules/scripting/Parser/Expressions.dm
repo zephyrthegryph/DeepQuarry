@@ -281,7 +281,7 @@ See Also:
 
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			return exp
-		exp.parameters+=ParseParamExpression()
+		own_add(exp, "parameters", ParseParamExpression())
 		if(curToken().value==","&&istype(curToken(), /datum/token/symbol))NextToken()	//skip comma
 		if(istype(curToken(), /datum/token/end))																		//Prevents infinite loop...
 			own_add(src, "errors", new/datum/scriptError/ExpectedToken(")"))

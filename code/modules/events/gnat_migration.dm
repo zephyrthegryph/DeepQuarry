@@ -84,7 +84,7 @@
 // If gnat is bomphed, remove it from the list.
 /datum/event/gnat_migration/proc/on_gnat_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_gnat, M)
+	own_take_member(src, "spawned_gnat", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/gnat_migration/end()

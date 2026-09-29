@@ -275,7 +275,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	rel_add(src, "power_machines", M)
 
 /area/proc/power_unsubscribe(obj/machinery/M)
-	LAZYREMOVE(power_machines, M)
+	rel_remove(src, "power_machines", M)
 
 // Called once per area channel change (the APC's Rust power event). Lights and
 // other reactor subscribers hear the key; subscribed machines re-check their

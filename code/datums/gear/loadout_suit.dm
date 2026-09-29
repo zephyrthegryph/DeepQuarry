@@ -771,7 +771,7 @@
 		"very high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppierer,
 		"super high cropped hoodie"=/obj/item/clothing/suit/storage/croppedhoodie/croppiest
 	)
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(croppedhoodies))
 
 /datum/gear/suit/drive
@@ -950,7 +950,7 @@ Talon winter coat
 		var/obj/item/clothing/suit/storage/toggle/hoodie/hoodie = hoodie_style
 		hoodies[initial(hoodie.name)] = hoodie
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(sortAssoc(hoodies)))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/suit/cyberpunk_recolorable
 	display_name = "cyberpunk jacket (recolorable)"
@@ -1154,7 +1154,7 @@ Talon winter coat
 		"cropped hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/cropped,
 		"shortsleeve hoodie"=/obj/item/clothing/suit/storage/hooded/toggle/colorable/shortsleeve
 	)
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(choodies))
 
 //ABOUT TIME SOMEONE ADDED THIS TO A LOADOUT

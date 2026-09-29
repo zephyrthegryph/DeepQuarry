@@ -440,7 +440,7 @@
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			LAZYREMOVE(custom_tracks, T)
+			own_take_member(src, "custom_tracks", T)
 			qdel(T)
 			return
 

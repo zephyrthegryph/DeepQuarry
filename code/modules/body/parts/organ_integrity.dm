@@ -111,7 +111,7 @@
 	if(L.body)
 		L.body.remove_affliction(L) // on_removed() recomputes integrity
 	else
-		LAZYREMOVE(detached_afflictions, L)
+		own_take_member(src, "detached_afflictions", L)
 		recalc_integrity()
 	qdel(L)
 

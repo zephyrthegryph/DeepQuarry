@@ -377,8 +377,15 @@ def main(argv=None):
         if d and decl_kind_of.get(d[1]) in ("OWN", "REL", "PROTO"):
             return ("list" if is_list or not vtype else "entity"), dtype
         used = idx.usage.get(name)
-        if used and any(t and related(t, owner_type) for k in ("OWN", "REL", "PROTO") for (t, _, _) in used.get(k, ())):
-            return ("list" if is_list else "entity"), dtype
+        if used:
+            for k in ("OWN", "REL", "PROTO"):
+                for (t, _, _) in used.get(k, ()):
+                    # The usage must name this same var: its receiver resolves the member to the
+                    # same declaring type (not merely a related type with a same-named var).
+                    if t and related(t, owner_type):
+                        got_t = idx.member(t, name)
+                        if got_t and got_t[0] == dtype:
+                            return ("list" if is_list else "entity"), dtype
         if is_list:
             return ("list" if idx.is_entity(vtype) else None), dtype
         return ("entity" if idx.is_entity(vtype) else None), dtype

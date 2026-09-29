@@ -25,7 +25,7 @@
 	while(length(openlist))
 		// Grab a maze point to use and remove it from the open list.
 		var/datum/maze_cell/next = DEFAULTPICK(openlist, null)
-		LAZYREMOVE(openlist, next)
+		own_take_member(src, "openlist", next)
 		if(!isnull(LAZYACCESS(closedlist, next.name)))
 			continue
 
@@ -53,7 +53,7 @@
 
 	// Cleanup. Map stays in memory for display proc.
 	LAZYCLEARLIST(checked_coord_cache)
-	LAZYCLEARLIST(openlist)
+	own_take_all(src, "openlist")
 	LAZYCLEARLIST(closedlist)
 
 /datum/random_map/maze/proc/add_to_openlist(tx, ty, nx, ny)

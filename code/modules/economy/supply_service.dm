@@ -70,7 +70,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/world_service/supply/proc/reset_shift_economy_tracking()
-	QDEL_LIST(service_invoices)
+	own_clear(src, "service_invoices", OWN_DELETE)
 	service_invoice_counter = 0
 	service_accounting_period = 1
 	currency_created = 0
@@ -855,7 +855,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
 	release_market_order_reservation(O)
 	log_admin("[key_name(user)] has deleted supply order [REF(O)] [O] from the user-side order history.")
-	order_history -= O
+	own_take_member(src, "order_history", O)
 
 // Will generate a new, requested order, for the given supply pack type
 /datum/world_service/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
@@ -944,7 +944,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	if(!(E in exported_crates))
 		return
 	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
-	exported_crates -= E
+	own_take_member(src, "exported_crates", E)
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)

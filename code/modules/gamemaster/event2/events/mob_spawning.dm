@@ -95,5 +95,5 @@
 /datum/event2/event/mob_spawning/proc/on_mob_destruction(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	var/mob/M = source
-	LAZYREMOVE(spawned_mobs, M)
+	rel_remove(src, "spawned_mobs", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)

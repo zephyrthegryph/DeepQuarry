@@ -234,13 +234,13 @@
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
 	if(!recipes)
-		recipes = list()
+		own_take_all(src, "recipes")
 		for(var/D in subtypesof(/datum/particle_smasher_recipe))
 			own_add(src, "recipes", new D)
 	else
 		for(var/datum/particle_smasher_recipe/D in recipes)
 			qdel(D)
-		recipes.Cut()
+		own_take_all(src, "recipes")
 		for(var/D in subtypesof(/datum/particle_smasher_recipe))
 			own_add(src, "recipes", new D)
 

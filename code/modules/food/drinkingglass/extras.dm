@@ -50,7 +50,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
-		LAZYREMOVE(extras, choice)
+		rel_remove(src, "extras", choice)
 	else
 		to_chat(user, span_warning("Something went wrong, please try again."))
 

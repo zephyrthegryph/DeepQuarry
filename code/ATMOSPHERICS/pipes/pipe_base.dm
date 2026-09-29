@@ -49,7 +49,7 @@
 		if(leaking)
 			rel_add(parent, "leaks", src)
 		else
-			parent.leaks -= src
+			rel_remove(parent, "leaks", src)
 		if(parent.network)
 			if(leaking)
 				parent.network.leaks |= src
@@ -142,7 +142,7 @@
 		// to qdel that shared wrapper from every exploded pipe was deliberately
 		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
 		if(!QDELETED(old_parent))
-			old_parent.leaks -= src
+			rel_remove(old_parent, "leaks", src)
 	else
 		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
 		qdel(old_parent)

@@ -260,7 +260,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	if(M != connected_mob && connected_mob)
 		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
 	if(istype(L) && istype(L.species, /datum/species/lleill))
-		L.teleporters -= src
+		own_take_member(L, "teleporters", src)
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))

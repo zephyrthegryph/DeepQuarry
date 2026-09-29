@@ -306,7 +306,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		if("remove_modkit")
 			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			var/obj/item/rem_kit = locate(params["modkit"])
-			LAZYREMOVE(kin.modkits, rem_kit)
+			rel_remove(kin, "modkits", rem_kit)
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")

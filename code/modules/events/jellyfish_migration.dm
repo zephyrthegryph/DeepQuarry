@@ -85,7 +85,7 @@
 /datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	var/mob/M = source
-	LAZYREMOVE(spawned_jellyfish, M)
+	own_take_member(src, "spawned_jellyfish", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/jellyfish_migration/end()

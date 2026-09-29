@@ -39,9 +39,9 @@
 /datum/world_model/New(mob/living/owner)
 	if(owner)
 		rel_set(src, "owner", owner)
-	visible_hostiles = list()
-	visible_friendlies = list()
-	visible_neutrals = list()
+	rel_clear(src, "visible_hostiles")
+	rel_clear(src, "visible_friendlies")
+	rel_clear(src, "visible_neutrals")
 
 /datum/world_model/proc/get_owner()
 	return owner
@@ -54,11 +54,11 @@
 		return
 
 	visible_hostiles ||= list()
-	visible_hostiles.Cut()
+	rel_clear(src, "visible_hostiles")
 	visible_friendlies ||= list()
-	visible_friendlies.Cut()
+	rel_clear(src, "visible_friendlies")
 	visible_neutrals ||= list()
-	visible_neutrals.Cut()
+	rel_clear(src, "visible_neutrals")
 
 	var/range = brain.vision_range
 	for(var/mob/living/M in view(range, owner))

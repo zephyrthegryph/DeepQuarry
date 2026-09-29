@@ -401,7 +401,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	if(component_parts)
 		return
 	latent_materialize_all(CONTAINER_SLOT_INTERNALS)
-	component_parts = list()
+	own_take_all(src, "component_parts")
 	for(var/obj/item/I in slot_contents(CONTAINER_SLOT_INTERNALS))
 		if(istype(I, /obj/item/circuitboard))
 			own_set(src, "circuit", I)
@@ -536,14 +536,14 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// CONTAINER_SLOT_INTERNALS entries lazily, the first time anything (this
 /// RefreshParts() call included) asks the ledger an exact question.
 /obj/machinery/proc/default_apply_parts()
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 
 /obj/machinery/proc/default_use_hicell()
 	materialize_parts()
 	var/obj/item/cell/C = locate_in_list(component_parts, /obj/item/cell)
 	if(C)
-		component_parts -= C
+		own_take_member(src, "component_parts", C)
 		qdel(C)
 		C = new /obj/item/cell/high(src)
 		C.move_into(src, CONTAINER_SLOT_INTERNALS)
@@ -574,7 +574,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 					if(B.get_rating() > A.get_rating())
 						R.remove_from_storage(B, src, user)
 						R.insert_item(A, user, TRUE)
-						component_parts -= A
+						own_take_member(src, "component_parts", A)
 						B.move_into(src, CONTAINER_SLOT_INTERNALS, user)
 						own_add(src, "component_parts", B)
 						to_chat(user, span_notice("[A.name] replaced with [B.name]."))
@@ -637,10 +637,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 		for(var/obj/D in component_parts)
 			D.forceMove(src.loc)
 		if(A.components)
-			LAZYCLEARLIST(A.components)
+			own_take_all(A, "components")
 		else
-			A.components = list()
-		component_parts = list()
+			own_take_all(A, "components")
+		own_take_all(src, "component_parts")
 		A.check_components()
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
@@ -673,7 +673,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	// generic contents-to-turf pass, so materialize before letting go of them.
 	materialize_circuit()
 	materialize_parts()
-	component_parts = null
+	own_take_all(src, "component_parts")
 	own_take(src, "circuit")
 	return ..()
 

@@ -88,7 +88,7 @@
 // If carp is bomphed, remove it from the list.
 /datum/event/carp_migration/proc/on_carp_destruction(mob/carp_to_remove, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_carp, carp_to_remove)
+	own_take_member(src, "spawned_carp", carp_to_remove)
 	om_unhook(carp_to_remove, /datum/om/event/qdeleting, src)
 
 /datum/event/carp_migration/end()

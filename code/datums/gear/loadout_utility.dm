@@ -136,7 +136,7 @@
 
 /datum/gear/utility/wheelchair/New()
 	..()
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 	var/list/wheelchairs = list(
 		"wheelchair" = /obj/item/wheelchair,
 		"motorized wheelchair" = /obj/item/wheelchair/motor

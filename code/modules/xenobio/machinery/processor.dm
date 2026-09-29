@@ -61,7 +61,7 @@
 // Ejects all the things out of the machine.
 /obj/machinery/processor/proc/empty()
 	for(var/atom/movable/AM in to_be_processed)
-		LAZYREMOVE(to_be_processed, AM)
+		rel_remove(src, "to_be_processed", AM)
 		AM.forceMove(get_turf(src))
 
 // Ejects all the things out of the machine.
@@ -100,17 +100,17 @@
 			playsound(src, 'sound/effects/splat.ogg', 50, 1)
 			S.cores--
 			return STEP_REPEAT(1 SECOND)
-		LAZYREMOVE(to_be_processed, S)
+		rel_remove(src, "to_be_processed", S)
 		qdel(S)
 		return STEP_REPEAT(1 SECOND)
 	if(ishuman(AM))
 		playsound(src, 'sound/effects/splat.ogg', 50, 1)
-		LAZYREMOVE(to_be_processed, AM)
+		rel_remove(src, "to_be_processed", AM)
 		qdel(AM)
 		monkeys_recycled++
 		return STEP_REPEAT(1 SECOND)
 	if(AM)
-		LAZYREMOVE(to_be_processed, AM)
+		rel_remove(src, "to_be_processed", AM)
 		return STEP_REPEAT(0)
 	if(monkeys_recycled >= monkeys_per_cube)
 		new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))

@@ -43,8 +43,8 @@
 		var/client/client = eye.GetViewerClient()
 		if(client)
 			client.images -= obscured
-	eye.visibleChunks -= src
-	LAZYREMOVE(seenby, eye)
+	rel_remove(eye, "visibleChunks", src)
+	rel_remove(src, "seenby", eye)
 	if(visible > 0)
 		visible--
 
@@ -105,7 +105,7 @@
 			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/eye/m as anything in seenby)
 				if(!m)
-					LAZYREMOVE(seenby, m)
+					rel_remove(src, "seenby", m)
 					continue
 				var/client/client = m.GetViewerClient()
 				if(client)

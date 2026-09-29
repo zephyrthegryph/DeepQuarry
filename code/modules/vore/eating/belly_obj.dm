@@ -487,7 +487,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		count += release_specific_contents(AM, silent = TRUE)
 
 	//Clean up our own business
-	items_preserved = null
+	rel_clear(src, "items_preserved")
 
 	//Determines privacy
 	var/privacy_range = world.view
@@ -540,7 +540,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		COOLDOWN_START(slip, slip_protect, 2.5 SECONDS) // This is to prevent slipping back into your pred if they stand on soap or something.
 	//Place them into our drop_location
 	belly_release_to(M, drop_location())
-	LAZYREMOVE(items_preserved, M)
+	rel_remove(src, "items_preserved", M)
 
 	//Special treatment for absorbed prey
 	if(isliving(M))
@@ -732,7 +732,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				owner.soulgem.catch_mob(R, R.name)
 			else
 				R.mmi.forceMove(src)
-				LAZYOR(items_preserved, R.mmi)
+				rel_add(src, "items_preserved", R.mmi)
 				hasMMI = R.mmi
 				var/datum/mind_host/mmi_host = get_mind_host(hasMMI)
 				var/mob/living/carbon/brain/view = mmi_host.receive_mind(M.mind, "cyborg [R] digested")
@@ -914,7 +914,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		if(I.gurgled && target.contaminates)
 			I.wash(CLEAN_WASH)
 			I.gurgle_contaminate(target.contents, target.contamination_flavor, target.contamination_color)
-	LAZYREMOVE(items_preserved, content)
+	rel_remove(src, "items_preserved", content)
 	if(!silent)
 		handle_visual_update()
 
@@ -1173,14 +1173,14 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 				for(var/mob/living/voice/V in O.possessed_voice)
 					D.inhabit_item(V, null, V.tf_mob_holder)
 					qdel(V)
-				O.possessed_voice = list()
+				own_take_all(O, "possessed_voice")
 			return TRUE
 		var/obj/item/debris_pack/digested/D = new /obj/item/debris_pack/digested(src, modified_mats)
 		if(O.possessed_voice && O.possessed_voice.len)
 			for(var/mob/living/voice/V in O.possessed_voice)
 				D.inhabit_item(V, null, V.tf_mob_holder)
 				qdel(V)
-			O.possessed_voice = list()
+			own_take_all(O, "possessed_voice")
 	return TRUE
 
 /obj/belly/proc/owner_adjust_nutrition(amount = 0)

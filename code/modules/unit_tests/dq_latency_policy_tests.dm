@@ -135,7 +135,7 @@
 	own_add(box, "open_tguis", new /datum) // stand in for an open tgui/browse window
 	TEST_ASSERT(!can_be_latent(item), "an open window on the holder must block collapse")
 	qdel(box.open_tguis[1])
-	box.open_tguis = null
+	own_take_all(box, "open_tguis")
 	TEST_ASSERT(can_be_latent(item), "closing the window should restore eligibility")
 	qdel(box)
 
@@ -230,7 +230,7 @@
 	var/materializes = 0
 
 /datum/unit_test/dq_latency_fuzz/Run()
-	made = list()
+	own_take_all(src, "made")
 	rel_set(src, "floor", dq_latency_floor())
 	TEST_ASSERT_NOTNULL(floor, "need a clean floor")
 	var/list/boxes = list()
@@ -260,7 +260,7 @@
 				if(L.latent_total > 0)
 					var/list/made_now = L.latent_materialize_all()
 					materializes += length(made_now)
-					made += made_now
+					own_add(src, "made", made_now)
 			if("move")
 				var/list/real = list()
 				for(var/atom/movable/A as anything in contents_of(box))

@@ -133,11 +133,11 @@ list[](
 		//While doing that, we iterate them as well, and disconnect ourselves from them.
 		for(var/datum/integrated_io/their_linked_io in their_io.linked)
 			if(their_linked_io == src)
-				LAZYREMOVE(their_io.linked, src)
+				rel_remove(their_io, "linked", src)
 			else
 				continue
 		//Now that we're removed from them, we gotta remove them from us.
-		LAZYREMOVE(linked, their_io)
+		rel_remove(src, "linked", their_io)
 
 /// A pin value being asked: the type picked, then the value. Subtype it to carry more state
 /// to the on_value callback (see /datum/om/flow/ask_sequence/pin_value/list_edit).

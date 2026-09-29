@@ -84,7 +84,7 @@
 // If shark is bomphed, remove it from the list.
 /datum/event/shark_migration/proc/on_shark_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_shark, M)
+	own_take_member(src, "spawned_shark", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/shark_migration/end()

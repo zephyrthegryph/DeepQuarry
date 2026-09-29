@@ -107,7 +107,7 @@
 			. = TRUE
 
 		if("release")
-			servers = list()
+			rel_clear(src, "servers")
 			rel_clear(src, "SelectedServer")
 			. = TRUE
 
@@ -159,7 +159,7 @@
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		servers = list()
+		rel_clear(src, "servers")
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE

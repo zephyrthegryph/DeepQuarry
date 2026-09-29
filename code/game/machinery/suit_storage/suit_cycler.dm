@@ -531,7 +531,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	if(!suit || !suit.damage || !suit.can_breach)
 		return
 
-	suit.breaches = list()
+	own_take_all(suit, "breaches")
 	suit.calc_breach_damage()
 
 	return

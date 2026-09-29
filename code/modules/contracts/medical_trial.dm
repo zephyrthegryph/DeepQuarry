@@ -66,7 +66,7 @@
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
 	own_set(src, "profile", new /datum/medical_trial_profile(cohort, target_metric))
-	participants = list()
+	own_take_all(src, "participants")
 	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."
@@ -320,7 +320,7 @@
 		om_unhook(subject, /datum/om/event/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
-	participants -= subject_id
+	own_take_member(src, "participants", subject_id)
 	qdel(participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject?.real_name || subject_id] withdrew consent; unsubmitted observations were discarded and the cohort slot reopened.")
 	return TRUE

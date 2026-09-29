@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/syringe_cartridge, \
 
 /obj/item/gun/launcher/syringe/handle_post_fire()
 	..()
-	LAZYREMOVE(darts, next())
+	rel_remove(src, "darts", next())
 	rel_clear(src, "next")
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()).
@@ -134,7 +134,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/syringe, INTERACT_HAND(null, PROC_RE
 			to_chat(user, span_warning("[src]'s cover is locked shut."))
 			return TRUE
 		var/obj/item/syringe_cartridge/C = LAZYACCESS(darts, 1)
-		LAZYREMOVE(darts, C)
+		rel_remove(src, "darts", C)
 		user.put_in_hands(C)
 		user.visible_message("[user] removes \a [C] from [src].", span_notice("You remove \a [C] from [src]."))
 		playsound(src, 'sound/weapons/empty.ogg', 50, 1)

@@ -76,25 +76,25 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large alien wood floor tile", /obj/item/stack/tile/wood/sif/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/hardwood
@@ -118,28 +118,28 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large hardwood floor tile", /obj/item/stack/tile/wood/hardwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/log
@@ -205,28 +205,28 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large birch floor tile", /obj/item/stack/tile/wood/birch/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/pine
@@ -249,28 +249,28 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large pine floor tile", /obj/item/stack/tile/wood/pine/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/oak
@@ -293,28 +293,28 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large oak floor tile", /obj/item/stack/tile/wood/oak/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/acacia
@@ -337,28 +337,28 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large acacia floor tile", /obj/item/stack/tile/wood/acacia/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 
 /datum/material/wood/redwood
@@ -382,26 +382,26 @@
 	own_add(src, "recipes", new /datum/stack_recipe("vertical large redwood floor tile", /obj/item/stack/tile/wood/redwood/vert_panel, 1, 4, 20, pass_stack_color = FALSE))
 	for(var/datum/stack_recipe/r_recipe in recipes)
 		if(r_recipe.title == "wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "parquet wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "tiled wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "vertical large wood floor tile")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden chair")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue
 		if(r_recipe.title == "wooden standup figure")
-			recipes -= r_recipe
+			own_take_member(src, "recipes", r_recipe)
 			continue

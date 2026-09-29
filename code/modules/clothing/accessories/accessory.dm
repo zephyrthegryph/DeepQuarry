@@ -78,7 +78,7 @@
 	// Clear both sides of the ownership relation. Qdel may delete an accessory
 	// directly rather than going through clothing.remove_accessory().
 	GLOB.accessory_slot_registry.remove_modifiers(src, old_suit)
-	LAZYREMOVE(old_suit.accessories, src)
+	own_take_member(old_suit, "accessories", src)
 	rel_clear(src, "has_suit")
 	if(QDELETED(src))
 		return

@@ -274,7 +274,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			sheets.Remove(B)
+			rel_remove(src, "sheets", B)
 
 		else
 			B = new /obj/item/bedsheet(loc)
@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			sheets.Remove(B)
+			rel_remove(src, "sheets", B)
 
 		else
 			B = new /obj/item/bedsheet(loc)

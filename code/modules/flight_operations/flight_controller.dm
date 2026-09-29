@@ -190,7 +190,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		return
 	if(destination.target())
 		destination_by_target -= REF(destination.target())
-	destinations -= id
+	own_take_member(src, "destinations", id)
 	qdel(destination)
 
 /datum/world_service/flight/proc/destination_for_target(atom/target)
@@ -264,7 +264,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/register_mapped_ports()
 	for(var/id in ports)
 		qdel(ports[id])
-	ports.Cut()
+	own_take_all(src, "ports")
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]
@@ -374,7 +374,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		current_run.len--
 		var/datum/flight_plan/plan = plans[id]
 		if(!plan || QDELETED(plan))
-			plans -= id
+			own_take_member(src, "plans", id)
 			continue
 		process_plan(plan)
 		if(TICK_CHECK)
@@ -496,7 +496,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	return null
 
 /datum/world_service/flight/proc/finish_plan(datum/flight_plan/plan)
-	plans -= plan.id
+	own_take_member(src, "plans", plan.id)
 	if(plan.vessel?.active_plan == plan)
 		own_clear(plan.vessel, "active_plan", OWN_DELETE)
 		return

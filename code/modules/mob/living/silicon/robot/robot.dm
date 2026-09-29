@@ -1592,7 +1592,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		if(!silent)
 			sync() // One last sync attempt
 		om_unhook(old_ai, list(/datum/om/event/silicon_laws_changed, /datum/om/event/qdeleting), src)
-		old_ai.connected_robots -= src
+		rel_remove(old_ai, "connected_robots", src)
 	rel_set(src, "connected_ai", new_ai)
 	if(new_ai)
 		rel_add(new_ai, "connected_robots", src)

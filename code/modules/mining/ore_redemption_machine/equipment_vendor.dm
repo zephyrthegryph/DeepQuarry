@@ -40,7 +40,7 @@ OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 
 /obj/machinery/mineral/equipment_vendor/Initialize(mapload)
 	. = ..()
-	prize_list = list()
+	own_take_all(src, "prize_list")
 	prize_list["Gear"] = list(
 		EQUIPMENT("Brown Webbing",								/obj/item/clothing/accessory/storage/brown_vest,			500),
 		EQUIPMENT("Defense Equipment - Plasteel Machete",		/obj/item/material/knife/machete,							500),

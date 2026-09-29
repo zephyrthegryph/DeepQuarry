@@ -96,7 +96,7 @@
 		prio.Cut()
 	priority_overlays = null
 	if (length(managed_vis_overlays))
-		managed_vis_overlays.Cut()
+		rel_clear(src, "managed_vis_overlays")
 	if (length(original_atom))
 		original_atom.Cut()
 	return ..()

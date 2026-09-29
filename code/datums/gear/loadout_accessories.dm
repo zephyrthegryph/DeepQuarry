@@ -28,7 +28,7 @@
 
 /datum/gear/accessory/armband/colored/New()
 	..()
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/wallet
 	display_name = "wallet, orange"
@@ -556,7 +556,7 @@ Talon pin
 	"Studded Belt" = /obj/item/clothing/accessory/belt/studded
 	)
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(wristband_lists))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/accessory/bunny_tail
 	display_name = "bunny tail, colorable"
@@ -578,4 +578,4 @@ Talon pin
 	"Legwarmers, short" = /obj/item/clothing/accessory/legwarmersshort
 	)
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/variant(legwarmer_lists))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)

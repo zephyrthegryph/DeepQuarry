@@ -115,7 +115,7 @@
 	if(sdisability)
 		H.set_sdisabilities(H.sdisabilities & (~sdisability)) // bitflag
 	if(special_env)
-		LAZYREMOVE(S.env_traits, src)
+		rel_remove(S, "env_traits", src)
 	if(added_behaviour_path && H)
 		om_detach(H, added_behaviour_path)
 	if(added_component_path)

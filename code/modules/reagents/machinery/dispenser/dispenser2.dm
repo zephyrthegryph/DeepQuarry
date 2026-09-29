@@ -73,7 +73,7 @@
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
 	. = cartridges[label]
-	cartridges -= label
+	own_take_member(src, "cartridges", label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)

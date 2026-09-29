@@ -187,8 +187,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 
 			// Wiring the same pin will unwire it
 			if(pin2 in pin1.linked)
-				LAZYREMOVE(pin1.linked, pin2)
-				LAZYREMOVE(pin2.linked, pin1)
+				rel_remove(pin1, "linked", pin2)
+				rel_remove(pin2, "linked", pin1)
 			else
 				rel_add(pin1, "linked", pin2)
 				rel_add(pin2, "linked", pin1)
@@ -205,9 +205,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 				return
 
 			for(var/datum/integrated_io/other as anything in pin1.linked)
-				LAZYREMOVE(other.linked, pin1)
+				rel_remove(other, "linked", pin1)
 
-			pin1.linked = null
+			rel_clear(pin1, "linked")
 
 			return TRUE
 

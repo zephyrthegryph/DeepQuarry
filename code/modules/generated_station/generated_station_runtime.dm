@@ -76,7 +76,7 @@
 	return TRUE
 
 /datum/generated_station_director/proc/unregister_defender(mob/living/defender)
-	LAZYREMOVE(registered_defenders, defender)
+	rel_remove(src, "registered_defenders", defender)
 
 /datum/generated_station_director/proc/medical_heal(mob/living/defender, amount)
 	if(!(defender in registered_defenders) || simulation().department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
@@ -177,7 +177,7 @@
 		return FALSE
 	own_set(src, "station_simulation", new /datum/generated_station_simulation(station_spec))
 	own_set(src, "station_director", new /datum/generated_station_director(station_simulation))
-	station_controls = list()
+	own_take_all(src, "station_controls")
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node

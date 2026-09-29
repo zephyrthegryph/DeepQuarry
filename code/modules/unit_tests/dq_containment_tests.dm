@@ -237,7 +237,7 @@
 			var/atom/movable/T = pick(things)
 			if(T in holders)
 				return TRUE
-			things -= T
+			rel_remove(src, "things", T)
 			qdel(T)
 		if("open_close")
 			var/list/closets = list()
@@ -267,14 +267,14 @@
 	for(var/datum/om/relation/slot/def as anything in L.defs)
 		for(var/atom/movable/T as anything in H.slot_contents(def.slot_id))
 			expected[T] = def.drop_policy
-	holders -= H
-	things -= H
+	rel_remove(src, "holders", H)
+	rel_remove(src, "things", H)
 	qdel(H)
 	// A delete policy takes nested holders with it (a folder in a bag).
 	for(var/atom/movable/nested as anything in holders.Copy())
 		if(QDELETED(nested))
-			holders -= nested
-			things -= nested
+			rel_remove(src, "holders", nested)
+			rel_remove(src, "things", nested)
 			add_holder(nested.type)
 	for(var/atom/movable/T as anything in expected)
 		switch(expected[T])
@@ -282,8 +282,8 @@
 				if(!QDELETED(T))
 					TEST_FAIL("step [step]: [T] outlived [H] despite a delete policy")
 					return FALSE
-				things -= T
-				holders -= T
+				rel_remove(src, "things", T)
+				rel_remove(src, "holders", T)
 			if(SLOT_DROP_SPILL)
 				if(QDELETED(T) || T.loc != drop)
 					TEST_FAIL("step [step]: [T] should have spilled to [drop], is [QDELETED(T) ? "deleted" : "in [T.loc]"]")
@@ -305,7 +305,7 @@
 			. = FALSE
 	for(var/atom/movable/T as anything in things.Copy())
 		if(QDELETED(T))
-			things -= T
+			rel_remove(src, "things", T)
 			continue
 		if(!T.loc)
 			TEST_FAIL("[label]: [T] was lost to nullspace")

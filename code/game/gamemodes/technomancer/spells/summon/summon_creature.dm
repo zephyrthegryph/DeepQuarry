@@ -39,7 +39,7 @@
 
 /obj/item/spell/summon/summon_creature/on_summon(mob/living/simple_mob/summoned)
 	if(check_for_scepter())
-		LAZYADD(summoned.friends, owner_ref())
+		rel_add(summoned, "friends", owner_ref())
 
 	// Makes their new pal big and strong, if they have spell power.
 	summoned.endurance = calculate_spell_power(summoned.endurance)

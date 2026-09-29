@@ -83,7 +83,7 @@
 /obj/item/organ/external/proc/remove_wound(datum/affliction/wound/W)
 	if(W.body)
 		W.body.remove_affliction(W)
-	LAZYREMOVE(detached_afflictions, W)
+	own_take_member(src, "detached_afflictions", W)
 	integrity_dirty = TRUE
 	qdel(W)
 
@@ -174,7 +174,7 @@
 			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1
-	O.detached_afflictions = null
+	own_take_all(O, "detached_afflictions")
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
 
 /// Offline tick for afflictions riding a detached organ.
@@ -182,7 +182,7 @@
 	for(var/datum/affliction/A as anything in detached_afflictions)
 		A.tick_offline()
 		if(A.severity <= 0 && !istype(A, /datum/affliction/load))
-			LAZYREMOVE(detached_afflictions, A)
+			own_take_member(src, "detached_afflictions", A)
 			qdel(A)
 
 /// Afflictions located on this organ, whether it's in a body or detached.

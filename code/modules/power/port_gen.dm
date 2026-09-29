@@ -616,14 +616,14 @@
 			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)
 			if(isnull(C))
 				break
-			component_parts.Remove(C)
+			own_take_member(src, "component_parts", C)
 			qdel(C)
 	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
 			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
-			component_parts.Remove(M)
+			own_take_member(src, "component_parts", M)
 			qdel(M)
 
 	// Rebuild from mapper's parts

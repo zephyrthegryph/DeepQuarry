@@ -53,7 +53,7 @@
 					break
 				M = pickweight(ourgroup)
 				Turf = DEFAULTPICK(valid_spawn_turfs, null)
-				LAZYREMOVE(valid_spawn_turfs, Turf)
+				rel_remove(src, "valid_spawn_turfs", Turf)
 				var/mob/ourmob = new M(Turf)
 				adjust_mob(ourmob)
 	else
@@ -62,7 +62,7 @@
 				break
 			M = pickweight(valid_mobs || list())
 			Turf = DEFAULTPICK(valid_spawn_turfs, null)
-			LAZYREMOVE(valid_spawn_turfs, Turf)
+			rel_remove(src, "valid_spawn_turfs", Turf)
 			var/mob/ourmob = new M(Turf)
 			adjust_mob(ourmob)
 
@@ -97,5 +97,5 @@
 			break
 		F = DEFAULTPICK(valid_flora, null)
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
-		LAZYREMOVE(valid_spawn_turfs, Turf)
+		rel_remove(src, "valid_spawn_turfs", Turf)
 		new F(Turf)

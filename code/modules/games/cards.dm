@@ -127,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 	var/datum/playingcard/P = cards[1]
 	own_add(H, "cards", P)
-	cards -= P
+	own_take_member(src, "cards", P)
 	H.parentdeck = src
 	H.update_icon()
 	user.visible_message(span_infoplain(span_bold("\The [user]") + " draws a card."))
@@ -242,7 +242,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			var/datum/playingcard/P = cards[i]
 			if(TDN == P.name)
 				own_add(H, "cards", P)
-				cards -= P
+				own_take_member(src, "cards", P)
 				H.parentdeck = src
 				break
 	H.update_icon()
@@ -259,8 +259,8 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	var/obj/item/hand/H = new(get_step(user, user.dir))
 	var/i
 	for(i = 0, i < dcard, i++)
-		H.cards += cards[1]
-		cards -= cards[1]
+		own_add(H, "cards", cards[1])
+		own_take_member(src, "cards", cards[1])
 		H.parentdeck = src
 		H.concealed = 1
 		H.update_icon()
@@ -318,7 +318,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		while(cards.len)
 			var/datum/playingcard/P = pick(cards)
 			newcards += P
-			cards -= P
+			own_take_member(src, "cards", P)
 		cards = newcards
 		user.visible_message(span_notice("\The [user] shuffles [src]."))
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
@@ -376,7 +376,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 	user.visible_message(span_danger("[user] rips open \the [src]!"))
 	var/obj/item/hand/H = new()
 
-	H.cards += cards
+	own_add(H, "cards", cards)
 	H.parentdeck = src.parentdeck
 	cards.Cut();
 	user.drop_item()
@@ -424,7 +424,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 
 		var/obj/item/hand/H = new(src.loc)
 		own_add(H, "cards", card)
-		cards -= card
+		own_take_member(src, "cards", card)
 		H.concealed = 0
 		H.parentdeck = src.parentdeck
 		H.update_icon()
@@ -480,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	var/obj/item/hand/H = new(get_turf(src))
 	user.put_in_hands(H)
 	own_add(H, "cards", card)
-	cards -= card
+	own_take_member(src, "cards", card)
 	H.parentdeck = src.parentdeck
 	H.concealed = src.concealed
 	H.update_icon()

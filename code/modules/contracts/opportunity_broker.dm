@@ -228,7 +228,7 @@
 
 /datum/contract_opportunity_rule/New()
 	. = ..()
-	signals = list()
+	own_take_all(src, "signals")
 	context_fields = list()
 	configure()
 

@@ -55,7 +55,7 @@
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
 		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
-		LAZYREMOVE(cooking_objs, CI)
+		own_take_member(src, "cooking_objs", CI)
 		qdel(CI)
 	..()
 
@@ -759,7 +759,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		thing.forceMove(get_turf(src))
 
 	if (delete)
-		LAZYREMOVE(cooking_objs, CI)
+		own_take_member(src, "cooking_objs", CI)
 		qdel(CI)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside

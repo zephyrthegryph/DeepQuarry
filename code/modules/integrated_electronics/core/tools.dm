@@ -40,7 +40,7 @@
 			to_chat(user, span_warning("Both \the [io.holder()] and \the [selected_io.holder()] need to be inside the same assembly."))
 			return
 		rel_add(selected_io, "linked", io)
-		LAZYOR(io.linked, selected_io)
+		rel_add(io, "linked", selected_io)
 
 		to_chat(user, span_notice("You connect \the [selected_io.holder()]'s [selected_io.name] to \the [io.holder()]'s [io.name]."))
 		mode = WIRE
@@ -65,8 +65,8 @@
 			the same pin is rather moot."))
 			return
 		if(selected_io in io.linked)
-			LAZYREMOVE(io.linked, selected_io)
-			LAZYREMOVE(selected_io.linked, io)
+			rel_remove(io, "linked", selected_io)
+			rel_remove(selected_io, "linked", io)
 			to_chat(user, span_notice("You disconnect \the [selected_io.holder()]'s [selected_io.name] from \
 			\the [io.holder()]'s [io.name]."))
 			selected_io.holder().interact(user) // This is to update the UI.
@@ -244,8 +244,8 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 		to_chat(user, span_warning("These data pins aren't connected!"))
 		return
 	else
-		LAZYREMOVE(io1.linked, io2)
-		LAZYREMOVE(io2.linked, io1)
+		rel_remove(io1, "linked", io2)
+		rel_remove(io2, "linked", io1)
 		to_chat(user, span_notice("You clip the data connection between the [io1.holder().displayed_name]'s \
 		[io1.name] and the [io2.holder().displayed_name]'s [io2.name]."))
 		io1.holder().interact(user) // This is to update the UI.

@@ -403,7 +403,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 // records shared with the upper unit must not be deleted with it (the owned
 // item_records list is deleted when the links clear, right after this).
 /obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
-	item_records = null // shared with the upper unit; don't let phase 4 qdel its stored records
+	own_take_all(src, "item_records") // shared with the upper unit; don't let phase 4 qdel its stored records
 	..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down

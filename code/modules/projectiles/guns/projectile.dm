@@ -64,11 +64,11 @@
 		if(loaded.len)
 			rel_set(src, "chambered", loaded[1]) //load next casing.
 			if(handle_casings != HOLD_CASINGS)
-				loaded -= chambered
+				own_take_member(src, "loaded", chambered)
 		else if(ammo_magazine && ammo_magazine.stored_ammo.len)
 			rel_set(src, "chambered", ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len])
 			if(handle_casings != HOLD_CASINGS)
-				ammo_magazine.stored_ammo -= chambered
+				own_take_member(ammo_magazine, "stored_ammo", chambered)
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 		chamber_bullet() // Manual Chambering
 
@@ -108,9 +108,9 @@
 				playsound(src, "casing", 50, 1)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
-				ammo_magazine.stored_ammo += chambered
+				own_add(ammo_magazine, "stored_ammo", chambered)
 			else
-				loaded += chambered
+				own_add(src, "loaded", chambered)
 
 	if(handle_casings != HOLD_CASINGS)
 		rel_clear(src, "chambered")
@@ -141,7 +141,7 @@
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				loaded.Cut()
+				own_take_all(src, "loaded")
 			if(count)
 				user.visible_message("[user] unloads [src].", span_notice("You unload [count] round\s from [src]."))
 		else if(load_method & SINGLE_CASING)
@@ -478,11 +478,11 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(loaded.len)
 		to_chamber = loaded[1] //load next casing.
 		if(handle_casings != HOLD_CASINGS)
-			loaded -= to_chamber
+			own_take_member(src, "loaded", to_chamber)
 	else if(ammo_magazine && ammo_magazine.stored_ammo.len)
 		to_chamber = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
 		if(handle_casings != HOLD_CASINGS)
-			ammo_magazine.stored_ammo -= to_chamber
+			own_take_member(ammo_magazine, "stored_ammo", to_chamber)
 	rel_set(src, "chambered", to_chamber)
 	if(to_chamber)
 		return TRUE
@@ -538,7 +538,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(!can_feed_from(H))
 		return STEP_DONE
 	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
-	H.stored_ammo -= rd
+	own_take_member(H, "stored_ammo", rd)
 	rd.forceMove(src)
 	loaded.Insert(1, rd) //add to the head of the list
 	playsound(src, 'sound/weapons/empty.ogg', 50, 1)
@@ -607,7 +607,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 					if(C.caliber == caliber)
 						C.forceMove(src)
 						own_add(src, "loaded", C)
-						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+						own_take_member(AM, "stored_ammo", C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
 					user.visible_message("[user] reloads [src].", span_notice("You load [count] round\s into [src]."))

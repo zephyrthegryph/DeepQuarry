@@ -27,7 +27,7 @@
 
 /datum/event/electrical_storm/start()
 	..()
-	valid_apcs = list()
+	rel_clear(src, "valid_apcs")
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in affecting_z)
 			rel_add(src, "valid_apcs", A)

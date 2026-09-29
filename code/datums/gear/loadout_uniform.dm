@@ -580,7 +580,7 @@
 	"gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/leotard/gray,
 	"feminine gray leotard skinsuit"=/obj/item/clothing/under/skinsuit/fem/leotard/gray
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(skinsuits)))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(skinsuits)))
 
 //baggy turtlenecks
 /datum/gear/uniform/turtlebaggys
@@ -603,7 +603,7 @@
 	"black baggy turtleneck" = "black",
 	"feminine black baggy turtleneck" = "black_fem"
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(turtlebaggys)))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(turtlebaggys)))
 
 //colorable sweaters
 /datum/gear/uniform/bigsweaters
@@ -616,7 +616,7 @@
 	"cableknit sweater"=/obj/item/clothing/under/bigsweater,
 	"keyhole sweater"=/obj/item/clothing/under/bigsweater/keyhole
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(bigsweaters), GLOB.gear_tweak_free_color_choice))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(bigsweaters), GLOB.gear_tweak_free_color_choice))
 
 //half-moon outfit
 /datum/gear/uniform/halfmoon
@@ -643,7 +643,7 @@
 	"white tabard-dress"=/obj/item/clothing/under/dress/tabard,
 	"black tabard-dress"=/obj/item/clothing/under/dress/tabard/black
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(tabarddress)))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(tabarddress)))
 
 //bunny suits
 
@@ -661,7 +661,7 @@
 	"reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop,
 	"maid reverse bunnysuit, no legs"=/obj/item/clothing/under/reverse_bunnytop_maid
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(bunnysuit)))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(bunnysuit)))
 	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/uniform/suit/permit
@@ -807,7 +807,7 @@ Talon jumpsuit
 	"short skirt"=/obj/item/clothing/under/skirt/colorable/short,
 	"short skirt (split)"=/obj/item/clothing/under/skirt/colorable/short_split
 	)
-	LAZYADD(gear_tweaks, list(new/datum/gear_tweak/variant(skirts), GLOB.gear_tweak_free_color_choice))
+	own_add(src, "gear_tweaks", list(new/datum/gear_tweak/variant(skirts), GLOB.gear_tweak_free_color_choice))
 
 // gwen beedells clown clothes
 

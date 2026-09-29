@@ -151,7 +151,7 @@
 // Description: Adds standard components for this SMES, and forces recalculation of properties.
 /obj/machinery/power/smes/buildable/Initialize(mapload)
 	. = ..()
-	component_parts = list()
+	own_take_all(src, "component_parts")
 	own_add(src, "component_parts", new /obj/item/stack/cable_coil(src,30))
 	set_wires(new /datum/wires/smes(src))
 

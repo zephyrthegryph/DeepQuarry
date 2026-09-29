@@ -11,7 +11,7 @@
 
 /obj/machinery/mineral/equipment_vendor/survey/Initialize(mapload)
 	. = ..()
-	prize_list = list()
+	own_take_all(src, "prize_list")
 	prize_list["Gear"] = list(
 		EQUIPMENT("Brown Webbing",									/obj/item/clothing/accessory/storage/brown_vest,							500),
 		EQUIPMENT("Defense Equipment - Smoke Bomb",					/obj/item/grenade/smokebomb,												10),

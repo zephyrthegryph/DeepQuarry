@@ -261,7 +261,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
 		own_set(src, "exonet", new /datum/exonet_protocol(src))
-	LAZYCLEARLIST(src.known_devices)
+	rel_clear(src, "known_devices")
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
 	for(var/obj/item/communicator/comm in REGISTRY_MEMBERS(REGISTRY_COMMUNICATORS))
@@ -385,7 +385,7 @@ OWN(/obj/item/communicator, id, OWN_SPILL)
 /obj/item/communicator/on_destroy(force)
 	// Voice mobs are told the line dropped before they go; a policy can't send that.
 	for(var/mob/living/voice/voice in contents.Copy()) // ALLOW(decl): per-item message and deletion, not a drop
-		LAZYREMOVE(voice_mobs, voice)
+		own_take_member(src, "voice_mobs", voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")

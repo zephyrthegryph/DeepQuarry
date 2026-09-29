@@ -1104,7 +1104,7 @@ GLOBAL_LIST_EMPTY(map_model_default)
 	parsed_bounds.Cut()
 	bounds.Cut()
 	grid_models.Cut()
-	gridSets.Cut()
+	own_take_all(src, "gridSets")
 	..()
 
 #undef MAP_DMM

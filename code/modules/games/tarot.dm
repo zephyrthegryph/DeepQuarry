@@ -34,7 +34,7 @@
 			if(prob(50))
 				P.name += " reversed"
 			newcards += P
-			cards -= P
+			own_take_member(src, "cards", P)
 		cards = newcards
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")
@@ -89,7 +89,7 @@
 			if(prob(50))
 				P.name += " reversed"
 			newcards += P
-			cards -= P
+			own_take_member(src, "cards", P)
 		cards = newcards
 		playsound(src, 'sound/items/cardshuffle.ogg', 50, 1)
 		user.visible_message("\The [user] shuffles [src].")

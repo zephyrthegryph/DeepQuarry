@@ -11,7 +11,7 @@
 
 // Refreshes list of active supermatter crystals
 /datum/tgui_module/supermatter_monitor/proc/refresh()
-	supermatters = list()
+	rel_clear(src, "supermatters")
 	var/z = get_z(tgui_host())
 	if(!z)
 		return

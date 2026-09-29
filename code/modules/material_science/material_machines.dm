@@ -266,11 +266,11 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 				break
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
-	feedstock = null
+	rel_clear(src, "feedstock")
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
 		qdel(coal)
-	carbon_feed = null
+	rel_clear(src, "carbon_feed")
 	if(!batch.amount)
 		qdel(batch)
 		return
@@ -349,10 +349,10 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		return FALSE
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		stock.forceMove(user.drop_location())
-	feedstock = null
+	rel_clear(src, "feedstock")
 	for(var/obj/item/ore/coal as anything in carbon_feed)
 		coal.forceMove(user.drop_location())
-	carbon_feed = null
+	rel_clear(src, "carbon_feed")
 	visible_message(span_notice("[user] unloads the unfired charge from [src]."))
 	return TRUE
 

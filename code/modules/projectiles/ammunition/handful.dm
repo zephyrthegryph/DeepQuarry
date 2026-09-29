@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 		var/moved = 0
 		while(other.stored_ammo.len && stored_ammo.len < max_ammo)
 			var/obj/item/ammo_casing/C = other.stored_ammo[other.stored_ammo.len]
-			other.stored_ammo -= C
+			own_take_member(other, "stored_ammo", C)
 			C.forceMove(src)
 			own_add(src, "stored_ammo", C)
 			moved++

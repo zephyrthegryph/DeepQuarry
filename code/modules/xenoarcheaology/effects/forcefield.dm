@@ -16,7 +16,7 @@
 	..()
 	if(length(created_field))
 		for(var/obj/effect/energy_field/F in created_field)
-			LAZYREMOVE(created_field, F)
+			own_take_member(src, "created_field", F)
 			qdel(F)
 	else if(holder)
 		var/turf/T = get_turf(holder)

@@ -318,7 +318,7 @@
 	newsign.data["connection"] = connection
 
 
-	own_put(newsign, "data", "radio", hradio)
+	newsign.data["radio"] = hradio // ALLOW(ownership): a transient signal payload naming the sending radio; the signal is dropped after transmission
 	newsign.data["vmessage"] = message
 	newsign.data["vname"] = source
 	newsign.data["vmask"] = 0

@@ -49,7 +49,7 @@
 
 	if(air && air.return_volume())
 		temporarily_store_air()
-	leaks = null
+	rel_clear(src, "leaks")
 
 /// Engineered pipes are evaluated whenever their authoritative network gas is
 /// mutated. Ordinary mapped pipes retain the old cheap path.

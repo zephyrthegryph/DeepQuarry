@@ -339,7 +339,7 @@ GLOBAL_LIST(construction_frame_floor)
 	icon_state = frame_type.get_icon_state(state)
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
-	components = list()
+	own_take_all(src, "components")
 	req_components = circuit.req_components.Copy()
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]

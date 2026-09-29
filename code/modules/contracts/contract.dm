@@ -64,7 +64,7 @@
 	id = _id
 	title = _title
 	description = _description
-	options = list()
+	own_take_all(src, "options")
 
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
@@ -242,8 +242,8 @@
 	. = ..()
 	contributions = list()
 	contributor_names = list()
-	audit_log = list()
-	negotiation_clauses = list()
+	own_take_all(src, "audit_log")
+	own_take_all(src, "negotiation_clauses")
 	negotiation_selections = list()
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()

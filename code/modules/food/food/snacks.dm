@@ -105,7 +105,7 @@
 			NR.stored_nutrition = 1
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-				possessed_voice -= V
+				own_take_member(src, "possessed_voice", V)
 				qdel(V)
 			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
 				NR.forceMove(get_turf(eater))
@@ -116,12 +116,12 @@
 			if(possessed_voice && possessed_voice.len)
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-					possessed_voice -= V
+					own_take_member(src, "possessed_voice", V)
 					qdel(V)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
-				possessed_voice -= V
+				own_take_member(src, "possessed_voice", V)
 				qdel(V)
 		qdel(src)
 

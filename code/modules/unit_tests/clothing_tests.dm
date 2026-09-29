@@ -24,7 +24,7 @@
 	// Build one human per body type up-front. set_species runs once per species here
 	// instead of once per (species × clothing item).
 	own_set(src, "human_storage", new /obj())
-	test_humans = list()
+	own_take_all(src, "test_humans")
 	for(var/body_type in list(SPECIES_HUMAN, SPECIES_VOX, SPECIES_TESHARI))
 		var/mob/living/carbon/human/H = new(human_storage)
 		H.set_species(body_type)
@@ -57,7 +57,7 @@
 		var/mob/living/carbon/human/H = test_humans[body_type]
 		om_unhook(H, /datum/om/event/unittest_data, src)
 		qdel(H)
-	test_humans = null
+	own_take_all(src, "test_humans")
 	own_clear(src, "human_storage", OWN_DELETE)
 	#endif
 

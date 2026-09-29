@@ -1,6 +1,6 @@
 /datum/antagonist/proc/get_starting_locations()
 	if(landmark_id)
-		starting_locations = list()
+		rel_clear(src, "starting_locations")
 		for(var/obj/effect/landmark/L in REGISTRY_MEMBERS(REGISTRY_LANDMARKS))
 			if(L.name == landmark_id)
 				rel_add(src, "starting_locations", get_turf(L))

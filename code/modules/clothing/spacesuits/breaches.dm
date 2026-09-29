@@ -59,7 +59,7 @@
 		if(B.class <= amount_left)
 			amount_left -= B.class
 			valid_breaches -= B
-			LAZYREMOVE(breaches, B)
+			own_take_member(src, "breaches", B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -135,7 +135,7 @@
 
 	for(var/datum/breach/B in breaches)
 		if(!B.class)
-			LAZYREMOVE(breaches, B)
+			own_take_member(src, "breaches", B)
 			qdel(B)
 		else
 			damage += B.class

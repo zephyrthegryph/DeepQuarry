@@ -185,7 +185,7 @@
 		var/datum/borrow/borrow = B
 		if (world.time > borrow.grace_expires)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			LAZYREMOVE(borrows, borrow)
+			rel_remove(src, "borrows", borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -196,7 +196,7 @@
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					LAZYREMOVE(borrows, borrow)
+					rel_remove(src, "borrows", borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -210,7 +210,7 @@
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (borrow.offer_expires < world.time)
-			LAZYREMOVE(borrow_brokers, borrow)
+			own_take_member(src, "borrow_brokers", borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
@@ -263,7 +263,7 @@
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	LAZYREMOVE(borrow_brokers, B)
+	own_take_member(src, "borrow_brokers", B)
 	rel_add(src, "borrows", B)
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time

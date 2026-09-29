@@ -68,8 +68,8 @@
 
 /datum/contract/social/New()
 	. = ..()
-	stakeholder_roles = list()
-	stakeholder_proposals = list()
+	own_take_all(src, "stakeholder_roles")
+	own_take_all(src, "stakeholder_proposals")
 
 
 /datum/contract/social/on_negotiated_terms_changed()

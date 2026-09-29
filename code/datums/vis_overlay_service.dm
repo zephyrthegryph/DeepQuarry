@@ -20,7 +20,7 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		if(!overlay.unused && !length(overlay.vis_locs))
 			overlay.unused = world.time
 		else if(overlay.unused && overlay.unused + overlay.cache_expiration < world.time)
-			vis_overlay_cache -= key
+			own_take_member(src, "vis_overlay_cache", key)
 			qdel(overlay)
 		if(TICK_CHECK)
 			return FALSE
@@ -71,9 +71,9 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	thing.vis_contents -= overlays
 	if(!isatom(thing))
 		return
-	thing.managed_vis_overlays -= overlays
+	rel_remove(thing, "managed_vis_overlays", overlays)
 	if(!length(thing.managed_vis_overlays))
-		thing.managed_vis_overlays = null
+		rel_clear(thing, "managed_vis_overlays")
 
 /atom/proc/add_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags = VIS_INHERIT_ID, unique)
 	// The extremely minimal version where you just pass a string and nothing else

@@ -29,7 +29,7 @@
 	else
 		for(var/mob/observer/dead/D as anything in candidates)
 			if(!evaluate_candidate(D))
-				candidates -= D
+				rel_remove(src, "candidates", D)
 		finished = TRUE
 		OM_EMIT(src, /datum/om/event/ghost_query_complete)
 

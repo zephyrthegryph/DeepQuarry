@@ -494,11 +494,11 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		notify("The software \"[NS]\" refuses to be uninstalled.",TRUE)
 		return FALSE
 
-	nifsofts[old_soft.list_pos] = null
+	own_take_member(src, "nifsofts", old_soft.list_pos)
 	power_usage -= old_soft.p_drain
 
 	if(old_soft.tick_flags == NIF_ALWAYSTICK)
-		LAZYREMOVE(nifsofts_life, old_soft)
+		rel_remove(src, "nifsofts_life", old_soft)
 
 	if(old_soft.active)
 		old_soft.deactivate(force = TRUE)
@@ -541,7 +541,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		human << click_sound
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		LAZYREMOVE(nifsofts_life, soft)
+		rel_remove(src, "nifsofts_life", soft)
 
 	power_usage -= soft.a_drain
 

@@ -353,9 +353,9 @@
 	if(new_machine.component_parts)
 		for(var/CP in new_machine.component_parts)
 			qdel(CP)
-		new_machine.component_parts.Cut()
+		own_take_all(new_machine, "component_parts")
 	else
-		new_machine.component_parts = list()
+		own_take_all(new_machine, "component_parts")
 
 	circuit.construct(new_machine)
 
@@ -374,8 +374,8 @@
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.moveToNullspace()
-		new_machine.component_parts += O
-	components = null // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
+		own_add(new_machine, "component_parts", O)
+	own_take_all(src, "components") // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)

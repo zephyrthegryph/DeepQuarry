@@ -392,7 +392,7 @@
 
 			new_gun.max_shells = rand(1,12)
 			var/num_bullets = rand(1,new_gun.max_shells)
-			QDEL_LIST(new_gun.loaded) //Remove all the bullets we spawned with.
+			own_clear(new_gun, "loaded", OWN_DELETE) //Remove all the bullets we spawned with.
 			for(var/i = 1, i <= num_bullets, i++)//Load our gun with the special artifact ammo.
 				own_add(new_gun, "loaded", new /obj/item/ammo_casing/artifact(new_gun))
 

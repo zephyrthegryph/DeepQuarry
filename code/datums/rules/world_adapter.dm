@@ -53,14 +53,14 @@
 /// Every subscription is a watch: cancelling it is deleting it.
 /proc/dq_rx_cancel(datum/rule_binding/D, datum/native_watch/token)
 	if(istype(D))
-		LAZYREMOVE(D.world_watches, token)
+		rel_remove(D, "world_watches", token)
 	if(istype(token) && !QDELETED(token))
 		qdel(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
 		dq_rx_cancel(D, W)
-	D.world_watches = null
+	rel_clear(D, "world_watches")
 
 /proc/dq_rx_rate_linear(v0, per_second, lo, hi)
 	return om_rate_linear(v0, per_second, lo, hi)
@@ -135,7 +135,7 @@
 	if(W)
 		for(var/datum/native_watch/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
-				LAZYREMOVE(node.watches, old)
+				own_take_member(node, "watches", old)
 		own_add(node, "watches", W)
 	return W
 

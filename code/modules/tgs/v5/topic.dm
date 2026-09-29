@@ -87,7 +87,7 @@
 
 			if (event_type == TGS_EVENT_WATCHDOG_DETACH)
 				detached = TRUE
-				chat_channels.Cut() // https://github.com/tgstation/tgstation-server/issues/1490
+				own_take_all(src, "chat_channels") // https://github.com/tgstation/tgstation-server/issues/1490
 
 			return
 

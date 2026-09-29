@@ -32,7 +32,7 @@
 	own_add(src, "synths", cloth)
 
 	var/jetpack = new/obj/item/tank/jetpack/carbondioxide(src)
-	src.modules += jetpack
+	own_add(src, "modules", jetpack)
 	own_set(robot, "internals", jetpack)
 
 	var/obj/item/card/id/robot_id = robot.idcard
@@ -185,5 +185,5 @@
 	//Removes the default sblade
 	var/obj/item/melee/robotic/blade/syndicate/sblade = locate_in_list(src.modules, /obj/item/melee/robotic/blade/syndicate)
 	if(sblade)
-		src.modules -= sblade
+		own_take_member(src, "modules", sblade)
 		qdel(sblade)

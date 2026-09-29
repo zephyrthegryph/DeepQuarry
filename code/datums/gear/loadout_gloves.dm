@@ -79,7 +79,7 @@
 		"recolourable, long"=/obj/item/clothing/gloves/fingerless_recolourable/long
 	)
 	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(sortAssoc(selector_uniforms)))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", GLOB.gear_tweak_free_color_choice)
 
 /datum/gear/gloves/ring
 	display_name = "ring selection"

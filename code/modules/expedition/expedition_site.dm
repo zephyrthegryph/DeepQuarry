@@ -58,7 +58,7 @@
 	rel_set(src, "landing", _landing)
 	generated_at = world.time
 	last_occupied = world.time
-	participants = list()
+	rel_clear(src, "participants")
 
 
 // A random walkable floor on this site (prefers the cached list, falls back to

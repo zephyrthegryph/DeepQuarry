@@ -70,7 +70,7 @@
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			LAZYADD(beakers, B)
+			rel_add(src, "beakers", B)
 	update_icon()
 
 /obj/item/gun/projectile/dartgun/update_icon()
@@ -167,7 +167,7 @@
 				var/obj/item/reagent_containers/glass/beaker/B = LAZYACCESS(beakers, index)
 				to_chat(usr, "You remove [B] from [src].")
 				LAZYREMOVE(mixing, B)
-				LAZYREMOVE(beakers, B)
+				rel_remove(src, "beakers", B)
 				B.forceMove(get_turf(src))
 	else if (href_list["eject_cart"])
 		unload_ammo(usr)

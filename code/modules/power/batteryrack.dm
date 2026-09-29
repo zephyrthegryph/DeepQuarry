@@ -201,7 +201,7 @@
 /obj/machinery/power/smes/batteryrack/dismantle()
 	for(var/obj/item/cell/C in internal_cells)
 		C.forceMove(get_turf(src))
-		LAZYREMOVE(internal_cells, C)
+		own_take_member(src, "internal_cells", C)
 	return ..()
 
 /obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
@@ -311,7 +311,7 @@
 				return TRUE
 
 			C.forceMove(get_turf(src))
-			LAZYREMOVE(internal_cells, C)
+			own_take_member(src, "internal_cells", C)
 			update_icon()
 			RefreshParts()
 			update_maxcharge()

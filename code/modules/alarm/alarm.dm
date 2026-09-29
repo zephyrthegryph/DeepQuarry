@@ -39,7 +39,7 @@
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
 		if((AS.end_time && world.time > AS.end_time) || (AS.duration && world.time > (AS.start_time + AS.duration)))
-			LAZYREMOVE(sources, AS)
+			own_take_member(src, "sources", AS)
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
@@ -63,8 +63,8 @@
 
 /datum/alarm/proc/clear(source)
 	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
-	LAZYREMOVE(sources, AS)
-	LAZYREMOVE(sources_assoc, source)
+	own_take_member(src, "sources", AS)
+	own_take_member(src, "sources_assoc", source)
 	if(AS)
 		AS.source = null
 		qdel(AS)

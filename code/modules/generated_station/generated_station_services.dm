@@ -82,7 +82,7 @@
 /datum/generated_station_service_route/New()
 	..()
 	path = list()
-	physical_markers = list()
+	own_take_all(src, "physical_markers")
 
 
 /obj/effect/landmark/generated_station_department_core

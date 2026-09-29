@@ -32,7 +32,7 @@
 		chambered.forceMove(get_turf(src))
 		rel_clear(src, "chambered")
 		var/obj/item/ammo_casing/C = loaded[1]
-		loaded -= C
+		own_take_member(src, "loaded", C)
 
 	if(!retracted_bolt)
 		to_chat(user, span_notice("You cycle back the bolt on [src], ejecting the casing and allowing you to reload."))

@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 // ships drop the engine.
 /datum/ship_engine/lifecycle_dematerialize()
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
-		LAZYREMOVE(S.engines, src)
+		rel_remove(S, "engines", src)
 	return ..()
 
 /// actual engine object

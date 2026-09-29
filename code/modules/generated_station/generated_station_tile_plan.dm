@@ -77,7 +77,7 @@
 	..()
 	grid_width = new_width
 	grid_height = new_height
-	tiles = list()
+	own_take_all(src, "tiles")
 	errors = list()
 	wall_fixture_edges = list()
 	utility_floors_by_owner = list()
@@ -230,7 +230,7 @@
 	if(!cursor)
 		hull_openings = list()
 		hull_coordinates = list()
-		hull_corners = list()
+		rel_clear(src, "hull_corners")
 	var/count = length(tiles)
 	if(stage == 1)
 		for(var/n in i to count)
@@ -278,7 +278,7 @@
 		claim(intent.local_x, intent.local_y, wall_owner_id, "hull", GENERATED_STATION_TILE_HULL, null, null)
 	hull_openings = null
 	hull_coordinates = null
-	hull_corners = null
+	rel_clear(src, "hull_corners")
 	return null
 
 /// Floods vacuum from the map edge and proves it cannot reach a pressurized floor.

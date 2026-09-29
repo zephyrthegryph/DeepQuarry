@@ -54,8 +54,8 @@
 		remove_verb(player.current, faction_verb)
 	if(player in current_antagonists)
 		to_chat(player.current, span_danger(span_large("You are no longer a [role_text]!")))
-		LAZYREMOVE(current_antagonists, player)
-		LAZYREMOVE(faction_members, player)
+		rel_remove(src, "current_antagonists", player)
+		rel_remove(src, "faction_members", player)
 		player.special_role = null
 		update_icons_removed(player)
 		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)

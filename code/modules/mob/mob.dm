@@ -877,7 +877,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 				if(O == selection)
 					affected = organ
 
-		LAZYREMOVE(affected.implants, selection)
+		rel_remove(affected, "implants", selection)
 		H.adjust_shock(20, "implant extraction")
 		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 
@@ -902,7 +902,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	for(var/obj/item/O in pinned)
 		if(O == selection)
-			LAZYREMOVE(pinned, O)
+			rel_remove(src, "pinned", O)
 		if(!LAZYLEN(pinned))
 			anchored = FALSE
 	return 1

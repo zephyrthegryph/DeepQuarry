@@ -221,9 +221,9 @@ GLOBAL_DATUM_INIT(station_faction_relations, /datum/station_faction_relations, n
 		REPUTATION_FACTION_SYNDICATE = REPUTATION_HATED,
 	)
 	. = ..(defaults)
-	department_ledgers = list()
-	personal_ledgers = list()
-	agent_records = list()
+	own_take_all(src, "department_ledgers")
+	own_take_all(src, "personal_ledgers")
+	own_take_all(src, "agent_records")
 	for(var/department in get_reputation_departments())
 		own_put(src, "department_ledgers", department, new /datum/faction_reputation_ledger(reputations))
 

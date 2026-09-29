@@ -36,7 +36,7 @@
 
 /datum/generated_room_solution/New()
 	..()
-	placements = list()
+	own_take_all(src, "placements")
 	fragments = list()
 	circulation = list()
 	door_circulation = list()
@@ -183,9 +183,9 @@
 	control_landmarks = list()
 	service_endpoints = list()
 	service_routes = list()
-	owned_furnishing_atoms = list()
-	doors = list()
-	infrastructure = list()
+	own_take_all(src, "owned_furnishing_atoms")
+	own_take_all(src, "doors")
+	own_take_all(src, "infrastructure")
 	degradation_events = list()
 
 /datum/generated_station_materialization/proc/world_turf(local_x, local_y)
@@ -721,7 +721,7 @@
 				if(!destination)
 					if(generated_station_is_removable_decor(furnishing))
 						rel_remove(result, "furnishings", furnishing)
-						result.owned_furnishing_atoms -= furnishing
+						own_take_member(result, "owned_furnishing_atoms", furnishing)
 						qdel(furnishing)
 						continue
 					// Some functional wall-side machinery is legitimately adjacent
@@ -770,7 +770,7 @@
 				if(required_blocker)
 					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
 					rel_remove(result, "furnishings", required_blocker)
-					result.owned_furnishing_atoms -= required_blocker
+					own_take_member(result, "owned_furnishing_atoms", required_blocker)
 					qdel(required_blocker)
 					continue
 				if(install_emergency_room_access(A))
@@ -783,7 +783,7 @@
 				log_world("Generated station could not repair furnishing access for [A.name]: [jointext(blockers, ", ")]")
 				return FALSE
 			rel_remove(result, "furnishings", removable)
-			result.owned_furnishing_atoms -= removable
+			own_take_member(result, "owned_furnishing_atoms", removable)
 			qdel(removable)
 			generation_checkpoint("Opening final room circulation", 55)
 	return TRUE

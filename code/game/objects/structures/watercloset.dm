@@ -66,7 +66,7 @@
 		own_take(src, "teleplumb_crystal")
 	for(var/atom/movable/AM in currently_held_objects)
 		AM.forceMove(src.loc)
-	currently_held_objects = null
+	rel_clear(src, "currently_held_objects")
 
 /obj/structure/toilet/update_icon()
 	icon_state = "[initial(icon_state)][open][cistern]"
@@ -377,7 +377,7 @@
 	if(flush_failed)
 		visible_message(span_warning("\The [src] glurks and splutters, unable to guzzle more stuff down in a single flush!"), span_warning("Glornch"))
 	panic_mult = initial(panic_mult)
-	currently_held_objects = list() //Clear the list.
+	rel_clear(src, "currently_held_objects") //Clear the list.
 
 /obj/structure/toilet/proc/toilet_reflux(datum/source, datum/om/event/disposal_receive/event)
 	EVENT_HANDLER

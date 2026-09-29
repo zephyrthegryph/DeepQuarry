@@ -218,7 +218,7 @@
 			return
 		var/datum/event_meta/EM = locate(href_list["remove"])
 		var/datum/event_container/EC = locate(href_list["EC"])
-		EC.available_events -= EM
+		rel_remove(EC, "available_events", EM)
 		log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.")
 	else if(href_list["add"])
 		if(!new_event.name || !new_event.event_type)

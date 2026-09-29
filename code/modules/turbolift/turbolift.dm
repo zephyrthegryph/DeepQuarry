@@ -68,7 +68,7 @@
 	for(var/datum/turbolift_floor/floor in queued_floors)
 		if(floor.ext_panel)
 			floor.ext_panel.reset()
-	LAZYCLEARLIST(queued_floors)
+	rel_clear(src, "queued_floors")
 
 // Update the icons of all exterior panels (after we change modes etc)
 /datum/turbolift/proc/update_ext_panel_icons()
@@ -141,7 +141,7 @@
 		if(!queued_floors || !length(queued_floors))
 			return 0
 		rel_set(src, "target_floor", LAZYACCESS(queued_floors, 1))
-		LAZYREMOVE(queued_floors, target_floor())
+		rel_remove(src, "queued_floors", target_floor())
 		if(current_floor_index < floors.Find(target_floor()))
 			moving_upwards = 1
 		else

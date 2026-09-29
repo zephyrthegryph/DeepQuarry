@@ -32,7 +32,7 @@
 /datum/hud/proc/build_action_groups()
 	own_set(src, "listed_actions", new /datum/action_group/listed(src))
 	own_set(src, "palette_actions", new /datum/action_group/palette(src))
-	floating_actions = list()
+	own_take_all(src, "floating_actions")
 	for(var/datum/action/action as anything in mymob().actions)
 		var/atom/movable/screen/movable/action_button/button = action.button_for(src)
 		if(!button)

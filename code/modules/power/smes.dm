@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		var/obj/item/smes_coil/C = locate_in_list(component_parts, /obj/item/smes_coil)
 		if(isnull(C))
 			break
-		component_parts.Remove(C)
+		own_take_member(src, "component_parts", C)
 		qdel(C)
 		cur_coils--
 	// Rebuild from mapper's coils

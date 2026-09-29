@@ -108,9 +108,9 @@ GLOBAL_LIST_INIT(advance_cures, list(
 
 /datum/affliction/contagion/engineered/Copy()
 	var/datum/affliction/contagion/engineered/A = ..()
-	QDEL_LIST(A.symptoms)
+	own_clear(A, "symptoms", OWN_DELETE)
 	for(var/datum/viral_trait/S as anything in symptoms)
-		A.symptoms += S.Copy()
+		own_add(A, "symptoms", S.Copy())
 	A.virus_modifiers = virus_modifiers & ~(PROCESSING | HAS_TIMER)
 	A.spread_flags = spread_flags
 	A.disease_flags = disease_flags
@@ -426,7 +426,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 
 // Simply removes the symptom.
 /datum/affliction/contagion/engineered/proc/RemoveSymptom(datum/viral_trait/S)
-	symptoms -= S
+	own_take_member(src, "symptoms", S)
 	return
 
 // Neuters a symptom, allowing it only for stats.

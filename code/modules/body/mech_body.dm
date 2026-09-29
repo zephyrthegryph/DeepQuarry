@@ -264,7 +264,7 @@
 	var/datum/mech_affliction/A = affliction_for(id)
 	if(!A || !(A in host.afflictions))
 		return FALSE
-	LAZYREMOVE(host.afflictions, A)
+	rel_remove(host, "afflictions", A)
 	A.on_cleared(host)
 	return TRUE
 

@@ -196,7 +196,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		if(amount_grown < 0) amount_grown = 1
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
-			LAZYREMOVE(O.implants, src)
+			rel_remove(O, "implants", src)
 			src.forceMove(O.owner ? O.owner.loc : O.loc)
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)
