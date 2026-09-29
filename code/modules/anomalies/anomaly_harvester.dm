@@ -104,22 +104,21 @@
 	if(. & ITEM_INTERACT_SUCCESS)
 		rel_clear(src, "harvested")
 
-/obj/machinery/anomaly_harvester/proc/attach_anomaly(anomaly)
-	// The scanner's buffered_anomaly and the stats' attached_harvester live in code/game (out of this
-	// scope) and still hold handles.
-	var/obj/effect/anomaly/anom = om_resolve(anomaly) // ALLOW(ownership): scanner.buffered_anomaly is set as a handle by _anomalies.dm
+/obj/machinery/anomaly_harvester/proc/attach_anomaly(obj/effect/anomaly/anomaly)
+	// The scanner's buffered_anomaly and the stats' attached_harvester are relation views.
+	var/obj/effect/anomaly/anom = anomaly
 	if(!istype(anom))
 		return
 
 	var/datum/anomaly_stats/stats = anom.stats
 	if(stats.attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = om_resolve(stats.attached_harvester) // ALLOW(ownership): anomaly_stats.attached_harvester is a handle (anomaly_stats.dm)
+		var/obj/machinery/anomaly_harvester/harvester = stats.attached_harvester
 		if(harvester)
 			rel_clear(harvester, "harvested")
 			harvester.update_icon()
-		stats.attached_harvester = null
+		rel_clear(stats, "attached_harvester")
 	rel_set(src, "harvested", anom)
-	stats.attached_harvester = om_handle(src) // ALLOW(ownership): anomaly_stats.attached_harvester is a handle (anomaly_stats.dm)
+	rel_set(stats, "attached_harvester", src)
 	playsound(src, 'sound/machines/boobeebeep.ogg', 75, TRUE)
 	return TRUE
 

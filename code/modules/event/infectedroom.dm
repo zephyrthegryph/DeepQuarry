@@ -70,11 +70,11 @@
 			C = new(pick_n_take(target_turfs))
 			C.basecolor = get_random_colour(rand(0, 1))
 			C.update_icon()
-			own_add(C, "viruses", chosen_disease.Copy())
+			C.add_contagions(list(chosen_disease)) // private copies (cleanable.dm)
 		else if(decal == 2)
 			var/obj/effect/decal/cleanable/vomit/V
 			V = new(pick_n_take(target_turfs))
-			own_add(V, "viruses", chosen_disease.Copy())
+			V.add_contagions(list(chosen_disease))
 		else
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))

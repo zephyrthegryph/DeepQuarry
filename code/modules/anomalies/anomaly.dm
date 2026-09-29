@@ -82,7 +82,8 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-	var/buffered_anomaly = null
+	/// Relation view: the last anomaly scanned (set by the anomaly's scan, _anomalies.dm).
+	var/obj/effect/anomaly/buffered_anomaly
 
 DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -105,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 
 /obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly) // ALLOW(ownership): _anomalies.dm (out of scope) writes buffered_anomaly as a handle
+	var/obj/effect/anomaly/anom = buffered_anomaly
 
 	if(!istype(anom))
 		return data

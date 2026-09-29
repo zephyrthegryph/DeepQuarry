@@ -494,7 +494,7 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 	return cell
 
 /obj/mecha/proc/add_cabin()
-	own_set(src, "cabin_air", new /datum/gas_mixture)
+	proto_set(src, "cabin_air", new /datum/gas_mixture) // a private mixture the mech owns
 	cabin_air.set_temperature(T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
@@ -1383,7 +1383,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return cabin_air
 
 /obj/mecha/set_port_network_air(datum/gas_mixture/new_air)
-	own_set(src, "cabin_air", new_air)
+	atmos_air_set(src, "cabin_air", new_air) // a network's air is referenced, a private mixture owned
 	return TRUE
 
 /obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
@@ -2704,4 +2704,5 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 // selected, active_jetpack and energy_relay name mounted equipment: relation views (implicit REL).
 // cell and internal_tank are implicit OWN(DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
-// cabin_air may be rebound to a connected port's network mixture (set_port_network_air()).
+// cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
+PROTO(/obj/mecha, cabin_air)
