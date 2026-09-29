@@ -144,7 +144,13 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 /proc/refresh_one(datum/D, bits)
 	var/datum/outer = GLOB.refresh_running
 	GLOB.refresh_running = D
-	refresh_one_inner(D, bits)
+	try
+		refresh_one_inner(D, bits)
+	catch(var/exception/e)
+		// Restore before the drain reports it: a stale refresh_running would flag every later mark of
+		// D as a self-mark.
+		GLOB.refresh_running = outer
+		throw e
 	GLOB.refresh_running = outer
 
 /proc/refresh_one_inner(datum/D, bits)
@@ -175,10 +181,9 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	A.draw(L)
 	if(!L.touched)
 		if(apply && !isnull(A.look_key))
-			// It drew before and draws nothing now: drop the overlays the last look added.
-			if(A.look_overlays)
-				A.cut_overlay(A.look_overlays)
-				A.look_overlays = null
+			// It drew before and draws nothing now: applying the empty look takes back everything the
+			// last look set (overlays, filters, vis_contents, base properties).
+			L.apply_to(A)
 			A.look_key = null
 		return null
 	var/key = L.change_key()
