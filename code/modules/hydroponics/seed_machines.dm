@@ -394,6 +394,6 @@ OWN(/obj/machinery/botany, loaded_disk, OWN_SPILL)
 /obj/machinery/botany/step_start_condition()
 	return active
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static

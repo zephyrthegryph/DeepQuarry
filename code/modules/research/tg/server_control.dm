@@ -103,6 +103,6 @@
 			console_selected.locked = !console_selected.locked
 			return TRUE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb
 	return stored_research_static

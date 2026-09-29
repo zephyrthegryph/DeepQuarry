@@ -381,6 +381,6 @@
 	if(blastloc)
 		explosion(blastloc, -1, -1, 2, 3)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/item/projectile/energy/floramut/gene/proc/gene() as /datum/decl/plantgene
 	return gene_static

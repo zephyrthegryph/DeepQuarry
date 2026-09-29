@@ -178,6 +178,6 @@
 	holder.squish()
 
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the holder this refers to (a relation view: null once it is deleted).
 /datum/slime_state/proc/holder() as /mob/living/simple_mob/slime/xenobio
 	return holder

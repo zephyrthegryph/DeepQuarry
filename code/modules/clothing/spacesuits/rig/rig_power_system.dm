@@ -161,6 +161,6 @@
 
 	return FALSE
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the holder this refers to (a relation view: null once it is deleted).
 /datum/rig_power_system/proc/holder() as /obj/item/rig
 	return holder

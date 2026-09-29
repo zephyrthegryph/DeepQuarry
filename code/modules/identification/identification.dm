@@ -114,6 +114,6 @@
 	Do you feel lucky?"
 	identification_type = IDENTITY_TYPE_CHEMICAL
 
-/// LC-refs: The thing the datum is 'attached' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The thing the datum is 'attached' to. (a relation view: null once it is deleted).
 /datum/identification/proc/holder() as /obj
 	return holder

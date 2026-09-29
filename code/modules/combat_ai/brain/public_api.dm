@@ -33,8 +33,9 @@
 /datum/ai_brain/proc/forget_everything()
 	lose_target()
 	personal = null
+	rel_clear(src, "personal_mobs")
 	clear_path()
-	leader_ref = null
+	rel_clear(src, "leader")
 
 // ---------------------------------------------------------------------------
 // Following / leader
@@ -45,7 +46,7 @@
 	invalidate_selection()
 
 /datum/ai_brain/proc/lose_follow()
-	leader_ref = null
+	rel_clear(src, "leader")
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------
@@ -155,9 +156,7 @@
 	return
 
 /datum/ai_brain/proc/check_attacker(mob/M)
-	if(!personal || !M)
-		return FALSE
-	var/list/entry = personal[om_handle(M)]
+	var/list/entry = personal_entry(M)
 	return entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE
 
 /datum/ai_brain/proc/on_hear_say(mob/living/speaker, message)
@@ -171,6 +170,6 @@
 		if("returns_home", "mauling")
 			invalidate_selection()
 
-/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the destination this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/destination() as /turf
 	return destination

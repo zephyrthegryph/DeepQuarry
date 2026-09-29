@@ -24,7 +24,7 @@
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-	var/obj/machinery/camera/camera // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/machinery/camera/camera
 	var/list/camera_networks
 
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)

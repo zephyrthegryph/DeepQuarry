@@ -430,10 +430,10 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 			start_experiment_callback.Invoke(selected_experiment())
 
 
-/// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the selected_experiment this refers to (a relation view: null once it is deleted).
 /datum/experiment_handler/proc/selected_experiment() as /datum/experiment
 	return selected_experiment
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/experiment_handler/proc/linked_web() as /datum/techweb
 	return linked_web_static

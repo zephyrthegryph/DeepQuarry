@@ -308,7 +308,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 
 // ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
-// it owns (DECLARE_REF(..., OWNED_LIST)): the replacement takes the list over.
+// it owns (an owned list): the replacement takes the list over.
 	var/turf/T = locate(1,1,2)
 	if(T)
 		GLOB.blackbox = null

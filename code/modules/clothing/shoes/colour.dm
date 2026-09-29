@@ -164,6 +164,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
 	name = "yellow high-tops"
 	icon_state = "yellowhi"
 
-/// LC-refs: the chained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the chained this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/shoes/orange/proc/chained() as /obj/item/handcuffs
 	return chained

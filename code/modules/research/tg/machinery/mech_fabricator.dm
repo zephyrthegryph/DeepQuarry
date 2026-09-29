@@ -574,11 +574,11 @@
 /obj/machinery/mecha_part_fabricator_tg/step_start_condition()
 	return process_queue
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-/// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the being_built this refers to (a relation view: null once it is deleted).
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 

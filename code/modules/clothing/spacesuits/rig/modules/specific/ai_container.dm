@@ -211,6 +211,6 @@
 
 OWN(/obj/item/rig_module/ai_container, ai_card, OWN_CONTAINED)
 
-/// LC-refs: Direct reference to the actual mob held in the suit. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Direct reference to the actual mob held in the suit. (a relation view: null once it is deleted).
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob
 	return integrated_ai

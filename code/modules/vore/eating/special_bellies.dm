@@ -33,6 +33,6 @@
 	else
 		thing.forceMove(target_turf ? get_turf(target()) : target() )
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to (a relation view: null once it is deleted).
 /obj/belly/special/teleporter/proc/target() as /atom/movable
 	return target

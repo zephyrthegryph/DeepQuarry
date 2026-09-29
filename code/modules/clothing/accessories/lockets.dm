@@ -9,7 +9,6 @@
 	slot = ACCESSORY_SLOT_DECOR
 	var/base_icon
 	var/open
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/tmp/obj/item/held	//Item inside locket.
 	special_handling = TRUE
 
@@ -55,6 +54,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/// LC-refs: Item inside locket. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Item inside locket. (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/locket/proc/held() as /obj/item
 	return held

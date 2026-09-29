@@ -128,6 +128,6 @@
 	rel_clear(src, "interfaced_with")
 	total_power_drained = 0
 
-/// LC-refs: Currently draining power from this device. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Currently draining power from this device. (a relation view: null once it is deleted).
 /obj/item/rig_module/power_sink/proc/interfaced_with() as /atom
 	return interfaced_with

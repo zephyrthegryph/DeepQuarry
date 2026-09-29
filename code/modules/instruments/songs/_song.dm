@@ -439,14 +439,14 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 
 	return null
 
-/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the parent this refers to (a relation view: null once it is deleted).
 /datum/song/proc/parent() as /atom
 	return parent
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/song/proc/using_instrument() as /datum/instrument
 	return using_instrument_static
 
-/// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the music_player this refers to (a relation view: null once it is deleted).
 /datum/song/proc/music_player() as /atom
 	return music_player

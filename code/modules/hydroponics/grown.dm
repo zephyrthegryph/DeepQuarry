@@ -403,6 +403,6 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	// ALLOW(decl): as above
 	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static

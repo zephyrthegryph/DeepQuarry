@@ -284,7 +284,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	pass_color = TRUE
 	strict_color_stacking = TRUE
 	exotic_no_autolathe_reprint = TRUE
-	var/datum/material_batch/batch_state // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/datum/material_batch/batch_state
 	/// Export value of one sheet; the stack's total is always this times the
 	/// current amount, so splitting/merging/using never creates or destroys value.
 	var/export_value_per_sheet = 0

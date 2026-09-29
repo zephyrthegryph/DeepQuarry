@@ -143,6 +143,6 @@
 		return
 	return P
 
-/// LC-refs: the loaded_star this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
 	return loaded_star

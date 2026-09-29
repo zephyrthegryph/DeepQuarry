@@ -639,7 +639,7 @@ OWN(/datum/seed_pile, seeds, OWN_SPILL)
 		/obj/item/seeds/lustflower = 2,
 		/obj/item/seeds/pitcherseed = 3)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return seed_type_static
 

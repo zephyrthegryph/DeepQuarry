@@ -380,6 +380,6 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/lustflower
 	seed_type = PLANT_GARDENIA
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/item/seeds/proc/seed() as /datum/seed
 	return seed_static

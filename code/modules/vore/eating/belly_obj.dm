@@ -1254,11 +1254,11 @@ REL_PAIR_LIST(/mob/living, vore_organs, owner)
 #undef MAX_ENTRY_MESSAAGES
 #undef ENTRY_MESSAGE_INTERVAL
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
 	return tail_to_change_to_static
 
-/// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Is this belly creating an egg? (a relation view: null once it is deleted).
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg
 	return ownegg
 

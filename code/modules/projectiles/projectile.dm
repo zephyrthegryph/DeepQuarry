@@ -950,23 +950,23 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 // Tracer points (point -> next point); cleanup_beam_segments() deletes keys and values in lifecycle_prerelease().
 
-/// LC-refs: the beam_index this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the beam_index this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/proc/beam_index() as /datum/point
 	return beam_index
 
-/// LC-refs: last turf touched during hitscanning. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// last turf touched during hitscanning. (a relation view: null once it is deleted).
 /obj/item/projectile/proc/hitscan_last() as /turf
 	return hitscan_last
 
-/// LC-refs: the homing_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the homing_target this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/proc/homing_target() as /atom
 	return homing_target
 
-/// LC-refs: the my_case this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the my_case this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/proc/my_case() as /obj/item/ammo_casing
 	return my_case
 
-/// LC-refs: the original target clicked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the original target clicked (a relation view: null once it is deleted).
 /obj/item/projectile/proc/original() as /atom
 	return original
 

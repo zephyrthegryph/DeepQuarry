@@ -948,7 +948,7 @@ OWN(/obj/item/roulette_ball/hollow, trapped, OWN_SPILL)
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and it pings to inform you bought [collar.sentientprizename]!"))
 		// Apply the item-TF outcome resolved (and paid for) above.
 		if(do_tf)
-			var/mob/living/sentient_prize = om_resolve(collar.wearer)
+			var/mob/living/sentient_prize = collar.wearer
 			if(sentient_prize)
 				do_item_tf(sentient_prize, tf_choice)
 			else

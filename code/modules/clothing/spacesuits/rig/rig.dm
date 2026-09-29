@@ -1030,11 +1030,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 OWN(/obj/item/rig, air_supply, OWN_CONTAINED)
 OWN(/obj/item/rig, cell, OWN_CONTAINED)
-OWN(/obj/item/rig, selected_module, OWN_CONTAINED)
-OWN(/obj/item/rig, visor, OWN_CONTAINED)
-OWN(/obj/item/rig, speech, OWN_CONTAINED)
+OWN(/obj/item/rig, installed_modules, OWN_CONTAINED)
 OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
 
-/// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
 	return wearer

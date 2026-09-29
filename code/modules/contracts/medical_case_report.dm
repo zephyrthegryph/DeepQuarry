@@ -300,6 +300,6 @@
 			withdraw_candidate(candidate, "The patient is no longer available for this report.")
 
 
-/// LC-refs: the consent_record this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the consent_record this refers to (a relation view: null once it is deleted).
 /datum/contract/medical_case_report/proc/consent_record() as /obj/item/paper
 	return consent_record

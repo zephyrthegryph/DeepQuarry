@@ -2,8 +2,8 @@
 	if(!user.unEquip(mod))
 		return
 	to_chat(user, "You install \the [mod] into \the [src].")
-	LAZYOR(installed_modules, mod)
 	mod.forceMove(src)
+	own_add(src, "installed_modules", mod)
 	mod.installed(src)
 	update_icon()
 
@@ -82,8 +82,6 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 					to_chat(user, span_danger("You can't install a hardsuit module while the suit is being worn."))
 					return TRUE
 
-			if(!installed_modules)
-				rel_set(src, "installed_modules", list())
 			if(length(installed_modules))
 				for(var/obj/item/rig_module/installed_mod in installed_modules)
 					if(!installed_mod.redundant && istype(installed_mod,W))
@@ -185,9 +183,9 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(!removed)
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, "You detach \the [removed] from \the [src].")
+	own_take_member(src, "installed_modules", removed)
 	removed.forceMove(get_turf(src))
 	removed.removed()
-	LAZYREMOVE(installed_modules, removed)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

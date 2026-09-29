@@ -111,10 +111,10 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		if(M?.client)
 			M.update_music()
 
-/// LC-refs: the our_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the our_area this refers to (a relation view: null once it is deleted).
 /obj/item/juke_remote/proc/our_area() as /area
 	return our_area
 
-/// LC-refs: the paired_juke this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the paired_juke this refers to (a relation view: null once it is deleted).
 /obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
 	return paired_juke

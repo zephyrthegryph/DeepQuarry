@@ -173,6 +173,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 	aggressiveness = 1
 	phrase = 1
 
-/// LC-refs: the hailer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the hailer this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/gas/sechailer/proc/hailer() as /obj/item/hailer
 	return hailer

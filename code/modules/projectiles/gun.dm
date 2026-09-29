@@ -859,11 +859,11 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 OWN(/obj/item/gun, attached_lock, OWN_CONTAINED)
 
-/// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()
 	return auto_target
 
-/// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Used to fire faster at more than one person. (a relation view: null once it is deleted).
 /obj/item/gun/proc/last_moved_mob() as /mob/living
 	return last_moved_mob
 

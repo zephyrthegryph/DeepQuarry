@@ -868,6 +868,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/tactical_sec_vi
 	enables_planes = list(VIS_FULLBRIGHT, VIS_MESONS)
 	see_invisible = INVISIBILITY_SHADEKIN
 
-/// LC-refs: the overlay this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the overlay this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/glasses/proc/overlay() as /atom/movable/screen
 	return overlay

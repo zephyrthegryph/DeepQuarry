@@ -73,6 +73,6 @@
 	disconnect_media_source()
 	..()
 
-/// LC-refs: My area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// My area (a relation view: null once it is deleted).
 /obj/machinery/media/proc/master_area() as /area
 	return master_area

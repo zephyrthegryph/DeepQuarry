@@ -234,10 +234,10 @@
 
 #undef TIME_MULTIPLIER
 
-/// LC-refs: the product_article this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the product_article this refers to (a relation view: null once it is deleted).
 /datum/stockEvent/product/proc/product_article() as /datum/article
 	return product_article
 
-/// LC-refs: the company this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the company this refers to (a relation view: null once it is deleted).
 /datum/stockEvent/proc/company() as /datum/stock
 	return company

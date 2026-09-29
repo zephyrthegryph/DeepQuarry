@@ -170,11 +170,11 @@
 		return
 
 	if(!istype(module))
-		own_take(src, "selected_module")
+		rel_clear(src, "selected_module")
 		to_chat(user, span_boldnotice("Primary system is now: deselected."))
 		return
 
-	own_set(src, "selected_module", module)
+	rel_set(src, "selected_module", module)
 	to_chat(user, span_boldnotice("Primary system is now: [selected_module.interface_name]."))
 
 /// Old verb "Toggle Module".

@@ -218,10 +218,10 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	moveToNullspace()
 	om_task_periodic_stop(src)
 
-/// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What are we targeting with? (a relation view: null once it is deleted).
 /obj/aiming_overlay/proc/aiming_with() as /obj/item
 	return aiming_with
 
-/// LC-refs: Who do we belong to? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Who do we belong to? (a relation view: null once it is deleted).
 /obj/aiming_overlay/proc/owner() as /mob
 	return owner

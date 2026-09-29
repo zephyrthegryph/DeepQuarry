@@ -119,6 +119,6 @@ DECLARE_INTERACTIONS(/obj/item/assembly, \
 		return loc.tgui_host()
 	return ..()
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the holder this refers to (a relation view: null once it is deleted).
 /obj/item/assembly/proc/holder() as /obj/item/assembly_holder
 	return holder

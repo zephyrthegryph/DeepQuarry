@@ -128,10 +128,10 @@
 	if(isatom(over_object) && !istype(over_object, /atom/movable/screen))
 		L.update_autofire_target(over_object, params)
 
-/// LC-refs: the autofire_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the autofire_gun this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_gun() as /obj/item/gun
 	return autofire_gun
 
-/// LC-refs: the autofire_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the autofire_target this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_target() as /atom
 	return autofire_target

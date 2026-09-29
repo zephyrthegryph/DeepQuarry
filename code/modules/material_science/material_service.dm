@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	return types
 
 /obj
-	var/datum/material_service/material_service // ALLOW(state_ref): running: the material simulation service while admitted
+	var/datum/material_service/material_service
 	var/material_configuration_revision = 0
 	var/material_assembly_id
 	/// TRUE for player-fabricated or deliberately reconfigured assemblies. Map
@@ -629,19 +629,19 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 	material_service?.schedule(0)
 
 
-/// LC-refs: the watched_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the watched_turf this refers to (a relation view: null once it is deleted).
 /datum/material_service/proc/watched_turf() as /turf
 	return watched_turf
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/material_service/proc/thermal_stock() as /datum/material
 	return thermal_stock_static
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/material_service/proc/electrical_stock() as /datum/material
 	return electrical_stock_static
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the owner this refers to (a relation view: null once it is deleted).
 /datum/material_service/proc/owner() as /obj
 	return owner
 

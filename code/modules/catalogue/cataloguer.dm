@@ -28,7 +28,7 @@
 	var/credit_sharing_range = 280 // If another person is within this radius, they will also be credited with a successful scan. Original was 14
 	var/datum/category_item/catalogue/displayed_data = null // Used for viewing a piece of data in the UI.
 	var/debug = FALSE // If true, can view all catalogue data defined, regardless of unlock status.
-	var/partial_scanned = null // OM handle of the thing that was last scanned if inturrupted. Used to allow for partial scans to be resumed.
+	var/atom/partial_scanned = null // The thing that was last scanned if inturrupted (a relation view). Used to allow for partial scans to be resumed.
 	var/partial_scan_time = 0 // How much to make the next scan shorter.
 
 /obj/item/cataloguer/advanced
@@ -83,7 +83,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	// Get how long the delay will be.
 	var/scan_delay = target.get_catalogue_delay() * toolspeed
 	if(partial_scanned)
-		if(om_resolve(partial_scanned) == target)
+		if(partial_scanned == target)
 			scan_delay -= partial_scan_time
 			to_chat(user, span_notice("Resuming previous scan."))
 		else
@@ -130,7 +130,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 		to_chat(user, span_warning("\The [target] is no longer valid to scan with \the [src]."))
 		playsound(src, 'sound/machines/buzz-two.ogg', 50)
 
-	partial_scanned = null
+	rel_clear(src, "partial_scanned")
 	partial_scan_time = 0
 	scan_cleanup(target, user, effects)
 
@@ -143,7 +143,7 @@ REGISTRY_MEMBERSHIP(/obj/item/cataloguer, REGISTRY_CATALOGUERS)
 	playsound(src, 'sound/machines/buzz-two.ogg', 50)
 	color_box(effects[3], "#FF0000", 3)
 	if(target)
-		partial_scanned = om_handle(target)
+		rel_set(src, "partial_scanned", target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
 	om_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
 	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)

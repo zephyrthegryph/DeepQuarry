@@ -162,6 +162,6 @@
 	else
 		icon_state = "dnaopen"
 
-/// LC-refs: the bloodsamp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the bloodsamp this refers to (a relation view: null once it is deleted).
 /obj/machinery/dnaforensics/proc/bloodsamp() as /obj/item/forensics/swab
 	return bloodsamp

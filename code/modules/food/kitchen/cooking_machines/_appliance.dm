@@ -905,6 +905,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 /obj/machinery/appliance/step_start_condition()
 	return cooking
 
-/// LC-refs: the container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the container this refers to (a relation view: null once it is deleted).
 /datum/cooking_item/proc/container() as /obj/item/reagent_containers/cooking_container
 	return container

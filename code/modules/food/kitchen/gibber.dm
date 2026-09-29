@@ -259,6 +259,6 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 	update_icon()
 
-/// LC-refs: the input_plate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the input_plate this refers to (a relation view: null once it is deleted).
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf
 	return input_plate

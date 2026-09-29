@@ -498,10 +498,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 #undef TRANSFER_FUNDS
 #undef VIEW_TRANSACTION_LOGS
 
-/// LC-refs: the held_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the held_card this refers to (a relation view: null once it is deleted).
 /obj/machinery/atm/proc/held_card() as /obj/item/card
 	return held_card
 
-/// LC-refs: the authenticated_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the authenticated_account this refers to (a relation view: null once it is deleted).
 /obj/machinery/atm/proc/authenticated_account() as /datum/money_account
 	return authenticated_account

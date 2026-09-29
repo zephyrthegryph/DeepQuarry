@@ -185,14 +185,14 @@ DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
 	else
 		icon_state = "heavysniper"
 
-/// LC-refs: the barrel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the barrel this refers to (a relation view: null once it is deleted).
 /obj/item/sniper_rifle_part/proc/barrel() as /obj/item/sniper_rifle_part
 	return barrel
 
-/// LC-refs: the trigger_group this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the trigger_group this refers to (a relation view: null once it is deleted).
 /obj/item/sniper_rifle_part/proc/trigger_group() as /obj/item/sniper_rifle_part
 	return trigger_group
 
-/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stock this refers to (a relation view: null once it is deleted).
 /obj/item/sniper_rifle_part/proc/stock() as /obj/item/sniper_rifle_part
 	return stock

@@ -552,18 +552,18 @@
 	qdel(M)
 	return TRUE
 
-/// LC-refs: the own_mind this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the own_mind this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/own_mind() as /datum
 	return own_mind
 
-/// LC-refs: the linked_belly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_belly this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/linked_belly() as /obj/belly
 	return linked_belly
 
-/// LC-refs: the selected_soul this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the selected_soul this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/selected_soul() as /mob
 	return selected_soul
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the owner this refers to (a relation view: null once it is deleted).
 /obj/soulgem/proc/owner() as /mob/living
 	return owner

@@ -177,7 +177,7 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 		return
 	hit()
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master this refers to (a relation view: null once it is deleted).
 /obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
 	return master
 

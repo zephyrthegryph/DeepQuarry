@@ -310,6 +310,6 @@
 
 OWN(/obj/machinery/account_database, held_card, OWN_CONTAINED)
 
-/// LC-refs: the detailed_account_view this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the detailed_account_view this refers to (a relation view: null once it is deleted).
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account
 	return detailed_account_view

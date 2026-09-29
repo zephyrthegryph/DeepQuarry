@@ -234,10 +234,10 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 
 	return
 
-/// LC-refs: What gun are we in, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What gun are we in, if any? (a relation view: null once it is deleted).
 /obj/item/ammo_magazine/smart/proc/holding_gun() as /obj/item/gun
 	return holding_gun
 
-/// LC-refs: What cell are we using, if any? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What cell are we using, if any? (a relation view: null once it is deleted).
 /obj/item/ammo_magazine/smart/proc/attached_cell() as /obj/item/cell/device
 	return attached_cell

@@ -1489,6 +1489,6 @@
 #undef GENERAL_TAB
 
 
-/// LC-refs: Note, we do this in case we ever want to allow people to view others vore panels -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Note, we do this in case we ever want to allow people to view others vore panels (a relation view: null once it is deleted).
 /datum/vore_look/proc/host() as /mob
 	return host

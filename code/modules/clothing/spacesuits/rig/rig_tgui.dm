@@ -176,7 +176,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 				var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
 				switch(params["module_mode"])
 					if("select")
-						own_set(src, "selected_module", module)
+						rel_set(src, "selected_module", module)
 						. = TRUE
 					if("engage")
 						module.engage()

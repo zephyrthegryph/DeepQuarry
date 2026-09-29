@@ -8531,6 +8531,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 
 OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
 
-/// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
 	return coating

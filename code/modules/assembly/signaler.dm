@@ -171,10 +171,10 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 // end
 
 
-/// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the connected this refers to (a relation view: null once it is deleted).
 /obj/item/assembly/signaler/proc/connected() as /datum/wires
 	return connected
 
-/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the radio_connection this refers to (a relation view: null once it is deleted).
 /obj/item/assembly/signaler/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

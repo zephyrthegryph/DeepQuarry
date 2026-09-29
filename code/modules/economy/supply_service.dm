@@ -1024,7 +1024,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 #undef ALLOCATION_POLICY_PAYROLL
 #undef DEPARTMENT_BASE_OPERATING_ALLOCATION
 
-/// DECLARE_REF(..., STATIC): the supply pack this order is for (a shared definition, held strongly).
+/// the supply pack this order is for (a shared definition, held strongly).
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
 

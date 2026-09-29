@@ -427,6 +427,6 @@
 
 #undef CASINO_PRIZE
 
-/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/casino_prize_dispenser/proc/currently_vending() as /datum/data/casino_prize
 	return currently_vending

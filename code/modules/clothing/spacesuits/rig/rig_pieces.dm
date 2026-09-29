@@ -172,6 +172,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 	flags = THICKMATERIAL
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-/// LC-refs: the tacknife this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the tacknife this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/suit/space/rig/proc/tacknife() as /obj/item/material/knife
 	return tacknife
