@@ -307,7 +307,7 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 	. = ..()
 	uses = rand(1, 5)
 
-/// LC-refs: robot owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: robot owner (reads null once it is gone).
 /obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot
 	return robot_owner
 

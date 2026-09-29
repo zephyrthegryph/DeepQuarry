@@ -100,8 +100,8 @@ OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 		return
 	if(user)
 		visible_message(span_warning("[user] stuffs [victim] into [src]!"))
+	victim.forceMove(src)
 	own_set(src, "inserted", victim)
-	inserted.forceMove(src)
 
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE

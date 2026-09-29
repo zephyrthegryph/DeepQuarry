@@ -137,6 +137,14 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	category = INTERACTION_CAT_TOGGLE
 	effect = /obj/machinery/button/ignition/proc/interaction_trigger
 
+/// Sparkers and igniters sharing our id (keyed).
+/obj/machinery/button/ignition/var/list/obj/machinery/sparker/controlled_sparkers
+/obj/machinery/button/ignition/var/list/obj/machinery/igniter/controlled_igniters
+REL_KEYED_LIST(/obj/machinery/button/ignition, controlled_sparkers, id, /obj/machinery/sparker)
+REL_KEYED_LIST(/obj/machinery/button/ignition, controlled_igniters, id, /obj/machinery/igniter)
+KEYED_TARGET(/obj/machinery/sparker, id)
+KEYED_TARGET(/obj/machinery/igniter, id)
+
 /obj/machinery/button/ignition/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)
 
@@ -146,15 +154,13 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	active = TRUE
 	icon_state = "launcheract"
 
-	for(var/obj/machinery/sparker/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.ignite()
+	for(var/obj/machinery/sparker/M as anything in controlled_sparkers)
+		M.ignite()
 
-	for(var/obj/machinery/igniter/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			use_power(50)
-			M.on = !(M.on)
-			M.icon_state = text("igniter[]", M.on)
+	for(var/obj/machinery/igniter/M as anything in controlled_igniters)
+		use_power(50)
+		M.on = !(M.on)
+		M.icon_state = text("igniter[]", M.on)
 
 	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))
 	return TRUE

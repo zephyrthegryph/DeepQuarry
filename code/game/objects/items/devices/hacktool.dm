@@ -171,6 +171,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_st
 	icon_state = "multitool_suspicious"
 	in_hack_mode = 1	//start in hackmode
 
-/// LC-refs: hacktool -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hacktool (reads null once it is gone).
 /datum/tgui_state/default/must_hack/proc/hacktool() as /obj/item/multitool/hacktool
 	return hacktool

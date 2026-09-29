@@ -376,6 +376,6 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
 					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
 
-/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// breather (a relation view: it reads null once the target is deleted).
 /obj/machinery/oxygen_pump/proc/breather() as /mob/living/carbon
 	return breather

@@ -15,7 +15,8 @@
 	idle_power_usage = 150		//internal circuitry, friction losses and stuff
 	power_rating = 3700			//3700 W ~ 5 HP
 
-	var/list/inputs = new() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
+	/// Port role views, derived from the owned `ports` by rebuild_port_roles().
+	var/list/datum/omni_port/inputs
 	var/datum/omni_port/output
 
 	//setup tags for initial concentration values (must be decimal)
@@ -57,29 +58,28 @@
 		P.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER)
 
 /obj/machinery/atmospherics/omni/mixer/sort_ports()
-	for(var/datum/omni_port/P in ports)
-		if(P.update)
-			if(output == P)
-				rel_clear(src, "output")
-			if(inputs.Find(P))
-				inputs -= P
-
-			switch(P.mode)
-				if(ATM_INPUT)
-					// ALLOW(object_keyed_lists): subset of the owned ports list (DECLARE_REF(..., OWNED_LIST) on /omni), rebuilt from it
-					inputs += P
-				if(ATM_OUTPUT)
-					rel_set(src, "output", P)
+	rebuild_port_roles()
 
 	if(!mapper_set())
 		for(var/datum/omni_port/P in inputs)
-			P.concentration = 1 / max(1, inputs.len)
+			P.concentration = 1 / max(1, length(inputs))
 
 	if(output)
-		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * inputs.len)
+		output.air.set_volume(ATMOS_DEFAULT_VOLUME_MIXER * 0.75 * length(inputs))
 		output.concentration = 1
 
 	rebuild_mixing_inputs()
+
+/// Derived view: output and the input ports, recomputed from the owned ports' modes.
+/obj/machinery/atmospherics/omni/mixer/proc/rebuild_port_roles()
+	rel_clear(src, "output")
+	rel_clear(src, "inputs")
+	for(var/datum/omni_port/P as anything in ports)
+		switch(P.mode)
+			if(ATM_INPUT)
+				rel_add(src, "inputs", P)
+			if(ATM_OUTPUT)
+				rel_set(src, "output", P)
 
 /obj/machinery/atmospherics/omni/mixer/proc/mapper_set()
 	return (tag_north_con || tag_south_con || tag_east_con || tag_west_con)
@@ -87,7 +87,7 @@
 /obj/machinery/atmospherics/omni/mixer/error_check()
 	if(!output || !inputs)
 		return 1
-	if(inputs.len < 2) //requires at least 2 inputs ~otherwise why are you using a mixer?
+	if(length(inputs) < 2) //requires at least 2 inputs ~otherwise why are you using a mixer?
 		return 1
 
 	//concentration must add to 1
@@ -281,7 +281,7 @@
 				if(ATM_NONE)
 					if(P.mode == ATM_OUTPUT)
 						return
-					if(P.mode == ATM_INPUT && inputs.len > 2)
+					if(P.mode == ATM_INPUT && length(inputs) > 2)
 						P.mode = mode
 		else if(P.mode == ATM_OUTPUT && mode == ATM_OUTPUT)
 			P.mode = ATM_INPUT
@@ -353,3 +353,5 @@
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
 
+REL(/obj/machinery/atmospherics/omni/mixer, output)
+REL_LIST(/obj/machinery/atmospherics/omni/mixer, inputs)

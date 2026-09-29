@@ -141,7 +141,7 @@
 				continue
 			sendPDAs["[P.name]"] = "\ref[P]"
 		data["possibleRecipients"] = sendPDAs
-	var/mob/living/original = om_resolve(user.mind.original_character)
+	var/mob/living/original = user.mind.original_character
 	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
 
 	return data
@@ -217,7 +217,7 @@
 				temp = noserver
 		//Hack the Console to get the password
 		if("hack")
-			var/mob/living/original = om_resolve(ui.user.mind.original_character)
+			var/mob/living/original = ui.user.mind.original_character
 			if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
 				hacking = 1
 				update_icon()
@@ -238,12 +238,12 @@
 			. = TRUE
 		//Clears the logs - KEY REQUIRED
 		if("del_pda")
-			linkedServer().pda_msgs = list()
+			own_clear(linkedServer(), "pda_msgs", OWN_DELETE)
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Clears the request console logs - KEY REQUIRED
 		if("del_rc")
-			linkedServer().rc_msgs = list()
+			own_clear(linkedServer(), "rc_msgs", OWN_DELETE)
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Change the password - KEY REQUIRED
@@ -253,9 +253,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				LAZYREMOVE(linkedServer().pda_msgs, locate(params["id"]))
+				own_remove(linkedServer(), "pda_msgs", locate(params["id"]) in linkedServer().pda_msgs)
 			else
-				LAZYREMOVE(linkedServer().rc_msgs, locate(params["id"]))
+				own_remove(linkedServer(), "rc_msgs", locate(params["id"]) in linkedServer().rc_msgs)
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED
@@ -382,10 +382,10 @@
 		BruteForce(user)
 
 
-/// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// linkedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
 	return linkedServer
 
-/// LC-refs: customrecepient -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The custom recipient PDA (a relation view).
 /obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
 	return customrecepient

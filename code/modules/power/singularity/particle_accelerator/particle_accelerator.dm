@@ -340,6 +340,6 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	update_state()
 	update_icon()
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master this refers to: a relation view, null once that is deleted.
 /obj/structure/particle_accelerator/proc/master() as /obj/machinery/particle_accelerator/control_box
 	return master

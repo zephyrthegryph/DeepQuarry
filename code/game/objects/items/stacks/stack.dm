@@ -15,6 +15,7 @@
 	randpixel = 7
 	center_of_mass_x = 0
 	center_of_mass_y = 0
+	/// A shared recipe table (never owned or cleared by the stack).
 	var/tmp/list/datum/stack_recipe/recipes
 	var/singular_name
 	var/amount = 1

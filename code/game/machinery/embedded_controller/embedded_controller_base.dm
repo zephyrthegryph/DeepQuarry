@@ -10,7 +10,7 @@
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
-		rel_set(src, "program", new program(src))
+		own_set(src, "program", new program(src))
 	return ..()
 
 
@@ -127,6 +127,6 @@
 	frequency = new_frequency
 	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter))
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/embedded_controller/radio/proc/radio_connection() as /datum/radio_frequency
 	return radio_connection

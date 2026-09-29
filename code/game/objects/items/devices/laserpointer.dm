@@ -231,6 +231,6 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 
 OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)
 
-/// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: pointer loc (reads null once it is gone).
 /obj/item/laser_pointer/proc/pointer_loc() as /turf
 	return pointer_loc

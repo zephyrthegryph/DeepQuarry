@@ -27,10 +27,11 @@
 
 	light_color = "#315ab4"
 
+// Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
+REL_PAIR_LIST(/obj/machinery/computer/cloning, pods, connected)
+
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()
-	pods = list()
-	records = list()
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
@@ -43,7 +44,7 @@
 /obj/machinery/computer/cloning/machine_step()
 	if(!autoprocess)
 		return PROCESS_KILL
-	if(!scanner() || !pods.len || stat & NOPOWER)
+	if(!scanner() || !length(pods) || stat & NOPOWER)
 		return
 
 	if(scanner().get_occupant() && can_autoprocess())
@@ -57,13 +58,13 @@
 			for(var/datum/transhuman/body_record/BR in records)
 				if(!(pod.get_occupant() || pod.mess))
 					if(pod.growclone(BR))
-						records.Remove(BR)
+						own_move(BR, pod, "growing_record")
 
 /obj/machinery/computer/cloning/proc/updatemodules()
 	rel_set(src, "scanner", findscanner())
 	releasecloner()
 	findcloner()
-	if(!selected_pod() && pods.len)
+	if(!selected_pod() && length(pods))
 		rel_set(src, "selected_pod", pods[1])
 
 /obj/machinery/computer/cloning/proc/findscanner()
@@ -84,17 +85,14 @@
 
 /obj/machinery/computer/cloning/proc/releasecloner()
 	for(var/obj/machinery/clonepod/P in pods)
-		rel_clear(P, "connected")
 		P.name = initial(P.name)
-	pods.Cut()
+	rel_clear(src, "pods")
 
 /obj/machinery/computer/cloning/proc/findcloner()
 	var/num = 1
 	for(var/obj/machinery/clonepod/P in get_area(src))
 		if(!P.connected())
-			// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
-			pods += P
-			rel_set(P, "connected", src)
+			rel_add(src, "pods", P)
 			P.name = "[initial(P.name)] #[num++]"
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
@@ -120,9 +118,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	var/obj/item/multitool/multitool = tool
 	var/obj/machinery/clonepod/pod = multitool.connecting()
 	if(pod && !(pod in pods))
-		// ALLOW(object_keyed_lists): linked pods; each pod removes itself on disconnect/destroy (clonepod connected().pods -= src)
-		pods += pod
-		rel_set(pod, "connected", src)
+		rel_add(src, "pods", pod)
 		pod.name = "[initial(pod.name)] #[length(pods)]"
 		to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -158,8 +154,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	data["scanner"] = sanitize("[scanner()]")
 
 	var/canpodautoprocess = 0
-	if(pods.len)
-		data["numberofpods"] = pods.len
+	if(length(pods))
+		data["numberofpods"] = length(pods)
 
 		var/list/tempods[0]
 		for(var/obj/machinery/clonepod/pod in pods)
@@ -186,7 +182,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	data["can_brainscan"] = can_brainscan() // You'll need tier 4s for this
 	data["scan_mode"] = scan_mode
 
-	if(scanner() && pods.len && ((scanner().scan_level > 2) || canpodautoprocess))
+	if(scanner() && length(pods) && ((scanner().scan_level > 2) || canpodautoprocess))
 		data["autoallowed"] = 1
 	else
 		data["autoallowed"] = 0
@@ -225,8 +221,11 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 					set_temp("ID not in hand.", "danger")
 					return
 				if(check_access(C))
-					records.Remove(active_BR())
-					qdel(active_BR()) // Already deletes dna in destroy()
+					var/datum/transhuman/body_record/doomed = active_BR()
+					if(doomed in records)
+						own_remove(src, "records", doomed) // Already deletes dna in destroy()
+					else
+						qdel(doomed)
 					set_temp("Record deleted.", "success")
 					menu = MENU_RECORDS
 				else
@@ -347,8 +346,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						if(cloneresult)
 							set_temp("Initiating cloning cycle...", "success")
 							playsound(src, 'sound/machines/medbayscanner1.ogg', 100, 1)
-							records.Remove(C)
-							qdel(C)
+							own_move(C, pod, "growing_record")
 							menu = MENU_MAIN
 						else
 							set_temp("Error: Initialisation failure.", "danger")
@@ -441,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
 		BR.mydna.mind = "\ref[subject.mind]"
 
-	records += BR
+	own_add(src, "records", BR)
 	set_scan_temp("Subject successfully scanned.", "good")
 	SStgui.update_uis(src)
 
@@ -501,15 +499,15 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 
 OWN(/obj/machinery/computer/cloning, diskette, OWN_CONTAINED)
 
-/// LC-refs: scanner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// scanner (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/cloning/proc/scanner() as /obj/machinery/dna_scannernew
 	return scanner
 
-/// LC-refs: active BR -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// active BR (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/cloning/proc/active_BR() as /datum/transhuman/body_record
 	return active_BR
 
-/// LC-refs: selected pod -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// selected pod (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/cloning/proc/selected_pod() as /obj/machinery/clonepod
 	return selected_pod
 

@@ -117,6 +117,6 @@ DECLARE_INTERACTIONS(/obj/item/bork_medigun, INTERACT_HAND(null, PROC_REF(intera
 		return TRUE
 	return FALSE
 
-/// LC-refs: current target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: current target (reads null once it is gone).
 /obj/item/bork_medigun/proc/current_target() as /mob
 	return current_target

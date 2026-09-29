@@ -382,9 +382,9 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		own_set(R, "trap", trap)
-		own_take(src, "trap")
-		R.trap.forceMove(R)
+		var/obj/item/T = trap
+		T.forceMove(R) // CONTAINED on the mine: moved in first
+		own_transfer(src, "trap", R, "trap")
 	if(explode_now)
 		R.explode(user)
 	consume(src)

@@ -19,7 +19,7 @@
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "air_contents", new /datum/gas_mixture)
+	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 	air_contents.set_volume(200)
 
 /// Arms this device's own eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()):
@@ -111,11 +111,11 @@
 
 /obj/machinery/atmospherics/unary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		own_set(src, "air_contents", network_air)
+		atmos_air_set(src, "air_contents", network_air)
 
 /obj/machinery/atmospherics/unary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air_contents == network_air)
-		own_set(src, "air_contents", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, "air_contents", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
 	invalidate_gas_dependencies()
@@ -169,3 +169,5 @@
 	..()
 	register_gas_dependencies()
 
+
+PROTO(/obj/machinery/atmospherics/unary, air_contents)

@@ -64,7 +64,8 @@
 	icon_screen = "turbinecomp"
 	circuit = /obj/item/circuitboard/turbine_control
 	var/tmp/obj/machinery/compressor/compressor
-	var/list/doors	// OM handles of the vent doors (om_resolve_all())
+	/// The vent blast doors found by locate_machinery() (relation list).
+	var/list/obj/machinery/door/blast/doors
 	var/id = 0
 	var/door_status = 0
 
@@ -350,10 +351,10 @@
 	for(var/obj/machinery/compressor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.comp_id == id)
 			rel_set(src, "compressor", C)
-	LAZYINITLIST(doors)
+	rel_clear(src, "doors")
 	for(var/obj/machinery/door/blast/P in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
-			doors += om_handle(P)
+			rel_add(src, "doors", P)
 
 /obj/machinery/computer/turbine_computer/declare_interactions(list/into)
 	into += list(
@@ -432,7 +433,7 @@
 			. = TRUE
 		if("doors")
 			door_status = !door_status
-			for(var/obj/machinery/door/blast/D in om_resolve_all(src.doors))
+			for(var/obj/machinery/door/blast/D as anything in doors?.Copy())
 				if (door_status)
 					D.close()
 				else
@@ -446,22 +447,24 @@
 #undef TURBGENG
 
 
-/// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the compressor this refers to: a relation view, null once that is deleted.
 /obj/machinery/computer/turbine_computer/proc/compressor() as /obj/machinery/compressor
 	return compressor
 
-/// LC-refs: the inturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the inturf this refers to: a relation view, null once that is deleted.
 /obj/machinery/compressor/proc/inturf() as /turf/simulated
 	return inturf
 
-/// LC-refs: the outturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the outturf this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/turbine/proc/outturf() as /turf/simulated
 	return outturf
 
-/// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the compressor this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/turbine/proc/compressor() as /obj/machinery/compressor
 	return compressor
 
-/// LC-refs: the turbine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the turbine this refers to: a relation view, null once that is deleted.
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
 	return turbine
+
+REL_LIST(/obj/machinery/computer/turbine_computer, doors)

@@ -19,8 +19,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_p
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port/Initialize(mapload)
 	. = ..()
-	own_set(src, "docking_program", new/datum/embedded_program/docking/airlock(src, airlock_program))
-	rel_set(src, "program", docking_program)
+	// The port owns its running program (program); docking_program is a typed view of it.
+	own_set(src, "program", new/datum/embedded_program/docking/airlock(src, airlock_program))
+	rel_set(src, "docking_program", program)
 	if(display_name)
 		docking_program.display_name = display_name
 

@@ -237,6 +237,6 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 #undef THROWER_MIN
 #undef THROWER_MAX
 
-/// LC-refs: previousturf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: previousturf (reads null once it is gone).
 /obj/item/flamethrower/proc/previousturf() as /turf
 	return previousturf

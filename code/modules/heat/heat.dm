@@ -257,14 +257,12 @@
 	src.both_edges = both_edges
 	src.lane = lane
 	src.keep_body = keep_body
-	if(!isturf(target))
-		LAZYADD(target.heat_watches, src)
 	if(!register() && keep_body)
 		qdel(src)
 		return null
 	return src
 
-/// `target` points back at the atom whose heat_watches list holds this watch.
+/// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
 REL_PAIR(/datum/native_watch/heat, target, heat_watches)
 REL_PAIR_LIST(/atom, heat_watches, target)
 
@@ -297,9 +295,7 @@ REL_PAIR_LIST(/atom, heat_watches, target)
 		vg_heat_unwatch(!isturf(target), live_index, live_generation)
 	live = FALSE
 	body = null
-	if(!isturf(target))
-		LAZYREMOVE(target?.heat_watches, src)
-	rel_clear(src, "target")
+	rel_clear(src, "target") // two-sided: the target's heat_watches lets go too
 
 /// The target's body changed (created, or released at rest): follow it.
 /datum/native_watch/heat/proc/relink()

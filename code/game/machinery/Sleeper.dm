@@ -403,9 +403,9 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
-			own_set(src, "beaker", I)
 			user.drop_item()
 			I.forceMove(src)
+			own_set(src, "beaker", I) // CONTAINED: in contents first
 			user.visible_message(span_infoplain(span_bold("\The [user]") + " adds \a [I] to \the [src]."), span_notice("You add \a [I] to \the [src]."))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))

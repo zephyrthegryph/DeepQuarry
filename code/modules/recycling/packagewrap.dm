@@ -32,8 +32,8 @@
 		if(!istype(O.loc, /turf))
 			if(user.client)
 				user.client.screen -= O
-		own_set(P, "wrapped", O)
 		O.forceMove(P)
+		own_set(P, "wrapped", O) // CONTAINED: in P first
 		P.w_class = O.w_class
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))

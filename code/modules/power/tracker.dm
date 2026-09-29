@@ -29,11 +29,6 @@
 	. = ..()
 	connect_to_network()
 
-// leaves its solar control computer.
-/obj/machinery/power/tracker/on_destroy(force)
-	unset_control() //remove from control computer
-	..()
-
 //set the control of the tracker to a given computer if closer than SOLAR_MAX_DIST
 /obj/machinery/power/tracker/proc/set_control(obj/machinery/power/solar_control/SC)
 	if(SC && (get_dist(src, SC) > SOLAR_MAX_DIST))
@@ -80,6 +75,6 @@
 	icon_state = "door_electronics"
 	w_class = ITEMSIZE_SMALL
 
-/// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the control this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/tracker/proc/control() as /obj/machinery/power/solar_control
 	return control

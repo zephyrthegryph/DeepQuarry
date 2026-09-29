@@ -25,6 +25,18 @@ GLOBAL_LIST(construction_frame_floor)
 	var/x_offset				// For wall frames: pixel_x
 	var/y_offset				// For wall frames: pixel_y
 
+/// A private copy of a frame type. A frame owns its frame_type, so a frame built from a shared
+/// entry (GLOB.construction_frame_*) or from a board's board_type (which the board owns) takes a copy.
+/// Some boards hold text ("other") instead of an instance: that passes through unchanged.
+/proc/frame_type_copy(value)
+	var/datum/frame/frame_types/source = value
+	if(!istype(source))
+		return value
+	var/datum/frame/frame_types/copy = new source.type
+	for(var/var_name in list("icon_override", "name", "frame_size", "frame_class", "circuit", "frame_style", "x_offset", "y_offset"))
+		copy.vars[var_name] = source.vars[var_name]
+	return copy
+
 // Get the icon state to use at a given state.  Default implementation is based on the frame's name
 /datum/frame/frame_types/proc/get_icon_state(state)
 	var/type = lowertext(name)
@@ -333,7 +345,7 @@ GLOBAL_LIST(construction_frame_floor)
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)
-		frame_type = type
+		own_set(src, "frame_type", frame_type_copy(type))
 		state = FRAME_PLACED
 
 		if(dir)
@@ -455,4 +467,6 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	return TRUE
 
 OWN(/obj/structure/frame, circuit, OWN_CONTAINED)
+// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
+OWN(/obj/structure/frame, frame_type, OWN_DELETE)
 

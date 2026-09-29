@@ -131,7 +131,8 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 	var/on = TRUE
 	var/breaker = TRUE
-	var/list/parts
+	/// The eight part objects around it (owned: created here, destroyed with it).
+	var/list/obj/machinery/gravity_generator/part/parts
 	var/tmp/obj/middle
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
@@ -148,17 +149,14 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 	update_list()
 	update_areas()
 
-// gravity goes off on its levels and its parts go with it.
-/obj/machinery/gravity_generator/main/on_destroy(force) // If we somehow get deleted, remove all of our other parts.
+// gravity goes off on its levels; its owned parts go with it.
+/obj/machinery/gravity_generator/main/on_destroy(force)
 	investigate_log("was destroyed!", "gravity")
 	on = FALSE
 	update_list()
 	if(!gravity_in_level())
 		update_gravity(FALSE)
-	for(var/obj/machinery/gravity_generator/part/O in parts)
-		if(!QDESTROYING(O))
-			qdel(O)
-	..()
+	..() // its parts (owned) are destroyed with it
 
 /obj/machinery/gravity_generator/main/proc/setup_parts()
 	var/turf/our_turf = get_turf(src)
@@ -178,7 +176,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
 		rel_set(part, "main_part", src)
-		LAZYADD(parts, part)
+		own_add(src, "parts", part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()
@@ -502,10 +500,10 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 /obj/machinery/gravity_generator/main/step_start_condition()
 	return charging_state != 0 // POWER_IDLE (undefined past this file end)
 
-/// LC-refs: the main_part this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the main_part this refers to: a relation view, null once that is deleted.
 /obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main
 	return main_part
 
-/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the middle this refers to: a relation view, null once that is deleted.
 /obj/machinery/gravity_generator/main/proc/middle() as /obj
 	return middle

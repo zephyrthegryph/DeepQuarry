@@ -328,10 +328,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: the circ1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the circ1 this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/generator/proc/circ1() as /obj/machinery/atmospherics/binary/circulator
 	return circ1
 
-/// LC-refs: the circ2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the circ2 this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/generator/proc/circ2() as /obj/machinery/atmospherics/binary/circulator
 	return circ2

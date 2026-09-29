@@ -12,7 +12,8 @@
 	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
 	var/shield_idle_power = 1500		//how much power we use when just being sustained.
-	var/our_owner
+	/// The generator that projects this tile (it owns the tile in deployed_shields).
+	var/obj/machinery/shieldgen/our_owner
 
 /obj/machinery/shield/malfai
 	name = "emergency forcefield"
@@ -161,13 +162,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate_within(target_tile, /obj/machinery/shield)))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
-				LAZYADD(deployed_shields, S)
-				S.our_owner = om_handle(src) //So it knows to remove itself from our list when it gets qdel'd
+				own_add(src, "deployed_shields", S) // a destroyed tile leaves the list by itself
+				rel_set(S, "our_owner", src)
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
-	for(var/obj/machinery/shield/shield_tile in deployed_shields)
-		qdel(shield_tile)
+	own_clear(src, "deployed_shields", OWN_DELETE)
 
 /obj/machinery/shieldgen/machine_step()
 	if(!active)

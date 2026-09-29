@@ -464,6 +464,6 @@ DECLARE_INTERACTIONS(/obj/item/gps, \
 	update_icon()
 	visible_message("\The [src] appears to be functional again.")
 
-/// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: holder (reads null once it is gone).
 /obj/item/gps/proc/holder_ref() as /mob
 	return holder

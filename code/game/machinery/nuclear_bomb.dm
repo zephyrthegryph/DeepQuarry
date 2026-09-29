@@ -525,6 +525,6 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /obj/machinery/nuclearbomb/proc/toggle_safety()
 	safety = !safety
 
-/// LC-refs: auth -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// auth (a relation view: it reads null once the target is deleted).
 /obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear
 	return auth

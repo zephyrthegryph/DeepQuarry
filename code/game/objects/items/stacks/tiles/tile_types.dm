@@ -41,7 +41,7 @@
 			stack_trace("Material of type: [default_type] does not exist.")
 			return INITIALIZE_HINT_QDEL
 		if(material) //sanity check
-			recipes = material.get_recipes()
+			recipes = material.get_recipes() // ALLOW(ownership): a shared recipe table (GLOB or the registered material holds it); stack_recipe is not a registry type yet
 			stacktype = material.stack_type
 
 /obj/item/stack/tile/welder_act(mob/user, obj/item/tool)

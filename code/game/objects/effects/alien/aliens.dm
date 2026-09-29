@@ -292,6 +292,6 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 //Xenomorph Effect egg removed, replaced with Structure Egg.
 
 
-/// LC-refs: linked node -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: linked node (reads null once it is gone).
 /obj/effect/alien/weeds/proc/linked_node() as /obj/effect/alien/weeds/node
 	return linked_node

@@ -122,7 +122,7 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 /obj/item/tank/jetpack/rig/get_gas_supply()
 	return holder_ref()?.air_supply?.air_contents
 
-/// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: holder (reads null once it is gone).
 /obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
 	return holder
 /// Old object verbs.

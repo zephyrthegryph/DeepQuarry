@@ -12,8 +12,8 @@
 
 	var/obj/item/radio/bradio = null
 	var/obj/effect/overlay/vis/bpinboard
-	var/showing
-	var/the_camera
+	var/atom/showing
+	var/obj/item/clothing/accessory/bodycam/the_camera
 
 	var/enabled = TRUE // on or off
 
@@ -75,8 +75,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 	if(!showing || !the_camera)
 		stop_showing()
 		return PROCESS_KILL
-	var/atom/them = om_resolve(showing)
-	var/obj/item/clothing/accessory/bodycam/bo_cam = om_resolve(the_camera)
+	var/atom/them = showing
+	var/obj/item/clothing/accessory/bodycam/bo_cam = the_camera
 	var/turf/here = get_turf(them)
 	var/turf/there = get_turf(bo_cam)
 	if(here != there)
@@ -91,7 +91,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 		return
 	if(!thing || !other_thing)
 		return
-	the_camera = om_handle(other_thing)
+	rel_set(src, "the_camera", other_thing)
 	var/tries = 10
 	var/atom/recursive_loc = thing
 	while(--tries)
@@ -99,7 +99,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 		if(!istype(recursive_loc, /atom/movable))
 			break
 	thing = recursive_loc // should get the topmost atom, which *should* be a mob, or a locker, or something that isnt just ~clothes~
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	MACHINE_WAKE(src)
 	if(bpinboard)
 		bpinboard.vis_contents = list(thing)
@@ -108,8 +108,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 	// Reverse of the above
 	if(bpinboard)
 		bpinboard.vis_contents = null
-	showing = null
-	the_camera = null
+	rel_clear(src, "showing")
+	rel_clear(src, "the_camera")
 
 /obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(thingref)
 	if(showing == thingref)

@@ -66,7 +66,7 @@
 	var/obj/item/multitool/multitool = tool
 	if(multitool.connectable() && istype(multitool.connectable(), /obj/machinery/button/doorbell))
 		var/obj/machinery/button/doorbell/button = multitool.connectable()
-		id_tag = button.id
+		keyed_set_id(src, "id_tag", button.id) // joins the button's keyed chimes
 		to_chat(user, span_notice("You upload the data from \the [tool]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -135,14 +135,18 @@
 	name = "Press"
 	effect = /obj/machinery/button/doorbell/proc/interaction_press_impl
 
+/// Chimes whose id_tag matches our id (keyed).
+/obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
+REL_KEYED_LIST(/obj/machinery/button/doorbell, chimes, id, /obj/machinery/doorbell_chime)
+KEYED_TARGET(/obj/machinery/doorbell_chime, id_tag)
+
 /obj/machinery/button/doorbell/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	use_power(5)
 	flick("doorbell-active", src)
 
-	for(var/obj/machinery/doorbell_chime/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id_tag == id)
-			M.chime()
+	for(var/obj/machinery/doorbell_chime/M as anything in chimes)
+		M.chime()
 	return TRUE
 
 /// Old attackby: fingerprint any item, and rename with a pen when the panel is open.

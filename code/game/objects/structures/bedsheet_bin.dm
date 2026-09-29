@@ -333,6 +333,6 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	icon = 'icons/obj/items.dmi'
 	icon_state = "doublesheetpirate"
 
-/// LC-refs: hidden -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hidden (reads null once it is gone).
 /obj/structure/bedsheetbin/proc/hidden() as /obj/item
 	return hidden

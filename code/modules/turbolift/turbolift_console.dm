@@ -216,6 +216,6 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 // End panel.
 
-/// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the lift this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/lift/proc/lift() as /datum/turbolift
 	return lift

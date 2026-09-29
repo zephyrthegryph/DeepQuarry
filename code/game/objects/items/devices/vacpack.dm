@@ -8,6 +8,7 @@
 	item_state = "sucker"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
+	/// Where sucked-up things go (a handle: also written by code/modules/mob/.../swoopie.dm).
 	var/output_dest
 	var/list/vac_settings = list( // ALLOW(instance_list): c: read-only per-subtype constant table (1 subtype overrides); a getter would share it, not worth it on a rare type
 			"power off" = 0,
@@ -32,7 +33,7 @@
 DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!om_resolve(output_dest))
+	if(!om_resolve(output_dest)) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 		apply_setting(user, "output destination")
 		return
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = vac_settings, ask_flags = ASK_CARRIED | ASK_CAPABLE)
@@ -62,7 +63,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/dogborg/sleeper/S in M.modules)
 					if(istype(S))
-						output_dest = om_handle(S)
+						output_dest = om_handle(S) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 						return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
@@ -71,23 +72,23 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/storage/bag/trash/T in M.modules)
 					if(istype(T))
-						output_dest = om_handle(T)
+						output_dest = om_handle(T) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 						return
 			for(var/obj/item/storage/bag/trash/T in contents_of(user))
 				if(istype(T))
-					output_dest = om_handle(T)
+					output_dest = om_handle(T) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
 			if(user.vore_selected)
-				output_dest = om_handle(user.vore_selected)
+				output_dest = om_handle(user.vore_selected) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)
 		return
 	if(!proximity)
 		return
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = om_resolve(output_dest) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 	if(!output_atom)
 		return
 	var/mob/living/attachment_holder //If we have someone holding the vac_attachment, so we don't suck them up by mistake.
@@ -269,7 +270,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = om_resolve(output_dest) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 
 	if(vac_owner) //Embedded vacs have special handling.
 		var/turf/item_turf = get_turf(src)
@@ -286,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
 	if(target_turf && target.loc != target_turf)
 		return
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = om_resolve(output_dest) // ALLOW(ownership): output_dest stays a handle until swoopie.dm (code/modules/mob) converts with it
 
 	if(vac_owner)
 		var/turf/item_turf = get_turf(src)

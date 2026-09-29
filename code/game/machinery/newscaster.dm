@@ -683,7 +683,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	feedback_inc("newscaster_newspapers_printed",1)
 	var/obj/item/newspaper/NEWSPAPER = new /obj/item/newspaper
 	for(var/datum/feed_channel/FC in GLOB.news_network.network_channels)
-		LAZYADD(NEWSPAPER.news_content, FC)
+		rel_add(NEWSPAPER, "news_content", FC) // the paper names the network's channels
 	if(GLOB.news_network.wanted_issue())
 		rel_set(NEWSPAPER, "important_message", GLOB.news_network.wanted_issue())
 	NEWSPAPER.forceMove(get_turf(src))
@@ -716,7 +716,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	update_icon()
 
 
-/// LC-refs: parent channel -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// parent channel (a relation view: it reads null once the target is deleted).
 /datum/feed_message/proc/parent_channel() as /datum/feed_channel
 	return parent_channel
 
@@ -724,15 +724,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 /datum/feed_network/proc/wanted_issue() as /datum/feed_message
 	return wanted_issue_owned
 
-/// LC-refs: viewing channel -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// viewing channel (a relation view: it reads null once the target is deleted).
 /obj/machinery/newscaster/proc/viewing_channel() as /datum/feed_channel
 	return viewing_channel
 
-/// LC-refs: node -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// node (a relation view: it reads null once the target is deleted).
 /obj/machinery/newscaster/proc/node() as /obj/machinery/exonet_node
 	return node
 
-/// LC-refs: photo -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// photo (a relation view: it reads null once the target is deleted).
 /datum/news_photo/proc/photo() as /obj/item/photo
 	return photo
 

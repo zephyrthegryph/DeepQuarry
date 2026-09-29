@@ -56,15 +56,13 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 			if ((imp || M.imp.implanted))
 				return INTERACTION_HANDLED_PASS
 			M.imp.forceMove(src)
-			own_set(src, "imp", M.imp)
-			own_take(M, "imp")
+			own_transfer(M, "imp", src, "imp")
 			update()
 			M.update()
 		else
 			if (imp)
 				imp.forceMove(M)
-				own_set(M, "imp", imp)
-				own_take(src, "imp")
+				own_transfer(src, "imp", M, "imp")
 				update()
 			M.update()
 	return INTERACTION_HANDLED_PASS

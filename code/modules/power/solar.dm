@@ -571,10 +571,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 /obj/machinery/power/solar_control/step_start_condition()
 	return TRUE // connects its trackers
 
-/// LC-refs: the control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the control this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/solar/proc/control() as /obj/machinery/power/solar_control
 	return control
 
-/// LC-refs: the connected_tracker this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the connected_tracker this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/solar_control/proc/connected_tracker() as /obj/machinery/power/tracker
 	return connected_tracker

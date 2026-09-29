@@ -535,8 +535,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
 		//Make an announcement and log the person entering storage.
-		LAZYADD(control_computer().frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
-		LAZYADD(control_computer()._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
+		var/obj/machinery/computer/cryopod/log_console = control_computer()
+		LAZYADD(log_console.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]") // strings
+		LAZYADD(log_console._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
 		var/depart_announce = TRUE
@@ -869,7 +870,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	qdel(item)
 
 	if(control_computer() && control_computer().allow_items)
-		LAZYADD(control_computer().frozen_items, "[item_name] ([char_name])")
+		var/obj/machinery/computer/cryopod/log_console = control_computer()
+		LAZYADD(log_console.frozen_items, "[item_name] ([char_name])") // strings
 
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"
@@ -883,6 +885,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 OWN(/obj/machinery/cryopod, announce, OWN_CONTAINED)
 
-/// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod
 	return control_computer
