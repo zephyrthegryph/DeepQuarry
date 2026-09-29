@@ -191,9 +191,8 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	else if(istype(W, /obj/item/clothing) || istype(W, /obj/item/bedsheet) || istype(W, /obj/item/stack/hairlesshide))
 		if(length(washing) < 5)
 			if(state in list(EMPTY_OPEN, FULL_OPEN))
-				user.drop_item()
-				W.forceMove(src)
-				own_add(src, "washing", W)
+				if(!own_add(src, nameof(src.washing), W, user = user))
+					return TRUE
 				set_state(FULL_OPEN)
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
@@ -207,8 +206,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	if(state == EMPTY_OPEN) //Checking to make sure nobody closed it before we shoved em in it.
 		var/mob/grabbed = G?.grab_target()
 		act_message(user, grabbed, MSG_SELF("You stuff %T% into the [src] and shut the door!"), MSG_OTHERS("%U% stuffs %T% into the [src] and shuts the door!"))
-		grabbed.forceMove(src)
-		own_add(src, "washing", grabbed)
+		own_add(src, nameof(src.washing), grabbed, user = user, into = TRUE)
 		consume(G, user)
 		set_state(FULL_CLOSED)
 	else

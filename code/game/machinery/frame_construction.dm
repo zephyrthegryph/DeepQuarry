@@ -137,9 +137,8 @@
 	var/obj/structure/frame/frame = target
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	actor.drop_item()
-	held.forceMove(frame)
-	own_set(frame, "circuit", held) // CONTAINED: in the frame first
+	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
+		return TRUE
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()

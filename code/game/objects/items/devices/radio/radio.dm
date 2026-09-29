@@ -666,9 +666,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		return TRUE
 
 	if(!keyslot)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "keyslot", W)
+		own_set(src, nameof(src.keyslot), W, user = user)
 
 	recalculateChannels()
 	return TRUE

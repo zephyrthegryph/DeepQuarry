@@ -34,9 +34,7 @@
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
 	if(B)
 		B.preserved = TRUE
-		if(B.loc != src)
-			B.forceMove(src)
-	own_set(src, "brainobj", B) // contained: moved in first
+	own_set(src, nameof(src.brainobj), B, into = TRUE)
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 

@@ -28,9 +28,8 @@ OWN(/obj/item/gun/launcher/rocket, rockets, OWN_CONTAINED)
 	. = INTERACTION_HANDLED_PASS
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
-			user.drop_item()
-			I.forceMove(src)
-			own_add(src, "rockets", I)
+			if(!own_add(src, nameof(src.rockets), I, user = user))
+				return
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))
 		else

@@ -831,6 +831,7 @@
 #include "code\datums\ownership\registry_types.dm"
 #include "code\datums\ownership\shared.dm"
 #include "code\datums\ownership\table.dm"
+#include "code\datums\ownership\transfer.dm"
 #include "code\datums\om_events\atom_events.dm"
 #include "code\datums\om_events\signal_events.dm"
 #include "code\datums\behaviours\climbable.dm"

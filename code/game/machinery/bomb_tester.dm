@@ -98,12 +98,9 @@ DECLARE_APPEARANCE(/obj/machinery/bomb_tester, "appearance_tank2", list("1" = li
 	return !tank1 || !tank2
 
 /obj/machinery/bomb_tester/proc/interaction_load_tank(mob/user, obj/item/I, datum/interaction/interaction)
-	user.drop_item(I)
-	I.forceMove(src)
-	if(!tank1)
-		own_set(src, "tank1", I)
-	else
-		own_set(src, "tank2", I)
+	var/adopted = tank1 ? own_set(src, nameof(src.tank2), I, user = user) : own_set(src, nameof(src.tank1), I, user = user)
+	if(!adopted)
+		return TRUE
 	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
@@ -177,9 +174,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_add_tank)
 			to_chat(ui.user, span_warning("Slot [slot] is full."))
 			return
 
-		ui.user.drop_item(T)
-		T.forceMove(src)
-		own_set(src, slot_var, T) // CONTAINED: in our contents first
+		own_set(src, slot_var, T, user = ui.user)
 		return TRUE
 	else
 		to_chat(ui.user, span_warning("You must be wielding a tank to insert it!"))

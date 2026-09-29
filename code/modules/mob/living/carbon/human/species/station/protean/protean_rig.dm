@@ -122,12 +122,11 @@
 	if(istype(B,/obj/item/storage/backpack))
 		if(spawned)
 			B = P.get_equipped_item(SLOT_ID_BACK)
-			P.unEquip(P.get_equipped_item(SLOT_ID_BACK))
 		if(QDELETED(B)) // for mannequins or such
 			return
-		B.forceMove(src)
-		own_set(src, "rig_storage", B)
-		P.drop_item(B)
+		// Off the back (spawned) or out of the hand, into the rig.
+		if(!own_set(src, nameof(src.rig_storage), B, user = spawned ? null : P, into = TRUE))
+			return
 		to_chat(P, span_notice("[B] has been integrated into the [src]."))
 		if(spawned)	//This feels very dumb to have a second if but I'm lazy
 			P.equip_to_slot_if_possible(src, SLOT_ID_BACK)
@@ -315,11 +314,9 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			to_chat(user, "\The [src] already has a tank installed.")
 			return INTERACTION_HANDLED_PASS
 
-		if(!user.unEquip(W))
-			return INTERACTION_HANDLED_PASS
 
-		W.forceMove(src)
-		own_set(src, "air_supply", W) // contained: must already be inside
+		if(!own_set(src, nameof(src.air_supply), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, "You slot [W] into [src] and tighten the connecting valve.")
 		return INTERACTION_HANDLED_PASS
 

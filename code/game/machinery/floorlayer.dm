@@ -137,9 +137,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	return 1
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
-	tile.forceMove(src)
 	if(!T)
-		own_set(src, "T", tile)
+		own_set(src, nameof(src.T), tile, into = TRUE)
+	else
+		tile.forceMove(src)
 
 	SortStacks()
 
