@@ -10,9 +10,17 @@
 // that the holder's teardown cancels; CLOCK_WORLD runs on real time. Setting again replaces the timer;
 // keep_longer = TRUE keeps whichever of the two ends later.
 
+/// var name -> list(token, prior value, clock).
 /datum/var/tmp/list/timed_until
 
 OWN_TIMER(/datum, timed)
+
+/// Identifies one timed_set() so a replaced timer that still fires is ignored.
+GLOBAL_VAR_INIT(timed_token_seq, 0)
+
+#define TIMED_TOKEN 1
+#define TIMED_PRIOR 2
+#define TIMED_CLOCK 3
 
 /// Writes V on D through its setter (or directly, then changed()). Framework use only.
 /proc/timed_write(datum/D, var_name, value)
@@ -28,42 +36,61 @@ OWN_TIMER(/datum, timed)
 /proc/timed_set(datum/D, var_name, value, for_time, clock = CLOCK_OWN, keep_longer = FALSE, revert_to)
 	if(!D || QDELING(D) || !(var_name in D.vars))
 		CRASH("timed_set: [D?.type] has no var [var_name]")
-	var/ends = world.time + for_time
-	var/pending = D.timed_until?[var_name]
-	if(keep_longer && pending && pending[1] > ends)
+	var/list/pending = D.timed_until?[var_name]
+	if(keep_longer && pending && time_left(D, var_name) > for_time)
 		return FALSE
-	var/prior = pending ? pending[2] : D.vars[var_name]
+	var/prior = pending ? pending[TIMED_PRIOR] : D.vars[var_name]
 	if(!isnull(revert_to))
 		prior = revert_to
+	if(pending)
+		timed_cancel(D, var_name)
 	timed_write(D, var_name, value)
 	if(!for_time)
 		return TRUE
-	LAZYSET(D.timed_until, var_name, list(ends, prior))
-	var/slot = "timed:[var_name]"
+	var/token = ++GLOB.timed_token_seq
+	LAZYSET(D.timed_until, var_name, list(token, prior, clock))
 	if(clock == CLOCK_WORLD)
-		// Real time runs on the global owner; the call is dropped if D is deleted first.
-		om_after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, ends)
+		// Real time runs on the global owner. It holds a ref text, not D, so the timer never keeps a
+		// deleted holder alive; the token check drops a stale or reused ref.
+		om_after_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire_ref), REF(D), var_name, token)
 	else
-		om_after_slot(D, slot, for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, ends)
+		om_after_slot(D, "timed:[var_name]", for_time, GLOBAL_PROC_REF(timed_expire), D, var_name, token)
 	return TRUE
 
-/proc/timed_expire(datum/D, var_name, ends)
+/proc/timed_expire_ref(ref_text, var_name, token)
+	var/datum/D = locate(ref_text)
+	if(isdatum(D))
+		timed_expire(D, var_name, token)
+
+/proc/timed_expire(datum/D, var_name, token)
 	if(QDELETED(D))
 		return
 	var/list/pending = D.timed_until?[var_name]
-	if(!pending || pending[1] != ends)
+	if(!pending || pending[TIMED_TOKEN] != token)
 		return
 	LAZYREMOVE(D.timed_until, var_name)
-	timed_write(D, var_name, pending[2])
+	timed_write(D, var_name, pending[TIMED_PRIOR])
 
-/// Deciseconds until var_name reverts (0 when nothing is pending).
+/// Deciseconds until var_name reverts (0 when nothing is pending), on the clock it was set on.
 /proc/time_left(datum/D, var_name)
 	var/list/pending = D.timed_until?[var_name]
-	return pending ? max(0, pending[1] - world.time) : 0
+	if(!pending)
+		return 0
+	if(pending[TIMED_CLOCK] == CLOCK_WORLD)
+		return om_timer_slot_left(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]") || 0
+	return om_timer_slot_left(D, "timed:[var_name]") || 0
 
 /// Cancels a pending revert, leaving the current value.
 /proc/timed_cancel(datum/D, var_name)
-	if(!D.timed_until?[var_name])
+	var/list/pending = D.timed_until?[var_name]
+	if(!pending)
 		return
 	LAZYREMOVE(D.timed_until, var_name)
-	om_cancel_timer_slot(D, "timed:[var_name]")
+	if(pending[TIMED_CLOCK] == CLOCK_WORLD)
+		om_cancel_timer_slot(null, "timed:[SHARED_CACHE_UID(D)]:[var_name]")
+	else
+		om_cancel_timer_slot(D, "timed:[var_name]")
+
+#undef TIMED_TOKEN
+#undef TIMED_PRIOR
+#undef TIMED_CLOCK

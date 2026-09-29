@@ -80,6 +80,7 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 		var/datum/D = Q[i]
 		D.refresh_queued = FALSE
 		if(QDELETED(D))
+			D.refresh_bits = 0
 			continue
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
@@ -129,6 +130,12 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 	L.reset()
 	A.draw(L)
 	if(!L.touched)
+		if(apply && !isnull(A.look_key))
+			// It drew before and draws nothing now: drop the overlays the last look added.
+			if(A.look_overlays)
+				A.cut_overlay(A.look_overlays)
+				A.look_overlays = null
+			A.look_key = null
 		return null
 	var/key = L.change_key()
 	if(apply && key != A.look_key)
@@ -137,7 +144,7 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 	return key
 
 /proc/refresh_verbs(atom/A, apply = TRUE)
-	var/list/hidden = A.hidden_verbs()
+	var/list/hidden = A.hidden_verbs() || list()
 	if(!length(hidden) && !length(A.refresh_hidden_verbs))
 		return hidden
 	if(!apply)
@@ -152,7 +159,9 @@ GLOBAL_LIST_EMPTY(refresh_queue)
 
 // ---- the background sweep ----
 
-/// Atoms with something derived (a look, hidden verbs, periodic work). Weakly held: dead ones drop.
+/// Atoms with something derived (a look, hidden verbs, periodic work), as ref text -> TRUE. Refs,
+/// not the atoms: the sweep list never keeps a deleted atom alive (it would hard-delete every drawn
+/// atom); a ref that no longer names a swept atom is dropped when the sweep reaches it.
 GLOBAL_LIST_EMPTY(refresh_sweep_list)
 GLOBAL_VAR_INIT(refresh_sweep_index, 1)
 /// Drift reports this round (the drift test reads them).
@@ -166,7 +175,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	if(isnull(A.look_key) && !A.refresh_hidden_verbs && !A.periodic_cadence)
 		return
 	A.refresh_swept = TRUE
-	GLOB.refresh_sweep_list += A
+	GLOB.refresh_sweep_list[REF(A)] = TRUE
 
 /// Re-checks up to `budget` swept atoms: a derived result that differs from what is applied means a
 /// change was never marked. Production applies it; test builds report REFRESH DRIFT and fail.
@@ -176,8 +185,8 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	while(checked < budget && length(L))
 		if(GLOB.refresh_sweep_index > length(L))
 			GLOB.refresh_sweep_index = 1
-		var/atom/A = L[GLOB.refresh_sweep_index]
-		if(QDELETED(A))
+		var/atom/A = locate(L[GLOB.refresh_sweep_index])
+		if(!isatom(A) || QDELETED(A) || !A.refresh_swept)
 			L.Cut(GLOB.refresh_sweep_index, GLOB.refresh_sweep_index + 1)
 			continue
 		GLOB.refresh_sweep_index++
@@ -191,7 +200,7 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 	var/key = refresh_look(A, apply = FALSE)
 	if(key != A.look_key)
 		drift += "draw()"
-	var/list/hidden = A.hidden_verbs()
+	var/list/hidden = A.hidden_verbs() || list()
 	var/list/was = A.refresh_hidden_verbs || list()
 	if(length(hidden ^ was))
 		drift += "hidden_verbs()"
