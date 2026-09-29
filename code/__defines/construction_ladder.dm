@@ -6,13 +6,13 @@
 #define LADDER_ANY "*"
 
 // What a step's cost does with the held item.
-/// Only checked (a tool, or holding()).
+/// Only checked (a tool, or a cap_use_on() cost without uses).
 #define LADDER_ITEM_KEEP 0
-/// A stack's units are used (using() on a stack).
+/// A stack's units are used (a cap_use_on() cost on a stack, with uses).
 #define LADDER_ITEM_USE 1
-/// The part is used up (using() on anything else).
+/// The part is used up (a cap_use_on() cost on anything else, with uses).
 #define LADDER_ITEM_DELETE 2
-/// The part goes into the holder (inserting()).
+/// The part goes into the holder (a cap_insert() cost).
 #define LADDER_ITEM_INSERT 3
 
 // Cost kinds.
