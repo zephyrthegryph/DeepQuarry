@@ -315,6 +315,10 @@
 	om_slot_left(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
+	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
+	// naming it lets it go.
+	if(thing.own_holder_ref && !QDELETED(holder))
+		own_contents_exit(holder, thing)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id, flags = 0)

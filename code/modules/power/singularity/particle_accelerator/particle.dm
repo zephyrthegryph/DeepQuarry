@@ -77,22 +77,33 @@
 /obj/effect/accelerated_particle/proc/move(lag)
 	if(target())
 		if(movetotarget)
-			if(!step_towards(src,target()))
-				src.forceMove(get_step(src, get_dir(src,target())))
+			if(!step_towards(src,target()) && !particle_force_step(get_step(src, get_dir(src,target()))))
+				return
 			if(get_dist(src,target()) < 1)
 				movetotarget = 0
 		else
-			if(!step(src, get_step_away(src,source())))
-				src.forceMove(get_step(src, get_step_away(src,source())))
+			// get_step_away() already answers the turf to go to.
+			var/turf/away = get_step_away(src, source())
+			if(!(away && Move(away)) && !particle_force_step(away))
+				return
 	else
-		if(!step(src,dir))
-			src.forceMove(get_step(src,dir))
+		if(!step(src,dir) && !particle_force_step(get_step(src,dir)))
+			return
 	movement_range--
 	if(movement_range <= 0)
 		qdel(src)
 		return
 
 	om_after(src, lag, PROC_REF(move), lag)
+
+/// Pushes the particle onto `dest` when a normal step was blocked. At the map edge there is no
+/// turf to push onto: the particle leaves the map and is deleted (FALSE).
+/obj/effect/accelerated_particle/proc/particle_force_step(turf/dest)
+	if(!dest)
+		qdel(src)
+		return FALSE
+	forceMove(dest)
+	return TRUE
 
 /// the source this refers to: a relation view, null once that is deleted.
 /obj/effect/accelerated_particle/proc/source() as /turf

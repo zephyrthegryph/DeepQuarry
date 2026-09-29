@@ -33,11 +33,15 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 		own(probe)
 	return made
 
-/// Drops the test hooks; the probes are own()ed and go with the test.
+/// Drops the test hooks; the probes are own()ed and go with the test. The probe log is read
+/// after this, so it is cleared when the test goes (Destroy), not here.
 /datum/unit_test/dq_materialize_batch/proc/reset_hooks()
 	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
+
+/datum/unit_test/dq_materialize_batch/Destroy()
 	GLOB.dq_batch_probe_log.Cut()
+	return ..()
 
 /// Index of the first (or last) log entry of `kind` for any atom in `atoms`.
 /datum/unit_test/dq_materialize_batch/proc/log_index(kind, list/atoms, last = FALSE)
