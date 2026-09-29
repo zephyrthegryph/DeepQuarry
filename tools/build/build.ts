@@ -58,7 +58,7 @@ import {
   writeJson,
 } from './lib/bench';
 import { renderReport } from './lib/bench_report';
-import { DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
+import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
 
@@ -325,6 +325,12 @@ export const VerdigrisTarget = new Juke.Target({
     // library instead of compiling the whole Rust workspace.
     if (process.env.DQ_PREBUILT_VERDIGRIS === '1' && fs.existsSync(VERDIGRIS_LIB)) {
       Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
+      // Warn now (before a long compile); DreamDaemon() refuses to boot on it.
+      try {
+        checkVerdigrisAbi();
+      } catch {
+        Juke.logger.warn('verdigris: the prebuilt library does not match this tree; test/bench/server worlds will refuse to boot.');
+      }
       return false;
     }
     const probe = spawnSync('cargo', ['--version'], {
