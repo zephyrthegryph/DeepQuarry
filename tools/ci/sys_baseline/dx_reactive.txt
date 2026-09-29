@@ -25,7 +25,6 @@ dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Name", 
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Value", "entry" = E.value),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Buyer", "entry" = GLOB.supply_service.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
 dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Market premium", "entry" = E.market_premium)
-dx_untracked_read	code/game/machinery/computer/supply.dm	var/datum/department/primary_department = SSjob.get_primary_department_of_job(human_user.job)
 dx_untracked_read	code/game/machinery/computer/supply.dm	if(primary_department?.name in GLOB.department_accounts)
 dx_untracked_read	code/game/machinery/computer/supply.dm	department = primary_department.name
 dx_untracked_read	code/game/machinery/computer/supply.dm	data["personal_balance"] = personal_account?.money || 0

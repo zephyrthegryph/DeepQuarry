@@ -350,6 +350,8 @@ def own_roots_of(proc, relations=MARKING_RELATIONS):
         name, expr = m.group(1), m.group(2).strip()
         if expr in roots:
             roots.add(name)
+        elif expr in context or expr in CONTEXT_ROOTS:
+            context.add(name)  # `var/datum/interaction/capability/E = entry`: still context
         elif CAP_DATA_EXPR.match(expr) and (not CAP_DATA_EXPR.match(expr).group(1) or CAP_DATA_EXPR.match(expr).group(1) in roots):
             roots.add(name)
         elif CONFIG_CALLS.match(expr):
@@ -477,7 +479,8 @@ SETTER(/obj/item/cell, sealed)
 	look.overlay("w", when = C.rigged)
 
 /datum/capability/meter/gate(atom/holder, mob/user, datum/interaction/entry)
-	if(user.stat || entry.behind)
+	var/datum/interaction/capability/E = entry
+	if(user.stat || entry.behind || E.cap)
 		return "no"
 
 /datum/capability/meter/ui_data(atom/holder, mob/user, list/data)
