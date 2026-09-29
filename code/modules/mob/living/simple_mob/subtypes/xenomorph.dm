@@ -71,8 +71,8 @@ DECLARE_REF(/mob/living/simple_mob/xeno_ch, "spin_action", OWNED, null)
 /mob/living/simple_mob/xeno_ch/Login()
 	. = ..()
 	faction = "neutral"
-	add_verb(src,/mob/living/simple_mob/xeno_ch/proc/xeno_build) // TGPanel
-	add_verb(src,/mob/living/simple_mob/verb/toggle_speech_sounds) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/xeno_ch/proc/xeno_build, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/verb/toggle_speech_sounds, src) // TGPanel
 	build_action.Grant(src)
 
 // Xenomorph hunter subtype
@@ -97,9 +97,9 @@ DECLARE_REF(/mob/living/simple_mob/xeno_ch, "spin_action", OWNED, null)
 
 /mob/living/simple_mob/xeno_ch/hunter/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel
-	add_verb(src,/mob/living/proc/hide) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pounce_toggle, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src) // TGPanel
 	pounce_action.Grant(src)
 
 //Xenomorph Sentinel subtype
@@ -124,11 +124,11 @@ DECLARE_REF(/mob/living/simple_mob/xeno_ch, "spin_action", OWNED, null)
 
 /mob/living/simple_mob/xeno_ch/sentinel/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/pounce_toggle) // TGPanel
-	add_verb(src,/mob/living/proc/hide) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pounce_toggle, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/neurotoxin, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/acidspit, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/corrosive_acid, src) // TGPanel
 	pounce_action.Grant(src)
 	neurotox_action.Grant(src)
 	acidspit_action.Grant(src)
@@ -156,10 +156,10 @@ DECLARE_REF(/mob/living/simple_mob/xeno_ch, "spin_action", OWNED, null)
 
 /mob/living/simple_mob/xeno_ch/queen/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/neurotoxin) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/acidspit) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/corrosive_acid) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/speen) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/neurotoxin, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/acidspit, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/corrosive_acid, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/speen, src) // TGPanel
 	neurotox_action.Grant(src)
 	acidspit_action.Grant(src)
 	corrode_action.Grant(src)

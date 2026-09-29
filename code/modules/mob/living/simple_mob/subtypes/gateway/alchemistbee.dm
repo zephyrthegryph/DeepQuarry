@@ -54,8 +54,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()

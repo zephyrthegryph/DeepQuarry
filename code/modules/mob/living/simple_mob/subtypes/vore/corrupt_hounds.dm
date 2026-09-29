@@ -118,8 +118,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
-	add_verb(src, /mob/living/proc/toggle_rider_reins)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = 0
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/space/Process_Spacemove(check_drift = 0)
@@ -359,8 +359,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = 3
 
 /mob/living/simple_mob/vore/retaliate/corrupthound/janihound/space/Process_Spacemove(check_drift = 0)

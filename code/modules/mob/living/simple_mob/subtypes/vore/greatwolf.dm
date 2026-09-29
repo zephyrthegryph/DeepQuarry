@@ -94,9 +94,9 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
-	add_verb(src,/mob/living/proc/toggle_rider_reins)
-	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \

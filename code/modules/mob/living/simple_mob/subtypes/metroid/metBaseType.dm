@@ -68,7 +68,7 @@
 
 /mob/living/simple_mob/metroid/Initialize(mapload)
 	set_nutrition(100) //Have them start off pretty hungry still.
-	add_verb(src,/mob/living/proc/ventcrawl) // TGPanel //May not do anything at the moment.
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) // TGPanel //May not do anything at the moment.
 	return ..()
 
 /datum/say_list/metroid

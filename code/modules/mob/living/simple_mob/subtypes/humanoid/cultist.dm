@@ -758,8 +758,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
@@ -795,8 +795,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
@@ -833,8 +833,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
@@ -870,8 +870,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()

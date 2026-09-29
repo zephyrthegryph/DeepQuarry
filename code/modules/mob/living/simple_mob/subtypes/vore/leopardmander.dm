@@ -68,8 +68,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
-	add_verb(src,/mob/living/proc/toggle_rider_reins)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = -1 // 2 on Downstream
 	plane_holder.set_vis(VIS_CH_HEALTH_VR, 1)
 	plane_holder.set_vis(VIS_CH_ID, 1)
@@ -179,7 +179,7 @@
 
 /mob/living/simple_mob/vore/leopardmander/exotic/Initialize(mapload)
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow, src)
 
 /mob/living/simple_mob/vore/leopardmander/exotic/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
