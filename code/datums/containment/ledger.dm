@@ -423,7 +423,8 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 
 /// Aggregate of measure `id` over everything inside, or null.
 /datum/ledger/proc/aggregate(id)
-	var/index = (CACHED(ledger_measure_ids, "ids")).Find(id)
+	var/list/ids = CACHED(ledger_measure_ids, "ids")
+	var/index = ids.Find(id)
 	if(!index)
 		CRASH("[id] is not a ledger aggregate")
 	var/datum/property_accumulator/acc = accumulators[index]

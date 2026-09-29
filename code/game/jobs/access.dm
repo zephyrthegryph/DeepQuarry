@@ -69,7 +69,8 @@
 		all_jobs.Add(jobdatum.title)
 	return all_jobs
 
-TYPE_TABLE(/proc, get_all_centcom_jobs, list("VIP Guest", \
+/// Every CentCom job title (they get the NT logo on HUDs).
+GLOBAL_LIST_INIT(centcom_job_names, list("VIP Guest", \
 		"Custodian", \
 		"Thunderdome Overseer", \
 		"Intel Officer", \
@@ -123,7 +124,7 @@ TYPE_TABLE(/proc, get_all_centcom_jobs, list("VIP Guest", \
 		if(I.rank in job_icons)
 			return I.rank
 
-		var/centcom = TYPE_TABLE_GET(src, get_all_centcom_jobs)
+		var/centcom = GLOB.centcom_job_names
 		if(I.assignment	in centcom) //Return with the NT logo if it is a CentCom job
 			return "CentCom"
 		if(I.rank in centcom)
