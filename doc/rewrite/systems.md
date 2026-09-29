@@ -167,10 +167,24 @@ COW_LIST(src, products)[/obj/item/soap] = 3      // per-instance copy on first w
 - Values are shared: test builds runtime on a mutation (the shared-cache guard).
 - Procs that allocate the same constant list per call become `TYPE_TABLE` or a module constant
   (`GLOBAL_LIST_INIT`, or a proc-free `var/static` table read directly).
+- Global tables that must be built lazily (they need registries, subsystems or other globals)
+  use `GLOBAL_TABLE(name, GLOBAL_PROC_REF(builder))` + `GLOBAL_TABLE_GET(name)` (a one-entry
+  shared cache; `GLOBAL_TABLE_RESET(name)` rebuilds). Constant literal global tables are plain
+  `GLOBAL_LIST_INIT`.
+- As built (wave result): 139 declared tables with 1158 per-type overrides (the item
+  `hold/suit_storage/fit/equip_constraint()` procs became the `*_spec` tables, `get_ai_behaviors`,
+  `get_stages`, the cargo profiles, preference choices, ...). Before: 273 static getters, 437
+  constant allocations, 47 "not worth it" annotations (first lint shape); after: 0 of each with
+  the full-shape lint. Remaining keeps are `ALLOW(sys_*)` with reasons: loadout default
+  metadata (owned by the player's preferences), the armour soak scratch buffer, the extrapolator
+  result container, a one-shot builder's input rows, and the object model's
+  `declared_cache_vars()` hook (owned by the refs lead).
 - Lint (`tools/ci/sys_rules/tables.py`): `sys_static_getter` (a proc returning a proc-local
   `var/static/list` in any form, or a per-type override returning a `GLOB` list),
-  `sys_const_list_alloc` (a non-empty constant `list(...)` returned per call, or a local one
-  that is only read), `sys_not_worth_it_annotation` (the old instance_list "not worth it" keep).
+  `sys_const_list_alloc` (a non-empty constant `list(...)` returned per call from a proc whose
+  every value-returning path returns a constant literal, one-line `if(x) return list(...)`
+  branches included; or a local constant list that is only read), `sys_not_worth_it_annotation`
+  (the old instance_list "not worth it" keep). Code in `/* */` blocks is skipped.
 
 ## 8. One loot system
 
