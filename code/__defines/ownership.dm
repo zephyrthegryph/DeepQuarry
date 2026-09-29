@@ -43,7 +43,7 @@
 
 // ---- table entry layout: list(kind, arg, partner, extra, is_list, watch) ----
 #define OWNE_KIND 1
-/// OWN: policy, or a proc path (policy_proc). REL: shape. PROTO/SHARED: null.
+/// OWN: policy, or a proc name (policy_proc). REL: shape. PROTO/SHARED: null.
 #define OWNE_ARG 2
 /// REL pair/symmetric: the partner var name. OWN with if_var: the flag var.
 #define OWNE_PARTNER 3

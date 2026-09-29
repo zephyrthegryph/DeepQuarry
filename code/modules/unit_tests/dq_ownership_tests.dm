@@ -384,8 +384,8 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 // ---- the four declaration concepts: own() policies, rel() watch ----
 
 /datum/own_test_policy_holder
-	var/datum/own_test_child/spilled
-	var/datum/own_test_child/conditional
+	var/obj/spilled
+	var/obj/conditional
 	var/datum/own_test_child/by_proc
 	var/datum/own_test_child/plain
 	var/keep_it = FALSE
@@ -404,7 +404,7 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 
 /datum/unit_test/ownership_declared_policies/Run()
 	var/datum/own_test_policy_holder/H = new
-	var/datum/own_decls/table = own_table_of(H)
+	var/datum/own_table/table = own_table_of(H)
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.spilled), table.entries[nameof(H.spilled)]), OWN_SPILL, "policy = sets the policy")
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_DELETE, "else_policy applies while if_var is false")
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_DELETE, "policy_proc is asked")
@@ -412,7 +412,7 @@ OM_FIELD_TYPED(/datum/own_test_field_holder, tmp/datum/own_test_child, watched, 
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.conditional), table.entries[nameof(H.conditional)]), OWN_SPILL, "policy applies while if_var is true")
 	TEST_ASSERT_EQUAL(own_policy(H, nameof(H.by_proc), table.entries[nameof(H.by_proc)]), OWN_CONTAINED, "policy_proc answers from state")
 	TEST_ASSERT(isnull(table.entries[nameof(H.plain)]), "an annotation-only own() declares no kind")
-	TEST_ASSERT(nameof(H.plain) in table.keep, "keep_after_destroy is recorded")
+	TEST_ASSERT(nameof(H.plain) in table.keep_vars, "keep_after_destroy is recorded")
 	qdel(H)
 
 /datum/own_test_watch_target

@@ -57,7 +57,8 @@
  *
  * - `policy`: OWN_DELETE (destroyed with the holder), OWN_SPILL (a movable drops to the holder's
  *   drop location) or OWN_CONTAINED (a movable in the holder's contents; its ledger slot decides).
- * - `policy_proc`: a proc path on the holder returning the policy at teardown (instead of `policy`).
+ * - `policy_proc`: PROC_REF(name) / TYPE_PROC_REF(type, name) of a holder proc returning the policy at
+ *   teardown (instead of `policy`).
  * - `if_var` / `else_policy`: `policy` while the holder's var `if_var` (a nameof()) is true, else
  *   `else_policy`.
  * - Annotations: `keep_after_destroy` (the leak check skips the var), `pool_reset`
@@ -228,9 +229,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		switch(entry[OWNE_KIND])
 			if(OWNK_OWN)
 				var/policy = entry[OWNE_ARG]
-				if(!ispath(policy) && !(policy in list(OWN_DELETE, OWN_SPILL, OWN_CONTAINED)))
+				var/by_proc = istext(policy) || ispath(policy)
+				if(!by_proc && !(policy in list(OWN_DELETE, OWN_SPILL, OWN_CONTAINED)))
 					OWN_REPORT("[D.type].[var_name]: unknown teardown policy [policy]")
-				if(ispath(policy) && !hascall(D, own_proc_name(policy)))
+				if(by_proc && !hascall(D, own_proc_name(policy)))
 					OWN_REPORT("[D.type].[var_name]: policy proc [policy] is not a proc of [D.type]")
 				if(policy == OWN_CONTAINED && !ismovable(D) && !isturf(D))
 					OWN_REPORT("[D.type].[var_name]: CONTAINED on a type with no contents")

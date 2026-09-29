@@ -132,7 +132,7 @@
 /// The policy for holder.var_name's values now (a conditional policy proc or OWN_IF flag resolved).
 /proc/own_policy(datum/holder, var_name, list/entry)
 	var/policy = entry[OWNE_ARG]
-	if(ispath(policy))
+	if(istext(policy) || ispath(policy))
 		policy = call(holder, own_proc_name(policy))()
 	else if(entry[OWNE_PARTNER] && !holder.vars[entry[OWNE_PARTNER]])
 		policy = entry[OWNE_EXTRA]
