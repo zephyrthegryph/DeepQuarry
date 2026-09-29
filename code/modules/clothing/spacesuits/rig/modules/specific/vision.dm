@@ -246,7 +246,7 @@
 	vision_index = 1
 	// vision_modes starts as a list of types; it becomes the module's owned instances.
 	var/list/mode_types = vision_modes
-	vision_modes = null
+	own_clear(src, "vision_modes") // the type list holds no children yet: this only empties it
 	for(var/vision_mode in mode_types)
 		var/datum/rig_vision/vision_datum = own_add(src, "vision_modes", new vision_mode)
 		if(!vision)
