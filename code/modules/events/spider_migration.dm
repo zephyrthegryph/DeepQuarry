@@ -37,7 +37,7 @@
 	while (i <= num_groups)
 		var/group_size = rand(group_size_min, group_size_max)
 		for (var/j = 1, j <= group_size, j++)
-			LAZYADD(spawned_spider, new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
+			own_add(src, "spawned_spider", new /mob/living/simple_mob/animal/giant_spider/frost/event(spawn_locations[i]))
 		i++
 
 /datum/event/spider_migration/end()

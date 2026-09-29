@@ -96,7 +96,7 @@
  */
 /datum/experiment/proc/finish_experiment(datum/experiment_handler/experiment_handler)
 	completed = TRUE
-	experiment_handler.selected_experiment_handle = null
+	rel_clear(experiment_handler, "selected_experiment")
 	var/announcetext = experiment_handler.linked_web().complete_experiment(src)
 	experiment_handler.announce_message_to_all(announcetext)
 

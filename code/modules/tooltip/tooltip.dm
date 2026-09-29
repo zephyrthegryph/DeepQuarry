@@ -17,11 +17,11 @@
 // React owns is-visible (it shows the element after sizing it).
 
 /datum/tooltip
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	var/control = "mapwindow.tooltip"
 	var/showing = 0
 	var/queueHide = 0
-	var/tmp/last_target_handle
+	var/tmp/atom/last_target
 	var/datum/tgui_window/tooltip_window
 	// State that gets pushed to the React side. When `_visible` is
 	// FALSE the React component renders nothing; otherwise it
@@ -41,20 +41,22 @@
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
-	owner_handle = om_handle(C)
-	tooltip_window = new(C, control)
+	owner = C // a client, not a datum: plain (the client owns us as its tooltips)
+	own_set(src, "tooltip_window", new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend
 	// never refreshes (it stays on its initial visible=FALSE/empty data).
 	..()
 
-// ALLOW(lifecycle): closes its tooltip window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
-/datum/tooltip/lifecycle_unbind()
-	tooltip_window?.close()
+// Our tooltip window (owned) is closed client-side whenever it leaves us: replaced, or disposed
+// of with us in teardown.
+/datum/tooltip/on_owned_release(var_name, datum/child)
+	if(var_name == "tooltip_window")
+		var/datum/tgui_window/window = child
+		window.close()
 	return ..()
 
-// drops its owner and last target.
 /datum/tooltip/tgui_state(mob/user)
 	return GLOB.tgui_always_state
 
@@ -83,7 +85,7 @@
 	if(!isnull(last_target()))
 		om_unhook(last_target(), /datum/om/event/qdeleting, src)
 	om_hook(thing, /datum/om/event/qdeleting, src, PROC_REF(on_target_qdel))
-	last_target_handle = om_handle(thing)
+	rel_set(src, "last_target", thing)
 	_revision++
 	queueHide = FALSE
 
@@ -148,7 +150,7 @@
 /datum/tooltip/proc/on_target_qdel(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	hide()
-	last_target_handle = null
+	rel_clear(src, "last_target")
 
 /datum/tooltip/proc/do_hide(hide_revision)
 	if(hide_revision != _revision)
@@ -159,7 +161,7 @@
 		return
 	if(last_target())
 		om_unhook(last_target(), /datum/om/event/qdeleting, src)
-	last_target_handle = null
+	rel_clear(src, "last_target")
 	_visible = FALSE
 	SStgui.update_uis(src)
 
@@ -197,12 +199,11 @@
 		return
 	user.client.tooltips.hide(tip_src)
 
-DECLARE_REF(/datum/tooltip, "tooltip_window", OWNED, null)
 
-/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_target this refers to (a relation view: null once that is deleted).
 /datum/tooltip/proc/last_target() as /atom
-	return om_resolve(last_target_handle)
+	return last_target
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this tooltip belongs to.
 /datum/tooltip/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner

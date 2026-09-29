@@ -36,23 +36,23 @@
 	var/floor
 	/// value *= multiplier (a restriction). Null = none.
 	var/multiplier
-	/// What provides it. The support lapses when the source is deleted.
-	var/source
+	/// What provides it: a relation view. The support lapses when the source is deleted (the
+	/// view reads null; every support is created with a source).
+	var/datum/source
 	/// Readable source name, for logs and diagnosis.
 	var/source_name
 	/// When the support lapses (a cooldown; 0 = until removed).
 	COOLDOWN_DECLARE(expires_at)
-	/// Optional validity check (performer adjacent, machine powered...).
-	var/datum/callback/still_valid
+	/// Optional validity check (performer adjacent, machine powered...): an om_callable() spec.
+	var/list/still_valid
 
-DECLARE_REF(/datum/body_support, "still_valid", OWNED, null)
 
 /datum/body_support/proc/is_valid()
 	if(COOLDOWN_STARTED(src, expires_at) && COOLDOWN_FINISHED(src, expires_at))
 		return FALSE
-	if(source && !om_resolve(source))
+	if(!source)
 		return FALSE
-	if(still_valid && !still_valid.Invoke())
+	if(still_valid && !om_run(still_valid))
 		return FALSE
 	return TRUE
 
@@ -72,33 +72,32 @@ DECLARE_REF(/datum/body_support, "still_valid", OWNED, null)
 	/// The physiology, or null (simple and machine plans).
 	var/datum/physiology/physiology
 
-DECLARE_REF(/datum/body, "physiology", OWNED, null)
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
 /// `still_valid` fails). Re-adding from the same source refreshes it.
-/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, datum/callback/still_valid)
+/datum/body/proc/add_support(datum/source, factor_id, floor, duration = 0, list/still_valid)
 	return set_support(source, factor_id, floor, null, duration, still_valid)
 
 /// A multiplier below 1 on `factor_id` from `source`: a restriction (a
 /// chokehold on the airway, a crushing grip on the chest).
-/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, datum/callback/still_valid)
+/datum/body/proc/add_restriction(datum/source, factor_id, multiplier, duration = 0, list/still_valid)
 	return set_support(source, factor_id, null, multiplier, duration, still_valid)
 
-/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, datum/callback/still_valid)
+/datum/body/proc/set_support(datum/source, factor_id, floor, multiplier, duration, list/still_valid)
 	if(!physiology || !source)
 		return null
 	var/datum/body_support/S
 	for(var/datum/body_support/existing as anything in supports)
-		if(existing.factor_id == factor_id && om_resolve(existing.source) == source)
+		if(existing.factor_id == factor_id && existing.source == source)
 			S = existing
 			break
 	var/fresh = !S
 	if(fresh)
 		S = new
 		S.factor_id = factor_id
-		S.source = om_handle(source)
+		rel_set(S, "source", source)
 		S.source_name = "[source]"
-		LAZYADD(supports, S)
+		own_add(src, "supports", S)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
 	S.floor = floor
 	S.multiplier = multiplier
@@ -116,13 +115,12 @@ DECLARE_REF(/datum/body, "physiology", OWNED, null)
 /// Remove every support `source` provides.
 /datum/body/proc/remove_supports(datum/source)
 	for(var/datum/body_support/S as anything in supports?.Copy())
-		if(om_resolve(S.source) == source)
+		if(S.source == source)
 			drop_support(S, "removed")
 
 /datum/body/proc/drop_support(datum/body_support/S, reason)
-	LAZYREMOVE(supports, S)
 	log_runtime("PHYSIOLOGY: [key_name(owner)] lost the [S.source_name] support on factor [S.factor_id] ([reason])")
-	qdel(S)
+	own_remove(src, "supports", S)
 	invalidate(BODY_DIRTY_PHYSIOLOGY)
 
 /// Drop lapsed supports.
@@ -293,11 +291,10 @@ DECLARE_REF(/datum/body, "physiology", OWNED, null)
 	/// When the post-revival grace ends (a cooldown; 0 = none).
 	COOLDOWN_DECLARE(revival_grace_until)
 
-DECLARE_REF(/datum/physiology, "body", BACK, "physiology")
 
 /datum/physiology/New(datum/body/new_body)
 	..()
-	body = new_body
+	rel_set(src, "body", new_body)
 
 /// Recompute the derived values. Plans override. FALSE if the owner can't be
 /// evaluated yet (still being set up).

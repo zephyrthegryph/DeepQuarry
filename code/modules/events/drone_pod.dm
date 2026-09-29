@@ -1,5 +1,5 @@
 /datum/event/drone_pod_drop
-	var/tmp/land_target_handle
+	var/tmp/turf/land_target
 	var/attempt_amount = 10
 
 /datum/event/drone_pod_drop/setup()
@@ -13,7 +13,7 @@
 			land_spot_list += land_spot
 
 	target_spot = pick(land_spot_list)
-	land_target_handle =  om_handle(get_turf(target_spot))
+	rel_set(src, "land_target", get_turf(target_spot))
 
 	if(!land_target())
 		kill()
@@ -31,6 +31,6 @@
 	new /datum/random_map/droppod/supply(null, land_target().x-2, land_target().y-2, land_target().z, supplied_drops = list(/obj/structure/ghost_pod/manual/lost_drone/dogborg))
 
 
-/// LC-refs: the land_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the land_target var.
 /datum/event/drone_pod_drop/proc/land_target() as /turf
-	return om_resolve(land_target_handle)
+	return land_target

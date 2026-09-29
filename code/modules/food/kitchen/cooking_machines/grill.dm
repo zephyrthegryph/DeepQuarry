@@ -30,9 +30,8 @@
 
 /obj/machinery/appliance/cooker/grill/Initialize(mapload)
 	. = ..()
-	grill_loop = new(list(src), FALSE)
+	own_set(src, "grill_loop", new /datum/looping_sound/grill(list(src), FALSE))
 
-DECLARE_REF(/obj/machinery/appliance/cooker/grill, "grill_loop", OWNED, null)
 
 /obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
 	if(!has_stat(MACHINE_STAT_ANY))

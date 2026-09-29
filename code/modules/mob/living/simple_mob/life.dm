@@ -256,7 +256,7 @@
 /datum/om/stage/life/supernatural/idle(mob/living/simple_mob/self)
 	return !self.purge
 
-OM_TIMER_SLOT(/mob/living/simple_mob, update_icon_timer)
+OWN_TIMER(/mob/living/simple_mob, update_icon_timer)
 
 /mob/living/simple_mob/
 

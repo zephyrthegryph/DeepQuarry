@@ -6,7 +6,6 @@
 	/// deleted with the atom (was the update_on_z component's owned list).
 	var/tmp/list/image/z_update_images
 
-DECLARE_REF(/atom, "z_update_images", OWNED_LIST, null)
 
 /proc/dq_add_z_update_image(atom/a, image/img)
 	if(!img)

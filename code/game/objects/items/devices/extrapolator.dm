@@ -31,10 +31,10 @@
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		scanner = new starting_scanner(src) // ALLOW(decl): scanner from an Initialize argument
+		own_set(src, "scanner", new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
 	else if(istype(starting_scanner))
 		starting_scanner.forceMove(src)
-		scanner = starting_scanner
+		own_set(src, "scanner", starting_scanner)
 
 	refresh_parts()
 
@@ -47,7 +47,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	if(!scanner)
 		user.drop_item()
 		item.forceMove(src)
-		scanner = item
+		own_set(src, "scanner", item)
 		to_chat(user, span_notice("You install \the [scanner] in [src]."))
 		refresh_parts()
 	else
@@ -60,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove \the [scanner] from \the [src]."))
 	scanner.forceMove(drop_location())
-	scanner = null
+	own_take(src, "scanner")
 	playsound(src, tool.usesound, 50, 1)
 	return ITEM_INTERACT_SUCCESS
 
@@ -265,7 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))
 	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
-	symptom_holder.symptoms += chosen
+	own_add(symptom_holder, "symptoms", chosen.Copy()) // the target disease owns `chosen`; the isolate gets its own copy
 	symptom_holder.Finalize()
 	symptom_holder.Refresh()
 	om_task_start(/datum/om/task/timed/extrapolator_isolate_symptom, user, target, receiver = src, duration = extract_time, symptom_holder = symptom_holder)
@@ -321,4 +321,4 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 /obj/item/extrapolator/tier5
 	default_scanning_module = /obj/item/stock_parts/scanning_module
 
-DECLARE_REF(/obj/item/extrapolator, "scanner", HELD, null)
+OWN(/obj/item/extrapolator, scanner, OWN_CONTAINED)

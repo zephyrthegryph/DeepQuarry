@@ -19,7 +19,7 @@
 	findsleeper()
 	return ..()
 
-DECLARE_REF(/obj/machinery/sleep_console, "sleeper", PAIR, "console")
+REL_PAIR(/obj/machinery/sleep_console, sleeper, console)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// sleeper's own field is the occupant's environment, same as before the
@@ -38,8 +38,8 @@ DECLARE_REF(/obj/machinery/sleep_console, "sleeper", PAIR, "console")
 	for(var/direction in GLOB.cardinal) // Loop through every direction
 		sleepernew = locate(/obj/machinery/sleeper, get_step(src, direction)) // Try to find a scanner in that direction
 		if(sleepernew)
-			sleeper = sleepernew
-			sleepernew.console = src
+			rel_set(src, "sleeper", sleepernew)
+			rel_set(sleepernew, "console", src)
 			break
 
 
@@ -124,7 +124,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/sleeper, "beaker", /obj/item/reagent_contai
 	default_apply_parts()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/sleeper, "console", PAIR, "sleeper")
+REL_PAIR(/obj/machinery/sleeper, console, sleeper)
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0
@@ -399,10 +399,10 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
-			beaker = I
 			user.drop_item()
 			I.forceMove(src)
-			act_message(user, src, MSG_SELF(span_notice("You add \a [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds \a [I] to %T%.")))
+			own_set(src, "beaker", I) // CONTAINED: in contents first
+			act_message(user, src, MSG_SELF(span_notice("You add  [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds  [I] to %T%.")))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))
 		return TRUE
@@ -548,7 +548,7 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 /obj/machinery/sleeper/proc/remove_beaker()
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 		toggle_filter()
 
 /obj/machinery/sleeper/proc/inject_chemical(mob/living/user, chemical, amount)
@@ -582,4 +582,4 @@ DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
 	. = ..()
 	RefreshParts(1)
 
-DECLARE_REF(/obj/machinery/sleeper, "beaker", HELD, null)
+OWN(/obj/machinery/sleeper, beaker, OWN_CONTAINED)

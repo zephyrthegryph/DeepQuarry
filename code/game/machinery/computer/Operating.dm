@@ -23,12 +23,12 @@
 /obj/machinery/computer/operating/Initialize(mapload)
 	. = ..()
 	for(var/direction in list(NORTH,EAST,SOUTH,WEST))
-		table = locate(/obj/machinery/optable, get_step(src, direction))
+		rel_set(src, "table", locate(/obj/machinery/optable, get_step(src, direction)))
 		if(table)
-			table.computer = src
+			rel_set(table, "computer", src)
 			break
 
-DECLARE_REF(/obj/machinery/computer/operating, "table", PAIR, "computer")
+REL_PAIR(/obj/machinery/computer/operating, table, computer)
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \
@@ -109,7 +109,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 
 /obj/machinery/computer/operating/machine_step()
 	if(!table || !table.check_victim())
-		victim = null
+		rel_clear(src, "victim")
 		patientName = null
 		return PROCESS_KILL
 	if(table && table.victim)
@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 			if(patientName!=table.victim.name)
 				patientName=table.victim.name
 				atom_say("New patient detected, loading stats")
-				victim = table.victim
+				rel_set(src, "victim", table.victim)
 				atom_say("[victim.real_name], [victim.dna.b_type] blood, [victim.stat ? "Non-Responsive" : "Awake"]")
 				SStgui.update_uis(src)
 			if(COOLDOWN_FINISHED(src, nextTick))
@@ -161,4 +161,3 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 
 #undef OP_COMPUTER_COOLDOWN
 
-DECLARE_REF(/obj/machinery/computer/operating, "victim", HELD, null)

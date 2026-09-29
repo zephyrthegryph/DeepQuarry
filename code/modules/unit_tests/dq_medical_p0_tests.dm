@@ -68,10 +68,10 @@
 	var/mob/living/carbon/brain/B = allocate(/mob/living/carbon/brain)
 	TEST_ASSERT_NULL(B.mind, "a fresh brain mob has no mind")
 	TEST_ASSERT(!B.backup_ping_resolve(), "no mind: no notification")
-	B.mind = new /datum/mind("dq_p0_no_backup")
+	rel_set(B, "mind", new /datum/mind("dq_p0_no_backup"))
 	B.mind.name = "dq p0 nobody"
 	TEST_ASSERT(!B.backup_ping_resolve(), "no backup record: no notification")
-	B.mind = null
+	rel_clear(B, "mind")
 
 /// D13 / D14: rejuvenating or damaging a detached limb touches no owner.
 /datum/unit_test/dq_p0_detached_limb_no_owner_runtime
@@ -120,15 +120,15 @@
 	var/list/before = current.Copy()
 	// The continuation takes its om task (run_surgical_step() runs it through om_task_start()).
 	var/datum/om/task/timed/surgical_step/task = new
-	task.actor = surgeon
-	task.target = H
-	task.receiver = H
-	task.tool = tool
-	task.surgery_step = step
+	rel_set(task, "actor", surgeon)
+	rel_set(task, "target", H)
+	rel_set(task, "receiver", H)
+	rel_set(task, "tool", tool)
+	rel_set(task, "surgery_step", step)
 	task.zone = BP_L_ARM
 	task.cleanliness = 100
-	task.part = arm
-	task.work_target = arm
+	rel_set(task, "part", arm)
+	rel_set(task, "work_target", arm)
 	task.chance = 0
 	H.surgical_step_interrupted(task)
 	TEST_ASSERT(!(BP_L_ARM in H.surgery_zones_in_progress), "the zone lock is released on interruption")

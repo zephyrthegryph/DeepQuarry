@@ -1,6 +1,8 @@
-/obj/item/integrated_circuit/proc/setup_io(list/io_list, io_type, list/io_default_list)
-	var/list/io_list_copy = io_list.Copy()
-	io_list.Cut()
+/// Rebuilds the pin list var `io_var` (a spec list of names/types) into owned pin datums.
+/obj/item/integrated_circuit/proc/setup_io(io_var, io_type, list/io_default_list)
+	var/list/io_list = vars[io_var]
+	var/list/io_list_copy = io_list ? io_list.Copy() : list()
+	io_list?.Cut()
 	var/i = 1
 
 	for(var/io_entry in io_list_copy)
@@ -14,9 +16,9 @@
 			io_type_override = io_list_copy[io_entry]
 
 		if(io_type_override)
-			io_list.Add(new io_type_override(src, io_entry, default_data))
+			own_add(src, io_var, new io_type_override(src, io_entry, default_data))
 		else
-			io_list.Add(new io_type(src, io_entry, default_data))
+			own_add(src, io_var, new io_type(src, io_entry, default_data))
 		i++
 
 /// Prefix of an IC ref. Pin text is sanitized (html-encoded), so no string a
@@ -25,7 +27,7 @@
 
 /// An IC ref: the OM handle of `D` in that wrapper. Null for a deleted datum.
 /proc/ic_ref(datum/D)
-	var/h = om_handle(D)
+	var/h = om_handle(D) // ALLOW(ownership): IC pin data are player-copyable text values passed pin to pin; a generation-checked weak ref is the only safe encoding
 	return h && "[IC_REF_PREFIX][h]>"
 
 /// TRUE if `x` is an IC ref (ic_ref()), whether or not it still resolves.
@@ -36,7 +38,7 @@
 /proc/ic_ref_resolve(x)
 	if(!ic_is_ref(x))
 		return null
-	return om_resolve(copytext(x, length(IC_REF_PREFIX) + 1, -1))
+	return om_resolve(copytext(x, length(IC_REF_PREFIX) + 1, -1)) // ALLOW(ownership): resolves an IC pin ref (see ic_ref())
 
 /obj/item/integrated_circuit/proc/set_pin_data(pin_type, pin_number, datum/new_data)
 	if (istype(new_data) && !ic_is_ref(new_data))

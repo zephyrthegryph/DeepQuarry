@@ -133,57 +133,54 @@
 /mob/observer/dead/create_mob_hud(datum/hud/HUD, apply_to_client = TRUE)
 	..()
 
-	var/list/adding = list()
-	HUD.adding = adding
-
 	var/atom/movable/screen/using
 	using = new /atom/movable/screen/ghost/returntomenu()
 	using.screen_loc = ui_ghost_returntomenu
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/jumptomob()
 	using.screen_loc = ui_ghost_jumptomob
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/orbit()
 	using.screen_loc = ui_ghost_orbit
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/reenter_corpse()
 	using.screen_loc = ui_ghost_reenter_corpse
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/teleport()
 	using.screen_loc = ui_ghost_teleport
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/pai()
 	using.screen_loc = ui_ghost_pai
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/up()
 	using.screen_loc = ui_ghost_updown
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/down()
 	using.screen_loc = ui_ghost_updown
-	using.hud_handle = om_handle(src)
-	adding += using
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 
 	using = new /atom/movable/screen/ghost/vr()
 	using.screen_loc = ui_ghost_vr
-	using.hud_handle = om_handle(src)
-	adding += using
-
+	rel_set(using, "hud", HUD)
+	own_add(HUD, "adding", using)
 	if(client && apply_to_client)
 		client.screen = list()
-		client.screen += HUD.adding
+		if(length(HUD.adding))
+			client.screen += HUD.adding
 		client.screen += client.void
 

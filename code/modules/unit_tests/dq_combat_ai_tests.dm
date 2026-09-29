@@ -59,7 +59,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/datum/ai_brain/B = M.ai_brain
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
-	B.primary_threat = null
+	rel_clear(B, "primary_threat")
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
@@ -288,7 +288,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	H.put_in_hands(G)
 	H.ai_brain.rebuild_behaviors()
 	TEST_ASSERT(/datum/ai_behavior/throw_grenade in H.ai_brain.effective_behaviors, "rebuild_behaviors didn't merge held grenade's granted behavior into effective_behaviors")
-	TEST_ASSERT_EQUAL(om_resolve(H.ai_brain.effective_behaviors[/datum/ai_behavior/throw_grenade]), G, "throw_grenade's source isn't the grenade itself")
+	TEST_ASSERT_EQUAL(H.ai_brain.behavior_source(/datum/ai_behavior/throw_grenade), G, "throw_grenade's source isn't the grenade itself")
 
 
 // --- runtime: give_destination + tick walks the mob ------------------

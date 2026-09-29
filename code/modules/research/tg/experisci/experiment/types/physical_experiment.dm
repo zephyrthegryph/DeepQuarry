@@ -10,8 +10,6 @@
 	var/datum/experiment_handler/linked_experiment_handler
 
 // Its hooks on the scanned atom go with the core teardown.
-DECLARE_REF(/datum/experiment/physical, "currently_scanned_atom", BACK, null)
-DECLARE_REF(/datum/experiment/physical, "linked_experiment_handler", BACK, null)
 
 /datum/experiment/physical/is_complete()
 	return completed
@@ -19,12 +17,12 @@ DECLARE_REF(/datum/experiment/physical, "linked_experiment_handler", BACK, null)
 /datum/experiment/physical/perform_experiment_actions(datum/experiment_handler/experiment_handler, atom/target)
 	if(currently_scanned_atom)
 		unregister_events()
-	currently_scanned_atom = target
-	linked_experiment_handler = experiment_handler
+	rel_set(src, "currently_scanned_atom", target)
+	rel_set(src, "linked_experiment_handler", experiment_handler)
 	if(register_events())
 		return TRUE
-	currently_scanned_atom = null
-	linked_experiment_handler = null
+	rel_clear(src, "currently_scanned_atom")
+	rel_clear(src, "linked_experiment_handler")
 	return FALSE
 
 /**

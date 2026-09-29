@@ -15,8 +15,8 @@
 	var/ionizing = 0
 	var/particle_type
 	var/additional_particles = 0
-	var/tmp/target_handle
-	var/tmp/source_handle
+	var/tmp/turf/target
+	var/tmp/turf/source
 	var/movetotarget = 1
 
 /obj/effect/accelerated_particle/weak
@@ -104,10 +104,10 @@
 	forceMove(dest)
 	return TRUE
 
-/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the source this refers to: a relation view, null once that is deleted.
 /obj/effect/accelerated_particle/proc/source() as /turf
-	return om_resolve(source_handle)
+	return source
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to: a relation view, null once that is deleted.
 /obj/effect/accelerated_particle/proc/target() as /turf
-	return om_resolve(target_handle)
+	return target

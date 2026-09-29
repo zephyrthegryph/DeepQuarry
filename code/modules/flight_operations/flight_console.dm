@@ -1,11 +1,11 @@
 /datum/flight_operations_ui
-	var/tmp/host_handle
-	var/tmp/forced_vessel_handle
+	var/tmp/datum/host
+	var/tmp/datum/flight_vessel/forced_vessel
 
 /datum/flight_operations_ui/New(new_host, datum/flight_vessel/new_forced_vessel = null)
 	..()
-	host_handle = om_handle(new_host)
-	forced_vessel_handle = om_handle(new_forced_vessel)
+	rel_set(src, "host", new_host)
+	rel_set(src, "forced_vessel", new_forced_vessel)
 
 /datum/flight_operations_ui/tgui_host()
 	return host()
@@ -153,7 +153,7 @@
 				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 					return FALSE
 				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
+				own_clear(vessel, "active_plan", OWN_DELETE)
 			var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 			if(!jump_plan || !jump_plan.start())
 				to_chat(ui.user, span_warning("The jump could not be initiated."))
@@ -165,7 +165,7 @@
 				if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 					return FALSE
 				GLOB.flight_service.plans -= vessel.active_plan.id
-				qdel(vessel.active_plan)
+				own_clear(vessel, "active_plan", OWN_DELETE)
 			var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 			if(!plan)
 				to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
@@ -202,7 +202,7 @@
 
 /obj/machinery/computer/ship/proc/open_flight_operations(mob/user, datum/tgui/ui)
 	if(!flight_operations_ui)
-		flight_operations_ui = new(src)
+		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
 	flight_operations_ui.tgui_interact(user, ui)
 
 /obj/machinery/computer/ship/helm/tgui_interact(mob/user, datum/tgui/ui)
@@ -216,17 +216,15 @@
 
 /obj/machinery/computer/shuttle_control/explore/tgui_interact(mob/user, datum/tgui/ui)
 	if(!flight_operations_ui)
-		flight_operations_ui = new(src)
+		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
 	flight_operations_ui.tgui_interact(user, ui)
 
-DECLARE_REF(/obj/machinery/computer/ship, "flight_operations_ui", OWNED, null)
 
-DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui", OWNED, null)
 
-/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the host var.
 /datum/flight_operations_ui/proc/host() as /datum
-	return om_resolve(host_handle)
+	return host
 
-/// LC-refs: the forced_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the forced_vessel var.
 /datum/flight_operations_ui/proc/forced_vessel() as /datum/flight_vessel
-	return om_resolve(forced_vessel_handle)
+	return forced_vessel

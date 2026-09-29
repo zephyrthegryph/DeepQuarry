@@ -20,13 +20,10 @@
 	zone = packet.zone
 	flags = packet.flags
 	armor_flag = packet.armor_flag
-	source = packet.source
-	attacker = packet.attacker
-	weapon = packet.weapon
+	rel_set(src, "source", packet.source)
+	rel_set(src, "attacker", packet.attacker)
+	rel_set(src, "weapon", packet.weapon)
 
-DECLARE_REF(/datum/dq_packet_record, "source", HELD, null)
-DECLARE_REF(/datum/dq_packet_record, "attacker", HELD, null)
-DECLARE_REF(/datum/dq_packet_record, "weapon", HELD, null)
 
 /// Only `kind` carries damage, and exactly `amount` of it.
 /datum/dq_packet_record/proc/only(kind, amount)
@@ -52,11 +49,10 @@ DECLARE_REF(/datum/dq_packet_record, "weapon", HELD, null)
 
 /obj/machinery/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
-	QDEL_NULL(last)
-	last = new(packet)
+	own_clear(src, "last", OWN_DELETE)
+	own_set(src, "last", new /datum/dq_packet_record(packet))
 	return 0
 
-DECLARE_REF(/obj/machinery/dq_damage_probe, "last", OWNED, null)
 
 /// A mob that records packets instead of being injured.
 /mob/living/simple_mob/dq_damage_probe
@@ -69,11 +65,10 @@ DECLARE_REF(/obj/machinery/dq_damage_probe, "last", OWNED, null)
 
 /mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
-	QDEL_NULL(last)
-	last = new(packet)
+	own_clear(src, "last", OWN_DELETE)
+	own_set(src, "last", new /datum/dq_packet_record(packet))
 	return 0
 
-DECLARE_REF(/mob/living/simple_mob/dq_damage_probe, "last", OWNED, null)
 
 /datum/unit_test/dq_damage_packet
 	abstract_type = /datum/unit_test/dq_damage_packet
@@ -81,8 +76,8 @@ DECLARE_REF(/mob/living/simple_mob/dq_damage_probe, "last", OWNED, null)
 	var/mob/living/simple_mob/dq_damage_probe/mob_probe
 
 /datum/unit_test/dq_damage_packet/proc/make_probes()
-	probe = allocate(/obj/machinery/dq_damage_probe)
-	mob_probe = allocate(/mob/living/simple_mob/dq_damage_probe)
+	rel_set(src, "probe", allocate(/obj/machinery/dq_damage_probe))
+	rel_set(src, "mob_probe", allocate(/mob/living/simple_mob/dq_damage_probe))
 
 /datum/unit_test/dq_damage_packet/proc/make_projectile(kind, damage, pen = 0)
 	var/obj/item/projectile/P = allocate(/obj/item/projectile)

@@ -16,7 +16,7 @@
 /datum/om/prompt/var/datum/ui
 
 /// The prompt and the tgui input showing it point at each other.
-DECLARE_REF(/datum/om/prompt, "ui", PAIR, "om_prompt")
+REL_PAIR(/datum/om/prompt, ui, om_prompt)
 
 /// Shows the prompt to `user`. TRUE when it is waiting on an answer.
 /datum/om/prompt/proc/open(mob/user)
@@ -160,7 +160,7 @@ DECLARE_REF(/datum/om/prompt, "ui", PAIR, "om_prompt")
 /datum/tgui_alert/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_alert/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_alert/om, om_prompt, ui)
 
 /datum/tgui_alert/om/set_choice(choice)
 	. = ..()
@@ -179,7 +179,7 @@ DECLARE_REF(/datum/tgui_alert/om, "om_prompt", PAIR, "ui")
 /datum/tgui_list_input/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_list_input/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_list_input/om, om_prompt, ui)
 
 /datum/tgui_list_input/om/set_choice(choice)
 	. = ..()
@@ -198,7 +198,7 @@ DECLARE_REF(/datum/tgui_list_input/om, "om_prompt", PAIR, "ui")
 /datum/tgui_input_text/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_input_text/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_input_text/om, om_prompt, ui)
 
 /datum/tgui_input_text/om/set_entry(entry)
 	. = ..()
@@ -217,7 +217,7 @@ DECLARE_REF(/datum/tgui_input_text/om, "om_prompt", PAIR, "ui")
 /datum/tgui_input_number/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_input_number/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_input_number/om, om_prompt, ui)
 
 /datum/tgui_input_number/om/set_entry(entry)
 	. = ..()
@@ -236,7 +236,7 @@ DECLARE_REF(/datum/tgui_input_number/om, "om_prompt", PAIR, "ui")
 /datum/tgui_color_picker/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_color_picker/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_color_picker/om, om_prompt, ui)
 
 /datum/tgui_color_picker/om/set_choice(choice)
 	. = ..()
@@ -255,7 +255,7 @@ DECLARE_REF(/datum/tgui_color_picker/om, "om_prompt", PAIR, "ui")
 /datum/tgui_checkbox_input/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_checkbox_input/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_checkbox_input/om, om_prompt, ui)
 
 /datum/tgui_checkbox_input/om/set_choices(list/selections)
 	. = ..()
@@ -276,7 +276,7 @@ DECLARE_REF(/datum/tgui_checkbox_input/om, "om_prompt", PAIR, "ui")
 /datum/tgui_input_colormatrix/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_input_colormatrix/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_input_colormatrix/om, om_prompt, ui)
 
 /datum/tgui_input_colormatrix/om/set_entry(entry)
 	. = ..()
@@ -301,7 +301,7 @@ DECLARE_REF(/datum/tgui_input_colormatrix/om, "om_prompt", PAIR, "ui")
 /datum/tgui_bitfield_input/om
 	var/datum/om/prompt/om_prompt
 
-DECLARE_REF(/datum/tgui_bitfield_input/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/tgui_bitfield_input/om, om_prompt, ui)
 
 /datum/tgui_bitfield_input/om/tgui_act(action, list/params, datum/tgui/ui)
 	// Answer before the window closes: closing it means cancel.

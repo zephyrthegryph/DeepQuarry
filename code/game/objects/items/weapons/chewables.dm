@@ -263,7 +263,7 @@ TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/c
 /obj/item/clothing/mask/chewable/candy/lolli/container_resist(mob/living/M)
 	if(istype(M, /mob/living/voice)) return
 	if(victims)
-		victims -= M
+		own_take_member(src, "victims", M)
 	to_chat(M, span_warning("You manage to pull yourself free of \the [src]."))
 	M.forceMove(get_turf(src))
 
@@ -292,7 +292,7 @@ TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/c
 					F.forceMove(get_turf(src))
 				else if(!F.move_into(M.vore_selected, BELLY_SLOT_INTERIOR, M))
 					F.forceMove(get_turf(src))
-				victims -= F
+				own_take_member(src, "victims", F)
 	return ..()
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(null, PROC_REF(lolli_item)))
@@ -310,15 +310,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 		var/obj/item/holder/H = W
 
 		if(!victims)
-			victims = list()
+			own_set(src, "victims", list())
 
 		var/mob/living/M = H.held_mob
 
 		M.forceMove(src)
-		H.held_mob = null
+		rel_clear(H, "held_mob")
 		consume(H, user)
 
-		victims += M
+		own_add(src, "victims", M)
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
 		to_chat(M, span_warning("[user] sticks you to \the [src]!"))
@@ -369,4 +369,4 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGEN
 			to_chat(loc, span_notice("There's no more of \the [name] left!"))
 		spitout(0)
 
-DECLARE_REF(/obj/item/clothing/mask/chewable/candy/lolli, "victims", SPILL_LIST, null)
+OWN(/obj/item/clothing/mask/chewable/candy/lolli, victims, OWN_SPILL)

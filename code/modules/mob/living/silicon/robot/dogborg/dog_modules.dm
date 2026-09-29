@@ -466,7 +466,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
-	R = loc.loc
+	rel_set(src, "R", loc.loc)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
 /obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/source, datum/om/event/movable_attempted_move/event)
@@ -517,8 +517,4 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 			. += span_notice("[src] is dry.")
 // CHOMPEnable End
 
-// Matter synths belong to the robot module (DECLARE_REF(..., OWNED_LIST) "synths"); tools draw on them.
-DECLARE_REF(/obj/item/reagent_containers/borghypo/hound, "water", HELD, null)
-DECLARE_REF(/obj/item/robot_tongue, "water", HELD, null)
-DECLARE_REF(/obj/item/lightreplacer/dogborg, "glass", HELD, null)
-DECLARE_REF(/obj/item/reagent_containers/glass/beaker/large/borg, "R", HELD, null)
+// Matter synths belong to the robot module (the owned "synths" list); tools draw on them.

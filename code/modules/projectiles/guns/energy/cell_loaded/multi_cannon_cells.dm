@@ -38,8 +38,8 @@ DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
 		om_task_periodic(src, PERIODIC_SLOW)
 		. = BB
 		//alright, the below seems jank. it IS jank, but for whatever reason I can't reuse BB. big bad
-		BB = null
-		BB = new projectile_type
+		own_take(src, "BB")
+		own_set(src, "BB", new projectile_type)
 		// TGMC Ammo HUD - Update the HUD every time we expend/fire, given the Curabitur's method of handling firing.
 		if(istype(loc, /obj/item/gun/projectile/multi_cannon))
 			var/obj/item/gun/projectile/multi_cannon = loc
@@ -48,14 +48,14 @@ DECLARE_PERIODIC(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW)
 				user?.hud_used?.update_ammo_hud(user, multi_cannon)
 		return
 	else
-		BB = null
+		own_take(src, "BB")
 		return null
 
 /obj/item/ammo_casing/macrobattery/proc/recharge()
 	if(charge < max_charge)
 		charge ++
 		if(!BB)
-			BB = new projectile_type
+			own_set(src, "BB", new projectile_type)
 	if(charge >= max_charge)
 		om_task_periodic_stop(src)
 	if(istype(loc,/obj/item/gun/projectile/multi_cannon))

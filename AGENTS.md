@@ -116,9 +116,12 @@ lazylist instead. For per-subtype constant tables (which DM can't express as a
   (calls `..()`), teardown that must still read declared vars in
   `lifecycle_prerelease()`, behaviour-side work in `on_entity_destroy(E)`. The GC hint is
   the `destroy_hint` var; refusal is `lifecycle_keep(force)`.
-- **Declare every object-typed var** (one line per var, `DECLARE_REF(PATH, "var", KIND, OPT)` with KIND `OWNED`, `STATIC`, `PAIR`, `BACK`,
-  `BACKLIST`, `WEAK_LIST`, `BACK_HANDLE`, …; or an OM handle, or a declared cache); see
-  the table in `doc/rewrite/om_in_10_minutes.md` §3.
+- **Every object-typed var is own / shared / proto / relation** (`doc/rewrite/ownership.md`):
+  write owned vars with `own_set`/`own_take`/`own_add`/`own_transfer`/`own_clear`, relation
+  views with `rel_set`/`rel_add`/`rel_remove`, copy-on-write vars with `proto_*`; registry-typed
+  vars are shared. Declare only exceptions (`OWN(..., OWN_SPILL/OWN_CONTAINED)`, `PROTO`,
+  `REL_PAIR`, `REL_KEYED`, ...). No `CALLBACK` in content: `om_callable()` + `om_run()`.
+  `tools/ci/ownership_lint.py` enforces it; see the table in `doc/rewrite/om_in_10_minutes.md` §3.
 - Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
   when one fits, else `qdel()`; never `del()`.
 - **Don't unhook, cancel timers or null declared vars by hand on deletion**: the transaction
@@ -299,7 +302,7 @@ Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
 
 - [ ] New `.dm` files `#include`d in `deepquarry.dme`.
 - [ ] Absolute type/proc paths only; no `:` operator on subtype access.
-- [ ] No `Destroy()` overrides; object vars declared (`DECLARE_REF()`); consequences in `on_destroy()`.
+- [ ] No `Destroy()` overrides; object vars written through the ownership accessors (`ownership_lint.py` clean); consequences in `on_destroy()`.
 - [ ] Event handlers start with `EVENT_HANDLER`; callbacks use the `*_PROC_REF` macros.
 - [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
 - [ ] DreamChecker (`SpacemanDMM`) passes locally.

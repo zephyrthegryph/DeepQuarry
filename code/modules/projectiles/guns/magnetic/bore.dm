@@ -23,7 +23,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic/matfed, "manipulator", "manipulator
 		mat_cost = initial(mat_cost) / (2*manipulator.rating)
 	update_rating_mod()
 
-DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 
 /obj/item/gun/magnetic/matfed/examine(mob/user)
 	. = ..()
@@ -60,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 		if(cell && removable_components)
 			removing = cell
-			cell = null
+			own_take(src, "cell")
 
 		if(removing)
 			user.put_in_hands(removing)
@@ -95,7 +94,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " levers \the [manipulator] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
 	mat_cost = initial(mat_cost)
-	manipulator = null
+	own_take(src, "manipulator")
 	update_icon()
 	update_rating_mod()
 	return ITEM_INTERACT_SUCCESS
@@ -137,7 +136,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))
 				return
-			manipulator = thing
+			own_set(src, "manipulator", thing)
 			user.drop_from_inventory(manipulator, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
@@ -229,9 +228,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 
 /obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
 	. = ..()
-	soundloop = new(list(src), 0)
+	own_set(src, "soundloop", new /datum/looping_sound/small_motor(list(src), 0))
 
-DECLARE_REF(/obj/item/gun/magnetic/matfed/phoronbore, "soundloop", OWNED, null)
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)

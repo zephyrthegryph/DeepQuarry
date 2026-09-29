@@ -1,9 +1,8 @@
-OM_TIMER_SLOT(/datum/stockMarket, process_timer)
+OWN_TIMER(/datum/stockMarket, process_timer)
 
 /datum/stockMarket
 	var/list/stocks = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/balances
-	var/list/last_read
 	var/list/stockBrokers
 	var/list/logs
 
@@ -110,8 +109,8 @@ OM_TIMER_SLOT(/datum/stockMarket, process_timer)
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
-		stocks += S
-		LAZYSET(last_read, S, list())
+		own_add(src, "stocks", S)
+		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
 	for (var/stock in stocks)
@@ -127,9 +126,8 @@ OM_TIMER_SLOT(/datum/stockMarket, process_timer)
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	LAZYADD(logs, L)
+	own_add(src, "logs", L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.
 
-DECLARE_REF(/datum/stockMarket, "stocks", OWNED_LIST, null)

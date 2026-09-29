@@ -9,9 +9,9 @@
 	icon_keyboard = "rd_key"
 	icon_screen = "teleport"
 
-	var/tmp/front_handle
-	var/tmp/middle_handle
-	var/tmp/back_handle
+	var/tmp/obj/machinery/disperser/front/front
+	var/tmp/obj/machinery/disperser/middle/middle
+	var/tmp/obj/machinery/disperser/back/back
 	var/const/link_range = 16 //How far can the above stuff be maximum before we start complaining
 
 	var/overmapdir = 0
@@ -49,10 +49,10 @@
 		var/obj/machinery/disperser/back/B = locate_within(get_step(M, backwards), /obj/machinery/disperser/back)
 		if(!B || get_dist(src, B) >= link_range)
 			continue
-		front_handle = om_handle(F)
-		middle_handle = om_handle(M)
-		back_handle = om_handle(B)
-		// The parts are OM handles: one that is destroyed reads null, so is_valid_setup() fails
+		rel_set(src, "front", F)
+		rel_set(src, "middle", M)
+		rel_set(src, "back", B)
+		// The parts are relation views: one that is destroyed reads null, so is_valid_setup() fails
 		// without a destruction signal on each.
 		if(is_valid_setup())
 			return TRUE
@@ -66,9 +66,9 @@
 	return FALSE
 
 /obj/machinery/computer/ship/disperser/proc/release_links()
-	front_handle = null
-	middle_handle = null
-	back_handle = null
+	rel_clear(src, "front")
+	rel_clear(src, "middle")
+	rel_clear(src, "back")
 
 /obj/machinery/computer/ship/disperser/proc/get_calibration()
 	var/list/calresult[caldigit]
@@ -208,14 +208,14 @@
 	if(. && !issilicon(ui.user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
 
-/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the middle var.
 /obj/machinery/computer/ship/disperser/proc/middle() as /obj/machinery/disperser/middle
-	return om_resolve(middle_handle)
+	return middle
 
-/// LC-refs: the back this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the back var.
 /obj/machinery/computer/ship/disperser/proc/back() as /obj/machinery/disperser/back
-	return om_resolve(back_handle)
+	return back
 
-/// LC-refs: the front this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the front var.
 /obj/machinery/computer/ship/disperser/proc/front() as /obj/machinery/disperser/front
-	return om_resolve(front_handle)
+	return front

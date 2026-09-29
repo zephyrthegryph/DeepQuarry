@@ -17,8 +17,6 @@
 	/// The recursive move relay (dq_add_recursive_move()), or null.
 	var/tmp/datum/recursive_move/recursive_move
 
-DECLARE_REF(/atom/movable, "recursive_move", OWNED, null)
-DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 
 /// Gives `AM` a recursive move relay, or rebuilds the container chain of the one it has.
 /proc/dq_add_recursive_move(atom/movable/AM)
@@ -28,12 +26,12 @@ DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 		AM.recursive_move.reset_parents()
 		AM.recursive_move.setup_parents()
 		return AM.recursive_move
-	AM.recursive_move = new /datum/recursive_move(AM)
+	own_set(AM, "recursive_move", new /datum/recursive_move(AM))
 	return AM.recursive_move
 
 /datum/recursive_move/New(atom/movable/new_holder)
 	..()
-	holder = new_holder
+	rel_set(src, "holder", new_holder)
 	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/recursive_move/proc/setup_parents()
@@ -53,7 +51,7 @@ DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 			reset_parents()
 			break
 		recursion++
-		LAZYADD(parents, cur_parent)
+		rel_add(src, "parents", cur_parent)
 		om_hook(cur_parent, /datum/om/event/atom_exited, src, PROC_REF(on_parent_exited))
 		om_hook(cur_parent, /datum/om/event/qdeleting, src, PROC_REF(on_qdel))
 		// Because the turf is not considered to be in the heirarchy by the relay, picking
@@ -65,7 +63,7 @@ DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 	if(recursion >= 64) // If we escaped due to iteration limit, cancel
 		log_runtime("RECURSIVE_MOVE: Parent hit recursion limit. ([holder]) ([holder.type])")
 		reset_parents()
-		LAZYCLEARLIST(parents)
+		rel_clear(src, "parents")
 
 	if(length(parents))
 		//Only need to watch top parent for movement. Everything is covered by Exited
@@ -129,7 +127,7 @@ DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 
 /datum/recursive_move/proc/reset_parents()
 	unregister_hooks()
-	LAZYCLEARLIST(parents)
+	rel_clear(src, "parents")
 
 //the banana peel of testing stays
 /obj/item/bananapeel/test

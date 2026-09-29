@@ -30,22 +30,27 @@
 /datum/shuttle/autodock/multi/proc/set_destination(destination_key, mob/user)
 	if(moving_status != SHUTTLE_IDLE)
 		return
-	next_location_handle = om_handle(LAZYACCESS(destinations_cache, destination_key))
+	var/list/destinations = get_destinations()
+	rel_set(src, "next_location", destinations[destination_key])
 	if(!next_location())
 		WARNING("Shuttle [src] set to destination we can't find: [destination_key]")
 
+/// Name -> landmark, built fresh from the destinations_cache relation list (a deleted landmark leaves it).
 /datum/shuttle/autodock/multi/proc/get_destinations()
 	if (last_cache_rebuild_time < SSshuttles.last_landmark_registration_time)
 		build_destinations_cache()
-	return destinations_cache || list()
+	var/list/by_name = list()
+	for(var/obj/effect/shuttle_landmark/landmark as anything in destinations_cache)
+		by_name["[landmark.name]"] = landmark
+	return by_name
 
 /datum/shuttle/autodock/multi/proc/build_destinations_cache()
 	EXPIRY_STAMP(src, last_cache_rebuild_time, CLOCK_WORLD)
-	LAZYCLEARLIST(destinations_cache)
+	rel_clear(src, "destinations_cache")
 	for(var/destination_tag in destination_tags)
 		var/obj/effect/shuttle_landmark/landmark = SSshuttles.get_landmark(destination_tag)
 		if (istype(landmark))
-			LAZYSET(destinations_cache, "[landmark.name]", landmark)
+			rel_add(src, "destinations_cache", landmark)
 
 /datum/shuttle/autodock/multi/perform_shuttle_move()
 	..()

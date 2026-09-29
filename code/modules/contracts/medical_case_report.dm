@@ -44,7 +44,7 @@
 	var/target_condition_type
 	var/target_condition_name
 	EXPIRY_DECLARE(consent_time)
-	var/tmp/consent_record_handle
+	var/tmp/obj/item/paper/consent_record
 	var/consent_evidence_id
 	var/datum/contract_requirement/event_count/evidence_requirement
 
@@ -56,7 +56,7 @@
 	deadline_duration = 35 MINUTES
 	title = "Rare Case: [target_condition_name]"
 	description = "The registry has identified a clinically uncommon presentation of [target_condition_name]. With [target_name]'s consent, submit a baseline body scan, treat the condition, wait at least one minute, submit a follow-up scan demonstrating at least 50% improvement, and include the completed case narrative."
-	evidence_requirement = new(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
+	rel_set(src, "evidence_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_RARE_CASE_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	evidence_requirement.name = "Authenticated longitudinal case packet"
 	evidence_requirement.description = "Fax the signed consent, completed case narrative, and genuine baseline/follow-up body-scanner reports to [CONTRACT_FAX_CASE_REGISTRY]."
 	add_requirement(evidence_requirement)
@@ -88,7 +88,7 @@
 	if(state != CONTRACT_ACTIVE || consent_time || SScontracts.subject_identity(subject)?.id != target_ref || !target_condition())
 		return FALSE
 	EXPIRY_STAMP(src, consent_time, CLOCK_WORLD)
-	consent_record_handle = om_handle(paper)
+	rel_set(src, "consent_record", paper)
 	return TRUE
 
 /datum/contract/medical_case_report/proc/print_consent_revocation(turf/location, issuer_account)
@@ -297,8 +297,7 @@ GLOBAL_LIST_INIT(medical_rare_case_types, list(
 		if(candidate.definition_id == "medical_rare_case_report" && candidate.context["target_ref"] == subject_ref)
 			withdraw_candidate(candidate, "The patient is no longer available for this report.")
 
-DECLARE_REF(/datum/contract/medical_case_report, "evidence_requirement", OWNED, null)
 
-/// LC-refs: the consent_record this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the consent_record this refers to (a relation view: null once it is deleted).
 /datum/contract/medical_case_report/proc/consent_record() as /obj/item/paper
-	return om_resolve(consent_record_handle)
+	return consent_record

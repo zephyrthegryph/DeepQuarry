@@ -29,7 +29,7 @@
 // Parameters: None
 // Description: Adds components to the machine for deconstruction.
 /obj/machinery/exonet_node/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -47,7 +47,6 @@
 		desc = "This machine is one of many, many nodes inside [using_map.starsys_name]'s section of the Exonet, connecting the [using_map.station_short] to the rest of the system, at least \
 		electronically."
 
-DECLARE_REF(/obj/machinery/exonet_node, "soundloop", OWNED, null)
 
 // Proc: update_icon()
 // Parameters: None

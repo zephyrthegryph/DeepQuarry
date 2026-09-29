@@ -126,35 +126,38 @@
 				16= door safties
 	*/
 
+/// Airlocks whose id_tag matches our id (keyed: linked when either end materializes).
+/obj/machinery/button/remote/airlock/var/list/obj/machinery/door/airlock/controlled_airlocks
+REL_KEYED_LIST(/obj/machinery/button/remote/airlock, controlled_airlocks, id, /obj/machinery/door/airlock)
+
 /obj/machinery/button/remote/airlock/trigger()
-	for(var/obj/machinery/door/airlock/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(D.id_tag == id)
-			if(specialfunctions & OPEN)
-				if(D.density)
-					D.open()
-					continue
-				D.close()
+	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)
+		if(specialfunctions & OPEN)
+			if(D.density)
+				D.open()
 				continue
+			D.close()
+			continue
 
-			if(desiredstate == 1)
-				if(specialfunctions & IDSCAN)
-					D.set_idscan(0)
-				if(specialfunctions & BOLTS)
-					D.lock()
-				if(specialfunctions & SHOCK)
-					D.electrify(-1)
-				if(specialfunctions & SAFE)
-					D.set_safeties(0)
-				continue
-
+		if(desiredstate == 1)
 			if(specialfunctions & IDSCAN)
-				D.set_idscan(1)
+				D.set_idscan(0)
 			if(specialfunctions & BOLTS)
-				D.unlock()
+				D.lock()
 			if(specialfunctions & SHOCK)
-				D.electrify(0)
+				D.electrify(-1)
 			if(specialfunctions & SAFE)
-				D.set_safeties(1)
+				D.set_safeties(0)
+			continue
+
+		if(specialfunctions & IDSCAN)
+			D.set_idscan(1)
+		if(specialfunctions & BOLTS)
+			D.unlock()
+		if(specialfunctions & SHOCK)
+			D.electrify(0)
+		if(specialfunctions & SAFE)
+			D.set_safeties(1)
 
 #undef OPEN
 #undef IDSCAN
@@ -170,13 +173,16 @@
 	name = "remote blast door-control"
 	desc = "It controls blast doors, remotely."
 
+/// Blast doors whose id matches ours (keyed).
+/obj/machinery/button/remote/blast_door/var/list/obj/machinery/door/blast/controlled_doors
+REL_KEYED_LIST(/obj/machinery/button/remote/blast_door, controlled_doors, id, /obj/machinery/door/blast)
+
 /obj/machinery/button/remote/blast_door/trigger()
-	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			if(M.density)
-				M.open()
-			else
-				M.close()
+	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
+		if(M.density)
+			M.open()
+		else
+			M.close()
 
 
 /obj/machinery/button/remote/blast_door/bear
@@ -220,30 +226,33 @@
 	icon_state = "launcherbtt"
 	circuit = /obj/item/circuitboard/mass_driver_button
 
+/// Blast doors and mass drivers whose id matches ours (keyed).
+/obj/machinery/button/remote/driver/var/list/obj/machinery/door/blast/controlled_doors
+/obj/machinery/button/remote/driver/var/list/obj/machinery/mass_driver/controlled_drivers
+REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_doors, id, /obj/machinery/door/blast)
+REL_KEYED_LIST(/obj/machinery/button/remote/driver, controlled_drivers, id, /obj/machinery/mass_driver)
+
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)
 		return
 	set_active(TRUE)
 	update_icon()
 
-	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.open()
+	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
+		M.open()
 	om_after_unique(src, 2 SECONDS, PROC_REF(trigger_step_one))
 
 /obj/machinery/button/remote/driver/proc/trigger_step_one()
 	PRIVATE_PROC(TRUE)
-	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.drive()
+	for(var/obj/machinery/mass_driver/M as anything in controlled_drivers)
+		M.drive()
 	om_after_unique(src, 5 SECONDS, PROC_REF(trigger_step_two))
 
 /obj/machinery/button/remote/driver/proc/trigger_step_two()
 	PRIVATE_PROC(TRUE)
 
-	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.close()
+	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
+		M.close()
 
 	set_active(FALSE)
 	update_icon()
@@ -270,7 +279,7 @@
 /obj/machinery/button/remote/driver/proc/driver_id_entered(datum/om/prompt/number/ask)
 	var/new_id = ask.number
 	if(new_id)
-		id = new_id
+		keyed_set_id(src, "id", new_id) // re-links the keyed doors and drivers
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/remote/driver/update_icon()
@@ -287,11 +296,14 @@
 	desc = "It controls shields, remotely."
 	icon = 'icons/obj/stationobjs.dmi'
 
+/// Shield generators whose id matches ours (keyed).
+/obj/machinery/button/remote/shields/var/list/obj/machinery/shield_gen/controlled_shields
+REL_KEYED_LIST(/obj/machinery/button/remote/shields, controlled_shields, id, /obj/machinery/shield_gen)
+
 /obj/machinery/button/remote/shields/trigger(mob/user)
-	for(var/obj/machinery/shield_gen/SG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(SG.id == id)
-			if(SG?.anchored)
-				SG.toggle()
+	for(var/obj/machinery/shield_gen/SG as anything in controlled_shields)
+		if(SG.anchored)
+			SG.toggle()
 
 /obj/machinery/button/remote/airlock/release
 	icon = 'icons/obj/door_release.dmi'
@@ -303,12 +315,11 @@
 	active_power_usage = 0
 
 /obj/machinery/button/remote/airlock/release/trigger()
-	for(var/obj/machinery/door/airlock/D in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(D.id_tag == id)
-			if(D.locked)
-				D.unlock(1)
-			if(D.density)
-				D.open(1)
+	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)
+		if(D.locked)
+			D.unlock(1)
+		if(D.density)
+			D.open(1)
 
 /obj/machinery/button/remote/airlock/release/powered()
 	return 1 //Is always able to be used

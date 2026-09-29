@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /proc/construction_edge_by_id(id)
 	for(var/path in GLOB.construction_graphs)
 		var/datum/construction_graph/graph = GLOB.construction_graphs[path]
-		var/datum/interaction/construction/edge = graph.edges_by_id[id]
+		var/datum/interaction/construction/edge = graph.edge_by_id(id)
 		if(edge)
 			return edge
 	return null
@@ -76,20 +76,18 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/edge_requires
 	/// The target var holding the state id. Null when state_of() works it out instead.
 	var/state_var = "construction_state"
-	/// All edges, as shared singletons.
+	/// All edges, owned by the graph, in add order (never removed, so indices are stable).
 	var/tmp/list/edges
-	/// "[state]" -> the edges leaving it.
+	/// "[state]" -> indices into `edges` of the edges leaving it (plain numbers, not entities).
 	var/tmp/list/edges_by_state
-	/// Edges with from_state CONSTRUCTION_ANY_STATE: each one's leaves() decides.
+	/// Edges with from_state CONSTRUCTION_ANY_STATE (a relation view into `edges`): each one's leaves() decides.
 	var/tmp/list/wildcard_edges
-	/// Edge id -> edge.
+	/// Edge id -> index into `edges` (plain numbers, not entities). Read through edge_by_id().
 	var/tmp/list/edges_by_id
 
 /datum/construction_graph/New()
 	..()
-	edges = list()
 	edges_by_state = list()
-	wildcard_edges = list()
 	edges_by_id = list()
 	for(var/path in edge_types)
 		add_edge(new path)
@@ -101,7 +99,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 
 /// Registers an edge with this graph and gives it an id and a name.
 /datum/construction_graph/proc/add_edge(datum/interaction/construction/edge)
-	edge.graph = src
+	rel_set(edge, "graph", src) // the graph owns its edges (edges_by_id); graph is the back view
 	if(length(edge_requires))
 		edge.requires = (edge.requires || list()) + edge_requires
 	if(!edge.id)
@@ -113,13 +111,27 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 		edge.id = "[base_id]#[n]"
 	if(!edge.name)
 		edge.name = capitalize(edge.step_text)
-	edges += edge
-	edges_by_id[edge.id] = edge
+	own_add(src, "edges", edge)
+	var/edge_index = length(edges)
+	edges_by_id[edge.id] = edge_index
 	if(edge.from_state == CONSTRUCTION_ANY_STATE)
-		wildcard_edges += edge
+		rel_add(src, "wildcard_edges", edge)
 	else
-		LAZYADD(edges_by_state["[edge.from_state]"], edge)
+		var/state_key = "[edge.from_state]"
+		var/list/state_indices = edges_by_state[state_key]
+		if(!state_indices)
+			state_indices = list()
+			edges_by_state[state_key] = state_indices
+		state_indices += edge_index
 	return edge
+
+/// The edge with this id on this graph, or null.
+/datum/construction_graph/proc/edge_by_id(id)
+	RETURN_TYPE(/datum/interaction/construction)
+	var/edge_index = edges_by_id?[id]
+	if(!edge_index || edge_index > length(edges))
+		return null
+	return edges[edge_index]
 
 /// The target's current state id, or null when it is not on this graph right now.
 /datum/construction_graph/proc/state_of(atom/target)
@@ -139,9 +151,8 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	. = list()
 	if(isnull(state))
 		return
-	var/list/fixed = edges_by_state["[state]"]
-	if(fixed)
-		. += fixed
+	for(var/edge_index in edges_by_state["[state]"])
+		. += edges[edge_index]
 	for(var/datum/interaction/construction/edge as anything in wildcard_edges)
 		if(edge.leaves(state))
 			. += edge
@@ -283,7 +294,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	compiled = dq_predicate_for("construction:[id]", spec, "construction edge [id]")
+	rel_set(src, "compiled", dq_predicate_for("construction:[id]", spec, "construction edge [id]")) // a shared cached predicate
 	return compiled
 
 /datum/interaction/construction/why_not(mob/actor, atom/target, obj/item/held)
@@ -304,7 +315,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 /datum/interaction/construction/proc/alt_predicate()
 	if(compiled_alt || !length(requires))
 		return compiled_alt
-	compiled_alt = dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")
+	rel_set(src, "compiled_alt", dq_predicate_for("construction-alt:[id]", requires, "construction edge [id] (alt item)")) // a shared cached predicate
 	return compiled_alt
 
 /// Whether `held` is one of the items standing in for the tool.
@@ -471,10 +482,5 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 		lines += span_notice("Next: [edge.step_text][needs ? " ([needs])" : ""]")
 	return length(lines) ? lines : null
 
-DECLARE_REF(/datum/construction_graph, "edges", OWNED_LIST, null)
-DECLARE_REF(/datum/construction_graph, "wildcard_edges", OWNED_LIST, null)
 
-DECLARE_REF(/datum/construction_graph, "edges_by_id", OWNED_VALUES, null)
 
-DECLARE_REF(/datum/interaction/construction, "graph", STATIC, null)
-DECLARE_REF(/datum/interaction/construction, "compiled_alt", STATIC, null)

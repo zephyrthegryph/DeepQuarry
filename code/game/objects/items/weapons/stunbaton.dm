@@ -118,7 +118,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/baton/loaded, "bcell", /obj/item/cell/devi
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				bcell = W
+				own_set(src, "bcell", W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -150,7 +150,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			bcell = null
+			own_take(src, "bcell")
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_icon()
@@ -248,7 +248,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				bcell = W
+				own_set(src, "bcell", W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -284,4 +284,3 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
 
-DECLARE_REF(/obj/item/melee/baton, "bcell", OWNED, null)

@@ -7,20 +7,19 @@
 	light_color = "#00b000"
 	circuit = /obj/item/circuitboard/pod
 	var/id = 1.0
-	var/connected_handle
+	var/obj/machinery/mass_driver/connected
 	var/timing = FALSE
 	var/time = 30.0
 	var/title = "Mass Driver Controls"
 
-/obj/machinery/computer/pod/Initialize(mapload)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+/// Blast doors and mass drivers sharing our id.
+/obj/machinery/computer/pod/var/list/obj/machinery/door/blast/pod_doors
+/obj/machinery/computer/pod/var/list/obj/machinery/mass_driver/pod_drivers
 
-/obj/machinery/computer/pod/LateInitialize()
-	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			connected_handle = om_handle(M)
-			break
+// Keyed by id: linked when either end materializes (replaces the LateInitialize and per-use scans).
+REL_KEYED(/obj/machinery/computer/pod, connected, id, /obj/machinery/mass_driver)
+REL_KEYED_LIST(/obj/machinery/computer/pod, pod_doors, id, /obj/machinery/door/blast)
+REL_KEYED_LIST(/obj/machinery/computer/pod, pod_drivers, id, /obj/machinery/mass_driver)
 
 /obj/machinery/computer/pod/proc/alarm()
 	if(!operable())
@@ -30,24 +29,21 @@
 		to_chat(viewers(null, null),"Cannot locate mass driver connector. Cancelling firing sequence!")
 		return
 
-	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.open()
+	for(var/obj/machinery/door/blast/M as anything in pod_doors)
+		M.open()
 
 	om_after(src, 2 SECONDS, PROC_REF(alarm_drive))
 
 /obj/machinery/computer/pod/proc/alarm_drive()
-	for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.power = connected()?.power
-			M.drive()
+	for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
+		M.power = connected()?.power
+		M.drive()
 	om_after(src, 5 SECONDS, PROC_REF(alarm_close))
 
 /obj/machinery/computer/pod/proc/alarm_close()
-	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.close()
-			return
+	for(var/obj/machinery/door/blast/M as anything in pod_doors)
+		M.close()
+		return
 
 /obj/machinery/computer/pod/declare_interactions(list/into)
 	into += list(
@@ -90,12 +86,11 @@
 
 	switch(action)
 		if("toggle_door")
-			for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-				if(M.id == id)
-					if(M.density)
-						M.open()
-					else
-						M.close()
+			for(var/obj/machinery/door/blast/M as anything in pod_doors)
+				if(M.density)
+					M.open()
+				else
+					M.close()
 			return TRUE
 		if("start_stop")
 			timing = !timing
@@ -106,10 +101,9 @@
 			alarm()
 			return TRUE
 		if("test_drive")
-			for(var/obj/machinery/mass_driver/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-				if(M.id == id)
-					M.power = connected().power
-					M.drive()
+			for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
+				M.power = connected()?.power
+				M.drive()
 			return TRUE
 		if("adjust_power")
 			if(!connected())
@@ -171,6 +165,6 @@
 	name = "Magix System IV"
 	desc = "An arcane artifact that holds much magic. Running E-Knock 2.2: Sorceror's Edition"
 
-/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/pod/proc/connected() as /obj/machinery/mass_driver
-	return om_resolve(connected_handle)
+	return connected

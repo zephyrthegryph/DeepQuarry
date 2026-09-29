@@ -20,7 +20,7 @@
 		if (tempnetwork.len)
 			T[text("[][]", C.c_tag, (C.can_use() ? null : " (Deactivated)"))] = C
 
-	track = new()
+	own_set(src, "track", new /datum/trackable())
 	track.cameras = T
 	return T
 
@@ -100,8 +100,9 @@
 /datum/trackable
 	var/list/names = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 	var/list/namecounts
-	var/list/humans
-	var/list/others
+	var/list/humans // name -> REF(mob) text; resolve through `tracked`
+	var/list/others // name -> REF(mob) text; resolve through `tracked`
+	var/list/tracked // relation: every mob listed above (cleared by the framework when one dies)
 	var/list/cameras = list() // ALLOW(instance_list): d: tracking scratch state rebuilt on every search
 
 /mob/living/silicon/ai/proc/trackable_mobs()
@@ -122,13 +123,15 @@
 		else
 			TB.names.Add(name)
 			LAZYSET(TB.namecounts, name, 1)
+		rel_add(TB, "tracked", M)
+		var/mob_ref = REF(M)
 		if(ishuman(M))
-			LAZYSET(TB.humans, name, M)
+			LAZYSET(TB.humans, name, mob_ref)
 		else
-			LAZYSET(TB.others, name, M)
+			LAZYSET(TB.others, name, mob_ref)
 
 	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
-	src.track = TB
+	own_set(src, "track", TB)
 	return targets
 
 /mob/living/silicon/ai/proc/ai_camera_track(target_name in trackable_mobs())
@@ -140,10 +143,11 @@
 		to_chat(src, "You can't follow [target_name] with cameras because you are dead!")
 		return
 	if(!target_name)
-		src.cameraFollow = null
+		rel_clear(src, "cameraFollow")
 
-	var/mob/target = (isnull(LAZYACCESS(track.humans, target_name)) ? LAZYACCESS(track.others, target_name) : LAZYACCESS(track.humans, target_name))
-	src.track = null
+	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
+	var/mob/target = target_ref ? locate_in_list(track.tracked, target_ref) : null
+	own_clear(src, "track", OWN_DELETE)
 	ai_actual_track(target)
 
 /mob/living/silicon/ai/proc/ai_cancel_tracking(forced = 0)
@@ -152,7 +156,7 @@
 
 	to_chat(src, "Follow camera mode [forced ? "terminated" : "ended"].")
 	cameraFollow.tracking_cancelled()
-	cameraFollow = null
+	rel_clear(src, "cameraFollow")
 
 /mob/living/silicon/ai/proc/ai_actual_track(mob/living/target as mob)
 	if(!istype(target))	return FALSE
@@ -163,7 +167,7 @@
 
 	if(U.cameraFollow)
 		U.ai_cancel_tracking()
-	U.cameraFollow = target
+	rel_set(U, "cameraFollow", target)
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 

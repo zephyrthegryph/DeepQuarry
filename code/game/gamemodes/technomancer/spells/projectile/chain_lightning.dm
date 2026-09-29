@@ -42,7 +42,7 @@
 		H.electrocute_act(power, src, H.get_siemens_coefficient_organ(affected), affected, 0)
 	else
 		target_mob.electrocute_act(power, src, 0.75, BP_TORSO)
-	LAZYOR(hit_mobs, target_mob)
+	rel_add(src, "hit_mobs", target_mob)
 
 	//Each bounce reduces the damage of the bolt.
 	power = power * 0.80

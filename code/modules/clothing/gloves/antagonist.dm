@@ -57,11 +57,11 @@
 		slot = SLOT_ID_POCKET_R
 	else
 		return
-	theirs = victim.get_equipped_item(slot_id)
+	rel_set(src, "theirs", victim.get_equipped_item(slot_id))
 	if(istype(theirs))
 		wait(1 SECOND, PROC_REF(take))
 	else
-		theirs = null
+		rel_clear(src, "theirs")
 		give()
 
 /datum/om/flow/pickpocket/proc/open_storage()
@@ -75,16 +75,16 @@
 	if(victim.get_equipped_item(slot_id) != theirs)
 		return
 	victim.drop_from_inventory(theirs)
-	took = theirs
-	theirs = null
+	rel_set(src, "took", theirs)
+	rel_clear(src, "theirs")
 	give()
 
 /// Slipping your own pocket item into theirs: a second of holding still.
 /datum/om/flow/pickpocket/proc/give()
 	var/mob/living/carbon/human/user = actor
-	mine = user.get_equipped_item(slot_id)
+	rel_set(src, "mine", user.get_equipped_item(slot_id))
 	if(!istype(mine))
-		mine = null
+		rel_clear(src, "mine")
 		swapped(FALSE)
 		return
 	giving = TRUE
@@ -128,7 +128,6 @@
 	var/battery_type = /obj/item/cell/device/weapon/recharge
 	var/obj/item/cell/battery = null
 // The battery is built in (nothing removes it): it goes with the ring, not onto the floor.
-DECLARE_REF(/obj/item/clothing/gloves/ring/buzzer, "battery", OWNED, null)
 
 /obj/item/clothing/gloves/ring/buzzer/get_cell()
 	return battery

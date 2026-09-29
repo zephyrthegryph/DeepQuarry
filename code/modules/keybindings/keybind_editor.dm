@@ -1,15 +1,14 @@
 /// The tgui page where a player edits their keybindings. One per client, made on demand.
 /datum/keybind_editor
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	/// The profile being edited in the UI.
 	var/profile = KEYBIND_PROFILE_DEFAULT
 
 /datum/keybind_editor/New(client/owner)
-	src.owner_handle = om_handle(owner)
+	src.owner = owner // a client, not a datum: the client owns us by design (keybind_editor)
 	profile = owner?.mob?.keybind_profile() || KEYBIND_PROFILE_DEFAULT
 
-// clears the client's cached editor (clients aren't datums).
-DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor")
+// The client is our one owner by design (clients aren't datums, so its var is plain).
 
 /client/var/tmp/datum/keybind_editor/keybind_editor
 
@@ -21,7 +20,7 @@ DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor"
 	if(!prefs)
 		return
 	if(!keybind_editor)
-		keybind_editor = new(src)
+		keybind_editor = new /datum/keybind_editor(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	keybind_editor.tgui_interact(mob)
 
 /datum/keybind_editor/tgui_state(mob/user)
@@ -180,8 +179,8 @@ DECLARE_REF(/datum/keybind_editor, "owner_handle", BACK_HANDLE, "keybind_editor"
 	log_input("Keybindings: [owner().key] changed their [profile] bindings.")
 	owner().apply_keybindings(force = TRUE)
 
-DECLARE_REF(/client, "keybind_editor", OWNED, null)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this editor belongs to.
 /datum/keybind_editor/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
+

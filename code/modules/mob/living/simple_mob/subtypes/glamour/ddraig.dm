@@ -1,4 +1,4 @@
-OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
+OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 
 /mob/living/simple_mob/vore/ddraig
 	name = "ddraig"
@@ -88,7 +88,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 /mob/living/simple_mob/vore/ddraig/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	verbs |= /mob/living/simple_mob/proc/animal_mount
 	verbs |= /mob/living/proc/toggle_rider_reins
 	verbs |= /mob/living/proc/set_size

@@ -16,9 +16,8 @@
 
 /datum/computer_file/program/comm/New(obj/item/modular_computer/comp = null)
 	..()
-	message_core = new
+	own_set(src, "message_core", new /datum/comm_message_listener)
 
-DECLARE_REF(/datum/computer_file/program/comm, "message_core", OWNED, null)
 
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()

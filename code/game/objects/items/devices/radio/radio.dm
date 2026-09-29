@@ -41,8 +41,9 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/const/FREQ_LISTENING = 1
 	var/list/internal_channels
 
-	var/radio_connection_handle
-	var/tmp/list/datum/radio_frequency/secure_radio_connections
+	var/datum/radio_frequency/radio_connection
+	/// Channel name -> the radio service's shared frequency datum (not owned; rebuilt on materialize).
+	var/list/datum/radio_frequency/secure_radio_connections
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -52,7 +53,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 /obj/item/radio/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -76,14 +77,14 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT) // ALLOW(decl): per-channel service call with extra arguments
+		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/on_dematerialize()
 	if(GLOB.radio_service)
 		GLOB.radio_service.remove_object(src, frequency)
 		for (var/ch_name in channels)
 			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-	radio_connection_handle = null
+	rel_clear(src, "radio_connection")
 	return ..()
 
 /obj/item/radio/LateInitialize()
@@ -625,8 +626,8 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 //Giving borgs their own radio to have some more room to work with -Sieve
 
 /obj/item/radio/borg
-	var/myborg_handle // Cyborg which owns this radio. Used for power checks
-	// ALLOW(state_ref): owned: installed encryption key, kept in the radio's contents
+	var/tmp/mob/living/silicon/robot/myborg // Cyborg which owns this radio (a relation view). Used for power checks
+	// owned: installed encryption key, kept in the radio's contents
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"
@@ -655,7 +656,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	if(!keyslot)
 		user.drop_item()
 		W.forceMove(src)
-		keyslot = W
+		own_set(src, "keyslot", W)
 
 	recalculateChannels()
 	return TRUE
@@ -666,9 +667,9 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		secure_radio_connections[ch_name] = null
+		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	keyslot.forceMove(get_turf(user))
-	keyslot = null
+	own_take(src, "keyslot")
 	recalculateChannels()
 	to_chat(user, "You pop out the encryption key in the radio!")
 	playsound(src, tool.usesound, 50, TRUE)
@@ -708,17 +709,17 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/proc/config(op)
 	if(GLOB.radio_service)
 		for (var/ch_name in channels)
 			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-	secure_radio_connections = new
+	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	channels = op
 	if(GLOB.radio_service)
 		for (var/ch_name in op)
-			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	return
 
 /obj/item/radio/off
@@ -865,15 +866,14 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	bs_tx_preload_id = "cryogaia_rx" //Transmit to a receiver
 	bs_rx_preload_id = "cryogaia_tx" //Recveive from a transmitter
 
-DECLARE_REF(/obj/item/radio, "secure_radio_connections", OWNED_LIST, null)
 DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
-DECLARE_REF(/obj/item/radio/borg, "keyslot", HELD, null)
+OWN(/obj/item/radio/borg, keyslot, OWN_CONTAINED)
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection
 
-/// LC-refs: myborg -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: myborg (reads null once it is gone).
 /obj/item/radio/borg/proc/myborg() as /mob/living/silicon/robot
-	return om_resolve(myborg_handle)
+	return myborg

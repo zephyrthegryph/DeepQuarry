@@ -123,7 +123,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 	if(emagged) // Time to griff
 		for(var/turf/simulated/floor/D in view(src))
 			if(confirmTarget(D))
-				target = D
+				rel_set(src, "target", D)
 				return
 
 	else if(amount)
@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			var/turf/T = get_step(src, targetdirection)
 			while(T in range(world.view, src))
 				if(confirmTarget(T))
-					target = T
+					rel_set(src, "target", T)
 					return
 				T = get_step(T, targetdirection)
 			return // In bridge mode we don't want to step off that line even to eat plates!
@@ -210,7 +210,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 		else
 			act_message(src, null, others = span_danger("%U% begins to tear through the floor!"))
 			bot_work(15 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done2), list(F))
-		target = null
+		rel_clear(src, "target")
 	else if(isopenturf(A) || istype(A, /turf/simulated/mineral/floor))
 		var/building = 2
 		if(locate(/obj/structure/lattice, A))
@@ -219,22 +219,22 @@ EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open contro
 			return
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to repair the hole."))
 		bot_work(5 SECONDS, A, PROC_REF(UnarmedAttack_floorbot_done3), list(A, building))
-		target = null
+		rel_clear(src, "target")
 	else if(istype(A, /turf/simulated/floor))
 		var/turf/simulated/floor/F = A
 		if(F.broken || F.burnt)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to remove the broken floor."))
 			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done4), list(F))
-			target = null
+			rel_clear(src, "target")
 		else if(!F.flooring && amount)
 			act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to improve the floor."))
 			bot_work(5 SECONDS, F, PROC_REF(UnarmedAttack_floorbot_done5), list(F))
-			target = null
+			rel_clear(src, "target")
 	else if(istype(A, /obj/item/stack/tile/floor) && amount < maxAmount)
 		var/obj/item/stack/tile/floor/T = A
 		act_message(src, null, others = span_infoplain(span_bold("%U%") + " begins to collect tiles."))
 		bot_work(2 SECONDS, T, PROC_REF(UnarmedAttack_floorbot_done6), list(T))
-		target = null
+		rel_clear(src, "target")
 	else if(istype(A, /obj/item/stack/material) && amount + 4 <= maxAmount)
 		var/obj/item/stack/material/M = A
 		if(M.get_material_name() == MAT_STEEL)

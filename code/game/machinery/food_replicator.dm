@@ -43,7 +43,7 @@
 	if(T)
 		if(container)
 			container.forceMove(T)
-			container = null
+			own_take(src, "container")
 	QDEL_NULL_LIST(products)
 	return ..()
 
@@ -155,7 +155,7 @@
 /obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
 	user.drop_item()
 	O.forceMove(src)
-	container = O
+	own_set(src, "container", O)
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE
 
@@ -238,7 +238,7 @@
 /obj/machinery/food_replicator/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		container = null
+		own_take(src, "container")
 		return TRUE
 	return FALSE
 
@@ -256,4 +256,4 @@
 	update_icon()
 	explosion(src, 0, 0, 2)
 
-DECLARE_REF(/obj/machinery/food_replicator, "container", HELD, null)
+OWN(/obj/machinery/food_replicator, container, OWN_CONTAINED)

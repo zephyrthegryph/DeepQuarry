@@ -12,7 +12,7 @@
 	RETURN_TYPE(/datum/forensics_crime)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!forensic_data)
-		forensic_data = new()
+		own_set(src, "forensic_data", new /datum/forensics_crime())
 	return forensic_data
 
 /// Forensics: Handles most forensic investigation actions while touching an object. Including fingerprints, stray fibers from clothing, and bloody hands smearing objects. Returns true if a fingerprint was made.

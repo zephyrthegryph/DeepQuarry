@@ -452,7 +452,7 @@
 
 	damage *= rad_mod
 	self.injure(INJURY_TOXIN, damage * RADIATION_SPEED_COEFFICIENT, null, null, 0, /datum/affliction/radiation_poisoning, INJURE_CONTINUOUS)
-	if(organic && self.organs.len)
+	if(organic && length(self.organs))
 		var/obj/item/organ/external/O = pick(self.organs)
 		if(istype(O))
 			O.add_autopsy_data("Radiation Poisoning", damage)
@@ -626,7 +626,7 @@
 			suit_supply = Void.tank
 
 		if ((!suit_supply && !contents.Find(internal)) || !((get_equipped_item(SLOT_ID_MASK) && (get_equipped_item(SLOT_ID_MASK).item_flags & AIRTIGHT)) || (get_equipped_item(SLOT_ID_HEAD) && (get_equipped_item(SLOT_ID_HEAD).item_flags & AIRTIGHT))))
-			internal = null
+			rel_clear(src, "internal")
 
 		if(internal)
 			return internal.remove_air_volume(volume_needed)

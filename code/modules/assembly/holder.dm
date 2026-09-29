@@ -11,11 +11,9 @@
 	var/secured = 0
 	var/obj/item/assembly/a_left = null
 	var/obj/item/assembly/a_right = null
-	var/tmp/special_assembly_handle
+	var/tmp/obj/special_assembly
 
 // Its assemblies stop naming it (ones inside go with it; ones taken out stay).
-DECLARE_REF(/obj/item/assembly_holder, "a_left", BACK_VIA, "holder_handle")
-DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 
 /obj/item/assembly_holder/proc/attach(obj/item/assembly/D, obj/item/assembly/D2, mob/user)
 	if(!D || !D2)
@@ -31,12 +29,12 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 		user.remove_from_mob(D)
 		user.remove_from_mob(D2)
 
-	D.holder_handle = om_handle(src)
-	D2.holder_handle = om_handle(src)
+	rel_set(D, "holder", src)
+	rel_set(D2, "holder", src)
 	D.forceMove(src)
 	D2.forceMove(src)
-	a_left = D
-	a_right = D2
+	own_set(src, "a_left", D)
+	own_set(src, "a_right", D2)
 	name = "[D.name]-[D2.name] assembly"
 	update_icon()
 	user.put_in_hands(src)
@@ -80,7 +78,7 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 /obj/item/assembly_holder/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -162,12 +160,15 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 		var/turf/T = get_turf(src)
 		if(!T)
 			return TRUE
-		if(a_left)
-			a_left.holder_handle = null
-			a_left.forceMove(T)
-		if(a_right)
-			a_right.holder_handle = null
-			a_right.forceMove(T)
+		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
+		var/obj/item/assembly/left = own_take(src, "a_left")
+		var/obj/item/assembly/right = own_take(src, "a_right")
+		if(left)
+			rel_clear(left, "holder")
+			left.forceMove(T)
+		if(right)
+			rel_clear(right, "holder")
+			right.forceMove(T)
 		consume(src, user)
 	return TRUE
 
@@ -199,15 +200,15 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 
 	var/obj/item/assembly/igniter/ign = new(src)
 	ign.secured = 1
-	ign.holder_handle = om_handle(src)
+	rel_set(ign, "holder", src)
 
 	var/obj/item/assembly/timer/tmr = new(src)
 	tmr.time = 5
 	tmr.secured = 1
-	tmr.holder_handle = om_handle(src)
+	rel_set(tmr, "holder", src)
 
-	a_left = tmr
-	a_right = ign
+	own_set(src, "a_left", tmr)
+	own_set(src, "a_right", ign)
 	secured = 1
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"
@@ -250,9 +251,9 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
 
-DECLARE_REF(/obj/item/assembly_holder, "a_left", HELD, null)
-DECLARE_REF(/obj/item/assembly_holder, "a_right", HELD, null)
+OWN(/obj/item/assembly_holder, a_left, OWN_CONTAINED)
+OWN(/obj/item/assembly_holder, a_right, OWN_CONTAINED)
 
-/// LC-refs: the special_assembly this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the special_assembly this refers to (a relation view: null once it is deleted).
 /obj/item/assembly_holder/proc/special_assembly() as /obj
-	return om_resolve(special_assembly_handle)
+	return special_assembly

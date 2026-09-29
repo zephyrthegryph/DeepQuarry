@@ -10,12 +10,13 @@
 	invisibility = INVISIBILITY_OBSERVER
 
 	faction = FACTION_BLOB
-	var/tmp/blob_core_handle	// The blob overmind's core
+	var/tmp/obj/structure/blob/core/blob_core	// The blob overmind's core
 	var/blob_points = 0
 	var/max_blob_points = 200
 	var/last_attack = 0
 	var/datum/blob_type/blob_type = null
-	var/list/blob_mobs = list() // ALLOW(instance_list): d: per-mob blob_mobs, filled at runtime; mobs are few
+	/// Relation list (REL_LIST): spores and other blob mobs this overmind spawned.
+	var/list/blob_mobs
 	var/list/resource_blobs = list() // ALLOW(instance_list): d: per-mob resource_blobs, filled at runtime; mobs are few
 	var/placed = 0
 	var/base_point_rate = 2 //for blob core placement
@@ -41,10 +42,10 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 	name = new_name
 	real_name = new_name
 	if(desired_blob_type)
-		blob_type = new desired_blob_type()
+		own_set(src, "blob_type", new desired_blob_type())
 	else
 		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		blob_type = new BT()
+		own_set(src, "blob_type", new BT())
 	color = blob_type.complementary_color
 	if(blob_core())
 		blob_core().update_icon()
@@ -62,12 +63,12 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 /mob/observer/blob/on_destroy(force)
 	for(var/obj/structure/blob/B as anything in REGISTRY_MEMBERS(REGISTRY_BLOBS))
 		if(B && B.overmind == src)
-			B.overmind = null
+			rel_clear(B, "overmind")
 			B.update_icon() //reset anything that was ours
 
 	for(var/mob/living/simple_mob/blob/spore/BM as anything in blob_mobs)
 		if(BM)
-			BM.overmind = null
+			rel_clear(BM, "overmind")
 			BM.update_icons()
 
 	..()
@@ -164,13 +165,14 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	log_talk(message, LOG_SAY)
 	return 1
 
-DECLARE_REF(/mob/observer/blob, "blob_type", OWNED, null)
 
-/// LC-refs: The blob overmind's core -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The blob overmind's core
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
-	return om_resolve(blob_core_handle)
+	return blob_core
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The shared (registered) language this overmind speaks.
 /mob/observer/blob/proc/default_language() as /datum/language
 	return default_language_static
-DECLARE_REF(/mob/observer/blob, "default_language_static", STATIC, null)
+
+// blob_type is owned (implicit OWN, own_set in Initialize); blob_mobs names spawned mobs.
+REL_LIST(/mob/observer/blob, blob_mobs)

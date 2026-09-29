@@ -9,13 +9,12 @@
 	var/channel = "NCS Northern Star News Feed"
 	var/obj/machinery/camera/network/thunder/camera
 	var/obj/item/radio/radio
-	var/showing
+	/// Relation view: what the feed shows.
+	var/atom/showing
 	var/showing_name
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_REF(/obj/item/tvcamera, "camera", OWNED, null)
-DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "camera", /obj/machinery/camera/network/thunder)
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "radio", /obj/item/radio)
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
@@ -61,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(showing)
 		hide_tvs(showing)
 
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.show_thing(thing)
@@ -74,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
 		ES.maybe_stop_showing(showing)
 	om_task_periodic_stop(src)
-	showing = null
+	rel_clear(src, "showing")
 	showing_name = null
 
 /obj/item/tvcamera/Moved(atom/old_loc, direction, forced = FALSE, movetime)
@@ -94,11 +93,12 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 
 /obj/item/tvcamera/periodic_step()
 	if(!showing)
-		return PROCESS_KILL
+		if(isnull(showing_name))
+			return PROCESS_KILL
+		show_tvs(loc) // the shown thing is gone (the view cleared): fall back to where we are
+		return
 
-	var/atom/A = om_resolve(showing)
-	if(!A || QDELETED(A))
-		show_tvs(loc)
+	var/atom/A = showing
 
 	if(get_dist(get_turf(src), get_turf(A)) > 0) // No realtime updates
 		show_tvs(loc)
@@ -137,12 +137,11 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	var/channel = "Default Bodycamera Feed"
 	var/obj/machinery/camera/network/bodycamera/bcamera
 	var/obj/item/radio/bradio
-	var/showing
+	/// Relation view: what the feed shows.
+	var/atom/showing
 	var/showing_name
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bcamera", OWNED, null)
-DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bradio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bcamera", /obj/machinery/camera/network/bodycamera)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bradio", /obj/item/radio)
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)
@@ -187,7 +186,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(showing)
 		hide_bodycamera_tvs(showing)
 
-	showing = om_handle(thing)
+	rel_set(src, "showing", thing)
 	showing_name = "[thing]"
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.show_thing(thing, src)
@@ -200,7 +199,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 		ES.maybe_stop_showing(showing)
 	om_task_periodic_stop(src)
-	showing = null
+	rel_clear(src, "showing")
 	showing_name = null
 
 /obj/item/clothing/accessory/bodycam/Moved(atom/old_loc, direction, forced = FALSE, movetime)
@@ -210,11 +209,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 
 /obj/item/clothing/accessory/bodycam/periodic_step()
 	if(!showing)
-		return PROCESS_KILL
+		if(isnull(showing_name))
+			return PROCESS_KILL
+		show_bodycamera_tvs(loc) // the shown thing is gone (the view cleared): fall back to where we are
+		return
 
-	var/atom/A = om_resolve(showing)
-	if(!A || QDELETED(A))
-		show_bodycamera_tvs(loc)
+	var/atom/A = showing
 
 	if(get_dist(get_turf(src), get_turf(A)) > 0) // No realtime updates
 		update_feed()

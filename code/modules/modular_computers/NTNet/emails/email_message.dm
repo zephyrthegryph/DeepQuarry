@@ -14,7 +14,7 @@
 	temp.spam = spam
 	temp.timestamp = timestamp
 	if(attachment)
-		temp.attachment = attachment.clone()
+		own_set(temp, "attachment", attachment.clone())
 	return temp
 
 
@@ -30,4 +30,3 @@
 /datum/computer_file/data/email_message/proc/set_timestamp()
 	timestamp = stationtime2text()
 
-DECLARE_REF(/datum/computer_file/data/email_message, "attachment", OWNED, null)

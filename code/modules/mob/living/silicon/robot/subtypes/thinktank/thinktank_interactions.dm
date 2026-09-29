@@ -9,12 +9,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 /mob/living/silicon/robot/platform/proc/platform_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!opened)
 		if(recharging)
-			var/obj/item/recharging_atom = om_resolve(recharging)
-			if(istype(recharging_atom) && !QDELETED(recharging_atom) && recharging_atom.loc == src)
+			var/obj/item/recharging_atom = recharging
+			rel_clear(src, "recharging")
+			if(!QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				user.put_in_hands(recharging_atom)
 				act_message(user, src, others = span_infoplain(span_bold("%U%") + " pops %I% out of %T%'s recharging port."), item = recharging_atom)
-			recharging = null
 			return TRUE
 
 		if(try_remove_cargo(user))
@@ -26,10 +26,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 /mob/living/silicon/robot/platform/proc/platform_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/cell) && !opened)
 		if(recharging)
-			to_chat(user, span_warning("\The [src] already has \a [om_resolve(recharging)] inserted into its recharging port."))
+			to_chat(user, span_warning("\The [src] already has \a [recharging] inserted into its recharging port."))
 		else if(user.unEquip(W))
 			W.forceMove(src)
-			recharging = om_handle(W)
+			rel_set(src, "recharging", W)
 			recharge_complete = FALSE
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%'s recharging port."), item = W)
 		return TRUE

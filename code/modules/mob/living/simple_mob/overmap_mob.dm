@@ -1,7 +1,3 @@
-// Bracketed at file-header rather than per-hunk because the
-// edits are mechanical and span the whole file; the commit SHA
-// is the source of truth for per-line diff context.
-
 //So this is a bit weird, but I tried to make this as adaptable as I could
 //There are two working parts of an overmap mob, but I made it look like there is only one as far as the players are concerned.
 //The /obj/effect/overmap/visitable/simplemob is the part people will actually see. It follows the mob around and changes dir to look as mob-ish as it can.
@@ -31,18 +27,18 @@
 	unknown_name = "unknown ship"
 	unknown_state = "ship"
 
-	var/mob/living/simple_mob/vore/overmap/parent_mob_type
+	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
 /obj/effect/overmap/visitable/simplemob/Initialize(mapload, new_parent)
 	. = ..()
-	parent = new_parent
+	rel_set(src, "parent", new_parent)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
 		return INITIALIZE_HINT_QDEL
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
-		parent = P
+		rel_set(src, "parent", P)
 	om_mob_event_setup()
 
 /obj/effect/overmap/visitable/simplemob/proc/om_mob_event_setup()
@@ -56,11 +52,8 @@
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-// Ownership is a tree: the mob owns its marker (DECLARE_REF(..., OWNED) child_om_marker);
-// the marker's `parent` is only the way back, nulled on both sides when the
-// marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
-// the other twice (a CRASH the OM trampoline's catch hid).
-DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_marker")
+// Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
+// the marker's `parent` is only a relation back, cleared when the mob goes.
 
 /obj/effect/overmap/visitable/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -124,7 +117,7 @@ DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_m
 
 /mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
 	. = ..()
-	child_om_marker = new_child
+	own_set(src, "child_om_marker", new_child)
 	if(child_om_marker)
 		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
 	if(!om_child_type)
@@ -132,18 +125,17 @@ DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_m
 		return INITIALIZE_HINT_QDEL
 	// Maps with no overmap can still spawn overmap mobs (e.g. admin
 	// summon, unit tests). Skip the marker — there's nothing for it
-	// to render against, and creating one will QDEL through and take
-	// us with it via the marker's Destroy() QDEL_NULL(parent).
+	// to render against, and a marker that fails to initialise takes
+	// us with it through the overmap_mob_marker relation.
 	if(!using_map?.use_overmap)
 		return
 	if(!child_om_marker)
 		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
-		child_om_marker = C
+		own_set(src, "child_om_marker", C)
 		// The marker's Initialize() may have failed and deleted itself.
 		if(!QDELETED(C))
 			om_link(src, C, /datum/om/relation/overmap_mob_marker)
 
-DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 
 /// Overmap mob -> the marker that shows it. A marker destroyed on its own (not
 /// by its mob, which owns it) takes the mob with it: the mob is invisible and
@@ -169,18 +161,18 @@ DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 	unknown_name = "unknown ship"
 	unknown_state = "ship"
 
-	var/mob/living/simple_mob/vore/overmap/parent_mob_type
+	var/mob/living/simple_mob/vore/overmap/parent_mob_type // a type path, never an instance
 	var/mob/living/simple_mob/vore/overmap/parent
 
 /obj/effect/overmap/visitable/ship/simplemob/Initialize(mapload, new_parent)
 	. = ..()
-	parent = new_parent
+	rel_set(src, "parent", new_parent)
 	if(!parent_mob_type && !parent)
 		log_and_message_admins("An improperly configured OM mob event tried to spawn, and was deleted.")
 		return INITIALIZE_HINT_QDEL
 	if(!parent)
 		var/mob/living/simple_mob/vore/overmap/P = new parent_mob_type(loc, src)
-		parent = P
+		rel_set(src, "parent", P)
 	om_mob_event_setup()
 
 /obj/effect/overmap/visitable/ship/simplemob/proc/om_mob_event_setup()
@@ -194,11 +186,8 @@ DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 		color = initial(parent.color)
 		desc = initial(parent.desc)
 
-// Ownership is a tree: the mob owns its marker (DECLARE_REF(..., OWNED) child_om_marker);
-// the marker's `parent` is only the way back, nulled on both sides when the
-// marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
-// the other twice (a CRASH the OM trampoline's catch hid).
-DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent", BACK, "child_om_marker")
+// Ownership is a tree: the mob owns its marker (child_om_marker, OWN);
+// the marker's `parent` is only a relation back, cleared when the mob goes.
 
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -217,7 +206,3 @@ DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent", BACK, "child
 	EVENT_HANDLER
 	forceMove(parent.loc)
 	set_dir(parent.dir)
-
-// Type paths, never instances.
-DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent_mob_type", STATIC, null)
-DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent_mob_type", STATIC, null)

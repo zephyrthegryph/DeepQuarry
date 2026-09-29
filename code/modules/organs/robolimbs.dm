@@ -3,6 +3,9 @@ GLOBAL_LIST_EMPTY(robolimb_data)
 GLOBAL_LIST_EMPTY(chargen_robolimbs)
 GLOBAL_DATUM(basic_robolimb, /datum/robolimb)
 
+// Robolimb models are registry singletons (REGISTRY_TYPE in code/datums/ownership/registry_types.dm):
+// a /datum/robolimb var is implicitly shared.
+
 /proc/populate_robolimb_list()
 	GLOB.basic_robolimb = new()
 	for(var/limb_type in typesof(/datum/robolimb))

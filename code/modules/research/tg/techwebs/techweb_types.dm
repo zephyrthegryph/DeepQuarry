@@ -47,6 +47,8 @@ GLOBAL_LIST_EMPTY(autounlock_techwebs)
 
 /datum/techweb/autounlocking/New()
 	. = ..()
+	// One per type for the round (GLOB.autounlock_techwebs): a shared web, so it is registered.
+	GLOB.research_service.register_techweb(src)
 	for(var/id in GLOB.research_service.techweb_designs)
 		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[id]
 		if(!(design.build_type & allowed_buildtypes))

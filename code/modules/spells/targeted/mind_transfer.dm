@@ -48,7 +48,7 @@
 				remove_verb(victim, V)
 
 		var/mob/observer/dead/ghost = victim.ghostize(0)
-		ghost.spell_list += victim.spell_list//If they have spells, transfer them. Now we basically have a backup mob.
+		rel_add(ghost, "spell_list", victim.spell_list) //If they have spells, transfer them. Now we basically have a backup mob.
 
 		move_player(caster, victim, "mind transfer spell")
 		for(var/datum/spell/S in victim.spell_list) //get rid of spells the new way
@@ -65,7 +65,7 @@
 		transfer_mind(ghost.mind, caster, "mind transfer spell", force = TRUE) // the ghost holds the key: force it along
 		for(var/datum/spell/S in ghost.spell_list)
 			caster.add_spell(S)
-		ghost.spell_list = list()
+		rel_set(ghost, "spell_list", list())
 
 		if(length(caster.mind.special_verbs)) //If they had any special verbs, we add them here.
 			for(var/V in caster.mind.special_verbs)

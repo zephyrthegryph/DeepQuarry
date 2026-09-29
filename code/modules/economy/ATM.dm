@@ -24,14 +24,14 @@ log transactions
 	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/atm
 	flags = WALL_ITEM
-	var/tmp/authenticated_account_handle
+	var/tmp/datum/money_account/authenticated_account
 	var/number_incorrect_tries = 0
 	var/previous_account_number = 0
 	var/max_pin_attempts = 3
 	var/ticks_left_locked_down = 0
 	var/ticks_left_timeout = 0
 	var/machine_id = ""
-	var/tmp/held_card_handle
+	var/tmp/obj/item/card/held_card
 	var/editing_security_level = 0
 	var/view_screen = NO_SCREEN
 
@@ -48,7 +48,7 @@ log transactions
 	if(ticks_left_timeout > 0)
 		ticks_left_timeout--
 		if(ticks_left_timeout <= 0)
-			authenticated_account_handle = null
+			rel_clear(src, "authenticated_account")
 	if(ticks_left_locked_down > 0)
 		ticks_left_locked_down--
 		if(ticks_left_locked_down <= 0)
@@ -114,9 +114,9 @@ log transactions
 	if(!held_card())
 		user.drop_item()
 		idcard.forceMove(src)
-		held_card_handle = om_handle(idcard)
+		rel_set(src, "held_card", idcard)
 		if(authenticated_account() && held_card().associated_account_number != authenticated_account().account_number)
-			authenticated_account_handle = null
+			rel_clear(src, "authenticated_account")
 	return TRUE
 
 /// The old attackby's spacecash branch: deposit cash into the authenticated account.
@@ -218,13 +218,13 @@ log transactions
 					var/obj/item/I = ui.user.get_active_hand()
 					if(istype(I, /obj/item/card/id))
 						ui.user.drop_item(src)
-						held_card_handle = om_handle(I)
+						rel_set(src, "held_card", I)
 			. = TRUE
 
 		if("logout")
 			if(held_card())
 				release_held_id(ui.user)
-			authenticated_account_handle = null
+			rel_clear(src, "authenticated_account")
 			. = TRUE
 
 		// Balance statement
@@ -338,7 +338,7 @@ log transactions
 			if(!tried_account_num)
 				scan_user(ui.user)
 			else
-				authenticated_account_handle = om_handle(attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
+				rel_set(src, "authenticated_account", attempt_account_access(tried_account_num, tried_pin, held_card() && held_card().associated_account_number == tried_account_num ? 2 : 1))
 
 			if(!authenticated_account())
 				number_incorrect_tries++
@@ -357,7 +357,7 @@ log transactions
 							T.source_terminal = machine_id
 							T.date = GLOB.current_date_string
 							T.time = stationtime2text()
-							LAZYADD(failed_account.transaction_log, T)
+							own_add(failed_account, "transaction_log", T)
 					else
 						to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 						previous_account_number = tried_account_num
@@ -377,7 +377,7 @@ log transactions
 				T.source_terminal = machine_id
 				T.date = GLOB.current_date_string
 				T.time = stationtime2text()
-				LAZYADD(authenticated_account().transaction_log, T)
+				own_add(authenticated_account(), "transaction_log", T)
 
 				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
 
@@ -469,7 +469,7 @@ log transactions
 				var/obj/item/pda/P = human_user.get_equipped_item(SLOT_ID_ID)
 				I = P.id
 			if(I)
-				authenticated_account_handle = om_handle(attempt_account_access(I.associated_account_number))
+				rel_set(src, "authenticated_account", attempt_account_access(I.associated_account_number))
 
 // put the currently held id on the ground or in the hand of the user
 /obj/machinery/atm/proc/release_held_id(mob/living/carbon/human/human_user as mob)
@@ -477,11 +477,11 @@ log transactions
 		return
 
 	held_card().forceMove(src.loc)
-	authenticated_account_handle = null
+	rel_clear(src, "authenticated_account")
 
 	if(ishuman(human_user) && !human_user.get_active_hand())
 		human_user.put_in_hands(held_card())
-	held_card_handle = null
+	rel_clear(src, "held_card")
 
 /obj/machinery/atm/proc/spawn_ewallet(sum, loc, mob/living/carbon/human/human_user as mob)
 	var/obj/item/spacecash/ewallet/E = new /obj/item/spacecash/ewallet(loc)
@@ -495,10 +495,10 @@ log transactions
 #undef TRANSFER_FUNDS
 #undef VIEW_TRANSACTION_LOGS
 
-/// LC-refs: the held_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the held_card this refers to (a relation view: null once it is deleted).
 /obj/machinery/atm/proc/held_card() as /obj/item/card
-	return om_resolve(held_card_handle)
+	return held_card
 
-/// LC-refs: the authenticated_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the authenticated_account this refers to (a relation view: null once it is deleted).
 /obj/machinery/atm/proc/authenticated_account() as /datum/money_account
-	return om_resolve(authenticated_account_handle)
+	return authenticated_account

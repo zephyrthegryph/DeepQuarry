@@ -12,8 +12,8 @@
 	var/swarm_offset_y = 0
 	/// TRUE while offset by swarming.
 	var/is_swarming = FALSE
-	/// om_handle()s of the swarmers sharing our turf (lazy).
-	var/list/swarm_member_handles
+	/// The swarmers sharing our turf: a relation list view (lazy).
+	var/list/atom/movable/swarm_members
 
 /atom/movable/proc/enable_swarming(max_x = 24, max_y = 24)
 	swarm_offset_x = rand(-max_x, max_x)
@@ -46,24 +46,18 @@
 		pair(other, AM)
 
 /datum/om/behaviour/swarming/proc/pair(atom/movable/AM, atom/movable/other)
-	var/h = om_handle(other)
-	if(!h)
+	if(QDELETED(other))
 		return
-	LAZYOR(AM.swarm_member_handles, h)
+	rel_add(AM, "swarm_members", other)
 	swarm(AM)
 
 /// Unpairs `AM` from every swarm-mate; mates left alone stop swarming.
 /datum/om/behaviour/swarming/proc/leave_all(atom/movable/AM)
-	var/my_h = om_handle(AM)
-	for(var/h in AM.swarm_member_handles)
-		var/atom/movable/other = om_resolve(h)
-		if(!other)
-			continue
-		if(my_h)
-			LAZYREMOVE(other.swarm_member_handles, my_h)
-		if(!length(other.swarm_member_handles))
+	for(var/atom/movable/other as anything in AM.swarm_members?.Copy())
+		rel_remove(other, "swarm_members", AM)
+		if(!length(other.swarm_members))
 			unswarm(other)
-	AM.swarm_member_handles = null
+	rel_clear(AM, "swarm_members")
 	unswarm(AM)
 
 /datum/om/behaviour/swarming/proc/swarm(atom/movable/owner)
@@ -75,3 +69,5 @@
 	if(owner.is_swarming)
 		animate(owner, pixel_x = owner.pixel_x - owner.swarm_offset_x, pixel_y = owner.pixel_y - owner.swarm_offset_y, time = 2)
 		owner.is_swarming = FALSE
+
+REL_LIST(/atom/movable, swarm_members)

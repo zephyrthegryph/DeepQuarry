@@ -105,56 +105,39 @@
 /datum/node/statement/ReturnStatement
 	var/datum/node/expression/value
 
-DECLARE_REF(/datum/node/statement/FunctionDefinition, "block", OWNED, null)
 
-DECLARE_REF(/datum/node/statement/VariableAssignment, "var_name", OWNED, null)
-DECLARE_REF(/datum/node/statement/VariableAssignment, "value", OWNED, null)
 
-DECLARE_REF(/datum/node/statement/IfStatement, "block", OWNED, null)
-DECLARE_REF(/datum/node/statement/IfStatement, "else_block", OWNED, null)
-DECLARE_REF(/datum/node/statement/IfStatement, "cond", OWNED, null)
 
-DECLARE_REF(/datum/node/statement/WhileLoop, "block", OWNED, null)
-DECLARE_REF(/datum/node/statement/WhileLoop, "cond", OWNED, null)
 
-DECLARE_REF(/datum/node/statement/ReturnStatement, "value", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableDeclaration/proc/var_name() as /datum/node/identifier
 	return var_name_owned
-DECLARE_REF(/datum/node/statement/VariableDeclaration, "var_name_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/test() as /datum/node/expression
 	return test_owned
-DECLARE_REF(/datum/node/statement/ForLoop, "test_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/init() as /datum/node/expression
 	return init_owned
-DECLARE_REF(/datum/node/statement/ForLoop, "init_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/increment() as /datum/node/expression
 	return increment_owned
-DECLARE_REF(/datum/node/statement/ForLoop, "increment_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/FunctionCall/proc/object() as /datum/node/identifier
 	return object_owned
-DECLARE_REF(/datum/node/statement/FunctionCall, "object_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableAssignment/proc/object() as /datum/node/identifier
 	return object_owned
-DECLARE_REF(/datum/node/statement/VariableAssignment, "object_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/VariableDeclaration/proc/object() as /datum/node/identifier
 	return object_owned
-DECLARE_REF(/datum/node/statement/VariableDeclaration, "object_owned", OWNED, null)
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder (implicit OWN); deleted with it.
 /datum/node/statement/ForLoop/proc/block_node() as /datum/node/BlockDefinition
 	return block_owned
-DECLARE_REF(/datum/node/statement/ForLoop, "block_owned", OWNED, null)

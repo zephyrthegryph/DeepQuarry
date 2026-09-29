@@ -73,7 +73,7 @@
 
 	var/wielded_item_state
 	var/one_handed_penalty = 0 // Penalty applied if someone fires a two-handed gun with one hand.
-	var/tmp/auto_target_handle
+	var/tmp/datum/auto_target
 	var/shooting = 0
 	var/next_fire_time = 0
 
@@ -86,7 +86,7 @@
 	var/keep_aim = 1 	//1 for keep shooting until aim is lowered
 						//0 for one bullet after tarrget moves and aim is lowered
 	var/multi_aim = 0 //Used to determine if you can target multiple people.
-	var/tmp/last_moved_mob_handle	//Used to fire faster at more than one person.
+	var/tmp/mob/living/last_moved_mob	//Used to fire faster at more than one person.
 	var/tmp/told_cant_shoot = 0 //So that it doesn't spam them with the fact they cannot hit them.
 	var/tmp/lock_time = -100
 
@@ -136,13 +136,13 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 /obj/item/gun/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to length(firemodes))
-		LAZYSET(firemodes, i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
+		own_put(src, "firemodes", i, new /datum/firemode(src, LAZYACCESS(firemodes, i)))
 
 	if(isnull(scoped_accuracy))
 		scoped_accuracy = accuracy
 
 	if(dna_lock)
-		attached_lock = new /obj/item/dnalockingchip(src)
+		own_set(src, "attached_lock", new /obj/item/dnalockingchip(src))
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -150,7 +150,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 
 	// Initialise the firemode selector.
 
-DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 
 /obj/item/gun/update_twohanding()
 	if(one_handed_penalty)
@@ -244,7 +243,7 @@ DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
-		user.aiming = new(user)
+		own_set(user, "aiming", new /obj/aiming_overlay(user))
 
 	if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A)
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.
@@ -317,7 +316,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
 		A.forceMove(src)
-		attached_lock = A
+		own_set(src, "attached_lock", A)
 		dna_lock = 1
 		return
 
@@ -334,7 +333,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	to_chat(user, span_notice("You remove \the [attached_lock] from \the [src]."))
 	user.put_in_hands(attached_lock)
 	dna_lock = FALSE
-	attached_lock = null
+	own_take(src, "attached_lock")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/emag_act(remaining_charges, mob/user)
@@ -854,15 +853,15 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 	..()
 
-DECLARE_REF(/obj/item/gun, "attached_lock", HELD, null)
+OWN(/obj/item/gun, attached_lock, OWN_CONTAINED)
 
-/// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()
-	return om_resolve(auto_target_handle)
+	return auto_target
 
-/// LC-refs: Used to fire faster at more than one person. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Used to fire faster at more than one person. (a relation view: null once it is deleted).
 /obj/item/gun/proc/last_moved_mob() as /mob/living
-	return om_resolve(last_moved_mob_handle)
+	return last_moved_mob
 
 /// Called after each shot; starts the post-fire cooldowns that hold off recharging.
 /// Loaded smart magazines wait their own production_delay before forming new rounds.

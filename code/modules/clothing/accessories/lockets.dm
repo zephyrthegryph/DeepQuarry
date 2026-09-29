@@ -9,7 +9,7 @@
 	slot = ACCESSORY_SLOT_DECOR
 	var/base_icon
 	var/open
-	var/tmp/held_handle	//Item inside locket.
+	var/tmp/obj/item/held	//Item inside locket.
 	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
@@ -33,7 +33,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 		if(held())
 			to_chat(user, "\The [held()] falls out!")
 			held().forceMove(get_turf(user))
-			held_handle = null
+			rel_clear(src, "held")
 	else
 		icon_state = "[base_icon]"
 
@@ -46,10 +46,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 			to_chat(user, "You slip [O] into [src].")
 			user.drop_item()
 			O.forceMove(src)
-			held_handle = om_handle(O)
+			rel_set(src, "held", O)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
-/// LC-refs: Item inside locket. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Item inside locket. (a relation view: null once it is deleted).
 /obj/item/clothing/accessory/locket/proc/held() as /obj/item
-	return om_resolve(held_handle)
+	return held

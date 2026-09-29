@@ -21,7 +21,6 @@
 	if(camo_net)
 		alpha = 50
 
-DECLARE_REF(/obj/effect/mine, "trap", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/effect/mine, "trap", null)
 DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
 
@@ -58,7 +57,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		trap = null
+		own_take(src, "trap")
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -66,7 +65,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		trap = null
+		own_take(src, "trap")
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
@@ -357,7 +356,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		if(allowed)
 			user.drop_from_inventory(W)
 			W.forceMove(src)
-			trap = W
+			own_set(src, "trap", W)
 
 	return FALSE
 
@@ -367,9 +366,9 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		R.trap = trap
-		trap = null
-		R.trap.forceMove(R)
+		var/obj/item/T = trap
+		T.forceMove(R) // CONTAINED on the mine: moved in first
+		own_transfer(src, "trap", R, "trap")
 	if(explode_now)
 		R.explode(user)
 	consume(src)
@@ -448,7 +447,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	trap = null
+	own_take(src, "trap")
 
 //Lasertag mines
 
@@ -510,4 +509,4 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-DECLARE_REF(/obj/item/mine, "trap", HELD, null)
+OWN(/obj/item/mine, trap, OWN_CONTAINED)

@@ -11,7 +11,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 
-DECLARE_REF(/obj/item/shield_diffuser, "cell", OWNED, null)
 
 /obj/item/shield_diffuser/get_cell()
 	return cell

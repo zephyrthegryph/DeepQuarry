@@ -60,7 +60,6 @@
 
 	rebuild_overlay_lists(TRUE)
 
-DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 
 /obj/compass_holder/proc/get_heading()
 	var/atom/A = loc?.loc // is there a get_holder_recursive() equivalent on Polaris?
@@ -76,7 +75,7 @@ DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 	overlays = set_overlays // ???
 
 /obj/compass_holder/proc/clear_waypoint(id)
-	LAZYREMOVE(compass_waypoints, id)
+	own_put(src, "compass_waypoints", id, null) // removes and disposes of it
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/set_waypoint(id, label, heading_x, heading_y, heading_z, label_color)
@@ -84,7 +83,7 @@ DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 	if(!wp)
 		wp = new /datum/compass_waypoint()
 	wp.set_values(label, heading_x, heading_y, heading_z, label_color)
-	LAZYSET(compass_waypoints, id, wp)
+	own_put(src, "compass_waypoints", id, wp)
 	rebuild_overlay_lists(TRUE)
 
 /obj/compass_holder/proc/recalculate_heading(rebuild_icon = TRUE)
@@ -124,4 +123,3 @@ DECLARE_REF(/obj/compass_holder, "compass_waypoints", OWNED_VALUES, null)
 	if(update_icon)
 		update_icon()
 
-DECLARE_REF(/obj/compass_holder, "compass_heading_marker", OWNED, null)

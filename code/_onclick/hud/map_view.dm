@@ -11,16 +11,15 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	plane = MAP_VIEW_PLANE
 	del_on_map_removal = FALSE
 
-	// OM handles of all our viewers
+	// The ckeys of all our viewers (clients are not datums, so they are held by key)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
-DECLARE_REF(/atom/movable/screen/map_view_tg, "popup_plane_masters", OWNED_LIST, null)
 
-// hides itself from every client still viewing it (client refs are handles).
+// hides itself from every client still viewing it (held by ckey).
 /atom/movable/screen/map_view_tg/on_destroy(force)
-	for(var/client_ref in viewing_clients)
-		hide_from_client(om_resolve(client_ref))
+	for(var/viewer_ckey in viewing_clients)
+		hide_from_client(GLOB.directory[viewer_ckey])
 	..()
 
 /atom/movable/screen/map_view_tg/proc/generate_view(map_key)
@@ -31,7 +30,9 @@ DECLARE_REF(/atom/movable/screen/map_view_tg, "popup_plane_masters", OWNED_LIST,
 	assigned_map = map_key
 	set_position(1, 1)
 
-	popup_plane_masters = get_tgui_plane_masters()
+	own_clear(src, "popup_plane_masters", OWN_DELETE)
+	for(var/atom/movable/screen/fresh as anything in get_tgui_plane_masters())
+		own_add(src, "popup_plane_masters", fresh)
 
 	for(var/atom/movable/screen/instance as anything in popup_plane_masters)
 		instance.assigned_map = assigned_map
@@ -66,7 +67,7 @@ DECLARE_REF(/atom/movable/screen/map_view_tg, "popup_plane_masters", OWNED_LIST,
 	for(var/plane in popup_plane_masters)
 		show_to.register_map_obj(plane)
 
-	LAZYOR(viewing_clients, om_handle(show_to))
+	LAZYOR(viewing_clients, show_to.ckey)
 
 /atom/movable/screen/map_view_tg/proc/hide_from(mob/hide_from)
 	hide_from_client(hide_from?.client)
@@ -75,3 +76,4 @@ DECLARE_REF(/atom/movable/screen/map_view_tg, "popup_plane_masters", OWNED_LIST,
 	if(!hide_from)
 		return
 	hide_from.clear_map(assigned_map)
+	LAZYREMOVE(viewing_clients, hide_from.ckey)

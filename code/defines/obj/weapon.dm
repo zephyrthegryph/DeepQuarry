@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/camera_bug, INTERACT_USE(null, PROC_REF(interacti
 	icon = 'icons/obj/power.dmi'
 	icon_state = "wire1"
 
-	var/machine_handle
+	var/obj/machinery/machine
 
 ///////////////////////////////////////Stock Parts /////////////////////////////////
 
@@ -448,8 +448,7 @@ DECLARE_LOOT(/obj/effect/spawner/parts/t4, LOOT_TABLE(LOOT_SET(1, /obj/item/stoc
 
 DECLARE_LOOT(/obj/effect/spawner/parts/t5, LOOT_TABLE(LOOT_SET(1, /obj/item/stock_parts/matter_bin, /obj/item/stock_parts/manipulator, /obj/item/stock_parts/capacitor, /obj/item/stock_parts/scanning_module, /obj/item/stock_parts/micro_laser)), LOOT_COUNT(5))
 
-/// LC-refs: the machine this cable is jacked into -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The machine this cable is jacked into (a relation view).
 /obj/item/pai_cable/proc/machine() as /obj/machinery
-	return om_resolve(machine_handle)
+	return machine
 
-DECLARE_REF(/obj/item/gift, "gift", OWNED, null)

@@ -125,8 +125,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 	tick = world.tick_usage
 	D.lifecycle_dematerialize()
 	DQ_LIFECYCLE_TRACE(D, "lifecycle_dematerialize() returned")
-	if(ismovable(D))
-		dq_lifecycle_release_from_holder(D)
+	// An owned entity leaves its owner's var (ownership.md §1.5: no owner keeps a dying child).
+	if(D.own_holder_ref)
+		own_release_from_owner(D)
 	dq_lifecycle_time(trash, LIFECYCLE_PHASE_DEMATERIALIZE, tick)
 	DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_DEMATERIALIZE done")
 
@@ -139,12 +140,12 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 			// that falls out of ordinary qdel() recursion with no extra work).
 			tick = world.tick_usage
 			AM.dq_lifecycle_resolve_contents()
-			dq_lifecycle_spill_declared(AM)
+			own_spill_phase(AM)
 			dq_lifecycle_time(trash, LIFECYCLE_PHASE_CONTENTS, tick)
 			DQ_LIFECYCLE_TRACE(D, "LIFECYCLE_PHASE_CONTENTS done")
 
-	// Phase 4: links. Owned children deleted, pair partners nulled,
-	// back-list memberships removed (L2, code/datums/lifecycle/links.dm).
+	// Phase 4: links. Owned values disposed of by policy, relation edges and REF views cleared
+	// on both ends (doc/rewrite/ownership.md, code/datums/ownership/).
 	tick = world.tick_usage
 	D.lifecycle_prerelease() // teardown that still reads the declared vars (links.dm)
 	D.on_destroy(force) // the type's destroy hook: back-vars, partners and handles still live
@@ -253,7 +254,9 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 /// refusal overrides this. Must not sleep or change state.
 /datum/proc/lifecycle_keep(force)
 	SHOULD_NOT_SLEEP(TRUE)
-	return FALSE
+	// A registered singleton (REGISTRY_TYPE, doc/rewrite/ownership.md sec 2) is immortal: an
+	// unforced qdel() of one is refused. Controllers keep the MC's own replacement rules.
+	return !force && !istype(src, /datum/controller) && is_registered(src)
 
 /// The type's destroy hook, run at the start of phase 4, right after
 /// lifecycle_prerelease() and before the links clear: contents are resolved
@@ -334,10 +337,8 @@ GLOBAL_VAR_INIT(dq_lifecycle_trace_depth, 0)
 
 // ---- Phase 8: scrub ----
 
-/// Nulls every declared OWNED/OWNED_LIST/PAIR var still pointing
-/// somewhere (links.dm's phase-4 clear already emptied most of them; this
-/// catches whatever phase 7's leftover Destroy() set again) to break
-/// reference cycles, then does nothing else -- D is not parked anywhere,
-/// it is simply handed to the GC from here.
+/// Phase 8: an owned var re-set during teardown is deleted and reported (own_scrub(), never a
+/// silent null); REF views still set are unlinked. D is not parked anywhere, it is simply
+/// handed to the GC from here.
 /proc/dq_lifecycle_scrub(datum/D)
-	dq_lifecycle_null_declared_refs(D)
+	own_scrub(D)

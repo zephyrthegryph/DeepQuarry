@@ -4,7 +4,7 @@
 	desc = "This is a feeder. Put in a reagent container, then click and drag the feeder to someone!"
 	anchored = FALSE
 	density = FALSE
-	var/attached_handle
+	var/mob/living/carbon/human/attached
 	var/obj/item/reagent_containers/beaker = null
 
 /obj/machinery/feeder/update_icon()
@@ -41,13 +41,13 @@
 
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
-		attached_handle = null
+		rel_clear(src, "attached")
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
-		attached_handle = om_handle(over_object)
+		rel_set(src, "attached", over_object)
 		update_icon()
 		MACHINE_WAKE(src)
 
@@ -72,7 +72,7 @@
 /obj/machinery/feeder/proc/interaction_insert_beaker(mob/user, obj/item/W, datum/interaction/interaction)
 	user.drop_item()
 	W.forceMove(src)
-	beaker = W
+	own_set(src, "beaker", W)
 	MACHINE_WAKE(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
@@ -101,7 +101,7 @@
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	qdel(src)
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -109,7 +109,7 @@
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
-			attached_handle = null
+			rel_clear(src, "attached")
 			update_icon()
 			return PROCESS_KILL
 
@@ -132,7 +132,7 @@
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	beaker = null
+	own_take(src, "beaker")
 	update_icon()
 	return TRUE
 
@@ -155,8 +155,8 @@
 		return 1
 	return ..()
 
-DECLARE_REF(/obj/machinery/feeder, "beaker", HELD, null)
+OWN(/obj/machinery/feeder, beaker, OWN_CONTAINED)
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human
-	return om_resolve(attached_handle)
+	return attached

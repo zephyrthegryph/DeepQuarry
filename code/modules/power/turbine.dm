@@ -32,9 +32,9 @@
 	density = TRUE
 	can_atmos_pass = ATMOS_PASS_PROC
 	circuit = /obj/item/circuitboard/machine/power_compressor
-	var/tmp/turbine_handle
+	var/tmp/obj/machinery/power/turbine/turbine
 	var/datum/gas_mixture/gas_contained
-	var/tmp/inturf_handle
+	var/tmp/turf/simulated/inturf
 	var/starter = 0
 	var/rpm = 0
 	var/rpmtarget = 0
@@ -52,8 +52,8 @@
 	anchored = TRUE
 	density = TRUE
 	circuit = /obj/item/circuitboard/machine/power_turbine
-	var/tmp/compressor_handle
-	var/tmp/outturf_handle
+	var/tmp/obj/machinery/compressor/compressor
+	var/tmp/turf/simulated/outturf
 	var/lastgen
 	var/productivity = 1
 
@@ -63,8 +63,9 @@
 	icon_keyboard = "tech_key"
 	icon_screen = "turbinecomp"
 	circuit = /obj/item/circuitboard/turbine_control
-	var/tmp/compressor_handle
-	var/list/doors	// OM handles of the vent doors (om_resolve_all())
+	var/tmp/obj/machinery/compressor/compressor
+	/// The vent blast doors found by locate_machinery() (relation list).
+	var/list/obj/machinery/door/blast/doors
 	var/id = 0
 	var/door_status = 0
 
@@ -93,8 +94,8 @@
 /obj/machinery/compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	gas_contained = new()
-	inturf_handle = om_handle(get_step(src, dir))
+	own_set(src, "gas_contained", new /datum/gas_mixture())
+	rel_set(src, "inturf", get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
 		stat_add(BROKEN)
@@ -106,7 +107,7 @@
 /obj/machinery/compressor/proc/locate_machinery()
 	if(turbine())
 		return
-	turbine_handle = om_handle(locate_within(get_step(src, get_dir(inturf(), src)), /obj/machinery/power/turbine))
+	rel_set(src, "turbine", locate_within(get_step(src, get_dir(inturf(), src)), /obj/machinery/power/turbine))
 	if(turbine())
 		turbine().locate_machinery()
 
@@ -148,9 +149,9 @@
 
 /obj/machinery/compressor/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		turbine_handle = null
+		rel_clear(src, "turbine")
 		if(anchored)
-			inturf_handle = om_handle(get_step(src, dir))
+			rel_set(src, "inturf", get_step(src, dir))
 			locate_machinery()
 			if(turbine())
 				to_chat(user, span_notice("Turbine connected."))
@@ -223,7 +224,7 @@
 	. = ..()
 	default_apply_parts()
 	// The outlet is pointed at the direction of the turbine component
-	outturf_handle = om_handle(get_step(src, dir))
+	rel_set(src, "outturf", get_step(src, dir))
 	locate_machinery()
 	if(!compressor())
 		stat_add(BROKEN)
@@ -235,7 +236,7 @@
 /obj/machinery/power/turbine/proc/locate_machinery()
 	if(compressor())
 		return
-	compressor_handle = om_handle(locate_within(get_step(src, get_dir(outturf(), src)), /obj/machinery/compressor))
+	rel_set(src, "compressor", locate_within(get_step(src, get_dir(outturf(), src)), /obj/machinery/compressor))
 	if(compressor())
 		compressor().locate_machinery()
 
@@ -248,9 +249,9 @@
 
 /obj/machinery/power/turbine/wrench_act(mob/user, obj/item/W)
 	if((. = ..()))
-		compressor_handle = null
+		rel_clear(src, "compressor")
 		if(anchored)
-			outturf_handle = om_handle(get_step(src, dir))
+			rel_set(src, "outturf", get_step(src, dir))
 			locate_machinery()
 			if(compressor())
 				to_chat(user, span_notice("Compressor connected."))
@@ -349,11 +350,11 @@
 		return
 	for(var/obj/machinery/compressor/C in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(C.comp_id == id)
-			compressor_handle = om_handle(C)
-	LAZYINITLIST(doors)
+			rel_set(src, "compressor", C)
+	rel_clear(src, "doors")
 	for(var/obj/machinery/door/blast/P in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(P.id == id) //This will never work because the ID on the blast doors is a number while the ID on the turbine (if set mid-round) is a string.
-			doors += om_handle(P)
+			rel_add(src, "doors", P)
 
 /obj/machinery/computer/turbine_computer/declare_interactions(list/into)
 	into += list(
@@ -432,7 +433,7 @@
 			. = TRUE
 		if("doors")
 			door_status = !door_status
-			for(var/obj/machinery/door/blast/D in om_resolve_all(src.doors))
+			for(var/obj/machinery/door/blast/D as anything in doors?.Copy())
 				if (door_status)
 					D.close()
 				else
@@ -445,24 +446,25 @@
 #undef TURBGENQ
 #undef TURBGENG
 
-DECLARE_REF(/obj/machinery/compressor, "gas_contained", OWNED, null)
 
-/// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the compressor this refers to: a relation view, null once that is deleted.
 /obj/machinery/computer/turbine_computer/proc/compressor() as /obj/machinery/compressor
-	return om_resolve(compressor_handle)
+	return compressor
 
-/// LC-refs: the inturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the inturf this refers to: a relation view, null once that is deleted.
 /obj/machinery/compressor/proc/inturf() as /turf/simulated
-	return om_resolve(inturf_handle)
+	return inturf
 
-/// LC-refs: the outturf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the outturf this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/turbine/proc/outturf() as /turf/simulated
-	return om_resolve(outturf_handle)
+	return outturf
 
-/// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the compressor this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/turbine/proc/compressor() as /obj/machinery/compressor
-	return om_resolve(compressor_handle)
+	return compressor
 
-/// LC-refs: the turbine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the turbine this refers to: a relation view, null once that is deleted.
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
-	return om_resolve(turbine_handle)
+	return turbine
+
+REL_LIST(/obj/machinery/computer/turbine_computer, doors)

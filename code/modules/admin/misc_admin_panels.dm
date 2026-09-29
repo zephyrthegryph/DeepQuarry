@@ -13,13 +13,13 @@
 	panel.tgui_interact(recipient)
 
 /datum/mind_memory_panel
-	var/tmp/source_handle
-	var/tmp/recipient_handle
+	var/tmp/datum/mind/source
+	var/tmp/mob/recipient
 
 /datum/mind_memory_panel/New(datum/mind/src_mind, mob/recipient_mob)
 	..()
-	source_handle = om_handle(src_mind)
-	recipient_handle = om_handle(recipient_mob)
+	rel_set(src, "source", src_mind)
+	rel_set(src, "recipient", recipient_mob)
 
 /datum/mind_memory_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -57,11 +57,11 @@
 	panel.tgui_interact(user)
 
 /datum/tag_menu_panel
-	var/tmp/holder_handle
+	var/tmp/datum/admins/holder
 
 /datum/tag_menu_panel/New(datum/admins/owner_holder)
 	..()
-	holder_handle = om_handle(owner_holder)
+	rel_set(src, "holder", owner_holder)
 
 /datum/tag_menu_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -186,12 +186,12 @@
 	panel.tgui_interact(user)
 
 /datum/unban_panel
-	var/tmp/holder_handle
+	var/tmp/datum/admins/holder
 	var/list/shown_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
-	holder_handle = om_handle(owner_holder)
+	rel_set(src, "holder", owner_holder)
 
 /datum/unban_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -288,13 +288,13 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	panel.tgui_interact(owner().mob)
 
 /datum/jobban_panel
-	var/tmp/holder_handle
-	var/tmp/target_handle
+	var/tmp/datum/admins/holder
+	var/tmp/mob/target
 
 /datum/jobban_panel/New(datum/admins/owner_holder, mob/target_mob)
 	..()
-	holder_handle = om_handle(owner_holder)
-	target_handle = om_handle(target_mob)
+	rel_set(src, "holder", owner_holder)
+	rel_set(src, "target", target_mob)
 
 // leaves the per-admin panel index.
 /datum/jobban_panel/lifecycle_dematerialize()
@@ -503,13 +503,13 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 // ---- admin_verbs Delete Book (library admin) -----------------------------
 
 /datum/dq_delete_book_panel
-	var/tmp/our_comp_handle
+	var/tmp/obj/machinery/librarycomp/our_comp
 	var/list/books
 	var/error_msg = ""
 
 /datum/dq_delete_book_panel/New(obj/machinery/librarycomp/comp, list/book_rows, error)
 	..()
-	our_comp_handle = om_handle(comp)
+	rel_set(src, "our_comp", comp)
 	books = book_rows || list()
 	error_msg = error || ""
 
@@ -609,30 +609,30 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 	tgui_interact(user)
 	return TRUE
 
-/// LC-refs: the source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The source this refers to (a relation view: null once that is deleted).
 /datum/mind_memory_panel/proc/source() as /datum/mind
-	return om_resolve(source_handle)
+	return source
 
-/// LC-refs: the recipient this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The recipient this refers to (a relation view: null once that is deleted).
 /datum/mind_memory_panel/proc/recipient() as /mob
-	return om_resolve(recipient_handle)
+	return recipient
 
-/// LC-refs: the our_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The our_comp this refers to (a relation view: null once that is deleted).
 /datum/dq_delete_book_panel/proc/our_comp() as /obj/machinery/librarycomp
-	return om_resolve(our_comp_handle)
+	return our_comp
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/tag_menu_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/unban_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/jobban_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/jobban_panel/proc/target() as /mob
-	return om_resolve(target_handle)
+	return target

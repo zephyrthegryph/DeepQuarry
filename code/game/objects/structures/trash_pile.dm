@@ -9,7 +9,7 @@
 
 	// ALLOW(instance_list): d: passed to the lootable element, which adds the searcher's ckey to it in place
 	var/list/searchedby	= list()// Characters that have searched this trashpile, with values of searched time.
-	var/hider_handle		// A simple animal that might be hiding in the pile
+	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
 
 /obj/structure/trash_pile/Initialize(mapload)
@@ -28,7 +28,6 @@
 		"brokecomp")
 	make_climbable()
 
-DECLARE_REF(/obj/structure/trash_pile, "mouse_nest", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mob_spawner/mouse_nest)
 
 /obj/structure/trash_pile/declare_interactions(list/into)
@@ -100,13 +99,13 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 /obj/structure/trash_pile/proc/exit_answered(datum/om/prompt/confirm/trash_pile_exit/ask)
 	var/mob/living/L = ask.answerer
 	if(L == hider())
-		hider_handle = null
+		rel_clear(src, "hider")
 	L.forceMove(get_turf(src))
 
 /obj/structure/trash_pile/proc/hide_answered(datum/om/prompt/confirm/trash_pile_hide/ask)
 	var/mob/living/L = ask.answerer
 	L.forceMove(src)
-	hider_handle = om_handle(L)
+	rel_set(src, "hider", L)
 
 /// Old attack_ghost: offer to spawn as a mouse. Never fell through to the default.
 /obj/structure/trash_pile/proc/trash_pile_ghost_mouse(mob/observer/user, obj/item/held, datum/interaction/interaction)
@@ -192,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mo
 		//If there was a hider, chance to reveal them
 		to_chat(hider(),span_danger("You've been discovered!"))
 		hider().forceMove(get_turf(src))
-		hider_handle = null
+		rel_clear(src, "hider")
 		to_chat(user,span_danger("Some sort of creature leaps out of \the [src]!"))
 	else
 		loot_search(src, user, searchedby, 5)
@@ -235,6 +234,6 @@ TYPE_TABLE(/obj/structure/mob_spawner/mouse_nest, mob_spawner_types, list( \
 	..()
 	COOLDOWN_START(src, spawn_cooldown, rand(0, spawn_delay))
 
-/// LC-refs: hider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hider (reads null once it is gone).
 /obj/structure/trash_pile/proc/hider() as /mob/living
-	return om_resolve(hider_handle)
+	return hider

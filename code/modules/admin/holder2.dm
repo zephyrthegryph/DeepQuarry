@@ -7,20 +7,25 @@ GLOBAL_VAR_INIT(href_token, GenerateToken())
 GLOBAL_PROTECT(href_token)
 
 /datum/admins
+	/// Our ranks (a relation list: ranks live in GLOB.admin_ranks, or in custom_rank). Set with set_ranks().
 	var/list/datum/admin_rank/ranks
+	/// The client-level click intercept (a relation view); needs to implement InterceptClickOn(user,params,atom).
+	var/tmp/datum/click_intercept
+	/// A per-admin rank duplicated for this holder (change_admin_flags), owned.
+	var/datum/admin_rank/custom_rank
 
 	var/target
 	var/name = "nobody's admin datum (no rank)" //Makes for better runtimes
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	var/fakekey = null
 
-	var/tmp/marked_datum_handle
+	var/tmp/datum/marked_datum
 
 	var/admincaster_screen = 0	//See newscaster.dm under machinery for a full description
 	var/datum/feed_message/admincaster_feed_message = new /datum/feed_message   //These two will act as holders.
-	/// The admin newscaster's working channel: a network channel picked into admincaster_feed_channel_handle,
-	/// or while none is picked its own scratch channel (admincaster_feed_channel() reads either).
-	var/tmp/admincaster_feed_channel_handle
+	/// The admin newscaster's working channel: a picked network channel (a relation view), or while
+	/// none is picked its own scratch channel (admincaster_feed_channel() reads either).
+	var/tmp/datum/feed_channel/admincaster_feed_channel
 	var/datum/feed_channel/admincaster_scratch_channel = new /datum/feed_channel
 	var/admincaster_signature	//What you'll sign the newsfeeds as
 
@@ -62,11 +67,11 @@ GLOBAL_PROTECT(href_token)
 		CRASH("Admin datum created with invalid ranks: [ranks] ([json_encode(ranks)])")
 	target = ckey
 	name = "[ckey]'s admin datum ([join_admin_ranks(ranks)])"
-	src.ranks = ranks
+	set_ranks(ranks)
 	admincaster_signature = "[using_map.company_name] Officer #[rand(0,9)][rand(0,9)][rand(0,9)]"
 	href_token = GenerateToken()
 	if(protected)
-		GLOB.protected_admins[target] = src
+		GLOB.protected_admins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	activate()
 
 // Refuses deletion from advanced proc calls (permission elevation).
@@ -81,7 +86,7 @@ GLOBAL_PROTECT(href_token)
 		alert_to_permissions_elevation_attempt(usr)
 		return
 	GLOB.deadmins -= target
-	GLOB.admin_datums[target] = src
+	GLOB.admin_datums[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	deadmined = FALSE
 	if (GLOB.directory[target])
 		associate(GLOB.directory[target]) //find the client for a ckey if they are connected and associate them with us
@@ -90,7 +95,7 @@ GLOBAL_PROTECT(href_token)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)
 		return
-	GLOB.deadmins[target] = src
+	GLOB.deadmins[target] = src // ALLOW(registry): the admin holder tables are keyed by ckey and outlive the client (deadmin, protected admins); clients are not datums, so the ckey is the identity
 	GLOB.admin_datums -= target
 	deadmined = TRUE
 
@@ -117,7 +122,7 @@ GLOBAL_PROTECT(href_token)
 	if (deadmined)
 		activate()
 
-	owner_handle = om_handle(client)
+	rel_set(src, "owner", client)
 	owner().holder = src
 	owner().add_admin_verbs()
 	remove_verb(owner(), /client/proc/readmin)
@@ -135,7 +140,7 @@ GLOBAL_PROTECT(href_token)
 		owner().remove_admin_verbs()
 		// owner.init_verbs() //re-initialize the verb list
 		owner().holder = null
-		owner_handle = null
+		rel_clear(src, "owner")
 
 /// Returns the feedback forum thread for the admin holder's owner, as according to DB.
 /datum/admins/proc/feedback_link()
@@ -285,24 +290,21 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
 
 // Shared admin_rank registry entries.
-DECLARE_REF(/datum/admins, "ranks", STATIC, null)
-DECLARE_REF(/datum/admins, "admincaster_feed_message", OWNED, null)
-DECLARE_REF(/datum/admins, "filteriffic", OWNED, null)
-DECLARE_REF(/datum/admins, "particle_test", OWNED, null)
-DECLARE_REF(/datum/admins, "whitelist_editor", OWNED, null)
-DECLARE_REF(/datum/admins, "spawn_menu", OWNED, null)
-DECLARE_REF(/datum/admins, "spawn_panel", OWNED, null)
-DECLARE_REF(/datum/admins, "access_view_menu", OWNED, null)
-DECLARE_REF(/datum/admins, "admincaster_scratch_channel", OWNED, null)
 
-/// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The marked_datum this refers to (a relation view: null once that is deleted).
 /datum/admins/proc/marked_datum() as /datum
-	return om_resolve(marked_datum_handle)
+	return marked_datum
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/admins/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
 
-/// LC-refs: the channel the admin newscaster is working on -- a picked network channel (an OM handle) or the scratch one.
+/// The channel the admin newscaster is working on: a picked network channel (a relation view) or the scratch one.
 /datum/admins/proc/admincaster_feed_channel() as /datum/feed_channel
-	return om_resolve(admincaster_feed_channel_handle) || admincaster_scratch_channel
+	return admincaster_feed_channel || admincaster_scratch_channel
+
+/// Replaces our ranks (a relation list) with `new_ranks`.
+/datum/admins/proc/set_ranks(list/datum/admin_rank/new_ranks)
+	rel_clear(src, "ranks")
+	for(var/datum/admin_rank/rank as anything in new_ranks)
+		rel_add(src, "ranks", rank)

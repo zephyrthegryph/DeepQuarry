@@ -276,7 +276,7 @@
 	output.add_option(make_contract_clause_option("rated", "Rated · 800 EER", "Stages: 500 / 650 / 800 EER. Keep 90% integrity.", 0, 0, 0, 0, 0, 0, 0, list("engine_output_profile" = "rated")), TRUE)
 	output.add_option(make_contract_clause_option("frontier", "Frontier · 1,000 EER", "Stages: 600 / 800 / 1,000 EER. Keep 85% integrity.", 200, 400, 150, -2, -3, -1, 0, list("engine_output_profile" = "frontier")))
 	contract.add_negotiation_clause(output)
-	contract.performance_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Baseline", "threshold" = 500, "unit" = "EER", "duration" = 1 MINUTE)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	rel_set(contract, "performance_requirement", new /datum/contract_requirement/staged_sustained_event(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Baseline", "threshold" = 500, "unit" = "EER", "duration" = 1 MINUTE)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
 	contract.performance_requirement.name = "Progressive output certification"
 	contract.performance_requirement.filter.require_value("machine_kind", "supermatter")
 	contract.performance_requirement.filter.require_value("station_machine", TRUE)
@@ -611,4 +611,3 @@
 	reserve.require_number("command_allocation", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 6000)
 	contract.add_requirement(reserve)
 
-DECLARE_REF(/datum/contract/outcome/engine_performance, "performance_requirement", OWNED, null)

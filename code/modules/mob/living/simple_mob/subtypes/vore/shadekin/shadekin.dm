@@ -129,7 +129,7 @@
 
 /mob/living/simple_mob/shadekin/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)
-	vore_selected = B
+	rel_set(src, "vore_selected", B)
 	B.immutable = 1
 	B.affects_vore_sprites = TRUE
 	B.name = vore_stomach_name ? vore_stomach_name : "stomach"
@@ -436,5 +436,3 @@
 	say_got_target = list("MAR!!!")
 	//reactions = list("Mar?" = "Marrr!", "Mar!" = "Marrr???", "Mar." = "Marrr.")
 
-DECLARE_REF(/mob/living/simple_mob/shadekin, "henlo_human", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/shadekin, "tailimage", OWNED, null)

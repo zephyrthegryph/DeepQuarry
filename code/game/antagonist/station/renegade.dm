@@ -72,8 +72,8 @@ GLOBAL_DATUM(renegades, /datum/antagonist/renegade)
 		return
 
 	var/datum/objective/survive/survive = new
-	survive.owner = player
-	player.objectives |= survive
+	rel_set(survive, "owner", player)
+	own_add(player, "objectives", survive)
 
 /datum/antagonist/renegade/equip(mob/living/carbon/human/player)
 

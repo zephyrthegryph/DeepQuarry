@@ -3,7 +3,7 @@
 	desc = "It measures something."
 	icon = 'icons/obj/meter.dmi'
 	icon_state = "meterX"
-	var/target_handle
+	var/obj/machinery/atmospherics/pipe/target
 	var/list/pipes_on_turf
 	anchored = TRUE
 	power_channel = ENVIRON
@@ -22,13 +22,13 @@
 /obj/machinery/meter/proc/set_target(new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
-	target_handle = om_handle(new_target)
+	rel_set(src, "target", new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
 		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
 
 /obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	target_handle = null
+	rel_clear(src, "target")
 	if(QDELETED(src))
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
@@ -50,7 +50,7 @@
 /// resolution never wakes it.
 /obj/machinery/meter/proc/register_gas_dependency()
 	var/datum/gas_mixture/environment = target_ref()?.return_air()
-	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(current_display_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(current_display_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/meter/proc/current_display_signature()
 	var/datum/gas_mixture/environment = target_ref()?.return_air()
@@ -110,7 +110,7 @@
 			return PROCESS_KILL
 
 		var/datum/signal/signal = new
-		signal.source_handle = om_handle(src)
+		rel_set(signal, "source", src)
 		signal.transmission_method = TRANSMISSION_RADIO
 		signal.data = list(
 			"tag" = id,
@@ -172,12 +172,12 @@
 		om_ask(user, /datum/om/prompt/text/meter_id, PROC_REF(meter_id_entered), message = "Please insert an ID tag for [src], example 'exhaust_pipe'.", default = id, tool = tool)
 		return ITEM_INTERACT_SUCCESS
 	for(var/obj/machinery/atmospherics/pipe/pipe in contents_of(loc))
-		LAZYOR(pipes_on_turf, pipe)
+		rel_add(src, "pipes_on_turf", pipe)
 	if(!length(pipes_on_turf))
 		return ITEM_INTERACT_BLOCKING
 	set_target(LAZYACCESS(pipes_on_turf, 1))
-	LAZYREMOVE(pipes_on_turf, target_ref())
-	LAZYADD(pipes_on_turf, target_ref())
+	rel_remove(src, "pipes_on_turf", target_ref())
+	rel_add(src, "pipes_on_turf", target_ref())
 	to_chat(user, span_notice("Pipe meter set to monitor \the [target_ref()]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -195,7 +195,7 @@
 	id = ask.text
 	var/obj/item/multitool/multitool = ask.tool.get_multitool()
 	if(multitool)
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 	return ITEM_INTERACT_SUCCESS
 
 // TURF METER - REPORTS A TILE'S AIR CONTENTS
@@ -211,6 +211,6 @@
 	..()
 	register_gas_dependency()
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/meter/proc/target_ref() as /obj/machinery/atmospherics/pipe
-	return om_resolve(target_handle)
+	return target

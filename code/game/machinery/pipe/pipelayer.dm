@@ -5,7 +5,7 @@
 	icon_state = "pipe_d"
 	density = TRUE
 	circuit = /obj/item/circuitboard/pipelayer
-	var/old_turf_handle		// Last turf we were on.
+	var/turf/old_turf		// Last turf we were on.
 	var/old_dir				// Last direction we were facing.
 	on = 0				// Pipelaying online?
 	var/a_dis = 0			// Auto-dismantling - If enabled it will remove floor tiles
@@ -29,7 +29,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 	default_apply_parts()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 
 /obj/machinery/pipelayer/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)
@@ -47,7 +46,7 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 		dismantleFloor(old_turf())
 	layPipe(old_turf(), direction, old_dir)
 
-	old_turf_handle = om_handle(loc)
+	rel_set(src, "old_turf", loc)
 	old_dir = turn(direction, 180)
 
 /obj/machinery/pipelayer/declare_interactions(list/into)
@@ -80,7 +79,7 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 		om_ask(user, /datum/om/prompt/confirm, PROC_REF(eject_answered), message = "Do you want to eject all the metal in \the [src]?", title = "Eject?", requires = PROMPT_ADJACENT)
 		return TRUE
 	set_on(!on)
-	old_turf_handle = om_handle(get_turf(src))
+	rel_set(src, "old_turf", get_turf(src))
 	old_dir = dir
 	act_message(user, src, MSG_SELF(span_notice("You [!on?"de":""]activate %T%.")), MSG_OTHERS(span_notice("%U% has [!on?"de":""]activated %T%.")))
 	return TRUE
@@ -224,6 +223,6 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 
 	return 1
 
-/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/pipelayer/proc/old_turf() as /turf
-	return om_resolve(old_turf_handle)
+	return old_turf

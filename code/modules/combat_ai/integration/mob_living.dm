@@ -44,8 +44,8 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	if(!use_modern_ai)
 		return FALSE
 	if(ai_brain)
-		QDEL_NULL(ai_brain)
-	ai_brain = new /datum/ai_brain(src)
+		own_clear(src, "ai_brain", OWN_DELETE)
+	own_set(src, "ai_brain", new /datum/ai_brain(src))
 	var/list/sels = TYPE_TABLE_GET(src, get_ai_target_selectors)
 	if(sels && length(sels))
 		ai_brain.target_selector_chain = sels.Copy()
@@ -69,7 +69,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		return
 	ai_brain.add_personal(taunter, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "taunted")
 	if(force_target_switch)
-		ai_brain.primary_threat = taunter
+		rel_set(ai_brain, "primary_threat", taunter)
 	ai_brain.invalidate_selection()
 
 /// Re-open Initialize to drive brain creation. Also handles say_list spawning
@@ -82,8 +82,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	// no allocation, which matters at world-init when thousands of simple_mobs
 	// spawn. Callers (idle_speak behavior, hear_say) already handle null.
 	if(say_list_type && say_list_type != /datum/say_list)
-		say_list = new say_list_type(src)
+		own_set(src, "say_list", new say_list_type(src))
 	if(!ai_brain)
 		initialize_ai_brain()
 
-DECLARE_REF(/mob/living, "ai_brain", OWNED, null)

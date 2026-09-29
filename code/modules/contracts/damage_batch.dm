@@ -18,7 +18,7 @@
 	var/contract_batch_depth = 0
 	/// REF(atom) -> /datum/contract_damage_report, in first-hit order.
 	var/list/pending_damage_reports
-	/// window key -> the last event that revised it during the batch.
+	/// window key -> TRUE when the batch revised it (the event is the window's batch_event).
 	var/list/pending_opportunity_windows
 	/// window key -> TRUE once pruned in this batch.
 	var/list/pruned_opportunity_windows
@@ -70,17 +70,16 @@
 /// Adds one hit to `source`'s pending report for this batch.
 /datum/controller/subsystem/contracts/proc/queue_damage_report(atom/source, amount)
 	var/key = REF(source)
-	LAZYINITLIST(pending_damage_reports)
-	var/datum/contract_damage_report/report = pending_damage_reports[key]
+	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
 	if(!report)
 		report = new(source)
-		pending_damage_reports[key] = report
+		own_put(src, "pending_damage_reports", key, report)
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 
 /datum/controller/subsystem/contracts/proc/flush_damage_reports()
 	var/list/reports = pending_damage_reports
-	pending_damage_reports = null
+	own_take_all(src, "pending_damage_reports")
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++
@@ -132,12 +131,14 @@
 	pruned_opportunity_windows = null
 	for(var/window_key in windows)
 		var/datum/contract_opportunity_window/window = opportunity_windows?[window_key]
-		var/datum/contract_event/event = windows[window_key]
-		if(!window || QDELETED(event))
+		if(!window)
+			continue
+		var/datum/contract_event/event = window.batch_event
+		rel_clear(window, "batch_event")
+		if(QDELETED(event))
 			continue
 		var/rule_id = splittext(window_key, "|")[1]
 		var/datum/contract_opportunity_rule/rule = opportunity_rules?[rule_id]
 		if(rule)
 			evaluate_opportunity_window(rule, window, window_key, event)
 
-DECLARE_REF(/datum/controller/subsystem/contracts, "pending_damage_reports", OWNED_VALUES, null)

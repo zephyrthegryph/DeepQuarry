@@ -61,13 +61,13 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 	switch(action)
 		if("back")
 			. = TRUE
-			activewarrant_ref = null
+			rel_clear(src, "activewarrant_ref")
 
 		if("editwarrant")
 			. = TRUE
 			for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 				if(W.warrant_id == text2num(params["id"]))
-					activewarrant_ref = W
+					rel_set(src, "activewarrant_ref", W)
 					break
 
 	// The following actions will only be possible if the user has an ID with security access equipped. This is in line with modular computer framework's authentication methods,
@@ -98,17 +98,17 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 					W.fields["charges"] = "No reason given"
 					W.fields["auth"] = "Unauthorized"
 					W.fields["arrestsearch"] = "search"
-				activewarrant_ref = W
+				rel_set(src, "activewarrant_ref", W)
 
 		if("savewarrant")
 			. = TRUE
 			LAZYOR(GLOB.data_core.warrants, activewarrant())
-			activewarrant_ref = null
+			rel_clear(src, "activewarrant_ref")
 
 		if("deletewarrant")
 			. = TRUE
 			LAZYREMOVE(GLOB.data_core.warrants, activewarrant())
-			activewarrant_ref = null
+			rel_clear(src, "activewarrant_ref")
 
 		if("editwarrantname")
 			. = TRUE
@@ -158,4 +158,3 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 /datum/computer_file/program/digitalwarrant/proc/activewarrant() as /datum/data/record/warrant
 	return activewarrant_ref
 
-DECLARE_REF(/datum/computer_file/program/digitalwarrant, "activewarrant_ref", BACK, null)

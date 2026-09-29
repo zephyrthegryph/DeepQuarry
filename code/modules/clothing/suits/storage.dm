@@ -1,6 +1,6 @@
 /obj/item/clothing/suit/storage
 	name = DEVELOPER_WARNING_NAME
-	var/obj/item/storage/internal/pockets // ALLOW(state_ref): owned: the internal storage object that holds the pockets' contents
+	var/obj/item/storage/internal/pockets // owned: the internal storage object that holds the pockets' contents
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/storage/internal)
 
@@ -8,7 +8,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/storage, "pockets", /obj/item/stor
 	. = ..()
 	pockets.max_storage_space = ITEMSIZE_COST_SMALL * 2
 
-DECLARE_REF(/obj/item/clothing/suit/storage, "pockets", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(suit_pockets_hand)), \

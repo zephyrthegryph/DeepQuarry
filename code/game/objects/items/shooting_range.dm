@@ -20,7 +20,7 @@
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
-			T.pinned_target = null
+			rel_clear(T, "pinned_target") // the view clears anyway; the stake still blocks again
 			T.set_density(TRUE)
 			break
 	..()
@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 				src.forceMove(get_turf(user))
 				to_chat(user, "You take the target out of the stake.")
 
-			stake.pinned_target = null
+			rel_clear(stake, "pinned_target")
 			return TRUE
 
 	else
@@ -179,6 +179,5 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 	b2y1 = pixel_y + pick(1,1,1,1,2,2,3,3,4)
 	b2y2 = pixel_y - pick(1,1,1,1,2,2,3,3,4)
 
-	LAZYADD(Target.bulletholes, src)
+	rel_add(Target, "bulletholes", src)
 
-DECLARE_REF(/obj/item/target, "virtualIcon", OWNED, null)

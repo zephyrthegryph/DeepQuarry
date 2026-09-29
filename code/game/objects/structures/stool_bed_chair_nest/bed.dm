@@ -304,7 +304,7 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 		if(!RH.held)
 			to_chat(user, span_notice("You collect the roller bed."))
 			src.forceMove(RH)
-			RH.held = src
+			own_set(RH, "held", src)
 			return INTERACTION_HANDLED_PASS
 
 	return FALSE
@@ -331,8 +331,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	to_chat(user, span_notice("You deploy the roller bed."))
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)
-	qdel(held)
-	held = null
+	own_clear(src, "held", OWN_DELETE)
 	return TRUE
 
 
@@ -446,5 +445,4 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
-DECLARE_REF(/obj/item/roller_holder, "held", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/roller_holder, "held", /obj/item/roller)

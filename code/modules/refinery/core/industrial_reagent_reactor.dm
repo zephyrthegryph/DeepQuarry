@@ -24,7 +24,7 @@
 /obj/machinery/reagent_refinery/reactor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	internal_tank = new /obj/machinery/portable_atmospherics/canister/empty()
+	own_set(src, "internal_tank", new /obj/machinery/portable_atmospherics/canister/empty())
 	update_gas_network()
 	COOLDOWN_START(src, next_mode_toggle, dis_time SECONDS)
 	// Update neighbours and self for state
@@ -32,7 +32,6 @@
 	update_icon()
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, null)
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()
 	if(!anchored)
@@ -107,8 +106,8 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 	if(pad && !pad.connected_device)
 		if(anchored)
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this
-			internal_tank.connected_port_handle = om_handle(pad)
-			pad.connected_device = internal_tank
+			rel_set(internal_tank, "connected_port", pad)
+			rel_set(pad, "connected_device", internal_tank)
 			pad.set_on(1) //Activate port updates
 			// Actually enforce the air sharing
 			pad.rust_attach_external_device(internal_tank)

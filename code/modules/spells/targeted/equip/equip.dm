@@ -25,7 +25,7 @@
 					old_item.forceMove(L.loc)
 
 			if(duration)
-				LAZYADD(summoned_items, new_item) //we store it in a list to remove later
+				own_add(src, "summoned_items", new_item) // the spell made it and disposes of it when the spell runs out
 
 	if(duration)
 		om_after(src, duration, PROC_REF(unsummon_items))

@@ -125,12 +125,11 @@
 
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
-	soundloop = new(list(src), TRUE)
+	own_set(src, "soundloop", new /datum/looping_sound/supermatter(list(src), TRUE))
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
-DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 
 // an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/on_destroy(force)

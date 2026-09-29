@@ -117,7 +117,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 
 	// Adds friend_name var checks
 	if(!friend_name || L.real_name == friend_name)
-		friend = L
+		rel_set(src, "friend", L)
 		face_atom(L)
 		to_chat(L, span_notice("\The [src] is now your friend! Meow."))
 		visible_emote(pick("nuzzles [friend].", "brushes against [friend].", "rubs against [friend].", "purrs."))
@@ -385,4 +385,3 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 	flick("kphaseout",src)
 	expire(1 SECOND) //Back from whence you came!
 
-DECLARE_REF(/mob/living/simple_mob/animal/passive/cat, "friend", HELD, null)

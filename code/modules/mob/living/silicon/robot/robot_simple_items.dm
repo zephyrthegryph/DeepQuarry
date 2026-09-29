@@ -22,9 +22,13 @@
 		/obj/item/weldingtool/electric/mounted/cyborg = null,
 		)
 
+	/// The carried tools' names (text), in menu order; tools are looked up with integrated_tool_named().
 	var/list/integrated_tools_by_name
 
 	var/list/integrated_tool_images
+
+/// The selected tool: one of cyborg_integrated_tools, which owns it.
+REL(/obj/item/robotic_multibelt, selected_item)
 
 /obj/item/robotic_multibelt/item_ctrl_click(mob/user)
 	if(selected_item)
@@ -61,25 +65,34 @@
 	for(var/path in cyborg_integrated_tools)
 		if(ispath(path)) //Some things like the materials printer makes its own tools and it won't be a path.
 			if(!cyborg_integrated_tools[path])
-				cyborg_integrated_tools[path] = new path(src)
-		else
-			cyborg_integrated_tools[path] = path
-		var/obj/item/I = cyborg_integrated_tools[path]
+				own_put(src, "cyborg_integrated_tools", path, new path(src))
+		var/obj/item/I = integrated_tool_at(path)
 		I.canremove = FALSE
 
 	for(var/tool in cyborg_integrated_tools)
-		var/obj/item/real_tool = cyborg_integrated_tools[tool]
-		integrated_tools_by_name[real_tool.name] = real_tool
+		var/obj/item/real_tool = integrated_tool_at(tool)
+		integrated_tools_by_name |= real_tool.name
 		var/image/tool_image = image(icon = real_tool.icon, icon_state = real_tool.icon_state)
 		tool_image.color = real_tool.color
 		integrated_tool_images[real_tool.name] = tool_image
 
-// its integrated tools (assoc values) go with it.
-DECLARE_REF(/obj/item/robotic_multibelt, "cyborg_integrated_tools", OWNED_VALUES, null)
-// The selection and the by-name indexes point into cyborg_integrated_tools, which owns the tools.
-DECLARE_REF(/obj/item/robotic_multibelt, "selected_item", DROP, null)
-DECLARE_REF(/obj/item/robotic_multibelt, "integrated_tools_by_name", DROP, null)
-DECLARE_REF(/obj/item/robotic_multibelt, "integrated_tool_images", DROP, null)
+/// The tool under `key` in cyborg_integrated_tools: the value put under a type path, or the
+/// member itself (a made-in-place tool such as a material stack is its own key).
+/obj/item/robotic_multibelt/proc/integrated_tool_at(key)
+	var/obj/item/tool = cyborg_integrated_tools[key]
+	if(!tool && isitem(key))
+		tool = key
+	return tool
+
+/// The carried tool called `tool_name`, or null.
+/obj/item/robotic_multibelt/proc/integrated_tool_named(tool_name)
+	for(var/key in cyborg_integrated_tools)
+		var/obj/item/tool = integrated_tool_at(key)
+		if(tool?.name == tool_name)
+			return tool
+	return null
+
+// The selection and the by-name index point into cyborg_integrated_tools.
 
 DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(interaction_self), REQ_FIELD("cyborg_integrated_tools", "your multibelt is empty")))
 
@@ -99,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	if(!ask.choice)
 		return
 	cut_overlays()
-	assume_selected_item(integrated_tools_by_name[ask.choice])
+	assume_selected_item(integrated_tool_named(ask.choice))
 
 /obj/item/robotic_multibelt/proc/assume_selected_item(obj/item/chosen_item)
 	if(!chosen_item)
@@ -107,7 +120,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	icon = chosen_item.icon
 	icon_state = chosen_item.icon_state
 	color = chosen_item.color
-	selected_item = chosen_item
+	rel_set(src, "selected_item", chosen_item)
 
 /obj/item/robotic_multibelt/dropped(mob/user, equipping, slot)
 	..()
@@ -115,7 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	original_state()
 
 /obj/item/robotic_multibelt/proc/original_state(mob/user)
-	selected_item = null
+	rel_clear(src, "selected_item")
 	icon = initial(icon)
 	icon_state = initial(icon_state)
 
@@ -409,7 +422,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	if(!amount)
 		return
 
-	module.synths += new synth_path(amount)
+	own_add(module, "synths", new synth_path(amount))
 	update_material_multibelts()
 
 /mob/living/silicon/robot/proc/update_material_multibelts()
@@ -437,8 +450,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 
 	for(var/datum/matter_synth/synth in module.synths)
 		if(istype(synth, synth_path))
-			module.synths -= synth
-			qdel(synth)
+			own_remove(module, "synths", synth)
 	update_material_multibelts()
 
 //The Material Dispenser Multibelt
@@ -496,19 +508,18 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		if(is_type_in_list(our_item, possible_synths))
 			possible_synths -= our_item.type
 		else
-			cyborg_integrated_tools -= our_item
-			integrated_tools_by_name -= our_item
-			integrated_tool_images -= our_item
-			qdel(our_item)
+			integrated_tools_by_name -= our_item.name
+			integrated_tool_images -= our_item.name
+			own_remove(src, "cyborg_integrated_tools", our_item)
 
 	for(var/stack_to_add in possible_synths)
 		var/obj/item/stack/current_stack = new stack_to_add(src)
-		current_stack.synths = possible_synths[stack_to_add]
-		cyborg_integrated_tools += current_stack
+		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
+			rel_add(current_stack, "synths", linked_synth)
+		own_add(src, "cyborg_integrated_tools", current_stack)
 
 	. = ..()
 
-DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OWNED_LIST, null)
 
 ///Allows the material fabricator to pick up materials if they hit an appropriate stack.
 /obj/item/robotic_multibelt/materials/afterattack(atom/target, mob/user, proximity_flag, click_parameters)
@@ -546,7 +557,6 @@ DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OW
 
 	var/obj/item/current_pocket = null //What pocket (or item!) we currently have selected
 
-	var/list/pockets_by_name
 
 	var/list/photo_images
 
@@ -563,6 +573,10 @@ DECLARE_REF(/obj/item/robotic_multibelt/materials, "cyborg_integrated_tools", OW
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+/// The selected pocket (one of `pockets`) or item.
+REL(/obj/item/gripper, current_pocket)
+REL(/obj/item/gripper, our_robot)
+
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE
 
@@ -575,21 +589,18 @@ TYPE_TABLE(/obj/item/storage/internal/gripper, hold_spec, list(HOLD_MAX_SIZE(ITE
 		for(var/i = 1, i <= total_pockets, i++)
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
 			new_pocket.name = "Pocket [i]"
-			pockets += new_pocket
-	current_pocket = peek(pockets)
+			own_add(src, "pockets", new_pocket)
+	rel_set(src, "current_pocket", peek(pockets))
 	if(isrobot(loc.loc)) //We're in the module.
-		our_robot = loc.loc
+		rel_set(src, "our_robot", loc.loc)
 	else if(isrobot(loc)) //We spawned in the robot's module slots...Weird, but whatever.
-		our_robot = loc
+		rel_set(src, "our_robot", loc)
 	else //We were in neither. Let's qdel ourselves.
 		return INITIALIZE_HINT_QDEL
 	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))
 	om_hook(our_robot, /datum/om/event/do_after_ended, src, PROC_REF(end_using))
 
-DECLARE_REF(/obj/item/gripper, "pockets", OWNED_LIST, null)
 // The selected pocket is one of `pockets`, and the robot owns the gripper.
-DECLARE_REF(/obj/item/gripper, "current_pocket", DROP, null)
-DECLARE_REF(/obj/item/gripper, "our_robot", DROP, null)
 
 /obj/item/gripper/examine(mob/user)
 	. = ..()
@@ -731,7 +742,7 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()
-	R = loc.loc
+	rel_set(src, "R", loc.loc)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
 /obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
@@ -787,4 +798,3 @@ TYPE_TABLE(/obj/item/gripper/no_use/loader, hold_spec, list(HOLD_ONLY(list(SHEET
 
 TYPE_TABLE(/obj/item/gripper/syndicate, hold_spec, list(HOLD_ONLY(list(BASIC_GRIPPER, SECURITY_GRIPPER, MINER_GRIPPER, PAPERWORK_GRIPPER, MEDICAL_GRIPPER, RESEARCH_GRIPPER, CIRCUIT_GRIPPER, SERVICE_GRIPPER, GRAVEYARD_GRIPPER, ORGAN_GRIPPER, ROBOTICS_ORGAN_GRIPPER, EXOSUIT_GRIPPER, SHEET_GRIPPER))))
 
-DECLARE_REF(/obj/item/reagent_containers/glass/bucket/cyborg, "R", HELD, null)

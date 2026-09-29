@@ -71,7 +71,7 @@
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_gnat_destruction))
-	LAZYADD(spawned_gnat, M)
+	own_add(src, "spawned_gnat", M)
 	return M
 
 // Counts living gnat spawned by this event.
@@ -84,7 +84,7 @@
 // If gnat is bomphed, remove it from the list.
 /datum/event/gnat_migration/proc/on_gnat_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_gnat, M)
+	own_take_member(src, "spawned_gnat", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/gnat_migration/end()

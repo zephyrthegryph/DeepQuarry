@@ -17,10 +17,9 @@
 
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
-	song = new(src, allowed_instrument_ids, instrument_range)
+	own_set(src, "song", new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
 
-DECLARE_REF(/obj/item/instrument, "song", OWNED, null)
 
 /obj/item/instrument/proc/can_play(atom/music_player)
 	if(!ismob(music_player))

@@ -97,8 +97,7 @@
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	id=ident
-	if(istext(id))id=new(id)
+	own_set(src, "id", istext(ident) ? new /datum/node/identifier(ident) : ident)
 
 /datum/node/expression/value/variable/ToString()
 	return src.id.ToString()
@@ -107,22 +106,18 @@
 	Class: reference
 */
 /datum/node/expression/value/reference
-	var/tmp/value_handle
+	var/tmp/datum/value
 
 /datum/node/expression/value/reference/New(value)
 	.=..()
-	src.value_handle=om_handle(value)
+	rel_set(src, "value", value)
 
 /datum/node/expression/value/reference/ToString()
 	return "ref: [src.value()] ([src.value().type])"
 
-DECLARE_REF(/datum/node/expression/FunctionCall, "object", OWNED, null)
 
-DECLARE_REF(/datum/node/expression/value/variable, "id", OWNED, null)
-DECLARE_REF(/datum/node/expression/value/variable, "object", OWNED, null)
 
-DECLARE_REF(/datum/node/expression/op, "exp", OWNED, null)
 
-/// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The value (a relation view).
 /datum/node/expression/value/reference/proc/value() as /datum
-	return om_resolve(value_handle)
+	return value

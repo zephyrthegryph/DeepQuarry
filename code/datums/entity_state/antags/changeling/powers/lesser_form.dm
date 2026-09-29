@@ -67,7 +67,7 @@
 	changeling.chem_charges--
 	C.remove_changeling_powers()
 	act_message(C, null, others = span_warning("%U% transforms!"))
-	QDEL_SWAP(C.dna, chosen_dna.Clone())
+	own_set(C, "dna", chosen_dna.Clone())
 
 	var/list/implants = list()
 	for (var/obj/item/implant/I in C) //Still preserving implants
@@ -81,7 +81,7 @@
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( C.loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
-	animation.master = src
+	rel_set(animation, "master", src)
 	flick("monkey2h", animation)
 	om_after(src, 4.8 SECONDS, PROC_REF(changeling_lesser_transform_finish), animation, chosen_dna, implants)
 	return 1
@@ -100,8 +100,8 @@
 		O.gender = FEMALE
 	else
 		O.gender = MALE
-	QDEL_SWAP(O.dna, C.dna.Clone())
-	QDEL_NULL(C.dna)
+	own_set(O, "dna", C.dna.Clone())
+	own_clear(C, "dna", OWN_DELETE)
 	O.real_name = chosen_dna.real_name
 
 	for(var/obj/T in C)

@@ -10,7 +10,7 @@
 	var/vmode = 1
 
 	var/screen = "stocks"
-	var/tmp/current_stock_handle
+	var/tmp/datum/stock/current_stock
 
 	light_color = LIGHT_COLOR_GREEN
 
@@ -83,7 +83,7 @@
 		if("stocks_archive")
 			var/datum/stock/S = locate(params["share"])
 			if(S)
-				current_stock_handle = om_handle(S)
+				rel_set(src, "current_stock", S)
 				screen = "archive"
 
 		if("stocks_history")
@@ -92,7 +92,7 @@
 				S.displayValues(ui.user)
 
 		if("stocks_backbutton")
-			current_stock_handle = null
+			rel_clear(src, "current_stock")
 			screen = "stocks"
 
 		if("stocks_cycle_view")
@@ -115,10 +115,11 @@
 			else
 				data["viewMode"] = "Compressed"
 
-			for (var/datum/stock/S in GLOB.stockExchange.last_read)
-				var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-				if (!(logged_in in LR))
-					LR[logged_in] = 0
+			for (var/datum/stock/S in GLOB.stockExchange.stocks)
+				if (!S.last_read)
+					S.last_read = list()
+				if (!(logged_in in S.last_read))
+					S.last_read[logged_in] = 0
 
 			data["stocks"] = list()
 
@@ -146,8 +147,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-						var/lrt = LR[logged_in]
+						var/lrt = LAZYACCESS(S.last_read, logged_in)
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)
 								news = 1
@@ -179,8 +179,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-						var/lrt = LR[logged_in]
+						var/lrt = LAZYACCESS(S.last_read, logged_in)
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)
 								news = 1
@@ -242,7 +241,9 @@
 						"current_desc" = E.current_desc,
 				))
 
-			for (var/datum/article/A in current_stock().articles)
+			var/list/stock_articles = current_stock().articles
+			for (var/article_index = length(stock_articles), article_index >= 1, article_index--) // articles are appended oldest first; show newest first
+				var/datum/article/A = stock_articles[article_index]
 				data["articles"] += list(list(
 						"headline" = A.headline,
 						"subtitle" = A.subtitle,
@@ -350,6 +351,6 @@
 	else
 		to_chat(user, span_danger("Could not complete transaction. Check your account balance."))
 
-/// LC-refs: the current_stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the current_stock this refers to (a relation view: null once it is deleted).
 /obj/machinery/computer/stockexchange/proc/current_stock() as /datum/stock
-	return om_resolve(current_stock_handle)
+	return current_stock

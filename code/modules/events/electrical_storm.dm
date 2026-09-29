@@ -27,10 +27,10 @@
 
 /datum/event/electrical_storm/start()
 	..()
-	valid_apcs = list()
+	rel_clear(src, "valid_apcs")
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in affecting_z)
-			valid_apcs.Add(A)
+			rel_add(src, "valid_apcs", A)
 	endWhen = (severity * 60) + startWhen
 
 /datum/event/electrical_storm/tick()
@@ -45,7 +45,7 @@
 		//Minor breaches aren't enough to let through frying amounts of power
 		if(shield_gen.deal_shield_damage(30 * severity, SHIELD_DAMTYPE_EM) <= SHIELD_BREACHED_MINOR)
 			return
-	if(!valid_apcs.len)
+	if(!length(valid_apcs))
 		return
 	var/list/picked_apcs = list()
 	for(var/i=0, i< severity * 2, i++) // up to 2/4/6 APCs per tick depending on severity

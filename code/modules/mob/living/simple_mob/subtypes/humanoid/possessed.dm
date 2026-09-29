@@ -67,8 +67,8 @@
 	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 5) // ALLOW(decl): fills the grenade's own beakers
 	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 5) // ALLOW(decl): fills the grenade's own beakers
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+	own_add(src, "beakers", B1)
+	own_add(src, "beakers", B2)
 
 	icon_state = null // ALLOW(decl): hidden just before it detonates
 

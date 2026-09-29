@@ -17,7 +17,7 @@
 	Look at radio.dm for the prequel to this code.
 */
 
-OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
+OWN_TIMER(/obj/machinery/telecomms, thermal_timer)
 
 /obj/machinery/telecomms
 	icon = 'icons/obj/stationobjs.dmi'
@@ -89,9 +89,9 @@ OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
 
 			// Keep the "original" signal constant
 			if(!signal.data["original"])
-				copy.data["original"] = signal
+				copy.data["original"] = signal // ALLOW(ownership): signal payload data, transient message dict
 			else
-				copy.data["original"] = signal.data["original"]
+				copy.data["original"] = signal.data["original"] // ALLOW(ownership): signal payload data, transient message dict
 
 		send_count++
 		if(machine.is_freq_listening(signal))
@@ -151,7 +151,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		else
 			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -164,13 +164,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 			soundloop.mid_length = 30
 	soundloop.start()
 
-DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 
-/// Phase 2: every other telecomms machine drops its link to this one.
-/obj/machinery/telecomms/lifecycle_dematerialize()
-	. = ..()
-	for(var/obj/machinery/telecomms/comm in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
-		LAZYREMOVE(comm.links, src)
+// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
+// machine leaves every partner's list (the framework clears both sides).
+REL_SET(/obj/machinery/telecomms, links)
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)
@@ -180,7 +177,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 		for(var/x in autolinkers)
 			if(LAZYFIND(T.autolinkers, x))
 				if(src != T)
-					LAZYOR(links, T)
+					rel_add(src, "links", T)
 
 /obj/machinery/telecomms/update_icon()
 	if(on)
@@ -551,9 +548,9 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 	var/obj/item/radio/headset/server_radio = null
 
 /obj/machinery/telecomms/server/Initialize(mapload)
-	Compiler = new()
-	Compiler.Holder_handle = om_handle(src)
-	server_radio = new()
+	own_set(src, "Compiler", new /datum/TCS_Compiler())
+	rel_set(Compiler, "Holder", src)
+	own_set(src, "server_radio", new /obj/item/radio/headset())
 	. = ..()
 
 /obj/machinery/telecomms/server/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)
@@ -621,11 +618,11 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 					log.input_type = "Corrupt File"
 
 				// Log and store everything that needs to be logged
-				LAZYADD(log_entries, log)
+				own_add(src, "log_entries", log)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
 				logs++
-				signal.data["server"] = src
+				signal.data["server"] = src // ALLOW(ownership): signal payload data, transient message dict
 
 				// Give the log a name
 				var/identifier = num2text( rand(-1000,1000) + world.time )
@@ -658,7 +655,7 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 		for(var/i = 1, i <= logs, i++) // locate the first garbage collectable log entry and remove it
 			var/datum/comm_log_entry/L = LAZYACCESS(log_entries, i)
 			if(L.garbage_collector)
-				LAZYREMOVE(log_entries, L)
+				own_remove(src, "log_entries", L)
 				logs--
 				break
 
@@ -669,7 +666,7 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 	log.input_type = input
 	log.parameters["message"] = content
 	log.parameters["timecode"] = stationtime2text()
-	LAZYADD(log_entries, log)
+	own_add(src, "log_entries", log)
 	update_logs()
 
 // Simple log entry datum
@@ -709,5 +706,3 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 /obj/machinery/telecomms/step_start_condition()
 	return on
 
-DECLARE_REF(/obj/machinery/telecomms/server, "Compiler", OWNED, null)
-DECLARE_REF(/obj/machinery/telecomms/server, "server_radio", OWNED, null)

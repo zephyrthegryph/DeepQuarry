@@ -53,7 +53,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
 	if(loading.food_inserted_micros && loading.food_inserted_micros.len)
 		if(!food_inserted_micros)
-			food_inserted_micros = list()
+			own_set(src, "food_inserted_micros", list())
 
 		for(var/mob/living/F in loading.food_inserted_micros)
 			var/do_transfer = FALSE
@@ -66,9 +66,8 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 					do_transfer = TRUE
 
 			if(do_transfer)
-				F.forceMove(src)
-				loading.food_inserted_micros -= F
-				src.food_inserted_micros += F
+				F.forceMove(src) // leaving the food's contents releases it from food_inserted_micros (OWN_SPILL)
+				own_add(src, "food_inserted_micros", F)
 
 	if (loading.reagents.total_volume <= 0)
 		consume(loading, user)
@@ -98,7 +97,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 		reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
 		if(food_inserted_micros && food_inserted_micros.len)
 			for(var/mob/living/F in food_inserted_micros)
-				food_inserted_micros -= F
+				own_take_member(src, "food_inserted_micros", F)
 				if(!can_food_vore(M, F))
 					F.forceMove(get_turf(src))
 				else
@@ -130,7 +129,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 
 /obj/item/material/kitchen/utensil/container_resist(mob/living/M)
 	if(food_inserted_micros)
-		food_inserted_micros -= M
+		own_take_member(src, "food_inserted_micros", M)
 	if(isdisposalpacket(loc))
 		M.forceMove(loc)
 	else
@@ -222,4 +221,4 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-DECLARE_REF(/obj/item/material/kitchen/utensil, "food_inserted_micros", SPILL_LIST, null)
+OWN(/obj/item/material/kitchen/utensil, food_inserted_micros, OWN_SPILL)

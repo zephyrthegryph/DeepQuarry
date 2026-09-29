@@ -173,6 +173,7 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 
 // AUTONAME
 /obj/machinery/camera/autoname
+	/// Area name -> how many autonamed cameras have been numbered there (numbers only, no camera refs).
 	var/static/list/by_area
 
 /obj/machinery/camera/autoname/Initialize(mapload)
@@ -182,22 +183,10 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 		return .
 	if(!by_area)
 		by_area = list()
-	if(!by_area[A.name])
-		by_area[A.name] = list()
-	var/list/my_area = by_area[A.name]
-	my_area += src
-	var/number = my_area.len
+	var/number = by_area[A.name] + 1
+	by_area[A.name] = number
 
 	c_tag = "[A.name] #[number]"
-
-/// Phase 2: leaves its area's autoname index.
-/obj/machinery/camera/autoname/lifecycle_dematerialize()
-	. = ..()
-	var/area/A = get_area(src)
-	if(!A || !by_area || !by_area[A.name])
-		return
-	var/list/my_area = by_area[A.name]
-	my_area -= src
 
 // CHECKS
 
@@ -224,19 +213,19 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 // UPGRADE PROCS
 
 /obj/machinery/camera/proc/upgradeEmpProof()
-	LAZYADD(assembly.upgrades, new /obj/item/stack/material/osmium(assembly))
+	own_add(assembly, "upgrades", new /obj/item/stack/material/osmium(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeXRay()
-	LAZYADD(assembly.upgrades, new /obj/item/stock_parts/scanning_module(assembly))
+	own_add(assembly, "upgrades", new /obj/item/stock_parts/scanning_module(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeMotion()
 	if(!isturf(loc))
 		return //nooooo
-	LAZYADD(assembly.upgrades, new /obj/item/assembly/prox_sensor(assembly))
+	own_add(assembly, "upgrades", new /obj/item/assembly/prox_sensor(assembly))
 	setPowerUsage()
 	sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	update_coverage()

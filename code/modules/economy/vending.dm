@@ -28,7 +28,7 @@
 	var/vend_ready = 1 //Are we ready to vend?? Is it time??
 	var/vend_delay = 10 //How long does it take to vend?
 	var/categories = CAT_NORMAL // Bitmask of cats we're currently showing
-	var/tmp/currently_vending_handle	// What we're requesting payment for right now
+	var/tmp/datum/stored_item/vending_product/currently_vending	// What we're requesting payment for right now
 	var/vending_sound = "machines/vending/vending_drop.ogg"
 
 	/*
@@ -128,7 +128,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			product.variant = spec["variant"]
 			product.category = category
 
-			product_records.Add(product)
+			own_add(src, "product_records", product)
 			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))
@@ -189,8 +189,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 		for(var/datum/stored_item/R as anything in product_records)
 			R.forget(thing)
 
-DECLARE_REF(/obj/machinery/vending, "coin", OWNED, null)
-DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
 DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast_malfunction))
 
@@ -286,7 +284,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 /obj/machinery/vending/proc/interaction_coin(mob/user, obj/item/W, datum/interaction/interaction)
 	user.drop_item()
 	W.forceMove(src)
-	coin = W
+	own_set(src, "coin", W)
 	categories |= CAT_COIN
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
@@ -427,7 +425,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	var/list/listed_products = list()
 
 	data["chargesMoney"] = has_prices ? TRUE : FALSE
-	for(var/key = 1 to product_records.len)
+	for(var/key = 1 to length(product_records))
 		var/datum/stored_item/vending_product/I = product_records[key]
 
 		if(!(I.category & categories))
@@ -510,7 +508,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 				ui.user.put_in_hands(coin)
 
 			to_chat(ui.user, span_notice("You remove \the [coin] from \the [src]."))
-			coin = null
+			own_take(src, "coin")
 			categories &= ~CAT_COIN
 			return TRUE
 		if("vend")
@@ -567,7 +565,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 				vend_ready = TRUE
 				return
 
-			currently_vending_handle = om_handle(R)
+			rel_set(src, "currently_vending", R)
 
 			var/paid = FALSE
 
@@ -635,11 +633,11 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 				consume(coin, user)
-				coin = null
+				own_take(src, "coin")
 				categories &= ~CAT_COIN
 		else
 			consume(coin)
-			coin = null
+			own_take(src, "coin")
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
@@ -659,7 +657,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1
-		currently_vending_handle = null
+		rel_clear(src, "currently_vending")
 		SStgui.update_uis(src)
 		return
 	R.get_product(get_turf(src))
@@ -672,7 +670,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	GLOB.items_sold_shift_roundstat++
 
 	vend_ready = 1
-	currently_vending_handle = null
+	rel_clear(src, "currently_vending")
 	SStgui.update_uis(src)
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
@@ -816,6 +814,6 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 /obj/machinery/vending/step_start_condition()
 	return active && !shut_up && length(slogan_list)
 
-/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/vending/proc/currently_vending() as /datum/stored_item/vending_product
-	return om_resolve(currently_vending_handle)
+	return currently_vending

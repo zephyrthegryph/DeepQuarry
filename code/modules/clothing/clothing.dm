@@ -28,7 +28,7 @@
 	var/update_icon_define_orig = null	// temp storage for original update_icon_define (if it exists)
 	var/update_icon_define_digi = null	// dmi used for the digi sprites
 	var/fit_for_digi = FALSE // flag for if clothing has already been reskinned to digitigrade
-	var/wearer	//Who the person currently wearing us is.
+	var/mob/wearer	//Who the person currently wearing us is.
 
 //Updates the icons of the mob wearing the clothing item, if any.
 /obj/item/clothing/proc/update_clothing_icon()
@@ -65,14 +65,14 @@
 // itself if the control module is removed, destroyed, or its owner dies, so a
 // deployed component is never left locked onto the wearer. See rig_self_detach().
 /obj/item/clothing
-	var/master_rig_handle
+	var/obj/item/rig/master_rig
 
 // The self-detach primitive. Gets a deployed rig piece off its wearer and somewhere
 // safe: retracted back into the control module if it still exists, otherwise dropped
 // to the floor as a normal item. After this runs the piece is never "stuck".
 /obj/item/clothing/proc/rig_self_detach()
 	var/obj/item/rig/owner_rig = master_rig()
-	master_rig_handle = null
+	rel_clear(src, "master_rig")
 	canremove = TRUE
 	if(ismob(loc))
 		var/mob/M = loc
@@ -295,11 +295,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 	siemens_coefficient = 0.9
 	blood_sprite_state = "bloodyhands"
 	var/wired = 0
-	var/obj/item/cell/cell = 0 // ALLOW(state_ref): owned: the installed power cell, kept in the gloves' contents
+	var/obj/item/cell/cell = 0 // owned: the installed power cell, kept in the gloves' contents
 	var/fingerprint_chance = 0					//How likely the glove is to let fingerprints through
-	// ALLOW(state_ref): owned: the ring worn under the gloves, kept in their contents
+	// owned: the ring worn under the gloves, kept in their contents
 	var/obj/item/clothing/accessory/ring = null	//Covered ring
-	// ALLOW(state_ref): owned: the undergloves worn under gauntlets, kept in their contents
+	// owned: the undergloves worn under gauntlets, kept in their contents
 	var/obj/item/clothing/gloves/gloves = null	//Undergloves. Used for gauntlets.
 	var/glove_level = 2							//What "layer" the glove is on
 	var/overgloves = 0							//Used by gauntlets and arm_guards
@@ -324,10 +324,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-DECLARE_REF(/obj/item/clothing/gloves, "ring", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "gloves", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "special_attack", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
+OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -347,14 +344,14 @@ DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
 	update_icon()
 
 /obj/item/clothing/gloves/equipped(mob/user, slot)
-	wearer = om_handle(user)
+	rel_set(src, "wearer", user)
 	return ..()
 
 /obj/item/clothing/gloves/dropped(mob/user, equipping, slot)
 	..()
 
 	punch_force = initial(punch_force)
-	wearer = null
+	rel_clear(src, "wearer")
 	if(!ishuman(user))
 		return
 	var/mob/living/carbon/human/H = user
@@ -365,11 +362,11 @@ DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				gloves = H.get_equipped_item(SLOT_ID_GLOVES)
+				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES))
 			else if(istype(G, /obj/item/clothing/accessory))
-				ring = H.get_equipped_item(SLOT_ID_GLOVES)
+				own_set(src, "ring", H.get_equipped_item(SLOT_ID_GLOVES))
 			else
-				gloves = H.get_equipped_item(SLOT_ID_GLOVES) //Fallback
+				own_set(src, "gloves", H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
 			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
@@ -380,13 +377,13 @@ DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
 	if(gloves)
 		if(!H.equip_to_slot_if_possible(gloves, SLOT_ID_GLOVES))
 			gloves.forceMove(get_turf(src))
-		gloves = null
+		own_take(src, "gloves")
 		return
 
 	if(ring) //We do NOT have gloves under our gloves but have a ring under our glove instead!
 		if(!H.equip_to_slot_if_possible(ring, SLOT_ID_GLOVES))
 			ring.forceMove(get_turf(src))
-		ring = null
+		own_take(src, "ring")
 		return
 
 /obj/item/clothing/gloves
@@ -602,7 +599,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	blood_sprite_state = "shoeblood"
 
 	var/can_hold_knife = 0
-	var/obj/item/holding // ALLOW(state_ref): owned: the knife tucked in the boot, kept in its contents
+	var/obj/item/holding // owned: the knife tucked in the boot, kept in its contents
 
 	var/shoes_under_pants = 0
 
@@ -610,7 +607,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 	var/snow_speed = 0		//Speed boost/decrease on snow, lower/negative values mean more speed
 
 	var/step_volume_mod = 1	//How quiet or loud footsteps in this shoe are
-	// ALLOW(state_ref): owned: the shoes worn under these (magboots), kept in their contents
+	// owned: the shoes worn under these (magboots), kept in their contents
 	var/obj/item/clothing/shoes/shoes = null	//If we are wearing shoes in our shoes. Used primarily for magboots.
 	var/blocks_footsteps = TRUE //Does this shoe block custom footstep sounds?
 
@@ -641,8 +638,6 @@ TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exc
 		span_red("More motion while \the [name] move, feet pressing down against you.")
 	)
 
-DECLARE_REF(/obj/item/clothing/shoes, "shoes", OWNED, null)
-DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 /// Old verb "Draw Boot Knife" (offered while a knife is held).
 /obj/item/clothing/shoes/proc/shoes_draw_knife_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -670,7 +665,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	if(user.put_in_hands(holding))
 		act_message(user, null, others = span_danger("%U% pulls a knife out of their boot!"))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHOUT, 0.5, vary = FALSE)
-		holding = null
+		own_take(src, "holding")
 		cut_overlay("[icon_state]_knife")
 	else
 		to_chat(user, span_warning("Your need an empty, unbroken hand to do that."))
@@ -899,7 +894,7 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 	//Hood stuff. See hooded.dm for more info. This should be expanded so all suits can have hoods if desired.
 	//Currently only used by /obj/item/clothing/suit/storage/hooded.
-	var/obj/item/clothing/head/hood // ALLOW(state_ref): owned: the attached hood, kept in the suit's contents while down
+	var/obj/item/clothing/head/hood // owned: the attached hood, kept in the suit's contents while down
 	var/hoodtype = null //so the chaplain hoodie or other hoodies can override this
 	var/hood_up = FALSE
 	var/has_hood_sprite = FALSE
@@ -930,7 +925,6 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 	toggleicon = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 
 /obj/item/clothing/suit/update_icon()
 	. = ..()
@@ -951,7 +945,7 @@ DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 	if(!hoodtype)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	hood = H
+	own_set(src, "hood", H)
 	if(!actions_types.len) //If we don't already have a special action type, let's add it.
 		actions_types |= /datum/action/item_action/toggle_hood
 
@@ -1092,8 +1086,8 @@ DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 		|ACCESSORY_SLOT_DEPT\
 		|ACCESSORY_SLOT_OVER)
 
-	var/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // ALLOW(state_ref): an icon file resource ('*.dmi'), not an object reference
-	var/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // ALLOW(state_ref): an icon file resource ('*.dmi'), not an object reference
+	var/tmp/icon/rolled_down_icon = 'icons/inventory/uniform/mob_rolled_down.dmi' // an icon file resource ('*.dmi'), not an object reference
+	var/tmp/icon/rolled_down_sleeves_icon = 'icons/inventory/uniform/mob_sleeves_rolled.dmi' // an icon file resource ('*.dmi'), not an object reference
 
 	update_icon_define_digi = "icons/inventory/uniform/mob_digi.dmi"
 
@@ -1348,10 +1342,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing, "contents", SPILL_LIST, null)
+OWN(/obj/item/clothing, contents, OWN_SPILL)
 // Attached accessories are part of the garment: deleted with it, not spilled
 // (dq_lifecycle_spill_declared skips owned children held in contents).
-DECLARE_REF(/obj/item/clothing, "accessories", OWNED_LIST, null)
 
 /obj/item/clothing/proc/handle_digitigrade(mob/user)
 	if(ishuman(user))
@@ -1513,7 +1506,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 			return INTERACTION_HANDLED_PASS
 		user.unEquip(I)
 		I.forceMove(src)
-		holding = I
+		own_set(src, "holding", I)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -1555,16 +1548,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi')
 
-DECLARE_REF(/obj/item/clothing/head, "helmet_light", OWNED, null)
 
-DECLARE_REF(/obj/item/clothing/under, "rolled_down_icon", OWNED, null)
-DECLARE_REF(/obj/item/clothing/under, "rolled_down_sleeves_icon", OWNED, null)
 
-DECLARE_REF(/obj/item/clothing/gloves, "cell", HELD, null)
+OWN(/obj/item/clothing/gloves, cell, OWN_CONTAINED)
 
-/// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master_rig this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/proc/master_rig() as /obj/item/rig
-	return om_resolve(master_rig_handle)
+	return master_rig
 
 /obj/item/clothing/shoes/muffles_death_of(mob/occupant)
 	return TRUE

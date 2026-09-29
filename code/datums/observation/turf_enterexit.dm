@@ -16,9 +16,9 @@
 
 /turf/Entered(atom/movable/am, atom/old_loc)
 	. = ..()
-	// OM_EMIT only builds the event (and the handle) when something listens;
-	// every mapped object entering its turf at init would otherwise make one.
-	OM_EMIT(src, /datum/om/event/observer_turf_entered, om_handle(am), old_loc)
+	// OM_EMIT only builds the event when something listens; every mapped object
+	// entering its turf at init would otherwise make one.
+	OM_EMIT(src, /datum/om/event/observer_turf_entered, am, old_loc)
 
 /turf/Exited(atom/movable/am, atom/new_loc)
 	. = ..()

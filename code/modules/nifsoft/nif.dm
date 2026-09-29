@@ -103,8 +103,10 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	om_hook(human, /datum/om/event/mob_death, src, PROC_REF(on_human_death))
 
 /obj/item/nif/proc/unregister_human()
+	if(!human)
+		return
 	om_unhook(human, /datum/om/event/mob_death, src)
-	human.nif = null
+	rel_clear(src, "human") // the pair clears human.nif too
 
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
@@ -117,14 +119,10 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		persist_nif_data(source)
 
 //Destructor cleans up references
-DECLARE_REF(/obj/item/nif, "comm", OWNED, null)
-DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 
 // the NIF unregisters from its human.
 /obj/item/nif/on_destroy(force)
-	if(human)
-		unregister_human()
-		human = null
+	unregister_human()
 	..()
 
 //Being implanted in some mob
@@ -137,12 +135,10 @@ DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 		if(!bioadap && (H.species.flags & NO_DNA)) //NO_DNA is the default 'too complicated' flag
 			return FALSE
 
-		human = H
-		human.nif = src
+		rel_set(src, "human", H) // the pair sets H.nif too
 		stat = NIF_INSTALLING
 		add_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		QDEL_NULL(menu_ref)
-		menu_ref = new /datum/nif_menu(H)
+		own_set(src, "menu_ref", new /datum/nif_menu(H))
 		if(starting_software)
 			for(var/path in starting_software)
 				new path(src)
@@ -166,7 +162,7 @@ DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 		if(!istype(parent))
 			return FALSE
 		forceMove(parent)
-		LAZYADD(parent.implants, src)
+		rel_add(parent, "implants", src)
 		om_after(src, 1, PROC_REF(quick_install), H)
 		return TRUE
 
@@ -184,16 +180,13 @@ DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 /obj/item/nif/proc/unimplant(mob/living/carbon/human/H)
 	var/datum/nifsoft/soulcatcher/SC = imp_check(NIF_SOULCATCHER)
 	if(SC) //Clean up stored people, this is dirty but the easiest way.
-		QDEL_LIST_NULL(SC.brainmobs)
-		SC.brainmobs = list()
+		own_clear(SC, "brainmobs", OWN_DELETE)
 	stat = NIF_PREINSTALL
 	vis_update()
 	if(H)
 		remove_verb(H, /mob/living/carbon/human/proc/set_nif_examine)
-		H.nif = null
-	QDEL_NULL(menu_ref)
+	own_clear(src, "menu_ref", OWN_DELETE)
 	unregister_human()
-	human = null
 	install_done = null
 	update_icon()
 
@@ -480,11 +473,11 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 			return FALSE
 
 	wear(new_soft.wear)
-	nifsofts[new_soft.list_pos] = new_soft
+	own_put(src, "nifsofts", new_soft.list_pos, new_soft)
 	power_usage += new_soft.p_drain
 
 	if(new_soft.tick_flags == NIF_ALWAYSTICK)
-		LAZYADD(nifsofts_life, new_soft)
+		rel_add(src, "nifsofts_life", new_soft)
 
 	return TRUE
 
@@ -501,11 +494,18 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		notify("The software \"[NS]\" refuses to be uninstalled.",TRUE)
 		return FALSE
 
-	nifsofts[old_soft.list_pos] = null
+	// Detach it from its slot (the list shifts), then pad the slot back: nifsofts is a
+	// positional table indexed by list_pos.
+	var/slot = old_soft.list_pos
+	own_take_member(src, "nifsofts", old_soft)
+	if(!nifsofts)
+		nifsofts = new /list(TOTAL_NIF_SOFTWARE) // ALLOW(ownership): a fresh positional slot table (nulls only)
+	else if(length(nifsofts) < TOTAL_NIF_SOFTWARE)
+		nifsofts.Insert(slot, null) // ALLOW(ownership): an empty slot (null), keeping every other soft at its list_pos
 	power_usage -= old_soft.p_drain
 
 	if(old_soft.tick_flags == NIF_ALWAYSTICK)
-		LAZYREMOVE(nifsofts_life, old_soft)
+		rel_remove(src, "nifsofts_life", old_soft)
 
 	if(old_soft.active)
 		old_soft.deactivate(force = TRUE)
@@ -535,7 +535,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		return FALSE
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		LAZYADD(nifsofts_life, soft)
+		rel_add(src, "nifsofts_life", soft)
 
 	power_usage += soft.a_drain
 
@@ -548,7 +548,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		human << click_sound
 
 	if(soft.tick_flags == NIF_ACTIVETICK)
-		LAZYREMOVE(nifsofts_life, soft)
+		rel_remove(src, "nifsofts_life", soft)
 
 	power_usage -= soft.a_drain
 
@@ -733,7 +733,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 	var/obj/item/organ/external/eo = task.eo
 	user.unEquip(src)
 	forceMove(eo)
-	eo.implants |= src
+	rel_add(eo, "implants", src)
 	implant(T)
 	play_sfx(T, SFX_EFFECTS_SLIME_SQUISH)
 
@@ -762,4 +762,6 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		nif.save_data["examine_msg"] = new_flavor
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
-DECLARE_REF(/mob/living/carbon/human, "nif", OWNED, null)
+// The implanted human and its NIF name each other (the NIF lives in an organ's implants).
+REL_PAIR(/obj/item/nif, human, nif)
+REL_PAIR(/mob/living/carbon/human, nif, human)

@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 					AI.lose_target()
 					if(prob(tame_chance))
 						AI.set_hostile(FALSE)
-						friend = M
+						rel_set(src, "friend", M)
 						AI.set_follow(friend)
 						if(tamed != 1)
 							tamed = 1
@@ -307,7 +307,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 					audible_emote("growls disapprovingly at [M].")
 					if(M == friend)
 						AI.lose_follow()
-						friend = null
+						rel_clear(src, "friend")
 				return TRUE
 			return FALSE
 
@@ -324,7 +324,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 /mob/living/simple_mob/vore/otie/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
 	add_verb(src, /mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
@@ -336,4 +336,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 	say_maybe_target = list("Ruh?", "Waf?")
 	say_got_target = list("Rurrr!", "ROAR!", "MARR!", "RERR!", "RAHH!", "RAH!", "WARF!")
 
-DECLARE_REF(/mob/living/simple_mob/vore/otie, "friend", HELD, null)

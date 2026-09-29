@@ -42,13 +42,13 @@
 	if(spray_blood && prob(5)) // Make a big mess
 		act_message(src, null, others = "Something flies out of %U%. It seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(get_turf(src))
-		ignore_list += gib
+		rel_add(src, "ignore_list", gib)
 		om_after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), gib)
 
 /mob/living/bot/cleanbot/proc/clear_ignored_gib(obj/gibref)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	ignore_list -= gibref
+	rel_remove(src, "ignore_list", gibref)
 
 /mob/living/bot/cleanbot/handlePanic()	// Speed modification based on alert level.
 	. = 0
@@ -82,7 +82,7 @@
 			if (i > 0 && get_dist(src, D) < i)
 				continue // already checked this one
 			else if(confirmTarget(D))
-				target = D
+				rel_set(src, "target", D)
 				registry_join(REGISTRY_CLEANBOT_RESERVED_TURFS, D)
 				return
 
@@ -159,7 +159,7 @@
 		), "automation:[REF(src)]:sanitation:[world.time]", src)
 	if(D == target)
 		registry_leave(REGISTRY_CLEANBOT_RESERVED_TURFS, target)
-		target = null
+		rel_clear(src, "target")
 /mob/living/bot/cleanbot/proc/UnarmedAttack_cleanbot_done2()
 	var/cleaned_turf_id = REF(loc)
 	if(blood)

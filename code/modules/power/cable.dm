@@ -64,7 +64,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER
 	color = COLOR_RED
-	var/tmp/breaker_box_handle
+	var/tmp/obj/machinery/power/breakerbox/breaker_box
 	/// Optional registered composite. Ordinary mapped cable retains baseline behavior.
 	var/engineered_material_id
 	var/material_current = 0
@@ -219,8 +219,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 /obj/structure/cable/lifecycle_unbind()
 	. = ..()
 	GLOB.machine_service.power_material_cables -= src
-	material_overlay?.remove_cable(src)
-	material_overlay = null
+	material_overlay?.remove_cable(src) // dirties the overlay's graph; the pair view goes with it
 	power_unregister()
 
 /obj/structure/cable/examine(mob/user)
@@ -936,9 +935,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/alien, INTERACT_HAND_UNGATED("Tak
 
 #undef MAXCOIL
 
-/// LC-refs: a cable is a member of its material overlay's cables; deleting it leaves the list.
-DECLARE_REF(/obj/structure/cable, "material_overlay", BACKLIST, "cables")
+/// A cable is a member of its material overlay's cables (two-sided); deleting it leaves the list.
+REL_PAIR(/obj/structure/cable, material_overlay, cables)
+REL_PAIR_LIST(/datum/material_power_overlay, cables, material_overlay)
 
-/// LC-refs: the breaker_box this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The breaker box this cable belongs to: a relation view, null once that box is deleted.
 /obj/structure/cable/proc/breaker_box() as /obj/machinery/power/breakerbox
-	return om_resolve(breaker_box_handle)
+	return breaker_box

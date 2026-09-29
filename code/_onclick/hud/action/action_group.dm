@@ -1,7 +1,7 @@
 /datum/action_group
 	/// The hud we're owned by
-	var/owner_handle
-	/// The actions we're managing
+	var/datum/hud/owner
+	/// The action buttons we're laying out, in order (a relation list: each action owns its buttons)
 	var/list/atom/movable/screen/movable/action_button/actions
 	/// The initial vertical offset of our action buttons
 	var/north_offset = 0
@@ -23,25 +23,27 @@
 
 /datum/action_group/New(datum/hud/owner)
 	..()
-	actions = list()
-	src.owner_handle = om_handle(owner)
+	rel_set(src, "owner", owner)
 
-DECLARE_REF(/datum/action_group, "landing", OWNED, null)
-DECLARE_REF(/datum/action_group, "actions", OWNED_LIST, null)
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
 	if(action in actions)
 		if(actions[index] == action)
 			return
-		actions -= action // Don't dupe, come on
+		rel_remove(src, "actions", action) // Don't dupe, come on
 	if(!index)
 		index = length(actions) + 1
 	index = min(length(actions) + 1, index)
-	actions.Insert(index, action)
+	rel_add(src, "actions", action)
+	// rel_add appends: move the members that belong after it back to the end, in order
+	var/list/after = actions.Copy(index, length(actions))
+	for(var/atom/movable/screen/member as anything in after)
+		rel_remove(src, "actions", member)
+		rel_add(src, "actions", member)
 	refresh_actions()
 
 /datum/action_group/proc/remove_action(atom/movable/screen/action)
-	actions -= action
+	rel_remove(src, "actions", action)
 	if(!QDELING(src))
 		refresh_actions()
 
@@ -120,19 +122,19 @@ DECLARE_REF(/datum/action_group, "actions", OWNED_LIST, null)
 	return amount
 
 /datum/action_group/proc/index_of(atom/movable/screen/get_location)
-	return actions.Find(get_location)
+	return actions?.Find(get_location)
 
 /// Generates a landing object that can be dropped on to join this group
 /datum/action_group/proc/generate_landing()
 	if(landing)
 		return
-	landing = new()
+	own_set(src, "landing", new /atom/movable/screen/action_landing())
 	landing.set_owner(src)
 	refresh_actions()
 
 /// Clears any landing objects we may currently have
 /datum/action_group/proc/clear_landing()
-	QDEL_NULL(landing)
+	own_clear(src, "landing", OWN_DELETE)
 
 /datum/action_group/proc/update_landing()
 	if(!landing)
@@ -207,6 +209,6 @@ DECLARE_REF(/datum/action_group, "actions", OWNED_LIST, null)
 	. = ..()
 	owner()?.palette_actions.refresh_actions() // We effect them, so we gotta refresh em
 
-/// LC-refs: the hud that owns this group -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud that owns this group (a relation view: null once that is deleted).
 /datum/action_group/proc/owner() as /datum/hud
-	return om_resolve(owner_handle)
+	return owner

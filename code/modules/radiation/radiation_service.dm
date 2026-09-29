@@ -11,11 +11,13 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/enabled = TRUE
 
 	/// A list of radiation sources (/datum/radiation_pulse_information) that have yet to process.
-	/// Do not interact with this directly, use `radiation_pulse` instead.
+	/// Do not interact with this directly, use `radiation_pulse` instead. Owned: a pulse is
+	/// deleted when it leaves the queue.
 	var/list/datum/radiation_pulse_information/processing = list()
 	/// Turfs whose shielding changed since the last flush to the Rust
-	/// insulation layer (RAD_SHIELDING_CHANGED). Keyed by turf.
-	var/list/turf/dirty_turfs = list()
+	/// insulation layer (RAD_SHIELDING_CHANGED): a set of locations (turf -> TRUE), not
+	/// entity references; emptied by every flush.
+	var/list/dirty_turfs = list()
 	/// world.maxz the Rust layer last saw; a new z-level forces a flush.
 	var/synced_maxz = 0
 	/// Cumulative work counters consumed by the lightweight profiler.
@@ -35,15 +37,14 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /datum/world_service/radiation/service_step(resumed)
 	flush_shielding()
-	profile_max_queue = max(profile_max_queue, processing.len)
-	while (processing.len)
+	profile_max_queue = max(profile_max_queue, length(processing))
+	while (length(processing))
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
 
-		var/source_ref = pulse_information.source_ref
-		var/atom/source = om_resolve(source_ref)
+		var/atom/source = pulse_information.source_ref
 		if (isnull(source))
 			profile_dropped_sources++
-			processing.Cut(1, 2)
+			own_remove(src, "processing", pulse_information)
 			continue
 
 		profile_pulse_invocations++
@@ -61,9 +62,9 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		// or an overloaded tick would keep re-running a finished pulse forever.
 		if(!pulse_information.remaining_targets())
 			profile_pulses_completed++
-			processing.Cut(1, 2)
+			own_remove(src, "processing", pulse_information)
 
-		if (processing.len && TICK_CHECK)
+		if (length(processing) && TICK_CHECK)
 			profile_yields++
 			return FALSE
 	return TRUE
@@ -85,7 +86,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	)
 
 /datum/world_service/radiation/stat_line()
-	return "Pulses:[processing.len]"
+	return "Pulses:[length(processing)]"
 
 /// Sends every dirty turf's combined transmission (the turf's rad_insulation
 /// times that of everything directly on it) to the Rust insulation layer.
@@ -101,7 +102,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		cells += T.y
 		cells += T.z
 		cells += transmission
-	dirty_turfs.Cut()
+	dirty_turfs = list()
 	synced_maxz = world.maxz
 	profile_shielding_flushes++
 	profile_shielding_cells += length(cells) / 4
@@ -247,6 +248,4 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	return (protected_limbs/limb_count)
 
 // Queued pulses belong to the queue until processed.
-DECLARE_REF(/datum/world_service/radiation, "processing", OWNED_LIST, null)
 // Turfs are round-long; the dirty set is flushed and cut every tick.
-DECLARE_REF(/datum/world_service/radiation, "dirty_turfs", STATIC, null)

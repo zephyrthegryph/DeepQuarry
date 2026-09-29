@@ -70,8 +70,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/datum/progressbar/progbar
 	var/datum/cogbar/cog
 
-DECLARE_REF(/datum/om/task/timed, "progbar", OWNED, null)
-DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 
 /datum/om/task/timed/on_starting()
 	var/mob/user = actor
@@ -100,10 +98,10 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 	var/mob/user = actor
 	if(progress)
 		if(user.client)
-			progbar = new(user, duration, target || user)
+			own_set(src, "progbar", new /datum/progressbar(user, duration, target || user))
 			progbar.animate_fill(duration)
 		if(!hidden && duration >= 1 SECONDS)
-			cog = new(user, icon, iconstate)
+			own_set(src, "cog", new /datum/cogbar(user, icon, iconstate))
 	OM_EMIT(user, /datum/om/event/do_after_began)
 
 /// A repeating timed action (steps) shows a fresh bar for each step.
@@ -111,11 +109,12 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 	var/mob/user = actor
 	if(!progress || !istype(user))
 		return
-	if(!QDELETED(progbar))
-		progbar.end_progress(TRUE)
-	progbar = null
+	// The bar fades out on its own and deletes itself (om_qdel_after): handed off, not owned.
+	var/datum/progressbar/old_bar = own_take(src, "progbar")
+	if(!QDELETED(old_bar))
+		old_bar.end_progress(TRUE)
 	if(user.client && delay > 0)
-		progbar = new(user, delay, target || user)
+		own_set(src, "progbar", new /datum/progressbar(user, delay, target || user))
 		progbar.animate_fill(delay)
 
 /datum/om/task/timed/why_not_running()
@@ -174,11 +173,12 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 	return om_task_call(src, check_proc) != FALSE
 
 /datum/om/task/timed/proc/timed_action_end(success)
-	if(!QDELETED(progbar))
-		progbar.end_progress(success)
-	progbar = null
-	cog?.remove()
-	cog = null
+	// Both fade out and delete themselves (om_qdel_after): handed off, not owned.
+	var/datum/progressbar/done_bar = own_take(src, "progbar")
+	if(!QDELETED(done_bar))
+		done_bar.end_progress(success)
+	var/datum/cogbar/done_cog = own_take(src, "cog")
+	done_cog?.remove()
 	var/mob/user = actor
 	if(!istype(user))
 		return
@@ -365,7 +365,7 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
  * `slice_proc`, a proc on E called as (cursor), does one bounded slice and returns the next
  * cursor (lists pass as they are), or null when the work is done. Slices run back to back while the OM scheduler's budget
  * lasts; the rest resumes by its cursor on a later pass, on E's clock. `on_done`, a proc on E or
- * a /datum/callback, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
+ * an om_callable() spec, runs after the last slice. Before the live scheduler runs (world init), or with `now`, every
  * slice runs at once. Deleting E drops the rest.
  */
 /proc/om_task_slices(datum/E, slice_proc, cursor, on_done, now = FALSE)
@@ -375,7 +375,7 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 		if(!QDELETED(E))
 			_om_slices_done(E, on_done)
 		return
-	// on_done travels in a list: a callback passed to om_after() on its own is held weakly.
+	// on_done travels boxed in a list, so a spec (itself a list) reaches _om_slices_done() whole.
 	om_after(E, 0, /proc/_om_slices_run, E, slice_proc, cursor, list(on_done))
 
 /proc/_om_slices_run(datum/E, slice_proc, cursor, list/done_box)
@@ -388,10 +388,9 @@ DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 		return
 	_om_slices_done(E, done_box[1])
 
-/// `on_done`: a proc on E, or a /datum/callback.
+/// `on_done`: a proc on E, or an om_callable() spec.
 /proc/_om_slices_done(datum/E, on_done)
-	if(istype(on_done, /datum/callback))
-		var/datum/callback/C = on_done
-		C.Invoke()
+	if(islist(on_done))
+		om_run(on_done)
 	else if(on_done)
 		call(E, on_done)()

@@ -5,7 +5,7 @@
 /datum/squeak
 	var/static/list/default_squeak_sounds = list('sound/items/bikehorn.ogg'=1, 'sound/voice/quack.ogg'=1)
 	var/list/override_squeak_sounds
-	var/holder_handle
+	var/mob/holder
 
 	var/squeak_chance = 100
 	var/volume = 30
@@ -29,22 +29,20 @@
 	/// The squeaky shoes.
 	var/obj/item/clothing/shoes/owner
 
-DECLARE_REF(/datum/squeak, "owner", BACK, "squeak")
 /// Not saved: make_squeaky() in Initialize() rebuilds it.
 /obj/item/clothing/shoes/var/tmp/datum/squeak/squeak
-DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 
 /// Gives these shoes a squeak (was LoadComponent(/datum/component/squeak, ...)): returns the
 /// existing one when they already squeak.
 /obj/item/clothing/shoes/proc/make_squeaky(custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	RETURN_TYPE(/datum/squeak)
 	if(!squeak)
-		squeak = new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
+		own_set(src, "squeak", new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange))
 	return squeak
 
 /datum/squeak/New(obj/item/clothing/shoes/owner, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	om_hook(owner, list(/datum/om/event/atom_entered, /datum/om/event/before/movable_bump, /datum/om/event/movable_impact), src, PROC_REF(on_squeak_event))
 	om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
 	om_hook(owner, /datum/om/event/item_equipped, src, PROC_REF(on_equip))
@@ -118,12 +116,12 @@ DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 
 /datum/squeak/proc/on_equip(datum/source, datum/om/event/item_equipped/event)
 	EVENT_HANDLER
-	// An OM handle reads null once the holder is deleted, so no deletion hook is needed.
-	holder_handle = om_handle(event.equipper)
+	// The relation view clears once the holder is deleted, so no deletion hook is needed.
+	rel_set(src, "holder", event.equipper)
 
 /datum/squeak/proc/on_drop(datum/source, datum/om/event/item_dropped/event)
 	EVENT_HANDLER
-	holder_handle = null
+	rel_clear(src, "holder")
 
 /*	We don't have events set up for these
 // Disposal pipes related shits
@@ -137,6 +135,6 @@ DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 		play_squeak()
 */
 
-/// LC-refs: the mob wearing the squeaky thing -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob wearing the squeaky thing (a relation view).
 /datum/squeak/proc/holder() as /mob
-	return om_resolve(holder_handle)
+	return holder

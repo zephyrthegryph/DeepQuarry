@@ -36,9 +36,9 @@
 	for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
-		product_datums += entry
+		own_add(src, "product_datums", entry)
 	//move to relevant location
-	monitor_screen = new
+	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -62,8 +62,6 @@
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
-DECLARE_REF(/obj/machinery/maint_vendor, "monitor_screen", OWNED, null)
-DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 
 /obj/machinery/maint_vendor/declare_interactions(list/into)
 	into += list(

@@ -120,7 +120,8 @@
 	var/obj/item/organ/internal/O = istype(location, /obj/item/organ/internal) ? location : null
 	treated_by = list()
 	if(organ_tag_rate)
-		treated_by[O ? O.lesion_repair_tag() : TREAT_TISSUE_REPAIR] = organ_tag_rate
+		var/repair_tag = O ? O.lesion_repair_tag() : TREAT_TISSUE_REPAIR
+		treated_by[repair_tag] = organ_tag_rate
 	var/list/extra = TYPE_TABLE_GET(src, get_extra_treatments)
 	for(var/tag in extra)
 		treated_by[tag] = max(treated_by[tag], extra[tag])

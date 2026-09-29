@@ -34,9 +34,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 
 	//Their objectives cleanup
 	if(src.mind.objectives.len)
-		for(var/datum/objective/O in src.mind.objectives)
-			qdel(O)
-		src.mind.objectives.Cut()
+		own_clear(src.mind, "objectives", OWN_DELETE)
 		src.mind.special_role = null
 
 	//Cut the PDA manifest (ugh)

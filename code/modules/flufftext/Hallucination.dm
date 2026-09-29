@@ -18,23 +18,24 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	VAR_PRIVATE/image/client_only/halimage
 	/// The body/food image this event made and owns; nulled when it is deleted.
 	VAR_PRIVATE/image/client_only/halbody
-	VAR_PRIVATE/list/halitem = list() // OM handle pair of obj-key, client-value
+	/// The fake item this event put on the client's screen (owned: deleted with the event).
+	VAR_PRIVATE/obj/halitem
+	/// The client whose screen shows halitem: a relation view.
+	VAR_PRIVATE/client/halitem_client
 
 	VAR_PRIVATE/hal_crit = FALSE
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE
 
 /mob/living/carbon/var/datum/hallucinations/hallucinations
-DECLARE_REF(/mob/living/carbon, "hallucinations", OWNED, null)
-DECLARE_REF(/datum/hallucinations, "our_human", BACK, "hallucinations")
 
 /datum/hallucinations/New(mob/living/carbon/human/H)
 	..()
-	our_human = H
+	rel_set(src, "our_human", H)
 	make_timer()
 
 // a held hallucination item is removed.
 /datum/hallucinations/on_destroy(force)
-	if(halitem.len)
+	if(halitem)
 		remove_hallucination_item()
 	// Images are not datums: deleting one takes it off every client.images and nulls these vars.
 	if(halbody)
@@ -67,7 +68,7 @@ DECLARE_REF(/datum/hallucinations, "our_human", BACK, "hallucinations")
 /mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
 	if(hallucinations || !ishuman(src))
 		return hallucinations
-	hallucinations = new hallucination_type(src)
+	own_set(src, "hallucinations", new hallucination_type(src))
 	return hallucinations
 
 /mob/living/carbon/proc/get_hallucination_state()

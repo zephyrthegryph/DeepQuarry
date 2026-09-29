@@ -32,11 +32,11 @@
 
 /// Seat `B` as this MMI's brain tissue: the occupant's status reads it.
 /obj/item/mmi/proc/set_brain(obj/item/organ/internal/brain/B)
-	brainobj = B
 	if(B)
 		B.preserved = TRUE
 		if(B.loc != src)
 			B.forceMove(src)
+	own_set(src, "brainobj", B) // contained: moved in first
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.set_tissue(B)
 
@@ -146,7 +146,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 /// Take the brain organ out; the occupant (and its mind) goes with it. The
 /// organ keeps its lesions, so damage and treatment carry on.
 /obj/item/mmi/proc/eject_brain(atom/destination, reason = "ejected")
-	var/obj/item/organ/internal/brain/brain = brainobj
+	// Detached before it leaves our contents; set_brain(null) below then only drops the tissue.
+	var/obj/item/organ/internal/brain/brain = brainobj ? own_take(src, "brainobj") : null
 	if(!brain)	// An MMI filled without an organ (borging) grows one to carry the mind.
 		brain = new(destination)
 	brain.preserved = FALSE
@@ -171,11 +172,8 @@ DECLARE_INTERACTIONS(/obj/item/mmi, \
 		if(istype(rig,/obj/item/rig))
 			rig.forced_move(direction, user)
 
-// the occupant view is discarded before the tissue; a borg forgets its MMI.
+// the occupant view is discarded before the tissue (the borg's mmi var empties on its own).
 /obj/item/mmi/on_destroy(force)
-	if(isrobot(loc))
-		var/mob/living/silicon/robot/borg = loc
-		borg.mmi = null
 	// The occupant goes first: deleting the tissue under a live view would kill it for nothing.
 	var/datum/mind_host/host = get_mind_host(src)
 	host?.discard_view()
@@ -272,7 +270,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 		return
 	searching = 1
 
-	Q = new ghost_query_type()
+	own_set(src, "Q", new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
@@ -284,7 +282,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	else
 		reset_search()
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
 /obj/item/mmi/digital/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	if(get_occupant()?.key)
@@ -381,7 +379,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 
 /obj/item/mmi/inert/Initialize(mapload)
 	. = ..()
-	QDEL_NULL(mind_host)
+	own_clear(src, "mind_host", OWN_DELETE)
 
 // This is a 'fake' MMI that is used to let AIs control borg shells directly.
 // This doesn't inherit from /digital because all that does is add ghost pulling capabilities, which this thing won't need.
@@ -392,10 +390,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_REF(/obj/item/mmi, "radio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
-DECLARE_REF(/obj/item/mmi, "body_backup", OWNED, null)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
-DECLARE_REF(/obj/item/mmi, "brainobj", HELD, null)
-DECLARE_REF(/obj/item/mmi, "mecha", HELD, null)
-DECLARE_REF(/obj/item/mmi/digital, "Q", OWNED, null)
+OWN(/obj/item/mmi, brainobj, OWN_CONTAINED)
+REL(/obj/item/mmi, mecha) // the mech we are installed in

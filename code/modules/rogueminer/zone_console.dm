@@ -21,11 +21,11 @@
 	var/debug_scans = 0
 	var/scanning = 0
 	var/legacy_zone = 0 //Disable scanning and whatnot.
-	var/tmp/shuttle_control_handle
+	var/tmp/obj/machinery/computer/shuttle_control/belter/shuttle_control
 
 /obj/machinery/computer/roguezones/Initialize(mapload)
 	. = ..()
-	shuttle_control_handle = om_handle(locate(/obj/machinery/computer/shuttle_control/belter))
+	rel_set(src, "shuttle_control", locate(/obj/machinery/computer/shuttle_control/belter))
 	return INITIALIZE_HINT_LATELOAD
 
 /obj/machinery/computer/roguezones/LateInitialize()
@@ -130,17 +130,17 @@
 
 	//Update shuttle destination.
 	var/datum/shuttle/autodock/ferry/S = SSshuttles.shuttles["Belter"]
-	S.landmark_offsite_handle = om_handle(ZM_target.myshuttle_landmark())
-	S.next_location_handle = om_handle(S.get_location_waypoint(!S.location))
+	rel_set(S, "landmark_offsite", ZM_target.myshuttle_landmark())
+	rel_set(S, "next_location", S.get_location_waypoint(!S.location))
 
 	//Re-enable shuttle.
 	shuttle_control().shuttle_tag = "Belter"
 
 	//Update rm_previous
-	GLOB.rm_controller.previous_zone_handle = om_handle(GLOB.rm_controller.current_zone())
+	rel_set(GLOB.rm_controller, "previous_zone", GLOB.rm_controller.current_zone())
 
 	//Update rm_current
-	GLOB.rm_controller.current_zone_handle = om_handle(ZM_target)
+	rel_set(GLOB.rm_controller, "current_zone", ZM_target)
 
 	//Unset scanning
 	scanning = 0
@@ -183,6 +183,6 @@
 #undef TRANSIT_Z
 #undef BELT_Z
 
-/// LC-refs: the shuttle_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the shuttle_control var.
 /obj/machinery/computer/roguezones/proc/shuttle_control() as /obj/machinery/computer/shuttle_control/belter
-	return om_resolve(shuttle_control_handle)
+	return shuttle_control

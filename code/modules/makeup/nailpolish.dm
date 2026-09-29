@@ -108,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
-	nail_polish = polish
+	own_set(src, "nail_polish", polish)
 	owner?.update_icons_body()
 
 /obj/item/nailpolish_remover
@@ -180,6 +180,3 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish_remover, INTERACT_USE(null, PROC_REF(i
 	icon_state = _icon_state
 	color = _color
 
-DECLARE_REF(/obj/item/nailpolish, "top_underlay", OWNED, null)
-DECLARE_REF(/obj/item/nailpolish, "color_underlay", OWNED, null)
-DECLARE_REF(/obj/item/organ/external, "nail_polish", OWNED, null)

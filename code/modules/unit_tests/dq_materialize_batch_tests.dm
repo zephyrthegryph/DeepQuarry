@@ -12,7 +12,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
 /obj/effect/dq_batch_probe/Initialize(mapload)
 	. = ..()
-	seen_batch = SSatoms.active_batch
+	rel_set(src, "seen_batch", SSatoms.active_batch)
 	GLOB.dq_batch_probe_log.Add(list(list("init", src)))
 	return INITIALIZE_HINT_LATELOAD
 
@@ -34,7 +34,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	return made
 
 /// Drops the test hooks; the probes are own()ed and go with the test. The probe log is read
-/// after this, so it is cleared when the test goes (Destroy), not here.
+/// after this, so it is cleared when the test goes (on_destroy), not here.
 /datum/unit_test/dq_materialize_batch/proc/reset_hooks()
 	SSatoms.batch_yield_probe = null
 	SSatoms.batch_trace = null
@@ -66,7 +66,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 	var/total = MATERIALIZE_CHUNK_SIZE * 2 + 10
 	main_batch = uninitialized_probes(total)
 	SSatoms.batch_trace = list()
-	SSatoms.batch_yield_probe = CALLBACK(src, PROC_REF(on_yield))
+	SSatoms.batch_yield_probe = om_callable(src, PROC_REF(on_yield))
 	SSatoms.InitializeAtoms(main_batch.Copy())
 	var/datum/materialize_batch/batch = SSatoms.batch_trace[1]
 	reset_hooks()

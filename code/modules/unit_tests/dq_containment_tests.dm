@@ -114,7 +114,7 @@
 	var/moves_refused = 0
 
 /datum/unit_test/dq_containment_conservation_fuzz/Run()
-	floor = dq_containment_floor()
+	rel_set(src, "floor", dq_containment_floor())
 	var/list/holder_types = list(/obj/structure/closet, /obj/structure/closet/crate, /obj/item/folder, /obj/item/dq_containment_box, /obj/item/storage/backpack)
 	for(var/path in holder_types)
 		for(var/i in 1 to 3)
@@ -152,15 +152,12 @@
 	TEST_ASSERT(moves_done >= 25, "the fuzz exercised real moves ([moves_done])")
 	TEST_ASSERT(moves_refused >= 5, "the fuzz exercised refusals ([moves_refused])")
 
-DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "made", OWNED_LIST, null)
-DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "holders", WEAK_LIST, null)
-DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LIST, null)
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/add_holder(path)
 	var/atom/movable/H = new path(floor)
-	made += H
-	holders += H
-	things += H
+	own_add(src, "made", H)
+	rel_add(src, "holders", H)
+	rel_add(src, "things", H)
 	if(istype(H, /obj/structure/closet))
 		var/obj/structure/closet/C = H
 		C.storage_capacity = istype(C, /obj/structure/closet/crate) ? 6 : 200
@@ -173,8 +170,8 @@ DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LI
 	else
 		path = pick(/obj/item/dq_containment_test, /obj/item/dq_containment_test/glass, /obj/item/dq_containment_test/wood, /obj/item/paper)
 	var/atom/movable/T = new path(where || floor)
-	made += T
-	things += T
+	own_add(src, "made", T)
+	rel_add(src, "things", T)
 	return T
 
 /datum/unit_test/dq_containment_conservation_fuzz/proc/live_holders()
@@ -240,7 +237,7 @@ DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LI
 			var/atom/movable/T = pick(things)
 			if(T in holders)
 				return TRUE
-			things -= T
+			rel_remove(src, "things", T)
 			qdel(T)
 		if("open_close")
 			var/list/closets = list()
@@ -270,14 +267,14 @@ DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LI
 	for(var/datum/om/relation/slot/def as anything in L.defs)
 		for(var/atom/movable/T as anything in H.slot_contents(def.slot_id))
 			expected[T] = def.drop_policy
-	holders -= H
-	things -= H
+	rel_remove(src, "holders", H)
+	rel_remove(src, "things", H)
 	qdel(H)
 	// A delete policy takes nested holders with it (a folder in a bag).
 	for(var/atom/movable/nested as anything in holders.Copy())
 		if(QDELETED(nested))
-			holders -= nested
-			things -= nested
+			rel_remove(src, "holders", nested)
+			rel_remove(src, "things", nested)
 			add_holder(nested.type)
 	for(var/atom/movable/T as anything in expected)
 		switch(expected[T])
@@ -285,8 +282,8 @@ DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LI
 				if(!QDELETED(T))
 					TEST_FAIL("step [step]: [T] outlived [H] despite a delete policy")
 					return FALSE
-				things -= T
-				holders -= T
+				rel_remove(src, "things", T)
+				rel_remove(src, "holders", T)
 			if(SLOT_DROP_SPILL)
 				if(QDELETED(T) || T.loc != drop)
 					TEST_FAIL("step [step]: [T] should have spilled to [drop], is [QDELETED(T) ? "deleted" : "in [T.loc]"]")
@@ -308,7 +305,7 @@ DECLARE_REF(/datum/unit_test/dq_containment_conservation_fuzz, "things", WEAK_LI
 			. = FALSE
 	for(var/atom/movable/T as anything in things.Copy())
 		if(QDELETED(T))
-			things -= T
+			rel_remove(src, "things", T)
 			continue
 		if(!T.loc)
 			TEST_FAIL("[label]: [T] was lost to nullspace")

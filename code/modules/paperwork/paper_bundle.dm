@@ -30,7 +30,7 @@
 			return INTERACTION_HANDLED_PASS
 	// adding sheets
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
-		insert_sheet_at(user, pages.len+1, W)
+		insert_sheet_at(user, length(pages)+1, W)
 
 	// burning
 	else if(istype(W, /obj/item/flame))
@@ -42,7 +42,7 @@
 		for(var/obj/O in W)
 			O.forceMove(src)
 			O.add_fingerprint(user)
-			pages.Add(O)
+			rel_add(src, "pages", O)
 
 		to_chat(user, span_notice("You add \the [W.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 		consume(W, user)
@@ -69,7 +69,12 @@
 	user.drop_from_inventory(sheet)
 	sheet.forceMove(src)
 
-	pages.Insert(index, sheet)
+	// pages is an ordered relation list: rebuild it in the new order through the accessors.
+	var/list/ordered = pages ? pages.Copy() : list()
+	ordered.Insert(clamp(index, 1, length(ordered) + 1), sheet)
+	rel_clear(src, "pages")
+	for(var/obj/item/ordered_sheet as anything in ordered)
+		rel_add(src, "pages", ordered_sheet)
 
 	if(index <= page)
 		page++
@@ -123,9 +128,9 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 /obj/item/paper_bundle/tgui_data(mob/user)
 	var/list/data = list()
 	data["page"] = page
-	data["total_pages"] = pages.len
+	data["total_pages"] = length(pages)
 	data["scribble"] = ""
-	if(pages.len)
+	if(length(pages))
 		var/obj/item/W = pages[page]
 		data["page_name"] = W.name
 		if(istype(W, /obj/item/paper))
@@ -160,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 		if("next_page")
 			if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
 				insert_sheet_at(usr, page + 1, in_hand)
-			else if(page != pages.len)
+			else if(page != length(pages))
 				page++
 				play_sfx(src, SFX_PAGETURN)
 			return TRUE
@@ -172,20 +177,20 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 				play_sfx(src, SFX_PAGETURN)
 			return TRUE
 		if("remove")
-			if(!pages.len)
+			if(!length(pages))
 				return TRUE
 			var/obj/item/W = pages[page]
 			usr.put_in_hands(W)
-			pages.Remove(pages[page])
+			rel_remove(src, "pages", pages[page])
 			to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
-			if(pages.len <= 1)
+			if(length(pages) <= 1)
 				var/obj/item/paper/P = pages[1]
 				usr.drop_from_inventory(src)
 				usr.put_in_hands(P)
 				qdel(src)
 				return TRUE
-			if(page > pages.len)
-				page = pages.len
+			if(page > length(pages))
+				page = length(pages)
 			update_icon()
 			return TRUE
 

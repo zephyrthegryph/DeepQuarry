@@ -47,7 +47,7 @@
 /mob/living/simple_mob/vore/blaidd/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	verbs |= /mob/living/simple_mob/proc/animal_mount
 	verbs |= /mob/living/proc/toggle_rider_reins
 	verbs |= /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis

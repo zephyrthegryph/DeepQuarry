@@ -70,7 +70,7 @@
 				copyitem.forceMove(ui.user.loc)
 				ui.user.put_in_hands(copyitem)
 				to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-				copyitem = null
+				own_take(src, "copyitem")
 			else if(has_buckled_mobs())
 				to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 			. = TRUE
@@ -162,8 +162,8 @@
 /obj/machinery/photocopier/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!copyitem)
 		user.drop_item()
-		copyitem = O
 		O.forceMove(src)
+		own_set(src, "copyitem", O) // CONTAINED: in our contents first
 		to_chat(user, span_notice("You insert \the [O] into \the [src]."))
 		playsound(src, "sound/machines/click.ogg", 100, 1)
 		flick(insert_anim, src)
@@ -376,7 +376,7 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 		else if(istype(W, /obj/item/photo))
 			W = photocopy(W)
 		W.forceMove(p)
-		p.pages += W
+		rel_add(p, "pages", W)
 
 	p.forceMove(src.loc)
 	p.update_icon()
@@ -409,4 +409,4 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_REF(/obj/machinery/photocopier, "copyitem", HELD, null)
+OWN(/obj/machinery/photocopier, copyitem, OWN_CONTAINED)

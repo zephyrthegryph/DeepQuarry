@@ -143,9 +143,3 @@
 	var/eggs = 0
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
-DECLARE_REF(/mob/living, "inventory_panel", OWNED, null)
-DECLARE_REF(/mob/living, "dsoverlay", OWNED, null)
-DECLARE_REF(/mob/living, "selected_image", OWNED, null)
-DECLARE_REF(/mob/living, "cameraFollow", HELD, null)
-DECLARE_REF(/mob/living, "tf_form", HELD, null)
-DECLARE_REF(/mob/living, "tf_form_mind", HELD, null)

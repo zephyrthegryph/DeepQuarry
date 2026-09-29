@@ -28,12 +28,14 @@
 	//Excessively long because it won't accept subtypes for some reason!
 
 
+// Fitted parts sit in the gun's contents.
+OWN(/obj/item/gun/energy/modular, guncomponents, OWN_CONTAINED)
+
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
-	guncomponents = list()
-	LAZYADD(guncomponents, new /obj/item/stock_parts/capacitor)
-	LAZYADD(guncomponents, new /obj/item/stock_parts/micro_laser)
-	LAZYADD(guncomponents, new /obj/item/stock_parts/manipulator)
+	own_add(src, "guncomponents", new /obj/item/stock_parts/capacitor(src))
+	own_add(src, "guncomponents", new /obj/item/stock_parts/micro_laser(src))
+	own_add(src, "guncomponents", new /obj/item/stock_parts/manipulator(src))
 	CheckParts()
 	FireModeModify()
 
@@ -63,8 +65,8 @@
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
 		playsound(src, tool.usesound, 50, 1)
+		own_take_member(src, "guncomponents", I)
 		I.forceMove(get_turf(src))
-		LAZYREMOVE(guncomponents, I)
 		CheckParts()
 	return ITEM_INTERACT_SUCCESS
 
@@ -84,8 +86,8 @@
 		to_chat(user, span_warning("You can't add any more capacitors!"))
 		return
 	user.drop_item()
-	LAZYADD(guncomponents, O)
 	O.forceMove(src)
+	own_add(src, "guncomponents", O)
 	to_chat(user, span_notice("You add a component to the [src]"))
 	CheckParts()
 
@@ -124,12 +126,11 @@
 		chargecost = 100
 		chargecost_lethal = 200
 
-	firemodes = list(
-		new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)),
-		new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)),
-		new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)),
-		new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)),
-		)
+	own_clear(src, "firemodes", OWN_DELETE)
+	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
+	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
+	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
+	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
 
 /obj/item/gun/energy/modular/load_ammo(obj/item/C, mob/user)
 	if(istype(C, cell_type))

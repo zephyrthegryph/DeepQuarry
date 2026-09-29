@@ -19,7 +19,7 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-	var/buffer_handle // simple machine buffer for device linkage
+	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
 
 /obj/item/debugger/is_used_on(obj/O, mob/user)
 	if(istype(O, /obj/machinery/power/apc))
@@ -44,6 +44,6 @@ MATERIAL_MIX(/obj/item/debugger, list(MAT_STEEL = 50,MAT_GLASS = 20))
 			to_chat(user, span_notice("The device's software appears to be fine."))
 		return 1
 
-/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: buffer (reads null once it is gone).
 /obj/item/debugger/proc/buffer() as /obj/machinery/telecomms
-	return om_resolve(buffer_handle)
+	return buffer

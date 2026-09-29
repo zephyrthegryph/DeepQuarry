@@ -68,7 +68,7 @@
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
 	locked = 0
-	VAR_PRIVATE/occupant_handle = null
+	VAR_PRIVATE/mob/living/occupant = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0
 	var/damage_coeff
@@ -109,14 +109,14 @@
 /obj/machinery/dna_scannernew/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		occupant_handle = null
+		rel_clear(src, "occupant")
 		return
-	occupant_handle = om_handle(L)
+	rel_set(src, "occupant", L)
 
 /obj/machinery/dna_scannernew/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return om_resolve(occupant_handle)
+	return occupant
 
 /obj/machinery/dna_scannernew/RefreshParts()
 	scan_level = 0
@@ -212,9 +212,9 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		beaker = item
 		user.drop_item()
 		item.forceMove(src)
+		own_set(src, "beaker", item)
 		act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 		SStgui.update_uis(src)
 		return TRUE
@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	// release contents
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	var/mob/living/carbon/WC = get_occupant()
 	if(WC)
 		slot_remove(WC, get_turf(src))
@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	for(var/dirfind in GLOB.cardinal)
 		var/obj/machinery/computer/scan_consolenew/console = locate(/obj/machinery/computer/scan_consolenew, get_step(src, dirfind))
 		if(console && console.connected() == src)
-			console.connected_handle = null
+			rel_clear(console, "connected")
 			SStgui.close_uis(console)
 			break
 	. = ..()
@@ -331,7 +331,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	var/list/datum/transhuman/body_record/buffers[3] // Traitgenes Use bodyrecords
 	var/irradiating = 0
 	var/injector_ready = 0	//Quick fix for issue 286 (screwdriver the screen twice to restore injector)	-Pete
-	var/connected_handle
+	var/obj/machinery/dna_scannernew/connected
 	// Traitgenes body record disks are used instead of a unique disk
 	var/obj/item/disk/body_record/disk = null
 	var/selected_menu_key = PAGE_SE
@@ -354,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		if(!disk)
 			user.drop_item()
 			I.forceMove(src)
-			disk = I
+			own_set(src, "disk", I)
 			to_chat(user, "You insert [I].")
 			SStgui.update_uis(src) // update all UIs attached to src
 	else
@@ -368,14 +368,14 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	for(var/i=0;i<3;i++)
 		// Traitgenes Use bodyrecords
 		var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-		R.mydna = new
+		own_set(R, "mydna", new /datum/dna2/record)
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
-		buffers[i+1]=R
+		own_put(src, "buffers", i+1, R)
 	// Traitgenes don't alter direction of computer as this scans for neighbour
 	for(var/dirfind in GLOB.cardinal)
-		connected_handle = om_handle(locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
+		rel_set(src, "connected", locate(/obj/machinery/dna_scannernew, get_step(src, dirfind)))
 		if(connected())
 			break
 
@@ -391,7 +391,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	var/id = text2num(copytext(blk,1,pos))
 	if(!id) return 0
 	I.block = id
-	I.buf = buffer
+	own_set(I, "buf", buffer)
 	return 1
 
 /obj/machinery/computer/scan_consolenew
@@ -593,7 +593,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			if(!disk)
 				return TRUE
 			disk.forceMove(get_turf(src))
-			disk = null
+			own_take(src, "disk")
 		// Transfer Buffer Management
 		if("bufferOption")
 			var/bufferOption = params["option"]
@@ -616,17 +616,17 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 							var/mob/living/carbon/human/H = WC
 							databuf.mydna.dna.real_name = H.dna.real_name
 							databuf.mydna.gender = H.gender
-						buffers[bufferId] = databuf
+						own_put(src, "buffers", bufferId, databuf)
 					return TRUE
 				if("clear")
 					play_sfx(src, SFX_KEYBOARD)
 					// Traitgenes Storing the entire body record
 					var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-					R.mydna = new
+					own_set(R, "mydna", new /datum/dna2/record)
 					R.mydna.dna = new
 					R.mydna.dna.ResetUI()
 					R.mydna.dna.ResetSE()
-					buffers[bufferId] = R
+					own_put(src, "buffers", bufferId, R)
 					return TRUE
 				if("changeLabel")
 					play_sfx(src, SFX_KEYBOARD)
@@ -659,14 +659,14 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 					var/datum/transhuman/body_record/databuf = new /datum/transhuman/body_record()
 					databuf.init_from_br(disk.stored)
 					databuf.mydna.types = DNA2_BUF_SE // structurals only
-					buffers[bufferId] = databuf
+					own_put(src, "buffers", bufferId, databuf)
 				if("saveDisk")
 					play_sfx(src, SFX_KEYBOARD)
 					if(isnull(disk)) // Traitgenes Removed readonly
 						return TRUE
 					var/datum/transhuman/body_record/buf = buffers[bufferId]
 					// Traitgenes Properly clone records
-					disk.stored = new /datum/transhuman/body_record()
+					own_set(disk, "stored", new /datum/transhuman/body_record())
 					disk.stored.init_from_br(buf)
 					disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
 					disk.name = "Body Design Disk ('[buf.mydna.name]')"
@@ -683,14 +683,14 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			// Traitgenes Storing the entire body record
 			if(isnull(disk))
 				return TRUE
-			disk.stored = null
+			own_clear(disk, "stored", OWN_DELETE)
 			return TRUE
 		if("ejectDisk")
 			play_sfx(src, SFX_MACHINES_BUTTON)
 			if(!disk)
 				return TRUE
 			disk.forceMove(get_turf(src))
-			disk = null
+			own_take(src, "disk")
 			return TRUE
 
 /**
@@ -715,7 +715,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
-		I.buf = buf.mydna.copy()
+		own_set(I, "buf", buf.mydna.copy())
 	return I
 
 /**
@@ -753,7 +753,6 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 						return
 					var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords
 					buf.mydna.name = answer // Traitgenes Use bodyrecords
-					buffers[buffer_id] = buf
 				else
 					return FALSE
 		else
@@ -897,10 +896,9 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 
 /////////////////////////// DNA MACHINES
 
-DECLARE_REF(/datum/dna2/record, "dna", OWNED, null)
-DECLARE_REF(/obj/machinery/dna_scannernew, "beaker", HELD, null)
-DECLARE_REF(/obj/machinery/computer/scan_consolenew, "disk", HELD, null)
+OWN(/obj/machinery/dna_scannernew, beaker, OWN_CONTAINED)
+OWN(/obj/machinery/computer/scan_consolenew, disk, OWN_CONTAINED)
 
-/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected: a relation view, null once the scanner is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew
-	return om_resolve(connected_handle)
+	return connected

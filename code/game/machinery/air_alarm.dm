@@ -22,7 +22,7 @@
 
 //all air alarms in area are connected via freq 1439
 /area
-	var/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
+	var/obj/machinery/alarm/main_air_alarm // The air alarm currently managing the others in the area, settings changes go to this one and propogate
 	// All lazy: most areas have no air alarm or vents.
 	var/list/air_vent_names
 	var/list/air_scrub_names
@@ -30,9 +30,13 @@
 	var/list/air_scrub_info
 	var/list/air_alarms
 
+// The area's air alarms (members leave when they die) and its elected main alarm.
+REL_LIST(/area, air_alarms)
+REL(/area, main_air_alarm)
+
 /area/proc/elect_main_air_alarm(exclude_self = FALSE)
 	// loop through all sensors to update the area's sensor list as well
-	main_air_alarm = null
+	rel_clear(src, "main_air_alarm")
 	var/list/checks = list()
 	for(var/obj/machinery/alarm/AA in air_alarms)
 		if(exclude_self && AA == src)
@@ -41,8 +45,8 @@
 			checks += AA
 	if(!checks.len)
 		return
-	main_air_alarm = om_handle(pick(checks))
-	var/obj/machinery/alarm/new_main = om_resolve(main_air_alarm)
+	var/obj/machinery/alarm/new_main = pick(checks)
+	rel_set(src, "main_air_alarm", new_main)
 	for(var/obj/machinery/alarm/AA in checks)
 		if(AA == new_main)
 			om_changed(AA, CHANGE_MACHINE_SETTINGS)
@@ -51,7 +55,7 @@
 		AA.update_icon()
 
 /area/proc/main_air_alarm_is_operating()
-	var/obj/machinery/alarm/AM = om_resolve(main_air_alarm)
+	var/obj/machinery/alarm/AM = main_air_alarm
 	return AM && AM.operable()
 
 /obj/machinery/alarm
@@ -90,11 +94,11 @@
 	mode = AALARM_MODE_SCRUBBING
 	var/screen = AALARM_SCREEN_MAIN
 	var/area_uid
-	var/alarm_area_handle
+	var/area/alarm_area
 
 	var/target_temperature = T0C+20
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 	/// Keys are things like temperature and certain gasses. Values are lists, which contain, in order:
 	/// red warning minimum value, yellow warning minimum value, yellow warning maximum value, red warning maximum value
@@ -147,21 +151,20 @@
 	if(!pixel_x && !pixel_y)
 		offset_airalarm()
 	set_wires(new /datum/wires/alarm(src))
-	LAZYADD(alarm_area_ref().air_alarms, src)
+	rel_add(alarm_area_ref(), "air_alarms", src)
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 
-DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.
 /obj/machinery/alarm/lifecycle_dematerialize()
 	. = ..()
 	if(!alarm_area_ref())
 		return
-	LAZYREMOVE(alarm_area_ref().air_alarms, src)
-	if(om_resolve(alarm_area_ref().main_air_alarm) == src)
+	rel_remove(alarm_area_ref(), "air_alarms", src)
+	if(alarm_area_ref().main_air_alarm == src)
 		alarm_area_ref().elect_main_air_alarm(TRUE)
 
 /obj/machinery/alarm/proc/offset_airalarm()
@@ -208,7 +211,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 /obj/machinery/alarm/proc/update_area()
 	invalidate_gas_dependencies()
-	alarm_area_handle = om_handle(get_area(src))
+	alarm_area = get_area(src)
 	area_uid = "\ref[alarm_area_ref()]"
 	if(name == "alarm")
 		name = "[alarm_area_ref().name] Air Alarm \[[rand(9999)]\]" // random number id to help with players locating alarms, cosmetic
@@ -283,7 +286,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 /// waking on every harmless room-air diffusion revision bump.
 /obj/machinery/alarm/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
-	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_control_signature)), channel = CHANGE_MACHINE_GAS)
+	om_watch_arm_value(src, "gas", environment?.arena_id(), GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(current_control_signature)), channel = CHANGE_MACHINE_GAS)
 
 /obj/machinery/alarm/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -480,7 +483,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 		return
 
 	// sub light!
-	var/obj/machinery/alarm/MA = om_resolve(alarm_area_ref().main_air_alarm)
+	var/obj/machinery/alarm/MA = alarm_area_ref().main_air_alarm
 	if(MA == src)
 		// I am the main alarm
 		add_overlay(mutable_appearance(icon, "alarm_Mmode"))
@@ -505,7 +508,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 	switch(icon_level)
 		if(0)
 			icon_state = "alarm_0"
-			if(om_resolve(alarm_area_ref().main_air_alarm) == src)
+			if(alarm_area_ref().main_air_alarm == src)
 				// active controller
 				add_overlay(mutable_appearance(icon, "alarm_ov0"))
 				add_overlay(emissive_appearance(icon, "alarm_ov0"))
@@ -577,7 +580,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 /obj/machinery/alarm/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid)))
 
 /obj/machinery/alarm/proc/send_signal(target, list/command)//sends signal 'command' to 'target'. Returns 0 if no radio connection, 1 otherwise
 	if(!radio_connection())
@@ -585,7 +588,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = command
 	signal.data["tag"] = target
@@ -642,7 +645,7 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 		return
 
 	var/datum/signal/alert_signal = new
-	alert_signal.source_handle = om_handle(src)
+	rel_set(alert_signal, "source", src)
 	alert_signal.transmission_method = TRANSMISSION_RADIO
 	alert_signal.data["zone"] = alarm_area_ref().name
 	alert_signal.data["type"] = "Atmospheric"
@@ -1130,10 +1133,10 @@ TYPE_TABLE(/obj/machinery/alarm/sifwilderness, alarm_TLV, air_alarm_TLV_sifwilde
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: alarm area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The alarm's area (a location: a plain var).
 /obj/machinery/alarm/proc/alarm_area_ref() as /area
-	return om_resolve(alarm_area_handle)
+	return alarm_area
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The radio connection (a relation view).
 /obj/machinery/alarm/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

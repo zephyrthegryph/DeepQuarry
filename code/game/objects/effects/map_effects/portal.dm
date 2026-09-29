@@ -61,7 +61,7 @@ when portals are shortly lived, or when portals are made to be obvious with spec
 	var/portal_distance_x = 0 // How far the portal is from the left edge, in tiles.
 	var/portal_distance_y = 0 // How far the portal is from the top edge.
 
-DECLARE_REF(/obj/effect/map_effect/portal, "counterpart", PAIR, "counterpart")
+REL_PAIR(/obj/effect/map_effect/portal, counterpart, counterpart)
 
 // Called when something touches the portal, and usually teleports them to the other side.
 /obj/effect/map_effect/portal/Crossed(atom/movable/AM)
@@ -149,7 +149,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/map_effect/portal/master, REGISTRY_PORTAL_MASTER
 	make_visuals()
 	apply_offset()
 
-DECLARE_REF(/obj/effect/map_effect/portal/master, "portal_lines", OWNED_LIST, null)
 
 /obj/effect/map_effect/portal/master/proc/find_lines()
 	var/list/dirs_to_search = list( turn(dir, 90), turn(dir, -90) )
@@ -160,8 +159,7 @@ DECLARE_REF(/obj/effect/map_effect/portal/master, "portal_lines", OWNED_LIST, nu
 			current_T = get_step(current_T, dir_to_search)
 			var/obj/effect/map_effect/portal/line/line = locate_on(current_T, /obj/effect/map_effect/portal/line)
 			if(line)
-				LAZYADD(portal_lines, line)
-				line.my_master = src
+				rel_set(line, "my_master", src) // the pair adds it to portal_lines (lines are mapped, not owned)
 			else
 				break
 
@@ -174,14 +172,14 @@ DECLARE_REF(/obj/effect/map_effect/portal/master, "portal_lines", OWNED_LIST, nu
 			continue
 
 		if(M.portal_id == src.portal_id)
-			counterpart = M
-			M.counterpart = src
+			rel_set(src, "counterpart", M)
+			rel_set(M, "counterpart", src)
 			if(length(portal_lines))
 				for(var/i = 1 to length(portal_lines))
 					var/obj/effect/map_effect/portal/line/our_line = LAZYACCESS(portal_lines, i)
 					var/obj/effect/map_effect/portal/line/their_line = LAZYACCESS(M.portal_lines, i)
-					our_line.counterpart = their_line
-					their_line.counterpart = our_line
+					rel_set(our_line, "counterpart", their_line)
+					rel_set(their_line, "counterpart", our_line)
 			break
 
 	if(!counterpart)
@@ -308,7 +306,8 @@ DECLARE_REF(/obj/effect/map_effect/portal/master, "portal_lines", OWNED_LIST, nu
 	name = "portal line"
 	var/obj/effect/map_effect/portal/master/my_master = null
 
-DECLARE_REF(/obj/effect/map_effect/portal/line, "my_master", BACKLIST, "portal_lines")
+REL_PAIR(/obj/effect/map_effect/portal/line, my_master, portal_lines)
+REL_PAIR_LIST(/obj/effect/map_effect/portal/master, portal_lines, my_master)
 
 /obj/effect/map_effect/portal/line/side_a
 	name = "portal line A"

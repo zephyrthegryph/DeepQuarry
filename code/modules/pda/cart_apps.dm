@@ -42,7 +42,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source_handle = om_handle(src)
+	rel_set(status_signal, "source", src)
 	status_signal.transmission_method = 1
 	status_signal.data["command"] = command
 
@@ -108,10 +108,9 @@
 	var/datum/tgui_module/power_monitor/power_monitor
 
 /datum/data/pda/app/power/New()
-	power_monitor = new(src)
+	own_set(src, "power_monitor", new /datum/tgui_module/power_monitor(src))
 	. = ..()
 
-DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))
@@ -127,7 +126,7 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 			return TRUE
 
 /datum/data/pda/app/crew_records
-	var/tmp/general_records_handle
+	var/tmp/datum/data/record/general_records
 
 /datum/data/pda/app/crew_records/update_ui(mob/user, list/data)
 	var/list/records[0]
@@ -154,12 +153,12 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 				load_records(R)
 			return TRUE
 		if("Back")
-			general_records_handle = null
+			rel_clear(src, "general_records")
 			has_back = 0
 			return TRUE
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
-	general_records_handle = om_handle(R)
+	rel_set(src, "general_records", R)
 	has_back = 1
 
 /datum/data/pda/app/crew_records/medical
@@ -168,7 +167,7 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 	template = "pda_medical"
 	category = "Medical"
 
-	var/tmp/medical_records_handle
+	var/tmp/datum/data/record/medical_records
 
 /datum/data/pda/app/crew_records/medical/update_ui(mob/user, list/data)
 	var/list/records = ..()
@@ -184,7 +183,7 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.medical)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			medical_records_handle = om_handle(E)
+			rel_set(src, "medical_records", E)
 			break
 
 /datum/data/pda/app/crew_records/security
@@ -193,7 +192,7 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 	template = "pda_security"
 	category = "Security"
 
-	var/tmp/security_records_handle
+	var/tmp/datum/data/record/security_records
 
 /datum/data/pda/app/crew_records/security/update_ui(mob/user, list/data)
 	var/list/records = ..()
@@ -209,7 +208,7 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 	..(R)
 	for(var/datum/data/record/E as anything in GLOB.data_core.security)
 		if(E && (E.fields["name"] == R.fields["name"] || E.fields["id"] == R.fields["id"]))
-			security_records_handle = om_handle(E)
+			rel_set(src, "security_records", E)
 			break
 
 /datum/data/pda/app/supply
@@ -306,14 +305,14 @@ DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 	JaniData["carts"] = CartData.len ? CartData : null
 	data["janitor"] = JaniData
 
-/// LC-refs: the general_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The general_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/proc/general_records() as /datum/data/record
-	return om_resolve(general_records_handle)
+	return general_records
 
-/// LC-refs: the medical_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The medical_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/medical/proc/medical_records() as /datum/data/record
-	return om_resolve(medical_records_handle)
+	return medical_records
 
-/// LC-refs: the security_records this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The security_records this refers to (a relation view: null once that is deleted).
 /datum/data/pda/app/crew_records/security/proc/security_records() as /datum/data/record
-	return om_resolve(security_records_handle)
+	return security_records

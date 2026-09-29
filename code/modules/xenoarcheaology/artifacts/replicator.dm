@@ -137,7 +137,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
@@ -202,7 +202,7 @@
 /obj/machinery/replicator/proc/interaction_insert(mob/living/user, obj/item/W, datum/interaction/interaction)
 	user.drop_item()
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	act_message(user, src, others = span_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
@@ -324,7 +324,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
@@ -418,7 +418,7 @@
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				stored_materials.Add(inserted_mob)
+				rel_add(src, "stored_materials", inserted_mob)
 				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
@@ -439,7 +439,7 @@
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 
@@ -593,7 +593,7 @@
 			spawn_progress_time = 0
 			max_spawn_time = rand(30,100)
 
-			if(!spawning_types.len || !stored_materials.len)
+			if(!spawning_types.len || !length(stored_materials))
 				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
@@ -686,7 +686,7 @@
 							continue
 						inserted_human.drop_from_inventory(I)
 				inserted_mob.forceMove(src)
-				stored_materials.Add(inserted_mob)
+				rel_add(src, "stored_materials", inserted_mob)
 				act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts \the [inserted_mob] into %T%."))
 				return TRUE
 		else
@@ -705,7 +705,7 @@
 				inserted_human.drop_from_inventory(I)
 			//Now that we've dropped all the items they have, let's shove them back into the micro holder.
 	W.forceMove(src)
-	stored_materials.Add(W)
+	rel_add(src, "stored_materials", W)
 	act_message(user, src, others = span_filter_notice(span_bold("%U%") + " inserts %I% into %T%."), item = W)
 	return TRUE
 

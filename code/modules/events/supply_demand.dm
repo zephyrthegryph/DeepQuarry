@@ -149,7 +149,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 				"detail" = "Delivered [delivered_quantity] [meta.name] toward the live shortage response.",
 			), "supply-shortage-delivery:[REF(src)]:[REF(meta)]:[quantity_before]:[meta.qty_need]")
 			if(meta.qty_need <= 0)
-				LAZYREMOVE(required_items, meta)
+				own_take_member(src, "required_items", meta)
 			return 1
 	return 0 // Nothing found if we get here
 
@@ -285,7 +285,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		types -= R // Don't pick the same thing twice
 		var/chosen_path = initial(R.result)
 		var/chosen_qty = rand(1, 5)
-		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		own_add(src, "required_items", new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
@@ -299,7 +299,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		var/datum/reagent/R = pick(medicineReagents)
 		medicineReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		LAZYADD(required_items, new /datum/supply_demand_order/reagent(chosen_qty, R))
+		own_add(src, "required_items", new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
@@ -312,7 +312,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		var/datum/reagent/R = pick(drinkReagents)
 		drinkReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		LAZYADD(required_items, new /datum/supply_demand_order/reagent(chosen_qty, R))
+		own_add(src, "required_items", new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_robotics_items(differentTypes)
@@ -325,7 +325,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	for(var/i in 1 to differentTypes)
 		var/T = pick(types)
 		types -= T // Don't pick the same thing twice
-		LAZYADD(required_items, new /datum/supply_demand_order/thing(rand(1, 2), T))
+		own_add(src, "required_items", new /datum/supply_demand_order/thing(rand(1, 2), T))
 	return
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
@@ -341,8 +341,8 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
-	O.mixture = mixture
-	LAZYADD(required_items, O)
+	own_set(O, "mixture", mixture)
+	own_add(src, "required_items", O)
 	return
 
 /datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
@@ -352,7 +352,6 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		types -= A // Don't pick the same thing twice
 		var/chosen_path = initial(A.product)
 		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
-		LAZYADD(required_items, new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		own_add(src, "required_items", new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
-DECLARE_REF(/datum/supply_demand_order/gas, "mixture", OWNED, null)

@@ -160,20 +160,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 /// A bad declaration is reported and dropped here, once per type, never mid-lifecycle.
 /datum/lifecycle_decls/proc/finish(datum/D)
 	if(length(children))
-		var/list/link_table = dq_lifecycle_link_table(D)
 		for(var/var_name in children.Copy())
 			if(!(var_name in D.vars))
 				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): no such var; dropped")
 				children -= var_name
 				continue
-			var/declared = FALSE
-			for(var/kind in list(REFKIND_OWNED, REFKIND_OWNED_LIST, REFKIND_HELD, REFKIND_SPILL, REFKIND_SPILL_LIST))
-				var/list/names = link_table[kind]
-				if(names && (var_name in names))
-					declared = TRUE
-					break
-			if(!declared)
-				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): the var needs a DECLARE_REF of kind OWNED, OWNED_LIST, HELD, SPILL or SPILL_LIST; dropped")
+			// Every default child is owned: the var is OWN, implicitly (DELETE) or declared (a
+			// movable child in contents may use OWN(..., CONTAINED)). Any other kind is refused.
+			var/list/entry = own_entry(D, var_name)
+			if(entry && entry[OWNE_KIND] != OWNK_OWN)
+				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): the var is declared [own_kind_name(entry[OWNE_KIND])], but a default child is owned; dropped")
 				children -= var_name
 		if(!length(children))
 			children = null
@@ -241,13 +237,17 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		if(istext(default))
 			default = D.vars[default]
 		if(islist(current) || (isnull(current) && islist(default)))
-			D.vars[var_name] = lifecycle_decl_child_list(D, islist(current) ? current : default) // ALLOW(api): declared-child plumbing writes the declared var
+			var/list/spec = islist(current) ? current : default
+			D.vars[var_name] = null // ALLOW(api, ownership): declared-child plumbing replaces the spec with owned children
+			for(var/datum/child as anything in lifecycle_decl_child_list(D, spec))
+				lifecycle_decl_adopt_child(D, var_name, child, TRUE)
 			continue
 		if(isdatum(current))
 			continue
 		var/path = ispath(current) ? current : default
 		if(ispath(path))
-			D.vars[var_name] = new path(D) // ALLOW(api): declared-child plumbing writes the declared var
+			D.vars[var_name] = null // ALLOW(api, ownership): the type path placeholder is replaced by the owned child
+			lifecycle_decl_adopt_child(D, var_name, new path(D), FALSE)
 
 /// A list of children from `spec`: paths become new instances (a `path = count` entry makes
 /// count of them), instances already in it are kept.
@@ -264,6 +264,22 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			made += entry
 	return made
 
+/// Adopts a declared default child through the ownership accessors (DECLARE_DEFAULT_CHILD needs
+/// an OWN declaration on the var; a movable child in contents may be CONTAINED), then wires the
+/// child's back relation when its type names one (default_child_backref()).
+/proc/lifecycle_decl_adopt_child(datum/D, var_name, datum/child, as_list)
+	if(as_list)
+		own_add(D, var_name, child)
+	else
+		own_set(D, var_name, child)
+	var/back = child.default_child_backref()
+	if(back)
+		rel_set(child, back, D)
+
+/// The var (a REF) on a default child that names the holder that made it, or null.
+/datum/proc/default_child_backref()
+	return null
+
 /datum/lifecycle_decls/proc/create_gas(datum/D)
 	var/var_name = gas[1]
 	if(isdatum(D.vars[var_name]))
@@ -275,7 +291,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	var/list/gases = gas[4]
 	for(var/gas_id in gases)
 		mix.adjust_gas(gas_id, gases[gas_id] * volume / (R_IDEAL_GAS_EQUATION * temperature))
-	D.vars[var_name] = mix // ALLOW(api): declared gas plumbing writes the declared var
+	own_set(D, var_name, mix) // the holder owns its mixture (its arena slot goes with it)
 
 /datum/lifecycle_decls/proc/create_reagents_on(atom/A)
 	var/volume = lifecycle_decl_value(A, reagent_volume)

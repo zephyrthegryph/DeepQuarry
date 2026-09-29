@@ -13,13 +13,12 @@
 	var/tooltype = /obj/item/tool/wrench/power
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/Initialize(mapload)
-	my_tool = new tooltype(src)
+	own_set(src, "my_tool", new tooltype(src))
 	my_tool.name = name
 	my_tool.set_anchored(TRUE)
 	my_tool.canremove = FALSE
 	return ..()
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/powertool, "my_tool", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/action(atom/target)
 	if(!action_checks(target))

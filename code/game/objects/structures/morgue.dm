@@ -22,14 +22,14 @@
 	anchored = TRUE
 	unacidable = TRUE
 
-DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 
 /obj/structure/morgue/proc/get_occupants()
-	LAZYCLEARLIST(occupants)
+	rel_clear(src, "occupants")
 	for(var/mob/living/carbon/human/H in contents)
-		LAZYADD(occupants, H)
+		rel_add(src, "occupants", H)
 	for(var/obj/structure/closet/body_bag/B in contents)
-		LAZYADD(occupants, B.get_occupants())
+		for(var/mob/living/carbon/human/bagged as anything in B.get_occupants())
+			rel_add(src, "occupants", bagged)
 
 /obj/structure/morgue/proc/update(broadcast=0)
 	if (src.connected)
@@ -88,25 +88,23 @@ DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 		if (!( A.anchored ))
 			A.forceMove(src)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	qdel(src.connected)
-	src.connected = null
+	own_clear(src, "connected", OWN_DELETE)
 
 /obj/structure/morgue/proc/open()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	src.connected = new /obj/structure/m_tray( src.loc )
+	own_set(src, "connected", new /obj/structure/m_tray( src.loc ))
+	rel_set(connected, "connected", src)
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, src.dir)
 	if (T.contents.Find(src.connected))
-		src.connected.connected = src
 		src.icon_state = "morgue0"
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "morguet"
 		src.connected.set_dir(src.dir)
 	else
-		qdel(src.connected)
-		src.connected = null
+		own_clear(src, "connected", OWN_DELETE)
 
 
 /// Old attackby: relabel with a pen.
@@ -162,8 +160,7 @@ DECLARE_REF(/obj/structure/morgue, "connected", OWNED, null)
 	anchored = TRUE
 	throwpass = 1
 
-DECLARE_REF(/obj/structure/m_tray, "connected", PAIR, "connected")
-DECLARE_REF(/obj/structure/morgue, "connected", PAIR, "connected")
+// The morgue owns its tray (implicit OWN, deleted with it); the tray names its morgue (one-sided REL).
 
 /obj/structure/m_tray
 	silicon_use = ROBOT_USE_HAND_ADJACENT
@@ -187,11 +184,10 @@ DECLARE_REF(/obj/structure/morgue, "connected", PAIR, "connected")
 			if (!( A.anchored ))
 				A.forceMove(src.connected)
 			//Foreach goto(26)
-		src.connected.connected = null
-		src.connected.update()
+		var/obj/structure/morgue/M = connected
 		add_fingerprint(user)
-		//SN src = null
-		qdel(src)
+		own_clear(M, "connected", OWN_DELETE) // the morgue owns this tray: deletes src
+		M.update()
 	return TRUE
 
 /// Old MouseDrop_T: slide a body (or body bag) onto the tray.
@@ -260,21 +256,21 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			if (!( A.anchored ))
 				A.forceMove(src)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		QDEL_NULL(connected)
+		own_clear(src, "connected", OWN_DELETE)
 	else if (src.locked == 0)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		src.connected = new /obj/structure/m_tray/c_tray( src.loc )
+		own_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
+		rel_set(connected, "connected", src)
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
 		var/turf/T = get_step(src, dir)
 		if (T.contents.Find(src.connected))
-			src.connected.connected = src
 			src.icon_state = "crema0"
 			for(var/atom/movable/A as mob|obj in contents_of(src))
 				A.forceMove(src.connected.loc)
 			src.connected.icon_state = "cremat"
 		else
-			QDEL_NULL(connected)
+			own_clear(src, "connected", OWN_DELETE)
 	src.add_fingerprint(user)
 	update()
 	return TRUE
@@ -301,19 +297,18 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)
 		return
-	src.connected = new /obj/structure/m_tray/c_tray( src.loc )
+	own_set(src, "connected", new /obj/structure/m_tray/c_tray( src.loc ))
+	rel_set(connected, "connected", src)
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER
 	var/turf/T = get_step(src, EAST)
 	if (T.contents.Find(src.connected))
-		src.connected.connected = src
 		src.icon_state = "crema0"
 		for(var/atom/movable/A as mob|obj in contents_of(src))
 			A.forceMove(src.connected.loc)
 		src.connected.icon_state = "cremat"
 	else
-		qdel(src.connected)
-		src.connected = null
+		own_clear(src, "connected", OWN_DELETE)
 	return
 
 /obj/structure/morgue/crematorium/proc/cremation_done()

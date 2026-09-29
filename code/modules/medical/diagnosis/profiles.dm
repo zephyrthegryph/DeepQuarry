@@ -34,13 +34,21 @@
 	var/scanner_machine = FALSE
 	var/sees_fake_death = FALSE
 
+/// Profile type -> its registered singleton (created on first use).
+GLOBAL_LIST_EMPTY(diagnostic_profiles)
+
+/// Profiles are registry singletons: a /datum/diagnostic_profile var is implicitly shared.
+REGISTRY_TYPE(/datum/diagnostic_profile, GLOBAL_PROC_REF(registry_diagnostic_profile))
+
+/proc/registry_diagnostic_profile(datum/diagnostic_profile/D)
+	return GLOB.diagnostic_profiles[D.type]
+
 /// The shared singleton for a profile type.
 /proc/diagnostic_profile(profile_type)
-	var/static/list/singletons = list()
-	. = singletons[profile_type]
+	. = GLOB.diagnostic_profiles[profile_type]
 	if(!.)
 		. = new profile_type()
-		singletons[profile_type] = .
+		GLOB.diagnostic_profiles[profile_type] = .
 
 /// Naked eye: examine text and a passing glance.
 /datum/diagnostic_profile/glance

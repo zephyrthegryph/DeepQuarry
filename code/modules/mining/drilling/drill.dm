@@ -13,7 +13,8 @@
 	circuit = /obj/item/circuitboard/miningdrill
 	var/braces_needed = 2
 	var/total_brace_tier = 0
-	var/list/supports	// OM handles of the connected braces (om_resolve_all())
+	/// Connected braces: pairs with each brace's connected (REL_PAIR_LIST).
+	var/list/obj/machinery/mining/brace/supports
 	var/supported = 0
 	active = 0
 	var/list/resource_field
@@ -115,16 +116,14 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
+	own_set(src, "faultreporter", new /obj/item/radio/intercom{channels=list("Supply")}(null))
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/mining/drill, "faultreporter", OWNED, null)
-DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)
 		cell.forceMove(loc)
-		cell = null
+		own_take(src, "cell")
 	return ..()
 
 /obj/machinery/mining/drill/get_cell()
@@ -183,7 +182,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		while(length(resource_field) && !harvesting.resources)
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			LAZYREMOVE(resource_field, harvesting)
+			rel_remove(src, "resource_field", harvesting)
 			if(length(resource_field)) // runtime protection
 				harvesting = DEFAULTPICK(resource_field, null)
 			else
@@ -228,7 +227,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
 			harvesting.turf_resource_types &= ~(TURF_HAS_MINERALS)
 			harvesting.resources = null
-			LAZYREMOVE(resource_field, harvesting)
+			rel_remove(src, "resource_field", harvesting)
 
 	else if(!length(gas_field)) // Won't stop digging if gas pressure is detected
 		set_active(0)
@@ -263,9 +262,9 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		else
 			user.drop_item()
 			O.forceMove(src)
-			cell = O
+			own_set(src, "cell", O)
 			materialize_parts()
-			component_parts += O
+			// The cell var owns it; it is not also a component part (one owner per entity).
 			balloon_alert(user, "you install \the [O]")
 		return TRUE
 	return FALSE
@@ -308,8 +307,8 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 		balloon_alert(user, "you take out \the [cell]")
 		user.put_in_hands(cell)
 		if(component_parts)
-			component_parts -= cell
-		cell = null
+			own_take_member(src, "component_parts", cell)
+		own_take(src, "cell")
 		return TRUE
 	else if(need_player_check)
 		balloon_alert(user, "manual override hit, the drill's error checking resets.")
@@ -380,14 +379,14 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 	var/cap_rating = get_part_rating(/obj/item/stock_parts/capacitor)
 	if(cap_rating)
 		charge_use -= 10 * cap_rating
-	cell = locate_within(src, /obj/item/cell)
+	own_set(src, "cell", locate_within(src, /obj/item/cell))
 
 /obj/machinery/mining/drill/proc/check_supports()
 
 	supported = 0
 	total_brace_tier = 0
 
-	var/list/braces = om_resolve_all(supports)
+	var/list/braces = supports
 	if(!length(braces) && initial(anchored) == 0)
 		icon_state = "mining_drill"
 		set_anchored(FALSE)
@@ -417,7 +416,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 
 /obj/machinery/mining/drill/proc/get_resource_field()
 
-	resource_field = list()
+	rel_clear(src, "resource_field")
 	gas_field = list()
 	need_update_field = 0
 	drill_moles_per_tick = 0
@@ -433,7 +432,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 			mine_turf = locate(tx + ix, ty + iy, T.z)
 			if(!istype(mine_turf, /turf/space/))
 				if(mine_turf && mine_turf.turf_resource_types & TURF_HAS_MINERALS)
-					LAZYADD(resource_field, mine_turf)
+					rel_add(src, "resource_field", mine_turf)
 				// gas mining
 				if(istype(mine_turf,/turf/simulated/floor/gas_crack))
 					// Get gasses the cracks around us could give!
@@ -479,7 +478,7 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 	icon_state = "mining_brace"
 	circuit = /obj/item/circuitboard/miningdrillbrace
 	var/brace_tier = 1
-	var/tmp/connected_handle
+	var/tmp/obj/machinery/mining/drill/connected
 
 /obj/machinery/mining/brace/examine(mob/user)
 	. = ..()
@@ -552,32 +551,30 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 
 	for(var/thing in contents_of(T))
 		if(istype(thing, /obj/machinery/mining/drill))
-			connected_handle = om_handle(thing)
+			rel_set(src, "connected", thing)
 			break
 
 	if(!connected())
 		return
 
-	if(!connected().supports)
-		connected().supports = list()
-
 	icon_state = "mining_brace_active"
 
-	LAZYADD(connected().supports, om_handle(src))
+	// rel_set() above already listed us in the drill's supports (the pair).
 	connected().check_supports()
 
 /obj/machinery/mining/brace/proc/disconnect()
 
 	if(!connected()) return
 
-	if(!connected().supports) connected().supports = list()
-
 	icon_state = "mining_brace"
 
-	LAZYREMOVE(connected().supports, om_handle_of(src))
-	connected().check_supports()
-	connected_handle = null
+	var/obj/machinery/mining/drill/drill = connected()
+	rel_clear(src, "connected") // leaves the drill's supports too (the pair)
+	drill.check_supports()
 
-/// LC-refs: the connected this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
-	return om_resolve(connected_handle)
+	return connected
+
+REL_PAIR(/obj/machinery/mining/brace, connected, supports)
+REL_PAIR_LIST(/obj/machinery/mining/drill, supports, connected)

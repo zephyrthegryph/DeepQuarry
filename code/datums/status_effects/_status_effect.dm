@@ -47,12 +47,12 @@
 /// Returning FALSE from on_apply will stop on_creation and self-delete the effect.
 /datum/status_effect/proc/on_creation(mob/living/new_owner, ...)
 	if(new_owner)
-		owner = new_owner
+		rel_set(src, "owner", new_owner)
 	if(QDELETED(owner) || !on_apply())
 		qdel(src)
 		return
 	if(owner)
-		LAZYADD(owner.status_effects, src)
+		own_add(owner, "status_effects", src)
 		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
 
 	if(duration == INFINITY)
@@ -66,8 +66,8 @@
 
 	if(alert_type)
 		var/atom/movable/screen/alert/status_effect/new_alert = owner.throw_alert(id, alert_type)
-		new_alert.attached_effect_handle = om_handle(src) //so the alert can reference us, if it needs to
-		linked_alert = new_alert //so we can reference the alert, if we need to
+		rel_set(new_alert, "attached_effect", src) //so the alert can reference us, if it needs to
+		rel_set(src, "linked_alert", new_alert) //so we can reference the alert, if we need to
 		update_shown_duration()
 
 	if(EXPIRY_ACTIVE(src, duration, CLOCK_WORLD) || EXPIRY_ACTIVE(src, tick_interval, CLOCK_WORLD)) //don't process if we don't care
@@ -82,16 +82,15 @@
 	update_particles()
 	return TRUE
 
-DECLARE_REF(/datum/status_effect, "particle_effect", OWNED, null)
-/// The mob it is on; phase 4 takes it out of the mob's status_effects.
-DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
+// The mob owns its effects (living.status_effects, OWN); `owner` is the one-sided back view and
+// phase 2 takes a dying effect out of the mob's list. linked_alert is a relation view (the mob's
+// alerts own the alert).
 
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)
 	if(owner)
-		linked_alert = null
+		rel_clear(src, "linked_alert")
 		owner.clear_alert(id)
-		LAZYREMOVE(owner.status_effects, src)
 		on_remove()
 	..()
 
@@ -164,10 +163,10 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 /// or when a status effect with on_remove_on_mob_delete
 /// set to FALSE has its mob deleted
 /datum/status_effect/proc/be_replaced()
-	linked_alert = null
+	rel_clear(src, "linked_alert")
 	owner.clear_alert(id)
-	LAZYREMOVE(owner.status_effects, src)
-	owner = null
+	own_take_member(owner, "status_effects", src)
+	rel_clear(src, "owner")
 	qdel(src)
 
 /// Called before being fully removed (before on_remove)
@@ -238,9 +237,9 @@ DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
 	name = "Curse of Mundanity"
 	desc = "You don't feel any different..."
 	/// The status effect we're linked to
-	var/attached_effect_handle
+	var/datum/status_effect/attached_effect
 
 
-/// LC-refs: the status effect this alert shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The status effect this alert shows (a relation view).
 /atom/movable/screen/alert/status_effect/proc/attached_effect() as /datum/status_effect
-	return om_resolve(attached_effect_handle)
+	return attached_effect

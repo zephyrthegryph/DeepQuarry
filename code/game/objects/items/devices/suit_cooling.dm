@@ -31,7 +31,6 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	toggle(user)
 
 
-DECLARE_REF(/obj/item/suit_cooling_unit, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 
 /obj/item/suit_cooling_unit/periodic_step()
@@ -133,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		cell.update_icon()
 
 		to_chat(user, "You remove \the [src.cell].")
-		src.cell = null
+		own_take(src, "cell")
 		update_icon()
 		return
 
@@ -153,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			cell = W
+			own_set(src, "cell", W)
 			to_chat(user, "You insert the [cell].")
 	update_icon()
 	return TRUE

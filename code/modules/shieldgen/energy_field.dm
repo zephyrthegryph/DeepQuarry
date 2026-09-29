@@ -26,7 +26,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = FALSE
 	can_atmos_pass = ATMOS_PASS_DENSITY
-	var/tmp/my_gen_handle
+	var/tmp/obj/machinery/shield_gen/my_gen
 	var/ticks_recovering = 10
 	uses_integrity = TRUE
 	max_integrity = 10 * FIELD_INTEGRITY_PER_RENWICK
@@ -35,13 +35,12 @@
 /obj/effect/energy_field/Initialize(mapload, new_gen)
 	. = ..()
 	update_integrity(0) // Fields start down; the generator charges them.
-	my_gen_handle = om_handle(new_gen)
+	rel_set(src, "my_gen", new_gen)
 	if(nearby_active_shield_diffuser(src))
 		return INITIALIZE_HINT_QDEL
 	update_nearby_tiles()
 
 // Leaves its generator's field (a shield generator or a forcefield artifact).
-DECLARE_REF(/obj/effect/energy_field, "my_gen_handle", BACKLIST_HANDLE, list(/obj/machinery/shield_gen = "field", /datum/artifact_effect/forcefield = "created_field"))
 
 // Neighbouring fields redraw.
 /obj/effect/energy_field/on_destroy(force)
@@ -188,6 +187,6 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 
 #undef FIELD_INTEGRITY_PER_RENWICK
 
-/// LC-refs: the my_gen this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the my_gen this refers to (a relation view: it reads null once the target is deleted).
 /obj/effect/energy_field/proc/my_gen() as /obj/machinery/shield_gen
-	return om_resolve(my_gen_handle)
+	return my_gen

@@ -74,11 +74,11 @@
 	density = TRUE
 	anchored = TRUE
 	movement_type = UNSTOPPABLE
-	var/despawn_loc_handle
+	var/turf/despawn_loc
 	var/has_hunted_unlucky = FALSE
 
 /obj/effect/immovablerod/proc/TakeFlight(turf/end)
-	despawn_loc_handle = om_handle(end)
+	rel_set(src, "despawn_loc", end)
 	walk_towards(src, despawn_loc(), 1)
 	explosion(loc, 2, 3, 5) // start out with a bang
 
@@ -134,6 +134,6 @@
 	walk(src, 0)
 	walk_towards(src, despawn_loc(), 1)
 
-/// LC-refs: despawn loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Despawn loc (a relation view).
 /obj/effect/immovablerod/proc/despawn_loc() as /turf
-	return om_resolve(despawn_loc_handle)
+	return despawn_loc

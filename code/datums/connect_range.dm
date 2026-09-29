@@ -15,21 +15,20 @@
 	 * The atom being tracked. The datum deletes itself if the tracked is deleted.
 	 * Hooks are also updated whenever it moves (if it's a movable).
 	 */
-	var/tracked_handle
+	var/atom/tracked
 
 	/// Hooks are made only on turfs not farther from tracked than this.
 	var/range
 	/// Whether this works when the movable isn't directly located on a turf.
 	var/works_in_containers
 
-DECLARE_REF(/datum/connect_range, "listener", BACK, null)
 
 /datum/connect_range/New(datum/listener, atom/tracked, list/connections, range, works_in_containers = TRUE)
 	..()
 	if(!isatom(tracked) || isarea(tracked) || range < 0)
 		log_runtime("CONNECT_RANGE: [listener?.type] passed an invalid target [tracked] ([tracked?.type]) or range [range]")
 		return
-	src.listener = listener
+	rel_set(src, "listener", listener)
 	src.connections = connections
 	src.range = range
 	src.works_in_containers = works_in_containers
@@ -65,7 +64,7 @@ DECLARE_REF(/datum/connect_range, "listener", BACK, null)
 	if(tracked()) //Unhook the old tracked and its surroundings
 		unregister_hooks(isturf(tracked()) ? tracked() : tracked().loc, turfs)
 		om_unhook(tracked(), list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	tracked_handle = om_handle(new_tracked)
+	rel_set(src, "tracked", new_tracked)
 	if(!tracked())
 		return
 	//Hook the new tracked atom and its surroundings.
@@ -130,6 +129,6 @@ DECLARE_REF(/datum/connect_range, "listener", BACK, null)
 	EVENT_HANDLER
 	update_hooks(moved_thing, event.old_loc)
 
-/// LC-refs: the atom being tracked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom being tracked (a relation view).
 /datum/connect_range/proc/tracked() as /atom
-	return om_resolve(tracked_handle)
+	return tracked

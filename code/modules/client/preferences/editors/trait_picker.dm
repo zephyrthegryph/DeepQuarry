@@ -64,7 +64,7 @@
 			var/list_type = pref_for_category(params["category"])
 			if(!list_type)
 				return PREF_UPDATE_REJECTED
-			preferences.update_many(CALLBACK(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
+			preferences.update_many(om_callable(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
 			return PREF_UPDATE_ACCEPTED
 		if("remove_trait")
 			var/trait_path = text2path(params["trait_path"])

@@ -56,7 +56,7 @@
 	var/obj/item/rig_module/selected_module = null            // Primary system (used with middle-click)
 	var/obj/item/rig_module/vision/visor                      // Kinda shitty to have a var for a module, but saves time.
 	var/obj/item/rig_module/voice/speech                      // As above.
-	var/tmp/wearer_handle	// The person currently wearing the rig.
+	var/tmp/mob/living/carbon/human/wearer	// The person currently wearing the rig.
 	var/image/mob_icon                                        // Holder for on-mob icon.
 	var/list/installed_modules                       // Power consumption/use bookkeeping.
 
@@ -134,14 +134,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	update_icon(1)
 
-DECLARE_REF(/obj/item/rig, "power_system", OWNED, null)
-DECLARE_REF(/obj/item/rig, "boots", OWNED, null)
-DECLARE_REF(/obj/item/rig, "chest", OWNED, null)
-DECLARE_REF(/obj/item/rig, "helmet", OWNED, null)
-DECLARE_REF(/obj/item/rig, "gloves", OWNED, null)
-DECLARE_REF(/obj/item/rig, "mob_icon", OWNED, null)
-DECLARE_REF(/obj/item/rig, "minihud", OWNED, null)
-DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 // the suit pieces are torn down by its (owned) component registry.
 /obj/item/rig/on_destroy(force)
@@ -176,7 +168,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 		om_task_periodic(src, PERIODIC_SLOW)
 	else
 		om_task_periodic_stop(src)
-		QDEL_NULL(minihud) // Just in case we get removed some other way
+		own_clear(src, "minihud", OWN_DELETE) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
 		// damage, stuffed into storage, gibbed off, or a protean transforming out of
@@ -414,9 +406,9 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	canremove = seal_target
 	if(M.hud_used)
 		if(canremove)
-			QDEL_NULL(minihud)
+			own_clear(src, "minihud", OWN_DELETE)
 		else
-			minihud = new (M.hud_used, src)
+			own_set(src, "minihud", new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
@@ -489,8 +481,8 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	// Not on a mob...?
 	if(!ismob(loc))
 		if(wearer()?.wearing_rig == src)
-			wearer().wearing_rig = null
-		wearer_handle = null
+			own_take(wearer(), "wearing_rig")
+		rel_clear(src, "wearer")
 		return PROCESS_KILL
 
 	// Run through cooling.
@@ -667,8 +659,8 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
-		wearer_handle = om_handle(M)
-		wearer().wearing_rig = src
+		rel_set(src, "wearer", M)
+		own_set(wearer(), "wearing_rig", src)
 		update_icon()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
@@ -718,7 +710,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
-						use_obj.master_rig_handle = null   // intentional retract: silence the dropped() safety net
+						rel_clear(use_obj, "master_rig")   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -736,7 +728,7 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
-				use_obj.master_rig_handle = om_handle(src)   // the piece now knows its controller, so it can free itself
+				rel_set(use_obj, "master_rig", src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
@@ -779,8 +771,8 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		wearer().wearing_rig = null
-	wearer_handle = null
+		own_take(wearer(), "wearing_rig")
+	rel_clear(src, "wearer")
 
 //Todo
 /obj/item/rig/proc/malfunction()
@@ -1033,13 +1025,11 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 	M.client?.screen -= booting_R
 	qdel(booting_R)
 
-DECLARE_REF(/obj/item/rig, "air_supply", HELD, null)
-DECLARE_REF(/obj/item/rig, "cell", HELD, null)
-DECLARE_REF(/obj/item/rig, "selected_module", HELD, null)
-DECLARE_REF(/obj/item/rig, "visor", HELD, null)
-DECLARE_REF(/obj/item/rig, "speech", HELD, null)
-DECLARE_REF(/obj/item/rig, "rig_storage", HELD, null)
+OWN(/obj/item/rig, air_supply, OWN_CONTAINED)
+OWN(/obj/item/rig, cell, OWN_CONTAINED)
+OWN(/obj/item/rig, installed_modules, OWN_CONTAINED)
+OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
 
-/// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human
-	return om_resolve(wearer_handle)
+	return wearer

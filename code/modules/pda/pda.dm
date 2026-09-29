@@ -19,7 +19,7 @@
 
 	//Secondary variables
 	var/model_name = "Thinktronic 5230 Personal Data Assistant"
-	var/tmp/scanmode_handle
+	var/tmp/datum/data/pda/utility/scanmode/scanmode
 
 	var/lock_code = "" // Lockcode to unlock uplink
 
@@ -38,8 +38,8 @@
 
 	var/spam_proof = FALSE // If true, it can't be spammed by random events.
 
-	var/tmp/current_app_handle
-	var/tmp/lastapp_handle
+	var/tmp/datum/data/pda/app/current_app
+	var/tmp/datum/data/pda/app/lastapp
 	var/list/programs = list( // ALLOW(instance_list): d: edited in place per instance (1 writers)
 		new/datum/data/pda/app/main_menu,
 		new/datum/data/pda/app/notekeeper,
@@ -226,7 +226,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 /obj/item/pda/proc/update_programs()
 	for(var/datum/data/pda/P as anything in programs)
-		P.pda_handle = om_handle(src)
+		rel_set(P, "pda", src)
 
 /obj/item/pda/proc/detonate_act(obj/item/pda/P)
 	//TODO: sometimes these attacks show up on the message server
@@ -299,7 +299,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		id = null
+		own_take(src, "id")
 
 /obj/item/pda/proc/remove_pen()
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
@@ -322,7 +322,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 	if(can_use(user))
 		start_program(find_program(/datum/data/pda/app/main_menu))
-		LAZYCLEARLIST(notifying_programs)
+		rel_clear(src, "notifying_programs")
 		cut_overlay("pda-r")
 		to_chat(user, span_notice("You press the reset button on \the [src]."))
 	else
@@ -370,10 +370,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		var/mob/M = loc
 		M.put_in_hands(cartridge)
 	if (cartridge.radio)
-		cartridge.radio.hostpda_handle = null
+		rel_clear(cartridge.radio, "hostpda")
 	to_chat(user, span_notice("You remove \the [cartridge] from the [name]."))
 	play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
-	cartridge = null
+	own_take(src, "cartridge")
 	update_programs()
 	update_shortcuts()
 	start_program(find_program(/datum/data/pda/app/main_menu))
@@ -387,14 +387,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id) && user.unEquip(I))
 				I.forceMove(src)
-				id = I
+				own_set(src, "id", I)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
-			var/obj/old_id = id
+			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
 			I.forceMove(src)
-			id = I
+			own_set(src, "id", I)
 			user.put_in_hands(old_id)
 			return 1
 	return 0
@@ -413,14 +413,14 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// Old attackby.
 /obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		cartridge = C
+		own_set(src, "cartridge", C)
 		user.drop_item()
 		cartridge.forceMove(src)
 		cartridge.update_programs(src)
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
 		if(cartridge.radio)
-			cartridge.radio.hostpda_handle = om_handle(src)
+			rel_set(cartridge.radio, "hostpda", src)
 
 	else if(istype(C, /obj/item/card/id))
 		var/obj/item/card/id/idcard = C
@@ -442,7 +442,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
 		user.drop_item(src)
-		pai = C
+		own_set(src, "pai", C)
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))
@@ -473,17 +473,7 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		explosion(T, 0, 0, 1, rand(1,2))
 	return
 
-DECLARE_REF(/obj/item/pda, "pai", OWNED, null)
-DECLARE_REF(/obj/item/pda, "cartridge", OWNED, null)
-DECLARE_REF(/obj/item/pda, "programs", OWNED_LIST, null)
 
-// its ID drops out unless flagged to go with it.
-/obj/item/pda/on_destroy(force)
-	if (id && !delete_id && id.loc == src)
-		id.forceMove(get_turf(loc))
-	else
-		QDEL_NULL(id)
-	..()
 
 //Some spare PDAs in a box
 /obj/item/storage/box/PDAs
@@ -536,16 +526,17 @@ DECLARE_REF(/obj/item/pda, "programs", OWNED_LIST, null)
 /obj/item/pda/pilot
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
-DECLARE_REF(/obj/item/pda, "id", HELD, null)
+// Its ID drops out when it is destroyed, unless flagged (delete_id) to go with it.
+OWN_IF(/obj/item/pda, id, OWN_DELETE, delete_id, OWN_SPILL)
 
-/// LC-refs: the scanmode this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The scanmode this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode
-	return om_resolve(scanmode_handle)
+	return scanmode
 
-/// LC-refs: the current_app this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_app this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/current_app() as /datum/data/pda/app
-	return om_resolve(current_app_handle)
+	return current_app
 
-/// LC-refs: the lastapp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The lastapp this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/lastapp() as /datum/data/pda/app
-	return om_resolve(lastapp_handle)
+	return lastapp

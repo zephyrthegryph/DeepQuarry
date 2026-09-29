@@ -12,12 +12,15 @@
 	throw_distance = 7
 	release_force = 5
 
-	var/tmp/chambered_handle
+	var/tmp/obj/item/grenade/chambered
 	var/list/grenades
 	var/max_grenades = 5 //holds this + one in the chamber
 	MATERIAL_BULK(MAT_STEEL, 2000)
 	special_handling = TRUE
 	var/underslung = FALSE
+
+// Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
+OWN(/obj/item/gun/launcher/grenade, grenades, OWN_CONTAINED)
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)
@@ -27,11 +30,11 @@
 	if(length(grenades))
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered())
-		LAZYADD(grenades, chambered()) //rotate the revolving magazine
-		chambered_handle = null
+		own_add(src, "grenades", chambered()) //rotate the revolving magazine
+		rel_clear(src, "chambered")
 	if(next)
-		LAZYREMOVE(grenades, next) //Remove grenade from loaded list.
-		chambered_handle = om_handle(next)
+		own_take_member(src, "grenades", next) //Remove grenade from loaded list (it stays in our contents, chambered).
+		rel_set(src, "chambered", next)
 		to_chat(user, span_warning("You pump [src], loading \a [next] into the chamber."))
 	else
 		to_chat(user, span_warning("You pump [src], but the magazine is empty."))
@@ -52,15 +55,15 @@
 			return
 		user.remove_from_mob(G)
 		G.forceMove(src)
-		LAZYINITLIST(grenades); grenades.Insert(1, G) //add to the head of the list, so that it is loaded on the next pump
+		own_add(src, "grenades", G)
+		moveElement(grenades, length(grenades), 1) //to the head of the list, so that it is loaded on the next pump
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [G] into %T%.")), MSG_OTHERS("%U% inserts \a [G] into %T%."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
 
 /obj/item/gun/launcher/grenade/proc/unload(mob/user)
 	if(length(grenades))
-		var/obj/item/grenade/G = grenades[grenades.len]
-		grenades.len--
+		var/obj/item/grenade/G = own_take_member(src, "grenades", grenades[length(grenades)])
 		user.put_in_hands(G)
 		act_message(user, src, MSG_SELF(span_notice("You remove \a [G] from %T%.")), MSG_OTHERS("%U% removes \a [G] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
@@ -102,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 /obj/item/gun/launcher/grenade/handle_post_fire(mob/user)
 	message_admins("[key_name_admin(user)] fired a grenade ([chambered().name]) from a grenade launcher ([src.name]).")
 	log_game("[key_name_admin(user)] used a grenade ([chambered().name]).")
-	chambered_handle = null
+	rel_clear(src, "chambered")
 
 //Underslung grenade launcher to be used with the Z8
 /obj/item/gun/launcher/grenade/underslung
@@ -121,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 			return
 		user.remove_from_mob(G)
 		G.forceMove(src)
-		chambered_handle = om_handle(G)
+		rel_set(src, "chambered", G)
 		act_message(user, src, MSG_SELF(span_notice("You load \a [G] into %T%.")), MSG_OTHERS("%U% load \a [G] into %T%."))
 		return
 	to_chat(user, span_warning("[G] doesn't seem to fit in the [src]!"))
@@ -131,10 +134,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/grenade, INTERACT_HAND(null, PROC_RE
 		user.put_in_hands(chambered())
 		act_message(user, src, MSG_SELF(span_notice("You remove \a [chambered()] from %T%.")), MSG_OTHERS("%U% removes \a [chambered()] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
-		chambered_handle = null
+		rel_clear(src, "chambered")
 	else
 		to_chat(user, span_warning("[src] is empty."))
 
-/// LC-refs: the chambered this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the chambered this refers to (a relation view: null once it is deleted).
 /obj/item/gun/launcher/grenade/proc/chambered() as /obj/item/grenade
-	return om_resolve(chambered_handle)
+	return chambered

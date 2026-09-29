@@ -52,6 +52,4 @@ status starts and detaches it when it ends (the status row's on_start/on_end hoo
 	if(om_attached(src, /datum/om/behaviour/jittery_shake))
 		om_after_slot(src, "jittery_shake_timer", 1, TYPE_PROC_REF(/mob, jittery_shake_tick))
 
-/mob/om_declared_timer_slots()
-	. = ..()
-	. += "jittery_shake_timer"
+OWN_TIMER(/mob, jittery_shake_timer)

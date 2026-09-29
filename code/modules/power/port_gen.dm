@@ -616,20 +616,20 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 			var/obj/item/stock_parts/capacitor/C = locate_in_list(component_parts, /obj/item/stock_parts/capacitor)
 			if(isnull(C))
 				break
-			component_parts.Remove(C)
+			own_take_member(src, "component_parts", C)
 			qdel(C)
 	if(locate_in_list(parts_found, /obj/item/stock_parts/micro_laser))
 		while(TRUE)
 			var/obj/item/stock_parts/micro_laser/M = locate_in_list(component_parts, /obj/item/stock_parts/micro_laser)
 			if(isnull(M))
 				break
-			component_parts.Remove(M)
+			own_take_member(src, "component_parts", M)
 			qdel(M)
 
 	// Rebuild from mapper's parts
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
-		component_parts.Add(W)
+		own_add(src, "component_parts", W)
 		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 
@@ -759,7 +759,7 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 /obj/machinery/power/rtg/abductor/proc/interaction_eject_cell(mob/user, obj/item/held, datum/interaction/interaction)
 	cell.forceMove(get_turf(src))
 	user.put_in_active_hand(cell)
-	cell = null
+	own_take(src, "cell")
 	state_change = TRUE
 	RefreshParts()
 	update_icon()
@@ -792,7 +792,7 @@ DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
 	user.remove_from_mob(I)
 	I.forceMove(src)
-	cell = I
+	own_set(src, "cell", I)
 	RefreshParts()
 	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)
@@ -1198,4 +1198,4 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
 
-DECLARE_REF(/obj/machinery/power/rtg/abductor, "cell", HELD, null)
+OWN(/obj/machinery/power/rtg/abductor, cell, OWN_CONTAINED)

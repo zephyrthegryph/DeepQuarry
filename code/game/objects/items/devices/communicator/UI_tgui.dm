@@ -1,7 +1,7 @@
 // Etc UI-only vars
 /obj/item/communicator
 	// Stuff for moving cameras
-	var/last_camera_turf_handle
+	var/turf/last_camera_turf
 	// Stuff needed to render the map
 	var/map_name
 	var/atom/movable/screen/map_view/cam_screen
@@ -9,10 +9,6 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
-DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "local_skybox", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 
 // Proc: setup_tgui_camera()
 // Parameters: None
@@ -21,26 +17,26 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 	map_name = "communicator_[REF(src)]_map"
 
 	// Initialize map objects
-	cam_screen = new
+	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
 	cam_screen.screen_loc = "[map_name]:1,1"
 
-	cam_plane_masters = get_tgui_plane_masters()
+	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
+		own_add(src, "cam_plane_masters", plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
-	cam_plane_masters += local_skybox
 
-	cam_background = new
+	own_set(src, "cam_background", new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 
@@ -77,7 +73,7 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 		return
 
 	// We get a new turf in case they've moved in the last half decisecond (it's BYOND, it might happen)
-	last_camera_turf_handle = om_handle(get_turf(video_source))
+	rel_set(src, "last_camera_turf", get_turf(video_source))
 
 	if(!is_on_same_plane_or_station(get_z(last_camera_turf()), get_z(src)))
 		show_static()
@@ -121,6 +117,7 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 		user.client.register_map_obj(cam_screen)
 		for(var/plane in cam_plane_masters)
 			user.client.register_map_obj(plane)
+		user.client.register_map_obj(local_skybox) // owned via local_skybox, not the plane list
 		user.client.register_map_obj(cam_background)
 		// Setup UI
 		ui = new(user, src, "Communicator", name)
@@ -485,6 +482,6 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 		if("newsfeed")
 			newsfeed_channel = text2num(params["newsfeed"])
 
-/// LC-refs: last camera turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: last camera turf (reads null once it is gone).
 /obj/item/communicator/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf

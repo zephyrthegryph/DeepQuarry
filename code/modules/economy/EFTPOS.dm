@@ -13,7 +13,7 @@
 	var/transaction_amount = 0
 	var/transaction_purpose = "Default charge"
 	var/access_code = 0
-	var/tmp/linked_account_handle
+	var/tmp/datum/money_account/linked_account
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
@@ -21,7 +21,7 @@
 	. = ..()
 	//by default, connect to the station account
 	//the user of the EFTPOS device can change the target account though, and no-one will be the wiser (except whoever's being charged)
-	linked_account_handle = om_handle(GLOB.station_account)
+	rel_set(src, "linked_account", GLOB.station_account)
 
 	machine_id = "[station_name()] EFTPOS #[GLOB.num_financial_terminals++]"
 	access_code = rand(1111,111111)
@@ -69,7 +69,7 @@
 	R.stamps += "<HR><i>This paper has been stamped by the EFTPOS device.</i>"
 	var/obj/item/smallDelivery/D = new(R.loc)
 	R.forceMove(D)
-	D.wrapped = R
+	own_set(D, "wrapped", R)
 	D.name = "small parcel - 'EFTPOS access code'"
 
 // TGUI migration. attack_self opens Eftpos.tsx; the
@@ -181,10 +181,10 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 			var/attempt_pin = act_ask(usr, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
 			if(isnull(attempt_pin))
 				return
-			linked_account_handle = om_handle(attempt_account_access(attempt_account_num, attempt_pin, 1))
+			rel_set(src, "linked_account", attempt_account_access(attempt_account_num, attempt_pin, 1))
 			if(linked_account())
 				if(linked_account().suspended)
-					linked_account_handle = null
+					rel_clear(src, "linked_account")
 					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
 			else
 				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
@@ -309,6 +309,6 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 
 #undef EFTPOS_MAX_TRANSACTION
 
-/// LC-refs: the linked_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_account this refers to (a relation view: null once it is deleted).
 /obj/item/eftpos/proc/linked_account() as /datum/money_account
-	return om_resolve(linked_account_handle)
+	return linked_account

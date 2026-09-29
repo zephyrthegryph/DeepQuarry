@@ -24,7 +24,7 @@
 	. = ..()
 
 	if(!skip_cell)
-		cell = new/obj/item/cell/apc(src)
+		own_set(src, "cell", new/obj/item/cell/apc(src))
 
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
@@ -183,7 +183,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 		if("eject")
 			if(holding)
 				holding.forceMove(loc)
-				holding = null
+				own_take(src, "holding")
 			. = 1
 		if("pressure")
 			var/pressure = params["pressure"]

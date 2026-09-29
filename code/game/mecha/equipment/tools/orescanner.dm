@@ -14,7 +14,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/tool/orescanner, "my_scanner", /obj/item/mining_scanner)
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/orescanner, "my_scanner", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/tool/orescanner/proc/scan_done(atom/target)
 	my_scanner.ScanTurf(target, chassis?.slot_item(MECHA_SLOT_PILOT), exact_scan)

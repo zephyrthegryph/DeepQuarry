@@ -5,7 +5,7 @@
 // default (free) until the entity joins: `om_rec` and `om_listen`.
 
 /// The entity's record. Null until the entity first joins.
-// ALLOW(scheduler, declared_refs): the object-model core's own record for this entity; released by the core (entity.dm) on leave
+// ALLOW(scheduler): the object-model core's own record for this entity; released by the core (entity.dm) on leave
 /datum/var/tmp/datum/om/rec/om_rec
 /// Union of every channel something listens to on this entity. A setter's
 /// om_changed() returns on `!(om_listen & bits)` without a proc call more.
@@ -95,6 +95,11 @@
 		return null
 	rec = new /datum/om/rec(E, om_scheduler())
 	E.om_rec = rec
+	#ifdef UNIT_TESTS
+	var/list/rec_index = GLOB?.om_rec_audit_index
+	if(rec_index)
+		rec_index[ref(rec)] = TRUE
+	#endif
 	rec.table = om_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		om_cache_scan(rec.table, E)

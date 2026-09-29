@@ -2,10 +2,10 @@
 	name = "NTOS Computer Configuration Tool"
 	ntos = TRUE
 	tgui_id = "Configuration"
-	var/tmp/movable_handle
+	var/tmp/obj/item/modular_computer/movable
 
 /datum/tgui_module/computer_configurator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	movable_handle = om_handle(tgui_host())
+	rel_set(src, "movable", tgui_host())
 	// No computer connection, we can't get data from that.
 	if(!istype(movable(), /obj/item/modular_computer))
 		return 0
@@ -47,6 +47,6 @@
 				H.enabled = !H.enabled
 			. = TRUE
 
-/// LC-refs: the movable this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The movable this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/computer_configurator/proc/movable() as /obj/item/modular_computer
-	return om_resolve(movable_handle)
+	return movable

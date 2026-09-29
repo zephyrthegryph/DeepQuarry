@@ -8,11 +8,11 @@
 	bubble_icon = "science"
 	var/scan_in_progress = 0
 	var/scan_num = 0
-	var/tmp/scanned_obj_handle
-	var/tmp/owned_scanner_handle
+	var/tmp/obj/scanned_obj
+	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	EXPIRY_DECLARE(scan_completion_time)
 	var/scan_duration = 50
-	var/tmp/scanned_object_handle
+	var/tmp/obj/scanned_object
 	var/report_num = 0
 	var/static/list/priority_objects = list(/obj/machinery/artifact,
 										/obj/machinery/auto_cloner,
@@ -30,9 +30,9 @@
 
 /obj/machinery/artifact_analyser/proc/reconnect_scanner()
 	//connect to a nearby scanner pad
-	owned_scanner_handle = om_handle(locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
+	rel_set(src, "owned_scanner", locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		owned_scanner_handle = om_handle(locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
+		rel_set(src, "owned_scanner", locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 
 /obj/machinery/artifact_analyser/declare_interactions(list/into)
 	into += list(
@@ -104,14 +104,14 @@
 					else
 						for(var/otype in priority_objects)
 							if(istype(O, otype))
-								scanned_object_handle = om_handle(O)
+								rel_set(src, "scanned_object", O)
 								break
 						if(scanned_object())
 							break
 						else
 							secondary_priority = O
 				if(secondary_priority && !scanned_object())
-					scanned_object_handle = om_handle(secondary_priority)
+					rel_set(src, "scanned_object", secondary_priority)
 				if(!scanned_object())
 					atom_say("Unable to isolate scan target.")
 				else
@@ -154,7 +154,7 @@
 		var/obj/machinery/artifact/A = scanned_object()
 		A.set_anchored(FALSE)
 		A.in_use = 0
-	scanned_object_handle = null
+	rel_clear(src, "scanned_object")
 
 //hardcoded responses, oh well
 /obj/machinery/artifact_analyser/proc/get_scan_info(obj/scanned_obj)
@@ -214,14 +214,14 @@
 
 			return "[scanned_obj.name] - mundane application."
 
-/// LC-refs: the scanned_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the scanned_obj var.
 /obj/machinery/artifact_analyser/proc/scanned_obj() as /obj
-	return om_resolve(scanned_obj_handle)
+	return scanned_obj
 
-/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the owned_scanner var.
 /obj/machinery/artifact_analyser/proc/owned_scanner() as /obj/machinery/artifact_scanpad
-	return om_resolve(owned_scanner_handle)
+	return owned_scanner
 
-/// LC-refs: the scanned_object this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the scanned_object var.
 /obj/machinery/artifact_analyser/proc/scanned_object() as /obj
-	return om_resolve(scanned_object_handle)
+	return scanned_object

@@ -20,7 +20,7 @@
 	var/survivalfood = FALSE
 	var/nutriment_amt = 0
 	var/list/nutriment_desc = list("food" = 1) // ALLOW(instance_list): d: add_reagent() stores it by reference as the nutriment data, and nutriment mix_data() edits that list; sharing it gains nothing (see memory_lists_audit.md)
-	var/tmp/coating_handle
+	var/tmp/datum/reagent/nutriment/coating/coating
 	var/icon/flat_icon = null //Used to cache a flat icon generated from dipping in batter. This is used again to make the cooked-batter-overlay
 	var/do_coating_prefix = 1 //If 0, we wont do "battered thing" or similar prefixes. Mainly for recipes that include batter but have a special name
 
@@ -91,7 +91,7 @@
 
 			if(do_nom)
 				eater.vore_selected.nom_atom(micro)
-				food_inserted_micros -= micro
+				own_take_member(src, "food_inserted_micros", micro)
 
 	if(!reagents.total_volume)
 		eater.balloon_alert_visible("eats \the [src].","finishes eating \the [src].")
@@ -105,7 +105,7 @@
 			NR.stored_nutrition = 1
 			for(var/mob/living/voice/V in possessed_voice)
 				NR.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-				possessed_voice -= V
+				own_take_member(src, "possessed_voice", V)
 				qdel(V)
 			if(!NR.move_into(eater.vore_selected, BELLY_SLOT_INTERIOR, eater))
 				NR.forceMove(get_turf(eater))
@@ -116,12 +116,12 @@
 			if(possessed_voice && possessed_voice.len)
 				for(var/mob/living/voice/V in possessed_voice)
 					TrashItem.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-					possessed_voice -= V
+					own_take_member(src, "possessed_voice", V)
 					qdel(V)
 		// Clean up any remaining item TF mobs
 		if(possessed_voice && possessed_voice.len)
 			for(var/mob/living/voice/V in possessed_voice)
-				possessed_voice -= V
+				own_take_member(src, "possessed_voice", V)
 				qdel(V)
 		qdel(src)
 
@@ -388,16 +388,14 @@
 
 		var/obj/item/holder/holder = W
 
-		if(!food_inserted_micros)
-			food_inserted_micros = list()
 
 		var/mob/living/living_mob = holder.held_mob
 
 		living_mob.forceMove(src)
-		holder.held_mob = null
+		rel_clear(holder, "held_mob")
 		consume(holder, user)
 
-		food_inserted_micros += living_mob
+		own_add(src, "food_inserted_micros", living_mob)
 
 		to_chat(user, "Stuffed [living_mob] into \the [src].")
 		balloon_alert(user, "stuffs [living_mob] into \the [src].")
@@ -450,10 +448,7 @@
 					var/obj/item/reagent_containers/food/snacks/S = slice
 					for(var/mob/living/F in food_inserted_micros)
 						F.forceMove(S)
-						if(!S.food_inserted_micros)
-							S.food_inserted_micros = list()
-						S.food_inserted_micros += F
-						food_inserted_micros -= F
+						own_transfer(src, "food_inserted_micros", S, "food_inserted_micros", F)
 			on_slice_extra()
 
 			consume(src, user)
@@ -472,12 +467,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 /// Old MouseDrop_T.
 /obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
 	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-		if(!food_inserted_micros)
-			food_inserted_micros = list()
 
 		M.forceMove(src)
 
-		food_inserted_micros += M
+		own_add(src, "food_inserted_micros", M)
 
 		to_chat(user, span_warning("You climb into \the [src]."))
 		return INTERACTION_HANDLED_PASS
@@ -488,7 +481,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	return (slices_num && slice_path && slices_num > 0)
 
 // things stuffed inside drop out.
-DECLARE_REF(/obj/item/reagent_containers/food/snacks, "contents", SPILL_LIST, null)
+OWN(/obj/item/reagent_containers/food/snacks, contents, OWN_SPILL)
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
 	package = FALSE
@@ -522,7 +515,8 @@ DECLARE_REF(/obj/item/reagent_containers/food/snacks, "contents", SPILL_LIST, nu
 	bitecount++
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
-	om_after(user, 5, /proc/food_finished_emote, user, om_handle(src))
+	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
+	om_after(user, 5, /proc/food_finished_emote, user, !reagents?.total_volume)
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -3971,7 +3965,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 		user.put_in_hands( pizza )
 
 		to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-		src.pizza = null
+		own_take(src, "pizza")
 		update_icon()
 		return TRUE
 
@@ -4043,7 +4037,7 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 		if( src.open )
 			user.drop_item()
 			I.forceMove(src)
-			src.pizza = I
+			own_set(src, "pizza", I)
 
 			update_icon()
 
@@ -4072,32 +4066,32 @@ DECLARE_INTERACTIONS(/obj/item/pizzabox, \
 	return FALSE
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	pizza = new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src)
+	own_set(src, "pizza", new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 
@@ -4797,7 +4791,7 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 	if (!C)
 		return
 
-	coating_handle = om_handle(C)
+	rel_set(src, "coating", C)
 	//Now we have to do the witchcraft with masking images
 	//var/icon/I = new /icon(icon, icon_state)
 
@@ -4944,7 +4938,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch
 
 /obj/item/reagent_containers/food/snacks/sliceable/pizza/crunch/Initialize(mapload)
 	. = ..()
-	coating_handle = om_handle(reagents.get_reagent(REAGENT_ID_BATTER))
+	rel_set(src, "coating", reagents.get_reagent(REAGENT_ID_BATTER))
 	reagents.add_reagent(REAGENT_ID_OIL, 4)
 
 /obj/item/reagent_containers/food/snacks/funnelcake
@@ -8496,14 +8490,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		heat()
 
 /// A mindless eater who finished the food asks for more.
-/proc/food_finished_emote(mob/user, food_handle)
-	if(!om_resolve(food_handle) && !user.client)
+/proc/food_finished_emote(mob/user, finished)
+	if(finished && !user.client)
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks, "flat_icon", OWNED, null)
 
-DECLARE_REF(/obj/item/pizzabox, "pizza", HELD, null)
+OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
 
-/// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating
-	return om_resolve(coating_handle)
+	return coating

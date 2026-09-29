@@ -5,7 +5,7 @@
 
 	nodamage = 1 //Most of the time, anyways
 
-	var/tmp/carried_handle
+	var/tmp/datum/spell/targeted/projectile/carried
 
 	penetrating = 0
 	range = 10 //set by the duration of the spell
@@ -16,20 +16,18 @@
 	var/proj_trail_icon_state = "trail"
 	var/list/trails
 
-DECLARE_REF(/obj/item/projectile/spell_projectile, "trails", OWNED_LIST, null)
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
-		LAZYADD(trails, trail)
+		own_add(src, "trails", trail)
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
 		trail.set_density(FALSE)
 		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)
-	LAZYREMOVE(trails, trail)
-	qdel(trail)
+	own_remove(src, "trails", trail) // disposes of it
 
 /obj/item/projectile/spell_projectile/proc/prox_cast(list/targets)
 	if(loc)
@@ -50,6 +48,6 @@ DECLARE_REF(/obj/item/projectile/spell_projectile, "trails", OWNED_LIST, null)
 /obj/item/projectile/spell_projectile/seeking
 	name = "seeking spell"
 
-/// LC-refs: the carried this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the carried this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/spell_projectile/proc/carried() as /datum/spell/targeted/projectile
-	return om_resolve(carried_handle)
+	return carried

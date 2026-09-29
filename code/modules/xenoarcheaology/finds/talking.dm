@@ -1,15 +1,14 @@
-/obj/var/datum/talking_atom/talking_atom // ALLOW(state_ref): owned: xenoarch speech state with mob refs
-DECLARE_REF(/obj, "talking_atom", OWNED, null)
+/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
 
 /datum/talking_atom
 	var/list/heard_words = list() // ALLOW(instance_list): d: speech memory of a talking item, filled as it hears
 	COOLDOWN_DECLARE(talk_cooldown)
-	var/tmp/holder_atom_handle
+	var/tmp/atom/holder_atom
 	var/talk_interval = 50
 	var/talk_chance = 10
 
 /datum/talking_atom/New(atom/holder)
-	holder_atom_handle = om_handle(holder)
+	rel_set(src, "holder_atom", holder)
 	init()
 
 /datum/talking_atom/proc/init()
@@ -105,6 +104,6 @@ DECLARE_REF(/obj, "talking_atom", OWNED, null)
 		to_chat(M, "[icon2html(holder_atom(),M.client)] " + span_bold("[holder_atom()] reverberates") +" , \"[span_blue(msg)]\"")
 	COOLDOWN_START(src, talk_cooldown, talk_interval)
 
-/// LC-refs: the holder_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the holder_atom var.
 /datum/talking_atom/proc/holder_atom() as /atom
-	return om_resolve(holder_atom_handle)
+	return holder_atom

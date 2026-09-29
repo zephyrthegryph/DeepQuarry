@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 		return FALSE
 	user.drop_from_inventory(W)
 	W.forceMove(src)
-	ball = W
+	own_set(src, "ball", W)
 	to_chat(user, span_notice("You insert [W] into [src]."))
 	return INTERACTION_HANDLED_PASS
 
@@ -129,7 +129,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 	if(ball)
 		user.put_in_hands(ball)
 		to_chat(user, span_notice("You remove \the [ball] from [src]."))
-		ball = null
+		own_take(src, "ball")
 		return
 	else
 		to_chat(user, span_notice("There is no ball in [src]!"))
@@ -255,7 +255,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(H)
 		H.forceMove(src)
-		trapped = H
+		own_set(src, "trapped", H)
 		to_chat(user, span_notice("You trap \the [H] inside the glass roulette ball."))
 		to_chat(H.held_mob, span_warning("\The [user] traps you inside a glass roulette ball!"))
 		update_icon()
@@ -282,19 +282,19 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 		if(trapped.held_mob)
 			to_chat(user, span_notice("You take \the [trapped] out of the glass roulette ball."))
 			to_chat(trapped.held_mob, span_notice("\The [user] takes you out of a glass roulette ball."))
-		trapped = null
+		own_take(src, "trapped")
 		update_icon()
 	return TRUE
 
 /obj/item/roulette_ball/hollow/on_holder_escape()
-	trapped = null
+	own_take(src, "trapped")
 	update_icon()
 
 /obj/item/roulette_ball/hollow/on_spin()
 	if(trapped && trapped.held_mob)
 		to_chat(trapped.held_mob, span_critical("THE WHOLE WORLD IS SENT WHIRLING AS THE ROULETTE SPINS!!!"))
 
-DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
+OWN(/obj/item/roulette_ball/hollow, trapped, OWN_SPILL)
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
@@ -647,7 +647,7 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 					if(selected_collar)
 						collar_list -= selected_collar
 						sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
-						selected_collar = null
+						rel_clear(src, "selected_collar")
 					to_chat(user, span_warning("No collar is currently selected or the currently selected one has been destroyed or disabled."))
 					return TRUE
 				to_chat(user, span_warning("Sentient Prize information"))
@@ -662,12 +662,12 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 				var/_answer_k624 = rerun_ask(user, "k624", PROC_REF(interaction_use), args, /datum/om/prompt/choice, message = "Select a prize", title = "Chose a collar", choices = collar_list)
 				if(isnull(_answer_k624))
 					return
-				selected_collar = _answer_k624
+				rel_set(src, "selected_collar", _answer_k624)
 				if(QDELETED(selected_collar))
 					collar_list -= selected_collar
 					sentientprizes_ckeys_list -= selected_collar?.sentientprizeckey
 					to_chat(user, span_warning("No collars to chose, or selected collar has been destroyed or deactived, selection has been removed from list."))
-					selected_collar = null
+					rel_clear(src, "selected_collar")
 					return TRUE
 
 			if("Become Prize (Please examine yourself first)") //Its awkward, but no easy way to obtain flavor_text due to server not loading text of mob until its been examined at least once.
@@ -824,7 +824,7 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 					collar_list -= selected_collar
 					sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 					to_chat(user, span_warning("Collar has been destroyed!"))
-					selected_collar = null
+					rel_clear(src, "selected_collar")
 					return TRUE
 				var/safety_ckey = selected_collar.sentientprizeckey
 				var/confirm = rerun_ask(user, "k770", PROC_REF(interaction_id), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to wipe [selected_collar.sentientprizename] entry?", title = "Confirm Sentient Prize", choices = list("Yes", "No"))
@@ -840,7 +840,7 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 						sentientprizes_ckeys_list -= selected_collar.sentientprizeckey
 						selected_collar.sentientprizeckey = null
 						collar_list -= selected_collar
-						selected_collar = null
+						rel_clear(src, "selected_collar")
 						return TRUE
 					to_chat(user, span_warning("Registry deletion aborted! Changed collar selection!"))
 					return TRUE
@@ -969,13 +969,13 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 		collar.sentientprizeckey = null
 		collar_list -= collar
 		if(selected_collar == collar)
-			selected_collar = null
+			rel_clear(src, "selected_collar")
 
 	if(buystate == "buy")
 		to_chat(user,span_notice("You put [charge] credits worth of chips into the SPASM and it pings to inform you bought [collar.sentientprizename]!"))
 		// Apply the item-TF outcome resolved (and paid for) above.
 		if(do_tf)
-			var/mob/living/sentient_prize = om_resolve(collar.wearer)
+			var/mob/living/sentient_prize = collar.wearer
 			if(sentient_prize)
 				do_item_tf(sentient_prize, tf_choice)
 			else
@@ -990,7 +990,7 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 		collar.name =  "Sentient Prize Collar: [collar.sentientprizename] owned by [collar.ownername]!"
 		collar.desc = "A collar worn by sentient prizes on the Golden Goose Casino. The tag says its registered to [collar.sentientprizename] and they are owned by [collar.ownername]."
 		if(selected_collar == collar)
-			selected_collar = null
+			rel_clear(src, "selected_collar")
 
 /obj/machinery/casinosentientprize_handler/proc/setprice(mob/living/user)
 	if(user.incapacitated())
@@ -1010,7 +1010,7 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 
 	if(color=="gold") // Happy celebrations!
 		visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
-		confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		own_set(src, "confetti_spread", new /datum/effect/effect/system/confetti_spread())
 		confetti_spread.attach(src) //If somehow people start dragging roulette
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	else
@@ -1019,13 +1019,10 @@ DECLARE_REF(/obj/item/roulette_ball/hollow, "trapped", SPILL, null)
 /// The wheel stops: the result, confetti, and the wheel is free again.
 /obj/machinery/wheel_of_fortune/proc/wheel_stops(message)
 	visible_message(span_notice(message))
-	confetti_spread = new /datum/effect/effect/system/confetti_spread()
+	own_set(src, "confetti_spread", new /datum/effect/effect/system/confetti_spread())
 	confetti_spread.attach(src) //If somehow people start dragging slot machine
 	confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	flick("[icon_state]-winning",src)
 	icon_state = "wheel_of_fortune"
 
-DECLARE_REF(/obj/structure/casino_table/roulette_table, "ball", HELD, null)
-DECLARE_REF(/obj/structure/casino_table/roulette_table, "confetti_spread", OWNED, null)
-DECLARE_REF(/obj/machinery/wheel_of_fortune, "confetti_spread", OWNED, null)
-DECLARE_REF(/obj/machinery/casinosentientprize_handler, "selected_collar", BACK, null)
+OWN(/obj/structure/casino_table/roulette_table, ball, OWN_CONTAINED)

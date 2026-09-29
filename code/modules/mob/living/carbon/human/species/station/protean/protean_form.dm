@@ -28,7 +28,7 @@ TYPE_TABLE(/datum/forms/protean, get_form_types, list(/datum/form/human, /datum/
 // the protean's rig forgets its protean.
 /datum/forms/protean/on_destroy(force)
 	if(rig && (!owner || rig.myprotean == owner))
-		rig.myprotean = null
+		rel_clear(rig, "myprotean")
 	..()
 
 /datum/forms/protean/proc/blob_form()
@@ -331,9 +331,9 @@ GLOBAL_TABLE(protean_blob_styles, GLOBAL_PROC_REF(build_protean_blob_styles))
 
 /datum/protean_blob_style/layered/New()
 	..()
-	layers = list()
+	own_take_all(src, "layers")
 	for(var/list/spec as anything in TYPE_TABLE_GET(src, layer_specs))
-		layers += new /datum/protean_blob_layer(arglist(spec))
+		own_add(src, "layers", new /datum/protean_blob_layer(arglist(spec)))
 
 /// Constructor arguments for each layer, in draw order.
 TYPE_TABLE_DECLARE(/datum/protean_blob_style/layered, layer_specs, list())
@@ -502,5 +502,3 @@ TYPE_TABLE(/datum/protean_blob_style/layered/dullahan, layer_specs, list( \
 	return istype(character_forms, /datum/forms/protean) ? character_forms : null
 
 // The cluster lives in the world on its own; Destroy() tells it we are gone.
-DECLARE_REF(/datum/forms/protean, "rig", HELD, null)
-DECLARE_REF(/datum/protean_blob_style/layered, "layers", OWNED_LIST, null)

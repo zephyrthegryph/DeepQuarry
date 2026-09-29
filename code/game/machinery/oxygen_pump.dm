@@ -7,7 +7,7 @@
 	anchored = TRUE
 
 	var/obj/item/tank/tank
-	var/breather_handle
+	var/mob/living/carbon/breather
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = /obj/item/tank/emergency/oxygen/engi
@@ -22,8 +22,6 @@
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "tank", "spawn_type")
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
 
-DECLARE_REF(/obj/machinery/oxygen_pump, "tank", OWNED, null)
-DECLARE_REF(/obj/machinery/oxygen_pump, "contained", OWNED, null)
 
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()
@@ -79,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		user.put_in_hands(tank)
 		src.add_fingerprint(user)
 		tank.add_fingerprint(user)
-		tank = null
+		own_take(src, "tank")
 		return TRUE
 	if(!tank)
 		return TRUE
@@ -92,7 +90,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().cozyloop.stop() // Cozy Music
 		if(breather().internals)
 			breather().internals.icon_state = "internal0"
-		breather_handle = null
+		rel_clear(src, "breather")
 		set_use_power(USE_POWER_IDLE)
 	return TRUE
 
@@ -105,7 +103,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
+		rel_set(src, "breather", C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
@@ -161,7 +159,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			tank = W
+			own_set(src, "tank", W)
 			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \
 				item = tank)
@@ -199,7 +197,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			contained.forceMove(src)
 			breather().cozyloop.stop() // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather_handle = null
+			rel_clear(src, "breather")
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
@@ -279,7 +277,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
+		rel_set(src, "breather", C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
@@ -330,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		C.equip_to_slot(contained, SLOT_ID_MASK)
 		if(tank)
 			tank.forceMove(C)
-		breather_handle = om_handle(C)
+		rel_set(src, "breather", C)
 		MACHINE_WAKE(src)
 		om_after(src, 1, PROC_REF(attach_mask_finish))
 
@@ -356,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			breather().remove_from_mob(contained)
 			contained.forceMove(src)
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
-			breather_handle = null
+			rel_clear(src, "breather")
 			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
@@ -390,6 +388,6 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 					H.body?.add_support(src, BF_RESP_DRIVE, 1, 6 SECONDS)
 					H.body?.add_support(src, BF_PUMP, 1, 6 SECONDS)
 
-/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// breather (a relation view: it reads null once the target is deleted).
 /obj/machinery/oxygen_pump/proc/breather() as /mob/living/carbon
-	return om_resolve(breather_handle)
+	return breather

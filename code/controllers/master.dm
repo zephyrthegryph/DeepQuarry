@@ -673,7 +673,7 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 	var/list/subsystems_to_check
 
 	//setup the stack overflow detector
-	stack_end_detector = new()
+	own_set(src, "stack_end_detector", new /datum/stack_end_detector())
 	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
 	canary.use_variable()
 	//the actual loop.
@@ -1200,14 +1200,11 @@ GLOBAL_LIST_INIT(empty_performance_window, list("samples" = 0, "avg" = 0, "p50" 
 	last_profiled = REALTIMEOFDAY
 	SSprofiler.DumpFile(allow_yield = FALSE)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/controller/master/proc/queue_head() as /datum/controller/subsystem
 	return queue_head_static
-DECLARE_REF(/datum/controller/master, "queue_head_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
 	return queue_tail_static
-DECLARE_REF(/datum/controller/master, "queue_tail_static", STATIC, null)
 
-DECLARE_REF(/datum/controller/master, "stack_end_detector", OWNED, null)

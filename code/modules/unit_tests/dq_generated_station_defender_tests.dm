@@ -23,17 +23,17 @@
 	var/datum/generated_station_simulation/simulation = new(spec)
 	var/datum/generated_station_director/director = new(simulation)
 	var/datum/expedition_site/site = new
-	site.station_spec = spec
-	site.station_simulation = simulation
-	site.station_director = director
+	own_set(site, "station_spec", spec)
+	own_set(site, "station_simulation", simulation)
+	own_set(site, "station_director", director)
 	var/datum/generated_station_defense_runtime/runtime = new(site, director)
 	TEST_ASSERT_EQUAL(length(runtime.active_patrols), 0, "Fresh defense runtime scheduled idle patrol work")
 	TEST_ASSERT_EQUAL(length(runtime.agents), 0, "Defense runtime spawned agents before explicit roster creation")
 	TEST_ASSERT(director.defense_runtime() == runtime, "Director was not bound to its event-driven defense runtime")
 	qdel(runtime)
-	site.station_director = null
-	site.station_simulation = null
-	site.station_spec = null
+	own_take(site, "station_director")
+	own_take(site, "station_simulation")
+	own_take(site, "station_spec")
 	qdel(site)
 	qdel(director)
 	qdel(simulation)

@@ -103,7 +103,7 @@
 	.=..()
 	ignore+= ascii2text(13) //Carriage return
 	LAZYADD(delim, ignore + options.symbols + end_stmt + string_delim)
-	src.options_ref=options
+	rel_set(src, "options_ref", options)
 	LoadCode(code)
 
 /datum/n_Scanner/nS_Scanner/Scan() //Creates a list of tokens from source code
@@ -164,7 +164,7 @@
 							buf+=char
 			if("\n")
 				. = new/datum/token/string(buf, line, COL)
-				errors+=new/datum/scriptError("Unterminated string. Newline reached.", .)
+				own_add(src, "errors", new/datum/scriptError("Unterminated string. Newline reached.", .))
 				line++
 				linepos=codepos
 				break
@@ -223,7 +223,7 @@ Reads a number into a token.
 		char=copytext(code, codepos, codepos+1)
 	var/datum/token/number/T=new(buf, line, COL)
 	if(isnull(text2num(buf)))
-		errors+=new/datum/scriptError("Bad number: ", T)
+		own_add(src, "errors", new/datum/scriptError("Bad number: ", T))
 		T.value=0
 	codepos-- //allow main Scan() proc to read the next character
 	return T
@@ -270,7 +270,7 @@ Reads a comment and outputs the type of comment
 			if(expectedend) expectedend = 0
 
 		if(comm == 2)
-			errors+=new/datum/scriptError/UnterminatedComment()
+			own_add(src, "errors", new/datum/scriptError/UnterminatedComment())
 
 #undef COL
 
@@ -278,6 +278,4 @@ Reads a comment and outputs the type of comment
 /datum/n_Scanner/nS_Scanner/proc/options() as /datum/n_scriptOptions/nS_Options
 	return options_ref
 
-DECLARE_REF(/datum/n_Scanner, "errors", OWNED_LIST, null)
 
-DECLARE_REF(/datum/n_Scanner/nS_Scanner, "options_ref", BACK, null)

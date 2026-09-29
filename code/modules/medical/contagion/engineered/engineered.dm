@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 /datum/affliction/contagion/engineered/New(process = TRUE, datum/affliction/contagion/engineered/D)
 	if(istype(D))
 		for(var/datum/viral_trait/S in D.symptoms)
-			symptoms += new S.type
+			own_add(src, "symptoms", new S.type)
 	else
 		D = null
 
@@ -108,9 +108,9 @@ GLOBAL_LIST_INIT(advance_cures, list(
 
 /datum/affliction/contagion/engineered/Copy()
 	var/datum/affliction/contagion/engineered/A = ..()
-	QDEL_LIST(A.symptoms)
+	own_clear(A, "symptoms", OWN_DELETE)
 	for(var/datum/viral_trait/S as anything in symptoms)
-		A.symptoms += S.Copy()
+		own_add(A, "symptoms", S.Copy())
 	A.virus_modifiers = virus_modifiers & ~(PROCESSING | HAS_TIMER)
 	A.spread_flags = spread_flags
 	A.disease_flags = disease_flags
@@ -195,11 +195,24 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	if(!keepid)
 		id = null
 
-	if(!GLOB.archive_diseases[GetDiseaseID()])
+	// While the archive copy of a new strain is built, its own Refresh() sees the id being
+	// archived and takes the original's name (the archive never holds a live strain itself).
+	var/static/archiving_id
+	var/static/archiving_name
+	var/disease_id = GetDiseaseID()
+	if(!isnull(archiving_id) && disease_id == archiving_id)
+		if(archiving_name != DEVELOPER_WARNING_NAME)
+			name = archiving_name
+	else if(!GLOB.archive_diseases[disease_id])
 		if(new_name)
 			AssignName()
-		GLOB.archive_diseases[GetDiseaseID()] = src // So we don't infinite loop
-		GLOB.archive_diseases[GetDiseaseID()] = new /datum/affliction/contagion/engineered(0, src, 1)
+		disease_id = GetDiseaseID()
+		archiving_id = disease_id
+		archiving_name = name
+		var/datum/affliction/contagion/engineered/archived = new /datum/affliction/contagion/engineered(0, src, 1)
+		archiving_id = null
+		archiving_name = null
+		GLOB.archive_diseases[disease_id] = archived
 	else
 		var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[GetDiseaseID()]
 		var/actual_name = A.name
@@ -258,7 +271,8 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	stage_prob = max(stage_rate, 2)
 	SetDanger(threat)
 	GenerateCure()
-	symptoms = sortList(symptoms, GLOBAL_PROC_REF(cmp_advdisease_symptomid_asc))
+	if(symptoms)
+		sortTim(symptoms, GLOBAL_PROC_REF(cmp_advdisease_symptomid_asc)) // in place: the owned list keeps its members
 	// Resistant strains provoke a weaker immune response: the host takes
 	// longer to fight them off on their own.
 	immunogenicity = clamp(1 - (0.05 * resistance), 0.25, 1.5)
@@ -357,7 +371,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 /datum/affliction/contagion/engineered/proc/Neuter(ignore_mutable = FALSE)
 	if(global_flag_check(virus_modifiers, IMMUTABLE) && !ignore_mutable)
 		return
-	if(symptoms.len)
+	if(length(symptoms))
 		var/s = safepick(symptoms)
 		if(s)
 			NeuterSymptom(s)
@@ -405,15 +419,15 @@ GLOBAL_LIST_INIT(advance_cures, list(
 		return
 
 	if(length(symptoms) < (VIRUS_SYMPTOM_LIMIT - 1) + rand(-1, 1))
-		symptoms += S
+		own_add(src, "symptoms", S)
 	else
 		RemoveSymptom(pick(symptoms))
-		symptoms += S
+		own_add(src, "symptoms", S)
 	Refresh()
 
 // Simply removes the symptom.
 /datum/affliction/contagion/engineered/proc/RemoveSymptom(datum/viral_trait/S)
-	symptoms -= S
+	own_take_member(src, "symptoms", S)
 	return
 
 // Neuters a symptom, allowing it only for stats.
@@ -505,7 +519,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 	var/mob/living/carbon/human/H = null
 
 	var/datum/affliction/contagion/engineered/D = new(0, null)
-	D.symptoms = list()
+	own_clear(D, "symptoms", OWN_DELETE)
 
 	var/list/symptoms = list()
 	symptoms += "Done"
@@ -523,7 +537,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		else if(ispath(symptom))
 			var/datum/viral_trait/S = new symptom
 			if(!D.HasSymptom(S))
-				D.symptoms += S
+				own_add(D, "symptoms", S)
 				i -= 1
 	while(i > 0)
 
@@ -594,7 +608,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 
 	if(stealth >=2)
 		prefixes += "Crypto "
-	switch(max(resistance - (symptoms.len / 2), 1))
+	switch(max(resistance - (length(symptoms) / 2), 1))
 		if(1)
 			suffixes += "-alpha"
 		if(2)
@@ -618,7 +632,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(11 to INFINITY)
 			suffixes += "-omega"
 			prefixes += "Robust "
-	switch(transmission - symptoms.len)
+	switch(transmission - length(symptoms))
 		if(-INFINITY to 2)
 			prefixes += "Bloodborne "
 		if(3)
@@ -676,4 +690,3 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(3)
 			return "[pick(bodies)][pick(suffixes)]"
 
-DECLARE_REF(/datum/affliction/contagion/engineered, "symptoms", OWNED_LIST, null)

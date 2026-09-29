@@ -50,13 +50,11 @@
 	. = ..()
 
 	if(!cell && cell_type)
-		cell = new cell_type // ALLOW(decl): made in nullspace, not in src
+		own_set(src, "cell", new cell_type) // ALLOW(decl): made in nullspace, not in src
 
 	ion_trail.set_up(src)
 	ion_trail.stop()
 
-DECLARE_REF(/obj/item/uav, "cell", OWNED, null)
-DECLARE_REF(/obj/item/uav, "ion_trail", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/uav, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/uav/examine(mob/user)
@@ -124,7 +122,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 /obj/item/uav/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/modular_computer) && state == UAV_PAIRING)
 		var/obj/item/modular_computer/MC = I
-		LAZYDISTINCTADD(MC.paired_uavs, om_handle(src))
+		rel_add(MC, "paired_uavs", src)
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		act_message(user, src, others = span_notice("%U% pairs [I] to [nickname]"))
 		toggle_pairing()
@@ -154,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	power_down()
 	user.remove_from_mob(I)
 	I.forceMove(src)
-	cell = I
+	own_set(src, "cell", I)
 
 /obj/item/uav/screwdriver_act(mob/user, obj/item/tool)
 	if(!cell)
@@ -169,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 	playsound(src, tool.usesound, 50, 1)
 	power_down()
 	cell.forceMove(get_turf(src))
-	cell = null
+	own_take(src, "cell")
 
 /obj/item/uav/proc/can_transition_to(new_state, mob/user)
 	switch(state) //Current one

@@ -4,13 +4,13 @@
 	equip_cooldown = 15
 	energy_drain = 10
 	var/dam_force = 20
-	var/cargo_holder_handle
+	var/obj/mecha/working/ripley/cargo_holder
 	required_type = list(/obj/mecha/working)
 	ready_sound = SFX_MECHA_GASDISCONNECTED
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/attach(obj/mecha/M as obj)
 	..()
-	cargo_holder_handle = om_handle(M)
+	rel_set(src, "cargo_holder", M)
 
 	return
 
@@ -93,9 +93,10 @@
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
-				LAZYADD(cargo_holder().cargo, O)
-				if(!O.move_into(cargo_holder(), MECHA_SLOT_CARGO))
-					O.forceMove(cargo_holder())
+				var/obj/mecha/working/ripley/holder = cargo_holder()
+				LAZYADD(holder.cargo, O)
+				if(!O.move_into(holder, MECHA_SLOT_CARGO))
+					O.forceMove(holder)
 				O.anchored = FALSE
 				occupant_message(span_notice("[target] succesfully loaded."))
 				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
@@ -153,9 +154,10 @@
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
-						LAZYADD(cargo_holder().cargo, O)
-						if(!O.move_into(cargo_holder(), MECHA_SLOT_CARGO))
-							O.forceMove(cargo_holder())
+						var/obj/mecha/working/ripley/holder = cargo_holder()
+						LAZYADD(holder.cargo, O)
+						if(!O.move_into(holder, MECHA_SLOT_CARGO))
+							O.forceMove(holder)
 						O.anchored = FALSE
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
 						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
@@ -185,6 +187,6 @@
 		do_after_cooldown()
 	return 1
 
-/// LC-refs: cargo holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// cargo holder
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/cargo_holder() as /obj/mecha/working/ripley
-	return om_resolve(cargo_holder_handle)
+	return cargo_holder

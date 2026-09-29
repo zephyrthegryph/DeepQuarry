@@ -49,7 +49,7 @@
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
 	.=..()
-	idc = new(src)
+	own_set(src, "idc", new /obj/item/card/id(src))
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())
@@ -96,7 +96,7 @@
 	power_draw_per_use = 40
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder
-	var/tmp/last_known_position_handle
+	var/tmp/turf/last_known_position
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/targeted_pathfinder/do_work()
@@ -104,7 +104,7 @@
 	set_pin_data(IC_OUTPUT, 1, null)
 
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		last_known_position_handle = null
+		rel_clear(src, "last_known_position")
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -126,7 +126,7 @@
 		return
 
 	if(A in view(start))
-		last_known_position_handle = om_handle(goal)
+		rel_set(src, "last_known_position", goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))
@@ -172,7 +172,7 @@
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion
 	// Add these two variables
-	var/tmp/last_known_position_handle
+	var/tmp/turf/last_known_position
 	var/last_target = null
 
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/do_work()
@@ -180,7 +180,7 @@
 
 	// Reset last known position when target changes
 	if(!ic_is_ref(I.data) || I.data != last_target)
-		last_known_position_handle = null
+		rel_clear(src, "last_known_position")
 		last_target = I.data
 
 	if(!ic_is_ref(I.data))
@@ -200,7 +200,7 @@
 
 	// Update last known position when target is visible
 	if(A in view(start))
-		last_known_position_handle = om_handle(goal)
+		rel_set(src, "last_known_position", goal)
 
 	// If target not visible but we have last known position, use that instead
 	if(!(A in view(start)))
@@ -260,10 +260,10 @@
 	push_data()
 	activate_pin(2)
 
-/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_known_position this refers to (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/smart/targeted_pathfinder/proc/last_known_position() as /turf
-	return om_resolve(last_known_position_handle)
+	return last_known_position
 
-/// LC-refs: the last_known_position this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_known_position this refers to (a relation view: null once that is deleted).
 /obj/item/integrated_circuit/smart/pathfinding_locomotion/proc/last_known_position() as /turf
-	return om_resolve(last_known_position_handle)
+	return last_known_position

@@ -47,7 +47,7 @@
 				if(!beamtarget_exists && GetAnomalySusceptibility(L) >= 0.5)
 					B.visible_message(span_danger("\The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = beam_origin.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
-					LAZYOR(active_beams, drain_beam)
+					rel_add(src, "active_beams", drain_beam)
 					om_after(B, 9 SECONDS, TYPE_PROC_REF(/obj/structure/blob, ectoplasm_siphon), L, drain_beam)
 
 /datum/blob_type/ectoplasmic_horror/on_received_damage(obj/structure/blob/B, damage, damage_type)
@@ -87,7 +87,7 @@
 				if(!beamtarget_exists && GetAnomalySusceptibility(L) >= 0.5)
 					carrier.visible_message(span_danger("[icon2html(B,viewers(carrier))] \The [B] lashes out at \the [L]!"))
 					var/datum/beam/drain_beam = carrier.Beam(L, icon_state = "drain_life", time = 10 SECONDS)
-					LAZYOR(active_beams, drain_beam)
+					rel_add(src, "active_beams", drain_beam)
 					om_after(B, 9 SECONDS, TYPE_PROC_REF(/obj/item/blobcore_chunk, chunk_siphon), carrier, L, drain_beam)
 
 /// The end of an ectoplasmic lash: the blob siphons energy through the beam.

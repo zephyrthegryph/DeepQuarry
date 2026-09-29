@@ -374,9 +374,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	if(!allow_admin_interact)
 		return
 	if(!delete_click)
-		delete_click = new(null, "INITIALIZING", src)
+		own_set(src, "delete_click", new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
 	if(!action_click)
-		action_click = new(null, "INITIALIZNG", src)
+		own_set(src, "action_click", new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
 	var/list/L = list()
 	L[++L.len] = list("[id] ", "[delete_click.update("DELETE QUERY | STATE : [text_state()] | ALL/ELIG/FIN \
 	[islist(obj_count_all)? length(obj_count_all) : (isnull(obj_count_all)? "0" : obj_count_all)]/\
@@ -1142,5 +1142,3 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 #undef SDQL2_STAGE_SWITCH_CHECK
 
-DECLARE_REF(/datum/SDQL2_query, "delete_click", OWNED, null)
-DECLARE_REF(/datum/SDQL2_query, "action_click", OWNED, null)

@@ -49,7 +49,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/bluespace_harpoon, "scanmod", /obj/item/stock_pa
 	to_chat(user, span_notice("You remove [scanmod] from [src]."))
 	playsound(src, tool.usesound, 75, 1)
 	scanmod.forceMove(T)
-	scanmod = null
+	own_take(src, "scanmod")
 	update_fail_chance()
 	return ITEM_INTERACT_SUCCESS
 
@@ -71,7 +71,7 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 			return INTERACTION_HANDLED_PASS
 		user.remove_from_mob(I)
 		I.forceMove(src)
-		scanmod = I
+		own_set(src, "scanmod", I)
 		to_chat(user, span_notice("You install [scanmod] into [src]."))
 		update_fail_chance()
 	else
@@ -238,4 +238,4 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 				icon_state = "harpoon-2"
 		transforming = 0
 
-DECLARE_REF(/obj/item/bluespace_harpoon, "scanmod", HELD, null)
+OWN(/obj/item/bluespace_harpoon, scanmod, OWN_CONTAINED)

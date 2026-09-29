@@ -10,11 +10,9 @@
 
 /datum/generated_station_department_definition/New()
 	..()
-	requirements = list()
-	provisions = list()
+	own_take_all(src, "requirements")
+	own_take_all(src, "provisions")
 
-DECLARE_REF(/datum/generated_station_department_definition, "requirements", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_department_definition, "provisions", OWNED_LIST, null)
 
 /// A capability consumed by a department. Providers may be implemented later
 /// by rooms, machinery, networks, or another department.
@@ -42,6 +40,7 @@ DECLARE_REF(/datum/generated_station_department_definition, "provisions", OWNED_
 /// Per-station realization of an authored department definition.
 /datum/generated_station_department_instance
 	var/id
+	/// Relation view: this department's definition (owned by the spec's department_definitions).
 	var/tmp/datum/generated_station_department_definition/definition_static
 	var/desired_area = 1
 	var/layout_node_id
@@ -82,13 +81,10 @@ DECLARE_REF(/datum/generated_station_department_definition, "provisions", OWNED_
 	frontage_reservation = list()
 	local_circulation = list()
 	partition_walls = list()
-	frontage_sockets = list()
-	eva_vestibules = list()
-	room_program = list()
+	own_take_all(src, "frontage_sockets")
+	own_take_all(src, "eva_vestibules")
+	own_take_all(src, "room_program")
 
-DECLARE_REF(/datum/generated_station_layout_node, "frontage_sockets", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_layout_node, "eva_vestibules", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_layout_node, "room_program", OWNED_LIST, null)
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
 	return territory["[x],[y]"]
@@ -124,11 +120,10 @@ DECLARE_REF(/datum/generated_station_layout_node, "room_program", OWNED_LIST, nu
 /datum/generated_station_room_allocation/New()
 	..()
 	tiles = list()
-	door_sockets = list()
+	own_take_all(src, "door_sockets")
 	content_circulation = list()
 	fixture_ids = list()
 
-DECLARE_REF(/datum/generated_station_room_allocation, "door_sockets", OWNED_LIST, null)
 
 /datum/generated_station_room_allocation/proc/add_tile(x, y)
 	tiles["[x],[y]"] = TRUE
@@ -206,9 +201,8 @@ DECLARE_REF(/datum/generated_station_room_allocation, "door_sockets", OWNED_LIST
 /datum/generated_station_eva_vestibule/New()
 	..()
 	tiles = list()
-	door_sockets = list()
+	own_take_all(src, "door_sockets")
 
-DECLARE_REF(/datum/generated_station_eva_vestibule, "door_sockets", OWNED_LIST, null)
 
 /// Abstract relationship between two layout vertices.
 /datum/generated_station_layout_edge
@@ -247,12 +241,11 @@ DECLARE_REF(/datum/generated_station_eva_vestibule, "door_sockets", OWNED_LIST, 
 
 /datum/generated_station_validation_result/New()
 	..()
-	issues = list()
+	own_take_all(src, "issues")
 
-DECLARE_REF(/datum/generated_station_validation_result, "issues", OWNED_LIST, null)
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
-	issues += new /datum/generated_station_validation_issue(severity, code, message, subject_id)
+	own_add(src, "issues", new /datum/generated_station_validation_issue(severity, code, message, subject_id))
 
 /datum/generated_station_validation_result/proc/is_valid()
 	for(var/datum/generated_station_validation_issue/issue in issues)
@@ -307,26 +300,18 @@ DECLARE_REF(/datum/generated_station_validation_result, "issues", OWNED_LIST, nu
 
 /datum/generated_station_spec/New()
 	..()
-	departments = list()
-	department_definitions = list()
-	layout_nodes = list()
-	layout_edges = list()
+	own_take_all(src, "departments")
+	own_take_all(src, "layout_nodes")
+	own_take_all(src, "layout_edges")
 	circulation_tiles = list()
 	maintenance_tiles = list()
-	maintenance_doors = list()
+	own_take_all(src, "maintenance_doors")
 	structural_tiles = list()
-	fixture_blueprint = list()
-	network_blueprint = list()
+	own_take_all(src, "fixture_blueprint")
+	own_take_all(src, "network_blueprint")
 	content_quality = list()
 	fixture_type_registry = list()
 
-DECLARE_REF(/datum/generated_station_spec, "departments", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "department_definitions", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "layout_nodes", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "layout_edges", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "fixture_blueprint", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "network_blueprint", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "maintenance_doors", OWNED_VALUES, null)
 
 /datum/generated_station_spec/proc/validate()
 	var/datum/generated_station_validation_result/result = new
@@ -427,7 +412,7 @@ DECLARE_REF(/datum/generated_station_spec, "maintenance_doors", OWNED_VALUES, nu
 			result.add(GENERATED_STATION_ISSUE_ERROR, "layout-edge-route", "Transit edge has no routed corridor path.", edge.id)
 	var/list/reachable = list()
 	if(length(layout_nodes))
-		var/datum/generated_station_layout_node/start = layout_nodes[1]
+		var/datum/generated_station_layout_node/start = layout_nodes?[1]
 		var/list/frontier = list(start.id)
 		reachable[start.id] = TRUE
 		while(length(frontier))
@@ -453,7 +438,6 @@ DECLARE_REF(/datum/generated_station_spec, "maintenance_doors", OWNED_VALUES, nu
 #define GENERATED_STATION_TILE_FLOOR "floor"
 #define GENERATED_STATION_TILE_HULL "hull"
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// This department's definition (a relation view; the spec owns the definitions).
 /datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
 	return definition_static
-DECLARE_REF(/datum/generated_station_department_instance, "definition_static", STATIC, null)

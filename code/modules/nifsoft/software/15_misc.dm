@@ -6,15 +6,15 @@
 	wear = 2
 	applies_to = NIF_SYNTHETIC
 	tick_flags = NIF_ACTIVETICK
-	var/tmp/apc_handle
+	var/tmp/obj/machinery/power/apc/apc
 	other_flags = (NIF_O_APCCHARGE)
 
 /datum/nifsoft/apc_recharge/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		apc_handle = om_handle(locate_within(get_step(H,H.dir), /obj/machinery/power/apc))
+		rel_set(src, "apc", locate_within(get_step(H,H.dir), /obj/machinery/power/apc))
 		if(!apc())
-			apc_handle = om_handle(locate_within(get_step(H,0), /obj/machinery/power/apc))
+			rel_set(src, "apc", locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))
@@ -25,7 +25,7 @@
 
 /datum/nifsoft/apc_recharge/deactivate(force = FALSE)
 	if((. = ..()))
-		apc_handle = null
+		rel_clear(src, "apc")
 
 /datum/nifsoft/apc_recharge/life()
 	if((. = ..()))
@@ -201,6 +201,6 @@
 			EXPIRY_STAMP(src, last_ads, CLOCK_WORLD)
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 
-/// LC-refs: the apc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the apc this refers to -- a relation view: null once it is deleted.
 /datum/nifsoft/apc_recharge/proc/apc() as /obj/machinery/power/apc
-	return om_resolve(apc_handle)
+	return apc

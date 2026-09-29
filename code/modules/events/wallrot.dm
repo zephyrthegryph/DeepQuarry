@@ -1,5 +1,5 @@
 /datum/event/wallrot
-	var/tmp/center_handle
+	var/tmp/turf/simulated/wall/center
 
 /datum/event/wallrot/setup()
 	announceWhen = rand(0, 300)
@@ -10,7 +10,7 @@
 		var/z_level = pick(using_map.station_levels)
 		var/turf/candidate = locate(rand(1, world.maxx), rand(1, world.maxy), z_level)
 		if(istype(candidate, /turf/simulated/wall))
-			center_handle = om_handle(candidate)
+			rel_set(src, "center", candidate)
 			var/area/A = get_area(candidate)
 			if(!A.flag_check(AREA_FORBID_EVENTS))
 				return 1
@@ -36,6 +36,6 @@
 			if(rotcount >= actual_severity)
 				break
 
-/// LC-refs: the center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the center var.
 /datum/event/wallrot/proc/center() as /turf/simulated/wall
-	return om_resolve(center_handle)
+	return center

@@ -44,7 +44,6 @@
 
 /obj/machinery/computer/atmoscontrol/tgui_interact(mob/user)
 	if(!atmos_control)
-		atmos_control = new(src, req_access, req_one_access, monitored_alarm_ids)
+		own_set(src, "atmos_control", new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
 	atmos_control.tgui_interact(user)
 
-DECLARE_REF(/obj/machinery/computer/atmoscontrol, "atmos_control", OWNED, null)

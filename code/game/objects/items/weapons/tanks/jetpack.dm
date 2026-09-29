@@ -28,7 +28,6 @@
 	. = ..()
 	ion_trail.set_up(src)
 
-DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/tank/jetpack/examine(mob/user)
@@ -114,7 +113,7 @@ DECLARE_GAS(/obj/item/tank/jetpack/breaker, "air_contents", "volume", T20C, list
 DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C, list(GAS_CO2 = 6*ONE_ATMOSPHERE))
 /obj/item/tank/jetpack/rig
 	name = "jetpack"
-	var/holder_handle
+	var/obj/item/rig/holder
 
 /obj/item/tank/jetpack/rig/examine()
 	. = ..()
@@ -123,9 +122,9 @@ DECLARE_GAS(/obj/item/tank/jetpack/carbondioxide, "air_contents", "volume", T20C
 /obj/item/tank/jetpack/rig/get_gas_supply()
 	return holder_ref()?.air_supply?.air_contents
 
-/// LC-refs: holder -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: holder (reads null once it is gone).
 /obj/item/tank/jetpack/rig/proc/holder_ref() as /obj/item/rig
-	return om_resolve(holder_handle)
+	return holder
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/tank/jetpack, \
 	INTERACT_VERB("Toggle Jetpack Stabilization", PROC_REF(toggle_rockets_effect), REQ_IN_INVENTORY), \

@@ -107,12 +107,11 @@
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		lleill_ability_datums.Add(LP)
+		own_add(src, "lleill_ability_datums", LP)
 
 /datum/species/shapeshifter/hanner/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))
-		H.ability_master = null
-		H.ability_master = new /atom/movable/screen/movable/ability_master/lleill(H)
+		own_set(H, "ability_master", new /atom/movable/screen/movable/ability_master/lleill(H)) // replaces (deletes) a non-lleill master
 	for(var/datum/power/lleill/P in lleill_ability_datums)
 		if(!(P.verbpath in H.verbs))
 			add_verb(H, P.verbpath)

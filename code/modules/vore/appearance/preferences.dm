@@ -21,7 +21,6 @@
 	var/g_acc3 = 30
 	var/b_acc3 = 30
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /mob/living/carbon/human/proc/hair_accessory_style() as /datum/sprite_accessory/hair_accessory
 	return hair_accessory_style_static
-DECLARE_REF(/mob/living/carbon/human, "hair_accessory_style_static", STATIC, null)

@@ -24,7 +24,7 @@
 
 
 /datum/material/plasteel/generate_recipes()
-	. = ..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("AI core", /obj/structure/AIcore, 4, time = 50, one_per_turf = 1, recycle_material = "[name]"),
 		new /datum/stack_recipe("Metal crate", /obj/structure/closet/crate, 10, time = 50, one_per_turf = 1, recycle_material = "[name]"),
@@ -46,6 +46,7 @@
 		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1), \
 		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1), \
 		))
+	return recipes
 
 
 /datum/material/plastitanium
@@ -64,7 +65,8 @@
 	supply_conversion_value = 8
 
 /datum/material/plastitanium/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("whetstone", /obj/item/whetstone, 2, time = 20),
 	)
+	return recipes

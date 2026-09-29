@@ -28,11 +28,13 @@
 
 /datum/body/proc/diagnose(profile, datum/baseline_holder = null, update_baseline = FALSE) as /datum/diagnosis
 	var/datum/diagnostic_profile/P = ispath(profile) ? diagnostic_profile(profile) : profile
+	if(istype(P))
+		P = diagnostic_profile(P.type) // always the registered singleton
 	if(!istype(P))
 		CRASH("diagnose() called with an invalid profile: [profile]")
 	ensure_vitals()
 	var/datum/diagnosis/D = new
-	D.profile = P
+	shared_set(D, "profile", P)
 	D.patient_name = owner.name
 	D.fake_death = (owner.status_flags & FAKEDEATH) && !P.sees_fake_death
 

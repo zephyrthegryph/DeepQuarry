@@ -1,6 +1,6 @@
 /datum/event/bluespace_locker
-	var/tmp/entry_point_handle
-	var/tmp/exit_point_handle
+	var/tmp/obj/structure/closet/entry_point
+	var/tmp/obj/structure/closet/exit_point
 	var/static/list/area/excluded = list(
 		/area/shuttle,
 		/area/crew_quarters,
@@ -16,11 +16,11 @@
 	for(var/i in 1 to 15)
 		if(entry_point())
 			continue
-		entry_point_handle = om_handle(pick_locker(pickable_areas))
+		rel_set(src, "entry_point", pick_locker(pickable_areas))
 	for(var/i in 1 to 15)
 		if(exit_point())
 			continue
-		exit_point_handle = om_handle(pick_locker(pickable_areas, TRUE, TRUE))
+		rel_set(src, "exit_point", pick_locker(pickable_areas, TRUE, TRUE))
 
 	if(entry_point() && exit_point())
 		announceWhen = rand(10 SECONDS, 2 MINUTES)
@@ -59,12 +59,11 @@
 /datum/event/bluespace_locker/announce()
 	GLOB.command_announcement.Announce("Bluespace anomaly detected near [station_name()]. Possible location, [get_area(pick(entry_point(), exit_point()))].", "Anomaly Alert")
 
-/// LC-refs: the entry_point this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the entry_point var.
 /datum/event/bluespace_locker/proc/entry_point() as /obj/structure/closet
-	return om_resolve(entry_point_handle)
+	return entry_point
 
-/// LC-refs: the exit_point this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the exit_point var.
 /datum/event/bluespace_locker/proc/exit_point() as /obj/structure/closet
-	return om_resolve(exit_point_handle)
+	return exit_point
 
-DECLARE_REF(/datum/event/bluespace_locker, "pickable_areas", STATIC, null)

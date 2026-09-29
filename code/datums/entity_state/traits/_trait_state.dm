@@ -18,12 +18,12 @@
 	/// returns the existing one. Defaults to the state's own exact type.
 	var/unique_type
 
+/// The mob holding this state: a one-sided relation view (the mob owns us in trait_states).
 /datum/trait_state/var/mob/living/owner
-DECLARE_REF(/datum/trait_state, "owner", BACKLIST, "trait_states")
 
 /datum/trait_state/New(mob/living/owner)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 
 /// Called once after New() with the extra add_trait_state() args. Return FALSE when the state
 /// can't live on this mob (was COMPONENT_INCOMPATIBLE); it is then deleted without attaching.
@@ -51,12 +51,11 @@ DECLARE_REF(/datum/trait_state, "owner", BACKLIST, "trait_states")
 /datum/trait_state/lifecycle_prerelease()
 	..()
 	if(owner)
-		detach() // phase 4 then drops us from owner.trait_states (DECLARE_REF(..., BACKLIST))
+		detach() // phase 2 then drops us from owner.trait_states (our owner's OWN list)
 
 // --- Mob API ------------------------------------------------------------------------------------
 
 /mob/living/var/list/trait_states
-DECLARE_REF(/mob/living, "trait_states", OWNED_LIST, null)
 
 /// First trait state of `state_type` (or a subtype) this mob holds, or null.
 /mob/living/proc/get_trait_state(state_type)
@@ -82,10 +81,9 @@ DECLARE_REF(/mob/living, "trait_states", OWNED_LIST, null)
 	var/list/setup_args = args.Copy(2)
 	if(!S.setup(arglist(setup_args)))
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
-		S.owner = null
 		qdel(S)
 		return null
-	LAZYADD(trait_states, S)
+	own_add(src, "trait_states", S)
 	S.attach()
 	return S
 
@@ -94,5 +92,5 @@ DECLARE_REF(/mob/living, "trait_states", OWNED_LIST, null)
 	var/datum/trait_state/S = get_trait_state(state_type)
 	if(!S)
 		return FALSE
-	qdel(S)
+	own_remove(src, "trait_states", S)
 	return TRUE

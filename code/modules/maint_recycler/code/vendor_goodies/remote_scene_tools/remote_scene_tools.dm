@@ -13,7 +13,7 @@ why aren't these accessories?
 	return ..(list("Emotes and subtles the wearer does go directly to the linked tool; only its wearer sees them, and they must be wearing, holding or pocketing it. Remember bystander consent!") + additional_information)
 
 /obj/item/remote_scene_tool
-	var/tmp/linked_handle
+	var/tmp/obj/item/remote_scene_tool/linked
 	icon = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	icon_override = 'code/modules/maint_recycler/icons/goodies/remote_scene_tools.dmi'
 	item_state = "InvalidState" //so it defaults to the empty icon
@@ -23,7 +23,7 @@ why aren't these accessories?
 	desc = "A stretchable, flexible sticker that induces a quasi-stable 4th dimensional bluespace buzzword rift, enabling moderate levels of touch between the two."
 	slot_flags = (SLOT_OCLOTHING | SLOT_ICLOTHING | SLOT_GLOVES | SLOT_MASK | SLOT_HEAD | SLOT_FEET | SLOT_ID | SLOT_BELT | SLOT_BACK | SLOT_POCKET)
 	w_class = ITEMSIZE_SMALL
-	var/tmp/worn_mob_handle
+	var/tmp/mob/worn_mob
 	var/last_loc
 	var/can_summon = TRUE
 	var/can_replace = TRUE
@@ -35,8 +35,8 @@ why aren't these accessories?
 	if(linked())
 		return
 
-	linked_handle = om_handle(to_link)
-	linked().linked_handle = om_handle(src)
+	rel_set(src, "linked", to_link)
+	// REL_PAIR(linked, linked): the partner now names us back.
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -45,7 +45,7 @@ why aren't these accessories?
 	if(worn_mob())
 		unregister_from_mob(worn_mob())
 
-	worn_mob_handle = om_handle(mob)
+	rel_set(src, "worn_mob", mob)
 
 	om_hook(mob, /datum/om/event/mob_login, src, PROC_REF(worn_mob_logged_in))
 	om_hook(mob, /datum/om/event/mob_logout, src, PROC_REF(worn_mob_logged_out))
@@ -54,7 +54,7 @@ why aren't these accessories?
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
 	if(worn_mob() == null) return
 	om_unhook(worn_mob(), list(/datum/om/event/mob_login, /datum/om/event/mob_logout), src)
-	worn_mob_handle = null
+	rel_clear(src, "worn_mob")
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
@@ -206,11 +206,12 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 	link_to(newrst)
 	newrst.link_to(src)
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/item/remote_scene_tool/proc/linked() as /obj/item/remote_scene_tool
-	return om_resolve(linked_handle)
+	return linked
 
-/// LC-refs: the worn_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
-	return om_resolve(worn_mob_handle)
-DECLARE_REF(/obj/item/remote_scene_tool, "linked_handle", BACK_HANDLE, "linked_handle")
+	return worn_mob
+
+REL_PAIR(/obj/item/remote_scene_tool, linked, linked)

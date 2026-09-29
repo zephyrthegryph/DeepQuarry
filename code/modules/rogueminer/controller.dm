@@ -45,8 +45,8 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	var/max_diffstep = 6
 
 	//The current mining zone that the shuttle goes to and whatnot
-	var/tmp/current_zone_handle
-	var/tmp/previous_zone_handle
+	var/tmp/datum/rogue/zonemaster/current_zone
+	var/tmp/datum/rogue/zonemaster/previous_zone
 
 	// The world.time at which the scanner was last run (for cooldown)
 	EXPIRY_DECLARE(last_scan)
@@ -103,7 +103,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 /datum/controller/rogue/New()
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
-		LAZYADD(all_zones, new /datum/rogue/zonemaster(A))
+		own_add(src, "all_zones", new /datum/rogue/zonemaster(A))
 	//decay() //Decay removed for now, since people aren't getting high scores as it is.
 
 /datum/controller/rogue/proc/decay(manual = 0)
@@ -148,7 +148,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(ZM in ready_zones)
 		GLOB.rm_controller.dbg("RMC(mc): Finite state machine broken.")
 
-	LAZYADD(clean_zones, ZM)
+	own_add(src, "clean_zones", ZM)
 
 /datum/controller/rogue/proc/mark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -157,7 +157,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(ZM in clean_zones)
 		GLOB.rm_controller.dbg("RMC(mr): Finite state machine broken.")
 
-	LAZYADD(ready_zones, ZM)
+	own_add(src, "ready_zones", ZM)
 
 /datum/controller/rogue/proc/unmark_clean(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -166,7 +166,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(!(ZM in clean_zones))
 		GLOB.rm_controller.dbg("RMC(umc): Finite state machine broken.")
 
-	LAZYREMOVE(clean_zones, ZM)
+	own_take_member(src, "clean_zones", ZM)
 
 /datum/controller/rogue/proc/unmark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -175,7 +175,7 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 	if(!(ZM in ready_zones))
 		GLOB.rm_controller.dbg("RMC(umr): Finite state machine broken.")
 
-	LAZYREMOVE(ready_zones, ZM)
+	own_take_member(src, "ready_zones", ZM)
 
 /datum/controller/rogue/proc/prepare_new_zone()
 	var/datum/rogue/zonemaster/ZM_target
@@ -200,14 +200,11 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 
 	return ZM_target
 
-/// LC-refs: the current_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the current_zone var.
 /datum/controller/rogue/proc/current_zone() as /datum/rogue/zonemaster
-	return om_resolve(current_zone_handle)
+	return current_zone
 
-/// LC-refs: the previous_zone this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the previous_zone var.
 /datum/controller/rogue/proc/previous_zone() as /datum/rogue/zonemaster
-	return om_resolve(previous_zone_handle)
+	return previous_zone
 
-DECLARE_REF(/datum/controller/rogue, "all_zones", OWNED_LIST, null)
-DECLARE_REF(/datum/controller/rogue, "clean_zones", OWNED_LIST, null)
-DECLARE_REF(/datum/controller/rogue, "ready_zones", OWNED_LIST, null)

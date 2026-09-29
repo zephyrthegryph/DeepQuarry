@@ -43,32 +43,33 @@
 	if(starts_loaded)
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
 			for(var/i in 1 to max_shells)
-				loaded += new ammo_type(src)
+				own_add(src, "loaded", new ammo_type(src))
 			if(random_start_ammo)
-				loaded.Cut(0,rand(0,max_shells))
+				for(var/i in 1 to rand(0, max_shells))
+					if(!length(loaded))
+						break
+					own_remove(src, "loaded", loaded[1])
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			ammo_magazine = new magazine_type(src)
+			own_set(src, "ammo_magazine", new magazine_type(src))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)
 				for(var/i in 1 to min(ammo_cut, length(ammo_magazine.stored_ammo)))
-					var/obj/item/ammo_casing/spent = ammo_magazine.stored_ammo[1]
-					ammo_magazine.stored_ammo.Cut(1, 2)
-					qdel(spent)
+					own_remove(ammo_magazine, "stored_ammo", ammo_magazine.stored_ammo[1])
 
 	update_icon()
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
 		//get the next casing
-		if(loaded.len)
-			chambered = loaded[1] //load next casing.
+		if(length(loaded))
+			rel_set(src, "chambered", loaded[1]) //load next casing.
 			if(handle_casings != HOLD_CASINGS)
-				loaded -= chambered
-		else if(ammo_magazine && ammo_magazine.stored_ammo.len)
-			chambered = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
+				own_take_member(src, "loaded", chambered)
+		else if(ammo_magazine && length(ammo_magazine.stored_ammo))
+			rel_set(src, "chambered", ammo_magazine.stored_ammo[length(ammo_magazine.stored_ammo)])
 			if(handle_casings != HOLD_CASINGS)
-				ammo_magazine.stored_ammo -= chambered
+				own_take_member(ammo_magazine, "stored_ammo", chambered)
 	if(manual_chamber && auto_loading_type && CHECK_BITFIELD(auto_loading_type,OPEN_BOLT) && bolt_open)
 		chamber_bullet() // Manual Chambering
 
@@ -108,12 +109,12 @@
 				play_sfx(src, SFX_CASING_SOUND)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
-				ammo_magazine.stored_ammo += chambered
+				own_add(ammo_magazine, "stored_ammo", chambered)
 			else
-				loaded += chambered
+				own_add(src, "loaded", chambered)
 
 	if(handle_casings != HOLD_CASINGS)
-		chambered = null
+		rel_clear(src, "chambered")
 
 	var/mob/living/M = loc // TGMC Ammo HUD
 	if(istype(M)) // TGMC Ammo HUD
@@ -130,9 +131,9 @@
 		act_message(user, src, MSG_SELF(span_notice("You remove [ammo_magazine] from %T%.")), MSG_OTHERS("%U% removes [ammo_magazine] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		ammo_magazine.update_icon()
-		ammo_magazine = null
+		own_take(src, "ammo_magazine")
 		user.hud_used?.update_ammo_hud(user, src)
-	else if(loaded.len)
+	else if(length(loaded))
 		//presumably, if it can be speed-loaded, it can be speed-unloaded.
 		if(allow_dump && (load_method & SPEEDLOADER))
 			var/count = 0
@@ -141,12 +142,11 @@
 				for(var/obj/item/ammo_casing/C in loaded)
 					C.forceMove(T)
 					count++
-				loaded.Cut()
+				own_take_all(src, "loaded")
 			if(count)
 				act_message(user, src, MSG_SELF(span_notice("You unload [count] round\s from %T%.")), MSG_OTHERS("%U% unloads %T%."))
 		else if(load_method & SINGLE_CASING)
-			var/obj/item/ammo_casing/C = loaded[loaded.len]
-			loaded.len--
+			var/obj/item/ammo_casing/C = own_take_member(src, "loaded", loaded[length(loaded)])
 			user.put_in_hands(C)
 			act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
@@ -186,14 +186,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 /obj/item/gun/projectile/afterattack(atom/A, mob/living/user)
 	..()
-	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !ammo_magazine.stored_ammo.len && !(manual_chamber && chambered && chambered.BB != null)) // Manual Chambering
+	if(auto_eject && ammo_magazine && ammo_magazine.stored_ammo && !length(ammo_magazine.stored_ammo) && !(manual_chamber && chambered && chambered.BB != null)) // Manual Chambering
 		ammo_magazine.forceMove(get_turf(src.loc))
 		act_message(user, null, MSG_SELF(span_notice("[ammo_magazine] falls out and clatters on the floor!")), \
 			MSG_OTHERS("[ammo_magazine] falls out and clatters on the floor!"))
 		if(auto_eject_sound)
 			playsound(src, auto_eject_sound, 40, 1)
 		ammo_magazine.update_icon()
-		ammo_magazine = null
+		own_take(src, "ammo_magazine")
 		update_icon() //make sure to do this after unsetting ammo_magazine
 		user.hud_used?.update_ammo_hud(user, src)
 
@@ -206,9 +206,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 /obj/item/gun/projectile/proc/getAmmo()
 	var/bullets = 0
 	if(loaded)
-		bullets += loaded.len
+		bullets += length(loaded)
 	if(ammo_magazine && ammo_magazine.stored_ammo)
-		bullets += ammo_magazine.stored_ammo.len
+		bullets += length(ammo_magazine.stored_ammo)
 	if(chambered)
 		bullets += 1
 	return bullets
@@ -224,7 +224,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			var/obj/item/ammo_casing/A = chambered
 			var/obj/item/projectile/P = A.projectile_type
 			return list(initial(P.hud_state), initial(P.hud_state_empty))
-		else if(ammo_magazine && ammo_magazine.stored_ammo.len) // Do we have a mag, and have ammo in the mag, but nothing chambered?
+		else if(ammo_magazine && length(ammo_magazine.stored_ammo)) // Do we have a mag, and have ammo in the mag, but nothing chambered?
 			var/obj/item/ammo_casing/A = ammo_magazine.stored_ammo[1]
 			var/obj/item/projectile/P = A.projectile_type
 			return list(initial(P.hud_state), initial(P.hud_state_empty))
@@ -238,7 +238,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 			var/obj/item/ammo_casing/A = chambered
 			var/obj/item/projectile/P = A.projectile_type
 			return list(initial(P.hud_state), initial(P.hud_state_empty)) // Return the casing's projectile_type ammo hud state
-		else if(loaded.len) // Else, is the gun loaded, but no ammo casings in chamber currently?
+		else if(length(loaded)) // Else, is the gun loaded, but no ammo casings in chamber currently?
 			var/obj/item/ammo_casing/A = loaded[1]
 			var/obj/item/projectile/P = A.projectile_type
 			return list(initial(P.hud_state), initial(P.hud_state_empty)) // Return the ammunition loaded in the gun's hud_state
@@ -413,7 +413,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				var/output = BOLT_OPENED
 				if(ejected) output |= BOLT_CASING_EJECTED
 				return output
-			else if(loaded.len || (ammo_magazine && ammo_magazine.stored_ammo.len) || !able_to_lock)
+			else if(length(loaded) || (ammo_magazine && length(ammo_magazine.stored_ammo)) || !able_to_lock)
 				var/ejected = process_chambered()
 				var/chambering = chamber_bullet()
 				var/output = BOLT_OPENED | BOLT_CLOSED
@@ -439,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	else
 		if(auto_loading_type)
 			if(CHECK_BITFIELD(auto_loading_type,OPEN_BOLT))
-				if(loaded.len || (ammo_magazine && ammo_magazine.stored_ammo.len))
+				if(length(loaded) || (ammo_magazine && length(ammo_magazine.stored_ammo)))
 					if(!manual)
 						var/ejected = process_chambered()
 						var/output = BOLT_CLOSED | BOLT_OPENED
@@ -473,15 +473,15 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		return FALSE
 	var/obj/item/ammo_casing/to_chamber
-	if(loaded.len)
+	if(length(loaded))
 		to_chamber = loaded[1] //load next casing.
 		if(handle_casings != HOLD_CASINGS)
-			loaded -= to_chamber
-	else if(ammo_magazine && ammo_magazine.stored_ammo.len)
-		to_chamber = ammo_magazine.stored_ammo[ammo_magazine.stored_ammo.len]
+			own_take_member(src, "loaded", to_chamber)
+	else if(ammo_magazine && length(ammo_magazine.stored_ammo))
+		to_chamber = ammo_magazine.stored_ammo[length(ammo_magazine.stored_ammo)]
 		if(handle_casings != HOLD_CASINGS)
-			ammo_magazine.stored_ammo -= to_chamber
-	chambered = to_chamber
+			own_take_member(ammo_magazine, "stored_ammo", to_chamber)
+	rel_set(src, "chambered", to_chamber)
 	if(to_chamber)
 		return TRUE
 	else
@@ -499,7 +499,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(only_open_load && !bolt_open)
 		to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
 		return
-	if(loaded.len >= max_shells)
+	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
 	// The handful may still hold its rounds as a count (C5) if it was
@@ -513,9 +513,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 
 /// TRUE while the handful's next round fits and there is room for it.
 /obj/item/gun/projectile/proc/can_feed_from(obj/item/ammo_magazine/handful/H)
-	if(QDELETED(H) || !H.stored_ammo.len || loaded.len >= max_shells)
+	if(QDELETED(H) || !length(H.stored_ammo) || length(loaded) >= max_shells)
 		return FALSE
-	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
+	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	return rd.caliber == caliber
 
 /// Feeding rounds from a handful, one per reload_time, until the gun is full or the handful out.
@@ -535,10 +535,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	var/obj/item/ammo_magazine/handful/H = task.handful
 	if(!can_feed_from(H))
 		return STEP_DONE
-	var/obj/item/ammo_casing/rd = H.stored_ammo[H.stored_ammo.len]
-	H.stored_ammo -= rd
+	var/obj/item/ammo_casing/rd = H.stored_ammo[length(H.stored_ammo)]
 	rd.forceMove(src)
-	loaded.Insert(1, rd) //add to the head of the list
+	own_transfer(H, "stored_ammo", src, "loaded", rd)
+	moveElement(loaded, length(loaded), 1) //to the head of the list
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	H.update_icon()
 	var/mob/user = task.actor
@@ -552,7 +552,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 /obj/item/gun/projectile/proc/feed_done(obj/item/ammo_magazine/handful/H, mob/user, count)
 	if(count && user)
 		act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% feeds [count] round\s into %T%."))
-	if(H && !QDELETED(H) && !H.stored_ammo.len)
+	if(H && !QDELETED(H) && !length(H.stored_ammo))
 		consume(H, user)
 	update_icon()
 
@@ -584,7 +584,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 					return
 				user.remove_from_mob(AM)
 				AM.forceMove(src)
-				ammo_magazine = AM
+				own_set(src, "ammo_magazine", AM)
 				act_message(user, src, MSG_SELF(span_notice("You insert [AM] into %T%.")), MSG_OTHERS("%U% inserts [AM] into %T%."))
 				if(manual_chamber && CHECK_BITFIELD(auto_loading_type,CHAMBER_ON_RELOAD) && bolt_open && !chambered)
 					chamber_bullet()
@@ -595,17 +595,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 				if(only_open_load && !bolt_open)
 					to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
 					return
-				if(loaded.len >= max_shells)
+				if(length(loaded) >= max_shells)
 					to_chat(user, span_warning("[src] is full!"))
 					return
 				var/count = 0
 				for(var/obj/item/ammo_casing/C in AM.stored_ammo)
-					if(loaded.len >= max_shells)
+					if(length(loaded) >= max_shells)
 						break
 					if(C.caliber == caliber)
 						C.forceMove(src)
-						loaded += C
-						AM.stored_ammo -= C //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
+						own_transfer(AM, "stored_ammo", src, "loaded", C) //should probably go inside an ammo_magazine proc, but I guess less proc calls this way...
 						count++
 				if(count)
 					act_message(user, src, MSG_SELF(span_notice("You load [count] round\s into %T%.")), MSG_OTHERS("%U% reloads %T%."))
@@ -640,13 +639,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		if(only_open_load && !bolt_open)
 			to_chat(user, span_warning("[src] must have its bolt open to be loaded!"))
 			return
-		if(loaded.len >= max_shells)
+		if(length(loaded) >= max_shells)
 			to_chat(user, span_warning("[src] is full."))
 			return
 
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		loaded.Insert(1, C) //add to the head of the list
+		own_add(src, "loaded", C)
+		moveElement(loaded, length(loaded), 1) //to the head of the list
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [C] into %T%.")), MSG_OTHERS("%U% inserts \a [C] into %T%."))
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		user.hud_used?.update_ammo_hud(user, src)
@@ -678,7 +678,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 		return
 	load_ammo(ammo, user)
 	user.hud_used.update_ammo_hud(user, src)
-	if(loaded.len >= max_shells)
+	if(length(loaded) >= max_shells)
 		to_chat(user, span_warning("[src] is full."))
 		return
 	om_after(src, 1 SECOND, PROC_REF(load_from_storage), user, rounds)
@@ -696,7 +696,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 	if(chambered)
 		return
 	act_message(user, src, MSG_SELF(span_notice("You slide %I% into %T%'s chamber.")), MSG_OTHERS(span_notice(message)), item = C)
-	chambered = C
+	rel_set(src, "chambered", C)
 	user.hud_used.update_ammo_hud(user, src)
 	user.remove_from_mob(C)
 	C.forceMove(src)
@@ -727,7 +727,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-DECLARE_REF(/obj/item/gun/projectile, "ammo_magazine", HELD, null)
-DECLARE_REF(/obj/item/gun/projectile, "chambered", HELD, null)
+OWN(/obj/item/gun/projectile, ammo_magazine, OWN_CONTAINED)
+// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+REL(/obj/item/gun/projectile, chambered)
 
-DECLARE_REF(/obj/item/gun/projectile, "loaded", OWNED_LIST, null)

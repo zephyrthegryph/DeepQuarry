@@ -8,8 +8,6 @@
 	w_class = ITEMSIZE_HUGE
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/assembly/shock_kit, "part1", OWNED, null)
-DECLARE_REF(/obj/item/assembly/shock_kit, "part2", OWNED, null)
 
 /obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
 	if(!status)
@@ -18,10 +16,10 @@ DECLARE_REF(/obj/item/assembly/shock_kit, "part2", OWNED, null)
 			T = T.loc
 		part1.forceMove(T)
 		part2.forceMove(T)
-		part1.master = null
-		part2.master = null
-		part1 = null
-		part2 = null
+		rel_clear(part1, "master")
+		rel_clear(part2, "master")
+		own_take(src, "part1")
+		own_take(src, "part2")
 		qdel(src)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING

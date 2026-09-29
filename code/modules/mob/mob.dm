@@ -25,8 +25,8 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	unset_machine()
 	clear_fullscreen()
+	// The screen objects are ours (own_set by the HUD setup) and go in teardown.
 	if(client)
-		remove_screen_obj_references()
 		client.screen = list()
 	if(mind && mind.current == src)
 		spellremove(src)
@@ -37,35 +37,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	if(src?.pulling_target())
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
-	if(LAZYLEN(vore_organs))
-		QDEL_NULL_LIST(vore_organs)
+	// our bellies go with us (the mob owns them)
+	own_clear(src, "vore_organs", OWN_DELETE)
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
-	if(mind?.current == src)
-		mind.current = null
-	// the mind forgets us as its original character.
-	if(mind && om_handle_is(mind.original_character, src))
-		mind.original_character = null
+	// mind.current / mind.original_character are relation views: they clear as we go.
 	..()
 	update_client_z(null)
 	//return QDEL_HINT_HARDDEL_NOW
-
-/mob/proc/remove_screen_obj_references()
-	hands = null
-	pullin = null
-	purged = null
-	internals = null
-	i_select = null
-	m_select = null
-	healths = null
-	throw_icon = null
-	pain = null
-	item_use_icon = null
-	gun_move_icon = null
-	gun_setting_icon = null
-	spell_masters = null
-	zone_sel = null
 
 /mob/Initialize(mapload)
 	OM_EMIT_WORLD(/datum/om/event/world_mob_created, src)
@@ -471,7 +451,9 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 		//Their objectives cleanup
 		if(length(mind.objectives))
-			QDEL_LIST(mind.objectives)
+			// each dying objective leaves mind.objectives on its own (works for the OWN or pair declaration)
+			for(var/datum/objective/O as anything in mind.objectives.Copy())
+				qdel(O)
 			mind.special_role = null
 
 		//Cut the PDA manifest (ugh)
@@ -897,7 +879,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 				if(O == selection)
 					affected = organ
 
-		LAZYREMOVE(affected.implants, selection)
+		rel_remove(affected, "implants", selection)
 		H.adjust_shock(20, "implant extraction")
 		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 
@@ -922,7 +904,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 	for(var/obj/item/O in pinned)
 		if(O == selection)
-			LAZYREMOVE(pinned, O)
+			rel_remove(src, "pinned", O)
 		if(!LAZYLEN(pinned))
 			set_anchored(FALSE)
 	return 1
@@ -1158,13 +1140,9 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		exploit_addons |= I
+		rel_add(src, "exploit_addons", I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
-		I.exploit_for = om_handle(src)
-
-// exploit add-ons forget the item (the exploited mob is a handle).
-DECLARE_REF(/obj/item, "exploit_for", BACKLIST_HANDLE, "exploit_addons")
 
 /client/proc/check_has_body_select()
 	return mob && mob.hud_used && istype(mob.zone_sel, /atom/movable/screen/zone_sel)
@@ -1527,9 +1505,7 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 		return
 
 	if(ai_brain)	//Cleaning up the original ai
-		var/datum/ai_brain/old_brain = ai_brain
-		ai_brain = null
-		qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+		own_clear(src, "ai_brain", OWN_DELETE)
 	initialize_ai_brain()
 	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
 	return TRUE

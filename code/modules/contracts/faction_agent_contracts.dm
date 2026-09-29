@@ -179,11 +179,10 @@
 	contract.configure_operation(AGENT_OPERATION_CUSTODY)
 	// Replace the ordinary custody specification with the faction's actual red
 	// doctrine. The base charter/contact requirements remain shared.
-	for(var/datum/contract_requirement/requirement in contract.requirements.Copy())
+	for(var/datum/contract_requirement/requirement in contract.requirements?.Copy())
 		if(requirement.name in list("Signed operating charter", "Signed operational contact"))
 			continue
-		contract.requirements -= requirement
-		qdel(requirement)
+		own_remove(contract, "requirements", requirement)
 	contract.configure_red_operation(profile_id)
 	var/list/brief = agent_red_brief(contract.agent_faction)
 	contract.title = brief["title"]

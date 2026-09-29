@@ -2,8 +2,8 @@
 // The code is from TG, however tweaked to be within the preferred code style.
 
 /mob/living
-	var/list/owned_soul_links	// Soul links we are the owner of.
-	var/list/shared_soul_links	// Soul links we are a/the sharer of.
+	var/list/datum/soul_link/owned_soul_links	// Soul links we are the owner of (owned: deleted with us).
+	var/list/datum/soul_link/shared_soul_links	// Soul links we are a/the sharer of (a relation list view).
 
 // Keeps track of a Mob->Mob (potentially Player->Player) connection.
 // Can be used to trigger actions on one party when events happen to another.
@@ -15,13 +15,15 @@
 	var/mob/living/soul_sharer
 	var/id // Optional ID, for tagging and finding specific instances.
 
-DECLARE_REF(/datum/soul_link, "soul_owner", BACKLIST, "owned_soul_links")
-DECLARE_REF(/datum/soul_link, "soul_sharer", BACKLIST, "shared_soul_links")
+// The owner mob owns the link (owned_soul_links); soul_owner is the one-sided back view. Sharers
+// are plain relations both ways (a multi-sharer link names several), kept in step by the procs below.
+REL_LIST(/mob/living, shared_soul_links)
+REL_LIST(/datum/soul_link/multi_sharer, soul_sharers)
 
 /datum/soul_link/proc/remove_soul_sharer(mob/living/sharer)
 	if(soul_sharer == sharer)
-		soul_sharer = null
-		LAZYREMOVE(sharer.shared_soul_links, src)
+		rel_clear(src, "soul_sharer")
+		rel_remove(sharer, "shared_soul_links", src)
 
 // Used to assign variables, called primarily by soullink()
 // Override this to create more unique soullinks (Eg: 1->Many relationships)
@@ -29,10 +31,10 @@ DECLARE_REF(/datum/soul_link, "soul_sharer", BACKLIST, "shared_soul_links")
 /datum/soul_link/proc/parse_args(mob/living/owner, mob/living/sharer)
 	if(!owner || !sharer)
 		return FALSE
-	soul_owner = owner
-	soul_sharer = sharer
-	LAZYADD(owner.owned_soul_links, src)
-	LAZYADD(sharer.shared_soul_links, src)
+	rel_set(src, "soul_owner", owner)
+	rel_set(src, "soul_sharer", sharer)
+	own_add(owner, "owned_soul_links", src)
+	rel_add(sharer, "shared_soul_links", src)
 	return TRUE
 
 // Runs after /living death()
@@ -54,20 +56,21 @@ DECLARE_REF(/datum/soul_link, "soul_sharer", BACKLIST, "shared_soul_links")
 /////////////////
 // Abstract soullink for use with 1 Owner -> Many Sharer setups
 /datum/soul_link/multi_sharer
-	var/list/soul_sharers
+	var/list/mob/living/soul_sharers
 
 /datum/soul_link/multi_sharer/parse_args(mob/living/owner, list/sharers)
 	if(!owner || !LAZYLEN(sharers))
 		return FALSE
-	soul_owner = owner
-	soul_sharers = sharers
-	LAZYADD(owner.owned_soul_links, src)
+	rel_set(src, "soul_owner", owner)
+	own_add(owner, "owned_soul_links", src)
 	for(var/mob/living/L as anything in sharers)
-		LAZYADD(L.shared_soul_links, src)
+		rel_add(src, "soul_sharers", L)
+		rel_add(L, "shared_soul_links", src)
 	return TRUE
 
 /datum/soul_link/multi_sharer/remove_soul_sharer(mob/living/sharer)
-	LAZYREMOVE(soul_sharers, sharer)
+	rel_remove(src, "soul_sharers", sharer)
+	rel_remove(sharer, "shared_soul_links", src)
 
 /////////////////
 // SHARED FATE //

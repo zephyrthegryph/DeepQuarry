@@ -244,7 +244,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
 	user.drop_item()
 	IH.forceMove(src)
-	helmet = IH
+	own_set(src, "helmet", IH)
 
 	update_icon()
 	return TRUE
@@ -265,7 +265,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
 	user.drop_item()
 	IS.forceMove(src)
-	suit = IS
+	own_set(src, "suit", IS)
 
 	update_icon()
 	return TRUE
@@ -400,11 +400,11 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 				if("helmet")
 					if(helmet)
 						helmet.forceMove(get_turf(src))
-						helmet = null
+						own_take(src, "helmet")
 				if("suit")
 					if(suit)
 						suit.forceMove(get_turf(src))
-						suit = null
+						own_take(src, "suit")
 			. = TRUE
 
 		if("department")
@@ -525,7 +525,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	if(!suit || !suit.damage || !suit.can_breach)
 		return
 
-	suit.breaches = list()
+	own_clear(suit, "breaches", OWN_DELETE)
 	suit.calc_breach_damage()
 
 	return
@@ -588,15 +588,13 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	apply_paintjob()
 	finished_job(user)
 
-DECLARE_REF(/obj/machinery/suit_cycler, "suit", HELD, null)
-DECLARE_REF(/obj/machinery/suit_cycler, "helmet", HELD, null)
+OWN(/obj/machinery/suit_cycler, suit, OWN_CONTAINED)
+OWN(/obj/machinery/suit_cycler, helmet, OWN_CONTAINED)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department
 	return target_department_static
-DECLARE_REF(/obj/machinery/suit_cycler, "target_department_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_species() as /datum/suit_cycler_choice/species
 	return target_species_static
-DECLARE_REF(/obj/machinery/suit_cycler, "target_species_static", STATIC, null)

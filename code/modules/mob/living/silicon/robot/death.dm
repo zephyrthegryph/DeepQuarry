@@ -3,13 +3,11 @@
 
 /mob/living/silicon/robot/dust()
 	//Delete the MMI first so that it won't go popping out.
-	if(mmi)
-		qdel(mmi)
+	own_clear(src, "mmi", OWN_DELETE)
 	..()
 
 /mob/living/silicon/robot/ash()
-	if(mmi)
-		qdel(mmi)
+	own_clear(src, "mmi", OWN_DELETE)
 	..()
 
 /// Camera and senses follow the stat change (set_stat()); modules react to

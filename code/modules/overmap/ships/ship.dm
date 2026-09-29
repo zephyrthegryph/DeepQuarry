@@ -45,7 +45,7 @@
 	var/sound_cooldown = 10 SECONDS // add
 
 	/// Vis contents overlay holding the ship's vector when in motion
-	var/tmp/vector_handle
+	var/tmp/obj/effect/overlay/vis/vector
 	/// Stable registry key used by the unified flight-operations system.
 	var/flight_vessel_id
 	render_map = TRUE
@@ -59,7 +59,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	SSshuttles.ships += src
 	position_x = 0
 	position_y = 0
-	vector_handle = om_handle(add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
+	rel_set(src, "vector", add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
 	GLOB.flight_service?.register_vessel(src)
 
@@ -67,9 +67,8 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
 	SSshuttles.ships -= src
 	if(GLOB.flight_service && flight_vessel_id)
-		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[flight_vessel_id]
+		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, "vessels", flight_vessel_id)
 		if(vessel)
-			GLOB.flight_service.vessels -= flight_vessel_id
 			GLOB.flight_service.vessel_by_ship -= REF(src)
 			qdel(vessel)
 	return ..()
@@ -262,7 +261,7 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 		S.attempt_hook_up(src)
 	for(var/datum/ship_engine/E in REGISTRY_MEMBERS(REGISTRY_SHIP_ENGINES))
 		if(check_ownership(E.holder()))
-			LAZYOR(engines, E)
+			rel_add(src, "engines", E)
 
 /obj/effect/overmap/visitable/ship/proc/get_landed_info()
 	return "This ship cannot land."
@@ -329,6 +328,6 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	for(var/mob/M as anything in listeners)
 		M.show_message(message, m_type)
 
-/// LC-refs: the vector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the vector var.
 /obj/effect/overmap/visitable/ship/proc/vector_overlay() as /obj/effect/overlay/vis
-	return om_resolve(vector_handle)
+	return vector

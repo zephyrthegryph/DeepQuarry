@@ -130,18 +130,16 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 		charges = processed_charges
 
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/activate(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/deactivate(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/engage(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/select(src))
-	LAZYADD(stat_modules, new/atom/movable/stat_rig_module/charge(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/activate(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/deactivate(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/engage(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/select(src))
+	own_add(src, "stat_modules", new/atom/movable/stat_rig_module/charge(src))
 
-DECLARE_REF(/obj/item/rig_module, "holder", BACKLIST, "installed_modules")
-DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 
 // Called when the module is installed into a suit.
 /obj/item/rig_module/proc/installed(obj/item/rig/new_holder)
-	holder = new_holder
+	rel_set(src, "holder", new_holder)
 	return
 
 //Proc for one-use abilities like teleport.
@@ -206,7 +204,7 @@ DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 // Called when the module is uninstalled from a suit.
 /obj/item/rig_module/proc/removed()
 	deactivate()
-	holder = null
+	rel_clear(src, "holder")
 	return
 
 // Called by the hardsuit each rig process tick.
@@ -227,7 +225,7 @@ DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 
 /atom/movable/stat_rig_module/Initialize(mapload)
 	. = ..()
-	module = loc
+	rel_set(src, "module", loc)
 	if(!istype(module))
 		return INITIALIZE_HINT_QDEL
 
@@ -241,7 +239,7 @@ DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 	if(CanUse())
 		switch(module_mode)
 			if("select")
-				module.holder.selected_module = module
+				rel_set(module.holder, "selected_module", module)
 			if("engage")
 				module.engage()
 			if("activate")
@@ -339,4 +337,3 @@ DECLARE_REF(/obj/item/rig_module, "stat_modules", OWNED_LIST, null)
 		suit_overlay = suit_overlay_inactive
 	holder?.update_icon()
 
-DECLARE_REF(/atom/movable/stat_rig_module, "module", BACKLIST, "stat_modules")

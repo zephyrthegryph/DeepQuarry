@@ -659,7 +659,9 @@
 	if(HAS_SYNTHETIC_BIOLOGY(H))
 		act_message(H, null, others = span_danger("%U% collapses into parts, revealing a solitary diona nymph at the core."))
 
-		H.species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
+		// This is hard-set to default the body to a normal FBP, without changing anything.
+		// proto_replace: src may be H's private copy, still running this proc; deleted below.
+		var/datum/species/old_species = proto_replace(H, "species", GLOB.all_species[SPECIES_HUMAN])
 		H.invalidate_factors()
 
 		for(var/obj/item/organ/internal/diona/Org in H.internal_organ_list()) // Remove Nymph organs.
@@ -669,6 +671,8 @@
 		remove_verb(H, /mob/living/carbon/human/proc/diona_split_nymph)
 		remove_verb(H, /mob/living/carbon/human/proc/regenerate)
 
+		if(old_species)
+			qdel(old_species)
 		return
 
 	for(var/mob/living/carbon/alien/diona/D in contents_of(H))

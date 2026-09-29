@@ -50,7 +50,7 @@
 	return gen
 
 /obj/machinery/protean_reconstitutor/Initialize(mapload)
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 	. = ..()
 
@@ -126,19 +126,19 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
 		user.drop_from_inventory(NB)
 		NB.forceMove(src)
-		protean_brain = NB
+		own_set(src, "protean_brain", NB)
 
 	if(istype(W,/obj/item/organ/internal/nano/orchestrator))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		protean_orchestrator = W
+		own_set(src, "protean_orchestrator", W)
 
 	if(istype(W,/obj/item/organ/internal/nano/refactory))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		protean_refactory = W
+		own_set(src, "protean_refactory", W)
 
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W
@@ -179,11 +179,11 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	choice.forceMove(get_turf(src))
 	playsound(src, tool.usesound, 50, TRUE)
 	if(choice == protean_brain)
-		protean_brain = null
+		own_take(src, "protean_brain")
 	else if(choice == protean_refactory)
-		protean_refactory = null
+		own_take(src, "protean_refactory")
 	else if(choice == protean_orchestrator)
-		protean_orchestrator = null
+		own_take(src, "protean_orchestrator")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/protean_reconstitutor/screwdriver_act(mob/user, obj/item/tool)
@@ -278,10 +278,11 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			return
 		var/charjob = record_found.fields["real_rank"]
 		var/obj/item/organ/internal/mmi_holder/posibrain/nano/BR = O
-		BR.stored_mmi = null	//toss the dummy...
+		var/obj/item/mmi/digital/posibrain/nano/salvaged_brain = protean_brain
+		own_clear(BR, "stored_mmi", OWN_DELETE) //toss the dummy...
 		BR.slot_clear()
-		BR.stored_mmi = protean_brain	//...and implant the salvaged mmi in its place
-		protean_brain.forceMove(BR)
+		salvaged_brain.forceMove(BR)
+		own_move(salvaged_brain, BR, "stored_mmi") //...and implant the salvaged mmi in its place (from our protean_brain)
 		var/picked_ckey = posibrain_client.ckey
 		var/picked_slot = posibrain_client.prefs.default_slot
 		if(P.dna)
@@ -316,18 +317,17 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 
 		OM_EMIT(P, /datum/om/event/human_dna_finalized)
 
-		var/datum/mind_host/core_host = get_mind_host(protean_brain)
+		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")
-		protean_brain.forceMove(BR)
 	if(index < length(organs))
 		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
 		return
 	reconstitute_organs_done(P)
 
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organs_done(mob/living/carbon/human/protean/P)
-	protean_refactory = null
-	protean_brain = null
-	protean_orchestrator = null
+	own_take(src, "protean_refactory")
+	own_take(src, "protean_brain")
+	own_take(src, "protean_orchestrator")
 	om_after(src, finalize_time, PROC_REF(reconstitute_finish), P)
 
 /// Reconstitution step 3: revive and release the finished protean.
@@ -376,6 +376,6 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	processing_revive = FALSE
 	update_icon()
 
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_brain", HELD, null)
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_orchestrator", HELD, null)
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_refactory", HELD, null)
+OWN(/obj/machinery/protean_reconstitutor, protean_brain, OWN_CONTAINED)
+OWN(/obj/machinery/protean_reconstitutor, protean_orchestrator, OWN_CONTAINED)
+OWN(/obj/machinery/protean_reconstitutor, protean_refactory, OWN_CONTAINED)

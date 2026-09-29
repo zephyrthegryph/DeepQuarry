@@ -40,8 +40,6 @@
 	show_verb_panel = FALSE
 	///Contains admin info. Null if client is not an admin.
 	var/datum/admins/holder = null
-	///Needs to implement InterceptClickOn(user,params,atom) proc
-	var/tmp/click_intercept_handle
 	var/buildmode		= 0
 
 	///Contains the last message sent by this client - used to protect against copy-paste spamming.
@@ -135,12 +133,10 @@
 	var/list/misc_tabs = list() // ALLOW(instance_list): d: one per connected client; stat panel tabs
 	///A lazy list of atoms we've examined in the last RECENT_EXAMINE_MAX_WINDOW (default 2) seconds, so that we will call [/atom/proc/examine_more] instead of [/atom/proc/examine] on them when examining
 	var/list/recent_examines
-	///Our object window datum. It stores info about and handles behavior for the object tab
-	var/tmp/obj_window_handle
 
 	var/list/misc_cache = list() // ALLOW(instance_list): d: one per connected client; protean code indexes it directly
 
-	var/tmp/examine_icon_handle	//Holder for examine icon, useful for statpanel
+	var/tmp/examine_icon	//Cached examine icon source (icon2html text), useful for statpanel
 
 	//Hide top bars
 	var/fullscreen = FALSE
@@ -188,25 +184,14 @@
 	/// Loot panel for the client
 	var/datum/lootpanel/loot_panel
 
-DECLARE_REF(/client, "fakeConversations", OWNED, null)
-DECLARE_REF(/client, "tooltips", OWNED, null)
-DECLARE_REF(/client, "volume_panel", OWNED, null)
-DECLARE_REF(/client, "loot_panel", OWNED, null)
 
 // prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
-// GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
-DECLARE_REF(/client, "prefs", HELD, null)
-DECLARE_REF(/client, "persistent_client", HELD, null)
-DECLARE_REF(/client, "holder", HELD, null)
+// REGISTRY_PERSISTENT_CLIENTS, GLOB.admin_datums).
 
-/// LC-refs: the click_intercept this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client-level click intercept (held on the admin holder, a datum, as a relation view).
 /client/proc/click_intercept() as /datum
-	return om_resolve(click_intercept_handle)
+	return holder?.click_intercept
 
-/// LC-refs: the obj_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/client/proc/obj_window()
-	return om_resolve(obj_window_handle)
-
-/// LC-refs: Holder for examine icon, useful for statpanel -- an OM handle (om_handle()), so it reads null once that is deleted.
-/client/proc/examine_icon() as /atom
-	return om_resolve(examine_icon_handle)
+/// The cached examine icon source.
+/client/proc/examine_icon()
+	return examine_icon

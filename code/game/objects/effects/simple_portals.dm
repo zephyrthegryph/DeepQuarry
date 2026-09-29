@@ -7,7 +7,7 @@
 	density = 1
 	unacidable = TRUE
 	anchored = TRUE
-	var/destination_handle
+	var/atom/destination
 	var/teleport_sound = SFX_EFFECTS_PORTAL_EFFECT
 
 REGISTRY_MEMBERSHIP(/obj/effect/simple_portal, REGISTRY_SIMPLE_PORTALS)
@@ -49,30 +49,30 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 	var/tele_z
 
 /obj/effect/simple_portal/coords/handle_teleport(atom/movable/AM)
-	destination_handle = null
+	rel_clear(src, "destination")
 	if(!isnull(tele_x) && !isnull(tele_y) && !isnull(tele_z))
-		destination_handle = om_handle(locate(tele_x,tele_y,tele_z))
+		rel_set(src, "destination", locate(tele_x,tele_y,tele_z))
 	. = ..()
 
 /obj/effect/simple_portal/linked
 	icon_state = "portal1"
-	var/linked_portal_handle
+	var/obj/effect/simple_portal/linked/linked_portal
 	var/portal_id
 
 /obj/effect/simple_portal/linked/handle_teleport(atom/movable/AM)
-	destination_handle = null
+	rel_clear(src, "destination")
 	update_icon()
 	if(linked_portal() && icon_state == "portal")
 		var/rel_x = round(rand(-1,1))
 		var/rel_y = round(rand(-1,1))
 		var/movingdir = get_dir(AM,src)
 		if(!isnull(movingdir))
-			destination_handle = om_handle(get_step(get_turf(linked_portal()),movingdir))
+			rel_set(src, "destination", get_step(get_turf(linked_portal()),movingdir))
 		else
 			while(rel_x == 0 && rel_y == 0)
 				rel_x = round(rand(-1,1))
 				rel_y = round(rand(-1,1))
-			destination_handle = om_handle(locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+			rel_set(src, "destination", locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
 		if(!valid_destination(destination()))
 			var/list/possible_x = shuffle(list(-1,0,1))
 			var/list/possible_y = shuffle(list(-1,0,1))
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 				for(rel_y in possible_y)
 					if(rel_x == 0 && rel_y == 0)
 						continue
-					destination_handle = om_handle(locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
+					rel_set(src, "destination", locate(linked_portal().loc.x + rel_x, linked_portal().loc.y + rel_y, linked_portal().loc.z))
 					if(valid_destination(destination()))
 						break
 	. = ..()
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 		return "SET PORTAL ID FIRST"
 	for(var/obj/effect/simple_portal/linked/candidate in REGISTRY_MEMBERS(REGISTRY_SIMPLE_PORTALS))
 		if(istype(candidate) && portal_id == candidate.portal_id && candidate != src)
-			linked_portal_handle = om_handle(candidate)
+			rel_set(src, "linked_portal", candidate)
 			break
 	update_icon()
 
@@ -125,10 +125,10 @@ EXTEND_INTERACTIONS(/obj/effect/simple_portal, INTERACT_OBSERVER("Enter", PROC_R
 	else
 		icon_state = "portal1"
 
-/// LC-refs: destination -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: destination (reads null once it is gone).
 /obj/effect/simple_portal/proc/destination() as /atom
-	return om_resolve(destination_handle)
+	return destination
 
-/// LC-refs: linked portal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: linked portal (reads null once it is gone).
 /obj/effect/simple_portal/linked/proc/linked_portal() as /obj/effect/simple_portal/linked
-	return om_resolve(linked_portal_handle)
+	return linked_portal

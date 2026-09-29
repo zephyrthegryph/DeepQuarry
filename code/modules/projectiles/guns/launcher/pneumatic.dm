@@ -17,7 +17,7 @@
 	var/fire_pressure									// Used in fire checks/pressure checks.
 	var/hopper_size = ITEMSIZE_NORMAL					// Hopper intake size.
 	var/max_storage_space = ITEMSIZE_COST_NORMAL * 5	// Total internal storage size.
-	var/tmp/tank_handle	// Tank of gas for use in firing the cannon.
+	var/tmp/obj/item/tank/tank	// Tank of gas for use in firing the cannon.
 
 	var/obj/item/storage/item_storage
 	var/pressure_setting = 10							// Percentage of the gas in the tank used to fire the projectile.
@@ -52,7 +52,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
 	user.put_in_hands(tank())
-	tank_handle = null
+	rel_clear(src, "tank")
 	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
@@ -83,7 +83,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 	. = INTERACTION_HANDLED_PASS
 	if(!tank() && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
-		tank_handle = om_handle(W)
+		rel_set(src, "tank", W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
 		update_icon()
 	else if(istype(W))
@@ -242,8 +242,7 @@ DECLARE_INTERACTIONS(/obj/item/cannonframe, INTERACT_ITEM(null, PROC_REF(interac
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/// LC-refs: Tank of gas for use in firing the cannon. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Tank of gas for use in firing the cannon. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/pneumatic/proc/tank() as /obj/item/tank
-	return om_resolve(tank_handle)
+	return tank
 
-DECLARE_REF(/obj/item/gun/launcher/pneumatic, "item_storage", OWNED, null)

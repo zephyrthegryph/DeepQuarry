@@ -133,12 +133,12 @@
 	//Mechanically required
 	var/path
 	var/slot
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/client_ckey
 
 /datum/vore_preferences/New(client/C)
 	if(istype(C))
-		client_handle = om_handle(C)
+		rel_set(src, "client", C)
 		client_ckey = C.ckey
 		load_vore()
 
@@ -501,8 +501,7 @@
 /datum/vore_preferences/proc/patch_version(list/json_from_file,version)
 	return json_from_file
 
-DECLARE_REF(/client, "prefs_vr", OWNED, null)
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the client this refers to (a relation view: null once it is deleted).
 /datum/vore_preferences/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

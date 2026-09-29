@@ -14,10 +14,19 @@
 /datum/event_container/proc/add_disabled_events(list/disabled_events)
 	for(var/datum/event_meta/EM in disabled_events)
 		EM.enabled = 0
-		available_events += EM
+		own_add(src, "event_pool", EM)
+		rel_add(src, "available_events", EM)
+
+/// Replaces the rotation with `metas`: the container owns each one (event_pool) and
+/// lists it as available (a relation, so a queued or fired meta stays owned).
+/datum/event_container/proc/set_available_events(list/metas)
+	rel_clear(src, "available_events")
+	for(var/datum/event_meta/EM as anything in metas)
+		own_add(src, "event_pool", EM)
+		rel_add(src, "available_events", EM)
 
 /datum/event_container/mundane/New()
-	available_events = list(
+	set_available_events(list(
 		// Severity level, event name, even type, base weight, role weights, one shot, min weight, max weight. Last two only used if set and non-zero
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Nothing",				/datum/event/nothing,						400),
 		// Bluescreens APCs, but they still work
@@ -41,7 +50,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Vermin Infestation",	/datum/event/infestation, 					100,	list(DEPARTMENT_ANY = 5, JOB_JANITOR = 100), TRUE),
 		// Rot only weakens walls, not destroy them
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Wallrot",				/datum/event/wallrot, 						0,		list(DEPARTMENT_ENGINEERING = 30, JOB_BOTANIST = 50), TRUE),
-	)
+	))
 	add_disabled_events(list(
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Lost Carp",				/datum/event/carp_migration, 				0, 		list(DEPARTMENT_SECURITY = 40), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE, "Ian Storm",				/datum/event/ianstorm,	 					1,		list(), TRUE),
@@ -50,7 +59,7 @@
 	))
 
 /datum/event_container/moderate/New()
-	available_events = list(
+	set_available_events(list(
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Nothing",					/datum/event/nothing,					1600),
 		// Leaks gas into an unoccupied room.
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Appendicitis", 			/datum/event/spontaneous_appendicitis, 	-30,	list(DEPARTMENT_MEDICAL = 30, JOB_CHIEF_MEDICAL_OFFICER = 10, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
@@ -93,7 +102,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Spider Infestation",		/datum/event/spider_infestation, 		-20,	list(DEPARTMENT_SECURITY = 30, JOB_HEAD_OF_SECURITY = 20, JOB_WARDEN = 20, DEPARTMENT_ANY = 2), FALSE, min_jobs = list(DEPARTMENT_SECURITY = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Spontaneous Malignant Organ", 	/datum/event/spontaneous_malignant_organ, 	-30,	list(DEPARTMENT_MEDICAL = 30, JOB_CHIEF_MEDICAL_OFFICER = 20, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Weather Anomaly",			/datum/event/anomaly/weather,			20,		list(DEPARTMENT_RESEARCH = 40, JOB_RESEARCH_DIRECTOR = 20, DEPARTMENT_ANY = 2), TRUE),
-	)
+	))
 	add_disabled_events(list(
 		new /datum/event_meta(EVENT_LEVEL_MUNDANE,  "Camera Damage",			/datum/event/camera_damage,				20, 	list(DEPARTMENT_SECURITY = 5, DEPARTMENT_ENGINEERING = 20), min_jobs = list(DEPARTMENT_ENGINEERING = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MODERATE, "Meteor Shower",			/datum/event/meteor_wave,				30,		list(DEPARTMENT_ENGINEERING = 20), min_jobs = list(DEPARTMENT_ENGINEERING = 3)),
@@ -112,7 +121,7 @@
 	))
 
 /datum/event_container/major/New()
-	available_events = list(
+	set_available_events(list(
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Nothing",						/datum/event/nothing,					900),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Atmos Leak",					/datum/event/atmos_leak, 				5,		list(DEPARTMENT_ENGINEERING = 35, JOB_CHIEF_ENGINEER = 25, DEPARTMENT_ANY = 2), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Blob",						/datum/event/blob, 						-100,	list(DEPARTMENT_SECURITY = 40, JOB_HEAD_OF_SECURITY = 10, JOB_WARDEN = 10, DEPARTMENT_ENGINEERING = 5, DEPARTMENT_ANY = 2), TRUE, min_jobs = list(DEPARTMENT_SECURITY = 1)),
@@ -126,7 +135,7 @@
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Meteor Wave",					/datum/event/meteor_wave,				-70,	list(DEPARTMENT_ENGINEERING = 50, DEPARTMENT_MEDICAL = 10, DEPARTMENT_ANY = 2),	TRUE, min_jobs = list(DEPARTMENT_ENGINEERING = 1)),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Spacefish Swarm",				/datum/event/spacefish_migration,		10,		list(DEPARTMENT_SECURITY = 15, JOB_HEAD_OF_SECURITY = 10, JOB_WARDEN = 10, DEPARTMENT_MEDICAL = 5), TRUE),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Space Vines",					/datum/event/spacevine, 				20,		list(DEPARTMENT_ENGINEERING = 15, DEPARTMENT_ANY = 2), TRUE),
-	)
+	))
 	add_disabled_events(list(
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Containment Breach",			/datum/event/prison_break/station,		0,		list(DEPARTMENT_ANY = 5),0),
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Disease Outbreak",			/datum/event/disease_outbreak,			-30,	list(DEPARTMENT_MEDICAL = 30, DEPARTMENT_ANY = 1), 	TRUE, min_jobs = list(DEPARTMENT_MEDICAL = 2)),

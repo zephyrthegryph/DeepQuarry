@@ -32,7 +32,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		log_mapping("## ERROR Fancy shuttle with no tag at [x],[y],[z]! Type is: [type]")
 		return INITIALIZE_HINT_QDEL
 	split_icon = icon(split_file, null, dir)
-	GLOB.fancy_shuttles[fancy_shuttle_tag] = src
+	// What the walls need, as data (no reference to the helper): tag -> list(icon, x, y).
+	GLOB.fancy_shuttles[fancy_shuttle_tag] = list(split_icon, x, y)
 
 /obj/effect/fancy_shuttle_floor_preview
 	name = "shuttle floor preview"
@@ -118,12 +119,12 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 
 	cut_overlays()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
-		var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
-		if(!F)
+		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
+		if(!helper)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 			return
-		icon = F.split_icon
-		icon_state = "walls [x - F.x],[y - F.y]"
+		icon = helper[1]
+		icon_state = "walls [x - helper[2]],[y - helper[3]]"
 
 	apply_underlay()
 
@@ -189,12 +190,12 @@ MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
 /obj/structure/window/fancy_shuttle/update_icon()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
-		var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
-		if(!F)
+		var/list/helper = GLOB.fancy_shuttles[fancy_shuttle_tag]
+		if(!helper)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
 			return
-		icon = F.split_icon
-		icon_state = "walls [x - F.x],[y - F.y]"
+		icon = helper[1]
+		icon_state = "walls [x - helper[2]],[y - helper[3]]"
 
 /**
  * Invisible ship equipment (otherwise the same as normal)
@@ -377,6 +378,3 @@ MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 /obj/effect/fancy_shuttle_floor_preview/escapepod
 	icon = 'icons/turf/fancy_shuttles/pod_preview.dmi'
 
-DECLARE_REF(/obj/effect/fancy_shuttle, "split_icon", OWNED, null)
-DECLARE_REF(/turf/simulated/wall/fancy_shuttle, "under_MA", OWNED, null)
-DECLARE_REF(/turf/simulated/wall/fancy_shuttle, "under_EM", OWNED, null)

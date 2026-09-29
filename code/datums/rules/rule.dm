@@ -89,16 +89,18 @@
 			errors += "unknown effect kind [effect_kind]"
 	if(exit_proc && once)
 		errors += "exit_proc needs once = FALSE"
-	predicate = new
+	own_set(src, "predicate", new /datum/predicate)
 	predicate.name = "rule [name || type]"
 	predicate.spec = condition
 	if(!predicate.compile())
 		errors += predicate.errors
-		predicate = null
+		own_clear(src, "predicate", OWN_DELETE)
 	else
 		var/datum/rule_compiler/compiler = new(src)
 		compiler.visit(predicate.root)
-		triggers = compiler.triggers
+		// The rule takes the triggers the (transient) compiler built.
+		for(var/datum/rule_trigger/trigger as anything in compiler.triggers?.Copy())
+			own_add(src, "triggers", own_take_member(compiler, "triggers", trigger))
 		errors += compiler.errors
 		if(!length(triggers))
 			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
@@ -136,7 +138,7 @@
 	var/kind
 	var/property
 	/// The domain provider, for channel-backed triggers.
-	var/provider_handle
+	var/datum/property_provider/domain/provider
 	/// Thresholds: PRED_CMP_* with NOT applied.
 	var/op
 	/// Literal level, or null when it comes from value_property.
@@ -148,7 +150,7 @@
 	var/hi
 	/// Difference: the second side.
 	var/property_b
-	var/provider_b_handle
+	var/datum/property_provider/domain/provider_b
 	/// Key triggers.
 	var/key_kind
 
@@ -224,10 +226,10 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_BAND
 			trigger.property = band.property
-			trigger.provider_handle = om_handle(provider)
+			rel_set(trigger, "provider", provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
-			triggers += trigger
+			own_add(src, "triggers", trigger)
 		else if(dm_key(band.property))
 			add_key(band.property)
 		return
@@ -241,10 +243,10 @@
 			var/datum/rule_trigger/trigger = new
 			trigger.kind = RULE_TRIGGER_DIFFERENCE
 			trigger.property = rel.property
-			trigger.provider_handle = om_handle(a)
+			rel_set(trigger, "provider", a)
 			trigger.property_b = rel.property_b
-			trigger.provider_b_handle = om_handle(b)
-			triggers += trigger
+			rel_set(trigger, "provider_b", b)
+			own_add(src, "triggers", trigger)
 			return
 		if(b || dm_key(rel.property_b))
 			// Dynamic on the right: flip it so the dynamic side is on the left.
@@ -273,7 +275,7 @@
 	var/datum/rule_trigger/trigger = new
 	trigger.kind = provider ? RULE_TRIGGER_THRESHOLD : RULE_TRIGGER_KEY
 	trigger.property = property
-	trigger.provider_handle = om_handle(provider)
+	rel_set(trigger, "provider", provider)
 	trigger.op = op
 	trigger.value = value
 	trigger.value_property = value_property
@@ -282,7 +284,7 @@
 		error("threshold [property] against [value_property]: the level must be a static property")
 	if(provider && (op == PRED_CMP_EQ || op == PRED_CMP_NE))
 		error("[property] compared with == or !=; a watch needs a threshold or a band")
-	triggers += trigger
+	own_add(src, "triggers", trigger)
 
 /datum/rule_compiler/proc/add_key(property)
 	var/key_kind = dm_key(property)
@@ -295,7 +297,7 @@
 	trigger.kind = RULE_TRIGGER_KEY
 	trigger.property = property
 	trigger.key_kind = key_kind
-	triggers += trigger
+	own_add(src, "triggers", trigger)
 
 /// a op b  <=>  b (mirror op) a.
 /proc/dq_rule_mirror_cmp(op)
@@ -422,24 +424,20 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /proc/dq_rule_fire_count(datum/thing, datum/rule/rule)
 	return GLOB.dq_rule_fire_log["[REF(thing)]|[rule.type]"] || 0
 
-/// LC-refs: the domain provider for channel-backed triggers -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The domain provider for channel-backed triggers (a relation view).
 /datum/rule_trigger/proc/provider() as /datum/property_provider/domain
-	return om_resolve(provider_handle)
+	return provider
 
-/// LC-refs: the second domain provider -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The second domain provider (a relation view).
 /datum/rule_trigger/proc/provider_b() as /datum/property_provider/domain
-	return om_resolve(provider_b_handle)
+	return provider_b
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule
 	return rule_static
-DECLARE_REF(/datum/rule_compiler, "rule_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-DECLARE_REF(/datum/rule_compiler, "registry_static", STATIC, null)
 
-DECLARE_REF(/datum/rule, "predicate", OWNED, null)
 
-DECLARE_REF(/datum/rule, "triggers", OWNED_LIST, null)

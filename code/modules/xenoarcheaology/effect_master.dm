@@ -31,10 +31,9 @@
 /// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
 /atom/var/datum/artifact_master/artifact_master
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/atom, "artifact_master", OWNED, null)
 
 /datum/artifact_master
-	var/tmp/holder_handle
+	var/tmp/atom/holder
 	var/list/my_effects
 
 	var/effect_generation_chance = 100
@@ -53,10 +52,10 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 	if(!istype(new_holder) || new_holder.artifact_master)
 		qdel(src)
 		return
-	holder_handle = om_handle(new_holder)
-	new_holder.artifact_master = src
+	rel_set(src, "holder", new_holder)
+	own_set(new_holder, "artifact_master", src) // the anomalous atom owns its artifact state
 
-	my_effects = list()
+	own_take_all(src, "my_effects")
 
 	om_task_periodic(src, PERIODIC_SLOW)
 
@@ -116,7 +115,7 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
 		if(istype(holder(), my_effect.req_type))
-			my_effects += my_effect
+			own_add(src, "my_effects", my_effect)
 
 		else
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
@@ -128,22 +127,11 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 		return
 
 	if(to_remove_effect)
-		var/datum/artifact_effect/AE = to_remove_effect
-		my_effects.Remove(to_remove_effect)
-		qdel(AE)
+		own_remove(src, "my_effects", to_remove_effect)
 
-// its effects go with it.
+// its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
 /datum/artifact_master/on_destroy(force)
 	do_unregister()
-	var/atom/H = holder()
-	if(H?.artifact_master == src)
-		H.artifact_master = null
-	holder_handle = null
-	for(var/datum/artifact_effect/AE in my_effects)
-		AE.master_handle = null
-		my_effects -= AE
-		qdel(AE)
-
 	..()
 
 /datum/artifact_master/proc/do_setup()
@@ -151,7 +139,7 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
 			if(istype(holder(), new_effect.req_type))
-				my_effects += new_effect
+				own_add(src, "my_effects", new_effect)
 
 	else
 		generate_effects()
@@ -185,15 +173,15 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 	// Minimum output: 1 effect (the first pass is always unconditional).
 	// Hard ceiling: ARTIFACT_MAX_EFFECTS prevents degenerate artifacts with 10+ simultaneous
 	// effects that would saturate SSobj tick budgets when all fire at once in process().
-	while(effect_generation_chance > 0 && my_effects.len < ARTIFACT_MAX_EFFECTS)
+	while(effect_generation_chance > 0 && length(my_effects) < ARTIFACT_MAX_EFFECTS)
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
 			if(istype(holder(), AE.req_type))
-				my_effects += AE
+				own_add(src, "my_effects", AE)
 				effect_generation_chance -= 30
 			else
-				AE.master_handle = om_handle(src)
+				rel_set(AE, "master", src)
 				qdel(AE)
 			continue
 
@@ -201,7 +189,7 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 		effect_generation_chance /= 2
 
 		if(prob(effect_generation_chance))
-			my_effects += new chosen_path(src)
+			own_add(src, "my_effects", new chosen_path(src))
 
 		effect_generation_chance = round(effect_generation_chance)
 
@@ -482,8 +470,7 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 /datum/artifact_master/proc/bumper_gloves(mob/M)
 	return M.get_equipped_item(SLOT_ID_GLOVES)
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the holder var.
 /datum/artifact_master/proc/holder() as /atom
-	return om_resolve(holder_handle)
+	return holder
 
-DECLARE_REF(/datum/artifact_master, "my_effects", OWNED_LIST, null)

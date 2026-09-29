@@ -19,7 +19,7 @@
 /obj/item/latexballon/proc/blow(obj/item/tank/tank)
 	if (icon_state == "latexballon_bursted")
 		return
-	src.air_contents = tank.remove_air_volume(3)
+	own_set(src, "air_contents", tank.remove_air_volume(3))
 	icon_state = "latexballon_blow"
 	item_state = "latexballon"
 
@@ -51,4 +51,3 @@ DECLARE_INTERACTIONS(/obj/item/latexballon, INTERACT_ITEM(null, PROC_REF(interac
 		burst()
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_REF(/obj/item/latexballon, "air_contents", OWNED, null)

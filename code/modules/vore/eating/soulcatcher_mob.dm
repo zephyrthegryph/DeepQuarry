@@ -2,7 +2,7 @@
 	name = "stored soul"
 	desc = "A soul stored within the predator."
 
-	var/tmp/gem_handle
+	var/tmp/obj/soulgem/gem
 
 // Cleaning up the refs during deletion
 // its gem is told the mind unloaded.
@@ -14,8 +14,8 @@
 	if(gem())
 		gem().notify_holder("Mind unloaded: [name]")
 		gem().brainmobs -= src
-		gem_handle = null
-	container = null
+		rel_clear(src, "gem")
+	rel_clear(src, "container")
 	..()
 
 // Handling the automatic transcore backups in a set interval
@@ -268,6 +268,6 @@
 		return
 	gem().return_to_body(mind)
 
-/// LC-refs: the gem this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the gem this refers to (a relation view: null once it is deleted).
 /mob/living/carbon/brain/caught_soul/vore/proc/gem() as /obj/soulgem
-	return om_resolve(gem_handle)
+	return gem

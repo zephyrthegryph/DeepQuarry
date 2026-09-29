@@ -28,9 +28,7 @@
 		if(istype(nest, /obj/structure/prop/nest))
 			var/obj/structure/prop/nest/N = nest
 			N.remove_creature(src)
-		if(istype(nest, /obj/structure/blob/factory))
-			var/obj/structure/blob/factory/F = nest
-			LAZYREMOVE(F.spores, src)
+		// a blob spore leaves its factory's spores through the pair's teardown
 		if(istype(nest, /obj/structure/mob_spawner))
 			var/obj/structure/mob_spawner/S = nest
 			S.get_death_report(src)
@@ -46,12 +44,12 @@
 		else
 			var/turf/get_dat_turf = get_turf(src)
 			tf_mob_holder.forceMove(get_dat_turf)
-		QDEL_LIST_NULL(tf_mob_holder.vore_organs)
-		tf_mob_holder.vore_organs = list()
+		// the holder's old bellies go (it owns them)
+		own_clear(tf_mob_holder, "vore_organs", OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)
-	QDEL_NULL_LIST(hud_list)
+	own_clear(src, "hud_list", OWN_DELETE)
 	// Deleting a part detaches it, and the detach hook empties these caches
 	// (code/modules/body/parts/attach.dm). Copies: they shrink as we go.
 	for(var/OR in organs?.Copy())
@@ -62,7 +60,6 @@
 			qdel(OR)
 
 	GLOB.cultnet.updateVisibility(src, 0)
-	aimed.Cut()
 	..()
 
 //mob verbs are faster than object verbs. See mob/verb/examine.
@@ -901,16 +898,16 @@
 
 //Add an entry to overlays, assuming it exists
 /mob/living/proc/apply_hud(cache_index, image/I)
-	hud_list[cache_index] = I
+	if(I)
+		own_put(src, "hud_list", cache_index, I) // the mob owns its HUD images; a replaced one is deleted
 	if((. = hud_list[cache_index]))
 		add_overlay(.)
 
-//Remove an entry from overlays, and from the list
+//Remove an entry from overlays for editing; it stays owned in its slot until apply_hud() re-adds it
 /mob/living/proc/grab_hud(cache_index)
 	var/I = hud_list[cache_index]
 	if(I)
 		cut_overlay(I)
-		hud_list[cache_index] = null
 		return I
 
 /mob/living/proc/make_hud_overlays()
@@ -1051,13 +1048,10 @@
 	var/atom/movable/screen/character_setup/screen_icon
 
 /mob/living/var/datum/character_setup_button/character_setup_button
-DECLARE_REF(/mob/living, "character_setup_button", OWNED, null)
-DECLARE_REF(/datum/character_setup_button, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_button")
 
 /datum/character_setup_button/New(mob/living/M)
 	..()
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
@@ -1066,14 +1060,15 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 /datum/character_setup_button/on_destroy(force)
 	if(screen_icon)
 		owner?.client?.screen -= screen_icon
-		var/datum/hud/HUD = owner?.hud_used
-		LAZYREMOVE(HUD?.other_important, screen_icon)
+		var/datum/hud/button_hud = owner_of(screen_icon)
+		if(istype(button_hud))
+			own_remove(button_hud, "other_important", screen_icon)
 	..()
 
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		character_setup_button = new /datum/character_setup_button(src)
+		own_set(src, "character_setup_button", new /datum/character_setup_button(src))
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1082,8 +1077,12 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 
 /datum/character_setup_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
+	// The hud owns the button (other_important); a new hud's button is made afresh
+	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
-		screen_icon = new()
+		var/atom/movable/screen/character_setup/button = new
+		own_add(HUD, "other_important", button)
+		rel_set(src, "screen_icon", button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1094,7 +1093,6 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	LAZYADD(HUD.other_important, screen_icon)
 	user.client?.screen += screen_icon
 
 /datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
@@ -1147,8 +1145,8 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 		// Note, this should be refactored to drop priority overlays
 		// ALLOW(decl): priority overlay from a global, gated on has_huds
 		add_overlay(GLOB.backplane,TRUE) //Strap this on here, to block HUDs from appearing in rightclick menus: http://www.byond.com/forum/?post=2336679
-		hud_list = list()
-		hud_list.len = TOTAL_HUDS
+		own_clear(src, "hud_list", OWN_DELETE)
+		hud_list = new /list(TOTAL_HUDS) // ALLOW(ownership): a fresh slot table (nulls only); its images are adopted through own_put()
 		make_hud_overlays()
 
 	//I'll just hang my coat up over here
@@ -1161,8 +1159,8 @@ DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_butto
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	deaf_loop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
-	firesoundloop = new(list(src), FALSE) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, "deaf_loop", new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	own_set(src, "firesoundloop", new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work

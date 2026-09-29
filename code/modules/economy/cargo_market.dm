@@ -285,7 +285,6 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/reservation_key
 	var/reserved_account = 0
 
-DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 
 /datum/cargo_market_bid/proc/remaining_units()
 	return max(0, target_units - fulfilled_units)
@@ -347,14 +346,14 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	var/market_generation = 0
 
 /datum/world_service/supply/proc/initialize_cargo_market()
-	QDEL_LIST(market_counterparties)
-	QDEL_LIST(market_listings)
-	QDEL_LIST(market_bids)
-	QDEL_LIST(market_transactions)
-	market_counterparties = list()
-	market_listings = list()
-	market_bids = list()
-	market_transactions = list()
+	own_clear(src, "market_counterparties", OWN_DELETE)
+	own_clear(src, "market_listings", OWN_DELETE)
+	own_clear(src, "market_bids", OWN_DELETE)
+	own_clear(src, "market_transactions", OWN_DELETE)
+	own_take_all(src, "market_counterparties")
+	own_take_all(src, "market_listings")
+	own_take_all(src, "market_bids")
+	own_take_all(src, "market_transactions")
 	next_market_id = 1
 	market_generation = 0
 	for(var/counterparty_type as anything in subtypesof(/datum/cargo_market_counterparty))
@@ -362,7 +361,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			continue
 		var/datum/cargo_market_counterparty/counterparty = new counterparty_type
 		counterparty.rotate_cover()
-		market_counterparties[counterparty.id] = counterparty
+		own_put(src, "market_counterparties", counterparty.id, counterparty)
 	refresh_cargo_market()
 
 /datum/world_service/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
@@ -387,26 +386,20 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	return max(1.05, round(profile.base_price_multiplier * counterparty.buyer_price_multiplier * reputation_factor * market_factor, 0.01))
 
 /datum/world_service/supply/proc/refresh_cargo_market()
-	var/list/retained_listings = list()
-	for(var/listing_id in market_listings)
-		var/datum/cargo_market_listing/existing_listing = market_listings[listing_id]
-		if(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD))
-			retained_listings[listing_id] = existing_listing
-		else
-			qdel(existing_listing)
-	var/list/retained_bids = list()
-	for(var/bid_id in market_bids)
-		var/datum/cargo_market_bid/existing_bid = market_bids[bid_id]
-		if(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD))
-			retained_bids[bid_id] = existing_bid
-		else
-			qdel(existing_bid)
-	market_listings = retained_listings
-	market_bids = retained_bids
+	var/list/listing_ids = market_listings?.Copy()
+	for(var/listing_id in listing_ids)
+		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
+		if(!(existing_listing.reservation_key && existing_listing.stock > 0 && BEFORE(src, existing_listing.expires_at, CLOCK_WORLD)))
+			own_put(src, "market_listings", listing_id, null) // disposes of the owned listing
+	var/list/bid_ids = market_bids?.Copy()
+	for(var/bid_id in bid_ids)
+		var/datum/cargo_market_bid/existing_bid = market_bids?[bid_id]
+		if(!(existing_bid.reservation_key && !existing_bid.completed_at && BEFORE(src, existing_bid.expires_at, CLOCK_WORLD)))
+			own_put(src, "market_bids", bid_id, null) // disposes of the owned bid
 	market_generation++
 	var/expiry = world.time + CARGO_MARKET_REFRESH_INTERVAL
 	for(var/counterparty_id in market_counterparties)
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[counterparty_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 		counterparty.rotate_cover()
 		var/list/eligible_packs = list()
 		var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
@@ -425,7 +418,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			listing.stock = rand(1, 4)
 			listing.expires_at = expiry
 			listing.cover_name = counterparty.active_cover_name
-			market_listings[listing.id] = listing
+			own_put(src, "market_listings", listing.id, listing)
 		var/list/profile_paths = TYPE_TABLE_COPY(counterparty, buyer_profiles)
 		for(var/bid_index in 1 to min(CARGO_MARKET_BIDS_PER_PARTY, length(profile_paths)))
 			var/profile_path = pick_n_take(profile_paths)
@@ -433,12 +426,12 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			var/datum/cargo_market_bid/bid = new
 			bid.id = "MKT-B-[next_market_id++]"
 			bid.counterparty_id = counterparty.id
-			bid.profile = profile
+			own_set(bid, "profile", profile)
 			bid.target_units = rand(profile.minimum_units, profile.maximum_units)
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
 			bid.cover_name = counterparty.active_cover_name
-			market_bids[bid.id] = bid
+			own_put(src, "market_bids", bid.id, bid)
 	next_market_refresh = expiry
 
 /datum/world_service/supply/proc/process_cargo_market()
@@ -569,7 +562,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	if(!order?.market_counterparty_id)
 		return FALSE
 	order.market_stock_reserved = FALSE
-	var/datum/cargo_market_counterparty/counterparty = market_counterparties[order.market_counterparty_id]
+	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[order.market_counterparty_id]
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
 	if(!counterparty)
 		return FALSE
@@ -621,11 +614,10 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		transaction.trace_strength = CLAMP(round((8 + sqrt(max(0, transaction.value)) / 3 + (reservation_key ? 5 : 0)) * risk_multiplier), 1, CARGO_MARKET_TRACE_LIMIT)
 		GLOB.station_faction_relations.add_agent_exposure(transaction.principal_account, counterparty.faction_id, max(1, round(transaction.trace_strength / 5)), "Encrypted market traffic accumulated forensic metadata.", transaction.id)
 	log_game("Cargo market [transaction.id]: [transaction_type] [transaction.value] Thalers with [counterparty?.name || counterparty_id] by account [account_number || "unknown"] (cover: [transaction.cover_name || "none"], reservation: [reservation_key || "none"]).")
-	market_transactions += transaction
+	own_add(src, "market_transactions", transaction)
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
-		var/datum/cargo_market_transaction/oldest = market_transactions[1]
-		market_transactions.Cut(1, 2)
-		qdel(oldest)
+		var/datum/cargo_market_transaction/oldest = market_transactions?[1]
+		own_remove(src, "market_transactions", oldest)
 	return transaction
 
 /datum/world_service/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
@@ -746,7 +738,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	listing.cover_name = counterparty.active_cover_name
 	listing.reservation_key = reservation_key
 	listing.reserved_account = reserved_account
-	market_listings[listing.id] = listing
+	own_put(src, "market_listings", listing.id, listing)
 	return listing
 
 /datum/world_service/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
@@ -755,14 +747,14 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	var/datum/cargo_market_bid/bid = new
 	bid.id = "MKT-B-[next_market_id++]"
 	bid.counterparty_id = counterparty.id
-	bid.profile = profile
+	own_set(bid, "profile", profile)
 	bid.target_units = max(profile.minimum_units, target_units)
 	bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 	bid.expires_at = expires_at
 	bid.cover_name = counterparty.active_cover_name
 	bid.reservation_key = reservation_key
 	bid.reserved_account = reserved_account
-	market_bids[bid.id] = bid
+	own_put(src, "market_bids", bid.id, bid)
 	return bid
 
 /datum/world_service/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)
@@ -770,7 +762,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		return FALSE
 	var/datum/cargo_market_counterparty/counterparty
 	for(var/counterparty_id in market_counterparties)
-		var/datum/cargo_market_counterparty/candidate = market_counterparties[counterparty_id]
+		var/datum/cargo_market_counterparty/candidate = market_counterparties?[counterparty_id]
 		if(candidate.faction_id == contract.agent_faction)
 			counterparty = candidate
 			break
@@ -837,7 +829,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	if(!transaction?.covert || transaction.audited_accounts[auditor_key])
 		return FALSE
 	transaction.audited_accounts[auditor_key] = TRUE
-	var/datum/cargo_market_counterparty/counterparty = market_counterparties[transaction.counterparty_id]
+	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[transaction.counterparty_id]
 	var/datum/faction_agent_record/record = GLOB.station_faction_relations.get_agent_record(transaction.principal_account)
 	var/datum/contract/faction_agent/agent_contract = SScontracts?.agent_contract_for_market_key(transaction.reservation_key)
 	var/score = transaction.trace_strength + (record?.exposure || 0)
@@ -877,7 +869,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	for(var/datum/cargo_market_transaction/transaction in market_transactions)
 		if(!transaction.detected || transaction.detected_account != contract.suspect_account)
 			continue
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[transaction.counterparty_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[transaction.counterparty_id]
 		emit_contract_event(CONTRACT_EVENT_COVERT_MARKET_AUDIT, list(
 			"actor_account" = contract.accepted_by_account,
 			"department" = DEPARTMENT_SECURITY,
@@ -922,7 +914,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 	var/datum/money_account/viewer_account = contract_account_for_mob(user)
 	var/is_auditor = market_security_auditor(user)
 	for(var/counterparty_id in market_counterparties)
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[counterparty_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[counterparty_id]
 		if(!market_counterparty_visible(counterparty, user, console_unlocked))
 			continue
 		var/datum/reputation_faction/faction = GLOB.reputation_factions[counterparty.faction_id]
@@ -937,8 +929,8 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			"covert" = counterparty.covert,
 		)))
 	for(var/listing_id in market_listings)
-		var/datum/cargo_market_listing/listing = market_listings[listing_id]
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[listing.counterparty_id]
+		var/datum/cargo_market_listing/listing = market_listings?[listing_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing.counterparty_id]
 		if(listing.retired || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 			continue
 		var/can_access_listing = market_counterparty_access(counterparty, user, console_unlocked)
@@ -961,8 +953,8 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			"expires" = DisplayTimeText(max(0, listing.expires_at - world.time), 1),
 		)))
 	for(var/bid_id in market_bids)
-		var/datum/cargo_market_bid/bid = market_bids[bid_id]
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[bid.counterparty_id]
+		var/datum/cargo_market_bid/bid = market_bids?[bid_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[bid.counterparty_id]
 		if(bid.completed_at || bid.remaining_units() <= 0 || !BEFORE(src, bid.expires_at, CLOCK_WORLD) || !market_counterparty_visible(counterparty, user, console_unlocked) || !market_reserved_access(bid.reserved_account, user, bid.reservation_key))
 			continue
 		bids.Add(list(list(
@@ -980,7 +972,7 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 			"expires" = DisplayTimeText(max(0, bid.expires_at - world.time), 1),
 		)))
 	for(var/datum/cargo_market_transaction/transaction in market_transactions)
-		var/datum/cargo_market_counterparty/counterparty = market_counterparties[transaction.counterparty_id]
+		var/datum/cargo_market_counterparty/counterparty = market_counterparties?[transaction.counterparty_id]
 		var/transaction_visible = market_counterparty_visible(counterparty, user, console_unlocked)
 		if(!transaction_visible && !(is_auditor && transaction.covert))
 			continue
@@ -1028,10 +1020,5 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		"is_auditor" = is_auditor,
 	)
 
-DECLARE_REF(/datum/world_service/supply, "market_transactions", OWNED_LIST, null)
 
-DECLARE_REF(/datum/world_service/supply, "market_counterparties", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "market_listings", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "market_bids", OWNED_VALUES, null)
 
-DECLARE_REF(/datum/cargo_market_listing, "pack", STATIC, null)

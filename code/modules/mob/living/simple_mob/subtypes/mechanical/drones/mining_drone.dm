@@ -68,7 +68,7 @@
 	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
 
 /mob/living/simple_mob/mechanical/mining_drone/Initialize(mapload)
-	ion_trail = new // ALLOW(decl): configured and started before parent init
+	own_set(src, "ion_trail", new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()
@@ -76,9 +76,6 @@
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", /obj/item/ore_bag)
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "ion_trail", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "shields", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mining_drone
 	delete_on_death = TRUE
@@ -87,8 +84,8 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED,
 	death_message = "suddenly breaks apart."
 
 /mob/living/simple_mob/mechanical/mining_drone/on_death(gibbed)
-	my_storage.forceMove(get_turf(src))
-	my_storage = null
+	var/obj/item/ore_bag/dropped = own_take(src, "my_storage")
+	dropped?.forceMove(get_turf(src))
 	..()
 
 /mob/living/simple_mob/mechanical/mining_drone/Process_Spacemove(check_drift = 0)

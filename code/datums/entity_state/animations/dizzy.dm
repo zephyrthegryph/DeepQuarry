@@ -53,6 +53,4 @@ status starts and detaches it when it ends (the status row's on_start/on_end hoo
 	if(om_attached(src, /datum/om/behaviour/dizzy_shake))
 		om_after_slot(src, "dizzy_shake_timer", 1, TYPE_PROC_REF(/mob, dizzy_shake_tick))
 
-/mob/om_declared_timer_slots()
-	. = ..()
-	. += "dizzy_shake_timer"
+OWN_TIMER(/mob, dizzy_shake_timer)

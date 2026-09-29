@@ -1,6 +1,6 @@
 /mob/living/silicon/pai/proc/refresh_software_status()	//This manages the pAI software status buttons icon states based on if you have them and if they are enabled
 	for(var/thing in software)							//this only gets called when you click one of the relevent buttons, rather than all the time!
-		var/datum/pai_software/soft = software[thing]
+		var/datum/pai_software/soft = GLOB.pai_software_by_key[thing]
 		if(istype(soft,/datum/pai_software/med_records))
 			soft_mr = TRUE
 		if(istype(soft,/datum/pai_software/sec_records))
@@ -78,7 +78,7 @@
 		to_chat(src, span_warning("You can't do that right now."))
 		return
 	for(var/thing in software)
-		var/datum/pai_software/S = software[thing]
+		var/datum/pai_software/S = GLOB.pai_software_by_key[thing]
 		if(istype(S, /datum/pai_software) && S.name == soft_name)
 			if(S.toggle)
 				S.toggle(src)
@@ -119,7 +119,7 @@
 /mob/living/silicon/pai/proc/download_software_confirmed(datum/om/prompt/confirm/pai_download/ask)
 	var/datum/pai_software/our_soft = GLOB.pai_software_by_key[ask.software_key]
 	ram -= our_soft.ram_cost
-	software[our_soft.id] = our_soft
+	software[our_soft.id] = TRUE
 	to_chat(src, span_notice("You downloaded [our_soft.name]. ([ram] RAM remaining.)"))
 	refresh_software_status()
 

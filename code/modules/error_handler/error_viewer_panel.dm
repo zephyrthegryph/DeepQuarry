@@ -4,7 +4,7 @@
 	/// "organized" | "linear" — only meaningful when viewing the error_cache.
 	var/dq_linear = FALSE
 	/// Backwards-navigation target for the panel.
-	var/tmp/dq_back_to_handle
+	var/tmp/datum/error_viewer/dq_back_to
 
 /datum/error_viewer/browse_to(client/user, html)
 	// body is now a TGUI panel; the legacy html arg is ignored.
@@ -27,11 +27,11 @@
 
 /datum/error_viewer/error_source/ensure_back_pointer()
 	if(!dq_back_to())
-		dq_back_to_handle = om_handle(GLOB.error_cache)
+		rel_set(src, "dq_back_to", GLOB.error_cache)
 
 /datum/error_viewer/error_entry/ensure_back_pointer()
 	if(!dq_back_to())
-		dq_back_to_handle = om_handle(error_source())
+		rel_set(src, "dq_back_to", error_source())
 
 /datum/error_viewer/proc/dq_pack_link_ref(datum/error_viewer/EV)
 	if(!EV)
@@ -112,7 +112,7 @@
 			var/ref = "[params["ref"]]"
 			var/datum/error_viewer/EV = locate(ref)
 			if(istype(EV))
-				EV.dq_back_to_handle = om_handle(src)
+				rel_set(EV, "dq_back_to", src)
 				EV.dq_linear = dq_linear
 				EV.tgui_interact(ui.user)
 			return TRUE
@@ -152,6 +152,6 @@
 					ui.user.client?.holder?.topic_internal(ui.user, list("_src_" = "holder", "adminplayerobservecoodjump" = "1", "X" = "[E.usr_loc().x]", "Y" = "[E.usr_loc().y]", "Z" = "[E.usr_loc().z]"))
 			return TRUE
 
-/// LC-refs: the dq_back_to this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The dq_back_to this refers to (a relation view: null once that is deleted).
 /datum/error_viewer/proc/dq_back_to() as /datum/error_viewer
-	return om_resolve(dq_back_to_handle)
+	return dq_back_to

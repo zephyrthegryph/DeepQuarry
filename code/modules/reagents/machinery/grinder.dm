@@ -74,7 +74,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		if (beaker)
 			return TRUE
 		else
-			beaker =  O
+			own_set(src, "beaker", O)
 			user.drop_item()
 
 			O.forceMove(src)
@@ -96,7 +96,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 				continue
 			failed = 0
 			bag.remove_from_storage(G, src)
-			LAZYADD(holdingitems, G)
+			own_add(src, "holdingitems", G)
 			if(holdingitems && length(holdingitems) >= limit)
 				break
 
@@ -128,7 +128,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 
 	user.remove_from_mob(O)
 	O.forceMove(src)
-	LAZYADD(holdingitems, O)
+	own_add(src, "holdingitems", O)
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
@@ -209,8 +209,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 		return
 	for(var/obj/item/O in holdingitems)
 		O.forceMove(src.loc)
-		LAZYREMOVE(holdingitems, O)
-	LAZYCLEARLIST(holdingitems)
+		own_take_member(src, "holdingitems", O)
+	own_take_all(src, "holdingitems")
 	if(beaker)
 		replace_beaker(user)
 
@@ -238,10 +238,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 			user.put_in_hands(beaker)
 		else
 			beaker.forceMove(drop_location())
-		beaker = null
+		own_take(src, "beaker")
 	if(new_beaker)
-		beaker = new_beaker
+		own_set(src, "beaker", new_beaker)
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/obj/machinery/reagentgrinder, "beaker", HELD, null)
+OWN(/obj/machinery/reagentgrinder, beaker, OWN_CONTAINED)

@@ -57,13 +57,13 @@
 	var/tmp/emission_timer = 0
 	EXPIRY_DECLARE(last_activation)
 	EXPIRY_DECLARE(last_process)
-	var/tmp/inserted_battery_handle
-	var/tmp/archived_loc_handle
+	var/tmp/obj/item/anobattery/inserted_battery
+	var/tmp/turf/archived_loc
 	var/energy_consumed_on_touch = 100
-	var/tmp/last_user_touched_handle
+	var/tmp/mob/last_user_touched
 
 /obj/item/anodevice/equipped(mob/user, slot)
-	last_user_touched_handle = om_handle(user)
+	rel_set(src, "last_user_touched", user)
 	..()
 
 DECLARE_INTERACTIONS(/obj/item/anodevice, \
@@ -78,7 +78,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			to_chat(user, span_blue("You insert the battery."))
 			user.drop_item()
 			I.forceMove(src)
-			inserted_battery_handle = om_handle(I)
+			rel_set(src, "inserted_battery", I)
 			UpdateSprite()
 	else
 		return FALSE
@@ -152,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		if("ejectbattery")
 			if(inserted_battery())
 				inserted_battery().forceMove(get_turf(src))
-				inserted_battery_handle = null
+				rel_clear(src, "inserted_battery")
 				UpdateSprite()
 			shutdown_emission()
 			return TRUE
@@ -170,7 +170,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			//update the effect loc
 			var/turf/T = get_turf(src)
 			if(T != archived_loc())
-				archived_loc_handle = om_handle(T)
+				rel_set(src, "archived_loc", T)
 				inserted_battery().battery_effect.UpdateMove()
 
 			//if someone is holding the device, do the effect on them
@@ -268,16 +268,15 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		add_attack_logs(user,M,"Anobattery tap ([inserted_battery()?.battery_effect?.name])")
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_REF(/obj/item/anobattery, "battery_effect", OWNED, null)
 
-/// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the inserted_battery var.
 /obj/item/anodevice/proc/inserted_battery() as /obj/item/anobattery
-	return om_resolve(inserted_battery_handle)
+	return inserted_battery
 
-/// LC-refs: the archived_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the archived_loc var.
 /obj/item/anodevice/proc/archived_loc() as /turf
-	return om_resolve(archived_loc_handle)
+	return archived_loc
 
-/// LC-refs: the last_user_touched this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the last_user_touched var.
 /obj/item/anodevice/proc/last_user_touched() as /mob
-	return om_resolve(last_user_touched_handle)
+	return last_user_touched

@@ -25,7 +25,7 @@
 	if(!vorePanel)
 		if(!isnewplayer(src))
 			log_vore("[src] ([type], \ref[src]) didn't have a vorePanel and tried to use the verb.")
-		vorePanel = new(src)
+		own_set(src, "vorePanel", new /datum/vore_look(src))
 
 	vorePanel.tgui_interact(src)
 
@@ -37,7 +37,7 @@
 // Callback Handler for the Inside form
 //
 /datum/vore_look
-	var/tmp/host_handle	// Note, we do this in case we ever want to allow people to view others vore panels
+	var/tmp/mob/host	// Note, we do this in case we ever want to allow people to view others vore panels
 	var/unsaved_changes = FALSE
 	var/show_pictures = TRUE
 	var/icon_overflow = FALSE
@@ -53,7 +53,7 @@
 
 /datum/vore_look/New(mob/new_host)
 	if(istype(new_host))
-		host_handle = om_handle(new_host)
+		rel_set(src, "host", new_host)
 	. = ..()
 
 /datum/vore_look/tgui_close(mob/user)
@@ -823,7 +823,9 @@
 			host().soulgem.take_control_owner()
 			return TRUE
 		if("soulcatcher_select")
-			host().soulgem.selected_soul_handle = om_handle(locate(params["selected_soul"]))
+			var/mob/picked_soul = locate_in_list(host().soulgem.brainmobs, params["selected_soul"])
+			if(picked_soul)
+				rel_set(host().soulgem, "selected_soul", picked_soul)
 			return TRUE
 		//Soulcatcher settings
 		if("soulcatcher_toggle")
@@ -1276,8 +1278,8 @@
 		om_unsuspend(body_backup, body_backup)
 		body_backup.ajourn = 0
 		transfer_mind(T.mind, body_backup, "reformed in [host()]", force = TRUE)
-		body_backup.teleop = null
-		T.body_backup = null
+		rel_clear(body_backup, "teleop")
+		own_take(T, "body_backup")
 		host().vore_selected.release_specific_contents(T, TRUE)
 		if(istype(body_backup, /mob/living/simple_mob))
 			var/mob/living/simple_mob/sm = body_backup
@@ -1308,14 +1310,14 @@
 		om_unsuspend(body_backup, body_backup)
 		body_backup.forceMove(MMI.loc)
 		body_backup.ajourn = 0
-		body_backup.teleop = null
+		rel_clear(body_backup, "teleop")
 		//And now installing the MMI into the body...
 		if(isrobot(body_backup)) //Just do the reverse of getting the MMI pulled out in /obj/belly/proc/digestion_death
 			var/mob/living/silicon/robot/R = body_backup
 			R.revive()
 			mmi_host.release_mind(R, "reformed by [key_name(user)]")
 			MMI.forceMove(R)
-			R.mmi = MMI
+			own_set(R, "mmi", MMI)
 			R.add_language(LANGUAGE_ROBOT_TALK)
 		else // the same install as the surgery step (install_mmi_holder())
 			install_mmi_holder(body_backup, MMI)
@@ -1324,7 +1326,7 @@
 			//You've hopefully already named yourself, so... not implementing that bit.
 			var/mob/living/carbon/human/H = body_backup
 			H.reform_restore("reformed around [MMI] in [host()]", host())
-		MMI.body_backup = null
+		own_take(MMI, "body_backup")
 
 /// "Health": Report the prey's vitality.
 /datum/vore_look/proc/pick_health(mob/user, atom/movable/target, params)
@@ -1488,8 +1490,7 @@
 #undef PREFERENCE_TAB
 #undef GENERAL_TAB
 
-DECLARE_REF(/mob, "vorePanel", OWNED, null)
 
-/// LC-refs: Note, we do this in case we ever want to allow people to view others vore panels -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Note, we do this in case we ever want to allow people to view others vore panels (a relation view: null once it is deleted).
 /datum/vore_look/proc/host() as /mob
-	return om_resolve(host_handle)
+	return host

@@ -77,7 +77,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	scan.forceMove(loc)
 	if(ishuman(L) && !L.get_active_hand())
 		L.put_in_hands(scan)
-		scan = null
+		own_take(src, "scan")
 	authenticated = null
 	return TRUE
 
@@ -214,13 +214,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 			return TRUE
 		if("login")
 			var/login_type = text2num(params["login_type"])
@@ -241,7 +241,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			authenticated = null
 			return TRUE
 		if("remove")
@@ -252,7 +252,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 				copyitem.forceMove(loc)
 				ui.user.put_in_hands(copyitem)
 				to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-				copyitem = null
+				own_take(src, "copyitem")
 		if("send_automated_staff_request")
 			request_roles()
 
@@ -336,7 +336,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /obj/machinery/photocopier/faxmachine/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	scan = held
+	own_set(src, "scan", held)
 	return TRUE
 
 /datum/interaction/machine_item/faxmachine_insert_toner
@@ -655,4 +655,4 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
 	sendcooldown = 0
 
-DECLARE_REF(/obj/machinery/photocopier/faxmachine, "scan", HELD, null)
+OWN(/obj/machinery/photocopier/faxmachine, scan, OWN_CONTAINED)

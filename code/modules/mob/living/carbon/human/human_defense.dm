@@ -421,10 +421,9 @@ emp_act
 
 				if(T)
 					forceMove(T)
-					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), \
-						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
+					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [thrown_object]!")), 						MSG_OTHERS(span_warning("%U% is pinned to the wall by [thrown_object]!")))
 					set_anchored(TRUE)
-					LAZYADD(src.pinned, thrown_object)
+					rel_add(src, "pinned", thrown_object)
 
 // This does a prob check to catch the thing flying at you, with a minimum of 1%
 /mob/living/carbon/human/proc/can_catch(obj/item/O)

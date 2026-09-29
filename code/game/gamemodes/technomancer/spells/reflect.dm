@@ -87,3 +87,4 @@
 /obj/item/spell/reflect/proc/expire_reflect()
 	to_chat(owner_ref(), span_danger("Your shield fades due being used up!"))
 	qdel(src)
+

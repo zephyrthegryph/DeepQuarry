@@ -46,13 +46,13 @@
 
 	// Case 4: They're unlinked
 	B.dir = get_dir(get_turf(B), get_turf(M))
-	B.top = T
-	B.middle = M
+	rel_set(B, "top", T)
+	rel_set(B, "middle", M)
 	T.dir	 = B.dir
-	T.middle = M
+	rel_set(T, "middle", M)
 	T.bottom = B
 	M.dir	 = B.dir
-	M.top	 = T
+	rel_set(M, "top", T)
 	M.bottom = B
 	return TRUE
 
@@ -77,8 +77,8 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-DECLARE_REF(/obj/structure/stairs/bottom, "top", PAIR, "bottom")
-DECLARE_REF(/obj/structure/stairs/bottom, "middle", PAIR, "bottom")
+REL_PAIR(/obj/structure/stairs/bottom, top, bottom)
+REL_PAIR(/obj/structure/stairs/bottom, middle, bottom)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -248,8 +248,8 @@ DECLARE_REF(/obj/structure/stairs/bottom, "middle", PAIR, "bottom")
 		return INITIALIZE_HINT_QDEL
 	make_climbable()
 
-DECLARE_REF(/obj/structure/stairs/middle, "top", PAIR, "middle")
-DECLARE_REF(/obj/structure/stairs/middle, "bottom", PAIR, "middle")
+REL_PAIR(/obj/structure/stairs/middle, top, middle)
+REL_PAIR(/obj/structure/stairs/middle, bottom, middle)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -298,8 +298,8 @@ DECLARE_REF(/obj/structure/stairs/middle, "bottom", PAIR, "middle")
 
 	// The middle stair has some further special logic, in that it can be climbed, and so is technically valid if only the top exists
 	// T is enforced by a prior if
-	T.middle = src
-	src.top = T
+	rel_set(T, "middle", src)
+	rel_set(src, "top", T)
 	src.dir = T.dir
 	return TRUE
 
@@ -329,8 +329,8 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-DECLARE_REF(/obj/structure/stairs/top, "middle", PAIR, "top")
-DECLARE_REF(/obj/structure/stairs/top, "bottom", PAIR, "top")
+REL_PAIR(/obj/structure/stairs/top, middle, top)
+REL_PAIR(/obj/structure/stairs/top, bottom, top)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,

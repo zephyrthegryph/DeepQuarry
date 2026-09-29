@@ -2,10 +2,11 @@
 	name = "UAV Control"
 	tgui_id = "UAV"
 	ntos = TRUE
-	var/tmp/current_uav_handle	//The UAV we're watching
+	var/tmp/obj/item/uav/current_uav	//The UAV we're watching
 	var/signal_strength = 0 //Our last signal strength report (cached for a few seconds)
 	var/signal_test_counter = 0 //How long until next signal strength check
-	var/list/viewers //Who's viewing a UAV through us
+	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
+	var/list/watchers //Who's viewing a UAV through us (a relation list, kept by look()/unlook())
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
 /datum/tgui_module/uav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -25,14 +26,13 @@
 	if(current_uav())
 		data["current_uav"] = list("status" = current_uav().get_status_string(), "power" = current_uav().state == 1 ? 1 : null)
 	data["signal_strength"] = signal_strength ? signal_strength >= 2 ? "High" : "Low" : "None"
-	data["in_use"] = LAZYLEN(viewers)
+	data["in_use"] = LAZYLEN(watchers)
 
 	var/list/paired_map = list()
 	var/obj/item/modular_computer/mc_host = tgui_host()
 	if(istype(mc_host))
-		for(var/wr as anything in mc_host.paired_uavs)
-			var/obj/item/uav/U = om_resolve(wr)
-			paired_map.Add(list(list("name" = "[U ? U.nickname : "!!Missing!!"]", "uavref" = "\ref[U]")))
+		for(var/obj/item/uav/U in mc_host.paired_uavs) // a relation list: deleted UAVs leave it
+			paired_map.Add(list(list("name" = "[U.nickname]", "uavref" = "\ref[U]")))
 
 	data["paired_uavs"] = paired_map
 	return data
@@ -58,12 +58,12 @@
 		if("del_uav")
 			var/refstring = params["del_uav"] //This is a \ref to the UAV itself
 			var/obj/item/modular_computer/mc_host = tgui_host()
-			//Deleted UAVs don't resolve, so match on the \ref the UI sent (\ref[null] for those)
-			for(var/h in mc_host.paired_uavs)
-				if("\ref[om_resolve(h)]" == refstring)
-					if(current_uav() && om_handle(current_uav()) == h)
+			//Deleted UAVs have already left the (relation) list; match on the \ref the UI sent
+			for(var/obj/item/uav/U in mc_host.paired_uavs)
+				if("\ref[U]" == refstring)
+					if(current_uav() == U)
 						set_current(null)
-					LAZYREMOVE(mc_host.paired_uavs, h)
+					rel_remove(mc_host, "paired_uavs", U)
 			return TRUE
 
 		if("view_uav")
@@ -76,7 +76,6 @@
 				if(get_dist(ui.user, tgui_host()) > 1 || ui.user.blinded)
 					return FALSE
 				else if(!viewing_uav(ui.user))
-					if(!viewers) viewers = list() // List must exist for pass by reference to work
 					start_coordinated_remoteview(src, ui.user, current_uav(), viewers, /datum/remote_view_config/uav_control)
 				else
 					ui.user.reset_perspective()
@@ -96,7 +95,7 @@
 	signal_strength = 0
 	if(current_uav())
 		om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
-	current_uav_handle = om_handle(U)
+	rel_set(src, "current_uav", U)
 	if(U)
 		om_hook(U, /datum/om/event/before/movable_z_changed, src, PROC_REF(current_uav_changed_z))
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
@@ -107,7 +106,7 @@
 
 	om_unhook(current_uav(), /datum/om/event/before/movable_z_changed, src)
 	signal_strength = 0
-	current_uav_handle = null
+	rel_clear(src, "current_uav")
 	OM_EMIT(src, /datum/om/event/remote_view_clear)
 
 /datum/tgui_module/uav/proc/current_uav_changed_z(datum/source, datum/om/event/before/movable_z_changed/event)
@@ -170,7 +169,7 @@
 	user.reset_perspective()
 
 /datum/tgui_module/uav/proc/viewing_uav(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in watchers)
 
 /datum/tgui_module/uav/look(mob/user)
 	if(issilicon(user)) //Too complicated for me to want to mess with at the moment
@@ -179,12 +178,12 @@
 	if(!current_uav())
 		return
 	current_uav().add_master(user)
-	LAZYDISTINCTADD(viewers, om_handle(user))
+	rel_add(src, "watchers", user)
 
 /datum/tgui_module/uav/unlook(mob/user)
 	if(current_uav())
 		current_uav().remove_master(user)
-	LAZYREMOVE(viewers, om_handle(user))
+	rel_remove(src, "watchers", user)
 
 /datum/tgui_module/uav/tgui_close(mob/user)
 	. = ..()
@@ -265,6 +264,6 @@
 	host_mob.healths.appearance = MA
 	return HEALTH_ICON_EVENT_HANDLED
 
-/// LC-refs: The UAV we're watching -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The UAV we're watching (a relation view: null once that is deleted).
 /datum/tgui_module/uav/proc/current_uav() as /obj/item/uav
-	return om_resolve(current_uav_handle)
+	return current_uav

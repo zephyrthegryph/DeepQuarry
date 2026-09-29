@@ -37,4 +37,3 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/communications, "communications", 
 	communications.tgui_interact(user)
 	return TRUE
 
-DECLARE_REF(/obj/machinery/computer/communications, "communications", OWNED, null)

@@ -1,11 +1,11 @@
 //Gas nozzle engine
 /datum/ship_engine/gas_thruster
 	name = "gas thruster"
-	var/tmp/nozzle_handle
+	var/tmp/obj/machinery/atmospherics/unary/engine/nozzle
 
 /datum/ship_engine/gas_thruster/New(obj/machinery/_holder)
 	..()
-	nozzle_handle = om_handle(_holder)
+	rel_set(src, "nozzle", _holder)
 
 /datum/ship_engine/gas_thruster/get_status()
 	return nozzle().get_status()
@@ -85,12 +85,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 
 	for(var/obj/effect/overmap/visitable/ship/S as anything in SSshuttles.ships)
 		if(S.check_ownership(src))
-			LAZYOR(S.engines, controller)
+			rel_add(S, "engines", controller)
 			if(dir != S.fore_dir)
 				atom_break()
 			break
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()
@@ -233,7 +232,7 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 	for(var/obj/machinery/atmospherics/target in get_step(one_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()
@@ -274,12 +273,12 @@ DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 	for(var/obj/machinery/atmospherics/target in get_step(two_step,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()
 	update_underlays()
 
-/// LC-refs: the nozzle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the nozzle var.
 /datum/ship_engine/gas_thruster/proc/nozzle() as /obj/machinery/atmospherics/unary/engine
-	return om_resolve(nozzle_handle)
+	return nozzle

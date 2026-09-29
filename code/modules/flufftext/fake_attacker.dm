@@ -4,17 +4,17 @@
 	density = FALSE
 	anchored = TRUE
 	opacity = 0
-	VAR_PRIVATE/list/clients = list()
+	/// The clients shown this attacker: a relation list view (a disconnected client reads null).
+	VAR_PRIVATE/list/client/clients
 	VAR_PRIVATE/list/image/dir_images = list()
 
 /obj/effect/fake_attacker/periodic_step()
 	. = ..()
 	// Passive cleanup
-	for(var/C in clients)
-		var/client/CW = om_resolve(C)
-		if(isnull(CW))
-			clients.Remove(C)
-	if(!clients.len)
+	var/live_clients = 0
+	for(var/client/C in clients)
+		live_clients++
+	if(!live_clients)
 		qdel(src)
 
 /obj/effect/fake_attacker/set_dir(newdir)
@@ -25,8 +25,7 @@
 	var/updatesprite = (dir != newdir)
 	. = ..()
 	if(updatesprite)
-		for(var/C in clients)
-			var/client/CW = om_resolve(C)
+		for(var/client/CW in clients)
 			clear_images_from_client(CW)
 			assign_image_to_client(CW)
 
@@ -48,7 +47,7 @@
 	..()
 	clear_every_clients_images()
 	qdel_all_images()
-	clients.Cut()
+	rel_clear(src, "clients")
 
 /obj/effect/fake_attacker/proc/create_images_from(atom/clone)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -66,7 +65,8 @@
 
 /obj/effect/fake_attacker/proc/append_client(client/C)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	clients.Add(om_handle(C))
+	if(C)
+		rel_add(src, "clients", C)
 	assign_image_to_client(C)
 
 /obj/effect/fake_attacker/proc/assign_image_to_client(client/C)
@@ -81,8 +81,8 @@
 		C.images += I
 
 /obj/effect/fake_attacker/proc/clear_every_clients_images()
-	for(var/C in clients)
-		clear_images_from_client(om_resolve(C))
+	for(var/client/C in clients)
+		clear_images_from_client(C)
 
 /obj/effect/fake_attacker/proc/clear_images_from_client(client/C)
 	PRIVATE_PROC(TRUE)
@@ -145,7 +145,8 @@
 	return new forced_type(T,src,clone)
 
 /obj/effect/fake_attacker/human
-	VAR_PROTECTED/target = null
+	/// The mob this attacker haunts: a relation view.
+	VAR_PROTECTED/mob/living/target = null
 	var/requires_hallucinating = TRUE // Mob will qdel if the target is not hallucinating if this is true
 
 DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
@@ -161,7 +162,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 
 /obj/effect/fake_attacker/human/periodic_step()
 	// check if valid
-	var/mob/living/M = om_resolve(target)
+	var/mob/living/M = QDELETED(target) ? null : target
 	if(!M)
 		qdel(src)
 		return null
@@ -177,7 +178,7 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 	return M
 
 /obj/effect/fake_attacker/human/proc/set_target(mob/M)
-	target = om_handle(M)
+	rel_set(src, "target", M)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Attacker: Performs hostile shoves and attacks
@@ -211,5 +212,6 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 		step_away(src,M)
 
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
-		target = null
 		qdel(src)
+
+REL_LIST(/obj/effect/fake_attacker, clients)

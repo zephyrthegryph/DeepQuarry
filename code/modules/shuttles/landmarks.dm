@@ -12,7 +12,7 @@
 	//ID of the landmark
 	var/landmark_tag
 	//ID of the controller on the dock side (intialize to id_tag, becomes reference)
-	var/tmp/docking_controller_handle
+	var/tmp/datum/embedded_program/docking/docking_controller
 	var/docking_controller_tag	// the tag it starts as; resolved into docking_controller at init
 	//Map of shuttle names to ID of controller used for this landmark for shuttles with multiple ones.
 	var/list/special_dock_targets
@@ -20,7 +20,8 @@
 	//When the shuttle leaves this landmark, it will leave behind the base area
 	//also used to determine if the shuttle can arrive here without obstruction
 	var/base_area	// the area type (or area) configured; Initialize() resolves it into landing_area()
-	var/tmp/base_area_handle
+	/// The resolved area (a plain area var, set at Initialize()).
+	var/tmp/area/landing_area
 	//Will also leave this type of turf behind if set.
 	var/base_turf
 	//Name of the shuttle, null for generic waypoint
@@ -39,24 +40,24 @@
 			var/area/A = locate(base_area)
 			if(!istype(A))
 				CRASH("Shuttle landmark \"[landmark_tag]\" couldn't locate area [base_area].")
-			base_area_handle = om_handle(A)
+			landing_area = A
 		else
-			base_area_handle = om_handle(get_area(src))
+			landing_area = get_area(src)
 		var/turf/T = get_turf(src)
 		if(T && !base_turf)
 			base_turf = T.type
 	else
-		base_area_handle = om_handle(isarea(base_area) ? base_area : locate(base_area || world.area))
+		landing_area = isarea(base_area) ? base_area : locate(base_area || world.area)
 	SSshuttles.register_landmark(landmark_tag, src)
 
 /obj/effect/shuttle_landmark/LateInitialize()
 	if(!docking_controller_tag)
 		return
 	var/docking_tag = docking_controller_tag
-	docking_controller_handle = om_handle(SSshuttles.docking_registry[docking_tag])
+	rel_set(src, "docking_controller", SSshuttles.docking_registry[docking_tag])
 	if(!istype(docking_controller(), /datum/embedded_program/docking))
 		log_mapping("Could not find docking controller for shuttle waypoint '[name]', docking tag was '[docking_tag]'.")
-	// No QDELETING registration: the controller is an OM handle, which reads null once it is deleted.
+	// No QDELETING registration: docking_controller is a relation view, cleared when the controller dies.
 	if(using_map.use_overmap)
 		var/obj/effect/overmap/visitable/location = get_overmap_sector(z)
 		if(location && location.docking_codes && use_docking_codes)
@@ -194,10 +195,10 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 		icon_state = "bluflare_on"
 		set_light(0.3, 0.1, 6, 2, "85d1ff")
 
-/// LC-refs: the docking_controller this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the docking_controller var.
 /obj/effect/shuttle_landmark/proc/docking_controller() as /datum/embedded_program/docking
-	return om_resolve(docking_controller_handle)
+	return docking_controller
 
-/// LC-refs: the area this landmark leaves behind when a shuttle departs -- an OM handle resolved from base_area at Initialize().
+/// The area this landmark leaves behind when a shuttle departs (resolved from base_area at Initialize()).
 /obj/effect/shuttle_landmark/proc/landing_area() as /area
-	return om_resolve(base_area_handle)
+	return landing_area

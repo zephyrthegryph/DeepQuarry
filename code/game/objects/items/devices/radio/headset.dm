@@ -14,8 +14,8 @@
 
 	var/translate_binary = FALSE
 	var/translate_hive = FALSE
-	var/obj/item/encryptionkey/keyslot1 = null // ALLOW(state_ref): owned: installed encryption key, kept in the headset's contents
-	var/obj/item/encryptionkey/keyslot2 = null // ALLOW(state_ref): owned: installed encryption key, kept in the headset's contents
+	var/obj/item/encryptionkey/keyslot1 = null
+	var/obj/item/encryptionkey/keyslot2 = null
 	var/ks1type = null
 	var/ks2type = null
 
@@ -29,8 +29,6 @@
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
-DECLARE_REF(/obj/item/radio/headset, "keyslot1", OWNED, null)
-DECLARE_REF(/obj/item/radio/headset, "keyslot2", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot1", "ks1type")
 DECLARE_DEFAULT_CHILD(/obj/item/radio/headset, "keyslot2", "ks2type")
 
@@ -98,12 +96,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(!keyslot1)
 		user.drop_item()
 		W.forceMove(src)
-		keyslot1 = W
+		own_set(src, "keyslot1", W)
 
 	else
 		user.drop_item()
 		W.forceMove(src)
-		keyslot2 = W
+		own_set(src, "keyslot2", W)
 
 
 	recalculateChannels()
@@ -116,14 +114,14 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
 		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
-		secure_radio_connections[ch_name] = null
+		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
 		keyslot1.forceMove(T)
-		keyslot1 = null
+		own_take(src, "keyslot1")
 	if(keyslot2)
 		keyslot2.forceMove(T)
-		keyslot2 = null
+		own_take(src, "keyslot2")
 	recalculateChannels()
 	to_chat(user, span_notice("You pop out the encryption keys in the headset!"))
 	playsound(src, tool.usesound, 50, TRUE)
@@ -183,7 +181,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			return
 
 		for (var/ch_name in channels)
-			secure_radio_connections[ch_name] = GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)
+			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -212,11 +210,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		if(!M.mob_radio)
 			user.drop_item()
 			forceMove(M)
-			M.mob_radio = src
+			own_set(M, "mob_radio", src)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)
-			M.mob_radio = null
+			own_take(M, "mob_radio")
 			return
 	..()
 
@@ -709,7 +707,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	desc = "A headset with numerous toolkits appended to it, applying a wide variety of effects to its wearer set as per its manufacturer."
 	icon_state = "cent_headset_alt"
 	item_state = "headset"
-	var/wearer_handle
+	var/mob/living/carbon/human/wearer
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
 	var/tmp/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
@@ -731,7 +729,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
 	if(H && ((H.get_equipped_item(SLOT_ID_EAR_L) == src) || (H.get_equipped_item(SLOT_ID_EAR_R) == src)))
-		wearer_handle = om_handle(H)
+		rel_set(src, "wearer", H)
 		if(light_power)
 			set_light(light_range,light_power,light_color,1)
 		if(effect_icon)
@@ -744,12 +742,12 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
-				LAZYADD(remove_spells, SP)
+				own_add(src, "remove_spells", SP)
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
 	if(wearer())
-		wearer_handle = null
+		rel_clear(src, "wearer")
 		if(light_power)
 			light_on = 0
 		if(effect_icon)
@@ -812,11 +810,9 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	name = "explorer's bowman headset"
 	desc = "Bowman headset used by explorers for exploring. Access to the explorer channel."
 
-DECLARE_REF(/obj/item/radio/headset/event, "effect_overlay", OWNED, null)
 
-/// LC-refs: wearer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: wearer (reads null once it is gone).
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
-	return om_resolve(wearer_handle)
+	return wearer
 
-// The AI owns this radio through common_radio; myAi is the back reference.
-DECLARE_REF(/obj/item/radio/headset/heads/ai_integrated, "myAi", BACK, "common_radio")
+// The AI owns this radio through aiRadio; myAi is the back reference.

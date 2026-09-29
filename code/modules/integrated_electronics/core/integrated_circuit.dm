@@ -36,16 +36,13 @@ a creative player the means to solve many problems.  Circuits are held inside an
 	displayed_name = name
 	if(!size) size = w_class
 	if(size == -1) size = 0
-	setup_io(inputs, /datum/integrated_io, inputs_default)
-	setup_io(outputs, /datum/integrated_io, outputs_default)
-	setup_io(activators, /datum/integrated_io/activate)
+	setup_io("inputs", /datum/integrated_io, inputs_default)
+	setup_io("outputs", /datum/integrated_io, outputs_default)
+	setup_io("activators", /datum/integrated_io/activate)
 
 /obj/item/integrated_circuit/proc/on_data_written() //Override this for special behaviour when new data gets pushed to the circuit.
 	return
 
-DECLARE_REF(/obj/item/integrated_circuit, "inputs", OWNED_LIST, null)
-DECLARE_REF(/obj/item/integrated_circuit, "outputs", OWNED_LIST, null)
-DECLARE_REF(/obj/item/integrated_circuit, "activators", OWNED_LIST, null)
 
 DAMAGE_REACTION(/obj/item/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_emp_scramble))
 
@@ -222,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	disconnect_all()
 	var/turf/T = get_turf(src)
 	forceMove(T)
-	assembly_handle = null
+	rel_clear(src, "assembly")
 	play_sfx(T, SFX_ITEMS_CROWBAR)
 	to_chat(user, span_notice("You pop \the [src] out of the case, and slide it out."))
 

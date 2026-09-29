@@ -7,10 +7,10 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	plane = PLANE_PLAYER_HUD_ABOVE
 	vis_flags = VIS_INHERIT_PLANE
 	var/click_on_hover = FALSE
-	var/parent_handle
+	var/datum/radial_menu/parent
 
 /atom/movable/screen/radial/proc/set_parent(new_value)
-	parent_handle = om_handle(new_value)
+	rel_set(src, "parent", new_value)
 
 /atom/movable/screen/radial/slice
 	icon_state = "radial_slice"
@@ -88,8 +88,8 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	var/selected_choice
 	var/list/atom/movable/screen/elements
 	var/atom/movable/screen/radial/center/close_button
-	var/current_user_handle
-	var/anchor_handle
+	var/client/current_user
+	var/atom/anchor
 	var/image/menu_holder
 	var/finished = FALSE
 
@@ -116,12 +116,12 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		return
 	if(AM in user.client.screen)
 		if(hudfix_method)
-			anchor_handle = om_handle(user)
+			rel_set(src, "anchor", user)
 		else
 			py_shift = 32
 			restrict_to_dir(NORTH) //I was going to parse screen loc here but that's more effort than it's worth.
 	else if(hudfix_method && AM.loc)
-		anchor_handle = om_handle(get_atom_on_turf(anchor()))
+		rel_set(src, "anchor", get_atom_on_turf(anchor()))
 
 //Sets defaults
 //These assume 45 deg min_angle
@@ -154,7 +154,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			LAZYADD(elements, new_element)
+			own_add(src, "elements", new_element)
 
 	var/page = 1
 	page_data = list(null)
@@ -258,7 +258,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
-	close_button = new
+	own_set(src, "close_button", new /atom/movable/screen/radial/center)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()
@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 		hide()
 	if(!M.client || !anchor())
 		return
-	current_user_handle = om_handle(M.client)
+	rel_set(src, "current_user", M.client)
 	//Blank
 	menu_holder = image(icon='icons/effects/effects.dmi',loc=anchor(),icon_state="nothing", layer = RADIAL_BACKGROUND_LAYER, pixel_x = offset_x, pixel_y = offset_y)
 	menu_holder.plane = PLANE_PLAYER_HUD_ABOVE
@@ -338,10 +338,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
-DECLARE_REF(/datum/radial_menu, "close_button", OWNED, null)
-DECLARE_REF(/datum/radial_menu, "menu_holder", OWNED, null)
 
-DECLARE_REF(/datum/radial_menu, "elements", OWNED_LIST, null)
 
 /// Can be provided to choices in radial menus if you want to provide more information
 /datum/radial_menu_choice
@@ -354,18 +351,17 @@ DECLARE_REF(/datum/radial_menu, "elements", OWNED_LIST, null)
 	/// If provided, will display an info button that will put this text in your chat
 	var/info
 
-DECLARE_REF(/datum/radial_menu_choice, "image", OWNED, null)
 
 #undef NEXT_PAGE_ID
 
-/// LC-refs: the radial menu this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The radial menu this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/radial/proc/parent() as /datum/radial_menu
-	return om_resolve(parent_handle)
+	return parent
 
-/// LC-refs: the client the menu is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client the menu is shown to (a relation view: null once that is deleted).
 /datum/radial_menu/proc/current_user() as /client
-	return om_resolve(current_user_handle)
+	return current_user
 
-/// LC-refs: the atom the menu is anchored to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the menu is anchored to (a relation view: null once that is deleted).
 /datum/radial_menu/proc/anchor() as /atom
-	return om_resolve(anchor_handle)
+	return anchor

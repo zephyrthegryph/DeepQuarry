@@ -256,7 +256,6 @@
 
 /// Begin coordinated remote viewing, this will call look() when the view begins, and unlook() when it ends.
 /proc/start_coordinated_remoteview(datum/coordinator, mob/user, atom/target, list/viewer_managed_list, remote_view_config_path = null)
-	ASSERT(islist(viewer_managed_list))
 	user.begin_remote_view(/datum/remote_view/viewer_managed, target, null, remote_view_config_path, coordinator, viewer_managed_list)
 
 /// Called from /datum/remote_view/viewer_managed when the view begins.

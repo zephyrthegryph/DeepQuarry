@@ -21,8 +21,8 @@
 	var/download_progress = 0
 	var/download_speed = 0
 
-	var/tmp/current_account_handle
-	var/tmp/current_message_handle
+	var/tmp/datum/computer_file/data/email_account/current_account
+	var/tmp/datum/computer_file/data/email_message/current_message
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
@@ -33,7 +33,7 @@
 				if(account.suspended)
 					error = "This account has been suspended. Please contact the system administrator for assistance."
 					return 0
-				current_account_handle = om_handle(account)
+				rel_set(src, "current_account", account)
 				return 1
 			else
 				error = "Invalid Password"
@@ -61,8 +61,8 @@
 		read_message_count = allmails.len
 
 /datum/tgui_module/email_client/proc/log_out()
-	current_account_handle = null
-	downloading = null
+	rel_clear(src, "current_account")
+	own_take(src, "downloading")
 	download_progress = 0
 	last_message_count = 0
 	read_message_count = 0
@@ -156,9 +156,9 @@
 				data["cur_attachment_filename"] = "[current_message().attachment.filename].[current_message().attachment.filetype]"
 				data["cur_attachment_size"] = current_message().attachment.size
 		else
-			data["label_inbox"] = "Inbox ([current_account().inbox.len])"
-			data["label_spam"] = "Spam ([current_account().spam.len])"
-			data["label_deleted"] = "Deleted ([current_account().deleted.len])"
+			data["label_inbox"] = "Inbox ([length(current_account().inbox)])"
+			data["label_spam"] = "Spam ([length(current_account().spam)])"
+			data["label_deleted"] = "Deleted ([length(current_account().deleted)])"
 			var/list/message_source
 			if(folder == "Inbox")
 				message_source = current_account().inbox
@@ -203,8 +203,8 @@
 	msg_title = ""
 	msg_body = ""
 	msg_recipient = ""
-	msg_attachment = null
-	current_message_handle = null
+	own_take(src, "msg_attachment")
+	rel_clear(src, "current_message")
 
 /datum/tgui_module/email_client/proc/relayed_process(netspeed)
 	download_speed = netspeed
@@ -215,7 +215,7 @@
 		var/obj/item/modular_computer/MC = tgui_host()
 		if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 			error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
-			downloading = null
+			own_take(src, "downloading")
 			download_progress = 0
 			return 1
 
@@ -223,7 +223,7 @@
 			error = "File successfully downloaded to local device."
 		else
 			error = "Error saving file: I/O Error: The hard drive may be full or nonfunctional."
-		downloading = null
+		own_take(src, "downloading")
 		download_progress = 0
 	return 1
 
@@ -311,14 +311,15 @@
 			if(!istype(M))
 				return 1
 			if(folder == "Deleted")
-				current_account().deleted.Remove(M)
+				rel_remove(current_account(), "deleted", M)
 				qdel(M)
 			else
-				current_account().deleted.Add(M)
-				current_account().inbox.Remove(M)
-				current_account().spam.Remove(M)
+				var/datum/computer_file/data/email_account/mailbox = current_account()
+				rel_add(mailbox, "deleted", M)
+				rel_remove(mailbox, "inbox", M)
+				rel_remove(mailbox, "spam", M)
 			if(current_message() == M)
-				current_message_handle = null
+				rel_clear(src, "current_message")
 			return 1
 
 		if("send")
@@ -332,7 +333,7 @@
 			message.title = msg_title
 			message.stored_data = msg_body
 			message.source = current_account().login
-			message.attachment = msg_attachment
+			own_set(message, "attachment", msg_attachment)
 			if(!current_account().send_mail(msg_recipient, message))
 				error = "Error sending email: this address doesn't exist."
 				return 1
@@ -360,7 +361,7 @@
 		if("view")
 			var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["view"])
 			if(istype(M))
-				current_message_handle = om_handle(M)
+				rel_set(src, "current_message", M)
 			return 1
 
 		if("changepassword")
@@ -426,7 +427,7 @@
 
 		if("addattachment")
 			var/obj/item/modular_computer/MC = tgui_host()
-			msg_attachment = null
+			own_take(src, "msg_attachment")
 
 			if(!istype(MC) || !MC.hard_drive || !MC.hard_drive.check_functionality())
 				error = "Error uploading file. Are you using a functional and NTOSv2-compliant device?"
@@ -452,16 +453,16 @@
 				if(CF.unsendable)
 					continue
 				if(CF.filename == picked_file)
-					msg_attachment = CF.clone()
+					own_set(src, "msg_attachment", CF.clone())
 					break
 			if(!istype(msg_attachment))
-				msg_attachment = null
+				own_take(src, "msg_attachment")
 				error = "Unknown error when uploading attachment."
 				return 1
 
 			if(msg_attachment.size > 32)
 				error = "Error uploading attachment: File exceeds maximal permitted file size of 32GQ."
-				msg_attachment = null
+				own_take(src, "msg_attachment")
 			else
 				error = "File [msg_attachment.filename].[msg_attachment.filetype] has been successfully uploaded."
 			return 1
@@ -474,26 +475,24 @@
 				error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
 				return 1
 
-			downloading = current_message().attachment.clone()
+			own_set(src, "downloading", current_message().attachment.clone())
 			download_progress = 0
 			return 1
 
 		if("canceldownload")
-			downloading = null
+			own_take(src, "downloading")
 			download_progress = 0
 			return 1
 
 		if("remove_attachment")
-			msg_attachment = null
+			own_take(src, "msg_attachment")
 			return 1
 
-DECLARE_REF(/datum/tgui_module/email_client, "msg_attachment", OWNED, null)
-DECLARE_REF(/datum/tgui_module/email_client, "downloading", OWNED, null)
 
-/// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_account this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account
-	return om_resolve(current_account_handle)
+	return current_account
 
-/// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_message this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/email_client/proc/current_message() as /datum/computer_file/data/email_message
-	return om_resolve(current_message_handle)
+	return current_message

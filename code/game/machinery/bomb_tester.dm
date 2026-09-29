@@ -19,7 +19,7 @@
 
 	var/obj/item/tank/tank1
 	var/obj/item/tank/tank2
-	var/test_canister_handle
+	var/obj/machinery/portable_atmospherics/canister/test_canister
 
 	var/sim_mode = MODE_SINGLE
 	var/sim_canister_output = 10*ONE_ATMOSPHERE
@@ -39,22 +39,22 @@
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	faketank = new
+	own_set(src, "faketank", new /datum/gas_mixture)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)
 		tank1.forceMove(get_turf(src))
-		tank1 = null
+		own_take(src, "tank1")
 	if(tank2)
 		tank2.forceMove(get_turf(src))
-		tank2 = null
+		own_take(src, "tank2")
 	simulation_finish(1)
 	return ..()
 
 /obj/machinery/bomb_tester/machine_step()
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
-		test_canister_handle = null
+		rel_clear(src, "test_canister")
 
 /obj/machinery/bomb_tester/update_icon()
 	cut_overlays()
@@ -100,9 +100,9 @@
 	user.drop_item(I)
 	I.forceMove(src)
 	if(!tank1)
-		tank1 = I
+		own_set(src, "tank1", I)
 	else
-		tank2 = I
+		own_set(src, "tank2", I)
 	update_icon()
 	SStgui.update_uis(src)
 	to_chat(user, span_notice("You connect \the [I] to \the [src]'s [I==tank1 ? "primary" : "secondary"] slot."))
@@ -165,9 +165,9 @@
 				var/obj/item/tank/T = ui.user.get_active_hand()
 				var/slot = params["slot"]
 				if(slot == 1 && !tank1)
-					tank1 = T
+					own_set(src, "tank1", T)
 				else if(slot == 2 && !tank2)
-					tank2 = T
+					own_set(src, "tank2", T)
 				else
 					to_chat(ui.user, span_warning("Slot [slot] is full."))
 					return
@@ -182,9 +182,9 @@
 			var/obj/item/tank/T = locate_in_list(list(tank1, tank2), params["ref"])
 			if(istype(T))
 				if(T == tank1)
-					tank1 = null
+					own_take(src, "tank1")
 				if(T == tank2)
-					tank2 = null
+					own_take(src, "tank2")
 				T.forceMove(get_turf(src))
 				update_icon()
 			return TRUE
@@ -194,10 +194,10 @@
 				if(C && C == test_canister())
 					continue
 				else if(C)
-					test_canister_handle = om_handle(C)
+					rel_set(src, "test_canister", C)
 					break
 				else
-					test_canister_handle = null
+					rel_clear(src, "test_canister")
 			return TRUE
 
 		if("set_can_pressure")
@@ -396,10 +396,9 @@
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 
-DECLARE_REF(/obj/machinery/bomb_tester, "tank1", HELD, null)
-DECLARE_REF(/obj/machinery/bomb_tester, "tank2", HELD, null)
-DECLARE_REF(/obj/machinery/bomb_tester, "faketank", OWNED, null)
+OWN(/obj/machinery/bomb_tester, tank1, OWN_CONTAINED)
+OWN(/obj/machinery/bomb_tester, tank2, OWN_CONTAINED)
 
-/// LC-refs: test canister -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// test canister (a relation view: it reads null once the target is deleted).
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister
-	return om_resolve(test_canister_handle)
+	return test_canister

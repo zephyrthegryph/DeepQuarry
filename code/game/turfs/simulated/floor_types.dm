@@ -5,14 +5,14 @@
 	name = "landed turf holder"
 	desc = "holds all the info about the turf this turf 'landed on'"
 	var/turf_type
-	var/my_turf_handle
+	var/turf/simulated/shuttle/my_turf
 	var/image/turf_image
 	var/list/decals
 
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
-		my_turf_handle = om_handle(get_turf(src))
+		rel_set(src, "my_turf", get_turf(src))
 		moveToNullspace()
 
 /obj/landed_holder/proc/land_on(turf/T)
@@ -45,8 +45,8 @@
 	new_dest.lighting_build_overlay()
 
 	// Associate the holder with the new turf.
-	new_holder.my_turf_handle = om_handle(new_dest)
-	new_dest.landed_holder_ref = new_holder
+	rel_set(new_holder, "my_turf", new_dest)
+	own_set(new_dest, "landed_holder_ref", new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
@@ -449,13 +449,11 @@ EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM
 	icon_state = "floor"
 	set_light(0,0,"#ffffff")
 
-DECLARE_REF(/obj/landed_holder, "turf_image", OWNED, null)
 
-/// LC-refs: my turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// My turf (a relation view).
 /obj/landed_holder/proc/my_turf() as /turf/simulated/shuttle
-	return om_resolve(my_turf_handle)
+	return my_turf
 
-DECLARE_REF(/turf/simulated/shuttle, "landed_holder_ref", OWNED, null)
 
 /// The landed holder this floor owns (landed_holder_ref), or null.
 /turf/simulated/shuttle/proc/landed_holder() as /obj/landed_holder

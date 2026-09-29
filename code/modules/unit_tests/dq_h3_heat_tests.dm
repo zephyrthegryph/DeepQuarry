@@ -232,7 +232,7 @@
 	T.hotspot_expose(PLASMA_MINIMUM_BURN_TEMPERATURE + 500, CELL_VOLUME, TRUE)
 	var/obj/effect/hotspot/hotspot = T.active_hotspot
 	TEST_ASSERT(hotspot, "the tile burns")
-	TEST_ASSERT_EQUAL(om_resolve(probe.heat_fire_turf_handle), T, "the hotspot coupled the item to the burning gas")
+	TEST_ASSERT_EQUAL(probe.heat_fire_turf, T, "the hotspot coupled the item to the burning gas")
 	TEST_ASSERT(!isnull(probe.heat_body), "through its heat body")
 	var/start = probe.get_temperature()
 	// Was a fixed vg_world_run_steps(3): that assumed 3 frames is always
@@ -246,15 +246,15 @@
 	// checkpoint notes. Kept short (not 500 frames) so this fails fast instead
 	// of adding 30+ seconds to every run while that's open.
 	var/heated = wait_for_condition(
-		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
-		CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(vg_world_run_steps), 1),
+		om_callable(null, GLOBAL_PROC_REF(dq_h3_probe_warmer_than), probe, start),
+		om_callable(null, GLOBAL_PROC_REF(vg_world_run_steps), 1),
 		20,
 	)
 	TEST_ASSERT(heated, "the heat domain heats it (KNOWN ISSUE: heat-domain coupling, not test isolation -- see doc/testing.md flaky notes)")
 	hotspot.perform_exposure()
 	TEST_ASSERT_EQUAL(probe.fire_acts, 0, "without a fire_act() call per SSair fire")
 	qdel(hotspot)
-	TEST_ASSERT_NULL(om_resolve(probe.heat_fire_turf_handle), "the fire going out uncouples it")
+	TEST_ASSERT_NULL(probe.heat_fire_turf, "the fire going out uncouples it")
 
 	for(var/obj/effect/hotspot/other in range(2, T))
 		qdel(other)

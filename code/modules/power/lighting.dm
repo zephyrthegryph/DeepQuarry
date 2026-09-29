@@ -26,8 +26,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	var/stage = 1
 	var/fixture_type = /obj/machinery/light
 	var/sheets_refunded = 2
-	var/tmp/newlight_handle
-	var/tmp/cell_handle
+	var/tmp/obj/machinery/light/newlight
+	var/tmp/obj/item/cell/cell
 
 	var/cell_connectors = TRUE
 
@@ -88,7 +88,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell()].")), MSG_OTHERS("%U% removes [cell()] from %T%!"))
 		user.put_in_hands(cell())
 		cell().update_icon()
-		cell_handle = null
+		own_take(src, "cell") // it left for the user's hands
 	return TRUE
 
 /datum/interaction/machine_item/light_construct_insert_cell
@@ -111,7 +111,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
 		play_sfx(src, SFX_MACHINES_CLICK)
 		W.forceMove(src)
-		cell_handle = om_handle(W)
+		own_set(src, "cell", W)
 		add_fingerprint(user)
 	return TRUE
 
@@ -170,9 +170,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	transfer_fingerprints_to(finished_light)
 	if(cell())
 		finished_light.latent_cell_charge = null
-		finished_light.cell = cell()
 		cell().forceMove(finished_light)
-		cell_handle = null
+		own_transfer(src, "cell", finished_light, "cell")
 	replace_with(src, finished_light)
 	return ITEM_INTERACT_SUCCESS
 
@@ -217,7 +216,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 			icon_state = "flamp-empty"
 
 // the standard tube light fixture
-OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
+OWN_TIMER(/obj/machinery/light, light_timer_token)
 
 /obj/machinery/light
 	name = "light fixture"
@@ -265,7 +264,7 @@ OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
 	EXPIRY_DECLARE(emergency_discharge_started)
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
-	var/tmp/area_power_token_handle
+	var/tmp/area/area_power_token
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_at = 0
 	EXPIRY_TMP_DECLARE(flicker_check_at)
@@ -350,8 +349,6 @@ OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-DECLARE_REF(/obj/machinery/light, "cell", OWNED, null)
-DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 /// Phase 2: stops watching player chunks for flicker.
 /obj/machinery/light/lifecycle_dematerialize()
@@ -541,7 +538,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
 		latent_bulb = FALSE
-		installed_light = new light_type(src)
+		own_set(src, "installed_light", new light_type(src))
 		installed_light.status = status
 		installed_light.switchcount = switchcount
 		installed_light.rigged = rigged
@@ -558,7 +555,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	if(!isnull(latent_cell_charge))
 		var/charge = latent_cell_charge
 		latent_cell_charge = null
-		cell = new /obj/item/cell/emergency_light(src)
+		own_set(src, "cell", new /obj/item/cell/emergency_light(src))
 		cell.charge = charge
 	return cell
 
@@ -621,7 +618,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L)
 	update_from_bulb(L)
 	latent_bulb = FALSE
-	installed_light = L
+	own_set(src, "installed_light", L)
 	L.forceMove(src) //Move it into the socket!
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
@@ -638,7 +635,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	//. = new light_type(src.loc, src)
 
 	switchcount = 0
-	installed_light = null
+	own_take(src, "installed_light")
 	latent_bulb = FALSE
 	status = LIGHT_EMPTY
 	update()
@@ -976,7 +973,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
-	O.host_handle = om_handle(user)
+	rel_set(O, "host", user)
 	O.focus_object(B)
 	B.update_icon()
 	remove_bulb()
@@ -1029,11 +1026,11 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		return
 	if(area_power_token())
 		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
-		area_power_token_handle = null
+		area_power_token = null
 	if(A)
 		om_attach(src, /datum/om/behaviour/sleeper/light)
 		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		area_power_token_handle = om_handle(A)
+		area_power_token = A
 
 /// Area power changes and players moving near a waiting auto-flicker light.
 /datum/om/behaviour/sleeper/light
@@ -1752,19 +1749,20 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	set_on(1)
 	broken()
 
-DECLARE_REF(/obj/machinery/light, "installed_light", HELD, null)
+OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)
+OWN(/obj/machinery/light_construct, cell, OWN_CONTAINED)
 
-/// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the newlight this refers to: a relation view, null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
-	return om_resolve(newlight_handle)
+	return newlight
 
-/// LC-refs: the area_power_token this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The area whose power this light draws on (a plain area var).
 /obj/machinery/light/proc/area_power_token() as /area
-	return om_resolve(area_power_token_handle)
+	return area_power_token
 
-/// LC-refs: the cell this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The emergency cell fitted in the frame (owned, in its contents).
 /obj/machinery/light_construct/proc/cell() as /obj/item/cell
-	return om_resolve(cell_handle)
+	return cell
 
 /// A multitool recolouring a bulb (normal or nightshift colour).
 /datum/om/prompt/color/light_bulb

@@ -36,12 +36,12 @@
 	docking_definition.minimum_area = 16
 	var/datum/generated_station_department_instance/command = new
 	command.id = "command-1"
-	command.definition_static = command_definition
+	rel_set(command, "definition_static", command_definition)
 	command.desired_area = 165
 	command.layout_node_id = "node-command"
 	var/datum/generated_station_department_instance/docking = new
 	docking.id = "docking-1"
-	docking.definition_static = docking_definition
+	rel_set(docking, "definition_static", docking_definition)
 	docking.desired_area = 165
 	docking.layout_node_id = "node-docking"
 	var/datum/generated_station_layout_node/command_node = new
@@ -71,10 +71,17 @@
 	spec.grid_width = 44
 	spec.grid_height = 16
 	spec.maximum_area = 704
-	spec.department_definitions = list(command_definition, docking_definition)
-	spec.departments = list(command, docking)
-	spec.layout_nodes = list(command_node, docking_node)
-	spec.layout_edges = list(edge)
+	own_clear(spec, "department_definitions", OWN_DELETE)
+	own_add(spec, "department_definitions", command_definition)
+	own_add(spec, "department_definitions", docking_definition)
+	own_clear(spec, "departments", OWN_DELETE)
+	own_add(spec, "departments", command)
+	own_add(spec, "departments", docking)
+	own_clear(spec, "layout_nodes", OWN_DELETE)
+	own_add(spec, "layout_nodes", command_node)
+	own_add(spec, "layout_nodes", docking_node)
+	own_clear(spec, "layout_edges", OWN_DELETE)
+	own_add(spec, "layout_edges", edge)
 
 	var/datum/generated_station_materializer/materializer = new
 	var/origin_x = world.maxx - spec.grid_width + 1
@@ -103,7 +110,7 @@
 	TEST_ASSERT(length(materialized.furnishings) >= 16, "Functional modules did not receive credible furnishing sets")
 	var/fire_alarms = 0
 	var/emergency_closets = 0
-	for(var/atom/movable/furnishing in weak_list_live(materialized.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))
 		if(istype(furnishing, /obj/machinery/firealarm))
 			var/obj/machinery/firealarm/fire_alarm = furnishing
 			TEST_ASSERT(istype(get_step(get_turf(fire_alarm), turn(fire_alarm.dir, 180)), /turf/simulated/wall), "Fire alarm is not visually mounted against its wall")
@@ -248,7 +255,7 @@
 		if(solution_module?.role in machinery_roles && !findtext(solution.definition_id, "-compact-"))
 			TEST_ASSERT(machinery_count > 0, "Operational room [solution.module_id] contains no machinery")
 	var/list/furnished_departments = list()
-	for(var/atom/movable/furnishing in weak_list_live(materialized.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))
 		var/area/generated_station/furnishing_area = get_area(furnishing)
 		if(furnishing_area?.department_id)
 			furnished_departments[furnishing_area.department_id] = TRUE

@@ -10,7 +10,8 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 
 	var/list/datum/event/finished_events = list()
 
-	var/list/datum/event/allEvents
+	/// Every /datum/event subtype path (type paths, not entities).
+	var/list/allEvents
 	var/alist/event_containers
 
 	var/datum/event_meta/new_event = new
@@ -47,13 +48,13 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 		log_game("Event of '[E.type]' with missing meta-data has completed.")
 		return
 
-	finished_events += E
+	own_add(src, "finished_events", E)
 
 	// Add the event back to the list of available events
 	var/datum/event_container/EC = event_containers[E.severity]
 	var/datum/event_meta/EM = E.event_meta()
 	if(EM.add_to_queue)
-		EC.available_events += EM
+		rel_add(EC, "available_events", EM)
 
 	log_game("Event '[EM.name]' has completed at [stationtime2text()].")
 
@@ -80,6 +81,3 @@ GLOBAL_DATUM_INIT(event_service, /datum/world_service/events, new)
 				message += "and ran to completion."
 		to_chat(world, message)
 
-DECLARE_REF(/datum/world_service/events, "new_event", OWNED, null)
-DECLARE_REF(/datum/world_service/events, "finished_events", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/events, "allEvents", STATIC, null)

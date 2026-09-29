@@ -169,7 +169,6 @@
 			converted_entry = strip_name_tokens(converted_entry)
 		src.entry = trim(converted_entry, PREVENT_CHARACTER_TRIM_LOSS(max_length))
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_text/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui_input_text, "state_static", STATIC, null)

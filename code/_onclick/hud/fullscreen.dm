@@ -10,7 +10,7 @@
 		// needs to be recreated
 		clear_fullscreen(category, FALSE)
 		screen = new type()
-		LAZYSET(screens, category, screen)
+		own_put(src, "screens", category, screen)
 	else if ((!severity || severity == screen.severity) && (!client || screen.screen_loc != "CENTER-7,CENTER-7" || screen.view == client.view))
 		// doesn't need to be updated
 		return screen
@@ -28,7 +28,7 @@
 	if(!screen)
 		return
 
-	LAZYREMOVE(screens, category)
+	own_take_member(src, "screens", category)
 
 	if(animated)
 		animate(screen, alpha = 0, time = animated)

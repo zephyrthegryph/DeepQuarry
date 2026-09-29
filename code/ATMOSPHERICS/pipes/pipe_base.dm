@@ -8,9 +8,8 @@
 	var/volume = 0
 	var/leaking = FALSE // Do not set directly, use set_leaking(TRUE/FALSE)
 	var/damaged_leak = FALSE
-	/// Pipelines which cache this pipe as a boundary edge. A pipe can be an edge
-	/// of several foreign pipelines, so `parent` alone is not sufficient ownership.
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
+	/// Pipelines which cache this pipe as a boundary edge (two-sided with their `edges`).
+	/// A pipe can be an edge of several foreign pipelines.
 	var/list/datum/pipeline/edge_pipelines
 
 	layer = PIPES_LAYER
@@ -48,14 +47,14 @@
 	wake_automatic_shutoff_valves(parent?.network)
 	if(parent)
 		if(leaking)
-			parent.leaks |= src
+			rel_add(parent, "leaks", src)
 		else
-			parent.leaks -= src
+			rel_remove(parent, "leaks", src)
 		if(parent.network)
 			if(leaking)
-				parent.network.leaks |= src
+				rel_add(parent.network, "leaks", src)
 			else
-				parent.network.leaks -= src
+				rel_remove(parent.network, "leaks", src)
 			parent.network.mark_leak_dirty()
 	// Without a network yet, network construction (rust_pipenets.dm) collects leaking pipes itself.
 
@@ -135,10 +134,7 @@
 	clear_leak_gas_dependencies()
 	wake_automatic_shutoff_valves(old_parent?.network)
 	release_sorbed_material_gas()
-	var/list/old_edge_pipelines = edge_pipelines
-	edge_pipelines = null
-	for(var/datum/pipeline/edge_owner as anything in old_edge_pipelines)
-		edge_owner.remove_edge(src, FALSE)
+	// `parent` and `edge_pipelines` are two-sided relations: the framework clears both ends.
 	if(rust_owned_parent)
 		// Rust already captured this port's exact volume share in the queued
 		// remove-to-mixture transaction. The persistent-region commit retires the
@@ -146,21 +142,13 @@
 		// to qdel that shared wrapper from every exploded pipe was deliberately
 		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
 		if(!QDELETED(old_parent))
-			old_parent.members -= src
-			old_parent.leaks -= src
-		parent = null
+			rel_remove(old_parent, "leaks", src)
 	else
-		// Legacy wrappers still own their own gas and teardown semantics.
-		QDEL_NULL(parent)
+		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
+		qdel(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
-		QDEL_NULL(air_temporary)
-
-/obj/machinery/atmospherics/pipe/proc/register_edge_pipeline(datum/pipeline/edge_owner)
-	LAZYOR(edge_pipelines, edge_owner)
-
-/obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
-	LAZYREMOVE(edge_pipelines, edge_owner)
+		own_clear(src, "air_temporary", OWN_DELETE)
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
 /// mixtures either side of the leak: it wakes only once they no longer match, which is when the
@@ -175,7 +163,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(leak_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_leak)))
+	om_watch_arm_condition(src, "leak", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(leak_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_leak)))
 
 /obj/machinery/atmospherics/pipe/proc/leak_wake_condition()
 	return leaking && leak_needs_equalization(parent?.air, loc?.return_air())
@@ -333,6 +321,5 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "air_temporary", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "parent", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "edge_pipelines", HELD, null)
+REL_PAIR(/obj/machinery/atmospherics/pipe, parent, members)
+REL_PAIR_LIST(/obj/machinery/atmospherics/pipe, edge_pipelines, edges)

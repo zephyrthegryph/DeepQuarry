@@ -12,44 +12,32 @@
 /datum/alternate_appearance
 	var/key = ""
 	var/image/img
-	var/list/viewers = list() // ALLOW(instance_list): d: every alternate appearance is shown to someone
-	var/tmp/owner_handle
+	/// The mobs shown this appearance: a relation list (partner: atom.alt_appearances_viewing).
+	var/list/mob/viewers
+	/// The atom owning us (atom.alt_appearances_owned[key]): a one-sided back view.
+	var/tmp/atom/owner
 
 /datum/alternate_appearance/proc/display_to(list/displayTo)
 	if(!displayTo || !displayTo.len)
 		return
 	for(var/mob/M as anything in displayTo)
-		var/list/viewing = dq_get_viewing_alt_appearances(M, create = TRUE)
-		viewers |= M // ALLOW(object_keyed_lists): hide()/remove() walk viewers to pull the image off each client; a cache null would strand it
-		viewing |= src
+		rel_add(src, "viewers", M) // lists us in M.alt_appearances_viewing too
 		if(M.client)
 			M.client.images |= img
 
 /datum/alternate_appearance/proc/hide(list/hideFrom)
-	var/list/hiding = viewers
-	if(hideFrom)
-		hiding = hideFrom
+	var/list/hiding = hideFrom || viewers?.Copy()
 
 	for(var/mob/M as anything in hiding)
 		if(M.client)
 			M.client.images -= img
-		var/list/viewing = dq_get_viewing_alt_appearances(M)
-		if(viewing && viewing.len)
-			viewing -= src
-			if(!viewing.len)
-				dq_clear_viewing_alt_appearances_component(M)
-		viewers -= M
+		rel_remove(src, "viewers", M) // and from M.alt_appearances_viewing
 
 /datum/alternate_appearance/proc/remove()
 	hide()
-	if(owner())
-		var/list/owned = dq_get_alt_appearances(owner())
-		if(owned)
-			owned -= key
-			if(!owned.len)
-				dq_clear_alt_appearances_component(owner())
 
-// it is removed from everyone who saw it.
+// its image comes off everyone who saw it; phase 2 takes it out of its owner's list and phase 4
+// drops the viewing links.
 /datum/alternate_appearance/on_destroy(force)
 	remove()
 	..()
@@ -57,33 +45,22 @@
 /atom/proc/add_alt_appearance(key, img, list/displayTo = list())
 	if(!key || !img)
 		return
-	var/list/owned = dq_get_alt_appearances(src, create = TRUE)
-
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
 	AA.key = key
-	AA.owner_handle = om_handle(src)
+	rel_set(AA, "owner", src)
 
-	if(owned[key])
-		qdel(owned[key])
-	owned[key] = AA
+	own_put(src, "alt_appearances_owned", key, AA) // deletes the one it replaces
 	if(displayTo && displayTo.len)
 		display_alt_appearance(key, displayTo)
 
 /atom/proc/remove_alt_appearance(key)
 	var/list/owned = dq_get_alt_appearances(src)
 	if(owned && owned[key])
-		qdel(owned[key])
+		own_put(src, "alt_appearances_owned", key, null)
 
 /atom/proc/remove_all_alt_appearances()
-	var/list/owned = dq_get_alt_appearances(src)
-	if(!owned)
-		return
-	for(var/key in owned)
-		if(owned[key])
-			qdel(owned[key])
-			owned.Remove(key)
-	dq_clear_alt_appearances_component(src)
+	own_clear(src, "alt_appearances_owned", OWN_DELETE)
 
 /atom/proc/display_alt_appearance(key, list/displayTo)
 	var/list/owned = dq_get_alt_appearances(src)
@@ -103,8 +80,7 @@
 		return
 	AA.hide(hideFrom)
 
-DECLARE_REF(/datum/alternate_appearance, "img", OWNED, null)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom owning this appearance.
 /datum/alternate_appearance/proc/owner() as /atom
-	return om_resolve(owner_handle)
+	return owner

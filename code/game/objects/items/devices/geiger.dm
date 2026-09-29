@@ -78,9 +78,9 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 
 	if (scanning)
 		if(!geiger_sound)
-			geiger_sound = new /datum/geiger_sound(src)
+			own_set(src, "geiger_sound", new /datum/geiger_sound(src))
 	else
-		QDEL_NULL(geiger_sound)
+		own_clear(src, "geiger_sound", OWN_DELETE)
 
 	update_icon()
 	balloon_alert(user, "switch [scanning ? "on" : "off"]")
@@ -172,7 +172,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	. = ..()
 	if(scanning)
 		if(!geiger_sound)
-			geiger_sound = new /datum/geiger_sound/wall(src) // ALLOW(decl): only while scanning
+			own_set(src, "geiger_sound", new /datum/geiger_sound/wall(src)) // ALLOW(decl): only while scanning
 
 /obj/item/geiger/wall/update_icon()
 	if(!scanning)

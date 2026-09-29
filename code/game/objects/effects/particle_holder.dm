@@ -12,7 +12,7 @@
 	/// See \code\__DEFINES\particles.dm
 	var/particle_flags = NONE
 
-	var/parent_handle
+	var/atom/parent
 
 /obj/effect/abstract/particle_holder/Initialize(mapload, particle_path = /particles/smoke, particle_flags = NONE)
 	. = ..()
@@ -24,7 +24,7 @@
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 
 	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
-	parent_handle = om_handle(loc)
+	rel_set(src, "parent", loc)
 	moveToNullspace()
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).
@@ -40,7 +40,6 @@
 		om_hook(get_parent(), /datum/om/event/moved, src, PROC_REF(on_parent_moved))
 	on_move(get_parent(), null, NORTH)
 
-DECLARE_REF(/obj/effect/abstract/particle_holder, "particles", OWNED, null)
 
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)
@@ -74,6 +73,6 @@ DECLARE_REF(/obj/effect/abstract/particle_holder, "particles", OWNED, null)
 /obj/effect/abstract/particle_holder/proc/set_particle_position(x = 0, y = 0, z = 0)
 	particles.position = list(x, y, z)
 
-/// LC-refs: parent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: parent (reads null once it is gone).
 /obj/effect/abstract/particle_holder/proc/get_parent() as /atom
-	return om_resolve(parent_handle)
+	return parent

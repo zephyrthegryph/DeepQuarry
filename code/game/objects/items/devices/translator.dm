@@ -262,9 +262,9 @@ TYPE_TABLE(/obj/item/universal_translator/limited/glamour, translator_languages,
 /obj/item/universal_translator/limited/teppi  //Admin spawn only, just here for utility
 	name = "handheld translator (teppi)"
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 
 TYPE_TABLE(/obj/item/universal_translator/limited/teppi, translator_languages, list(LANGUAGE_TEPPI))
+
+/// A shared definition (registered: never owned or cleared).
 /obj/item/universal_translator/proc/langset() as /datum/language
 	return langset_static
-DECLARE_REF(/obj/item/universal_translator, "langset_static", STATIC, null)

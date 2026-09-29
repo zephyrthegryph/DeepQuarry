@@ -26,11 +26,10 @@
 		name = "magma"
 	update_icon()
 	update_light()
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/lava(list(src), FALSE))
 	soundloop.start()
 	return ..()
 
-DECLARE_REF(/turf/simulated/floor/lava, "soundloop", OWNED, null)
 
 /turf/simulated/floor/lava/make_outdoors()
 	..()

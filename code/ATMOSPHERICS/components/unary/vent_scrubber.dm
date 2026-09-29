@@ -147,7 +147,7 @@
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = GLOB.radio_service.add_object(src, frequency, radio_filter_in)
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter_in))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/broadcast_status()
 	if(!radio_connection)
@@ -155,7 +155,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.data = list(
 		"area" = area_uid,
 		"tag" = id_tag,
@@ -348,5 +348,3 @@
 	if(welded)
 		. += "It is welded shut."
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/vent_scrubber, "initial_loc", STATIC, null)
-DECLARE_REF(/obj/machinery/atmospherics/unary/vent_scrubber, "radio_connection", STATIC, null)

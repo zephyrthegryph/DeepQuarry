@@ -350,6 +350,20 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		relations += R
 		R.id = length(relations)
 		relation_by_type[path] = R
+		switch(R.shape)
+			if(REL_ONE_TO_ONE)
+				R.source_single = TRUE
+				R.target_single = TRUE
+			if(REL_ONE_TO_MANY)
+				R.source_single = FALSE
+				R.target_single = TRUE
+			if(REL_MANY_TO_MANY, REL_SYMMETRIC)
+				R.source_single = FALSE
+				R.target_single = FALSE
+		if(R.source_view && !R.source_single)
+			error("relation [path]: source_view needs a single-target shape")
+		if(R.target_view && !R.target_single)
+			error("relation [path]: target_view needs a single-source shape")
 		for(var/inc in R.include)
 			for(var/datum/om/bundle/B as anything in expand(inc, list()))
 				R.contributes = om_merge_assoc(R.contributes, B.contributes)
@@ -369,10 +383,10 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 			R.compiled_active_if = om_check_get(R.active_if, src)
 			if(!R.compiled_active_if)
 				error("relation [path]: malformed active_if")
-		if(R.break_if)
-			R.compiled_break_if = om_check_get(R.break_if, src)
-			if(!R.compiled_break_if)
-				error("relation [path]: malformed break_if")
+		if(R.holds_while)
+			R.compiled_holds_while = om_check_get(R.holds_while, src)
+			if(!R.compiled_holds_while)
+				error("relation [path]: malformed holds_while")
 
 // ---------------------------------------------------------------- slots (containment.md §3)
 
@@ -1315,30 +1329,5 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 		CRASH("om: unknown relation [path]")
 	return R
 
-DECLARE_REF(/datum/om/registry, "expiry_behaviour", OWNED, null)
-DECLARE_REF(/datum/om/registry, "rate_behaviour", OWNED, null)
-DECLARE_REF(/datum/om/registry, "task_behaviour", OWNED, null)
-DECLARE_REF(/datum/om/registry, "timer_behaviour", OWNED, null)
-DECLARE_REF(/datum/om/registry, "ui_behaviour", OWNED, null)
-DECLARE_REF(/datum/om/registry, "edge_behaviour", OWNED, null)
 
-DECLARE_REF(/datum/om/registry, "bundles", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "decls", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "clocks", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "effects", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "relations", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "pipelines", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "derived", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "tasks", OWNED_LIST, null)
-DECLARE_REF(/datum/om/registry, "services", OWNED_LIST, null)
 
-DECLARE_REF(/datum/om/registry, "bundle_by_type", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "clock_by_id", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "effect_by_id", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "relation_by_type", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "behaviour_by_type", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "stage_by_type", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "derived_by_name", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "task_by_type", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "task_by_name", OWNED_VALUES, null)
-DECLARE_REF(/datum/om/registry, "type_tables", OWNED_VALUES, null)

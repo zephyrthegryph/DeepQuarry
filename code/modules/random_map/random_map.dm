@@ -46,7 +46,8 @@
 	else
 		GLOB.map_count[descriptor]++
 	name = "[descriptor] #[GLOB.map_count[descriptor]]"
-	if(preserve_map || admin_map) GLOB.random_maps[name] = src
+	if(preserve_map || admin_map)
+		registry_join(REGISTRY_RANDOM_MAPS, src)
 
 	// Get origins for applying the map later.
 	set_origins(tx, ty, tz)
@@ -229,3 +230,14 @@
 
 /datum/random_map/proc/handle_post_overlay_on(datum/random_map/target_map, tx, ty)
 	return
+
+REGISTRY_MEMBERSHIP(/datum/random_map, REGISTRY_RANDOM_MAPS)
+
+/datum/random_map/registry_key(registry_id)
+	return registry_id == REGISTRY_RANDOM_MAPS ? name : null
+
+/// Every preserved or admin random map as name -> map (a new list, for pickers).
+/proc/random_maps_by_name()
+	. = list()
+	for(var/datum/random_map/M as anything in REGISTRY_MEMBERS(REGISTRY_RANDOM_MAPS))
+		.[M.name] = M

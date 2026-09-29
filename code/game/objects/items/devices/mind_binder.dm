@@ -17,7 +17,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/mindbinder/proc/toggle_self_bind()
-	if(possessed_voice.len == 1)
+	if(length(possessed_voice) == 1)
 		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 	self_bind = !self_bind
@@ -30,7 +30,7 @@
 /obj/item/mindbinder/pre_attack(atom/A)
 	if(istype(A, /obj/structure/gargoyle))
 		var/obj/structure/gargoyle/G = A
-		A = om_resolve(G.WR_gargoyle)
+		A = G.WR_gargoyle
 	if(istype(A, /obj/item/holder))
 		var/obj/item/holder/H = A
 		A = H.held_mob
@@ -42,14 +42,14 @@
 		if(usr == M)
 			toggle_self_bind()
 			return
-		if(possessed_voice.len == 1 || self_bind)
+		if(length(possessed_voice) == 1 || self_bind)
 			bind_mob(M)
 		else
 			store_mob(M)
 		return
 	if(istype(A, /obj/item))
 		var/obj/item/I = A
-		if(possessed_voice.len == 1 || self_bind)
+		if(length(possessed_voice) == 1 || self_bind)
 			bind_item(I)
 		else
 			store_item(I)
@@ -86,7 +86,7 @@
 
 /datum/om/prompt/confirm/mindbinder/store_mob/valid()
 	var/obj/item/mindbinder/binder = subject
-	if(binder.possessed_voice.len != 0 || !answerer.Adjacent(victim))
+	if(length(binder.possessed_voice) != 0 || !answerer.Adjacent(victim))
 		return "can't download"
 	return null
 
@@ -115,7 +115,7 @@
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
 
 /obj/item/mindbinder/proc/bind_mob(mob/living/target)
-	if(possessed_voice.len == 0 && !self_bind)
+	if(length(possessed_voice) == 0 && !self_bind)
 		to_chat(usr,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
 		return
 
@@ -147,24 +147,24 @@
 	update_icon()
 	to_chat(usr_mob,span_notice("Your mind as been bound to [target]."))
 /obj/item/mindbinder/proc/bind_mob_timed_done2(mob/living/target, mob/usr_mob)
-	if(possessed_voice.len == 1 && !target.ckey)
+	if(length(possessed_voice) == 1 && !target.ckey)
 		var/mob/living/voice/V = possessed_voice[1]
 		V.mind.transfer_to(target)
 		if(!target.tf_mob_holder)
 			target.set_tf_mob_holder(V.tf_mob_holder)
 		if(target.tf_mob_holder == target)
 			target.set_tf_mob_holder(null)
-		possessed_voice -= V
+		own_take_member(src, "possessed_voice", V)
 		qdel(V)
 		to_chat(usr_mob,span_notice("Mind bound to [target]."))
 
 // Handle placing a mind into an item
 /obj/item/mindbinder/proc/bind_item(obj/item/item)
-	if(possessed_voice.len == 0 && !self_bind)
+	if(length(possessed_voice) == 0 && !self_bind)
 		to_chat(usr,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
 		return
 
-	if(item.possessed_voice && item.possessed_voice.len)
+	if(item.possessed_voice && length(item.possessed_voice))
 		to_chat(usr,span_warning("The device beeps a warning that the target is already sentient!"))
 		return
 
@@ -188,16 +188,16 @@
 	update_icon()
 	to_chat(usr_mob,span_notice("Your mind as been bound to [item]."))
 /obj/item/mindbinder/proc/bind_item_timed_done2(obj/item/item, mob/usr_mob)
-	if(possessed_voice.len == 1)
+	if(length(possessed_voice) == 1)
 		var/mob/living/voice/V = possessed_voice[1]
 		item.inhabit_item(V, null, V.tf_mob_holder, TRUE)
-		possessed_voice -= V
+		own_take_member(src, "possessed_voice", V)
 		qdel(V)
 		to_chat(usr_mob,span_notice("Mind bound to [item]."))
 
 // Handle taking a mind out of a mob
 /obj/item/mindbinder/proc/store_mob(mob/living/target)
-	if(possessed_voice.len != 0)
+	if(length(possessed_voice) != 0)
 		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 
@@ -210,17 +210,17 @@
 	update_icon()
 
 /obj/item/mindbinder/proc/store_mob_timed_done(mob/living/target, mob/usr_mob)
-	if(possessed_voice.len == 0 && target.mind)
+	if(length(possessed_voice) == 0 && target.mind)
 		inhabit_item(target, target.real_name, target)
 		to_chat(usr_mob,span_notice("Mind successfully stored!"))
 
 // Handle taking a mind out of an item
 /obj/item/mindbinder/proc/store_item(obj/item/item)
-	if(possessed_voice.len != 0)
+	if(length(possessed_voice) != 0)
 		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 
-	if(!(item.possessed_voice && item.possessed_voice.len))
+	if(!(item.possessed_voice && length(item.possessed_voice)))
 		return
 
 	var/mob/living/voice/target = item.possessed_voice[1]
@@ -240,14 +240,14 @@
 	var/obj/item/item = task.target
 	var/mob/living/voice/target = task.target_arg
 	var/mob/usr_mob = task.actor
-	if(possessed_voice.len == 0 && item.possessed_voice.Find(target))
+	if(length(possessed_voice) == 0 && item.possessed_voice.Find(target))
 		inhabit_item(target, target.real_name, target.tf_mob_holder)
-		item.possessed_voice -= target
+		own_take_member(item, "possessed_voice", target)
 		qdel(target)
 		to_chat(usr_mob,span_notice("Mind successfully stored!"))
 
 /obj/item/mindbinder/update_icon()
-	if((possessed_voice && possessed_voice.len > 0) || self_bind)
+	if((possessed_voice && length(possessed_voice) > 0) || self_bind)
 		icon_state = "[initial(icon_state)]_on"
 	else
 		icon_state = initial(icon_state)

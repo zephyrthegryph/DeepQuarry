@@ -41,7 +41,7 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	if(locate_within(loc, /obj/structure/table))
 		pixel_y = 3
 	if(GLOB.economy_init && account_to_connect)
-		linked_account = GLOB.department_accounts[account_to_connect]
+		rel_set(src, "linked_account", GLOB.department_accounts[account_to_connect])
 
 // Always face the user when put on a table
 /obj/item/retail_scanner/afterattack(atom/movable/AM, mob/user, proximity)
@@ -139,7 +139,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 					visible_message("[icon2html(src, viewers(src))]" + span_warning("Account has been suspended."))
 					return FALSE
 				var/provider_changed = linked_account != new_account
-				linked_account = new_account
+				rel_set(src, "linked_account", new_account)
 				if(provider_changed)
 					reset_memory()
 				else
@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 			return INTERACTION_HANDLED_PASS
 		if(!user.drop_from_inventory(form, src))
 			return INTERACTION_HANDLED_PASS
-		LAZYADD(freight_form_paper, form)
+		rel_add(src, "freight_form_paper", form)
 		to_chat(user, span_notice("You load [form] into [src]'s freight printer."))
 		return INTERACTION_HANDLED_PASS
 	// Check for a method of paying (ID, PDA, e-wallet, cash, ect.)
@@ -275,7 +275,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 	if(confirm_item == I && confirm_revision == ticket_revision)
 		return 1
 	else
-		confirm_item = I
+		rel_set(src, "confirm_item", I)
 		confirm_revision = ticket_revision
 		src.visible_message("[icon2html(src, viewers(src))]<b>Total price:</b> [transaction_amount] Thaler\s. Swipe again to confirm.")
 		play_sfx(src, SFX_MACHINES_TWOBEEP, 0.5, vary = FALSE)
@@ -405,7 +405,7 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 
 /obj/item/retail_scanner/proc/ticket_changed()
 	ticket_revision++
-	confirm_item = null
+	rel_clear(src, "confirm_item")
 	confirm_revision = 0
 
 /obj/item/retail_scanner/proc/get_current_transaction()
@@ -533,5 +533,3 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 /obj/item/retail_scanner/civilian
 	account_to_connect = "Civilian"
 
-DECLARE_REF(/obj/item/retail_scanner, "confirm_item", BACK, null)
-DECLARE_REF(/obj/item/retail_scanner, "linked_account", BACK, null)

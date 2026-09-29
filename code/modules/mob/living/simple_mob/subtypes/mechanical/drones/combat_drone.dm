@@ -65,15 +65,13 @@
 	icon_dead = "droneM_dead"
 
 /mob/living/simple_mob/mechanical/combat_drone/Initialize(mapload)
-	ion_trail = new // ALLOW(decl): configured and started before parent init
+	own_set(src, "ion_trail", new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/combat_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/combat_drone, "ion_trail", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/combat_drone, "shields", OWNED, null)
 
 /mob/living/simple_mob/mechanical/combat_drone
 	delete_on_death = TRUE

@@ -16,9 +16,9 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	var/siphoning_handle // What the spell is currently draining.  Does nothing if null.
+	var/atom/movable/siphoning // What the spell is currently draining.  Does nothing if null.
 	// ALLOW(instance_list): d: rebuilt in place every cast and passed to recursive_content_check() to fill
-	var/list/things_to_siphon = list() //Things which are actually drained as a result of the above not being null.
+	var/list/atom/movable/things_to_siphon //Things which are actually drained as a result of the above not being null (a relation list view, rebuilt each cycle).
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
 
 // the siphon stops draining its target.
@@ -48,10 +48,10 @@
 	if(istype(hit_atom, /atom/movable) && within_range(hit_atom, 4))
 		var/atom/movable/AM = hit_atom
 		populate_siphon_list(AM)
-		if(!things_to_siphon.len)
+		if(!length(things_to_siphon))
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
-		siphoning_handle = om_handle(AM)
+		rel_set(src, "siphoning", AM)
 		om_task_periodic(src, PERIODIC_SLOW)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
@@ -59,22 +59,21 @@
 		stop_siphoning()
 
 /obj/item/spell/energy_siphon/proc/populate_siphon_list(atom/movable/target)
-	things_to_siphon.Cut()
-	// ALLOW(object_keyed_lists): per-cycle scratch list of drain targets, Cut() every cycle and on stop
-	things_to_siphon |= target // The recursive check below does not add the object being checked to its list.
-	// ALLOW(object_keyed_lists): per-cycle scratch list of drain targets, Cut() every cycle and on stop
-	things_to_siphon |= recursive_content_check(target, things_to_siphon, recursion_limit = 3, client_check = 0, sight_check = 0, include_mobs = 1, include_objects = 1, ignore_show_messages = 1)
-	for(var/atom/movable/AM in things_to_siphon)
+	rel_clear(src, "things_to_siphon")
+	var/list/found = list(target) // The recursive check below does not add the object being checked to its list.
+	found |= recursive_content_check(target, found, recursion_limit = 3, client_check = 0, sight_check = 0, include_mobs = 1, include_objects = 1, ignore_show_messages = 1)
+	for(var/atom/movable/AM in found)
 		if(ishuman(AM)) // We can drain FBPs, so we can skip the test below.
 			var/mob/living/carbon/human/H = AM
 			if(HAS_SYNTHETIC_BIOLOGY(H))
 				continue
 		if(AM.drain_power(1) <= 0) // This checks if whatever's in the list can be drained from.
-			things_to_siphon.Remove(AM)
+			continue
+		rel_add(src, "things_to_siphon", AM)
 
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
-	siphoning_handle = null
-	things_to_siphon.Cut()
+	rel_clear(src, "siphoning")
+	rel_clear(src, "things_to_siphon")
 	update_icon()
 
 #define SIPHON_CELL_TO_ENERGY	0.5
@@ -83,7 +82,7 @@
 
 // This is called every tick, so long as a link exists between the target and the Technomancer.
 /obj/item/spell/energy_siphon/proc/siphon(atom/movable/siphoning, mob/living/user)
-	var/list/things_to_drain = things_to_siphon // Temporary list copy of what we're gonna steal from.
+	var/list/things_to_drain = things_to_siphon ? things_to_siphon.Copy() : list() // Temporary list copy of what we're gonna steal from.
 	var/charge_to_give = 0 // How much energy to give to the Technomancer at the end.
 	var/flow_remaining = calculate_spell_power(flow_rate)
 
@@ -164,7 +163,7 @@
 /// Seven bolts 0.3 s apart: process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
 /obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source, left = 7)
 	var/obj/item/projectile/beam/lightning/energy_siphon/lightning = new(get_turf(source))
-	lightning.firer = user
+	rel_set(lightning, "firer", user)
 	lightning.old_style_target(user)
 	lightning.fire()
 	if(left > 1)
@@ -203,6 +202,8 @@
 #undef SIPHON_FBP_TO_ENERGY
 #undef SIPHON_CORE_TO_ENERGY
 
-/// LC-refs: siphoning -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Siphoning (a relation view).
 /obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
-	return om_resolve(siphoning_handle)
+	return siphoning
+
+REL_LIST(/obj/item/spell/energy_siphon, things_to_siphon)

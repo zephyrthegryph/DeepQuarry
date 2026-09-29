@@ -22,10 +22,9 @@
 	return
 
 /obj/item/projectile/arc/Initialize(mapload)
-	shadow = new(get_turf(src))
+	own_set(src, "shadow", new /obj/effect/projectile_shadow(get_turf(src)))
 	return ..()
 
-DECLARE_REF(/obj/item/projectile/arc, "shadow", OWNED, null)
 
 /obj/item/projectile/arc/proc/calculate_initial_pixel_distance(atom/user, atom/target)
 	var/datum/point/A = new(user)

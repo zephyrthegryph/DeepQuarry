@@ -12,7 +12,7 @@
 	if(living_prey.previewing_belly && living_prey.previewing_belly != src)
 		return
 	if(living_prey.previewing_belly == src && living_prey.vore_selected != src)
-		living_prey.previewing_belly = null
+		rel_clear(living_prey, "previewing_belly")
 		living_prey.belly_overlay_tgui?.hide()
 		return
 	var/datum/belly_overlay_tgui/dq_overlay = get_belly_overlay_tgui(living_prey)
@@ -31,12 +31,12 @@
 
 /obj/belly/proc/vore_preview(mob/living/living_prey)
 	if(!istype(living_prey) || !living_prey.client)
-		living_prey.previewing_belly = null
+		rel_clear(living_prey, "previewing_belly")
 		return
-	living_prey.previewing_belly = src
+	rel_set(living_prey, "previewing_belly", src)
 	vore_fx(living_prey)
 	belly_reschedule() // A previewed belly keeps its liquid overlay current each cycle.
 
 /obj/belly/proc/clear_preview(mob/living/living_prey)
-	living_prey.previewing_belly = null
+	rel_clear(living_prey, "previewing_belly")
 	living_prey.belly_overlay_tgui?.hide()

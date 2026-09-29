@@ -10,9 +10,8 @@
 
 /obj/item/implant/integrated_circuit/Initialize(mapload)
 	. = ..()
-	IC.implant_handle = om_handle(src)
+	rel_set(IC, "implant", src)
 
-DECLARE_REF(/obj/item/implant/integrated_circuit, "IC", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/implant/integrated_circuit, "IC", /obj/item/electronic_assembly/implant)
 
 /obj/item/implant/integrated_circuit/get_data()

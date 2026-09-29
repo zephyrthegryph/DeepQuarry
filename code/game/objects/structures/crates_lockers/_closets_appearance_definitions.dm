@@ -1989,4 +1989,3 @@
 		"hop" = COLOR_WARM_YELLOW
 	)
 
-DECLARE_REF(/datum/decl/closet_appearance, "icon", OWNED, null)

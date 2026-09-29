@@ -12,8 +12,8 @@
 	required_access = ACCESS_NETWORK
 	category = PROG_ADMIN
 
-	var/tmp/current_account_handle
-	var/tmp/current_message_handle
+	var/tmp/datum/computer_file/data/email_account/current_account
+	var/tmp/datum/computer_file/data/email_message/current_message
 	var/error = ""
 
 /datum/computer_file/program/email_administration/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -75,9 +75,9 @@
 			if(error)
 				error = ""
 			else if(current_message())
-				current_message_handle = null
+				rel_clear(src, "current_message")
 			else
-				current_account_handle = null
+				rel_clear(src, "current_account")
 			return TRUE
 
 		if("ban")
@@ -108,14 +108,14 @@
 
 			for(var/datum/computer_file/data/email_message/received_message in (current_account().inbox | current_account().spam | current_account().deleted))
 				if(received_message.uid == text2num(params["viewmail"]))
-					current_message_handle = om_handle(received_message)
+					rel_set(src, "current_message", received_message)
 					break
 			return TRUE
 
 		if("viewaccount")
 			for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 				if(email_account.uid == text2num(params["viewaccount"]))
-					current_account_handle = om_handle(email_account)
+					rel_set(src, "current_account", email_account)
 					break
 			return TRUE
 
@@ -142,10 +142,10 @@
 			error = "Email [new_account.login] has been created, with generated password [new_account.password]"
 			return TRUE
 
-/// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_account this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/email_administration/proc/current_account() as /datum/computer_file/data/email_account
-	return om_resolve(current_account_handle)
+	return current_account
 
-/// LC-refs: the current_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current_message this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/email_administration/proc/current_message() as /datum/computer_file/data/email_message
-	return om_resolve(current_message_handle)
+	return current_message

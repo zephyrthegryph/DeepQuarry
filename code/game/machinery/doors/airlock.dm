@@ -39,7 +39,7 @@
 	var/lights = 1 // bolt lights show by default
 	var/aiDisabledIdScanner = 0
 	var/aiHacking = FALSE
-	var/closeOther_handle
+	var/obj/machinery/door/airlock/closeOther
 	var/closeOtherId = null
 	var/lockdownbyai = 0
 	autoclose = 1
@@ -67,7 +67,7 @@
 	var/knock_sound = SFX_MACHINES_2BEEPLOW
 	var/knock_hammer_sound = SFX_WEAPONS_SONIC_JACKHAMMER
 	var/knock_unpowered_sound = SFX_MACHINES_DOOR_KNOCK_GLASS
-	var/hold_open_handle
+	var/mob/hold_open
 	rad_insulation = RAD_MEDIUM_INSULATION
 	rad_shield_material = MAT_STEEL
 	rad_shield_thickness_mm = RAD_AIRLOCK_THICKNESS_MM
@@ -609,11 +609,11 @@ About the new airlock wires panel:
 				return TRUE
 
 	if(!Adjacent(hold_open()))
-		hold_open_handle = null
+		rel_clear(src, "hold_open")
 
 	if(hold_open() && !density)
 		if(hold_open() == user)
-			hold_open_handle = null
+			rel_clear(src, "hold_open")
 		else
 			to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
 
@@ -662,7 +662,7 @@ About the new airlock wires panel:
 	return TRUE
 
 /obj/machinery/door/airlock/proc/interaction_hold_open(mob/user, obj/item/held, datum/interaction/interaction)
-	hold_open_handle = om_handle(user)
+	rel_set(src, "hold_open", user)
 	act_message(user, src, others = span_info("%U% begins holding %T% open."), blind = span_info("Someone has started holding %T% open."))
 	attack_hand(user)
 	return TRUE
@@ -798,7 +798,7 @@ About the new airlock wires panel:
 	else if(!density)
 		if(hold_open())
 			if(hold_open() == user)
-				hold_open_handle = null
+				rel_clear(src, "hold_open")
 				close()
 			else
 				to_chat(user, span_warning("[hold_open()] is holding \the [src] open!"))
@@ -1090,7 +1090,7 @@ About the new airlock wires panel:
 		if (!electronics) create_electronics()
 
 		electronics.forceMove(get_turf(src))
-		electronics = null
+		own_take(src, "electronics")
 	qdel(src)
 
 /obj/machinery/door/airlock/proc/handleRemoveIce(obj/item/W, mob/user as mob, time = 15)
@@ -1191,7 +1191,7 @@ About the new airlock wires panel:
 			if(Adjacent(hold_open()) && !hold_open().incapacitated())
 				return FALSE
 			else
-				hold_open_handle = null
+				rel_clear(src, "hold_open")
 		if(!arePowerSystemsOn() || wires.is_cut(WIRE_OPEN_DOOR))
 			return	0
 	. = ..()
@@ -1256,7 +1256,7 @@ About the new airlock wires panel:
 	if(frozen && forced) // Unfreeze on forced open
 		unFreeze()
 
-	hold_open_handle = null //if it passes the can close check, always make sure to clear hold open
+	rel_clear(src, "hold_open") //if it passes the can close check, always make sure to clear hold open
 
 	if(safe && !ignore_safties)
 		for(var/turf/turf in locs)
@@ -1367,8 +1367,9 @@ About the new airlock wires panel:
 	if (assembly && istype(assembly))
 		assembly_type = assembly.type
 
-		electronics = assembly.electronics
-		electronics.forceMove(src)
+		var/obj/item/airlock_electronics/assembly_electronics = assembly.electronics
+		assembly_electronics.forceMove(src)
+		own_move(assembly_electronics, src, "electronics") // from the assembly to the door
 
 		//update the door's access to match the electronics'
 		secured_wires = electronics.secure
@@ -1393,16 +1394,16 @@ About the new airlock wires panel:
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
 	if (secured_wires)
-		wires = new/datum/wires/airlock/secure(src)
+		own_set(src, "wires", new/datum/wires/airlock/secure(src))
 	else
-		wires = new/datum/wires/airlock(src)
+		own_set(src, "wires", new/datum/wires/airlock(src))
 
 	. = ..()
 
 	if(closeOtherId != null)
 		for (var/obj/machinery/door/airlock/A in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(A.closeOtherId == closeOtherId && A != src)
-				closeOther_handle = om_handle(A)
+				rel_set(src, "closeOther", A)
 				break
 	name = "\improper [name]"
 	if(frequency)
@@ -1416,9 +1417,9 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		electronics = new/obj/item/airlock_electronics/secure(get_turf(src))
+		own_set(src, "electronics", new/obj/item/airlock_electronics/secure(src))
 	else
-		electronics = new/obj/item/airlock_electronics(get_turf(src))
+		own_set(src, "electronics", new/obj/item/airlock_electronics(src))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))
@@ -1509,7 +1510,7 @@ DAMAGE_REACTION(/obj/machinery/door/airlock, DAMAGE_EMP, PROC_REF(airlock_emp))
 // sets, so every override stays after its base definition (resolution preserved). ===
 /mob/living/silicon/robot
 	var/sleeper_resting = FALSE //Enable resting belly sprites for dogborgs that have the sprites
-	var/water_res_handle //Enable water for lick clean
+	var/datum/matter_synth/water_res //Enable water for lick clean
 	//Multibelly support. We do not want to apply it to any module not supporting it in it's sprites
 
 /mob/living/silicon/robot/proc/ex_reserve_refill()
@@ -1585,19 +1586,19 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 		return TRUE
 	return FALSE
 
-DECLARE_REF(/obj/machinery/door/airlock, "electronics", HELD, null)
+OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
 
-/// LC-refs: closeOther -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// closeOther (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock
-	return om_resolve(closeOther_handle)
+	return closeOther
 
-/// LC-refs: hold open -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// hold open (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/proc/hold_open() as /mob
-	return om_resolve(hold_open_handle)
+	return hold_open
 
-/// LC-refs: water res -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// water res (a relation view: it reads null once the target is deleted).
 /mob/living/silicon/robot/proc/water_res() as /datum/matter_synth
-	return om_resolve(water_res_handle)
+	return water_res
 
 #undef AIRLOCK_ENTRY_CTRL
 #undef AIRLOCK_ENTRY_WELD

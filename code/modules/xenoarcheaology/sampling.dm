@@ -7,6 +7,7 @@
 	w_class = ITEMSIZE_TINY
 	sharp = TRUE
 	injury_kind = INJURY_PIERCE
+	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
 /obj/item/rocksliver/Initialize(mapload)
@@ -26,6 +27,20 @@
 
 /datum/geosample/New(turf/simulated/mineral/container)
 	UpdateTurf(container)
+
+/// A private copy: a mine turf, each ore dug from it and each sample own their own geosample
+/// (never one shared owned instance).
+/datum/geosample/proc/copy()
+	var/datum/geosample/G = new /datum/geosample(null)
+	G.age = age
+	G.age_thousand = age_thousand
+	G.age_million = age_million
+	G.age_billion = age_billion
+	G.artifact_id = artifact_id
+	G.artifact_distance = artifact_distance
+	G.source_mineral = source_mineral
+	G.find_presence = LAZYCOPY(find_presence)
+	return G
 
 /datum/geosample/proc/UpdateTurf(turf/simulated/mineral/container)
 	if(!istype(container))
@@ -80,7 +95,7 @@
 						artifact_distance = cur_dist + rand() * 2 - 1
 						artifact_id = T.artifact_find.artifact_id
 				else
-					GLOB.xenoarch_service.artifact_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
 
 /obj/item/core_sampler
 	name = "core sampler"
@@ -135,7 +150,7 @@
 			to_chat(user, span_warning("The core sampler is out of sample bags."))
 		else
 			//create a new sample bag which we'll fill with rock samples
-			filled_bag = new /obj/item/evidencebag(src)
+			own_set(src, "filled_bag", new /obj/item/evidencebag(src))
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
@@ -144,7 +159,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			R.geological_data_static = geo_data
+			own_set(R, "geological_data_static", geo_data.copy())
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"
@@ -172,14 +187,12 @@ DECLARE_INTERACTIONS(/obj/item/core_sampler, \
 			success = M.put_in_inactive_hand(filled_bag)
 		if(!success)
 			filled_bag.forceMove(get_turf(src))
-		filled_bag = null
+		own_take(src, "filled_bag")
 		icon_state = "sampler0"
 	else
 		to_chat(user, span_warning("The core sampler is empty."))
 
-DECLARE_REF(/obj/item/core_sampler, "filled_bag", OWNED, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for the owned value.
 /obj/item/rocksliver/proc/geological_data() as /datum/geosample
 	return geological_data_static
-DECLARE_REF(/obj/item/rocksliver, "geological_data_static", STATIC, null)

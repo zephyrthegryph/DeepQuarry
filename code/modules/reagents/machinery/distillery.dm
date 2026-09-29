@@ -87,16 +87,6 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	overlay_dumping = image(icon = src.icon, icon_state = "[base_state]-dump")
 	overlay_connected = image(icon = src.icon, icon_state = "[base_state]-connector")
 
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "InputBeaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "OutputBeaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_output_beaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_input_beaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_off", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_ready", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_cooling", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_heating", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_dumping", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_connected", OWNED, null)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/examine(mob/user)
 	. = ..()
@@ -218,12 +208,12 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 		if("eject input")
 			if(InputBeaker)
 				InputBeaker.forceMove(get_turf(src))
-				InputBeaker = null
+				own_take(src, "InputBeaker")
 
 		if("eject output")
 			if(OutputBeaker)
 				OutputBeaker.forceMove(get_turf(src))
-				OutputBeaker = null
+				own_take(src, "OutputBeaker")
 
 		if("adjust temp")
 			om_ask(user, /datum/om/prompt/number, PROC_REF(target_temp_entered), max = max_temp, min = min_temp, title = "Temperature.", message = "Choose a target temperature.", default = T20C, round_entry = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
@@ -272,14 +262,14 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "ov
 				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
 				W.forceMove(src)
-				InputBeaker = W
+				own_set(src, "InputBeaker", W)
 
 		if("install output")
 			if(!OutputBeaker)
 				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
 				W.forceMove(src)
-				OutputBeaker = W
+				own_set(src, "OutputBeaker", W)
 
 	update_icon()
 	return TRUE

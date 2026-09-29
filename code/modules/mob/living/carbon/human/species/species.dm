@@ -3,10 +3,6 @@
 */
 
 /datum/species
-	/// TRUE on a per-mob copy made by produceCopy() (traits / custom species). The mob that
-	/// holds it owns it (carbon `species` is OWNED) and deletes it when it adopts another; the
-	/// shared GLOB.all_species singletons are FALSE and refuse qdel (lifecycle_keep).
-	var/per_mob_copy = FALSE
 
 	// Descriptors and strings.
 	var/name												// Species name.
@@ -397,25 +393,27 @@
 
 	var/default_custom_base = SPECIES_HUMAN
 
+/// Rebuilds unarmed_attacks from unarmed_types. Call it on a mob's private copy
+/// (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/update_attack_types()
-	unarmed_attacks = list()
+	own_clear(src, "unarmed_attacks", OWN_DELETE)
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 /datum/species/New()
 	share_type_tables()
 	if(hud_type)
-		hud = new hud_type()
+		own_set(src, "hud", new hud_type())
 	else
-		hud = new()
+		own_set(src, "hud", new /datum/hud_data())
 
 	//If the species has eyes, they are the default vision organ
 	if(!vision_organ && has_organ[O_EYES])
 		vision_organ = O_EYES
 
-	unarmed_attacks = list()
+	own_take_all(src, "unarmed_attacks")
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 	update_sort_hint()
 
@@ -431,10 +429,33 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		for(var/name in shared)
 			vars[name] = shared[name] // ALLOW(api): species copy and shared-list interning
 		return
+	resolve_limb_table()
 	shared = list()
 	for(var/name in TYPE_TABLE_GET(src, shared_table_vars))
 		shared[name] = vars[name]
 	tables_by_type[type] = shared
+
+/// Fills the per-limb data create_organs() used to write into the table on every spawn: a default
+/// "descriptor" and the "has_children" count. Done once, before the table is interned and frozen,
+/// so spawning a mob never writes into a shared (registered) species table.
+/datum/species/proc/resolve_limb_table()
+	var/list/limbs = list()
+	for(var/limb_type in has_limbs)
+		var/list/organ_data = has_limbs[limb_type]
+		limbs[limb_type] = organ_data.Copy()
+	for(var/limb_type in limbs)
+		limbs[limb_type]["has_children"] = 0
+	for(var/limb_type in limbs)
+		var/list/organ_data = limbs[limb_type]
+		var/obj/item/organ/external/limb_path = organ_data["path"]
+		if(!ispath(limb_path))
+			continue
+		if(!organ_data["descriptor"])
+			organ_data["descriptor"] = initial(limb_path.name)
+		var/parent_tag = initial(limb_path.parent_organ)
+		if(parent_tag && limbs[parent_tag])
+			limbs[parent_tag]["has_children"] = limbs[parent_tag]["has_children"] + 1
+	has_limbs = limbs
 
 /datum/species/proc/get_footsep_sounds()
 	return footstep
@@ -507,7 +528,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		qdel(stray)
 	for(var/obj/item/organ/stray as anything in H.internal_organ_list())
 		qdel(stray)
-	H.bad_external_organs?.Cut()
+	rel_clear(H, "bad_external_organs")
 
 	// Parent first, whatever order the table lists them in.
 	var/list/pending = has_limbs.Copy()
@@ -522,11 +543,10 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			pending -= limb_type
 			placed++
 			var/obj/item/organ/O = new limb_path(H)
-			organ_data["descriptor"] = O.name
-			if(O.parent_organ)
-				organ_data = has_limbs[O.parent_organ]
-				if(organ_data)
-					organ_data["has_children"] = organ_data["has_children"]+1
+			// "has_children" is precomputed (resolve_limb_table); a private copy may keep the built
+			// limb's own name, a registered species' table stays untouched.
+			if(!is_registered(src))
+				organ_data["descriptor"] = O.name
 		if(!placed)
 			log_runtime("PARTS: [name] has_limbs has a parent cycle or a missing parent: [jointext(pending, ", ")]")
 			break
@@ -810,11 +830,12 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			qdel(baseHead)
 	return
 
+/// Call it on a mob's private copy (proto_private(H, "species")), never on the registered species.
 /datum/species/proc/give_numbing_bite() //Holy SHIT this is hacky, but it works. Updating a mob's attacks mid game is insane.
-	unarmed_attacks = list()
+	own_clear(src, "unarmed_attacks", OWN_DELETE)
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
-		unarmed_attacks += new u_type()
+		own_add(src, "unarmed_attacks", new u_type())
 
 /// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
 /// /datum/shadekin and /datum/xenochimera.
@@ -879,7 +900,6 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	ASSERT(src)
 	ASSERT(istype(H))
 	var/datum/species/new_copy = new src.type()
-	new_copy.per_mob_copy = TRUE
 	new_copy.race_key = race_key
 	if (selects_bodytype && custom_base)
 		new_copy.base_species = custom_base
@@ -890,6 +910,9 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		if(selects_bodytype == SELECTS_BODYTYPE_SHAPESHIFTER)
 			H.shapeshifter_change_shape(custom_base, FALSE)
 
+	// The copy's own table first: its has_limbs may be a table interned per type (the registered
+	// species' own list), which must never be written.
+	new_copy.has_limbs = new_copy.has_limbs?.Copy() || list()
 	for(var/organ in has_limbs) //Copy important organ data generated by species.
 		var/list/organ_data = has_limbs[organ]
 		new_copy.has_limbs[organ] = organ_data.Copy()
@@ -901,8 +924,9 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			var/datum/trait/T = GLOB.all_traits[trait]
 			T.apply(new_copy, H, new_copy.traits[trait])
 
-	//Set up a mob
-	var/datum/species/old_species = H.adopt_species(new_copy)
+	//Set up a mob. The mob's species is PROTO: the copy becomes its private copy, and the private
+	// copy it replaces (often src itself, still read below) is deleted.
+	proto_set(H, "species", new_copy)
 	H.invalidate_factors()
 	H.icon_state = new_copy.get_bodytype()
 
@@ -916,11 +940,44 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	if(H.species.has_vibration_sense)
 		H.motiontracker_subscribe()
 
-	// Last: old_species is often src itself.
-	H.release_species_copy(old_species)
 	return new_copy
 
 //We REALLY don't need to go through every variable. Doing so makes this lag like hell on 515
+/// The private copy proto_private() makes of a mob's species (copy-on-write, carbon_defines.dm):
+/// a fresh instance with this one's saved vars copied over, lists copied so the copy never
+/// shares a mutable list with the registered prototype. tmp/const/global vars (the ownership
+/// stamps and reverse indexes among them) are left at the new instance's values.
+/// TRUE when `L` holds (as a member or an assoc value) something this species owns.
+/datum/species/proc/species_list_holds_owned(list/L)
+	for(var/key in L)
+		if(isdatum(key) && owner_of(key) == src)
+			return TRUE
+		if(!isnum(key))
+			var/datum/value = L[key]
+			if(isdatum(value) && owner_of(value) == src)
+				return TRUE
+	return FALSE
+
+/datum/species/proto_copy()
+	var/datum/species/copy = new type()
+	for(var/var_name in vars)
+		if(var_name == "vars" || !issaved(vars[var_name]))
+			continue
+		var/value = vars[var_name]
+		if(copy.vars[var_name] == value)
+			continue
+		// What we own (hud, unarmed_attacks) the copy built for itself in New(); sharing ours
+		// would have its teardown or rebuild delete our children.
+		if(isdatum(value) && owner_of(value) == src)
+			continue
+		if(islist(value))
+			var/list/L = value
+			if(species_list_holds_owned(L))
+				continue
+			value = L.Copy()
+		copy.vars[var_name] = value // ALLOW(api): species copy
+	return copy
+
 /datum/species/proc/copy_variables(datum/species/S, list/whitelist)
 	//List of variables to ignore, trying to copy type will runtime.
 	//Makes thorough copy of species datum.
@@ -992,12 +1049,4 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 		return allergies
 	return null
 
-/// Shared singletons are never deleted; only a mob's own produceCopy() copy is.
-/datum/species/lifecycle_keep(force)
-	return !per_mob_copy
-
-DECLARE_REF(/datum/species, "hud", OWNED, null)
-DECLARE_REF(/datum/species, "unarmed_attacks", OWNED_LIST, null)
 // An icon file and a trail type path.
-DECLARE_REF(/datum/species, "icon_template", STATIC, null)
-DECLARE_REF(/datum/species, "move_trail", STATIC, null)

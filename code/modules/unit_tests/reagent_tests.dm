@@ -118,7 +118,7 @@
 	var/failed = FALSE
 
 	// need to test for instant reactions blocking distillation!
-	instant_beaker = new /obj/item/reagent_containers/glass/beaker()
+	own_set(src, "instant_beaker", new /obj/item/reagent_containers/glass/beaker())
 	instant_beaker.reagents.maximum_volume = 5000
 	om_hook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src, PROC_REF(get_signal_data))
 
@@ -165,8 +165,8 @@
 
 	// Cleanup
 	om_unhook(instant_beaker.reagents, /datum/om/event/reagents_holder_reacted, src)
-	QDEL_NULL(fake_beaker)
-	QDEL_NULL(instant_beaker)
+	own_clear(src, "fake_beaker", OWN_DELETE)
+	own_clear(src, "instant_beaker", OWN_DELETE)
 
 	if(failed)
 		TEST_FAIL("One or more /datum/decl/chemical_reaction subtypes conflict with another reaction.")

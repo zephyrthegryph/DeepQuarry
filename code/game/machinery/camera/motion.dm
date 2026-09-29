@@ -1,7 +1,7 @@
 /obj/machinery/camera
 	var/list/motionTargets = null
 	EXPIRY_DECLARE(detectTime)
-	var/area_motion_handle
+	var/area/ai_monitored/area_motion
 	var/alarm_delay = 100 // Don't forget, there's another 10 seconds in queueAlarm()
 
 /// The motion alarm fires once a target has been seen for alarm_delay (the camera's timer).
@@ -62,7 +62,7 @@
 /obj/machinery/camera/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return
@@ -71,6 +71,6 @@
 		if(isliving(AM))
 			newTarget(AM)
 
-/// LC-refs: area motion -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// area motion (a relation view: it reads null once the target is deleted).
 /obj/machinery/camera/proc/area_motion() as /area/ai_monitored
-	return om_resolve(area_motion_handle)
+	return area_motion

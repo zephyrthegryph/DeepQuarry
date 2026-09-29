@@ -48,12 +48,10 @@
 
 /mob/living/simple_mob/blob/spore/Initialize(mapload, obj/structure/blob/factory/my_factory)
 	if(istype(my_factory))
-		factory = my_factory
-		LAZYADD(factory.spores, src)
+		rel_set(src, "factory", my_factory) // the pair adds us to factory.spores
 	return ..()
 
 // Destroy() drops the body out before letting go.
-DECLARE_REF(/mob/living/simple_mob/blob/spore, "infested", HELD, null)
 
 // the infested body falls out as the spore bursts.
 /mob/living/simple_mob/blob/spore/on_destroy(force)
@@ -129,9 +127,9 @@ DECLARE_REF(/mob/living/simple_mob/blob/spore, "infested", HELD, null)
 	attacktext = list("clawed")
 
 	H.forceMove(src)
-	infested = H
+	rel_set(src, "infested", H)
 
-	say_list = new /datum/say_list/infested()
+	own_set(src, "say_list", new /datum/say_list/infested())
 
 	update_icons()
 	visible_message(span_warning("The corpse of [H.name] suddenly rises!"))

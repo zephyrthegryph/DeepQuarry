@@ -13,7 +13,7 @@
 	flags = NOREACT
 	var/max_n_of_items = 999 // Sorry but the BYOND infinite loop detector doesn't look things over 1000.
 	var/list/item_records = list() // ALLOW(instance_list): d: the fridge's live stock records
-	var/tmp/currently_vending_handle	//What we're putting out of the machine.
+	var/tmp/datum/stored_item/currently_vending	//What we're putting out of the machine.
 	var/stored_datum_type = /datum/stored_item
 	/// Whether inserted items with identical state fold into counts (C9).
 	var/collapse_stock = TRUE
@@ -43,7 +43,7 @@
 	else
 		set_wires(new /datum/wires/smartfridge(src))
 
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/fridge(list(src), FALSE))
 	update_icon()
 	default_apply_parts()
 
@@ -59,8 +59,6 @@
 		for(var/datum/stored_item/I as anything in item_records)
 			I.forget(thing)
 
-DECLARE_REF(/obj/machinery/smartfridge, "soundloop", OWNED, null)
-DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 
 // a persistent fridge is forgotten by persistence.
 /obj/machinery/smartfridge/lifecycle_dematerialize()
@@ -242,7 +240,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		item_records.Add(I)
+		own_add(src, "item_records", I)
 	I.add_product(O)
 	SStgui.update_uis(src)
 	update_icon()
@@ -394,7 +392,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	name = "\improper Smart Chemavator - Upper"
 	desc = "A refrigerated storage unit for medicine and chemical storage. Now sporting a fancy system of pulleys to lift bottles up and down."
 	expert_job = JOB_CHEMIST
-	var/tmp/attached_handle
+	var/tmp/obj/machinery/smartfridge/chemistry/chemvator/attached
 	circuit = /obj/item/circuitboard/smartfridge/chemvator
 
 /obj/machinery/smartfridge/chemistry/chemvator/accept_check(obj/item/O as obj)
@@ -402,11 +400,20 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 		return 1
 	return 0
 
-// records shared with the upper unit must not be deleted with it (the owned
-// item_records list is deleted when the links clear, right after this).
+// The lower unit keeps no stock of its own: it stocks into the upper unit, and its
+// item_records is a read-only view of the upper unit's owned list. Drop the alias
+// (never take or dispose of it: the records belong to the upper unit).
 /obj/machinery/smartfridge/chemistry/chemvator/down/on_destroy(force)
-	item_records = null // shared with the upper unit; don't let phase 4 qdel its stored records
+	item_records = null // ALLOW(ownership): alias of the upper unit's owned list, never owned here
 	..()
+
+/obj/machinery/smartfridge/chemistry/chemvator/down/stock(obj/item/O)
+	var/obj/machinery/smartfridge/chemistry/chemvator/above = attached()
+	if(istype(above))
+		above.stock(O)
+		SStgui.update_uis(src)
+		return
+	return ..()
 
 /obj/machinery/smartfridge/chemistry/chemvator/down
 	name = "\improper Smart Chemavator - Lower"
@@ -416,9 +423,9 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	. = ..()
 	var/obj/machinery/smartfridge/chemistry/chemvator/above = locate(/obj/machinery/smartfridge/chemistry/chemvator,get_zstep(src,UP))
 	if(istype(above))
-		above.attached_handle = om_handle(src)
-		attached_handle = om_handle(above)
-		item_records = attached().item_records
+		rel_set(above, "attached", src)
+		rel_set(src, "attached", above)
+		item_records = attached().item_records // ALLOW(ownership): read-only alias of the upper unit's owned list; stock() forwards writes there
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))
 
@@ -426,11 +433,10 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /obj/machinery/smartfridge/step_start_condition()
 	return operable() // its hum
 
-/// LC-refs: What we're putting out of the machine. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're putting out of the machine. (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/proc/currently_vending() as /datum/stored_item
-	return om_resolve(currently_vending_handle)
+	return currently_vending
 
-/// LC-refs: the attached this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the attached this refers to (a relation view: null once it is deleted).
 /obj/machinery/smartfridge/chemistry/chemvator/proc/attached() as /obj/machinery/smartfridge/chemistry/chemvator
-	return om_resolve(attached_handle)
-DECLARE_REF(/obj/machinery/smartfridge/chemistry/chemvator/down, "attached_handle", BACK_HANDLE, "attached_handle")
+	return attached

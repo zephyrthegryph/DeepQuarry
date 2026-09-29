@@ -2,7 +2,7 @@
 	if(!istype(T, /turf/simulated) || T.density)
 		return FALSE
 	if(!T.air)
-		T.air = T.create_gas_mixture()
+		own_set(T, "air", T.create_gas_mixture())
 		if(SSair?.initialized)
 			T.update_air_ref(0)
 	var/datum/gas_mixture/air = T.return_air()
@@ -28,13 +28,13 @@
 	max_integrity = 100
 	var/station_id
 	var/department_id
-	var/defense_runtime_ref
-	var/camera_ref
+	/// Relation views: the defense runtime it reports to, and its camera.
+	var/datum/generated_station_defense_runtime/defense_runtime
+	var/obj/machinery/camera/camera
 
 /// Camera software calls this when it positively identifies an intruder.
 /obj/machinery/generated_station_data_relay/proc/report_hostile(atom/contact, confidence = 80)
-	var/datum/generated_station_defense_runtime/runtime = om_resolve(defense_runtime_ref)
-	var/obj/machinery/camera/camera = om_resolve(camera_ref)
+	var/datum/generated_station_defense_runtime/runtime = defense_runtime
 	if(!runtime || !camera || QDELETED(camera) || (!camera.operable()) || !can_see(camera, contact, 7))
 		return null
 	return runtime?.notify_sensor_contact(department_id, contact, "camera relay", confidence)
@@ -55,19 +55,19 @@
 		return FALSE
 	var/list/pressurized_turfs = list()
 	for(var/key in station_materialization.tile_plan?.tiles)
-		var/datum/generated_station_tile_intent/intent = station_materialization.tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = station_materialization.tile_plan.tiles?[key]
 		if(intent.structure_kind != GENERATED_STATION_TILE_FLOOR)
 			continue
 		var/turf/open/planned_floor = station_materialization.world_turf(intent.local_x, intent.local_y)
 		if(istype(planned_floor, /turf/simulated/floor))
 			pressurized_turfs[planned_floor] = TRUE
 	for(var/node_id in station_materialization.department_areas)
-		var/area/generated_station/A = station_materialization.department_areas[node_id]
+		var/area/generated_station/A = station_materialization.department_areas?[node_id]
 		for(var/turf/T in area_contents_of_type(A, /turf))
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
 	for(var/module_id in station_materialization.module_areas)
-		var/area/generated_station/room_area = station_materialization.module_areas[module_id]
+		var/area/generated_station/room_area = station_materialization.module_areas?[module_id]
 		for(var/turf/T in area_contents_of_type(room_area, /turf))
 			if(istype(T, /turf/simulated/floor))
 				pressurized_turfs[T] = TRUE
@@ -90,7 +90,7 @@
 				break
 		if(!department)
 			continue
-		var/area/generated_station/A = station_materialization.department_areas[node.id]
+		var/area/generated_station/A = station_materialization.department_areas?[node.id]
 		var/turf/placement
 		var/turf/camera_placement
 		for(var/turf/T in area_contents_of_type(A, /turf))
@@ -108,9 +108,9 @@
 		var/obj/machinery/generated_station_data_relay/relay = new(placement)
 		relay.station_id = station_spec.id
 		relay.department_id = department.id
-		station_materialization.infrastructure += relay
+		own_add(station_materialization, "infrastructure", relay)
 		var/obj/machinery/camera/camera = new(camera_placement)
 		camera.set_dir(turn(generated_station_adjacent_wall_direction(camera_placement), 180))
-		relay.camera_ref = om_handle(camera)
-		station_materialization.infrastructure += camera
+		rel_set(relay, "camera", camera)
+		own_add(station_materialization, "infrastructure", camera)
 	return TRUE

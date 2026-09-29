@@ -34,7 +34,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	. = ..()
 	// So you can have some spawn with components
 	if(ispath(capacitor))
-		capacitor = new capacitor(src)
+		own_set(src, "capacitor", new capacitor(src))
 		capacitor.charge = capacitor.max_charge
 
 	if(capacitor && capacitor.charge < capacitor.max_charge)
@@ -45,9 +45,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 
 	update_icon()
 
-DECLARE_REF(/obj/item/gun/magnetic, "cell", OWNED, null)
-DECLARE_REF(/obj/item/gun/magnetic, "loaded", OWNED, null)
-DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 
 /obj/item/gun/magnetic/get_cell()
 	return cell
@@ -150,7 +147,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 	user.put_in_hands(capacitor)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " unscrews \the [capacitor] from %T%."))
 	playsound(src, tool.usesound, 50, 1)
-	capacitor = null
+	own_take(src, "capacitor")
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
@@ -162,7 +159,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
-			cell = thing
+			own_set(src, "cell", thing)
 			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(cell, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
@@ -174,7 +171,7 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 			if(capacitor)
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
-			capacitor = thing
+			own_set(src, "capacitor", thing)
 			om_task_periodic(src, PERIODIC_SLOW)
 			user.drop_from_inventory(capacitor, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
@@ -193,11 +190,11 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 		// specific ammo types may exist down the track.
 		var/obj/item/stack/ammo = thing
 		if(!istype(ammo))
-			loaded = thing
+			own_set(src, "loaded", thing)
 			user.drop_from_inventory(thing)
 			thing.forceMove(src)
 		else
-			loaded = new load_type(src, 1)
+			own_set(src, "loaded", new load_type(src, 1))
 			ammo.use(1)
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))
@@ -215,10 +212,10 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 		if(loaded)
 			removing = loaded
-			loaded = null
+			own_take(src, "loaded")
 		else if(cell && removable_components)
 			removing = cell
-			cell = null
+			own_take(src, "cell")
 			om_task_periodic(src, PERIODIC_SLOW)
 
 		if(removing)
@@ -234,8 +231,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 	return loaded
 
 /obj/item/gun/magnetic/proc/use_ammo()
-	qdel(loaded)
-	loaded = null
+	own_clear(src, "loaded", OWN_DELETE)
 
 /obj/item/gun/magnetic/consume_next_projectile()
 
@@ -389,8 +385,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		to_chat(M, span_danger("Your ears start to ring!"))
 
 /obj/item/gun/magnetic/fuelrod/Initialize(mapload)
-	cell = new /obj/item/cell/high
-	capacitor = new /obj/item/stock_parts/capacitor
+	own_set(src, "cell", new /obj/item/cell/high)
+	own_set(src, "capacitor", new /obj/item/stock_parts/capacitor)
 	. = ..()
 
 #undef ICON_CELL

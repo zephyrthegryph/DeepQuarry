@@ -3,9 +3,11 @@
 	var/delayed = 0
 	var/delay_modifier = 1
 	EXPIRY_DECLARE(next_event_time)
+	/// Every event_meta this container made (owned); available_events and next_event name members of it.
+	var/list/event_pool
 	var/list/available_events
 	var/list/last_event_time
-	var/tmp/next_event_handle
+	var/tmp/datum/event_meta/next_event
 
 	EXPIRY_DECLARE(last_world_time)
 
@@ -26,7 +28,7 @@
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
-		next_event_handle = om_handle(acquire_event())
+		rel_set(src, "next_event", acquire_event())
 
 	// Has an event been acquired?
 	if(next_event())
@@ -39,14 +41,14 @@
 		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
 
 		log_game("Starting event '[next_event().name]' of severity [GLOB.severity_to_string[severity]].")
-		next_event_handle = null						// When set to null, a random event will be selected next time
+		rel_clear(src, "next_event")						// When set to null, a random event will be selected next time
 	else
 		// If not, wait for one minute, instead of one tick, before checking again.
 		next_event_time += (60 * 10)
 
 
 /datum/event_container/proc/acquire_event()
-	if(available_events.len == 0)
+	if(!length(available_events))
 		return
 	var/active_with_role = number_active_with_role()
 
@@ -61,7 +63,7 @@
 
 	// Select an event and remove it from the pool of available events
 	var/picked_event = pickweight(possible_events)
-	available_events -= picked_event
+	rel_remove(src, "available_events", picked_event)
 	return picked_event
 
 /datum/event_container/proc/get_weight(datum/event_meta/EM, list/active_with_role)
@@ -134,9 +136,9 @@
 	var/mob/user = ask.answerer
 	var/datum/event_meta/EM = ask.choice
 	if(next_event())
-		available_events += next_event()
-	available_events -= EM
-	next_event_handle = om_handle(EM)
+		rel_add(src, "available_events", next_event())
+	rel_remove(src, "available_events", EM)
+	rel_set(src, "next_event", EM)
 	log_and_message_admins("has queued the [GLOB.severity_to_string[severity]] event '[EM.name]'.", user)
 
 /datum/event_container/mundane
@@ -194,6 +196,6 @@
 		new /datum/event_meta(EVENT_LEVEL_MAJOR, "Space Vines",			/datum/event/spacevine, 		20,	list(DEPARTMENT_ENGINEERING = 15), 1),
 	)
 
-/// LC-refs: the next_event this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the next_event var.
 /datum/event_container/proc/next_event() as /datum/event_meta
-	return om_resolve(next_event_handle)
+	return next_event

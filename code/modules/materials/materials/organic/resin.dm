@@ -39,7 +39,7 @@
 	W.dismantle_wall()
 
 /datum/material/resin/generate_recipes()
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe("[display_name] door", /obj/structure/simple_door/resin, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE), // Reduced material cost.
 		new /datum/stack_recipe("[display_name] barricade", /obj/structure/alien/wall, 1, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"), // Reduced material cost.
 		new /datum/stack_recipe("[display_name] nest", /obj/structure/bed/nest, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE), // Reduced material cost.
@@ -49,3 +49,4 @@
 		new /datum/stack_recipe("[display_name] membrane", /obj/structure/alien/membrane, 1, time = 2 SECONDS, pass_stack_color = TRUE, recycle_material = "[name]"),
 // new /datum/stack_recipe("[display_name] node", /obj/effect/alien/weeds/node, 1, time = 4 SECONDS, recycle_material = "[name]") // No nodes.
 	)
+	return recipes

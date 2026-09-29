@@ -123,7 +123,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 /obj/machinery/chemical_synthesizer/examine(mob/user)
 	. = ..()
 	if(panel_open)
-		. += "It has [cartridges.len] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - cartridges.len] more."
+		. += "It has [length(cartridges)] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - length(cartridges)] more."
 
 /obj/machinery/chemical_synthesizer/power_change()
 	. = ..()
@@ -165,7 +165,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 			to_chat(user, span_warning("\The [C] will not fit in \the [src]!"))
 		return
 
-	if(cartridges.len >= SYNTHESIZER_MAX_CARTRIDGES)
+	if(length(cartridges) >= SYNTHESIZER_MAX_CARTRIDGES)
 		if(user)
 			to_chat(user, span_warning("\The [src] does not have any slots open for \the [C] to fit into!"))
 		return
@@ -175,7 +175,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 			to_chat(user, span_warning("\The [C] does not have a label!"))
 		return
 
-	if(cartridges[C.label])
+	if(LAZYACCESS(cartridges, C.label))
 		if(user)
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
@@ -185,14 +185,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	C.forceMove(src)
-	cartridges[C.label] = C
-	cartridges = sortAssoc(cartridges)
+	own_put(src, "cartridges", C.label, C)
+	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
 	MACHINE_WAKE(src)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/proc/remove_cartridge(label)
-	. = cartridges[label]
-	cartridges -= label
+	. = own_take_member(src, "cartridges", label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_synthesizer/declare_interactions(list/into)
@@ -236,7 +235,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
 
-	catalyst =  RC
+	own_set(src, "catalyst", RC)
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
@@ -273,7 +272,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		return sleep_until_powered()
 	var/short = FALSE
 	for(var/label in cartridges)
-		var/obj/item/reagent_containers/chem_disp_cartridge/cart = cartridges[label]
+		var/obj/item/reagent_containers/chem_disp_cartridge/cart = LAZYACCESS(cartridges, label)
 		if(cart && cart.reagents.total_volume < cart.reagents.maximum_volume)
 			short = TRUE
 			break
@@ -288,7 +287,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
 				dispense_reagents -= id
 				continue
-			var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[R.name]
+			var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, R.name)
 			if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 				var/to_restore = min(C.reagents.maximum_volume - C.reagents.total_volume, 5)
 				use_power(to_restore * 500)
@@ -350,7 +349,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 	var/chemicals[0]
 	for(var/label in cartridges)
-		var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
+		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		chemicals.Add(list(list("title" = label, "id" = label, "amount" = C.reagents.total_volume))) // list in a list because Byond merges the first list
 	data["chemicals"] = chemicals
 
@@ -395,7 +394,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 			// Removes the catalyst bottle from the machine.
 			if(!busy && catalyst)
 				catalyst.forceMove(get_turf(src))
-				catalyst = null
+				own_take(src, "catalyst")
 				update_icon()
 		if("toggle_catalyst")
 			// Decides if the machine uses the catalyst.
@@ -691,7 +690,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	var/quantity = recipes[r_id][step+1]
 
 	// If we're missing a cartridge somehow or lack space for the next step, stall. It's now up to the chemist to fix this.
-	if(!cartridges[label])
+	if(!LAZYACCESS(cartridges, label))
 		visible_message(span_warning("The [src] beeps loudly, flashing a 'cartridge missing' error!"), "You hear loud beeping!")
 		play_sfx(src, SFX_WEAPONS_SMG_EMPTY_ALARM)
 		stall()
@@ -704,7 +703,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		return
 
 	// If there isn't enough reagent left for this step, try again in a minute.
-	var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
+	var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 	if(quantity > C.reagents.total_volume)
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
 		om_after(src, 1 MINUTE, PROC_REF(perform_reaction), r_id, step)
@@ -816,6 +815,5 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-DECLARE_REF(/obj/machinery/chemical_synthesizer, "catalyst", HELD, null)
+OWN(/obj/machinery/chemical_synthesizer, catalyst, OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.
-DECLARE_REF(/obj/machinery/chemical_synthesizer, "cartridges", OWNED_VALUES, null)

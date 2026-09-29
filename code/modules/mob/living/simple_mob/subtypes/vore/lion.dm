@@ -128,4 +128,3 @@
 	add_verb(src,/mob/living/simple_mob/proc/pick_color)
 	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
 
-DECLARE_REF(/mob/living/simple_mob/vore/retaliate/lion, "mane_overlay", OWNED, null)

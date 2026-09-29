@@ -4,20 +4,19 @@ with an /obj/effect/overmap/visitable/ship present elsewhere on that z level, or
 somewhere on that shuttle. Subtypes of these can be then used to perform ship overmap movement functions.
 */
 /obj/machinery/computer/ship
-	var/tmp/linked_handle
-	var/list/viewers // OM handles of mobs in direct-view mode.
+	var/tmp/obj/effect/overmap/visitable/ship/linked
+	var/list/viewers // Mobs in direct-view mode (relation list, filled by /datum/remote_view/viewer_managed)
 	var/extra_view = 0 // how much the view is increased by when the mob is in overmap mode.
 	/// Whether AI/silicon mobs are permitted to interact with this console. Subtypes may override to FALSE.
 	var/ai_control = TRUE
 
-DECLARE_REF(/obj/machinery/computer/ship, "flight_operations_ui", OWNED, null)
 
 // A late init operation called in SSshuttles, used to attach the thing to the right ship.
 /obj/machinery/computer/ship/proc/attempt_hook_up(obj/effect/overmap/visitable/ship/sector)
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(src))
-		linked_handle = om_handle(sector)
+		rel_set(src, "linked", sector)
 		return 1
 
 /obj/machinery/computer/ship/proc/sync_linked(user = null)
@@ -132,7 +131,7 @@ TOPIC_ACTION(/obj/machinery/computer/ship, "sync", PROC_REF(topic_sync))
 	user.set_viewsize() // reset to default
 
 /obj/machinery/computer/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in viewers)
 
 /obj/machinery/computer/ship/tgui_close(mob/user)
 	. = ..()
@@ -152,6 +151,6 @@ Ships can now be hijacked!
 		to_chat(user, "You short out the console's ID checking system. It's now available to everyone!")
 		return 1
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the linked var.
 /obj/machinery/computer/ship/proc/linked() as /obj/effect/overmap/visitable/ship
-	return om_resolve(linked_handle)
+	return linked

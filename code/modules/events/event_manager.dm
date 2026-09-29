@@ -1,7 +1,7 @@
 //The UI portion. Should probably be made its own thing/made into a NanoUI thing later.
 /datum/world_service/events
 	var/report_at_round_end = 0
-	var/tmp/selected_event_container_handle
+	var/tmp/datum/event_container/selected_event_container
 
 /datum/world_service/events/proc/Interact(mob/living/user)
 	// structured TGUI Event Manager panel (see
@@ -9,7 +9,7 @@
 	// the per-subsystem panel datum so a second open just updates the
 	// open window via SStgui.update_uis instead of opening a duplicate.
 	if(!tgui_event_manager_panel)
-		tgui_event_manager_panel = new
+		own_set(src, "tgui_event_manager_panel", new /datum/event_manager_panel)
 	tgui_event_manager_panel.tgui_interact(user)
 	SStgui.update_uis(tgui_event_manager_panel)
 
@@ -23,6 +23,6 @@ ADMIN_VERB(event_manager_panel, R_ADMIN|R_EVENT, "Event Manager Panel", "Opens t
 	GLOB.event_service.Interact(user)
 	feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-/// LC-refs: the selected_event_container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the selected_event_container var.
 /datum/world_service/events/proc/selected_event_container() as /datum/event_container
-	return om_resolve(selected_event_container_handle)
+	return selected_event_container

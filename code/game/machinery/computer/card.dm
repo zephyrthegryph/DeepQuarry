@@ -51,11 +51,11 @@
 	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()) && (user.unEquip(id_card) || (id_card.loc == user && istype(user,/mob/living/silicon/robot)))) //Grippers. Again. ~Mechoid
 		user.drop_item()
 		id_card.forceMove(src)
-		scan = id_card
+		own_set(src, "scan", id_card)
 	else if(!modify)
 		user.drop_item()
 		id_card.forceMove(src)
-		modify = id_card
+		own_set(src, "modify", id_card)
 
 	SStgui.update_uis(src)
 	attack_hand(user)
@@ -74,13 +74,13 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		scan = null
+		own_take(src, "scan")
 	else if(modify)
 		to_chat(user, "You remove \the [modify] from \the [src].")
 		modify.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(modify)
-		modify = null
+		own_take(src, "modify")
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
@@ -180,15 +180,15 @@
 					modify.forceMove(get_turf(src))
 					if(!ui.user.get_active_hand())
 						ui.user.put_in_hands(modify)
-					modify = null
+					own_take(src, "modify")
 				else
 					modify.forceMove(get_turf(src))
-					modify = null
+					own_take(src, "modify")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
 					I.forceMove(src)
-					modify = I
+					own_set(src, "modify", I)
 			. = TRUE
 
 		if("scan")
@@ -197,16 +197,16 @@
 					scan.forceMove(get_turf(src))
 					if(!ui.user.get_active_hand())
 						ui.user.put_in_hands(scan)
-					scan = null
+					own_take(src, "scan")
 				else
 					scan.forceMove(get_turf(src))
-					scan = null
+					own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 			. = TRUE
 
 		if("access")
@@ -318,5 +318,5 @@
 		for(var/A in modify.access)
 			P.info += "  [SSaccess.get_access_desc(A)]"
 
-DECLARE_REF(/obj/machinery/computer/card, "scan", HELD, null)
-DECLARE_REF(/obj/machinery/computer/card, "modify", HELD, null)
+OWN(/obj/machinery/computer/card, scan, OWN_CONTAINED)
+OWN(/obj/machinery/computer/card, modify, OWN_CONTAINED)

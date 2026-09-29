@@ -7,7 +7,7 @@
 /obj/item/clothing/mask/gas/voice
 	name = "gas mask"
 	desc = "A face-covering mask that can be connected to an air supply. It seems to house some odd electronics."
-	var/obj/item/voice_changer/changer // ALLOW(state_ref): owned: the voice changer module, kept in the mask's contents
+	var/obj/item/voice_changer/changer // owned: the voice changer module, kept in the mask's contents
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 	INTERACT_VERB("Toggle Voice Changer", PROC_REF(voice_toggle_voice_changer_verb), REQ_IN_INVENTORY), \
@@ -37,4 +37,3 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/gas/voice, "changer", /obj/item/voice_changer)
 
-DECLARE_REF(/obj/item/clothing/mask/gas/voice, "changer", OWNED, null)

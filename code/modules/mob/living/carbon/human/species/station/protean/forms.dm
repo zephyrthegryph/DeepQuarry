@@ -9,11 +9,7 @@
 // its form instances, never on the species datum.
 
 /mob/living/carbon/human/var/datum/forms/character_forms
-DECLARE_REF(/mob/living/carbon/human, "character_forms", OWNED, null)
-DECLARE_REF(/datum/forms, "owner", BACK, "character_forms")
 // Form type -> this character's form instance; `current` is one of them.
-DECLARE_REF(/datum/forms, "forms", OWNED_VALUES, null)
-DECLARE_REF(/datum/forms, "current", HELD, null)
 
 /mob/living/carbon/human/proc/get_forms()
 	RETURN_TYPE(/datum/forms)
@@ -23,13 +19,13 @@ DECLARE_REF(/datum/forms, "current", HELD, null)
 /mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
 	RETURN_TYPE(/datum/forms)
 	if(!character_forms)
-		character_forms = new forms_type(src)
+		own_set(src, "character_forms", new forms_type(src))
 	return character_forms
 
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).
 /mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
 	if(istype(character_forms, forms_type))
-		QDEL_NULL(character_forms)
+		own_clear(src, "character_forms", OWN_DELETE)
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()
@@ -60,12 +56,12 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	if(!ishuman(H))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
-	owner = H
-	forms = list()
+	rel_set(src, "owner", H)
+	own_take_all(src, "forms")
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
-		forms[form_type] = new form_type()
-	current = forms[types[1]]
+		own_put(src, "forms", form_type, new form_type())
+	rel_set(src, "current", forms[types[1]])
 	attach()
 
 /// Joins the owner (was RegisterWithParent).
@@ -107,7 +103,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	switching = TRUE
 	var/datum/form/old = current
 	old.on_exit(src, H)
-	current = next
+	rel_set(src, "current", next)
 	next.on_enter(src, H)
 	H.invalidate_factors()
 	if(!silent)

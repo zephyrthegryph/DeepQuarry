@@ -110,11 +110,11 @@
 /datum/data/pda/utility/scanmode/notes
 	base_name = "Note Scanner"
 	icon = "clipboard"
-	var/tmp/notes_handle
+	var/tmp/datum/data/pda/app/notekeeper/notes
 
 /datum/data/pda/utility/scanmode/notes/start()
 	. = ..()
-	notes_handle = om_handle(pda().find_program(/datum/data/pda/app/notekeeper))
+	rel_set(src, "notes", pda().find_program(/datum/data/pda/app/notekeeper))
 
 /datum/data/pda/utility/scanmode/notes/scan_atom(atom/A, mob/user)
 	if(notes() && istype(A, /obj/item/paper))
@@ -168,6 +168,6 @@
 	else
 		to_chat(user, span_warning("Error scanning [A]."))
 
-/// LC-refs: the notes this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The notes this refers to (a relation view: null once that is deleted).
 /datum/data/pda/utility/scanmode/notes/proc/notes() as /datum/data/pda/app/notekeeper
-	return om_resolve(notes_handle)
+	return notes

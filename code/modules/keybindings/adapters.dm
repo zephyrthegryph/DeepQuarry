@@ -339,7 +339,7 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 		return TRUE
 	var/obj/item/tk_grab/grab = new(O)
 	user.put_in_active_hand(grab)
-	grab.host_handle = om_handle(user)
+	rel_set(grab, "host", user)
 	grab.focus_object(O)
 	return TRUE
 

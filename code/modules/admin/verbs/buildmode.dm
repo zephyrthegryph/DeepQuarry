@@ -31,23 +31,23 @@
 
 			var/obj/effect/bmode/buildholder/H = new/obj/effect/bmode/buildholder()
 			var/obj/effect/bmode/builddir/A = new/obj/effect/bmode/builddir(H)
-			A.master_handle = om_handle(H)
+			rel_set(A, "master", H)
 			var/obj/effect/bmode/buildhelp/B = new/obj/effect/bmode/buildhelp(H)
-			B.master_handle = om_handle(H)
+			rel_set(B, "master", H)
 			var/obj/effect/bmode/buildmode/C = new/obj/effect/bmode/buildmode(H)
-			C.master_handle = om_handle(H)
+			rel_set(C, "master", H)
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
-			D.master_handle = om_handle(H)
+			rel_set(D, "master", H)
 
-			H.builddir = A
-			H.buildhelp = B
-			H.buildmode = C
-			H.buildquit = D
+			own_set(H, "builddir", A)
+			own_set(H, "buildhelp", B)
+			own_set(H, "buildmode", C)
+			own_set(H, "buildquit", D)
 			M.client.screen += A
 			M.client.screen += B
 			M.client.screen += C
 			M.client.screen += D
-			H.cl_handle = om_handle(M.client)
+			H.cl_ckey = M.client.ckey // clients are not datums: held by ckey
 
 /obj/effect/bmode//Cleaning up the tree a bit
 	density = TRUE
@@ -56,10 +56,10 @@
 	plane = PLANE_PLAYER_HUD
 	dir = NORTH
 	icon = 'icons/misc/buildmode.dmi'
-	var/tmp/master_handle
+	/// The build holder this button belongs to (a relation view; the holder owns us)
+	var/tmp/obj/effect/bmode/buildholder/master
 
-// Comes off its builder's screen: its holder's client, two handles away.
-DECLARE_REF(/obj/effect/bmode, "master_handle.cl_handle", BACK_VIA, "screen")
+// Comes off its builder's screen: its holder's client.
 
 /obj/effect/bmode/builddir
 	icon_state = "build"
@@ -194,28 +194,26 @@ DECLARE_REF(/obj/effect/bmode, "master_handle.cl_handle", BACK_VIA, "screen")
 /obj/effect/bmode/buildholder
 	density = FALSE
 	anchored = TRUE
-	var/tmp/cl_handle
+	/// The builder's ckey (a client is not a datum, so it is held by key); read with cl().
+	var/tmp/cl_ckey
 	var/obj/effect/bmode/builddir/builddir = null
 	var/obj/effect/bmode/buildhelp/buildhelp = null
 	var/obj/effect/bmode/buildmode/buildmode = null
 	var/obj/effect/bmode/buildquit/buildquit = null
-	var/tmp/throw_atom_handle
+	var/tmp/atom/movable/throw_atom
+	/// Mobs selected for AI orders (a relation list)
 	var/list/selected_mobs
 	var/copied_faction = null
 	var/warned = 0
 
 REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
-DECLARE_REF(/obj/effect/bmode/buildholder, "builddir", OWNED, null)
-DECLARE_REF(/obj/effect/bmode/buildholder, "buildhelp", OWNED, null)
-DECLARE_REF(/obj/effect/bmode/buildholder, "buildmode", OWNED, null)
-DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 
 // AI mobs it selected are deselected.
 /obj/effect/bmode/buildholder/on_destroy(force)
-	for(var/mob/living/unit in selected_mobs)
+	for(var/mob/living/unit in selected_mobs?.Copy())
 		deselect_AI_mob(cl(), unit)
-	LAZYCLEARLIST(selected_mobs)
+	rel_clear(src, "selected_mobs")
 	..()
 
 /// The first base-turf deletion asks once; the answer does that deletion.
@@ -238,11 +236,11 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 	T.flags |= ADMIN_SPAWNED
 
 /obj/effect/bmode/buildholder/proc/select_AI_mob(client/C, mob/living/unit)
-	LAZYADD(selected_mobs, unit)
+	rel_add(src, "selected_mobs", unit)
 	C.images += unit.selected_image
 
 /obj/effect/bmode/buildholder/proc/deselect_AI_mob(client/C, mob/living/unit)
-	LAZYREMOVE(selected_mobs, unit)
+	rel_remove(src, "selected_mobs", unit)
 	C.images -= unit.selected_image
 
 /obj/effect/bmode/buildmode
@@ -255,8 +253,8 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 
 	var/wall_holder = /turf/simulated/wall
 	var/floor_holder = /turf/simulated/floor/plating
-	var/tmp/coordA_handle
-	var/tmp/coordB_handle
+	var/tmp/turf/coordA
+	var/tmp/turf/coordB
 	var/area_enabled = 0
 	var/area_name = "New Area"
 
@@ -422,7 +420,7 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 		if(BUILDMODE_THROW)
 			if(pa.Find("left"))
 				if(istype(object, /atom/movable))
-					holder.throw_atom_handle = om_handle(object)
+					rel_set(holder, "throw_atom", object)
 					log_admin("[key_name(usr)] selected [object] to throw.")
 			if(pa.Find("right"))
 				if(holder.throw_atom())
@@ -430,18 +428,18 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 
 		if(BUILDMODE_ROOM)
 			if(pa.Find("left"))
-				holder.buildmode.coordA_handle = om_handle(get_turf(object))
+				rel_set(holder.buildmode, "coordA", get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as point A."))
 
 			if(pa.Find("right"))
-				holder.buildmode.coordB_handle = om_handle(get_turf(object))
+				rel_set(holder.buildmode, "coordB", get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as point B."))
 
 			if(holder.buildmode.coordA() && holder.buildmode.coordB())
 				if(isnull(holder.buildmode.area_name))
 					to_chat(user, span_notice("ERROR: Insert area name before use."))
-					holder.buildmode.coordA_handle = null
-					holder.buildmode.coordB_handle = null
+					rel_clear(holder.buildmode, "coordA")
+					rel_clear(holder.buildmode, "coordB")
 					return
 				to_chat(user, span_notice("A and B set, creating rectangle."))
 				holder.buildmode.make_rectangle(
@@ -452,36 +450,36 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 					holder.buildmode.area_enabled,
 					holder.buildmode.area_name)
 				log_admin("BUILDMODE: [key_name(usr)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
-				holder.buildmode.coordA_handle = null
-				holder.buildmode.coordB_handle = null
+				rel_clear(holder.buildmode, "coordA")
+				rel_clear(holder.buildmode, "coordB")
 
 		if(BUILDMODE_LADDER)
 			if(pa.Find("left"))
-				holder.buildmode.coordA_handle = om_handle(get_turf(object))
+				rel_set(holder.buildmode, "coordA", get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as upper ladder location."))
 
 			if(pa.Find("right"))
-				holder.buildmode.coordB_handle = om_handle(get_turf(object))
+				rel_set(holder.buildmode, "coordB", get_turf(object))
 				to_chat(user, span_notice("Defined [object] ([object.type]) as lower ladder location."))
 
 			if(holder.buildmode.coordA() && holder.buildmode.coordB())
 				to_chat(user, span_notice("Ladder locations set, building ladders."))
 				var/obj/structure/ladder/A = new /obj/structure/ladder/up(holder.buildmode.coordA())
 				var/obj/structure/ladder/B = new /obj/structure/ladder(holder.buildmode.coordB())
-				A.target_up = B
-				B.target_down = A
+				rel_set(A, "target_up", B)
+				rel_set(B, "target_down", A)
 				A.flags |= ADMIN_SPAWNED
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()
 				B.update_icon()
 				log_admin("BUILDMODE: [key_name(usr)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
-				holder.buildmode.coordA_handle = null
-				holder.buildmode.coordB_handle = null
+				rel_clear(holder.buildmode, "coordA")
+				rel_clear(holder.buildmode, "coordB")
 
 		if(BUILDMODE_CONTENTS)
 			if(pa.Find("left"))
 				if(istype(object, /atom))
-					holder.throw_atom_handle = om_handle(object)
+					rel_set(holder, "throw_atom", object)
 			if(pa.Find("right"))
 				if(holder.throw_atom() && istype(object, /atom/movable))
 					object.forceMove(holder.throw_atom())
@@ -646,7 +644,7 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 							unit.forceMove(T)
 							forced++
 							continue
-						AI.home_turf_handle = om_handle(T)
+						rel_set(AI, "home_turf", T)
 						if(AI.process_flags == 0)
 							unit.forceMove(T)
 							forced++
@@ -1004,22 +1002,22 @@ DECLARE_REF(/obj/effect/bmode/buildholder, "buildquit", OWNED, null)
 #undef LAST_BUILDMODE
 #undef BUILDMODE_DROP
 
-/// LC-refs: the cl this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The builder's client, or null while they are disconnected.
 /obj/effect/bmode/buildholder/proc/cl() as /client
-	return om_resolve(cl_handle)
+	return GLOB.directory[cl_ckey]
 
-/// LC-refs: the throw_atom this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The throw_atom this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildholder/proc/throw_atom() as /atom/movable
-	return om_resolve(throw_atom_handle)
+	return throw_atom
 
-/// LC-refs: the coordA this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordA this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordA() as /turf
-	return om_resolve(coordA_handle)
+	return coordA
 
-/// LC-refs: the coordB this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The coordB this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/buildmode/proc/coordB() as /turf
-	return om_resolve(coordB_handle)
+	return coordB
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The master this refers to (a relation view: null once that is deleted).
 /obj/effect/bmode/proc/master() as /obj/effect/bmode/buildholder
-	return om_resolve(master_handle)
+	return master

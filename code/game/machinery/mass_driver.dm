@@ -17,6 +17,9 @@
 	var/id = null
 	var/drive_range = 50 //this is mostly irrelevant since current mass drivers throw into space, but you could make a lower-range mass driver for interstation transport or something I guess.
 
+// Buttons and pod consoles find their drivers by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/mass_driver, id)
+
 /obj/machinery/mass_driver/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -40,7 +43,7 @@
 	if(!new_id)
 		to_chat(user, "No input found please hang up and try your call again.")
 		return ITEM_INTERACT_BLOCKING
-	id = new_id
+	keyed_set_id(src, "id", new_id) // re-links the keyed buttons and consoles
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/mass_driver/proc/drive(amount)

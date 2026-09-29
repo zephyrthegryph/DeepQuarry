@@ -4,7 +4,7 @@
 	icon = 'icons/obj/ecig.dmi'
 	var/active = 0
 	var/cartridge_type = /obj/item/reagent_containers/ecig_cartridge/med_nicotine
-	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // ALLOW(state_ref): owned: the loaded cartridge, kept in the e-cig's contents
+	var/obj/item/reagent_containers/ecig_cartridge/ec_cartridge // owned: the loaded cartridge, kept in the e-cig's contents
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS | SLOT_MASK
 	attack_verb = list("attacked", "poked", "battered")
@@ -20,7 +20,6 @@
 /obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)
@@ -121,7 +120,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		else//fits in new one
 			user.remove_from_mob(I)
 			I.forceMove(src)//I.loc=src
-			ec_cartridge = I
+			own_set(src, "ec_cartridge", I)
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))
 	return INTERACTION_HANDLED_PASS
@@ -151,7 +150,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		active=0
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
-		ec_cartridge = null
+		own_take(src, "ec_cartridge")
 		update_icon()
 	return TRUE
 

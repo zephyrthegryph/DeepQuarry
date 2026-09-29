@@ -18,7 +18,7 @@ GLOBAL_VAR(bomb_set)
 	var/code = ""
 	var/yes_code = 0.0
 	var/safety = 1.0
-	var/auth_handle
+	var/obj/item/disk/nuclear/auth
 	var/list/wires_list
 	var/light_wire
 	var/safety_wire
@@ -83,7 +83,7 @@ GLOBAL_VAR(bomb_set)
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
 	user.drop_item()
 	O.forceMove(src)
-	auth_handle = om_handle(O)
+	rel_set(src, "auth", O)
 	add_fingerprint(user)
 	return TRUE
 
@@ -273,13 +273,13 @@ GLOBAL_VAR(bomb_set)
 			if(auth())
 				auth().forceMove(src.loc)
 				yes_code = 0
-				auth_handle = null
+				rel_clear(src, "auth")
 			else
 				var/obj/item/I = usr.get_active_hand()
 				if(istype(I, /obj/item/disk/nuclear))
 					usr.drop_item()
 					I.forceMove(src)
-					auth_handle = om_handle(I)
+					rel_set(src, "auth", I)
 			return TRUE
 		if("type")
 			if(!auth())
@@ -532,6 +532,6 @@ REGISTRY_MEMBERSHIP(/obj/item/disk/nuclear, REGISTRY_NUKE_DISKS)
 /obj/machinery/nuclearbomb/proc/toggle_safety()
 	safety = !safety
 
-/// LC-refs: auth -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// auth (a relation view: it reads null once the target is deleted).
 /obj/machinery/nuclearbomb/proc/auth() as /obj/item/disk/nuclear
-	return om_resolve(auth_handle)
+	return auth

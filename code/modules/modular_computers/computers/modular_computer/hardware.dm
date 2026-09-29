@@ -21,14 +21,14 @@
 		to_chat(user, "This computer's [H.name] slot is already occupied by \the [existing].")
 		return
 
-	vars[slot] = H // ALLOW(api): hardware slots named by the part's slot var
 	found = 1
 
 	if(found)
 		to_chat(user, "You install \the [H] into \the [src]")
-		H.holder2_handle = om_handle(src)
 		user.drop_from_inventory(H)
 		H.forceMove(src)
+		own_set(src, slot, H) // hardware slots are OWN_CONTAINED: in our contents first
+		rel_set(H, "holder2", src)
 		update_verbs()
 
 // Installs hardware during preset construction (no user interaction).
@@ -41,15 +41,15 @@
 	var/slot = H.get_slot_var()
 	if(!slot)
 		return
-	vars[slot] = H // ALLOW(api): hardware slots named by the part's slot var
-	H.holder2_handle = om_handle(src)
+	own_set(src, slot, H)
+	rel_set(H, "holder2", src)
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types
 // when they carry additional hardware slots beyond the base set.
 /obj/item/modular_computer/proc/uninstall_component(mob/living/user, obj/item/computer_hardware/H, found = 0, critical = 0)
 	var/slot = H.get_slot_var()
 	if(slot && (vars[slot] == H))
-		vars[slot] = null // ALLOW(api): hardware slots named by the part's slot var
+		own_take(src, slot) // moved out below
 		found = 1
 		// Processor and hard drive removal shuts down the computer.
 		// is_critical_slot() lets new hardware types declare themselves critical
@@ -61,7 +61,7 @@
 		if(user)
 			to_chat(user, "You remove \the [H] from \the [src].")
 		H.forceMove(get_turf(src))
-		H.holder2_handle = null
+		rel_clear(H, "holder2")
 		update_verbs()
 	if(critical && enabled)
 		if(user)

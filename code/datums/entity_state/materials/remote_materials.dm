@@ -12,9 +12,9 @@ handles linking back and forth.
 	// 3. silo is null, materials is null
 
 	///The silo machine this container is connected to
-	var/silo_handle
+	var/obj/machinery/ore_silo/silo
 	///Material container. the value is either the silo or local
-	var/mat_container_handle
+	var/datum/material_container/mat_container
 	///Should we create a local storage if we can't connect to silo
 	var/allow_standalone
 	///Local size of container when silo = null
@@ -28,8 +28,6 @@ handles linking back and forth.
 	///Our own container when not linked to a silo (owned).
 	var/datum/material_container/local_container
 
-DECLARE_REF(/datum/remote_materials, "owner", BACK, null)
-DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 
 /datum/remote_materials/New(
 	atom/new_owner,
@@ -43,7 +41,7 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 	if (!isatom(new_owner))
 		log_world("remote_materials: created without an atom owner ([new_owner])")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 
 	src.allow_standalone = allow_standalone
 	src.mat_container_flags = mat_container_flags
@@ -57,7 +55,7 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 	om_hook(owner, /datum/om/event/before/attackby, src, PROC_REF(on_item_insert))
 
 	if(mapload) // wait for silo to initialize during mapload
-		SSticker.OnRoundstart(CALLBACK(src, PROC_REF(_PrepareStorage), connect_to_silo))
+		SSticker.OnRoundstart(om_callable(src, PROC_REF(_PrepareStorage), connect_to_silo))
 	else //directly register in round
 		_PrepareStorage(connect_to_silo)
 
@@ -72,10 +70,10 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 	PRIVATE_PROC(TRUE)
 
 	if (connect_to_silo)
-		silo_handle = om_handle(GLOB.ore_silo_default)
+		rel_set(src, "silo", GLOB.ore_silo_default)
 		if (silo())
-			LAZYADD(silo().ore_connected_machines, src)
-			mat_container_handle = om_handle(silo().materials)
+			rel_add(silo, "ore_connected_machines", src)
+			rel_set(src, "mat_container", silo.materials)
 
 	if(!mat_container() && allow_standalone)
 		_MakeLocal()
@@ -90,29 +88,28 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 /datum/remote_materials/proc/_MakeLocal()
 	PRIVATE_PROC(TRUE)
 
-	silo_handle = null
+	rel_clear(src, "silo")
 
-	if(local_container)
-		QDEL_NULL(local_container)
-	local_container = new /datum/material_container( \
+	own_set(src, "local_container", new /datum/material_container( \
 		owner, \
 		subtypesof(/datum/material), \
 		local_size, \
 		mat_container_flags, \
 		container_events = mat_container_events, \
 		allowed_items = /obj/item/stack \
-	)
-	mat_container_handle = om_handle(local_container)
+	))
+	rel_set(src, "mat_container", local_container)
 
 /// Adds/Removes this connection from the silo
 /datum/remote_materials/proc/toggle_holding()
 	if(isnull(silo()))
 		return
 
-	if(!LAZYACCESS(silo().holds, src))
-		LAZYSET(silo().holds, src, TRUE)
+	// silo.holds is a relation list view of the connections on hold.
+	if(!(src in silo.holds))
+		rel_add(silo, "holds", src)
 	else
-		LAZYREMOVE(silo().holds, src)
+		rel_remove(silo, "holds", src)
 
 /**
  * Sets the storage size for local materials when not linked with silo
@@ -130,9 +127,9 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 	if(isnull(silo()))
 		return
 
-	LAZYREMOVE(silo().ore_connected_machines, src)
-	silo_handle = null
-	mat_container_handle = null
+	rel_remove(silo, "ore_connected_machines", src)
+	rel_clear(src, "silo")
+	rel_clear(src, "mat_container")
 
 	if (allow_standalone)
 		_MakeLocal()
@@ -152,8 +149,8 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 		var/obj/machinery/ore_silo/new_silo = M.buffer()
 		var/datum/material_container/new_container = new_silo.materials
 		if (silo())
-			LAZYREMOVE(silo().ore_connected_machines, src)
-			LAZYREMOVE(silo().holds, src)
+			rel_remove(silo, "ore_connected_machines", src)
+			rel_remove(silo, "holds", src)
 		else if (mat_container())
 			//transfer all mats to silo. whatever cannot be transfered is dumped out as sheets
 			if(mat_container().total_amount())
@@ -164,11 +161,12 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 					new_container.materials[mat] += mat_amount
 					mat_container().materials[mat] = 0
 			if(mat_container() == local_container)
-				local_container = null
-			qdel(mat_container())
-		silo_handle = om_handle(new_silo)
-		LAZYADD(silo().ore_connected_machines, src)
-		mat_container_handle = om_handle(new_container)
+				own_clear(src, "local_container", OWN_DELETE) // mat_container's view clears with it
+			else
+				qdel(mat_container())
+		rel_set(src, "silo", new_silo)
+		rel_add(new_silo, "ore_connected_machines", src)
+		rel_set(src, "mat_container", new_container)
 		to_chat(user, span_notice("You connect [owner] to [silo()] from the multitool's buffer."))
 		return TRUE
 
@@ -220,7 +218,7 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 
 /// returns TRUE if this connection put on hold by the silo
 /datum/remote_materials/proc/on_hold()
-	return check_z_level() ? LAZYACCESS(silo().holds, src) : FALSE
+	return check_z_level() ? (src in silo().holds) : FALSE
 
 /**
  * Check if this connection can use any materials from the silo()
@@ -306,10 +304,10 @@ DECLARE_REF(/datum/remote_materials, "local_container", OWNED, null)
 
 	return mat_container().insert_item(weapon, multiplier, owner)
 
-/// LC-refs: the silo we are connected to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The silo we are connected to (a relation view).
 /datum/remote_materials/proc/silo() as /obj/machinery/ore_silo
-	return om_resolve(silo_handle)
+	return silo
 
-/// LC-refs: the material container in use (the silo's or our local one) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The material container in use (the silo's or our local one) (a relation view).
 /datum/remote_materials/proc/mat_container() as /datum/material_container
-	return om_resolve(mat_container_handle)
+	return mat_container

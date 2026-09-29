@@ -30,10 +30,9 @@
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	camera = new(src, camera_network_id, see_dark)
+	own_set(src, "camera", new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
 
-DECLARE_REF(/obj/item/integrated_circuit/output/video_camera, "camera", OWNED, null)
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()
 	update_camera_name()
@@ -73,10 +72,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
-			LAZYREMOVE(input.paired_cameras, src)
+			rel_remove(input, "paired_cameras", src)
 			to_chat(user, span_notice("You unpair \the [input] from \the [src]."))
 		else
-			LAZYADD(input.paired_cameras, src)
+			rel_add(input, "paired_cameras", src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -164,7 +163,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", /datum/tgui_module/camera/intcircuit)
 
-DECLARE_REF(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", OWNED, null)
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
 	if(!length(paired_cameras))
@@ -210,10 +208,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 	tgui_id = "ICCameraConsole"
 	access_based = FALSE
 
-	var/tmp/owner_circuit_handle
+	var/tmp/obj/item/integrated_circuit/input/video_camera_input/owner_circuit
 
 /datum/tgui_module/camera/intcircuit/New(host)
-	owner_circuit_handle = om_handle(host)
+	rel_set(src, "owner_circuit", host)
 	// Pass an empty network list - we override get_available_cameras
 	..(host, list("intcircuit_dummy"))
 	access_based = FALSE
@@ -240,9 +238,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/input/video_camera_input, INTE
 
 /datum/tgui_module/camera/intcircuit/tgui_act(action, params, datum/tgui/ui)
 	if(action == "switch_camera")
-		last_camera_turf_handle = null
+		rel_clear(src, "last_camera_turf")
 	. = ..()
 
-/// LC-refs: the owner_circuit this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner_circuit this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/intcircuit/proc/owner_circuit() as /obj/item/integrated_circuit/input/video_camera_input
-	return om_resolve(owner_circuit_handle)
+	return owner_circuit

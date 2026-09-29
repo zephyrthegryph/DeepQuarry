@@ -9,13 +9,12 @@
 	var/message_to_play = "The quick brown fox jumps over the lazy dog."
 
 /obj/structure/prop/transmitter/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/sequence/morse(list(src), FALSE))
 	set_new_message(message_to_play)
 	soundloop.start()
 	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."
 	return ..()
 
-DECLARE_REF(/obj/structure/prop/transmitter, "soundloop", OWNED, null)
 
 /obj/structure/prop/transmitter/vv_edit_var(var_name, var_value)
 	if(var_name == "message_to_play")

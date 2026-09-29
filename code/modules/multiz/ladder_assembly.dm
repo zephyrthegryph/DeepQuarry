@@ -151,5 +151,8 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 
 // Make them constructable in hand
 /datum/material/steel/generate_recipes()
-	..()
-	recipes += new/datum/stack_recipe("ladder assembly", /obj/structure/ladder_assembly, 4, time = 50, one_per_turf = 1, on_floor = 1)
+	var/list/recipes = ..()
+	if(!islist(recipes))
+		recipes = list()
+	recipes += new /datum/stack_recipe("ladder assembly", /obj/structure/ladder_assembly, 4, time = 50, one_per_turf = 1, on_floor = 1)
+	return recipes

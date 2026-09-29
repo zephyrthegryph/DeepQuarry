@@ -19,7 +19,7 @@
 // Set up player on login.
 /client/New()
 	. = ..()
-	media = new /datum/media_manager(src)
+	media = new /datum/media_manager(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	media.open()
 	media.update_music()
 
@@ -99,7 +99,7 @@
 /area
 	// For now, only one media source per area allowed
 	// Possible Future: turn into a list, then only play the first one that's playing.
-	var/tmp/media_source_handle
+	var/tmp/obj/machinery/media/media_source
 
 //
 // ### Media Manager Datum
@@ -111,7 +111,7 @@
 	var/source_volume = 1		// Volume as set by source. Actual volume = "volume * source_volume"
 	var/rate = 1				// Playback speed.  For Fun(tm)
 	var/volume = 0.5			// Client's volume modifier. Actual volume = "volume * source_volume"
-	var/tmp/owner_handle	// Client this is actually running in
+	var/tmp/client/owner	// Client this is actually running in
 	var/forced=0				// If true, current url overrides area media sources
 	// media playback via TGUI MediaPlayer hosted in the
 	// hidden rpane.mediapanel skin element. The skin element stays
@@ -124,11 +124,13 @@
 
 /datum/media_manager/New(client/C)
 	ASSERT(istype(C))
-	src.owner_handle = om_handle(C)
+	rel_set(src, "owner", C)
 
-// ALLOW(lifecycle): closes its media window before phase 4 deletes it (DECLARE_REF(..., OWNED)).
-/datum/media_manager/lifecycle_unbind()
-	media_window?.close()
+/// Owned-child release: the media window is closed as it leaves us (replaced, or disposed at teardown).
+/datum/media_manager/on_owned_release(var_name, datum/child)
+	if(var_name == "media_window")
+		var/datum/tgui_window/window = child
+		window.close()
 	return ..()
 
 /datum/media_manager/tgui_state(mob/user)
@@ -154,7 +156,7 @@
 	// Enable the hidden skin element so its BROWSER actually loads our
 	// assets — the 1x1 size keeps it invisible regardless of is-visible.
 	winset(owner(), WINDOW_ID, "is-disabled=false;is-visible=true")
-	media_window = new(owner(), WINDOW_ID)
+	own_set(src, "media_window", new /datum/tgui_window(owner(), WINDOW_ID))
 	media_window.initialize(
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)
@@ -212,14 +214,12 @@
 #undef MP_DEBUG
 #endif
 
-DECLARE_REF(/client, "media", OWNED, null)
 
-DECLARE_REF(/datum/media_manager, "media_window", OWNED, null)
 
-/// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the media_source this refers to (a relation view: null once it is deleted).
 /area/proc/media_source() as /obj/machinery/media
-	return om_resolve(media_source_handle)
+	return media_source
 
-/// LC-refs: Client this is actually running in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client this is actually running in (a relation view: null once it is deleted).
 /datum/media_manager/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner

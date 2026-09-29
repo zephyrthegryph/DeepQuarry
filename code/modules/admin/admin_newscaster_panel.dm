@@ -15,7 +15,7 @@
 	if(!owner()?.mob)
 		return
 	if(!dq_newscaster_panel)
-		dq_newscaster_panel = new(src)
+		own_set(src, "dq_newscaster_panel", new /datum/newscaster_panel(src))
 	dq_newscaster_panel.tgui_interact(owner().mob)
 
 /datum/admins
@@ -26,10 +26,9 @@
 
 /datum/newscaster_panel/New(datum/admins/owner_holder)
 	..()
-	holder = owner_holder
+	rel_set(src, "holder", owner_holder)
 
-DECLARE_REF(/datum/newscaster_panel, "holder", PAIR, "dq_newscaster_panel")
-DECLARE_REF(/datum/admins, "dq_newscaster_panel", PAIR, "holder")
+// The admin holder owns this panel (dq_newscaster_panel); holder is a plain relation back.
 
 /datum/newscaster_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)

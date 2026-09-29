@@ -17,9 +17,10 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	var/static/random_channels_min = 50
 
 	// Hey uh these two needs to be initialized fast because the whole "things get deleted before init" thing.
-	/// Assoc list, `"[channel]" =` either the datum using it or TRUE for an unsafe-reserved (datumless reservation) channel
+	/// Assoc list, `"[channel]" =` the reserving datum's ref text, or DATUMLESS for an unsafe-reserved channel.
+	/// Keyed by ref text, not the datum: a reservation holds no reference to its datum.
 	var/list/using_channels
-	/// Assoc list datum = list(channel1, channel2, ...) for what channels something reserved.
+	/// Assoc list reserving datum's ref text (or DATUMLESS) = list(channel1, channel2, ...).
 	var/list/using_channels_by_datum
 	// Special datastructure for fast channel management
 	/// List of all channels as numbers
@@ -57,7 +58,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	var/text_channel = num2text(channel)
 	var/using = using_channels[text_channel]
 	using_channels -= text_channel
-	if(using != TRUE) // datum channel
+	if(using) // a datum or datumless reservation
 		using_channels_by_datum[using] -= channel
 		if(!length(using_channels_by_datum[using]))
 			using_channels_by_datum -= using
@@ -65,13 +66,14 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 
 /// Frees all the channels a datum is using.
 /datum/world_service/sounds/proc/free_datum_channels(datum/D)
-	var/list/L = using_channels_by_datum[D]
+	var/key = (D == DATUMLESS) ? DATUMLESS : ref(D)
+	var/list/L = using_channels_by_datum[key]
 	if(!L)
 		return
 	for(var/channel in L)
 		using_channels -= num2text(channel)
 		free_channel(channel)
-	using_channels_by_datum -= D
+	using_channels_by_datum -= key
 
 /// Frees all datumless channels
 /datum/world_service/sounds/proc/free_datumless_channels()
@@ -87,7 +89,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	LAZYINITLIST(using_channels_by_datum[DATUMLESS])
 	using_channels_by_datum[DATUMLESS] += .
 
-/// Reserves a channel for a datum. Automatic cleanup only when the datum is deleted. Returns an integer for channel.
+/// Reserves a channel for a datum, which frees it with free_datum_channels() (songs do when they stop). Returns an integer for channel.
 /datum/world_service/sounds/proc/reserve_sound_channel(datum/D)
 	if(!D) //i don't like typechecks but someone will fuck it up
 		CRASH("Attempted to reserve sound channel without datum using the managed proc.")
@@ -95,10 +97,10 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	if(!.)
 		return FALSE
 	var/text_channel = num2text(.)
-	// ALLOW(object_keyed_lists): channel -> reserving datum on the sound service; released when that datum is deleted
-	using_channels[text_channel] = D
-	LAZYINITLIST(using_channels_by_datum[D])
-	using_channels_by_datum[D] += .
+	var/key = ref(D)
+	using_channels[text_channel] = key
+	LAZYINITLIST(using_channels_by_datum[key])
+	using_channels_by_datum[key] += .
 
 /**
  * Reserves a channel and updates the datastructure. Private proc.

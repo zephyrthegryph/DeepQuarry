@@ -37,16 +37,16 @@
 	valid_z_levels = get_location_z_levels()
 	valid_z_levels -= using_map.sealed_levels // Space levels only please!
 
-	valid_apcs = null
+	rel_clear(src, "valid_apcs")
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in valid_z_levels)
-			WEAK_LIST_ADD(valid_apcs, A)
+			rel_add(src, "valid_apcs", A)
 
 /datum/event2/event/electrical_fault/start()
 	GLOB.command_announcement.Announce("Irregularities detected in \the [location_name()] power grid.", "[location_name()] Power Grid Monitoring", ANNOUNCER_MSG_WIRING_FAULT_START)
 
 /datum/event2/event/electrical_fault/event_tick()
-	var/list/live_apcs = weak_list_live(valid_apcs)
+	var/list/live_apcs = LAZYCOPY(valid_apcs)
 	if(!live_apcs.len)
 		log_game("ELECTRICAL EVENT: No valid APCs found for electrical fault event. Aborting.")
 		abort()
@@ -95,4 +95,3 @@
 		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 
-DECLARE_REF(/datum/event2/event/electrical_fault, "valid_apcs", WEAK_LIST, null)

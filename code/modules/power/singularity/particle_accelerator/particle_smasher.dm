@@ -21,7 +21,7 @@
 	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
-	var/tmp/reagent_container_handle	// Holds the beaker. The process will consume ALL reagents inside it.
+	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
 	var/beaker_type = /obj/item/reagent_containers/glass/beaker
 	var/list/storage		// Holds references to items allowed to be used in the fabrication phase.
 	var/max_storage = 3	// How many items can be jammed into it?
@@ -29,11 +29,9 @@
 
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
-	storage = list()
 	update_icon()
 	prepare_recipes()
 
-DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
@@ -77,8 +75,9 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	return (istype(held) && held.uses_charge) ? "you cannot fill it with a synthesizer" : TRUE
 
 /obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
-	target = M.split(1)
-	target.forceMove(src)
+	var/obj/item/stack/material/piece = M.split(1)
+	piece.forceMove(src)
+	own_set(src, "target", piece)
 	update_icon()
 	return TRUE
 
@@ -96,8 +95,8 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 		G.drop_item()
 	else
 		user.drop_from_inventory(W)
-	reagent_container_handle = om_handle(W)
-	reagent_container().forceMove(src)
+	W.forceMove(src)
+	own_set(src, "reagent_container", W)
 	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
 	return TRUE
@@ -123,7 +122,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	effect = /obj/machinery/particle_smasher/proc/interaction_store
 
 /obj/machinery/particle_smasher/proc/can_store_item(mob/actor, atom/target, obj/item/held)
-	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && storage.len < max_storage
+	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && length(storage) < max_storage
 
 /obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
 	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
@@ -132,7 +131,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	else
 		user.drop_from_inventory(W)
 	W.forceMove(src)
-	storage += W
+	own_add(src, "storage", W)
 	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)
@@ -230,21 +229,14 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 		return PROCESS_KILL
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
-	if(!recipes)
-		recipes = list()
-		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			recipes += new D
-	else
-		for(var/datum/particle_smasher_recipe/D in recipes)
-			qdel(D)
-		recipes.Cut()
-		for(var/D in subtypesof(/datum/particle_smasher_recipe))
-			recipes += new D
+	own_clear(src, "recipes", OWN_DELETE)
+	for(var/D in subtypesof(/datum/particle_smasher_recipe))
+		own_add(src, "recipes", new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 
-	if(!recipes || !recipes.len)
-		recipes = typesof(/datum/particle_smasher_recipe)
+	if(!length(recipes))
+		prepare_recipes()
 
 	if(!target)	// You are just blasting an empty machine.
 		visible_message(span_infoplain(span_bold("\The [src]") + " shudders."))
@@ -284,7 +276,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 							if(!reagent_container() || R.check_reagents(reagent_container().reagents) == -1)	// It doesn't have a reagent storage when it needs it, or it's lacking what is needed.
 								continue
 						if(R.items && R.items.len)
-							if(!(storage && storage.len) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
+							if(!length(storage) || R.check_items(src) == -1)	// It's empty, or it doesn't contain what is needed.
 								continue
 						possible_recipes += R
 						max_prob += R.probability
@@ -304,8 +296,7 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	if(!successful_craft || !recipe)
 		return
 
-	qdel(target)
-	target = null
+	own_clear(src, "target", OWN_DELETE)
 
 	if(reagent_container())
 		reagent_container().reagents.clear_reagents()
@@ -314,14 +305,13 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 		for(var/obj/item/I in storage)
 			for(var/item_type in recipe.items)
 				if(istype(I, item_type) && prob(recipe.item_consume_chance))
-					storage -= I
-					qdel(I)
+					own_remove(src, "storage", I) // consumed
 					break
 
 	var/result = recipe.result
 	if(recipe.recipe_type == PS_RESULT_STACK)
 		var/obj/item/stack/material/M = new result(src)
-		target = M
+		own_set(src, "target", M)
 	else if(recipe.recipe_type == PS_RESULT_ITEM)
 		new result(get_turf(src))
 	update_icon()
@@ -337,14 +327,15 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	return TRUE
 
 /obj/machinery/particle_smasher/proc/DumpContents()
-	target = null
-	reagent_container_handle = null
+	// Everything goes to the floor below: detach the owned slots first.
+	own_take(src, "target")
+	own_take(src, "reagent_container")
 	successful_craft = FALSE
 	var/turf/T = get_turf(src)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/I in contents) // ALLOW(latent): materialized above
 		if(I in storage)
-			storage -= I
+			own_take_member(src, "storage", I)
 		I.forceMove(T)
 	update_icon()
 
@@ -698,15 +689,13 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 #undef PS_RESULT_STACK
 #undef PS_RESULT_ITEM
 
-DECLARE_REF(/obj/machinery/particle_smasher, "material_layer", OWNED, null)
-DECLARE_REF(/obj/machinery/particle_smasher, "material_glow", OWNED, null)
-DECLARE_REF(/obj/machinery/particle_smasher, "reagent_layer", OWNED, null)
 
-DECLARE_REF(/obj/machinery/particle_smasher, "target", HELD, null)
+OWN(/obj/machinery/particle_smasher, target, OWN_CONTAINED)
+OWN(/obj/machinery/particle_smasher, reagent_container, OWN_CONTAINED)
 
-/// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Holds the beaker (owned, in its contents). The process will consume ALL reagents inside it.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
-	return om_resolve(reagent_container_handle)
+	return reagent_container
 
 // Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-DECLARE_REF(/obj/machinery/particle_smasher, "storage", SPILL_LIST, null)
+OWN(/obj/machinery/particle_smasher, storage, OWN_SPILL)

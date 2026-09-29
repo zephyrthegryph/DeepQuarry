@@ -233,7 +233,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 /obj/machinery/organ_printer/proc/remove_beaker()
 	if(container)
 		container.forceMove(get_turf(src))
-		container = null
+		own_take(src, "container")
 		return 1
 	return 0
 
@@ -315,7 +315,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 	if(T)
 		if(container)
 			container.forceMove(T)
-			container = null
+			own_take(src, "container")
 	return ..()
 
 /obj/machinery/organ_printer/flesh/print_organ(choice)
@@ -330,7 +330,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 		to_chat(user, span_warning("\The [src] already has a container loaded!"))
 		return
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
-	container = G
+	own_set(src, "container", G)
 	user.drop_item()
 	G.forceMove(src)
 
@@ -358,4 +358,4 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 	return FALSE
 // END FLESH ORGAN PRINTER
 
-DECLARE_REF(/obj/machinery/organ_printer, "container", HELD, null)
+OWN(/obj/machinery/organ_printer, container, OWN_CONTAINED)

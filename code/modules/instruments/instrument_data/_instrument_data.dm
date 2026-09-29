@@ -36,7 +36,7 @@
 	/// For legacy instruments, our file extension
 	var/legacy_instrument_ext
 	/// What songs are using us
-	var/list/songs_using	// OM handles of the songs using this (om_resolve_all())
+	var/list/songs_using	// a relation list: a deleted song leaves it
 	/// Don't touch this
 	var/static/HIGHEST_KEY = 127
 	/// Don't touch this x2
@@ -71,8 +71,7 @@
 // songs using it drop it; leaves instrument_service().
 /datum/instrument/on_destroy(force)
 	instrument_service().instrument_data -= id
-	for(var/i in om_resolve_all(songs_using))
-		var/datum/song/S = i
+	for(var/datum/song/S as anything in songs_using?.Copy())
 		S.set_instrument(null)
 	..()
 
@@ -84,7 +83,7 @@
 	if(!length(real_samples))
 		CRASH("No real samples defined for [id] [type] on calculate_samples() call.")
 	var/list/real_keys = list()
-	samples = list()
+	own_clear(src, "samples", OWN_DELETE)
 	for(var/key in real_samples)
 		real_keys += text2num(key)
 	sortTim(real_keys, GLOBAL_PROC_REF(cmp_numeric_asc), associative = FALSE)
@@ -96,9 +95,9 @@
 		var/sample2 = real_samples[num2text(to_key)]
 		var/pivot = FLOOR((from_key + to_key) / 2, 1) //original code was a round but I replaced it because that's effectively a floor, thanks Baystation! who knows what was intended.
 		for(var/key in from_key to pivot)
-			samples[num2text(key)] = new /datum/instrument_key(sample1, key, key - from_key)
+			own_put(src, "samples", num2text(key), new /datum/instrument_key(sample1, key, key - from_key))
 		for(var/key in (pivot + 1) to to_key)
-			samples[num2text(key)] = new /datum/instrument_key(sample2, key, key - to_key)
+			own_put(src, "samples", num2text(key), new /datum/instrument_key(sample2, key, key - to_key))
 
 	// Fill in 0 to first key and last key to 127
 	var/first_key = real_keys[1]
@@ -106,8 +105,8 @@
 	var/first_sample = real_samples[num2text(first_key)]
 	var/last_sample = real_samples[num2text(last_key)]
 	for(var/key in LOWEST_KEY to (first_key - 1))
-		samples[num2text(key)] = new /datum/instrument_key(first_sample, key, key - first_key)
+		own_put(src, "samples", num2text(key), new /datum/instrument_key(first_sample, key, key - first_key))
 	for(var/key in last_key to HIGHEST_KEY)
-		samples[num2text(key)] = new /datum/instrument_key(last_sample, key, key - last_key)
+		own_put(src, "samples", num2text(key), new /datum/instrument_key(last_sample, key, key - last_key))
 
-DECLARE_REF(/datum/instrument, "samples", OWNED_VALUES, null)
+REL_LIST(/datum/instrument, songs_using)

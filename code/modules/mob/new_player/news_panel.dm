@@ -10,8 +10,8 @@
 	var/datum/feed_channel/channel
 
 /datum/news_panel/New(mob/new_player/host_mob, datum/feed_channel/CHANNEL)
-	host = host_mob
-	channel = CHANNEL
+	rel_set(src, "host", host_mob)
+	rel_set(src, "channel", CHANNEL)
 
 /datum/news_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -63,14 +63,11 @@
 	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())
 		return
 	if(!dq_news_panel_cache)
-		dq_news_panel_cache = new(src, CHANNEL)
+		own_set(src, "dq_news_panel_cache", new /datum/news_panel(src, CHANNEL))
 	else
-		dq_news_panel_cache.channel = CHANNEL
+		rel_set(dq_news_panel_cache, "channel", CHANNEL)
 	if(!current_news_page && length(CHANNEL.messages))
 		current_news_page = 1
 	dq_news_panel_cache.tgui_interact(src)
 	client.seen_news = 1
 
-DECLARE_REF(/mob/new_player, "dq_news_panel_cache", OWNED, null)
-DECLARE_REF(/datum/news_panel, "host", BACK, "dq_news_panel_cache")
-DECLARE_REF(/datum/news_panel, "channel", HELD, null)

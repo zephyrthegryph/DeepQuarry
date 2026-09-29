@@ -40,8 +40,7 @@
 	host.computer_id = null
 	host.lastKnownIP = null
 
-	qdel(host_brain)
-	host_brain = new(src)
+	own_set(src, "host_brain", new /mob/living/captive_brain(src)) // replaces (and deletes) any old one
 	host_brain.name = host.name
 	// The host's mind is pushed aside into the captive brain, keeping its identity.
 	move_player(host, host_brain, "pushed aside by borer [src]", share = TRUE)

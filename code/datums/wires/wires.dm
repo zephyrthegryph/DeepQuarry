@@ -35,7 +35,7 @@
 	if(_holder && !istype(_holder, holder_type))
 		CRASH("Our holder is null/the wrong type!")
 
-	holder = _holder
+	rel_set(src, "holder", _holder)
 
 	// Add in the appropriate amount of dud wires.
 	var/wire_len = length(wires)
@@ -64,7 +64,7 @@
 	..()
 	if(!holder)
 		return
-	for(var/color in assemblies)
+	for(var/color in assemblies?.Copy())
 		detach_assembly(color)
 
 /**
@@ -470,9 +470,9 @@
  */
 /datum/wires/proc/attach_assembly(color, obj/item/assembly/signaler/S)
 	if(S && istype(S) && !is_attached(color))
-		LAZYSET(assemblies, color, S)
 		S.forceMove(holder)
-		S.connected_handle = om_handle(src)
+		own_put(src, "assemblies", color, S) // we hold it (dropped by detach_assembly()); S.connected is the back view
+		rel_set(S, "connected", src)
 		return S
 
 /**
@@ -486,8 +486,8 @@
 /datum/wires/proc/detach_assembly(color)
 	var/obj/item/assembly/signaler/S = get_attached(color)
 	if(S && istype(S))
-		LAZYREMOVE(assemblies, color)
-		S.connected_handle = null
+		own_take_member(src, "assemblies", color)
+		rel_clear(S, "connected")
 		S.forceMove(holder.drop_location())
 		return S
 
@@ -523,4 +523,3 @@
 
 #undef MAXIMUM_EMP_WIRES
 
-DECLARE_REF(/datum/wires, "holder", BACK, "wires")

@@ -3,6 +3,8 @@
 * This is a wrapper for handling it safely. Mostly used by self deleting effects.
 */
 /image/client_only
+	/// Relation list view: the clients this image is shown to (clients are roots: untracked,
+	/// a client that leaves reads null). lifecycle_dematerialize() takes it off each one.
 	var/list/clients
 
 /// Self-deleting client images waiting on their expiry timer. The timer names
@@ -18,12 +20,14 @@ GLOBAL_LIST_EMPTY(client_only_images_expiring)
 
 /image/client_only/proc/append_client(client/C)
 	C.images += src
-	LAZYADD(clients, om_handle(C))
+	rel_add(src, "clients", C)
 
-// comes off every client it was shown to (clients aren't datums).
-DECLARE_REF(/image/client_only, "clients", LIST_BACK, "images")
+REL_LIST(/image/client_only, clients)
 
+// comes off every client it was shown to (clients aren't datums, so no pair can do it).
 /image/client_only/lifecycle_dematerialize()
+	for(var/client/C in clients)
+		C.images -= src
 	..()
 	GLOB.client_only_images_expiring -= src
 

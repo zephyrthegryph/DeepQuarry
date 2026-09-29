@@ -63,7 +63,7 @@
 
 /datum/action/innate/xeno_ch/Grant(mob/living/L)
 	if(L)
-		parent_xeno = L
+		rel_set(src, "parent_xeno", L)
 	..()
 
 /datum/action/innate/xeno_ch/xeno_build
@@ -121,4 +121,3 @@
 	pounce_action.Grant(src)
 	spin_action.Grant(src)
 
-DECLARE_REF(/datum/action/innate/xeno_ch, "parent_xeno", HELD, null)

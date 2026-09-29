@@ -14,14 +14,14 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/detach()
 	if(chassis?.active_jetpack == src)
-		chassis.active_jetpack = null
+		rel_clear(chassis, "active_jetpack")
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/attach(obj/mecha/M as obj)
 	..()
 	if(!ion_trail)
-		ion_trail = new
+		own_set(src, "ion_trail", new /datum/effect/effect/system/ion_trail_follow)
 	ion_trail.set_up(chassis)
 	return
 
@@ -33,7 +33,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/turn_on()
 	set_ready_state(FALSE)
-	chassis.active_jetpack = src
+	rel_set(chassis, "active_jetpack", src)
 	ion_trail.start()
 	occupant_message("Activated")
 	src.mecha_log_message("Activated")
@@ -41,7 +41,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/proc/turn_off()
 	set_ready_state(TRUE)
 	if(chassis.active_jetpack == src)
-		chassis.active_jetpack = null
+		rel_clear(chassis, "active_jetpack")
 	ion_trail.stop()
 	occupant_message("Deactivated")
 	src.mecha_log_message("Deactivated")
@@ -132,4 +132,3 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "toggle", PROC_
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/cooldown_over()
 	wait = 0
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "ion_trail", OWNED, null)

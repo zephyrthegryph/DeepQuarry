@@ -46,7 +46,6 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	. = ..()
 	update_brightness()
 
-DECLARE_REF(/obj/item/flashlight, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered subtypes clear cell_type
 
 /obj/item/flashlight/get_cell()
@@ -179,7 +178,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	if(user.get_inactive_hand() == src && cell)
 		cell.update_icon()
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		to_chat(user, span_notice("You remove the cell from the [src]."))
 		play_sfx(src, SFX_MACHINES_BUTTON)
 		on = 0
@@ -225,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 			if(!cell)
 				user.drop_item()
 				W.forceMove(src)
-				cell = W
+				own_set(src, "cell", W)
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				play_sfx(src, SFX_MACHINES_BUTTON)
 				update_brightness()

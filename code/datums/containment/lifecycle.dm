@@ -150,5 +150,5 @@
 /// slots move their contents here instead of spilling; read (and cleared)
 /// only by dq_lifecycle_resolve_contents()/dq_lifecycle_resolve_latent()
 /// during this one transaction.
-// ALLOW(scheduler, declared_refs): scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
+// ALLOW(scheduler): scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
 /atom/movable/var/tmp/atom/movable/lifecycle_successor

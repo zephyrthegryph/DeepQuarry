@@ -94,7 +94,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	var/cross_round_cachable = FALSE
 
 /datum/asset/New()
-	GLOB.asset_datums[type] = src
+	GLOB.asset_datums[type] = src // ALLOW(registry): GLOB.asset_datums is the REGISTRY_TYPE store for /datum/asset (registry_types.dm): one registered instance per type
 	register()
 
 /// Stub that allows us to react to something trying to get us
@@ -755,4 +755,3 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/json/unregister()
 	SSassets.transport.unregister_asset("[name].json")
 
-DECLARE_REF(/datum/asset/simple, "assets", OWNED_VALUES, null)

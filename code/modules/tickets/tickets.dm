@@ -1,5 +1,6 @@
-/client/var/tmp/current_ticket_handle	//the current ticket the (usually) not-admin client is dealing with
-/client/var/tmp/selected_ticket_handle	//the current ticket being viewed in the Tickets Panel (usually) admin/mentor client
+// A client is not a datum and can't hold a relation view, so it names its tickets by id.
+/client/var/tmp/current_ticket_id	//the id of the current ticket the (usually) not-admin client is dealing with; read with current_ticket()
+/client/var/tmp/selected_ticket_id	//the id of the ticket being viewed in the Tickets Panel (usually) admin/mentor client; read with selected_ticket()
 
 /proc/get_ahelp_channel()
 	var/datum/tgs_api/v5/api = TGS_READ_GLOBAL(tgs)
@@ -35,33 +36,32 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	var/obj/effect/statclick/ticket_list/cstatclick = new(null, null, AHELP_CLOSED)
 	var/obj/effect/statclick/ticket_list/rstatclick = new(null, null, AHELP_RESOLVED)
 
-DECLARE_REF(/datum/tickets, "astatclick", OWNED, null)
-DECLARE_REF(/datum/tickets, "cstatclick", OWNED, null)
-DECLARE_REF(/datum/tickets, "rstatclick", OWNED, null)
-DECLARE_REF(/datum/tickets, "active_tickets", OWNED_LIST, null)
-DECLARE_REF(/datum/tickets, "closed_tickets", OWNED_LIST, null)
-DECLARE_REF(/datum/tickets, "resolved_tickets", OWNED_LIST, null)
 
 //private
+/// Adopts `new_ticket` (unowned, or owned by another of our lists) into the list for its
+/// state, kept sorted by id.
 /datum/tickets/proc/ListInsert(datum/ticket/new_ticket)
-	var/list/ticket_list
+	var/list_var
 	switch(new_ticket.state)
 		if(AHELP_ACTIVE)
-			ticket_list = active_tickets
+			list_var = "active_tickets"
 		if(AHELP_CLOSED)
-			ticket_list = closed_tickets
+			list_var = "closed_tickets"
 		if(AHELP_RESOLVED)
-			ticket_list = resolved_tickets
+			list_var = "resolved_tickets"
 		else
 			CRASH("Invalid ticket state: [new_ticket.state]")
-	var/num_closed = ticket_list.len
-	if(num_closed)
-		for(var/I in 1 to num_closed)
-			var/datum/ticket/T = ticket_list[I]
-			if(T.id > new_ticket.id)
-				ticket_list.Insert(I, new_ticket)
-				return
-	ticket_list += new_ticket
+	if(!own_move(new_ticket, src, list_var))
+		return
+	// own_move() appended it; slide it back to its sorted position.
+	var/list/ticket_list = vars[list_var]
+	var/num_tickets = length(ticket_list)
+	for(var/I in 1 to num_tickets - 1)
+		var/datum/ticket/T = ticket_list[I]
+		if(T.id > new_ticket.id)
+			ticket_list.Insert(I, new_ticket)
+			ticket_list.Cut(num_tickets + 1)
+			return
 
 /datum/tickets/proc/BrowseTickets(state)
 	tgui_interact(usr)
@@ -80,7 +80,7 @@ DECLARE_REF(/datum/tickets, "resolved_tickets", OWNED_LIST, null)
 		if(AHELP_RESOLVED)
 			l2b = resolved_tickets
 			title = "Resolved Tickets"
-	if(!l2b)
+	if(!title)
 		return
 	var/list/dat = list("<html><head><title>[title]</title></head>")
 	dat += "<A href='byond://?_src_=holder;[HrefToken()];ahelp_tickets=[state]'>Refresh</A><br><br>"
@@ -158,11 +158,12 @@ DECLARE_REF(/datum/tickets, "resolved_tickets", OWNED_LIST, null)
 
 //Reassociate still open ticket if one exists
 /datum/tickets/proc/ClientLogin(client/C, only_alert = FALSE)
-	C.current_ticket_handle = om_handle(CKey2ActiveTicket(C.ckey))
+	var/datum/ticket/active = CKey2ActiveTicket(C.ckey)
+	C.current_ticket_id = active?.id
 	if(C.current_ticket())
 		if(!only_alert)
 			C.current_ticket().AddInteraction("Client reconnected.")
-		C.current_ticket().initiator_handle = om_handle(C)
+		rel_set(C.current_ticket(), "initiator", C)
 		C.current_ticket().initiator().mob?.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
 //Dissasociate ticket
@@ -171,7 +172,7 @@ DECLARE_REF(/datum/tickets, "resolved_tickets", OWNED_LIST, null)
 		var/datum/ticket/T = C.current_ticket()
 		T.AddInteraction("Client disconnected.")
 		T.initiator()?.mob?.clear_alert("open ticket")
-		T.initiator_handle = null
+		rel_clear(T, "initiator")
 		T = null
 
 //Get a ticket given a ckey
@@ -227,8 +228,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	EXPIRY_DECLARE(opened_at)
 	EXPIRY_DECLARE(closed_at)
 
-	var/tmp/initiator_handle	//semi-misnomer, it's the person who ahelped/was bwoinked
-	var/handler_ref
+	var/tmp/client/initiator	//semi-misnomer, it's the person who ahelped/was bwoinked
+	/// The handling admin's ckey (a client is not a datum, so it is held by key); read with handler_client().
+	var/handler_ckey
 	var/handler = "/Unassigned\\" // The admin handling the ticket
 	var/initiator_ckey
 	var/initiator_key_name
@@ -264,18 +266,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	level = ticket_level
 
-	initiator_handle = om_handle(C)
+	rel_set(src, "initiator", C)
 	initiator_ckey = initiator().ckey
 	initiator_key_name = key_name(initiator(), FALSE, TRUE)
 	if(initiator().current_ticket())	//This is a bug
 		log_admin("Ticket erroneously left open by code, closing...")
 		initiator().current_ticket().AddInteraction("Ticket erroneously left open by code")
 		initiator().current_ticket().Close(usr)
-	initiator().current_ticket_handle = om_handle(src)
+	initiator().current_ticket_id = id
 
 	var/parsed_message = keywords_lookup(msg)
 
-	statclick = new(null, src)
+	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
 	_interactions = list()
 
 	if(is_bwoink)
@@ -306,16 +308,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	else
 		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 
-	GLOB.tickets.active_tickets += src
+	GLOB.tickets.ListInsert(src) // state is AHELP_ACTIVE
 
 	C.mob.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-// leaves the active, closed and resolved ticket lists.
+// Leaving GLOB.tickets' owned active/closed/resolved lists is automatic (phase 2).
 /datum/ticket/lifecycle_dematerialize()
 	..()
 	RemoveActive()
-	GLOB.tickets.closed_tickets -= src
-	GLOB.tickets.resolved_tickets -= src
 
 /datum/ticket/proc/AddInteraction(formatted_message)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"
@@ -404,19 +404,17 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		to_chat(usr, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
-	statclick = new(null, src)
-	GLOB.tickets.active_tickets += src
-	GLOB.tickets.closed_tickets -= src
-	GLOB.tickets.resolved_tickets -= src
+	own_set(src, "statclick", new /obj/effect/statclick/ticket(null, src))
 	switch(state)
 		if(AHELP_CLOSED)
 			feedback_dec("ticket_close")
 		if(AHELP_RESOLVED)
 			feedback_dec("ticket_resolve")
 	state = AHELP_ACTIVE
+	GLOB.tickets.ListInsert(src) // moves it out of the closed/resolved list
 	closed_at = null
 	if(initiator())
-		initiator().current_ticket_handle = om_handle(src)
+		initiator().current_ticket_id = id
 
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
@@ -434,10 +432,10 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(state != AHELP_ACTIVE)
 		return
 	EXPIRY_STAMP(src, closed_at, CLOCK_WORLD)
-	QDEL_NULL(statclick)
-	GLOB.tickets.active_tickets -= src
+	own_clear(src, "statclick", OWN_DELETE)
+	own_take_member(GLOB.tickets, "active_tickets", src) // Close()/Resolve() re-adopt it via ListInsert()
 	if(initiator() && initiator().current_ticket() == src)
-		initiator().current_ticket_handle = null
+		initiator().current_ticket_id = null
 
 //Mark open ticket as closed/meme
 /datum/ticket/proc/Close(user, silent = FALSE)
@@ -550,7 +548,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	handler = handler_name
 	if(ismob(user))
 		var/mob/our_handler_mob = user
-		handler_ref = om_handle(our_handler_mob.client)
+		handler_ckey = our_handler_mob.client?.ckey
 
 /datum/ticket/proc/Retitle()
 	var/new_title = rerun_ask(usr, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
@@ -629,11 +627,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //
 
 /obj/effect/statclick/ticket
-	var/tmp/ticket_datum_handle
+	var/tmp/datum/ticket/ticket_datum
 
 INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 /obj/effect/statclick/ticket/Initialize(mapload, datum/ticket/T)
-	ticket_datum_handle = om_handle(T)
+	rel_set(src, "ticket_datum", T)
 	. = ..()
 
 /obj/effect/statclick/ticket/update()
@@ -758,20 +756,35 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 
 	return msg
 
-DECLARE_REF(/datum/ticket, "statclick", OWNED, null)
 
-/// LC-refs: the ticket_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ticket_datum this refers to (a relation view: null once that is deleted).
 /obj/effect/statclick/ticket/proc/ticket_datum() as /datum/ticket
-	return om_resolve(ticket_datum_handle)
+	return ticket_datum
 
-/// LC-refs: the current ticket being viewed in the Tickets Panel (usually) admin/mentor client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current ticket being viewed in the Tickets Panel (usually) admin/mentor client (a relation view: null once that is deleted).
 /client/proc/selected_ticket() as /datum/ticket
-	return om_resolve(selected_ticket_handle)
+	return GLOB.tickets?.ticket_by_id(selected_ticket_id)
 
-/// LC-refs: the current ticket the (usually) not-admin client is dealing with -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The current ticket the (usually) not-admin client is dealing with (a relation view: null once that is deleted).
 /client/proc/current_ticket() as /datum/ticket
-	return om_resolve(current_ticket_handle)
+	return GLOB.tickets?.ticket_by_id(current_ticket_id)
 
-/// LC-refs: semi-misnomer, it's the person who ahelped/was bwoinked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Semi-misnomer, it's the person who ahelped/was bwoinked (a relation view: null once that is deleted).
 /datum/ticket/proc/initiator() as /client
-	return om_resolve(initiator_handle)
+	return initiator
+
+/// The ticket with this id (active or resolved), or null. No rights check: callers name their own tickets.
+/datum/tickets/proc/ticket_by_id(id)
+	if(isnull(id))
+		return null
+	for(var/datum/ticket/T as anything in active_tickets)
+		if(T.id == id)
+			return T
+	for(var/datum/ticket/T as anything in resolved_tickets)
+		if(T.id == id)
+			return T
+	return null
+
+/// The handling admin's client, or null while they are disconnected.
+/datum/ticket/proc/handler_client()
+	return handler_ckey ? GLOB.directory[handler_ckey] : null

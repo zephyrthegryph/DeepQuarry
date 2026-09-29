@@ -67,6 +67,11 @@
 	category = INTERACTION_CAT_TOGGLE
 	effect = /obj/machinery/button/neonsign/proc/interaction_toggle
 
+/// Neon signs sharing our id (keyed).
+/obj/machinery/button/neonsign/var/list/obj/machinery/neonsign/controlled_signs
+REL_KEYED_LIST(/obj/machinery/button/neonsign, controlled_signs, id, /obj/machinery/neonsign)
+KEYED_TARGET(/obj/machinery/neonsign, id)
+
 /obj/machinery/button/neonsign/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
@@ -75,7 +80,6 @@
 	set_active(!active)
 	icon_state = "light[active]"
 
-	for(var/obj/machinery/neonsign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			M.toggle()
+	for(var/obj/machinery/neonsign/M as anything in controlled_signs)
+		M.toggle()
 	return TRUE

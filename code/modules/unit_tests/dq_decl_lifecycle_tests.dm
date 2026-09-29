@@ -13,9 +13,8 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	var/datum/owner_ref
 
 /datum/dq_decl_owned_child/New(datum/owner)
-	owner_ref = owner
+	rel_set(src, "owner_ref", owner)
 
-DECLARE_REF(/datum/dq_decl_owned_child, "owner_ref", BACK, null)
 
 /obj/item/dq_decl_part
 	name = "declared part"
@@ -58,11 +57,8 @@ DECLARE_REF(/datum/dq_decl_owned_child, "owner_ref", BACK, null)
 	var/saw_reagents_in_initialize = 0
 	var/saw_part_in_initialize = FALSE
 
-DECLARE_REF(/obj/item/dq_decl_probe, "helper", OWNED, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "part", HELD, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "mapped_part", HELD, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "spares", OWNED_LIST, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "air_contents", OWNED, null)
+OWN(/obj/item/dq_decl_probe, part, OWN_CONTAINED)
+OWN(/obj/item/dq_decl_probe, mapped_part, OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "helper", /datum/dq_decl_owned_child)
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "part", /obj/item/dq_decl_part)
@@ -157,8 +153,8 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	var/datum/dq_decl_owned_child/helper = probe.helper
 	var/obj/item/dq_decl_part/spare = probe.spares[1]
 	qdel(probe)
-	TEST_ASSERT(QDELETED(helper), "an OWNED declared child dies with its owner (phase 4)")
-	TEST_ASSERT(QDELETED(spare), "so does each OWNED_LIST member")
+	TEST_ASSERT(QDELETED(helper), "an owned declared child dies with its owner (phase 4)")
+	TEST_ASSERT(QDELETED(spare), "so does each owned list member")
 
 
 /datum/unit_test/dq_decl_gas
@@ -266,7 +262,7 @@ DECLARE_NO_REAGENTS(/obj/item/dq_decl_probe/dry)
 	var/before = length(contents_of(T, /obj/item/dq_decl_part/better))
 	qdel(probe)
 	TEST_ASSERT_EQUAL(loose.loc, T, "drop_contents moved the leftover to the turf")
-	// Two declared debris (the HELD mapped_part, also a /better, may be dropped too).
+	// Two declared debris (the contained mapped_part, also a /better, may be dropped too).
 	TEST_ASSERT(length(contents_of(T, /obj/item/dq_decl_part/better)) - before >= 2, "the declared debris list spawned")
 	for(var/obj/item/dq_decl_part/P in contents_of(T))
 		qdel(P)

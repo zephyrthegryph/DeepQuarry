@@ -25,7 +25,8 @@
 	water_resist = 1
 
 	var/datum/affliction/contagion/base_disease = null
-	var/list/infections = list() // ALLOW(instance_list): d: per-mob infections, filled at runtime; mobs are few
+	/// Strains the creature carries (owned copies, lazy).
+	var/list/datum/affliction/contagion/infections
 
 	melee_damage_lower = 1
 	melee_damage_upper = 5
@@ -67,8 +68,7 @@
 	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
-	infections += D
-	base_disease = D
+	own_set(src, "base_disease", D)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -144,7 +144,7 @@
 		sick.update_icon()
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		LAZYADD(sick.viruses, base_disease.Copy())
+		own_add(sick, "viruses", base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"
@@ -161,8 +161,6 @@
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	vore_selected = B
+	rel_set(src, "vore_selected", B)
 
-// The macrophage's own strain; victims get copies. base_disease is also in infections.
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/macrophage, "base_disease", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/macrophage, "infections", OWNED_LIST, null)
+// The macrophage's own strain (owned); victims and decals get their own copies.

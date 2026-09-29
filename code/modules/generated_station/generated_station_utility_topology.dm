@@ -97,6 +97,7 @@
 
 /datum/generated_station_utility_topology
 	var/station_id
+	/// Everything the topology placed (owned); the lists below index members of these (relations).
 	var/list/power_objects
 	var/list/atmos_objects
 	var/list/apcs
@@ -108,17 +109,7 @@
 
 /datum/generated_station_utility_topology/New()
 	..()
-	power_objects = list()
-	atmos_objects = list()
-	apcs = list()
-	supply_vents = list()
-	supply_tanks = list()
-	scrubbers = list()
-	scrub_tanks = list()
-	alarms = list()
 
-DECLARE_REF(/datum/generated_station_utility_topology, "power_objects", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LIST, null)
 
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
@@ -223,8 +214,8 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	return null
 
 /datum/generated_station_utility_builder
-	var/tmp/spec_handle
-	var/tmp/materialization_handle
+	var/tmp/datum/generated_station_spec/spec
+	var/tmp/datum/generated_station_materialization/materialization
 	var/datum/generated_station_utility_topology/result
 
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
@@ -431,7 +422,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 			var/list/component_zones = list()
 			var/list/component_doors = list()
 			for(var/visited_key in came_from)
-				var/datum/generated_station_tile_intent/visited = plan.tiles[visited_key]
+				var/datum/generated_station_tile_intent/visited = plan.tiles?[visited_key]
 				component_zones[visited?.zone_id] = (component_zones[visited?.zone_id] || 0) + 1
 				if(visited?.door_type)
 					component_doors += "[visited.local_x],[visited.local_y]"
@@ -454,9 +445,9 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /datum/generated_station_utility_builder/proc/build(datum/generated_station_spec/new_spec, datum/generated_station_materialization/new_materialization)
 	if(!new_spec || !new_materialization)
 		return null
-	spec_handle = om_handle(new_spec)
-	materialization_handle = om_handle(new_materialization)
-	result = new
+	rel_set(src, "spec", new_spec)
+	rel_set(src, "materialization", new_materialization)
+	own_set(src, "result", new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
@@ -466,12 +457,12 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	var/engineering_owner
 
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = materialization().department_areas[node.id]
+		var/area/generated_station/department_area = materialization().department_areas?[node.id]
 		if(department_area?.department_id == "engineering-1")
 			engineering_area = department_area
 			engineering_owner = node.id
 	for(var/datum/generated_station_module/module in materialization().modules)
-		var/area/generated_station/A = materialization().module_areas[module.id]
+		var/area/generated_station/A = materialization().module_areas?[module.id]
 		var/turf/apc_turf = planned_fixture_turf(module.department_node_id, GENERATED_STATION_UTILITY_APC, module.id)
 		if(!apc_turf)
 			return fail_global_build("no APC floor in [A]")
@@ -481,9 +472,9 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		// APC construction faces into its supporting wall, unlike generic wall frames.
 		APC.set_dir(apc_wall_direction)
-		result.power_objects += APC
-		result.apcs += APC
-		A.apc = APC
+		own_add(result, "power_objects", APC)
+		rel_add(result, "apcs", APC)
+		rel_set(A, "apc", APC)
 		var/turf/apc_terminal_turf = get_turf(APC.terminal)
 		if(!apc_terminal_turf)
 			return fail_global_build("APC in [A] did not create a terminal")
@@ -497,16 +488,16 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 		var/turf/supply_device = supply_pair["device"]
 		var/turf/supply_connector = supply_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_pump/on/generated_station/vent = new(supply_device, get_dir(supply_device, supply_connector))
-		result.atmos_objects += vent
-		result.supply_vents += vent
+		own_add(result, "atmos_objects", vent)
+		rel_add(result, "supply_vents", vent)
 		path_targets += supply_connector
 		add_external_connection(supply_connections, supply_connector, get_dir(supply_connector, supply_device))
 
 		var/turf/scrub_device = scrub_pair["device"]
 		var/turf/scrub_connector = scrub_pair["connector"]
 		var/obj/machinery/atmospherics/unary/vent_scrubber/on/generated_station/scrubber = new(scrub_device, get_dir(scrub_device, scrub_connector))
-		result.atmos_objects += scrubber
-		result.scrubbers += scrubber
+		own_add(result, "atmos_objects", scrubber)
+		rel_add(result, "scrubbers", scrubber)
 		path_targets += scrub_connector
 		add_external_connection(scrub_connections, scrub_connector, get_dir(scrub_connector, scrub_device))
 
@@ -519,8 +510,8 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 		var/obj/machinery/alarm/alarm = new(alarm_turf)
 		alarm.set_dir(turn(alarm_wall_direction, 180))
 		alarm.offset_airalarm()
-		result.atmos_objects += alarm
-		result.alarms += alarm
+		own_add(result, "atmos_objects", alarm)
+		rel_add(result, "alarms", alarm)
 
 	if(!engineering_area)
 		return fail_global_build("engineering area was not found")
@@ -532,14 +523,14 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	var/turf/smes_terminal_turf = source_pair["connector"]
 	var/obj/machinery/power/terminal/smes_terminal = new(smes_terminal_turf)
 	smes_terminal.set_dir(get_dir(smes_terminal, smes_turf))
-	result.power_objects += smes_terminal
+	own_add(result, "power_objects", smes_terminal)
 	var/obj/machinery/power/smes/generated_station/SMES = new(smes_turf)
-	result.power_objects += SMES
+	own_add(result, "power_objects", SMES)
 	path_targets += smes_terminal_turf
 	power_targets += smes_terminal_turf
 	var/turf/generator_turf = generator_pair["device"]
 	var/obj/machinery/power/generator/generated_station/generator = new(generator_turf)
-	result.power_objects += generator
+	own_add(result, "power_objects", generator)
 	path_targets += generator_turf
 	power_targets += generator_turf
 
@@ -550,15 +541,15 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	var/turf/supply_tank_turf = supply_source_pair["device"]
 	var/turf/supply_tank_connector = supply_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/air/full/generated_station/supply_tank = new(supply_tank_turf, get_dir(supply_tank_turf, supply_tank_connector))
-	result.atmos_objects += supply_tank
-	result.supply_tanks += supply_tank
+	own_add(result, "atmos_objects", supply_tank)
+	rel_add(result, "supply_tanks", supply_tank)
 	path_targets += supply_tank_connector
 	add_external_connection(supply_connections, supply_tank_connector, get_dir(supply_tank_connector, supply_tank_turf))
 	var/turf/scrub_tank_turf = scrub_source_pair["device"]
 	var/turf/scrub_tank_connector = scrub_source_pair["connector"]
 	var/obj/machinery/atmospherics/pipe/tank/generated_station_scrub/scrub_tank = new(scrub_tank_turf, get_dir(scrub_tank_turf, scrub_tank_connector))
-	result.atmos_objects += scrub_tank
-	result.scrub_tanks += scrub_tank
+	own_add(result, "atmos_objects", scrub_tank)
+	rel_add(result, "scrub_tanks", scrub_tank)
 	path_targets += scrub_tank_connector
 	add_external_connection(scrub_connections, scrub_tank_connector, get_dir(scrub_tank_connector, scrub_tank_turf))
 
@@ -578,7 +569,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /// Proves that every department floor lies near a powered, intact, active fixture.
 /datum/generated_station_utility_builder/proc/validate_operational_light_coverage(max_distance = 7)
 	for(var/module_id in materialization().module_areas)
-		var/area/generated_station/department_area = materialization().module_areas[module_id]
+		var/area/generated_station/department_area = materialization().module_areas?[module_id]
 		var/list/working_lights = list()
 		for(var/obj/machinery/light/light in area_contents_of_type(department_area, /obj/machinery/light))
 			if(light.status == LIGHT_OK && light.on && light.powered(LIGHT))
@@ -597,14 +588,14 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 
 /datum/generated_station_utility_builder/proc/planned_fixture_turf(owner_id, utility_id, zone_id)
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			return materialization().world_turf(intent.local_x, intent.local_y)
 	return null
 
 /datum/generated_station_utility_builder/proc/planned_fixture_direction(owner_id, utility_id, zone_id)
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			return intent.utility_wall_directions[utility_id]
 	return 0
@@ -612,7 +603,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /datum/generated_station_utility_builder/proc/planned_fixture_pair(owner_id, utility_id, zone_id)
 	var/datum/generated_station_tile_intent/device_intent
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(intent.owner_id == owner_id && (!zone_id || intent.zone_id == zone_id) && (utility_id in intent.utility_intents))
 			device_intent = intent
 			break
@@ -634,7 +625,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /datum/generated_station_utility_builder/proc/planned_route_turfs()
 	var/list/route = list()
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(GENERATED_STATION_UTILITY_POWER_ROUTE in intent.utility_intents)
 			var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
 			route[REF(T)] = T
@@ -642,7 +633,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 
 /datum/generated_station_utility_builder/proc/build_planned_lights()
 	for(var/key in materialization().tile_plan.tiles)
-		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles[key]
+		var/datum/generated_station_tile_intent/intent = materialization().tile_plan.tiles?[key]
 		if(!(GENERATED_STATION_UTILITY_LIGHT in intent.utility_intents))
 			continue
 		var/turf/T = materialization().world_turf(intent.local_x, intent.local_y)
@@ -665,18 +656,18 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 			if(WEST)
 				light.pixel_x = -26
 				light.pixel_y = (T.y % 2) ? 8 : -8
-		result.power_objects += light
+		own_add(result, "power_objects", light)
 
 /// Publishes power and lighting only after the power and atmosphere graphs exist.
 /datum/generated_station_utility_builder/proc/publish_utility_state()
 	for(var/node_id in materialization().department_areas)
-		var/area/generated_station/A = materialization().department_areas[node_id]
+		var/area/generated_station/A = materialization().department_areas?[node_id]
 		A.power_change()
 	materialization().transit_area()?.power_change()
 
 /datum/generated_station_utility_builder/proc/fail_global_build(reason)
 	log_world("Generated station utility build failed for [spec()?.id]: [reason]")
-	QDEL_NULL(result)
+	own_clear(src, "result", OWN_DELETE)
 	return null
 
 /datum/generated_station_utility_builder/proc/add_external_connection(list/connections, turf/T, direction)
@@ -712,10 +703,10 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 			continue
 		if(length(directions) <= 2)
 			var/cable_state = length(directions) == 1 ? "0-[directions[1]]" : "[min(directions[1], directions[2])]-[max(directions[1], directions[2])]"
-			result.power_objects += new /obj/structure/cable/generated_station(T, cable_state)
+			own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, cable_state))
 		else
 			for(var/direction in directions)
-				result.power_objects += new /obj/structure/cable/generated_station(T, "0-[direction]")
+				own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, "0-[direction]"))
 
 /// Gives every terminal/source an explicit center tap even when the routed cable bends on its tile.
 /datum/generated_station_utility_builder/proc/ensure_global_power_connections(list/path, list/targets)
@@ -730,7 +721,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 				found = TRUE
 				break
 		if(!found)
-			result.power_objects += new /obj/structure/cable/generated_station(T, required_state)
+			own_add(result, "power_objects", new /obj/structure/cable/generated_station(T, required_state))
 
 /datum/generated_station_utility_builder/proc/spanning_path_directions(list/path)
 	var/list/tree_directions = list()
@@ -773,7 +764,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 			if(4)
 				pipe = supply ? new /obj/machinery/atmospherics/pipe/manifold4w/hidden/supply(T) : new /obj/machinery/atmospherics/pipe/manifold4w/hidden/scrubbers(T)
 		if(pipe)
-			result.atmos_objects += pipe
+			own_add(result, "atmos_objects", pipe)
 
 /datum/generated_station_utility_builder/proc/initialize_global_atmos()
 	for(var/obj/machinery/atmospherics/AM in result.atmos_objects)
@@ -804,7 +795,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	if(!station_spec || !station_materialization || station_utilities)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
-	station_utilities = builder.build(station_spec, station_materialization)
+	own_set(src, "station_utilities", builder.build(station_spec, station_materialization))
 	qdel(builder)
 	return !!station_utilities
 
@@ -812,14 +803,12 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /obj/machinery/power/generator/generated_station/step_start_condition()
 	return !has_stat(BROKEN)
 
-DECLARE_REF(/datum/generated_station_utility_builder, "result", OWNED, null)
 
-DECLARE_REF(/datum/expedition_site, "station_utilities", OWNED, null)
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_utility_builder/proc/spec() as /datum/generated_station_spec
-	return om_resolve(spec_handle)
+	return spec
 
-/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materialization var.
 /datum/generated_station_utility_builder/proc/materialization() as /datum/generated_station_materialization
-	return om_resolve(materialization_handle)
+	return materialization

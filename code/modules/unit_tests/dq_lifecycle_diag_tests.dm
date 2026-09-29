@@ -1,5 +1,5 @@
 // Lifecycle diagnostics (doc/rewrite/object_model_core.md, lifecycle section):
-// a caught exception is reported, mutual ownership is detected, and the
+// a caught exception is reported, mutual ownership tears down cleanly, and the
 // destroy postcondition names a cycle between deleted objects. Each check
 // raises a runtime in normal use; these tests switch on the capture lists
 // (GLOB.dq_caught_capture, GLOB.dq_lifecycle_report_capture) so they can look
@@ -7,17 +7,12 @@
 
 // ---- Fixtures ----
 
-/// Two types that DECLARE_REF(..., OWNED) each other: the shape of the old overmap mob/marker bug.
+/// Two types that own each other (implicit OWN): the shape of the old overmap mob/marker bug.
 /datum/dq_diag_owner_a
 	var/datum/dq_diag_owner_b/b
 
 /datum/dq_diag_owner_b
 	var/datum/dq_diag_owner_a/a
-
-// ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-DECLARE_REF(/datum/dq_diag_owner_a, "b", OWNED, null)
-// ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 
 /// A holder that deletes its members in Destroy() but keeps its list of them,
 /// while each member keeps a reference back: after both are deleted, neither
@@ -82,21 +77,20 @@ DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 	TEST_ASSERT(dq_diag_capture_has(capture, "dq_diag scheduler catch"), "scheduler report_caught() went through dq_report_caught(): [json_encode(capture)]")
 	TEST_ASSERT(dq_diag_capture_has(capture, "OM trampoline (after sleep)"), "the trampoline reported a runtime raised after its callee slept: [json_encode(capture)]")
 
-/// Two types that own each other: destroying one reports the cycle and does
-/// not qdel either twice.
+/// Two types that own each other: destroying one deletes both exactly once. The dying
+/// end leaves its owner's var first (phase 2), so the owned end's disposal never
+/// reaches back into it.
 /datum/unit_test/dq_lifecycle_diag_mutual_ownership
 
 /datum/unit_test/dq_lifecycle_diag_mutual_ownership/Run()
-	GLOB.dq_lifecycle_report_capture = list()
 	var/datum/dq_diag_owner_a/A = new
 	var/datum/dq_diag_owner_b/B = new
-	A.b = B
-	B.a = A
+	own_set(A, "b", B)
+	own_set(B, "a", A)
+	TEST_ASSERT_EQUAL(owner_of(B), A, "B is owned by A")
+	TEST_ASSERT_EQUAL(owner_of(A), B, "A is owned by B")
 	qdel(A)
-	var/list/capture = GLOB.dq_lifecycle_report_capture
-	GLOB.dq_lifecycle_report_capture = null
 	TEST_ASSERT(QDELETED(A) && QDELETED(B), "both ends were deleted")
-	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE OWNERSHIP CYCLE: /datum/dq_diag_owner_a.b"), "the mutual ownership was reported: [json_encode(capture)]")
 	TEST_ASSERT(isnull(A.b) && isnull(B.a), "both owned vars were cleared")
 
 /// The postcondition names a var still holding a deleted object that holds
@@ -110,13 +104,13 @@ DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 
 	var/datum/dq_diag_leaker/leaker = new
 	var/datum/dq_diag_leaked/leaked = new
-	leaked.holder = leaker
+	rel_set(leaked, "holder", leaker)
 	leaker.members = list(leaked)
 	qdel(leaker)
 
 	var/datum/dq_diag_clean/clean = new
 	var/datum/dq_diag_leaked/bystander = new
-	clean.other = bystander // live, and holds nothing back: not a leak
+	rel_set(clean, "other", bystander) // live, and holds nothing back: not a leak
 	qdel(clean)
 
 	var/list/capture = GLOB.dq_lifecycle_report_capture
@@ -126,8 +120,8 @@ DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 
 	// Break the cycle by hand so the fixtures themselves collect.
 	leaker.members = null
-	leaked.holder = null
-	clean.other = null
+	rel_clear(leaked, "holder")
+	rel_clear(clean, "other")
 	qdel(bystander)
 
 	TEST_ASSERT(dq_diag_capture_has(capture, "LIFECYCLE LEAK: /datum/dq_diag_leaker.members still holds a list with deleted /datum/dq_diag_leaked"), "the leaker's list was reported: [json_encode(capture)]")
@@ -153,7 +147,7 @@ DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 /obj/item/dq_diag_init_refuser/on_destroy(force)
 	if(fragile_destroy)
 		// Touches state Initialize() never built: a runtime mid-Destroy().
-		made_in_init.other = null
+		rel_clear(made_in_init, "other")
 	..()
 
 /obj/item/dq_diag_init_refuser/fragile

@@ -24,7 +24,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	cell = default_use_hicell()
+	own_set(src, "cell", default_use_hicell())
 
 	add_hose_connector(/datum/hose_connector/output)
 
@@ -33,7 +33,6 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
@@ -45,10 +44,9 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	qdel(src.reagents)
-	src.reagents = R
+	own_set(src, "reagents", R)
 
-	cell = locate_within(src, /obj/item/cell)
+	own_set(src, "cell", locate_within(src, /obj/item/cell))
 
 /obj/machinery/pump/update_icon()
 	..()
@@ -156,7 +154,7 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
 	user.drop_from_inventory(W, src)
-	cell = W // Link the cell to us
+	own_set(src, "cell", W) // Link the cell to us
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()
@@ -173,7 +171,7 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 		user.put_in_hands(cell)
 		cell.add_fingerprint(user)
 		cell.update_icon()
-		cell = null
+		own_take(src, "cell")
 		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE

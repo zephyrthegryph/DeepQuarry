@@ -53,7 +53,7 @@
 			om_attach(src, /datum/om/behaviour/spontaneous_vore)
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 		return TRUE
 
 	//We'll load our client's organs if we have one
@@ -62,14 +62,13 @@
 			to_chat(src,span_warning("ERROR: You seem to have saved VOREStation prefs, but they couldn't be loaded."))
 			return FALSE
 		if(LAZYLEN(vore_organs))
-			vore_selected = vore_organs[1]
+			rel_set(src, "vore_selected", vore_organs[1])
 			return TRUE
 
 	//Or, we can create a basic one for them
 	if(!LAZYLEN(vore_organs) && isliving(src))
-		LAZYINITLIST(vore_organs)
 		var/obj/belly/B = new /obj/belly(src)
-		vore_selected = B
+		rel_set(src, "vore_selected", B)
 		B.immutable = TRUE
 		B.name = "Stomach"
 		B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
@@ -79,7 +78,7 @@
 			if(istype(H.species,/datum/species/monkey))
 				allow_spontaneous_tf = TRUE
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 		return TRUE
 
 /mob/living/init_vore(force)
@@ -361,31 +360,31 @@
 		if(isliving(src))
 			var/mob/living/L = src
 			L.release_vore_contents(silent = TRUE)
-		QDEL_LIST(vore_organs)
+		own_clear(src, "vore_organs", OWN_DELETE)
 		for(var/entry in P.belly_prefs)
 			var/list/errors = list()
 			if(!state_materialize(entry, src, NONE, errors))
 				log_state("copy_from_prefs_vr: a belly of [src] did not load: [jointext(errors, "; ")]")
 		if(!length(vore_organs))
 			var/obj/belly/B = new /obj/belly(src)
-			vore_selected = B
+			rel_set(src, "vore_selected", B)
 			B.immutable = TRUE
 			B.name = "Stomach"
 			B.desc = "It appears to be rather warm and wet. Makes sense, considering it's inside \the [name]."
 			B.can_taste = TRUE
 		else
-			vore_selected = vore_organs[1]
+			rel_set(src, "vore_selected", vore_organs[1])
 
 		if(soulgem)
 			src.soulgem.release_mobs()
-			QDEL_NULL(soulgem)
+			own_clear(src, "soulgem", OWN_DELETE)
 		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
-			soulgem = state_materialize(P.soulcatcher_prefs, src, NONE, errors)
+			own_set(src, "soulgem", state_materialize(P.soulcatcher_prefs, src, NONE, errors))
 			if(!soulgem)
 				log_state("copy_from_prefs_vr: the soulgem of [src] did not load: [jointext(errors, "; ")]")
 		if(!soulgem)
-			soulgem = new(src)
+			own_set(src, "soulgem", new /obj/soulgem(src))
 
 	return TRUE
 
@@ -657,7 +656,7 @@
 		forceMove(get_turf(src)) //Just move me up to the turf, let's not cascade through bellies, there's been a problem, let's just leave.
 		status_set(EFFECT_SLEEPING, 0) //Wake up instantly if asleep
 		for(var/mob/living/simple_mob/SA in range(10))
-			LAZYSET(SA.prey_excludes, src, world.time)
+			rel_add(SA, "prey_excludes", src)
 		log_and_message_admins("used the OOC escape button to get out of [key_name(B.owner)] ([B.owner ? "<a href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[B.owner.x];Y=[B.owner.y];Z=[B.owner.z]'>JMP</a>" : "null"])", src)
 
 		B.owner.handle_belly_update() //This is run whenever a belly's contents are changed.
@@ -680,8 +679,8 @@
 	else if(iscapturecrystal(loc))
 		var/obj/item/capture_crystal/crystal = loc
 		crystal.unleash()
-		crystal.bound_mob = null
-		crystal.bound_mob = capture_crystal = 0
+		rel_clear(crystal, "bound_mob")
+		capture_crystal = 0
 		clear_fullscreen(ATOM_BELLY_FULLSCREEN)
 		log_and_message_admins("used the OOC escape button to get out of [crystal] owned by [crystal.owner]. [ADMIN_FLW(src)]", src)
 
@@ -695,7 +694,7 @@
 				var/mob/living/voice/possessed_voice = src  // Stupid band-aid fix for OOC escaping object TF
 				if(possessed_voice.item_tf)
 					mind.transfer_to(ourmob)
-					item_to_destroy.possessed_voice -= src
+					own_take_member(item_to_destroy, "possessed_voice", src)
 					qdel(src)
 					ourmob.forceMove(item_to_destroy.loc)
 					qdel(item_to_destroy)
@@ -708,7 +707,7 @@
 				to_chat(src,span_notice("Your body appears to be in someone else's control."))
 				return
 			src.mind.transfer_to(ourmob)
-			item_to_destroy.possessed_voice -= src
+			own_take_member(item_to_destroy, "possessed_voice", src)
 			qdel(src)
 			log_and_message_admins("[key_name(src)] used the OOC escape button to revert back to their original form from being TFed into an object.")
 			return
@@ -747,13 +746,12 @@
 	else if(istype(loc, /obj/item/reagent_containers/food))
 		var/obj/item/reagent_containers/food/F = src.loc
 		if(F.food_inserted_micros)
-			F.food_inserted_micros -= src
+			own_take_member(F, "food_inserted_micros", src)
 		src.forceMove(get_turf(F))
 		log_and_message_admins("used the OOC escape button to get out of a food item.", src)
 
 	else if(alerts && alerts["leashed"])
-		var/atom/movable/screen/alert/leash_pet/pet_alert = src.alerts["leashed"]
-		var/obj/item/leash/owner = om_resolve(pet_alert.master_ref)
+		var/obj/item/leash/owner = leash_item() // the leashed_to relation names the leash
 		if(owner)
 			owner.clear_leash()
 		log_and_message_admins("used the OOC escape button to get out of a leash.", src)
@@ -1410,37 +1408,36 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 	var/atom/movable/screen/vore_panel/screen_icon
 
 /mob/living/var/datum/vore_panel_button/vore_panel_button
-DECLARE_REF(/mob/living, "vore_panel_button", OWNED, null)
-DECLARE_REF(/datum/vore_panel_button, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	if(owner.client)
 		create_mob_button(owner)
 	add_verb(owner, /mob/proc/insidePanel)
 	if(!owner.vorePanel)
-		owner.vorePanel = new(owner)
+		own_set(owner, "vorePanel", new /datum/vore_look(owner))
 
 // takes the panel verb and panel back from its owner. Hooks, the screen icon
-// (owned; it leaves client screens in its own teardown) and the owner <->
+// (owned by the HUD; it leaves client screens in its own teardown) and the owner <->
 // vore_panel_button pair are core work.
 /datum/vore_panel_button/on_destroy(force)
 	var/mob/living/M = owner
 	if(screen_icon)
-		var/datum/hud/HUD = M?.hud_used
-		LAZYREMOVE(HUD?.other_important, screen_icon)
+		// The HUD owns the icon (other_important); take it off and dispose of it.
+		var/datum/hud/HUD = owner_of(screen_icon)
+		if(HUD)
+			own_remove(HUD, "other_important", screen_icon)
 	if(M)
 		remove_verb(M, /mob/proc/insidePanel)
-		QDEL_NULL(M.vorePanel)
+		own_clear(M, "vorePanel", OWN_DELETE)
 	..()
 
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
 	if(!vore_panel_button)
-		vore_panel_button = new /datum/vore_panel_button(src)
+		own_set(src, "vore_panel_button", new /datum/vore_panel_button(src))
 	return vore_panel_button
 
 /datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1450,7 +1447,8 @@ DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 /datum/vore_panel_button/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
 	if(!screen_icon)
-		screen_icon = new()
+		// The HUD owns the icon (other_important, below); the button keeps a relation to it.
+		rel_set(src, "screen_icon", new /atom/movable/screen/vore_panel())
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(vore_panel_click))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
@@ -1461,7 +1459,8 @@ DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 		screen_icon.alpha = HUD.ui_alpha
 	if(isAI(user))
 		screen_icon.screen_loc = ui_ai_pda_send
-	LAZYADD(HUD.other_important, screen_icon)
+	if(owner_of(screen_icon) != HUD)
+		own_move(screen_icon, HUD, "other_important")
 	user.client?.screen += screen_icon
 
 /datum/vore_panel_button/proc/vore_panel_click(datum/source, datum/om/event/click/event)

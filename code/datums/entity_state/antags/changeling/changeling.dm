@@ -20,7 +20,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	var/allowduringlesserform = FALSE
 	var/genomecost = 500000 // Cost for the changeling to evolve this power.
 
-/// Changeling antag state. Owned by the changeling mob (/mob/living var changeling_state); the mind keeps an OM handle.
+/// Changeling antag state. Owned by the changeling mob (/mob/living var changeling_state); the mind keeps a relation view.
 /datum/changeling
 	var/mob/living/owner
 	var/list/datum/absorbed_dna/absorbed_dna = list() // ALLOW(instance_list): d: changeling state; starts with the changeling's own DNA
@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /datum/changeling/New(mob/living/new_owner)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	if(owner)
 		if(GLOB.possible_changeling_IDs.len)
 			changelingID = pick(GLOB.possible_changeling_IDs)
@@ -132,7 +132,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 	changeling_update_languages(comp.absorbed_languages)
 
 	if(!comp.GetDNA(newDNA.name)) // Don't duplicate - I wonder if it's possible for it to still be a different DNA? DNA code could use a rewrite
-		comp.absorbed_dna += newDNA
+		own_add(comp, "absorbed_dna", newDNA)
 
 //Restores our verbs. It will only restore verbs allowed during lesser (monkey) form if we are not human
 /mob/proc/make_changeling()
@@ -147,8 +147,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			return
 		var/mob/living/living_self = src
 		comp = new /datum/changeling(living_self)
-		living_self.changeling_state = comp
-	mind.antag_holder.changeling_handle = om_handle(comp)
+		own_set(living_self, "changeling_state", comp)
+	rel_set(mind.antag_holder, "changeling", comp)
 	var/lesser_form = !ishuman(src)
 
 	if(!GLOB.powerinstances.len)
@@ -169,7 +169,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 				add_verb(src, P.verbpath)
 			if(P.make_hud_button)
 				if(!src.ability_master)
-					src.ability_master = new /atom/movable/screen/movable/ability_master(src)
+					own_set(src, "ability_master", new /atom/movable/screen/movable/ability_master(src))
 				src.ability_master.add_ling_ability(
 					object_given = src,
 					verb_given = P.verbpath,
@@ -360,8 +360,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		for(var/changeling_power in GLOB.changeling_powers)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
-		comp.power_panel = new()
-		comp.power_panel.comp_handle = om_handle(comp)
+		own_set(comp, "power_panel", new /datum/changeling_panel())
+		rel_set(comp.power_panel, "comp", comp)
 
 	comp.power_panel.tgui_interact(src)
 
@@ -389,15 +389,14 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	geneticpoints -= Thepower.genomecost
 
-	LAZYADD(purchased_powers, Thepower)
+	rel_add(src, "purchased_powers", Thepower)
 
 	if(Thepower.genomecost > 0)
 		LAZYADD(purchased_powers_history, "[Pname] ([Thepower.genomecost] points)")
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
-		if(owner.ability_master)
-			QDEL_NULL(owner.ability_master)
-			owner.ability_master = new /atom/movable/screen/movable/ability_master(owner)
+		// A fresh master (own_set deletes the old one); a mob without one gets its first.
+		own_set(owner, "ability_master", new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,
 			verb_given = Thepower.verbpath,
@@ -437,7 +436,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 ///Changeling Panel
 /datum/changeling_panel
-	var/comp_handle
+	var/datum/changeling/comp
 
 /datum/changeling_panel/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -481,9 +480,9 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 			return TRUE
 	return TRUE
 
-/// LC-refs: the changeling this panel shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The changeling this panel shows (a relation view).
 /datum/changeling_panel/proc/comp() as /datum/changeling
-	return om_resolve(comp_handle)
+	return comp
 
 /// The mob's changeling state, if any (only living mobs can hold it).
 /mob/proc/get_changeling_state() as /datum/changeling
@@ -493,10 +492,6 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 	return changeling_state
 
 /mob/living/var/datum/changeling/changeling_state
-DECLARE_REF(/mob/living, "changeling_state", OWNED, null)
 
-DECLARE_REF(/datum/changeling, "owner", BACK, "changeling_state")
 
-DECLARE_REF(/datum/changeling, "absorbed_dna", OWNED_LIST, null)
 
-DECLARE_REF(/datum/changeling, "power_panel", OWNED, null)

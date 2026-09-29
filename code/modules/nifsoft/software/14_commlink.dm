@@ -11,14 +11,14 @@
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
-		nif().comm = new /obj/item/communicator/commlink(nif(),src)
+		own_set(nif(), "comm", new /obj/item/communicator/commlink(nif(),src))
 		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
 			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
 
 /datum/nifsoft/commlink/uninstall()
 	var/obj/item/nif/lnif = nif() //Awkward. Parent clears it in an attempt to clean up.
 	if((. = ..()) && lnif)
-		QDEL_NULL(lnif.comm)
+		own_clear(lnif, "comm", OWN_DELETE)
 
 /datum/nifsoft/commlink/activate()
 	if((. = ..()))
@@ -40,15 +40,16 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 	desc = "An internal communicator, basically."
 	occupation = "\[Commlink\]"
 	var/obj/item/nif/nif
-	var/tmp/nifsoft_handle
+	var/tmp/datum/nifsoft/commlink/nifsoft
 
 /obj/item/communicator/commlink/Initialize(mapload, soft)
 	. = ..()
-	nif = loc
-	nifsoft_handle = om_handle(soft)
+	rel_set(src, "nif", loc)
+	rel_set(src, "nifsoft", soft)
 
-DECLARE_REF(/obj/item/communicator/commlink, "nif", PAIR, "comm")
-DECLARE_REF(/obj/item/nif, "comm", PAIR, "nif")
+// The NIF creates and owns its commlink (in its contents, deleted with it); the commlink's `nif`
+// is a plain back relation.
+OWN(/obj/item/nif, comm, OWN_DELETE)
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name
@@ -97,7 +98,7 @@ DECLARE_REF(/obj/item/nif, "comm", PAIR, "nif")
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.voice_invites, src)
+		rel_add(comm, "voice_invites", src)
 
 	if(!who)
 		return
@@ -117,11 +118,11 @@ DECLARE_REF(/obj/item/nif, "comm", PAIR, "nif")
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.im_contacts, src)
+		rel_add(comm, "im_contacts", src)
 		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
-	LAZYOR(im_contacts, candidate)
+	rel_add(src, "im_contacts", candidate)
 
 	if(!who)
 		return
@@ -129,6 +130,6 @@ DECLARE_REF(/obj/item/nif, "comm", PAIR, "nif")
 	if(ringer && nif.human)
 		nif.notify("Commlink message from [who]: \"[text]\" (<a href='byond://?src=\ref[nifsoft()];open=1'>Open</a>) (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)")
 
-/// LC-refs: the nifsoft this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// LC-refs: the nifsoft this refers to -- a relation view: null once it is deleted.
 /obj/item/communicator/commlink/proc/nifsoft() as /datum/nifsoft/commlink
-	return om_resolve(nifsoft_handle)
+	return nifsoft

@@ -12,7 +12,7 @@
 	var/id = ""
 
 	/// The atom we're attached to/playing from
-	var/tmp/parent_handle
+	var/tmp/atom/parent
 
 	/// Our song lines
 	var/list/lines
@@ -67,7 +67,7 @@
 	/// List of channels that aren't being used, as text. This is to prevent unnecessary freeing and reallocations from the sound and instrument services.
 	var/list/channels_idle
 	/// Who or what's playing us
-	var/tmp/music_player_handle
+	var/tmp/atom/music_player
 	//////////////////////////////////////////////////////
 
 	/// Last world.time we checked for who can hear us
@@ -112,18 +112,16 @@
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
 	lines = list()
 	tempo = sanitize_tempo(tempo, TRUE)
-	src.parent_handle = om_handle(parent)
+	rel_set(src, "parent", parent)
 	if(instrument_ids)
 		allowed_instrument_ids = islist(instrument_ids) ? instrument_ids : list(instrument_ids)
 	if(length(allowed_instrument_ids))
 		set_instrument(allowed_instrument_ids[1])
-	hearing_mobs = list()
 	volume = clamp(volume, min_volume, max_volume)
 	if(new_range)
 		instrument_range = new_range
 
 // stops playing and leaves its instrument.
-DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 
 /datum/song/on_destroy(force)
 	stop_playing()
@@ -134,17 +132,21 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
  */
 /datum/song/proc/do_hearcheck()
 	EXPIRY_STAMP(src, last_hearcheck, CLOCK_WORLD)
-	var/list/old = hearing_mobs.Copy()
-	hearing_mobs.len = 0
+	var/list/old = hearing_mobs ? hearing_mobs.Copy() : list()
 	var/turf/source = get_turf(parent())
 	// FIXME
 	// for(var/mob/M in get_hearers_in_view(instrument_range, source))
 	var/list/in_range = get_mobs_and_objs_in_view_fast(source, instrument_range, remote_ghosts = FALSE)
+	var/list/now = list()
 	for(var/mob/M in in_range["mobs"])
-		hearing_mobs[M] = get_dist(M, source) // ALLOW(object_keyed_lists): rebuilt every hearcheck; stop_playing() needs every hearer to terminate its sound
-	var/list/exited = old - hearing_mobs
-	for(var/i in exited)
-		terminate_sound_mob(i)
+		now += M
+	// hearing_mobs is a relation list: a deleted hearer leaves it by itself; stop_playing() still
+	// terminates the sound of every hearer left in it.
+	for(var/mob/M as anything in old - now)
+		rel_remove(src, "hearing_mobs", M)
+		terminate_sound_mob(M)
+	for(var/mob/M as anything in now - old)
+		rel_add(src, "hearing_mobs", M)
 
 /**
  * Sets our instrument, caching anything necessary for faster accessing. Accepts an ID, typepath, or instantiated instrument datum.
@@ -153,7 +155,7 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 	terminate_all_sounds()
 	var/old_legacy
 	if(using_instrument())
-		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
+		rel_remove(using_instrument(), "songs_using", src)
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument_static = null
 	legacy = null
@@ -161,7 +163,7 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 		I = instrument_service().instrument_data[I]
 	if(istype(I))
 		using_instrument_static = I
-		LAZYADD(I.songs_using, om_handle(src))
+		rel_add(I, "songs_using", src)
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			legacy = TRUE
@@ -192,7 +194,7 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 	elapsed_delay = 0
 	delay_by = 0
 	current_chord = 1
-	music_player_handle = om_handle(user)
+	rel_set(src, "music_player", user)
 	om_task_periodic(src, PERIODIC_INSTRUMENTS)
 	if(id)
 		sync_play()
@@ -238,8 +240,8 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	om_task_periodic_stop(src)
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
-	hearing_mobs.len = 0
-	music_player_handle = null
+	rel_clear(src, "hearing_mobs")
+	rel_clear(src, "music_player")
 
 /**
  * Processes our song.
@@ -410,15 +412,16 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 
 	return null
 
-/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the parent this refers to (a relation view: null once it is deleted).
 /datum/song/proc/parent() as /atom
-	return om_resolve(parent_handle)
+	return parent
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/song/proc/using_instrument() as /datum/instrument
 	return using_instrument_static
-DECLARE_REF(/datum/song, "using_instrument_static", STATIC, null)
 
-/// LC-refs: the music_player this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the music_player this refers to (a relation view: null once it is deleted).
 /datum/song/proc/music_player() as /atom
-	return om_resolve(music_player_handle)
+	return music_player
+
+REL_LIST(/datum/song, hearing_mobs)

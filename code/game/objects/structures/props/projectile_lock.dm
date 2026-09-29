@@ -12,7 +12,7 @@
 	var/list/linked_objects
 
 // many-to-many with puzzle doors: leaves each door's lock list.
-DECLARE_REF(/obj/structure/prop/lock, "linked_objects", LIST_BACK, list(/obj/machinery/door/blast/puzzle = "locks"))
+REL_PAIR_LIST(/obj/structure/prop/lock, linked_objects, locks)
 
 /obj/structure/prop/lock/proc/toggle_lock()
 	enabled = !enabled

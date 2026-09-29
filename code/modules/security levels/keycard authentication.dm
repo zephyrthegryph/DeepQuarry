@@ -11,9 +11,9 @@
 	var/screen = 1
 	var/confirmed = 0 //This variable is set by the device that confirms the request.
 	var/confirm_delay = 20 //(2 seconds)
-	var/tmp/event_source_handle
-	var/tmp/event_triggered_by_handle
-	var/tmp/event_confirmed_by_handle
+	var/tmp/obj/machinery/keycard_auth/event_source
+	var/tmp/mob/event_triggered_by
+	var/tmp/mob/event_confirmed_by
 	//1 = select event
 	//2 = authenticate
 	anchored = TRUE
@@ -34,9 +34,10 @@
 /obj/machinery/keycard_auth/proc/screwdriver_act_tool_done(mob/user)
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
-	A.circuit = circuit
-	A.frame_type = circuit.board_type
-	circuit = null
+	var/obj/item/circuitboard/board = circuit
+	own_set(A, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	board.forceMove(A)
+	own_move(board, A, "circuit") // the board goes from this machine to the frame
 	A.need_circuit = FALSE
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
@@ -48,7 +49,7 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	A.forensic_data = forensic_data //carry crime data over.
+	own_transfer(src, "forensic_data", A, "forensic_data") //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
 	qdel(src)
@@ -83,9 +84,9 @@
 				//This is not the device that made the initial request. It is the device confirming the request.
 				if(event_source())
 					event_source().confirmed = 1
-					event_source().event_confirmed_by_handle = om_handle(user)
+					rel_set(event_source(), "event_confirmed_by", user)
 			else if(screen == 2)
-				event_triggered_by_handle = om_handle(user)
+				rel_set(src, "event_triggered_by", user)
 				broadcast_request(user) //This is the device making the initial event request. It needs to broadcast to other devices
 	return TRUE
 
@@ -155,10 +156,10 @@
 	event = ""
 	screen = 1
 	confirmed = 0
-	event_source_handle = null
+	rel_clear(src, "event_source")
 	icon_state = "auth_off"
-	event_triggered_by_handle = null
-	event_confirmed_by_handle = null
+	rel_clear(src, "event_triggered_by")
+	rel_clear(src, "event_confirmed_by")
 
 /obj/machinery/keycard_auth/proc/broadcast_request(mob/user)
 	icon_state = "auth_on"
@@ -181,7 +182,7 @@
 /obj/machinery/keycard_auth/proc/receive_request(obj/machinery/keycard_auth/source)
 	if(!operable())
 		return
-	event_source_handle = om_handle(source)
+	rel_set(src, "event_source", source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	om_release_busy(src, "new request")
 	set_active(1)
@@ -189,7 +190,7 @@
 	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
-	event_source_handle = null
+	rel_clear(src, "event_source")
 	icon_state = "auth_off"
 	set_active(0)
 
@@ -233,14 +234,14 @@ GLOBAL_VAR_INIT(maint_all_access, FALSE)
 		return 1
 	return ..(M)
 
-/// LC-refs: the event_triggered_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_triggered_by (a relation view).
 /obj/machinery/keycard_auth/proc/event_triggered_by() as /mob
-	return om_resolve(event_triggered_by_handle)
+	return event_triggered_by
 
-/// LC-refs: the event_confirmed_by this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_confirmed_by (a relation view).
 /obj/machinery/keycard_auth/proc/event_confirmed_by() as /mob
-	return om_resolve(event_confirmed_by_handle)
+	return event_confirmed_by
 
-/// LC-refs: the event_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_source (a relation view).
 /obj/machinery/keycard_auth/proc/event_source() as /obj/machinery/keycard_auth
-	return om_resolve(event_source_handle)
+	return event_source

@@ -28,7 +28,8 @@
 	var/recent_moles_transferred = 0
 	var/ui_error = null // For error messages to show up in nano ui.
 
-	var/datum/gas_mixture/internal = new()
+	/// The farm's own working mixture (owned).
+	var/datum/gas_mixture/internal
 	var/const/input_gas = GAS_CO2
 	var/const/output_gas = GAS_O2
 
@@ -37,6 +38,7 @@
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
+	own_set(src, "internal", new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 	update_icon()
@@ -98,7 +100,7 @@
 	if(co2_moles < MINIMUM_MOLES_TO_FILTER)
 		ui_error = "Insufficient [GLOB.gas_data.name[input_gas]] to process."
 		update_icon()
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 		return PROCESS_KILL
 
 	// STEP 4 - Consume the resources
@@ -348,6 +350,5 @@
 /obj/machinery/atmospherics/binary/algae_farm/arm_wakes()
 	..()
 	if(air1)
-		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+		om_watch_arm_condition(src, "gas", list(air1.arena_id()), GAS_DEPENDENCY_COMPOSITION, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/algae_farm, "internal", OWNED, null)

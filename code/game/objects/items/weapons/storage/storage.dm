@@ -142,7 +142,6 @@
 
 	calibrate_size()
 
-DECLARE_REF(/obj/item/storage, "hud", OWNED, null)
 
 // closes on everyone looking into it and leaves its wearer.
 /obj/item/storage/on_destroy(force)
@@ -614,7 +613,7 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 
 /obj/item/storage/proc/close(mob/user)
 	hide_from(user)
-	user.s_active = null
+	rel_clear(user, "s_active")
 
 /obj/item/storage/proc/close_all()
 	for(var/mob/M in can_see_contents())
@@ -642,9 +641,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 		user.s_active.hide_from(user)
 
 	if(!hud)
-		hud = new /datum/storage_hud(src)
+		own_set(src, "hud", new /datum/storage_hud(src))
 	LAZYDISTINCTADD(is_seeing, user)
-	user.s_active = src
+	rel_set(user, "s_active", src)
 	var/client/C = user.client
 	if(C)
 		C.screen += hud.screen_atoms()
@@ -660,9 +659,9 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 			if(I.loc != user)
 				C.screen -= I
 	if(user.s_active == src)
-		user.s_active = null
+		rel_clear(user, "s_active")
 	if(!LAZYLEN(is_seeing))
-		QDEL_NULL(hud)
+		own_clear(src, "hud", OWN_DELETE)
 
 /// Lays the HUD out again after a change, for everyone looking.
 /obj/item/storage/proc/refresh_hud()
@@ -695,35 +694,31 @@ DECLARE_INTERACTIONS(/obj/item/storage, \
 	var/atom/movable/screen/close/closer
 	/// One click catcher per shown item.
 	var/list/atom/movable/storage_slot/catchers
-	/// Items placed on screen (one per type with display_contents_with_number).
-	// ALLOW(object_keyed_lists): items of the open storage on screen; Destroy() unpins each
+	/// Relation list view: items placed on screen, in layout order (one per type with
+	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /datum/storage_hud/New(obj/item/storage/S)
 	..()
-	storage = S
-	backdrop = list()
-	catchers = list()
-	shown = list()
-	var/master = om_handle(S)
+	rel_set(src, "storage", S)
+	own_set(src, "backdrop", list())
+	own_set(src, "catchers", list())
+	var/obj/item/storage/master = S
 	if(S.storage_slots)
-		backdrop += new_backdrop(master, "block")
+		own_add(src, "backdrop", new_backdrop(master, "block"))
 	else
-		backdrop += new_backdrop(master, "storage_start")
-		backdrop += new_backdrop(master, "storage_continue")
-		backdrop += new_backdrop(master, "storage_end")
-	closer = new /atom/movable/screen/close()
-	closer.master_ref = master
+		own_add(src, "backdrop", new_backdrop(master, "storage_start"))
+		own_add(src, "backdrop", new_backdrop(master, "storage_continue"))
+		own_add(src, "backdrop", new_backdrop(master, "storage_end"))
+	own_set(src, "closer", new /atom/movable/screen/close())
+	rel_set(closer, "master_ref", master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
 	GLOB.storage_hud_count++
 	layout()
 
-DECLARE_REF(/datum/storage_hud, "closer", OWNED, null)
-DECLARE_REF(/datum/storage_hud, "catchers", OWNED_LIST, null)
-DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 
 // shown items lose their count text; the global hud count drops.
 /datum/storage_hud/on_destroy(force)
@@ -734,10 +729,10 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 		I.latent_unpin(src)
 	..()
 
-/datum/storage_hud/proc/new_backdrop(master, state)
+/datum/storage_hud/proc/new_backdrop(obj/item/storage/master, state)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
-	B.master_ref = master
+	rel_set(B, "master_ref", master)
 	B.icon_state = state
 	return B
 
@@ -749,8 +744,8 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 
 /// Places the items and sizes the backdrop.
 /datum/storage_hud/proc/layout()
-	QDEL_LIST(catchers)
-	catchers = list()
+	own_clear(src, "catchers", OWN_DELETE)
+	own_set(src, "catchers", list())
 	var/list/items = storage.hud_order(storage.stored_items())
 	var/list/counts
 	if(storage.display_contents_with_number)
@@ -772,7 +767,9 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 		I.latent_unpin(src)
 	for(var/obj/item/I as anything in items - shown)
 		I.latent_pin(src)
-	shown = items
+	rel_clear(src, "shown")
+	for(var/obj/item/I as anything in items)
+		rel_add(src, "shown", I)
 	if(storage.storage_slots)
 		boxes_layout(counts)
 	else
@@ -782,7 +779,7 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 	var/atom/movable/storage_slot/SS = new(null, I)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	catchers += SS
+	own_add(src, "catchers", SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.
@@ -889,13 +886,14 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 	plane = PLANE_PLAYER_HUD_ITEMS
 	layer = 0.1
 	alpha = 200
-	var/held_item
+	/// Relation view: the stored item this catcher stands for.
+	var/obj/item/held_item
 
 /atom/movable/storage_slot/Initialize(mapload, obj/item/held_item)
 	. = ..()
 	ASSERT(held_item)
 	name += held_item.name
-	src.held_item = om_handle(held_item)
+	rel_set(src, "held_item", held_item)
 
 /// Has to be this way. The fact that the overlays will be constantly mutated by other storage means we can't wait.
 /atom/movable/storage_slot/add_overlay(list/somethings)
@@ -903,7 +901,7 @@ DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 	overlays = somethings
 
 /atom/movable/storage_slot/Click()
-	var/obj/item/I = om_resolve(held_item)
+	var/obj/item/I = held_item
 	if(I)
 		usr.ClickOn(I)
 	return 1
@@ -1065,5 +1063,3 @@ EXTEND_INTERACTIONS(/obj/item/storage, \
 	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
 )
 
-DECLARE_REF(/datum/storage_hud, "storage", BACK, "hud")
-DECLARE_REF(/datum/storage_hud, "shown", HELD, null)

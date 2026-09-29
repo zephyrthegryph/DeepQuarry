@@ -14,8 +14,8 @@
 	var/train_length = 0
 	var/latch_on_start = 1
 
-	var/tmp/lead_handle
-	var/tmp/tow_handle
+	var/tmp/obj/vehicle/train/lead
+	var/tmp/obj/vehicle/train/tow
 
 	var/open_top = TRUE
 
@@ -189,8 +189,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		next_car = next_car.lead()
 
 	//latch with src as the follower
-	lead_handle = om_handle(T)
-	T.tow_handle = om_handle(src)
+	rel_set(src, "lead", T) // REL_PAIR: T's tow names us
 	set_dir(lead().dir)
 
 	if(user)
@@ -205,11 +204,11 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 		to_chat(user, span_red("[src] is not hitched to anything."))
 		return
 
-	lead().tow_handle = null
-	lead().update_stats()
+	var/obj/vehicle/train/old_lead = lead()
+	rel_clear(src, "lead") // the pair: old_lead's tow clears too
+	old_lead.update_stats()
 
-	to_chat(user, span_blue("You unhitch [src] from [lead()]."))
-	lead_handle = null
+	to_chat(user, span_blue("You unhitch [src] from [old_lead]."))
 
 	update_stats()
 
@@ -243,10 +242,9 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 	while(T.tow())
 		//check for cyclic train.
 		if (T.tow() == src)
-			lead().tow_handle = null
-			lead().update_stats()
-
-			lead_handle = null
+			var/obj/vehicle/train/old_lead = lead()
+			rel_clear(src, "lead") // the pair: old_lead's tow clears too
+			old_lead?.update_stats()
 			update_stats()
 			return
 		T = T.tow()
@@ -264,10 +262,13 @@ EXTEND_INTERACTIONS(/obj/vehicle/train, \
 /obj/vehicle/train/proc/update_car(train_length, active_engines)
 	return
 
-/// LC-refs: the tow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the tow var.
 /obj/vehicle/train/proc/tow() as /obj/vehicle/train
-	return om_resolve(tow_handle)
+	return tow
 
-/// LC-refs: the lead this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the lead var.
 /obj/vehicle/train/proc/lead() as /obj/vehicle/train
-	return om_resolve(lead_handle)
+	return lead
+
+REL_PAIR(/obj/vehicle/train, lead, tow)
+REL_PAIR(/obj/vehicle/train, tow, lead)

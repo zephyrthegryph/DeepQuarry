@@ -211,16 +211,31 @@
 	var/list/grants_occupant
 	/// Check spec (actor = source, target = target); contributions apply only while it passes.
 	var/active_if
-	/// Check spec (actor = source, target = target); the edge is unlinked outright the moment
-	/// it fails (e.g. range or same-z checks) rather than just losing its contributions. Runs
-	/// alongside active_if off the same watched channels.
-	var/break_if
+	/// Check spec (actor = source, target = target): the edge holds only while it passes and is
+	/// unlinked outright the moment it fails (range, same-z, visibility), rather than just losing
+	/// its contributions. Runs alongside active_if off the same watched channels.
+	var/holds_while
+	/// REL_ONE_TO_ONE, REL_ONE_TO_MANY, REL_MANY_TO_MANY or REL_SYMMETRIC (sets source_single /
+	/// target_single at registration). Null: the singles as written.
+	var/shape
+	/// Framework-maintained view vars: the source's var naming its target (1:1 from the source),
+	/// and the target's var naming its source. Raw writes are banned (ownership_lint.py).
+	var/source_view
+	var/target_view
+	/// List-undo: a list var on the target the source is added to on link and removed from on
+	/// unlink (alternate_appearance viewers, lg_imageholder, song listeners, multicam).
+	var/undo_list
+	/// A proc name on the source recomputing a view from linked() after every structural change
+	/// (omni filter/mixer port roles).
+	var/derived_view
+	/// entity_clone(): an edge leaving the cloned subtree is re-linked to the clone.
+	var/clone_follows = FALSE
 	/// Bundles whose relation fields (contributes, grants_*) are merged in.
 	var/list/include
 
 	var/id = 0
 	var/datum/om/check/compiled_active_if
-	var/datum/om/check/compiled_break_if
+	var/datum/om/check/compiled_holds_while
 
 /// Hooks get both ends, never null: an end being deleted is QDELETED but not null.
 /datum/om/relation/proc/on_link(datum/source, datum/target, datum/om/edge/edge)
@@ -228,6 +243,18 @@
 	return
 
 /datum/om/relation/proc/on_unlink(datum/source, datum/target, datum/om/edge/edge)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// A member leaving through its own domain proc (om_leave()): a cloning pod releasing its
+/// occupant record, a jukebox listener walking off, a resleever, a conveyor switch. Runs before
+/// the edge is unlinked; `member` is the end that asked.
+/datum/om/relation/proc/on_member_leave(datum/source, datum/target, datum/member)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// One end changed in a way the relation cares about (its watched channels): re-derive views.
+/datum/om/relation/proc/on_end_changed(datum/source, datum/target, datum/om/edge/edge)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
@@ -242,6 +269,8 @@
 	var/active = FALSE
 	/// Relation-specific payload the linker attaches (e.g. an orbit's saved transform).
 	var/list/data
+	/// Why the edge is being unlinked (RELATION_*), readable in on_unlink().
+	var/unlink_reason
 
 // ===================================================================== checks
 
@@ -369,9 +398,5 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
-DECLARE_REF(/datum/om/behaviour, "compiled_wake_if", OWNED, null)
 
-DECLARE_REF(/datum/om/relation, "compiled_active_if", OWNED, null)
-DECLARE_REF(/datum/om/relation, "compiled_break_if", OWNED, null)
 
-DECLARE_REF(/datum/om/derived, "compiled_expr", OWNED, null)

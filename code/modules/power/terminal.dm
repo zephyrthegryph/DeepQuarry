@@ -8,7 +8,7 @@
 	icon_state = "term"
 	desc = "It's an underfloor wiring terminal for power equipment."
 	level = 1
-	var/tmp/master_handle
+	var/tmp/obj/machinery/power/master
 	anchored = TRUE
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01
@@ -35,6 +35,6 @@
 	if(master())
 		master().overload(source)
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/terminal/proc/master() as /obj/machinery/power
-	return om_resolve(master_handle)
+	return master

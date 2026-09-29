@@ -58,8 +58,6 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 
 REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLARGRUBS)
 
-DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWNED, null)
 
 /datum/om/stage/life/type_post/simple_mob/animal/solargrub_larva
 	of = /mob/living/simple_mob/animal/solargrub_larva
@@ -198,10 +196,9 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 /obj/machinery/abstract_grub_machine/Initialize(mapload)
 	. = ..()
 	shuffle_power_usages()
-	grub = loc
-	if(!istype(grub))
-		grub = null
+	if(!istype(loc, /mob/living/simple_mob/animal/solargrub_larva))
 		return INITIALIZE_HINT_QDEL
+	rel_set(src, "grub", loc)
 
 /// Drains its area's power for its grub while draining; stopped, it sleeps until the grub moves.
 /obj/machinery/abstract_grub_machine/machine_step()
@@ -249,6 +246,5 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 				return
 	return ..()
 
-DECLARE_REF(/obj/machinery/abstract_grub_machine, "grub", BACK, "powermachine")
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/solargrub_larva, "powermachine", /obj/machinery/abstract_grub_machine)

@@ -4,7 +4,7 @@ GLOBAL_VAR(managed_browser_id_ticker)
 // Managing can include things like persisting the state of specific information inside of this object, receiving Topic() calls, or deleting itself when the window is closed.
 // This is useful for browser windows to be able to stand 'on their own' instead of being tied to something in the game world, like an object or mob.
 /datum/managed_browser
-	var/my_client_handle
+	var/client/my_client
 	var/browser_id = null
 	var/base_browser_id = null
 
@@ -22,7 +22,7 @@ GLOBAL_VAR(managed_browser_id_ticker)
 		stack_trace("Managed browser object does not have a base browser id defined in its type.")
 		return
 
-	my_client_handle = om_handle(new_client)
+	rel_set(src, "my_client", new_client)
 	browser_id = "[base_browser_id]-[GLOB.managed_browser_id_ticker++]"
 
 	if(display_when_created)
@@ -50,6 +50,6 @@ GLOBAL_VAR(managed_browser_id_ticker)
 	if(C?.mob)
 		dq_admin_report_html(C.mob, title, html, src)
 
-/// LC-refs: the client this browser is shown to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this browser is shown to (a relation view).
 /datum/managed_browser/proc/my_client() as /client
-	return om_resolve(my_client_handle)
+	return my_client

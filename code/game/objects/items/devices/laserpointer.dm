@@ -8,7 +8,7 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 	var/pointer_icon_state
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL //Increased to 2, because diodes are w_class 2. Conservation of matter.
-	var/pointer_loc_handle
+	var/turf/pointer_loc
 	var/energy = 8
 	var/max_energy = 8
 	var/effectchance = 20
@@ -33,9 +33,9 @@ MATERIAL_MIX(/obj/item/laser_pointer, list(MAT_GLASS = 500, MAT_STEEL = 500))
 /obj/item/laser_pointer/Initialize(mapload, laser_path)
 	. = ..()
 	if(ispath(laser_path))
-		diode = new laser_path // ALLOW(decl): diode from an Initialize argument
+		own_set(src, "diode", new laser_path) // ALLOW(decl): diode from an Initialize argument
 	else
-		diode = new(src) // ALLOW(decl): paired with the argument branch above
+		own_set(src, "diode", new /obj/item/stock_parts/micro_laser(src)) // ALLOW(decl): paired with the argument branch above
 	if(!pointer_icon_state)
 		pointer_icon_state = pick("red_laser","green_laser","blue_laser","purple_laser")
 
@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 	if(!diode)
 		user.drop_item()
 		W.forceMove(src)
-		diode = W
+		own_set(src, "diode", W)
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else
 		to_chat(user, span_notice("[src] already has a diode."))
@@ -66,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You remove the [diode.name] from the [src]."))
 	diode.forceMove(get_turf(loc))
-	diode = null
+	own_take(src, "diode")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/laser_pointer/afterattack(atom/target, mob/living/user, flag, params)
@@ -229,8 +229,8 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			recharge_locked = FALSE
 			..()
 
-DECLARE_REF(/obj/item/laser_pointer, "diode", HELD, null)
+OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)
 
-/// LC-refs: pointer loc -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: pointer loc (reads null once it is gone).
 /obj/item/laser_pointer/proc/pointer_loc() as /turf
-	return om_resolve(pointer_loc_handle)
+	return pointer_loc

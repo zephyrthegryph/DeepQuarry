@@ -23,8 +23,6 @@
 	var/datum/asset/simple/live_shell_assets
 	var/datum/asset/simple/namespaced/live_chunk_assets
 
-DECLARE_REF(/datum/tgui_asset_generation, "live_shell_assets", OWNED, null)
-DECLARE_REF(/datum/tgui_asset_generation, "live_chunk_assets", OWNED, null)
 
 /datum/tgui_asset_generation/proc/get_default_geometry(interface_name)
 	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)
@@ -557,7 +555,7 @@ SUBSYSTEM_DEF(tgui)
 	if(length(user?.tgui_open_uis) == 0)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
-		if(isnull(src_object) || om_handle_is(ui.src_object_handle, src_object))
+		if(isnull(src_object) || (ui.src_object == src_object))
 			ui.process(wait * 0.1, force = 1)
 			count++
 	return count
@@ -577,7 +575,7 @@ SUBSYSTEM_DEF(tgui)
 	if(length(user?.tgui_open_uis) == 0)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
-		if((isnull(src_object) || om_handle_is(ui.src_object_handle, src_object)) && ui.closeable)
+		if((isnull(src_object) || (ui.src_object == src_object)) && ui.closeable)
 			ui.close(logout = logout)
 			count++
 	return count

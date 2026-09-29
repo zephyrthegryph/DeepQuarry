@@ -42,11 +42,10 @@
 	var/check_range = world.view * checkrange_mult
 	for(var/obj/structure/prop/lock/L in orange(src, check_range))
 		if(L.lockID == lockID)
-			LAZYOR(L.linked_objects, src)
-			LAZYOR(locks, L)
+			rel_add(src, "locks", L) // the pair adds us to L.linked_objects
 
-// many-to-many with locks: leaves each lock's door list.
-DECLARE_REF(/obj/machinery/door/blast/puzzle, "locks", LIST_BACK, list(/obj/structure/prop/lock = "linked_objects"))
+// many-to-many with locks: a dying door leaves each lock's door list and vice versa.
+REL_PAIR_LIST(/obj/machinery/door/blast/puzzle, locks, linked_objects)
 
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(

@@ -221,21 +221,26 @@
 	if(!SK)
 		CRASH("A shadekin [H] somehow is missing their shadekin component post-spawn!")
 
+	// Per-mob value: written to H's private species copy, never the shared one.
+	var/eye_health = total_health
 	switch(SK.eye_color)
 		if(BLUE_EYES)
-			total_health = 75
+			eye_health = 75
 		if(RED_EYES)
-			total_health = 150
+			eye_health = 150
 		if(PURPLE_EYES)
-			total_health = 150
+			eye_health = 150
 		if(YELLOW_EYES)
-			total_health = 50
+			eye_health = 50
 		if(GREEN_EYES)
-			total_health = 100
+			eye_health = 100
 		if(ORANGE_EYES)
-			total_health = 125
+			eye_health = 125
 
-	H.endurance = total_health
+	if(H.species.total_health != eye_health)
+		var/datum/species/private_species = proto_private(H, "species")
+		private_species.total_health = eye_health
+	H.endurance = eye_health
 
 /datum/species/shadekin/produceCopy(list/traits, mob/living/carbon/human/H, custom_base, reset_dna = TRUE) // Traitgenes reset_dna flag required, or genes get reset on resleeve
 	var/datum/species/shadekin/new_copy = ..()

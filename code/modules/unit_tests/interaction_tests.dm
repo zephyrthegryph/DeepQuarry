@@ -149,8 +149,9 @@
 	var/obj/machinery/unit_test_destruction_salvage/machine = allocate(/obj/machinery/unit_test_destruction_salvage, salvage_turf)
 	var/obj/item/part = allocate(/obj/item, machine)
 	var/obj/item/circuitboard/board = allocate(/obj/item/circuitboard, machine)
-	machine.component_parts = list(part)
-	machine.circuit = board
+	own_clear(machine, "component_parts", OWN_DELETE)
+	own_add(machine, "component_parts", part)
+	own_set(machine, "circuit", board)
 
 	machine.deconstruct(FALSE)
 
@@ -165,7 +166,8 @@
 	var/turf/test_turf = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/obj/machinery/machine = allocate(/obj/machinery, test_turf)
 	var/obj/item/stock_parts/capacitor/part = new(machine)
-	machine.component_parts = list(part)
+	own_clear(machine, "component_parts", OWN_DELETE)
+	own_add(machine, "component_parts", part)
 	qdel(part)
 	TEST_ASSERT(!(part in machine.component_parts), "A deleted stock part remained strongly retained by machine.component_parts.")
 	qdel(machine)
@@ -180,7 +182,7 @@
 	var/datum/alarm/alarm = handler.alarms[1]
 	alarm.cameras = list(source)
 	handler.release_atom(source)
-	TEST_ASSERT(!(source in alarm.sources_assoc), "Released alarm source remained an associative-list key.")
+	TEST_ASSERT(!alarm.source_entry(source), "Released alarm source remained an alarm source entry.")
 	TEST_ASSERT(!(source in alarm.cameras), "Released alarm source remained in an alarm camera cache.")
 	qdel(source)
 	qdel(handler)

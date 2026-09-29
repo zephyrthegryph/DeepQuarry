@@ -62,7 +62,7 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 // Description: Links the catalog to hopefully the technomancer, so that only they can access it.
 /obj/item/technomancer_catalog/proc/bind_to_owner(mob/living/carbon/human/new_owner)
 	if(!owner && (GLOB.technomancers.is_antagonist(new_owner.mind) || universal)) // Universal catalogs
-		owner = new_owner
+		rel_set(src, "owner", new_owner)
 
 // Proc: New()
 // Parameters: 0
@@ -77,21 +77,21 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 /obj/item/technomancer_catalog/proc/set_up()
 	if(!length(spell_instances))
 		for(var/S in GLOB.all_technomancer_spells)
-			LAZYADD(spell_instances, new S())
+			own_add(src, "spell_instances", new S())
 	if(!length(equipment_instances))
 		for(var/E in GLOB.all_technomancer_equipment)
-			LAZYADD(equipment_instances, new E())
+			own_add(src, "equipment_instances", new E())
 	if(!length(consumable_instances))
 		for(var/C in GLOB.all_technomancer_consumables)
-			LAZYADD(consumable_instances, new C())
+			own_add(src, "consumable_instances", new C())
 	if(!length(assistance_instances))
 		for(var/A in GLOB.all_technomancer_assistance)
-			LAZYADD(assistance_instances, new A())
+			own_add(src, "assistance_instances", new A())
 
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()
 	for(var/datum/technomancer/assistance/apprentice/A in assistance_instances)
-		LAZYREMOVE(assistance_instances, A)
+		own_remove(src, "assistance_instances", A)
 
 // Proc: show_categories()
 // Parameters: 1 (category - the category link to display)

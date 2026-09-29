@@ -72,15 +72,12 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 /// Spawns `type` at the scenario site and tracks it for cleanup.
 /datum/balance_scenario/proc/spawn_thing(type)
 	var/atom/movable/thing = new type(site)
-	LAZYADD(spawned, thing)
+	own_add(src, "spawned", thing)
 	return thing
 
 /// Deletes everything the scenario spawned (between trials and at the end).
 /datum/balance_scenario/proc/cleanup()
-	for(var/atom/movable/thing as anything in spawned)
-		if(!QDELETED(thing))
-			qdel(thing)
-	spawned = null
+	own_clear(src, "spawned", OWN_DELETE)
 
 /// Starts a trial: fresh RNG seed, nothing left over from the previous trial.
 /datum/balance_scenario/proc/begin_trial()
@@ -168,7 +165,7 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 			entry["error"] = "no breathable floor to run on"
 			continue
 		var/datum/balance_scenario/scenario = new path
-		scenario.site = site
+		rel_set(scenario, "site", site)
 		entry["description"] = scenario.description
 		var/runtimes_before = GLOB.total_runtimes
 		var/start = REALTIMEOFDAY
@@ -206,4 +203,3 @@ TYPE_TABLE_DECLARE(/datum/balance_scenario, balance_expected_keys, expected_keys
 	log_test("BALANCE: wrote [BALANCE_RESULTS_FILE]")
 	return document
 
-DECLARE_REF(/datum/balance_scenario, "site", BACK, null)

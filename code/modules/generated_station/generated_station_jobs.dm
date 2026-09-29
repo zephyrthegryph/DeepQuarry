@@ -7,8 +7,8 @@
 /// is spent, so nothing sleeps and a partially built z-level is never exposed to
 /// players. The normal budget deliberately leaves most of a 25 ms tick to the live game.
 /datum/generated_station_materialization_job
-	var/tmp/materializer_handle
-	var/tmp/flight_plan_handle
+	var/tmp/datum/generated_station_materializer/materializer
+	var/tmp/datum/flight_plan/flight_plan
 	var/phase = "queued"
 	var/progress = 0
 	var/tick_budget = GENERATED_STATION_TICK_BUDGET_NORMAL
@@ -21,7 +21,7 @@
 	var/finished_at
 	var/failed = FALSE
 	var/failure_reason
-	var/tmp/materialization_handle
+	var/tmp/datum/generated_station_materialization/materialization
 	/// Runs every phase at once (materialize()), or as lane work (materialize_async()).
 	var/now = TRUE
 	/// The materializer's phases, the one running and where it resumes.
@@ -30,12 +30,12 @@
 	var/phase_cursor
 	/// materialize_async(): list(callback) invoked with the materialization (or null) at the end.
 	/// Invoked with the materialization when the run ends; the caller made it.
-	var/datum/callback/on_done
+	var/list/on_done
 
 /datum/generated_station_materialization_job/New(datum/generated_station_materializer/new_materializer, datum/flight_plan/new_flight_plan, fast_mode = FALSE)
 	..()
-	materializer_handle = om_handle(new_materializer)
-	flight_plan_handle = om_handle(new_flight_plan)
+	rel_set(src, "materializer", new_materializer)
+	rel_set(src, "flight_plan", new_flight_plan)
 	if(fast_mode)
 		tick_budget = GENERATED_STATION_TICK_BUDGET_FAST
 	var/static/next_timer_id = 0
@@ -79,7 +79,7 @@
 	return end_run()
 
 /// Materializes as lane work; `new_on_done` is invoked with the materialization (or null).
-/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, datum/callback/new_on_done)
+/datum/generated_station_materialization_job/proc/execute_async(datum/generated_station_spec/spec, z_level, origin_x, origin_y, list/new_on_done)
 	now = FALSE
 	on_done = new_on_done
 	if(!start(spec, z_level, origin_x, origin_y))
@@ -124,38 +124,37 @@
 	if(failed || !materializer().result)
 		failed = TRUE
 		failure_reason = materializer().last_failure_details || phase
-		materialization_handle = null
+		rel_clear(src, "materialization")
 		return null
-	var/datum/generated_station_materialization/done = materializer().result
-	// Hand-off: the materializer owns its result (DECLARE_REF(..., OWNED)) only while building it, so
-	// deleting the materializer afterwards must not delete the station it built.
-	materializer().result = null
-	materialization_handle = om_handle(done)
+	// Hand-off: the materializer owns its result only while building it, so it lets go here
+	// (deleting the materializer afterwards must not delete the station it built). The expedition
+	// site adopts it (own_set) when it is published.
+	var/datum/generated_station_materialization/done = own_take(materializer(), "result")
+	rel_set(src, "materialization", done)
 	checkpoint("Station materialization complete", 62)
 	return done
 
 /datum/generated_station_materialization_job/proc/finish_async()
 	var/datum/generated_station_materialization/result = end_run()
 	materializer().record_job_telemetry(src)
-	var/datum/callback/callback = on_done
+	var/list/callback = on_done
 	qdel(src)
-	callback?.Invoke(result)
+	om_run(callback, result)
 
 #undef GENERATED_STATION_TICK_BUDGET_NORMAL
 #undef GENERATED_STATION_TICK_BUDGET_FAST
 
-/// LC-refs: the materializer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materializer var.
 /datum/generated_station_materialization_job/proc/materializer() as /datum/generated_station_materializer
-	return om_resolve(materializer_handle)
+	return materializer
 
-/// LC-refs: the flight_plan this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the flight_plan var.
 /datum/generated_station_materialization_job/proc/flight_plan() as /datum/flight_plan
-	return om_resolve(flight_plan_handle)
+	return flight_plan
 
-/// LC-refs: the materialization this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the materialization var.
 /datum/generated_station_materialization_job/proc/materialization() as /datum/generated_station_materialization
-	return om_resolve(materialization_handle)
+	return materialization
 
 
 
-DECLARE_REF(/datum/generated_station_materialization_job, "on_done", HELD, null)

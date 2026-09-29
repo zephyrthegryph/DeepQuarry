@@ -15,7 +15,7 @@
 	var/icon_success = "restorer_success"
 	var/icon_fail = "restorer_fail"
 
-	var/inserted_handle
+	var/obj/item/card/id/inserted
 
 //Frame
 /datum/frame/frame_types/id_restorer
@@ -30,6 +30,6 @@
 /datum/frame/frame_types/id_restorer/get_icon_state(state)
 	return "restorer_b[state]"
 
-/// LC-refs: inserted -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// inserted (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/id_restorer/proc/inserted() as /obj/item/card/id
-	return om_resolve(inserted_handle)
+	return inserted

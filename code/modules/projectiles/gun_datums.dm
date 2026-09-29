@@ -26,16 +26,16 @@
 /// a cleaner API for switching and describing the selected mode.
 /datum/gun_firemode_selector
 	/// The gun that owns this selector.
-	var/gun_ref = null
+	var/obj/item/gun/gun_ref = null // a relation view
 
 /datum/gun_firemode_selector/New(obj/item/gun/gun)
 	..()
 	if(gun)
-		gun_ref = om_handle(gun)
+		rel_set(src, "gun_ref", gun)
 
 /// Returns the currently active /datum/firemode, or null if no firemodes set.
 /datum/gun_firemode_selector/proc/current_mode()
-	var/obj/item/gun/gun = om_resolve(gun_ref)
+	var/obj/item/gun/gun = gun_ref
 	if(!gun || !length(gun.firemodes))
 		return null
 	return LAZYACCESS(gun.firemodes, gun.sel_mode)
@@ -43,7 +43,7 @@
 /// Advance to the next mode (wrapping).  Applies the mode to the gun and
 /// notifies user.  Returns the new mode or null if no change.
 /datum/gun_firemode_selector/proc/cycle(mob/user)
-	var/obj/item/gun/gun = om_resolve(gun_ref)
+	var/obj/item/gun/gun = gun_ref
 	if(!gun || length(gun.firemodes) <= 1)
 		return null
 	gun.sel_mode++

@@ -51,9 +51,9 @@
 		voremob_loaded = TRUE
 		init_vore()
 	if(istype(Vac))
-		Vac.output_dest = om_handle(vore_selected)
+		rel_set(Vac, "output_dest", vore_selected)
 		Vac.vac_power = 3
-		Vac.vac_owner = src
+		rel_set(Vac, "vac_owner", src)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()
@@ -115,7 +115,7 @@
 	B.belly_fullscreen_color4 = "#CCFFFF"
 	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
 
-	vore_selected = B
+	rel_set(src, "vore_selected", B)
 
 	B = new /obj/belly/longneck(src)
 	B.affects_vore_sprites = TRUE
@@ -197,10 +197,10 @@
 					L.remove_from_mob(self.Vac, self)
 				else
 					self.Vac.forceMove(self)
-		var/atom/movable/vac_output = om_resolve(self.Vac.output_dest)
+		var/atom/movable/vac_output = self.Vac.output_dest
 		if(!vac_output)
 			if(isbelly(self.vore_selected))
-				self.Vac.output_dest = om_handle(self.vore_selected)
+				rel_set(self.Vac, "output_dest", self.vore_selected)
 	if(!istype(T) || !istype(self.Vac) || !(self.ai_brain != null) || self.Vac.loc != self || self.stat)
 		return
 	if(istype(T, /turf/simulated))
@@ -322,6 +322,5 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 //Custom Swoopie AI to make it swoop up trash when asked to
 // Select an obj if no mobs are around.
 
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", OWNED, null)
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, "Vac", /obj/item/vac_attachment/swoopie)

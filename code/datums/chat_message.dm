@@ -40,9 +40,9 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	/// The visual element of the chat messsage
 	var/image/message
 	/// The location in which the message is appearing
-	var/message_loc_handle
+	var/atom/message_loc
 	/// The client who heard this message
-	var/owned_by_handle
+	var/client/owned_by
 	/// Contains the scheduled destruction time
 	var/scheduled_destruction
 	/// Contains the approximate amount of lines for height decay
@@ -54,7 +54,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	/// Our animation lifespan, how long this message will last
 	var/animate_lifespan = 0
 	/// Callback to finish_image_generation passed to GLOB.runechat_service
-	var/datum/callback/finish_callback
+	var/list/finish_callback // om_callable() spec queued on the runechat service
 
 /**
  * Constructs a chat message overlay
@@ -76,19 +76,17 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return
 	generate_image(text, target, owner, extra_classes, lifespan)
 
-/// Phase 1: a message leaves its client's images and seen list (keyed by the loc's handle), and
+/// Phase 1: a message leaves its client's images and seen list (keyed by the loc), and
 /// GLOB.runechat_service's queue, while its image and callback (owned, dropped in phase 4) still exist.
 /datum/chatmessage/lifecycle_unbind()
 	var/client/owner = owned_by()
 	if(owner)
 		if(owner.seen_messages)
-			LAZYREMOVEASSOC(owner.seen_messages, message_loc_handle, src)
+			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
 		owner.images.Remove(message)
 	if (finish_callback)
-		GLOB.runechat_service.message_queue -= finish_callback
+		GLOB.runechat_service.message_queue -= list(finish_callback)
 
-DECLARE_REF(/datum/chatmessage, "message", OWNED, null)
-DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 
 /**
  * Generates a chat message image representation
@@ -107,7 +105,7 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 		return
 
 	// Register client who owns this message
-	owned_by_handle = om_handle(owner.client)
+	rel_set(src, "owned_by", owner.client)
 	// Clients cannot be hooked: a vanished client leaves owned_by() null and the
 	// message is dropped by its om_qdel_after() lifespan timer.
 
@@ -196,8 +194,8 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 	if(!VERB_SHOULD_YIELD)
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
 
-	finish_callback = CALLBACK(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
-	GLOB.runechat_service.message_queue += finish_callback
+	finish_callback = om_callable(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
+	GLOB.runechat_service.message_queue += list(finish_callback)
 	GLOB.runechat_service.demand()
 
 /datum/chatmessage/proc/finish_image_generation(msgwidth, mheight, atom/target, mob/owner, complete_text, lifespan)
@@ -208,7 +206,7 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 	var/starting_height = target.runechat_y_offset()
 
 	// Translate any existing messages upwards, apply exponential decay factors to timers
-	message_loc_handle = om_handle(target.runechat_holder(src))
+	rel_set(src, "message_loc", target.runechat_holder(src))
 	if(!owned_by())
 		qdel(src)
 		return
@@ -216,7 +214,7 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 	if(owned_by().seen_messages)
 		var/idx = 1
 		var/combined_height = approx_lines
-		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc_handle])
+		for(var/datum/chatmessage/m as anything in owned_by().seen_messages[message_loc])
 			combined_height += m.approx_lines
 
 			var/time_spent = rough_time - m.animate_start
@@ -287,8 +285,9 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 		message.plane = PLANE_PLAYER_HUD_ABOVE
 
 	// View the message
-	LAZYADDASSOCLIST(owned_by().seen_messages, message_loc_handle, src)
-	owned_by().images |= message
+	var/client/viewer = owned_by
+	LAZYADDASSOCLIST(viewer.seen_messages, message_loc, src)
+	viewer.images |= message
 
 	// Fade in
 	animate(message, alpha = 255, time = CHAT_MESSAGE_SPAWN_TIME)
@@ -491,10 +490,10 @@ DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 #undef CHAT_RUNE_EMOTE
 #undef CHAT_RUNE_RADIO
 
-/// LC-refs: the atom the message floats over -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the message floats over (a relation view: null once it is deleted).
 /datum/chatmessage/proc/message_loc() as /atom
-	return om_resolve(message_loc_handle)
+	return message_loc
 
-/// LC-refs: the client who heard the message -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client who heard the message (a relation view).
 /datum/chatmessage/proc/owned_by() as /client
-	return om_resolve(owned_by_handle)
+	return owned_by

@@ -16,7 +16,7 @@
 
 /obj/machinery/smartfridge/tcrystal/proc/mod_amount(datum/stored_item/I,mod)
 	if(I.amount + mod <= 0)
-		item_records.Remove(I)
+		own_take_member(src, "item_records", I)
 		qdel(I)
 	else
 		I.amount += mod
@@ -31,7 +31,7 @@
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
-		item_records.Add(item)
+		own_add(src, "item_records", item)
 		consume(O)
 
 /obj/machinery/smartfridge/tcrystal/tgui_act(action, params, datum/tgui/ui)

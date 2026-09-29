@@ -7,13 +7,15 @@
 	var/ID
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
-DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
+OWN(/datum/seed_pile, seeds, OWN_SPILL)
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
 	amount = 1
-	seed_type_static = O.seed()
-	seeds += O
+	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
+	var/datum/seed/S = O.seed()
+	proto_set(src, "seed_type_static", (!S || is_registered(S)) ? S : S.copy_line())
+	own_add(src, "seeds", O)
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
@@ -423,22 +425,22 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 				var/obj/O = pick(N.seeds)
 				if(O)
 					--N.amount
-					N.seeds -= O
+					own_take_member(N, "seeds", O)
 					if(N.amount <= 0 || N.seeds.len <= 0)
-						piles -= N
-						LAZYREMOVE(piles_contra, N)
+						own_take_member(src, "piles", N)
+						own_take_member(src, "piles_contra", N)
 						qdel(N)
 					O.forceMove(src.loc)
 				else
-					piles -= N
-					LAZYREMOVE(piles_contra, N)
+					own_take_member(src, "piles", N)
+					own_take_member(src, "piles_contra", N)
 					qdel(N)
 				return TRUE
 			else if(action == "purge")
 				for(var/obj/O in N.seeds)
 					qdel(O)
-				piles -= N
-				LAZYREMOVE(piles_contra, N)
+				own_take_member(src, "piles", N)
+				own_take_member(src, "piles_contra", N)
 				qdel(N)
 				return TRUE
 			break
@@ -499,22 +501,22 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount
-				N.seeds += (O)
+				own_add(N, "seeds", (O))
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		LAZYADD(piles_contra, new /datum/seed_pile(O, newID))
+		own_add(src, "piles_contra", new /datum/seed_pile(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
 		if (N.matches(O))
 			++N.amount
-			N.seeds += (O)
+			own_add(N, "seeds", (O))
 			return
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	piles += new /datum/seed_pile(O, newID)
+	own_add(src, "piles", new /datum/seed_pile(O, newID))
 
 	return
 
@@ -637,10 +639,8 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 		/obj/item/seeds/lustflower = 2,
 		/obj/item/seeds/pitcherseed = 3)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The pile's seed (PROTO): a registered line, or its own snapshot.
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return seed_type_static
-DECLARE_REF(/datum/seed_pile, "seed_type_static", STATIC, null)
 
-DECLARE_REF(/obj/machinery/seed_storage, "piles", OWNED_LIST, null)
-DECLARE_REF(/obj/machinery/seed_storage, "piles_contra", OWNED_LIST, null)
+PROTO(/datum/seed_pile, seed_type_static)

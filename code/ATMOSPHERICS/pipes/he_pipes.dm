@@ -45,7 +45,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(heat_exchange_actionable)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_TEMPERATURE, om_callable(src, PROC_REF(heat_exchange_actionable)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -106,11 +106,11 @@
 
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,node2_dir))
 		if(can_be_node(target, 2))
-			node2 = target
+			rel_set(src, "node2", target)
 			break
 	if(!node1 && !node2)
 		qdel(src)
@@ -238,11 +238,11 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/junction/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src,initialize_directions))
 		if(target.initialize_directions & get_dir(target,src))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,initialize_directions_he))
 		if(target.initialize_directions_he & get_dir(target,src))
-			node2 = target
+			rel_set(src, "node2", target)
 			break
 
 	if(!node1&&!node2)

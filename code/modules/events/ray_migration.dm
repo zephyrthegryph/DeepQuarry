@@ -71,7 +71,7 @@
 /datum/event/ray_migration/proc/spawn_one_ray(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/ray(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_ray_destruction))
-	LAZYADD(spawned_ray, M)
+	own_add(src, "spawned_ray", M)
 	return M
 
 // Counts living ray spawned by this event.
@@ -84,7 +84,7 @@
 // If ray is bomphed, remove it from the list.
 /datum/event/ray_migration/proc/on_ray_destruction(mob/M, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	LAZYREMOVE(spawned_ray, M)
+	own_take_member(src, "spawned_ray", M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/ray_migration/end()

@@ -14,7 +14,7 @@
 	src.remove_changeling_powers() //First, remove the verbs.
 	var/datum/changeling/ling_datum = changeling
 	ling_datum.readapts--
-	ling_datum.purchased_powers = list() //Then wipe all the powers we bought.
+	rel_clear(ling_datum, "purchased_powers") //Then wipe all the powers we bought.
 	ling_datum.geneticpoints = ling_datum.max_geneticpoints //Now refund our points to the maximum.
 	ling_datum.chem_recharge_rate = 0.5 //If glands were bought, revert that upgrade.
 	ling_datum.thermal_sight = FALSE

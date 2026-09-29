@@ -22,7 +22,7 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/active1_handle
+	var/datum/data/record/active1
 	var/a_id = null
 	var/list/temp = null
 	var/printing = null
@@ -226,7 +226,7 @@
 	if(!user.unEquip(O))
 		return FALSE
 	O.forceMove(src)
-	scan = O
+	own_set(src, "scan", O)
 	to_chat(user, "You insert [O].")
 	tgui_interact(user)
 	return TRUE
@@ -381,7 +381,7 @@
 			if(GENERAL_RECORD_DATA)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+				if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 					var/list/fields = list()
 					general["fields"] = fields
 					fields[++fields.len] = FIELD("Name", active1().fields["name"], "name")
@@ -459,8 +459,8 @@
 
 	add_fingerprint(ui.user)
 
-	if(!GLOB.data_core.general.Find(active1()))
-		active1_handle = null
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, "active1")
 
 	. = TRUE
 	if(tgui_act_modal(action, params))
@@ -472,13 +472,13 @@
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 		if("cleartemp")
 			temp = null
 		if("login")
@@ -495,7 +495,7 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1_handle = null
+				rel_clear(src, "active1")
 				screen = GENERAL_RECORD_LIST
 		else
 			. = FALSE
@@ -511,17 +511,17 @@
 					scan.forceMove(loc)
 					if(ishuman(ui.user) && !ui.user.get_active_hand())
 						ui.user.put_in_hands(scan)
-					scan = null
+					own_take(src, "scan")
 				authenticated = null
 				screen = null
-				active1_handle = null
+				rel_clear(src, "active1")
 			if("screen")
 				var/requested_screen = text2num(params["screen"])
 				if(requested_screen in list(GENERAL_RECORD_FINANCES, GENERAL_RECORD_CONTRACTS))
 					screen = requested_screen
 				else
 					screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
-				active1_handle = null
+				rel_clear(src, "active1")
 			if("contract_accept")
 				var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 				return accept_management_contract(contract, ui.user)
@@ -621,20 +621,20 @@
 							qdel(R)
 					set_temp("Employment record deleted.")
 					var/datum/data/record/deleted_record = active1()
-					active1_handle = null
+					rel_clear(src, "active1")
 					QDEL_NULL(deleted_record)
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!GLOB.data_core.general.Find(general_record))
+				if(!(general_record in GLOB.data_core.general))
 					set_temp("Record not found.", "danger")
 					return
 
-				active1_handle = om_handle(general_record)
+				rel_set(src, "active1", general_record)
 				screen = GENERAL_RECORD_DATA
 			if("new")
 				if(GLOB.PDA_Manifest)
 					GLOB.PDA_Manifest.Cut()
-				active1_handle = om_handle(GLOB.data_core.CreateGeneralRecord())
+				rel_set(src, "active1", GLOB.data_core.CreateGeneralRecord())
 				screen = GENERAL_RECORD_DATA
 				set_temp("Employment record created.", "success")
 			if("del_c")
@@ -732,7 +732,7 @@
 /obj/machinery/computer/skills/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Medical Record") + "</center><br>"
-	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
@@ -805,8 +805,8 @@ DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp)
 
 #undef FIELD
 
-DECLARE_REF(/obj/machinery/computer/skills, "scan", HELD, null)
+OWN(/obj/machinery/computer/skills, scan, OWN_CONTAINED)
 
-/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record
-	return om_resolve(active1_handle)
+	return active1

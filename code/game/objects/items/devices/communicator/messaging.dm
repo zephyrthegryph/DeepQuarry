@@ -37,7 +37,7 @@
 			to_chat(src, span_notice("[icon2html(origin_atom,src.client)] Receiving communicator request from [origin_atom].  To answer, use the " + span_bold("Call Communicator") + "\
 			verb, and select that name to answer the call."))
 			src << 'sound/machines/defib_SafetyOn.ogg'
-			LAZYOR(comm.voice_invites, src)
+			rel_add(comm, "voice_invites", src)
 	if(message == "ping")
 		if(client && client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			var/random = rand(450,700)
@@ -62,7 +62,7 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.im_contacts, src)
+		rel_add(comm, "im_contacts", src)
 		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else if(istype(candidate, /obj/item/integrated_circuit))
 		var/obj/item/integrated_circuit/CIRC = candidate
@@ -70,7 +70,7 @@
 		LAZYADD(im_list, list(list("address" = origin_address, "to_address" = exonet.address, "im" = text)))
 	else return
 
-	LAZYOR(im_contacts, candidate)
+	rel_add(src, "im_contacts", candidate)
 
 	if(!who)
 		return

@@ -5,8 +5,8 @@
 
 /datum/rogue/zonemaster
 	//our area
-	var/tmp/myarea_handle
-	var/tmp/myshuttle_landmark_handle
+	var/tmp/area/asteroid/rogue/myarea
+	var/tmp/obj/effect/shuttle_landmark/myshuttle_landmark
 
 	//world.time
 	EXPIRY_DECLARE(prepared_at)
@@ -26,13 +26,14 @@
 	var/original_mobs = 0
 
 	//in-use spawns from the area
-	var/list/rockspawns	// OM handles (om_resolve_all())
-	var/list/mobspawns	// OM handles (om_resolve_all())
+	/// Relation lists: the spawners enabled for this preparation.
+	var/list/obj/asteroid_spawner/rockspawns
+	var/list/obj/rogue_mobspawner/mobspawns
 
 /datum/rogue/zonemaster/New(area/A)
 	ASSERT(A)
-	myarea_handle = om_handle(A)
-	myshuttle_landmark_handle = om_handle(locate_within(myarea(), /obj/effect/shuttle_landmark))
+	myarea = A
+	rel_set(src, "myshuttle_landmark", locate_within(myarea(), /obj/effect/shuttle_landmark))
 	if(!istype(myshuttle_landmark(), /obj/effect/shuttle_landmark))
 		WARNING("Zonemaster cannot find a shuttle landmark in its area '[A]'")
 	om_after(src, 1 SECOND, PROC_REF(report_clean)) //This is called from controller New() and freaks out if this calls back too fast.
@@ -116,7 +117,7 @@
 	ASSERT(SP && A)
 
 	GLOB.rm_controller.dbg("ZM(pa): Placing at point [SP.x],[SP.y],[SP.z].")
-	SP.myasteroid_handle = om_handle(A)
+	rel_set(SP, "myasteroid", A)
 
 	//Bottom-left corner of our bounding box
 	var/BLx = SP.x - (A.width/2)
@@ -180,7 +181,7 @@
 		else
 			M.turf_resource_types |= TURF_HAS_ORE
 			M.make_ore()
-		LAZYADD(mineral_rocks, M)
+		rel_add(src, "mineral_rocks", M)
 		//If above difficulty threshold make rare ore instead (M.turf_resource_types |= TURF_HAS_RARE_ORE)
 	//Increase with difficulty etc
 
@@ -188,7 +189,7 @@
 		return
 
 	if(isnull(M.geologic_data))
-		M.geologic_data = new /datum/geosample(M)
+		own_set(M, "geologic_data", new /datum/geosample(M))
 
 	if(!prob(XENOARCH_SPAWN_CHANCE))
 		return
@@ -201,7 +202,7 @@
 	if(!farEnough)
 		return
 
-	GLOB.xenoarch_service.digsite_spawning_turfs.Add(M)
+	rel_add(GLOB.xenoarch_service, "digsite_spawning_turfs", M)
 
 	var/digsite = get_random_digsite_type()
 	var/target_digsite_size = rand(DIGSITESIZE_LOWER, DIGSITESIZE_UPPER)
@@ -230,16 +231,15 @@
 		GLOB.rm_controller.dbg("ZM(par): Adding archeo find to [M.x],[M.y].")
 		processed_turfs.Add(archeo_turf)
 		if(isnull(archeo_turf.finds))
-			archeo_turf.finds = list()
 			if(prob(50))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 190)))
 			else if(prob(75))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 90)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(110, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 90)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(110, 190)))
 			else
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(10, 50)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(60, 140)))
-				archeo_turf.finds.Add(new /datum/find(digsite, rand(150, 190)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(10, 50)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(60, 140)))
+				own_add(archeo_turf, "finds", new /datum/find(digsite, rand(150, 190)))
 
 			//sometimes a find will be close enough to the surface to show
 			var/datum/find/F = archeo_turf.finds[1]
@@ -249,17 +249,17 @@
 
 		//have a chance for an artifact to spawn here, but not in plant digsites
 		if(isnull(M.artifact_find) && digsite != DIGSITE_GARDEN)
-			GLOB.xenoarch_service.artifact_spawning_turfs.Add(archeo_turf)
+			rel_add(GLOB.xenoarch_service, "artifact_spawning_turfs", archeo_turf)
 
 	//create artifact machinery
 	var/num_artifacts_spawn = rand(ARTIFACTSPAWNNUM_LOWER, ARTIFACTSPAWNNUM_UPPER)
-	while(GLOB.xenoarch_service.artifact_spawning_turfs.len > num_artifacts_spawn)
-		pick_n_take(GLOB.xenoarch_service.artifact_spawning_turfs)
+	while(length(GLOB.xenoarch_service.artifact_spawning_turfs) > num_artifacts_spawn)
+		rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", pick(GLOB.xenoarch_service.artifact_spawning_turfs))
 
-	var/list/artifacts_spawnturf_temp = GLOB.xenoarch_service.artifact_spawning_turfs.Copy()
+	var/list/artifacts_spawnturf_temp = length(GLOB.xenoarch_service.artifact_spawning_turfs) ? GLOB.xenoarch_service.artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
-		artifact_turf.artifact_find = new()
+		own_set(artifact_turf, "artifact_find", new /datum/artifact_find())
 
 	#undef XENOARCH_SPAWN_CHANCE
 	#undef DIGSITESIZE_LOWER
@@ -280,20 +280,20 @@
 	GLOB.rm_controller.dbg("ZM(p): Randomizing spawns.")
 	randomize_spawns()
 	GLOB.rm_controller.dbg("ZM(p): [length(rockspawns)] picked.")
-	for(var/obj/asteroid_spawner/SP in om_resolve_all(rockspawns))
+	for(var/obj/asteroid_spawner/SP in rockspawns)
 		GLOB.rm_controller.dbg("ZM(p): Creating asteroid for [SP.x],[SP.y],[SP.z].")
 		var/datum/rogue/asteroid/A = generate_asteroid()
 		GLOB.rm_controller.dbg("ZM(p): Placing asteroid.")
 		place_asteroid(A,SP)
 
-	for(var/obj/rogue_mobspawner/SP in om_resolve_all(mobspawns))
+	for(var/obj/rogue_mobspawner/SP in mobspawns?.Copy())
 		GLOB.rm_controller.dbg("ZM(p): Spawning mob at [SP.x],[SP.y],[SP.z].")
 		//Make sure we can spawn a spacemob here
 		if(!istype(get_turf(SP),/turf/space))
 			GLOB.rm_controller.dbg("ZM(p): Turf blocking mob spawn at [SP.x],[SP.y],[SP.z].")
-			LAZYREMOVE(mobspawns, om_handle_of(SP))
+			rel_remove(src, "mobspawns", SP)
 			for(var/obj/rogue_mobspawner/NS in myarea().mob_spawns)
-				if(om_handle_of(NS) in mobspawns)
+				if(NS in mobspawns)
 					continue
 				if(istype(get_turf(NS),/turf/space))
 					SP = NS
@@ -304,7 +304,7 @@
 			GLOB.rm_controller.dbg("ZM(p): Picked [mobchoice] to spawn.")
 			var/mob/living/newmob = new mobchoice(get_turf(SP))
 			newmob.faction = FACTION_ASTEROID_BELT
-			LAZYADD(spawned_mobs, newmob)
+			rel_add(src, "spawned_mobs", newmob)
 
 	GLOB.rm_controller.dbg("ZM(p): Zone generation done.")
 	log_world("RM(stats): PREP [myarea()] at [world.time] with [length(spawned_mobs)] mobs, [length(mineral_rocks)] minrocks, total of [length(rockspawns)] rockspawns, [length(mobspawns)] mobspawns.") //DEBUG code for playtest stats gathering.
@@ -315,19 +315,19 @@
 //Randomize the landmarks that are enabled
 /datum/rogue/zonemaster/proc/randomize_spawns(chance = 50)
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(rockspawns)] rockspawns.")
-	LAZYCLEARLIST(rockspawns)
+	rel_clear(src, "rockspawns")
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(rockspawns)] rockspawns.")
 	for(var/obj/asteroid_spawner/SP in myarea().asteroid_spawns)
 		if(prob(chance))
-			LAZYADD(rockspawns, om_handle(SP))
+			rel_add(src, "rockspawns", SP)
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(rockspawns)] new rockspawns with [chance]% chance.")
 
 	GLOB.rm_controller.dbg("ZM(rs): Previously [length(mobspawns)] mobspawns.")
-	LAZYCLEARLIST(mobspawns)
+	rel_clear(src, "mobspawns")
 	GLOB.rm_controller.dbg("ZM(rs): Now [length(mobspawns)] mobspawns.")
 	for(var/obj/rogue_mobspawner/SP in myarea().mob_spawns)
 		if(prob(GLOB.rm_controller.diffstep_chances[GLOB.rm_controller.diffstep]))
-			LAZYADD(mobspawns, om_handle(SP))
+			rel_add(src, "mobspawns", SP)
 			original_mobs++
 	GLOB.rm_controller.dbg("ZM(rs): Picked [length(mobspawns)] new mobspawns with [chance]% chance.")
 	return myarea()
@@ -350,7 +350,7 @@
 		if(has_minerals == 0)
 			tally += RM_DIFF_VALUE_ORE
 
-	LAZYCLEARLIST(mineral_rocks) //For good measure, to prevent rescoring.
+	rel_clear(src, "mineral_rocks") //For good measure, to prevent rescoring.
 
 	for(var/I = 1, I <= length(spawned_mobs), I++)
 		if(isnull(LAZYACCESS(spawned_mobs, I)))
@@ -362,7 +362,7 @@
 				tally += RM_DIFF_VALUE_MOB
 				GLOB.rm_controller.dbg("ZM(sz): Scoring one mob dead.")
 
-	LAZYCLEARLIST(spawned_mobs)
+	rel_clear(src, "spawned_mobs")
 	original_mobs = 0
 
 	GLOB.rm_controller.adjust_difficulty(tally)
@@ -377,10 +377,10 @@
 	GLOB.rm_controller.unmark_ready(src)
 
 	//Cut these lists so qdel can dereference the things properly
-	LAZYCLEARLIST(mineral_rocks)
-	LAZYCLEARLIST(spawned_mobs)
-	LAZYCLEARLIST(rockspawns)
-	LAZYCLEARLIST(mobspawns)
+	rel_clear(src, "mineral_rocks")
+	rel_clear(src, "spawned_mobs")
+	rel_clear(src, "rockspawns")
+	rel_clear(src, "mobspawns")
 
 	clean_pass(delay, 1)
 	return myarea()
@@ -440,11 +440,14 @@
 /datum/rogue/zonemaster/proc/report_clean()
 	GLOB.rm_controller.mark_clean(src)
 
-/// LC-refs: the myarea this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the myarea var.
 /datum/rogue/zonemaster/proc/myarea() as /area/asteroid/rogue
-	return om_resolve(myarea_handle)
+	return myarea
 
-/// LC-refs: the myshuttle_landmark this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the myshuttle_landmark var.
 /datum/rogue/zonemaster/proc/myshuttle_landmark() as /obj/effect/shuttle_landmark
-	return om_resolve(myshuttle_landmark_handle)
+	return myshuttle_landmark
 
+
+REL_LIST(/datum/rogue/zonemaster, rockspawns)
+REL_LIST(/datum/rogue/zonemaster, mobspawns)

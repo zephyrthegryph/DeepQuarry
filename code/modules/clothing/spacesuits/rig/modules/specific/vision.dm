@@ -17,43 +17,43 @@
 	mode = "night vision"
 
 /datum/rig_vision/nvg/New()
-	glasses = new /obj/item/clothing/glasses/night
+	own_set(src, "glasses", new /obj/item/clothing/glasses/night)
 
 /datum/rig_vision/thermal
 	mode = "thermal scanner"
 
 /datum/rig_vision/thermal/New()
-	glasses = new /obj/item/clothing/glasses/thermal
+	own_set(src, "glasses", new /obj/item/clothing/glasses/thermal)
 
 /datum/rig_vision/meson
 	mode = "meson scanner"
 
 /datum/rig_vision/meson/New()
-	glasses = new /obj/item/clothing/glasses/meson
+	own_set(src, "glasses", new /obj/item/clothing/glasses/meson)
 
 /datum/rig_vision/graviton
 	mode = "graviton scanner"
 
 /datum/rig_vision/graviton/New()
-	glasses = new /obj/item/clothing/glasses/graviton
+	own_set(src, "glasses", new /obj/item/clothing/glasses/graviton)
 
 /datum/rig_vision/sechud
 	mode = "security HUD"
 
 /datum/rig_vision/sechud/New()
-	glasses = new /obj/item/clothing/glasses/hud/security
+	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/security)
 
 /datum/rig_vision/medhud
 	mode = "medical HUD"
 
 /datum/rig_vision/medhud/New()
-	glasses = new /obj/item/clothing/glasses/hud/health
+	own_set(src, "glasses", new /obj/item/clothing/glasses/hud/health)
 
 /datum/rig_vision/material
 	mode = "material scanner"
 
 /datum/rig_vision/material/New()
-	glasses = new /obj/item/clothing/glasses/material
+	own_set(src, "glasses", new /obj/item/clothing/glasses/material)
 
 /obj/item/rig_module/vision
 
@@ -205,10 +205,8 @@
 // There should only ever be one vision module installed in a suit.
 /obj/item/rig_module/vision/installed()
 	..()
-	holder.visor = src
+	rel_set(holder, "visor", src)
 
-DECLARE_REF(/obj/item/rig_module/vision, "holder", PAIR, "visor")
-DECLARE_REF(/obj/item/rig, "visor", PAIR, "holder")
 
 /obj/item/rig_module/vision/engage()
 
@@ -224,7 +222,7 @@ DECLARE_REF(/obj/item/rig, "visor", PAIR, "holder")
 		vision_index++
 		if(vision_index > vision_modes.len)
 			vision_index = 1
-		vision = vision_modes[vision_index]
+		rel_set(src, "vision", vision_modes[vision_index])
 
 		to_chat(holder.wearer(), span_blue("You cycle your sensors to <b>[vision.mode]</b> mode."))
 	else
@@ -246,17 +244,13 @@ DECLARE_REF(/obj/item/rig, "visor", PAIR, "holder")
 		return
 
 	vision_index = 1
-	var/list/processed_vision = list()
+	// vision_modes starts as a list of types; it becomes the module's owned instances.
+	var/list/mode_types = vision_modes.Copy()
+	own_clear(src, "vision_modes") // the type list holds no children yet: this only empties it
+	for(var/vision_mode in mode_types)
+		var/datum/rig_vision/vision_datum = own_add(src, "vision_modes", new vision_mode)
+		if(!vision)
+			rel_set(src, "vision", vision_datum)
 
-	for(var/vision_mode in vision_modes)
-		var/datum/rig_vision/vision_datum = new vision_mode
-		if(!vision) vision = vision_datum
-		processed_vision += vision_datum
-
-	vision_modes = processed_vision
-
-DECLARE_REF(/datum/rig_vision, "glasses", OWNED, null)
 
 // vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.
-DECLARE_REF(/obj/item/rig_module/vision, "vision_modes", OWNED_LIST, null)
-DECLARE_REF(/obj/item/rig_module/vision, "vision", BACK, null)

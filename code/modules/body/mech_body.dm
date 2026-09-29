@@ -254,7 +254,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	var/datum/mech_affliction/A = affliction_for(id)
 	if(!A || (A in host.afflictions))
 		return FALSE
-	LAZYADD(host.afflictions, A)
+	rel_add(host, "afflictions", A)
 	A.on_afflicted(host)
 	return TRUE
 
@@ -263,7 +263,7 @@ GLOBAL_TABLE(mech_affliction_flyweights, GLOBAL_PROC_REF(build_mech_affliction_f
 	var/datum/mech_affliction/A = affliction_for(id)
 	if(!A || !(A in host.afflictions))
 		return FALSE
-	LAZYREMOVE(host.afflictions, A)
+	rel_remove(host, "afflictions", A)
 	A.on_cleared(host)
 	return TRUE
 

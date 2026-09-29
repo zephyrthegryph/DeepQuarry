@@ -317,19 +317,13 @@
 
 				// Remove link entries from both T and src.
 
-				if(src in T.links)
-					LAZYREMOVE(T.links, src)
-				LAZYREMOVE(links, T)
+				rel_remove(src, "links", T)
 				. = TRUE
 
 		if("link")
 			if(P)
 				if(P.buffer() && P.buffer() != src)
-					if(!(src in P.buffer().links))
-						LAZYADD(P.buffer().links, src)
-
-					if(!(P.buffer() in src.links))
-						LAZYADD(src.links, P.buffer())
+					rel_add(src, "links", P.buffer())
 
 					set_temp("-% Successfully linked with \ref[P.buffer()] [P.buffer().name] %-", "average")
 
@@ -339,14 +333,14 @@
 
 		if("buffer")
 			if(P)
-				P.buffer_handle = om_handle(src)
+				rel_set(P, "buffer", src)
 				set_temp("-% Successfully stored \ref[P.buffer()] [P.buffer().name] in buffer %-", "average")
 			. = TRUE
 
 		if("flush")
 			if(P)
 				set_temp("-% Buffer successfully flushed. %-", "average")
-				P.buffer_handle = null
+				rel_clear(P, "buffer")
 			. = TRUE
 
 		if("cleartemp")
@@ -388,11 +382,9 @@
 		set_temp("-% Too many characters in new network tag %-", "average")
 
 	else
-		for(var/obj/machinery/telecomms/T in links)
-			LAZYREMOVE(T.links, src)
+		rel_clear(src, "links")
 
 		network = newnet
-		links = list()
 		set_temp("-% New network tag assigned: \"[network]\" %-", "average")
 	. = TRUE
 

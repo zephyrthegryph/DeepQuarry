@@ -66,7 +66,7 @@
 	var/tension = 0                         // Current draw on the bow.
 	var/max_tension = 5                     // Highest possible tension.
 	var/release_speed = 5                   // Speed per unit of tension.
-	var/tmp/cell_handle	// Used for firing superheated rods.
+	var/tmp/obj/item/cell/cell	// Used for firing superheated rods.
 	var/current_user                        // Used to check if the crossbow has changed hands since being drawn.
 	w_class = ITEMSIZE_HUGE //.
 
@@ -84,7 +84,7 @@
 	return bolt
 
 /obj/item/gun/launcher/crossbow/handle_post_fire(mob/user, atom/target)
-	bolt = null
+	own_take(src, "bolt")
 	tension = 0
 	update_icon()
 	..()
@@ -102,7 +102,7 @@
 				MSG_OTHERS("%U% relaxes the tension on %T%'s string and removes [bolt]."))
 			bolt.forceMove(get_turf(src))
 			var/obj/item/arrow/A = bolt
-			bolt = null
+			own_take(src, "bolt")
 			A.removed(user)
 		else
 			act_message(user, src, MSG_SELF("You relax the tension on %T%'s string."), MSG_OTHERS("%U% relaxes the tension on %T%'s string."))
@@ -166,7 +166,7 @@
 		C.forceMove(get_turf(user))
 		to_chat(user, span_notice("You jimmy [cell()] out of [src] with [tool]."))
 		playsound(src, tool.usesound, 50, 1)
-		cell_handle = null
+		rel_clear(src, "cell")
 	else
 		to_chat(user, span_notice("[src] doesn't have a cell installed."))
 	return ITEM_INTERACT_SUCCESS
@@ -177,14 +177,14 @@
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
 			user.drop_from_inventory(W, src)
-			bolt = W
+			own_set(src, "bolt", W)
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
 			update_icon()
 			return
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
 			if (R.use(1))
-				bolt = new /obj/item/arrow/rod(src)
+				own_set(src, "bolt", new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
 				update_icon()
@@ -195,7 +195,7 @@
 	if(istype(W, /obj/item/cell))
 		if(!cell())
 			user.drop_item()
-			cell_handle = om_handle(W)
+			rel_set(src, "cell", W)
 			cell().forceMove(src)
 			to_chat(user, span_notice("You jam [cell()] into [src] and wire it to the firing coil."))
 			superheat_rod(user)
@@ -315,8 +315,8 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 		return FALSE
 	return INTERACTION_HANDLED_PASS
 
-/// LC-refs: Used for firing superheated rods. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Used for firing superheated rods. (a relation view: null once it is deleted).
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
-	return om_resolve(cell_handle)
+	return cell
 
-DECLARE_REF(/obj/item/gun/launcher/crossbow, "bolt", HELD, null)
+OWN(/obj/item/gun/launcher/crossbow, bolt, OWN_CONTAINED)

@@ -114,7 +114,7 @@
 			to_chat(L, span_warning("\The [src] ignores you."))
 			return
 
-	friend = L
+	rel_set(src, "friend", L)
 	face_atom(L)
 	to_chat(L, span_notice("\The [src] is now your friend!"))
 	visible_emote(pick("nips [friend].", "brushes against [friend].", "tugs on [friend].", "chrrrrs."))
@@ -238,5 +238,3 @@
 /mob/living/simple_mob/animal/passive/fox/beastmode
 	movement_cooldown = 1
 
-DECLARE_REF(/mob/living/simple_mob/animal/passive/fox, "flee_target", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/animal/passive/fox/renault, "friend", HELD, null)

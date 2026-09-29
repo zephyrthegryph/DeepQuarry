@@ -40,7 +40,7 @@
 	if(T.z in using_map.station_levels)
 		. = FALSE
 
-OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
+OWN_TIMER(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 
 /obj/item/gun/energy/kinetic_accelerator
 	name = "proto-kinetic accelerator"
@@ -133,7 +133,7 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 		. += A
 
 /obj/item/gun/energy/kinetic_accelerator/proc/modify_projectile(obj/item/projectile/kinetic/K)
-	K.kinetic_gun_handle = om_handle(src) //do something special on-hit, easy!
+	rel_set(K, "kinetic_gun", src) //do something special on-hit, easy!
 	for(var/A in get_modkits())
 		var/obj/item/borg/upgrade/modkit/M = A
 		M.modify_projectile(K)
@@ -230,7 +230,7 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	var/pressure_decrease_active = FALSE
 	var/pressure_decrease = 1/3
 	var/environment = KA_ENVIRO_TYPE_COLD
-	var/tmp/kinetic_gun_handle
+	var/tmp/obj/item/gun/energy/kinetic_accelerator/kinetic_gun
 
 /obj/item/projectile/kinetic/premium
 	damage = 40
@@ -380,7 +380,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 			user.drop_from_inventory(src, KA)
 			to_chat(user, span_notice("You install the modkit."))
 			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
-			LAZYADD(KA.modkits, src)
+			rel_add(KA, "modkits", src)
 		else
 			to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Use a crowbar to remove existing modkits."))
 	else
@@ -388,7 +388,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 		. = FALSE
 
 /obj/item/borg/upgrade/modkit/proc/uninstall(obj/item/gun/energy/kinetic_accelerator/KA, forcemove = TRUE)
-	LAZYREMOVE(KA.modkits, src)
+	rel_remove(KA, "modkits", src)
 	if(forcemove)
 		forceMove(get_turf(KA))
 
@@ -714,6 +714,6 @@ EXTEND_INTERACTIONS(/obj/item/borg/upgrade/modkit/tracer/adjustable, INTERACT_US
 #undef KA_ENVIRO_TYPE_HOT
 #undef KA_ENVIRO_TYPE_OFFSITE
 
-/// LC-refs: the kinetic_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the kinetic_gun this refers to (a relation view: null once it is deleted).
 /obj/item/projectile/kinetic/proc/kinetic_gun() as /obj/item/gun/energy/kinetic_accelerator
-	return om_resolve(kinetic_gun_handle)
+	return kinetic_gun

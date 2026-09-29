@@ -6,7 +6,7 @@
 	var/class = 0                           // Size. Lower is smaller. Uses floating point values!
 	var/descriptor                          // 'gaping hole' etc.
 	var/breach_type = BURN                      // Punctured or melted
-	var/tmp/holder_handle	// Suit containing the list of breaches holding this instance.
+	var/tmp/obj/item/clothing/suit/space/holder	// Suit containing the list of breaches holding this instance.
 
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"
@@ -59,7 +59,7 @@
 		if(B.class <= amount_left)
 			amount_left -= B.class
 			valid_breaches -= B
-			LAZYREMOVE(breaches, B)
+			own_take_member(src, "breaches", B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -107,13 +107,13 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		LAZYADD(breaches, B)
+		own_add(src, "breaches", B)
 
 		B.class = min(amount,5)
 
 		B.breach_type = breach_type
 		B.update_descriptor()
-		B.holder_handle = om_handle(src)
+		rel_set(B, "holder", src)
 
 		if(B.breach_type == BRUTE)
 			T.visible_message(span_warning("\A [B.descriptor] opens up on [src]!"))
@@ -135,7 +135,7 @@
 
 	for(var/datum/breach/B in breaches)
 		if(!B.class)
-			LAZYREMOVE(breaches, B)
+			own_take_member(src, "breaches", B)
 			qdel(B)
 		else
 			damage += B.class
@@ -212,6 +212,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space, INTERACT_ITEM(null, PROC_REF(
 		for(var/datum/breach/B in breaches)
 			. += span_red(span_bold("It has \a [B.descriptor]."))
 
-/// LC-refs: Suit containing the list of breaches holding this instance. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Suit containing the list of breaches holding this instance. (a relation view: null once it is deleted).
 /datum/breach/proc/holder() as /obj/item/clothing/suit/space
-	return om_resolve(holder_handle)
+	return holder

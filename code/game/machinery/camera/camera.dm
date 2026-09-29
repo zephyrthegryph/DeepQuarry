@@ -1,4 +1,4 @@
-OM_TIMER_SLOT(/obj/machinery/camera, camera_timer_token)
+OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 
 /obj/machinery/camera
 	name = "security camera"
@@ -48,7 +48,7 @@ OM_TIMER_SLOT(/obj/machinery/camera, camera_timer_token)
 		resistance_flags |= BOMB_PROOF
 	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
-	assembly = new(src)
+	own_set(src, "assembly", new /obj/item/camera_assembly(src))
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 
@@ -81,7 +81,6 @@ OM_TIMER_SLOT(/obj/machinery/camera, camera_timer_token)
 		interned[key] = shared
 	return shared
 
-DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 // alarm handlers release it, motion sensing stops and viewers are kicked out.
 /obj/machinery/camera/on_destroy(force)
@@ -305,7 +304,7 @@ DAMAGE_REACTION(/obj/machinery/camera, DAMAGE_EMP, PROC_REF(camera_emp))
 			assembly.state = 1
 			to_chat(user, span_notice("You cut \the [src] free from the wall."))
 			new /obj/item/stack/cable_coil(loc, 2)
-		assembly = null
+		own_take(src, "assembly")
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 

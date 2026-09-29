@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 		for(var/obj/item/I in reset_objects)
 			I.cut_overlay(I.blood_overlay)
 			if(dq_get_fluorescent(I) == 2) dq_set_fluorescent(I, 1)
-		LAZYCLEARLIST(reset_objects)
+		rel_clear(src, "reset_objects")
 
 /obj/item/uv_light/periodic_step()
 	clear_last_scan()
@@ -73,4 +73,4 @@ DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction
 						var/obj/item/O = A
 						if(dq_get_was_bloodied(O) && !(O.blood_overlay in O.overlays))
 							O.add_overlay(O.blood_overlay)
-							LAZYOR(reset_objects, O)
+							rel_add(src, "reset_objects", O)

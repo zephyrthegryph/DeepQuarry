@@ -6,7 +6,7 @@
 	layer = OBJ_LAYER // These are mobile, best not be under everything.
 	var/datum/gas_mixture/air_contents
 
-	var/connected_port_handle
+	var/obj/machinery/atmospherics/portables_connector/connected_port
 	var/obj/item/tank/holding
 
 	var/volume = 0
@@ -17,7 +17,7 @@
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
-	air_contents = new
+	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
 	return INITIALIZE_HINT_LATELOAD
@@ -28,8 +28,6 @@
 		connect(port)
 		update_icon()
 
-DECLARE_REF(/obj/machinery/portable_atmospherics, "air_contents", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 
 // Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
 // (code/game/machinery/machine_pipeline.dm, "canisters" section).
@@ -48,7 +46,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	if(isnull(mixture_id))
 		return
 	// The machine pipeline wakes on om_changed() (machine_pipeline.dm).
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_om_pipeline))
+	var/list/wake = om_callable(src, PROC_REF(wake_om_pipeline))
 	om_watch_arm_revision(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, wake_callback = wake, current_revision = air_contents.revision())
 
 /obj/machinery/portable_atmospherics/proc/clear_gas_dependency()
@@ -78,7 +76,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	return air_contents
 
 /obj/machinery/portable_atmospherics/set_port_network_air(datum/gas_mixture/new_air)
-	air_contents = new_air
+	atmos_air_set(src, "air_contents", new_air)
 	return TRUE
 
 /obj/machinery/portable_atmospherics/update_icon()
@@ -94,7 +92,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 		return 0
 
 	//Perform the connection
-	connected_port_handle = om_handle(new_port)
+	rel_set(src, "connected_port", new_port)
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	connected_port().connected_device = src
 	connected_port().on = 1 //Activate port updates
@@ -116,10 +114,10 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	set_anchored(FALSE)
 
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
-	old_port.connected_device = null
+	rel_clear(old_port, "connected_device")
 	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
-	connected_port_handle = null
+	rel_clear(src, "connected_port")
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 	return 1
@@ -156,7 +154,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	var/obj/item/tank/T = W
 	user.drop_item()
 	T.forceMove(src)
-	holding = T
+	own_set(src, "holding", T)
 	update_icon()
 	return TRUE
 
@@ -222,8 +220,8 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 
 	user.drop_item()
 	C.add_fingerprint(user)
-	cell = C
 	C.forceMove(src)
+	own_set(src, "cell", C) // CONTAINED: in contents first
 	act_message(user, src, MSG_SELF(span_notice("You open the panel on %T% and insert [C].")), \
 		MSG_OTHERS(span_notice("%U% opens the panel on %T% and inserts [C].")))
 	power_change()
@@ -240,7 +238,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	playsound(src, tool.usesound, 50, TRUE)
 	cell.add_fingerprint(user)
 	cell.forceMove(loc)
-	cell = null
+	own_take(src, "cell")
 	power_change()
 	return ITEM_INTERACT_SUCCESS
 
@@ -260,8 +258,11 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered, "cell", HELD, null)
+OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 
-/// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
-	return om_resolve(connected_port_handle)
+	return connected_port
+
+// air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
+PROTO(/obj/machinery/portable_atmospherics, air_contents)

@@ -40,11 +40,11 @@
 
 /datum/generated_room_feature/New()
 	..()
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	utility_requirements = TYPE_TABLE_GET(src, build_utility_requirements)
 	variant_options = build_variant_options()
 
-DECLARE_REF(/datum/generated_room_feature, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_feature/proc/build_constraints()
 	return list()
@@ -272,9 +272,9 @@ TYPE_TABLE(/datum/generated_room_feature/operating_computer, build_utility_requi
 /datum/generated_room_feature_group/New()
 	..()
 	feature_types = TYPE_TABLE_GET(src, build_group_feature_types)
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 
-DECLARE_REF(/datum/generated_room_feature_group, "constraints", OWNED_LIST, null)
 
 TYPE_TABLE_DECLARE(/datum/generated_room_feature_group, build_group_feature_types, list())
 
@@ -446,12 +446,12 @@ TYPE_TABLE(/datum/generated_room_feature_group/cargo_workstation, build_group_fe
 
 /datum/generated_room_fragment/New()
 	..()
-	sockets = build_sockets()
-	constraints = build_constraints()
+	for(var/datum/generated_room_fragment_socket/built_socket in build_sockets())
+		own_add(src, "sockets", built_socket)
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	occupied_offsets = TYPE_TABLE_GET(src, build_occupied_offsets)
 
-DECLARE_REF(/datum/generated_room_fragment, "sockets", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_room_fragment, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_fragment/proc/build_sockets()
 	return list()
@@ -495,7 +495,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 				continue
 			owner.register_furnishing(movable)
 			if(istype(movable, /obj/machinery/door))
-				owner.doors |= movable
+				own_add(owner, "doors", movable)
 			created = TRUE
 	qdel(template)
 	return created
@@ -541,7 +541,7 @@ TYPE_TABLE(/datum/generated_room_fragment/reception_corner, build_occupied_offse
 	var/obj/machinery/door/window/access = new(access_turf)
 	access.set_dir(EAST)
 	owner.register_furnishing(access)
-	owner.doors |= access
+	own_add(owner, "doors", access)
 	return TRUE
 
 /datum/generated_room_fragment/reception_corner/build_constraints()
@@ -799,12 +799,11 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 	required_groups = TYPE_TABLE_GET(src, build_required_groups)
 	optional_groups = TYPE_TABLE_GET(src, build_optional_groups)
 	fragment_options = TYPE_TABLE_GET(src, build_fragment_options)
-	constraints = build_constraints()
+	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
+		own_add(src, "constraints", built_constraint)
 	variant_options = TYPE_TABLE_GET(src, build_variant_options)
-	room_style = build_room_style()
+	own_set(src, "room_style", build_room_style())
 
-DECLARE_REF(/datum/generated_room_definition, "room_style", OWNED, null)
-DECLARE_REF(/datum/generated_room_definition, "constraints", OWNED_LIST, null)
 
 TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_required_features, list())
 
@@ -1273,24 +1272,24 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 	var/datum/generated_room_definition/fallback = new
 	fallback.id = "[department_id]-[role]"
 	fallback.name = capitalize(replacetext(role, "-", " "))
-	QDEL_NULL(fallback.room_style)
+	own_clear(fallback, "room_style", OWN_DELETE)
 	switch(department_id)
 		if("command")
-			fallback.room_style = new /datum/generated_room_style/command
+			own_set(fallback, "room_style", new /datum/generated_room_style/command)
 		if("ai")
-			fallback.room_style = new /datum/generated_room_style/ai/support
+			own_set(fallback, "room_style", new /datum/generated_room_style/ai/support)
 		if("security")
-			fallback.room_style = new /datum/generated_room_style/security
+			own_set(fallback, "room_style", new /datum/generated_room_style/security)
 		if("medical")
-			fallback.room_style = new /datum/generated_room_style/medical
+			own_set(fallback, "room_style", new /datum/generated_room_style/medical)
 		if("engineering")
-			fallback.room_style = new /datum/generated_room_style/engineering
+			own_set(fallback, "room_style", new /datum/generated_room_style/engineering)
 		if("logistics")
-			fallback.room_style = new /datum/generated_room_style/cargo
+			own_set(fallback, "room_style", new /datum/generated_room_style/cargo)
 		if("docking")
-			fallback.room_style = new /datum/generated_room_style/docking
+			own_set(fallback, "room_style", new /datum/generated_room_style/docking)
 		else
-			fallback.room_style = new /datum/generated_room_style
+			own_set(fallback, "room_style", new /datum/generated_room_style)
 	fallback.density_min = 0.2
 	fallback.density_max = 0.5
 	switch("[department_id]/[role]")

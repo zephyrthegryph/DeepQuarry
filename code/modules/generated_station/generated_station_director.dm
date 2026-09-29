@@ -7,7 +7,8 @@
 	var/confidence = 0
 	EXPIRY_DECLARE(created_at)
 	var/expires_at = 0
-	var/target_ref
+	/// Relation view: the atom (or turf) this report is about.
+	var/atom/target
 
 /datum/generated_station_knowledge_report/proc/is_expired(at_time = EXPIRY_AT(null, CLOCK_WORLD, 0))
 	return expires_at > 0 && at_time >= expires_at
@@ -40,11 +41,12 @@
 /// Event-driven strategic state for one station. Producers submit observations
 /// and capability changes directly; this layer never discovers state by polling mobs.
 /datum/generated_station_director
-	var/tmp/simulation_handle
+	var/tmp/datum/generated_station_simulation/simulation
 	var/alert_level = GENERATED_STATION_ALERT_GREEN
 	var/list/local_alert_levels
 	var/list/department_connected
 	var/list/reports
+	/// report id -> TRUE for reports every connected department knows (the reports themselves live in `reports`).
 	var/list/global_knowledge
 	var/list/local_knowledge
 	var/list/squads
@@ -55,18 +57,17 @@
 	var/next_report_id = 1
 	var/next_squad_id = 1
 	var/next_order_id = 1
-	var/tmp/defense_runtime_handle
+	var/tmp/datum/generated_station_defense_runtime/defense_runtime
 
 /datum/generated_station_director/New(datum/generated_station_simulation/new_simulation)
 	..()
-	simulation_handle = om_handle(new_simulation)
+	rel_set(src, "simulation", new_simulation)
 	local_alert_levels = list()
 	department_connected = list()
-	reports = list()
-	global_knowledge = list()
+	own_take_all(src, "reports")
 	local_knowledge = list()
-	squads = list()
-	orders = list()
+	own_take_all(src, "squads")
+	own_take_all(src, "orders")
 	dirty_departments = list()
 	for(var/department_id in simulation()?.departments)
 		department_connected[department_id] = TRUE
@@ -81,10 +82,6 @@
 		return null
 	return new /datum/generated_station_director(simulation)
 
-DECLARE_REF(/datum/generated_station_director, "reports", OWNED_VALUES, null)
-DECLARE_REF(/datum/generated_station_director, "squads", OWNED_VALUES, null)
-DECLARE_REF(/datum/generated_station_director, "orders", OWNED_VALUES, null)
-DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES, null)
 
 /datum/generated_station_director/proc/mark_dirty(department_id)
 	strategic_dirty = TRUE
@@ -121,7 +118,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 				continue
 			var/list/knowledge = local_knowledge[department_id]
 			for(var/report_id in knowledge)
-				var/datum/generated_station_knowledge_report/report = reports[report_id]
+				var/datum/generated_station_knowledge_report/report = reports?[report_id]
 				if(report && !report.is_expired())
 					propagate_report(report)
 	dirty_departments.Cut()
@@ -132,7 +129,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 		return null
 	var/list/source_knowledge = local_knowledge[source_department_id]
 	for(var/existing_report_id in source_knowledge)
-		var/datum/generated_station_knowledge_report/existing_report = reports[existing_report_id]
+		var/datum/generated_station_knowledge_report/existing_report = reports?[existing_report_id]
 		if(existing_report && !existing_report.is_expired() && existing_report.subject_id == subject_id && existing_report.category == category)
 			return existing_report
 	var/datum/generated_station_knowledge_report/report = new
@@ -144,7 +141,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	report.confidence = clamp(confidence, 0, 100)
 	EXPIRY_STAMP(report, created_at, CLOCK_WORLD)
 	report.expires_at = lifetime > 0 ? world.time + lifetime : 0
-	reports[report.id] = report
+	own_put(src, "reports", report.id, report)
 	source_knowledge[report.id] = report
 	process_dirty()
 	if(strategic_online && department_connected[source_department_id])
@@ -156,7 +153,7 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 /datum/generated_station_director/proc/propagate_report(datum/generated_station_knowledge_report/report)
 	if(!strategic_online || !report || report.is_expired() || !department_connected[report.source_department_id])
 		return FALSE
-	global_knowledge[report.id] = report
+	LAZYSET(global_knowledge, report.id, TRUE)
 	for(var/department_id in local_knowledge)
 		if(department_connected[department_id])
 			var/list/knowledge = local_knowledge[department_id]
@@ -167,14 +164,14 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	// The director may already be torn down when a stale timer fires.
 	if(QDELETED(src) || !reports)
 		return
-	var/datum/generated_station_knowledge_report/report = reports[report_id]
+	var/datum/generated_station_knowledge_report/report = reports?[report_id]
 	if(!report || report.expires_at != expected_expiry || !report.is_expired())
 		return
-	global_knowledge?.Remove(report_id)
+	LAZYREMOVE(global_knowledge, report_id)
 	for(var/department_id in local_knowledge)
 		var/list/knowledge = local_knowledge[department_id]
 		knowledge?.Remove(report_id)
-	reports -= report_id
+	own_take_member(src, "reports", report_id)
 	qdel(report)
 
 /datum/generated_station_director/proc/department_knows(department_id, report_id)
@@ -183,7 +180,9 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	return report && !report.is_expired()
 
 /datum/generated_station_director/proc/globally_knows(report_id)
-	var/datum/generated_station_knowledge_report/report = global_knowledge[report_id]
+	if(!global_knowledge?[report_id])
+		return FALSE
+	var/datum/generated_station_knowledge_report/report = reports?[report_id]
 	return report && !report.is_expired()
 
 /datum/generated_station_director/proc/set_alert(new_level, source_department_id)
@@ -205,11 +204,11 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	var/datum/generated_station_squad/squad = new
 	squad.id = "squad-[next_squad_id++]"
 	squad.department_id = department_id
-	squads[squad.id] = squad
+	own_put(src, "squads", squad.id, squad)
 	return squad
 
 /datum/generated_station_director/proc/issue_order(squad_id, report_id, kind, global_coordination = FALSE)
-	var/datum/generated_station_squad/squad = squads[squad_id]
+	var/datum/generated_station_squad/squad = squads?[squad_id]
 	if(!squad || !kind || squad.active_order_id || length(orders) >= GENERATED_STATION_MAX_ORDERS)
 		return null
 	if(global_coordination)
@@ -226,27 +225,27 @@ DECLARE_REF(/datum/generated_station_director, "global_knowledge", OWNED_VALUES,
 	order.global_coordination = global_coordination
 	EXPIRY_STAMP(order, created_at, CLOCK_WORLD)
 	order.state = GENERATED_STATION_ORDER_ACTIVE
-	orders[order.id] = order
+	own_put(src, "orders", order.id, order)
 	squad.active_order_id = order.id
 	defense_runtime()?.apply_order(order)
 	return order
 
 /datum/generated_station_director/proc/complete_order(order_id)
-	var/datum/generated_station_order/order = orders[order_id]
+	var/datum/generated_station_order/order = orders?[order_id]
 	if(!order || order.state != GENERATED_STATION_ORDER_ACTIVE)
 		return FALSE
 	order.state = GENERATED_STATION_ORDER_COMPLETE
-	var/datum/generated_station_squad/squad = squads[order.squad_id]
+	var/datum/generated_station_squad/squad = squads?[order.squad_id]
 	if(squad?.active_order_id == order.id)
 		squad.active_order_id = null
-	orders -= order.id
+	own_take_member(src, "orders", order.id)
 	qdel(order)
 	return TRUE
 
-/// LC-refs: the simulation this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the simulation var.
 /datum/generated_station_director/proc/simulation() as /datum/generated_station_simulation
-	return om_resolve(simulation_handle)
+	return simulation
 
-/// LC-refs: the defense_runtime this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the defense_runtime var.
 /datum/generated_station_director/proc/defense_runtime() as /datum/generated_station_defense_runtime
-	return om_resolve(defense_runtime_handle)
+	return defense_runtime

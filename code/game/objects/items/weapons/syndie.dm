@@ -45,7 +45,7 @@
 	desc += "\n You see [K] engraved on \the [src]."
 	var/obj/item/flame/lighter/zippo/c4detonator/detonator = new(src.loc)
 	detonator.desc += " You see [K] engraved on the lighter."
-	detonator.bomb_handle = om_handle(src)
+	rel_set(detonator, "bomb", src)
 
 /obj/item/syndie/c4explosive/proc/detonate()
 	icon_state = "c-4[size]_1"
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 /obj/item/syndie/c4explosive/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter/zippo/c4detonator))
 		var/obj/item/flame/lighter/zippo/c4detonator/D = W
-		D.bomb_handle = om_handle(src)
+		rel_set(D, "bomb", src)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 /*Click it when closed to open, when open to bring up a prompt asking you if you want to close it or press the button.*/
 
 /obj/item/flame/lighter/zippo/c4detonator
-	var/bomb_handle
+	var/obj/item/syndie/c4explosive/bomb
 
 EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(null, PROC_REF(c4detonator_self)))
 
@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 			icon_state = "[base_state]click"
 			if(bomb())
 				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb()
-				bomb_handle = null //clear up our ref
+				rel_clear(src, "bomb") //clear up our ref
 				bomb_to_explode.detonate()
 				log_admin("[key_name(user)] has triggered [bomb_to_explode] with [src].")
 				message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))
@@ -127,6 +127,6 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 	to_chat(user, span_notice("You unscrew the top panel of \the [src] revealing a button."))
 	return ITEM_INTERACT_SUCCESS
 
-/// LC-refs: bomb -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: bomb (reads null once it is gone).
 /obj/item/flame/lighter/zippo/c4detonator/proc/bomb() as /obj/item/syndie/c4explosive
-	return om_resolve(bomb_handle)
+	return bomb

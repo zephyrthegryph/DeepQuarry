@@ -113,7 +113,7 @@
 	var/icon_dist
 
 /obj/effect/abstract/directional_lighting/Initialize(mapload)
-	light_spot = new
+	own_set(src, "light_spot", new /obj/effect/abstract/light_spot)
 	. = ..()
 	vis_contents += light_spot
 
@@ -140,7 +140,6 @@
 			if(3 to INFINITY)
 				light_spot.icon_state = "far"
 
-DECLARE_REF(/obj/effect/abstract/directional_lighting, "light_spot", OWNED, null)
 
 // Only its light component may delete it (a forced qdel()).
 /obj/effect/abstract/directional_lighting/lifecycle_keep(force)

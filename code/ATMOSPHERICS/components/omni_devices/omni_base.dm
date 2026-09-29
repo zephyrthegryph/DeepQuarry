@@ -22,15 +22,14 @@
 	var/overlays_error[2]
 	var/underlays_current[4]
 
-	var/list/ports = new() // ALLOW(instance_list): atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
+	/// The device's four ports, in GLOB.cardinal order (owned: own_add in Initialize()).
+	var/list/datum/omni_port/ports
 
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
 
-
-	ports = new()
 	for(var/d in GLOB.cardinal)
 		var/datum/omni_port/new_port = new(src, d)
 		switch(d)
@@ -44,7 +43,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 				new_port.mode = tag_west
 		if(new_port.mode > 0)
 			initialize_directions |= d
-		ports += new_port
+		own_add(src, "ports", new_port)
 
 	build_icons()
 
@@ -99,7 +98,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 		var/id = P.air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
 	OMNI_WAKE_TRACE(src, "hibernate mixtures=[length(mixture_ids)]")
 
@@ -263,7 +262,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 			continue
 		for(var/obj/machinery/atmospherics/target in get_step(src, P.dir))
 			if(can_be_node(target, 1))
-				P.node = target
+				rel_set(P, "node", target)
 				break
 
 	for(var/datum/omni_port/P in ports)
@@ -281,7 +280,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == old_network)
-			P.network = new_network
+			rel_set(P, "network", new_network)
 
 	return 1
 
@@ -297,19 +296,19 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference)
-			P.air = network_air
+			atmos_air_set(P, "air", network_air)
 
 /obj/machinery/atmospherics/omni/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference && P.air == network_air)
-			P.air = detached_pipenet_air(network_air, 200, network_volume)
+			atmos_air_set(P, "air", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()
 	for(var/datum/omni_port/P in ports)
 		if(reference == P.node)
 			rust_release_network_wrapper(P.network)
-			P.node = null
+			rel_clear(P, "node")
 			P.update = 1
 			break
 
@@ -345,4 +344,3 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.
-DECLARE_REF(/obj/machinery/atmospherics/omni, "ports", OWNED_LIST, null)

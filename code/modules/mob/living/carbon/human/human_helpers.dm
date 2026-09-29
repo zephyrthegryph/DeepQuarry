@@ -149,24 +149,24 @@
 	return FBP_NONE
 
 /mob/living/carbon/human/make_hud_overlays()
-	hud_list[HEALTH_HUD]      = gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH)
+	own_put(src, "hud_list", HEALTH_HUD, gen_hud_image(GLOB.ingame_hud_med, src, "100", plane = PLANE_CH_HEALTH))
 	if(HAS_SYNTHETIC_BIOLOGY(src))
-		hud_list[STATUS_HUD]  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS)
-		hud_list[LIFE_HUD]	  = gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE)
+		own_put(src, "hud_list", STATUS_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_STATUS))
+		own_put(src, "hud_list", LIFE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudrobo", plane = PLANE_CH_LIFE))
 	else
-		hud_list[STATUS_HUD]  = gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS)
-		hud_list[LIFE_HUD]    = gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_LIFE)
-	hud_list[ID_HUD]          = gen_hud_image(using_map.id_hud_icons, src, "hudunknown", plane = PLANE_CH_ID)
-	hud_list[WANTED_HUD]      = gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_WANTED)
-	hud_list[IMPLOYAL_HUD]    = gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPLOYAL)
-	hud_list[IMPCHEM_HUD]     = gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPCHEM)
-	hud_list[IMPTRACK_HUD]    = gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPTRACK)
-	hud_list[SPECIALROLE_HUD] = gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_SPECIAL)
-	hud_list[STATUS_HUD_OOC]  = gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS_OOC)
-	hud_list[HEALTH_VR_HUD]   = gen_hud_image(GLOB.ingame_hud_med_vr, src, "100", plane = PLANE_CH_HEALTH_VR)
-	hud_list[STATUS_R_HUD]    = gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R)
-	hud_list[BACKUP_HUD]      = gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP)
-	hud_list[VANTAG_HUD]      = gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG)
+		own_put(src, "hud_list", STATUS_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS))
+		own_put(src, "hud_list", LIFE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_LIFE))
+	own_put(src, "hud_list", ID_HUD, gen_hud_image(using_map.id_hud_icons, src, "hudunknown", plane = PLANE_CH_ID))
+	own_put(src, "hud_list", WANTED_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_WANTED))
+	own_put(src, "hud_list", IMPLOYAL_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPLOYAL))
+	own_put(src, "hud_list", IMPCHEM_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPCHEM))
+	own_put(src, "hud_list", IMPTRACK_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_IMPTRACK))
+	own_put(src, "hud_list", SPECIALROLE_HUD, gen_hud_image(GLOB.ingame_hud, src, "hudblank", plane = PLANE_CH_SPECIAL))
+	own_put(src, "hud_list", STATUS_HUD_OOC, gen_hud_image(GLOB.ingame_hud, src, "hudhealthy", plane = PLANE_CH_STATUS_OOC))
+	own_put(src, "hud_list", HEALTH_VR_HUD, gen_hud_image(GLOB.ingame_hud_med_vr, src, "100", plane = PLANE_CH_HEALTH_VR))
+	own_put(src, "hud_list", STATUS_R_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_STATUS_R))
+	own_put(src, "hud_list", BACKUP_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_BACKUP))
+	own_put(src, "hud_list", VANTAG_HUD, gen_hud_image(GLOB.ingame_hud_vr, src, "hudblank", plane = PLANE_CH_VANTAG))
 	add_overlay(hud_list)
 
 /mob/living/carbon/human/recalculate_vis()
@@ -411,6 +411,8 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 		flavor_texts = character.flavor_texts?.Copy()
 
 	copy_physique_from(character)
+	if(species)
+		proto_private(src, "species") // per-mob change: never mutate the shared species
 	species?.blood_color = character.species?.blood_color
 
 	dna?.base_species = bodytype
@@ -533,6 +535,7 @@ GLOBAL_DATUM_INIT(ingame_hud_med_vr, /icon, icon('icons/mob/hud_med_vr.dmi'))
 	offset_override	= character.offset_override
 	voice_freq		= character.voice_freq
 	if (species && character.species)
+		proto_private(src, "species") // per-mob change: never mutate the shared species
 		species.micro_size_mod = character.species.micro_size_mod
 		species.icon_scale_x = character.species.icon_scale_x
 		species.icon_scale_y = character.species.icon_scale_y

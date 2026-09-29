@@ -31,8 +31,6 @@
 
 	description_fluff = "If attempting to implant a compatible augment into a synthetic limb, the limb must be screwdrivered open and then the augment port opened with a crowbar before insertion can begin."
 
-DECLARE_REF(/obj/item/organ/internal/augment, "integrated_object", OWNED, null)
-DECLARE_REF(/obj/item/organ/internal/augment, "my_radial_icon", OWNED, null)
 
 DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "integrated_object_type")
 
@@ -162,7 +160,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "in
 			return 0
 
 	if(cling_to_organ) // Does the object automatically return to the organ?
-		equipping.my_augment_handle = om_handle(cling_to_organ)
+		rel_set(equipping, "my_augment", cling_to_organ)
 
 	if(make_sound)
 		play_sfx(src, SFX_ITEMS_CHANGE_JAWS, 0.6)

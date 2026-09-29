@@ -1,10 +1,10 @@
 /datum/ship_engine/ion
 	name = "ion thruster"
-	var/tmp/thruster_handle
+	var/tmp/obj/machinery/ion_engine/thruster
 
 /datum/ship_engine/ion/New(obj/machinery/_holder)
 	..()
-	thruster_handle = om_handle(_holder)
+	rel_set(src, "thruster", _holder)
 
 /datum/ship_engine/ion/get_status()
 	return thruster().get_status()
@@ -50,7 +50,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engin
 	. = ..()
 	add_glow()
 
-DECLARE_REF(/obj/machinery/ion_engine, "controller", OWNED, null)
 
 /obj/machinery/ion_engine/proc/add_glow()
 	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")
@@ -82,6 +81,6 @@ DECLARE_REF(/obj/machinery/ion_engine, "controller", OWNED, null)
 							/obj/item/stock_parts/matter_bin = 1,
 							/obj/item/stock_parts/capacitor = 2)
 
-/// LC-refs: the thruster this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the thruster var.
 /datum/ship_engine/ion/proc/thruster() as /obj/machinery/ion_engine
-	return om_resolve(thruster_handle)
+	return thruster

@@ -173,7 +173,7 @@
 			new /datum/economic_adoption(sale_item, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
 		remaining_personal_payment -= credited_value
 		remaining_by_name[sale_item.name]--
-	service_invoices += invoice
+	own_add(src, "service_invoices", invoice)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = customer?.account_number,
 		"actor_name" = invoice.customer_name,
@@ -309,7 +309,6 @@
 /// contracts.
 /obj/item/var/datum/economic_adoption/economic_adoption
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 
 /datum/economic_adoption
 	/// The purchased item.
@@ -321,7 +320,6 @@ DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 	var/value
 	var/adopted = FALSE
 
-DECLARE_REF(/datum/economic_adoption, "parent", BACK, "economic_adoption")
 
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()
@@ -332,8 +330,8 @@ DECLARE_REF(/datum/economic_adoption, "parent", BACK, "economic_adoption")
 		// Unique: the existing adoption record is kept.
 		qdel(src)
 		return
-	parent = new_parent
-	new_parent.economic_adoption = src
+	rel_set(src, "parent", new_parent)
+	own_set(new_parent, "economic_adoption", src)
 	invoice_id = _invoice_id
 	customer_account = _customer_account
 	customer_department = _customer_department

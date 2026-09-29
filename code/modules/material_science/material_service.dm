@@ -39,7 +39,7 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_gases))
 
 /obj
-	var/datum/material_service/material_service // ALLOW(state_ref): running: the material simulation service while admitted
+	var/datum/material_service/material_service
 	var/material_configuration_revision = 0
 	var/material_assembly_id
 	/// TRUE for player-fabricated or deliberately reconfigured assemblies. Map
@@ -72,7 +72,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(!admit)
 		return
 	if(!material_service)
-		material_service = new(src)
+		own_set(src, "material_service", new /datum/material_service(src))
 	material_last_service_event = event
 	material_service.last_admission_event = event
 	if(isnum(observed_temperature) && observed_temperature > material_service.temperature)
@@ -171,14 +171,14 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	return MATERIAL_TANK_REFERENCE_THICKNESS
 
 /datum/material_service
-	var/tmp/owner_handle
+	var/tmp/obj/owner
 	var/list/mixture_ids
 	/// Last pressure published for each watched mixture. Stable, harmless
 	/// pressure jitter updates this cache without waking the physical model.
 	var/list/mixture_pressures
 	var/list/mixture_corrosion
 	var/list/movement_sources
-	var/tmp/watched_turf_handle
+	var/tmp/turf/watched_turf
 	var/timer
 	var/next_update = 0
 	var/last_update
@@ -211,7 +211,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/New(obj/assembly)
 	..()
-	owner_handle = om_handle(assembly)
+	rel_set(src, "owner", assembly)
 	if(!owner().material_assembly_id)
 		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
@@ -228,11 +228,12 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		// watches disarm in one pass when the batch flushes, and no hook is unhooked one by one --
 		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
 		// it holds, on the doomed owner and on its turf and holders alike.
-		batch.material_service_watch_keys += om_watch_entity_key(src)
-		monitor_tool = null
-		monitor_user = null
+		var/watch_key = om_watch_entity_key(src) // ref text: plain data, not an entity
+		batch.material_service_watch_keys += watch_key
+		rel_clear(src, "monitor_tool")
+		rel_clear(src, "monitor_user")
 		last_reading = null
-		watched_turf_handle = null
+		rel_clear(src, "watched_turf")
 		mixture_ids = null
 		mixture_pressures = null
 		mixture_corrosion = null
@@ -259,7 +260,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
 		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		watched_turf_handle = null
+		rel_clear(src, "watched_turf")
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
 	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
 	// to work around here.
@@ -281,9 +282,9 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	EVENT_HANDLER
 	var/list/post_change_callbacks = event.post_change_callbacks
 	om_unhook(source, /datum/om/event/turf_change, src)
-	watched_turf_handle = null
+	rel_clear(src, "watched_turf")
 	watches_dirty = TRUE
-	post_change_callbacks += CALLBACK(src, PROC_REF(environment_changed))
+	post_change_callbacks += list(om_callable(src, PROC_REF(environment_changed)))
 
 /datum/material_service/proc/environment_changed(topology_changed = TRUE)
 	// Sleeping means the previous environment had no continuing effect. Do not
@@ -353,7 +354,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(location != watched_turf())
 		if(watched_turf())
 			om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		watched_turf_handle = om_handle(location)
+		rel_set(src, "watched_turf", location)
 		if(watched_turf())
 			om_hook(watched_turf(), /datum/om/event/turf_change, src, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()
@@ -373,7 +374,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 			om_watch_disarm(src, "gas[id]")
 	for(var/id in next_ids)
 		if(!(id in mixture_ids))
-			om_watch_arm_raw(src, "gas[id]", id, interest_mask, CALLBACK(src, PROC_REF(on_gas_notify)))
+			om_watch_arm_raw(src, "gas[id]", id, interest_mask, om_callable(src, PROC_REF(on_gas_notify)))
 	mixture_ids = next_ids
 	mixture_pressures = next_pressures
 	mixture_corrosion = next_corrosion
@@ -628,23 +629,21 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		material_service.watches_dirty = TRUE
 	material_service?.schedule(0)
 
-DECLARE_REF(/obj, "material_service", OWNED, null)
 
-/// LC-refs: the watched_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the watched_turf this refers to (a relation view: null once it is deleted).
 /datum/material_service/proc/watched_turf() as /turf
-	return om_resolve(watched_turf_handle)
+	return watched_turf
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/material_service/proc/thermal_stock() as /datum/material
 	return thermal_stock_static
-DECLARE_REF(/datum/material_service, "thermal_stock_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/material_service/proc/electrical_stock() as /datum/material
 	return electrical_stock_static
-DECLARE_REF(/datum/material_service, "electrical_stock_static", STATIC, null)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the owner this refers to (a relation view: null once it is deleted).
 /datum/material_service/proc/owner() as /obj
-	return om_resolve(owner_handle)
-DECLARE_REF(/datum/material_service, "owner_handle", BACK_HANDLE, "material_service")
+	return owner
+
+// An obj owns its material service (own_set); `owner` is the service's one-sided view back.

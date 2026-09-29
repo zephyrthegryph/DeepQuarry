@@ -287,7 +287,7 @@
 /// process() makes before regulating.
 /obj/machinery/power/thermoregulator/proc/hibernate_until_temperature_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_for_state_change)))
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_TEMPERATURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_for_state_change)))
 	MACHINE_SLEEP(src)
 
 /obj/machinery/power/thermoregulator/proc/gas_wake_condition()

@@ -25,7 +25,7 @@
 	if(adminalert)
 		log_and_message_admins(adminalert)
 	busy = TRUE
-	Q = new ghost_query_type()
+	own_set(src, "Q", new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
@@ -35,14 +35,14 @@
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
 		om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-		QDEL_NULL(Q) //get rid of the query
+		own_clear(src, "Q", OWN_DELETE) //get rid of the query
 		create_occupant(D)
 		return
 
 	if(delay_to_try_again)
 		om_after(src, delay_to_try_again, PROC_REF(trigger))
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.
 /obj/structure/ghost_pod/proc/create_occupant(mob/M)
@@ -216,7 +216,7 @@ EXTEND_INTERACTIONS(/obj/structure/ghost_pod/ghost_activated, INTERACT_OBSERVER(
 /mob/living/proc/load_bellies_answered(datum/om/prompt/confirm/ask)
 	copy_from_prefs_vr()
 	if(LAZYLEN(vore_organs))
-		vore_selected = vore_organs[1]
+		rel_set(src, "vore_selected", vore_organs[1])
 
 /// Lets a freshly spawned character pick a new name.
 /mob/living/carbon/human/proc/offer_spawn_rename()
@@ -285,4 +285,3 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 /obj/structure/ghost_pod/ghost_activated/LateInitialize()
 	ghostpod_startup(spawn_active)
 
-DECLARE_REF(/obj/structure/ghost_pod, "Q", OWNED, null)

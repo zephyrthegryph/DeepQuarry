@@ -29,7 +29,7 @@
 	else
 		for(var/mob/observer/dead/D as anything in candidates)
 			if(!evaluate_candidate(D))
-				candidates -= D
+				rel_remove(src, "candidates", D)
 		finished = TRUE
 		OM_EMIT(src, /datum/om/event/ghost_query_complete)
 
@@ -60,7 +60,7 @@
 	if(query_sound)
 		SEND_SOUND(C, sound(query_sound))
 
-	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), CALLBACK(src, PROC_REF(get_reply)), wait_time)
+	tgui_alert_async(D, question, "[role_name] request", list("Yes", "No", "Never for this round"), om_callable(src, PROC_REF(get_reply)), wait_time)
 
 /// Process an async alert response
 /datum/ghost_query/proc/get_reply(response)
@@ -86,7 +86,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Prompt a second time
-				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), CALLBACK(src, PROC_REF(get_reply)), wait_time)
+				tgui_alert_async(D, "Are you sure you want to play as a [role_name]?", "[role_name] request", list("I'm Sure", "Nevermind"), om_callable(src, PROC_REF(get_reply)), wait_time)
 
 		if("I'm Sure")
 			if(!evaluate_candidate(D)) // Failed revalidation
@@ -94,7 +94,7 @@
 			else if(finished) // Already finished candidate list
 				to_chat(D, span_warning("Unfortunately, you were not fast enough, and there are no more available roles. Sorry."))
 			else // Accept their nomination
-				candidates.Add(D)
+				rel_add(src, "candidates", D)
 				if(cutoff_number && candidates.len >= cutoff_number)
 					finished = TRUE // Finish now if we're full.
 

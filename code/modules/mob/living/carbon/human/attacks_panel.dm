@@ -6,7 +6,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 	var/mob/living/carbon/human/host
 
 /datum/attacks_panel/New(mob/living/carbon/human/host_mob)
-	host = host_mob
+	rel_set(src, "host", host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/attacks_panel/lifecycle_dematerialize()
@@ -70,4 +70,3 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		GLOB.dq_attacks_panels[key] = panel
 	panel.tgui_interact(src)
 
-DECLARE_REF(/datum/attacks_panel, "host", HELD, null)

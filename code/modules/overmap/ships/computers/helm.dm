@@ -49,7 +49,7 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			LAZYSET(known_sectors, S.name, R)
+			own_put(src, "known_sectors", S.name, R)
 
 /obj/machinery/computer/ship/helm/machine_step()
 	..()
@@ -206,14 +206,13 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 						return FALSE
 					R.fields["x"] = CLAMP(newx, 1, world.maxx)
 					R.fields["y"] = CLAMP(newy, 1, world.maxy)
-			LAZYSET(known_sectors, sec_name, R)
+			own_put(src, "known_sectors", sec_name, R)
 			. = TRUE
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
-			if(R)
-				LAZYREMOVE(known_sectors, R.fields["name"])
-				qdel(R)
+			if(istype(R) && LAZYACCESS(known_sectors, R.fields["name"]) == R) // only our own entries
+				own_put(src, "known_sectors", R.fields["name"], null) // disposes of the owned record
 			. = TRUE
 
 		if("setcoord")
@@ -289,7 +288,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 				return FALSE
 			else if(!viewing_overmap(ui.user) && linked())
-				if(!viewers) viewers = list() // List must exist for pass by reference to work
 				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
@@ -318,7 +316,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/ship/navigation, "nav_tgui", /datu
 	if(.)
 		nav_tgui?.attempt_hook_up(sector)
 
-DECLARE_REF(/obj/machinery/computer/ship/navigation, "nav_tgui", OWNED, null)
 
 /obj/machinery/computer/ship/navigation/sync_linked(user)
 	return nav_tgui?.sync_linked()

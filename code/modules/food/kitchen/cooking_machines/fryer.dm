@@ -42,9 +42,9 @@
 
 /obj/machinery/appliance/cooker/fryer/Initialize(mapload)
 	. = ..()
-	fry_loop = new(list(src), FALSE)
+	own_set(src, "fry_loop", new /datum/looping_sound/deep_fryer(list(src), FALSE))
 
-	oil = new/datum/reagents/oil_reagents(optimal_oil * 1.25, src)
+	own_set(src, "oil", new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
 	oil.optimal_oil = optimal_oil
 	var/variance = rand()*0.15
 	// Fryer is always a little below full, but its usually negligible
@@ -55,8 +55,6 @@
 	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
 	add_hose_connector(/datum/hose_connector/input/fryer)
 
-DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "fry_loop", OWNED, null)
-DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
 	. = ..()

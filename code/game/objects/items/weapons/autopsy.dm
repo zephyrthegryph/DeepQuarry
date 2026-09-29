@@ -51,7 +51,7 @@
 		if(!D)
 			D = new()
 			D.weapon = W.weapon
-			LAZYSET(wdata, V, D)
+			own_put(src, "wdata", V, D)
 
 		if(!LAZYACCESS(D.organs_scanned, O.name))
 			if(D.organ_names == "")
@@ -64,7 +64,7 @@
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
-			LAZYADD(chemtraces, V)
+			own_add(src, "chemtraces", V)
 
 /// Requirement: only a conscious human can print the data.
 /obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
@@ -162,8 +162,8 @@
 
 	if(target_name != M.name)
 		target_name = M.name
-		src.wdata = list()
-		src.chemtraces = list()
+		own_set(src, "wdata", list())
+		own_set(src, "chemtraces", list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 
@@ -184,8 +184,6 @@
 
 	return 1
 
-DECLARE_REF(/obj/item/autopsy_scanner, "wdata", OWNED_LIST, null)
-DECLARE_REF(/obj/item/autopsy_scanner, "chemtraces", OWNED_LIST, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/autopsy_scanner, \

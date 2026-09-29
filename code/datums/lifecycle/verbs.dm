@@ -60,6 +60,7 @@
 		if(QDELETED(built))
 			return null
 		original.lifecycle_successor = built
+		om_handle_forward(original, built)
 		qdel(original)
 		if(slot_id && !QDELETED(holder) && !QDELETED(built))
 			built.move_into(holder, slot_id)
@@ -71,6 +72,7 @@
 	if(QDELETED(successor))
 		return null
 	original.lifecycle_successor = successor
+	om_handle_forward(original, successor)
 	qdel(original)
 	// Into the slot only once the original has left it: a one-item slot (a
 	// hand) would refuse the successor while the original still filled it.
@@ -302,6 +304,4 @@
 			S.update_connections()
 		N.update_icon()
 
-/atom/movable/om_declared_timer_slots()
-	. = ..()
-	. += "lifecycle_lifetime_timer"
+OWN_TIMER(/atom/movable, lifecycle_lifetime_timer)

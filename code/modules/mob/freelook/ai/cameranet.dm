@@ -33,7 +33,7 @@
 	if(istype(c, /obj/machinery/camera))
 		if(choice == 0)
 			// Remove the camera.
-			WEAK_LIST_REMOVE(chunk.cameras, c)
+			rel_remove(chunk, "cameras", c)
 		else if(choice == 1)
 			// You can't have the same camera in the list twice.
-			WEAK_LIST_ADD(chunk.cameras, c)
+			rel_add(chunk, "cameras", c)

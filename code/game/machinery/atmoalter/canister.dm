@@ -171,7 +171,7 @@
 		var/mixture_id = air_contents?.arena_id()
 		if(isnull(mixture_id))
 			return
-		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(current_update_flag)), wake_callback = CALLBACK(src, PROC_REF(wake_om_pipeline)))
+		om_watch_arm_value(src, "gas", mixture_id, GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(current_update_flag)), wake_callback = om_callable(src, PROC_REF(wake_om_pipeline)))
 		return
 	return ..()
 
@@ -241,7 +241,7 @@ update_flag
 
 	if (src.holding)
 		src.holding.forceMove(src.loc)
-		src.holding = null
+		own_take(src, "holding")
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable atmospherics" section):
 // canister inherits polls = FALSE from /obj/machinery/portable_atmospherics. The body that used
@@ -443,7 +443,7 @@ update_flag
 				if(istype(holding, /obj/item/tank))
 					holding.manipulated_by = ui.user.real_name
 				holding.forceMove(loc)
-				holding = null
+				own_take(src, "holding")
 			. = TRUE
 
 	add_fingerprint(ui.user)
@@ -509,7 +509,7 @@ update_flag
 	var/turf/simulated/location = src.loc
 	if (istype(src.loc))
 		location.assume_air(air_contents)
-		air_contents = new
+		atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 
 /obj/machinery/portable_atmospherics/canister/nitrogen/Initialize(mapload)
 	. = ..()

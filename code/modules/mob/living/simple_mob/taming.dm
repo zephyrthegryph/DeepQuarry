@@ -2,15 +2,16 @@
 /mob/living/simple_mob
 	// Assoc list of items that can be given to a mob to befriend it, and the percent success.
 	var/list/tame_items
-	// OM handles of the mobs who are 'friends' (om_handle(), so a friend going away drops out).
+	// Mobs who are 'friends' (a relation list: a friend going away drops out).
 	var/list/tamers
+
+REL_LIST(/mob/living/simple_mob, tamers)
 
 /mob/living/simple_mob/IIsAlly(mob/living/L)
 	. = ..()
 
 	if(!. && LAZYLEN(tamers))
-		var/handle = om_handle_of(L)
-		if(handle && (handle in tamers))
+		if(L in tamers)
 			return TRUE
 
 /mob/living/simple_mob/proc/can_tame(obj/O, mob/user)
@@ -44,12 +45,10 @@
 	if(!user)
 		return
 
-	if(!LAZYLEN(tamers))
-		tamers = list()
-
 	handle_tame_item(O, user)
 
-	tamers |= om_handle(user)
+	if(!(user in tamers))
+		rel_add(src, "tamers", user)
 	ai_brain.forget_everything()
 
 /mob/living/simple_mob/proc/handle_tame_item(obj/O, mob/user)

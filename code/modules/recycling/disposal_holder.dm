@@ -26,9 +26,8 @@
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_SEALED
 
-DECLARE_REF(/obj/structure/disposalholder, "gas", OWNED, null)
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
-	gas = flush_gas// transfer gas resv. into holder object -- let's be explicit about the data this proc consumes, please.
+	own_move(flush_gas, src, "gas") // transfer gas resv. into holder object (from whoever owns it now) -- let's be explicit about the data this proc consumes, please.
 
 	//Check for any living mobs trigger hasmob.
 	//hasmob effects whether the package goes to cargo or its tagged destination.

@@ -20,7 +20,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect
 	. = ..()
 	smoke.attach(src)
 
-DECLARE_REF(/obj/item/rig_module/self_destruct, "smoke", OWNED, null)
 
 /obj/item/rig_module/self_destruct/activate()
 	return

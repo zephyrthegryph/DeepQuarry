@@ -757,7 +757,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
@@ -794,7 +794,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
@@ -832,7 +832,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
@@ -869,7 +869,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
@@ -892,4 +892,3 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/cultist/magus, "shields", 
 		"The %pred traces their claws over your form and sings an incantation, and you feel your strength wane as the walls work in with renewed vigor.",
 		"The motion of the %pred's trotting sloshes and sways you from side to side, occasionally coating you in more hot fluids! Eating away your stamina with irragular flexes to allow them to keep eating you away." ,)
 
-DECLARE_REF(/mob/living/simple_mob/humanoid/cultist/magus, "shields", OWNED, null)

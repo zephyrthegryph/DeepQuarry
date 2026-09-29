@@ -1,7 +1,7 @@
 /datum/borrow
 	var/broker = ""
 	var/borrower = ""
-	var/tmp/stock_handle
+	var/tmp/datum/stock/stock
 	EXPIRY_DECLARE(lease_expires)
 	var/lease_time = 0
 	var/grace_time = 0
@@ -42,16 +42,18 @@
 	var/list/borrows
 	var/list/events = list() // ALLOW(instance_list): d: stock market singleton state
 	var/list/articles
+	/// Account -> world.time that account last read this stock's news (plain data).
+	var/list/last_read
 	var/fluctuation_rate = 15
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
 
 /datum/stock/proc/addEvent(datum/stockEvent/E)
-	events |= E
+	own_add(src, "events", E)
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		LAZYINITLIST(articles); articles.Insert(1, A)
+		own_add(src, "articles", A) // appended: newest article is last
 	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
@@ -71,19 +73,19 @@
 
 /datum/stock/proc/generateIndustry()
 	if (findtext(name, "Farms"))
-		industry = new /datum/industry/agriculture
+		own_set(src, "industry", new /datum/industry/agriculture)
 	else if (findtext(name, "Software") || findtext(name, "Programming")  || findtext(name, "IT Group") || findtext(name, "Electronics") || findtext(name, "Electric") || findtext(name, "Nanotechnology"))
-		industry = new /datum/industry/it
+		own_set(src, "industry", new /datum/industry/it)
 	else if (findtext(name, "Mobile") || findtext(name, "Communications"))
-		industry = new /datum/industry/communications
+		own_set(src, "industry", new /datum/industry/communications)
 	else if (findtext(name, "Pharmaceuticals") || findtext(name, "Health"))
-		industry = new /datum/industry/health
+		own_set(src, "industry", new /datum/industry/health)
 	else if (findtext(name, "Wholesale") || findtext(name, "Stores"))
-		industry = new /datum/industry/consumer
+		own_set(src, "industry", new /datum/industry/consumer)
 	else
 		var/ts = typesof(/datum/industry) - /datum/industry
 		var/in_t = pick(ts)
-		industry = new in_t
+		own_set(src, "industry", new in_t)
 	for (var/i = 0, i < rand(2, 5), i++)
 		products += industry.generateProductName(name)
 
@@ -185,7 +187,7 @@
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
-			LAZYREMOVE(borrows, borrow)
+			own_take_member(src, "borrows", borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
 				GLOB.FrozenAccounts[borrow.borrower] -= borrow
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -196,7 +198,7 @@
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
 					shareholders[borrow.borrower] -= borrow.share_debt
-					LAZYREMOVE(borrows, borrow)
+					own_take_member(src, "borrows", borrow)
 					if (borrow.borrower in GLOB.FrozenAccounts)
 						GLOB.FrozenAccounts[borrow.borrower] -= borrow
 					if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
@@ -210,7 +212,7 @@
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
 		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
-			LAZYREMOVE(borrow_brokers, borrow)
+			own_take_member(src, "borrow_brokers", borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))
 		generateBrokers()
@@ -230,14 +232,14 @@
 	var/broker = DEFAULTPICK(GLOB.stockExchange.stockBrokers, null)
 	var/datum/borrow/B = new
 	B.broker = broker
-	B.stock_handle = om_handle(src)
+	rel_set(B, "stock", src)
 	B.lease_time = rand(4, 7) * 600
 	B.grace_time = rand(1, 3) * 600
 	B.share_amount = rand(1, 10) * 100
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	LAZYADD(borrow_brokers, B)
+	own_add(src, "borrow_brokers", B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]
@@ -263,8 +265,7 @@
 		LAZYSET(shareholders, who, B.share_amount)
 	else
 		LAZYADDASSOC(shareholders, who, B.share_amount)
-	LAZYREMOVE(borrow_brokers, B)
-	LAZYADD(borrows, B)
+	own_transfer(src, "borrow_brokers", src, "borrows", B) // an accepted offer: still the stock's to delete
 	B.borrower = who
 	B.grace_expires = B.lease_expires + B.grace_time
 	if (!(who in GLOB.FrozenAccounts))
@@ -308,10 +309,8 @@
 /datum/stock/proc/displayValues(mob/user)
 	return  // body provided by modular override
 
-DECLARE_REF(/datum/stock, "industry", OWNED, null)
 
-/// LC-refs: the stock this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stock this refers to (a relation view: null once it is deleted).
 /datum/borrow/proc/stock() as /datum/stock
-	return om_resolve(stock_handle)
+	return stock
 
-DECLARE_REF(/datum/stock, "events", OWNED_LIST, null)

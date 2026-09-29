@@ -18,7 +18,7 @@
 #define DISPOSALMODE_CHARGING 1
 #define DISPOSALMODE_CHARGED 2
 
-OM_TIMER_SLOT(/obj/machinery/disposal, power_retry_timer)
+OWN_TIMER(/obj/machinery/disposal, power_retry_timer)
 
 /obj/machinery/disposal
 	name = "disposal unit"
@@ -117,7 +117,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /// Wakes only once a charging disposal can actually draw air from its turf.
 /obj/machinery/disposal/proc/hibernate_until_intake_changes()
 	var/datum/gas_mixture/environment = loc.return_air()
-	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 	MACHINE_SLEEP(src)
 
 /obj/machinery/disposal/proc/gas_wake_condition()
@@ -665,7 +665,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
-	air_contents = new(PRESSURE_TANK_VOLUME)	// new empty gas resv. Disposal packet takes ownership of the original one!
+	own_set(src, "air_contents", new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
 	flushing = FALSE
 
 	// now reset disposal state
@@ -835,4 +835,3 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/step_start_condition()
 	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
 
-DECLARE_REF(/obj/machinery/disposal, "air_contents", OWNED, null)

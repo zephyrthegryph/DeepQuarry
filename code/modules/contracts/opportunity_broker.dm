@@ -50,10 +50,9 @@
 	event_type = _event_type
 	target = _target
 	value_field = _value_field
-	filter = new
+	own_set(src, "filter", new /datum/contract_event_filter)
 	diversity_targets = list()
 
-DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 
 /datum/contract_opportunity_signal/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -107,6 +106,8 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 	EXPIRY_DECLARE(last_event_at)
 	var/latched = FALSE
 	var/list/facts_by_signal
+	/// The last event that revised this window during an open batch (a relation; damage_batch.dm).
+	var/datum/contract_event/batch_event
 
 /datum/contract_opportunity_window/New(_key, _bucket, datum/contract_opportunity_rule/rule)
 	. = ..()
@@ -229,11 +230,10 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 
 /datum/contract_opportunity_rule/New()
 	. = ..()
-	signals = list()
+	own_take_all(src, "signals")
 	context_fields = list()
 	configure()
 
-DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 
 /datum/contract_opportunity_rule/proc/configure()
 	return
@@ -246,7 +246,7 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 		if(existing.id == signal.id)
 			qdel(signal)
 			return null
-	signals += signal
+	own_add(src, "signals", signal)
 	return signal
 
 /datum/contract_opportunity_rule/proc/forward_context(event_field, context_field = null)
@@ -381,7 +381,8 @@ DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 		if(!changed)
 			continue
 		if(batching)
-			LAZYSET(pending_opportunity_windows, window_key, event)
+			rel_set(window, "batch_event", event)
+			LAZYSET(pending_opportunity_windows, window_key, TRUE)
 			continue
 		evaluate_opportunity_window(rule, window, window_key, event)
 	return TRUE

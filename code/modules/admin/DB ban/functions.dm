@@ -66,7 +66,9 @@
 	if(!validckey && !unseen_ok)
 		if(!banned_mob || (banned_mob && !IsGuestKey(banned_mob.key))) // .
 			// The answer records the ban again from the start, re-reading the target's identifiers.
-			om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid), banned_mob_h = om_handle(banned_mob))
+			var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
+			if(ask && banned_mob)
+				rel_set(ask, "banned_mob", banned_mob)
 			return
 
 	var/a_ckey
@@ -178,13 +180,13 @@
 	requires = PROMPT_ADMIN(R_MOD|R_BAN)
 	/// DB_ban_record()'s arguments (the target's identifiers as they were when asked).
 	var/list/ban_args
-	/// The banned mob as a handle: the ban goes ahead by ckey if the mob is gone meanwhile.
-	var/banned_mob_h
+	/// The banned mob (a relation view): the ban goes ahead by ckey if the mob is gone meanwhile.
+	var/mob/banned_mob
 
 /datum/admins/proc/unseen_ban_confirmed(datum/om/prompt/confirm/unseen_ban/ask)
 	var/mob/admin = ask.answerer
 	var/list/ban_args = ask.ban_args
-	var/mob/banned_mob = om_resolve(ask.banned_mob_h)
+	var/mob/banned_mob = ask.banned_mob
 	if(banned_mob)
 		ban_args[2] = banned_mob
 	usr = admin // DB_ban_record() reads usr for the banning admin, as when it asked.

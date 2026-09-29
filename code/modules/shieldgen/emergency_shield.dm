@@ -12,7 +12,8 @@
 	max_integrity = 200 //The shield can only take so much beating (prevents perma-prisons)
 	var/shield_generate_power = 7500	//how much power we use when regenerating
 	var/shield_idle_power = 1500		//how much power we use when just being sustained.
-	var/our_owner
+	/// The generator that projects this tile (it owns the tile in deployed_shields).
+	var/obj/machinery/shieldgen/our_owner
 
 /obj/machinery/shield/malfai
 	name = "emergency forcefield"
@@ -37,7 +38,6 @@
 	update_nearby_tiles(need_rebuild=1)
 
 // leaves its generator's deployed shields (the generator is a handle).
-DECLARE_REF(/obj/machinery/shield, "our_owner", BACKLIST_HANDLE, "deployed_shields")
 
 /obj/machinery/shield/on_destroy(force)
 	opacity = 0
@@ -122,8 +122,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 	. = ..()
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/shieldgen, "cell", OWNED, null)
-DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -165,13 +163,12 @@ DECLARE_REF(/obj/machinery/shieldgen, "deployed_shields", OWNED_LIST, null)
 		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate_within(target_tile, /obj/machinery/shield)))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
-				LAZYADD(deployed_shields, S)
-				S.our_owner = om_handle(src) //So it knows to remove itself from our list when it gets qdel'd
+				own_add(src, "deployed_shields", S) // a destroyed tile leaves the list by itself
+				rel_set(S, "our_owner", src)
 				use_power(S.shield_generate_power)
 
 /obj/machinery/shieldgen/proc/collapse_shields()
-	for(var/obj/machinery/shield/shield_tile in deployed_shields)
-		qdel(shield_tile)
+	own_clear(src, "deployed_shields", OWN_DELETE)
 
 /obj/machinery/shieldgen/machine_step()
 	if(!active)
@@ -327,7 +324,7 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
 			user.drop_item()
-			cell = C
+			own_set(src, "cell", C)
 			C.forceMove(src)
 			C.add_fingerprint(user)
 

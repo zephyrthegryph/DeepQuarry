@@ -4,7 +4,7 @@
 /obj/item/communicator/proc/add_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	LAZYOR(communicating, comm)
+	rel_add(src, "communicating", comm)
 	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	update_icon()
@@ -15,7 +15,7 @@
 /obj/item/communicator/proc/del_communicating(obj/item/communicator/comm)
 	if(!comm || !istype(comm)) return
 
-	LAZYREMOVE(communicating, comm)
+	rel_remove(src, "communicating", comm)
 	update_icon()
 
 // Proc: open_connection()
@@ -23,7 +23,7 @@
 // Description: Typechecks the candidate, then calls the correct proc for further connecting.
 /obj/item/communicator/proc/open_connection(mob/user, atom/candidate)
 	if(isobserver(candidate))
-		LAZYREMOVE(voice_invites, candidate)
+		rel_remove(src, "voice_invites", candidate)
 		open_connection_to_ghost(user, candidate)
 	else
 		if(istype(candidate, /obj/item/communicator))
@@ -36,7 +36,7 @@
 	if(!istype(candidate, /obj/item/communicator))
 		return
 	var/obj/item/communicator/comm = candidate
-	LAZYREMOVE(voice_invites, candidate)
+	rel_remove(src, "voice_invites", candidate)
 	LAZYREMOVE(comm.voice_requests, src)
 
 	if(user)
@@ -74,7 +74,7 @@
 	//Handle moving the ghost into the new shell.
 	announce_ghost_joinleave(candidate, 0, "They are occupying a personal communications device now.")
 	LAZYREMOVE(voice_requests, candidate)
-	LAZYREMOVE(voice_invites, candidate)
+	rel_remove(src, "voice_invites", candidate)
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the ghost is going to be.
 	new_voice.transfer_identity(candidate) 	//Now make the voice mob load from the ghost's active character in preferences.
 	//Do some simple logging since this is a tad risky as a concept.
@@ -82,9 +82,9 @@
 	[user && user.client ? "[user.client.key]" : "*no key*"] ([user ? "[user]" : "*null*"]) at [x],[y],[z].  They have joined as [new_voice.name]."
 	message_admins(msg)
 	log_game(msg)
-	new_voice.mind = candidate.mind			//Transfer the mind, if any.
+	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
-	LAZYADD(voice_mobs, new_voice)
+	own_add(src, "voice_mobs", new_voice)
 	om_task_periodic(src, PERIODIC_SLOW) // the connection watchdog
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
@@ -142,7 +142,7 @@
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		LAZYREMOVE(voice_mobs, voice)
+		own_take_member(src, "voice_mobs", voice)
 		qdel(voice)
 		update_icon()
 
@@ -173,7 +173,7 @@
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
 		who = comm.owner
-		LAZYOR(comm.voice_invites, src)
+		rel_add(comm, "voice_invites", src)
 
 	if(!who)
 		return
@@ -207,7 +207,7 @@
 		to_chat(candidate, span_warning("Your communicator call request was declined."))
 	else if(istype(candidate, /obj/item/communicator))
 		var/obj/item/communicator/comm = candidate
-		LAZYREMOVE(comm.voice_invites, src)
+		rel_remove(comm, "voice_invites", src)
 
 	LAZYREMOVE(voice_requests, candidate)
 
@@ -375,7 +375,7 @@
 		return
 	to_chat(user, span_notice("[icon2html(src, user.client)] Please wait..."))
 
-	video_source = comm.camera
+	rel_set(src, "video_source", comm.camera)
 	comm.visible_message(span_danger("[icon2html(src,viewers(src))] New video connection from [comm]."))
 	update_active_camera_screen()
 	om_hook(video_source, /datum/om/event/movable_attempted_move, src, PROC_REF(update_active_camera_screen))
@@ -388,7 +388,7 @@
 /obj/item/communicator/proc/end_video(reason)
 	om_unhook(video_source, /datum/om/event/movable_attempted_move, src)
 	show_static()
-	video_source = null
+	rel_clear(src, "video_source")
 
 	if(reason)
 		visible_message(reason)

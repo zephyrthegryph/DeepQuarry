@@ -13,7 +13,7 @@
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		LAZYADD(containers, new /obj/item/reagent_containers/glass/bottle/biomass(src))
+		own_add(src, "containers", new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.
@@ -42,7 +42,7 @@
 
 		if(tankpath)
 			H.equip_to_slot_or_del(new tankpath(H), SLOT_ID_BACK)
-			H.internal = H.get_equipped_item(SLOT_ID_BACK)
+			rel_set(H, "internal", H.get_equipped_item(SLOT_ID_BACK))
 			if(istype(H.internal,/obj/item/tank) && H.internals)
 				H.internals.icon_state = "internal1"
 
@@ -131,11 +131,11 @@
 	anchored = TRUE
 
 	var/list/stored_material =  list(MAT_STEEL = 30000, MAT_GLASS = 30000) // ALLOW(instance_list): d: edited in place per instance (3 writers)
-	var/connected      //What console it's done up with
+	var/obj/machinery/computer/transhuman/resleeving/connected      //What console it's done up with (relation)
 	var/busy = 0       //Busy cloning
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)
 	var/max_res_amount = 30000 //Max the thing can hold
-	var/current_br
+	var/datum/transhuman/body_record/current_br // the record being printed (relation)
 
 	var/broken = 0
 	var/burn_value = 0 //Setting these to 0, if resleeving as organic with unupgraded sleevers gives them no damage, resleeving synths with unupgraded synthfabs should not give them potentially 105 damage.
@@ -159,7 +159,7 @@
 
 /obj/machinery/transhuman/synthprinter/Initialize(mapload)
 	. = ..()
-	component_parts = null
+	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 
@@ -191,7 +191,7 @@
 	if(has_stat(NOPOWER))
 		if(busy)
 			busy = 0
-			current_br = null
+			rel_clear(src, "current_br")
 		update_icon()
 		return PROCESS_KILL
 
@@ -204,14 +204,14 @@
 	if(!busy)
 		return PROCESS_KILL
 
-/obj/machinery/transhuman/synthprinter/proc/print(BR)
-	if(!om_resolve(BR) || busy)
+/obj/machinery/transhuman/synthprinter/proc/print(datum/transhuman/body_record/BR)
+	if(!istype(BR) || QDELETED(BR) || busy)
 		return 0
 
 	if(stored_material[MAT_STEEL] < body_cost || stored_material[MAT_GLASS] < body_cost)
 		return 0
 
-	current_br = BR
+	rel_set(src, "current_br", BR)
 	busy = 5
 	MACHINE_WAKE(src)
 	update_icon()
@@ -221,10 +221,10 @@
 /obj/machinery/transhuman/synthprinter/proc/make_body()
 	//Manage machine-specific stuff
 
-	var/datum/transhuman/body_record/current_project = om_resolve(current_br)
+	var/datum/transhuman/body_record/current_project = current_br
 	if(!current_project)
 		busy = 0
-		current_br = null
+		rel_clear(src, "current_br")
 		update_icon()
 		return
 
@@ -317,8 +317,9 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 	var/blur_amount
 	var/confuse_amount
 
-	VAR_PRIVATE/occupant_handle = null
-	var/connected = null
+	/// The occupant in the sealed occupant slot (a relation view; set only by set_occupant()).
+	var/mob/living/carbon/human/sleever_occupant
+	var/obj/machinery/computer/transhuman/resleeving/connected //What console it's done up with (relation)
 
 	var/sleevecards = 2
 
@@ -340,7 +341,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /obj/machinery/transhuman/resleever/Initialize(mapload)
 	. = ..()
-	component_parts = null
+	own_clear(src, "component_parts", OWN_DELETE) // this machine runs without stock parts
 	RefreshParts()
 	update_icon()
 
@@ -353,15 +354,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /obj/machinery/transhuman/resleever/proc/set_occupant(mob/living/carbon/human/H)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!H)
-		occupant_handle = null
-		return
-	occupant_handle = om_handle(H)
+	rel_set(src, "sleever_occupant", H) // null clears it
 
 /obj/machinery/transhuman/resleever/proc/get_occupant()
 	RETURN_TYPE(/mob/living/carbon/human)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return om_resolve(occupant_handle)
+	return sleever_occupant
 
 /obj/machinery/transhuman/resleever/RefreshParts()
 	var/scan_rating = get_part_rating(/obj/item/stock_parts/scanning_module)

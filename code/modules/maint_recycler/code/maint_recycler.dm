@@ -116,15 +116,12 @@
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-DECLARE_REF(/obj/machinery/maint_recycler, "inserted_item", SPILL, null)
-DECLARE_REF(/obj/machinery/maint_recycler, "hatch", OWNED, null)
-DECLARE_REF(/obj/machinery/maint_recycler, "monitor_screen", OWNED, null)
-DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
+OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	hatch = new
+	own_set(src, "hatch", new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
@@ -136,7 +133,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	//at least for 32x32 stuff!
 	src.underlays |= underlay
 
-	monitor_screen = new
+	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -144,7 +141,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 
 	src.vis_contents |= monitor_screen
 
-	item_overlay = new
+	own_set(src, "item_overlay", new /obj/effect/overlay/recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
 
@@ -216,7 +213,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 				user.drop_item() //mobs need to be properly handled, can't just move the holder into the thing
 				m.dir = SOUTH //the disposal bins do that and it simply doesn't work.
 				m.forceMove(src)
-				inserted_item = m
+				own_set(src, "inserted_item", m)
 			else
 				return TRUE //too far away, dumbass.
 		else
@@ -225,7 +222,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 		to_chat(user, span_notice("You put \the [O] into \the [src]'s processing compartment!"))
 		user.drop_item()
 		O.forceMove(src)
-		inserted_item = O
+		own_set(src, "inserted_item", O)
 
 	update_icon()
 	return FALSE
@@ -240,7 +237,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 			if(inserted_item == null)
 				visible_message("\The [source] lands in \the [src].",runemessage = "swish")
 				source.forceMove(src)
-				inserted_item = source
+				own_set(src, "inserted_item", source)
 				update_icon()
 				play_sfx(src, SFX_RECYCLER_A_WONDERFUL_THROW)
 				set_screen_state("screen_happy",10)
@@ -326,10 +323,12 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	inserted_item.forceMove(get_turf(src))
-	visible_message(span_warning("[src] ejects \the [inserted_item] from its recycling chamber!"))
-	inserted_item.throw_at(get_step(src,SOUTH),5,1,src)
-	inserted_item = null;
+	var/atom/movable/ejected = own_take(src, "inserted_item")
+	if(!ejected)
+		return
+	ejected.forceMove(get_turf(src))
+	visible_message(span_warning("[src] ejects \the [ejected] from its recycling chamber!"))
+	ejected.throw_at(get_step(src,SOUTH),5,1,src)
 	update_icon()
 
 /obj/machinery/maint_recycler/proc/start_recycling(mob/user)
@@ -352,13 +351,13 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	if(istype(inserted_item,/mob))
-		var/mob/m = inserted_item
+	var/recycled = own_take(src, "inserted_item")
+	if(istype(recycled,/mob))
+		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?
 	else
-		qdel(inserted_item)
+		qdel(recycled)
 	set_screen_state("screen_cashout",10)
-	inserted_item = null
 	door_locked = FALSE
 	open_door(user)
 	update_icon()

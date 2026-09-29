@@ -176,4 +176,3 @@
 			return ..()
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob/vore/fennec/huge, "bigshadow", OWNED, null)

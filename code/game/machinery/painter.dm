@@ -54,7 +54,7 @@
 	else
 		icon_state = "colormate"
 
-DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
+OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 
 /obj/machinery/gear_painter/declare_interactions(list/into)
 	into += list(
@@ -91,7 +91,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
 	user.drop_from_inventory(I)
 	I.forceMove(src)
-	inserted = I
+	own_set(src, "inserted", I)
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -100,8 +100,8 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 		return
 	if(user)
 		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
-	inserted = victim
-	inserted.forceMove(src)
+	victim.forceMove(src)
+	own_set(src, "inserted", victim)
 
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE
@@ -132,7 +132,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 	inserted.forceMove(drop_location())
 	if(isliving(user))
 		user.put_in_hands(inserted)
-	inserted = null
+	own_take(src, "inserted")
 	update_icon()
 	SStgui.update_uis(src)
 

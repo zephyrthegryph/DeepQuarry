@@ -1049,14 +1049,15 @@
 	src.hit_atom = hit_atom
 	src.throwingdatum = throwingdatum
 
-/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom OM handle,/turf/echo_turf_location)
+/// From /datum/controller/subsystem/motion_tracker/notice() (source_atom,/turf/echo_turf_location)
 /datum/om/event/movable_motiontracker
 	sync = TRUE
-	var/handle
+	/// The moving atom that made the echo.
+	var/atom/source
 	var/echo_turf_location
 
-/datum/om/event/movable_motiontracker/New(handle, echo_turf_location)
-	src.handle = handle
+/datum/om/event/movable_motiontracker/New(atom/source, echo_turf_location)
+	src.source = source // ALLOW(ownership): a sync event payload that lives for one emit and is never destroyed
 	src.echo_turf_location = echo_turf_location
 
 /// From base of atom/movable/Moved(): (/atom)
@@ -1122,11 +1123,11 @@
 
 /datum/om/event/observer_turf_entered
 	sync = TRUE
-	var/arrived_handle
+	var/atom/movable/arrived
 	var/old_loc
 
-/datum/om/event/observer_turf_entered/New(arrived_handle, old_loc)
-	src.arrived_handle = arrived_handle
+/datum/om/event/observer_turf_entered/New(atom/movable/arrived, old_loc)
+	src.arrived = arrived // ALLOW(ownership): a sync event payload that lives for one emit and is never destroyed; a relation index entry on every mover would outlive it
 	src.old_loc = old_loc
 
 /// From /client/proc/handle_popup_close() : (window_id)
@@ -1294,7 +1295,7 @@
 /datum/om/event/tgui_window_visible/New(client)
 	src.client = client
 
-/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that signal handlers can mutate to append `/datum/callback` objects. They will be called with the new turf after the turf has changed.
+/// From base of turf/ChangeTurf(): (path, list/new_baseturfs, flags, list/post_change_callbacks). `post_change_callbacks` is a list that handlers append om_callable() specs to (as list(spec)). They will be called with the new turf after the turf has changed.
 /datum/om/event/turf_change
 	sync = TRUE
 	var/path

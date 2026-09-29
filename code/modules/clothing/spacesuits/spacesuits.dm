@@ -24,7 +24,7 @@
 	valid_accessory_slots = null
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
-	var/obj/machinery/camera/camera // ALLOW(state_ref): owned: helmet camera made on first toggle, kept in the helmet's contents
+	var/obj/machinery/camera/camera // owned: helmet camera made on first toggle, kept in the helmet's contents
 	var/list/camera_networks
 
 	actions_types = list(/datum/action/item_action/toggle_helmet_light)
@@ -50,7 +50,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 		return
 
 	if(!camera)
-		camera = new /obj/machinery/camera(src)
+		own_set(src, "camera", new /obj/machinery/camera(src))
 		camera.replace_networks(camera_networks)
 		camera.set_status(FALSE) //So the camera will activate in the following check.
 
@@ -89,7 +89,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 	siemens_coefficient = 0.9
 	preserve_item = 1
 	valid_accessory_slots = (ACCESSORY_SLOT_OVER | ACCESSORY_SLOT_ARMBAND | ACCESSORY_SLOT_DECOR)
-	var/list/supporting_limbs //If not-null, automatically splints breaks. Checked when removing the suit.
+	var/supports_limbs = FALSE //If TRUE, automatically splints breaks. Checked when removing the suit.
+	var/list/supporting_limbs //The limbs it is splinting now (a relation list: a deleted limb leaves it).
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 // start - use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
@@ -118,26 +119,26 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 /obj/item/clothing/suit/space/proc/check_limb_support(mob/living/carbon/human/user)
 
 	// If this isn't set, then we don't need to care.
-	if(!istype(user) || isnull(supporting_limbs))
+	if(!istype(user) || !supports_limbs)
 		return
 
 	if(user.get_equipped_item(SLOT_ID_SUIT) == src)
 		for(var/obj/item/organ/external/E in user.bad_external_organs)
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-				supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
+				rel_add(src, "supporting_limbs", E)
 	else
 		// Otherwise, remove the splints.
 		for(var/obj/item/organ/external/E in supporting_limbs)
 			if(E.splinted == src && E.remove_splint(src))
 				to_chat(user, "\The [src] stops supporting your [E.name].")
-		supporting_limbs.Cut()
+		rel_clear(src, "supporting_limbs")
 
 /obj/item/clothing/suit/space/proc/handle_fracture(mob/living/carbon/human/user, obj/item/organ/external/E)
-	if(!istype(user) || isnull(supporting_limbs))
+	if(!istype(user) || !supports_limbs)
 		return
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-		supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
+		rel_add(src, "supporting_limbs", E)
 
-DECLARE_REF(/obj/item/clothing/head/helmet/space, "camera", OWNED, null)
+REL_LIST(/obj/item/clothing/suit/space, supporting_limbs)

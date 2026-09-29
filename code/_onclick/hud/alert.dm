@@ -17,7 +17,7 @@
 	var/atom/movable/screen/alert/alert
 	if(LAZYACCESS(alerts, category))
 		alert = alerts[category]
-		var/obj/master = om_resolve(alert.master_ref)
+		var/obj/master = alert.master_ref
 		if(new_master && new_master != master)
 			WARNING("[src] threw alert [category] with new_master [new_master] while already having that alert with master [master]")
 			clear_alert(category)
@@ -40,12 +40,12 @@
 		I.plane = PLANE_PLAYER_HUD_ABOVE
 		I.color = new_master.color
 		alert.add_overlay(I)
-		alert.master_ref = om_handle(new_master)
+		rel_set(alert, "master_ref", new_master)
 	else
 		alert.icon_state = "[initial(alert.icon_state)][severity]"
 		alert.severity = severity
 
-	LAZYSET(alerts, category, alert)
+	own_put(src, "alerts", category, alert)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 	alert.transform = matrix(32, 6, MATRIX_TRANSLATE)
@@ -66,7 +66,7 @@
 	if(!alert)
 		return 0
 
-	LAZYREMOVE(alerts, category)
+	own_take_member(src, "alerts", category)
 	if(client && hud_used)
 		hud_used.reorganize_alerts()
 		client.screen -= alert
@@ -422,7 +422,7 @@ so as to remain in compliance with the most up-to-date laws."
 
 	// Open a new chat with the user
 	var/datum/ticket_chat/TC = new()
-	TC.T_handle = om_handle(usr.client.current_ticket())
+	rel_set(TC, "T", usr.client.current_ticket())
 	TC.tgui_interact(usr.client.mob)
 
 // PRIVATE = only edit, use, or override these if you're editing the system as a whole
@@ -472,7 +472,7 @@ so as to remain in compliance with the most up-to-date laws."
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT)) // screen objects don't do the normal Click() stuff so we'll cheat
 		to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
 		return
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	if(master)
 		return usr.client.Click(master, location, control, params)
 	..() // Pass through to click_vr

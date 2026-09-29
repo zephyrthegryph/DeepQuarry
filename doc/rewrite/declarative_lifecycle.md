@@ -4,7 +4,7 @@ Status: **authoritative** for the declaration primitives. Macros:
 `code/__defines/lifecycle_decl.dm`. Runtime: `code/datums/lifecycle/declarations.dm`.
 Tests: `code/modules/unit_tests/dq_decl_lifecycle_tests.dm`. Backlog lint:
 `tools/ci/decl_lint.py`. Read [lifecycle.md](lifecycle.md) first for the destroy transaction
-and `DECLARE_REF`.
+and the ownership declarations (doc/rewrite/ownership.md).
 
 ## 1. The idea
 
@@ -31,7 +31,7 @@ Rules:
 | **init** | end of `/atom/Initialize()` (the root, so before any subtype code after `. = ..()`), and `table_initialize()` | 1 children, 2 gas, 3 reagents, 4 appearance |
 | **materialize** | `/atom/on_materialize()`, after the core registries, rules and OM start | 5 conditional registries, 6 service members, 7 binds, 8 behaviours, periodic work, timers |
 | **dematerialize** | `/atom/on_dematerialize()`, before the core leaves registries | periodic stop, service leave, bind release (skipped while destroying: phase 1 did it) |
-| **destroy** | the destroy transaction | phase 1: bind release. Phase 3/4: children, by their `DECLARE_REF` kind. Phase 6: `DESTROY_EFFECTS`, including `drop_contents` (per atom, before a batch merge) and `debris` |
+| **destroy** | the destroy transaction | phase 1: bind release. Phase 3/4: children, by their ownership policy. Phase 6: `DESTROY_EFFECTS`, including `drop_contents` (per atom, before a batch merge) and `debris` |
 
 Instance state is set up at **init** rather than materialize. A sandboxed object
 (`new_unmaterialized()`, a latent entry being built) then has its reagents, children and
@@ -103,8 +103,8 @@ holder.
 ### 3.2 Owned children with a default: `DECLARE_DEFAULT_CHILD`
 
 ```dm
-DECLARE_REF(PATH, "var", OWNED|OWNED_LIST|HELD|SPILL|SPILL_LIST, null)   // how it dies (unchanged)
-DECLARE_DEFAULT_CHILD(PATH, "var", DEFAULT)                            // how it's born
+OWN(PATH, var, OWN_SPILL)                      // how it dies: only when not the default OWN_DELETE
+DECLARE_DEFAULT_CHILD(PATH, "var", DEFAULT)    // how it's born (adopted through own_set/own_add)
 ```
 
 DEFAULT is a type path, a list of paths or `list(path = count)` for a list var, or the **name
@@ -114,8 +114,9 @@ of a var holding the type** (`"cell_type"`). The var's own value wins:
 - an instance creates nothing;
 - a list of paths creates each.
 
-Children are made with `new type(src)`. The `DECLARE_REF` line is required; the table refuses a
-default for a var that has none.
+Children are made with `new type(src)` and adopted with `own_set()` / `own_add()`
+(doc/rewrite/ownership.md), so the var is owned (implicitly `OWN_DELETE`, or its declared policy).
+A var declared as another kind (a relation, a proto) refuses a default child at boot.
 
 ```dm
 // Before
@@ -147,8 +148,8 @@ Keep in `Initialize()`: children built with extra arguments (`new X(src, a, b)`)
 wired to each other after creation, and random picks. You can still declare a child and then
 configure it in `Initialize()` after `. = ..()`, because the child already exists by then.
 
-The destroy side is just the `DECLARE_REF` kind. Delete any `qdel(var)` / `QDEL_NULL(var)` in
-`on_destroy()` for an OWNED var (`decl_lint`: `destroy_qdel_owned`).
+The destroy side is the var's ownership policy. Delete any `own_clear()` / `qdel(var)` of an owned
+var in `on_destroy()` (`decl_lint`: `destroy_qdel_owned`).
 
 ### 3.3 Gas contents: `DECLARE_GAS`
 

@@ -27,12 +27,12 @@
 	. = ..()
 	our_db_static = GLOB.transcore_service.db_by_key(db_key)
 
-DECLARE_REF(/obj/machinery/computer/transhuman/designer, "disk", SPILL, null)
+OWN(/obj/machinery/computer/transhuman/designer, disk, OWN_SPILL)
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)
 		disk.forceMove(get_turf(src))
-		disk = null
+		own_take(src, "disk")
 	. = ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
@@ -43,8 +43,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 /// Old attackby.
 /obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
 	user.unEquip(W)
-	disk = W
-	disk.forceMove(src)
+	W.forceMove(src)
+	own_set(src, "disk", W)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)
 	return INTERACTION_HANDLED_PASS
@@ -56,8 +56,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	if(!operable())
 		return
 	if(!designer_gui)
-		designer_gui = new(src, null)
-		designer_gui.linked_body_design_console = om_handle(src)
+		own_set(src, "designer_gui", new /datum/tgui_module/appearance_changer/body_designer(src, null))
+		rel_set(designer_gui, "linked_body_design_console", src)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())
 		designer_gui.make_fake_owner()
@@ -96,9 +96,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 #undef MENU_SPECIFICRECORD
 #undef MENU_OOCNOTES
 
-DECLARE_REF(/obj/machinery/computer/transhuman/designer, "designer_gui", OWNED, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/transhuman/designer/proc/our_db() as /datum/transcore_db
 	return our_db_static
-DECLARE_REF(/obj/machinery/computer/transhuman/designer, "our_db_static", STATIC, null)

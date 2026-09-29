@@ -13,7 +13,7 @@
 // the event service forgets its manager panel.
 /datum/event_manager_panel/lifecycle_dematerialize()
 	if(GLOB.event_service?.tgui_event_manager_panel == src)
-		GLOB.event_service.tgui_event_manager_panel = null
+		rel_clear(GLOB.event_service, "tgui_event_manager_panel")
 	..()
 
 /datum/event_manager_panel/tgui_state(mob/user)
@@ -175,16 +175,16 @@
 				return
 			if(EC.next_event())
 				log_and_message_admins("has dequeued the [GLOB.severity_to_string[EC.severity]] event '[EC.next_event().name]'.", user)
-				EC.next_event_handle = null
+				rel_clear(EC, "next_event")
 			return TRUE
 		if("view_events")
 			var/datum/event_container/EC = container_from(params["ref"])
 			if(!EC)
 				return
-			service.selected_event_container_handle = om_handle(EC)
+			rel_set(service, "selected_event_container", EC)
 			return TRUE
 		if("back")
-			service.selected_event_container_handle = null
+			rel_clear(service, "selected_event_container")
 			return TRUE
 		if("stop_event")
 			var/datum/event/E = locate_in_list(service.active_events(), params["ref"])
@@ -251,7 +251,7 @@
 			var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
 			if(answer != "Yes")
 				return
-			EC.available_events -= EM
+			rel_remove(EC, "available_events", EM)
 			log_and_message_admins("has removed the [GLOB.severity_to_string[EM.severity]] event '[EM.name]'.", user)
 			return TRUE
 		if("add_event")
@@ -263,12 +263,13 @@
 			if(answer != "Yes" || NE != service.new_event)
 				return
 			NE.severity = EC.severity
-			EC.available_events += NE
+			// The container adopts the drafted meta; the service starts a fresh draft below.
+			own_transfer(service, "new_event", EC, "event_pool")
+			rel_add(EC, "available_events", NE)
 			log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
-			service.new_event = new
+			own_set(service, "new_event", new /datum/event_meta)
 			return TRUE
 
 /datum/world_service/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
 
-DECLARE_REF(/datum/world_service/events, "tgui_event_manager_panel", OWNED, null)

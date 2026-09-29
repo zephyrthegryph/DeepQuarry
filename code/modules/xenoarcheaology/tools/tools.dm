@@ -70,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					GLOB.xenoarch_service.artifact_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "artifact_spawning_turfs", T)
 
 			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
@@ -79,7 +79,7 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					GLOB.xenoarch_service.digsite_spawning_turfs.Remove(T)
+					rel_remove(GLOB.xenoarch_service, "digsite_spawning_turfs", T)
 
 		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
@@ -105,8 +105,10 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	item_state = "analyzer"
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_BELT
+	/// Owned: the depth scans this scanner recorded.
 	var/list/positive_locations
-	var/tmp/current_handle
+	/// Relation view: the selected scan (one of positive_locations).
+	var/tmp/datum/depth_scan/current
 
 /datum/depth_scan
 	var/time = ""
@@ -135,7 +137,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			LAZYADD(positive_locations, D)
+			own_add(src, "positive_locations", D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -151,7 +153,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			LAZYADD(positive_locations, D)
+			own_add(src, "positive_locations", D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 
@@ -213,20 +215,18 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 		if("select")
 			var/index = text2num(params["select"])
 			if(index && index <= LAZYLEN(positive_locations))
-				current_handle = om_handle(LAZYACCESS(positive_locations, index))
+				rel_set(src, "current", LAZYACCESS(positive_locations, index))
 			return TRUE
 		if("clear")
 			var/index = text2num(params["clear"])
 			if(index)
 				if(index <= LAZYLEN(positive_locations))
 					var/datum/depth_scan/D = LAZYACCESS(positive_locations, index)
-					LAZYREMOVE(positive_locations, D)
-					qdel(D)
-					current_handle = null
+					rel_clear(src, "current")
+					own_remove(src, "positive_locations", D) // deletes the scan
 			else
-				QDEL_LIST_NULL(positive_locations)
-				positive_locations = list()
-				qdel_handle(current_handle); current_handle = null
+				rel_clear(src, "current")
+				own_clear(src, "positive_locations", OWN_DELETE)
 			return TRUE
 
 MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
@@ -238,7 +238,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 	item_state = "electronic"
 	var/frequency = PUB_FREQ
 	var/scan_ticks = 0
-	var/tmp/target_radio_handle
+	var/tmp/obj/item/radio/target_radio
 
 /// Points at its target (or counts a reset) every 2 s while tracking; idle, it sleeps.
 /obj/item/beacon_locator/periodic_step()
@@ -268,7 +268,7 @@ MATERIAL_MIX(/obj/item/beacon_locator, list(MAT_STEEL = 1000,MAT_GLASS = 500))
 						var/check_dist = get_dist(T,R)
 						if(check_dist < cur_dist)
 							cur_dist = check_dist
-							target_radio_handle = om_handle(R)
+							rel_set(src, "target_radio", R)
 
 				scan_ticks = 0
 				if(target_radio())
@@ -317,7 +317,7 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	switch(action)
 		if("reset_tracking")
 			scan_ticks = 1
-			target_radio_handle = null
+			rel_clear(src, "target_radio")
 			om_task_periodic(src, PERIODIC_SLOW)
 			return TRUE
 		if("setFrequency")
@@ -365,13 +365,11 @@ DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
 /obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_scan(mob/user, obj/item/held, datum/interaction/interaction)
 	anomaly_scanner.interact(user)
 
-DECLARE_REF(/obj/item/xenoarch_multi_tool, "anomaly_scanner", OWNED, null)
-DECLARE_REF(/obj/item/xenoarch_multi_tool, "depth_scanner", OWNED, null)
 
-/// LC-refs: the target_radio this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_radio var.
 /obj/item/beacon_locator/proc/target_radio() as /obj/item/radio
-	return om_resolve(target_radio_handle)
+	return target_radio
 
-/// LC-refs: the current this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the current var.
 /obj/item/depth_scanner/proc/current() as /datum/depth_scan
-	return om_resolve(current_handle)
+	return current

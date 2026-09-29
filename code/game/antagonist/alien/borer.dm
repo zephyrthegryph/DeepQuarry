@@ -35,9 +35,9 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 /datum/antagonist/borer/create_objectives(datum/mind/player)
 	if(!..())
 		return
-	player.objectives += new /datum/objective/borer_survive()
-	player.objectives += new /datum/objective/borer_reproduce()
-	player.objectives += new /datum/objective/escape()
+	player.add_objective(new /datum/objective/borer_survive())
+	player.add_objective(new /datum/objective/borer_reproduce())
+	player.add_objective(new /datum/objective/escape())
 
 /datum/antagonist/borer/place_mob(mob/living/mob)
 	var/mob/living/simple_mob/animal/borer/borer = mob
@@ -54,7 +54,7 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 			om_link(borer, host, /datum/om/relation/host_of) // also lists it in head.implants
 			borer.forceMove(head)
 			if(!borer.host_brain)
-				borer.host_brain = new(borer)
+				own_set(borer, "host_brain", new /mob/living/captive_brain(borer)) // the borer owns the captive mind it makes
 			borer.host_brain.name = host.name
 			borer.host_brain.real_name = host.real_name
 			return

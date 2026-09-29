@@ -99,7 +99,7 @@ Thus, the two variables affect pump operation are set in New():
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -107,7 +107,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"tag" = id,
@@ -350,4 +350,3 @@ Thus, the two variables affect pump operation are set in New():
 	else
 		icon_state = "[use_power ? "on" : "off"]"
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/pump, "radio_connection", STATIC, null)

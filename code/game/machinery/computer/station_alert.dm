@@ -18,11 +18,10 @@
 	circuit = /obj/item/circuitboard/stationalert_all
 
 /obj/machinery/computer/station_alert/Initialize(mapload)
-	alarm_monitor = new monitor_type(src)
+	own_set(src, "alarm_monitor", new monitor_type(src))
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 
-DECLARE_REF(/obj/machinery/computer/station_alert, "alarm_monitor", OWNED, null)
 
 /// Phase 2: leaves its alarm monitor's listeners.
 /obj/machinery/computer/station_alert/lifecycle_dematerialize()

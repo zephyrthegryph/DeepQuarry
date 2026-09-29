@@ -13,7 +13,7 @@
 	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 
 	if(istype(loc, /obj/item/communicator))
-		comm = loc
+		rel_set(src, "comm", loc) // the communicator carrying us
 	. = ..()
 
 // Proc: transfer_identity()
@@ -151,4 +151,4 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-DECLARE_REF(/mob/living/voice, "comm", HELD, null)
+REL(/mob/living/voice, comm)

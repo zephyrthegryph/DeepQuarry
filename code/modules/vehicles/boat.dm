@@ -83,12 +83,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/boat, INTERACT_DRAG("Board", PROC_REF(interacti
 		return FALSE
 	..(L, user)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/vehicle/boat/proc/material() as /datum/material
 	return material_static
-DECLARE_REF(/obj/vehicle/boat, "material_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// Accessor for a shared definition.
 /obj/item/oar/proc/material() as /datum/material
 	return material_static
-DECLARE_REF(/obj/item/oar, "material_static", STATIC, null)

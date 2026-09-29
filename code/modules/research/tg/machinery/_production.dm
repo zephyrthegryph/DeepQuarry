@@ -28,17 +28,16 @@
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
 
-DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 
 /obj/machinery/rnd/production/Initialize(mapload)
-	print_sound = new(list(src), FALSE)
-	materials = new /datum/remote_materials(
+	own_set(src, "print_sound", new /datum/looping_sound/lathe_print(list(src), FALSE))
+	own_set(src, "materials", new /datum/remote_materials(
 		src, \
 		mapload, \
 		mat_container_events = list( \
 			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/rnd/production, local_material_insert)
 		) \
-	)
+	))
 
 	available_designs = list()
 
@@ -48,8 +47,6 @@ DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 	RefreshParts()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/rnd/production, "print_sound", OWNED, null)
-DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 
 /obj/machinery/rnd/production/update_icon()
 	cut_overlays()

@@ -45,8 +45,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	B2.reagents.add_reagent(REAGENT_ID_PHOSPHORUS, 150)
 	B2.reagents.add_reagent(REAGENT_ID_SUGAR, 150)
 
-	LAZYADD(beakers, B1)
-	LAZYADD(beakers, B2)
+	own_add(src, "beakers", B1)
+	own_add(src, "beakers", B2)
 
 /obj/item/projectile/bullet/frostshotgun
 	use_submunitions = 1

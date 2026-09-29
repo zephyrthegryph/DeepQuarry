@@ -3,16 +3,15 @@
 	desc = "You should never see this..."
 	var/list/possible_tooltypes
 	var/current_tooltype = 1
-	var/obj/item/weldingtool/welder // ALLOW(state_ref): owned: the internal welder the tool transforms into, kept in its contents
+	var/obj/item/weldingtool/welder // owned: the internal welder the tool transforms into, kept in its contents
 	var/weldertype = /obj/item/weldingtool/dummy
 
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
 	. = ..()
 	if(TOOL_WELDER in possible_tooltypes)
-		welder = new weldertype(src) // ALLOW(decl): only when a welder mode is possible
+		own_set(src, "welder", new weldertype(src)) // ALLOW(decl): only when a welder mode is possible
 	on_tool_switch()
 
-DECLARE_REF(/obj/item/tool/transforming, "welder", OWNED, null)
 
 /obj/item/tool/transforming/get_welder()
 	return welder

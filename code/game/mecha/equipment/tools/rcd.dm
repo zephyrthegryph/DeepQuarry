@@ -11,7 +11,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", /obj/item/rcd/electric/mounted/mecha)
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/rcd, "my_rcd", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/tool/rcd/action(atom/target)
 	if(!action_checks(target) || get_dist(chassis, target) > 3)

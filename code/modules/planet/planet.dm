@@ -32,9 +32,9 @@
 
 /datum/planet/New()
 	..()
-	weather_holder = new(src)
-	sun_holder = new(src)
-	current_time = current_time.make_random_time()
+	own_set(src, "weather_holder", new /datum/weather_holder(src))
+	own_set(src, "sun_holder", new /datum/sun_holder(src))
+	own_set(src, "current_time", current_time.make_random_time())
 	if(moon_name)
 		moon_phase = pick(list(
 			MOON_PHASE_NEW_MOON,
@@ -53,7 +53,7 @@
 /datum/planet/periodic_step(delta)
 	if(current_time)
 		var/difference = last_step ? world.time - last_step : delta
-		current_time = current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER)
+		own_set(src, "current_time", current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
 	EXPIRY_STAMP(src, last_step, CLOCK_WORLD)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
 	if(COOLDOWN_FINISHED(src, next_sun_process))
@@ -84,9 +84,8 @@
 /datum/planet/proc/get_sun_solar_position()
 	return 220 - (sun_position * 80) // this base version doesn't know how long a planet's day is, so just goes back and forth facing south-eastish based on midnight to noon intensity
 
-DECLARE_REF(/datum/planet, "weather_holder", OWNED, null)
-DECLARE_REF(/datum/planet, "sun_holder", OWNED, null)
-DECLARE_REF(/datum/planet, "current_time", OWNED, null)
 // Turfs are never deleted.
-DECLARE_REF(/datum/planet, "planet_floors", STATIC, null)
-DECLARE_REF(/datum/planet, "planet_walls", STATIC, null)
+
+// The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
+REL_LIST(/datum/planet, planet_floors)
+REL_LIST(/datum/planet, planet_walls)

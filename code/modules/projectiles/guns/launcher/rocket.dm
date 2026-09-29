@@ -20,6 +20,9 @@
 	if(get_dist(user, src) <= 2)
 		. += span_blue("[length(rockets)] / [max_rockets] rockets.")
 
+// Loaded rockets sit in the launcher's contents.
+OWN(/obj/item/gun/launcher/rocket, rockets, OWN_CONTAINED)
+
 /// Old attackby. It never called ..(): any item stops here, but afterattack still follows.
 /obj/item/gun/launcher/rocket/gun_item(mob/user, obj/item/I, datum/interaction/interaction)
 	. = INTERACTION_HANDLED_PASS
@@ -27,7 +30,7 @@
 		if(length(rockets) < max_rockets)
 			user.drop_item()
 			I.forceMove(src)
-			LAZYADD(rockets, I)
+			own_add(src, "rockets", I)
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))
 		else
@@ -36,8 +39,9 @@
 /obj/item/gun/launcher/rocket/consume_next_projectile()
 	if(length(rockets))
 		var/obj/item/ammo_casing/rocket/I = LAZYACCESS(rockets, 1)
-		LAZYREMOVE(rockets, I)
-		return new I.projectile_type(src)
+		var/projectile_path = I.projectile_type
+		own_remove(src, "rockets", I) // the rocket is spent
+		return new projectile_path(src)
 	return null
 
 /obj/item/gun/launcher/rocket/handle_post_fire(mob/user, atom/target)

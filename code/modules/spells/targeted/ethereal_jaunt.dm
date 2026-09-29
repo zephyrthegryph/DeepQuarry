@@ -29,7 +29,7 @@
 		animation.icon = 'icons/mob/mob.dmi'
 		animation.plane = MOB_PLANE
 		animation.layer = ABOVE_MOB_LAYER
-		animation.master = holder
+		rel_set(animation, "master", holder)
 		target.extinguish_mob()
 		if(target?.buckled_to())
 			var/atom/movable/_tmp_buck_42 = target?.buckled_to()
@@ -87,13 +87,13 @@
 	var/reappearing = 0
 	density = FALSE
 	anchored = TRUE
-	var/tmp/last_valid_turf_handle
+	var/tmp/turf/last_valid_turf
 
 /obj/effect/dummy/spell_jaunt/Initialize(mapload)
 	. = ..()
-	last_valid_turf_handle = om_handle(get_turf(loc))
+	rel_set(src, "last_valid_turf", get_turf(loc))
 
-DECLARE_REF(/obj/effect/dummy/spell_jaunt, "contents", SPILL_LIST, null)
+OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return
@@ -102,7 +102,7 @@ DECLARE_REF(/obj/effect/dummy/spell_jaunt, "contents", SPILL_LIST, null)
 		loc = newLoc // ALLOW(containment): jaunt holder abstract move: must not trigger Entered/Crossed
 		var/turf/T = get_turf(loc)
 		if(!T.contains_dense_objects())
-			last_valid_turf_handle = om_handle(T)
+			rel_set(src, "last_valid_turf", T)
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
@@ -113,6 +113,6 @@ DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(
 /obj/effect/dummy/spell_jaunt/proc/allow_move()
 	canmove = 1
 
-/// LC-refs: the last_valid_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_valid_turf this refers to (a relation view: null once it is deleted).
 /obj/effect/dummy/spell_jaunt/proc/last_valid_turf() as /turf
-	return om_resolve(last_valid_turf_handle)
+	return last_valid_turf

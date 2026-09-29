@@ -8,7 +8,7 @@
  * The wake test for any sleeper (a sleeper behaviour, om_after() timers): with its input held steady `D` must stay asleep,
  * and after `change` runs it must wake within `ticks`. Returns null on success or the failure.
  */
-/proc/om_wake_test(datum/D, datum/callback/change, ticks = 4)
+/proc/om_wake_test(datum/D, list/change, ticks = 4)
 	om_trace(D)
 	om_test_ticks(ticks)
 	// Settle first: a wake already queued before the steady window (the test's own setup) lands
@@ -19,7 +19,7 @@
 	if(om_traced_count(D) != before)
 		om_untrace(D)
 		return "[D.type] woke while its input held steady"
-	change.Invoke()
+	om_run(change)
 	// Wakes ride the scheduler's lanes and deadline share: under a busy test world give them a
 	// little longer than `ticks` before calling one lost.
 	var/after = before
@@ -93,7 +93,7 @@
 	TEST_ASSERT(!A.next_door_deadline(), "a fresh airlock has a deadline ([A.next_door_deadline()])")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "a fresh airlock is not asleep")
 
-	var/failure = om_wake_test(A, CALLBACK(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1), 20)
+	var/failure = om_wake_test(A, om_callable(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1), 20)
 	TEST_ASSERT(!failure, failure)
 
 	// Electrification expires on its timer, with no process() poll.
@@ -130,7 +130,7 @@
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	var/datum/om_wake_test_subscriber/watcher = allocate(/datum/om_wake_test_subscriber)
 	om_test_watch(watcher, A, CHANGE_MACHINE_MODE)
-	var/failure = om_wake_test(watcher, CALLBACK(A, TYPE_PROC_REF(/obj/machinery/door/airlock, lock), TRUE))
+	var/failure = om_wake_test(watcher, om_callable(A, TYPE_PROC_REF(/obj/machinery/door/airlock, lock), TRUE))
 	TEST_ASSERT(!failure, failure)
 
 /// Cameras: EMP recovery and the motion alarm are timers; losing a target is a signal.
@@ -140,7 +140,7 @@
 	var/obj/machinery/camera/C = allocate(/obj/machinery/camera, test_floor())
 	TEST_ASSERT(!om_timer_slot_pending(C, "camera_timer_token"), "an idle camera has a timer")
 	TEST_ASSERT_NULL(C.om_sleep_violation(), "an idle camera is not asleep")
-	var/failure = om_wake_test(C, CALLBACK(src, PROC_REF(emp_camera_briefly), C), 20)
+	var/failure = om_wake_test(C, om_callable(src, PROC_REF(emp_camera_briefly), C), 20)
 	TEST_ASSERT(!failure, failure)
 	om_test_ticks(4)
 	TEST_ASSERT(!C.has_stat(EMPED), "the camera did not recover at the end of its EMP")
@@ -172,7 +172,7 @@
 	var/area/A = get_area(L)
 	TEST_ASSERT(!isnull(L.area_power_token()), "a light did not subscribe to its area's power key")
 	TEST_ASSERT_NULL(L.om_sleep_violation(), "a new light is not asleep")
-	var/failure = om_wake_test(L, CALLBACK(A, TYPE_PROC_REF(/area, power_change)))
+	var/failure = om_wake_test(L, om_callable(A, TYPE_PROC_REF(/area, power_change)))
 	TEST_ASSERT(!failure, failure)
 
 	// Losing light power puts a charged light on its cell, on a timer. (The light switch
@@ -228,7 +228,7 @@
 	TEST_ASSERT_EQUAL(D.shuttle_key_id, SHUTTLE_SCHEDULE_EVAC, "shuttle mode is not watching the evac shuttle")
 	TEST_ASSERT_NULL(D.om_sleep_violation(), "a shuttle display's audit failed")
 	if(!om_timer_slot_pending(D, "refresh_token")) // No evac under way: only the key wakes it.
-		var/failure = om_wake_test(D, CALLBACK(src, PROC_REF(publish_evac)))
+		var/failure = om_wake_test(D, om_callable(src, PROC_REF(publish_evac)))
 		TEST_ASSERT(!failure, failure)
 
 /datum/unit_test/dq_om_wake_status_display/proc/publish_evac()
@@ -256,7 +256,7 @@
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a loop nobody can hear did not go dormant")
 	TEST_ASSERT(GLOB.player_chunk_watches > 0, "a dormant loop left no chunk subscriptions")
 	TEST_ASSERT_NULL(loop.om_sleep_violation(), "a dormant loop's audit failed")
-	var/failure = om_wake_test(loop, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(publish_player_chunk), T))
+	var/failure = om_wake_test(loop, om_callable(null, GLOBAL_PROC_REF(publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
 	TEST_ASSERT(loop.dormant_chunk_tokens, "a chunk wake with nobody in range left dormancy")
 	loop.stop()
@@ -281,7 +281,7 @@
 	om_test_ticks(4)
 	TEST_ASSERT_EQUAL(om_traced_count(players), before, "a mob without a client woke a player chunk subscriber")
 	om_untrace(players)
-	var/failure = om_wake_test(players, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(publish_player_chunk), T))
+	var/failure = om_wake_test(players, om_callable(null, GLOBAL_PROC_REF(publish_player_chunk), T))
 	TEST_ASSERT(!failure, failure)
 	unwatch_mob_chunks(players, tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/test_subscriber)
 	TEST_ASSERT_EQUAL(length(players.wakes) >= 1, TRUE, "no wake recorded")

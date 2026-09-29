@@ -10,16 +10,15 @@
 	icon = 'icons/obj/device.dmi'
 	icon_state = "bspeaker"
 
-	var/tmp/paired_juke_handle
-	var/tmp/our_area_handle
+	var/tmp/obj/machinery/media/jukebox/paired_juke
+	var/tmp/area/our_area
 
 // Pairing
 /obj/item/juke_remote/proc/pair_juke(obj/machinery/media/jukebox/juke, mob/user)
 	if(paired_juke())
 		to_chat(user, span_warning("The [src] is already paired to [paired_juke() == juke ? "that" : "a different"] jukebox."))
 		return
-	paired_juke_handle = om_handle(juke)
-	LAZYDISTINCTADD(paired_juke().remotes, src)
+	rel_set(src, "paired_juke", juke) // also lists us in the jukebox's remotes (REL_PAIR)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
 	icon_state = "[initial(icon_state)]_ready"
 
@@ -27,8 +26,7 @@
 	if(!paired_juke())
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
-	LAZYREMOVE(paired_juke().remotes, src)
-	paired_juke_handle = null
+	rel_clear(src, "paired_juke")
 	icon_state = initial(icon_state)
 	unanchor()
 	detach_area()
@@ -90,17 +88,17 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		return FALSE
 	if(A.media_source())
 		return FALSE // Already has a media source, won't overpower it with porta speaker
-	our_area_handle = om_handle(A)
-	A.media_source_handle = om_handle(paired_juke())
+	our_area = A
+	rel_set(A, "media_source", paired_juke())
 	update_music()
 	return TRUE
 
 /obj/item/juke_remote/proc/detach_area()
 	if(!our_area() || (paired_juke() && our_area().media_source() != paired_juke()))
 		return
-	our_area().media_source_handle = null
+	rel_clear(our_area(), "media_source")
 	update_music()
-	our_area_handle = null
+	our_area = null
 
 // Music handling
 /obj/item/juke_remote/proc/update_music()
@@ -111,10 +109,14 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		if(M?.client)
 			M.update_music()
 
-/// LC-refs: the our_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The area the speaker plays in (a plain var: areas never die).
 /obj/item/juke_remote/proc/our_area() as /area
-	return om_resolve(our_area_handle)
+	return our_area
 
-/// LC-refs: the paired_juke this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the paired_juke this refers to (a relation view: null once it is deleted).
 /obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
-	return om_resolve(paired_juke_handle)
+	return paired_juke
+
+/// A paired speaker and its jukebox name each other; either one dying unpairs them.
+REL_PAIR(/obj/item/juke_remote, paired_juke, remotes)
+REL_PAIR_LIST(/obj/machinery/media/jukebox, remotes, paired_juke)

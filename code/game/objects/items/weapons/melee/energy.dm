@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				bcell = W
+				own_set(src, "bcell", W)
 				to_chat(user, span_notice("You install a cell in [src]."))
 				update_icon()
 			else
@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		return ..()
 	bcell.update_icon()
 	bcell.forceMove(get_turf(loc))
-	bcell = null
+	own_take(src, "bcell")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	deactivate()
 	update_icon()
@@ -445,7 +445,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/sword/charge/loaded, "bcell", /obj/
 	w_class = ITEMSIZE_HUGE//So you can't hide it in your pocket or some such. //CHOMP Edit
 	flags = NOBLOODY
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	var/creator_handle
+	var/mob/living/creator
 	projectile_parry_chance = 60
 	lcolor = "#00FF00"
 	special_handling = TRUE
@@ -473,8 +473,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 				for(var/obj/item/organ/external/organ in host.organs)
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
-							LAZYREMOVE(organ.implants, src)
-			LAZYREMOVE(host.pinned, src)
+							rel_remove(organ, "implants", src)
+			rel_remove(host, "pinned", src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
 		expire(1)
@@ -585,9 +585,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-DECLARE_REF(/obj/item/melee/energy, "bcell", HELD, null)
+OWN(/obj/item/melee/energy, bcell, OWN_CONTAINED)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
-/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: creator (reads null once it is gone).
 /obj/item/melee/energy/blade/proc/creator() as /mob/living
-	return om_resolve(creator_handle)
+	return creator

@@ -35,6 +35,8 @@ Pipelines + Other Objects -> Pipe network
 	var/initialize_directions = 0
 	var/pipe_color
 
+	/// Node topology: foreign neighbours, relation views (cleared by the framework when a
+	/// neighbour dies). disconnect() is the domain unlink.
 	var/obj/machinery/atmospherics/node1
 	var/obj/machinery/atmospherics/node2
 	/// Optional material or layered composite retained through construction/deconstruction.
@@ -43,51 +45,42 @@ Pipelines + Other Objects -> Pipe network
 	var/material_sorbed_moles = 0
 	var/material_sorbed_thermal_energy = 0
 	var/material_last_exposure = 0
-	/// Every pipe-network roster currently retaining this machine. This is the
-	/// authoritative reverse index used to make topology teardown cycle-proof.
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
+	/// Every pipe network whose normal_members roster lists this machine (the two-sided
+	/// partner of /datum/pipe_network.normal_members).
 	var/list/datum/pipe_network/network_memberships
 
-/obj/machinery/atmospherics/proc/register_network_membership(datum/pipe_network/network)
-	LAZYOR(network_memberships, network)
-
-/obj/machinery/atmospherics/proc/unregister_network_membership(datum/pipe_network/network)
-	LAZYREMOVE(network_memberships, network)
+REL(/obj/machinery/atmospherics, node1)
+REL(/obj/machinery/atmospherics, node2)
+REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)
-/// forgets this machine, and every network roster holding it lets go. One
-/// place for every atmos type; neighbours that are being destroyed too are
-/// skipped (their own unbind drops the edge).
+/// forgets this machine (disconnect() updates its icon and network), and every
+/// Rust-owned network wrapper holding it lets go. The node and roster views
+/// themselves are relations: the framework clears both ends in phase 4.
 /obj/machinery/atmospherics/lifecycle_unbind()
 	. = ..()
 	rust_unregister_pipe_topology()
 	for(var/obj/machinery/atmospherics/neighbour in get_neighbor_nodes_for_init())
 		if(!QDELETED(neighbour))
 			neighbour.disconnect(src)
-	// Pipe adjacency is a bidirectional edge: sever the common node slots on
-	// surviving peers that point here without being our declared nodes.
-	var/list/adjacent_machines = list()
-	for(var/obj/machinery/atmospherics/neighbour in orange(1, src))
-		adjacent_machines += neighbour
-	if(z > 1)
-		for(var/obj/machinery/atmospherics/neighbour in locate(x, y, z - 1))
-			adjacent_machines |= neighbour
-	if(z < world.maxz)
-		for(var/obj/machinery/atmospherics/neighbour in locate(x, y, z + 1))
-			adjacent_machines |= neighbour
-	for(var/obj/machinery/atmospherics/neighbour as anything in adjacent_machines)
-		if(neighbour.node1 == src)
-			neighbour.node1 = null
-		if(neighbour.node2 == src)
-			neighbour.node2 = null
 	for(var/datum/pipe_network/network as anything in network_memberships?.Copy())
 		rust_release_network_wrapper(network)
-	network_memberships = null
-	// Our own side of every edge: a neighbour destroyed in the same batch skips us (it is
-	// QDELETED above), so nothing else clears these and the pair would pin each other.
-	node1 = null
-	node2 = null
+
+/// Points holder.var_name (a PROTO gas port: air1/air2/air3, air_contents, a pipeline's air)
+/// at `value`. A mixture another holder owns (the pipe network's authoritative air, the
+/// proto) is referenced, never adopted; an unowned mixture (a detached port share, a fresh
+/// port) becomes the holder's private copy. The private copy it replaces is deleted; a
+/// network's shared mixture is only let go (the network owns it).
+/proc/atmos_air_set(datum/holder, var_name, datum/gas_mixture/value)
+	var/datum/gas_mixture/old = holder.vars[var_name]
+	if(old == value)
+		return value
+	if(!value || !value.own_holder_ref || (value.own_holder_ref == ref(holder) && value.own_slot == var_name) || !owner_of(value))
+		return proto_set(holder, var_name, value)
+	proto_set(holder, var_name, null)
+	holder.vars[var_name] = value // ALLOW(api, ownership): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network
+	return value
 
 /obj/machinery/atmospherics/proc/engineered_material()
 	return material_for_role(MATERIAL_ROLE_STRUCTURE) || (engineered_material_id ? get_material_by_name(engineered_material_id) : null)
@@ -385,7 +378,3 @@ Pipelines + Other Objects -> Pipe network
 		unsafe_pressure_release(user, internal_pressure)
 		play_sfx(our_turf, SFX_MACHINES_HISS)
 
-// Topology links: strong, cleared by lifecycle_unbind() (phase 1), which does the real disconnection.
-DECLARE_REF(/obj/machinery/atmospherics, "node1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics, "node2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics, "network_memberships", HELD, null)

@@ -7,13 +7,13 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(cmd_admin_check_player_logs, R_ADMIN|R_MOD, "Check 
 	log_view.tgui_interact(mob)
 
 ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays the client logs of the selected ckey.", ADMIN_CATEGORY_LOGS)
-	var/mob/living/selected_key = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select a ckey to check their logs", title = "Ckey", choices = GLOB.persistent_clients_by_ckey)
+	var/mob/living/selected_key = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select a ckey to check their logs", title = "Ckey", choices = persistent_clients_by_ckey())
 	if(isnull(selected_key))
 		return
 	if(!selected_key)
 		return
 
-	var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[selected_key]
+	var/datum/persistent_client/selected = persistent_client_for(selected_key)
 
 	user.show_cmd_admin_check_player_logs(selected.logging, selected.mob()?.name, selected_key, selected.mob()?.mind?.special_role, TRUE)
 
@@ -62,7 +62,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 /datum/player_log_viwer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"on_cooldown" = refresh_cooldown(),
-		"all_clients" = GLOB.persistent_clients_by_ckey,
+		"all_clients" = persistent_clients_by_ckey(),
 	)
 
 /datum/player_log_viwer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
@@ -82,10 +82,10 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 			if(refresh_cooldown())
 				return FALSE
 			var/new_ckey = params["ckey"]
-			if(!(new_ckey in GLOB.persistent_clients_by_ckey))
+			if(!(persistent_client_for(new_ckey)))
 				return FALSE
 			target_ckey = new_ckey
-			var/datum/persistent_client/selected = GLOB.persistent_clients_by_ckey[new_ckey]
+			var/datum/persistent_client/selected = persistent_client_for(new_ckey)
 			log_data = selected.logging
 			target_name = selected.mob()?.name
 			special_role = selected.mob()?.mind?.special_role

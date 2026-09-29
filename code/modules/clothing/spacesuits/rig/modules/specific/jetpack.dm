@@ -48,14 +48,13 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/rig_module/maneuvering_jets, "jets", /obj/item/tank/jetpack/rig)
 
-DECLARE_REF(/obj/item/rig_module/maneuvering_jets, "jets", OWNED, null)
 
 /obj/item/rig_module/maneuvering_jets/installed()
 	..()
-	jets.holder_handle = om_handle(holder)
+	rel_set(jets, "holder", holder)
 	jets.ion_trail.set_up(holder)
 
 /obj/item/rig_module/maneuvering_jets/removed()
 	..()
-	jets.holder_handle = null
+	rel_clear(jets, "holder")
 	jets.ion_trail.set_up(jets)

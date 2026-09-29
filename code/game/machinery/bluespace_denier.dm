@@ -68,7 +68,7 @@ DAMAGE_REACTION(/obj/machinery/bluespace_denier, DAMAGE_EMP, PROC_REF(denier_emp
 	if(isnull(WF))
 		return
 
-	var/atom/movable/AM = om_resolve(WF)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

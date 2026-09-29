@@ -24,9 +24,7 @@
 
 /obj/structure/cult/pylon/swarm/Initialize(mapload)
 	. = ..()
-	active_beams = list()
 
-DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 
 /obj/structure/cult/pylon/swarm/pylonhit(damage)
 	if(!isbroken)
@@ -88,7 +86,7 @@ DECLARE_REF(/obj/structure/cult/pylon/swarm, "active_beams", OWNED_LIST, null)
 				break
 
 		if(!has_beam)
-			active_beams |= Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2)
+			own_add(src, "active_beams", Beam(S,icon='icons/effects/beam.dmi',icon_state="holo_beam",time=3 SECONDS,maxdistance=3,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 
 		if(S.cell)
 			S.cell.give(rand(30, 120))

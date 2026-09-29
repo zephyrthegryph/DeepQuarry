@@ -93,14 +93,14 @@
 /// no longer has any view state to keep in sync, only the real side effects
 /// below (direction/canmove/floating/water, riding offsets, the buckled
 /// alert, the buckle signal).
-/// break_if drops the edge outright (not just its EFFECT_BUCKLED contribution)
+/// holds_while drops the edge outright (not just its EFFECT_BUCKLED contribution)
 /// the moment the mob ends up off the buckled object's tile, e.g. a forced
 /// move that didn't go through handle_buckled_mob_movement().
 /datum/om/relation/buckled_to
 	name = "buckle"
 	source_single = TRUE
 	source_contributes = list(EFFECT_BUCKLED = TRUE)
-	break_if = CHECK(/datum/om/check/in_range, 0)
+	holds_while = CHECK(/datum/om/check/in_range, 0)
 	/// Set by buckle_mob() immediately before it calls om_link(), since
 	/// on_link()'s signature has no room for the `forced` flag; read and
 	/// cleared here.
@@ -114,7 +114,7 @@
 	source.update_canmove()
 	source.update_floating(source.Check_Dense_Object())
 	if(target.riding_datum)
-		target.riding_datum.ridden_handle = om_handle(target)
+		rel_set(target.riding_datum, "ridden", target)
 		target.riding_datum.handle_vehicle_offsets()
 	source.update_water()
 	target.post_buckle_mob(source)
@@ -190,14 +190,14 @@
 /// overwrote pulledby without the first puller's own `pulling` var ever being
 /// cleared. `pulling`/`pulledby` are gone entirely now (OM relations step 6):
 /// PULLING()/PULLED_BY() (om.dm) read the edge directly, so there is no
-/// stored field left on either side to desync. break_if = in_range(1)
+/// stored field left on either side to desync. holds_while = in_range(1)
 /// replaces the hand-rolled "Break pulling if we are too far to pull now"
 /// check that used to live in /atom/movable/Move() (atoms_movable.dm).
 /datum/om/relation/pulling
 	name = "pull"
 	source_single = TRUE
 	target_single = TRUE
-	break_if = CHECK(/datum/om/check/in_range, 1)
+	holds_while = CHECK(/datum/om/check/in_range, 1)
 
 /datum/om/relation/pulling/on_link(atom/movable/source, atom/movable/target, datum/om/edge/edge)
 	if(!istype(source) || !istype(target))

@@ -69,7 +69,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 		if((M in view(7,src)) && M.vitality() > 0.6)
 			if(prob(50))
 				bloodcall(M)
-				LAZYADD(nearby_mobs, M)
+				rel_add(src, "nearby_mobs", M)
 
 	//suck up some blood to gain power
 	if(ELAPSED(src, last_eat, CLOCK_WORLD) > eat_interval)
@@ -99,7 +99,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
-			LAZYADD(shadow_wights, new /obj/effect/shadow_wight(src.loc))
+			own_add(src, "shadow_wights", new /obj/effect/shadow_wight(src.loc))
 			play_sfx(src, SFX_EFFECTS_GHOST)
 			charges -= 0.1
 
@@ -116,11 +116,11 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 		var/obj/effect/shadow_wight/W = LAZYACCESS(shadow_wights, wight_check_index)
 		if(isnull(W))
-			LAZYREMOVE(shadow_wights, W)
+			own_take_member(src, "shadow_wights", W)
 		else if(isnull(W.loc))
-			LAZYREMOVE(shadow_wights, W)
+			own_take_member(src, "shadow_wights", W)
 		else if(get_dist(W, src) > 10)
-			LAZYREMOVE(shadow_wights, W)
+			own_take_member(src, "shadow_wights", W)
 
 /obj/item/vampiric/hear_talk(mob/M, list/message_pieces, verb)
 	..()
@@ -131,7 +131,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 	EXPIRY_STAMP(src, last_bloodcall, CLOCK_WORLD)
 	if(istype(M))
 		play_sfx(src, SFX_HALLUCINATIONS_WAIL)
-		LAZYADD(nearby_mobs, M)
+		rel_add(src, "nearby_mobs", M)
 
 		var/target = length(M.organs_by_name) ? pick(M.organs_by_name) : null
 		M.injure(INJURY_CUT, rand(5, 10), target, src)
@@ -143,7 +143,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 //animated blood 2 SPOOKY
 /obj/effect/decal/cleanable/blood/splatter/animated
-	var/tmp/target_turf_handle
+	var/tmp/turf/target_turf
 	var/loc_last_process
 
 DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_SLOW)
@@ -159,7 +159,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/blood/splatter/animated, PERIODIC_S
 	if(target_turf() && src.loc != target_turf())
 		step_towards(src,target_turf())
 		if(src.loc == loc_last_process)
-			target_turf_handle = null
+			rel_clear(src, "target_turf")
 		loc_last_process = src.loc
 
 		//leave some drips behind
@@ -209,6 +209,6 @@ DECLARE_PERIODIC(/obj/effect/shadow_wight, PERIODIC_SLOW)
 	if(length(heard_talk))
 		om_task_periodic(src, PERIODIC_SLOW)
 
-/// LC-refs: the target_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_turf var.
 /obj/effect/decal/cleanable/blood/splatter/animated/proc/target_turf() as /turf
-	return om_resolve(target_turf_handle)
+	return target_turf

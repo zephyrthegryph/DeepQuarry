@@ -6,7 +6,7 @@
 	show_messages = TRUE
 
 	var/implanted = null
-	var/imp_in_handle
+	var/mob/imp_in
 	var/obj/item/organ/external/part = null
 	var/implant_color = "b"
 	var/allow_reagents = 0
@@ -44,7 +44,7 @@
 		// No organ to embed in (a non-human host, or no matching limb):
 		// imp_in has no relation to keep it in sync with, since there's no
 		// reverse list on a bare mob the way an organ's `implants` is one.
-		imp_in_handle = om_handle(source)
+		rel_set(src, "imp_in", source)
 		forceMove(source)
 
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction
 			return INTERACTION_HANDLED_PASS
 		user.drop_from_inventory(src)
 		forceMove(implanter)
-		implanter.imp = src
+		own_set(implanter, "imp", src)
 		implanter.update()
 	else
 		return FALSE
@@ -116,7 +116,6 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	om_task_periodic(src, PERIODIC_SLOW)
 
 // leaves its limb's implant list.
-DECLARE_REF(/obj/item/implant/tracking, "part", BACK_VIA, "implants")
 
 /obj/item/implant/tracking/periodic_step()
 	var/mob/living/implant_mob // Get implant's mob from our host organ
@@ -388,8 +387,8 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implant/chem/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(50)
-	reagents = R
-	R.my_atom = src
+	own_set(src, "reagents", R)
+	rel_set(R, "my_atom", src)
 
 /obj/item/implant/chem/trigger(emote, source as mob)
 	if(emote == "deathgasp")
@@ -591,7 +590,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 	desc = "Based on compressed matter technology, can store a single item."
 	icon_state = "implant_evil"
 	var/activation_emote = "sigh"
-	var/scanned_handle
+	var/obj/item/scanned
 
 /obj/item/implant/compressed/get_data()
 	var/dat = {"
@@ -876,12 +875,12 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 	explosion(get_turf(imp_in()), -1, -1, 1, 3)
 	qdel(src)
 
-/// LC-refs: imp in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: imp in (reads null once it is gone).
 /obj/item/implant/proc/imp_in() as /mob
-	return om_resolve(imp_in_handle)
+	return imp_in
 
-/// LC-refs: scanned -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: scanned (reads null once it is gone).
 /obj/item/implant/compressed/proc/scanned() as /obj/item
-	return om_resolve(scanned_handle)
+	return scanned
 
-DECLARE_REF(/obj/item/implant, "part", HELD, null)
+// part is the organ the implant sits in: a view kept by the organ's implant slot (containment), not owned.

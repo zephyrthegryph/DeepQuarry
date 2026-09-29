@@ -15,8 +15,8 @@
 /datum/board_game/space_battle
 	name = GAME_SPACE_BATTLE
 	table_icon = "gamble_space"
-	var/player_one
-	var/player_two
+	var/mob/player_one
+	var/mob/player_two
 	var/list/ship_count_pone
 	var/list/ship_count_ptwo
 	var/list/shots_fired_pone = list() // ALLOW(instance_list): d: board state written through an alias (current_shots[key] = hit); one per game table
@@ -53,8 +53,8 @@
 	)
 
 /datum/board_game/space_battle/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/player_one_mob = om_resolve(player_one)
-	var/mob/player_two_mob = om_resolve(player_two)
+	var/mob/player_one_mob = player_one
+	var/mob/player_two_mob = player_two
 
 	var/list/visible_ships = list()
 	if(ui.user == player_one_mob || game_state == GAME_OVER)
@@ -88,27 +88,27 @@
 		if("be_player_one")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_one) == ui.user)
-				player_one = null
+			if(player_one == ui.user)
+				rel_clear(src, "player_one")
 				return TRUE
-			player_one = om_handle(ui.user)
+			rel_set(src, "player_one", ui.user)
 			return TRUE
 		if("be_player_two")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(om_resolve(player_two) == ui.user)
-				player_two = null
+			if(player_two == ui.user)
+				rel_clear(src, "player_two")
 				return TRUE
-			player_two = om_handle(ui.user)
+			rel_set(src, "player_two", ui.user)
 			return TRUE
 		if("swap_players")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 		if("clear_game")
 			if(game_state == GAME_SETUP)
 				return FALSE
@@ -117,8 +117,8 @@
 		if("prepare_game")
 			if(game_state != GAME_SETUP)
 				return FALSE
-			var/mob/player_one_mob = om_resolve(player_one)
-			var/mob/player_two_mob = om_resolve(player_two)
+			var/mob/player_one_mob = player_one
+			var/mob/player_two_mob = player_two
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 			game_state = GAME_PLACE_SHIPS
@@ -130,8 +130,8 @@
 				return FALSE
 			if(!(ships_have_been_placed == (PLAYER_ONE_PLACED_SHIPS | PLAYER_TWO_PLACED_SHIPS)))
 				return FALSE
-			var/mob/player_one_mob = om_resolve(player_one)
-			var/mob/player_two_mob = om_resolve(player_two)
+			var/mob/player_one_mob = player_one
+			var/mob/player_two_mob = player_two
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 			ship_count_pone = get_alive_ships(1)
@@ -141,25 +141,25 @@
 		if("play_again")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
 			return TRUE
 		if("play_again_swapped")
 			if(game_state < GAME_OVER)
 				return FALSE
-			if(!om_resolve(player_one) || !om_resolve(player_two))
+			if(!player_one || !player_two)
 				return FALSE
 			reset()
-			var/temp_player = player_one
-			player_one = player_two
-			player_two = temp_player
+			var/mob/temp_player = player_one
+			rel_set(src, "player_one", player_two)
+			rel_set(src, "player_two", temp_player)
 			return TRUE
 		if("place_ship")
 			if(game_state != GAME_PLACE_SHIPS)
 				return FALSE
-			var/mob/player_one_mob = om_resolve(player_one)
-			var/mob/player_two_mob = om_resolve(player_two)
+			var/mob/player_one_mob = player_one
+			var/mob/player_two_mob = player_two
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 
@@ -217,8 +217,8 @@
 		if("remove_ship")
 			if(game_state != GAME_PLACE_SHIPS)
 				return FALSE
-			var/mob/player_one_mob = om_resolve(player_one)
-			var/mob/player_two_mob = om_resolve(player_two)
+			var/mob/player_one_mob = player_one
+			var/mob/player_two_mob = player_two
 			if(!player_one_mob || !player_two_mob)
 				return FALSE
 
@@ -248,14 +248,14 @@
 						return TRUE
 			return FALSE
 		if("game_action")
-			if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
+			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
 				if(params["data"]["player"] == 1)
 					return FALSE
 				if(player_actions(params["action"], params["data"], ui.user))
 					if(game_state < GAME_OVER)
 						game_state = GAME_PLAYER_TWO
 					return TRUE
-			if(ui.user == om_resolve(player_two) && game_state == GAME_PLAYER_TWO)
+			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
 				if(params["data"]["player"] == 2)
 					return FALSE
 				if(player_actions(params["action"], params["data"], ui.user))
@@ -277,8 +277,8 @@
 	ships_have_been_placed = NONE
 	if(full)
 		game_state = GAME_SETUP
-		player_one = null
-		player_two = null
+		rel_clear(src, "player_one")
+		rel_clear(src, "player_two")
 	else
 		game_state = GAME_PLACE_SHIPS
 

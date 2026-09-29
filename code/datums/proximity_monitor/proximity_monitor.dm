@@ -1,8 +1,8 @@
 /datum/proximity_monitor
 	///The atom we are tracking
-	var/host_handle
+	var/atom/host
 	///The atom that will receive HasProximity calls.
-	var/hasprox_receiver_handle
+	var/atom/hasprox_receiver
 	///The range of the proximity monitor. Things moving wihin it will trigger HasProximity calls.
 	var/current_range
 	///If we don't check turfs in range if the host's loc isn't a turf
@@ -18,8 +18,6 @@
 	/// Hooks the turfs in range of the host (owned).
 	var/datum/connect_range/range_connector
 
-DECLARE_REF(/datum/proximity_monitor, "containers_connector", OWNED, null)
-DECLARE_REF(/datum/proximity_monitor, "range_connector", OWNED, null)
 
 /datum/proximity_monitor/New(atom/_host, range, _ignore_if_not_on_turf = TRUE)
 	ignore_if_not_on_turf = _ignore_if_not_on_turf
@@ -34,18 +32,18 @@ DECLARE_REF(/datum/proximity_monitor, "range_connector", OWNED, null)
 	if(hasprox_receiver())
 		om_unhook(hasprox_receiver(), /datum/om/event/qdeleting, src)
 	if(new_receiver)
-		hasprox_receiver_handle = om_handle(new_receiver)
+		rel_set(src, "hasprox_receiver", new_receiver)
 		if(new_receiver != new_host)
 			om_hook(new_receiver, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
 	else if(hasprox_receiver() == host()) //Default case
-		hasprox_receiver_handle = om_handle(new_host)
-	host_handle = om_handle(new_host)
+		rel_set(src, "hasprox_receiver", new_host)
+	rel_set(src, "host", new_host)
 	om_hook(new_host, /datum/om/event/qdeleting, src, PROC_REF(on_host_or_receiver_del))
 	var/static/list/containers_connections = list(/datum/om/event/moved = PROC_REF(on_moved), /datum/om/event/before/movable_z_changed = PROC_REF(on_z_change))
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
 	else if(ismovable(host()))
-		containers_connector = new /datum/connect_containers(src, host(), containers_connections)
+		own_set(src, "containers_connector", new /datum/connect_containers(src, host(), containers_connections))
 	om_hook(host(), /datum/om/event/moved, src, PROC_REF(on_moved))
 	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
 	set_range(current_range, TRUE)
@@ -68,7 +66,7 @@ DECLARE_REF(/datum/proximity_monitor, "range_connector", OWNED, null)
 	if(range_connector && !QDELETED(range_connector))
 		range_connector.update(host(), loc_connections, current_range, works_in_containers)
 		return
-	range_connector = new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers)
+	own_set(src, "range_connector", new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
 /datum/proximity_monitor/proc/on_moved(atom/movable/source, datum/om/event/moved/event)
 	EVENT_HANDLER
@@ -118,10 +116,10 @@ DECLARE_REF(/datum/proximity_monitor, "range_connector", OWNED, null)
 	if(source != host())
 		scanner.NewProximity(arrived)
 
-/// LC-refs: the atom this monitor follows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this monitor follows (a relation view).
 /datum/proximity_monitor/proc/host() as /atom
-	return om_resolve(host_handle)
+	return host
 
-/// LC-refs: the atom told about proximity -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom told about proximity (a relation view).
 /datum/proximity_monitor/proc/hasprox_receiver() as /atom
-	return om_resolve(hasprox_receiver_handle)
+	return hasprox_receiver

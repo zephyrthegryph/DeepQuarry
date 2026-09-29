@@ -44,7 +44,7 @@
 	earrings["dangle, gold"] = /obj/item/clothing/ears/earring/dangle/gold
 	earrings["dangle, platinum"] = /obj/item/clothing/ears/earring/dangle/platinum
 	earrings["dangle, diamond"] = /obj/item/clothing/ears/earring/dangle/diamond
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(earrings))
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(earrings))
 
 
 /datum/gear/ears/earringscolour
@@ -58,5 +58,5 @@
 	earringscolour["stud"] = /obj/item/clothing/ears/earring/stud
 	earringscolour["dangle"] = /obj/item/clothing/ears/earring/dangle
 
-	LAZYADD(gear_tweaks, new/datum/gear_tweak/path(earringscolour))
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", new/datum/gear_tweak/path(earringscolour))
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)

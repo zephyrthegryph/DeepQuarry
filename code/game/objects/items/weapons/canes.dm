@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		user.put_in_hands(src)
 		user.update_inv_l_hand(0)
 		user.update_inv_r_hand()
-		concealed_blade = null
+		own_take(src, "concealed_blade")
 		update_icon()
 	return TRUE
 
@@ -50,7 +50,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHIN)
 		user.drop_from_inventory(W)
 		W.forceMove(src)
-		src.concealed_blade = W
+		own_set(src, "concealed_blade", W)
 		update_icon()
 	else
 		return FALSE
@@ -127,5 +127,5 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 	add_fingerprint(user)
 	return TRUE
 
-DECLARE_REF(/obj/item/cane/concealed, "concealed_blade", HELD, null)
+OWN(/obj/item/cane/concealed, concealed_blade, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/cane/concealed, "concealed_blade", /obj/item/material/sword/katana/caneblade)

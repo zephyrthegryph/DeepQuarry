@@ -52,7 +52,7 @@
 	last_range = light_min_range
 	last_power = light_min_power
 
-	owned_core = new_owned_core
+	rel_set(src, "owned_core", new_owned_core)
 	if(!owned_core)
 		return INITIALIZE_HINT_QDEL
 	id_tag = owned_core.id_tag
@@ -60,65 +60,65 @@
 	var/obj/effect/fusion_particle_catcher/catcher
 
 	catcher = new (locate(src.x,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(1)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 
 	catcher = new (locate(src.x-1,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(3)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x+1,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(3)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y+1,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(3)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y-1,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(3)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 
 	catcher = new (locate(src.x-2,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(5)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x+2,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(5)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y+2,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(5)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y-2,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(5)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 
 	catcher = new (locate(src.x-3,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(7)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 
 	// Idle traps do not scan their surroundings. Field creation is the dependency
 	// that wakes only traps close enough to use it.
 	for(var/obj/machinery/power/hydromagnetic_trap/trap in range(7, src))
 		MACHINE_WAKE(trap)
 	catcher = new (locate(src.x+3,src.y,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(7)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y+3,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(7)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 	catcher = new (locate(src.x,src.y-3,src.z))
-	catcher.parent = src
+	rel_set(catcher, "parent", src)
 	catcher.SetSize(7)
-	LAZYADD(particle_catchers, catcher)
+	own_add(src, "particle_catchers", catcher)
 
 /obj/effect/fusion_em_field/periodic_step()
 	//make sure the field generator is still intact
@@ -501,9 +501,8 @@
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
 
-DECLARE_REF(/obj/effect/fusion_em_field, "particle_catchers", OWNED_LIST, null)
-DECLARE_REF(/obj/effect/fusion_em_field, "owned_core", PAIR, "owned_field")
-DECLARE_REF(/obj/machinery/power/fusion_core, "owned_field", PAIR, "owned_core")
+// The core owns its field (own_set in fusion_core/Startup()); the field names its core back.
+REL(/obj/effect/fusion_em_field, owned_core)
 
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)

@@ -58,7 +58,7 @@
 		return
 
 	var/mob/living/silicon/robot/R = loc
-	R.module = src
+	own_set(R, "module", src)
 
 	add_camera_networks(R)
 	add_languages(R)
@@ -84,7 +84,7 @@
 
 /obj/item/robot_module/proc/create_equipment(mob/living/silicon/robot/robot)
 	if(!istype(robot.idcard, idcard_type))
-		QDEL_NULL(robot.idcard)
+		own_clear(robot, "idcard", OWN_DELETE)
 	robot.init_id(idcard_type)
 	return
 
@@ -95,7 +95,7 @@
 
 /// The module is leaving `robot`. Undo on_robot_equip().
 /obj/item/robot_module/proc/on_robot_unequip(mob/living/silicon/robot/robot)
-	QDEL_NULL(robot.robot_belly)
+	own_clear(robot, "robot_belly", OWN_DELETE)
 
 // Reset the module and delete it
 /obj/item/robot_module/proc/reset_module(mob/living/silicon/robot/robot)
@@ -111,15 +111,12 @@
 
 	robot.scrubbing = FALSE
 
-	modules -= robot.idcard
+	modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 	if(robot.idcard.loc != robot)
 		robot.idcard.forceMove(robot)
-	robot.module = null
+	own_take(robot, "module")
 	consume(src, robot)
 
-DECLARE_REF(/obj/item/robot_module, "modules", OWNED_LIST, null)
-DECLARE_REF(/obj/item/robot_module, "emag", OWNED_LIST, null)
-DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 
 /// Module items are pulsed once by content recursion: stowed ones inside the
 /// module, equipped ones inside the robot. Only the matter synths (datums)
@@ -139,11 +136,9 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 		T.add_charge(T.recharge_rate * rate)
 
 /obj/item/robot_module/proc/rebuild()//Rebuilds the list so it's possible to add/remove items from the module
-	var/list/temp_list = modules
-	modules = list()
-	for(var/obj/O in temp_list)
-		if(O)
-			modules += O
+	// In place: the members keep their owners (the robot's idcard is listed, not owned, here).
+	if(modules)
+		listclearnulls(modules)
 
 /obj/item/robot_module/proc/add_languages(mob/living/silicon/robot/R)
 	// Stores the languages as they were before receiving the module, and whether they could be synthezized.
@@ -214,16 +209,22 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 		if(!found)
 			var/datum/matter_synth/new_synth = new matter_synth.type(10000)
 			item_synths += new_synth
-			synths += new_synth
-	item_with_synth.synths = item_synths
+			own_add(src, "synths", new_synth)
+	rel_clear(item_with_synth, "synths")
+	for(var/datum/matter_synth/linked_synth as anything in item_synths)
+		rel_add(item_with_synth, "synths", linked_synth)
 
 /obj/item/robot_module/proc/add_item(atom/movable/new_item, mob/living/silicon/robot/robot)
 	if(istype(new_item, /obj/item/card/id))
 		if(robot.idcard)
-			modules -= robot.idcard
-			QDEL_NULL(robot.idcard)
-		robot.idcard = new_item
-	modules += new_item
+			modules -= robot.idcard // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
+			own_clear(robot, "idcard", OWN_DELETE)
+		own_move(new_item, robot, "idcard")
+		modules |= new_item // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
+		new_item.forceMove(src)
+		robot.hud_used?.update_robot_modules_display()
+		return
+	own_add(src, "modules", new_item)
 	new_item.forceMove(src)
 	robot.hud_used?.update_robot_modules_display()
 
@@ -241,46 +242,46 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.metal.type == synth.type)
-					item_with_matter.metal = synth
+					rel_set(item_with_matter, "metal", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/metal = new /datum/matter_synth/metal(40000)
-				item_with_matter.metal = metal
-				LAZYADD(synths, metal)
+				rel_set(item_with_matter, "metal", metal)
+				own_add(src, "synths", metal)
 		if(item_with_matter.glass)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.glass.type == synth.type)
-					item_with_matter.glass = synth
+					rel_set(item_with_matter, "glass", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/glass = new /datum/matter_synth/glass(40000)
-				item_with_matter.glass = glass
-				LAZYADD(synths, glass)
+				rel_set(item_with_matter, "glass", glass)
+				own_add(src, "synths", glass)
 		if(item_with_matter.wood)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.wood.type == synth.type)
-					item_with_matter.wood = synth
+					rel_set(item_with_matter, "wood", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/wood = new /datum/matter_synth/wood(40000)
-				item_with_matter.wood = wood
-				LAZYADD(synths, wood)
+				rel_set(item_with_matter, "wood", wood)
+				own_add(src, "synths", wood)
 		if(item_with_matter.plastic)
 			var/found = FALSE
 			for(var/datum/matter_synth/synth as anything in synths)
 				if(item_with_matter.plastic.type == synth.type)
-					item_with_matter.plastic = synth
+					rel_set(item_with_matter, "plastic", synth)
 					found = TRUE
 					break
 			if(!found)
 				var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(40000)
-				item_with_matter.plastic = plastic
-				LAZYADD(synths, plastic)
+				rel_set(item_with_matter, "plastic", plastic)
+				own_add(src, "synths", plastic)
 
 // Cyborgs (non-drones), default loadout. This will be given to every module.
 /obj/item/robot_module/robot/create_equipment(mob/living/silicon/robot/robot)
@@ -289,21 +290,21 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	water.name = "Water reserves"
 	water.recharge_rate = 10
 	water.max_energy = 1000
-	robot.water_res_handle = om_handle(water)
-	synths += water
+	rel_set(robot, "water_res", water)
+	own_add(src, "synths", water)
 	var/obj/item/robot_tongue/T = new /obj/item/robot_tongue(src)
-	T.water = water
-	src.modules += T
+	rel_set(T, "water", water)
+	own_add(src, "modules", T)
 	var/obj/item/gps/robot/robot_gps = new /obj/item/gps/robot(src)
 	adjust_gps(robot_gps)
-	src.modules += robot_gps
-	src.modules += new /obj/item/boop_module(src)
-	src.modules += new /obj/item/flash/robot(src)
-	src.modules += new /obj/item/extinguisher(src)
-	src.modules += new /obj/item/tool/crowbar/cyborg(src)
-	src.modules += new /obj/item/melee/robotic/jaws/small(src)
-	src.modules += new /obj/item/gripper/scene(src)
-	src.modules += new /obj/item/robo_dice(src)
+	own_add(src, "modules", robot_gps)
+	own_add(src, "modules", new /obj/item/boop_module(src))
+	own_add(src, "modules", new /obj/item/flash/robot(src))
+	own_add(src, "modules", new /obj/item/extinguisher(src))
+	own_add(src, "modules", new /obj/item/tool/crowbar/cyborg(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/jaws/small(src))
+	own_add(src, "modules", new /obj/item/gripper/scene(src))
+	own_add(src, "modules", new /obj/item/robo_dice(src))
 
 /obj/item/robot_module/robot/proc/adjust_gps(obj/item/gps/robot/robot_gps)
 	return
@@ -314,13 +315,13 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/standard/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/tool/wrench/cyborg(src)
-	src.modules += new /obj/item/healthanalyzer(src)
-	src.modules += new /obj/item/melee/baton/loaded(src)
-	src.emag += new /obj/item/melee/energy/sword(src)
+	own_add(src, "modules", new /obj/item/tool/wrench/cyborg(src))
+	own_add(src, "modules", new /obj/item/healthanalyzer(src))
+	own_add(src, "modules", new /obj/item/melee/baton/loaded(src))
+	own_add(src, "emag", new /obj/item/melee/energy/sword(src))
 
-	src.modules += new /obj/item/dogborg/sleeper/compactor/generic(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/compactor/generic(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/medical
 	staffing_role = DEPARTMENT_MEDICAL
@@ -340,43 +341,43 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/medical/surgeon/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/healthanalyzer(src)
-	src.modules += new /obj/item/sleevemate(src)
-	src.modules += new /obj/item/reagent_containers/borghypo/surgeon(src)
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
-	src.modules += new /obj/item/gripper/medical(src)
-	src.modules += new /obj/item/shockpaddles/robot(src)
-	src.modules += new /obj/item/reagent_containers/dropper(src) // Allows surgeon borg to fix necrosis
-	src.modules += new /obj/item/reagent_containers/syringe(src)
+	own_add(src, "modules", new /obj/item/healthanalyzer(src))
+	own_add(src, "modules", new /obj/item/sleevemate(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/borghypo/surgeon(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
+	own_add(src, "modules", new /obj/item/gripper/medical(src))
+	own_add(src, "modules", new /obj/item/shockpaddles/robot(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/dropper(src)) // Allows surgeon borg to fix necrosis
+	own_add(src, "modules", new /obj/item/reagent_containers/syringe(src))
 
 	var/obj/item/reagent_containers/spray/PS = new /obj/item/reagent_containers/spray(src)
 
-	src.emag += PS
+	own_add(src, "emag", PS)
 	PS.reagents.add_reagent(REAGENT_ID_PACID, 250)
 	PS.name = "Polyacid spray"
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(10000)
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	var/obj/item/stack/medical/advanced/bruise_pack/B = new /obj/item/stack/medical/advanced/bruise_pack(src)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src) // edit: we have burn surgeries so they should be able to do them
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	N.synths = list(medicine)
+	rel_add(N, "synths", medicine)
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	B.synths = list(medicine)
+	rel_add(B, "synths", medicine)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	O.synths = list(medicine)
-	src.modules += N
-	src.modules += B
-	src.modules += O
+	rel_add(O, "synths", medicine)
+	own_add(src, "modules", N)
+	own_add(src, "modules", B)
+	own_add(src, "modules", O)
 
-	src.modules += new /obj/item/dogborg/sleeper/trauma(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/trauma(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/medical/surgeon/respawn_consumable(mob/living/silicon/robot/R, amount)
 
@@ -398,29 +399,29 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/medical/crisis/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/healthanalyzer(src)
-	src.modules += new /obj/item/sleevemate(src)
-	src.modules += new /obj/item/reagent_scanner/adv(src)
-	src.modules += new /obj/item/roller_holder(src)
-	src.modules += new /obj/item/reagent_containers/borghypo/crisis(src)
-	src.modules += new /obj/item/reagent_containers/glass/beaker/large/borg(src)
-	src.modules += new /obj/item/reagent_containers/dropper/industrial(src)
-	src.modules += new /obj/item/reagent_containers/syringe(src)
-	src.modules += new /obj/item/gripper/medical(src)
-	src.modules += new /obj/item/shockpaddles/robot(src)
+	own_add(src, "modules", new /obj/item/healthanalyzer(src))
+	own_add(src, "modules", new /obj/item/sleevemate(src))
+	own_add(src, "modules", new /obj/item/reagent_scanner/adv(src))
+	own_add(src, "modules", new /obj/item/roller_holder(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/borghypo/crisis(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/glass/beaker/large/borg(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/dropper/industrial(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/syringe(src))
+	own_add(src, "modules", new /obj/item/gripper/medical(src))
+	own_add(src, "modules", new /obj/item/shockpaddles/robot(src))
 	//Surgeon Modules below
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
-	src.modules += new /obj/item/robotic_multibelt/medical(src)
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/medical(src))
 	//Surgeon Modules End
-	src.modules += new /obj/item/inflatable_dispenser/robot(src)
-	src.modules += new /obj/item/holosign_creator/medical(src)
+	own_add(src, "modules", new /obj/item/inflatable_dispenser/robot(src))
+	own_add(src, "modules", new /obj/item/holosign_creator/medical(src))
 	var/obj/item/reagent_containers/spray/PS = new /obj/item/reagent_containers/spray(src)
-	src.emag += PS
+	own_add(src, "emag", PS)
 	PS.reagents.add_reagent(REAGENT_ID_PACID, 250)
 	PS.name = "Polyacid spray"
 
 	var/datum/matter_synth/medicine = new /datum/matter_synth/medicine(30000)
-	synths += medicine
+	own_add(src, "synths", medicine)
 
 	var/obj/item/stack/medical/advanced/clotting/C = new (src)
 	var/obj/item/stack/medical/advanced/ointment/O = new /obj/item/stack/medical/advanced/ointment(src)
@@ -428,23 +429,23 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	var/obj/item/stack/medical/splint/S = new /obj/item/stack/medical/splint(src)
 	C.uses_charge = 1
 	C.charge_costs = list(5000)
-	C.synths = list(medicine)
+	rel_add(C, "synths", medicine)
 	O.uses_charge = 1
 	O.charge_costs = list(1000)
-	O.synths = list(medicine)
+	rel_add(O, "synths", medicine)
 	B.uses_charge = 1
 	B.charge_costs = list(1000)
-	B.synths = list(medicine)
+	rel_add(B, "synths", medicine)
 	S.uses_charge = 1
 	S.charge_costs = list(1000)
-	S.synths = list(medicine)
-	src.modules += O
-	src.modules += B
-	src.modules += S
-	src.modules += C
+	rel_add(S, "synths", medicine)
+	own_add(src, "modules", O)
+	own_add(src, "modules", B)
+	own_add(src, "modules", S)
+	own_add(src, "modules", C)
 
-	src.modules += new /obj/item/dogborg/sleeper(src)
-	src.emag += new /obj/item/dogborg/pounce(src) //Pounce
+	own_add(src, "modules", new /obj/item/dogborg/sleeper(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src)) //Pounce
 
 /obj/item/robot_module/robot/medical/crisis/respawn_consumable(mob/living/silicon/robot/R, amount)
 
@@ -472,26 +473,26 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/engineering/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/robotic_multibelt(src)
-	src.modules += new /obj/item/robotic_multibelt(src)
-	src.modules += new /obj/item/borg/sight/meson(src)
-	src.modules += new /obj/item/t_scanner(src)
-	src.modules += new /obj/item/analyzer(src)
-	src.modules += new /obj/item/assembly/signaler(src) // Anomaly handling
-	src.modules += new /obj/item/geiger(src)
-	src.modules += new /obj/item/taperoll/engineering(src)
-	src.modules += new /obj/item/gripper/engineering(src)
-	src.modules += new /obj/item/lightreplacer(src)
-	src.modules += new /obj/item/pipe_dispenser(src)
-	src.modules += new /obj/item/floor_painter(src)
-	src.modules += new /obj/item/rms(src)
-	src.modules += new /obj/item/inflatable_dispenser/robot(src)
-	src.emag += new /obj/item/melee/robotic/baton/arm(src)
-	src.modules += new /obj/item/rcd/electric/mounted/borg(src)
-	src.modules += new /obj/item/pickaxe/plasmacutter/borg(src)
-	src.modules += new /obj/item/dogborg/stasis_clamp(src)
-	src.modules += new /obj/item/storage/pouch/eng_parts/borg(src)
-	src.modules += new /obj/item/holosign_creator/combifan(src)
+	own_add(src, "modules", new /obj/item/robotic_multibelt(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt(src))
+	own_add(src, "modules", new /obj/item/borg/sight/meson(src))
+	own_add(src, "modules", new /obj/item/t_scanner(src))
+	own_add(src, "modules", new /obj/item/analyzer(src))
+	own_add(src, "modules", new /obj/item/assembly/signaler(src)) // Anomaly handling
+	own_add(src, "modules", new /obj/item/geiger(src))
+	own_add(src, "modules", new /obj/item/taperoll/engineering(src))
+	own_add(src, "modules", new /obj/item/gripper/engineering(src))
+	own_add(src, "modules", new /obj/item/lightreplacer(src))
+	own_add(src, "modules", new /obj/item/pipe_dispenser(src))
+	own_add(src, "modules", new /obj/item/floor_painter(src))
+	own_add(src, "modules", new /obj/item/rms(src))
+	own_add(src, "modules", new /obj/item/inflatable_dispenser/robot(src))
+	own_add(src, "emag", new /obj/item/melee/robotic/baton/arm(src))
+	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg(src))
+	own_add(src, "modules", new /obj/item/pickaxe/plasmacutter/borg(src))
+	own_add(src, "modules", new /obj/item/dogborg/stasis_clamp(src))
+	own_add(src, "modules", new /obj/item/storage/pouch/eng_parts/borg(src))
+	own_add(src, "modules", new /obj/item/holosign_creator/combifan(src))
 
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal(40000)
 	var/datum/matter_synth/glass = new /datum/matter_synth/glass(40000)
@@ -500,22 +501,22 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(40000)
 
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()
-	synths += metal
-	synths += glass
-	synths += plasteel
-	synths += wood
-	synths += plastic
-	synths += wire
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
+	own_add(src, "synths", plasteel)
+	own_add(src, "synths", wood)
+	own_add(src, "synths", plastic)
+	own_add(src, "synths", wire)
 
 	var/obj/item/dogborg/sleeper/compactor/decompiler/BD = new /obj/item/dogborg/sleeper/compactor/decompiler(src)
-	BD.metal = metal
-	BD.glass = glass
-	BD.wood = wood
-	BD.plastic = plastic
-	src.modules += BD
+	rel_set(BD, "metal", metal)
+	rel_set(BD, "glass", glass)
+	rel_set(BD, "wood", wood)
+	rel_set(BD, "plastic", plastic)
+	own_add(src, "modules", BD)
 
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/security
 	staffing_role = DEPARTMENT_SECURITY
@@ -532,18 +533,18 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/security/general/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/handcuffs/cyborg(src)
-	src.modules += new /obj/item/melee/robotic/baton(src)
-	src.modules += new /obj/item/gun/energy/robotic/taser(src)
-	src.modules += new /obj/item/taperoll/police(src)
-	src.modules += new /obj/item/reagent_containers/spray/pepper(src)
-	src.modules += new /obj/item/gripper/security(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // Phasegun for regular sec cyborg.
-	src.modules += new /obj/item/ticket_printer(src)
-	src.emag += new /obj/item/gun/energy/robotic/laser/rifle(src)
+	own_add(src, "modules", new /obj/item/handcuffs/cyborg(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/baton(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/taser(src))
+	own_add(src, "modules", new /obj/item/taperoll/police(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/spray/pepper(src))
+	own_add(src, "modules", new /obj/item/gripper/security(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/phasegun(src)) // Phasegun for regular sec cyborg.
+	own_add(src, "modules", new /obj/item/ticket_printer(src))
+	own_add(src, "emag", new /obj/item/gun/energy/robotic/laser/rifle(src))
 
-	src.modules += new /obj/item/dogborg/sleeper/K9(src) //Eat criminals. Bring them to the brig.
-	src.modules += new /obj/item/dogborg/pounce(src) //Pounce
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/K9(src)) //Eat criminals. Bring them to the brig.
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src)) //Pounce
 
 /obj/item/robot_module/robot/security/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
@@ -572,16 +573,16 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/janitor/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/soap/nanotrasen(src)
-	src.modules += new /obj/item/storage/bag/trash(src)
-	src.modules += new /obj/item/mop(src)
-	src.modules += new /obj/item/pupscrubber(src)
-	src.modules += new /obj/item/lightreplacer(src)
-	src.modules += new /obj/item/vac_attachment(src)
-	src.modules += new /obj/item/borg/sight/janitor(src)
-	src.modules += new /obj/item/reagent_containers/glass/bucket/cyborg(src)
+	own_add(src, "modules", new /obj/item/soap/nanotrasen(src))
+	own_add(src, "modules", new /obj/item/storage/bag/trash(src))
+	own_add(src, "modules", new /obj/item/mop(src))
+	own_add(src, "modules", new /obj/item/pupscrubber(src))
+	own_add(src, "modules", new /obj/item/lightreplacer(src))
+	own_add(src, "modules", new /obj/item/vac_attachment(src))
+	own_add(src, "modules", new /obj/item/borg/sight/janitor(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/glass/bucket/cyborg(src))
 	var/obj/item/reagent_containers/spray/LS = new /obj/item/reagent_containers/spray(src)
-	src.emag += LS
+	own_add(src, "emag", LS)
 	LS.reagents.add_reagent(REAGENT_ID_LUBE, 250)
 	LS.name = "Lube spray"
 
@@ -597,33 +598,34 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	glass.max_energy = 50000
 	glass.energy = 0
 
-	synths += metal
-	synths += glass
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
 
 	//Sheet refiners can only produce raw sheets.
 	var/obj/item/stack/material/cyborg/steel/M = new (src)
 	M.name = "steel recycler"
 	M.desc = "A device that refines recycled steel into sheets."
-	M.synths = list(metal)
-	M.recipes = list()
-	M.recipes += new/datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20)
-	src.modules += M
+	rel_add(M, "synths", metal)
+	// Shared recipe tables, like material.get_recipes(): never owned by one stack.
+	var/static/list/steel_recycler_recipes = list(new /datum/stack_recipe("steel sheet", /obj/item/stack/material/steel, 1, 1, 20))
+	var/static/list/glass_recycler_recipes = list(new /datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20))
+	M.recipes = steel_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
+	own_add(src, "modules", M)
 
 	var/obj/item/stack/material/cyborg/glass/G = new (src)
 	G.name = "glass recycler"
 	G.desc = "A device that refines recycled glass into sheets."
 	G.material = get_material_by_name("placeholder") //Hacky shit but we want sheets, not windows.
-	G.synths = list(glass)
-	G.recipes = list()
-	G.recipes += new/datum/stack_recipe("glass sheet", /obj/item/stack/material/glass, 1, 1, 20)
-	src.modules += G
+	rel_add(G, "synths", glass)
+	G.recipes = glass_recycler_recipes // ALLOW(ownership): a shared static recipe table (stack recipes are shared lists, cf. material.get_recipes())
+	own_add(src, "modules", G)
 
 	var/obj/item/dogborg/sleeper/compactor/C = new /obj/item/dogborg/sleeper/compactor(src)
-	C.metal = metal
-	C.glass = glass
-	src.modules += C
+	rel_set(C, "metal", metal)
+	rel_set(C, "glass", glass)
+	own_add(src, "modules", C)
 
-	src.emag += new /obj/item/dogborg/pounce(src) //Pounce
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src)) //Pounce
 
 /obj/item/robot_module/robot/janitor/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
@@ -670,35 +672,35 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/clerical/butler/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/gripper/service(src)
-	src.modules += new /obj/item/robotic_multibelt/service(src)
-	src.modules += new /obj/item/storage/bag/serviceborg(src)
+	own_add(src, "modules", new /obj/item/gripper/service(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/service(src))
+	own_add(src, "modules", new /obj/item/storage/bag/serviceborg(src))
 
 	var/obj/item/rsf/M = new /obj/item/rsf(src)
 	M.stored_matter = 30
-	src.modules += M
+	own_add(src, "modules", M)
 
-	src.modules += new /obj/item/reagent_containers/dropper/industrial(src)
+	own_add(src, "modules", new /obj/item/reagent_containers/dropper/industrial(src))
 
 	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
 	L.lit = 1
-	src.modules += L
+	own_add(src, "modules", L)
 
-	src.modules += new /obj/item/tray/robotray(src)
-	src.modules += new /obj/item/reagent_containers/borghypo/service(src)
+	own_add(src, "modules", new /obj/item/tray/robotray(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/borghypo/service(src))
 	var/obj/item/reagent_containers/food/drinks/bottle/small/beer/PB = new /obj/item/reagent_containers/food/drinks/bottle/small/beer(src)
-	src.emag += PB
+	own_add(src, "emag", PB)
 
 	var/datum/reagents/R = new/datum/reagents(50)
-	PB.reagents = R
-	R.my_atom = PB
+	own_set(PB, "reagents", R)
+	rel_set(R, "my_atom", PB)
 	R.add_reagent(REAGENT_ID_BEER2, 50)
 	PB.name = "Auntie Hong's Final Sip"
 	PB.desc = "A bottle of very special mix of alcohol and poison. Some may argue that there's alcohol to die for, but Auntie Hong took it to next level."
 
-	src.modules += new /obj/item/dogborg/sleeper/compactor/brewer(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/compactor/brewer(src))
 
-	src.emag += new /obj/item/dogborg/pounce(src) //Pounce
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src)) //Pounce
 
 /obj/item/robot_module/robot/clerical/butler/respawn_consumable(mob/living/silicon/robot/R, amount)
 	..()
@@ -714,31 +716,31 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	can_be_pushed = 0
 
 /obj/item/robot_module/robot/clerical/honkborg/create_equipment(mob/living/silicon/robot/R)
-	src.modules += new /obj/item/gripper/service(src)
-	src.modules += new /obj/item/reagent_containers/glass/bucket/cyborg(src)
-	src.modules += new /obj/item/robotic_multibelt/botanical(src)
-	src.modules += new /obj/item/dogborg/pounce(src)
-	src.modules += new /obj/item/bikehorn(src)
-	src.modules += new /obj/item/gun/launcher/confetti_cannon/robot(src)
-	src.modules += new /obj/item/reagent_containers/spray/waterflower(src)
+	own_add(src, "modules", new /obj/item/gripper/service(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/glass/bucket/cyborg(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/botanical(src))
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
+	own_add(src, "modules", new /obj/item/bikehorn(src))
+	own_add(src, "modules", new /obj/item/gun/launcher/confetti_cannon/robot(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/spray/waterflower(src))
 
 	var/obj/item/rsf/M = new /obj/item/rsf(src)
 	M.stored_matter = 30
-	src.modules += M
+	own_add(src, "modules", M)
 
-	src.modules += new /obj/item/reagent_containers/dropper/industrial(src)
+	own_add(src, "modules", new /obj/item/reagent_containers/dropper/industrial(src))
 
 	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
 	L.lit = 1
-	src.modules += L
+	own_add(src, "modules", L)
 
-	src.modules += new /obj/item/tray/robotray(src)
-	src.modules += new /obj/item/reagent_containers/borghypo/service(src)
+	own_add(src, "modules", new /obj/item/tray/robotray(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/borghypo/service(src))
 
 	var/obj/item/dogborg/sleeper/compactor/honkborg/B = new /obj/item/dogborg/sleeper/compactor/honkborg(src)
-	src.modules += B
+	own_add(src, "modules", B)
 	var/obj/item/reagent_containers/spray/LS = new /obj/item/reagent_containers/spray(src)
-	src.emag += LS
+	own_add(src, "emag", LS)
 	LS.reagents.add_reagent(REAGENT_ID_LUBE, 250)
 	LS.name = "Lube spray"
 	..()
@@ -754,17 +756,17 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/clerical/general/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/pen/robopen(src)
-	src.modules += new /obj/item/form_printer(src)
-	src.modules += new /obj/item/gripper/paperwork(src)
-	src.modules += new /obj/item/hand_labeler(src)
-	src.modules += new /obj/item/stamp(src)
-	src.modules += new /obj/item/stamp/denied(src)
-	src.emag += new /obj/item/stamp/chameleon(src)
-	src.emag += new /obj/item/pen/chameleon(src)
+	own_add(src, "modules", new /obj/item/pen/robopen(src))
+	own_add(src, "modules", new /obj/item/form_printer(src))
+	own_add(src, "modules", new /obj/item/gripper/paperwork(src))
+	own_add(src, "modules", new /obj/item/hand_labeler(src))
+	own_add(src, "modules", new /obj/item/stamp(src))
+	own_add(src, "modules", new /obj/item/stamp/denied(src))
+	own_add(src, "emag", new /obj/item/stamp/chameleon(src))
+	own_add(src, "emag", new /obj/item/pen/chameleon(src))
 
-	src.modules += new /obj/item/dogborg/sleeper/compactor/generic(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/compactor/generic(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/miner
 	staffing_role = DEPARTMENT_CARGO
@@ -777,39 +779,39 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/miner/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/borg/sight/material(src)
-	src.modules += new /obj/item/tool/wrench/cyborg(src)
-	src.modules += new /obj/item/tool/screwdriver/cyborg(src)
-	src.modules += new /obj/item/pickaxe/borgdrill(src)
-	src.modules += new /obj/item/storage/bag/sheetsnatcher/borg(src)
-	src.modules += new /obj/item/gripper/miner(src)
-	src.modules += new /obj/item/mining_scanner/robot(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // Phasegun for regular mining cyborg.
-	src.modules += new /obj/item/vac_attachment(src)
+	own_add(src, "modules", new /obj/item/borg/sight/material(src))
+	own_add(src, "modules", new /obj/item/tool/wrench/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/screwdriver/cyborg(src))
+	own_add(src, "modules", new /obj/item/pickaxe/borgdrill(src))
+	own_add(src, "modules", new /obj/item/storage/bag/sheetsnatcher/borg(src))
+	own_add(src, "modules", new /obj/item/gripper/miner(src))
+	own_add(src, "modules", new /obj/item/mining_scanner/robot(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/phasegun(src)) // Phasegun for regular mining cyborg.
+	own_add(src, "modules", new /obj/item/vac_attachment(src))
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.name = "\improper Synthetic Miner ID"
 	robot_id.initial_sprite_stack = list("base-stamp", "top-brown", "stamp-n", "stripe-purple")
 	robot_id.reset_icon()
 	robot_id.forceMove(src)
-	src.modules += robot_id
-	src.modules += new /obj/item/mail_scanner(src)
-	src.modules += new /obj/item/storage/bag/mail/borg(src)
-	src.modules += new /obj/item/destTagger(src)
-	src.modules += new /obj/item/packageWrap/borg(src)
-	src.emag += new /obj/item/kinetic_crusher/machete/dagger(src)
+	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
+	own_add(src, "modules", new /obj/item/mail_scanner(src))
+	own_add(src, "modules", new /obj/item/storage/bag/mail/borg(src))
+	own_add(src, "modules", new /obj/item/destTagger(src))
+	own_add(src, "modules", new /obj/item/packageWrap/borg(src))
+	own_add(src, "emag", new /obj/item/kinetic_crusher/machete/dagger(src))
 
 	var/datum/matter_synth/beacon = new /datum/matter_synth/beacon(10000)
-	synths += beacon
+	own_add(src, "synths", beacon)
 
 	var/obj/item/stack/marker_beacon/MB = new /obj/item/stack/marker_beacon(src)
 	MB.uses_charge = 1
 	MB.charge_costs = list(500)
-	MB.synths = list(beacon)
-	src.modules += MB
+	rel_add(MB, "synths", beacon)
+	own_add(src, "modules", MB)
 
-	src.modules += new /obj/item/dogborg/sleeper/compactor/supply(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/compactor/supply(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/research
 	staffing_role = DEPARTMENT_RESEARCH
@@ -820,45 +822,45 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/research/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/experi_scanner(src)
-	src.modules += new /obj/item/robotanalyzer(src)
-	src.modules += new /obj/item/card/robot(src)
-	src.modules += new /obj/item/gripper/research(src)
-	src.modules += new /obj/item/robotic_multibelt(src)
-	src.modules += new /obj/item/robotic_multibelt(src)
-	src.modules += new /obj/item/robotic_multibelt/botanical(src)
-	src.modules += new /obj/item/surgical/hemostat/cyborg(src) //Synth repair
-	src.modules += new /obj/item/surgical/surgicaldrill/cyborg(src) //NIF repair
-	src.modules += new /obj/item/surgical/circular_saw/cyborg(src) // Synth limb replacement
-	src.modules += new /obj/item/reagent_containers/syringe(src)
-	src.modules += new /obj/item/reagent_containers/glass/beaker/large/borg(src)
-	src.modules += new /obj/item/storage/part_replacer(src)
-	src.modules += new /obj/item/shockpaddles/robot/jumper(src)
-	src.modules += new /obj/item/melee/robotic/baton/slime(src)
-	src.modules += new /obj/item/gun/energy/robotic/taser/xeno(src)
-	src.modules += new /obj/item/xenoarch_multi_tool(src)
-	src.modules += new /obj/item/pickaxe/excavationdrill(src)
+	own_add(src, "modules", new /obj/item/experi_scanner(src))
+	own_add(src, "modules", new /obj/item/robotanalyzer(src))
+	own_add(src, "modules", new /obj/item/card/robot(src))
+	own_add(src, "modules", new /obj/item/gripper/research(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/botanical(src))
+	own_add(src, "modules", new /obj/item/surgical/hemostat/cyborg(src)) //Synth repair
+	own_add(src, "modules", new /obj/item/surgical/surgicaldrill/cyborg(src)) //NIF repair
+	own_add(src, "modules", new /obj/item/surgical/circular_saw/cyborg(src)) // Synth limb replacement
+	own_add(src, "modules", new /obj/item/reagent_containers/syringe(src))
+	own_add(src, "modules", new /obj/item/reagent_containers/glass/beaker/large/borg(src))
+	own_add(src, "modules", new /obj/item/storage/part_replacer(src))
+	own_add(src, "modules", new /obj/item/shockpaddles/robot/jumper(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/baton/slime(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/taser/xeno(src))
+	own_add(src, "modules", new /obj/item/xenoarch_multi_tool(src))
+	own_add(src, "modules", new /obj/item/pickaxe/excavationdrill(src))
 	// Anomaly handling
-	src.modules += new /obj/item/analyzer(src)
-	src.modules += new /obj/item/assembly/signaler(src)
-	src.modules += new /obj/item/anomaly_scanner(src)
+	own_add(src, "modules", new /obj/item/analyzer(src))
+	own_add(src, "modules", new /obj/item/assembly/signaler(src))
+	own_add(src, "modules", new /obj/item/anomaly_scanner(src))
 
-	src.emag += new /obj/item/hand_tele(src)
+	own_add(src, "emag", new /obj/item/hand_tele(src))
 
 	var/datum/matter_synth/nanite = new /datum/matter_synth/nanite(10000)
-	synths += nanite
+	own_add(src, "synths", nanite)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire()						//Added to allow repairs, would rather add cable now than be asked to add it later,
-	synths += wire																		//Cable code, taken from engiborg,
+	own_add(src, "synths", wire) //Cable code, taken from engiborg,
 
 	var/obj/item/stack/nanopaste/N = new /obj/item/stack/nanopaste(src)
 	N.uses_charge = 1
 	N.charge_costs = list(1000)
-	N.synths = list(nanite)
-	src.modules += N
+	rel_add(N, "synths", nanite)
+	own_add(src, "modules", N)
 
-	src.modules += new /obj/item/dogborg/sleeper/compactor/analyzer(src)
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
-	src.emag += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/compactor/analyzer(src))
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
+	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
 
 /obj/item/robot_module/robot/research/respawn_consumable(mob/living/silicon/robot/R, amount)
 
@@ -878,20 +880,20 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/robot/security/combat/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/handcuffs/cyborg(src)
-	src.modules += new /obj/item/taperoll/police(src)
-	src.modules += new /obj/item/gun/energy/robotic/laser/rifle(src)
-	src.modules += new /obj/item/gun/energy/robotic/disabler(src)
-	src.modules += new /obj/item/pickaxe/plasmacutter/borg(src)
-	src.modules += new /obj/item/melee/robotic/blade/dagger(src)
-	src.modules += new /obj/item/borg/combat/shield(src)
-	src.modules += new /obj/item/borg/combat/mobility(src)
-	src.modules += new /obj/item/melee/robotic/borg_combat_shocker(src)
-	src.modules += new /obj/item/ticket_printer(src)
-	src.emag += new /obj/item/gun/energy/robotic/laser/heavy(src)
+	own_add(src, "modules", new /obj/item/handcuffs/cyborg(src))
+	own_add(src, "modules", new /obj/item/taperoll/police(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/laser/rifle(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/disabler(src))
+	own_add(src, "modules", new /obj/item/pickaxe/plasmacutter/borg(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/blade/dagger(src))
+	own_add(src, "modules", new /obj/item/borg/combat/shield(src))
+	own_add(src, "modules", new /obj/item/borg/combat/mobility(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/borg_combat_shocker(src))
+	own_add(src, "modules", new /obj/item/ticket_printer(src))
+	own_add(src, "emag", new /obj/item/gun/energy/robotic/laser/heavy(src))
 
-	src.modules += new /obj/item/dogborg/sleeper/K9/ert(src)
-	src.modules += new /obj/item/dogborg/pounce(src)
+	own_add(src, "modules", new /obj/item/dogborg/sleeper/K9/ert(src))
+	own_add(src, "modules", new /obj/item/dogborg/pounce(src))
 
 /* Drones */
 
@@ -908,27 +910,26 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/drone/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/borg/sight/meson(src)
-	src.modules += new /obj/item/weldingtool/electric/mounted/cyborg(src)
-	src.modules += new /obj/item/tool/screwdriver/cyborg(src)
-	src.modules += new /obj/item/tool/wrench/cyborg(src)
-	src.modules += new /obj/item/tool/crowbar/cyborg(src)
-	src.modules += new /obj/item/tool/wirecutters/cyborg(src)
-	src.modules += new /obj/item/t_scanner(src)
-	src.modules += new /obj/item/multitool/cyborg(src)
-	src.modules += new /obj/item/lightreplacer(src)
-	src.modules += new /obj/item/gripper/drone(src)
-	src.modules += new /obj/item/soap(src)
-	src.modules += new /obj/item/extinguisher(src)
-	src.modules += new /obj/item/pipe_painter(src)
-	src.modules += new /obj/item/floor_painter(src)
-	src.modules += new /obj/item/pipe_dispenser(src)
+	own_add(src, "modules", new /obj/item/borg/sight/meson(src))
+	own_add(src, "modules", new /obj/item/weldingtool/electric/mounted/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/screwdriver/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/wrench/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/crowbar/cyborg(src))
+	own_add(src, "modules", new /obj/item/tool/wirecutters/cyborg(src))
+	own_add(src, "modules", new /obj/item/t_scanner(src))
+	own_add(src, "modules", new /obj/item/multitool/cyborg(src))
+	own_add(src, "modules", new /obj/item/lightreplacer(src))
+	own_add(src, "modules", new /obj/item/gripper/drone(src))
+	own_add(src, "modules", new /obj/item/soap(src))
+	own_add(src, "modules", new /obj/item/extinguisher(src))
+	own_add(src, "modules", new /obj/item/pipe_painter(src))
+	own_add(src, "modules", new /obj/item/floor_painter(src))
+	own_add(src, "modules", new /obj/item/pipe_dispenser(src))
 
-	robot.internals = new/obj/item/tank/jetpack/carbondioxide(src)
-	src.modules += robot.internals
+	own_add(src, "modules", new/obj/item/tank/jetpack/carbondioxide(src))
 
 	var/obj/item/pickaxe/plasmacutter/borg/PC = new /obj/item/pickaxe/plasmacutter/borg(src)
-	src.emag += PC
+	own_add(src, "emag", PC)
 	PC.name = "Plasma Cutter"
 
 	var/datum/matter_synth/metal = new /datum/matter_synth/metal(25000)
@@ -936,19 +937,19 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	var/datum/matter_synth/wood = new /datum/matter_synth/wood(25000)
 	var/datum/matter_synth/plastic = new /datum/matter_synth/plastic(25000)
 	var/datum/matter_synth/wire = new /datum/matter_synth/wire(30)
-	synths += metal
-	synths += glass
-	synths += wood
-	synths += plastic
-	synths += wire
+	own_add(src, "synths", metal)
+	own_add(src, "synths", glass)
+	own_add(src, "synths", wood)
+	own_add(src, "synths", plastic)
+	own_add(src, "synths", wire)
 
 	var/obj/item/matter_decompiler/MD = new /obj/item/matter_decompiler(src)
-	MD.metal = metal
-	MD.glass = glass
-	MD.wood = wood
-	MD.plastic = plastic
-	src.modules += new /obj/item/robotic_multibelt/materials(src)
-	src.modules += MD
+	rel_set(MD, "metal", metal)
+	rel_set(MD, "glass", glass)
+	rel_set(MD, "wood", wood)
+	rel_set(MD, "plastic", plastic)
+	own_add(src, "modules", new /obj/item/robotic_multibelt/materials(src))
+	own_add(src, "modules", MD)
 
 /obj/item/robot_module/drone/construction
 	name = "construction drone module"
@@ -958,7 +959,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/drone/construction/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/rcd/electric/mounted/borg/lesser(src)
+	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg/lesser(src))
 
 /obj/item/robot_module/drone/respawn_consumable(mob/living/silicon/robot/R, amount)
 	var/obj/item/lightreplacer/LR = locate_in_list(src.modules, /obj/item/lightreplacer)
@@ -973,12 +974,12 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 /obj/item/robot_module/drone/mining/create_equipment(mob/living/silicon/robot/robot)
 	..()
-	src.modules += new /obj/item/borg/sight/material(src)
-	src.modules += new /obj/item/pickaxe/borgdrill(src)
-	src.modules += new /obj/item/ore_bag(src)
-	src.modules += new /obj/item/storage/bag/sheetsnatcher/borg(src)
-	src.modules += new /obj/item/gun/energy/robotic/phasegun(src) // makes the mining borg able to defend itself.
-	src.emag += new /obj/item/pickaxe/diamonddrill(src)
+	own_add(src, "modules", new /obj/item/borg/sight/material(src))
+	own_add(src, "modules", new /obj/item/pickaxe/borgdrill(src))
+	own_add(src, "modules", new /obj/item/ore_bag(src))
+	own_add(src, "modules", new /obj/item/storage/bag/sheetsnatcher/borg(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/phasegun(src)) // makes the mining borg able to defend itself.
+	own_add(src, "emag", new /obj/item/pickaxe/diamonddrill(src))
 
 /obj/item/robot_module/drone/talon
 	name = "talon drone module"

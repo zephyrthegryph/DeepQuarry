@@ -127,5 +127,4 @@ DECLARE_INTERACTIONS(/obj/item/makeover, INTERACT_USE(null, PROC_REF(interaction
 			E.change_eye_color()
 	return TRUE
 
-DECLARE_REF(/obj/item/makeover, "M", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/makeover, "M", /datum/tgui_module/appearance_changer/mirror/coskit)

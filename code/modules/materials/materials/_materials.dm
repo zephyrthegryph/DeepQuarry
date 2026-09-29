@@ -202,7 +202,6 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 	var/shard_type = SHARD_SHRAPNEL       // Path of debris object.
 	var/shard_icon                        // Related to above.
 	var/shard_can_repair = 1              // Can shards be turned into sheets with a welder?
-	var/list/recipes                      // Holder for all recipes usable with a sheet of this material.
 	var/destruction_desc = "breaks apart" // Fancy string for barricades/tables/objects exploding.
 
 	// Icons
@@ -452,14 +451,24 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 /datum/material/proc/wall_touch_special(turf/simulated/wall/W, mob/living/L)
 	return
 
+/// Material name -> the stack recipes usable with a sheet of that material. Materials are
+/// registered DEF singletons frozen after boot, so the recipe table lives here, built on first use.
+/// The recipes are shared by every stack of the material; never write the returned list.
+GLOBAL_LIST_EMPTY(material_recipe_cache) // ALLOW(cache): recipe objects built on first use per material and kept off the frozen material definition; a shared cache would intern and snapshot the objects
 /datum/material/proc/get_recipes()
-	if(!recipes)
-		generate_recipes()
-	return recipes
+	var/list/cached = GLOB.material_recipe_cache[name]
+	if(!islist(cached))
+		cached = generate_recipes()
+		if(!islist(cached))
+			cached = list()
+		GLOB.material_recipe_cache[name] = cached
+	return cached
 
+/// Builds and returns this material's stack recipe list. Overrides extend the parent's list
+/// (`var/list/recipes = ..()`) or replace it, and must return it; never store it on the material.
 /datum/material/proc/generate_recipes()
 	// If is_brittle() returns true, these are only good for a single strike.
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe("[display_name] baseball bat", /obj/item/material/twohanded/baseballbat, 10, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
 		new /datum/stack_recipe("[display_name] staff", /obj/item/material/twohanded/staff, 10, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
 		new /datum/stack_recipe("[display_name] ashtray", /obj/item/material/ashtray, 2, one_per_turf = 1, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
@@ -495,6 +504,7 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 			new /datum/stack_recipe("[display_name] blade", /obj/item/material/butterflyblade, 6, time = 20, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE),
 			new /datum/stack_recipe("[display_name] defense wire", /obj/item/material/barbedwire, 10, time = 1 MINUTE, one_per_turf = 0, on_floor = 1, supplied_material = "[name]", pass_stack_color = TRUE)
 		)
+	return recipes
 
 /datum/material/proc/get_wall_texture()
 	return
@@ -511,4 +521,3 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_REF(/datum/material, "recipes", OWNED_LIST, null)

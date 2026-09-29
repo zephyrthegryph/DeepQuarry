@@ -18,7 +18,7 @@
 	// Printing state variables
 	var/is_printing = FALSE		// If true, printer is busy cloning.
 	EXPIRY_DECLARE(print_end_time) // World time when printing will finish
-	var/tmp/queued_assembly_handle	// The assembly being cloned.
+	var/tmp/obj/item/electronic_assembly/queued_assembly	// The assembly being cloned.
 
 /obj/item/integrated_circuit_printer/proc/finish_printing()
 	if(!queued_assembly())
@@ -31,7 +31,7 @@
 	visible_message(span_notice("[src] beeps as it finishes printing '[queued_assembly().name]'."))
 
 	// Clear printing state
-	queued_assembly_handle = null
+	rel_clear(src, "queued_assembly")
 	is_printing = FALSE
 	print_end_time = 0
 
@@ -490,7 +490,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	assembly.update_icon()
 
 	// Start the printing process
-	queued_assembly_handle = om_handle(assembly)
+	rel_set(src, "queued_assembly", assembly)
 	is_printing = TRUE
 	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
@@ -525,6 +525,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	desc = "Install this into your integrated circuit printer to enhance it.  This one allows the printer to duplicate assemblies."
 	icon_state = "upgrade_disk_clone"
 
-/// LC-refs: The assembly being cloned. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assembly being cloned. (a relation view: null once that is deleted).
 /obj/item/integrated_circuit_printer/proc/queued_assembly() as /obj/item/electronic_assembly
-	return om_resolve(queued_assembly_handle)
+	return queued_assembly

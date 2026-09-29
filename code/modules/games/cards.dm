@@ -40,14 +40,14 @@
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]num"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				cards += pcard
+				own_add(src, "cards", pcard)
 
 			for(var/number in list("jack","queen","king"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]col"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				cards += pcard // Make it so.
+				own_add(src, "cards", pcard) // Make it so.
 
 		init_jokers()
 
@@ -57,7 +57,7 @@
 		pcard = new()
 		pcard.name = "joker"
 		pcard.card_icon = "joker"
-		cards += pcard
+		own_add(src, "cards", pcard)
 
 /obj/item/deck/cards/Initialize(mapload)
 	. = ..()
@@ -68,8 +68,8 @@
 	if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src)
-			for(var/datum/playingcard/P in H.cards)
-				cards += P
+			for(var/datum/playingcard/P in H.cards?.Copy())
+				own_transfer(H, "cards", src, "cards", P)
 			consume(H, user)
 			to_chat(user,span_notice("You place your cards on the bottom of \the [src]."))
 			return INTERACTION_HANDLED_PASS
@@ -156,8 +156,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	if(!H || !user) return
 
 	var/datum/playingcard/P = cards[1]
-	H.cards += P
-	cards -= P
+	own_transfer(src, "cards", H, "cards", P)
 	H.parentdeck = src
 	H.update_icon()
 	act_message(user, null, others = span_infoplain(span_bold("%U%") + " draws a card."))
@@ -193,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	for(var/mob/living/player in viewers(3, user))
 		if(!player.stat)
 			players += player
-	var/maxcards = max(min(cards.len,10),1)
+	var/maxcards = max(min(length(cards),10),1)
 	var/dcard = rerun_ask(user, "k172", PROC_REF(deck_verb_deal_multi), args, /datum/om/prompt/number, message = "How many card(s) do you wish to deal? You may deal up to [maxcards] cards.", max = maxcards)
 	if(isnull(dcard))
 		return
@@ -266,8 +265,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 			var/TDN = copytext(to_draw, 1, length(to_draw) - 3)
 			var/datum/playingcard/P = cards[i]
 			if(TDN == P.name)
-				H.cards += P
-				cards -= P
+				own_transfer(src, "cards", H, "cards", P)
 				H.parentdeck = src
 				break
 	H.update_icon()
@@ -288,8 +286,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	var/obj/item/hand/H = new(get_step(user, user.dir))
 	var/i
 	for(i = 0, i < dcard, i++)
-		H.cards += cards[1]
-		cards -= cards[1]
+		if(!length(cards))
+			break
+		own_transfer(src, "cards", H, "cards", cards[1])
 		H.parentdeck = src
 		H.concealed = 1
 		H.update_icon()
@@ -302,7 +301,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /// Old attackby.
 /obj/item/hand/proc/interaction_item(mob/user, obj/O, datum/interaction/interaction)
-	if(cards.len == 1 && istype(O, /obj/item/pen))
+	if(length(cards) == 1 && istype(O, /obj/item/pen))
 		var/datum/playingcard/P = cards[1]
 		if(P.name != "Blank Card")
 			to_chat(user,span_notice("You cannot write on that card."))
@@ -319,8 +318,8 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	else if(istype(O,/obj/item/hand))
 		var/obj/item/hand/H = O
 		if(H.parentdeck == src.parentdeck) // Prevent cardmixing
-			for(var/datum/playingcard/P in cards)
-				H.cards += P
+			for(var/datum/playingcard/P in cards?.Copy())
+				own_transfer(src, "cards", H, "cards", P)
 			H.concealed = src.concealed
 			consume(src, user)
 			H.update_icon()
@@ -343,12 +342,11 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 
 /obj/item/deck/proc/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
-		var/list/newcards = list()
-		while(cards.len)
-			var/datum/playingcard/P = pick(cards)
-			newcards += P
-			cards -= P
-		cards = newcards
+		var/list/unshuffled = own_take_all(src, "cards")
+		while(length(unshuffled))
+			var/datum/playingcard/P = pick(unshuffled)
+			unshuffled -= P
+			own_add(src, "cards", P)
 		act_message(user, src, others = span_notice("%U% shuffles %T%."))
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
@@ -405,9 +403,9 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 	act_message(user, src, others = span_danger("%U% rips open %T%!"))
 	var/obj/item/hand/H = new()
 
-	H.cards += cards
+	for(var/datum/playingcard/P as anything in cards?.Copy())
+		own_transfer(src, "cards", H, "cards", P)
 	H.parentdeck = src.parentdeck
-	cards.Cut();
 	user.drop_item()
 	consume(src, user)
 
@@ -431,7 +429,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 /// Old Discard verb: Place (a) card(s) from your hand in front of you.
 /obj/item/hand/proc/hand_verb_discard(mob/user, obj/item/held, datum/interaction/interaction)
 	var/i
-	var/maxcards = min(cards.len,5) // Maximum of 5 cards at once
+	var/maxcards = min(length(cards),5) // Maximum of 5 cards at once
 	var/discards = rerun_ask(user, "k432", PROC_REF(hand_verb_discard), args, /datum/om/prompt/number, message = "How many cards do you want to discard? You may discard up to [maxcards] card(s)", max = maxcards)
 	if(isnull(discards))
 		return
@@ -452,8 +450,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		var/discarding = card.name
 
 		var/obj/item/hand/H = new(src.loc)
-		H.cards += card
-		cards -= card
+		own_transfer(src, "cards", H, "cards", card)
 		H.concealed = 0
 		H.parentdeck = src.parentdeck
 		H.update_icon()
@@ -462,7 +459,7 @@ DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_sel
 		H.forceMove(get_turf(user))
 		H.Move(get_step(user,user.dir))
 
-	if(!cards.len)
+	if(!length(cards))
 		qdel(src)
 
 DECLARE_INTERACTIONS(/obj/item/hand, \
@@ -490,7 +487,7 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 /obj/item/hand/examine(mob/user)
 	. = ..()
-	if((!concealed) && cards.len)
+	if((!concealed) && length(cards))
 		. += "It contains: "
 		for(var/datum/playingcard/P in cards)
 			. += "\The [P.name]."
@@ -515,20 +512,19 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 
 	var/obj/item/hand/H = new(get_turf(src))
 	user.put_in_hands(H)
-	H.cards += card
-	cards -= card
+	own_transfer(src, "cards", H, "cards", card)
 	H.parentdeck = src.parentdeck
 	H.concealed = src.concealed
 	H.update_icon()
 	src.update_icon()
 
-	if(!cards.len)
+	if(!length(cards))
 		qdel(src)
 	return
 
 /obj/item/hand/update_icon(direction = 0)
 
-	var/cardNumber = cards.len
+	var/cardNumber = length(cards)
 
 	if(!cardNumber)
 		qdel(src)
@@ -607,6 +603,3 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	return TRUE
 
 // A deck, pack or hand owns the card datums it holds.
-DECLARE_REF(/obj/item/deck, "cards", OWNED_LIST, null)
-DECLARE_REF(/obj/item/pack, "cards", OWNED_LIST, null)
-DECLARE_REF(/obj/item/hand, "cards", OWNED_LIST, null)

@@ -64,14 +64,13 @@
 	id = _id
 	title = _title
 	description = _description
-	options = list()
+	own_take_all(src, "options")
 
-DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
-	if(!option?.id || options[option.id])
+	if(!option?.id || options?[option.id])
 		return FALSE
-	options[option.id] = option
+	own_put(src, "options", option.id, option)
 	if(make_default || !default_option_id)
 		default_option_id = option.id
 	return TRUE
@@ -168,8 +167,8 @@ DECLARE_REF(/datum/contract_negotiation_clause, "options", OWNED_VALUES, null)
 /datum/contract_definition/proc/finalize_contract_authoring(datum/contract/contract, list/context)
 	return
 
-OM_TIMER_SLOT(/datum/contract, deadline_timer)
-OM_TIMER_SLOT(/datum/contract, offer_timer)
+OWN_TIMER(/datum/contract, deadline_timer)
+OWN_TIMER(/datum/contract, offer_timer)
 
 /datum/contract
 	var/id
@@ -242,19 +241,14 @@ OM_TIMER_SLOT(/datum/contract, offer_timer)
 
 /datum/contract/New()
 	. = ..()
-	requirements = list()
-	children = list()
 	contributions = list()
 	contributor_names = list()
-	audit_log = list()
-	negotiation_clauses = list()
+	own_take_all(src, "audit_log")
+	own_take_all(src, "negotiation_clauses")
 	negotiation_selections = list()
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()
 
-DECLARE_REF(/datum/contract, "requirements", OWNED_LIST, null)
-DECLARE_REF(/datum/contract, "audit_log", OWNED_LIST, null)
-DECLARE_REF(/datum/contract, "negotiation_clauses", OWNED_VALUES, null)
 
 // an active contract unsubscribes and leaves SScontracts (before phase 4
 // deletes its owned requirements, which unsubscribing still reads).
@@ -264,8 +258,6 @@ DECLARE_REF(/datum/contract, "negotiation_clauses", OWNED_VALUES, null)
 		unsubscribe_events()
 	SScontracts?.unregister_contract(src)
 
-// its children are orphaned.
-DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 
 /datum/contract/proc/finalize_offer(duration)
 	if(state != CONTRACT_OFFERED || !isnum(duration) || duration <= 0)
@@ -286,26 +278,26 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
 /datum/contract/proc/audit(category, detail)
-	audit_log += new /datum/contract_audit_entry(category, detail)
+	own_add(src, "audit_log", new /datum/contract_audit_entry(category, detail))
 
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
 		return FALSE
-	requirement.contract = src
-	requirements += requirement
+	rel_set(requirement, "contract", src)
+	own_add(src, "requirements", requirement)
 	return TRUE
 
 /datum/contract/proc/add_child(datum/contract/child)
 	if(!child || child == src || child.parent)
 		return FALSE
-	child.parent = src
-	children += child
+	rel_set(child, "parent", src)
+	rel_add(src, "children", child)
 	return TRUE
 
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
-	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses[clause.id] || !length(clause.options))
+	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses?[clause.id] || !length(clause.options))
 		return FALSE
-	negotiation_clauses[clause.id] = clause
+	own_put(src, "negotiation_clauses", clause.id, clause)
 	negotiation_selections[clause.id] = clause.default_option_id
 	return TRUE
 
@@ -322,8 +314,8 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 /datum/contract/proc/select_negotiation_option(clause_id, option_id, actor_name)
 	if(state != CONTRACT_OFFERED || negotiation_locked)
 		return FALSE
-	var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-	var/datum/contract_clause_option/option = clause?.options[option_id]
+	var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+	var/datum/contract_clause_option/option = clause?.options?[option_id]
 	if(!option)
 		return FALSE
 	capture_base_terms()
@@ -345,8 +337,8 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	negotiated_effects.Cut()
 	secondary_faction_reputation_rewards.Cut()
 	for(var/clause_id in negotiation_clauses)
-		var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-		var/datum/contract_clause_option/option = clause.options[negotiation_selections[clause_id]]
+		var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+		var/datum/contract_clause_option/option = clause.options?[negotiation_selections[clause_id]]
 		if(!option)
 			continue
 		negotiated_station_bonus += option.station_reward_delta
@@ -394,8 +386,8 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 
 /datum/contract/proc/negotiation_complete()
 	for(var/clause_id in negotiation_clauses)
-		var/datum/contract_negotiation_clause/clause = negotiation_clauses[clause_id]
-		if(!clause.options[negotiation_selections[clause_id]])
+		var/datum/contract_negotiation_clause/clause = negotiation_clauses?[clause_id]
+		if(!clause.options?[negotiation_selections[clause_id]])
 			return FALSE
 	return TRUE
 
@@ -777,5 +769,5 @@ DECLARE_REF(/datum/contract, "children", LIST_BACK, "parent")
 	return TRUE
 
 // A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-DECLARE_REF(/datum/contract, "parent", BACKLIST, "children")
-DECLARE_REF(/datum/contract, "funding_account", BACK, null)
+REL_PAIR(/datum/contract, parent, children)
+REL_PAIR_LIST(/datum/contract, children, parent)

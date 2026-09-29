@@ -2,22 +2,22 @@
 	var/location = FERRY_LOCATION_STATION	//0 = at area_station, 1 = at area_offsite
 	var/direction = FERRY_GOING_TO_STATION	//0 = going to station, 1 = going to offsite.
 
-	var/tmp/landmark_station_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/obj/effect/shuttle_landmark/landmark_station	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_station_tag	// the tag it starts as; resolved into landmark_station at init
-	var/tmp/landmark_offsite_handle	// the landmark (set the _tag var, New() resolves it)
+	var/tmp/obj/effect/shuttle_landmark/landmark_offsite	// the landmark (set the _tag var, New() resolves it)
 	var/landmark_offsite_tag	// the tag it starts as; resolved into landmark_offsite at init
 
 	category = /datum/shuttle/autodock/ferry
 
 /datum/shuttle/autodock/ferry/New(_name)
 	if(landmark_station_tag)
-		landmark_station_handle = om_handle(SSshuttles.get_landmark(landmark_station_tag))
+		rel_set(src, "landmark_station", SSshuttles.get_landmark(landmark_station_tag))
 	if(landmark_offsite_tag)
-		landmark_offsite_handle = om_handle(SSshuttles.get_landmark(landmark_offsite_tag))
+		rel_set(src, "landmark_offsite", SSshuttles.get_landmark(landmark_offsite_tag))
 
 	..(_name, get_location_waypoint(location))
 
-	next_location_handle = om_handle(get_location_waypoint(!location))
+	rel_set(src, "next_location", get_location_waypoint(!location))
 
 
 //Gets the shuttle landmark associated with the given location (defaults to current location)
@@ -45,7 +45,7 @@
 // Once we have arrived where we are going, plot a course back!
 /datum/shuttle/autodock/ferry/process_arrived()
 	..()
-	next_location_handle = om_handle(get_location_waypoint(!location))
+	rel_set(src, "next_location", get_location_waypoint(!location))
 
 // Ferry shuttles should generally always be able to dock.  So read the docking codes off of the target.
 /datum/shuttle/autodock/ferry/update_docking_target(obj/effect/shuttle_landmark/location)
@@ -53,10 +53,10 @@
 	if(active_docking_controller() && active_docking_controller().docking_codes)
 		set_docking_codes(active_docking_controller().docking_codes)
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/ferry/proc/landmark_station() as /obj/effect/shuttle_landmark
-	return om_resolve(landmark_station_handle)
+	return landmark_station
 
-/// LC-refs: the landmark resolved from the _tag var -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the landmark resolved from the _tag var
 /datum/shuttle/autodock/ferry/proc/landmark_offsite() as /obj/effect/shuttle_landmark
-	return om_resolve(landmark_offsite_handle)
+	return landmark_offsite

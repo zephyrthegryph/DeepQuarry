@@ -30,7 +30,7 @@
 /datum/dq_vital_listener/proc/on_revived(mob/living/source, datum/om/event/living_revived/event)
 	EVENT_HANDLER
 	revivals++
-	last_revive_source = event.source
+	rel_set(src, "last_revive_source", event.source)
 	last_revive_reason = event.reason
 
 // --- Death pipeline ------------------------------------------------------------------------

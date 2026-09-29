@@ -3,7 +3,7 @@
 	name = "large parcel"
 	icon = 'icons/obj/storage_vr.dmi'
 	icon_state = "deliverycloset"
-	var/tmp/wrapped_handle
+	var/tmp/obj/wrapped
 	density = TRUE
 	var/sortTag = null
 	flags = NOBLUDGEON
@@ -142,7 +142,7 @@ DESTROY_EFFECTS(/obj/structure/bigDelivery, new /datum/destroy_effects_data(drop
 		if(istype(wrapped(), /obj/structure/closet))
 			var/obj/structure/closet/O = wrapped()
 			O.sealed = 0
-		wrapped_handle = null
+		rel_clear(src, "wrapped")
 	..()
 
 /obj/item/smallDelivery
@@ -276,8 +276,8 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-DECLARE_REF(/obj/item/smallDelivery, "wrapped", HELD, null)
+OWN(/obj/item/smallDelivery, wrapped, OWN_CONTAINED)
 
-/// LC-refs: the wrapped this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj
-	return om_resolve(wrapped_handle)
+	return wrapped

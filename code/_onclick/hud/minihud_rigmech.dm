@@ -5,7 +5,7 @@
 
 // Specific types
 /datum/mini_hud/rig
-	var/owner_rig_handle
+	var/obj/item/rig/owner_rig
 	var/atom/movable/screen/rig/power/power
 	var/atom/movable/screen/rig/health/health
 	var/atom/movable/screen/rig/air/air
@@ -14,20 +14,19 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/rig/New(datum/hud/other, obj/item/rig/owner)
-	owner_rig_handle = om_handle(owner)
-	power = new ()
-	health = new ()
-	air = new ()
-	airtoggle = new ()
-
-	screenobjs = list(power, health, air, airtoggle)
-	screenobjs += new /atom/movable/screen/rig/deco1
-	screenobjs += new /atom/movable/screen/rig/deco2
-	screenobjs += new /atom/movable/screen/rig/deco1_f
-	screenobjs += new /atom/movable/screen/rig/deco2_f
+	rel_set(src, "owner_rig", owner)
+	// screenobjs owns every element; power/health/air/airtoggle are views into it.
+	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/rig/power ()))
+	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/rig/health ()))
+	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/rig/air ()))
+	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/rig/airtoggle ()))
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco1_f)
+	own_add(src, "screenobjs", new /atom/movable/screen/rig/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_rig())
+		rel_set(S, "master_ref", owner_rig())
 	..()
 
 /datum/mini_hud/rig/periodic_step()
@@ -48,7 +47,7 @@
 	airtoggle.icon_state = "airon[air_on]"
 
 /datum/mini_hud/mech
-	var/owner_mech_handle
+	var/obj/mecha/owner_mech
 	var/atom/movable/screen/mech/power/power
 	var/atom/movable/screen/mech/health/health
 	var/atom/movable/screen/mech/air/air
@@ -57,24 +56,22 @@
 	needs_processing = TRUE
 
 /datum/mini_hud/mech/New(datum/hud/other, obj/mecha/owner)
-	owner_mech_handle = om_handle(owner)
-	power = new ()
-	health = new ()
-	air = new ()
-	airtoggle = new ()
-
-	screenobjs = list(power, health, air, airtoggle)
-	screenobjs += new /atom/movable/screen/mech/deco1
-	screenobjs += new /atom/movable/screen/mech/deco2
-	screenobjs += new /atom/movable/screen/mech/deco1_f
-	screenobjs += new /atom/movable/screen/mech/deco2_f
+	rel_set(src, "owner_mech", owner)
+	// screenobjs owns every element; power/health/air/airtoggle are views into it.
+	rel_set(src, "power", own_add(src, "screenobjs", new /atom/movable/screen/mech/power ()))
+	rel_set(src, "health", own_add(src, "screenobjs", new /atom/movable/screen/mech/health ()))
+	rel_set(src, "air", own_add(src, "screenobjs", new /atom/movable/screen/mech/air ()))
+	rel_set(src, "airtoggle", own_add(src, "screenobjs", new /atom/movable/screen/mech/airtoggle ()))
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco1_f)
+	own_add(src, "screenobjs", new /atom/movable/screen/mech/deco2_f)
 
 	for(var/atom/movable/screen/S as anything in screenobjs)
-		S.master_ref = om_handle(owner_mech())
+		rel_set(S, "master_ref", owner_mech())
 	..()
 
-// the mech points at its minihud; the minihud going clears that var.
-DECLARE_REF(/datum/mini_hud/mech, "owner_mech_handle", BACK_HANDLE, "minihud")
+// the mech owns us as its minihud; owner_mech is a plain relation back.
 
 /datum/mini_hud/mech/periodic_step()
 	if(!owner_mech())
@@ -142,7 +139,7 @@ DECLARE_REF(/datum/mini_hud/mech, "owner_mech_handle", BACK_HANDLE, "minihud")
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/item/rig/owner_rig = om_resolve(master_ref)
+	var/obj/item/rig/owner_rig = master_ref
 	if(!owner_rig || user != owner_rig.wearer())
 		return
 	user.toggle_internals()
@@ -194,26 +191,17 @@ DECLARE_REF(/datum/mini_hud/mech, "owner_mech_handle", BACK_HANDLE, "minihud")
 	var/mob/living/carbon/human/user = usr
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
-	var/obj/mecha/owner_mech = om_resolve(master_ref)
+	var/obj/mecha/owner_mech = master_ref
 	if(user != owner_mech?.slot_item(MECHA_SLOT_PILOT))
 		return
 	owner_mech.toggle_internal_tank()
 
 
-/// LC-refs: the rig this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The rig this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/rig/proc/owner_rig() as /obj/item/rig
-	return om_resolve(owner_rig_handle)
+	return owner_rig
 
-/// LC-refs: the mech this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mech this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/mech/proc/owner_mech() as /obj/mecha
-	return om_resolve(owner_mech_handle)
+	return owner_mech
 
-DECLARE_REF(/datum/mini_hud/rig, "power", OWNED, null)
-DECLARE_REF(/datum/mini_hud/rig, "health", OWNED, null)
-DECLARE_REF(/datum/mini_hud/rig, "air", OWNED, null)
-DECLARE_REF(/datum/mini_hud/rig, "airtoggle", OWNED, null)
-
-DECLARE_REF(/datum/mini_hud/mech, "power", OWNED, null)
-DECLARE_REF(/datum/mini_hud/mech, "health", OWNED, null)
-DECLARE_REF(/datum/mini_hud/mech, "air", OWNED, null)
-DECLARE_REF(/datum/mini_hud/mech, "airtoggle", OWNED, null)

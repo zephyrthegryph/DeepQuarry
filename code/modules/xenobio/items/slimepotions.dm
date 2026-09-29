@@ -282,7 +282,7 @@
 
 	to_chat(user, span_notice("You feed \the [SM] the agent. It will now be your best friend."))
 	to_chat(SM, span_notice("\The [user] feeds you \the [src], and feel that \the [user] wants to be best friends with you."))
-	LAZYADD(SM.friends, user)
+	rel_add(SM, "friends", user)
 	AI.remove_target() // So hostile things stop attacking people even if not hostile anymore.
 	play_sfx(src, SFX_EFFECTS_BUBBLES)
 	consume(src, user)

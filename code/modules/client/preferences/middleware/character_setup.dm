@@ -410,7 +410,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 		preferences().dq_category_static_cache[built_category_key] = category
 
 /datum/preference_middleware/character_setup/proc/dq_editor_version(editor_key)
-	LAZYINITLIST(preferences().dq_editor_static_versions)
+	var/datum/preferences/prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_editor_static_versions)
 	if(!preferences().dq_editor_static_versions[editor_key])
 		preferences().dq_editor_static_versions[editor_key] = 1
 	return preferences().dq_editor_static_versions[editor_key]
@@ -451,7 +452,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/force_catalogs = !!preferences().dq_force_catalogs_by_window?[window_id]
 	if(force_catalogs)
 		preferences().dq_force_catalogs_by_window -= window_id
-	LAZYINITLIST(preferences().dq_window_category_versions)
+	var/datum/preferences/prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_window_category_versions)
 	if(!islist(preferences().dq_window_category_versions[window_id]))
 		preferences().dq_window_category_versions[window_id] = list()
 	var/list/window_category_versions = preferences().dq_window_category_versions[window_id]
@@ -478,7 +480,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/editor_data = list()
 	var/list/editor_versions = list()
 	var/list/editor_static_patch = list()
-	LAZYINITLIST(preferences().dq_window_editor_versions)
+	prefs_datum = preferences()
+	LAZYINITLIST(prefs_datum.dq_window_editor_versions)
 	if(!islist(preferences().dq_window_editor_versions[window_id]))
 		preferences().dq_window_editor_versions[window_id] = list()
 	var/list/window_editor_versions = preferences().dq_window_editor_versions[window_id]
@@ -551,7 +554,8 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 			preferences().dq_active_category = category_key
 			if(params["force_catalogs"])
 				var/window_id = ui?.window()?.id || "unpooled"
-				LAZYINITLIST(preferences().dq_force_catalogs_by_window)
+				var/datum/preferences/prefs_datum = preferences()
+				LAZYINITLIST(prefs_datum.dq_force_catalogs_by_window)
 				preferences().dq_force_catalogs_by_window[window_id] = TRUE
 				if(islist(preferences().dq_window_category_versions?[window_id]))
 					preferences().dq_window_category_versions[window_id] -= category_key

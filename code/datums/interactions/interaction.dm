@@ -129,7 +129,7 @@
 	var/list/spec = selector_spec()
 	if(!length(spec))
 		return null
-	compiled_selector = dq_predicate_for("interaction_selector:[predicate_key()]", spec, "interaction [id] selector")
+	rel_set(src, "compiled_selector", dq_predicate_for("interaction_selector:[predicate_key()]", spec, "interaction [id] selector")) // a shared cached predicate
 	return compiled_selector
 
 /// Whether the player meant this interaction: the right tool or item, and its offered_when clauses hold.
@@ -144,7 +144,7 @@
 	var/list/spec = full_spec()
 	if(!length(spec))
 		return null
-	compiled = dq_predicate_for("interaction:[predicate_key()]", spec, "interaction [id]")
+	rel_set(src, "compiled", dq_predicate_for("interaction:[predicate_key()]", spec, "interaction [id]")) // a shared cached predicate
 	return compiled
 
 /// Whether this interaction is offered on this target at all. Cheap: no reasons, no actor.
@@ -371,5 +371,3 @@ DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_c
 	return
 
 // Compiled predicates are shared from the dq_predicate_for() registry.
-DECLARE_REF(/datum/interaction, "compiled", STATIC, null)
-DECLARE_REF(/datum/interaction, "compiled_selector", STATIC, null)

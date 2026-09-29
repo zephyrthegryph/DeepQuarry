@@ -27,7 +27,7 @@
 	sharp = TRUE
 	injury_kind = INJURY_CUT
 	embed_chance = 0
-	var/tmp/last_touched_handle	//The last human that touched us
+	var/tmp/mob/living/carbon/human/last_touched	//The last human that touched us
 	var/stored_blood = 0 //How much energy we have!
 	COOLDOWN_DECLARE(special_cooldown) //When our powers may next be used. Can be admin-set to a high number to keep the mode from being changed.
 	var/static/list/abilities = list("Consecrate", "Summon")
@@ -46,7 +46,7 @@
 		return
 	if(!last_touched() || last_touched().stat == DEAD) //If our user doesn't exist or is dead, stop processing until the next unlucky sod touches us.
 		om_task_periodic_stop(src)
-		last_touched_handle = null
+		rel_clear(src, "last_touched")
 		return
 	if(loc == last_touched() && (last_touched().life_tick % 30 == 0)) //We are currently being wielded by our owner. One proc every minute.
 		/// First and foremost, the sword passively takes some blood from you when you hold it.
@@ -149,7 +149,7 @@
 	// Yes. This means you can hand off the sword to someone else to make them the newfound owner of the cursed sword.
 	if((user != last_touched()) && !iscultist(user) && ishuman(user))
 		to_chat(user, span_cult("An overwhelming feeling of dread comes over you as you pick up the sword. You feel as though it has become attached to you."))
-		last_touched_handle = om_handle(user)
+		rel_set(src, "last_touched", user)
 		om_task_periodic(src, PERIODIC_SLOW)
 
 DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/melee/artifact_blade/proc/cooled_down)))
@@ -305,6 +305,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/artifact_blade, INTERACT_USE(null, PROC_REF
 #undef SHELL
 #undef ARTIFACT
 
-/// LC-refs: The last human that touched us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last human that touched us
 /obj/item/melee/artifact_blade/proc/last_touched() as /mob/living/carbon/human
-	return om_resolve(last_touched_handle)
+	return last_touched

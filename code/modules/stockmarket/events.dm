@@ -3,7 +3,7 @@
 /datum/stockEvent
 	var/name = "event"
 	EXPIRY_DECLARE(next_phase)
-	var/tmp/company_handle
+	var/tmp/datum/stock/company
 	var/current_title = "A company holding a pangalactic conference in the Seattle Conference Center, Seattle, Earth"
 	var/current_desc = "We will continue to monitor their stocks as the situation unfolds."
 	var/phase_id = 0
@@ -29,11 +29,11 @@
 /datum/stockEvent/product
 	name = "product"
 	var/product_name = ""
-	var/tmp/product_article_handle
+	var/tmp/datum/article/product_article
 	var/effect = 0
 
 /datum/stockEvent/product/New(datum/stock/S)
-	company_handle = om_handle(S)
+	rel_set(src, "company", S)
 	var/mins = rand(5*TIME_MULTIPLIER,20*TIME_MULTIPLIER)
 	next_phase = mins * (600*TIME_MULTIPLIER) + world.time
 	current_title = "Product demo"
@@ -50,7 +50,7 @@
 			current_title = "Product release: [product_name]"
 			current_desc = "[company().name] unveiled their newest product at a conference, [product_name]Product release is expected to happen at spacetime [spacetime(next_phase)]."
 			var/datum/article/A = company().industry.generateInCharacterProductArticle(product_name, company())
-			product_article_handle = om_handle(A)
+			rel_set(src, "product_article", A)
 			effect = A.opinion + rand(-1, 1)
 			company().affectPublicOpinion(effect)
 			phase_id = 1
@@ -70,7 +70,7 @@
 
 /datum/stockEvent/bankruptcy/New(datum/stock/S)
 	hidden = 1
-	company_handle = om_handle(S)
+	rel_set(src, "company", S)
 	var/mins = rand(9*TIME_MULTIPLIER,60*TIME_MULTIPLIER)
 	bailout_millions = rand(70, 190)
 	next_phase = mins * 300*TIME_MULTIPLIER + world.time
@@ -121,7 +121,7 @@
 /datum/stockEvent/bankruptcy/proc/generateBankruptcyArticle()
 	var/datum/article/A = new
 	var/list/bankrupt_reason = list("investor pessimism", "failure of product lines", "economic recession", "overblown inflation", "overblown deflation", "collapsed pyramid schemes", "a Ponzi scheme", "economic terrorism", "extreme hedonism", "unfavourable economic climate", "rampant government corruption", "divine conspiracy", "some total bullshit", "volatile plans")
-	A.about_handle = om_handle(company())
+	rel_set(A, "about", company())
 	A.headline = pick(	"[company().name] filing for bankruptcy", \
 						"[company().name] unable to pay, investors run", \
 						"[company().name] crashes, in foreclosure", \
@@ -149,7 +149,7 @@
 
 /datum/stockEvent/arrest/New(datum/stock/S)
 	hidden = 1
-	company_handle = om_handle(S)
+	rel_set(src, "company", S)
 	var/mins = rand(10*TIME_MULTIPLIER, 35*TIME_MULTIPLIER)
 	next_phase = mins * 600*TIME_MULTIPLIER + world.time
 	current_title = ""
@@ -211,7 +211,7 @@
 
 /datum/stockEvent/arrest/proc/generateArrestArticle()
 	var/datum/article/A = new
-	A.about_handle = om_handle(company())
+	rel_set(A, "about", company())
 	A.headline = company().industry.detokenize(pick( \
 						"[tname], [position] of [company().name] arrested", \
 						"[position] of [company().name] facing jail time", \
@@ -234,10 +234,10 @@
 
 #undef TIME_MULTIPLIER
 
-/// LC-refs: the product_article this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the product_article this refers to (a relation view: null once it is deleted).
 /datum/stockEvent/product/proc/product_article() as /datum/article
-	return om_resolve(product_article_handle)
+	return product_article
 
-/// LC-refs: the company this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the company this refers to (a relation view: null once it is deleted).
 /datum/stockEvent/proc/company() as /datum/stock
-	return om_resolve(company_handle)
+	return company

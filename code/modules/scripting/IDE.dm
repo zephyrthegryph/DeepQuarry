@@ -143,7 +143,7 @@
 					signal.data["name"] = ""
 					signal.data["job"] = ""
 					signal.data["reject"] = 0
-					signal.data["server"] = Server
+					signal.data["server"] = Server // ALLOW(ownership): a transient test-signal payload naming the server; dropped after the run
 
 					Server.Compiler.Run(signal)
 
@@ -172,7 +172,7 @@
 			var/obj/machinery/computer/telecomms/traffic/Machine = machine
 			if(Machine.editingcode() == mob)
 				Machine.storedcode = "[code]"
-				Machine.editingcode_handle = null
+				rel_clear(Machine, "editingcode")
 			else
 				if(mob in Machine.viewingcode)
 					LAZYREMOVE(Machine.viewingcode, mob)

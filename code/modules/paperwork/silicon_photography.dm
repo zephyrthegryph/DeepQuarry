@@ -15,13 +15,12 @@
 /obj/item/camera/siliconcam/drone_camera //currently doesn't offer the verbs, thus cannot be used
 	name = "Drone photo camera"
 
-DECLARE_REF(/obj/item/camera/siliconcam, "aipictures", OWNED_LIST, null)
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
 	p.forceMove(src)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
-	LAZYADD(aipictures, p)
+	own_add(src, "aipictures", p)
 
 /obj/item/camera/siliconcam/proc/injectmasteralbum(mob/user, obj/item/photo/p) //stores image information to a list similar to that of the datacore
 	var/mob/living/silicon/robot/C = user
@@ -73,8 +72,7 @@ DECLARE_REF(/obj/item/camera/siliconcam, "aipictures", OWNED_LIST, null)
 	if(!selection)
 		return
 
-	LAZYREMOVE(aipictures, selection)
-	qdel(selection)
+	own_remove(src, "aipictures", selection)
 	to_chat(user, span_unconscious("Local image deleted"))
 
 /obj/item/camera/siliconcam/ai_camera/can_capture_turf(turf/T, mob/user)

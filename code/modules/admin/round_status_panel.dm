@@ -21,10 +21,9 @@
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
 	..()
-	src.owner_admin = owner_admin
+	rel_set(src, "owner_admin", owner_admin)
 
-DECLARE_REF(/datum/round_status_panel, "owner_admin", PAIR, "round_status_panel")
-DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
+// The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
 /datum/round_status_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)
@@ -184,7 +183,7 @@ DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		round_status_panel = new(src)
+		own_set(src, "round_status_panel", new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

@@ -11,7 +11,7 @@
 	layer = ABOVE_MOB_LAYER
 	density = TRUE
 	invisibility = INVISIBILITY_NONE
-	var/tmp/gen_handle	// Owning generator
+	var/tmp/obj/machinery/power/shield_generator/gen	// Owning generator
 	var/disabled_for = 0
 	var/diffused_for = 0
 	can_atmos_pass = ATMOS_PASS_YES
@@ -68,7 +68,6 @@
 		update_nearby_tiles() //Force ZAS update
 	..()
 
-DECLARE_REF(/obj/effect/shield, "gen_handle", BACKLIST_HANDLE, list("field_segments", "damaged_segments"))
 
 // Temporarily collapses this shield segment.
 /obj/effect/shield/proc/fail(duration)
@@ -76,7 +75,7 @@ DECLARE_REF(/obj/effect/shield, "gen_handle", BACKLIST_HANDLE, list("field_segme
 		return
 
 	if(gen())
-		LAZYOR(gen().damaged_segments, src)
+		rel_add(gen(), "damaged_segments", src)
 	disabled_for += duration
 
 	set_density(0)
@@ -100,7 +99,7 @@ DECLARE_REF(/obj/effect/shield, "gen_handle", BACKLIST_HANDLE, list("field_segme
 		update_visuals()
 		update_nearby_tiles() //Force ZAS update
 		update_explosion_resistance()
-		LAZYREMOVE(gen().damaged_segments, src)
+		rel_remove(gen(), "damaged_segments", src)
 
 /obj/effect/shield/proc/diffuse(duration)
 	// The shield is trying to counter diffusers. Cause lasting stress on the shield.
@@ -109,7 +108,8 @@ DECLARE_REF(/obj/effect/shield, "gen_handle", BACKLIST_HANDLE, list("field_segme
 		return
 
 	diffused_for = max(duration, 0)
-	LAZYOR(gen()?.damaged_segments, src)
+	if(gen())
+		rel_add(gen(), "damaged_segments", src)
 
 	set_density(0)
 	update_visuals()
@@ -379,6 +379,6 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 	make_debris()
 	qdel(src)
 
-/// LC-refs: Owning generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owning generator (a relation view: it reads null once the target is deleted).
 /obj/effect/shield/proc/gen() as /obj/machinery/power/shield_generator
-	return om_resolve(gen_handle)
+	return gen

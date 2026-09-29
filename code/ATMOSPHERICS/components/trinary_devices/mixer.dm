@@ -196,7 +196,7 @@
 /// Nothing to mix: park until the inputs hold enough to move (the same test machine_step()
 /// makes). Power and settings changes wake it through their own channels.
 /obj/machinery/atmospherics/trinary/mixer/proc/hibernate_until_input_changes()
-	om_watch_arm_condition(src, "gas", list(air1?.arena_id(), air2?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", list(air1?.arena_id(), air2?.arena_id()), GAS_DEPENDENCY_COMPOSITION | GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/trinary/mixer/proc/gas_wake_condition()
 	return use_power && operable() && mix_transfer_moles() > MINIMUM_MOLES_TO_FILTER

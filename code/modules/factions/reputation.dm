@@ -220,15 +220,12 @@ GLOBAL_LIST_INIT(reputation_affiliation_choices, list(AFFILIATION_HOSTILE, AFFIL
 		REPUTATION_FACTION_SYNDICATE = REPUTATION_HATED,
 	)
 	. = ..(defaults)
-	department_ledgers = list()
-	personal_ledgers = list()
-	agent_records = list()
+	own_take_all(src, "department_ledgers")
+	own_take_all(src, "personal_ledgers")
+	own_take_all(src, "agent_records")
 	for(var/department in TYPE_TABLE_GET(src, get_reputation_departments))
-		department_ledgers[department] = new /datum/faction_reputation_ledger(reputations)
+		own_put(src, "department_ledgers", department, new /datum/faction_reputation_ledger(reputations))
 
-DECLARE_REF(/datum/station_faction_relations, "department_ledgers", OWNED_VALUES, null)
-DECLARE_REF(/datum/station_faction_relations, "personal_ledgers", OWNED_VALUES, null)
-DECLARE_REF(/datum/station_faction_relations, "agent_records", OWNED_LIST, null)
 
 TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments, list( \
 		DEPARTMENT_COMMAND, \
@@ -244,20 +241,20 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	))
 
 /datum/station_faction_relations/proc/get_department_ledger(department, create = TRUE)
-	var/datum/faction_reputation_ledger/ledger = department_ledgers[department]
+	var/datum/faction_reputation_ledger/ledger = department_ledgers?[department]
 	if(!ledger && create && istext(department) && length(department))
 		ledger = new(reputations)
-		department_ledgers[department] = ledger
+		own_put(src, "department_ledgers", department, ledger)
 	return ledger
 
 /datum/station_faction_relations/proc/get_personal_ledger(account_number, create = TRUE, list/initial_values) as /datum/faction_reputation_ledger
 	if(!account_number)
 		return null
 	var/key = "[account_number]"
-	var/datum/faction_reputation_ledger/ledger = personal_ledgers[key]
+	var/datum/faction_reputation_ledger/ledger = personal_ledgers?[key]
 	if(!ledger && create)
 		ledger = new(initial_values)
-		personal_ledgers[key] = ledger
+		own_put(src, "personal_ledgers", key, ledger)
 	return ledger
 
 /proc/get_station_faction_reputation(faction_id)
@@ -361,9 +358,9 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	var/datum/faction_agent_record/record = new
 	record.account_number = account.account_number
 	record.faction_id = faction_id
-	record.agent_mind = user.mind
+	rel_set(record, "agent_mind", user.mind)
 	EXPIRY_STAMP(record, candidate_started_at, CLOCK_WORLD)
-	agent_records["[account.account_number]"] = record
+	own_put(src, "agent_records", "[account.account_number]", record)
 	var/datum/reputation_faction/faction = GLOB.reputation_factions[faction_id]
 	log_game("[key_name(user)] opened exclusive faction vetting with [faction?.name || faction_id].")
 	SScontracts?.queue_agent_vetting(account.account_number, faction_id)
@@ -417,7 +414,7 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	if(!record || record.tier < FACTION_AGENT_TIER_TRUSTED || record.operative_contract_id)
 		return FALSE
 	if(current_owner?.mind)
-		record.agent_mind = current_owner.mind
+		rel_set(record, "agent_mind", current_owner.mind)
 	var/datum/mind/owner_mind = record.agent_mind
 	var/datum/antagonist/operative_role = GLOB.antag_service.get_antag_data(CONTRACT_OPERATIVE_ANTAG_ID)
 	if(!owner_mind?.current || owner_mind.special_role || !operative_role || !operative_role.add_antagonist(owner_mind, TRUE, TRUE, FALSE, FALSE, TRUE))
@@ -493,9 +490,9 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 			stable_ledger.affiliations_initialized = faction_reputation?.affiliations_initialized || FALSE
 			if(faction_reputation?.positive_reputation_earned)
 				stable_ledger.positive_reputation_earned = faction_reputation.positive_reputation_earned.Copy()
-		faction_reputation = stable_ledger
+		rel_set(src, "faction_reputation", stable_ledger)
 	if(!faction_reputation)
-		faction_reputation = new()
+		rel_set(src, "faction_reputation", new /datum/faction_reputation_ledger())
 	return faction_reputation
 
 /mob/living/proc/get_faction_reputation(faction_id)
@@ -531,6 +528,4 @@ TYPE_TABLE_DECLARE(/datum/station_faction_relations, get_reputation_departments,
 	// Affiliations describe relationships; NanoTrasen employment remains independent.
 	return ..()
 
-DECLARE_REF(/datum/faction_agent_record, "agent_mind", BACK, null)
 // Usually the station relations' personal ledger for our account (owned there), else a private one.
-DECLARE_REF(/mob/living, "faction_reputation", BACK, null)

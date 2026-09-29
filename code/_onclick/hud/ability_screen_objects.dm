@@ -10,21 +10,19 @@
 
 	screen_loc = ui_spell_master // TODO: Rename
 
-	var/my_mob_handle	// The mob that possesses this hud object.
+	var/mob/my_mob	// The mob that possesses this hud object.
 
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
-		my_mob_handle = om_handle(loc)
+		rel_set(src, "my_mob", loc)
 		update_abilities(0, loc)
 		overlays.Add(closed_state)
 	else
 		message_admins("ERROR: ability_master's New() was not given an owner argument.  This is a bug.")
 
-DECLARE_REF(/atom/movable/screen/movable/ability_master, "ability_objects", OWNED_LIST, null)
 
-// the mob's ability_master var points back at us; a master deleted on its own clears it.
-DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_HANDLE, "ability_master")
+// the mob owns us as its ability_master; my_mob is a plain relation back.
 
 /atom/movable/screen/movable/ability_master/MouseDrop()
 	if(showing)
@@ -99,21 +97,20 @@ DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_H
 
 
 	var/atom/movable/screen/ability/new_button = new /atom/movable/screen/ability
-	new_button.ability_master_handle = om_handle(src)
+	rel_set(new_button, "ability_master", src)
 
 
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
 	new_button.update_icon(1)
-	LAZYADD(ability_objects, new_button)
+	own_add(src, "ability_objects", new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/ability_master/proc/remove_ability(atom/movable/screen/ability/ability)
 	if(!ability)
 		return
-	LAZYREMOVE(ability_objects, ability)
-	qdel(ability)
+	own_remove(src, "ability_objects", ability)
 
 	if(length(ability_objects))
 		toggle_open(showing + 1)
@@ -159,15 +156,14 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	var/ability_icon_state = null
 	var/index = 0
 
-	var/ability_master_handle
+	var/atom/movable/screen/movable/ability_master/ability_master
 
 
 // an ability leaves its master's list (the master owns the list; the ability can go first).
 /atom/movable/screen/ability/on_destroy(force)
 	var/atom/movable/screen/movable/ability_master/master = master_of()
-	if(master)
-		LAZYREMOVE(master.ability_objects, src)
-		if(!length(master.ability_objects))
+	if(master) // we leave its list in phase 2
+		if(!length(master.ability_objects - src))
 			master.update_icon()
 	..()
 
@@ -241,14 +237,14 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/A = new /atom/movable/screen/ability/verb_based()
-	A.ability_master_handle = om_handle(src)
+	rel_set(A, "ability_master", src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -265,14 +261,14 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	if(get_ability_by_proc_ref(verb_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/verb_based/changeling/A = new /atom/movable/screen/ability/verb_based/changeling()
-	A.ability_master_handle = om_handle(src)
+	rel_set(A, "ability_master", src)
 	A.object_used = object_given
 	A.verb_to_call = verb_given
 	A.ability_icon_state = ability_icon_given
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -281,7 +277,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 //////////////////////////////
 
 /atom/movable/screen/ability/obj_based
-	var/object_handle
+	var/obj/object
 
 /atom/movable/screen/ability/obj_based/activate()
 	if(object())
@@ -298,22 +294,23 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 	if(get_ability_by_instance(object_given))
 		return // Duplicate
 	var/atom/movable/screen/ability/obj_based/technomancer/A = new /atom/movable/screen/ability/obj_based/technomancer()
-	A.ability_master_handle = om_handle(src)
-	A.object_handle = om_handle(object_given)
+	rel_set(A, "ability_master", src)
+	rel_set(A, "object", object_given)
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
-	LAZYADD(ability_objects, A)
+	own_add(src, "ability_objects", A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
-/// LC-refs: the mob these abilities belong to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob these abilities belong to (a relation view: null once that is deleted).
 /atom/movable/screen/movable/ability_master/proc/my_mob() as /mob
-	return om_resolve(my_mob_handle)
+	return my_mob
 
-/// LC-refs: the object this ability clicks -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The object this ability clicks (a relation view: null once that is deleted).
 /atom/movable/screen/ability/obj_based/proc/object() as /obj
-	return om_resolve(object_handle)
+	return object
 
-/// LC-refs: the ability master listing this ability -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The ability master listing this ability (a relation view: null once that is deleted).
 /atom/movable/screen/ability/proc/master_of() as /atom/movable/screen/movable/ability_master
-	return om_resolve(ability_master_handle)
+	return ability_master
+

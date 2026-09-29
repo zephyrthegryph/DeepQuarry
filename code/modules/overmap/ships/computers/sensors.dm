@@ -5,7 +5,7 @@
 	light_color = "#77fff8"
 	circuit = /obj/item/circuitboard/sensors
 	extra_view = 4
-	var/tmp/sensors_handle
+	var/tmp/obj/machinery/shipsensors/sensors
 
 // fancy sprite
 /obj/machinery/computer/ship/sensors/adv
@@ -24,7 +24,7 @@
 		return
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
-			sensors_handle = om_handle(S)
+			rel_set(src, "sensors", S)
 			refresh_sensor_light()
 			break
 
@@ -102,7 +102,6 @@
 				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 					. = FALSE
 				else if(!viewing_overmap(ui.user) && linked())
-					if(!viewers) viewers = list() // List must exist for pass by reference to work
 					start_coordinated_remoteview(src, ui.user, linked(), viewers)
 				else
 					ui.user.reset_perspective()
@@ -160,9 +159,9 @@
 // sensor consoles lose it.
 /obj/machinery/shipsensors/lifecycle_dematerialize()
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(!om_handle_is(console.sensors_handle, src))
+		if(!(console.sensors == src))
 			continue
-		console.sensors_handle = null
+		rel_clear(console, "sensors")
 		console.refresh_sensor_light()
 	return ..()
 
@@ -280,6 +279,6 @@ DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shu
 /obj/machinery/computer/ship/sensors/step_start_condition()
 	return TRUE // its sensor light
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the sensors var.
 /obj/machinery/computer/ship/sensors/proc/sensors() as /obj/machinery/shipsensors
-	return om_resolve(sensors_handle)
+	return sensors

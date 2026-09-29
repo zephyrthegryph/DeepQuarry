@@ -21,7 +21,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/blob, REGISTRY_BLOBS)
 
 /obj/structure/blob/Initialize(mapload, new_overmind)
 	if(new_overmind)
-		overmind = new_overmind
+		rel_set(src, "overmind", new_overmind)
 		faction = overmind.blob_type.faction
 	set_dir(pick(GLOB.cardinal))
 	consume_tile()
@@ -112,7 +112,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 			continue
 
 		if(!B.overmind && !istype(B, /obj/structure/blob/core) && prob(30))
-			B.overmind = pulsing_overmind //reclaim unclaimed, non-core blobs.
+			rel_set(B, "overmind", pulsing_overmind) //reclaim unclaimed, non-core blobs.
 			B.update_icon()
 
 		var/distance = get_dist(get_turf(src), get_turf(B))
@@ -180,9 +180,9 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 		var/obj/structure/blob/B = new /obj/structure/blob/normal(src.loc)
 		B.faction = faction
 		if(controller)
-			B.overmind = controller
+			rel_set(B, "overmind", controller)
 		else
-			B.overmind = overmind
+			rel_set(B, "overmind", overmind)
 		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
@@ -226,7 +226,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 		return
 	var/obj/structure/blob/B = new type(src.loc, controller)
 	if(controller)
-		B.overmind = controller
+		rel_set(B, "overmind", controller)
 	B.update_icon()
 	B.set_dir(dir)
 	replace_with(src, B)
@@ -415,7 +415,7 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 
 			else
 				faction = B.faction
-				overmind = B.overmind
+				rel_set(src, "overmind", B.overmind)
 				update_icon()
 				return
 
@@ -460,6 +460,7 @@ DAMAGE_REACTION(/obj/structure/grille, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_
 /turf/simulated/wall/blob_act(obj/structure/blob/B)
 	deal_damage(DAMAGE_BLUNT, 100, MELEE, B, B?.overmind)
 
-// Every blob names its overmind; only resource blobs sit in its resource_blobs list, and
-// removing a non-member is a no-op, so the base declaration is the resource one.
-DECLARE_REF(/obj/structure/blob, "overmind", BACKLIST, "resource_blobs")
+// Every blob names its overmind (a one-sided view); only resource blobs pair with its
+// resource_blobs list (resource.dm).
+REL(/obj/structure/blob, overmind)
+REL_PAIR_LIST(/mob/observer/blob, resource_blobs, overmind)

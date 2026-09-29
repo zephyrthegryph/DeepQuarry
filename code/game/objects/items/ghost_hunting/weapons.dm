@@ -9,7 +9,8 @@
 	var/grab_range = 5 // How many tiles away it can grab. Changing this also changes the box size.
 	/// Stops multiple grabbs if set to TRUE
 	/// The entity we are currently grabbing.
-	var/grabbed_entity
+	/// Relation view: the entity held in the beam.
+	var/atom/movable/grabbed_entity
 	/// How far we can move an entity in one go!
 	var/max_move_distance = 1
 	/// If we're held in two hands or not...Used until we get two handed component.
@@ -62,7 +63,7 @@
 				return
 		else
 			if(grabbed_entity)
-				var/atom/movable/entity = om_resolve(grabbed_entity)
+				var/atom/movable/entity = grabbed_entity
 				if(get_dist(T, entity) > max_move_distance)
 					to_chat(user, span_warning("\The [src] is unable to pull the entity that far!"))
 					return
@@ -72,7 +73,7 @@
 
 	if(istype(target, /obj/item/ghost_trap)) //Special handling for traps, since traps are full sized objects and not turf.
 		var/obj/item/ghost_trap/trap = target
-		var/atom/movable/entity = om_resolve(grabbed_entity)
+		var/atom/movable/entity = grabbed_entity
 		if(!trap.deployed)
 			to_chat(user, span_warning("The trap isn't deployed!"))
 			return
@@ -109,7 +110,7 @@
 
 	play_sfx(src, SFX_MACHINES_BEEP)
 
-	grabbed_entity = om_handle(target)
+	rel_set(src, "grabbed_entity", target)
 	if(isliving(target))
 		var/mob/living/target_mob = target
 		target_mob.status_at_least(EFFECT_WEAKENED, 3)
@@ -147,7 +148,7 @@
 		target.filters -= effects[2]
 	if(user?.client) // If for some reason they logged out mid-scan the box will be gone anyways.
 		delete_box(effects[3], user.client)
-	grabbed_entity = null
+	rel_clear(src, "grabbed_entity")
 	COOLDOWN_START(src, ghost_cooldown, 10 SECONDS) // Arbitrary cooldown to prevent spam. Adjust as needed.
 
 /obj/item/ghost_catcher/proc/grab_timed_out(datum/om/task/timed/ghost_grab/task)

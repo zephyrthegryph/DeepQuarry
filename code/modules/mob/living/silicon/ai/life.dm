@@ -3,7 +3,7 @@
 // backup capacitor. The power-loss routine is a timer-driven state machine
 // (aiRestorePowerRoutine = AI_POWER_*), not a sleeping spawn.
 
-OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
+OWN_TIMER(/mob/living/silicon/ai, power_restore_timer)
 
 /mob/living/silicon/ai
 
@@ -23,7 +23,7 @@ OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
 		return ctx.abort()
 
 	if(self.stat != CONSCIOUS)
-		self.cameraFollow = null
+		rel_clear(self, "cameraFollow")
 		self.reset_perspective()
 		self.disconnect_shell("Disconnecting from remote shell due to local system failure.")
 

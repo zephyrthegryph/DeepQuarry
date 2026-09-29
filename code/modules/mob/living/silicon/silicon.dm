@@ -21,7 +21,8 @@
 	var/local_transmit //If set, can only speak to others of the same type within a short range.
 
 	var/next_alarm_notice
-	var/list/datum/alarm/queued_alarms = new() // ALLOW(instance_list): d: per-mob queued_alarms, sized at creation and filled in place; mobs are few
+	/// One owned /datum/silicon_alarm_queue per registered alarm handler, keyed by "[handler.type]" text.
+	var/list/queued_alarms
 
 	var/list/access_rights
 	var/obj/item/card/id/idcard
@@ -46,13 +47,9 @@
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
-DECLARE_REF(/mob/living/silicon, "aiCamera", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "idcard", OWNED, null)
-// The radio it speaks on belongs to the chassis (a borg's radio, an AI's aiRadio).
-DECLARE_REF(/mob/living/silicon, "common_radio", HELD, null)
-// Languages are shared definitions; alarm handlers are round-long singletons (the queue's keys).
-DECLARE_REF(/mob/living/silicon, "speech_synthesizer_langs", STATIC, null)
-DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
+// The radio it speaks on belongs to the chassis (a borg's radio, an AI's aiRadio, a pAI's radio):
+// common_radio is a plain relation (rel_set) naming it, never an owner.
+// speech_synthesizer_langs holds shared language definitions: no declaration needed.
 
 // leaves every alarm handler and its subsystems.
 /mob/living/silicon/on_destroy(force)
@@ -65,7 +62,7 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 		return
 	if(idcard)
 		return
-	idcard = new idcard_type(src)
+	own_set(src, "idcard", new idcard_type(src))
 	set_id_info(idcard)
 
 /mob/living/silicon/proc/SetName(pickedName as text)
@@ -313,50 +310,67 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 	if(alarm.origin() && !(get_z(alarm.origin()) in using_map.get_map_levels(get_z(src), TRUE, om_range = DEFAULT_OVERMAP_RANGE)))
 		return
 
-	var/list/alarms = queued_alarms[alarm_handler]
+	var/datum/silicon_alarm_queue/Q = LAZYACCESS(queued_alarms, "[alarm_handler.type]")
+	if(!Q)
+		return
 	if(was_raised)
 		// Raised alarms are always set
-		alarms[alarm] = 1
+		rel_remove(Q, "cleared", alarm)
+		rel_add(Q, "raised", alarm)
 	else
 		// Alarms that were raised but then cleared before the next notice are instead removed
-		if(alarm in alarms)
-			alarms -= alarm
+		if((alarm in Q.raised) || (alarm in Q.cleared))
+			rel_remove(Q, "raised", alarm)
+			rel_remove(Q, "cleared", alarm)
 		// And alarms that have only been cleared thus far are set as such
 		else
-			alarms[alarm] = -1
+			rel_add(Q, "cleared", alarm)
 
 /mob/living/silicon/proc/process_queued_alarms()
 	if(next_alarm_notice && (COOLDOWN_FINISHED(src, next_alarm_notice)))
 		next_alarm_notice = 0
 
 		var/alarm_raised = 0
-		for(var/datum/alarm_handler/AH in queued_alarms)
-			var/list/alarms = queued_alarms[AH]
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
 			var/reported = 0
-			for(var/datum/alarm/A in alarms)
-				if(alarms[A] == 1)
-					alarm_raised = 1
-					if(!reported)
-						reported = 1
-						to_chat(src, span_warning("--- [AH.category] Detected ---"))
-					raised_alarm(A)
+			for(var/datum/alarm/A in Q.raised)
+				alarm_raised = 1
+				if(!reported)
+					reported = 1
+					to_chat(src, span_warning("--- [Q.category] Detected ---"))
+				raised_alarm(A)
 
-		for(var/datum/alarm_handler/AH in queued_alarms)
-			var/list/alarms = queued_alarms[AH]
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
 			var/reported = 0
-			for(var/datum/alarm/A in alarms)
-				if(alarms[A] == -1)
-					if(!reported)
-						reported = 1
-						to_chat(src, span_notice("--- [AH.category] Cleared ---"))
-					to_chat(src, "\The [A.alarm_name()].")
+			for(var/datum/alarm/A in Q.cleared)
+				if(!reported)
+					reported = 1
+					to_chat(src, span_notice("--- [Q.category] Cleared ---"))
+				to_chat(src, "\The [A.alarm_name()].")
 
 		if(alarm_raised)
 			to_chat(src, span_filter_notice("<A HREF='byond://?src=\ref[src];showalerts=1'>\[Show Alerts\]</A>"))
 
-		for(var/datum/alarm_handler/AH in queued_alarms)
-			var/list/alarms = queued_alarms[AH]
-			alarms.Cut()
+		for(var/key in queued_alarms)
+			var/datum/silicon_alarm_queue/Q = queued_alarms[key]
+			rel_clear(Q, "raised")
+			rel_clear(Q, "cleared")
+
+/// A silicon's pending alarm notices for one alarm handler: what was raised and what was cleared
+/// since the last notice. Owned by the silicon; the alarms themselves belong to their handler.
+/datum/silicon_alarm_queue
+	var/category
+	var/list/raised
+	var/list/cleared
+
+/datum/silicon_alarm_queue/New(category)
+	..()
+	src.category = category
+
+REL_LIST(/datum/silicon_alarm_queue, raised)
+REL_LIST(/datum/silicon_alarm_queue, cleared)
 
 /mob/living/silicon/proc/raised_alarm(datum/alarm/A)
 	to_chat(src, span_filter_warning("[A.alarm_name()]!"))
@@ -384,7 +398,7 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 
 /mob/living/silicon/reset_perspective(atom/new_eye)
 	. = ..()
-	cameraFollow = null
+	rel_clear(src, "cameraFollow")
 
 /mob/living/silicon/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(affect_silicon)

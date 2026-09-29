@@ -59,7 +59,7 @@
 	update_client_color()
 
 	if(!plane_holder) //Lazy
-		plane_holder = new(src) //Not a location, it takes it and saves it.
+		own_set(src, "plane_holder", new /datum/plane_holder(src)) //Not a location, it takes it and saves it.
 	if(!vis_enabled)
 		vis_enabled = list()
 	client.screen += plane_holder.plane_masters

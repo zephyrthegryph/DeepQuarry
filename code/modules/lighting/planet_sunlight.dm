@@ -20,7 +20,7 @@
 	var/cache_b_shade = 0.0
 	var/maxlum = 0.0
 	var/maxlumshade = 0.0
-	var/sun_handle
+	var/datum/simple_sun/sun
 	/// The planetary sun this handler made for itself (a fake sun hands in its own).
 	var/datum/simple_sun/owned_sun
 	var/atom/movable/sun_vis_simple/vis_overhead
@@ -32,14 +32,14 @@
 	var/datum/planet/P = planet
 	var/datum/simple_sun/S = planet
 	if(istype(P))
-		owned_sun = new /datum/simple_sun/planetary(P)
-		sun_handle = om_handle(owned_sun)
+		own_set(src, "owned_sun", new /datum/simple_sun/planetary(P))
+		rel_set(src, "sun", owned_sun)
 
 	if(istype(S))
-		sun_handle = om_handle(S)
+		rel_set(src, "sun", S)
 
-	vis_overhead = new(null)
-	vis_shade = new(null)
+	own_set(src, "vis_overhead", new /atom/movable/sun_vis_simple(null))
+	own_set(src, "vis_shade", new /atom/movable/sun_vis_simple(null))
 
 /datum/planet_sunlight_handler/proc/update_sun()
 	sun().update()
@@ -120,24 +120,21 @@
 	return //Do nothing. This is meant to be overridden.
 
 /datum/simple_sun/planetary
-	var/tmp/sun_handle
+	var/tmp/datum/sun_holder/sun
 
 /datum/simple_sun/planetary/New(datum/planet/planet)
-	sun_handle = om_handle(planet.sun_holder)
+	rel_set(src, "sun", planet.sun_holder)
 
 /datum/simple_sun/planetary/update()
 	. = ..()
 	brightness = CLAMP01(sun().our_brightness)
 	color = sun().our_color
 
-DECLARE_REF(/datum/planet_sunlight_handler, "vis_overhead", OWNED, null)
-DECLARE_REF(/datum/planet_sunlight_handler, "vis_shade", OWNED, null)
-DECLARE_REF(/datum/planet_sunlight_handler, "owned_sun", OWNED, null)
 
-/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sun (a relation view).
 /datum/simple_sun/planetary/proc/sun() as /datum/sun_holder
-	return om_resolve(sun_handle)
+	return sun
 
-/// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sun (a relation view).
 /datum/planet_sunlight_handler/proc/sun() as /datum/simple_sun
-	return om_resolve(sun_handle)
+	return sun

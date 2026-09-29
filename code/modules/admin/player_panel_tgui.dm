@@ -10,10 +10,9 @@
 
 /datum/player_panel/New(datum/admins/owner_admin)
 	..()
-	src.owner_admin = owner_admin
+	rel_set(src, "owner_admin", owner_admin)
 
-DECLARE_REF(/datum/player_panel, "owner_admin", PAIR, "tgui_player_panel")
-DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
+// The admin holder owns this panel (tgui_player_panel); owner_admin is a plain relation back.
 
 /datum/player_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
@@ -123,5 +122,5 @@ DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 	if(!check_rights_for(user, R_HOLDER))
 		return
 	if(!tgui_player_panel)
-		tgui_player_panel = new(src)
+		own_set(src, "tgui_player_panel", new /datum/player_panel(src))
 	tgui_player_panel.tgui_interact(user.mob)

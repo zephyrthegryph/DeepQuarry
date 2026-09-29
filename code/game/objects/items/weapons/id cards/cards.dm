@@ -272,13 +272,13 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 	update_icon()
 
 /obj/item/card/id/synthetic/borg
-	var/robot_owner_handle
+	var/mob/living/silicon/robot/robot_owner
 	var/last_robot_loc
 
 /obj/item/card/id/synthetic/borg/Initialize(mapload)
 	. = ..()
 	if(isrobot(loc))
-		robot_owner_handle = om_handle(loc)
+		rel_set(src, "robot_owner", loc)
 		registered_name = robot_owner().braintype
 		om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
 
@@ -307,9 +307,9 @@ DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interacti
 	. = ..()
 	uses = rand(1, 5)
 
-/// LC-refs: robot owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: robot owner (reads null once it is gone).
 /obj/item/card/id/synthetic/borg/proc/robot_owner() as /mob/living/silicon/robot
-	return om_resolve(robot_owner_handle)
+	return robot_owner
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/card/data, \

@@ -12,7 +12,7 @@
 	active_power_usage = 8000
 
 	var/current_program = "Off"
-	var/tmp/my_area_handle
+	var/tmp/area/looking_glass/my_area
 	/// Two-tier gravity toggle throttle: ignore inside the short window, warn inside the long one.
 	COOLDOWN_DECLARE(gravity_short_cooldown)
 	COOLDOWN_DECLARE(gravity_long_cooldown)
@@ -25,7 +25,7 @@
 	. = ..()
 	for(var/area/looking_glass/lga in world)
 		if(lga.lg_id == lg_id)
-			my_area_handle = om_handle(lga)
+			my_area = lga
 			break
 	if(!istype(my_area(), /area/looking_glass))
 		log_mapping("Looking glass console [x],[y],[x] not in a looking glass area.")
@@ -163,6 +163,6 @@ DAMAGE_REACTION(/obj/machinery/computer/looking_glass, DAMAGE_EXPLOSION, PROC_RE
 	if (. && (has_stat(NOPOWER)))
 		unload_program()
 
-/// LC-refs: the my_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the my_area var.
 /obj/machinery/computer/looking_glass/proc/my_area() as /area/looking_glass
-	return om_resolve(my_area_handle)
+	return my_area

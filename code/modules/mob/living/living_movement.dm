@@ -175,7 +175,7 @@ default behaviour is:
 			now_pushing = FALSE
 			return
 
-		tmob.LAssailant = src
+		rel_set(tmob, "LAssailant", src)
 
 	now_pushing = FALSE
 	. = ..()

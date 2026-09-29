@@ -64,7 +64,6 @@
 /// An atom owns its wiring: the destroy transaction's links phase deletes it
 /// (lifecycle.md section 4), so no Destroy() override hand-deletes `wires`.
 /// Salvaged from Codex's main-tree wires-ownership work onto the links framework.
-DECLARE_REF(/atom, "wires", OWNED, null)
 
 /atom/Destroy()
 	// ---- L2 lifecycle: leave the live world (state.md section 6). ----
@@ -82,11 +81,11 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)
-		QDEL_NULL(reagents)
+		own_clear(src, "reagents", OWN_DELETE)
 	if(light)
-		QDEL_NULL(light)
+		own_clear(src, "light", OWN_DELETE)
 	if(forensic_data)
-		QDEL_NULL(forensic_data)
+		own_clear(src, "forensic_data", OWN_DELETE)
 	// Checking length(overlays) before cutting has significant speed benefits
 	if (length(overlays))
 		overlays.Cut()
@@ -97,7 +96,7 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 		prio.Cut()
 	priority_overlays = null
 	if (length(managed_vis_overlays))
-		managed_vis_overlays.Cut()
+		rel_clear(src, "managed_vis_overlays")
 	if (length(original_atom))
 		original_atom.Cut()
 	return ..()
@@ -143,16 +142,16 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 
 // Used to be for the PROXMOVE flag, but that was terrible, so instead it's just here as a stub for
 // all the atoms that still have the proc, but get events other ways.
-/atom/proc/HasProximity(turf/T, WF, old_loc)
+/atom/proc/HasProximity(turf/T, atom/movable/arrived, old_loc) // arrived: the atom itself (not a handle)
 	SHOULD_NOT_SLEEP(TRUE)
 	return
 
 /// Hooked on the turfs sense_proximity() watches: something entered one of them.
 /atom/proc/on_proximity_turf_entered(turf/source, datum/om/event/observer_turf_entered/event)
 	EVENT_HANDLER
-	HasProximity(source, event.arrived_handle, event.old_loc)
+	HasProximity(source, event.arrived, event.old_loc)
 
-//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived_handle, old_loc);
+//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived, old_loc);
 // `callback` is kept for the callers' readability and must be HasProximity.
 /atom/proc/sense_proximity(range = 1, callback)
 	ASSERT(callback)
@@ -298,7 +297,6 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
 	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
-	var/oldDir = dir
 	dir = new_dir
 
 // Called to set the atom's density and used to add behavior to density changes.
@@ -381,7 +379,7 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 		dq_set_blood_color(src, SYNTH_BLOOD_COLOUR)
 	if(istype(M))
 		if (!istype(M.dna, /datum/dna))
-			M.dna = new /datum/dna(null)
+			own_set(M, "dna", new /datum/dna(null))
 			M.dna.real_name = M.real_name
 		M.check_dna()
 		dq_set_blood_color(src, M.species.get_blood_colour(M))
@@ -708,7 +706,7 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 
 /// Sets the wire datum of an atom
 /atom/proc/set_wires(datum/wires/new_wires)
-	wires = new_wires
+	own_set(src, "wires", new_wires)
 
 /// Its icon state (om_after() target for a state that reverts, like a flash of a sprite).
 /atom/proc/set_icon_state(new_state)
@@ -717,10 +715,3 @@ GLOBAL_LIST_INIT(zero_icon_offsets, list("x" = 0, "y" = 0))
 /// Its base colour, under any colour layers (a debug or effect tint that reverts later).
 /atom/proc/set_base_color(new_color)
 	color = new_color
-
-DECLARE_REF(/atom, "forensic_data", OWNED, null)
-DECLARE_REF(/atom, "reagents", OWNED, null)
-DECLARE_REF(/atom, "wires", OWNED, null)
-DECLARE_REF(/atom, "forensic_data", OWNED, null)
-DECLARE_REF(/atom, "reagents", OWNED, null)
-DECLARE_REF(/atom, "wires", OWNED, null)

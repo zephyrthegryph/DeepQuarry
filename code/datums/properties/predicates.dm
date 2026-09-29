@@ -42,11 +42,13 @@
 /// Compile `spec` against `registry` (default: the global one). Called once.
 /datum/predicate/proc/compile(datum/property_registry/registry)
 	var/datum/predicate_compiler/compiler = new(registry || dq_property_registry(), name || "[type]")
-	root = compiler.compile_spec(spec)
+	own_set(src, "root", compiler.compile_spec(spec))
 	errors = length(compiler.errors) ? compiler.errors : null
-	watchable = length(compiler.watchable) ? compiler.watchable : null
+	rel_clear(src, "watchable")
+	for(var/datum/pred_node/node as anything in compiler.watchable)
+		rel_add(src, "watchable", node) // nodes are owned by the tree under root
 	if(errors)
-		root = new /datum/pred_node/invalid
+		own_set(src, "root", new /datum/pred_node/invalid)
 	return !errors
 
 /// TRUE if every clause passes.
@@ -328,7 +330,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.value = clause[5]
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_THRESHOLD
-		watchable += node
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_band(list/clause, negate)
@@ -350,7 +352,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.outside = negate
 	if(channel_backed(def.id))
 		node.watch_kind = PRED_WATCH_BAND
-		watchable += node
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /datum/predicate_compiler/proc/compile_rel(list/clause, negate)
@@ -377,7 +379,7 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 	node.property_b = def_b.id
 	if(node.op != PRED_CMP_EQ && node.op != PRED_CMP_NE && channel_backed(def_a.id) && channel_backed(def_b.id))
 		node.watch_kind = PRED_WATCH_DIFFERENCE
-		watchable += node
+		rel_add(src, "watchable", node) // the node belongs to the tree under root
 	return node
 
 /proc/dq_pred_valid_cmp(op)
@@ -832,31 +834,24 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 /mob/living/simple_mob/dq_has_free_hand()
 	return has_hands && (!get_equipped_item(SLOT_ID_HAND_L) || !get_equipped_item(SLOT_ID_HAND_R))
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/predicate_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-DECLARE_REF(/datum/predicate_compiler, "registry_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/pred_node/tag/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/tag, "def_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/pred_node/cmp/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/cmp, "def_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/pred_node/band/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/band, "def_static", STATIC, null)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/pred_node/rel/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/rel, "def_static", STATIC, null)
 
-DECLARE_REF(/datum/predicate, "root", OWNED, null)
 
-DECLARE_REF(/datum/predicate, "watchable", OWNED_LIST, null)

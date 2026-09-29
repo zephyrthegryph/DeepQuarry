@@ -8,7 +8,7 @@
 // natively, so we don't ship per-frame URLs or any animation timing.
 
 /datum/belly_overlay_tgui
-	var/tmp/owner_handle
+	var/tmp/mob/owner
 	var/datum/tgui/active_ui
 	var/list/state = list() // ALLOW(instance_list): d: UI state (generic name, too many ambiguous call sites)
 	/// Signature of the last computed overlay state. show() recomputes it cheaply
@@ -17,7 +17,7 @@
 	var/last_show_sig
 
 /datum/belly_overlay_tgui/New(mob/M)
-	owner_handle = om_handle(M)
+	rel_set(src, "owner", M)
 
 // hides the owner's belly overlay window.
 /datum/belly_overlay_tgui/on_destroy(force)
@@ -46,7 +46,7 @@
 	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
 		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
-		active_ui = new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win)
+		own_set(src, "active_ui", new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win))
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
@@ -179,17 +179,15 @@
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		M.belly_overlay_tgui = new /datum/belly_overlay_tgui(M)
+		own_set(M, "belly_overlay_tgui", new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob
 	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
 // /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm
 
-DECLARE_REF(/datum/belly_overlay_tgui, "active_ui", OWNED, null)
 
-DECLARE_REF(/mob, "belly_overlay_tgui", OWNED, null)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner: a relation view, null once it is deleted.
 /datum/belly_overlay_tgui/proc/owner() as /mob
-	return om_resolve(owner_handle)
+	return owner

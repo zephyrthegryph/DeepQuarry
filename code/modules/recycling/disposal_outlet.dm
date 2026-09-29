@@ -10,7 +10,7 @@
 	density = TRUE
 	anchored = TRUE
 	var/active = FALSE // Code appendix.
-	var/tmp/target_handle	// this will be where the output objects are 'thrown' to.
+	var/tmp/turf/target	// this will be where the output objects are 'thrown' to.
 	var/mode = 0
 	EXPIRY_DECLARE(start_eject)
 	var/eject_range = 3 //Did you know, in TGcode, it's a default of 2 tiles?
@@ -113,11 +113,11 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	update_target()
 
 /obj/structure/disposaloutlet/proc/update_target()
-	target_handle = om_handle(get_ranged_target_turf(src, dir, 10))
+	rel_set(src, "target", get_ranged_target_turf(src, dir, 10))
 
 #undef OUTLET_SCREWED
 #undef OUTLET_UNSCREWED
 
-/// LC-refs: this will be where the output objects are 'thrown' to. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// this will be where the output objects are 'thrown' to. (a relation view: it reads null once the target is deleted).
 /obj/structure/disposaloutlet/proc/target() as /turf
-	return om_resolve(target_handle)
+	return target

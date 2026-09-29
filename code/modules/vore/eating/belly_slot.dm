@@ -18,7 +18,7 @@
 // late or a turbo cycle changes nothing but granularity: the same totals over
 // the same time.
 
-OM_TIMER_SLOT(/obj/belly, liquid_timer)
+OWN_TIMER(/obj/belly, liquid_timer)
 
 /obj/belly
 	/// TRUE while the belly's cycle clock runs (it is occupied), else null.

@@ -1,6 +1,7 @@
 /datum/tgui_module/ship
-	var/tmp/linked_handle
-	var/list/viewers
+	var/tmp/obj/effect/overmap/visitable/ship/linked
+	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
+	var/list/watchers //Who is viewing through us (a relation list, kept by look()/unlook())
 	var/extra_view = 0
 	var/map_view_used = FALSE
 
@@ -57,21 +58,23 @@
 	if(!istype(sector))
 		return
 	if(sector.check_ownership(tgui_host()))
-		linked_handle = om_handle(sector)
+		rel_set(src, "linked", sector)
 		return 1
 
 /datum/tgui_module/ship/look(mob/user)
+	rel_add(src, "watchers", user)
 	user.set_viewsize(world.view + extra_view)
 	if(!map_view_used)
 		map_view_used = TRUE
 
 /datum/tgui_module/ship/unlook(mob/user)
+	rel_remove(src, "watchers", user)
 	user.set_viewsize() // reset to default
 	if(map_view_used)
 		map_view_used = FALSE
 
 /datum/tgui_module/ship/proc/viewing_overmap(mob/user)
-	return (om_handle(user) in viewers)
+	return (user in watchers)
 
 // Navigation
 /datum/tgui_module/ship/nav
@@ -134,7 +137,6 @@
 		if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 			return FALSE
 		else if(!viewing_overmap(ui.user))
-			if(!viewers) viewers = list() // List must exist for pass by reference to work
 			start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 		else
 			ui.user.reset_perspective()
@@ -156,7 +158,7 @@
 	var/speedlimit = 1/(20 SECONDS) //top speed for autopilot, 5
 	var/accellimit = 0.001 //manual limiter for acceleration
 	// SENSORS
-	var/tmp/sensors_handle
+	var/tmp/obj/machinery/shipsensors/sensors
 
 /datum/tgui_module/ship/fullmonty/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
@@ -170,7 +172,7 @@
 	. = ..()
 	if(!istype(new_linked))
 		CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-	linked_handle = om_handle(new_linked)
+	rel_set(src, "linked", new_linked)
 	name = initial(name) + " ([linked().name])"
 	// HELM
 	// ALLOW(spatial): world search
@@ -181,11 +183,11 @@
 			R.fields["name"] = S.name
 			R.fields["x"] = S.x
 			R.fields["y"] = S.y
-			LAZYSET(known_sectors, S.name, R)
+			own_put(src, "known_sectors", S.name, R)
 	// SENSORS
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
-			sensors_handle = om_handle(S)
+			rel_set(src, "sensors", S)
 			break
 
 /datum/tgui_module/ship/fullmonty/relaymove(mob/user, direction)
@@ -346,14 +348,13 @@
 			if(!R)
 				return TRUE
 			R.fields["name"] = sec_name
-			LAZYSET(known_sectors, sec_name, R)
+			own_put(src, "known_sectors", sec_name, R)
 			. = TRUE
 
 		if("remove")
 			var/datum/computer_file/data/waypoint/R = locate(params["remove"])
-			if(R)
-				LAZYREMOVE(known_sectors, R.fields["name"])
-				qdel(R)
+			if(istype(R) && known_sectors?[R.fields["name"]] == R) // only one of our own entries
+				own_put(src, "known_sectors", R.fields["name"], null) // removes and disposes of it
 			. = TRUE
 
 		if("setcoord")
@@ -424,7 +425,6 @@
 			if(ui.user.blinded || !linked())
 				return FALSE
 			else  if(!viewing_overmap(ui.user))
-				if(!viewers) viewers = list()
 				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()
@@ -523,10 +523,10 @@
 		host_mob.reset_perspective()
 		return
 
-/// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The linked this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/proc/linked() as /obj/effect/overmap/visitable/ship
-	return om_resolve(linked_handle)
+	return linked
 
-/// LC-refs: the sensors this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The sensors this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/ship/fullmonty/proc/sensors() as /obj/machinery/shipsensors
-	return om_resolve(sensors_handle)
+	return sensors

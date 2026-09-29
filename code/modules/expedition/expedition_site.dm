@@ -14,7 +14,7 @@
 	/// EXP_STATUS_* lifecycle status.
 	var/status = EXP_STATUS_GENERATING
 	/// A safe, walkable turf crews arrive on.
-	var/tmp/landing_handle
+	var/tmp/turf/landing
 	/// Cached walkable floors, for content placement and respawns.
 	var/list/floors
 	/// The mission bound to this site (may be null for a raw debug site).
@@ -30,14 +30,14 @@
 	/// Mobs that have deployed here (for reward payout).
 	var/list/participants
 	/// The short-jump craft assigned to this expedition.
-	var/tmp/assigned_shuttle_handle
+	var/tmp/datum/shuttle/autodock/overmap/assigned_shuttle
 	/// Authoritative vessel assignment; survives console replacement or deletion.
-	var/tmp/assigned_flight_vessel_handle
+	var/tmp/datum/flight_vessel/assigned_flight_vessel
 	/// The craft's control console, used as the physical payout point.
-	var/tmp/origin_console_handle
-	var/tmp/payout_turf_handle
-	/// Overmap destination and landing waypoint owned by this site.
-	var/tmp/overmap_sector_handle
+	var/tmp/obj/machinery/computer/shuttle_control/explore/origin_console
+	var/tmp/turf/payout_turf
+	/// Overmap destination and landing waypoint owned by this site (implicit OWN).
+	var/obj/effect/overmap/visitable/sector/expedition/overmap_sector
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/landing_waypoint
 	/// Stable destination registry key used before and after physical generation.
 	var/flight_destination_id
@@ -55,27 +55,11 @@
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
 	difficulty = _difficulty
-	landing_handle = om_handle(_landing)
+	rel_set(src, "landing", _landing)
 	EXPIRY_STAMP(src, generated_at, CLOCK_WORLD)
 	EXPIRY_STAMP(src, last_occupied, CLOCK_WORLD)
-	participants = list()
+	rel_clear(src, "participants")
 
-DECLARE_REF(/datum/expedition_site, "station_defense", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_director", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_simulation", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "mission", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "biome", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_spec", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_materialization", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "landing_waypoint", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_controls", OWNED_LIST, null)
-
-/// A deleted descriptor leaves the service list that owned it.
-/datum/expedition_site/lifecycle_unbind()
-	. = ..()
-	var/datum/world_service/expedition/service = GLOB.expedition_service
-	if(service)
-		LAZYREMOVE(service.descriptors, src)
 
 // A random walkable floor on this site (prefers the cached list, falls back to
 // a fresh scan if the cache is stale/empty). Biome-agnostic.
@@ -102,29 +86,29 @@ DECLARE_REF(/datum/expedition_site, "station_controls", OWNED_LIST, null)
 	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[flight_destination_id]
 	return LAZYLEN(destination?.active_plans)
 
-/// LC-refs: the landing this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The landing (a relation view: null once it is gone).
 /datum/expedition_site/proc/landing() as /turf
-	return om_resolve(landing_handle)
+	return landing
 
-/// LC-refs: the assigned_flight_vessel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assigned_flight_vessel (a relation view: null once it is gone).
 /datum/expedition_site/proc/assigned_flight_vessel() as /datum/flight_vessel
-	return om_resolve(assigned_flight_vessel_handle)
+	return assigned_flight_vessel
 
-/// LC-refs: the payout_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The payout_turf (a relation view: null once it is gone).
 /datum/expedition_site/proc/payout_turf() as /turf
-	return om_resolve(payout_turf_handle)
+	return payout_turf
 
-/// LC-refs: the origin_console this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The origin_console (a relation view: null once it is gone).
 /datum/expedition_site/proc/origin_console() as /obj/machinery/computer/shuttle_control/explore
-	return om_resolve(origin_console_handle)
+	return origin_console
 
-/// LC-refs: the overmap_sector this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site's overmap sector (owned).
 /datum/expedition_site/proc/overmap_sector() as /obj/effect/overmap/visitable/sector/expedition
-	return om_resolve(overmap_sector_handle)
+	return overmap_sector
 
-/// LC-refs: the assigned_shuttle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The assigned_shuttle (a relation view: null once it is gone).
 /datum/expedition_site/proc/assigned_shuttle() as /datum/shuttle/autodock/overmap
-	return om_resolve(assigned_shuttle_handle)
+	return assigned_shuttle
 
 /datum/expedition_site/declared_cache_vars()
 	var/list/L = ..()

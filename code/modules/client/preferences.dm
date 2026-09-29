@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 	// body_markings, flavor_texts, flavour_texts_robot, custom_link, exploit_record migrated to /datum/preference subtypes.
 
-	var/tmp/client_handle
+	var/tmp/client/client
 	var/client_ckey = null
 
 	// communicator_visibility/ringtone migrated to /datum/preference subtypes.
@@ -124,10 +124,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 /datum/preferences/New(client/C)
-	client_handle = om_handle(C)
+	rel_set(src, "client", C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		LAZYADD(middleware, new middleware_type(src))
+		own_add(src, "middleware", new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey
@@ -157,7 +157,6 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 		save_preferences()
 	save_character() // Save random character
 
-DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 
 // in-flight character preview renders discard their result.
 /datum/preferences/on_destroy(force)
@@ -479,16 +478,18 @@ DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 									/datum/trait/neutral/micro_size_down,
 									/datum/trait/neutral/micro_size_up)
 	if(character.species)
-		character.species.micro_size_mod = 0
-		character.species.icon_scale_x = 1
-		character.species.icon_scale_y = 1
+		// species is PROTO: mutate the mob's private copy, never the shared prototype
+		var/datum/species/own_species = proto_private(character, "species")
+		own_species.micro_size_mod = 0
+		own_species.icon_scale_x = 1
+		own_species.icon_scale_y = 1
 		for(var/trait in read_preference(/datum/preference/typed_list/traits/neu_traits)) // typed_list pref base
 			if(trait in traits_to_copy)
 				var/datum/trait/instance = GLOB.all_traits[trait]
 				if(!instance)
 					continue
 				for(var/key, value in instance.var_changes)
-					character.species.vars[key] = value // ALLOW(api): custom species prefs copied by name
+					own_species.vars[key] = value // ALLOW(api): custom species prefs copied by name
 	character.update_transform()
 
 	// Snowflake shapeshifter bodytype derivation — this is what makes vanity_copy_to
@@ -503,10 +504,11 @@ DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 	else
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
-	character.species.base_species = bodytype_selected
-	character.species.icobase = character.species.get_icobase()
-	character.species.deform = character.species.get_icobase(get_deform = TRUE)
-	character.species.vanity_base_fit = bodytype_selected
+	var/datum/species/private_species = proto_private(character, "species") // PROTO: private copy
+	private_species.base_species = bodytype_selected
+	private_species.icobase = private_species.get_icobase()
+	private_species.deform = private_species.get_icobase(get_deform = TRUE)
+	private_species.vanity_base_fit = bodytype_selected
 	if(istype(character.species, /datum/species/shapeshifter))
 		GLOB.wrapped_species_by_ref["\ref[character]"] = bodytype_selected
 
@@ -547,8 +549,7 @@ DECLARE_REF(/datum/preferences, "middleware", OWNED_LIST, null)
 
 	feedback_add_details("admin_verb","TCaptureCrystal") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-DECLARE_REF(/datum/preferences, "savefile", OWNED, null)
 
-/// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/client() as /client
-	return om_resolve(client_handle)
+	return client

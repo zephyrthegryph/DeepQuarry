@@ -42,7 +42,7 @@
 		width = bounds[MAP_MAXX] // Assumes all templates are rectangular, have a single Z level, and begin at 1,1,1
 		height = bounds[MAP_MAXY]
 		if(cache)
-			parsed_map = parsed
+			own_set(src, "parsed_map", parsed)
 	return bounds
 
 /// Bounds written by the build (tools/build/lib/map_bounds.ts) so templates don't
@@ -181,7 +181,7 @@
 	// Accept cached maps, but don't save them automatically - we don't want
 	// ruins clogging up memory for the whole round.
 	var/datum/parsed_map/parsed = parsed_map || new(file(mappath))
-	parsed_map = keep_cached_map ? parsed : null
+	own_set(src, "parsed_map", keep_cached_map ? parsed : null)
 
 	if(!parsed.load(
 		T.x,
@@ -423,4 +423,3 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 
 	return
 
-DECLARE_REF(/datum/map_template, "parsed_map", OWNED, null)

@@ -11,6 +11,8 @@
 
 /obj/machinery/mineral/equipment_vendor/survey/Initialize(mapload)
 	. = ..()
+	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
+	// record, freed in on_destroy()). Rebuilt per vendor type here.
 	prize_list = list()
 	prize_list["Gear"] = list(
 		EQUIPMENT("Brown Webbing",									/obj/item/clothing/accessory/storage/brown_vest,							500),

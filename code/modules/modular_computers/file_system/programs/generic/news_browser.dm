@@ -73,7 +73,7 @@
 /datum/computer_file/program/newsbrowser/kill_program()
 	..()
 	requires_ntnet = TRUE
-	loaded_article = null
+	own_clear(src, "loaded_article", OWN_DELETE)
 	download_progress = 0
 	downloading = FALSE
 	show_archived = FALSE
@@ -89,7 +89,7 @@
 
 			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 				if(N.uid == text2num(params["uid"]))
-					loaded_article = N.clone()
+					own_set(src, "loaded_article", N.clone())
 					downloading = 1
 					break
 		if("PRG_reset")
@@ -97,7 +97,7 @@
 			downloading = 0
 			download_progress = 0
 			requires_ntnet = 1
-			loaded_article = null
+			own_clear(src, "loaded_article", OWN_DELETE)
 		if("PRG_clearmessage")
 			. = TRUE
 			message = ""
@@ -121,4 +121,3 @@
 			. = TRUE
 			show_archived = !show_archived
 
-DECLARE_REF(/datum/computer_file/program/newsbrowser, "loaded_article", OWNED, null)

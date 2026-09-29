@@ -34,18 +34,22 @@
 
 	// --- Active action ---
 	var/active_behavior_type = null   // typepath of currently-running behavior
-	var/tmp/active_target_handle
-	var/tmp/active_source_handle	// null for innate, else the item/modifier granting it
+	var/tmp/atom/active_target
+	var/tmp/atom/active_source	// null for innate, else the item/modifier granting it
 	var/selection_dirty = TRUE
 
 	// --- Behavior aggregation ---
-	var/list/effective_behaviors = null  // typepath => om_handle(source atom) or null
+	var/list/effective_behaviors = null  // typepath => ref text of its source atom (see behavior_source()) or null
+	/// The source atoms effective_behaviors names (a relation list: a deleted source leaves it).
+	var/list/behavior_sources = null
 
 	// --- Per-behavior state ---
 	var/list/behavior_state = null       // typepath => list("cooldown" = world.time, "charges" = N)
 
 	// --- Personal relationships. Lazylist. ---
-	var/list/personal = null             // OM handle => list("disp", "expires")
+	var/list/personal = null             // ref text of the mob => list("disp", "expires"); valid only while the mob is in personal_mobs
+	/// The mobs personal names (a relation list: a deleted mob leaves it, and its entry goes stale).
+	var/list/personal_mobs = null
 
 	// --- Behavior trigger subscriptions ---
 	var/list/subscribed_signals = null   // DQAI_TRIGGER_* => list(behavior_typepath, ...)
@@ -53,8 +57,8 @@
 	// --- Tactical state (read by behaviors) ---
 	EXPIRY_DECLARE(last_attack_at) // world.time of the most recent successful attack tick
 	var/last_juke_at = 0             // last world.time evasive_juke fired
-	var/tmp/home_turf_handle	// for guard / return_home behaviors
-	var/leader_ref = null  // for follow_leader / cooperative AI
+	var/tmp/turf/home_turf	// for guard / return_home behaviors
+	var/mob/leader = null  // for follow_leader / cooperative AI (a relation view)
 	/// world.time when primary_threat first left view(). Used to mirror legacy
 	/// ai_holder lose_target_timeout: the mob keeps pursuing for
 	/// DQ_LOSE_THREAT_TIMEOUT deciseconds before dropping the target.
@@ -71,10 +75,10 @@
 		stack_trace("ai_brain instantiated with no owner")
 		qdel(src)
 		return
-	holder = owner
-	model = new /datum/world_model(owner)
+	rel_set(src, "holder", owner)
+	own_set(src, "model", new /datum/world_model(owner))
 	target_selector_chain = list(/datum/target_selector/closest)
-	home_turf_handle = om_handle(get_turf(owner))
+	rel_set(src, "home_turf", get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
 	om_hook(holder, /datum/om/event/mob_statchange, src, PROC_REF(on_stat_change))
 	om_hook(holder, /datum/om/event/living_injured, src, PROC_REF(on_holder_injured))
@@ -86,14 +90,12 @@
 	rebuild_behaviors()
 	return ..()
 
-DECLARE_REF(/datum/ai_brain, "model", OWNED, null)
-DECLARE_REF(/datum/ai_brain, "primary_threat", BACK, null)
-DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 
-// effective_behaviors maps behaviour type -> om_handle() of its source atom (or null): the brain owns no source.
+// effective_behaviors maps behaviour type -> the ref text of its source atom (or null): the brain owns no source.
+// The atom itself is in behavior_sources, so a deleted source reads null through behavior_source().
 
 /// A running behaviour is stopped (it ends ai_busy on holder) and the loops and chunk sleep are
-/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain (DECLARE_REF(..., BACK)).
+/// cancelled while holder is still set; phase 4 then clears holder and holder.ai_brain.
 /datum/ai_brain/lifecycle_prerelease()
 	cancel_chunk_sleep()
 	if(active_behavior_type)
@@ -107,10 +109,30 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	return holder
 
 /datum/ai_brain/proc/get_leader()
-	return om_resolve(leader_ref)
+	return leader
 
-/datum/ai_brain/proc/set_leader(mob/leader)
-	leader_ref = leader ? om_handle(leader) : null
+/datum/ai_brain/proc/set_leader(mob/new_leader)
+	rel_set(src, "leader", new_leader)
+
+/// The atom granting behaviour `btype`, or null (innate, or the source was deleted).
+/datum/ai_brain/proc/behavior_source(btype)
+	var/key = effective_behaviors?[btype]
+	if(!key)
+		return null
+	var/atom/A = locate(key)
+	return (A in behavior_sources) ? A : null
+
+/// The personal-disposition entry for `other`, or null. Stale entries (a deleted mob) are dropped.
+/datum/ai_brain/proc/personal_entry(mob/other)
+	if(!personal || !other)
+		return null
+	var/key = ref(other)
+	var/list/entry = personal[key]
+	if(entry && !(other in personal_mobs))
+		personal -= key
+		UNSETEMPTY(personal)
+		return null
+	return entry
 
 // ---------------------------------------------------------------------------
 // Loop scheduling (scheduling.dm).
@@ -218,6 +240,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 		return
 	var/list/old = effective_behaviors
 	effective_behaviors = list()
+	rel_clear(src, "behavior_sources")
 
 	// Innate behaviors via the mob's getter — falls back to the default factory
 	// for simple_mobs that haven't been hand-tuned yet.
@@ -232,15 +255,18 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	for(var/obj/item/I as anything in holder.get_all_held_items())
 		var/list/granted = TYPE_TABLE_GET(I, item_granted_behaviors)
 		if(granted)
+			var/source_ref = ref(I) // effective_behaviors keeps the ref text only; the source itself is behavior_sources
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = om_handle(I)
+				rel_add(src, "behavior_sources", I)
+				effective_behaviors[btype] = source_ref
 
 	// Modifier-granted (statuses, buffs).
 	for(var/effect_type in holder.body_effects())
 		var/list/granted = body_effect_def(effect_type).get_dq_granted_behaviors()
 		if(granted)
 			for(var/btype as anything in granted)
-				effective_behaviors[btype] = om_handle(holder)
+				rel_add(src, "behavior_sources", holder)
+				effective_behaviors[btype] = ref(holder)
 
 	// Inject behaviors implied by legacy-compat flags so callers can flip
 	// brain.returns_home = TRUE on a mob even after spawn and have it work.
@@ -296,7 +322,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	var/any_pending = FALSE
 
 	for(var/btype as anything in effective_behaviors)
-		var/source = om_resolve(effective_behaviors[btype])
+		var/source = behavior_source(btype)
 		var/datum/ai_behavior/B = dq_get_behavior(btype)
 		if(B.requires_held_source && !source)
 			continue
@@ -331,7 +357,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 		// Re-face the new target so the mob's sprite reorients immediately
 		// instead of waiting for the next step.
 		if(active_target() != best_target)
-			active_target_handle = om_handle(best_target)
+			rel_set(src, "active_target", best_target)
 			if(holder && best_target)
 				holder.face_atom(best_target)
 		return TRUE
@@ -343,8 +369,8 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	if(active_behavior_type)
 		stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
 	active_behavior_type = btype
-	active_target_handle = om_handle(target)
-	active_source_handle = om_handle(source)
+	rel_set(src, "active_target", target)
+	rel_set(src, "active_source", source)
 	var/datum/ai_behavior/B = dq_get_behavior(btype)
 	var/result = B.start(src, target, source)
 	if(result == DQ_BEHAVIOR_DONE)
@@ -358,8 +384,8 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	var/datum/ai_behavior/B = dq_get_behavior(active_behavior_type)
 	B.stop(src, active_target(), active_source(), reason)
 	active_behavior_type = null
-	active_target_handle = null
-	active_source_handle = null
+	rel_clear(src, "active_target")
+	rel_clear(src, "active_source")
 	// Defensive: if a behavior's start() runtimed before releasing its hold, the
 	// brain would lock up. stop_active is the funnel for every termination,
 	// so always release the hold here regardless of blocks_reselection.
@@ -420,7 +446,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 			break
 	if(new_threat != primary_threat)
 		var/old = primary_threat
-		primary_threat = new_threat
+		rel_set(src, "primary_threat", new_threat)
 		OM_EMIT(holder, /datum/om/event/dqai_target_changed, new_threat, old)
 		sync_fast_processing()
 
@@ -429,7 +455,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 /datum/ai_brain/proc/drop_primary_threat()
 	lose_threat_at = 0
 	var/old = primary_threat
-	primary_threat = null
+	rel_clear(src, "primary_threat")
 	if(holder)
 		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 	if(active_behavior_type)
@@ -442,10 +468,9 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 /datum/ai_brain/proc/should_retaliate_against(mob/attacker)
 	if(!attacker || !holder || attacker == holder)
 		return FALSE
-	if(personal)
-		var/list/entry = personal[om_handle(attacker)]
-		if(entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE)
-			return TRUE
+	var/list/grudge = personal_entry(attacker)
+	if(grudge && grudge["disp"] <= DQ_DISPOSITION_HOSTILE)
+		return TRUE
 	if(holder.faction && attacker.faction == holder.faction)
 		dqai_log("[holder] brain: ignoring hit from faction-mate [attacker]")
 		return FALSE
@@ -461,15 +486,14 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 /datum/ai_brain/proc/disposition_to(mob/other)
 	if(!other || other == holder)
 		return DQ_DISPOSITION_ALLY
-	if(personal)
-		var/ref = om_handle(other)
-		var/list/entry = personal[ref]
-		if(entry)
-			if(entry["expires"] && ELAPSED_SINCE(src, entry["expires"], CLOCK_WORLD) > 0)
-				personal -= ref
-				UNSETEMPTY(personal)
-			else
-				return entry["disp"]
+	var/list/entry = personal_entry(other)
+	if(entry)
+		if(entry["expires"] && ELAPSED_SINCE(src, entry["expires"], CLOCK_WORLD) > 0)
+			personal -= ref(other)
+			UNSETEMPTY(personal)
+			rel_remove(src, "personal_mobs", other)
+		else
+			return entry["disp"]
 	var/datum/faction_data/data = dq_faction_data_for(holder.faction)
 	var/result
 	if(other.client)
@@ -491,7 +515,8 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	if(!other)
 		return
 	LAZYINITLIST(personal)
-	personal[om_handle(other)] = list(
+	rel_add(src, "personal_mobs", other)
+	personal[ref(other)] = list(
 		"disp" = disposition,
 		"expires" = duration ? world.time + duration : 0,
 		"reason" = reason,
@@ -508,8 +533,12 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	var/list/expired
 	for(var/ref in personal)
 		var/list/entry = personal[ref]
-		if(entry && entry["expires"] && entry["expires"] < now)
+		var/mob/M = locate(ref)
+		if(!(M in personal_mobs)) // the mob was deleted: its entry is stale
 			LAZYADD(expired, ref)
+		else if(entry && entry["expires"] && entry["expires"] < now)
+			LAZYADD(expired, ref)
+			rel_remove(src, "personal_mobs", M)
 	if(expired)
 		personal -= expired
 	UNSETEMPTY(personal)
@@ -569,7 +598,7 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 		add_personal(attacker, DQ_DISPOSITION_HOSTILE, DQ_PERSONAL_DEFAULT_DURATION, "hit me")
 		if(!primary_threat)
 			var/mob/old = primary_threat
-			primary_threat = attacker
+			rel_set(src, "primary_threat", attacker)
 			OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	OM_EMIT(holder, /datum/om/event/dqai_damage_taken, amount, injury_kind, attacker)
 	dispatch_behavior_signal(DQAI_TRIGGER_DAMAGE_TAKEN, amount, injury_kind, attacker)
@@ -606,14 +635,17 @@ DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 	if(istype(T, /datum/om/task/hold))
 		om_task_cancel(T, "done")
 
-/// LC-refs: the active_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the active_target this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/active_target() as /atom
-	return om_resolve(active_target_handle)
+	return active_target
 
-/// LC-refs: null for innate, else the item/modifier granting it -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// null for innate, else the item/modifier granting it (a relation view: null once it is deleted).
 /datum/ai_brain/proc/active_source() as /atom
-	return om_resolve(active_source_handle)
+	return active_source
 
-/// LC-refs: for guard / return_home behaviors -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// for guard / return_home behaviors (a relation view: null once it is deleted).
 /datum/ai_brain/proc/home_turf() as /turf
-	return om_resolve(home_turf_handle)
+	return home_turf
+
+REL_LIST(/datum/ai_brain, behavior_sources)
+REL_LIST(/datum/ai_brain, personal_mobs)

@@ -266,4 +266,3 @@ DAMAGE_REACTION(/obj/machinery/turretid, DAMAGE_EMP, PROC_REF(turretid_emp))
 		enabled = TRUE
 		updateTurrets()
 
-DECLARE_REF(/obj/machinery/turretid, "control_area", STATIC, null)

@@ -25,9 +25,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 	chamber_offset = 0
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
-	loaded = shuffle(loaded)
-	if(rand(1,max_shells) > loaded.len)
-		chamber_offset = rand(0,max_shells - loaded.len)
+	if(length(loaded))
+		shuffle_inplace(loaded)
+	if(rand(1,max_shells) > length(loaded))
+		chamber_offset = rand(0,max_shells - length(loaded))
 
 /obj/item/gun/projectile/revolver/consume_next_projectile()
 	if(chamber_offset)
@@ -185,7 +186,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 
 /obj/item/gun/projectile/revolver/deckard/update_icon()
 	..()
-	if(loaded.len)
+	if(length(loaded))
 		icon_state = "deckard-loaded"
 	else
 		icon_state = "deckard-empty"
@@ -235,14 +236,16 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	var/secondary_caliber = "12g"
 	var/secondary_ammo_type = /obj/item/ammo_casing/a12g
 	var/flipped_firing = 0
-	var/list/secondary_loaded = list() // ALLOW(instance_list): d: swapped with loaded (ammo state) when the cylinder flips
-	var/list/tertiary_loaded = list() // ALLOW(instance_list): d: swapped with loaded (ammo state) when the cylinder flips
+	/// Owned rounds of the cylinder not being fired (swapped with loaded when the firing mode flips).
+	var/list/secondary_loaded
+	/// Owned rounds of the primary cylinder while the secondary one is being fired.
+	var/list/tertiary_loaded
 
 
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to secondary_max_shells)
-		secondary_loaded += new secondary_ammo_type(src)
+		own_add(src, "secondary_loaded", new secondary_ammo_type(src))
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
 
@@ -263,9 +266,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 		if(ammo_type && secondary_ammo_type)
 			ammo_type = secondary_ammo_type
 
-		if(secondary_loaded)
-			tertiary_loaded = loaded.Copy()
-			loaded = secondary_loaded
+		swap_cylinder("secondary_loaded", "tertiary_loaded")
 
 		flipped_firing = 1
 
@@ -279,11 +280,18 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 		if(ammo_type && secondary_ammo_type)
 			ammo_type = initial(ammo_type)
 
-		if(tertiary_loaded)
-			secondary_loaded = loaded.Copy()
-			loaded = tertiary_loaded
+		swap_cylinder("tertiary_loaded", "secondary_loaded")
 
 		flipped_firing = 0
+
+/// The rounds in `incoming_var` become loaded; the rounds loaded now move to `stash_var`.
+/obj/item/gun/projectile/revolver/lemat/proc/swap_cylinder(incoming_var, stash_var)
+	var/list/current = own_take_all(src, "loaded")
+	var/list/incoming = own_take_all(src, incoming_var)
+	for(var/obj/item/ammo_casing/casing as anything in current)
+		own_add(src, stash_var, casing)
+	for(var/obj/item/ammo_casing/casing as anything in incoming)
+		own_add(src, "loaded", casing)
 
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
 /obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)
@@ -291,9 +299,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	act_message(user, src, others = span_warning("%U% spins the cylinder of %T%!"), blind = span_notice("You hear something metallic spin and click."))
 	play_sfx(src, SFX_WEAPONS_REVOLVER_SPIN)
 	if(!flipped_firing)
-		loaded = shuffle(loaded)
-		if(rand(1,max_shells) > loaded.len)
-			chamber_offset = rand(0,max_shells - loaded.len)
+		if(length(loaded))
+			shuffle_inplace(loaded)
+		if(rand(1,max_shells) > length(loaded))
+			chamber_offset = rand(0,max_shells - length(loaded))
 
 /obj/item/gun/projectile/revolver/lemat/examine(mob/user)
 	. = ..()
@@ -335,7 +344,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 
 /obj/item/gun/projectile/revolver/consul/proc/update_charge()
 	cut_overlays()
-	if(loaded.len==0)
+	if(length(loaded)==0)
 		add_overlay("inspector_off")
 	else
 		add_overlay("inspector_on")

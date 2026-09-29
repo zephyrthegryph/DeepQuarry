@@ -12,11 +12,7 @@
 /mob
 	/// The active remote view of this mob, if any (see begin_remote_view()).
 	var/tmp/datum/remote_view/remote_view
-DECLARE_REF(/mob, "remote_view", OWNED, null)
 
-DECLARE_REF(/datum/remote_view, "settings", OWNED, null)
-DECLARE_REF(/datum/remote_view, "host_mob", BACK, "remote_view")
-DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 
 /**
  * Starts a remote view of `view_type` on this mob, replacing any current one.
@@ -37,17 +33,17 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 	// Like the old component's highlander replace: the previous view goes after the new one began.
 	if(old_view && old_view != new_view && !QDELETED(old_view))
 		qdel(old_view)
-	remote_view = new_view
+	own_set(src, "remote_view", new_view)
 	new_view.attach()
 	return new_view
 
 /datum/remote_view/New(mob/viewer)
 	..()
-	host_mob = viewer
+	rel_set(src, "host_mob", viewer) // one-sided back view: the mob owns us in remote_view
 
 /// Drops the host without restoring its perspective: for a view that never started.
 /datum/remote_view/proc/forget_host()
-	host_mob = null
+	rel_clear(src, "host_mob")
 
 /// Begins the view (was the component's Initialize). Returns FALSE if the view cannot start.
 /datum/remote_view/proc/start(atom/focused_on, viewsize, vconfig_path)
@@ -56,7 +52,7 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 	// Set config
 	if(!vconfig_path)
 		vconfig_path = /datum/remote_view_config
-	settings = new vconfig_path
+	own_set(src, "settings", new vconfig_path)
 	// Safety check, focus on ourselves if the target is deleted, and flag any movement to end the view.
 	if(QDELETED(focused_on))
 		focused_on = host_mob
@@ -97,7 +93,7 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 	if(isturf(focused_on))
 		om_hook(host_mob, /datum/om/event/movable_attempted_move, src, PROC_REF(on_recursive_moved_event))
 	// Focus on remote view
-	remote_view_target = focused_on
+	rel_set(src, "remote_view_target", focused_on)
 	if(host_mob != remote_view_target) // Some items just offset our view, so we set ourselves as the view target, don't double dip if so!
 		om_hook(remote_view_target, /datum/om/event/qdeleting, src, PROC_REF(handle_endview))
 		om_hook(remote_view_target, /datum/om/event/mob_reset_perspective, src, PROC_REF(on_remotetarget_reset_perspective))
@@ -123,8 +119,7 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 	if(!host_mob)
 		return
 	om_unhook_all(src)
-	if(host_mob.remote_view == src)
-		host_mob.remote_view = null
+	// Phase 2 then takes us out of host_mob.remote_view (the mob owns its view).
 	// Reset to default size
 	host_mob.set_viewsize()
 	if(settings?.use_zoom_hud && !host_mob.hud_used.hud_shown)
@@ -135,8 +130,8 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 		settings?.handle_remove_visuals(src, host_mob)
 		host_mob.refresh_vision()
 		host_mob.refresh_hud()
-	host_mob = null
-	remote_view_target = null
+	rel_clear(src, "host_mob")
+	rel_clear(src, "remote_view_target")
 
 // Event handlers
 
@@ -340,13 +335,12 @@ DECLARE_REF(/datum/remote_view, "remote_view_target", BACK, null)
 	VAR_PRIVATE/obj/item/host_item
 	VAR_PRIVATE/show_message
 
-DECLARE_REF(/datum/remote_view/item_zoom, "host_item", BACK, null)
 
 /datum/remote_view/item_zoom/start(atom/focused_on, viewsize, vconfig_path, obj/item/our_item, tileoffset, show_visible_messages)
 	. = ..()
 	if(!.)
 		return
-	host_item = our_item
+	rel_set(src, "host_item", our_item)
 	om_hook(host_item, list(
 		/datum/om/event/qdeleting,
 		/datum/om/event/moved,
@@ -390,7 +384,7 @@ DECLARE_REF(/datum/remote_view/item_zoom, "host_item", BACK, null)
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
 		host_mob.refresh_vision()
-	host_item = null
+	rel_clear(src, "host_item")
 	. = ..()
 
 /**
@@ -421,33 +415,30 @@ DECLARE_REF(/datum/remote_view/item_zoom, "host_item", BACK, null)
 	qdel(src)
 
 /**
- * Remote view subtype that handles look() and unlook() procs while managing a list of viewers. Expects a viewer list stored by the object itself, passed in to begin_remote_view(). Ensure the list exists before passing it or pass by reference will fail.
+ * Remote view subtype that handles look() and unlook() procs while managing the coordinator's
+ * `viewers` relation list view (the viewing mobs; a deleted viewer leaves it).
  */
 /datum/remote_view/viewer_managed
-	VAR_PRIVATE/datum/view_coordinator // The object containing the viewer_list, with look() and unlook() logic
-	VAR_PRIVATE/list/viewers // list from the view_coordinator, lists in byond are pass by reference, so this is the SAME list as on the coordinator! If you pass a null this will explode.
+	VAR_PRIVATE/datum/view_coordinator // The object whose `viewers` list we join, with look() and unlook() logic (a relation view)
 
-DECLARE_REF(/datum/remote_view/viewer_managed, "view_coordinator", BACK, null)
 
 /datum/remote_view/viewer_managed/start(atom/focused_on, viewsize, vconfig_path, datum/coordinator, list/viewer_list)
 	. = ..()
 	if(!.)
 		return
-	if(!islist(viewer_list)) // BAD BAD BAD NO
-		CRASH("Passed a viewer_list that was not a list, or was null, to /datum/remote_view/viewer_managed. Ensure the viewer_list exists before passing it into begin_remote_view().")
-	viewers = viewer_list
-	view_coordinator = coordinator
+	rel_set(src, "view_coordinator", coordinator)
 	view_coordinator.look(host_mob)
-	LAZYDISTINCTADD(viewers, om_handle(host_mob))
+	if("viewers" in view_coordinator.vars)
+		rel_add(view_coordinator, "viewers", host_mob)
 	om_hook(view_coordinator, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
 
 // The view coordinator stops showing to this viewer.
 /datum/remote_view/viewer_managed/lifecycle_unbind()
 	if(host_mob && view_coordinator)
 		view_coordinator.unlook(host_mob, FALSE)
-		LAZYREMOVE(viewers, om_handle(host_mob))
-	viewers = null
-	view_coordinator = null
+		if("viewers" in view_coordinator.vars)
+			rel_remove(view_coordinator, "viewers", host_mob)
+	rel_clear(src, "view_coordinator")
 	. = ..()
 
 /datum/remote_view/viewer_managed/get_coordinator()

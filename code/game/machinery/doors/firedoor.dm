@@ -73,7 +73,8 @@
 			LAZYADD(A.all_doors, src)
 			areas_added += A
 
-DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
+// A lift floor's firedoor: one-sided view (the floor lists it in its own doors REL_LIST).
+REL(/obj/machinery/door/firedoor, turbolift_floor)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
@@ -439,8 +440,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	var/list/dependency_turfs = list(get_turf(src))
 	for(var/direction in GLOB.cardinal)
 		dependency_turfs += get_step(src, direction)
-	var/datum/callback/getter = CALLBACK(src, PROC_REF(firedoor_atmos_signature))
-	var/datum/callback/wake = CALLBACK(src, PROC_REF(wake_from_air))
+	var/list/getter = om_callable(src, PROC_REF(firedoor_atmos_signature))
+	var/list/wake = om_callable(src, PROC_REF(wake_from_air))
 	for(var/index in 1 to length(dependency_turfs))
 		var/turf/T = dependency_turfs[index]
 		var/datum/gas_mixture/air = T?.return_air()
@@ -678,4 +679,3 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	..()
 	hibernate_until_air_changes()
 
-DECLARE_REF(/obj/machinery/door/firedoor, "areas_added", STATIC, null)

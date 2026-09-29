@@ -168,7 +168,7 @@
 	table_icon_base = "stone"
 
 /datum/material/glamour/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("oar", /obj/item/oar, 2, time = 30, supplied_material = "[name]", pass_stack_color = TRUE),
 		new /datum/stack_recipe("boat", /obj/vehicle/boat, 20, time = 10 SECONDS, supplied_material = "[name]", pass_stack_color = TRUE),
@@ -208,6 +208,7 @@
 		new /datum/stack_recipe("glamour bow", /obj/item/gun/launcher/crossbow/bow/glamour, 15, time = 15 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]"),
 		new /datum/stack_recipe("glamour arrow", /obj/item/arrow/standard/glamour, 1, time = 15 SECONDS, pass_stack_color = FALSE, supplied_material = "[name]")
 	)
+	return recipes
 
 //downstream material, upported to keep cohesion between sprites. Not intended to naturally spawn and require mapping for accessing it
 /datum/material/weathered_agate

@@ -8,8 +8,10 @@
 	item_state = "sucker"
 	slot_flags = SLOT_BELT | SLOT_BACK
 	var/vac_power = 0
-	var/output_dest
-	var/vac_owner = null
+	/// Where sucked-up things go (a relation view: the belly, sleeper or trash bag we feed).
+	var/atom/movable/output_dest
+	/// The mob this attachment is built into (a relation view; the mob owns the attachment through Vac).
+	var/tmp/mob/living/vac_owner
 	var/sucksound = SFX_MACHINES_KITCHEN_CANDYMAKER_CANDYMAKER_MID1
 	var/suckverb = "vacuum"
 	var/suckanim = TRUE
@@ -33,7 +35,7 @@ TYPE_TABLE_DECLARE(/obj/item/vac_attachment, vac_attachment_settings, list( \
 DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/vac_attachment/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!om_resolve(output_dest))
+	if(!output_dest)
 		apply_setting(user, "output destination")
 		return
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(setting_chosen), title = "Vac Settings", message = "Set your [suckverb] attachment's power level or output mode.", choices = TYPE_TABLE_GET(src, vac_attachment_settings), ask_flags = ASK_CARRIED | ASK_CAPABLE)
@@ -63,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/dogborg/sleeper/S in M.modules)
 					if(istype(S))
-						output_dest = om_handle(S)
+						rel_set(src, "output_dest", S)
 						return
 			to_chat(user, span_warning("Borg belly not found."))
 		if("Trash Bag")
@@ -72,23 +74,23 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/robot_module/M = R.module
 				for(var/obj/item/storage/bag/trash/T in M.modules)
 					if(istype(T))
-						output_dest = om_handle(T)
+						rel_set(src, "output_dest", T)
 						return
 			for(var/obj/item/storage/bag/trash/T in contents_of(user))
 				if(istype(T))
-					output_dest = om_handle(T)
+					rel_set(src, "output_dest", T)
 					return
 			to_chat(user, span_warning("Trash bag not found."))
 		if("Vore Belly")
 			if(user.vore_selected)
-				output_dest = om_handle(user.vore_selected)
+				rel_set(src, "output_dest", user.vore_selected)
 
 /obj/item/vac_attachment/afterattack(atom/target, mob/living/user, proximity)
 	if(vac_power < 1)
 		return
 	if(!proximity)
 		return
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = output_dest
 	if(!output_atom)
 		return
 	var/mob/living/attachment_holder //If we have someone holding the vac_attachment, so we don't suck them up by mistake.
@@ -99,7 +101,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 		if(get_turf(output_atom) != get_turf(user))
 			vac_power = 0
 			icon_state = "sucker-0"
-			output_dest = null
+			rel_clear(src, "output_dest")
 			to_chat(user, span_warning("Trash bag not found. Shutting down."))
 			return
 		var/obj/item/storage/bag/trash/B = output_atom
@@ -125,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				return
 			vac_power = 0
 			icon_state = "sucker-0"
-			output_dest = null
+			rel_clear(src, "output_dest")
 			to_chat(user, span_warning("Target destination not found. Shutting down."))
 			return
 	if(istype(target,/obj/structure/window) || istype(target,/obj/structure/grille))
@@ -270,7 +272,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = output_dest
 
 	if(vac_owner) //Embedded vacs have special handling.
 		var/turf/item_turf = get_turf(src)
@@ -287,7 +289,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
 	if(target_turf && target.loc != target_turf)
 		return
-	var/atom/movable/output_atom = om_resolve(output_dest)
+	var/atom/movable/output_atom = output_dest
 
 	if(vac_owner)
 		var/turf/item_turf = get_turf(src)
@@ -415,4 +417,3 @@ EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
 )
 
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.
-DECLARE_REF(/obj/item/vac_attachment/swoopie, "vac_owner", BACK, "Vac")

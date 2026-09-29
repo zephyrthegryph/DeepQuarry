@@ -1926,7 +1926,7 @@
 	)
 
 // Some snapshot targets deliberately leave things behind: the generic arcade replaces
-// itself with a random game, an APC spills its cell (DECLARE_REF(..., SPILL)). Those are the test's.
+// itself with a random game, an APC spills its cell (OWN_SPILL). Those are the test's.
 /datum/unit_test/dq_interaction_domain_snapshot/i7_bulk/Run()
 	..()
 	own_turf_contents(test_floor())

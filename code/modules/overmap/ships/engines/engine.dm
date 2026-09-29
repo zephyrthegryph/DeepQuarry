@@ -2,13 +2,13 @@
 
 /datum/ship_engine
 	var/name = "ship engine"
-	var/tmp/holder_handle	//actual engine object
+	var/tmp/obj/machinery/holder	//actual engine object
 
 REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 
 /datum/ship_engine/New(obj/machinery/_holder)
 	..()
-	holder_handle = om_handle(_holder)
+	rel_set(src, "holder", _holder)
 	join_registries()
 
 /datum/ship_engine/proc/can_burn()
@@ -43,9 +43,9 @@ GLOBAL_LIST_INIT(ship_engine_nominal_status, list("All systems nominal"))
 // ships drop the engine.
 /datum/ship_engine/lifecycle_dematerialize()
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
-		LAZYREMOVE(S.engines, src)
+		rel_remove(S, "engines", src)
 	return ..()
 
-/// LC-refs: actual engine object -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// actual engine object
 /datum/ship_engine/proc/holder() as /obj/machinery
-	return om_resolve(holder_handle)
+	return holder

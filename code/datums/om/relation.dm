@@ -7,6 +7,8 @@
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	if(!source || !target || source == target)
 		return "invalid ends"
+	if((source.datum_flags | target.datum_flags) & DF_DESTROYING)
+		return "deleted" // links to a dying entity are refused (lifecycle phase 0 on)
 	var/datum/om/rec/srec = om_rec_of(source)
 	var/datum/om/rec/trec = om_rec_of(target)
 	if(!srec || !trec)
@@ -25,6 +27,7 @@
 		if(old)
 			if(R.conflict == OM_REL_REFUSE)
 				return "[target] is in use"
+			old.unlink_reason = RELATION_REPLACED
 			om_unlink_edge(old)
 	var/datum/om/edge/edge = new
 	edge.rel = R
@@ -32,6 +35,7 @@
 	edge.target = target
 	LAZYADD(srec.edges, edge)
 	LAZYADD(trec.edges, edge)
+	om_edge_views_link(R, source, target)
 	try
 		R.on_link(source, target, edge)
 	catch(var/exception/e)
@@ -70,6 +74,9 @@
 	om_edge_teardown(edge)
 	if(trec)
 		om_agg_edge_removed(edge, trec)
+	if(!edge.unlink_reason)
+		edge.unlink_reason = deleting ? RELATION_DESTROYING : RELATION_UNLINKED
+	om_edge_views_unlink(R, source, target)
 	try
 		R.on_unlink(source, target, edge)
 	catch(var/exception/e)
@@ -86,10 +93,92 @@
 		om_changed(target, CHANGE_RELATION_REMOVED)
 	edge.source = null
 	edge.target = null
+	if(R.derived_view)
+		if(!QDELETED(source) && hascall(source, R.derived_view))
+			call(source, R.derived_view)()
 	if(deleting == source && R.on_source_delete == OM_END_DELETE_OTHER && !QDELETED(target))
 		qdel(target)
 	else if(deleting == target && R.on_target_delete == OM_END_DELETE_OTHER && !QDELETED(source))
 		qdel(source)
+
+/// Framework-maintained view vars and the list-undo list, on link.
+/proc/om_edge_views_link(datum/om/relation/R, datum/source, datum/target)
+	if(R.source_view)
+		source.vars[R.source_view] = target // ALLOW(api, ownership): relation view
+		own_field_changed(source, R.source_view)
+	if(R.target_view)
+		target.vars[R.target_view] = source // ALLOW(api, ownership): relation view
+		own_field_changed(target, R.target_view)
+	if(R.undo_list)
+		var/list/L = target.vars[R.undo_list]
+		if(!islist(L))
+			L = list()
+			target.vars[R.undo_list] = L // ALLOW(api, ownership): relation list-undo
+			own_field_changed(target, R.undo_list)
+		L |= source
+	if(R.derived_view && hascall(source, R.derived_view))
+		call(source, R.derived_view)()
+
+/// The inverse of om_edge_views_link(): a view is cleared only while it still names the partner.
+/proc/om_edge_views_unlink(datum/om/relation/R, datum/source, datum/target)
+	if(R.source_view && source.vars[R.source_view] == target)
+		source.vars[R.source_view] = null // ALLOW(api, ownership): relation view
+		own_field_changed(source, R.source_view)
+	if(R.target_view && target.vars[R.target_view] == source)
+		target.vars[R.target_view] = null // ALLOW(api, ownership): relation view
+		own_field_changed(target, R.target_view)
+	if(R.undo_list)
+		var/list/L = target.vars[R.undo_list]
+		if(islist(L))
+			L -= source
+			if(!length(L))
+				target.vars[R.undo_list] = null // ALLOW(api, ownership): relation list-undo
+				own_field_changed(target, R.undo_list)
+
+/// A member leaves through its own domain proc: the relation's on_member_leave() runs, then the
+/// edge between `member` and `other` (either direction) is unlinked with RELATION_LEFT.
+/proc/om_leave(datum/member, rel_path, datum/other)
+	var/datum/om/relation/R = om_registry().relation(rel_path)
+	for(var/datum/om/edge/edge as anything in member?.om_rec?.edges)
+		if(edge.rel != R)
+			continue
+		if(other && edge.source != other && edge.target != other)
+			continue
+		try
+			R.on_member_leave(edge.source, edge.target, member)
+		catch(var/exception/e)
+			dq_report_caught(e, "[R.type] on_member_leave")
+		edge.unlink_reason = RELATION_LEFT
+		om_unlink_edge(edge)
+		return TRUE
+	return FALSE
+
+/// z-level release: every REF view naming a turf on `z` is cleared, and every rich edge with a
+/// turf end on `z` is unlinked (RELATION_Z_RELEASED). Movables on the z-level drop their own
+/// edges when they are destroyed.
+/proc/om_drop_z(z)
+	om_z_generation_bump(z)
+	. = rel_drop_z(z)
+	for(var/turf/T as anything in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
+		for(var/datum/om/edge/edge as anything in T.om_rec?.edges?.Copy())
+			edge.unlink_reason = RELATION_Z_RELEASED
+			om_unlink_edge(edge)
+			.++
+
+/// Per z-level: bumped each time the level is released (om_drop_z()), carried in turf handles.
+GLOBAL_LIST_EMPTY(om_z_generations)
+
+/proc/om_z_generation(z)
+	var/list/gens = GLOB.om_z_generations
+	return (z > 0 && z <= length(gens)) ? gens[z] : 0
+
+/proc/om_z_generation_bump(z)
+	if(z <= 0)
+		return
+	var/list/gens = GLOB.om_z_generations
+	if(length(gens) < z)
+		gens.len = z
+	gens[z] = (gens[z] || 0) + 1
 
 /proc/om_edge_from(datum/om/rec/rec, datum/om/relation/R, as_source)
 	for(var/datum/om/edge/edge as anything in rec.edges)
@@ -98,7 +187,7 @@
 	return null
 
 /// Targets of `E`'s edges of this relation (E is the source).
-/proc/om_related(datum/E, rel_path)
+/proc/linked(datum/E, rel_path)
 	. = list()
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
@@ -106,7 +195,7 @@
 			. += edge.target
 
 /// Sources of edges of this relation pointing at `E` (E is the target): its members.
-/proc/om_related_to(datum/E, rel_path)
+/proc/linked_to(datum/E, rel_path)
 	. = list()
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
@@ -114,7 +203,7 @@
 			. += edge.source
 
 /// The single target of `E`'s edge of this relation, or null.
-/proc/om_relation_of(datum/E, rel_path)
+/proc/link_of(datum/E, rel_path)
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
 		if(edge.rel == R && edge.source == E)
@@ -123,7 +212,7 @@
 
 /// The single source of an edge of this relation targeting `E`, or null.
 /// Pair with a target_single relation (at most one exists to find).
-/proc/om_source_of(datum/E, rel_path)
+/proc/link_source_of(datum/E, rel_path)
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	for(var/datum/om/edge/edge as anything in E?.om_rec?.edges)
 		if(edge.rel == R && edge.target == E)
@@ -141,10 +230,10 @@
 
 /proc/om_edge_setup(datum/om/edge/edge)
 	var/datum/om/relation/R = edge.rel
-	if(R.compiled_active_if || R.compiled_break_if)
+	if(R.compiled_active_if || R.compiled_holds_while)
 		var/datum/om/behaviour/B = om_registry().edge_behaviour
 		om_attach(edge, B)
-		var/mask = (R.compiled_active_if?.depends_on || 0) | (R.compiled_break_if?.depends_on || 0)
+		var/mask = (R.compiled_active_if?.depends_on || 0) | (R.compiled_holds_while?.depends_on || 0)
 		if(mask)
 			om_watch(edge, edge.source, mask, B)
 			om_watch(edge, edge.target, mask, B)
@@ -162,7 +251,8 @@
 	var/datum/target = edge.target
 	if(!source || !target)
 		return
-	if(R.compiled_break_if && !isnull(R.compiled_break_if.why_not(source, target)))
+	if(R.compiled_holds_while && !isnull(R.compiled_holds_while.why_not(source, target)))
+		edge.unlink_reason = RELATION_BROKEN
 		om_unlink_edge(edge)
 		return
 	var/want = !R.compiled_active_if || isnull(R.compiled_active_if.why_not(source, target))
@@ -297,115 +387,115 @@
 //
 // One proc per relation end, typed so reads chain (M.buckled_to()?.loc). They
 // replaced the BUCKLED()/PULLING()/... accessor macros; tools/ci/check_ratchets.sh
-// bans the macros and bare om_relation_of() outside code/datums/om.
+// bans the macros and bare link_of() outside code/datums/om.
 
 /// Was BUCKLED().
 /mob/proc/buckled_to() as /atom/movable
-	return om_relation_of(src, /datum/om/relation/buckled_to)
+	return link_of(src, /datum/om/relation/buckled_to)
 
 /// Was BUCKLED_MOBS().
 /atom/movable/proc/buckled_mob_list() as /list
-	return om_related_to(src, /datum/om/relation/buckled_to)
+	return linked_to(src, /datum/om/relation/buckled_to)
 
 /// Was PULLING().
 /mob/proc/pulling_target() as /atom/movable
-	return om_relation_of(src, /datum/om/relation/pulling)
+	return link_of(src, /datum/om/relation/pulling)
 
 /// A wheelchair pulls too (relaymove()); declared here rather than on /atom/movable.
 /obj/structure/bed/chair/wheelchair/proc/pulling_target() as /atom/movable
-	return om_relation_of(src, /datum/om/relation/pulling)
+	return link_of(src, /datum/om/relation/pulling)
 
 /// Was PULLED_BY().
 /atom/movable/proc/pulled_by_mob() as /mob/living
-	return om_source_of(src, /datum/om/relation/pulling)
+	return link_source_of(src, /datum/om/relation/pulling)
 
 /// Was GRABBED_BY().
 /mob/proc/grabbed_by_list() as /list
-	return om_related_to(src, /datum/om/relation/grabbing)
+	return linked_to(src, /datum/om/relation/grabbing)
 
 /// Was EYE_OWNER().
 /mob/observer/eye/proc/eye_owner() as /mob
-	return om_relation_of(src, /datum/om/relation/eye_of)
+	return link_of(src, /datum/om/relation/eye_of)
 
 /// Was EYES_OF().
 /mob/living/proc/eyes_list() as /list
-	return om_related_to(src, /datum/om/relation/eye_of)
+	return linked_to(src, /datum/om/relation/eye_of)
 
 /// Was ACTIVE_EYE().
 /mob/proc/active_eye() as /mob/observer/eye
-	return om_relation_of(src, /datum/om/relation/active_eye)
+	return link_of(src, /datum/om/relation/active_eye)
 
 /// Was GRAB_TARGET().
 /obj/item/grab/proc/grab_target() as /mob/living
-	return om_relation_of(src, /datum/om/relation/grabbing)
+	return link_of(src, /datum/om/relation/grabbing)
 
 /// Was ORBIT_TARGET().
 /atom/movable/proc/orbit_target() as /atom/movable
-	return om_relation_of(src, /datum/om/relation/orbiting)
+	return link_of(src, /datum/om/relation/orbiting)
 
 /// Was ORBITERS().
 /atom/movable/proc/orbiter_list() as /list
-	return om_related_to(src, /datum/om/relation/orbiting)
+	return linked_to(src, /datum/om/relation/orbiting)
 
 /// Was LEASH_PET().
 /obj/item/leash/proc/leash_pet() as /mob/living
-	return om_source_of(src, /datum/om/relation/leashed_to)
+	return link_source_of(src, /datum/om/relation/leashed_to)
 
 /// Was LEASH_MASTER().
 /obj/item/leash/proc/leash_master() as /mob/living
-	return om_relation_of(src, /datum/om/relation/leash_held_by)
+	return link_of(src, /datum/om/relation/leash_held_by)
 
 /// Was LEASH_OF().
 /mob/living/proc/leash_item() as /obj/item
-	return om_relation_of(src, /datum/om/relation/leashed_to)
+	return link_of(src, /datum/om/relation/leashed_to)
 
 /// Was TETHERED_HANDHELD().
 /obj/item/proc/tethered_handheld() as /obj/item
-	return om_source_of(src, /datum/om/relation/tethered_to)
+	return link_source_of(src, /datum/om/relation/tethered_to)
 
 /// Was TETHER_HOST().
 /obj/item/proc/tether_host() as /obj/item
-	return om_relation_of(src, /datum/om/relation/tethered_to)
+	return link_of(src, /datum/om/relation/tethered_to)
 
 /// Was FOLLOWING().
 /mob/observer/proc/following_target() as /atom/movable
-	return om_relation_of(src, /datum/om/relation/following)
+	return link_of(src, /datum/om/relation/following)
 
 /// Was FOLLOWERS().
 /mob/proc/follower_list() as /list
-	return om_related_to(src, /datum/om/relation/following)
+	return linked_to(src, /datum/om/relation/following)
 
 /// Was BORER_HOST().
 /mob/living/simple_mob/animal/borer/proc/borer_host() as /mob/living/carbon/human
-	return om_relation_of(src, /datum/om/relation/host_of)
+	return link_of(src, /datum/om/relation/host_of)
 
 /// Was BORER_OF().
 /mob/living/carbon/human/proc/borer_of() as /mob/living/simple_mob/animal/borer
-	return om_source_of(src, /datum/om/relation/host_of)
+	return link_source_of(src, /datum/om/relation/host_of)
 
 /// Was BS_TX_TARGET().
 /obj/item/radio/proc/bs_tx_target() as /obj/machinery/telecomms
-	return om_relation_of(src, /datum/om/relation/bluespace_tx_to)
+	return link_of(src, /datum/om/relation/bluespace_tx_to)
 
 /// Was BS_TX_RADIOS().
 /obj/machinery/telecomms/proc/bs_tx_radios() as /list
-	return om_related_to(src, /datum/om/relation/bluespace_tx_to)
+	return linked_to(src, /datum/om/relation/bluespace_tx_to)
 
 /// Was BS_RX_SOURCE().
 /obj/item/radio/proc/bs_rx_source() as /obj/machinery/telecomms
-	return om_relation_of(src, /datum/om/relation/bluespace_rx_from)
+	return link_of(src, /datum/om/relation/bluespace_rx_from)
 
 /// Was BS_RX_RADIOS().
 /obj/machinery/telecomms/proc/bs_rx_radios() as /list
-	return om_related_to(src, /datum/om/relation/bluespace_rx_from)
+	return linked_to(src, /datum/om/relation/bluespace_rx_from)
 
 /// Was GRIPPER_HELD().
 /obj/item/gripper/proc/gripper_held() as /obj/item
-	return om_relation_of(src, /datum/om/relation/gripper_holding)
+	return link_of(src, /datum/om/relation/gripper_holding)
 
 /// Was UAV_MASTERS().
 /obj/item/uav/proc/uav_masters() as /list
-	return om_related_to(src, /datum/om/relation/uav_master)
+	return linked_to(src, /datum/om/relation/uav_master)
 
 /// The mob holding grab item src (the grab lives in the assailant's hand), or null. Was GRAB_ASSAILANT().
 /obj/item/grab/proc/grab_assailant() as /mob/living/carbon/human

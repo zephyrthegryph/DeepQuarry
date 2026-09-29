@@ -38,7 +38,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	system.kind = FLIGHT_DEST_SYSTEM
 	system.body_radius = 5
 	system.body_color = "#ffd36a"
-	destinations[system.id] = system
+	own_put(src, "destinations", system.id, system)
 	for(var/obj/effect/overmap/visitable/target as anything in REGISTRY_MEMBERS(REGISTRY_OVERMAP_VISITABLES))
 		register_destination(target)
 	normalize_celestial_hierarchy()
@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	var/base = "[prefix]-[safe]"
 	var/candidate = base
 	var/suffix = 2
-	while(destinations[candidate] || vessels[candidate])
+	while(destinations?[candidate] || vessels?[candidate])
 		candidate = "[base]-[suffix++]"
 	return candidate
 
@@ -73,12 +73,12 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		return null
 	var/existing_id = destination_by_target[REF(target)]
 	if(existing_id)
-		return destinations[existing_id]
+		return destinations?[existing_id]
 	var/datum/flight_destination/destination = new
 	destination.id = make_id("destination", target.name)
 	destination.name = target.name
 	destination.description = target.desc
-	destination.target_handle = om_handle(target)
+	rel_set(destination, "target", target)
 	if(istype(target, /obj/effect/overmap/visitable/planet))
 		destination.kind = FLIGHT_DEST_SURFACE
 		destination.orbit_parent_id = "system-vir"
@@ -103,27 +103,28 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	if(istype(target, /obj/effect/overmap/visitable/ship/exploration_carrier))
 		destination.orbit_radius = 19
 		destination.orbit_phase = 42
-	destinations[destination.id] = destination
-	destination_by_target[REF(target)] = destination.id
+	own_put(src, "destinations", destination.id, destination)
+	var/target_ref = REF(target) // lookup keyed by ref string: plain data
+	destination_by_target[target_ref] = destination.id
 	return destination
 
 /datum/world_service/flight/proc/first_planet_id()
 	for(var/id in destinations)
-		var/datum/flight_destination/destination = destinations[id]
+		var/datum/flight_destination/destination = destinations?[id]
 		if(destination.kind == FLIGHT_DEST_SURFACE)
 			return destination.id
 	return "system-vir"
 
 /datum/world_service/flight/proc/planet_id_named(planet_name)
 	for(var/id in destinations)
-		var/datum/flight_destination/destination = destinations[id]
+		var/datum/flight_destination/destination = destinations?[id]
 		if(destination.kind == FLIGHT_DEST_SURFACE && lowertext(destination.name) == lowertext(planet_name))
 			return destination.id
 	return null
 
 /datum/world_service/flight/proc/destination_id_named(destination_name)
 	for(var/id in destinations)
-		var/datum/flight_destination/destination = destinations[id]
+		var/datum/flight_destination/destination = destinations?[id]
 		if(lowertext(destination.name) == lowertext(destination_name))
 			return destination.id
 	return null
@@ -131,7 +132,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/normalize_celestial_hierarchy()
 	var/sif_id = planet_id_named("Sif") || first_planet_id()
 	for(var/id in destinations)
-		var/datum/flight_destination/destination = destinations[id]
+		var/datum/flight_destination/destination = destinations?[id]
 		if(destination.kind == FLIGHT_DEST_STATION)
 			destination.orbit_parent_id = sif_id
 		else if(destination.kind == FLIGHT_DEST_VESSEL || destination.kind == FLIGHT_DEST_ORBIT)
@@ -140,12 +141,12 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 
 /datum/world_service/flight/proc/seed_expedition_catalog()
 	for(var/id in destinations.Copy())
-		var/datum/flight_destination/planet = destinations[id]
+		var/datum/flight_destination/planet = destinations?[id]
 		if(planet.kind != FLIGHT_DEST_SURFACE)
 			continue
 		var/site_count = 0
 		for(var/site_id in destinations)
-			var/datum/flight_destination/site_destination = destinations[site_id]
+			var/datum/flight_destination/site_destination = destinations?[site_id]
 			if(site_destination.kind == FLIGHT_DEST_EXPEDITION && site_destination.orbit_parent_id == planet.id)
 				site_count++
 		while(site_count < 4)
@@ -163,34 +164,34 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/register_expedition(datum/expedition_site/site)
 	if(!site || QDELETED(site))
 		return null
-	if(site.flight_destination_id && destinations[site.flight_destination_id])
-		return destinations[site.flight_destination_id]
+	if(site.flight_destination_id && destinations?[site.flight_destination_id])
+		return destinations?[site.flight_destination_id]
 	var/datum/flight_destination/destination = new
 	destination.id = make_id("expedition", site.name)
 	destination.name = site.name
 	destination.description = site.mission?.desc || "A procedurally surveyed expedition site."
 	destination.kind = FLIGHT_DEST_EXPEDITION
-	destination.expedition_handle = om_handle(site)
-	destination.target_handle = om_handle(site.overmap_sector())
+	rel_set(destination, "expedition", site)
+	rel_set(destination, "target", site.overmap_sector())
 	destination.required_capabilities = FLIGHT_CAP_EXPEDITION | FLIGHT_CAP_LAND
 	destination.orbit_parent_id = site.parent_destination_id || first_planet_id()
 	destination.body_radius = 0.45
 	destination.body_color = "#ffc45c"
 	destination.surface_latitude = rand(-75, 75)
 	destination.surface_longitude = rand(-180, 180)
-	destinations[destination.id] = destination
+	own_put(src, "destinations", destination.id, destination)
 	if(destination.target())
 		destination_by_target[REF(destination.target())] = destination.id
 	site.flight_destination_id = destination.id
 	return destination
 
 /datum/world_service/flight/proc/unregister_destination(id)
-	var/datum/flight_destination/destination = destinations[id]
+	var/datum/flight_destination/destination = destinations?[id]
 	if(!destination)
 		return
 	if(destination.target())
 		destination_by_target -= REF(destination.target())
-	destinations -= id
+	own_take_member(src, "destinations", id)
 	qdel(destination)
 
 /datum/world_service/flight/proc/destination_for_target(atom/target)
@@ -198,31 +199,32 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	if(!target)
 		return null
 	var/id = destination_by_target[REF(target)]
-	return destinations[id]
+	return destinations?[id]
 
 /datum/world_service/flight/proc/register_vessel(obj/effect/overmap/visitable/ship/ship)
 	if(!ship || QDELETED(ship))
 		return null
 	var/existing_id = vessel_by_ship[REF(ship)]
 	if(existing_id)
-		var/datum/flight_vessel/existing = vessels[existing_id]
+		var/datum/flight_vessel/existing = vessels?[existing_id]
 		if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 			var/obj/effect/overmap/visitable/ship/landable/landable = ship
-			existing.shuttle_handle = om_handle(SSshuttles.shuttles[landable.shuttle])
+			rel_set(existing, "shuttle", SSshuttles.shuttles[landable.shuttle])
 			if(existing.shuttle())
 				existing.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
 		return existing
 	var/datum/flight_vessel/vessel = new
 	vessel.id = make_id("vessel", ship.name)
 	vessel.name = ship.name
-	vessel.ship_handle = om_handle(ship)
+	rel_set(vessel, "ship", ship)
 	vessel.capabilities = FLIGHT_CAP_STRATEGIC | FLIGHT_CAP_DOCK
 	if(istype(ship, /obj/effect/overmap/visitable/ship/landable))
 		var/obj/effect/overmap/visitable/ship/landable/landable = ship
-		vessel.shuttle_handle = om_handle(SSshuttles.shuttles[landable.shuttle])
+		rel_set(vessel, "shuttle", SSshuttles.shuttles[landable.shuttle])
 		vessel.capabilities |= FLIGHT_CAP_LAND | FLIGHT_CAP_EXPEDITION
-	vessels[vessel.id] = vessel
-	vessel_by_ship[REF(ship)] = vessel.id
+	own_put(src, "vessels", vessel.id, vessel)
+	var/ship_ref = REF(ship) // lookup keyed by ref string: plain data
+	vessel_by_ship[ship_ref] = vessel.id
 	ship.flight_vessel_id = vessel.id
 	register_destination(ship)
 	var/obj/effect/overmap/visitable/physical_target
@@ -234,7 +236,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle().current_location())
 		if(current_port)
 			vessel.docked_port_id = current_port.id
-			current_port.occupied_by_handle = om_handle(vessel)
+			rel_set(current_port, "occupied_by", vessel)
 	else if(istype(ship, /obj/effect/overmap/visitable/ship/exploration_carrier))
 		vessel.orbit_parent_id = planet_id_named("Sif") || first_planet_id()
 		vessel.docked_port_id = null
@@ -243,7 +245,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/world_service/flight/proc/sync_vessel_destinations()
 	var/sif_id = planet_id_named("Sif") || first_planet_id()
 	for(var/id in vessels)
-		var/datum/flight_vessel/vessel = vessels[id]
+		var/datum/flight_vessel/vessel = vessels?[id]
 		var/datum/flight_destination/destination = destination_for_target(vessel.ship())
 		if(!destination)
 			continue
@@ -262,9 +264,7 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 			destination.orbit_period = 600
 
 /datum/world_service/flight/proc/register_mapped_ports()
-	for(var/id in ports)
-		qdel(ports[id])
-	ports.Cut()
+	own_clear(src, "ports", OWN_DELETE)
 	port_by_landmark.Cut()
 	if(length(using_map.station_levels))
 		var/station_z = using_map.station_levels[1]
@@ -300,69 +300,70 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 		port.name = landmark.name
 		port.host_destination_id = host_id
 		port.serves_destination_ids = list(host_id)
-		port.landmark_handle = om_handle(landmark)
+		rel_set(port, "landmark", landmark)
 		if(host_id == station_id)
 			port.berth_group = "southern-cross-hangar-three"
-		ports[port.id] = port
-		port_by_landmark[REF(landmark)] = port.id
+		own_put(src, "ports", port.id, port)
+		var/landmark_ref = REF(landmark) // lookup keyed by ref string: plain data
+		port_by_landmark[landmark_ref] = port.id
 
 /datum/world_service/flight/proc/sync_vessel_ports()
 	for(var/id in ports)
-		var/datum/flight_port/port = ports[id]
-		port.occupied_by_handle = null
+		var/datum/flight_port/port = ports?[id]
+		rel_clear(port, "occupied_by")
 	for(var/id in vessels)
-		var/datum/flight_vessel/vessel = vessels[id]
+		var/datum/flight_vessel/vessel = vessels?[id]
 		if(istype(vessel.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier))
 			vessel.docked_port_id = null
 			continue
 		var/datum/flight_port/current_port = port_for_landmark(vessel.shuttle()?.current_location())
 		vessel.docked_port_id = current_port?.id
 		if(current_port)
-			current_port.occupied_by_handle = om_handle(vessel)
+			rel_set(current_port, "occupied_by", vessel)
 
 /datum/world_service/flight/proc/port_for_landmark(obj/effect/shuttle_landmark/landmark)
-	return ports[port_by_landmark[REF(landmark)]]
+	return ports?[port_by_landmark[REF(landmark)]]
 
 /datum/world_service/flight/proc/reserve_arrival_port(datum/flight_plan/plan)
 	if(!plan?.vessel?.shuttle())
 		return null
 	for(var/id in ports)
-		var/datum/flight_port/port = ports[id]
+		var/datum/flight_port/port = ports?[id]
 		if(!port.serves(plan.destination().id) || !port.can_accept(plan.vessel, plan))
 			continue
-		port.reserved_by_handle = om_handle(plan)
+		rel_set(port, "reserved_by", plan)
 		return port
 	return null
 
 /datum/world_service/flight/proc/set_vessel_docked_port(datum/flight_vessel/vessel, datum/flight_port/new_port)
 	if(!vessel)
 		return
-	var/datum/flight_port/old_port = ports[vessel.docked_port_id]
+	var/datum/flight_port/old_port = ports?[vessel.docked_port_id]
 	if(old_port?.occupied_by() == vessel)
-		old_port.occupied_by_handle = null
+		rel_clear(old_port, "occupied_by")
 	vessel.docked_port_id = new_port?.id
 	if(new_port)
-		new_port.occupied_by_handle = om_handle(vessel)
+		rel_set(new_port, "occupied_by", vessel)
 
 /datum/world_service/flight/proc/vessel_for_ship(obj/effect/overmap/visitable/ship/ship)
 	var/id = ship?.flight_vessel_id || vessel_by_ship[REF(ship)]
-	return vessels[id]
+	return vessels?[id]
 
 /datum/world_service/flight/proc/create_plan(datum/flight_vessel/vessel, destination_id)
-	var/datum/flight_destination/destination = destinations[destination_id]
+	var/datum/flight_destination/destination = destinations?[destination_id]
 	if(!vessel || !destination?.is_available() || vessel.active_plan)
 		return null
 	if(destination.expedition())
 		var/datum/expedition_site/site = destination.expedition()
 		if(site.assigned_flight_vessel() && site.assigned_flight_vessel() != vessel)
 			return null
-		site.assigned_flight_vessel_handle = om_handle(vessel)
-		site.assigned_shuttle_handle = om_handle(vessel.shuttle())
-		vessel.active_expedition_handle = om_handle(site)
-	var/datum/flight_destination/origin = destinations[vessel.current_destination_id()]
+		rel_set(site, "assigned_flight_vessel", vessel)
+		rel_set(site, "assigned_shuttle", vessel.shuttle())
+		rel_set(vessel, "active_expedition", site)
+	var/datum/flight_destination/origin = destinations?[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
-	vessel.active_plan = plan
-	plans[plan.id] = plan
+	own_set(vessel, "active_plan", plan) // the vessel owns its active plan; plans is the service's id lookup
+	own_put(src, "plans", plan.id, plan)
 	return plan
 
 /datum/world_service/flight/service_step(resumed)
@@ -372,9 +373,9 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	while(length(current_run))
 		var/id = current_run[length(current_run)]
 		current_run.len--
-		var/datum/flight_plan/plan = plans[id]
+		var/datum/flight_plan/plan = plans?[id]
 		if(!plan || QDELETED(plan))
-			plans -= id
+			own_take_member(src, "plans", id)
 			continue
 		process_plan(plan)
 		if(TICK_CHECK)
@@ -496,9 +497,10 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 	return null
 
 /datum/world_service/flight/proc/finish_plan(datum/flight_plan/plan)
-	plans -= plan.id
+	own_take_member(src, "plans", plan.id)
 	if(plan.vessel?.active_plan == plan)
-		plan.vessel.active_plan = null
+		own_clear(plan.vessel, "active_plan", OWN_DELETE)
+		return
 	qdel(plan)
 
 /datum/world_service/flight/stat_line()
@@ -513,6 +515,3 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/om/behaviour/world/flight/service()
 	return GLOB.flight_service
 
-DECLARE_REF(/datum/world_service/flight, "destinations", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/flight, "vessels", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/flight, "plans", OWNED_VALUES, null)

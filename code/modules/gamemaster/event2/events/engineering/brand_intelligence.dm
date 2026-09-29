@@ -15,21 +15,21 @@
 
 	var/list/vending_machines // List of venders that can potentially be infected.
 	var/list/infected_vending_machines // List of venders that have been infected.
-	var/tmp/vender_zero_handle	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
+	var/tmp/obj/machinery/vending/vender_zero	// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 	COOLDOWN_DECLARE(malware_spread_cooldown_until)
 
 /datum/event2/event/brand_intelligence/set_up()
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(V.z in using_map.station_levels))
 			continue
-		LAZYADD(vending_machines, V)
+		rel_add(src, "vending_machines", V)
 
 	if(!length(vending_machines))
 		log_game("Brand intelligence event: Could not find any vending machines on station Z levels. Aborting.")
 		abort()
 		return
 
-	vender_zero_handle = om_handle(DEFAULTPICK(vending_machines, null))
+	rel_set(src, "vender_zero", DEFAULTPICK(vending_machines, null))
 
 /datum/event2/event/brand_intelligence/announce()
 	if(prob(90))
@@ -76,19 +76,19 @@
 		cure_vender(vender)
 
 /datum/event2/event/brand_intelligence/proc/infect_vender(obj/machinery/vending/V)
-	LAZYREMOVE(vending_machines, V)
-	LAZYADD(infected_vending_machines, V)
+	rel_remove(src, "vending_machines", V)
+	rel_add(src, "infected_vending_machines", V)
 	V.shut_up = FALSE
 	V.shoot_inventory = TRUE
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
-	LAZYREMOVE(infected_vending_machines, V)
+	rel_remove(src, "infected_vending_machines", V)
 	V.shut_up = TRUE
 	V.shoot_inventory = FALSE
 
 /datum/event2/event/brand_intelligence/proc/can_propagate(obj/machinery/vending/V)
 	return V && V.shut_up == FALSE
 
-/// LC-refs: The first vending machine infected. If that one gets fixed, all other infected machines will be cured. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The first vending machine infected. If that one gets fixed, all other infected machines will be cured.
 /datum/event2/event/brand_intelligence/proc/vender_zero() as /obj/machinery/vending
-	return om_resolve(vender_zero_handle)
+	return vender_zero

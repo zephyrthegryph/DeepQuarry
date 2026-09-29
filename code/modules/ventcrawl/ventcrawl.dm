@@ -214,4 +214,3 @@ TYPE_TABLE_DECLARE(/mob/living, ventcrawl_get_item_whitelist, list( \
 
 	pipes_shown.len = 0
 
-DECLARE_REF(/mob/living, "pipes_shown", OWNED_LIST, null)
