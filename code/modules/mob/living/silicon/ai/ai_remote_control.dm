@@ -64,7 +64,7 @@
 			target.first_transfer = FALSE
 			target.copy_from_prefs_vr()
 			if(LAZYLEN(target.vore_organs))
-				own_set(target, "vore_selected", target.vore_organs[1])
+				rel_set(target, "vore_selected", target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
 		rel_set(src, "teleop", target) // So the AI 'hears' messages near its core.
 		target.post_deploy()

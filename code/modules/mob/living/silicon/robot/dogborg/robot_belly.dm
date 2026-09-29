@@ -28,7 +28,7 @@
 	R.buckle_lying = FALSE
 	R.max_buckled_mobs = 1
 	if(!R.riding_datum)
-		R.riding_datum = new /datum/riding/dogborg(R)
+		own_set(R, "riding_datum", new /datum/riding/dogborg(R))
 	om_hook(R, /datum/om/event/mob_death, src, PROC_REF(on_death))
 	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
 	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
@@ -41,7 +41,7 @@
 			bag.dropped(R)
 		for(var/rider in R.buckled_mob_list())
 			R.riding_datum?.force_dismount(rider)
-		QDEL_NULL(R.riding_datum)
+		own_clear(R, "riding_datum", OWN_DELETE)
 		R.can_buckle = initial(R.can_buckle)
 	..()
 

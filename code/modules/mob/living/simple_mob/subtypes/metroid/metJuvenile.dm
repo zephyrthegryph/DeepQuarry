@@ -62,7 +62,7 @@
 
 	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()
-		prey_excludes.Cut()
+		rel_clear(src, "prey_excludes")
 		stop_consumption()
 
 	else

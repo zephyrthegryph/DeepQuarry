@@ -27,7 +27,7 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// The event carries the moving atom itself (emitted synchronously, never stored).
-	var/atom/echo_source = event.handle
+	var/atom/echo_source = event.source
 	var/turf/T = event.echo_turf_location
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return

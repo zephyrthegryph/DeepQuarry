@@ -1,10 +1,11 @@
 /mob/living/carbon/Initialize(mapload)
 	. = ..()
 	//setup reagent holders
-	own_set(src, "bloodstr", new/datum/reagents/metabolism/bloodstream(500, src)) // ALLOW(decl): holder takes constructor args
+	// The bloodstream is the carbon's owned `reagents`; `bloodstr` is a relation alias of it.
+	own_set(src, "reagents", new/datum/reagents/metabolism/bloodstream(500, src)) // ALLOW(decl): holder takes constructor args
+	rel_set(src, "bloodstr", reagents)
 	own_set(src, "ingested", new/datum/reagents/metabolism/ingested(500, src)) // ALLOW(decl): holder takes constructor args
 	own_set(src, "touching", new/datum/reagents/metabolism/touch(500, src)) // ALLOW(decl): holder takes constructor args
-	reagents = bloodstr
 	if (!default_language && species_language)
 		default_language = GLOB.all_languages[species_language]
 

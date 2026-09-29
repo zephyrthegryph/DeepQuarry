@@ -11,7 +11,7 @@
 	own_set(src, "aiEye", new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
 	rel_set(aiEye, "screen", src)
 
-// ALLOW(ownership_cycle): type-level only; a pic_in_pic window is never one of its own eye's hud elements.
+// No ownership cycle: a pic_in_pic window is never one of its own eye's hud elements.
 // The AI names its windows through relations (multicam_screens, master_multicam), cleared when a window dies.
 
 // the AI loses this multicam window.

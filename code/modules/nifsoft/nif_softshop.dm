@@ -18,9 +18,7 @@
 /obj/machinery/vending/nifsoft_shop/Initialize(mapload)
 	. = ..()
 
-	if(wires)
-		qdel(wires)
-	wires = new /datum/wires/vending/no_contraband(src) //These wires can't be hacked for contraband.
+	own_set(src, "wires", new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
 	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
 /obj/machinery/vending/nifsoft_shop/tgui_data(mob/user)

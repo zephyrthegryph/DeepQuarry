@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	for(var/datum/pai_sprite/sprite as anything in subtypesof(/datum/pai_sprite))
 		if(!initial(sprite.sprite_icon) || initial(sprite.hidden))
 			continue
-		pai_chassis_sprites[initial(sprite.name)] = new sprite()
+		own_put(src, "pai_chassis_sprites", initial(sprite.name), new sprite())
 
 	log_world("pAI service initialized: [length(GLOB.pai_software_by_key)] software, [length(pai_chassis_sprites)] chassis.")
 

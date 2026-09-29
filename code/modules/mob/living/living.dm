@@ -44,9 +44,8 @@
 		else
 			var/turf/get_dat_turf = get_turf(src)
 			tf_mob_holder.forceMove(get_dat_turf)
-		// the holder's old bellies go; each leaves tf_mob_holder.vore_organs through the pair
-		for(var/obj/belly/B as anything in tf_mob_holder.vore_organs?.Copy())
-			qdel(B)
+		// the holder's old bellies go (it owns them)
+		own_clear(tf_mob_holder, "vore_organs", OWN_DELETE)
 		tf_mob_holder.mob_belly_transfer(src)
 	if(tf_mob_holder)
 		set_tf_mob_holder(null)

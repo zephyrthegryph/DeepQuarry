@@ -135,7 +135,7 @@
 /mob/living/simple_mob/humanoid/cultist/magus/rift/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
 	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1

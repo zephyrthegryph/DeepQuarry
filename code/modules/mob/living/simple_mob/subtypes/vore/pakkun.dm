@@ -109,7 +109,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
-		LAZYSET(prey_excludes, target, world.time)
+		rel_add(src, "prey_excludes", target)
 		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), target)
 	// DQEdit: legacy if-block emptied.
 
@@ -135,7 +135,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	release_vore_contents()
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))
-			LAZYSET(prey_excludes, L, world.time)
+			rel_add(src, "prey_excludes", L)
 			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
 	return TRUE
 

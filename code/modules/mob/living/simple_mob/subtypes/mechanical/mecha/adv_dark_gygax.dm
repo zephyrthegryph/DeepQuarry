@@ -128,7 +128,7 @@
 	shock_resist = 1
 
 	// Make the energy ball. This is purely visual since the tesla ball is hyper-deadly.
-	energy_ball = new(loc)
+	own_set(src, "energy_ball", new /obj/effect/overlay/energy_ball(loc))
 	energy_ball.adjust_scale(0.5)
 	energy_ball.orbit(src, 32, TRUE, 1 SECOND)
 

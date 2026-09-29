@@ -158,6 +158,6 @@
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	own_set(src, "vore_selected", B)
+	rel_set(src, "vore_selected", B)
 
 // The macrophage's own strain (owned); victims and decals get their own copies.

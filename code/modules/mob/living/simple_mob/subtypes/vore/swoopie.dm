@@ -115,7 +115,7 @@
 	B.belly_fullscreen_color4 = "#CCFFFF"
 	B.belly_fullscreen = "VBO_maw25" //Swoopies have beaks!!
 
-	own_set(src, "vore_selected", B)
+	rel_set(src, "vore_selected", B)
 
 	B = new /obj/belly/longneck(src)
 	B.affects_vore_sprites = TRUE

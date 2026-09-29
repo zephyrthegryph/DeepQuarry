@@ -105,7 +105,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
-				self.prey_excludes.Cut()
+				rel_clear(self, "prey_excludes")
 			GLOB.moth_amount = GLOB.moth_amount + 1
 			self.death_star()
 

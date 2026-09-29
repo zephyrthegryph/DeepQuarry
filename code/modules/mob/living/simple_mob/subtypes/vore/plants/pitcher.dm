@@ -205,7 +205,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		return
 	if(prob(15))
 		user.visible_message(span_notice("[user] pulls a sticky [H] free from \the [src]."), span_infoplain("You heft [H] free from \the [src]."))
-		LAZYSET(prey_excludes, H, world.time)
+		rel_add(src, "prey_excludes", H)
 		vore_selected.release_specific_contents(H)
 		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), H)
 	else

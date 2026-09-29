@@ -662,7 +662,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 						return TRUE
 					var/datum/transhuman/body_record/buf = buffers[bufferId]
 					// Traitgenes Properly clone records
-					disk.stored = new /datum/transhuman/body_record()
+					own_set(disk, "stored", new /datum/transhuman/body_record())
 					disk.stored.init_from_br(buf)
 					disk.stored.mydna.types = DNA2_BUF_UI|DNA2_BUF_UE|DNA2_BUF_SE // DNA disks need to maintain their data
 					disk.name = "Body Design Disk ('[buf.mydna.name]')"
@@ -679,7 +679,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 			// Traitgenes Storing the entire body record
 			if(isnull(disk))
 				return TRUE
-			disk.stored = null
+			own_clear(disk, "stored", OWN_DELETE)
 			return TRUE
 		if("ejectDisk")
 			playsound(src, 'sound/machines/button.ogg', 30, 1, 0)

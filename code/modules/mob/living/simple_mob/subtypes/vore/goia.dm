@@ -390,7 +390,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 /mob/living/simple_mob/vore/zorgoia/Login()
 	. = ..()
 	if(!riding_datum)
-		riding_datum = new /datum/riding/simple_mob(src)
+		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
 	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
 	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0

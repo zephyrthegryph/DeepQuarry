@@ -815,10 +815,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 	T.stop_pulling()
 	if(current_affinity >= 50)
 		var/tumby = vore_selected
-		own_set(src, "vore_selected", friend_zone)
+		rel_set(src, "vore_selected", friend_zone)
 		ai_busy_end()
 		..()
-		own_set(src, "vore_selected", tumby)
+		rel_set(src, "vore_selected", tumby)
 		return
 	else if(current_affinity <= -50)
 		vore_selected.digest_mode = DM_DIGEST
