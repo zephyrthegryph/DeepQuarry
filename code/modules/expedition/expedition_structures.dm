@@ -36,8 +36,16 @@
 
 DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/structure/expedition_survey_beacon/proc/can_log)), \
 )
+
+/// Requirement: the marker hasn't been logged yet (only asked of scanners; other items fall through).
+/obj/structure/expedition_survey_beacon/proc/can_log(mob/user, atom/target, obj/item/held)
+	if(!istype(held, /obj/item/survey_scanner) && !istype(held, /obj/item/analyzer))
+		return TRUE
+	if(scanned)
+		return "[src] has already been logged"
+	return TRUE
 
 /// Old attack_hand.
 /obj/structure/expedition_survey_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
@@ -49,9 +57,6 @@ DECLARE_INTERACTIONS(/obj/structure/expedition_survey_beacon, \
 /obj/structure/expedition_survey_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!istype(W, /obj/item/survey_scanner) && !istype(W, /obj/item/analyzer))
 		return FALSE
-	if(scanned)
-		to_chat(user, span_notice("[src] has already been logged."))
-		return INTERACTION_HANDLED_PASS
 	user.visible_message(
 		span_notice("[user] sweeps [W] across [src]."),
 		span_notice("You begin logging [src]'s readings with [W]...")

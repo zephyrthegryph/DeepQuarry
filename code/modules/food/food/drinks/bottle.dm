@@ -108,8 +108,16 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	INTERACT_SELF(null, PROC_REF(bottle_self)), \
 	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
 	INTERACT_VERB("Smash Bottle", PROC_REF(smash_bottle_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Spin The Bottle", PROC_REF(spin_bottle_effect)), \
+	INTERACT_VERB("Spin The Bottle", PROC_REF(spin_bottle_effect), REQ_TARGET_STATE(/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle)), \
 )
+
+/// Requirement: the bottle lies on the floor (observers and the unconscious are ignored silently by the effect).
+/obj/item/reagent_containers/food/drinks/bottle/proc/can_spin_bottle(mob/user, atom/target, obj/item/held)
+	if(isobserver(user) || user.stat)
+		return TRUE
+	if(!isturf(loc))
+		return "\The [src] needs to be on the floor to spin"
+	return TRUE
 
 /// Old attackby. FALSE falls to the drinks handling, as the old ..() did.
 /obj/item/reagent_containers/food/drinks/bottle/proc/bottle_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -190,10 +198,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 /obj/item/reagent_containers/food/drinks/bottle/proc/spin_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(isobserver(user) || user.stat)
-		return
-
-	if(!isturf(src.loc))
-		to_chat(user, span_notice("\The [src] needs to be on the floor to spin."))
 		return
 
 	var/spin_rotation = (rand(0,359))

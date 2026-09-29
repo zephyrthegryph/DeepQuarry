@@ -44,16 +44,18 @@
 	if(move_trader)
 		move_trader()
 
-DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_trader_hand)), 	INTERACT_ITEM(null, PROC_REF(interaction_trader_item)))
+DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_trader_hand), REQ_TARGET_STATE(/obj/trader/proc/can_trade)), 	INTERACT_ITEM(null, PROC_REF(interaction_trader_item)))
+
+/// Requirement: TRUE, or why no trade can start.
+/obj/trader/proc/can_trade(mob/living/user, atom/target, obj/item/held)
+	if(trading)
+		return "\The [src] is busy with someone else at the moment"
+	if(!length(products))
+		return "\The [src] hasn't got anything to sell"
+	return TRUE
 
 /// Old attack_hand: start a trade with one customer at a time.
 /obj/trader/proc/interaction_trader_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(trading)
-		to_chat(user, span_notice("\The [src] is busy with someone else at the moment..."))
-		return TRUE
-	if(!products.len)
-		to_chat(user, span_notice("\The [src] hasn't got anything to sell."))
-		return TRUE
 	trading = TRUE
 	switch(accepts)
 		if("coin")

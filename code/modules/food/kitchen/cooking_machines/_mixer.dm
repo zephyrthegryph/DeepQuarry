@@ -93,12 +93,16 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	. = ..()
 	.["icon_used"] = off_icon
 
+/// Requirement: something in the bowl to mix.
+/obj/machinery/appliance/mixer/can_toggle_power_verb(mob/user, atom/target, obj/item/held)
+	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
+	if(!CI.container().check_contents())
+		return "there's nothing in it, add ingredients before turning [src] on"
+	return ..()
+
 /obj/machinery/appliance/mixer/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
-	if(!CI.container().check_contents())
-		to_chat(user, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
-		return
 
 	if(has_stat(POWEROFF))//Its turned off
 		stat_remove(POWEROFF)

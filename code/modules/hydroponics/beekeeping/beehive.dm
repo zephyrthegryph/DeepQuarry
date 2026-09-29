@@ -53,12 +53,10 @@
 	id = "beehive_smoke"
 	name = "Smoke bees"
 	held_type = /obj/item/bee_smoker
+	also_requires = list(REQ_FIELD_NOT("closed", "you need to open it with a crowbar before smoking the bees"))
 	effect = /obj/machinery/beehive/proc/interaction_beehive_smoke
 
 /obj/machinery/beehive/proc/interaction_beehive_smoke(mob/user, obj/item/held, datum/interaction/interaction)
-	if(closed)
-		to_chat(user, span_notice("You need to open \the [src] with a crowbar before smoking the bees."))
-		return TRUE
 	user.visible_message(span_notice("[user] smokes the bees in \the [src]."), span_notice("You smoke the bees in \the [src]."))
 	smoked = 30
 	MACHINE_WAKE(src)
@@ -69,18 +67,20 @@
 	id = "beehive_load_frame"
 	name = "Load frame"
 	held_type = /obj/item/honey_frame
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_load_frame))
 	effect = /obj/machinery/beehive/proc/interaction_beehive_load_frame
 
-/obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+/// Requirement: TRUE, or why this frame can't go in.
+/obj/machinery/beehive/proc/can_load_frame(mob/user, atom/target, obj/item/honey_frame/held)
 	if(closed)
-		to_chat(user, span_notice("You need to open \the [src] with a crowbar before inserting \the [held]."))
-		return TRUE
+		return "you need to open \the [src] with a crowbar before inserting \the [held]"
 	if(length(frames) >= maxFrames)
-		to_chat(user, span_notice("There is no place for an another frame."))
-		return TRUE
+		return "there is no place for an another frame"
 	if(held.honey)
-		to_chat(user, span_notice("\The [held] is full with beeswax and honey, empty it in the extractor first."))
-		return TRUE
+		return "\The [held] is full with beeswax and honey, empty it in the extractor first"
+	return TRUE
+
+/obj/machinery/beehive/proc/interaction_beehive_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] loads \the [held] into \the [src]."), span_notice("You load \the [held] into \the [src]."))
 	update_icon()
 	user.drop_from_inventory(held)
@@ -92,21 +92,22 @@
 	id = "beehive_bee_pack"
 	name = "Move bees"
 	held_type = /obj/item/bee_pack
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/beehive/proc/can_move_bees))
 	effect = /obj/machinery/beehive/proc/interaction_beehive_bee_pack
 
-/obj/machinery/beehive/proc/interaction_beehive_bee_pack(mob/user, obj/item/bee_pack/held, datum/interaction/interaction)
+/// Requirement: TRUE, or why the bees can't be moved in or split out.
+/obj/machinery/beehive/proc/can_move_bees(mob/user, atom/target, obj/item/bee_pack/held)
 	if(held.full && bee_count)
-		to_chat(user, span_notice("\The [src] already has bees inside."))
-		return TRUE
+		return "\The [src] already has bees inside"
 	if(!held.full && bee_count < 90)
-		to_chat(user, span_notice("\The [src] is not ready to split."))
-		return TRUE
+		return "\The [src] is not ready to split"
 	if(!held.full && !smoked)
-		to_chat(user, span_notice("Smoke \the [src] first!"))
-		return TRUE
+		return "smoke \the [src] first"
 	if(closed)
-		to_chat(user, span_notice("You need to open \the [src] with a crowbar before moving the bees."))
-		return TRUE
+		return "you need to open \the [src] with a crowbar before moving the bees"
+	return TRUE
+
+/obj/machinery/beehive/proc/interaction_beehive_bee_pack(mob/user, obj/item/bee_pack/held, datum/interaction/interaction)
 	if(held.full)
 		user.visible_message(span_notice("[user] puts the queen and the bees from \the [held] into \the [src]."), span_notice("You put the queen and the bees from \the [held] into \the [src]."))
 		bee_count = 20
@@ -295,13 +296,16 @@
 	id = "honey_extractor_load_frame"
 	name = "Load frame"
 	held_type = /obj/item/honey_frame
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_TARGET_STATE(/obj/machinery/honey_extractor/proc/can_extract_frame))
 	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame
 
-/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
+/// Requirement: the frame has honey to extract.
+/obj/machinery/honey_extractor/proc/can_extract_frame(mob/user, atom/target, obj/item/honey_frame/held)
 	if(!held.honey)
-		to_chat(user, span_notice("\The [held] is empty, put it into a beehive."))
-		return TRUE
+		return "\The [held] is empty, put it into a beehive"
+	return TRUE
+
+/obj/machinery/honey_extractor/proc/interaction_honey_extractor_load_frame(mob/user, obj/item/honey_frame/held, datum/interaction/interaction)
 	user.visible_message(span_notice("[user] loads \the [held]'s comb into \the [src] and turns it on."), span_notice("You load \the [held] into \the [src] and turn it on."))
 	processing = held.honey
 	update_icon()
@@ -315,13 +319,10 @@
 	id = "honey_extractor_collect"
 	name = "Collect honey"
 	held_type = /obj/item/reagent_containers/glass
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null))
+	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/honey_extractor/proc/ready_for_item, null), REQ_FIELD("honey", "there is no honey in it"))
 	effect = /obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect
 
 /obj/machinery/honey_extractor/proc/interaction_honey_extractor_collect(mob/user, obj/item/reagent_containers/glass/held, datum/interaction/interaction)
-	if(!honey)
-		to_chat(user, span_notice("There is no honey in \the [src]."))
-		return TRUE
 	var/transferred = min(held.reagents.maximum_volume - held.reagents.total_volume, honey)
 	held.reagents.add_reagent(REAGENT_ID_HONEY, transferred)
 	honey -= transferred

@@ -225,15 +225,18 @@
 	name = "Stock"
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/department_storefront/proc/can_stock))
 	effect = /obj/machinery/department_storefront/proc/interaction_stock
 
-/obj/machinery/department_storefront/proc/interaction_stock(mob/user, obj/item/item, datum/interaction/interaction)
+/// Requirement: TRUE, or why this item can't be stocked by this user.
+/obj/machinery/department_storefront/proc/can_stock(mob/user, atom/target, obj/item/held)
 	if(!storefront_staff_authorized(user))
-		to_chat(user, span_warning("Only [department_id] staff may stock this storefront."))
-		return TRUE
-	if(item.anchored || istype(item, /obj/item/paper) || istype(item, /obj/item/card/id))
-		to_chat(user, span_warning("[item] cannot be offered through this storefront."))
-		return TRUE
+		return "only [department_id] staff may stock this storefront"
+	if(held.anchored || istype(held, /obj/item/paper) || istype(held, /obj/item/card/id))
+		return "[held] cannot be offered through this storefront"
+	return TRUE
+
+/obj/machinery/department_storefront/proc/interaction_stock(mob/user, obj/item/item, datum/interaction/interaction)
 	var/suggested = storefront_suggested_price(item)
 	var/price = max(1, round(suggested * (100 + markup_percent) / 100))
 	if(!user.drop_from_inventory(item, src))

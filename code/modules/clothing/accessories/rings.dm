@@ -98,14 +98,10 @@ DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(RE
 	var/nameset = FALSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE("Claim", PROC_REF(signet_ring_claim_self)))
+EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE("Claim", PROC_REF(signet_ring_claim_self), REQ_FIELD_NOT("nameset", "it has already been claimed")))
 
 /// Old attack_self.
 /obj/item/clothing/accessory/ring/seal/signet/proc/signet_ring_claim_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(nameset)
-		to_chat(user, span_notice("The [src] has already been claimed!"))
-		return
-
 	to_chat(user, span_notice("You claim the [src] as your own!"))
 	change_name(user)
 	nameset = TRUE

@@ -25,14 +25,17 @@
 		reveal()
 		watchowner_handle = null
 
-DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/deadringer/proc/can_use_ringer)))
+
+/// Requirement: TRUE, or why the ringer can't be used.
+/obj/item/deadringer/proc/can_use_ringer(mob/user, atom/target, obj/item/held)
+	if(!ishuman(loc))
+		return "you have no clue what to do with this thing"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/deadringer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/living/H = src.loc
-	if (!ishuman(H))
-		to_chat(H, span_blue("You have no clue what to do with this thing."))
-		return TRUE
 	if(!activated)
 		if(timer == 0)
 			to_chat(H, span_blue("You press a small button on [src]'s side. It starts to hum quietly."))

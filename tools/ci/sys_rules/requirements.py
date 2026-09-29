@@ -41,6 +41,12 @@ MESSAGE = re.compile(r"\b(?:to_chat|balloon_alert|visible_message|audible_messag
 QUIET = re.compile(r"^(?:playsound|SEND_SOUND)\s*\(")
 RETURN = re.compile(r"^return\b")
 IF = re.compile(r"^if\s*\(")
+# A condition that performs the action (drops the item, spends a stack, asks the player) reports
+# that action failing, which is effect-time feedback, not a refusal a requirement could declare.
+ACTING = re.compile(r"\b(?:drop_from_inventory|unEquip|drop_item|drop_held_item|put_in_\w+|remove_from_mob|"
+                    r"use|use_charge|checked_use|use_tool|do_after|do_mob|tgui_\w+|input|alert|forceMove|"
+                    r"try_\w+|attempt_\w+|consume\w*|transfer\w*|insert_item|user_unbuckle_mob|"
+                    r"buckle_mob|remove_fuel|use_resource|spend\w*|pay\w*|charge|om_task_timed)\s*\(")
 ELSE = re.compile(r"^else\b")
 
 
@@ -142,6 +148,7 @@ def guard_parts(stmt):
         elif c == ")":
             depth -= 1
             if depth == 0:
+                cond = first[:i + 1]
                 rest = first[i + 1:].strip()
                 break
     else:
@@ -153,7 +160,7 @@ def guard_parts(stmt):
     for _, code, _ in stmt[1:]:
         code = code.strip("{} ")
         parts += [p.strip() for p in code.split(";") if p.strip()]
-    return parts
+    return cond, parts
 
 
 def scan(files):
@@ -186,8 +193,13 @@ def scan(files):
                     break
                 if k + 1 < len(stmts) and ELSE.match(stmts[k + 1][0][1]):
                     break
-                parts = guard_parts(stmt)
-                if parts is None or not parts or not RETURN.match(parts[-1]) and not RETURN.match(parts[0]):
+                guard = guard_parts(stmt)
+                if guard is None:
+                    break
+                cond, parts = guard
+                if ACTING.search(cond):
+                    continue
+                if not parts or not RETURN.match(parts[-1]) and not RETURN.match(parts[0]):
                     break
                 if only_refusal(parts) or (len(parts) == 1 and RETURN.match(parts[0]) and MESSAGE.search(parts[0])):
                     out["inline_refusal"].append((rel, stmt[0][0]))

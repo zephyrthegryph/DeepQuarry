@@ -95,12 +95,10 @@
 /datum/interaction/machine_hand/ungated/generated_station_upload
 	id = "generated_station_upload"
 	name = "Upload payload"
+	also_requires = list(REQ_FIELD_NOT("uploaded", "the payload is already resident"))
 	effect = /obj/machinery/generated_station_upload_terminal/proc/interaction_upload
 
 /obj/machinery/generated_station_upload_terminal/proc/interaction_upload(mob/user, obj/item/held, datum/interaction/interaction)
-	if(uploaded)
-		to_chat(user, span_notice("The payload is already resident."))
-		return TRUE
 	user.visible_message(span_notice("[user] begins uploading a control payload."), span_notice("You begin uploading the malware payload."))
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(upload_done), list(user))
 	return TRUE

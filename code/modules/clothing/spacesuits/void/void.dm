@@ -152,15 +152,15 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 /obj/item/clothing/suit/space/void/ui_action_click(mob/living/user, action_name)
 	if(..())
 		return TRUE
+	var/why = can_toggle_helmet(user, src, null)
+	if(why != TRUE)
+		to_chat(user, span_warning("[why]."))
+		return
 	void_toggle_helmet_verb(user)
 
 /// Old verb "Toggle Helmet".
 /obj/item/clothing/suit/space/void/proc/void_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(loc))
-		return
-
-	if(!hood)
-		to_chat(user, "There is no helmet installed.")
 		return
 
 	var/mob/living/carbon/human/H = user
@@ -189,11 +189,37 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/space/void, "tank", "tank")
 			play_sfx(src.loc, SFX_MACHINES_CLICK2)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
-	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt)), \
-	INTERACT_ITEM(null, PROC_REF(voidsuit_install_item)), \
-	INTERACT_VERB("Toggle Helmet", PROC_REF(void_toggle_helmet_verb), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Eject Voidsuit Tank/Cooler", PROC_REF(void_eject_tank_verb), REQ_IN_INVENTORY), \
+	INTERACT_ALT("Eject tank", PROC_REF(voidsuit_eject_tank_alt), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_eject_tank)), \
+	INTERACT_ITEM(null, PROC_REF(voidsuit_install_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)), \
+	INTERACT_VERB("Toggle Helmet", PROC_REF(void_toggle_helmet_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_toggle_helmet)), \
+	INTERACT_VERB("Eject Voidsuit Tank/Cooler", PROC_REF(void_eject_tank_verb), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_eject_tank)), \
 )
+
+/// Requirement: the suit isn't being worn while modified. Accessories and labelers (and non-living users) pass: the effect lets them through.
+/obj/item/clothing/suit/space/void/proc/can_modify_unworn(mob/user, atom/target, obj/item/held)
+	if(!isliving(user))
+		return TRUE
+	if(istype(held, /obj/item/clothing/accessory) || istype(held, /obj/item/hand_labeler))
+		return TRUE
+	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
+		return "you cannot modify \the [src] while it is being worn"
+	return TRUE
+
+/// Requirement: TRUE, or why the helmet can't be toggled (a suit nobody wears is ignored silently by the effect).
+/obj/item/clothing/suit/space/void/proc/can_toggle_helmet(mob/user, atom/target, obj/item/held)
+	if(!isliving(loc))
+		return TRUE
+	if(!hood)
+		return "there is no helmet installed"
+	return TRUE
+
+/// Requirement: TRUE, or why nothing can be ejected (a suit nobody wears is ignored silently by the effect).
+/obj/item/clothing/suit/space/void/proc/can_eject_tank(mob/user, atom/target, obj/item/held)
+	if(!isliving(loc))
+		return TRUE
+	if(!tank && !cooler)
+		return "there is no tank or cooling unit inserted"
+	return TRUE
 
 /// Old click_alt. It never reached the clothing alt-click.
 /obj/item/clothing/suit/space/void/proc/voidsuit_eject_tank_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
@@ -205,10 +231,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 	if(!isliving(src.loc)) return
 
 	var/mob/living/carbon/human/H = user
-
-	if(!tank && !cooler)
-		to_chat(H, span_notice("There is no tank or cooling unit inserted."))
-		return
 
 	if(!istype(H)) return
 	if(H.stat) return
@@ -233,10 +255,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 
 	if(istype(W,/obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
-
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return INTERACTION_HANDLED_PASS
 
 	if(istype(W,/obj/item/clothing/head/helmet/space))
 		if(hood)
@@ -367,7 +385,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void, \
 
 TYPE_TABLE(/obj/item/clothing/suit/space/void/autolok, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA,SPECIES_VOX))))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item)))
+EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(null, PROC_REF(autolok_worn_item), REQ_TARGET_STATE(/obj/item/clothing/suit/space/void/proc/can_modify_unworn)))
 
 /// Old attackby: no modifying it while worn.
 /obj/item/clothing/suit/space/void/autolok/proc/autolok_worn_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -377,10 +395,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 
 	if(istype(W, /obj/item/clothing/accessory) || istype(W, /obj/item/hand_labeler))
 		return FALSE
-
-	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
-		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
-		return INTERACTION_HANDLED_PASS
 
 	return FALSE
 

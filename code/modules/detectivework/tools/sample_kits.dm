@@ -64,7 +64,17 @@ DECLARE_INTERACTIONS(/obj/item/sample, INTERACT_ITEM(null, PROC_REF(interaction_
 	icon_state = "fingerprint0"
 	item_state = "paper"
 
-EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self)))
+EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/sample/print/proc/can_press_prints)))
+
+/// Requirement: bare fingertips (a used card or a non-human is ignored silently by the effect).
+/obj/item/sample/print/proc/can_press_prints(mob/user, atom/target, obj/item/held)
+	if((evidence && length(evidence)) || !ishuman(user))
+		return TRUE
+	var/mob/living/carbon/human/H = user
+	var/obj/item/gloves = H.get_equipped_item(SLOT_ID_GLOVES)
+	if(gloves)
+		return "take \the [gloves] off first"
+	return TRUE
 
 /// Old attack_self.
 /obj/item/sample/print/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -73,9 +83,6 @@ EXTEND_INTERACTIONS(/obj/item/sample/print, INTERACT_USE(null, PROC_REF(interact
 	if(!ishuman(user))
 		return TRUE
 	var/mob/living/carbon/human/H = user
-	if(H.get_equipped_item(SLOT_ID_GLOVES))
-		to_chat(user, span_warning("Take \the [H.get_equipped_item(SLOT_ID_GLOVES)] off first."))
-		return TRUE
 
 	to_chat(user, span_notice("You firmly press your fingertips onto the card."))
 	var/fullprint = H.get_full_print()
