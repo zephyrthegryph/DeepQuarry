@@ -1045,7 +1045,7 @@
 	var/turf/test_turf = run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1)
 	var/mob/living/carbon/human/subject = new(test_turf)
 	subject.real_name = "Rare Case Patient"
-	var/datum/mind/test_mind = new
+	var/datum/mind/test_mind = own(new /datum/mind) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 	test_mind.assigned_role = JOB_MEDICAL_DOCTOR
 	test_mind.transfer_to(subject)
 	var/obj/item/organ/lungs = subject.organ_in(O_LUNGS)
@@ -1640,7 +1640,7 @@
 		var/mob/living/carbon/human/player = new(run_loc_floor_bottom_left)
 		player.real_name = account.owner_name
 		player.job = "Scientist"
-		var/datum/mind/player_mind = new("reassignment_test_[index]")
+		var/datum/mind/player_mind = own(new /datum/mind("reassignment_test_[index]")) // the test deletes it: a dropped mind leaves its owned identity stamped with a dead owner
 		rel_set(player_mind, "initial_account", account)
 		player_mind.transfer_to(player)
 		player.ensure_faction_reputation().set_reputation(REPUTATION_FACTION_WORKERS_UNION, REPUTATION_NEUTRAL)
