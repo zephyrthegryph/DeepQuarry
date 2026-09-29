@@ -213,6 +213,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 //callback used by objects to react to incoming radio signals
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
+	cap_signaler_receive(src, signal) // a holder of the signaler capability (capabilities/library/signaler.dm)
 	return null
 
 /// Relation view: the device that sent this signal (reads null once it is gone).
