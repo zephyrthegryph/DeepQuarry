@@ -410,7 +410,6 @@ init_new_child	code/game/machinery/fire_alarm.dm	causality = new(list(src), FALS
 init_new_child	code/game/machinery/frame.dm	circuit = new frame_type.circuit(src)
 init_new_child	code/game/machinery/gear_dispenser.dm	one_setting = new one_setting
 init_new_child	code/game/machinery/pda_multicaster.dm	soundloop = new(list(src), FALSE)
-init_new_child	code/game/machinery/portable_turret.dm	spark_system = new /datum/effect/effect/system/spark_spread
 init_new_child	code/game/machinery/requests_console.dm	announcement = new
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	Compiler = new()
 init_new_child	code/game/machinery/telecomms/telecomunications.dm	server_radio = new()
@@ -533,4 +532,3 @@ destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	src.visible_me
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard/phoron(src.loc)
 destroy_effects	code/modules/xenoarcheaology/artifacts/crystal.dm	new /obj/item/material/shard(src.loc)
 destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	visible_message(span_cult("\The [src] screeches as it's destroyed"))
-destroy_effects	code/modules/xenoarcheaology/finds/Weapons/archeo_melee.dm	playsound(src, 'sound/goonstation/spooky/creepyshriek.ogg', 100, 1, 75) //It plays VERY far.

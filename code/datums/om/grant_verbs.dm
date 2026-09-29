@@ -26,7 +26,7 @@
 // (Login for DECLARE_LOGIN_VERB). A per-instance grant is for what can change.
 //
 // Clients are not datums: `om_grant(client, ...)` goes to the client's /datum/client_verbs holder
-// (made on first grant, deleted with the client), so client verb sets follow the same rules.
+// (made on first grant, owned by the client), so client verb sets follow the same rules.
 // Sources with no datum of their own (the server config, an admin's hand edit) use
 // verb_source(VERB_SOURCE_*), one shared datum per name.
 
@@ -67,10 +67,8 @@
 /datum/verb_source/New(id)
 	src.id = id
 
-/datum/verb_source/Destroy(force)
-	if(!force)
-		return QDEL_HINT_LETMELIVE
-	return ..()
+// Shared sources live for the round.
+LIFECYCLE_KEEP_UNLESS_FORCED(/datum/verb_source)
 
 // ---------------------------------------------------------------- clients
 
@@ -85,9 +83,8 @@
 /datum/client_verbs/New(client/C)
 	owner = C
 
-/datum/client_verbs/Destroy(force)
-	owner = null
-	return ..()
+DECLARE_REF(/datum/client_verbs, "owner", DROP, null)
+DECLARE_REF(/client, "verb_store", OWNED, null) // its grants die with the client
 
 /// The datum grants on `target` are stored on: a client's holder, or `target` itself.
 /// `create`: make a client's holder when it has none (grants); FALSE for reads and revokes.
@@ -134,7 +131,7 @@
 	var/list/grants = E?.om_rec ? om_value_of(E, GRANT_VERB) : null
 	if(grants?[key] > 0)
 		return TRUE
-	if(!ispath(key))
+	if(istext(key))
 		return FALSE // a named verb exists only while granted
 	var/owner_type = verb_static_owner(key)
 	if(owner_type && istype(owner, owner_type))
@@ -156,7 +153,7 @@
 /proc/has_verb(target, key)
 	if(!target)
 		return FALSE
-	if(ispath(key))
+	if(!istext(key))
 		var/atom/A = target // clients have verbs too; the var is read the same way
 		return key in A.verbs
 	var/datum/E = om_grant_target(target, FALSE)
@@ -190,7 +187,7 @@
 		verb_store_write(E, owner, add, remove)
 
 /proc/verb_store_present(datum/E, owner, key)
-	if(ispath(key))
+	if(!istext(key))
 		var/atom/A = owner
 		return key in A.verbs
 	var/datum/om/rec/rec = E.om_rec
@@ -210,7 +207,7 @@
 	var/list/panel_remove
 	for(var/key in remove)
 		var/procpath/P
-		if(ispath(key))
+		if(!istext(key))
 			P = key
 			A.verbs -= key
 		else
@@ -226,7 +223,7 @@
 			LAZYADD(panel_remove, list(list(P.category, P.name)))
 	for(var/key in add)
 		var/procpath/P
-		if(ispath(key))
+		if(!istext(key))
 			P = key
 			A.verbs += key
 		else

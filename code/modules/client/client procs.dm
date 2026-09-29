@@ -414,7 +414,6 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(holder)
 		holder.owner_handle = null
 		GLOB.admins -= src
-	QDEL_NULL(verb_store) // its grants die with it
 	if(skybox)
 		QDEL_NULL(skybox)
 	if(fakeConversations)

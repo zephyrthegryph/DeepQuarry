@@ -16,15 +16,13 @@
 /obj/item/dq_grants_declared
 	var/dq_flag = FALSE
 
-/obj/item/dq_grants_declared/verb/dq_static_verb()
-	set name = "DQ Grants Static Verb"
-	set hidden = TRUE
-
 /obj/item/dq_grants_declared/hiding
+
+/mob/living/carbon/human/dq_grants_hiding
 
 DECLARE_VERB(/obj/item/dq_grants_declared, /obj/proc/dq_sys_grants_test_obj_verb)
 DECLARE_VERB_IF(/obj/item/dq_grants_declared, /obj/proc/dq_sys_grants_test_flag_verb, "dq_flag")
-DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/item/dq_grants_declared/verb/dq_static_verb)
+DECLARE_VERB_HIDE(/mob/living/carbon/human/dq_grants_hiding, /mob/verb/observe)
 DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_test_obj_verb)
 
 /datum/unit_test/dq_sys_grants_verb_follows_sources
@@ -103,7 +101,6 @@ DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_t
 	var/obj/item/dq_grants_declared/D = allocate(/obj/item/dq_grants_declared, test_floor())
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "DECLARE_VERB puts the verb on at init")
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_flag_verb in D.verbs), "DECLARE_VERB_IF stays off while the var is false")
-	TEST_ASSERT(/obj/item/dq_grants_declared/verb/dq_static_verb in D.verbs, "the type's own verb is there")
 	TEST_ASSERT(!D.om_rec?.contribs, "declared verbs keep no per-instance store entry")
 
 	D.dq_flag = TRUE
@@ -119,10 +116,12 @@ DECLARE_VERB_HIDE(/obj/item/dq_grants_declared/hiding, /obj/proc/dq_sys_grants_t
 	TEST_ASSERT(/obj/proc/dq_sys_grants_test_obj_verb in D.verbs, "a revoke keeps a declared verb")
 
 	var/obj/item/dq_grants_declared/hiding/H = allocate(/obj/item/dq_grants_declared/hiding, test_floor())
-	TEST_ASSERT(!(/obj/item/dq_grants_declared/verb/dq_static_verb in H.verbs), "DECLARE_VERB_HIDE strips an inherited type verb")
-	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "and overrides the parent's DECLARE_VERB")
+	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a subtype's DECLARE_VERB_HIDE overrides the parent's DECLARE_VERB")
 	om_grant(H, GRANT_VERB, /obj/proc/dq_sys_grants_test_obj_verb, source)
 	TEST_ASSERT(!(/obj/proc/dq_sys_grants_test_obj_verb in H.verbs), "a declared hide beats a runtime grant")
+
+	var/mob/living/carbon/human/dq_grants_hiding/M = allocate(/mob/living/carbon/human/dq_grants_hiding, test_floor())
+	TEST_ASSERT(!(/mob/verb/observe in M.verbs), "DECLARE_VERB_HIDE strips an inherited /type/verb/")
 
 /// VERB_NAMED: a renamed verb instance, granted and revoked by its key.
 /datum/unit_test/dq_sys_grants_named_verb

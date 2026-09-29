@@ -405,7 +405,84 @@ lint at 0.
 `om_grant(M, GRANT_ABILITY, /datum/ability/x, source)`: the verb/ability appears while any source
 grants it and disappears automatically when the source is removed/destroyed (the contribution
 system already drops a destroyed source's holds). Replaces paired `add_verb`/`remove_verb`.
-Lint `sys_add_verb_pair`.
+
+**As built (the verb store, `code/datums/om/grant_verbs.dm`).** The store is the only code that
+writes a `verbs` list. `add_verb()`/`remove_verb()` (`code/_helpers/verbs.dm`) are deleted.
+
+- **Rule.** A verb (a path, or a `VERB_NAMED` key) is on an atom or client when nothing hides it
+  and something gives it:
+  - Hides: a `GRANT_VERB_HIDE` source, or the type's `DECLARE_VERB_HIDE`. A hide beats everything.
+  - Givers: a `GRANT_VERB` source, a `/type/verb/` the atom inherits, `DECLARE_VERB`,
+    `DECLARE_VERB_IF` with its var true, or `DECLARE_LOGIN_VERB` once a player has had the mob.
+
+  `GRANT_VERB` and `GRANT_VERB_HIDE` share one change hook, `verb_store_sync()`. It re-evaluates
+  the rule for each key whose state flipped and writes only the difference. So a type verb that a
+  grant also covered survives the grant's revoke, and lifting a hide restores exactly what the
+  rule says. That fixes the old mixed-source desync, where the `if(!(X in S.inherent_verbs))`
+  guards in 11 trait unapplies tried to stop a revoke from eating the species' verb. Those guards
+  are deleted.
+- **API.**
+  - `om_grant/om_revoke(target, GRANT_VERB | GRANT_VERB_HIDE, verb, source)` and
+    `om_grant_each/om_revoke_each/om_revoke_all_of`.
+  - `om_grant_for(target, kind, verb, source, duration)` makes a timed grant or hide (the ticket
+    cooldowns).
+  - `has_verb(target, key)` and `verb_store_refresh(target, keys)`. Call the refresh after
+    changing a `DECLARE_VERB_IF` var.
+  - `verb_source(VERB_SOURCE_CONFIG | VERB_SOURCE_ADMIN)` returns a shared named source for grants
+    no datum owns: config-gated verbs, and an admin's VV hand edits. VV "Remove Verb" is an admin
+    hide, and "Add Verb" is an admin grant that lifts that hide.
+- **Declared verbs** (`code/__defines/lifecycle_decl.dm`, in the lifecycle declaration table):
+  - `DECLARE_VERB(PATH, VERB)` is applied at init.
+  - `DECLARE_VERB_IF(PATH, VERB, "var")` is applied at init while the var is true.
+  - `DECLARE_LOGIN_VERB(PATH, VERB)` is applied by `/mob/Login()`, so NPC-only mobs never carry
+    the verbs list.
+  - `DECLARE_VERB_HIDE(PATH, VERB)` hides a verb and replaces stripping a type verb in
+    `Initialize()`.
+  - A later line for the same verb replaces the parent's, so a subtype `DECLARE_VERB_HIDE`
+    cancels an inherited `DECLARE_VERB`.
+
+  None of these keeps a per-instance store entry. **Per-instance memory:** 184 self-sourced
+  `om_grant(src, GRANT_VERB, X, src)` calls in `Initialize`/`New`/`Login` became declarations.
+  Before, every simple mob, pAI, clothing item and so on carried an OM rec plus a contribution
+  row per verb. Runtime grants remain only for what can change.
+- **Turfs.** `climb_wall` is `DECLARE_VERB_IF(/turf/simulated, ..., "climbable")`, and
+  `toggle_climbability()` refreshes it. No turf holds a verb grant, so a `ChangeTurf()` leaves no
+  store entry behind. The old turf's teardown drops anything it held as a source.
+- **Named verbs.** `VERB_NAMED(path, name, desc)` keys a renamed verb instance, which is
+  `new path(target, name, desc)`. The store makes the instance on the first grant, remembers it in
+  `rec.named_verbs` and removes it on the last revoke. The reagent implants use it.
+- **Clients.** `om_grant(client, ...)` resolves through `om_grant_target()` to the client's
+  `/datum/client_verbs` holder. The holder is made on the first grant and deleted in
+  `/client/Destroy()`. These all go through it:
+  - admin verb datums (source: the singleton `/datum/admin_verb`);
+  - `readmin` and `show_verbs` (source: the `/datum/admins`);
+  - `aooc` (source: the mind);
+  - the mentorhelp, adminhelp and spice cooldowns (timed `GRANT_VERB_HIDE`, which replaced three
+    `spawn()`s).
+- **Diona.** The diona species is the one source of `diona_split_nymph`/`regenerate`. The
+  nymph-install surgery no longer self-grants them, because `set_species()` already did. The two
+  death/split paths that hard-set `species` call `remove_inherent_verbs()` first. The
+  "revoke from every source" loops are gone. The other such loops became proper sources or hides:
+  - petrification: the statue structure hides the gargoyle verbs;
+  - the xeno egg config check: a config hide;
+  - yank-out: `embed()`'s own grant.
+- **Also fixed:**
+  - Malf research abilities were verb *instances* (`new /verb()` at compile time), which a grant
+    key rejects. They are now paths.
+  - `stop_malf` no longer does `verbs = null`. It revokes the research, ability, hardware and malf
+    verbs by source.
+  - Deleted the `verbs.Cut()` no-ops on overlays and click catchers, and the modular computer's
+    `update_verbs()`. None of those types has verbs.
+- **Lint** `sys_verb_write` (`tools/ci/sys_rules/grants.py`, formerly `sys_add_verb_pair`). It
+  flags any verbs write outside the store:
+  - `+=`, `-=`, `|=`, `&=` and `^=` on `verbs`, or assigning it;
+  - `Add`, `Remove`, `Cut`, `Insert`, `Swap` or `Splice` on `verbs`, or an index assignment into it;
+  - `add_verb(` and `remove_verb(`;
+  - `new /x/proc/y(` and `new /x/verb/y(`.
+
+  The rule sets `NO_ALLOW`, so an `ALLOW(sys_verb_write)` does not count. The baseline is empty
+  and the count is 0. Tests: `dq_sys_grants_tests.dm` (sources, list helpers, hides and mixed
+  sources, declared verbs, named verbs, turf).
 
 ## 20. TOPIC_ACTION registry
 

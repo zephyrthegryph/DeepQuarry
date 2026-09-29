@@ -225,13 +225,16 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(!length(registries))
 		registries = null
 	var/list/declared_verbs = list()
-	declared_verbs |= verbs_always
-	declared_verbs |= verbs_login
-	declared_verbs |= verbs_hidden
+	for(var/verb_path in verbs_always)
+		declared_verbs |= verb_path
+	for(var/verb_path in verbs_login)
+		declared_verbs |= verb_path
+	for(var/verb_path in verbs_hidden)
+		declared_verbs |= verb_path
 	for(var/verb_path in verbs_if)
 		declared_verbs |= verb_path
 	for(var/verb_path in declared_verbs)
-		if(!ispath(verb_path))
+		if(istext(verb_path) || !(findtext("[verb_path]", "/proc/") || findtext("[verb_path]", "/verb/")))
 			stack_trace("DECLARE_VERB([owner_type], [verb_path]): not a verb path; dropped")
 			LAZYREMOVE(verbs_always, verb_path)
 			LAZYREMOVE(verbs_login, verb_path)
