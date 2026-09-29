@@ -78,7 +78,7 @@
 		SPECIES_TESHARI 		= 'icons/inventory/suit/mob_teshari.dmi',
 		SPECIES_ALTEVIAN 		= 'icons/inventory/suit/mob_altevian.dmi'
 		)
-	supporting_limbs = list()
+	supports_limbs = TRUE
 	var/obj/item/material/knife/tacknife
 	max_pressure_protection = null
 	min_pressure_protection = null
