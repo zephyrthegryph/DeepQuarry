@@ -66,7 +66,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/food, INTERACT_ITEM(null, PROC
 /obj/item/reagent_containers/food/container_resist(mob/living/M)
 	if(istype(M, /mob/living/voice)) return // Stops sentient food from astral projecting
 	if(food_inserted_micros)
-		food_inserted_micros -= M
+		own_take_member(src, "food_inserted_micros", M)
 	if(isdisposalpacket(loc))
 		M.forceMove(loc)
 	else
@@ -80,3 +80,6 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/food, INTERACT_ITEM(null, PROC
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food, \
 	INTERACT_VERB("Rename Food", PROC_REF(food_change_name_effect)), \
 )
+
+/// Micros stuffed into the food are in its contents: they drop out when it is destroyed.
+OWN(/obj/item/reagent_containers/food, food_inserted_micros, OWN_SPILL)

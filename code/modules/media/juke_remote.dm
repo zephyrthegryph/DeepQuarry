@@ -18,8 +18,7 @@
 	if(paired_juke())
 		to_chat(user, span_warning("The [src] is already paired to [paired_juke() == juke ? "that" : "a different"] jukebox."))
 		return
-	rel_set(src, "paired_juke", juke)
-	LAZYDISTINCTADD(paired_juke().remotes, src)
+	rel_set(src, "paired_juke", juke) // also lists us in the jukebox's remotes (REL_PAIR)
 	to_chat(user, span_notice("You pair the [src] to the [juke]."))
 	icon_state = "[initial(icon_state)]_ready"
 
@@ -27,7 +26,6 @@
 	if(!paired_juke())
 		to_chat(user, span_warning("The [src] isn't paired to anything."))
 		return
-	LAZYREMOVE(paired_juke().remotes, src)
 	rel_clear(src, "paired_juke")
 	icon_state = initial(icon_state)
 	unanchor()
@@ -90,7 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		return FALSE
 	if(A.media_source())
 		return FALSE // Already has a media source, won't overpower it with porta speaker
-	rel_set(src, "our_area", A)
+	our_area = A
 	rel_set(A, "media_source", paired_juke())
 	update_music()
 	return TRUE
@@ -100,7 +98,7 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		return
 	rel_clear(our_area(), "media_source")
 	update_music()
-	rel_clear(src, "our_area")
+	our_area = null
 
 // Music handling
 /obj/item/juke_remote/proc/update_music()
@@ -111,10 +109,14 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 		if(M?.client)
 			M.update_music()
 
-/// the our_area this refers to (a relation view: null once it is deleted).
+/// The area the speaker plays in (a plain var: areas never die).
 /obj/item/juke_remote/proc/our_area() as /area
 	return our_area
 
 /// the paired_juke this refers to (a relation view: null once it is deleted).
 /obj/item/juke_remote/proc/paired_juke() as /obj/machinery/media/jukebox
 	return paired_juke
+
+/// A paired speaker and its jukebox name each other; either one dying unpairs them.
+REL_PAIR(/obj/item/juke_remote, paired_juke, remotes)
+REL_PAIR_LIST(/obj/machinery/media/jukebox, remotes, paired_juke)

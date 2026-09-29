@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return FALSE
 	default_type = material_name
 	material = new_material
-	recipes = material.get_recipes()
+	recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
 	stacktype = material.stack_type
 	if(apply_colour || pass_color)
 		color = material.icon_colour
@@ -305,7 +305,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	if(batch_state)
 		return batch_state
 	var/datum/material/processed_alloy/processed = material
-	batch_state = processed?.batch_template?.copy_for_amount(amount)
+	own_set(src, "batch_state", processed?.batch_template?.copy_for_amount(amount))
 	return batch_state
 
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
@@ -409,7 +409,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return FALSE
 	default_type = material_name
 	material = new_material
-	recipes = material.get_recipes()
+	recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
 	stacktype = material.stack_type
 	color = material.icon_colour
 	if(material.conductive)

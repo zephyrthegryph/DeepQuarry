@@ -15,7 +15,12 @@
 	var/sizeshift_mode = SIZE_SHRINK
 	var/dorm_size = TRUE
 	var/size_increment = 0.01
-	var/current_target
+	// The scan in progress (relation views: a deleted target, user or beam reads null, and the
+	// next step still reaches sizegun_finish() to clean up).
+	var/atom/current_target
+	var/mob/living/scan_user
+	var/obj/item/scan_hand
+	var/datum/beam/scan_beam_effect
 	var/trading = 0
 
 /obj/item/slow_sizegun/update_icon()
@@ -122,7 +127,7 @@
 		to_chat(user, span_warning("\the [target] is immune to resizing."))
 
 	// Start the effects
-	current_target = target
+	rel_set(src, "current_target", target)
 	busy = TRUE
 	update_icon()
 	var/datum/beam/scan_beam = user.Beam(target, icon = 'icons/effects/beam_vr.dmi', icon_state = "zappy1", time = 6000)
@@ -139,9 +144,12 @@
 	var/previous_scale = L.size_multiplier
 
 	// The beam steps every 0.3 s on om_after() timers until should_stop() (S10b: was a
-	// stoplag() loop). Objects travel as OM handles so a deleted target or user still
-	// reaches sizegun_finish() and the effects are cleaned up.
-	var/list/state = list(om_handle(L), om_handle(user), active_hand ? om_handle(active_hand) : null, previous_scale, om_handle(scan_beam), filter, box_segments, user.client)
+	// stoplag() loop). The target, user, hand and beam are relation views on the gun, so a deleted
+	// target or user still reaches sizegun_finish() and the effects are cleaned up.
+	rel_set(src, "scan_user", user)
+	rel_set(src, "scan_hand", active_hand)
+	rel_set(src, "scan_beam_effect", scan_beam)
+	var/list/state = list(previous_scale, filter, box_segments, user.client)
 	if(should_stop(L, user, active_hand))
 		sizegun_finish(state)
 		return
@@ -149,9 +157,9 @@
 
 /// One step of the beam: resize, then stop or schedule the next step.
 /obj/item/slow_sizegun/proc/sizegun_step(list/state)
-	var/mob/living/L = om_resolve(state[1])
-	var/mob/living/U = om_resolve(state[2])
-	var/active_hand = om_resolve(state[3])
+	var/mob/living/L = current_target
+	var/mob/living/U = scan_user
+	var/active_hand = scan_hand
 	if(!L || !U || !busy)
 		sizegun_finish(state)
 		return
@@ -170,14 +178,17 @@
 
 /// The beam ends: size-strip the target if it changed enough, then clean up the effects.
 /obj/item/slow_sizegun/proc/sizegun_finish(list/state)
-	var/mob/living/L = om_resolve(state[1])
-	var/previous_scale = state[4]
-	var/datum/beam/scan_beam = om_resolve(state[5])
-	var/filter = state[6]
-	var/list/box_segments = state[7]
-	var/client/C = state[8]
+	var/mob/living/L = current_target
+	var/previous_scale = state[1]
+	var/datum/beam/scan_beam = scan_beam_effect
+	var/filter = state[2]
+	var/list/box_segments = state[3]
+	var/client/C = state[4]
 	busy = FALSE
-	current_target = null
+	rel_clear(src, "current_target")
+	rel_clear(src, "scan_user")
+	rel_clear(src, "scan_hand")
+	rel_clear(src, "scan_beam_effect")
 
 	if(ishuman(L))
 		var/mob/living/carbon/human/our_target = L

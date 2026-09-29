@@ -361,7 +361,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 							T.source_terminal = machine_id
 							T.date = GLOB.current_date_string
 							T.time = stationtime2text()
-							LAZYADD(failed_account.transaction_log, T)
+							own_add(failed_account, "transaction_log", T)
 					else
 						to_chat(ui.user, span_warning("[icon2html(src, ui.user.client)] Incorrect pin/account combination entered, [max_pin_attempts - number_incorrect_tries] attempts remaining."))
 						previous_account_number = tried_account_num
@@ -381,7 +381,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 				T.source_terminal = machine_id
 				T.date = GLOB.current_date_string
 				T.time = stationtime2text()
-				LAZYADD(authenticated_account().transaction_log, T)
+				own_add(authenticated_account(), "transaction_log", T)
 
 				to_chat(ui.user, span_notice("[icon2html(src, ui.user.client)] Access granted. Welcome user '[authenticated_account().owner_name].'"))
 

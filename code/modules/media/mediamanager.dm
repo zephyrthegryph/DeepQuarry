@@ -126,9 +126,11 @@
 	ASSERT(istype(C))
 	rel_set(src, "owner", C)
 
-// ALLOW(lifecycle): closes its media window before phase 4 deletes it.
-/datum/media_manager/lifecycle_unbind()
-	media_window?.close()
+/// Owned-child release: the media window is closed as it leaves us (replaced, or disposed at teardown).
+/datum/media_manager/on_owned_release(var_name, datum/child)
+	if(var_name == "media_window")
+		var/datum/tgui_window/window = child
+		window.close()
 	return ..()
 
 /datum/media_manager/tgui_state(mob/user)

@@ -240,8 +240,6 @@
 
 /datum/contract/New()
 	. = ..()
-	own_set(src, "requirements", list())
-	rel_set(src, "children", list())
 	contributions = list()
 	contributor_names = list()
 	audit_log = list()
@@ -259,8 +257,6 @@
 		unsubscribe_events()
 	SScontracts?.unregister_contract(src)
 
-// its children are orphaned.
-REL_PAIR_LIST(/datum/contract, children, parent)
 
 /datum/contract/proc/finalize_offer(duration)
 	if(state != CONTRACT_OFFERED || !isnum(duration) || duration <= 0)

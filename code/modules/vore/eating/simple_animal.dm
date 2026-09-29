@@ -1,7 +1,7 @@
 ///////////////////// Simple Animal /////////////////////
 /mob/living/simple_mob
 	var/swallowTime = (3 SECONDS)		//How long it takes to eat its prey in 1/10 of a second. The default is 3 seconds.
-	var/list/prey_excludes = null		//For excluding people from being eaten.
+	var/list/prey_excludes = null		//For excluding people from being eaten (a relation list: a deleted mob leaves it).
 
 /mob/living/simple_mob/insidePanel() //On-demand belly loading.
 	if(vore_active && !voremob_loaded)
@@ -103,18 +103,17 @@
 			release_vore_contents()
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.
-					LAZYSET(prey_excludes, L, world.time)
-					om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(L))
+					rel_add(src, "prey_excludes", L)
+					om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
 	else if(istype(O, /obj/item/healthanalyzer))
 		var/healthpercent = round(vitality() * 100)
 		to_chat(user, span_notice("[src] seems to be [healthpercent]% healthy."))
 	else
 		..()
 
-/mob/living/simple_mob/proc/removeMobFromPreyExcludes(target)
-	if(om_is_handle(target))
-		var/mob/living/L = om_resolve(target)
-		LAZYREMOVE(prey_excludes, L) // It's fine to remove a null from the list if we couldn't resolve L
+/mob/living/simple_mob/proc/removeMobFromPreyExcludes(mob/living/L)
+	// The timer skips a deleted L: prey_excludes is a relation list, so it already left.
+	rel_remove(src, "prey_excludes", L)
 
 /mob/living/simple_mob/proc/nutrition_heal()
 	set name = "Nutrition Heal"
@@ -143,3 +142,5 @@
 		if(heal_amount <= 0)
 			break
 		heal_amount -= mend(treat_tag, heal_amount)
+
+REL_LIST(/mob/living/simple_mob, prey_excludes)

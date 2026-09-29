@@ -970,5 +970,4 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/original() as /atom
 	return original
 
-REL_PAIR(/obj/item/ammo_casing, BB, my_case)
-REL_PAIR(/obj/item/projectile, my_case, BB)
+// A casing owns its bullet (BB, a default child); my_case is the bullet's one-sided view back.

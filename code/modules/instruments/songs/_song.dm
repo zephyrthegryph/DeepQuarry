@@ -129,7 +129,6 @@
 		allowed_instrument_ids = islist(instrument_ids) ? instrument_ids : list(instrument_ids)
 	if(length(allowed_instrument_ids))
 		set_instrument(allowed_instrument_ids[1])
-	hearing_mobs = list()
 	volume = clamp(volume, min_volume, max_volume)
 	update_sustain()
 	if(new_range)
@@ -146,17 +145,21 @@
  */
 /datum/song/proc/do_hearcheck()
 	last_hearcheck = world.time
-	var/list/old = hearing_mobs.Copy()
-	hearing_mobs.len = 0
+	var/list/old = hearing_mobs ? hearing_mobs.Copy() : list()
 	var/turf/source = get_turf(parent())
 	// FIXME
 	// for(var/mob/M in get_hearers_in_view(instrument_range, source))
 	var/list/in_range = get_mobs_and_objs_in_view_fast(source, instrument_range, remote_ghosts = FALSE)
+	var/list/now = list()
 	for(var/mob/M in in_range["mobs"])
-		hearing_mobs[M] = get_dist(M, source) // ALLOW(object_keyed_lists): rebuilt every hearcheck; stop_playing() needs every hearer to terminate its sound
-	var/list/exited = old - hearing_mobs
-	for(var/i in exited)
-		terminate_sound_mob(i)
+		now += M
+	// hearing_mobs is a relation list: a deleted hearer leaves it by itself; stop_playing() still
+	// terminates the sound of every hearer left in it.
+	for(var/mob/M as anything in old - now)
+		rel_remove(src, "hearing_mobs", M)
+		terminate_sound_mob(M)
+	for(var/mob/M as anything in now - old)
+		rel_add(src, "hearing_mobs", M)
 
 /**
  * Sets our instrument, caching anything necessary for faster accessing. Accepts an ID, typepath, or instantiated instrument datum.
@@ -165,7 +168,7 @@
 	terminate_all_sounds()
 	var/old_legacy
 	if(using_instrument())
-		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
+		rel_remove(using_instrument(), "songs_using", src)
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument_static = null
 	cached_samples = null
@@ -176,7 +179,7 @@
 		I = instrument_service().instrument_data[I]
 	if(istype(I))
 		using_instrument_static = I
-		LAZYADD(I.songs_using, om_handle(src))
+		rel_add(I, "songs_using", src)
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
 			cached_legacy_ext = I.legacy_instrument_ext
@@ -256,7 +259,7 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	om_task_periodic_stop(src)
 	OM_EMIT(parent(), /datum/om/event/instrument_end, finished)
 	terminate_all_sounds(TRUE)
-	hearing_mobs.len = 0
+	rel_clear(src, "hearing_mobs")
 	rel_clear(src, "music_player")
 
 /**
@@ -450,3 +453,5 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /// the music_player this refers to (a relation view: null once it is deleted).
 /datum/song/proc/music_player() as /atom
 	return music_player
+
+REL_LIST(/datum/song, hearing_mobs)

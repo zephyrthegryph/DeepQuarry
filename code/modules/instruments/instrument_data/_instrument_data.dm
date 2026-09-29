@@ -36,7 +36,7 @@
 	/// For legacy instruments, our file extension
 	var/legacy_instrument_ext
 	/// What songs are using us
-	var/list/songs_using	// OM handles of the songs using this (om_resolve_all())
+	var/list/songs_using	// a relation list: a deleted song leaves it
 	/// Don't touch this
 	var/static/HIGHEST_KEY = 127
 	/// Don't touch this x2
@@ -71,8 +71,7 @@
 // songs using it drop it; leaves instrument_service().
 /datum/instrument/on_destroy(force)
 	instrument_service().instrument_data -= id
-	for(var/i in om_resolve_all(songs_using))
-		var/datum/song/S = i
+	for(var/datum/song/S as anything in songs_using?.Copy())
 		S.set_instrument(null)
 	..()
 
@@ -110,3 +109,4 @@
 	for(var/key in last_key to HIGHEST_KEY)
 		samples[num2text(key)] = new /datum/instrument_key(last_sample, key, key - last_key)
 
+REL_LIST(/datum/instrument, songs_using)

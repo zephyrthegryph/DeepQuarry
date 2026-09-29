@@ -17,7 +17,7 @@
 	var/delete_message = "Delete Message"
 
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
-// the linked belly (an OM handle) is saved as the belly's name.
+// the linked belly (a relation view) is saved as the belly's name.
 /obj/soulgem/state_codecs()
 	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
 
@@ -41,7 +41,7 @@
 /datum/state_codec/soulgem_belly
 
 /datum/state_codec/soulgem_belly/encode(datum/owner, var_name, value, datum/state_context/ctx)
-	var/obj/belly/belly = om_resolve(value)
+	var/obj/belly/belly = value
 	return istype(belly) ? belly.name : null
 
 /datum/state_codec/soulgem_belly/decode(datum/owner, var_name, encoded, datum/state_context/ctx)
@@ -61,10 +61,13 @@
 // Allows to transfer the soulgem to the given mob
 /obj/soulgem/proc/transfer_self(mob/target)
 	own_clear(target, "soulgem", OWN_DELETE)
-	owner().soulgem = null
+	var/mob/living/old_owner = owner()
 	forceMove(target)
 	rel_set(src, "owner", target)
-	rel_set(target, "soulgem", src)
+	if(old_owner && old_owner.soulgem == src)
+		own_transfer(old_owner, "soulgem", target, "soulgem")
+	else
+		own_set(target, "soulgem", src)
 
 // Cleaning up our refs before deletion
 

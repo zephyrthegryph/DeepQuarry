@@ -229,8 +229,8 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 		// this service's own OM teardown (lifecycle phase 5, om_teardown_hooks()) drops every hook
 		// it holds, on the doomed owner and on its turf and holders alike.
 		batch.material_service_watch_keys += om_watch_entity_key(src)
-		monitor_tool = null
-		monitor_user = null
+		rel_clear(src, "monitor_tool")
+		rel_clear(src, "monitor_user")
 		last_reading = null
 		rel_clear(src, "watched_turf")
 		mixture_ids = null
@@ -645,5 +645,4 @@ GLOBAL_VAR_INIT(next_material_assembly_id, 0)
 /datum/material_service/proc/owner() as /obj
 	return owner
 
-REL_PAIR(/datum/material_service, owner, material_service)
-REL_PAIR(/obj, material_service, owner)
+// An obj owns its material service (own_set); `owner` is the service's one-sided view back.
