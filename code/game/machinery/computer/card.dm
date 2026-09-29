@@ -48,14 +48,10 @@
 	effect = /obj/machinery/computer/card/proc/interaction_insert_id
 
 /obj/machinery/computer/card/proc/interaction_insert_id(mob/user, obj/item/card/id/id_card, datum/interaction/interaction)
-	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()) && (user.unEquip(id_card) || (id_card.loc == user && istype(user,/mob/living/silicon/robot)))) //Grippers. Again. ~Mechoid
-		user.drop_item()
-		id_card.forceMove(src)
-		own_set(src, nameof(scan), id_card)
+	if(!scan && (ACCESS_CHANGE_IDS in id_card.GetAccess()))
+		own_set(src, nameof(src.scan), id_card, user = user)
 	else if(!modify)
-		user.drop_item()
-		id_card.forceMove(src)
-		own_set(src, nameof(modify), id_card)
+		own_set(src, nameof(src.modify), id_card, user = user)
 
 	SStgui.update_uis(src)
 	attack_hand(user)
@@ -180,9 +176,8 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_modify)
 			own_take(src, nameof(/obj/machinery/computer/card::modify))
 	else
 		var/obj/item/I = ui.user.get_active_hand()
-		if(istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-			I.forceMove(src)
-			own_set(src, nameof(/obj/machinery/computer/card::modify), I)
+		if(istype(I, /obj/item/card/id))
+			own_set(src, nameof(src.modify), I, user = ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"
@@ -201,9 +196,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			ui.user.drop_item()
-			I.forceMove(src)
-			own_set(src, nameof(/obj/item/extrapolator::scan), I)
+			own_set(src, nameof(src.scan), I, user = ui.user)
 	. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"

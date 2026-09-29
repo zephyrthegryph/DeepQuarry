@@ -181,24 +181,31 @@
 
 /// Adopts `value` into holder's one-shape owned var. The previous value is disposed of by
 /// policy (destroyed, spilled, or left contained). Returns `value`, or null when refused.
-/proc/own_set(datum/holder, var_name, datum/value)
+///
+/// A movable somewhere else is transferred in first, in the same call (transfer.dm): checked
+/// (it can leave its hand, equip slot, storage or other holder, and enter this one), released
+/// from there, moved in (`slot`: which of the holder's ledger slots) and adopted. `user`: who does
+/// it -- told why on a refusal, and the transfer is recorded as a dispatched call (changed(), the
+/// fingerprint, the `log` line). `into`: TRUE moves it in even off a turf, FALSE never moves it.
+/// `force`: skips the checks (admin undress, a worn item swallowing the one under it).
+/proc/own_set(datum/holder, var_name, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN)
 	var/old = holder.vars[var_name]
 	if(old == value)
 		return value
 	if(!isnull(value) && !own_guard(holder, value, "own_set([var_name])")) // the one teardown guard (guard.dm)
 		return null
-	if(entry && isdatum(value))
-		if(!own_stamp(value, holder, var_name))
-			return null
-		if(own_policy(holder, var_name, entry) == OWN_CONTAINED)
-			var/atom/movable/AM = value
-			if(!ismovable(AM) || AM.loc != holder)
-				OWN_REPORT("[holder.type].[var_name] is CONTAINED: put [value.type] in its contents before own_set()")
+	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, user, into, slot, force))
+		return null
+	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
+		return null
 	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
 	own_field_changed(holder, var_name)
+	own_mark_changed(holder) // review 2 M8: every accessor write marks the holder
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
+	if(user && !isnull(value))
+		own_transfer_record(holder, value, user, log)
 	return value
 
 /// Detaches and returns holder.var_name's value, now unowned: the caller adopts it
@@ -209,16 +216,21 @@
 		return null
 	holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 	own_field_changed(holder, var_name)
+	own_mark_changed(holder)
 	holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
 
 /// Adds `value` to holder's owned list (created on first use). Returns `value`, or null when refused.
-/proc/own_add(datum/holder, var_name, datum/value)
+/// A movable somewhere else is transferred in first: see own_set() for `user`, `into`, `slot`,
+/// `force` and `log`.
+/proc/own_add(datum/holder, var_name, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(isnull(value))
 		return null
 	if(!own_guard(holder, value, "own_add([var_name])")) // the one teardown guard (guard.dm)
+		return null
+	if(!own_bring_in(holder, var_name, value, entry, user, into, slot, force))
 		return null
 	if(entry && !own_stamp(value, holder, var_name))
 		return null
@@ -228,6 +240,9 @@
 		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
 	L |= value
+	own_mark_changed(holder)
+	if(user)
+		own_transfer_record(holder, value, user, log)
 	return value
 
 /// Removes `value` from holder's owned list and disposes of it by policy.
@@ -237,6 +252,7 @@
 	if(!islist(L) || !(value in L))
 		return FALSE
 	L -= value
+	own_mark_changed(holder)
 	if(!length(L))
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
@@ -244,29 +260,35 @@
 		own_dispose(holder, var_name, value, entry)
 	return TRUE
 
-/// Values shape: holder.var_name[key] = value, disposing of the value it replaces.
-/proc/own_put(datum/holder, var_name, key, datum/value)
+/// Values shape: holder.var_name[key] = value, disposing of the value it replaces. A movable
+/// somewhere else is transferred in first: see own_set() for `user`, `into`, `slot`, `force`, `log`.
+/proc/own_put(datum/holder, var_name, key, datum/value, mob/user = null, into = null, slot = null, force = FALSE, log = null)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(!isnull(value) && !own_guard(holder, value, "own_put([var_name])")) // the one teardown guard (guard.dm)
 		return null
 	var/list/L = holder.vars[var_name]
+	if(!islist(L) && isnull(value))
+		return null
+	if(islist(L) && L[key] == value)
+		return value
+	if(!isnull(value) && !own_bring_in(holder, var_name, value, entry, user, into, slot, force))
+		return null
+	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
+		return null
 	if(!islist(L))
-		if(isnull(value))
-			return null
 		L = list()
 		holder.vars[var_name] = L // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
 	var/old = L[key]
-	if(old == value)
-		return value
-	if(entry && isdatum(value) && !own_stamp(value, holder, var_name))
-		return null
 	if(isnull(value))
 		L -= key
 	else
 		L[key] = value
+	own_mark_changed(holder)
 	if(entry && isdatum(old))
 		own_dispose(holder, var_name, old, entry)
+	if(user && !isnull(value))
+		own_transfer_record(holder, value, user, log)
 	return value
 
 /// List or values shape: detaches one member (a value, or the value under a key) and returns it unowned.
@@ -285,28 +307,34 @@
 		holder.vars[var_name] = null // ALLOW(api, ownership): the accessor
 		own_field_changed(holder, var_name)
 	if(value)
+		own_mark_changed(holder)
 		holder.on_owned_release(var_name, value)
 	own_unstamp(value)
 	return value
 
 /// Moves an owned value from from.from_var to dest.dest_var: never destroyed or orphaned on the
-/// way. `member` picks one member of a list/values var (the value, or its key); null moves a
+/// way, and never moved (a re-own in place; own_set() with a place to take it from is the
+/// one-call transfer). `member` picks one member of a list/values var (the value, or its key); null moves a
 /// one-shape var's value. A list/values destination adds (or puts under `dest_key`).
 /proc/own_transfer(datum/from, from_var, datum/dest, dest_var, member = null, dest_key = null)
 	// The one teardown guard (guard.dm), before anything is taken from `from`.
 	var/datum/moving = isnull(member) ? from.vars[from_var] : member
 	if(!own_guard(dest, isdatum(moving) ? moving : null, "own_transfer([from_var] -> [dest_var])"))
 		return null
+	// A move into a CONTAINED var is a transfer (transfer.dm): checked here, before anything is taken,
+	// so a refusal leaves the value with `from` instead of destroying it below.
+	if(isdatum(moving) && own_wants_transfer(dest, dest_var, moving, own_table_of(dest).entries[dest_var], into = FALSE) && own_transfer_refusal(dest, moving))
+		return null
 	var/datum/value = isnull(member) ? own_take(from, from_var) : own_take_member(from, from_var, member)
 	if(isnull(value))
 		return null
 	var/adopted
 	if(!isnull(dest_key))
-		adopted = own_put(dest, dest_var, dest_key, value)
+		adopted = own_put(dest, dest_var, dest_key, value, into = FALSE)
 	else if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
-		adopted = own_add(dest, dest_var, value)
+		adopted = own_add(dest, dest_var, value, into = FALSE)
 	else
-		adopted = own_set(dest, dest_var, value)
+		adopted = own_set(dest, dest_var, value, into = FALSE)
 	if(!adopted)
 		OWN_REPORT("own_transfer of [value.type] from [from.type].[from_var] to [dest.type].[dest_var] refused; destroying it")
 		qdel(value) // ALLOW(lifecycle): the ownership framework disposes of owned values by policy
@@ -327,10 +355,10 @@
 		var/list/cur = current.vars[value.own_slot]
 		return own_transfer(current, value.own_slot, dest, dest_var, islist(cur) ? value : null, dest_key)
 	if(!isnull(dest_key))
-		return own_put(dest, dest_var, dest_key, value)
+		return own_put(dest, dest_var, dest_key, value, into = FALSE)
 	if(islist(dest.vars[dest_var]) || own_table_of(dest).entries[dest_var]?[OWNE_LIST])
-		return own_add(dest, dest_var, value)
-	return own_set(dest, dest_var, value)
+		return own_add(dest, dest_var, value, into = FALSE)
+	return own_set(dest, dest_var, value, into = FALSE)
 
 /// Detaches everything holder.var_name owns and returns it as a list, all unowned (the caller
 /// adopts or destroys each). The var is emptied.

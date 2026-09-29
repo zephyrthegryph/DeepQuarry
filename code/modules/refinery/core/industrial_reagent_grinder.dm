@@ -47,14 +47,12 @@
 /obj/machinery/reagent_refinery/grinder/proc/interaction_insert(mob/user, obj/item/O, datum/interaction/interaction)
 	// Botany/Chemistry gameplay
 	if(istype(O,/obj/item/storage/bag))
-		var/obj/item/storage/bag/bag = O
 		var/failed = 1
 		for(var/obj/item/G in contents_of(O))
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			bag.remove_from_storage(G, src)
-			own_add(src, nameof(holdingitems), G)
+			own_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
 			if(holdingitems && holdingitems.len >= limit)
 				break
 
@@ -87,8 +85,8 @@
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 
-	user.drop_from_inventory(O,src)
-	own_add(src, nameof(holdingitems), O)
+	if(!own_add(src, nameof(src.holdingitems), O, user = user))
+		return TRUE
 	update_icon()
 	return TRUE
 
@@ -143,8 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 		return FALSE
 	if(!GLOB.sheet_reagents[AM.type] && !GLOB.ore_reagents[AM.type] && (!AM.reagents || !AM.reagents.total_volume))
 		return FALSE
-	AM.forceMove(src)
-	own_add(src, nameof(holdingitems), AM)
+	own_add(src, nameof(src.holdingitems), AM, into = TRUE)
 	return TRUE
 
 /obj/machinery/reagent_refinery/grinder/examine(mob/user, infix, suffix)

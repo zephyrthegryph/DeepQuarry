@@ -319,11 +319,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 
 		var/mob/living/M = H.held_mob
 
-		M.forceMove(src)
-		rel_clear(H, nameof(H.held_mob))
+		own_add(src, nameof(src.victims), M, user = user, into = TRUE) // out of the holder
+		rel_clear(H, "held_mob")
 		consume(H, user)
-
-		own_add(src, nameof(victims), M)
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
 		to_chat(M, span_warning("[user] sticks you to \the [src]!"))

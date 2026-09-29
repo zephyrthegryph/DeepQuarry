@@ -114,9 +114,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
 				return TRUE
 		set_busy(TRUE)
-		user.drop_item()
-		O.forceMove(src)
-		own_set(src, nameof(loaded_item), O)
+		if(!own_set(src, nameof(src.loaded_item), O, user = user))
+			return TRUE
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)

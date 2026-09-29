@@ -109,8 +109,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 /obj/item/organ/internal/heart/machine/anomalock/proc/install_core(mob/user, obj/item/W)
 	if(core || W.loc != user)
 		return
-	user.unEquip(W, TRUE, src)
-	own_set(src, nameof(core), W)
+	if(!own_set(src, nameof(src.core), W, user = user))
+		return
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()

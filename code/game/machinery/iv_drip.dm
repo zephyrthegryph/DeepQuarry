@@ -67,9 +67,8 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(!istype(W, /obj/item/reagent_containers))
 		return FALSE
 
-	user.drop_item()
-	W.forceMove(src)
-	own_set(src, nameof(beaker), W)
+	if(!own_set(src, nameof(src.beaker), W, user = user))
+		return FALSE
 	to_chat(user, "You attach \the [W] to \the [src].")
 	update_icon()
 	return TRUE

@@ -385,16 +385,16 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 			return 1
 		else
 			var/obj/item/I = user.get_active_hand()
-			if (istype(I, /obj/item/card/id) && user.unEquip(I))
-				I.forceMove(src)
-				own_set(src, nameof(id), I)
+			if (istype(I, /obj/item/card/id))
+				own_set(src, nameof(src.id), I, user = user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
-		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
-			var/obj/old_id = own_take(src, nameof(id)) // handed back below, not disposed of
-			I.forceMove(src)
-			own_set(src, nameof(id), I)
+		if (istype(I, /obj/item/card/id) && I:registered_name)
+			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
+			if(!own_set(src, nameof(src.id), I, user = user))
+				own_set(src, nameof(src.id), old_id)
+				return 0
 			user.put_in_hands(old_id)
 			return 1
 	return 0
@@ -413,9 +413,8 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 /// Old attackby.
 /obj/item/pda/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
 	if(istype(C, /obj/item/cartridge) && !cartridge)
-		own_set(src, nameof(cartridge), C)
-		user.drop_item()
-		cartridge.forceMove(src)
+		if(!own_set(src, nameof(src.cartridge), C, user = user))
+			return INTERACTION_HANDLED_PASS
 		cartridge.update_programs(src)
 		update_shortcuts()
 		to_chat(user, span_notice("You insert [cartridge] into [src]."))
@@ -441,8 +440,8 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 					add_overlay("pda-id")
 			return INTERACTION_HANDLED_PASS
 	else if(istype(C, /obj/item/paicard) && !src.pai)
-		user.drop_item(src)
-		own_set(src, nameof(pai), C)
+		if(!own_set(src, nameof(src.pai), C, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 		SStgui.update_uis(src) // update all UIs attached to src
 	else if(istype(C, /obj/item/pen))

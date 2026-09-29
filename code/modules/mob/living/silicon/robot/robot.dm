@@ -797,9 +797,8 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(bolt)
 		to_chat(user, span_notice("There is already a restraining bolt installed in this cyborg."))
 		return FALSE
-	user.drop_from_inventory(W)
-	W.forceMove(src)
-	own_set(src, nameof(bolt), W)
+	if(!own_set(src, nameof(src.bolt), W, user = user))
+		return FALSE
 	to_chat(user, span_notice("You install \the [W]."))
 	return TRUE
 

@@ -781,9 +781,8 @@ APPEARANCE_NONE(/obj/machinery/power/rtg/fake_gen)
 	return !cell
 
 /obj/machinery/power/rtg/abductor/proc/interaction_insert_cell(mob/user, obj/item/I, datum/interaction/interaction)
-	user.remove_from_mob(I)
-	I.forceMove(src)
-	own_set(src, nameof(cell), I)
+	if(!own_set(src, nameof(src.cell), I, user = user))
+		return TRUE
 	RefreshParts()
 	update_icon()
 	play_sfx(src, SFX_EFFECTS_METAL_CLOSE)

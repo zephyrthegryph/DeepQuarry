@@ -229,9 +229,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	else if(!can_wear_hat)
 		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
 	else
-		user.drop_item(new_hat)
-		new_hat.forceMove(src)
-		own_set(src, nameof(hat), new_hat)
+		if(!own_set(src, "hat", new_hat, user = user))
+			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
 		update_icon()
 		return

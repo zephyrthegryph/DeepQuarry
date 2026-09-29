@@ -94,9 +94,8 @@
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
 				var/obj/item/clothing/head/new_hat = get_active_hand()
-				drop_from_inventory(new_hat, src)
-				new_hat.forceMove(src)
-				own_set(src, nameof(hat), new_hat)
+				if(!own_set(src, nameof(src.hat), new_hat, user = user, slot = SLOT_ID_BODY)) // out of the paw, onto the head
+					return
 				to_chat(user, span_notice("You put on the hat."))
 				update_icon()
 			return

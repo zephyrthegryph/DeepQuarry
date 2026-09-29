@@ -117,9 +117,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		var/obj/item/assembly/igniter/I = W
 		if(I.secured)	return INTERACTION_HANDLED_PASS
 		if(igniter)		return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		I.forceMove(src)
-		own_set(src, nameof(igniter), I)
+		if(!own_set(src, nameof(src.igniter), I, user = user))
+			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -127,9 +126,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
 			return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		own_set(src, nameof(ptank), W)
-		W.forceMove(src)
+		if(!own_set(src, nameof(src.ptank), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 

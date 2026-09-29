@@ -103,10 +103,9 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 
 /obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!power_source)
-		own_set(src, nameof(power_source), W)
+		if(!own_set(src, nameof(src.power_source), W, user = user))
+			return TRUE
 		power_source.update_icon() //Why doesn't a cell do this already? :|
-		user.unEquip(power_source)
-		power_source.forceMove(src)
 		update_icon()
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
 		return TRUE

@@ -395,10 +395,9 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 			return TRUE
 
 		to_chat(user, "You install the coil into the SMES unit!")
-		user.drop_item()
 		cur_coils ++
-		own_add(src, nameof(component_parts), W)
-		W.forceMove(src)
+		if(!own_add(src, nameof(src.component_parts), W, user = user))
+			return TRUE
 		recalc_coils()
 	else
 		to_chat(user, span_red("You can't insert more coils into this SMES unit!"))

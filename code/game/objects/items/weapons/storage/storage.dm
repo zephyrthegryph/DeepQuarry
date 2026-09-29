@@ -275,13 +275,22 @@ TYPE_TABLE(/obj/item/storage, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 		return FALSE
 	if(new_location && ismob(loc))
 		W.dropped(user || loc)
+	return storage_exit(W, destination, user)
+
+/// remove_from_storage()'s commit, after any stall: moves `W` to `destination` and runs the storage
+/// side (layer, maptext, on_exit_storage(), icon). Never sleeps. `checked`: the caller already
+/// checked the move (a one-call transfer, code/datums/ownership/transfer.dm), so it commits straight
+/// into `slot` with `flags`; otherwise slot_remove() checks it.
+/obj/item/storage/proc/storage_exit(obj/item/W, atom/destination, mob/user, slot = null, flags = 0, checked = FALSE)
 	if(ismob(destination))
 		W.hud_layerise()
 	else
 		W.reset_plane_and_layer()
-	if(!slot_remove(W, destination, user))
+	if(checked)
+		if(!dq_ledger_force_move(W, destination, flags, slot))
+			return FALSE
+	else if(!slot_remove(W, destination, user))
 		return FALSE
-
 	if(W.maptext)
 		W.maptext = ""
 	W.on_exit_storage(src)

@@ -164,9 +164,8 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 /// Old attackby.
 /obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !cell)
-		user.unEquip(W)
-		W.forceMove(src)
-		own_set(src, nameof(cell), W) // CONTAINED: in our contents first
+		if(!own_set(src, nameof(src.cell), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		cell.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
 	return INTERACTION_HANDLED_PASS

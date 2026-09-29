@@ -95,9 +95,8 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 /// Old attackby.
 /obj/item/backup_implanter/proc/backup_implanter_interaction_load(mob/user, obj/item/W, datum/interaction/interaction)
 	if(LAZYLEN(imps) < max_implants)
-		user.unEquip(W)
-		W.forceMove(src)
-		own_add(src, nameof(imps), W)
+		if(!own_add(src, nameof(src.imps), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		W.germ_level = 0
 		update()
 		to_chat(user, span_notice("You load \the [W] into \the [src]."))

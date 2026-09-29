@@ -24,6 +24,28 @@
 
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
+/// A custom interval (deciseconds) for periodic_step() instead of a shared cadence (the old
+/// DECLARE_REPEAT delay): runs every interval while should_run() holds. A type var.
+/datum/var/periodic_interval = null
+
+OWN_TIMER(/datum, periodic_interval)
+
+/// Starts or stops D's custom-interval step to match should_run().
+/proc/periodic_interval_update(datum/D)
+	var/want = !!D.should_run()
+	var/pending = om_timer_slot_pending(D, "periodic_interval")
+	if(want && !pending)
+		om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+	else if(!want && pending)
+		om_cancel_timer_slot(D, "periodic_interval")
+
+/// One custom-interval step; re-arms while should_run() holds (the framework's timer, not game code).
+/proc/periodic_interval_fire(datum/D)
+	if(QDELETED(D) || !D.periodic_interval)
+		return
+	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
+		return
+	om_after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.
@@ -209,6 +231,9 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 	D.on_state_changed(bits)
 
 /proc/refresh_periodic(datum/D)
+	if(D.periodic_interval)
+		periodic_interval_update(D)
+		return
 	if(!D.periodic_cadence)
 		return
 	var/want = !!D.should_run()

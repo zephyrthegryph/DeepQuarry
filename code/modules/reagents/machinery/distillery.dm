@@ -259,17 +259,13 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	switch(ask.choice)
 		if("install input")
 			if(!InputBeaker)
-				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
-				W.forceMove(src)
-				own_set(src, nameof(InputBeaker), W)
+				own_set(src, nameof(src.InputBeaker), W, user = user)
 
 		if("install output")
 			if(!OutputBeaker)
-				user.drop_from_inventory(W)
 				W.add_fingerprint(user)
-				W.forceMove(src)
-				own_set(src, nameof(OutputBeaker), W)
+				own_set(src, nameof(src.OutputBeaker), W, user = user)
 
 	update_icon()
 	return TRUE

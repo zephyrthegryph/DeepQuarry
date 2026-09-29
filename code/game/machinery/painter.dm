@@ -85,9 +85,8 @@ DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(AP
 	if(istype(I,/obj/item/stack/material/cyborg)) //Needs an exception for borg materials to avoid glitches.
 		return TRUE
 	act_message(user, null, others = span_notice("%U% inserts %I% into the Color Mate receptable."), item = I)
-	user.drop_from_inventory(I)
-	I.forceMove(src)
-	own_set(src, nameof(inserted), I)
+	if(!own_set(src, nameof(src.inserted), I, user = user))
+		return TRUE
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -96,8 +95,7 @@ DECLARE_APPEARANCE(/obj/machinery/gear_painter, "panel_open", list("1" = list(AP
 		return
 	if(user)
 		act_message(user, victim, others = span_warning("%U% stuffs %T% into [src]!"))
-	victim.forceMove(src)
-	own_set(src, nameof(inserted), victim)
+	own_set(src, nameof(src.inserted), victim, user = user, into = TRUE)
 
 /obj/machinery/gear_painter/AllowDrop()
 	return FALSE

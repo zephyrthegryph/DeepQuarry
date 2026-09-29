@@ -245,8 +245,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/toy, "{initial(icon_state
 	for(var/obj/item/ammo_casing/afoam_dart/D in contents_of(T))
 		if(length(loaded) >= max_shells)
 			break
-		D.forceMove(src)
-		own_add(src, nameof(loaded), D)
+		own_add(src, nameof(src.loaded), D, into = TRUE)
 		moveElement(loaded, length(loaded), 1)
 		success = 1
 	if(success)

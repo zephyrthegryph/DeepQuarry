@@ -24,11 +24,10 @@
 	found = 1
 
 	if(found)
+		if(!own_set(src, slot, H, user = user))
+			return
 		to_chat(user, "You install \the [H] into \the [src]")
-		user.drop_from_inventory(H)
-		H.forceMove(src)
-		own_set(src, slot, H) // hardware slots are OWN_CONTAINED: in our contents first
-		rel_set(H, nameof(/obj/item/computer_hardware/::holder2), src)
+		rel_set(H, "holder2", src)
 
 // Installs hardware during preset construction (no user interaction).
 // Used by install_default_hardware() overrides and the laptop vendor.

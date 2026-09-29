@@ -61,9 +61,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, 
 	effect = /obj/machinery/computer/timeclock/proc/interaction_insert_id
 
 /obj/machinery/computer/timeclock/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
-	if(!card && user.unEquip(I))
-		I.forceMove(src)
-		own_set(src, nameof(card), I)
+	if(!card && own_set(src, nameof(src.card), I, user = user))
 		play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 		SStgui.update_uis(src)
 		update_icon()
@@ -125,9 +123,7 @@ UI_ACT_PROC(/obj/machinery/computer/timeclock, ui_act_id)
 		play_sfx(src, SFX_EFFECTS_REMOVE_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	else
 		var/obj/item/I = ui.user.get_active_hand()
-		if (istype(I, /obj/item/card/id) && ui.user.unEquip(I))
-			I.forceMove(src)
-			own_set(src, nameof(/mob/living/silicon/pai::card), I)
+		if (istype(I, /obj/item/card/id) && own_set(src, nameof(src.card), I, user = ui.user))
 			play_sfx(src, SFX_EFFECTS_INSERT_ID_CARD) // Timeclock beepboop. TODO: Make clocks delay reading the card for ~3 seconds to line up with quiet boops
 	update_icon()
 	return TRUE

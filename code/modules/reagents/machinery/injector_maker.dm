@@ -76,9 +76,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 /obj/machinery/injector_maker/proc/interaction_add_beaker(mob/user, obj/item/O, datum/interaction/interaction)
 	if (beaker)
 		return TRUE
-	user.drop_item()
-	O.forceMove(src)
-	own_set(src, nameof(beaker), O) // CONTAINED: in our contents first
+	if(!own_set(src, nameof(src.beaker), O, user = user))
+		return TRUE
 	update_icon()
 	return TRUE
 

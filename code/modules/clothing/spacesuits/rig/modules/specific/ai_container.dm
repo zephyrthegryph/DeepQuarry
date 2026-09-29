@@ -189,9 +189,8 @@
 				else
 					return 0
 			else
-				user.drop_from_inventory(ai)
-				ai.forceMove(src)
-				own_set(src, nameof(ai_card), ai)
+				if(!own_set(src, nameof(src.ai_card), ai, user = user))
+					return 0
 				to_chat(ai_mob, span_blue("You have been transferred to \the [holder]'s [src]."))
 				to_chat(user, span_blue("You load [ai_mob] into \the [holder]'s [src]."))
 

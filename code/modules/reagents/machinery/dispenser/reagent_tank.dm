@@ -231,9 +231,8 @@ EXTEND_INTERACTIONS(/obj/structure/reagent_dispensers/fueltank, \
 		message_admins("[key_name_admin(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[loc.x];Y=[loc.y];Z=[loc.z]'>JMP</a>)")
 		log_game("[key_name(user)] rigged fueltank at [loc.loc.name] ([loc.x],[loc.y],[loc.z]) for explosion.")
 
-	user.drop_item()
-	H.forceMove(src)
-	own_set(src, nameof(rig), H) // CONTAINED: in our contents first
+	if(!own_set(src, nameof(src.rig), H, user = user))
+		return
 
 	var/icon/test = getFlatIcon(H)
 	test.Shift(NORTH,1)

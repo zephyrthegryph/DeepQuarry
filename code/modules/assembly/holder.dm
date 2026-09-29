@@ -25,16 +25,10 @@
 	if(D.secured || D2.secured)
 		return FALSE
 
-	if(user)
-		user.remove_from_mob(D)
-		user.remove_from_mob(D2)
-
-	rel_set(D, nameof(D.holder), src)
-	rel_set(D2, nameof(D2.holder), src)
-	D.forceMove(src)
-	D2.forceMove(src)
-	own_set(src, nameof(a_left), D)
-	own_set(src, nameof(a_right), D2)
+	rel_set(D, "holder", src)
+	rel_set(D2, "holder", src)
+	own_set(src, nameof(src.a_left), D, user = user, into = TRUE)
+	own_set(src, nameof(src.a_right), D2, user = user, into = TRUE)
 	name = "[D.name]-[D2.name] assembly"
 	update_icon()
 	user.put_in_hands(src)

@@ -139,9 +139,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 			if(cell)
 				to_chat(user, "There is a power cell already installed.")
 			else
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, nameof(cell), W)
+				if(!own_set(src, nameof(src.cell), W, user = user))
+					return TRUE
 				to_chat(user, "You insert the power cell.")
 	update_icon()
 	return TRUE

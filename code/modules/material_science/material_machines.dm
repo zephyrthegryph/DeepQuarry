@@ -117,11 +117,8 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	return TRUE
 
 /obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(!user.drop_from_inventory(stock))
-		to_chat(user, span_warning("You cannot let go of [stock]."))
+	if(!own_add(src, nameof(src.feedstock), stock, user = user)) // the user is told why
 		return TRUE
-	stock.forceMove(src)
-	own_add(src, nameof(feedstock), stock)
 	act_message(user, src, others = span_notice("%U% loads [stock] into %T%."))
 	return TRUE
 
@@ -136,11 +133,8 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 /obj/machinery/material_furnace/proc/interaction_load_carbon(mob/user, obj/item/item, datum/interaction/interaction)
 	if(firing || output_stock())
 		return TRUE
-	if(!user.drop_from_inventory(item))
-		to_chat(user, span_warning("You cannot let go of [item]."))
+	if(!own_add(src, nameof(src.carbon_feed), item, user = user)) // the user is told why
 		return TRUE
-	item.forceMove(src)
-	own_add(src, nameof(carbon_feed), item)
 	act_message(user, src, others = span_notice("%U% adds carbon to %T%'s charge."))
 	return TRUE
 

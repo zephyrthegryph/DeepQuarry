@@ -41,9 +41,8 @@
 		return TRUE
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
-			user.remove_from_mob(O)
-			O.forceMove(src)
-			own_set(src, nameof(has_extinguisher), O)
+			if(!own_set(src, nameof(src.has_extinguisher), O, user = user))
+				return TRUE
 			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else

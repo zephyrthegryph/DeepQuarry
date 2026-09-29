@@ -68,9 +68,8 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		path = 1
 		to_chat(user, span_notice("You add [W] to the metal casing."))
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2)
-		user.remove_from_mob(det)
-		det.forceMove(src)
-		own_set(src, nameof(detonator), det)
+		if(!own_set(src, nameof(src.detonator), det, user = user))
+			return INTERACTION_HANDLED_PASS
 		if(istimer(detonator.a_left))
 			var/obj/item/assembly/timer/T = detonator.a_left
 			det_time = 10*T.time

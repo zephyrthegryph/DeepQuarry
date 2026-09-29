@@ -138,8 +138,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))
 				return
-			own_set(src, nameof(manipulator), thing)
-			user.drop_from_inventory(manipulator, src)
+			if(!own_set(src, nameof(src.manipulator), thing, user = user))
+				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = manipulator)

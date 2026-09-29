@@ -326,9 +326,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/organ_printer/flesh/full, "container", /obj
 		to_chat(user, span_warning("\The [src] already has a container loaded!"))
 		return
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = G)
-	user.drop_item()
-	G.forceMove(src)
-	own_set(src, nameof(container), G) // CONTAINED: in our contents first
+	own_set(src, nameof(src.container), G, user = user)
 
 EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC_REF(flesh_printer_interaction_item)))
 

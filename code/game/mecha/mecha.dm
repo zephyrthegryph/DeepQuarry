@@ -484,8 +484,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
-		C.forceMove(src)
-		own_set(src, nameof(cell), C)
+		own_set(src, nameof(src.cell), C, into = TRUE)
 		return
 	own_set(src, nameof(cell), new /obj/item/cell/mech(src))
 
@@ -1247,9 +1246,8 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		if(state==MECHA_CELL_OUT)
 			if(!src.cell)
 				to_chat(user, "You install the powercell")
-				user.drop_item()
-				W.forceMove(src)
-				own_set(src, nameof(cell), W)
+				if(!own_set(src, nameof(src.cell), W, user = user))
+					return TRUE
 				src.mecha_log_message("Powercell installed")
 			else
 				to_chat(user, "There's already a powercell installed.")

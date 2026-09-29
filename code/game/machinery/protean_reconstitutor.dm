@@ -132,21 +132,15 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			to_chat(user,span_warning("You cannot use an inactive positronic brain for this process."))
 			return TRUE
 		to_chat(user,span_notice("You slot \the [NB] into \the [src]."))
-		user.drop_from_inventory(NB)
-		NB.forceMove(src)
-		own_set(src, nameof(protean_brain), NB)
+		own_set(src, nameof(src.protean_brain), NB, user = user)
 
 	if(istype(W,/obj/item/organ/internal/nano/orchestrator))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
-		user.drop_from_inventory(W)
-		W.forceMove(src)
-		own_set(src, nameof(protean_orchestrator), W)
+		own_set(src, nameof(src.protean_orchestrator), W, user = user)
 
 	if(istype(W,/obj/item/organ/internal/nano/refactory))
 		to_chat(user,span_notice("You slot \the [W] into \the [src]."))
-		user.drop_from_inventory(W)
-		W.forceMove(src)
-		own_set(src, nameof(protean_refactory), W)
+		own_set(src, nameof(src.protean_refactory), W, user = user)
 
 	if(istype(W,/obj/item/stack/nanopaste))
 		var/obj/item/stack/nanopaste/NP = W

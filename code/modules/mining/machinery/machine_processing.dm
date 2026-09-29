@@ -52,9 +52,7 @@
 /obj/machinery/mineral/processing_unit_console/proc/interaction_insert_id(mob/user, obj/item/card/id/I, datum/interaction/interaction)
 	if(!powered())
 		return TRUE
-	if(!inserted_id && (user.unEquip(I) || isrobot(user)))
-		I.forceMove(src)
-		own_set(src, nameof(inserted_id), I)
+	if(!inserted_id && own_set(src, nameof(src.inserted_id), I, user = user))
 		SStgui.update_uis(src)
 	return TRUE
 
@@ -166,9 +164,7 @@ UI_ACT(/obj/machinery/mineral/processing_unit_console, "insert", ui_act_insert)
 UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
 	var/obj/item/card/id/I = ui.user.get_active_hand()
 	if(istype(I))
-		ui.user.drop_item()
-		I.forceMove(src)
-		own_set(src, nameof(/obj/machinery/mineral/equipment_vendor::inserted_id), I)
+		own_set(src, nameof(src.inserted_id), I, user = ui.user)
 	else
 		to_chat(ui.user, span_warning("No valid ID."))
 	. = TRUE
@@ -390,7 +386,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPEL
 	return output
 
 /// Accessor for the console var.
-/obj/machinery/mineral/processing_unit/proc/console() as /obj/machinery/mineral
+/obj/machinery/mineral/processing_unit/proc/linked_console() as /obj/machinery/mineral
 	return console
 
 /// Accessor for the machine var.

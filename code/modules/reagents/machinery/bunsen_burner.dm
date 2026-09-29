@@ -41,9 +41,8 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 		to_chat(user, span_notice("You must remove \the [held_container] before you can place another container on \the [src]."))
 		return TRUE
 	// A new hand touches the beacon
-	user.drop_item(src)
-	W.forceMove(src)
-	own_set(src, nameof(held_container), W) // CONTAINED: in our contents first
+	if(!own_set(src, nameof(src.held_container), W, user = user))
+		return TRUE
 	reagents.maximum_volume = held_container.reagents.maximum_volume // Update internal reagent distilling volume
 	to_chat(user, span_notice("You put \the [held_container] onto \the [src]."))
 	if(held_container.reagents.total_volume > 0)

@@ -428,9 +428,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/sleeper, "sleeper_{appearance_occupied}")
 		return TRUE
 	if(istype(I, /obj/item/reagent_containers/glass))
 		if(!beaker)
-			user.drop_item()
-			I.forceMove(src)
-			own_set(src, nameof(beaker), I) // CONTAINED: in contents first
+			if(!own_set(src, nameof(src.beaker), I, user = user))
+				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You add  [I] to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds  [I] to %T%.")))
 		else
 			to_chat(user, span_warning("\The [src] has a beaker already."))
