@@ -291,9 +291,13 @@ TYPE_TABLE_DECLARE(/obj/item/medigun_backpack, medigun_mode_tags, list( \
 		medigun.update_icon()
 	if(bcell) // declared default: starts empty
 		bcell.charge = 0
-	if(smodule)
-		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only with a scanning module fitted
 	update_icon()
+
+OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, sbin, CHANGE_EXPLICIT)
+OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, smanipulator, CHANGE_EXPLICIT)
+OM_FIELD_VIEW_OF(/obj/item/medigun_backpack, scapacitor, CHANGE_EXPLICIT)
+/// Recharges its tanks and cell every 2 s while its manipulator, capacitor and matter bin are all fitted.
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/medigun_backpack, PERIODIC_SLOW, list("smanipulator", "scapacitor", "sbin"))
 
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "bcell", null)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smodule", null)
@@ -345,7 +349,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			own_take(src, "smodule")
 
 		if(smanipulator)
-			om_task_periodic_stop(src)
 			smanipulator.forceMove(get_turf(loc))
 			own_take(src, "smanipulator")
 			smaniptier = 0
@@ -355,12 +358,10 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			own_take(src, "slaser")
 
 		if(scapacitor)
-			om_task_periodic_stop(src)
 			scapacitor.forceMove(get_turf(loc))
 			own_take(src, "scapacitor")
 
 		if(sbin)
-			om_task_periodic_stop(src)
 			sbin.forceMove(get_turf(loc))
 			own_take(src, "sbin")
 			sbintier = 0
@@ -413,7 +414,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			W.forceMove(src)
 			own_set(src, "smanipulator", W)
 			smaniptier = smanipulator.get_rating()
-			if(sbin && scapacitor)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -465,7 +465,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				if(bcell.charge > chargecap)
 					bcell.charge = chargecap
 
-			if(sbin && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -497,7 +496,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 				burncharge = tankmax
 			if(toxcharge > tankmax)
 				toxcharge = tankmax
-			if(scapacitor && smanipulator)om_task_periodic(src, PERIODIC_SLOW)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS

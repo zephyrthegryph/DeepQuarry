@@ -286,10 +286,24 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 
 // ---- Per-type reactions ----
 
+/// TRUE from left_body() until joined_body(): a part that came out of a body.
+OM_FIELD_TYPED(/obj/item/organ, tmp, left_body_loose, FALSE, CHANGE_EXPLICIT)
+/// A part out of a body that hasn't died: it ticks on its own (decay, loose afflictions) while
+/// this holds (DECLARE_PERIODIC_WHILE). Attached parts are ticked by the body's organs stage.
+/// Death and revival raise CHANGE_EXPLICIT (die(), peridaxon, bioregeneration).
+OM_DERIVE_FIELD(/obj/item/organ, organ_ticks_loose, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/organ, PERIODIC_SLOW, "organ_ticks_loose")
+
+/obj/item/organ/proc/organ_ticks_loose()
+	if(!left_body_loose || (status & ORGAN_DEAD))
+		return FALSE
+	// A dead prosthetic has no ORGAN_DEAD flag: it is dead at max damage.
+	return !(is_robotic() && damage >= max_damage)
+
 /// This part just joined `M`'s body. Runs inside the move: must not sleep,
 /// move or delete anything.
 /obj/item/organ/proc/joined_body(mob/living/M)
-	om_task_periodic_stop(src)
+	set_left_body_loose(FALSE)
 	handle_organ_mod_special()
 
 /obj/item/organ/external/joined_body(mob/living/M)
@@ -305,7 +319,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /// being destroyed.
 /obj/item/organ/proc/left_body(mob/living/M)
 	handle_organ_mod_special(TRUE)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_left_body_loose(TRUE)
 	rejecting = null
 	// Keep a blood sample, for transplant matching and forensics.
 	var/mob/living/carbon/human/C = M

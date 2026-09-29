@@ -18,7 +18,6 @@
 	var/image/material_layer	// Holds the image used for the filled overlay.
 	var/image/material_glow		// Holds the image used for the glow overlay.
 	var/image/reagent_layer		// Holds the image used for showing a contained beaker.
-	var/energy = 0				// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
 	var/max_energy = 600
 	var/obj/item/target	// The material or persistent workpiece being bombarded.
 	var/tmp/obj/item/reagent_containers/reagent_container	// Holds the beaker. The process will consume ALL reagents inside it.
@@ -32,6 +31,11 @@
 	update_icon()
 	prepare_recipes()
 
+
+/// How many 'energy' units does this have? Acquired by a Particle Accelerator like a Singularity.
+/// It bleeds it off (machine_step()) while it has any.
+OM_FIELD(/obj/machinery/particle_smasher, energy, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energy")
 
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
@@ -197,25 +201,7 @@
 
 /// Bleeds its stored energy (radiating) while it has any; empty, it sleeps until a particle hits.
 /obj/machinery/particle_smasher/machine_step()
-	if(!energy)
-		return PROCESS_KILL
 	if(!src.anchored)	// Rapidly loses focus.
-		if(energy)
-			radiation_pulse(
-				src,
-				max_range = 7,
-				threshold = RAD_HEAVY_INSULATION,
-				chance = round(((src.energy-150)/50)*5,1),
-				minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
-				strength = energy * 0.1 //60 rads at max energy.
-			)
-			energy = max(0, energy - 30)
-			update_icon()
-		return
-
-	if(energy)
-		if(istype(target, /obj/item/stack/material/processed_alloy))
-			try_material_stock_conditioning()
 		radiation_pulse(
 			src,
 			max_range = 7,
@@ -224,9 +210,21 @@
 			minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 			strength = energy * 0.1 //60 rads at max energy.
 		)
-		energy = CLAMP(energy - 5, 0, max_energy)
-	if(!energy)
-		return PROCESS_KILL
+		set_energy(max(0, energy - 30))
+		update_icon()
+		return
+
+	if(istype(target, /obj/item/stack/material/processed_alloy))
+		try_material_stock_conditioning()
+	radiation_pulse(
+		src,
+		max_range = 7,
+		threshold = RAD_HEAVY_INSULATION,
+		chance = round(((src.energy-150)/50)*5,1),
+		minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
+		strength = energy * 0.1 //60 rads at max energy.
+	)
+	set_energy(CLAMP(energy - 5, 0, max_energy))
 
 /obj/machinery/particle_smasher/proc/prepare_recipes()
 	own_clear(src, "recipes", OWN_DELETE)
@@ -258,7 +256,7 @@
 				minimum_exposure_time = URANIUM_RADIATION_MINIMUM_EXPOSURE_TIME,
 				strength = energy * 0.1
 			)
-			energy = max(0, energy - 30)
+			set_energy(max(0, energy - 30))
 		update_icon()
 		return
 

@@ -4,8 +4,11 @@
 	desc = "This is a feeder. Put in a reagent container, then click and drag the feeder to someone!"
 	anchored = FALSE
 	density = FALSE
-	var/mob/living/carbon/human/attached
-	var/obj/item/reagent_containers/beaker = null
+
+OM_FIELD_VIEW(/obj/machinery/feeder, mob/living/carbon/human, attached, CHANGE_MACHINE_OCCUPANT)
+OM_FIELD_VIEW(/obj/machinery/feeder, obj/item/reagent_containers, beaker, CHANGE_MACHINE_OCCUPANT)
+/// Feeds while a patient and a container are attached.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/feeder, MACHINE_PIPELINE, list("attached", "beaker"))
 
 /obj/machinery/feeder/update_icon()
 	if(attached())
@@ -49,7 +52,6 @@
 		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		rel_set(src, "attached", over_object)
 		update_icon()
-		MACHINE_WAKE(src)
 
 
 /obj/machinery/feeder/declare_interactions(list/into)
@@ -73,7 +75,6 @@
 	user.drop_item()
 	W.forceMove(src)
 	own_set(src, "beaker", W)
-	MACHINE_WAKE(src)
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	update_icon()
 	return TRUE
@@ -90,7 +91,7 @@
 
 /obj/machinery/feeder/screwdriver_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	to_chat(user, span_notice("You [panel_open ? "open" : "close"] the maintenance hatch of [src]."))
 	update_icon()
 	om_task_timed(user, 1.5 SECONDS, target = src, receiver = src, on_done = PROC_REF(screwdriver_act_timed_done), done_args = list(user))
@@ -111,12 +112,9 @@
 			visible_message("The tube is pulled out of [attached()].")
 			rel_clear(src, "attached")
 			update_icon()
-			return PROCESS_KILL
-
-	if(!attached() || !beaker)
-		return PROCESS_KILL
+			return
 	// Give food
-	if(beaker.volume > 0)
+	if(beaker && beaker.volume > 0)
 		var/transfer_amount = 2
 		beaker.reagents.trans_to_mob(attached(), transfer_amount, CHEM_INGEST)
 		update_icon()

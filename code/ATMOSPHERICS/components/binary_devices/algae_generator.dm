@@ -33,6 +33,23 @@
 	var/const/input_gas = GAS_CO2
 	var/const/output_gas = GAS_O2
 
+/// Switched to active (grow lights on) and operable: it converts while this holds.
+OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+/obj/machinery/atmospherics/binary/algae_farm/proc/farming()
+	return operable() && use_power >= USE_POWER_ACTIVE
+
+DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PIPELINE, "farming")
+
+/// Not farming: clear the error and report only the idle draw (what the step did when it parked).
+/obj/machinery/atmospherics/binary/algae_farm/proc/show_idle_readout()
+	recent_moles_transferred = 0
+	ui_error = null
+	if(use_power == USE_POWER_IDLE)
+		last_power_draw = idle_power_usage
+	else
+		last_power_draw = 0
+	update_icon()
+
 /obj/machinery/atmospherics/binary/algae_farm/filled
 	stored_material = list(MAT_ALGAE = 10000, MAT_GRAPHITE = 0)
 
@@ -54,24 +71,12 @@
 	. = ..()
 	if(.)
 		update_icon()
-		// machine_step() sleeps while inoperable; wake it when power returns
-		// to a farm that is still switched on.
-		if(operable() && use_power >= USE_POWER_ACTIVE)
-			MACHINE_WAKE(src)
+		if(!farming())
+			show_idle_readout()
 
 /obj/machinery/atmospherics/binary/algae_farm/machine_step()
 	..()
 	recent_moles_transferred = 0
-
-	if(!operable() || use_power < USE_POWER_ACTIVE)
-		ui_error = null
-		update_icon()
-		if(use_power == USE_POWER_IDLE)
-			last_power_draw = idle_power_usage
-		else
-			last_power_draw = 0
-		return PROCESS_KILL
-
 	last_power_draw = active_power_usage
 
 	// STEP 1 - Check material resources
@@ -244,9 +249,9 @@
 		if("toggle")
 			if(use_power == USE_POWER_IDLE)
 				set_use_power(USE_POWER_ACTIVE)
-				MACHINE_WAKE(src)
 			else
 				set_use_power(USE_POWER_IDLE)
+				show_idle_readout()
 			update_icon()
 			. = TRUE
 

@@ -45,7 +45,6 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 	var/force_update           // Set this to bypass the cycle time check.
 	var/obj/temp_chem_holder   // Something to hold reagents during process_reagents()
 	var/labelled
-	var/frozen = 0				//Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
 
 	// Seed details/line data.
 	var/datum/seed/seed = null // The currently planted seed
@@ -211,6 +210,15 @@ OWN_TIMER(/obj/machinery/portable_atmospherics/hydroponics, growth_timer)
 		return
 
 DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
+
+/// Is the plant frozen? -1 is used to define trays that can't be frozen. 0 is unfrozen and 1 is frozen.
+OM_FIELD(/obj/machinery/portable_atmospherics/hydroponics, frozen, 0, CHANGE_MACHINE_SETTINGS)
+/// Everything but cryogenically frozen (frozen == 1) grows.
+OM_DERIVE_FIELD(/obj/machinery/portable_atmospherics/hydroponics, not_frozen, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE_PIPELINE, "not_frozen")
+
+/obj/machinery/portable_atmospherics/hydroponics/proc/not_frozen()
+	return frozen != 1
 
 /obj/machinery/portable_atmospherics/hydroponics/Initialize(mapload)
 	..()
@@ -694,9 +702,7 @@ DECLARE_REAGENTS(/obj/machinery/portable_atmospherics/hydroponics, 200, null)
 		to_chat(user, span_warning("You see no way to use \the [tool] on [src]."))
 		return ITEM_INTERACT_BLOCKING
 	to_chat(user, span_notice("You [frozen ? "disable" : "enable"] the cryogenic freezing."))
-	frozen = !frozen
-	if(!frozen)
-		MACHINE_WAKE(src)
+	set_frozen(!frozen)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 

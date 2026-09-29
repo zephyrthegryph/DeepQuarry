@@ -4,13 +4,14 @@
 	var/frequency
 	var/shockedby = list()
 	var/datum/radio_frequency/radio_connection
-	var/cur_command = null	//the command the door is currently attempting to complete
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
 
-/obj/machinery/door/airlock/machine_step()
-	if (..() == PROCESS_KILL && !cur_command)
-		. = PROCESS_KILL
+/// The command the door is currently attempting to complete; command_step() retries it while set.
+OM_FIELD(/obj/machinery/door/airlock, cur_command, null, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command")
+
+/obj/machinery/door/airlock/proc/command_step()
 	if (arePowerSystemsOn())
 		execute_current_command()
 
@@ -21,10 +22,8 @@
 
 	if(id_tag != signal.data["tag"] || !signal.data["command"]) return
 
-	cur_command = signal.data["command"]
+	set_cur_command(signal.data["command"])
 	execute_current_command()
-	if(cur_command)
-		MACHINE_WAKE(src)
 
 /obj/machinery/door/airlock/proc/execute_current_command()
 	if(operating)
@@ -44,11 +43,12 @@
 	if(do_lock)
 		lock()
 	if(delayed_status)
+		// ALLOW(sys_om_after_rearm): one-shot deferral, not a loop: the re-armed call passes no args, so delayed_status is FALSE there and it never re-arms.
 		om_after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
 	var/completed_command = cur_command
 	if(command_completed(completed_command))
-		cur_command = null
+		set_cur_command(null)
 	send_status(force = completed_command == "update")
 
 /obj/machinery/door/airlock/proc/do_command(command)

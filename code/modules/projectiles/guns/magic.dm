@@ -19,7 +19,10 @@
 	var/charges = 0
 	var/recharge_rate = 4
 	var/charge_tick = 0
-	var/can_charge = TRUE
+
+OM_FIELD(/obj/item/gun/magic, can_charge, TRUE, CHANGE_EXPLICIT)
+/// Regains charges while it can charge.
+DECLARE_PERIODIC_WHILE(/obj/item/gun/magic, PERIODIC_SLOW, "can_charge")
 
 /obj/item/gun/magic/consume_next_projectile()
 	if(checks_antimagic && locate_within(usr, /obj/item/nullrod)) return null
@@ -33,8 +36,6 @@
 /obj/item/gun/magic/Initialize(mapload)
 	. = ..()
 	charges = max_charges
-	if(can_charge)
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/gun/magic/periodic_step()
 	if (charges >= max_charges)

@@ -25,7 +25,7 @@
 	data["code"] = code
 	data["speed"] = speed
 	data["path"] = path
-	data["moving"] = !!moving
+	data["moving"] = !!path_moving
 
 	var/list/magnet_rows = list()
 	var/i = 0

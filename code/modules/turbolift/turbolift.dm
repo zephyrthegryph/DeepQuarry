@@ -15,8 +15,15 @@
 	var/fire_mode = FALSE								// Flag to indicate firefighter mode is active.
 
 	var/tmp/moving_upwards
-	var/tmp/busy_state									// Used for controller processing.
 	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
+
+/// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
+OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
+
+/datum/turbolift/New()
+	..()
+	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 
 /datum/turbolift/proc/emergency_stop()
 	cancel_pending_floors()
@@ -112,24 +119,25 @@
 					// TODO - This logic copied from old processor.  Would be better to have error states.
 					target_floor().ext_panel.reset()
 					rel_clear(src, "target_floor")
-				return PROCESS_KILL
+				set_busy_state(null)
+				return
 			else if(!next_process)
 				log_runtime("Turbolift [src] do_move() returned 1 but next_process = null; busy_state=[busy_state]")
-				return PROCESS_KILL
+				set_busy_state(null)
+				return
 		if(LIFT_WAITING_A)
 			var/area/turbolift/origin = locate(current_floor().area_ref)
 			control_panel_interior.visible_message(span_infoplain(span_bold("The elevator") + " announces, \"[origin.lift_announce_str]\""))
 			EXPIRY_SET(src, next_process, floor_wait_delay, CLOCK_WORLD)
-			busy_state = LIFT_WAITING_B
+			set_busy_state(LIFT_WAITING_B)
 		if(LIFT_WAITING_B)
 			if(length(queued_floors))
-				busy_state = LIFT_MOVING
+				set_busy_state(LIFT_MOVING)
 			else
-				busy_state = null
-				return PROCESS_KILL
+				set_busy_state(null)
 		else
 			log_runtime("Turbolift [src] process() called with unknown busy_state='[busy_state]'")
-			return PROCESS_KILL
+			set_busy_state(null)
 
 // Called by process when in LIFT_MOVING
 /datum/turbolift/proc/do_move()
@@ -174,7 +182,7 @@
 		rel_clear(src, "target_floor")
 
 		EXPIRY_SET(src, next_process, 15, CLOCK_WORLD)
-		busy_state = LIFT_WAITING_A
+		set_busy_state(LIFT_WAITING_A)
 		return 1
 
 	// Work out where we're headed.
@@ -213,8 +221,7 @@
 		return // STOP PRESSING THE BUTTON.
 	floor.pending_move(src)
 	rel_add(src, "queued_floors", floor)
-	busy_state = LIFT_MOVING
-	om_task_periodic(src, PERIODIC_SECOND)
+	set_busy_state(LIFT_MOVING)
 
 // TODO: dummy machine ('lift mechanism') in powered area for functionality/blackout checks.
 /datum/turbolift/proc/is_functional()

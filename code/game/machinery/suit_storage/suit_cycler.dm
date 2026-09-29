@@ -1,5 +1,16 @@
 GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
+/// If this is > 0, the cycler is decontaminating whatever is inside it (steps left).
+OM_FIELD(/obj/machinery/suit_cycler, irradiating, 0, CHANGE_MACHINE_SETTINGS)
+/// Shock timer from the electrify wire: > 0 counts down each step, -1 is permanent (cut wire).
+OM_FIELD(/obj/machinery/suit_cycler, electrified, 0, CHANGE_MACHINE_SETTINGS)
+/// Derived field: a UV cycle is running, or the electrify timer is counting down.
+OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/suit_cycler/proc/cycler_has_work()
+	return (active && irradiating > 0) || electrified > 0
+
+DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has_work")
+
 /obj/machinery/suit_cycler
 	name = "suit cycler"
 	desc = "An industrial machine for painting and refitting voidsuits."
@@ -13,12 +24,10 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 
 	active = 0          // PLEASE HOLD.
 	var/safeties = 1        // The cycler won't start with a living thing inside it unless safeties are off.
-	var/irradiating = 0     // If this is > 0, the cycler is decontaminating whatever is inside it.
 	var/radiation_level = 2 // 1 is removing germs, 2 is removing blood, 3 is removing phoron.
 	var/model_text = ""     // Some flavour text for the topic box.
 	locked = 1          // If locked, nothing can be taken from or added to the cycler.
 	var/can_repair          // If set, the cycler can repair voidsuits.
-	var/electrified = 0
 
 	/// Departments that the cycler can paint suits to look like. Null assumes all except specially excluded ones.
 	/// No idea why these particular suits are the default cycler's options.
@@ -286,7 +295,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 /obj/machinery/suit_cycler/screwdriver_act(mob/user, obj/item/tool)
 	if(electrified && shock(user, 100))
 		return ITEM_INTERACT_BLOCKING
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, "You [panel_open ? "open" : "close"] the maintenance panel.")
 	return ITEM_INTERACT_SUCCESS
@@ -457,8 +466,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 				return
 
 			set_active(1)
-			irradiating = 10
-			MACHINE_WAKE(src)
+			set_irradiating(10)
 			om_after(src, 1 SECOND, PROC_REF(uv_wash))
 			. = TRUE
 
@@ -479,32 +487,30 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
 
 	if(electrified > 0)
-		electrified--
+		set_electrified(electrified - 1)
 
 	if(!active)
-		if(electrified <= 0)
-			return PROCESS_KILL
 		return
 
-	if(active && !operable())
+	if(!operable())
 		set_active(0)
-		irradiating = 0
-		electrified = 0
-		return PROCESS_KILL
+		set_irradiating(0)
+		set_electrified(0)
+		return
 
 	// Repair and repaint jobs complete through their existing delayed callbacks;
 	// only UV treatment needs a per-cycle machinery callback.
 	if(irradiating <= 0)
-		return PROCESS_KILL
+		return
 
 	if(irradiating == 1)
 		add_overlay("decon")
 		finished_job()
-		irradiating = 0
+		set_irradiating(0)
 		cut_overlays()
-		return PROCESS_KILL
+		return
 
-	irradiating--
+	set_irradiating(irradiating - 1)
 
 	if(occupant)
 		if(prob(radiation_level*2)) occupant.emote("scream")

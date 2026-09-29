@@ -10,7 +10,6 @@
 	COOLDOWN_DECLARE(regen_cooldown)
 	var/spike_gen_time = 150
 	var/max_spikes = 5
-	var/spikes = 5
 	release_force = 30
 	icon = 'icons/obj/gun.dmi'
 	icon_state = "spikethrower3"
@@ -18,16 +17,21 @@
 	fire_sound = SFX_WEAPONS_BLADESLICE
 	fire_sound_text = "a strange noise"
 
+OM_FIELD(/obj/item/gun/launcher/spikethrower, spikes, 5, CHANGE_EXPLICIT)
+/// Short of spikes: derived from spikes (raised by set_spikes()).
+OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, CHANGE_EXPLICIT)
+/obj/item/gun/launcher/spikethrower/proc/spikes_short()
+	return spikes < max_spikes
+DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spikes_short")
+
 /obj/item/gun/launcher/spikethrower/Initialize(mapload)
 	. = ..()
 	COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 
-/// Regrows spikes every 2 s while short (firing starts it); full, it sleeps.
+/// Regrows spikes every 2 s while short (declared on spikes_short); full, it sleeps.
 /obj/item/gun/launcher/spikethrower/periodic_step()
-	if(spikes >= max_spikes)
-		return PROCESS_KILL
-	if(spikes < max_spikes && COOLDOWN_FINISHED(src, regen_cooldown))
-		spikes++
+	if(COOLDOWN_FINISHED(src, regen_cooldown))
+		set_spikes(spikes + 1)
 		COOLDOWN_START(src, regen_cooldown, spike_gen_time)
 		update_icon()
 
@@ -43,8 +47,7 @@
 
 /obj/item/gun/launcher/spikethrower/consume_next_projectile()
 	if(spikes < 1) return null
-	spikes--
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_spikes(spikes - 1)
 	return new /obj/item/spike(src)
 
 /*

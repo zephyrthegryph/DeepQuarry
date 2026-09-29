@@ -27,7 +27,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It seems like only the /hidden type actually makes use of this...
+// A new discount every offer_time (only /hidden makes use of this; the base proc is a stub).
+DECLARE_REPEAT(/obj/item/uplink, "offer_time", next_offer, null)
 
 /obj/item/uplink/get_item_cost(item_type, item_cost)
 	return (discount_item() && (item_type == discount_item())) ? max(1, round(item_cost*discount_amount)) : item_cost
@@ -65,7 +66,6 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 	discount_amount = pick(90;0.9, 80;0.8, 70;0.7, 60;0.6, 50;0.5, 40;0.4, 30;0.3, 20;0.2, 10;0.1)
 	EXPIRY_SET(src, next_offer_time, offer_time, CLOCK_WORLD)
 	SStgui.update_uis(src)
-	om_after(src, offer_time, PROC_REF(next_offer))
 
 // Toggles the uplink on and off. Normally this will bypass the item's normal functions and go to the uplink menu, if activated.
 /obj/item/uplink/hidden/proc/toggle()

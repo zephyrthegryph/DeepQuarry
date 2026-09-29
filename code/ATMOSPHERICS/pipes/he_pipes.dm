@@ -50,9 +50,10 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
 
+/// The gas watch's wake: an external temperature change, not a state of this pipe. (The old
+/// stable_temperature_cycles reset here was dead: the step parks after one stable cycle either way.)
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/wake_from_gas()
 	unregister_gas_dependencies()
-	stable_temperature_cycles = 0
 	MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/proc/heat_exchange_actionable()

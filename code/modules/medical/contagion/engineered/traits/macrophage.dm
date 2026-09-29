@@ -105,4 +105,4 @@ BONUS
 			own_add(phage, "infections", D.Copy())
 	act_message(M, null, MSG_SELF(span_userdanger("A slimy creature bursts forth from your flesh!")), \
 		MSG_OTHERS(span_danger("A strange creature burst out of %U%!")))
-	om_after(phage, 3 MINUTES, TYPE_PROC_REF(/mob/living/simple_mob/vore/aggressive/macrophage, deathcheck))
+	phage.set_deathwatch(TRUE)

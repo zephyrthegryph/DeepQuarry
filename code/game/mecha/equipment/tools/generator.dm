@@ -19,19 +19,21 @@
 DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", "fuel_type")
 
 
+OM_FIELD(/obj/item/mecha_parts/mecha_equipment/generator, generating, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/generator, PERIODIC_FAST, list("generating", "chassis"))
+
 /obj/item/mecha_parts/mecha_equipment/generator/periodic_step()
-	if(!chassis)
-		set_ready_state(TRUE)
-		return PROCESS_KILL
 	if(fuel_amount <= 0) // Spam fix
 		src.mecha_log_message("Deactivated - no fuel.")
 		set_ready_state(TRUE)
+		set_generating(FALSE)
 		return PROCESS_KILL
 	var/cur_charge = chassis.get_charge()
 	if(isnull(cur_charge))
 		set_ready_state(TRUE)
 		occupant_message("No powercell detected.")
 		src.mecha_log_message("Deactivated.")
+		set_generating(FALSE)
 		return PROCESS_KILL
 	var/use_fuel = fuel_per_cycle_idle
 	if(cur_charge<chassis.cell.maxcharge)
@@ -41,19 +43,19 @@ DECLARE_DEFAULT_CHILD(/obj/item/mecha_parts/mecha_equipment/generator, "fuel", "
 	update_equip_info()
 
 /obj/item/mecha_parts/mecha_equipment/generator/detach()
-	om_task_periodic_stop(src)
+	set_generating(FALSE)
 	..()
 	return
 
 TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/generator, "toggle", PROC_REF(topic_toggle))
 
 /obj/item/mecha_parts/mecha_equipment/generator/proc/topic_toggle(mob/user, list/args)
-	if(datum_flags & DF_ISPROCESSING)
-		om_task_periodic_stop(src)
+	if(generating)
+		set_generating(FALSE)
 		set_ready_state(TRUE)
 		src.mecha_log_message("Deactivated.")
 	else
-		om_task_periodic(src, PERIODIC_FAST)
+		set_generating(TRUE)
 		set_ready_state(FALSE)
 		src.mecha_log_message("Activated.")
 	return
@@ -61,7 +63,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/generator, "toggle", PROC_REF
 /obj/item/mecha_parts/mecha_equipment/generator/get_equip_info()
 	var/output = ..()
 	if(output)
-		return "[output] \[[fuel]: [fuel_amount] cm<sup>3</sup>\] - <a href='byond://?src=\ref[src];toggle=1'>[(datum_flags & DF_ISPROCESSING)?"Dea":"A"]ctivate</a>"
+		return "[output] \[[fuel]: [fuel_amount] cm<sup>3</sup>\] - <a href='byond://?src=\ref[src];toggle=1'>[generating?"Dea":"A"]ctivate</a>"
 	return
 
 /obj/item/mecha_parts/mecha_equipment/generator/action(target)

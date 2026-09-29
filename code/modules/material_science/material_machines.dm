@@ -570,7 +570,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	batch.record_electricity(300)
 	batch.recalculate()
 	own_set(src, "target", replace_processed_stack(stock, batch, src))
-	energy = max(0, energy - 300)
+	set_energy(max(0, energy - 300))
 	qdel(batch)
 	return TRUE
 

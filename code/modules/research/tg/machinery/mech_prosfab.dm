@@ -31,7 +31,7 @@
 	// Don't call parent
 	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
-	process_queue = FALSE
+	set_process_queue(FALSE)
 	print_sound.stop()
 	update_icon()
 

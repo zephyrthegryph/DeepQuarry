@@ -80,6 +80,9 @@
 	var/list/self_grants = list()
 	/// Global observer mask for this type (services).
 	var/service_mask = 0
+	/// Channels of this type's declared periodic fields: a raise re-evaluates its declarations at once
+	/// (code/datums/sys/periodic.dm).
+	var/sys_periodic_mask = 0
 	/// Services observing this type.
 	var/list/services
 	/// Parallel to services: the channels each service observes on this type (per-(service, type) mask).

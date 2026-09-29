@@ -27,6 +27,13 @@
 
 	var/state = 0
 
+/// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
+/// Swapping parts raises CHANGE_EXPLICIT; the step's own charging settles it (it then parks).
+OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/proc/capacitor_unsettled()
+	return capacitor && (cell ? capacitor.charge < capacitor.max_charge : capacitor.charge)
+DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettled")
+
 DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "cell", "cell")
 DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 
@@ -37,9 +44,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 		own_set(src, "capacitor", new capacitor(src))
 		capacitor.charge = capacitor.max_charge
 
-	if(capacitor && capacitor.charge < capacitor.max_charge)
-		om_task_periodic(src, PERIODIC_SLOW)
-
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
 
@@ -49,12 +53,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 /obj/item/gun/magnetic/get_cell()
 	return cell
 
-/// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled;
-/// firing and swapping parts start it again.
+/// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled
+/// (declared on capacitor_unsettled); firing and swapping parts start it again.
 /obj/item/gun/magnetic/periodic_step()
-	if(!capacitor || (cell ? capacitor.charge >= capacitor.max_charge : !capacitor.charge))
+	if(!capacitor_unsettled())
 		update_state()
-		return PROCESS_KILL
+		return PROCESS_KILL // it charged (or bled) itself settled
 	if(capacitor)
 		if(cell)
 			if(capacitor.charge < capacitor.max_charge && cell.checked_use(power_per_tick))
@@ -161,7 +165,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 				return
 			user.drop_from_inventory(thing, src)
 			own_set(src, "cell", thing)
-			om_task_periodic(src, PERIODIC_SLOW)
+			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
@@ -172,7 +176,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
 			own_set(src, "capacitor", thing)
-			om_task_periodic(src, PERIODIC_SLOW)
+			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 			user.drop_from_inventory(capacitor, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -216,7 +220,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		else if(cell && removable_components)
 			removing = cell
 			own_take(src, "cell")
-			om_task_periodic(src, PERIODIC_SLOW)
+			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 
 		if(removing)
 			removing.forceMove(get_turf(src))

@@ -24,7 +24,6 @@
 	MATERIAL_BULK(MAT_STEEL, 500)
 	var/status = FALSE
 	var/throw_amount = THROWER_MIN
-	var/lit = FALSE	//on or off
 	COOLDOWN_DECLARE(operating)
 	var/turf/previousturf
 	var/obj/item/weldingtool/weldtool = null
@@ -41,15 +40,16 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly
 
 /obj/item/flamethrower/full/Initialize(mapload)
 	. = ..()
-	igniter.secured = 0 // for disassembly
+	igniter.set_secured(FALSE) // for disassembly
 	status = TRUE
 
 DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 
+/// On or off: while lit it heats its turf every 2 s.
+OM_FIELD(/obj/item/flamethrower, lit, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/flamethrower, PERIODIC_SLOW, "lit")
+
 /obj/item/flamethrower/periodic_step()
-	if(!lit)
-		om_task_periodic_stop(src)
-		return null
 	var/turf/location = loc
 	if(istype(location, /mob/))
 		var/mob/living/M = location
@@ -91,11 +91,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
 			var/datum/gas_mixture/used_gas = ptank.air_contents.remove_ratio(volume_per_max_burn * thrower_spew_percent() / ptank.air_contents.return_volume())
 			qdel(used_gas)
 			if(!check_fuel())
-				lit = FALSE
+				set_lit(FALSE)
 			update_icon()
 		else
 			to_chat(user, span_notice("There is not enough pressure in [src]'s tank!"))
-			lit = FALSE
+			set_lit(FALSE)
 			update_icon()
 		// prevent spam
 		COOLDOWN_START(src, operating, 15)
@@ -199,9 +199,8 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 		if("light")
 			if(!check_fuel() || LINDA_GAS_AMT(ptank.air_contents, GAS_PHORON) < 1 || !status)
 				return FALSE
-			lit = !lit
+			set_lit(!lit)
 			if(lit)
-				om_task_periodic(src, PERIODIC_SLOW)
 				play_sfx(src, SFX_ITEMS_WELDERACTIVATE)
 			else
 				play_sfx(src, SFX_ITEMS_WELDERDEACTIVATE)
@@ -216,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 				return FALSE
 			usr.put_in_hands(ptank)
 			own_take(src, "ptank")
-			lit = 0
+			set_lit(0)
 			update_icon()
 			return TRUE
 

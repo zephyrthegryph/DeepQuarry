@@ -14,17 +14,20 @@ status starts and detaches it when it ends (the status row's on_start/on_end hoo
 	/// Dizzy shake: whether the mob was resting when the status's rate was last checked.
 	var/dizzy_was_resting
 
+/// Set while the dizzy_shake behaviour is attached: dizzy_shake_tick() runs every tick (DECLARE_REPEAT).
+OM_FIELD_TYPED(/mob, tmp, dizzy_shaking, FALSE, CHANGE_MOB_CONDITIONS)
+DECLARE_REPEAT(/mob, 1, dizzy_shake_tick, "dizzy_shaking") // Needs to be a LOT faster than life ticks
+
 /datum/om/behaviour/dizzy_shake/on_start(mob/M)
 	if(!ismob(M))
 		return
 	M.dizzy_was_resting = M.resting
-	om_after_slot(M, "dizzy_shake_timer", 1, TYPE_PROC_REF(/mob, dizzy_shake_tick)) // Needs to be a LOT faster than life ticks
+	M.set_dizzy_shaking(TRUE)
 
 /datum/om/behaviour/dizzy_shake/on_stop(mob/M)
 	if(!ismob(M))
 		return
-	if(om_timer_slot_pending(M, "dizzy_shake_timer"))
-		om_cancel_timer_slot(M, "dizzy_shake_timer")
+	M.set_dizzy_shaking(FALSE)
 	// The shaken client's view offset resets.
 	if(M.client)
 		M.client.pixel_x = 0
@@ -36,7 +39,7 @@ status starts and detaches it when it ends (the status row's on_start/on_end hoo
 
 /mob/proc/dizzy_shake_tick()
 	if(QDELETED(src) || !om_attached(src, /datum/om/behaviour/dizzy_shake))
-		return
+		return REPEAT_STOP
 
 	// Resting wears dizziness off faster.
 	if(resting != dizzy_was_resting)
@@ -49,8 +52,3 @@ status starts and detaches it when it ends (the status row's on_start/on_end hoo
 		var/amplitude = dizziness*(sin(dizziness * 0.044 * world.time) + 1) / 70
 		client.pixel_x = amplitude * sin(0.008 * dizziness * world.time)
 		client.pixel_y = amplitude * cos(0.008 * dizziness * world.time)
-
-	if(om_attached(src, /datum/om/behaviour/dizzy_shake))
-		om_after_slot(src, "dizzy_shake_timer", 1, TYPE_PROC_REF(/mob, dizzy_shake_tick))
-
-OWN_TIMER(/mob, dizzy_shake_timer)

@@ -73,7 +73,7 @@ OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 	I.SwapColor(rgb(255, 0, 220, 255), rgb(0, 0, 0, 0))
 	B.icon = I
 
-	if(rag && rag.on_fire && isliving(against))
+	if(rag && rag.rag_lit && isliving(against))
 		rag.forceMove(loc)
 		var/mob/living/L = against
 		L.ignite_mob()
@@ -160,7 +160,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 /obj/item/reagent_containers/food/drinks/bottle/update_icon()
 	underlays.Cut()
 	if(rag)
-		var/underlay_image = image(icon='icons/obj/drinks.dmi', icon_state=rag.on_fire? "[rag_underlay]_lit" : rag_underlay)
+		var/underlay_image = image(icon='icons/obj/drinks.dmi', icon_state=rag.rag_lit? "[rag_underlay]_lit" : rag_underlay)
 		underlays += underlay_image
 		set_light(rag.light_range, rag.light_power, rag.light_color)
 	else

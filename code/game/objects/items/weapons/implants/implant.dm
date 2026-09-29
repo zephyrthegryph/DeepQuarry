@@ -112,8 +112,12 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	. = ..()
 	id = rand(1, 1000)
 
+/// Watches its host every 2 s from implantation until it melts down.
+OM_FIELD(/obj/item/implant/tracking, tracking_active, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/implant/tracking, PERIODIC_SLOW, "tracking_active")
+
 /obj/item/implant/tracking/post_implant(mob/source)
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_tracking_active(TRUE)
 
 // leaves its limb's implant list.
 
@@ -129,7 +133,7 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"
 			malfunction = MALFUNCTION_PERMANENT
-			om_task_periodic_stop(src)
+			set_tracking_active(FALSE)
 	return 1
 
 /obj/item/implant/tracking/get_data()
@@ -525,6 +529,10 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 "} + span_bold("Integrity:") + {"Implant will occasionally be degraded by the body's immune system and thus will occasionally malfunction."}
 	return dat
 
+/// Monitors its host every 2 s from implantation until it has raised its alarm (or broke).
+OM_FIELD(/obj/item/implant/death_alarm, alarm_armed, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/implant/death_alarm, PERIODIC_SLOW, "alarm_armed")
+
 /obj/item/implant/death_alarm/periodic_step()
 	if (!implanted) return
 	var/mob/M = imp_in()
@@ -538,7 +546,7 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 	var/mob/M = imp_in()
 	var/area/t = get_area(M)
 	if(!t) // Failsafe
-		om_task_periodic_stop(src)
+		set_alarm_armed(FALSE)
 		return
 	switch (cause)
 		if("death")
@@ -549,7 +557,7 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 			else
 				a.autosay("[mobname] has died in [t.name]!", "[mobname]'s Death Alarm")
 			qdel(a)
-			om_task_periodic_stop(src)
+			set_alarm_armed(FALSE)
 		if ("emp")
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			var/name = prob(50) ? t.name : pick(GLOB.teleportlocs)
@@ -559,7 +567,7 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 			var/obj/item/radio/headset/a = new /obj/item/radio/headset/heads/captain(null)
 			a.autosay("[mobname] has died-zzzzt in-in-in...", "[mobname]'s Death Alarm")
 			qdel(a)
-			om_task_periodic_stop(src)
+			set_alarm_armed(FALSE)
 
 DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_emp))
 /// For some reason alarms stop going off in case they are emp'd, even without this.
@@ -574,13 +582,13 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
 			malfunction = MALFUNCTION_PERMANENT
-		om_task_periodic_stop(src)
+		set_alarm_armed(FALSE)
 
 	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_alarm_armed(TRUE)
 
 //////////////////////////////
 //	Compressed Matter Implant

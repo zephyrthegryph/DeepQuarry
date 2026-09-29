@@ -54,7 +54,7 @@ MSG_DEF_SELF(interaction/maintenance_panel/open, "You open the maintenance hatch
 MSG_DEF_SELF(interaction/maintenance_panel/close, "You close the maintenance hatch of %T%.")
 
 /obj/machinery/proc/toggle_maintenance_panel(mob/actor, obj/item/held, datum/interaction/interaction)
-	panel_open = !panel_open
+	set_panel_open(!panel_open)
 	update_icon()
 	return TRUE
 

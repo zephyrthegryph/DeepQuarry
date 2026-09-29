@@ -20,7 +20,6 @@
 	var/max_contents = 1			// Maximum number of things this appliance can simultaneously cook
 	var/on_icon						// Icon state used when cooking.
 	var/off_icon					// Icon state used when not cooking.
-	var/cooking = FALSE				// Whether or not the machine is currently operating.
 	var/cook_type					// A string value used to track what kind of food this machine makes.
 	var/can_cook_mobs				// Whether or not this machine accepts grabbed mobs.
 	var/mob_injury_kind = INJURY_BLUNT	// What a mob stuffed inside suffers: burns for cooking appliances, bruising for cereal/candy
@@ -45,6 +44,10 @@
 	var/static/radial_power = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_power")
 	var/static/radial_safety = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_safety")
 	var/static/radial_output = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_change_output")
+
+/// Whether or not the machine is currently operating (cooking its contents).
+OM_FIELD(/obj/machinery/appliance, cooking, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/appliance, MACHINE_PIPELINE, "cooking")
 
 /obj/machinery/appliance/Initialize(mapload)
 	. = ..()
@@ -159,7 +162,7 @@ GLOBAL_LIST_INIT(appliance_progress_texts, list( 	list("average", "Not Cooking."
 		stat_add(POWEROFF)
 		set_use_power(0)
 		act_message(user, src, MSG_SELF(span_filter_notice("You turn off %T%.")), MSG_OTHERS(span_filter_notice("%U% turns %T% off.")))
-		cooking = FALSE // Stop cooking here, too, just in case.
+		set_cooking(FALSE) // Stop cooking here, too, just in case.
 
 	play_sfx(src, SFX_MACHINES_CLICK, 0.8)
 	update_icon()
@@ -321,8 +324,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 
 	get_cooking_work(CI)
-	cooking = TRUE
-	MACHINE_WAKE(src)
+	set_cooking(TRUE)
 	return CI
 
 /obj/machinery/appliance/proc/get_cooking_work(datum/cooking_item/CI)
@@ -414,7 +416,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		if(CI.max_cookwork > 0)
 			all_done_cooking = FALSE
 	if(all_done_cooking)
-		cooking = FALSE
+		set_cooking(FALSE)
 		update_icon()
 		return PROCESS_KILL
 
@@ -910,10 +912,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 /obj/machinery/appliance/proc/toggle_safety(mob/user)
 	food_safety = !food_safety
 	to_chat(user, span_notice("You flip \the [src]'s safe mode switch. Safe mode is now [food_safety ? "on" : "off"]."))
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/appliance/step_start_condition()
-	return cooking
 
 /// the container this refers to (a relation view: null once it is deleted).
 /datum/cooking_item/proc/container() as /obj/item/reagent_containers/cooking_container

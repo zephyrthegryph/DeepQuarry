@@ -13,6 +13,10 @@
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 
+/// TRUE while worn in the mask slot by a mob with a mouth.
+OM_FIELD(/obj/item/clothing/mask/chewable, chewing, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/chewable, PERIODIC_SECOND, "chewing")
+
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
 
 /// Old attack_self. Returns FALSE so the clothing self-use still follows, as the old ..() did.
@@ -41,12 +45,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 	if(slot == SLOT_ID_MASK)
 		var/mob/living/carbon/human/C = user
 		if(C.check_has_mouth())
-			om_task_periodic(src, PERIODIC_SECOND)
+			set_chewing(TRUE)
 		else
 			to_chat(user, span_notice("You don't have a mouth, and can't make much use of \the [src]."))
 
 /obj/item/clothing/mask/chewable/dropped(mob/user, equipping, slot)
-	om_task_periodic_stop(src)
+	set_chewing(FALSE)
 	..()
 
 /obj/item/clothing/mask/chewable/proc/chew()
@@ -57,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 			if (src == C.get_equipped_item(SLOT_ID_MASK) && C.check_has_mouth())
 				reagents.trans_to_mob(C, REM, CHEM_INGEST, 0.2)
 		else
-			om_task_periodic_stop(src)
+			set_chewing(FALSE)
 
 /obj/item/clothing/mask/chewable/periodic_step()
 	chew()
@@ -95,7 +99,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PR
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)
-	om_task_periodic_stop(src)
 	qdel(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap

@@ -34,6 +34,13 @@
 
 	max_integrity = 80
 
+/// Not BROKEN (the emitter runs on grid power, not APC power, so operable() doesn't fit).
+OM_DERIVE_FIELD(/obj/machinery/power/emitter, unbroken, CHANGE_MACHINE_BROKEN)
+/obj/machinery/power/emitter/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/emitter, MACHINE_PIPELINE, list("active", "unbroken"))
+
 // admins are told an emitter was deleted.
 /obj/machinery/power/emitter/on_destroy(force)
 	message_admins("Emitter deleted at ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)")
@@ -69,7 +76,6 @@
 		if(!src.locked)
 			if(src.active==1)
 				set_active(0)
-				MACHINE_SLEEP(src)
 				balloon_alert_visible("turned off")
 				message_admins("Emitter turned off by [key_name(user, user.client)](<A href='byond://?_src_=holder;[HrefToken()];adminmoreinfo=\ref[user]'>?</A>) in ([x],[y],[z] - <A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)",0,1)
 				log_game("EMITTER([x],[y],[z]) OFF by [key_name(user)]")
@@ -77,7 +83,6 @@
 			else
 				set_active(1)
 				EXPIRY_STAMP(src, material_last_charge, CLOCK_WORLD)
-				MACHINE_WAKE(src)
 				balloon_alert_visible("turned on")
 				src.shot_number = 0
 				src.fire_delay = get_initial_fire_delay()
@@ -92,14 +97,10 @@
 		return 1
 
 /obj/machinery/power/emitter/machine_step()
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
 	if(src.state != 2 || (!power_region && active_power_usage))
 		set_active(0)
 		update_icon()
-		return PROCESS_KILL
-	if(!active)
-		return PROCESS_KILL
+		return
 	charge_emitter()
 	if((COOLDOWN_FINISHED(src, shot_cooldown)) && (src.active == 1))
 		var/burst_time = (min_burst_delay + max_burst_delay)/2 + 2*(burst_shots-1)
@@ -404,7 +405,3 @@
 /obj/machinery/power/emitter/antique/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/power/emitter/step_start_condition()
-	return active

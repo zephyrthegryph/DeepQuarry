@@ -3,6 +3,14 @@
 // thermostat), losing heat to the room through its casing. Its cooking
 // containers and the food in them get heat bodies coupled to it, and the
 // cooking rule (code/datums/rules/declarations.dm) decides when food is cooked.
+/// A cooker steps while cooking, while on (its thermostat; it hibernates at temperature on a heat
+/// watch), and while off until its heat body has cooled back to the room and been released.
+OM_DERIVE_FIELD(/obj/machinery/appliance/cooker, cooker_needs_step, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooker_needs_step")
+
+/obj/machinery/appliance/cooker/proc/cooker_needs_step()
+	return cooking || !has_stat(MACHINE_STAT_ANY) || !isnull(heat_body)
+
 /obj/machinery/appliance/cooker
 	var/min_temp = 80 + T0C	//Minimum temperature to do any cooking
 	var/optimal_temp = 200 + T0C	//Temperature at which we have 100% efficiency. efficiency is lowered on either side of this
@@ -69,7 +77,7 @@
 	own_take_all(src, "cooking_objs")
 	for (var/i = 0, i < max_contents, i++)
 		own_add(src, "cooking_objs", new /datum/cooking_item/(new container_type(src)))
-	cooking = FALSE
+	set_cooking(FALSE)
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 

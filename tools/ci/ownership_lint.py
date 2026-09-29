@@ -61,7 +61,7 @@ MODIFIERS = {"tmp", "static", "global", "const", "final"}
 PROC_DEF = re.compile(r"^(/[\w/]+?)/(?:(?:proc|verb)/)?(\w+)\s*\((.*)$")
 TYPE_LINE = re.compile(r"^(/[\w/]+)\s*(?:\{.*)?$")
 MEMBER = re.compile(r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
-OM_FIELD_DECL = re.compile(r"^OM_FIELD(?:_TYPED\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,")
+OM_FIELD_DECL = re.compile(r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,")
 ABS_MEMBER = re.compile(r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
 TYPED_NAME = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
 DECL = re.compile(r"^(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEEP_AFTER_DESTROY|POOL_RESET)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*(?:,\s*(.*?))?\)\s*$")
@@ -164,7 +164,7 @@ class Index:
                     current = None
                     continue
                 m = OM_FIELD_DECL.match(line)
-                if m:  # OM_FIELD(T, F, ...) / OM_FIELD_TYPED(T, VT, F, ...) declare T/var/F
+                if m:  # OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
                     vt = (m.group(2).strip('/') + '/') if m.group(2) else ''
                     self.add_member(m.group(1) or m.group(3), vt, m.group(5))
                     current = None

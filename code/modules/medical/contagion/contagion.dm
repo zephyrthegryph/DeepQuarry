@@ -106,7 +106,10 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/New()
 	if(isnull(stage))
 		stage = 1
-	..(null)// --- Joining and leaving a body ----------------------------------------------------
+	..(null)
+	lifecycle_decls_init(src)
+
+// --- Joining and leaving a body ----------------------------------------------------
 
 /// Viable on the declared body plans and biologies (a strain carrying
 /// INFECT_SYNTHETICS also takes synthetic and nanoform bodies), and only on
@@ -139,13 +142,14 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	update_spread_lane()
 
 /datum/affliction/contagion/on_removed()
-	om_task_periodic_stop(src)
 	if(global_flag_check(virus_modifiers, PROCESSING))
 		virus_modifiers &= ~PROCESSING
 		End()
 	..()
 	registry_leave(REGISTRY_ACTIVE_DISEASES, src)
 	rel_clear(src, "host")
+	// Out of a body: spread_lane_wanted no longer holds, which parks the spread lane.
+	update_spread_lane()
 
 /datum/affliction/contagion/proc/try_infect(mob/living/infectee, make_copy = TRUE)
 	return infect(infectee, make_copy)

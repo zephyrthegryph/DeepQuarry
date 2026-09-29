@@ -10,7 +10,6 @@
 	MATERIAL_BULK(MAT_STEEL, 500)
 	preserve_item = 1
 	var/obj/item/disk/nuclear/the_disk
-	var/active = 0
 
 	///TODO: Clear up click code entirely. This is used exclusively for attack_self
 	var/nuclear = FALSE
@@ -19,6 +18,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+OM_FIELD(/obj/item/pinpointer, active, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
+
 DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
 
 /// Old attack_self.
@@ -26,19 +28,14 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	if(nuclear || shuttle)
 		return
 	if(!active)
-		active = TRUE
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_active(TRUE)
 		to_chat(user, span_notice("You activate the pinpointer"))
 	else
-		active = FALSE
-		om_task_periodic_stop(src)
+		set_active(FALSE)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
 /obj/item/pinpointer/periodic_step()
-	if(!active)
-		return PROCESS_KILL
-
 	if(!the_disk())
 		rel_set(src, "the_disk", locate(/obj/item/disk/nuclear))
 		if(!the_disk())
@@ -72,8 +69,6 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/obj/target
 
 /obj/item/pinpointer/advpinpointer/periodic_step()
-	if(!active)
-		return PROCESS_KILL
 	if(mode == 0)
 		..()
 	if(mode == 1)
@@ -117,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 /obj/item/pinpointer/advpinpointer/proc/advpinpointer_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
-	active = 0
+	set_active(FALSE)
 	icon_state = "pinoff"
 	rel_clear(src, "target")
 	rel_clear(src, "location")
@@ -207,8 +202,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 /obj/item/pinpointer/nukeop/proc/nukeop_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_self(user, held, interaction)
 	if(!active)
-		active = 1
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_active(TRUE)
 		if(!mode)
 			workdisk()
 			to_chat(user, span_notice("Authentication Disk Locator active."))
@@ -216,15 +210,11 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 			worklocation()
 			to_chat(user, span_notice("Shuttle Locator active."))
 	else
-		active = 0
-		om_task_periodic_stop(src)
+		set_active(FALSE)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
 /obj/item/pinpointer/nukeop/periodic_step()
-	if(!active)
-		return PROCESS_KILL
-
 	switch(mode)
 		if(0)
 			workdisk()
@@ -297,19 +287,14 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 /obj/item/pinpointer/shuttle/proc/shuttle_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_self(user, held, interaction)
 	if(!active)
-		active = TRUE
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_active(TRUE)
 		to_chat(user, span_notice("Shuttle Locator active."))
 	else
-		active = FALSE
-		om_task_periodic_stop(src)
+		set_active(FALSE)
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
 /obj/item/pinpointer/shuttle/periodic_step()
-	if(!active)
-		return PROCESS_KILL
-
 	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.

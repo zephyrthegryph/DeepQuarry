@@ -40,8 +40,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_event_collector, R_ADMIN, "Configure Collecto
 			target.pick_new_recipe()
 		if("Clear Current Recipe")
 			target.active_recipe = list()
-			target.awaiting_next_recipe = TRUE
 			target.calls_remaining = 0
+			target.set_awaiting_next_recipe(TRUE)
 
 		if("Force Clear Blockers")
 			for(var/obj/structure/event_collector_blocker/tofix as anything in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS))

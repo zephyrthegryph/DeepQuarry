@@ -3,8 +3,6 @@
 	desc = "A very lifelike carving."
 	density = TRUE
 	anchored = TRUE
-	/// Relation view: the petrified mob this statue holds.
-	var/mob/living/carbon/human/WR_gargoyle
 	var/initial_sleep
 	var/initial_blind
 	var/initial_is_shifted
@@ -26,6 +24,10 @@
 
 	var/can_revert = TRUE
 	var/was_rayed = FALSE
+
+/// The petrified mob (a relation view); the statue watches it every second while it holds one.
+OM_FIELD_VIEW(/obj/structure/gargoyle, mob/living/carbon/human, WR_gargoyle, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 
 /obj/structure/gargoyle/Initialize(mapload, mob/living/carbon/human/H, ident_ovr, mat_ovr, adj_ovr, tint_ovr, revert = TRUE, discard_clothes)
 	. = ..()
@@ -130,8 +132,6 @@
 	H.canmove = 0
 
 	can_revert = revert
-
-	om_task_periodic(src, PERIODIC_SECOND)
 
 // the petrified gargoyle reverts, or crumbles.
 /obj/structure/gargoyle/on_destroy(force)

@@ -45,14 +45,11 @@
 
 /obj/item/flame/candle/proc/light(flavor_text = span_notice("\The [usr] lights the [src]."))
 	if(!lit)
-		lit = TRUE
+		set_lit(TRUE)
 		visible_message(flavor_text)
 		set_light(CANDLE_LUM)
-		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flame/candle/periodic_step()
-	if(!lit)
-		return
 	wax--
 	if(!wax)
 		if(istype(src.loc, /mob))
@@ -72,7 +69,7 @@ DECLARE_INTERACTIONS(/obj/item/flame/candle, \
 /// Old attack_self.
 /obj/item/flame/candle/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit)
-		lit = FALSE
+		set_lit(FALSE)
 		update_icon()
 		set_light(0)
 	return TRUE

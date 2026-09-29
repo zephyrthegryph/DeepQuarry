@@ -14,24 +14,24 @@
 	var/list/reset_objects
 
 	var/range = 3
-	var/on = 0
 	var/step_alpha = 50
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+OM_FIELD(/obj/item/uv_light, on, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/uv_light, PERIODIC_SLOW, "on")
 
 DECLARE_INTERACTIONS(/obj/item/uv_light, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.
 /obj/item/uv_light/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+	set_on(!on)
 	if(on)
 		set_light(range, 2, "#007fff")
-		om_task_periodic(src, PERIODIC_SLOW)
 		icon_state = "uv_on"
 	else
 		set_light(0)
 		clear_last_scan()
-		om_task_periodic_stop(src)
 		icon_state = "uv_off"
 	return TRUE
 

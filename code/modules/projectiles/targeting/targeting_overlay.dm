@@ -11,12 +11,15 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/tmp/obj/item/aiming_with	// What are we targeting with?
 	var/tmp/mob/owner	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	EXPIRY_DECLARE(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
 	var/target_permissions = 0 // Permission bitflags.
+
+/// What are we targeting with? Set while aiming; the aim is tracked every slow tick while it is.
+OM_FIELD_VIEW(/obj/aiming_overlay, obj/item, aiming_with, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
@@ -170,7 +173,6 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	if(istype(aiming_with(), /obj/item/gun))
 		play_sfx(owner(), SFX_WEAPONS_TARGETON)
 	forceMove(get_turf(target))
-	om_task_periodic(src, PERIODIC_SLOW)
 
 	rel_add(aiming_at, "aimed", src)
 	toggle_active(1)
@@ -216,7 +218,6 @@ REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 	rel_remove(aiming_at, "aimed", src)
 	rel_clear(src, "aiming_at")
 	moveToNullspace()
-	om_task_periodic_stop(src)
 
 /// What are we targeting with? (a relation view: null once it is deleted).
 /obj/aiming_overlay/proc/aiming_with() as /obj/item

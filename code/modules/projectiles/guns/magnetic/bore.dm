@@ -234,6 +234,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)
 	toggle_generator(user)
 
+/// Replaces /obj/item/gun/magnetic's capacitor_unsettled declaration: the bore also steps while its
+/// generator runs, whatever the capacitor is doing.
+OM_DERIVE_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, bore_busy, CHANGE_EXPLICIT)
+/obj/item/gun/magnetic/matfed/phoronbore/proc/bore_busy()
+	return generator_state > GEN_OFF || capacitor_unsettled()
+DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic/matfed/phoronbore, PERIODIC_SLOW, "bore_busy")
+
 /obj/item/gun/magnetic/matfed/phoronbore/periodic_step()
 	if(generator_state && !mat_storage)
 		audible_message(span_notice("\The [src] goes quiet."),span_notice("A motor noise cuts out."), runemessage = "goes quiet")

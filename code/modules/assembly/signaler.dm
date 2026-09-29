@@ -14,7 +14,10 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	var/airlock_wire = null
 	var/tmp/datum/wires/connected
 	var/tmp/datum/radio_frequency/radio_connection
-	var/deadman = FALSE
+
+/// Someone is threatening to press the button: it may slip while it's not held.
+OM_FIELD(/obj/item/assembly/signaler, deadman, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/assembly/signaler, PERIODIC_SLOW, "deadman")
 
 /obj/item/assembly/signaler/Initialize(mapload)
 	. = ..()
@@ -152,20 +155,16 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
-	if(!deadman)
-		om_task_periodic_stop(src)
 	var/mob/M = src.loc
 	if(!M || !ismob(M))
 		if(prob(5))
 			signal()
-		deadman = FALSE
-		om_task_periodic_stop(src)
+		set_deadman(FALSE)
 	else if(prob(5))
 		act_message(M, src, others = "%U%'s finger twitches a bit over %T%'s signal button!")
 
 /obj/item/assembly/signaler/proc/deadman_it_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	deadman = TRUE
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_deadman(TRUE)
 	log_and_message_admins("is threatening to trigger a signaler deadman's switch", user)
 	act_message(user, src, others = "<font color='red'>%U% moves their finger over %T%'s signal button...</font>")
 // end

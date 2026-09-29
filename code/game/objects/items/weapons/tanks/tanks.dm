@@ -43,7 +43,6 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 						//If they have and we haven't scanned it with the PDA or gas analyzer then we might just breath whatever they put in it.
 
 	var/failure_temp = 173 //173 deg C Borate seal (yes it should be 153 F, but that's annoying)
-	var/leaking = 0
 	var/wired = 0
 
 
@@ -65,6 +64,17 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 
+/// TRUE while the relief valve or a failed seal is venting.
+OM_FIELD(/obj/item/tank, leaking, FALSE, CHANGE_EXPLICIT)
+/// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or
+/// worn by a mob (moving raises CHANGE_ITEM_LOC). MANY tanks during rounds are never touched, and
+/// an intact, sealed tank lying about has no reason to explode spontaneously.
+OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, CHANGE_EXPLICIT | CHANGE_ITEM_LOC)
+DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
+
+/obj/item/tank/proc/pressure_watched()
+	return leaking || ismob(loc) || get_integrity() < max_integrity
+
 // a tank in a transfer valve leaves the valve.
 /obj/item/tank/on_destroy(force)
 	if(istype(loc, /obj/item/transfer_valve))
@@ -73,13 +83,13 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	..()
 
 /obj/item/tank/material_environment_begin_leak()
-	leaking = TRUE
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_leaking(TRUE)
 	return ..()
 
 /obj/item/tank/material_environment_repaired()
-	leaking = FALSE
+	set_leaking(FALSE)
 	repair_damage(max_integrity)
+	om_changed(src, CHANGE_EXPLICIT) // integrity is an input of pressure_watched
 	return ..()
 
 /obj/item/tank/material_environment_owns_leak()
@@ -89,16 +99,14 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	// The established tank rupture path supplies fragments, gas release, and
 	// explosion strength. Drive it by state instead of bypassing it with qdel.
 	update_integrity(0)
-	leaking = TRUE
-	om_task_periodic(src, PERIODIC_SLOW)
+	set_leaking(TRUE)
 	check_status()
 
 /obj/item/tank/equipped() // Note that even grabbing into a hand calls this, so it should be fine as a 'has a player touched this'
 	. = ..()
 	// An attempt at optimization. There are MANY tanks during rounds that will never get touched.
 	// Don't see why any of those would explode spontaneously. So only tanks that players touch get processed.
-	// This could be optimized more, but it's a start!
-	om_task_periodic(src, PERIODIC_SLOW) // This has a built in safety to avoid multi-processing
+	// Held or worn, it is watched (pressure_watched(); the move raised CHANGE_ITEM_LOC).
 
 /obj/item/tank/examine(mob/user)
 	. = ..()
@@ -236,7 +244,7 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 	var/mob/user = task.actor
 	to_chat(user, span_notice("You carefully weld \the [src] emergency pressure relief valve shut.") + " " + span_warning("\The [src] may now rupture under pressure!"))
 	src.valve_welded = 1
-	src.leaking = 0
+	set_leaking(FALSE)
 
 /obj/item/tank/proc/welder_act_timed_failed(datum/om/task/timed/tank_welder_act/task)
 	var/mob/user = task.actor
@@ -519,7 +527,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		else
 			if(!valve_welded)
 				tank_stress(30)
-				src.leaking = 1
+				set_leaking(TRUE)
 			else
 				tank_stress(50)
 
@@ -544,7 +552,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 			if(!leaking)
 				visible_message("[icon2html(src,viewers(src))] " + span_warning("\The [src] relief valve flips open with a hiss!"), "You hear hissing.")
 				play_sfx(src, SFX_EFFECTS_SPRAY)
-				leaking = 1
+				set_leaking(TRUE)
 				#ifdef FIREDBG
 				log_world(span_warning("[x],[y] tank is leaking: [pressure] kPa, integrity [get_integrity()]"))
 				#endif
@@ -556,18 +564,19 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		if(get_integrity() < max_integrity)
 			repair_damage(leaking ? 20 : 10)
 			if(get_integrity() >= max_integrity)
-				leaking = 0
+				set_leaking(FALSE)
 
 /// Pressure and heat wear on the seal. Armour doesn't help a seal from the inside.
 /obj/item/tank/proc/tank_stress(amount)
 	take_damage(amount, BRUTE, null, FALSE)
+	om_changed(src, CHANGE_EXPLICIT) // integrity is an input of pressure_watched
 
 /// A failed seal is a state, not a wreck: the tank keeps its gas until the next
 /// pressure check ruptures or vents it. Fire and acid still destroy it.
 /obj/item/tank/atom_destruction(damage_flag)
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
-	om_task_periodic(src, PERIODIC_SLOW)
+	om_changed(src, CHANGE_EXPLICIT) // a failed seal: pressure_watched() holds while damaged
 
 /////////////////////////////////
 ///Prewelded tanks

@@ -107,7 +107,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 				return ITEM_INTERACT_BLOCKING
 		to_chat(user, span_notice("You register [src] with the [new_ident] network."))
 		id_tag = new_ident
-		MACHINE_WAKE(src)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -134,6 +133,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	var/id_tag = null
 	var/fire_sounds = SFX_WEAPONS_FRIGATE_TURRET_FRIGATE_TURRET_FIRE_MIX
 
+/// Steps (watches for and shoots meteors) while switched on and working.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/pointdefense, MACHINE_PIPELINE, list("active", "operable"))
+
 /obj/machinery/pointdefense/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -154,8 +156,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 	. = ..()
 	if(.)
 		update_icon()
-		if(active && operable())
-			MACHINE_WAKE(src)
 
 // Find controller with the same tag on connected z levels (if any)
 /obj/machinery/pointdefense/proc/get_controller()
@@ -227,11 +227,6 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 
 /obj/machinery/pointdefense/machine_step()
 	..()
-	if(has_stat(BROKEN))
-		return PROCESS_KILL
-	if(!active)
-		sleep_until_keys(list(GLOB.meteor_watch, CHANGE_METEORS))
-		return PROCESS_KILL
 	var/desiredir = ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH
 	if(dir != desiredir)
 		set_dir(desiredir)
@@ -307,7 +302,6 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 
 	play_sfx(src, SFX_WEAPONS_FLASH, vary = FALSE)
 	set_active(TRUE)
-	MACHINE_WAKE(src)
 	update_icon()
 	return TRUE
 
@@ -316,13 +310,12 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 		return FALSE
 	play_sfx(src, SFX_MACHINES_APC_NOPOWER)
 	set_active(FALSE)
-	MACHINE_SLEEP(src)
 	update_icon()
 	return TRUE
 
 /// Audit: an active point defense must not sleep through meteors.
 /obj/machinery/pointdefense/om_sleep_violation()
-	if(!asleep_on_keys() || (has_stat(BROKEN)) || !active)
+	if(!asleep_on_keys() || (!operable()) || !active)
 		return null
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return "asleep with [LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS))] meteors about"

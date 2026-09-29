@@ -28,8 +28,10 @@
 /// Wakes this ore machine on whichever lane it runs (fast mode or the machine pipeline).
 /obj/machinery/mineral/proc/wake_mining()
 	if(speed_process)
+		// ALLOW(sys_periodic_toggle): lane dispatch for an input-arrival wake: speed_process picks which lane runs the step, the reason to start is the arrival event, not a state change
 		om_task_periodic(src, PERIODIC_FAST)
 	else
+		// ALLOW(sys_periodic_toggle): same lane dispatch (slow lane) for the input-arrival wake
 		MACHINE_WAKE(src)
 
 /// Starts watching `plate`'s turf for arrivals.

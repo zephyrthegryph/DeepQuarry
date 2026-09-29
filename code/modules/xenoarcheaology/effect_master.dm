@@ -33,7 +33,6 @@
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master
-	var/tmp/atom/holder
 	var/list/my_effects
 
 	var/effect_generation_chance = 100
@@ -47,6 +46,10 @@
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
+/// The anomalous atom this state belongs to (a relation view); the master runs its effects while it has one.
+OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
+DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
+
 /datum/artifact_master/New(atom/new_holder)
 	. = ..()
 	if(!istype(new_holder) || new_holder.artifact_master)
@@ -56,8 +59,7 @@
 	own_set(new_holder, "artifact_master", src) // the anomalous atom owns its artifact state
 
 	own_take_all(src, "my_effects")
-
-	om_task_periodic(src, PERIODIC_SLOW)
+	lifecycle_decls_init(src) // a non-atom: starts the holder declaration
 
 	do_setup()
 	return

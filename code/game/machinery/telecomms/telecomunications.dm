@@ -20,6 +20,8 @@
 OWN_TIMER(/obj/machinery/telecomms, thermal_timer)
 
 /obj/machinery/telecomms
+	// Any power or break change (power_change(), EMP, EMP recovery) runs one step to reconcile.
+	step_on_power_change = TRUE
 	icon = 'icons/obj/stationobjs.dmi'
 	unacidable = TRUE
 	/// Until when an EMP keeps the machine down (EMP_DISABLE). Takes a long time for the machines to reboot.
@@ -231,12 +233,6 @@ REL_SET(/obj/machinery/telecomms, links)
 /obj/machinery/telecomms/proc/thermal_check_due()
 	MACHINE_WAKE(src)
 
-/obj/machinery/telecomms/power_change()
-	var/changed = ..()
-	if(changed)
-		MACHINE_WAKE(src)
-	return changed
-
 EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 
 /// Weaker pulses only sometimes knock a telecomms machine out.
@@ -247,7 +243,6 @@ EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
 
 /obj/machinery/telecomms/emp_disable_changed(disabled)
 	..()
-	MACHINE_WAKE(src)
 	if(disabled)
 		play_sfx(src, SFX_MACHINES_TCOMMS_TCOMMS_PULSE)
 

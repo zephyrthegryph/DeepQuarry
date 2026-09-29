@@ -18,7 +18,7 @@
 	if(!changeling)	return
 
 	if(changeling.mimicing)
-		changeling.mimicing = ""
+		changeling.set_mimicing("")
 		to_chat(src, span_notice("We return our vocal glands to their original location."))
 		return
 
@@ -28,21 +28,17 @@
 	if(!mimic_voice)
 		return
 
-	changeling.mimicing = mimic_voice
+	changeling.set_mimicing(mimic_voice)
 
 	to_chat(src, span_notice("We shape our glands to take the voice of <b>[mimic_voice]</b>, this will stop us from regenerating chemicals while active."))
 	to_chat(src, span_notice("Use this power again to return to our original voice and reproduce chemicals again."))
 
 	feedback_add_details("changeling_powers","MV")
-	changeling_mimic_drain()
 
-/// Mimicry costs a chemical every 4 seconds while it lasts.
-/mob/proc/changeling_mimic_drain()
-	var/datum/changeling/changeling = is_changeling(src)
-	if(!src.mind || !changeling)
-		return
-	if(!changeling.mimicing)
-		changeling.mimicing = ""
-		return
-	changeling.chem_charges = max(changeling.chem_charges - 1, 0)
-	om_after(src, 4 SECONDS, PROC_REF(changeling_mimic_drain))
+DECLARE_REPEAT(/datum/changeling, 4 SECONDS, mimic_drain, "mimicing")
+
+/// Mimicry costs a chemical every 4 seconds while it lasts (DECLARE_REPEAT while mimicing).
+/datum/changeling/proc/mimic_drain()
+	if(!owner?.mind)
+		return REPEAT_STOP
+	chem_charges = max(chem_charges - 1, 0)

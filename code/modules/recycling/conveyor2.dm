@@ -25,6 +25,12 @@
 	var/list/affecting	// the list of all items that will be moved this ptick
 	var/id = ""			// the control ID	- must match controller ID
 
+/// set_operating() below is the hand setter; it raises CHANGE_MACHINE_SETTINGS on a real change.
+OM_FIELD_SETTER(/obj/machinery/conveyor, operating, CHANGE_MACHINE_SETTINGS)
+/// Moves what sits on it while running and operable (the declaration also picks the machine
+/// pipeline or the fast lane on speed_process); with nothing to move it sleeps until cargo arrives.
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("operating", "operable"))
+
 /obj/machinery/conveyor/centcom_auto
 	id = "round_end_belt"
 
@@ -72,17 +78,16 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 	update()
 
 /obj/machinery/conveyor/proc/set_operating(new_operating)
+	if(new_operating != FORWARDS && new_operating != BACKWARDS)
+		new_operating = OFF
 	if(new_operating == operating)
 		return // No change
 	operating = new_operating
+	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(operating == FORWARDS)
 		movedir = forwards
 	else if(operating == BACKWARDS)
 		movedir = backwards
-	else
-		operating = OFF
-	// update() enrols a running belt in the machine (or fast) roster, so cargo
-	// already sitting on it is picked up without waiting for a new arrival.
 	update()
 
 /obj/machinery/conveyor/set_dir()
@@ -100,11 +105,11 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 /obj/machinery/conveyor/proc/update()
 	if(has_stat(BROKEN))
 		icon_state = "conveyor-broken"
-		operating = OFF
+		set_operating(OFF)
 		set_use_power(USE_POWER_OFF)
 		return
 	if(!operable)
-		operating = OFF
+		set_operating(OFF)
 	if(has_stat(NOPOWER))
 		// Keep the commanded direction across a power blip: process() already
 		// kills itself on NOPOWER, and power_change() re-enters here to restart
@@ -118,23 +123,12 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 	if(!operating)
 		set_use_power(USE_POWER_OFF)
 		return
-	if(speed_process) // high gear
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-		set_use_power(USE_POWER_ACTIVE)
-	else // low gear
-		om_task_periodic_stop(src)
-		MACHINE_WAKE(src)
-		set_use_power(USE_POWER_ACTIVE)
+	// The operating/operable declaration runs the belt (fast lane in high gear).
+	set_use_power(USE_POWER_ACTIVE)
 
 	// machine process
 	// move items to the target location
 /obj/machinery/conveyor/machine_step()
-	if(!operable())
-		return PROCESS_KILL
-	if(!operating)
-		return PROCESS_KILL
-
 	var/list/movable_contents = list()
 	for(var/atom/movable/A in contents_of(loc))
 		if(A == src || A.anchored || istype(A, /obj/effect/abstract) || A.is_incorporeal())
@@ -250,7 +244,6 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 	icon_state = "switch-off"
 	var/position = 0			// 0 off, -1 reverse, 1 forward
 	var/last_pos = -1			// last direction setting
-	var/operated = 1			// true if just operated
 	var/oneway = 0				// Voreadd: One way levels mid-round!
 
 	var/id = "" 				// must match conveyor IDs to control them
@@ -261,6 +254,10 @@ KEYED_TARGET(/obj/machinery/conveyor, id)
 
 /// Other switches sharing our id (keyed; includes this one), kept in step with our position.
 /obj/machinery/conveyor_switch/var/list/obj/machinery/conveyor_switch/linked_switches
+
+/// TRUE when just operated: one step pushes the position to the linked conveyors.
+OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
 
 REL_KEYED_LIST(/obj/machinery/conveyor_switch, conveyors, id, /obj/machinery/conveyor)
 REL_KEYED_LIST(/obj/machinery/conveyor_switch, linked_switches, id, /obj/machinery/conveyor_switch)
@@ -293,9 +290,7 @@ KEYED_TARGET(/obj/machinery/conveyor_switch, id)
 // if the switch changed, update the linked conveyors
 
 /obj/machinery/conveyor_switch/machine_step()
-	if(!operated)
-		return PROCESS_KILL
-	operated = 0
+	set_operated(FALSE)
 
 	for(var/obj/machinery/conveyor/C in conveyors)
 		C.set_operating(position)
@@ -329,8 +324,7 @@ KEYED_TARGET(/obj/machinery/conveyor_switch, id)
 		last_pos = position
 		position = 0
 
-	operated = 1
-	MACHINE_WAKE(src)
+	set_operated(TRUE)
 	update()
 
 	// find any switches with same id as this one, and set their positions to match us
@@ -400,7 +394,3 @@ KEYED_TARGET(/obj/machinery/conveyor_switch, id)
 				items_moved++
 		if(items_moved >= 10)
 			break
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/conveyor/step_start_condition()
-	return operating

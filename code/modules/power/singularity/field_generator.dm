@@ -21,12 +21,10 @@
 	density = TRUE
 	use_power = USE_POWER_OFF
 	var/const/num_power_levels = 6	// Total number of power level icon has
-	var/Varedit_start = 0
 	var/Varpower = 0
 	active = 0
 	var/power = 30000  // Current amount of power
 	state = 0
-	var/warming_up = 0
 	/// The containment fields this generator powers (shared with the generator at the far end;
 	/// each field is a map object, rooted by its turf).
 	var/list/obj/machinery/containment_field/fields
@@ -41,6 +39,22 @@
 	var/light_range_on = 3
 	var/light_power_on = 1
 	light_color = "#5BA8FF"
+
+/// Admin quick-start (debug.dm): the next step brings it straight online.
+OM_FIELD(/obj/machinery/field_generator, Varedit_start, FALSE, CHANGE_MACHINE_SETTINGS)
+/// Warm-up stage 0-3 (turn_on(), warm_up_step()); the fields go up at 3.
+OM_FIELD(/obj/machinery/field_generator, warming_up, 0, CHANGE_MACHINE_SETTINGS)
+/// Fields up (active 2) and drawing power, or an admin quick-start pending.
+OM_DERIVE_FIELD(/obj/machinery/field_generator, fields_running, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/field_generator/proc/fields_running()
+	return active == 2 || Varedit_start
+/// Switched on (active 1) and still warming up.
+OM_DERIVE_FIELD(/obj/machinery/field_generator, warming, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/field_generator/proc/warming()
+	return active == 1 && warming_up && warming_up < 3
+
+DECLARE_PERIODIC_WHILE(/obj/machinery/field_generator, MACHINE_PIPELINE, "fields_running")
+DECLARE_REPEAT(/obj/machinery/field_generator, 5 SECONDS, warm_up_step, "warming")
 
 /obj/machinery/field_generator/examine()
 	. = ..()
@@ -75,22 +89,20 @@
 	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/field_generator/machine_step()
-	if(Varedit_start == 1)
+	if(Varedit_start)
 		if(active == 0)
 			set_active(1)
 			set_state(2)
 			power = field_generator_max_power
 			set_anchored(TRUE)
-			warming_up = 3
+			set_warming_up(3)
 			start_fields()
 			update_icon()
-		Varedit_start = 0
-
-	if(src.active == 2)
-		calc_power()
-		update_icon()
+		set_Varedit_start(FALSE)
 		return
-	return PROCESS_KILL
+
+	calc_power()
+	update_icon()
 
 /obj/machinery/field_generator/declare_interactions(list/into)
 	into += list(
@@ -196,22 +208,17 @@
 
 /obj/machinery/field_generator/proc/turn_on()
 	set_active(1)
-	MACHINE_WAKE(src)
-	warming_up = 1
-	om_after(src, 1 + 5 SECONDS, PROC_REF(warm_up_step))
+	set_warming_up(1)
 	update_icon()
 
-/// Warming up: one stage every five seconds, fields up at the third.
+/// Warming up (declared on `warming`): one stage every five seconds, fields up at the third.
 /obj/machinery/field_generator/proc/warm_up_step()
-	if(warming_up >= 3 || !active)
-		return
-	warming_up++
+	set_warming_up(warming_up + 1)
 	update_icon()
 	if(warming_up >= 3)
 		start_fields()
 		set_light(light_range_on, light_power_on)
-		return
-	om_after(src, 5 SECONDS, PROC_REF(warm_up_step))
+		return REPEAT_STOP
 
 /obj/machinery/field_generator/proc/calc_power()
 	if(Varpower)
@@ -268,7 +275,6 @@
 	om_after(src, 3, PROC_REF(setup_field), 4)
 	om_after(src, 4, PROC_REF(setup_field), 8)
 	set_active(2)
-	MACHINE_WAKE(src)
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)
 	var/turf/T = src.loc
@@ -345,11 +351,6 @@
 /obj/machinery/field_generator/pre_mapped/Initialize(mapload)
 	. = ..()
 	update_icon()
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/field_generator/step_start_condition()
-	return active || Varedit_start
-
 
 REL_LIST(/obj/machinery/field_generator, fields)
 REL_SET(/obj/machinery/field_generator, connected_gens)

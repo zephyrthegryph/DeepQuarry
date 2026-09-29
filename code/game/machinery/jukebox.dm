@@ -28,6 +28,8 @@
 	var/list/obj/item/juke_remote/remotes
 	var/datum/track/current_track
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing")
+
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -41,11 +43,9 @@
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
 
 /obj/machinery/media/jukebox/machine_step()
-	if(!playing)
-		return PROCESS_KILL
 	if(!operable())
 		disconnect_media_source()
-		playing = 0
+		set_playing(0)
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
 	if(current_track() && ELAPSED(src, media_start_time, CLOCK_WORLD) < current_track().duration)
@@ -66,11 +66,9 @@
 			rel_set(src, "current_track", current_track())
 		if(JUKEMODE_PLAY_ONCE)
 			rel_clear(src, "current_track")
-			playing = 0
+			set_playing(0)
 			update_icon()
 	start_stop_song()
-	if(!playing)
-		return PROCESS_KILL
 
 // Tells the media manager to start or stop playing based on current settings.
 /obj/machinery/media/jukebox/proc/start_stop_song()
@@ -122,7 +120,7 @@
 	power_change()
 	update_icon()
 	if(!anchored)
-		playing = FALSE
+		set_playing(FALSE)
 		disconnect_media_source()
 	else
 		update_media_source()
@@ -280,8 +278,7 @@
 		return 1
 
 /obj/machinery/media/jukebox/proc/StopPlaying()
-	playing = 0
-	MACHINE_SLEEP(src)
+	set_playing(0)
 	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
@@ -289,8 +286,7 @@
 /obj/machinery/media/jukebox/proc/StartPlaying()
 	if(!current_track())
 		return
-	playing = 1
-	MACHINE_WAKE(src)
+	set_playing(1)
 	set_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()

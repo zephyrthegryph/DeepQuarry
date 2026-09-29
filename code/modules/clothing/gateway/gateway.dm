@@ -119,6 +119,10 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 	var/flavor_activate = null // Ditto, for but activating.
 	var/brainloss_cost = 0
 
+/// TRUE while worn in the suit slot by a sentient mob.
+OM_FIELD(/obj/item/clothing/suit/armor/buffvest, worn_by_sentient, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/clothing/suit/armor/buffvest, PERIODIC_SLOW, "worn_by_sentient")
+
 /obj/item/clothing/suit/armor/buffvest/proc/activate_ability(mob/living/wearer)
 	COOLDOWN_START(src, cooldown, cooldown_duration)
 	to_chat(wearer, flavor_activate)
@@ -129,13 +133,13 @@ TYPE_TABLE(/obj/item/clothing/suit/darkvrwizard, suit_storage_spec, list(HOLD_ON
 /obj/item/clothing/suit/armor/buffvest/equipped(mob/living/carbon/human/H, slot)
 	..()
 	if(istype(H) && H.get_equipped_item(SLOT_ID_SUIT) == src && H.is_sentient())
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_worn_by_sentient(TRUE)
 		if(flavor_equip)
 			to_chat(H, span_info(flavor_equip))
 
 /obj/item/clothing/suit/armor/buffvest/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()
-	om_task_periodic_stop(src)
+	set_worn_by_sentient(FALSE)
 	if(H.is_sentient())
 		if(loc == H) // Still inhand.
 			if(flavor_unequip)

@@ -25,7 +25,6 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/tmp/mob/watching_mob
 	var/image/small_station_map = null
 	var/image/floor_markings = null
 	var/image/panel = null
@@ -35,6 +34,10 @@
 	var/datum/station_holomap/holomap_datum
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/station_holomap)
+
+/// The mob looking at the map (startWatching()/stopWatching()); it checks on them while set.
+OM_FIELD_VIEW(/obj/machinery/station_map, mob, watching_mob, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_mob")
 
 /obj/machinery/station_map/Initialize(mapload)
 	. = ..()
@@ -131,7 +134,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			user.client.images |= holomap_datum.station_map
 
 			rel_set(src, "watching_mob", user)
-			MACHINE_WAKE(src)
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
 			om_hook(watching_mob(), /datum/om/event/qdeleting, src, PROC_REF(on_watcher_deleted))
@@ -146,10 +148,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 // user.station_holomap.toggleHolomap(user, isAI(user))
 
 /obj/machinery/station_map/machine_step()
-	if((!operable()) || !anchored)
+	if((!operable()) || !anchored || !watching_mob())
 		stopWatching()
-	if(!watching_mob())
-		return PROCESS_KILL
 
 /obj/machinery/station_map/proc/checkPosition()
 	SHOULD_NOT_SLEEP(TRUE)

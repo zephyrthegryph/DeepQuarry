@@ -26,7 +26,6 @@
 	var/mob_push_flags = 0
 	var/mob_always_swap = 0
 
-	var/mob/living/cameraFollow = null
 
 	var/tod = null // Time of death
 	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
@@ -143,3 +142,5 @@
 	var/eggs = 0
 
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
+/// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it).
+OM_FIELD_VIEW(/mob/living, mob/living, cameraFollow, CHANGE_MOB_CONDITIONS)

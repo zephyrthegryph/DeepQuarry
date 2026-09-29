@@ -8,6 +8,8 @@
 	// dry() works on each real item in turn.
 	collapse_stock = FALSE
 
+DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE, "operable")
+
 /obj/machinery/smartfridge/drying_rack/Initialize(mapload)
 	. = ..()
 	make_climbable()
@@ -25,8 +27,6 @@
 
 /obj/machinery/smartfridge/drying_rack/machine_step()
 	..()
-	if(!operable())
-		return PROCESS_KILL
 	if(stored_count())
 		dry()
 		update_icon()

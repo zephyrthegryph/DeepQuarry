@@ -146,7 +146,7 @@
 	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
-		H.active = FALSE
+		H.set_active(FALSE)
 		var/turf/T = get_turf(src)
 		if(T.density)
 			// broken pipe is inside a dense turf (wall)
@@ -243,7 +243,7 @@
 	var/obj/structure/disposalholder/H = locate_within(src, /obj/structure/disposalholder)
 	if(H)
 		// holder was present
-		H.active = FALSE
+		H.set_active(FALSE)
 		var/turf/T = get_turf(src)
 		if(T.density)
 			// deleting pipe is inside a dense turf (wall)

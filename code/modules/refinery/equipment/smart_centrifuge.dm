@@ -9,9 +9,15 @@
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 2 SECONDS
 
-	var/working = FALSE
+	/// Delay before the next separation step: the spin-up, then one bottle a second.
+	var/separate_delay = 10 SECONDS
+	/// The current run's output choice (spin_reagents()).
+	var/separate_force_bottle = FALSE
+	var/separate_force_canister = FALSE
 
 DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
+OM_FIELD(/obj/machinery/smart_centrifuge, working, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/smart_centrifuge, "separate_delay", internal_reagent_seperate, "working")
 
 /obj/machinery/smart_centrifuge/Initialize(mapload)
 	. = ..()
@@ -96,18 +102,23 @@ DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
 		play_sfx(src, SFX_MACHINES_AIRPUMPIDLE)
 		to_chat(user, "<span class='notice'>You activate \the [src].</span>")
-		working = TRUE
+		separate_force_bottle = force_bottle
+		separate_force_canister = force_canister
+		separate_delay = 10 SECONDS
+		set_working(TRUE)
 		flags ^= OPENCONTAINER
-	om_after(src, 10 SECONDS, PROC_REF(internal_reagent_seperate), force_canister, force_bottle)
 
-/obj/machinery/smart_centrifuge/proc/internal_reagent_seperate(force_canister,force_bottle)
+/obj/machinery/smart_centrifuge/proc/internal_reagent_seperate()
+	var/force_canister = separate_force_canister
+	var/force_bottle = separate_force_bottle
+	separate_delay = 1 SECOND
 	if(reagents.reagent_list.len <= 0)
 		visible_message("\The [src] finishes processing.")
 		play_sfx(src, SFX_MACHINES_BIOGENERATOR_END, 1.25)
 		play_sfx(src, SFX_MACHINES_BUTTONBEEP)
-		working = FALSE
+		set_working(FALSE)
 		flags |= OPENCONTAINER
-		return
+		return REPEAT_STOP
 
 	// Seperate out reagents
 	for(var/datum/reagent/RL in reagents.reagent_list)
@@ -131,7 +142,6 @@ DECLARE_REAGENTS(/obj/machinery/smart_centrifuge, CARGOTANKER_VOLUME, null)
 		CD.pixel_x = rand(-7, 7) // random position
 		CD.pixel_y = rand(-7, 7)
 		break
-	om_after(src, 1 SECOND, PROC_REF(internal_reagent_seperate), force_canister, force_bottle)
 
 /// Old MouseDrop_T: only trolley tanks are handled; anything else, or a failed guard, falls through to ..().
 /datum/interaction/machine_drag/centrifuge_drain_tank

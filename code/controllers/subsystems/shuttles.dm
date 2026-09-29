@@ -12,7 +12,7 @@ SUBSYSTEM_DEF(shuttles)
 		/datum/controller/subsystem/air,
 		/datum/controller/subsystem/atoms
 	)
-	// Shuttles with work run their shuttle_step() on the slow periodic lane (refresh_processing_shuttle()).
+	// Shuttles with work run their shuttle_step() on the slow periodic lane (DECLARE_PERIODIC_WHILE, shuttle.dm).
 	flags = SS_NO_FIRE
 
 	var/overmap_halted = FALSE                     // Whether ships can move on the overmap; used for adminbus.
@@ -20,7 +20,6 @@ SUBSYSTEM_DEF(shuttles)
 
 	var/list/shuttles = list()                     // Maps shuttle tags to shuttle datums, so that they can be looked up.
 	var/list/process_shuttles = list()             // Simple list of shuttles, for processing
-	var/list/active_process_shuttles = list()      // Event-driven working set; idle shuttles stay in the registry only.
 
 	var/list/registered_shuttle_landmarks = list() // Maps shuttle landmark tags to instances
 	EXPIRY_DECLARE(last_landmark_registration_time) // world.time of most recent addition to registered_shuttle_landmarks
@@ -61,10 +60,9 @@ SUBSYSTEM_DEF(shuttles)
 	return SS_INIT_SUCCESS
 
 /// A shuttle with work: one shuttle_step() every 2 s while it is launching, moving or always
-/// processing; idle, it parks until set_process_state() gives it work again.
+/// processing (DECLARE_PERIODIC_WHILE on shuttle_working, code/modules/shuttles/shuttle.dm); idle,
+/// it parks until set_process_state() gives it work again.
 /datum/shuttle/periodic_step(delta)
-	if(!process_state && !always_process)
-		return PROCESS_KILL
 	var/profile_start = TICK_USAGE
 	var/result = shuttle_step()
 	var/type_key = "[type]"
@@ -74,8 +72,6 @@ SUBSYSTEM_DEF(shuttles)
 	if(result == PROCESS_KILL)
 		SSshuttles.profile_kills++
 		set_process_state(IDLE_STATE)
-	if(!process_state && !always_process)
-		return PROCESS_KILL
 
 /// One step of this shuttle's launch/move state machine.
 /datum/shuttle/proc/shuttle_step()
@@ -101,19 +97,6 @@ SUBSYSTEM_DEF(shuttles)
 		"top_type_cost_ms" = type_costs,
 		"type_calls" = profile_type_calls.Copy(),
 	)
-
-/datum/controller/subsystem/shuttles/proc/refresh_processing_shuttle(datum/shuttle/shuttle)
-	if(!shuttle || QDELETED(shuttle) || !(shuttle.flags & SHUTTLE_FLAGS_PROCESS))
-		active_process_shuttles -= shuttle
-		if(shuttle)
-			om_task_periodic_stop(shuttle)
-		return
-	if(shuttle.always_process || shuttle.process_state != IDLE_STATE)
-		active_process_shuttles |= shuttle
-		om_task_periodic(shuttle, PERIODIC_SLOW)
-	else
-		active_process_shuttles -= shuttle
-		om_task_periodic_stop(shuttle)
 
 /datum/controller/subsystem/shuttles/proc/process_init_queues()
 	if(block_init_queue)

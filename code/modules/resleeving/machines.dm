@@ -132,7 +132,6 @@
 
 	var/list/stored_material =  list(MAT_STEEL = 30000, MAT_GLASS = 30000) // ALLOW(instance_list): d: edited in place per instance (3 writers)
 	var/obj/machinery/computer/transhuman/resleeving/connected      //What console it's done up with (relation)
-	var/busy = 0       //Busy cloning
 	var/body_cost = 15000  //Cost of a cloned body (metal and glass ea.)
 	var/max_res_amount = 30000 //Max the thing can hold
 	var/datum/transhuman/body_record/current_br // the record being printed (relation)
@@ -144,6 +143,10 @@
 // This board declares no req_components, so its default parts are declared
 // here instead of read off the board (roadmap C6): still resolved lazily
 // into latent entries in CONTAINER_SLOT_INTERNALS, not eager objects.
+/// Print progress (percent); 0 while idle.
+OM_FIELD(/obj/machinery/transhuman/synthprinter, busy, 0, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/transhuman/synthprinter, MACHINE_PIPELINE, "busy")
+
 /obj/machinery/transhuman/synthprinter/latent_generator()
 	// `list(circuit = 1, ...)` would use the literal identifier "circuit" as
 	// the key (DM's named-argument list syntax), not circuit's value -- the
@@ -189,20 +192,16 @@
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 /obj/machinery/transhuman/synthprinter/machine_step()
 	if(has_stat(NOPOWER))
-		if(busy)
-			busy = 0
-			rel_clear(src, "current_br")
+		set_busy(0)
+		rel_clear(src, "current_br")
 		update_icon()
-		return PROCESS_KILL
+		return
 
 	if(busy > 0 && busy <= 95)
-		busy += 5
+		set_busy(busy + 5)
 
 	if(busy >= 100)
 		make_body()
-
-	if(!busy)
-		return PROCESS_KILL
 
 /obj/machinery/transhuman/synthprinter/proc/print(datum/transhuman/body_record/BR)
 	if(!istype(BR) || QDELETED(BR) || busy)
@@ -212,8 +211,7 @@
 		return 0
 
 	rel_set(src, "current_br", BR)
-	busy = 5
-	MACHINE_WAKE(src)
+	set_busy(5)
 	update_icon()
 
 	return 1
@@ -223,7 +221,7 @@
 
 	var/datum/transhuman/body_record/current_project = current_br
 	if(!current_project)
-		busy = 0
+		set_busy(0)
 		rel_clear(src, "current_br")
 		update_icon()
 		return
@@ -242,7 +240,7 @@
 	//Machine specific stuff at the end
 	stored_material[MAT_STEEL] -= body_cost
 	stored_material[MAT_GLASS] -= body_cost
-	busy = 0
+	set_busy(0)
 	update_icon()
 
 	return 1

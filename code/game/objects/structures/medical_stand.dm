@@ -7,20 +7,27 @@
 
 	//gas stuff
 	var/obj/item/tank/tank
-	var/mob/living/carbon/human/breather
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = null
 	var/mask_type = /obj/item/clothing/mask/breath/medical
 
 	var/is_loosen = TRUE
-	var/valve_opened = FALSE
 	//blood stuff
-	var/mob/living/carbon/attached
 	var/mode = 1 // 1 is injecting, 0 is taking blood.
 	var/obj/item/reagent_containers/beaker
 	var/static/list/transfer_amounts = list(REM, 1, 2)
 	var/transfer_amount = 1
+
+OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
+OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
+OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/structure/medical_stand, stand_working, CHANGE_EXPLICIT)
+/// Feeds gas and reagents every 2 s while its valve is open or it has a patient on the mask or needle.
+DECLARE_PERIODIC_WHILE(/obj/structure/medical_stand, PERIODIC_SLOW, "stand_working")
+
+/obj/structure/medical_stand/proc/stand_working()
+	return valve_opened || breather || attached
 
 /obj/structure/medical_stand/Initialize(mapload)
 	. = ..()
@@ -162,7 +169,6 @@
 	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
 	rel_set(src, "attached", target)
-	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 /obj/structure/medical_stand/proc/MouseDrop_timed_done(mob/living/carbon/human/target, mob/user)
@@ -189,7 +195,6 @@
 	if(attach_mask(target))
 		src.add_fingerprint(user)
 		update_icon()
-		om_task_periodic(src, PERIODIC_SLOW)
 	return
 
 DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
@@ -227,8 +232,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 					MSG_OTHERS(span_warningplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 				user.put_in_hands(tank)
 				own_take(src, "tank")
-				valve_opened = FALSE
-				om_task_periodic_stop(src)
+				set_valve_opened(FALSE)
 				update_icon()
 				return
 			else if (!is_loosen)
@@ -245,16 +249,15 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 					if(breather())
 						breather().internals?.icon_state = "internal0"
 						breather().internal = null
-					valve_opened = FALSE
+					set_valve_opened(FALSE)
 					update_icon()
 				else
 					act_message(user, src, others = span_infoplain(span_bold("%U%") + " opens valve on %T%!"), blind = span_notice("You open valve on %T%."))
 					if(breather())
 						breather().internal = tank
 						breather().internals?.icon_state = "internal1"
-					valve_opened = TRUE
+					set_valve_opened(TRUE)
 					update_icon()
-					om_task_periodic(src, PERIODIC_SLOW)
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)

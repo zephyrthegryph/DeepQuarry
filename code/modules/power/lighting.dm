@@ -244,7 +244,11 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 	var/brightness_power
 	var/brightness_color
 	var/status = LIGHT_OK		// LIGHT_OK, _EMPTY, _BURNED or _BROKEN
-	var/flickering = 0
+	/// flicker(): flicks still to go, the flicker colour, and the colours to restore at the end.
+	var/tmp/flicks_left = 0
+	var/tmp/flicker_color
+	var/tmp/flicker_original_color
+	var/tmp/flicker_original_color_ns
 	var/light_type = /obj/item/light/tube		// the type of light item
 	var/construct_type = /obj/machinery/light_construct
 	var/switchcount = 0			// count of number of times switched on/off
@@ -285,6 +289,10 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 	var/brightness_color_ns
 
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
+
+/// A flicker() run in progress: do_flicker() flicks every flicker_delay() until flicks_left runs out.
+OM_FIELD(/obj/machinery/light, flickering, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_REPEAT(/obj/machinery/light, "flicker_delay", do_flicker, "flickering")
 
 /obj/machinery/light/flicker
 	auto_flicker = TRUE
@@ -825,15 +833,23 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 /obj/machinery/light/proc/flicker(amount = rand(10, 20), flicker_color)
 	if(flickering) return
 	if(on && status == LIGHT_OK)
-		flickering = 1
-		do_flicker(amount, flicker_color, brightness_color, brightness_color_ns)
+		flicks_left = amount
+		src.flicker_color = flicker_color
+		flicker_original_color = brightness_color
+		flicker_original_color_ns = brightness_color_ns
+		set_flickering(TRUE)
+		do_flicker()
 
-/obj/machinery/light/proc/do_flicker(remaining_flicks, flicker_color, original_color, original_color_ns)
+/// The delay before the next flick (DECLARE_REPEAT reads it each time).
+/obj/machinery/light/proc/flicker_delay()
+	return rand(5, 15)
+
+/obj/machinery/light/proc/do_flicker()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	if(status != LIGHT_OK)
-		flickering = 0
-		return
+		set_flickering(FALSE)
+		return REPEAT_STOP
 	set_on(!on)
 	if(flicker_color && brightness_color != flicker_color)
 		brightness_color = flicker_color
@@ -842,17 +858,17 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 	update(0)
 	if(!on) // Only play when the light turns off.
 		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
-	if(remaining_flicks > 0)
-		remaining_flicks--
-		om_after(src, rand(5, 15), PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns)
+	if(flicks_left > 0)
+		flicks_left--
 		return
 	//All this happens after our final flicker.
 	set_on((status == LIGHT_OK))
-	brightness_color = original_color
-	brightness_color_ns = original_color_ns
+	brightness_color = flicker_original_color
+	brightness_color_ns = flicker_original_color_ns
 	update(0)
 	update(0)
-	flickering = 0
+	set_flickering(FALSE)
+	return REPEAT_STOP
 
 // ai attack - turn on/off emergency lighting for a specific fixture
 /// Old attack_ai: toggle the fixture's emergency lighting.

@@ -17,8 +17,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	COOLDOWN_DECLARE(map_refresh_cd)
 	light_color = "#7faaff"
 	circuit = /obj/item/circuitboard/helm
-	var/autopilot = 0
-	var/autopilot_disabled = TRUE
 	var/list/known_sectors
 	var/dx		//desitnation
 	var/dy		//coordinates
@@ -26,6 +24,10 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	var/accellimit = 0.001 //manual limiter for acceleration
 	// req_one_access = list(ACCESS_PILOT) // // removed hard access locks.
 	ai_control = FALSE // AI/Borgs shouldn't really be flying off in ships without crew help
+
+OM_FIELD(/obj/machinery/computer/ship/helm, autopilot, FALSE, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery/computer/ship/helm, autopilot_disabled, TRUE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/ship/helm, MACHINE_PIPELINE, list("autopilot", "!autopilot_disabled"))
 
 // fancy sprite
 /obj/machinery/computer/ship/helm/adv
@@ -53,12 +55,12 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 /obj/machinery/computer/ship/helm/machine_step()
 	..()
-	if(!autopilot || !dx || !dy || autopilot_disabled || !linked() || !using_map)
+	if(!dx || !dy || !linked() || !using_map)
 		return PROCESS_KILL
 	var/turf/T = locate(dx,dy,using_map.overmap_z)
 	if(linked().loc == T)
 		if(linked().is_still())
-			autopilot = 0
+			set_autopilot(FALSE)
 		else
 			linked().decelerate()
 	else
@@ -77,8 +79,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 		// All other cases, move toward direction
 		else if(speed + acceleration <= speedlimit)
 			linked().accelerate(direction, accellimit)
-	if(!autopilot)
-		return PROCESS_KILL
 
 /obj/machinery/computer/ship/helm/relaymove(mob/user, direction)
 	if(viewing_overmap(user) && linked())
@@ -272,16 +272,14 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 
 		if("apilot")
 			if(autopilot_disabled)
-				autopilot = FALSE
+				set_autopilot(FALSE)
 			else
-				autopilot = !autopilot
-			if(autopilot)
-				MACHINE_WAKE(src)
+				set_autopilot(!autopilot)
 			. = TRUE
 
 		if("apilot_lock")
-			autopilot_disabled = !autopilot_disabled
-			autopilot = FALSE
+			set_autopilot_disabled(!autopilot_disabled)
+			set_autopilot(FALSE)
 			. = TRUE
 
 		if("manual")

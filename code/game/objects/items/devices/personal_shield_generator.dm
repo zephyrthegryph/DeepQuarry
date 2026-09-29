@@ -35,7 +35,6 @@
 	var/modifier_type = /datum/body_effect/shield_projection	// What type of modifier will it add? Used for variant modifiers!
 
 	var/has_weapon = 1										// Backpack units generally have weapons.
-	var/shield_active = 0 									// If the shield gen is active.
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
 /obj/item/personal_shield_generator/get_cell()
@@ -50,9 +49,11 @@
 		else
 			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
 			rel_set(active_weapon, "power_supply", bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
-	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
+/// If the shield gen is active; it drains power while it is.
+OM_FIELD(/obj/item/personal_shield_generator, shield_active, 0, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/personal_shield_generator, PERIODIC_SLOW, "shield_active")
 DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
@@ -94,14 +95,13 @@ DAMAGE_REACTION(/obj/item/personal_shield_generator, DAMAGE_EMP, PROC_REF(shield
 						bcell.corrupt() //Not too bad if you slotted a battery in. Disasterous if it has a self-charging battery.
 					if(bcell.rigged) //Did the above just rig the cell? Turn it off. Don't immediately have it go boom. Instead have the cell blow soon-ish.
 						fx_sparks(src, 5)
-						shield_active = 0
+						set_shield_active(0)
 						if(bcell.charge_delay) //It WILL blow up soon. Downside of self-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL MELTDOWN IMMINENT. TIME TILL EXPLOSION: [bcell.charge_delay/10] SECONDS. DISCARD UNIT IMMEDIATELY!'"))
 						else //It won't blow up unless you turn it back on again. Upside of using non-charging cells.
 							to_chat(src.loc, span_critical("Your shield generator sparks and suddenly goes down! A warning message pops up on screen: \
 							'WARNING, INTERNAL CELL CRITICALLY DAMAGED. REPLACE CELL IMMEDIATELY.'"))
-						om_task_periodic_stop(src)
 						update_icon()
 			else
 				if(prob(25))
@@ -235,18 +235,16 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		return
 	else
 		if(shield_active)
-			shield_active = !shield_active //Deactivate the shield!
+			set_shield_active(!shield_active) //Deactivate the shield!
 			to_chat(user, span_warning("You deactive the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-			om_task_periodic_stop(src)
 			play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		else
-			shield_active = !shield_active
+			set_shield_active(!shield_active)
 			to_chat(user, span_warning("You activate the shield!"))
 			user.remove_body_effect(/datum/body_effect/shield_projection) //Just to make sure they aren't using two at once!
 			user.apply_body_effect(modifier_type)
 			user.update_modifier_visuals() //Forces coloration to WORK.
-			om_task_periodic(src, PERIODIC_SLOW) //Let's only bother draining power when we're being used!
 			play_sfx(src, SFX_WEAPONS_SABERON) //Shield turning off! PLACEHOLDER
 	update_icon()
 
@@ -281,8 +279,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates! An error message pops up on screen: 'Cell missing. Cell replacement required.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-		shield_active = 0
-		om_task_periodic_stop(src)
+		set_shield_active(0)
 		update_icon()
 		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return
@@ -300,8 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
 			own_take(src, "bcell")
-			shield_active = 0
-			om_task_periodic_stop(src)
+			set_shield_active(0)
 			update_icon()
 			return
 
@@ -309,12 +305,11 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			bcell.use(generator_active_cost)
 
 	if(bcell.charge < generator_hit_cost || bcell.charge < generator_active_cost) //Out of charge...
-		shield_active = 0
+		set_shield_active(0)
 		if(ishuman(loc)) //We on someone? Tell them it turned off.
 			var/mob/living/carbon/human/user = loc
 			to_chat(user, span_warning("The shield deactivates, an error message popping up on screen: 'Cell out of charge.'"))
 			user.remove_body_effect(/datum/body_effect/shield_projection)
-		om_task_periodic_stop(src)
 		update_icon()
 		play_sfx(src, SFX_WEAPONS_SABEROFF) //Shield turning off! PLACEHOLDER
 		return

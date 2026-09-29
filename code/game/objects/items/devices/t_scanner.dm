@@ -12,13 +12,16 @@
 
 	var/scan_range = 1
 
-	var/on = 0
 	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
 	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
+
+OM_FIELD(/obj/item/t_scanner, on, 0, CHANGE_EXPLICIT)
+// Scans underfloor objects while switched on.
+DECLARE_PERIODIC_WHILE(/obj/item/t_scanner, PERIODIC_SLOW, "on")
 
 /obj/item/t_scanner/update_icon()
 	icon_state = "t-ray[on]"
@@ -29,19 +32,15 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 	set_active(!on)
 
 /obj/item/t_scanner/proc/set_active(active)
-	on = active
+	set_on(active)
 	if(on)
-		om_task_periodic(src, PERIODIC_SLOW)
 		flicker = 0
 	else
-		om_task_periodic_stop(src)
 		set_user_client(null)
 	update_icon()
 
 //If reset is set, then assume the client has none of our overlays, otherwise we only send new overlays.
 /obj/item/t_scanner/periodic_step()
-	if(!on) return
-
 	//handle clients changing
 	var/client/loc_client = null
 	if(ismob(src.loc))

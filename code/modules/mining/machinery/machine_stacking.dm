@@ -118,12 +118,8 @@
 		set_speed_process(forced)
 	else
 		set_speed_process(!speed_process) // switching gears
-	if(speed_process) // high gear
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-	else // low gear
-		om_task_periodic_stop(src)
-		MACHINE_WAKE(src)
+	// /obj/machinery's speed_process declaration runs the step on the fast lane in high gear; the
+	// machine pipeline's step stage idles meanwhile and picks its work back up in low gear.
 
 /obj/machinery/mineral/stacking_machine/machine_step()
 	var/did_work = FALSE

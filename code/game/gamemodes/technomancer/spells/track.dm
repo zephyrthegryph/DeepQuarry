@@ -19,12 +19,16 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	desc = "Never lose your stuff again!"
 	cast_methods = CAST_USE
 	aspect = ASPECT_TELE
-	var/atom/movable/tracked // The thing to point towards.
-	var/tracking = 0 // If one, points towards tracked.
+	var/atom/movable/tracked // The thing to point towards (a relation view).
+
+/// If set, points towards tracked (every half second).
+OM_FIELD(/obj/item/spell/track, tracking, FALSE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
 
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
-		tracking = 0
+		set_tracking(FALSE)
+		icon_state = "track"
 		to_chat(user, span_notice("You stop tracking for \the [tracked()]'s whereabouts."))
 		rel_clear(src, "tracked")
 		return
@@ -45,14 +49,11 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 /obj/item/spell/track/proc/track_target_chosen(datum/om/prompt/choice/carried_item/ask)
 	if(ask.choice)
 		rel_set(src, "tracked", ask.choice)
-		tracking = 1
+		set_tracking(TRUE)
 		track()
 
+/// DECLARE_REPEAT while tracking: point towards the tracked thing.
 /obj/item/spell/track/proc/track()
-	if(!tracking)
-		icon_state = "track"
-		return
-
 	if(!tracked())
 		icon_state = "track_unknown"
 
@@ -71,8 +72,6 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 				icon_state = "track_medium"
 			if(16 to INFINITY)
 				icon_state = "track_far"
-
-	om_after(src, 5, PROC_REF(track))
 
 /// Tracked (a relation view).
 /obj/item/spell/track/proc/tracked() as /atom/movable

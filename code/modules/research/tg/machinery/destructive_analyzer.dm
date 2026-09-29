@@ -111,7 +111,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 			if(bad_item)
 				to_chat(user, span_notice("The machine rejects \the [O]! You need to clear it of all items first!"))
 				return TRUE
-		busy = TRUE
+		set_busy(TRUE)
 		user.drop_item()
 		O.forceMove(src)
 		own_set(src, "loaded_item", O)
@@ -264,7 +264,7 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/obj/item/current_item = loaded_item
 	if(!current_item || QDELETED(src))
 		return FALSE
-	busy = TRUE
+	set_busy(TRUE)
 	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)
 	// Destroy items inside

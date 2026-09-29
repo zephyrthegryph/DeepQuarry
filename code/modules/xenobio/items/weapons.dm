@@ -211,6 +211,10 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	var/list/to_be_processed
 	var/monkeys_recycled = 0
 
+/// Set after a monkey is ground: make_cubes() runs every second while it is (DECLARE_REPEAT).
+OM_FIELD(/obj/item/slime_grinder, cube_making, FALSE, CHANGE_EXPLICIT)
+DECLARE_REPEAT(/obj/item/slime_grinder, 1 SECOND, make_cubes, "cube_making")
+
 /// Grinds `AM`: one core per timed action for slimes; a monkey is one timed action, then cubes.
 /obj/item/slime_grinder/proc/extract(atom/movable/AM, mob/living/user)
 	processing = TRUE
@@ -241,17 +245,17 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	qdel(M)
 	monkeys_recycled++
-	om_after(src, 1 SECOND, PROC_REF(make_cubes))
+	set_cube_making(TRUE)
 
 /// One monkey cube a second while four monkeys' worth is recycled.
 /obj/item/slime_grinder/proc/make_cubes()
 	if(monkeys_recycled < 4)
 		processing = FALSE
-		return
+		set_cube_making(FALSE)
+		return REPEAT_STOP
 	new /obj/item/reagent_containers/food/snacks/monkeycube(get_turf(src))
 	play_sfx(src, SFX_EFFECTS_SPLAT)
 	monkeys_recycled -= 4
-	om_after(src, 1 SECOND, PROC_REF(make_cubes))
 
 /obj/item/slime_grinder/proc/grind_ended()
 	processing = FALSE

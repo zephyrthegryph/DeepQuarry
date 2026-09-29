@@ -17,6 +17,10 @@
 	var/applies_material_colour = 1
 	var/wall_type = /turf/simulated/wall
 
+/// TRUE while its material needs processing (radioactive or similar); set by set_material().
+OM_FIELD(/obj/structure/girder, material_processing, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/structure/girder, PERIODIC_SLOW, "material_processing")
+
 /obj/structure/girder/Initialize(mapload, material_key)
 	. = ..()
 	if(!material_key)
@@ -29,8 +33,7 @@
 
 /obj/structure/girder/periodic_step()
 	if(!radiate())
-		om_task_periodic_stop(src)
-		return
+		return PROCESS_KILL
 
 /obj/structure/girder/proc/radiate()
 	// radioactivity moved to a component on /datum/material.
@@ -57,10 +60,7 @@
 	update_rad_insulation()
 	if(applies_material_colour)
 		color = girder_material.icon_colour
-	if(girder_material.products_need_process()) //Am I radioactive or some other? Process me!
-		om_task_periodic(src, PERIODIC_SLOW)
-	else if(datum_flags & DF_ISPROCESSING) //If I happened to be radioactive or s.o. previously, and am not now, stop processing.
-		om_task_periodic_stop(src)
+	set_material_processing(girder_material.products_need_process() ? TRUE : FALSE) //Am I radioactive or some other? Process me!
 
 /obj/structure/girder/get_material()
 	return girder_material

@@ -290,6 +290,7 @@
 #include "dq_om_ask_tests.dm"
 #include "dq_sys_damage_reactions_tests.dm"
 #include "dq_sys_expiry_tests.dm"
+#include "dq_sys_periodic_tests.dm"
 #include "dq_flow_io_tests.dm"
 #include "dq_refs_tests.dm"
 #include "dq_om_timed_action_tests.dm"

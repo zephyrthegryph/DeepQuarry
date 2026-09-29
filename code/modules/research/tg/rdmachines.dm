@@ -7,8 +7,6 @@
 	anchored = TRUE
 	use_power = USE_POWER_IDLE
 
-	///Are we currently printing a machine
-	var/busy = FALSE
 	///Is this machne hacked via wires
 	var/hacked = FALSE
 	///Is this machine disabled via wires
@@ -17,6 +15,9 @@
 	var/datum/techweb/stored_research
 	///The item loaded inside the machine, used by experimentors and destructive analyzers only (owned; spills when the machine dies).
 	var/obj/item/loaded_item
+
+///Are we currently printing a machine
+OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/rnd/Initialize(mapload)
 	. = ..()
@@ -51,7 +52,7 @@
 
 ///Reset the state of this machine
 /obj/machinery/rnd/proc/reset_busy()
-	busy = FALSE
+	set_busy(FALSE)
 
 /obj/machinery/rnd/declare_interactions(list/into)
 	into += list(

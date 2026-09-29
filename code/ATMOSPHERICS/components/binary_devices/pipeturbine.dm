@@ -22,6 +22,13 @@
 	var/datum/pipe_network/network1
 	var/datum/pipe_network/network2
 
+/// Not BROKEN (the turbine needs no power, so operable() is too strict).
+OM_DERIVE_FIELD(/obj/machinery/atmospherics/pipeturbine, unbroken, CHANGE_MACHINE_BROKEN)
+/obj/machinery/atmospherics/pipeturbine/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/pipeturbine, MACHINE_PIPELINE, list("anchored", "unbroken"))
+
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
 	. = ..()
 	atmos_air_set(src, "air_in", new /datum/gas_mixture(200))
@@ -44,8 +51,6 @@
 
 /obj/machinery/atmospherics/pipeturbine/machine_step()
 	..()
-	if(!anchored || (has_stat(BROKEN)))
-		return PROCESS_KILL
 	kin_energy *= 1 - kin_loss
 	dP = max(air_in.return_pressure() - air_out.return_pressure(), 0)
 	if(dP > 10)
@@ -105,7 +110,6 @@
 
 /obj/machinery/atmospherics/pipeturbine/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
-	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))
 
@@ -217,6 +221,13 @@
 	var/kin_to_el_ratio = 0.1	//How much kinetic energy will be taken from turbine and converted into electricity
 	var/obj/machinery/atmospherics/pipeturbine/turbine
 
+/// Not BROKEN (the motor is a generator; operable() would also demand power).
+OM_DERIVE_FIELD(/obj/machinery/power/turbinemotor, unbroken, CHANGE_MACHINE_BROKEN)
+/obj/machinery/power/turbinemotor/proc/unbroken()
+	return !has_stat(BROKEN)
+
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, list("anchored", "unbroken"))
+
 /obj/machinery/power/turbinemotor/Initialize(mapload)
 	. = ..()
 	updateConnection()
@@ -236,7 +247,7 @@
 /// it (pipeturbine machine_step()).
 /obj/machinery/power/turbinemotor/machine_step()
 	updateConnection()
-	if(!turbine || !anchored || has_stat(BROKEN) || turbine.kin_energy < TURBINE_MIN_KIN_ENERGY)
+	if(!turbine || turbine.kin_energy < TURBINE_MIN_KIN_ENERGY)
 		return PROCESS_KILL
 
 	var/power_generated = kin_to_el_ratio * turbine.kin_energy
@@ -245,7 +256,6 @@
 
 /obj/machinery/power/turbinemotor/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)
-	MACHINE_WAKE(src)
 	playsound(src, W.usesound, 50, 1)
 	rel_clear(src, "turbine")
 	to_chat(user, span_notice("You [anchored ? "secure" : "unsecure"] the bolts holding \the [src] to the floor."))

@@ -130,6 +130,41 @@ DECLARE_REPEAT(/obj/effect/beam, 2 SECONDS, PROC_REF(pulse), "active")          
 - Lint `sys_periodic_guard` (`if(!field) return PROCESS_KILL` as a body's first statement),
   `sys_om_after_rearm` (an `om_after(src, ..., PROC_REF(p))` inside `p`).
 
+**As built (rewrite/sys-periodic).**
+
+- Macros (`code/__defines/sys_periodic.dm`): `DECLARE_PERIODIC_WHILE(T, CADENCE, "field")`,
+  `DECLARE_PERIODIC_WHILE_ALL(T, CADENCE, list("a", "!b"))` (`"!f"` = while `f` is false) and
+  `DECLARE_REPEAT(T, DELAY, proc, "field")`. **Refinements:** the repeat's proc is a bare proc name
+  (the macro builds `TYPE_PROC_REF(T, proc)`, so a typo is a compile error, and keys the declaration
+  by it: several repeats per type); DELAY is a time or the name of a var/proc read at every re-arm;
+  `MACHINE_PIPELINE` is the cadence for `machine_step()` work (start = `MACHINE_WAKE`, stop =
+  `MACHINE_SLEEP`; in `speed_process` fast mode, the fast periodic lane).
+- Each line generates a static `/datum/sys_periodic_def<T>/while_state` (or `/repeat_<proc>`) and a
+  lifecycle declaration entry, so only declared types pay at materialize. `finish()` resolves the
+  type's `/datum/sys_periodic_table` (nearest while-declaration; repeats by proc, nearest wins) and
+  validates fields and procs against the first instance.
+- Watch: each OM type table carries `sys_periodic_mask`, the union of the type's declared fields'
+  channels (resolved from the `field_def` registrations, derived fields included). A raise of one
+  re-evaluates the entity's declarations synchronously in `om_dispatch_change()`: start what holds,
+  stop what doesn't (starting only schedules, so this is safe inside a setter). A derived field's
+  inputs raise its channel (`om_changed()`) where they change.
+  Materialize ensures an OM record (the listen mask) and evaluates; dematerialize stops. Non-atom
+  datums start from `lifecycle_decls_init(src)` in `New()`.
+- Gate: while a while-declaration doesn't hold, `om_task_periodic()` on its cadence and
+  `MACHINE_WAKE()` refuse, the machine step/power-step stages don't run `machine_step()` and fast
+  mode stops, so no body guards on its declared state.
+- Repeats run in timer slot `sys_repeat:<proc>` (owned and cancelled with the holder). The loop
+  re-arms after each run while the field holds; `REPEAT_STOP` ends it until the field's channel is
+  next raised while it holds.
+- Lint (`tools/ci/sys_rules/periodic.py`, empty baseline, all 0): `periodic_guard` (a top-level
+  `if(<fields>) return PROCESS_KILL` anywhere in a `periodic_step()`/`machine_step()` body, fields
+  being bare vars, `operable()`, `has_stat()`), `om_after_rearm` (a self re-arm whose extra arguments
+  are constants or the proc's own parameters unchanged; a re-arm passing a per-step progression is a
+  finite sequence, not a loop over state), `periodic_toggle` (a hand `om_task_periodic(src..)` /
+  `om_task_periodic_stop(src)` / `MACHINE_WAKE(src)` / `MACHINE_SLEEP(src)` next to a var write or
+  first in an `if(<fields>)`/`else` branch).
+- Test: `code/modules/unit_tests/dq_sys_periodic_tests.dm`.
+
 ## 3. Declared UI model
 
 ```dm

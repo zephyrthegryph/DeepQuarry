@@ -103,8 +103,8 @@
 	rec.table = om_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		om_cache_scan(rec.table, E)
-	if(rec.table.service_mask | rec.table.cache_mask)
-		E.om_listen |= rec.table.service_mask | rec.table.cache_mask
+	if(rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask)
+		E.om_listen |= rec.table.service_mask | rec.table.cache_mask | rec.table.sys_periodic_mask
 	return rec
 
 // ---------------------------------------------------------------- declared caches
@@ -314,7 +314,7 @@
 
 /// Recomputed only when attachments, watches, forwards or derived storage change.
 /proc/om_recompute_listen(datum/om/rec/rec)
-	var/slow = rec.table?.service_mask
+	var/slow = rec.table?.service_mask | rec.table?.sys_periodic_mask
 	var/mask = slow
 	for(var/datum/om/behaviour/B as anything in rec.att)
 		mask |= B.interest
@@ -362,6 +362,9 @@
 	// so it runs before the repeat and bulk short cuts below).
 	if(rec.table.cache_mask & bits)
 		om_cache_clear(E, rec.table.cache_change, null, bits)
+	// A declared periodic field changed: start or stop the declared work now (code/datums/sys/periodic.dm).
+	if(rec.table.sys_periodic_mask & bits)
+		sys_periodic_evaluate(E)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 	// Tests count raises (a status change must raise its channel once, not twice).
 	if(sched.test_raises)

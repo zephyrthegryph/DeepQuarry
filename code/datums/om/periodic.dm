@@ -35,6 +35,9 @@
 		return FALSE
 	if(E.periodic_pipe == P)
 		return TRUE
+	// A DECLARE_PERIODIC_WHILE on this cadence whose state doesn't hold refuses (code/datums/sys/periodic.dm).
+	if(!sys_periodic_allows(E, P))
+		return FALSE
 	E.periodic_pipe = P
 	E.datum_flags |= DF_ISPROCESSING
 	if(om_attached(E, P))

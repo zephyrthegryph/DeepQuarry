@@ -20,6 +20,9 @@
 	var/tmp/obj/machinery/shield_gen/owned_gen
 	interact_offline = TRUE
 
+/// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
+DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "anchored")
+
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
 	make_climbable()
@@ -61,11 +64,11 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 	act_message(user, src, others = span_blue("[icon2html(src,viewers(src))] %T% has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by %U%."))
 
 	if(anchored)
-		MACHINE_WAKE(src)
 		for(var/obj/machinery/shield_gen/gen in range(1, src))
 			if(get_dir(src, gen) == src.dir)
 				rel_set(src, "owned_gen", gen)
 	else
+		set_active(0)
 		rel_clear(src, "owned_gen")
 	return ITEM_INTERACT_SUCCESS
 
@@ -112,10 +115,6 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 	return data
 
 /obj/machinery/shield_capacitor/machine_step()
-	if (!anchored)
-		set_active(0)
-		return PROCESS_KILL
-
 	//see if we can connect to a power net.
 	var/PN = 0
 	var/turf/T = get_turf(src)
@@ -153,8 +152,6 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
 				return
 			set_active(!active)
-			if(stored_charge < max_charge)
-				MACHINE_WAKE(src)
 			. = TRUE
 		if("charge_rate")
 			charge_rate = clamp(text2num(params["rate"]), 10000, max_charge_rate)
@@ -184,10 +181,6 @@ REL_PAIR(/obj/machinery/shield_capacitor, owned_gen, capacitors)
 		return "asleep below full charge on a grid with [power_surplus(PN)] W spare"
 	return null
 
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shield_capacitor/step_start_condition()
-	return anchored && stored_charge < max_charge
 
 /// The generator this capacitor feeds (a relation view).
 /obj/machinery/shield_capacitor/proc/owned_gen() as /obj/machinery/shield_gen

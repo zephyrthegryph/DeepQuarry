@@ -117,6 +117,7 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 	idle_power_usage = 0
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
+DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 
 /obj/machinery/shieldgen/Initialize(mapload)
 	. = ..()
@@ -140,7 +141,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 	if(active) return 0 //If it's already turned on, how did this get called?
 
 	set_active(TRUE)
-	MACHINE_WAKE(src)
 	update_icon()
 
 	create_shields()
@@ -153,7 +153,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 	if(!active) return 0 //If it's already off, how did this get called?
 
 	set_active(FALSE)
-	MACHINE_SLEEP(src)
 	update_icon()
 
 	collapse_shields()
@@ -171,9 +170,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 	own_clear(src, "deployed_shields", OWN_DELETE)
 
 /obj/machinery/shieldgen/machine_step()
-	if(!active)
-		return PROCESS_KILL
-
 	if(cell && cell.charge)
 		var/power_usage = 0
 		for(var/obj/machinery/shield/shield_tile in deployed_shields)
@@ -366,7 +362,3 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 	else
 		src.icon_state = malfunction ? "shieldoffbr":"shieldoff"
 	return
-
-/// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
-/obj/machinery/shieldgen/step_start_condition()
-	return active

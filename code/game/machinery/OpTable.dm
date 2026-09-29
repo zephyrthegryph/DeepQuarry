@@ -11,9 +11,12 @@
 	active_power_usage = 5
 	surgery_cleanliness = 100
 	throwpass = 1
-	var/mob/living/carbon/human/victim = null
 	var/strapped = 0.0
 	var/obj/machinery/computer/operating/computer = null
+
+/// The patient lying on it; the table checks on them every machine frame while there is one.
+OM_FIELD_VIEW(/obj/machinery/optable, mob/living/carbon/human, victim, CHANGE_MACHINE_OCCUPANT)
+DECLARE_PERIODIC_WHILE(/obj/machinery/optable, MACHINE_PIPELINE, "victim")
 
 /obj/machinery/optable/Initialize(mapload)
 	. = ..()
@@ -70,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 
 /obj/machinery/optable/machine_step()
 	if(!check_victim())
-		return PROCESS_KILL
+		return // check_victim() cleared the victim, which ends the declared work
 	if(computer)
 		MACHINE_WAKE(computer)
 
@@ -92,7 +95,6 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 	if(ishuman(C))
 		var/mob/living/carbon/human/H = C
 		rel_set(src, "victim", H)
-		MACHINE_WAKE(src)
 		if(computer)
 			MACHINE_WAKE(computer)
 		icon_state = H.pulse ? "table2-active" : "table2-idle"

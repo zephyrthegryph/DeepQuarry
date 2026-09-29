@@ -15,10 +15,12 @@
 
 	var/fuel_usage = 30
 	var/id_tag
-	var/injecting = 0
 	var/obj/item/fuel_assembly/cur_assembly
 
 REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS)
+
+OM_FIELD(/obj/machinery/fusion_fuel_injector, injecting, FALSE, CHANGE_MACHINE_SETTINGS)
+DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "injecting")
 
 /obj/machinery/fusion_fuel_injector/Initialize(mapload)
 	. = ..()
@@ -31,11 +33,9 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 	anchored = TRUE
 
 /obj/machinery/fusion_fuel_injector/machine_step()
-	if(!injecting)
-		return PROCESS_KILL
 	if(!operable())
 		StopInjecting()
-		return PROCESS_KILL
+		return
 	Inject()
 
 /obj/machinery/fusion_fuel_injector/declare_interactions(list/into)
@@ -149,13 +149,12 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 /obj/machinery/fusion_fuel_injector/proc/BeginInjecting()
 	if(!injecting && cur_assembly)
 		icon_state = "injector1"
-		injecting = 1
+		set_injecting(TRUE)
 		set_use_power(USE_POWER_IDLE)
-		MACHINE_WAKE(src)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)
-		injecting = 0
+		set_injecting(FALSE)
 		icon_state = "injector0"
 		set_use_power(USE_POWER_OFF)
 

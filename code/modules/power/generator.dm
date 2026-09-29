@@ -44,6 +44,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 	reconnect()
 
 
+/// Generates while bolted down (unbolting zeroes it in wrench_act()).
+DECLARE_PERIODIC_WHILE(/obj/machinery/power/generator, MACHINE_PIPELINE, "anchored")
+
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator
 //so a circulator to the NORTH of the generator connects first to the EAST, then to the WEST
@@ -119,10 +122,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		return 1
 
 /obj/machinery/power/generator/machine_step()
-	if(!anchored)
-		stored_energy = 0
-		set_power_supply(0)
-		return PROCESS_KILL
 	if(!circ1() || !circ2() || !operable())
 		stored_energy = 0
 		set_power_supply(0)
@@ -208,10 +207,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 		MSG_BLIND("You hear a ratchet."))
 	set_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
-		MACHINE_WAKE(src)
-	if(anchored)
 		connect_to_network()
 	else
+		stored_energy = 0
+		set_power_supply(0)
 		disconnect_from_network()
 	reconnect()
 	lastgenlev = 0

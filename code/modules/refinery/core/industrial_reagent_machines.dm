@@ -52,9 +52,10 @@
 /obj/machinery/reagent_refinery/interaction_ran(mob/actor, datum/interaction/interaction)
 	wake_refinery_line()
 
+/// Unanchored refinery machines are disconnected and do nothing.
+DECLARE_PERIODIC_WHILE(/obj/machinery/reagent_refinery, MACHINE_PIPELINE, "anchored")
+
 /obj/machinery/reagent_refinery/machine_step()
-	if(!anchored)
-		return PROCESS_KILL
 	var/before = reagents ? reagents.total_volume : 0
 	refinery_step()
 	if(QDELETED(src))

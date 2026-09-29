@@ -225,13 +225,17 @@
 	var/obj/item/offhand/crushergauntlets/offhand
 	slot_flags = null
 
+/// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
+OM_FIELD(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SECOND, "gauntlets_worn")
+
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
-	om_task_periodic(src, PERIODIC_SECOND)
+	set_gauntlets_worn(TRUE)
 
 /obj/item/kinetic_crusher/machete/gauntlets/dropped(mob/user, equipping, slot)
 	ready_toggle(TRUE)
-	om_task_periodic_stop(src)
+	set_gauntlets_worn(FALSE)
 	. = ..()
 
 DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(null, PROC_REF(interaction_self)))

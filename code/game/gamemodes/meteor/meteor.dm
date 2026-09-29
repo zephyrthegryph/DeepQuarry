@@ -9,17 +9,33 @@
 	votable = 0
 	deny_respawn = 0
 
+/// The waves have begun (METEOR_DELAY into the round); they then repeat every GLOB.meteor_wave_delay.
+OM_FIELD(/datum/game_mode/meteor, meteor_waves, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/game_mode/meteor, "meteor_wave_delay", meteor_wave, "meteor_waves")
+
+/datum/game_mode/meteor/New()
+	..()
+	lifecycle_decls_init(src) // starts DECLARE_REPEAT (a non-atom has no materialize)
+
 /datum/game_mode/meteor/post_setup()
 	. = ..()
-	om_after(src, max(METEOR_DELAY - world.time, 0), PROC_REF(meteor_wave))
+	om_after(src, max(METEOR_DELAY - world.time, 0), PROC_REF(start_meteor_waves))
+
+/// om_after() callback: the first wave, then the declared repeat carries on.
+/datum/game_mode/meteor/proc/start_meteor_waves()
+	spawn_meteors(6, GLOB.meteors_normal)
+	set_meteor_waves(TRUE)
+
+/// DECLARE_REPEAT delay: read each time the wave re-arms.
+/datum/game_mode/meteor/proc/meteor_wave_delay()
+	return GLOB.meteor_wave_delay
 
 /// The mode's periodic work is the waves alone (no latespawn), on their own timer.
 /datum/game_mode/meteor/periodic_step()
 	return
 
-/// om_after() callback: one wave of meteors, then the next one is scheduled.
+/// DECLARE_REPEAT: one wave of meteors every GLOB.meteor_wave_delay while the waves run.
 /datum/game_mode/meteor/proc/meteor_wave()
-	om_after(src, GLOB.meteor_wave_delay, PROC_REF(meteor_wave))
 	spawn_meteors(6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()

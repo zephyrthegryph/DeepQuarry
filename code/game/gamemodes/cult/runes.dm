@@ -513,15 +513,27 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		D.real_name += pick("Apparition", "Aptrgangr", "Dis", "Draugr", "Dybbuk", "Eidolon", "Fetch", "Fylgja", "Ghast", "Ghost", "Gjenganger", "Haint", "Phantom", "Phantasm", "Poltergeist", "Revenant", "Shade", "Shadow", "Soul", "Spectre", "Spirit", "Spook", "Visitant", "Wraith")
 
 	log_and_message_admins("used a manifest rune.")
-	this_rune.manifest_tick(user, D)
+	rel_set(this_rune, "manifest_dummy", D)
+	rel_set(this_rune, "manifest_user", user)
+	this_rune.manifest_tick()
 	return
 
+/// The summoner of a manifested homunculus (a relation view). A field: they bleed for it while
+/// set; a summoner who is destroyed is cleared by the framework, which ends the repeat.
+OM_FIELD_VIEW(/obj/effect/rune, mob/living, manifest_user, CHANGE_EXPLICIT)
+/// The manifested homunculus (a relation view).
+/obj/effect/rune/var/mob/living/carbon/human/dummy/manifest_dummy
+DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
+
 /// The summoner bleeds for the homunculus every 3 seconds while they hold the rune; it dies when they stop.
-/obj/effect/rune/proc/manifest_tick(mob/living/user, mob/living/carbon/human/dummy/D)
+/obj/effect/rune/proc/manifest_tick()
+	var/mob/living/user = manifest_user
+	var/mob/living/carbon/human/dummy/D = manifest_dummy
 	if(user && user.stat==CONSCIOUS && user.client && user.loc==loc)
 		user.injure(INJURY_BLUNT, 1)
-		om_after(src, 3 SECONDS, PROC_REF(manifest_tick), user, D)
 		return
+	rel_clear(src, "manifest_dummy")
+	rel_clear(src, "manifest_user")
 	if(D)
 		act_message(D, null, MSG_SELF(span_danger("You feel pain, as bonds formed between your soul and this homunculus break.")), \
 			MSG_OTHERS(span_danger("%U% slowly dissipates into dust and bones.")), \

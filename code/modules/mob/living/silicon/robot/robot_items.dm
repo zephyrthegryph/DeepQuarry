@@ -438,12 +438,21 @@ DECLARE_INTERACTIONS(/obj/item/form_printer, INTERACT_USE(null, PROC_REF(interac
 	icon = 'icons/obj/decals.dmi'
 	icon_state = "shock"
 	var/shield_level = 0.5			//Percentage of damage absorbed by the shield.
-	var/active = 1					//If the shield is on
-	var/flash_count = 0				//Counter for how many times the shield has been flashed
 	var/overload_threshold = 3		//Number of flashes it takes to overload the shield
 	var/shield_refresh = 15 SECONDS	//Time it takes for the shield to reboot after destabilizing
 	COOLDOWN_DECLARE(overload_cooldown)	//When the shield reboots after an overload
 	COOLDOWN_DECLARE(flash_refresh_cooldown)	//When the flash count clears after the last flash
+
+/// If the shield is on (off while it recovers from an overload).
+OM_FIELD(/obj/item/borg/combat/shield, active, TRUE, CHANGE_EXPLICIT)
+/// Counter for how many times the shield has been flashed.
+OM_FIELD(/obj/item/borg/combat/shield, flash_count, 0, CHANGE_EXPLICIT)
+/// Derived field: an overload or a flash count is pending recovery.
+OM_DERIVE_FIELD(/obj/item/borg/combat/shield, recovering, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/borg/combat/shield, PERIODIC_SLOW, "recovering")
+
+/obj/item/borg/combat/shield/proc/recovering()
+	return !active || flash_count
 
 DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -458,15 +467,13 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.
 /obj/item/borg/combat/shield/periodic_step()
-	if(active && !flash_count)
-		return PROCESS_KILL
 	if(active)
 		if(flash_count && COOLDOWN_FINISHED(src, flash_refresh_cooldown))
-			flash_count = 0
+			set_flash_count(0)
 			COOLDOWN_RESET(src, flash_refresh_cooldown)
 	else if(COOLDOWN_FINISHED(src, overload_cooldown))
-		active = 1
-		flash_count = 0
+		set_active(TRUE)
+		set_flash_count(0)
 		COOLDOWN_RESET(src, overload_cooldown)
 
 		var/mob/living/user = src.loc
@@ -476,8 +483,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 
 /obj/item/borg/combat/shield/proc/adjust_flash_count(mob/living/user, amount)
 	if(active)			//Can't destabilize a shield that's not on
-		flash_count += amount
-		om_task_periodic(src, PERIODIC_SLOW)
+		set_flash_count(flash_count + amount)
 
 		if(amount > 0)
 			COOLDOWN_START(src, flash_refresh_cooldown, shield_refresh)
@@ -485,11 +491,10 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 				overload(user)
 
 /obj/item/borg/combat/shield/proc/overload(mob/living/user)
-	active = 0
+	set_active(FALSE)
 	act_message(user, null, MSG_SELF(span_danger("Your shield destabilizes!")), MSG_OTHERS(span_danger("%U%'s shield destabilizes!")))
 	user.update_icon()
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
-	om_task_periodic(src, PERIODIC_SLOW)
 
 /// Old Set shield level verb.
 /obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)

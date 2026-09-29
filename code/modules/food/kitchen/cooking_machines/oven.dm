@@ -25,7 +25,6 @@
 
 	stat = POWEROFF	//Starts turned off
 
-	var/open = FALSE // Start closed just so people don't try to preheat with it open, lol.
 
 	tgui_id = "CookingOven"
 
@@ -93,6 +92,15 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	return TRUE
 
+/// Start closed just so people don't try to preheat with it open, lol.
+OM_FIELD(/obj/machinery/appliance/cooker/oven, open, FALSE, CHANGE_MACHINE_SETTINGS)
+
+/// With the door open it doesn't step at all (the door's heat loss is the body's coupling).
+/obj/machinery/appliance/cooker/oven/cooker_needs_step()
+	if(open)
+		return FALSE
+	return ..()
+
 /obj/machinery/appliance/cooker/oven/proc/try_toggle_door(mob/user)
 	if(!isliving(user) || isAI(user))
 		return
@@ -106,16 +114,14 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
 		return
 
 	if(open)
-		open = FALSE
+		set_open(FALSE)
 		heat_recouple()
-		cooking = TRUE
-		MACHINE_WAKE(src)
+		set_cooking(TRUE)
 	else
-		open = TRUE
+		set_open(TRUE)
 		heat_recouple()
 		//When the oven door is opened, heat is lost MUCH faster and you stop cooking (because the door is open)
-		cooking = FALSE
-		MACHINE_SLEEP(src)
+		set_cooking(FALSE)
 
 	play_sfx(src, SFX_MACHINES_HATCH_OPEN, volume = 20)
 	to_chat(user, span_notice("You [open? "open":"close"] the oven door"))

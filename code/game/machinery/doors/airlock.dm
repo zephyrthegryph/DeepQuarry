@@ -176,18 +176,26 @@
 /obj/machinery/door/airlock/proc/publish_door_mode()
 	om_changed(src, CHANGE_MACHINE_MODE)
 
+// Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
+// Only the airlocks that can freeze (can_freeze()) declare it.
+DECLARE_REPEAT(/obj/machinery/door/airlock/external, "freeze_check_delay", check_for_freeze, null)
+DECLARE_REPEAT(/obj/machinery/door/airlock/glass_external, "freeze_check_delay", check_for_freeze, null)
+
+/obj/machinery/door/airlock/proc/freeze_check_delay()
+	return rand(10, 20) SECONDS
+
 /obj/machinery/door/airlock/proc/check_for_freeze()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// We don't freeze so none of this matters
 	if(!can_freeze())
-		return
+		return REPEAT_STOP
 
 	// If we are not on a planet don't bother checking again. We physically cannot be outdoors. Except shuttles...
 	var/area/our_area = get_area(src)
 	var/turf/our_turf = get_turf(src)
-	if(!istype(our_area, /area/shuttle) && (our_turf.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_turf.z]))
-		return
+	if(!our_turf || (!istype(our_area, /area/shuttle) && (our_turf.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_turf.z])))
+		return REPEAT_STOP
 
 	// Don't do anything if we are changing states
 	if(!operating)
@@ -209,10 +217,6 @@
 		else if(planet_temp > T0C)
 			if(frozen && prob(20))
 				unFreeze()
-
-	// Runs in a seperate timer loop, because making every airlock process every tick just to check for unfreezing is a bad idea.
-	// By default airlocks only tick if they are waiting for their opening/closing times to tick down.
-	om_after(src, rand(10,20) SECONDS, PROC_REF(check_for_freeze))
 
 /*
 About the new airlock wires panel:
@@ -1409,7 +1413,6 @@ About the new airlock wires panel:
 	if(frequency)
 		set_frequency(frequency)
 	update_icon()
-	check_for_freeze()
 
 // Most doors will never be deconstructed over the course of a round,
 // so as an optimization defer the creation of electronics until

@@ -471,6 +471,18 @@
 /// a family root (/obj/machinery, /mob) to add that family's channel; fields_of() ORs them.
 #define OM_FIELD_SETTER(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
+/// A declared field whose var holds an entity under the ownership model (doc/rewrite/ownership.md):
+/// an owned child, a relation view, a proto or a shared singleton. Declares `T/var/VT/F = null` and
+/// registers it raising C, with NO generated setter: its only writers are the ownership accessors
+/// (own_set/own_take/own_clear, rel_set/rel_clear/rel_add/rel_remove, proto_set, shared_set), which
+/// raise C through own_field_changed(), and so do the framework's automatic clears (a view whose
+/// target died, an owned child that left or was disposed of). A periodic declaration or stage gated
+/// on F therefore re-evaluates when the related entity is destroyed, with no guard in the body.
+#define OM_FIELD_VIEW(T, VT, F, C) T/var/VT/F = null;/datum/om/field_def##T/F { of = T; field = #F; channel = C }
+
+/// OM_FIELD_VIEW() for a var already declared on T or an ancestor (registers it, declares nothing).
+#define OM_FIELD_VIEW_OF(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C }
+
 /// A derived (read-only) field: `T/proc/F()` computes it and it changes whenever any of the
 /// channels C is raised, so a stage that `reads = list("F")` wakes on C. There is no var and no
 /// setter; om_set() on it crashes.

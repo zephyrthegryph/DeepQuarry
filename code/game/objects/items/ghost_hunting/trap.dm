@@ -14,10 +14,12 @@
 	throwforce = 0
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
-	///The entity we currently have captured.
-	/// Relation view: the entity held in the trap.
-	var/mob/captured_entity
 	var/obj/item/radio/intercom/science/ghost_reporter
+
+///The entity we currently have captured (a relation view).
+OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
+/// Watches its catch every 2 s while it holds one; empty, it sleeps.
+DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
@@ -88,10 +90,8 @@
 /obj/item/ghost_trap/start_active
 	deployed = TRUE
 
-/// Watches its catch every 2 s while it holds one (catch_ghost() starts it); empty, it sleeps.
+/// Watches its catch every 2 s while it holds one (declared above); empty, it sleeps.
 /obj/item/ghost_trap/periodic_step()
-	if(!captured_entity)
-		return PROCESS_KILL
 	if(captured_entity)
 		var/mob/our_entity = captured_entity
 		if(our_entity && our_entity.loc != src)
@@ -187,7 +187,6 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	if(!ismob(passing_entity)) //wtf did you do
 		return
 	rel_set(src, "captured_entity", passing_entity)
-	om_task_periodic(src, PERIODIC_SLOW) // watches for an escape while it holds something
 
 	if(isliving(passing_entity))
 		var/mob/living/living_entity = passing_entity

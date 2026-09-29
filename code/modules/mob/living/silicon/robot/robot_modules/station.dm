@@ -682,8 +682,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 	own_add(src, "modules", new /obj/item/reagent_containers/dropper/industrial(src))
 
-	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
-	L.lit = 1
+	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src) // starts unlit: lit, it would burn on the slow lane from module creation
 	own_add(src, "modules", L)
 
 	own_add(src, "modules", new /obj/item/tray/robotray(src))
@@ -730,8 +729,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 
 	own_add(src, "modules", new /obj/item/reagent_containers/dropper/industrial(src))
 
-	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src)
-	L.lit = 1
+	var/obj/item/flame/lighter/zippo/L = new /obj/item/flame/lighter/zippo(src) // starts unlit: lit, it would burn on the slow lane from module creation
 	own_add(src, "modules", L)
 
 	own_add(src, "modules", new /obj/item/tray/robotray(src))

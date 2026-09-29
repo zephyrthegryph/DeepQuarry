@@ -7,8 +7,9 @@
 	icon = 'icons/obj/machines/shielding.dmi'
 	icon_state = "hdiffuser_off"
 	var/obj/item/cell/device/cell
-	var/enabled = 0
 
+OM_FIELD(/obj/item/shield_diffuser, enabled, FALSE, CHANGE_EXPLICIT)
+DECLARE_PERIODIC_WHILE(/obj/item/shield_diffuser, PERIODIC_SLOW, "enabled")
 DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 
 
@@ -16,9 +17,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/shield_diffuser, "cell", /obj/item/cell/device)
 	return cell
 
 /obj/item/shield_diffuser/periodic_step()
-	if(!enabled)
-		return PROCESS_KILL
-
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
 		for(var/obj/effect/shield/S in turf_contents_of_type(shielded_tile, /obj/effect/shield))
@@ -40,12 +38,8 @@ DECLARE_INTERACTIONS(/obj/item/shield_diffuser, INTERACT_USE(null, PROC_REF(inte
 
 /// Old attack_self.
 /obj/item/shield_diffuser/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	enabled = !enabled
+	set_enabled(!enabled)
 	update_icon()
-	if(enabled)
-		om_task_periodic(src, PERIODIC_SLOW)
-	else
-		om_task_periodic_stop(src)
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 	return TRUE
 

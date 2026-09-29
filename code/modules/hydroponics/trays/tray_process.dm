@@ -1,8 +1,6 @@
 /obj/machinery/portable_atmospherics/hydroponics/machine_step()
 	if(om_timer_slot_pending(src, "growth_timer"))
 		om_cancel_timer_slot(src, "growth_timer")
-	if(frozen == 1)
-		return PROCESS_KILL
 
 	// Handle nearby smoke if any.
 	var/nearby_chemical_smoke = FALSE

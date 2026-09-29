@@ -132,8 +132,7 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 			LAZYSET(unit.ores_processing, ore, new_setting)
 			. = TRUE
 		if("power")
-			machine().active = !machine().active
-			machine().wake_mining()
+			machine().set_active(!machine().active)
 			. = TRUE
 		if("showAllOres")
 			show_all_ores = !show_all_ores
@@ -237,12 +236,8 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 		set_speed_process(forced)
 	else
 		set_speed_process(!speed_process) // switching gears
-	if(speed_process) // high gear
-		MACHINE_SLEEP(src)
-		om_task_periodic(src, PERIODIC_FAST)
-	else // low gear
-		om_task_periodic_stop(src)
-		MACHINE_WAKE(src)
+	// The active declaration moves the work between the machine pipeline and the fast lane on
+	// speed_process (code/datums/sys/periodic.dm).
 	for(var/obj/machinery/mineral/unloading_machine/unloader in contents_of(refinery_area))
 		unloader.toggle_speed()
 	for(var/obj/machinery/conveyor_switch/cswitch in contents_of(refinery_area))
@@ -250,15 +245,16 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 	for(var/obj/machinery/mineral/stacking_machine/stacker in contents_of(refinery_area))
 		stacker.toggle_speed()
 
-/// Takes in what is on its input plate and smelts while active; with nothing to take in and nothing
-/// to make it sleeps until something arrives (on_input_entered()) or it is switched on.
+/// Takes in what is on its input plate and smelts while active (declared: switched off it neither
+/// takes in nor smelts, ore waits on the plate); with nothing to make it sleeps until something
+/// arrives (on_input_entered()).
+DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/mineral/processing_unit, MACHINE_PIPELINE, list("active", "!panel_open"))
+
 /obj/machinery/mineral/processing_unit/machine_step()
 
 	if (!src.output_marker() || !src.input_marker())
 		return PROCESS_KILL
 
-	if(panel_open)
-		return PROCESS_KILL
 	if(!powered())
 		return sleep_until_powered()
 
@@ -287,9 +283,6 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 			ores_stored[O.material]++
 			points += (ore_values[O.material]*points_mult)
 		qdel(O)
-
-	if(!active)
-		return PROCESS_KILL
 
 	//Process our stored ores and spit out sheets.
 	var/sheets = 0
