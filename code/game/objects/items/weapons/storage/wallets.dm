@@ -106,9 +106,10 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	desc = "You can recolor it! Fancy! The future is NOW!"
 	icon_state = "wallet-white"
 
+DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/change_color)
+
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()
-	verbs += /obj/item/storage/wallet/poly/proc/change_color
 	color = get_random_colour()
 	update_icon()
 

@@ -73,7 +73,7 @@ def run_module(mod, files, raw):
         keep = []
         for site in found.get(rule, []):
             rel, number = site[0], site[1]
-            if allowed(raw[rel], number, "sys_" + rule):
+            if rule not in getattr(mod, "NO_ALLOW", ()) and allowed(raw[rel], number, "sys_" + rule):
                 continue
             keep.append((rel, number))
         out[rule] = keep

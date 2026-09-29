@@ -821,7 +821,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 
 	if(!(has_mutation(mMorph)))
-		remove_verb(src, /mob/living/carbon/human/proc/morph)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/morph, verb_source(VERB_SOURCE_ADMIN)) // only an admin hand grants it
 		return
 
 	// hair
@@ -931,8 +931,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 
 	if(!(src.has_mutation(mRemotetalk)))
-		remove_verb(src, /mob/living/carbon/human/proc/remotesay)
-		return
+		return // the gene's unapply revokes its grant; any other source keeps the verb
 	var/list/creatures = list()
 	for(var/mob/living/carbon/h in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(h == src) // Don't target self
@@ -1131,7 +1130,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		add_blooddna(M.dna,M)
 	hand_blood_color = dq_get_blood_color(src)
 	update_bloodied()
-	add_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
+	om_grant(src, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, src)
 	return 1 //we applied blood to the item
 
 /mob/living/carbon/human/proc/get_full_print()
@@ -1391,7 +1390,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return 0 //something is terribly wrong
 
 	if (!bloody_hands)
-		remove_verb(src, /mob/living/carbon/human/proc/bloody_doodle)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/bloody_doodle, src)
 
 	if (get_equipped_item(SLOT_ID_GLOVES))
 		to_chat(src, span_warning("Your [get_equipped_item(SLOT_ID_GLOVES)] are getting in the way."))

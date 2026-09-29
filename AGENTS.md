@@ -203,6 +203,20 @@ lists the lint names and rejects a missing reason or an unknown name. Don't anno
 debt to get under a ceiling: use the mechanism the lint points to
 (`doc/rewrite/object_model_core.md` §16).
 
+### 3h. Verbs
+
+The verb store (`code/datums/om/grant_verbs.dm`) is the **only** writer of a `verbs` list:
+never `verbs +=`/`-=`/`=`, `verbs.Cut()`, or `new /x/proc/y(target, ...)`. There is no
+`add_verb()`/`remove_verb()`.
+
+- A type's own verbs are `DECLARE_VERB` / `DECLARE_VERB_IF` / `DECLARE_LOGIN_VERB` /
+  `DECLARE_VERB_HIDE` lines.
+- Runtime verbs are `om_grant(target, GRANT_VERB, verb, source)`. The verb goes when the source
+  revokes it or is deleted.
+- Take a verb away with `GRANT_VERB_HIDE` from a source. Timed: `om_grant_for`.
+- Clients take grants too (`om_grant(client, ...)`).
+- Lint `sys_verb_write` is at 0 and accepts no ALLOW. See doc/rewrite/systems.md §19.
+
 ---
 
 ## 4. Build pipeline

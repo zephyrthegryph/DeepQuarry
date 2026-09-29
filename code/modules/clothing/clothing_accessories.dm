@@ -106,7 +106,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 /obj/item/clothing/proc/attach_accessory(mob/user, obj/item/clothing/accessory/A)
 	own_add(src, "accessories", A)
 	A.on_attached(src, user)
-	src.verbs |= /obj/item/clothing/proc/removetie_verb
+	om_grant(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
 	update_accessory_slowdown()
 	update_clothing_icon()
 	worn_protection_changed()
@@ -173,5 +173,5 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 
 	if(!LAZYLEN(accessories))
-		src.verbs -= /obj/item/clothing/proc/removetie_verb
+		om_revoke(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
 		own_take_all(src, "accessories")

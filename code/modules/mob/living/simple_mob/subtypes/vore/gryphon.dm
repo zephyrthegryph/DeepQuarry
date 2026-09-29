@@ -139,12 +139,13 @@
 	if(Adjacent(L))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		L.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/gryphon, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/gryphon/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
-	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = 0
 
 /datum/say_list/gryphon

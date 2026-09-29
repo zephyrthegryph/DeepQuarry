@@ -114,10 +114,8 @@
 
 			return FALSE
 
-/mob/living/simple_mob/animal/sif/tymisian/Initialize(mapload)
-	. = ..()
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/tymisian, /mob/living/proc/hide)
 
 
 /datum/om/stage/life/special/animal/sif/tymisian

@@ -52,7 +52,7 @@
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
-	carrier.verbs |= /atom/proc/disconnect_hose
+	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
 
 	// A disconnected, empty connector has no time-based work. connect() wakes it.
 	if(my_hose || reagents.total_volume)
@@ -68,7 +68,7 @@
 	if(my_hose)
 		qdel(my_hose)
 	if(carrier)
-		carrier.verbs -= /atom/proc/disconnect_hose
+		om_revoke(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
 		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
 
 /datum/hose_connector/proc/get_carrier()

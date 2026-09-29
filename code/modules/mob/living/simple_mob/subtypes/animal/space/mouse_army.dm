@@ -55,11 +55,12 @@
 	pain_emote_1p = list("squeak", "squik")
 	pain_emote_1p = list("squeaks", "squiks")
 
+DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/space/mouse_army/Initialize(mapload)
 	. = ..()
 
-	add_verb(src,/mob/living/proc/ventcrawl)
-	add_verb(src,/mob/living/proc/hide)
 
 	if(name == initial(name))
 		name = "[name] ([rand(1, 1000)])"

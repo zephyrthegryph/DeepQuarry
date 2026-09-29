@@ -260,7 +260,7 @@
 /mob/living/proc/embed(obj/O, def_zone=null)
 	O.forceMove(src)
 	LAZYADD(src.embedded, O)
-	add_verb(src, /mob/proc/yank_out_object)
+	om_grant(src, GRANT_VERB, /mob/proc/yank_out_object, src)
 	throw_alert("embeddedobject", /atom/movable/screen/alert/embeddedobject)
 
 //This is called when the mob is thrown into a dense turf

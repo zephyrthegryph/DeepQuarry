@@ -75,7 +75,7 @@
 	. = ..() //if not vaccable, just do what it normally does
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/load_default_bellies()
-	add_verb(src,/mob/living/proc/restrict_trasheater)
+	om_grant(src, GRANT_VERB, /mob/living/proc/restrict_trasheater, src)
 	var/obj/belly/B = new /obj/belly(src)
 	B.affects_vore_sprites = TRUE
 	B.belly_sprite_to_affect = "stomach"
@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/Login()
 	. = ..()
-	verbs -= /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings //Controlled swoopies dont need their settings changed externally
+	om_grant(src, GRANT_VERB_HIDE, /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings, src) //Controlled swoopies dont need their settings changed externally
 
 //Special Swoopie vaccum so it can be handled better than a vareditted vacpack.
 /obj/item/vac_attachment/swoopie

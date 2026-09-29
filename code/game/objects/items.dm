@@ -1105,8 +1105,8 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
 	own_add(src, "possessed_voice", new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
-	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
-	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
+	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/change_name, src) // No changing your name! Bad!
+	om_grant(new_voice, GRANT_VERB_HIDE, /mob/living/voice/verb/hang_up, src) // Also you can't hang up. You are the item!
 	src.item_tf_spawnpoint_used() // Item TF spawnpoints
 	if(!istype(src, /obj/item/communicator) && is_item_tf)
 		new_voice.item_tf = is_item_tf 					// allows items to use /me

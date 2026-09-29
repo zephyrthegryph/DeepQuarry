@@ -206,9 +206,9 @@
 
 /datum/trait/positive/winged_flight/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/proc/flying_toggle)
-	add_verb(H, /mob/living/proc/flying_vore_toggle)
-	add_verb(H, /mob/living/proc/start_wings_hovering)
+	om_grant(H, GRANT_VERB, /mob/living/proc/flying_toggle, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/flying_vore_toggle, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/start_wings_hovering, src)
 
 /datum/trait/positive/soft_landing
 	name = "Soft Landing"
@@ -225,7 +225,7 @@
 
 /datum/trait/positive/antiseptic_saliva/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/lick_wounds)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/lick_wounds, src)
 
 /datum/trait/positive/traceur
 	name = "Traceur"
@@ -274,8 +274,8 @@
 
 /datum/trait/positive/aquatic/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/water_stealth)
-	add_verb(H, /mob/living/carbon/human/proc/underwater_devour)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/water_stealth, src)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/underwater_devour, src)
 
 /datum/trait/positive/aquatic/plus
 	name = "Aquatic 2"
@@ -296,7 +296,7 @@
 
 /datum/trait/positive/cocoon_tf/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/enter_cocoon)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/enter_cocoon, src)
 
 /* // We already have our own version of this trait.
 /datum/trait/positive/linguist
@@ -410,15 +410,14 @@
 	..()
 	if(trait_prefs?["pass_table"] || !trait_prefs)
 		H.pass_flags |= PASSTABLE
-	add_verb(H,/mob/living/proc/toggle_pass_table)
+	om_grant(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src)
 
 // Traitgenes All genetraits need an unapply proc if they do anything special
 /datum/trait/positive/table_passer/unapply(datum/species/S, mob/living/carbon/human/H)
 	. = ..()
 	if (H.pass_flags & PASSTABLE)
 		H.pass_flags ^= PASSTABLE
-	if(!(/mob/living/proc/toggle_pass_table in S.inherent_verbs)) // Teshari shouldn't lose agility
-		remove_verb(H,/mob/living/proc/toggle_pass_table)
+	om_revoke(H, GRANT_VERB, /mob/living/proc/toggle_pass_table, src) // a species that has it inherently (Teshari) keeps it: that grant is the species\'
 
 /datum/trait/positive/photosynth
 	name = "Photosynthesis"
@@ -474,12 +473,12 @@
 /datum/trait/positive/vibration_sense/apply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
 	H.motiontracker_subscribe()
-	add_verb(H,/mob/living/carbon/human/proc/sonar_ping)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/sonar_ping, src)
 
 /datum/trait/positive/vibration_sense/unapply(datum/species/S, mob/living/carbon/human/H, trait_prefs)
 	. = ..()
 	H.motiontracker_unsubscribe()
-	remove_verb(H,/mob/living/carbon/human/proc/sonar_ping)
+	om_revoke(H, GRANT_VERB, /mob/living/carbon/human/proc/sonar_ping, src)
 
 /datum/trait/positive/stable_genetics
 	name = "Stable Genetics"
@@ -758,7 +757,7 @@
 
 /datum/trait/positive/insect_sting/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H,/mob/living/proc/insect_sting)
+	om_grant(H, GRANT_VERB, /mob/living/proc/insect_sting, src)
 
 /datum/trait/positive/burn_resist_plus // Equivalent to Burn Weakness Major, cannot be taken at the same time.
 	name = "Burn Resist, Major"
@@ -846,7 +845,7 @@
 
 /datum/trait/positive/bloodsucker_plus/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H,/mob/living/carbon/human/proc/bloodsuck)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/bloodsuck, src)
 
 /datum/trait/positive/toxin_gut
 	name ="Robust Gut"
@@ -958,8 +957,8 @@
 
 /datum/trait/positive/shapeshifting/apply(datum/species/S,mob/living/carbon/human/H)
 	..()
-	add_verb(H, /mob/living/carbon/human/proc/innate_shapeshifting)
-	add_verb(H, /mob/living/proc/name_change_verb)
+	om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/innate_shapeshifting, src)
+	om_grant(H, GRANT_VERB, /mob/living/proc/name_change_verb, src)
 
 
 // === merged from positive_chomp.dm during hard-fork de-suffix (verified no override-order change) ===

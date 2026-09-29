@@ -98,11 +98,12 @@
 	emote_see = list("vibrates","looks around", "stares", "extends a proboscis")
 	emote_hear = list("chitters", "clicks", "gurgles")
 
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/ventcrawl)
+DECLARE_VERB(/mob/living/simple_mob/animal/sif/leech, /mob/living/proc/hide)
+
 /mob/living/simple_mob/animal/sif/leech/Initialize(mapload)
 	. = ..()
 
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
 
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 

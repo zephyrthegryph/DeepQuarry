@@ -108,6 +108,15 @@
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_chassis)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/silicon/pai/proc/choose_verbs)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/proc/dominate_predator)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/dominate_prey)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/set_size)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/shred_limb)
+DECLARE_VERB(/mob/living/silicon/pai, /mob/living/proc/toggle_trash_catching)
+DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun support, and it shouldn't use guns anyway
+
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
@@ -131,16 +140,6 @@
 	add_language(LANGUAGE_EAL, 1)
 	add_language(LANGUAGE_TERMINUS, 1)
 	add_language(LANGUAGE_SIGN, 1)
-
-	add_verb(src, /mob/living/silicon/pai/proc/choose_chassis)
-	add_verb(src, /mob/living/silicon/pai/proc/choose_verbs)
-	add_verb(src, /mob/proc/dominate_predator)
-	add_verb(src, /mob/living/proc/dominate_prey)
-	add_verb(src, /mob/living/proc/set_size)
-	add_verb(src, /mob/living/proc/shred_limb)
-	add_verb(src, /mob/living/proc/toggle_trash_catching)
-
-	remove_verb(src, /mob/verb/toggle_gun_mode) // Pai doesn't have support for this and shouldn't be able to use guns anyway
 
 	//PDA
 	pda.ownjob = "Personal Assistant"

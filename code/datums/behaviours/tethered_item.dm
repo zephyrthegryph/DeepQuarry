@@ -33,13 +33,13 @@
 /// Makes this item the host of a tethered `handheld_path`. Call before . = ..() in Initialize().
 /obj/item/proc/make_tethered(handheld_path)
 	tether_path = handheld_path
-	verbs += /obj/item/proc/toggle_tethered_handheld
+	om_grant(src, GRANT_VERB, /obj/item/proc/toggle_tethered_handheld, src)
 	actions_types += list(/datum/action/item_action/swap_tethered_item)
 	om_attach(src, /datum/om/behaviour/tether_host)
 	tether_make_handheld()
 
 /datum/om/behaviour/tether_host/on_stop(obj/item/host_item)
-	host_item.verbs -= /obj/item/proc/toggle_tethered_handheld
+	om_revoke(host_item, GRANT_VERB, /obj/item/proc/toggle_tethered_handheld, host_item)
 	var/obj/item/hand_held = host_item.tethered_handheld()
 	host_item.tether_path = null // no remake
 	if(hand_held)

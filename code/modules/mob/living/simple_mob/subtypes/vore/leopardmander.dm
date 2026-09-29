@@ -64,12 +64,13 @@
 	The Va'aen has been hunted to near extinction by poachers due to its secretions' unusual healing properties, and its beautiful hide; encountering one has become very rare."
 	value = CATALOGUER_REWARD_HARD
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/simple_mob/proc/animal_mount)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/toggle_rider_reins)
+
 /mob/living/simple_mob/vore/leopardmander/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount)
-	add_verb(src,/mob/living/proc/toggle_rider_reins)
 	movement_cooldown = -1 // 2 on Downstream
 	plane_holder.set_vis(VIS_CH_HEALTH_VR, 1)
 	plane_holder.set_vis(VIS_CH_ID, 1)
@@ -177,9 +178,7 @@
 
 	set_glow_toggle(!glow_toggle)
 
-/mob/living/simple_mob/vore/leopardmander/exotic/Initialize(mapload)
-	. = ..()
-	add_verb(src,/mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
+DECLARE_VERB(/mob/living/simple_mob/vore/leopardmander/exotic, /mob/living/simple_mob/vore/leopardmander/exotic/proc/toggle_glow)
 
 /mob/living/simple_mob/vore/leopardmander/exotic/load_default_bellies()
 	var/obj/belly/B = new /obj/belly(src)

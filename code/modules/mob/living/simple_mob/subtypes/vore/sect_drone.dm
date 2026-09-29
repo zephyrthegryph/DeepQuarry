@@ -84,9 +84,7 @@
 
 	allow_mind_transfer = TRUE
 
-/mob/living/simple_mob/vore/sect_drone/Login()
-	. = ..()
-	add_verb(src,  /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color)
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/sect_drone, /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color)
 
 /mob/living/simple_mob/vore/sect_drone/proc/set_abdomen_color()
 	set name = "Set Glow Color"

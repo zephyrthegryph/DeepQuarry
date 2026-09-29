@@ -3,6 +3,22 @@
 // edits are mechanical and span the whole file; the commit SHA
 // is the source of truth for per-line diff context.
 
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/escapeOOC)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/lick)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/smell)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/switch_scaling)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/center_offset)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/mute_entry)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/liquidbelly_visuals)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/fix_vore_effects)
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
+DECLARE_LOGIN_VERB(/mob/living, /mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything
+DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nsay_vore)
+DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nme_vore)
+DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nsay_vore_ch)
+DECLARE_LOGIN_VERB(/mob/living, /mob/proc/nme_vore_ch)
+DECLARE_LOGIN_VERB(/mob/living, /mob/proc/enter_soulcatcher)
+
 /mob/living/Login()
 	..()
 	on_client_changed("login")
@@ -21,27 +37,12 @@
 	add_character_setup_button()
 
 	// Vore stuff
-	add_verb(src, /mob/living/proc/escapeOOC)
-	add_verb(src, /mob/living/proc/lick)
-	add_verb(src, /mob/living/proc/smell)
-	add_verb(src, /mob/living/proc/switch_scaling)
-	add_verb(src, /mob/living/proc/center_offset)
-	add_verb(src, /mob/living/proc/mute_entry)
-	add_verb(src, /mob/living/proc/liquidbelly_visuals)
-	add_verb(src, /mob/living/proc/fix_vore_effects)
 
 	if(!no_vore)
-		add_verb(src, /mob/living/proc/vorebelly_printout)
+		om_grant(src, GRANT_VERB, /mob/living/proc/vorebelly_printout, src)
 		if(!vorePanel)
 			add_vore_panel_button()
 
-	add_verb(src,/mob/living/proc/vore_transfer_reagents) // If mob doesnt have bellies it cant use this verb for anything
-	add_verb(src,/mob/living/proc/vore_check_reagents) // If mob doesnt have bellies it cant use this verb for anything
-	add_verb(src,/mob/proc/nsay_vore)
-	add_verb(src,/mob/proc/nme_vore)
-	add_verb(src,/mob/proc/nsay_vore_ch)
-	add_verb(src,/mob/proc/nme_vore_ch)
-	add_verb(src,/mob/proc/enter_soulcatcher)
 
 	if(!length(voice_sounds_list))
 		if(client.prefs.read_preference(/datum/preference/text/human/voice_sound))

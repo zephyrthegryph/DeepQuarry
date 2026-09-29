@@ -33,11 +33,10 @@
 
 TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
+DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/helmet/space/proc/toggle_camera, "camera_networks")
+
 /obj/item/clothing/head/helmet/space/Initialize(mapload)
 	. = ..()
-	if(camera_networks)
-		verbs |= /obj/item/clothing/head/helmet/space/proc/toggle_camera
-
 	if(type == /obj/item/clothing/head/helmet/space) // use the specially refitted sprites by KBraid. Done this way to avoid breaking subtypes.
 		LAZYSET(sprite_sheets, SPECIES_TESHARI, 'icons/inventory/head/mob_teshari.dmi')
 

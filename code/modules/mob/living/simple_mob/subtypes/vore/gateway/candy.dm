@@ -44,12 +44,13 @@
 	can_be_drop_prey = TRUE
 
 //bluenom
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/bluecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/bluecabold/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/bluecabold/load_default_bellies()
@@ -67,12 +68,13 @@
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //rednom
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/redcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/redcabold/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/redcabold/load_default_bellies()
@@ -90,12 +92,13 @@
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //yellow
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/yellowcabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/yellowcabold/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/yellowcabold/load_default_bellies()
@@ -113,12 +116,13 @@
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //orange
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/orangecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/orangecabold/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/orangecabold/load_default_bellies()
@@ -136,12 +140,13 @@
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //purplenom
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/purplecabold, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/purplecabold/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/purplecabold/load_default_bellies()
@@ -159,12 +164,13 @@
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 
 //marshmellownom
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/marshmellowserpent/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/load_default_bellies()
@@ -651,12 +657,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 	new /obj/random/mob/candycritter (src.loc)
 
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/worm, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/worm/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/worm/redcabold/load_default_bellies()
@@ -674,12 +681,13 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/candy/peppermint, \
 		"Every clench of the predator's stomach grinds powerful digestive fluids into your body, forcibly churning away your strength!")
 */
 
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/simple_mob/proc/animal_mount) // TGPanel
+DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/peppermint, /mob/living/proc/toggle_rider_reins) // TGPanel
+
 /mob/living/simple_mob/vore/candy/peppermint/Login()
 	. = ..()
 	if(!riding_datum)
 		own_set(src, "riding_datum", new /datum/riding/simple_mob(src))
-	add_verb(src,/mob/living/simple_mob/proc/animal_mount) // TGPanel
-	add_verb(src,/mob/living/proc/toggle_rider_reins) // TGPanel
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vore/candy/peppermint/load_default_bellies()

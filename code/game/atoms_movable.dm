@@ -582,11 +582,6 @@
 	var/atom/master = null
 	anchored = TRUE
 
-/atom/movable/overlay/Initialize(mapload)
-	. = ..()
-	for(var/x in src.verbs)
-		src.verbs -= x
-
 // An overlay passes touches and items on to what it overlays.
 DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_REF(overlay_pass_touch)), 	INTERACT_ITEM(null, PROC_REF(overlay_pass_item)), )
 
