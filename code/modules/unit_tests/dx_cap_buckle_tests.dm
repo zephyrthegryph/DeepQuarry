@@ -1,8 +1,13 @@
 // buckle() (code/datums/capabilities/library/buckle.dm).
 
+/obj/cap_fixture/seat
+	can_buckle = TRUE
+	max_buckled_mobs = 2
+	buckle_lying = 1
+
 /obj/cap_fixture/seat/capabilities()
 	. = ..()
-	. += cap_buckle(max = 2, lying = TRUE)
+	. += cap_buckle()
 
 /datum/unit_test/dx_cap_buckle
 
@@ -12,9 +17,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/sitter = allocate(/mob/living/carbon/human, T)
 
-	TEST_ASSERT(F.can_buckle, "buckle() turns on the buckling system")
-	TEST_ASSERT_EQUAL(F.max_buckled_mobs, 2, "max")
-	TEST_ASSERT_EQUAL(F.buckle_lying, 1, "lying")
+	TEST_ASSERT(F.can_buckle && F.max_buckled_mobs == 2, "the buckling rules are the type's own vars")
 
 	var/datum/interaction/capability/grab_entry = dx_cap_entry(F, "Buckle")
 	var/datum/interaction/capability/release = dx_cap_entry(F, "Unbuckle")

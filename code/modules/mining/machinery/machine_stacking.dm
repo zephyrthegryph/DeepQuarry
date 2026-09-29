@@ -155,7 +155,7 @@ UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
 	return output
 
 /// Accessor for the console var.
-/obj/machinery/mineral/stacking_machine/proc/console() as /obj/machinery/mineral/stacking_unit_console
+/obj/machinery/mineral/stacking_machine/proc/linked_console() as /obj/machinery/mineral/stacking_unit_console
 	return console
 
 /// Accessor for the machine var.

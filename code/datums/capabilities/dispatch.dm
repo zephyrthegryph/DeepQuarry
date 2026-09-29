@@ -56,20 +56,22 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
  * comes back here and the outer context is restored, so a sleeping handler never leaks its context
  * to unrelated code (ask_*() captured it before sleeping and re-binds it when the answer arrives).
  */
-/proc/dispatch_call(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log)
+/proc/dispatch_call(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log, datum/runs_on)
 	var/datum/dispatch_context/outer = GLOB.dispatch_context_now
 	GLOB.dispatch_context_now = ctx
 	ctx.returned = FALSE
-	. = dispatch_call_inner(ctx, target, proc_ref, named, action_name, log)
+	. = dispatch_call_inner(ctx, target, proc_ref, named, action_name, log, runs_on)
 	ctx.returned = TRUE
 	GLOB.dispatch_context_now = outer
 
-/proc/dispatch_call_inner(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log)
+/// runs_on: the datum the proc is called on when it isn't the target (a capability flyweight whose
+/// handler takes the holder as `holder`); the target is still what gets marked, fingerprinted and logged.
+/proc/dispatch_call_inner(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log, datum/runs_on)
 	set waitfor = FALSE
 	var/result
 	var/failed = FALSE
 	try
-		result = call(target, proc_ref)(arglist(named))
+		result = call(runs_on || target, proc_ref)(arglist(named))
 	catch(var/exception/e)
 		failed = TRUE
 		var/msg = "dispatch: [target.type].[proc_ref] ([action_name]) by [key_name(ctx.user)] failed: [e] ([e.file]:[e.line])"
