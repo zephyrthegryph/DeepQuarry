@@ -65,6 +65,7 @@ PROC_HDR = re.compile(r"^/[\w/]*\w\((.*)\)")
 OVERRIDE_HDR = re.compile(r"^/[\w/]+/(?!proc/|verb/)\w+\(\s*\)")
 GLOB_RETURN = re.compile(r"^\s+return\s+(?:GLOB|global)\.\w+\s*$")
 STATIC_ANY = re.compile(r"^(\s+)var/static/list/(\w+)\b")
+DOT_WRITE = re.compile(r"^\s*\.\s*(\[|\+=|-=|\|=|\.Add\(|\.Insert\()")
 LOCAL_CONST = re.compile(r"^(\s+)var/list/(\w+)\s*=\s*list\(")
 WRITE = r"\s*(\+=|-=|\|=|&=|\^=|\.Add\(|\.Remove\(|\.Cut\(|\.Insert\(|\.Swap\(|\.Splice\(|\.Copy\(|\[[^\]]*\]\s*(=[^=]|\+=|-=)|\.len\s*[-+]?=|\s*=[^=])"
 
@@ -105,8 +106,11 @@ def scan(files):
                     out["static_getter"].append((rel, number))
                 continue
             if RETURN_LIST.match(code):
-                text, _ = gather(lines, number - 1, line.index("list("))
+                text, end = gather(lines, number - 1, line.index("list("))
                 if constant(text):
+                    if not code.lstrip().startswith("return") and any(
+                            DOT_WRITE.search(lines[k].split("//", 1)[0]) for k in proc_body(lines, end)):
+                        continue  # `. = list(...)` seeding a result the proc then fills in
                     out["const_list_alloc"].append((rel, number))
                 continue
             match = LOCAL_CONST.match(code)
