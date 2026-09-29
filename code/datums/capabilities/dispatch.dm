@@ -13,6 +13,8 @@
 	var/obj/item/held
 	var/datum/interaction/entry
 	var/datum/tgui/ui
+	/// Extra `needs` (ask_*(needs =)): re-run on the answer, like an entry's, against the target.
+	var/list/ask_needs
 	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
 	var/returned = FALSE
 
@@ -31,6 +33,10 @@
 		return "it's gone"
 	if(user.stat != CONSCIOUS)
 		return "you can't do that now"
+	if(ask_needs)
+		var/needs_reason = cap_needs_reason(target, user, held, ask_needs)
+		if(needs_reason)
+			return needs_reason
 	if(ui)
 		if(ui.status != STATUS_INTERACTIVE)
 			return "you can't use it from here any more"

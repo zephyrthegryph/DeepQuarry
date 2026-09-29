@@ -264,7 +264,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /**
  * Why `entry` (a capability entry of A) can't run for user now, or null. Order: broken, unpowered,
  * behind (needs the bits SET), blocked_by (needs them CLEAR: "only while the cover is closed"),
- * locked_by, needs, then every capability's gate() (the cover, the lock, a slot's rules).
+ * locked_by, needs (global chk_* refs or holder procs: library/checks.dm), then every capability's gate() (the cover, the lock, a slot's rules).
  */
 /proc/cap_gate_reason(atom/A, mob/user, obj/item/held, datum/interaction/capability/entry)
 	if(!entry.works_broken && is_broken(A))
@@ -285,14 +285,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		return "you can't do that in its current state"
 	if(entry.locked_by && (A.cap_state & entry.locked_by))
 		return "it's locked"
-	if(entry.needs)
-		var/list/needs = islist(entry.needs) ? entry.needs : list(entry.needs)
-		for(var/proc_ref in needs)
-			var/result = call(A, proc_ref)(user, held)
-			if(istext(result))
-				return result
-			if(!result)
-				return entry.else_say || "you can't do that right now"
+	var/needs_reason = cap_needs_reason(A, user, held, entry.needs, entry.else_say)
+	if(needs_reason)
+		return needs_reason
 	for(var/datum/capability/C as anything in caps_all(A))
 		var/reason = C.gate(A, user, entry)
 		if(reason)

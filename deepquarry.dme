@@ -581,6 +581,7 @@
 #include "code\datums\capabilities\library\anchor.dm"
 #include "code\datums\capabilities\library\breakable.dm"
 #include "code\datums\capabilities\library\buckle.dm"
+#include "code\datums\capabilities\library\checks.dm"
 #include "code\datums\capabilities\library\cover.dm"
 #include "code\datums\capabilities\library\emag.dm"
 #include "code\datums\capabilities\library\label.dm"

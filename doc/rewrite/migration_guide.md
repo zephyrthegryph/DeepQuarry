@@ -427,9 +427,9 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 |---|---|
 | `REQ_ON(proc)`, `REQ_TARGET_STATE(proc)` | `needs = PROC_REF(proc)` (the same proc body; TRUE or text) |
 | `REQ_IN_INVENTORY`, `REQ_INTERACTION_REACH`, `REQ_REACH_ADJACENT` | delete: the dispatcher applies reach by entry kind |
-| `REQ_CONSCIOUS`, `ASK_CONSCIOUS`, `PROMPT_CONSCIOUS` | `chk_conscious` [planned]; until then keep the old form |
+| `REQ_CONSCIOUS`, `ASK_CONSCIOUS`, `PROMPT_CONSCIOUS` | `GLOBAL_PROC_REF(chk_conscious)` [built] (`chk_alive`/`chk_capable`/`chk_held`/`chk_carried`/`chk_adjacent`... for the other ASK_*/PROMPT_* flags) |
 | tag, compare and body-type clauses | a small `needs` proc, or a slot `accepts =` |
-| `ASK_*` flags on a prompt | delete once `ask_*` re-runs `needs` [planned]; until then leave them |
+| `ASK_*` flags on a prompt | [built] `ask_*` re-runs the entry's `needs` and takes `needs =`; delete `ask_flags` on converted prompts (the old om prompts keep theirs until removed) |
 
 ## B5. Appearance → `draw(look)`
 
