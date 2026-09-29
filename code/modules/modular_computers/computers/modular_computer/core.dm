@@ -161,7 +161,8 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		active_program().kill_program(forced)
 		rel_clear(src, "active_program")
 	var/mob/user = usr
-	om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
+	if(!QDELETED(src)) // a dying computer refuses timers, and has no UI to reopen
+		om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
 	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)

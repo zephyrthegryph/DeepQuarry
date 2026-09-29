@@ -25,7 +25,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		own_set(src, "cell", new cell_type) // ALLOW(decl): made in nullspace, not in src
+		own_set(src, "cell", new cell_type(src)) // CONTAINED: made in our contents
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))

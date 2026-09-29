@@ -41,6 +41,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/L = value
 	if(D in L)
 		return TRUE
+	if(var_name == "contents") // built in: no assoc values, and a lookup is a "bad index"
+		return FALSE
 	for(var/key in L)
 		if(!isnum(key) && L[key] == D)
 			return TRUE
@@ -329,6 +331,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		. += value
 	else if(islist(value))
 		var/list/L = value
+		if(var_name == "contents") // built in: a contents list refuses assoc lookups ("bad index")
+			L = L.Copy()
 		for(var/key in L)
 			if(isdatum(key))
 				. += key
@@ -358,6 +362,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	if(islist(value))
 		var/list/L = value
 		L -= D
+		if(var_name == "contents") // built in: no assoc values, and a lookup is a "bad index"
+			return
 		for(var/key in L.Copy())
 			if(!isnum(key) && L[key] == D)
 				L -= key
@@ -410,6 +416,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	else if(islist(current))
 		var/list/L = current
 		L -= value
+		if(var_name == "contents") // built in: no assoc values, and a lookup is a "bad index"
+			return
 		for(var/key in L.Copy())
 			if(!isnum(key) && L[key] == value)
 				L -= key

@@ -104,7 +104,7 @@
 
 /datum/unit_test/dq_mmi_tissue_loss_kills_view/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	dq_test_give_mind(H, "Tissue Subject")
+	dq_test_give_mind(src, H, "Tissue Subject")
 	var/obj/item/organ/internal/brain/brain = dq_test_remove_brain(H)
 	var/obj/item/mmi/mmi = allocate(/obj/item/mmi)
 	mmi.insert_brain(brain, "unit test")
@@ -125,7 +125,7 @@
 	host.receive_mind(null, "unit test empty view")
 	TEST_ASSERT_NOTNULL(empty.get_occupant(), "the MMI has an empty view")
 	var/mob/living/carbon/human/H2 = allocate(/mob/living/carbon/human)
-	var/datum/mind/M2 = dq_test_give_mind(H2, "Second Subject")
+	var/datum/mind/M2 = dq_test_give_mind(src, H2, "Second Subject")
 	var/obj/item/organ/internal/brain/brain2 = dq_test_remove_brain(H2)
 	empty.insert_brain(brain2, "unit test")
 	var/mob/living/carbon/brain/new_view = empty.get_occupant()
@@ -141,7 +141,7 @@
 	if(!R.mmi)
 		own_set(R, "mmi", new /obj/item/mmi(R))
 	var/obj/item/mmi/mmi = R.mmi
-	var/datum/mind/M = dq_test_give_mind(R, "Borg On Floor")
+	var/datum/mind/M = dq_test_give_mind(src, R, "Borg On Floor")
 	qdel(R)
 	TEST_ASSERT(!QDELETED(mmi), "the MMI survives its cyborg")
 	TEST_ASSERT_EQUAL(mmi.loc, test_floor(), "the MMI lands on the cyborg's turf")
@@ -152,7 +152,7 @@
 	if(!lost.mmi)
 		own_set(lost, "mmi", new /obj/item/mmi(lost))
 	var/obj/item/mmi/lost_mmi = lost.mmi
-	var/datum/mind/M2 = dq_test_give_mind(lost, "Borg In Nullspace")
+	var/datum/mind/M2 = dq_test_give_mind(src, lost, "Borg In Nullspace")
 	lost.moveToNullspace()
 	qdel(lost)
 	TEST_ASSERT(QDELETED(lost_mmi), "an MMI with nowhere to go is deleted with the cyborg")
@@ -163,7 +163,7 @@
 
 /datum/unit_test/dq_syndicate_borg_state/Run()
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, test_floor())
-	var/datum/mind/M = dq_test_give_mind(R, "Syndie Borg")
+	var/datum/mind/M = dq_test_give_mind(src, R, "Syndie Borg")
 	R.set_syndicate(TRUE)
 	TEST_ASSERT(R.syndicate, "the cyborg is syndicate")
 	TEST_ASSERT_EQUAL(M.special_role, "traitor", "a syndicate cyborg's mind is marked")
