@@ -217,14 +217,14 @@
 	switch(action)
 		if("power")
 			if(!configuring)
-				update_use_power(!use_power)
+				set_use_power(!use_power)
 			else
-				update_use_power(USE_POWER_OFF)
+				set_use_power(USE_POWER_OFF)
 			. = TRUE
 		if("configure")
 			configuring = !configuring
 			if(configuring)
-				update_use_power(USE_POWER_OFF)
+				set_use_power(USE_POWER_OFF)
 			. = TRUE
 		if("set_flow_rate")
 			if(!configuring || use_power)

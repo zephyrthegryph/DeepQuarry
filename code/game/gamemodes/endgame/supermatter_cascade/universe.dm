@@ -84,7 +84,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 			if(APC.cell)
 				APC.cell.charge = 0
 			APC.wake_for_power_dependency()
-			APC.emagged = 1
+			APC.set_emagged(1)
 			APC.queue_icon_update()
 
 /datum/universal_state/supermatter_cascade/proc/PlayerSet()

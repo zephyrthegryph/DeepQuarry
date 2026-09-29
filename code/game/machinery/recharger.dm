@@ -236,10 +236,10 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		if(!C.fully_charged())
 			icon_state = icon_state_charging
 			C.give(CELLRATE*efficiency)
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 		else
 			icon_state = icon_state_charged
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 	else if(istype(charging, /obj/item/ammo_casing/microbattery))
 		charge_microbattery(charging)
 
@@ -291,11 +291,11 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(batt.shots_left >= initial(batt.shots_left))
 		batt.shots_left = initial(batt.shots_left)
 		icon_state = icon_state_charged
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	else
 		icon_state = icon_state_charging
 		batt.shots_left++
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 
 ///Charges cell magazines, one projectile at a time.
 /obj/machinery/recharger/proc/charge_cell_magazine(obj/item/ammo_magazine/cell_mag/magazine)
@@ -305,10 +305,10 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 				continue
 			shot_to_charge.shots_left++
 			icon_state = icon_state_charging
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 			return
 	icon_state = icon_state_charged
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 ///Charges cell guns. First charges the currently chambered battery, then the batteries in the magazine.
 /obj/machinery/recharger/proc/charge_cell_gun(obj/item/gun/projectile/cell_loaded/cellgun)
@@ -319,7 +319,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	if(batt && !(batt.shots_left >= initial(batt.shots_left)))
 		icon_state = icon_state_charging
 		batt.shots_left++
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		return
 	//Second, we charge the batteries in the magazine.
 	else if(magazine && LAZYLEN(magazine.stored_ammo))
@@ -328,11 +328,11 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 				continue
 			shot_to_charge.shots_left++
 			icon_state = icon_state_charging
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 			return //only heal one at a time.
 	//If the chambered battery AND the magazine are all full, we are done.
 	icon_state = icon_state_charged
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	return
 
 /obj/machinery/recharger/update_icon()	// Immediate feedback; the power stage refines it (charged, charging) each frame.

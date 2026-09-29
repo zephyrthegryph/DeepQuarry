@@ -301,7 +301,7 @@ EXTEND_INTERACTIONS(/obj/structure/disposalconstruct, INTERACT_VERB("Flip Pipe",
 	else if(ptype == DISPOSAL_PIPE_BIN)
 		var/obj/machinery/disposal/P = new(src.loc)
 		transfer_fingerprints_to(P)
-		P.mode = 0
+		P.set_mode(0)
 	else if(ptype == DISPOSAL_PIPE_OUTLET)
 		var/obj/structure/disposaloutlet/P = new(src.loc)
 		transfer_fingerprints_to(P)

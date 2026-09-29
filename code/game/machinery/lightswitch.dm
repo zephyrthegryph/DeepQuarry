@@ -73,7 +73,7 @@
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 
 	for(var/obj/machinery/light_switch/L in area())
-		L.on = on
+		L.set_on(on)
 		L.update_icon()
 
 	area().power_change()

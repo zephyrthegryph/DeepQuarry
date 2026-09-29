@@ -143,7 +143,7 @@
 //
 
 // Sets the use_power var and then forces an area power update
-/obj/machinery/proc/update_use_power(new_use_power)
+/obj/machinery/proc/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).

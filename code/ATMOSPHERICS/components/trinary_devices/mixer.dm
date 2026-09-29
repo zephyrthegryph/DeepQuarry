@@ -46,7 +46,7 @@
 		icon_state += use_power ? "on" : "off"
 	else
 		icon_state += "off"
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/atmospherics/trinary/mixer/Initialize(mapload)
 	. = ..()
@@ -145,7 +145,7 @@
 
 	switch(action)
 		if("power")
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 			. = TRUE
 		if("pressure")
 			var/pressure = params["pressure"]

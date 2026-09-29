@@ -74,12 +74,12 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 /obj/machinery/medical_kiosk/proc/wake_lock(mob/living/user)
 	active_user_handle = om_handle(user)
 	update_icon()
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/medical_kiosk/proc/suspend()
 	active_user_handle = null
 	update_icon()
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/medical_kiosk/proc/start_using(mob/living/user)
 	// Out of standby

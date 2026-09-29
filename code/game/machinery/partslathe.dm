@@ -154,7 +154,7 @@
 	var/datum/category_item/partslathe/D = queue[1]
 	if(canBuild(D))
 		busy = 1
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		progress += speed
 		if(progress >= D.time)
 			build(D, queue_producer_accounts[1])
@@ -164,7 +164,7 @@
 	else if(busy)
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
 		busy = 0
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		update_icon()
 		playsound(src, 'sound/machines/chime.ogg', 50, 0)
 

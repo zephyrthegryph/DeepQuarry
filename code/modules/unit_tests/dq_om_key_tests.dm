@@ -72,7 +72,7 @@
 /datum/unit_test/dq_om_keys_wake_point_defense/Run()
 	var/obj/machinery/pointdefense/PD = allocate(/obj/machinery/pointdefense, test_floor())
 	PD.set_stat(0)
-	PD.active = TRUE
+	PD.set_active(TRUE)
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return
 	PD.machine_step()
@@ -90,7 +90,7 @@
 		return
 	D.set_stat(0)
 	D.flush = 0
-	D.mode = 2 // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
+	D.set_mode(2) // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
 	for(var/atom/movable/AM as anything in contents_of(D))
 		qdel(AM)
 	D.machine_step()

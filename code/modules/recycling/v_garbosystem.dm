@@ -65,14 +65,14 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 /obj/machinery/v_garbosystem/proc/update()
 	if(!operable())
 		operating = FALSE
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(!operating)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	icon_state = "cronchy_active"
 	MACHINE_WAKE(src)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/v_garbosystem/machine_step()
 	if(!operating || !crusher() || crusher().stat & (NOPOWER|BROKEN))
@@ -197,7 +197,7 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 						break
 				for(var/atom/movable/C in contents_of(A))
 					if(C.anchored)
-						C.anchored = FALSE
+						C.set_anchored(FALSE)
 					C.forceMove(loc)
 				if(isitem(A))
 					A.SpinAnimation(5,3)

@@ -225,7 +225,7 @@
 		return PROCESS_KILL
 	var/new_use_power = 1 + on
 	if(new_use_power != use_power)
-		update_use_power(new_use_power)
+		set_use_power(new_use_power)
 	if(!on)
 		return PROCESS_KILL
 

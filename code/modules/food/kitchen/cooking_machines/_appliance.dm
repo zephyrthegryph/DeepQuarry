@@ -148,12 +148,12 @@
 
 	if (has_stat(POWEROFF))//Its turned off
 		stat_remove(POWEROFF)
-		use_power = 1
+		set_use_power(1)
 		user.visible_message(span_filter_notice("[user] turns [src] on."), span_filter_notice("You turn on [src]."))
 
 	else //Its on, turn it off
 		stat_add(POWEROFF)
-		use_power = 0
+		set_use_power(0)
 		user.visible_message(span_filter_notice("[user] turns [src] off."), span_filter_notice("You turn off [src]."))
 		cooking = FALSE // Stop cooking here, too, just in case.
 

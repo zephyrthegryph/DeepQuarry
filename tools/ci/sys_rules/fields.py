@@ -11,7 +11,7 @@ Rules (every one must reach 0):
                 to change it.
   stat_helper   The old duplicate readers inoperable() / is_operational(): use operable().
   field_write   A direct write to a declared core field (on, active, state, mode, locked,
-                emagged, stat, anchored, density) anywhere but its setter: use set_<field>()
+                emagged, stat, anchored, density, use_power) anywhere but its setter: use set_<field>()
                 (and stat_add()/stat_remove()). The rule shares tools/ci/field_write_lint.py's
                 resolution (owner type, typed receivers).
 """
@@ -28,7 +28,7 @@ RULES = {
     "field_write": "set_<field>() (stat_add()/stat_remove() for bits); no direct writes to a core field (systems.md section 2)",
 }
 
-CORE = ("on", "active", "state", "mode", "locked", "emagged", "stat", "anchored", "density")
+CORE = ("on", "active", "state", "mode", "locked", "emagged", "stat", "anchored", "density", "use_power")
 STAT_ROOTS = ("/obj/machinery", "/obj/vehicle")
 RUNTIME = ("code/game/machinery/machinery_fields.dm", "code/__defines/om.dm", "code/datums/om/fields.dm")
 

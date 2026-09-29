@@ -78,8 +78,8 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 			var/atom/movable/_tmp_buck_15 = M?.buckled_to()
 			_tmp_buck_15.unbuckle_mob(M)
 	else
-		A.anchored = TRUE
-		A.density = FALSE
+		A.set_anchored(TRUE)
+		A.set_density(FALSE)
 	var/list/flooring_near_beacon = list()
 	for(var/turf/simulated/floor/floor in orange(1, beacon()))
 		flooring_near_beacon += floor
@@ -135,8 +135,8 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
-	A.anchored = FALSE // An item has to be unanchored to be extracted in the first place.
-	A.density = initial(A.density)
+	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
+	A.set_density(initial(A.density))
 	animate(src, pixel_z = 0, time = 5)
 	om_after(src, 0.5 SECONDS, PROC_REF(fulton_release), A)
 

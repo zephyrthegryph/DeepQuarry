@@ -80,7 +80,7 @@
 		return TRUE
 	enabled = !enabled
 	MACHINE_WAKE(src)
-	update_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	set_use_power(enabled ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 	to_chat(user, "You turn \the [src] [enabled ? "on" : "off"].")
 	return TRUE

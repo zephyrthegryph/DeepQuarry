@@ -105,10 +105,10 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 		if(user)
 			user.visible_message(span_filter_notice("[user] turns the [src] on."), span_filter_notice("You turn on \the [src]."))
 			get_cooking_work(CI)
-			use_power = 2
+			set_use_power(2)
 	else //Its on, turn it off
 		stat_add(POWEROFF)
-		use_power = 0
+		set_use_power(0)
 		if(user)
 			user.visible_message(span_filter_notice("[user] turns the [src] off."), span_filter_notice("You turn off \the [src]."))
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
@@ -125,7 +125,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	..()
 	stat_add(POWEROFF)
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
-	use_power = 0
+	set_use_power(0)
 	CI.reset()
 	update_icon()
 

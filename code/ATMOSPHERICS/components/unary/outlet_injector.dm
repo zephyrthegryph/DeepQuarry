@@ -144,10 +144,10 @@
 		return 0
 
 	if(signal.data["power"])
-		update_use_power(text2num(signal.data["power"]))
+		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"])
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["inject"])
 		spawn inject()
@@ -183,7 +183,7 @@
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	injecting = !injecting
-	update_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
+	set_use_power(injecting ? USE_POWER_IDLE : USE_POWER_OFF)
 	update_icon()
 	return TRUE
 

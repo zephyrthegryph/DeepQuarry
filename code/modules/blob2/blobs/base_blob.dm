@@ -181,7 +181,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 			B.overmind = controller
 		else
 			B.overmind = overmind
-		B.density = TRUE
+		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
 			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)

@@ -70,10 +70,10 @@
 // Description: This tracks historical usage, for TGUI power monitors
 /obj/machinery/power/sensor/machine_step()
 	if(!power_region)
-		use_power = USE_POWER_IDLE
+		set_use_power(USE_POWER_IDLE)
 		connect_to_network()
 	else
-		use_power = USE_POWER_ACTIVE
+		set_use_power(USE_POWER_ACTIVE)
 		record()
 	if(!record_timer)
 		var/delay = power_region ? max(1, next_record - world.time) : record_interval

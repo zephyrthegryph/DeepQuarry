@@ -554,7 +554,7 @@
 	TEST_ASSERT_EQUAL(scanner.service_staff_account_number, 0, "scanner carried old staff attribution into a new provider account")
 
 	var/obj/machinery/cash_register/register = new(test_turf)
-	register.locked = FALSE
+	register.set_locked(FALSE)
 	TEST_ASSERT(register.access_action("custom_order", list("purpose" = "Repair", "amount" = 2, "price" = 15), null), "register rejected a valid custom-order row")
 	TEST_ASSERT(register.access_action("custom_order", list("purpose" = "Repair", "amount" = 1, "price" = 15), null), "register did not deterministically merge a duplicate row")
 	TEST_ASSERT_EQUAL(register.item_list["Repair"], 3, "register duplicate row overwrote rather than merged quantity")

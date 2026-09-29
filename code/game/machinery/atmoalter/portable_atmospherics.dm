@@ -118,7 +118,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 
 	var/obj/machinery/atmospherics/portables_connector/old_port = connected_port()
 	old_port.connected_device = null
-	old_port.on = 0
+	old_port.set_on(0)
 	MACHINE_SLEEP(old_port)
 	connected_port_handle = null
 	om_changed(src, CHANGE_MACHINE_SETTINGS)

@@ -189,7 +189,7 @@
 	clear_gas_dependencies()
 	MACHINE_WAKE(src)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/update_use_power(new_use_power)
+/obj/machinery/atmospherics/binary/dp_vent_pump/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	wake_for_state_change()
@@ -259,10 +259,10 @@
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
 	if(signal.data["power"])
-		update_use_power(text2num(signal.data["power"]))
+		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"])
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["direction"])
 		pump_direction = text2num(signal.data["direction"])

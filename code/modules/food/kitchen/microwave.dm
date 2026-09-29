@@ -507,7 +507,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
 	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
 	operating = TRUE
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	post_state_change()
 	soundloop.start()
 
@@ -524,9 +524,9 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
 	operating = FALSE // Turn it off again aferwards
 	if(broken)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	post_state_change()
 	soundloop.stop()
 

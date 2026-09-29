@@ -24,8 +24,8 @@
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T.z))
 			LAZYADD(created_field, E)
 			E.set_strength(1)
-			E.density = TRUE
-			E.anchored = TRUE
+			E.set_density(TRUE)
+			E.set_anchored(TRUE)
 			E.invisibility = INVISIBILITY_NONE
 		om_after(src, 1 SECOND, PROC_REF(UpdateMove))
 	return 1
@@ -47,8 +47,8 @@
 			//for now, just instantly respawn the fields when they get destroyed
 			var/obj/effect/energy_field/E = new (locate(T.x,T.y,T))
 			LAZYADD(created_field, E)
-			E.anchored = TRUE
-			E.density = TRUE
+			E.set_anchored(TRUE)
+			E.set_density(TRUE)
 			E.invisibility = INVISIBILITY_NONE
 
 		var/obj/effect/energy_field/E = LAZYACCESS(created_field, 1)

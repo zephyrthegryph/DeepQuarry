@@ -96,7 +96,7 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 
 /obj/machinery/power/solar/proc/crowbar_act_tool_done(mob/user)
 	var/obj/item/solar_assembly/S = new(loc)
-	S.anchored = TRUE
+	S.set_anchored(TRUE)
 	playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 	user.visible_message(span_notice("[user] takes the glass off the solar panel."))
 	replace_with(src, glass_type, 2)
@@ -463,7 +463,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		A.circuit = M
 		A.state = 3
 		A.icon_state = "computer_3"
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(src)
 	else
 		to_chat(user, span_blue("You disconnect the monitor."))
@@ -475,7 +475,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 		A.circuit = M
 		A.state = 4
 		A.icon_state = "computer_4"
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(src)
 
 /obj/machinery/power/solar_control/machine_step()

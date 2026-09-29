@@ -521,7 +521,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	if(!M.move_into(src, OCCUPANT_SLOT_SLEEPER))
 		return
 	occupant = M
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	MACHINE_WAKE(src)
 	occupant.cozyloop.start() // Cozy Music
 	update_icon()
@@ -539,7 +539,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	// everything except a hand-kept exclude list" loop -- the source of the
 	// sleeper's partial-eject bug -- is gone.
 	slot_remove(occupant, get_turf(src))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	toggle_filter()
 	toggle_pump()

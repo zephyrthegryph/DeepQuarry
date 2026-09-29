@@ -129,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		return TRUE
 
 	set_on(!on)
-	if(on) update_use_power(USE_POWER_ACTIVE)
+	if(on) set_use_power(USE_POWER_ACTIVE)
 	// visible_message(span_notice("\The [user] turns \the [src] [on ? "on" : "off"].")) // No thankouuuu. Too spammy.
 	update_brightness()
 	return TRUE
@@ -138,11 +138,11 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 	..()
 	var/need_update
 	if((!anchored || broken()) && on)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		set_on(0)
 		need_update = 1
 	else if(use_power && !on)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		need_update = 1
 	if(need_update)
 		update_brightness()
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/floor_light, INTERACT_USE(null, PROC_REF(interact
 		if(light_range != default_light_range || light_power != default_light_power || light_color != default_light_colour)
 			set_light(default_light_range, default_light_power, default_light_colour)
 	else
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		if(light_range || light_power)
 			set_light(0)
 

@@ -43,7 +43,7 @@ OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"), PROC_REF(compute_operabl
   `interact_offline`. It replaces every `stat & (NOPOWER|BROKEN)` read (`inoperable()`,
   `is_operational()` go away; `operable()` is the one reader).
 - **Power draw per state:** `POWER_DRAW(type, list(STATE_IDLE = 10, STATE_ACTIVE = 500))` keyed on
-  the `use_power` field; `update_use_power()` calls disappear, the draw follows the field.
+  the `use_power` field; `set_use_power()` calls disappear, the draw follows the field.
 - Lint `sys_stat_bits`: raw `stat & (`, `stat |=`, `stat &= ~` outside the field runtime.
   `sys_field_write`: direct writes to a core field (`on = `, `locked = `...) outside its setter
   (extends `field_write_lint.py`).

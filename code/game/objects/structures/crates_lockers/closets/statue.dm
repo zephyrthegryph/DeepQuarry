@@ -23,7 +23,7 @@
 		if(L?.buckled_to())
 			var/atom/movable/_tmp_buck_9 = L?.buckled_to()
 			_tmp_buck_9.unbuckle_mob(L, TRUE)
-			L.anchored = FALSE
+			L.set_anchored(FALSE)
 		L.forceMove(src)
 		L.set_sdisabilities(L.sdisabilities | MUTE)
 		max_integrity = L.get_endurance() + 100

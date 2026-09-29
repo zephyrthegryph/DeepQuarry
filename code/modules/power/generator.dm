@@ -209,7 +209,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 					"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 					"You hear a ratchet.")
-	update_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
+	set_use_power(anchored ? USE_POWER_IDLE : USE_POWER_ACTIVE)
 	if(anchored)
 		MACHINE_WAKE(src)
 	if(anchored)

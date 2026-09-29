@@ -142,7 +142,7 @@
 			new_coil.component_parts += I
 		new_coil.RefreshParts()
 
-		new_coil.anchored = anchored
+		new_coil.set_anchored(anchored)
 		new_coil.update_icon()
 
 		to_chat(user, span_notice("You modify \the [src]. It is now a [lowertext(modification_decision)]! You close the access panel."))

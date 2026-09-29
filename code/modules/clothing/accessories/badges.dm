@@ -357,8 +357,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 			desc = "This seems like a dosimeter, but the film has turned black."
 
 /obj/item/clothing/accessory/dosimeter/proc/update_state(tostate)
-	if(current_film)
-		current_film.state = tostate
+	var/obj/item/dosimeter_film/film = current_film
+	if(film)
+		film.state = tostate
 		icon_state = "[initial(icon_state)][tostate]"
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else

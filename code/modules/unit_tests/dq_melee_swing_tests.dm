@@ -71,7 +71,7 @@
 	var/turf/north = get_step(base, NORTH)
 	var/mob/living/carbon/human/attacker = allocate(/mob/living/carbon/human, base)
 	var/mob/living/carbon/human/victim = allocate(/mob/living/carbon/human, north)
-	victim.anchored = TRUE
+	victim.set_anchored(TRUE)
 	var/obj/item/weapon = allocate(/obj/item)
 	weapon.force = 8
 	weapon.w_class = ITEMSIZE_SMALL

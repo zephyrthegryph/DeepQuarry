@@ -64,8 +64,8 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	C.set_dir(dir)
 	C.ptype = 7
 	C.update()
-	C.anchored = TRUE
-	C.density = TRUE
+	C.set_anchored(TRUE)
+	C.set_density(TRUE)
 	replace_with(src, C)
 
 /obj/structure/disposaloutlet/multitool_act(mob/user, obj/item/I)

@@ -302,15 +302,15 @@
 
 /datum/om/stage/machine/power/recharger/perform(obj/machinery/recharger/M, datum/om/frame/machine/F)
 	if(!F.usable())
-		M.update_use_power(USE_POWER_OFF)
+		M.set_use_power(USE_POWER_OFF)
 		M.icon_state = M.icon_state_idle
 		return STAGE_IDLE
 	if(!M.charging)
-		M.update_use_power(USE_POWER_IDLE)
+		M.set_use_power(USE_POWER_IDLE)
 		M.icon_state = M.icon_state_idle
 		return STAGE_IDLE
 	if(M.charging_complete())
-		M.update_use_power(USE_POWER_IDLE)
+		M.set_use_power(USE_POWER_IDLE)
 		M.icon_state = M.icon_state_charged
 		return STAGE_IDLE
 	M.charge_step()
@@ -331,14 +331,14 @@
 
 /datum/om/stage/machine/power/cell_charger/perform(obj/machinery/cell_charger/M, datum/om/frame/machine/F)
 	if(!F.usable())
-		M.update_use_power(USE_POWER_OFF)
+		M.set_use_power(USE_POWER_OFF)
 		return STAGE_IDLE
 	if(!M.charging || M.charging.fully_charged())
-		M.update_use_power(USE_POWER_IDLE)
+		M.set_use_power(USE_POWER_IDLE)
 		return STAGE_IDLE
 	var/newlevel = round(M.charging.percent() * 4.0 / 99)
 	M.charging.give(M.efficiency * CELLRATE)
-	M.update_use_power(USE_POWER_ACTIVE)
+	M.set_use_power(USE_POWER_ACTIVE)
 	if(M.chargelevel != newlevel)
 		M.update_icon()
 

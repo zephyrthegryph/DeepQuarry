@@ -85,7 +85,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		if(breather().internals)
 			breather().internals.icon_state = "internal0"
 		breather_handle = null
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	return TRUE
 
 /obj/machinery/oxygen_pump
@@ -106,7 +106,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().internal = tank
 		if(breather().internals)
 			breather().internals.icon_state = "internal1"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user as mob)
 	if(!user)
@@ -189,7 +189,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			breather().cozyloop.stop() // Cozy Music
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
 			breather_handle = null
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
 			if(breather().internals)
@@ -277,7 +277,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().internal = tank
 		if(breather().internals)
 			breather().internals.icon_state = "internal1"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile
@@ -328,7 +328,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		breather().internal = tank
 		if(breather().internals)
 			breather().internals.icon_state = "internal1"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	breather().cozyloop.start()
 
 /obj/machinery/oxygen_pump/mobile/stabilizer
@@ -346,7 +346,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 			contained.forceMove(src)
 			src.visible_message(span_notice("\The [contained] rapidly retracts back into \the [src]!"))
 			breather_handle = null
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 		else if(!breather().internal && tank)
 			breather().internal = tank
 			if(breather().internals)

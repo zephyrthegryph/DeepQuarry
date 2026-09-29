@@ -73,6 +73,6 @@
 	var/obj/structure/disposalconstruct/C = new(src.loc)
 	C.ptype = 8
 	C.update()
-	C.anchored = TRUE
-	C.density = TRUE
+	C.set_anchored(TRUE)
+	C.set_density(TRUE)
 	replace_with(src, C)

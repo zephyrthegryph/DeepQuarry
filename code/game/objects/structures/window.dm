@@ -278,7 +278,7 @@
 	P.max_integrity = max_integrity
 	P.update_integrity(get_integrity())
 	P.state = state
-	P.anchored = anchored
+	P.set_anchored(anchored)
 	replace_with(src, P)
 
 // Tool steps and weld repair: window_construction.dm.

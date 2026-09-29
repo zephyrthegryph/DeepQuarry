@@ -336,7 +336,7 @@
 	if(base_state == "right" || base_state == "rightsecure")
 		assembly.facing = "r"
 	assembly.set_dir(dir)
-	assembly.anchored = TRUE
+	assembly.set_anchored(TRUE)
 	assembly.created_name = name
 	assembly.state = "02"
 	assembly.step = 2

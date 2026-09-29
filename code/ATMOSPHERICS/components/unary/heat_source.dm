@@ -153,7 +153,7 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/heater, 120, null)
 	. = TRUE
 	switch(action)
 		if("toggleStatus")
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 			update_icon()
 		if("setGasTemperature")
 			var/amount = text2num(params["temp"])

@@ -339,7 +339,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 /obj/machinery/alarm/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
 
-/obj/machinery/alarm/update_use_power(new_use_power)
+/obj/machinery/alarm/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	invalidate_gas_dependencies()
@@ -355,7 +355,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	if(!regulating_temperature)
 		//check for when we should start adjusting temperature
 		if(!TEST_TLV_VALUES && abs(environment.return_temperature() - target_temperature) > 2.0 && environment.return_pressure() >= 1)
-			update_use_power(USE_POWER_ACTIVE)
+			set_use_power(USE_POWER_ACTIVE)
 			set_regulating_temperature((environment.return_temperature() > target_temperature ? 1 : 2))
 			audible_message("\The [src] clicks as it starts [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click and a faint electronic hum.", runemessage = "* click *")
@@ -363,7 +363,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 	else
 		//check for when we should stop adjusting temperature
 		if(TEST_TLV_VALUES || abs(environment.return_temperature() - target_temperature) <= 0.5 || environment.return_pressure() < 1)
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			audible_message("\The [src] clicks quietly as it stops [regulating_temperature == 1 ? "cooling" : "heating"] the room.",\
 			"You hear a click as a faint electronic humming stops.", runemessage = "* click *")
 			set_regulating_temperature(0)
@@ -384,7 +384,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 				var/energy_used = min(gas.get_thermal_energy_change(target_temperature) , active_power_usage)
 
 				gas.add_thermal_energy(energy_used)
-				//use_power(energy_used, ENVIRON) //handle by update_use_power instead
+				//use_power(energy_used, ENVIRON) //handle by set_use_power instead
 			else	//gas cooling
 				var/heat_transfer = min(abs(gas.get_thermal_energy_change(target_temperature)), active_power_usage)
 
@@ -397,7 +397,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 				heat_transfer = -gas.add_thermal_energy(-heat_transfer)	//get the actual heat transfer
 
-				//use_power(heat_transfer / cop, ENVIRON)	//handle by update_use_power instead
+				//use_power(heat_transfer / cop, ENVIRON)	//handle by set_use_power instead
 
 			environment.merge(gas)
 
@@ -596,7 +596,7 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 
 /obj/machinery/alarm/proc/apply_mode()
 	for(var/obj/machinery/alarm/AA in alarm_area_ref().air_alarms)
-		AA.mode = mode //propagate mode to other air alarms in the area
+		AA.set_mode(mode) //propagate mode to other air alarms in the area
 
 	switch(mode)
 		if(AALARM_MODE_SCRUBBING)

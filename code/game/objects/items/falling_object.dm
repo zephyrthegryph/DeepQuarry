@@ -29,7 +29,7 @@
 	dropped.plane = 1
 	dropped.pixel_x = rand(-150, 150)
 	dropped.pixel_y = 500 // When you think that pixel_z is height but you are wrong
-	dropped.density = FALSE
+	dropped.set_density(FALSE)
 	dropped.opacity = FALSE
 	if(admin_spawned)
 		dropped.flags |= ADMIN_SPAWNED

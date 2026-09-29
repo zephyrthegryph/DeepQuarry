@@ -143,14 +143,14 @@
 			var/obj/machinery/door/airlock/airlock = object
 			var/obj/machinery/door/airlock/new_airlock = new_object
 			new_airlock.req_one_access = airlock.req_one_access?.Copy()
-			new_airlock.locked = airlock.locked
+			new_airlock.set_locked(airlock.locked)
 			if(istype(object, /obj/machinery/door/airlock/multi_tile))
 				for(var/turf/location in object.locs)
 					if(location == object.loc)
 						continue
 					var/obj/machinery/door/airlock/long_airlock = new replace_path(location)
 					long_airlock.req_one_access = airlock.req_one_access?.Copy()
-					long_airlock.locked = airlock.locked
+					long_airlock.set_locked(airlock.locked)
 					long_airlock.name = airlock.name
 		new_object.name = object.name
 	qdel(object)

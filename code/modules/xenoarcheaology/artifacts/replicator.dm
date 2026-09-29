@@ -138,7 +138,7 @@
 			max_spawn_time = rand(30,100)
 
 			if(!spawning_types.len || !stored_materials.len)
-				update_use_power(USE_POWER_IDLE)
+				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
 		else if(prob(5))
@@ -179,7 +179,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
 					spawning_types.Add(LAZYACCESS(construction, key))
 					spawn_progress_time = 0
-					update_use_power(USE_POWER_ACTIVE)
+					set_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
 				else
 					visible_message(fail_message)
@@ -321,7 +321,7 @@
 			max_spawn_time = rand(30,100)
 
 			if(!spawning_types.len || !stored_materials.len)
-				update_use_power(USE_POWER_IDLE)
+				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
 		else if(prob(5))
@@ -456,7 +456,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
 					spawning_types.Add(LAZYACCESS(created_mobs, key))
 					spawn_progress_time = 0
-					update_use_power(USE_POWER_ACTIVE)
+					set_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
 				else
 					visible_message(fail_message)
@@ -587,7 +587,7 @@
 			max_spawn_time = rand(30,100)
 
 			if(!spawning_types.len || !stored_materials.len)
-				update_use_power(USE_POWER_IDLE)
+				set_use_power(USE_POWER_IDLE)
 				icon_state = "borgcharger0(old)"
 
 		else if(prob(5))
@@ -726,7 +726,7 @@
 						visible_message(span_notice("[icon2html(src,viewers(src))] [src]'s front compartment slides shut."))
 					spawning_types.Add(LAZYACCESS(created_items, key))
 					spawn_progress_time = 0
-					update_use_power(USE_POWER_ACTIVE)
+					set_use_power(USE_POWER_ACTIVE)
 					icon_state = "borgcharger1(old)"
 				else
 					visible_message(fail_message)

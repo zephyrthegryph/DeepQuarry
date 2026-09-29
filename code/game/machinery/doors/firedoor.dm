@@ -373,8 +373,8 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	else
 		new /obj/item/circuitboard/airalarm(loc)
 	var/obj/structure/firedoor_assembly/assembly = new(loc)
-	assembly.anchored = TRUE
-	assembly.density = TRUE
+	assembly.set_anchored(TRUE)
+	assembly.set_density(TRUE)
 	assembly.wired = TRUE
 	assembly.glass = glass
 	assembly.update_icon()

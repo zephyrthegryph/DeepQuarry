@@ -199,7 +199,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 	container.reagents.remove_reagent(REAGENT_ID_BIOMASS, possible_list[choice][2])
 
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	printing = 1
 	update_icon()
 
@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 
 /// The print delay is over: the organ comes out unless the printer lost power.
 /obj/machinery/organ_printer/proc/printing_done(organ_path)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	printing = 0
 	update_icon()
 

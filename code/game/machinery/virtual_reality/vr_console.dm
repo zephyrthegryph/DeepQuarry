@@ -236,7 +236,7 @@
 		to_chat(user, span_warning("\The [src] rejects [M] with a sharp beep."))
 		return
 
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	enter_vr()
 
 /obj/machinery/vr_sleeper/proc/go_out()
@@ -276,7 +276,7 @@
 	// slot (machine_internals) now, so the old "eject everything except a
 	// hand-kept exclude list" loop is gone.
 	slot_remove(occupant, get_turf(src))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 
 /obj/machinery/vr_sleeper/proc/enter_vr()

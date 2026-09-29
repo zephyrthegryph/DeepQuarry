@@ -223,7 +223,7 @@
 		return // No turning on if broken or misplaced.
 	if(!use_power) //need some juice to kickstart
 		use_power_oneoff(idle_power_usage*5)
-	update_use_power(!use_power)
+	set_use_power(!use_power)
 	update_icon()
 	refresh_linked_consoles()
 	MACHINE_WAKE(src)

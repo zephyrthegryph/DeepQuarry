@@ -176,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	pulse2.icon = 'icons/effects/effects.dmi'
 	pulse2.icon_state = "empdisable"
 	pulse2.name = "emp sparks"
-	pulse2.anchored = TRUE
+	pulse2.set_anchored(TRUE)
 	pulse2.set_dir(pick(GLOB.cardinal))
 
 	om_qdel_after(pulse2, 1 SECOND)
@@ -329,7 +329,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 	C.forceMove(loc)
 	C.set_dir(dir)
-	C.anchored = TRUE
+	C.set_anchored(TRUE)
 
 	load = C
 
@@ -378,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 
 	load.forceMove(dest)
 	load.set_dir(get_dir(loc, dest))
-	load.anchored = FALSE		//we can only load non-anchored items, so it makes sense to set this to false
+	load.set_anchored(FALSE) //we can only load non-anchored items, so it makes sense to set this to false
 	if(ismob(load))
 		var/mob/L = load
 		L.pixel_x = L.default_pixel_x

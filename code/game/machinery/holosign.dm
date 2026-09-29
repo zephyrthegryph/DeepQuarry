@@ -19,7 +19,7 @@
 	if(!operable())
 		return
 	lit = !lit
-	update_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 
 /obj/machinery/holosign/update_icon()
@@ -34,7 +34,7 @@
 	. = ..()
 	if(has_stat(NOPOWER))
 		lit = 0
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 	update_icon()
 

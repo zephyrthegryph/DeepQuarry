@@ -281,8 +281,8 @@
 	O.desc = "Looks hot."
 	O.icon = 'icons/effects/fire.dmi'
 	O.icon_state = "2"
-	O.anchored = TRUE
-	O.density = TRUE
+	O.set_anchored(TRUE)
+	O.set_density(TRUE)
 	O.plane = ABOVE_PLANE
 
 	if(girder_material.integrity >= 150 && !girder_material.is_brittle()) //Strong girders will remain in place when a wall is melted.
@@ -963,7 +963,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				return FALSE
 			to_chat(user, span_notice("You construct the grille."))
 			var/obj/structure/grille/G = new(src)
-			G.anchored = TRUE
+			G.set_anchored(TRUE)
 			return TRUE
 		if(RCD_DECONSTRUCT)
 			to_chat(user, span_notice("You deconstruct \the [src]."))
@@ -1118,7 +1118,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 			frame.dir = EAST
 		if("WEST")
 			frame.dir = WEST
-	frame.anchored = 1
+	frame.set_anchored(1)
 	to_chat(user, span_notice("You build a frame"))
 	ask.rcd.finish_deferred_build(src, user, RCD_FRAME)
 
@@ -1392,7 +1392,7 @@ DECLARE_INTERACTIONS(/obj/item/rcd, \
 				if("plastitanium")
 					window_to_spawn = (temp_dir==10?"/obj/structure/window/plastitanium/full":"/obj/structure/window/plastitanium")
 			var/obj/structure/window/WD = new window_to_spawn(loc)
-			WD.anchored = TRUE
+			WD.set_anchored(TRUE)
 			WD.dir = temp_dir
 			return TRUE
 	return FALSE

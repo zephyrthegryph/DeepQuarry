@@ -326,7 +326,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	occupant.cozyloop.stop() // Cozy Music
 	//this doesn't account for walls or anything, but i don't forsee that being a problem.
 	slot_remove(occupant, get_step(src.loc, SOUTH))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
 	return
 
@@ -359,7 +359,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	add_fingerprint(usr)
 	update_icon()
 	SStgui.update_uis(src)

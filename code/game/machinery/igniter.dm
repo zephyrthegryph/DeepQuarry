@@ -153,7 +153,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sparker, INTERACT_SILICON("Ignite", PROC_REF(
 	for(var/obj/machinery/igniter/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(M.id == id)
 			use_power(50)
-			M.on = !(M.on)
+			M.set_on(!(M.on))
 			M.icon_state = text("igniter[]", M.on)
 
 	om_after_unique(src, 5 SECONDS, PROC_REF(finish_trigger))

@@ -67,11 +67,11 @@
 	if(QDELETED(victim()))
 		victim_handle = null
 		update_icon()
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	if(victim() && !Adjacent(victim()))
 		victim_handle = null
 		update_icon()
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	if(victim())
 		update_icon()
 	if(beep && victim() && victim().pulse)
@@ -82,10 +82,10 @@
 		return
 	if(victim())
 		victim_handle = null
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	else if(ishuman(over_object))
 		victim_handle = om_handle(over_object)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		MACHINE_WAKE(src)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 

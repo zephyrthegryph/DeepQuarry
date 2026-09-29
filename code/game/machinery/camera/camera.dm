@@ -288,7 +288,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 /obj/machinery/camera/proc/welded_off(mob/user, obj/item/tool)
 	if(assembly)
 		assembly.forceMove(loc)
-		assembly.anchored = TRUE
+		assembly.set_anchored(TRUE)
 		assembly.camera_name = c_tag
 		assembly.camera_network = english_list(network, NETWORK_DEFAULT, ",", ",")
 		assembly.update_icon()

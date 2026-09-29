@@ -109,7 +109,7 @@
 
 		container.reagents.remove_reagent(REAGENT_ID_NUTRIMENT, (total*efficiency))
 
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		printing = TRUE
 		update_icon()
 
@@ -197,12 +197,12 @@
 /// own draw while it runs.
 /obj/machinery/food_replicator/machine_step()
 	if(!operable())
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
 	if(printing)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		return PROCESS_KILL
-	use_power = USE_POWER_IDLE
+	set_use_power(USE_POWER_IDLE)
 	return PROCESS_KILL
 
 /obj/machinery/food_replicator/RefreshParts()
@@ -228,7 +228,7 @@
 
 /obj/machinery/food_replicator/proc/print_done(obj/item/reagent_containers/foodItem)
 	ping()
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	printing = FALSE
 	update_icon()
 

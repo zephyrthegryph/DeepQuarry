@@ -486,19 +486,19 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 					set_on(0)
 					set_light(0)
 			else
-				update_use_power(USE_POWER_ACTIVE)
+				set_use_power(USE_POWER_ACTIVE)
 				set_light(correct_range, correct_power, correct_color)
 				overlay_color = correct_overlay
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
 	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		emergency_mode = TRUE
 		begin_emergency_discharge()
 		if(auto_flicker)
 			start_flicker_watch()
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		set_light(0)
 	update_light()
 	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)

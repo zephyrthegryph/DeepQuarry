@@ -211,7 +211,7 @@
 /obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 		update_icon()
 		add_fingerprint(user)
 		if(use_power)

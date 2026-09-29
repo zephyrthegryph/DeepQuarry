@@ -68,7 +68,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 	last_flow_rate = 0
 
 	if(error_check())
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 	if((!operable()) || !use_power)
 		return 0
@@ -310,7 +310,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 		wake_for_state_change()
 		update_icon()
 		add_fingerprint(user)

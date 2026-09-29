@@ -24,7 +24,7 @@ DECLARE_REF(/obj/item/projectile/spell_projectile, "trails", OWNED_LIST, null)
 		LAZYADD(trails, trail)
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
-		trail.density = FALSE
+		trail.set_density(FALSE)
 		om_after(src, proj_trail_lifespan, PROC_REF(expire_trail), trail) // our Destroy() takes the trails with us
 
 /obj/item/projectile/spell_projectile/proc/expire_trail(obj/effect/trail)

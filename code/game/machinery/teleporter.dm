@@ -235,8 +235,8 @@ DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_con
 	if(com())
 		com().icon_state = "tele1"
 		use_power(5000)
-		update_use_power(USE_POWER_ACTIVE)
-		com().update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
+		com().set_use_power(USE_POWER_ACTIVE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter engaged!"), 2)
 	if(user)
@@ -251,8 +251,8 @@ DECLARE_REF(/obj/machinery/teleport/station, "com_handle.com_handle.teleport_con
 	if(com())
 		com().icon_state = "tele0"
 		com().accurate = 0
-		com().update_use_power(USE_POWER_IDLE)
-		update_use_power(USE_POWER_IDLE)
+		com().set_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		for(var/mob/O in hearers(src, null))
 			O.show_message(span_notice("Teleporter disengaged!"), 2)
 	if(user)

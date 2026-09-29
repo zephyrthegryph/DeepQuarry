@@ -1401,7 +1401,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 	connected_port = new_port
 	connected_port.connected_device = src
-	connected_port.on = 1
+	connected_port.set_on(1)
 
 	// Inject cabin_air into the port's pipe network so an external supply can
 	// equalise with it. connected_device is set first so return_network()

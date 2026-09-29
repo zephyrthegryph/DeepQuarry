@@ -41,7 +41,7 @@
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
 	A.set_dir(dir)
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
 		if(istype(C, /obj/item/circuitboard))
@@ -150,7 +150,7 @@
 			return TRUE
 
 /obj/machinery/keycard_auth/proc/reset()
-	active = 0
+	set_active(0)
 	event = ""
 	screen = 1
 	confirmed = 0
@@ -183,14 +183,14 @@
 	event_source_handle = om_handle(source)
 	// Busy for the confirmation window: a hold claims the device and closes the window when it ends.
 	om_release_busy(src, "new request")
-	active = 1
+	set_active(1)
 	icon_state = "auth_on"
 	om_hold_busy(src, confirm_delay, PROC_REF(receive_window_closed))
 
 /obj/machinery/keycard_auth/proc/receive_window_closed()
 	event_source_handle = null
 	icon_state = "auth_off"
-	active = 0
+	set_active(0)
 
 /obj/machinery/keycard_auth/proc/trigger_event(mob/user)
 	switch(event)

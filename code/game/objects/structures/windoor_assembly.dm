@@ -246,7 +246,7 @@
 			windoor.icon_state = "rightsecureopen"
 			windoor.base_state = "rightsecure"
 		windoor.set_dir(src.dir)
-		windoor.density = FALSE
+		windoor.set_density(FALSE)
 		if(created_name)
 			windoor.name = created_name
 		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
@@ -267,7 +267,7 @@
 			windoor.icon_state = "rightopen"
 			windoor.base_state = "right"
 		windoor.set_dir(src.dir)
-		windoor.density = FALSE
+		windoor.set_density(FALSE)
 		if(created_name)
 			windoor.name = created_name
 		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))

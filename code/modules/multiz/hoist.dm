@@ -55,7 +55,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	hoistee_handle = om_handle(AM)
 	if(ismob(AM))
 		source_hook.buckle_mob(AM)
-	AM.anchored = TRUE // why isn't this being set by buckle_mob for silicons?
+	AM.set_anchored(TRUE) // why isn't this being set by buckle_mob for silicons?
 	source_hook.layer = AM.layer + 0.1
 
 /obj/effect/hoist_hook/MouseDrop(atom/dest)

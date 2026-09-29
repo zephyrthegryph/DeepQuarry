@@ -268,7 +268,7 @@
 					fabricated_laptop.battery_module.charge_to_full()
 				fabricated_laptop.forceMove(src.loc)
 				fabricated_laptop.screen_on = 0
-				fabricated_laptop.anchored = FALSE
+				fabricated_laptop.set_anchored(FALSE)
 				fabricated_laptop.update_icon()
 				fabricated_laptop.update_verbs()
 				fabricated_laptop = null

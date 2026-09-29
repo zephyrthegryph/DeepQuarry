@@ -130,14 +130,14 @@
 	if(temperature < optimal_temp)
 		if(use_power == 1 && ((optimal_temp - temperature) > 5))
 			playsound(src, 'sound/machines/click.ogg', 20, 1)
-			use_power = 2.//If we're heating we use the active power
+			set_use_power(USE_POWER_ACTIVE) // If we're heating we use the active power
 			update_icon()
 		set_heating(TRUE)
 		update_cooking_power()
 		return 1
 	else
 		if(use_power == 2)
-			use_power = 1
+			set_use_power(1)
 			playsound(src, 'sound/machines/click.ogg', 20, 1)
 			update_icon()
 		//We're holding steady: the casing loses heat to the room.

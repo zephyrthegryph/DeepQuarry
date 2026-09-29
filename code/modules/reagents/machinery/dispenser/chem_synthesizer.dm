@@ -645,7 +645,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 		return
 
 	busy = TRUE
-	use_power = USE_POWER_ACTIVE
+	set_use_power(USE_POWER_ACTIVE)
 	if(use_catalyst)
 		// Populate the list of catalyst chems. This is important when it's time to bottle_product().
 		for(var/datum/reagent/chem in catalyst.reagents.reagent_list)
@@ -798,7 +798,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 	else
 		busy = FALSE
-		use_power = USE_POWER_IDLE
+		set_use_power(USE_POWER_IDLE)
 		queue = list()
 		update_icon()
 
@@ -806,7 +806,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 // What happens to the synthesizer if it breaks or loses power in the middle of running. Chemists must fix things manually.
 /obj/machinery/chemical_synthesizer/proc/stall()
 	busy = FALSE
-	use_power = USE_POWER_IDLE
+	set_use_power(USE_POWER_IDLE)
 	queue = list()
 	catalyst_ids = list()
 	update_icon()

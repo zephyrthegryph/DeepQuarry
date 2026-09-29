@@ -48,7 +48,7 @@
 	var/obj/structure/window/window = target
 	if(!istype(window) || state == CONSTRUCTION_DONE)
 		return
-	window.anchored = copytext(state, 1, 2) == "a"
+	window.set_anchored(copytext(state, 1, 2) == "a")
 	if(window.reinf)
 		window.state = text2num(copytext(state, 2))
 

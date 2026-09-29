@@ -230,8 +230,8 @@
 	C.subtype = subtype
 	transfer_fingerprints_to(C)
 	C.set_dir(dir)
-	C.density = FALSE
-	C.anchored = TRUE
+	C.set_density(FALSE)
+	C.set_anchored(TRUE)
 	C.update()
 
 	replace_with(src, C)

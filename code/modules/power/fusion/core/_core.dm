@@ -94,7 +94,7 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 	owned_field.ChangeFieldStrength(field_strength)
 	MACHINE_WAKE(src)
 	icon_state = "core1"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	. = 1
 
 /obj/machinery/power/fusion_core/proc/Shutdown(force_rupture)
@@ -106,7 +106,7 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 			owned_field.RadiateAll()
 		qdel(owned_field)
 		owned_field = null
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
 	if(owned_field)

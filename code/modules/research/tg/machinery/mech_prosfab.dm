@@ -24,12 +24,12 @@
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/on_start_printing()
 	// Don't call parent
 	update_icon()
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	print_sound.start()
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/on_finish_printing()
 	// Don't call parent
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
 	process_queue = FALSE
 	print_sound.stop()

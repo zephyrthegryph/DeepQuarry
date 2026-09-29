@@ -180,12 +180,50 @@ def violations(fields, rel, text):
             if recv == "src":
                 continue  # handled as a bare write
             if m.start() > 0 and line[m.start() - 1] == ".":
-                rtype = None  # a chained access: the receiver's type is unknown
+                rtype = chain_type(owner, locals_, line[:m.start()], recv)  # a.b.recv.field
             else:
                 rtype = locals_.get(recv) or member_type(owner, recv)
             if rtype and not any(related(rtype, t) for t in fields[field]):
                 continue  # a typed receiver of an unrelated type: a different var
             yield no, field, "%s.%s in %s/%s" % (recv, field, owner, proc)
+
+
+CHAIN_RE = re.compile(r"((?:\w+\??\.)+)$")
+GLOBAL_DATUM_RE = re.compile(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)")
+
+
+def global_types():
+    """GLOB var name -> declared type, from GLOBAL_DATUM()/GLOBAL_DATUM_INIT()."""
+    if "globals" not in _CACHE:
+        out = {}
+        for _, path in dm_files():
+            with open(path, encoding="utf-8", errors="replace") as handle:
+                for gm in GLOBAL_DATUM_RE.finditer(handle.read()):
+                    out[gm.group(1)] = gm.group(2)
+        _CACHE["globals"] = out
+    return _CACHE["globals"]
+
+
+def chain_type(owner, locals_, before, recv):
+    """The type of `recv` in `a.b.recv` (before = the text up to recv), walking typed members
+    from the head (a local, a member of the owner, or GLOB.x); None when a link is unknown."""
+    cm = CHAIN_RE.search(before)
+    if not cm:
+        return None
+    links = [x.rstrip("?") for x in cm.group(1).split(".") if x] + [recv]
+    head = links[0]
+    if head == "GLOB" and len(links) > 1:
+        t = global_types().get(links[1])
+        links = links[1:]
+    elif head == "src":
+        t = owner
+    else:
+        t = locals_.get(head) or member_type(owner, head)
+    for link in links[1:]:
+        if not t:
+            return None
+        t = member_type(t, link)
+    return t
 
 
 _CACHE = {}

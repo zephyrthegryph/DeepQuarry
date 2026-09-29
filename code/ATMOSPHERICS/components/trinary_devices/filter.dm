@@ -79,7 +79,7 @@
 		icon_state += use_power ? "on" : "off"
 	else
 		icon_state += "off"
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 /// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
 /// a filter is a masked flow to the filter port plus a pass-through flow
@@ -195,7 +195,7 @@
 
 	switch(action)
 		if("power")
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 		if("rate")
 			var/rate = params["rate"]
 			if(rate == "max")

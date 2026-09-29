@@ -133,7 +133,7 @@
 		to_chat(src, span_notice("We are extra loud."))
 
 	for(var/obj/machinery/light/L in range(range_light, src))
-		L.on = TRUE
+		L.set_on(TRUE)
 		L.broken()
 	empulse(get_turf(src), range_heavy, range_med, range_light, range_long)
 

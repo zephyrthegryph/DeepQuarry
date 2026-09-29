@@ -300,13 +300,13 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		pulse2.icon = 'icons/effects/effects.dmi'
 		pulse2.icon_state = "empdisable"
 		pulse2.name = "emp sparks"
-		pulse2.anchored = TRUE
+		pulse2.set_anchored(TRUE)
 		pulse2.set_dir(pick(GLOB.cardinal))
 		pulse2.expire(1 SECOND)
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))
-		update_use_power(new_value)
+		set_use_power(new_value)
 		return TRUE
 	else if(var_name == NAMEOF(src, power_channel))
 		update_power_channel(new_value)
@@ -614,15 +614,15 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	A.circuit = M
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	A.frame_type = M.board_type
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		A.density = FALSE
+		A.set_density(FALSE)
 	else
-		A.density = TRUE
+		A.set_density(TRUE)
 
 	if(A.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/obj/D in component_parts)

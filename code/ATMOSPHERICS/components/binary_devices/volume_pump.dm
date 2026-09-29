@@ -205,12 +205,12 @@ Thus, the two variables affect pump operation are set in New():
 
 	if(signal.data["power"])
 		if(text2num(signal.data["power"]))
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 		else
-			update_use_power(USE_POWER_OFF)
+			set_use_power(USE_POWER_OFF)
 
 	if("power_toggle" in signal.data)
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["set_volume_rate"])
 		transfer_rate = between(0, text2num(signal.data["set_volume_rate"]), air1.return_volume())
@@ -252,7 +252,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	switch(action)
 		if("power")
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 			. = TRUE
 		if("set_press")
 			var/press = params["press"]
@@ -340,7 +340,7 @@ Thus, the two variables affect pump operation are set in New():
 		to_chat(user, span_warning("Access denied."))
 		return CLICK_ACTION_BLOCKING
 
-	update_use_power(!use_power)
+	set_use_power(!use_power)
 	update_rust_device()
 	update_icon()
 	add_fingerprint(user)

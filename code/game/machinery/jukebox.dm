@@ -283,7 +283,7 @@
 /obj/machinery/media/jukebox/proc/StopPlaying()
 	playing = 0
 	MACHINE_SLEEP(src)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	start_stop_song()
 
@@ -292,7 +292,7 @@
 		return
 	playing = 1
 	MACHINE_WAKE(src)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	update_icon()
 	start_stop_song()
 
@@ -352,7 +352,7 @@
 /// Untouchable: no interactions at all (the old attackby/attack_hand returned); only ghosts use it.
 /obj/machinery/media/jukebox/ghost/declare_interactions(list/into)
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("Use", PROC_REF(ghost_jukebox_observer_use)))
-/obj/machinery/media/jukebox/ghost/update_use_power(new_use_power)
+/obj/machinery/media/jukebox/ghost/set_use_power(new_use_power)
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
 	return

@@ -90,7 +90,7 @@
 
 	// Relatively small chance to emag the apc as apc_damage event does.
 	if(prob(5))
-		A.emagged = TRUE
+		A.set_emagged(TRUE)
 		A.update_icon()
 		playsound(A, 'sound/machines/chime.ogg', 50, 1)
 		apcs_emagged++

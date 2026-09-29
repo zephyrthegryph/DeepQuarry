@@ -115,7 +115,7 @@
 	. = ..()
 	working = TRUE
 	icon_state = "crusher-process"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	om_after(src, 5 SECONDS, PROC_REF(crush_done), O)
 
 /obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
@@ -133,13 +133,13 @@
 	for(var/obj/item/debris_pack/D in turf_contents_of_type(T, /obj/item/debris_pack))
 		if(istype(D))
 			D.add_materials(modified_mats)
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			icon_state = "crusher"
 			qdel(O)
 			working = FALSE
 			return
 	new /obj/item/debris_pack(get_step(src, dir), modified_mats)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	icon_state = "crusher"
 	qdel(O)
 	working = FALSE
@@ -166,7 +166,7 @@
 	. = ..()
 	working = TRUE
 	icon_state = "sorter-process"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	om_after(src, 2 SECONDS, PROC_REF(sort_done), O)
 
 /obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
@@ -190,7 +190,7 @@
 			new /obj/item/material_dust(get_step(src, dir), mat)
 			om_after(src, 2 SECONDS, PROC_REF(dispense_if_possible))
 			return
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	icon_state = "sorter"
 	working = FALSE
 
@@ -213,13 +213,13 @@
 	. = ..()
 	working = TRUE
 	icon_state = "stamper-process"
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	om_after(src, 6.4 SECONDS, PROC_REF(stamp_done), O)
 
 /obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
 	dust_to_sheet(O)
 	icon_state = "stamper"
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	working = FALSE
 
 /obj/machinery/recycling/stamper/proc/dust_to_sheet(obj/item/material_dust/D)

@@ -100,7 +100,7 @@
 			var/obj/machinery/computer/rdconsole_tg/console_selected = locate_in_list(stored_research().consoles_accessing, params["selected_console"])
 			if(!console_selected)
 				return FALSE
-			console_selected.locked = !console_selected.locked
+			console_selected.set_locked(!console_selected.locked)
 			return TRUE
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.

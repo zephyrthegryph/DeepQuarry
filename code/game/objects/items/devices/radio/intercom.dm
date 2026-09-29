@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	frame.pixel_y = pixel_y
 	frame.circuit = board
 	frame.set_dir(dir)
-	frame.anchored = TRUE
+	frame.set_anchored(TRUE)
 	frame.state = 2
 	frame.update_icon()
 	board.atom_deconstruct(TRUE, src)

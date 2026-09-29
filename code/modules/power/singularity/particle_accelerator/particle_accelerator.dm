@@ -324,10 +324,10 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 		if(src.construction_state < 3)//Was taken apart, update state
 			update_state()
 			if(use_power)
-				update_use_power(USE_POWER_OFF)
+				set_use_power(USE_POWER_OFF)
 		src.construction_state = temp_state
 		if(src.construction_state >= 3)
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 		update_icon()
 		return 1
 

@@ -98,7 +98,7 @@
 		if(component_parts && (A in component_parts))
 			continue
 		A.forceMove(src.loc)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 
 /obj/machinery/vr_sleeper/alien/enter_vr()

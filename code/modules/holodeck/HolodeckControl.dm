@@ -225,7 +225,7 @@
 			damaged = 1
 			loadProgram(powerdown_program, 0)
 			set_active(0)
-			update_use_power(USE_POWER_IDLE)
+			set_use_power(USE_POWER_IDLE)
 			for(var/mob/M in range(10,src))
 				M.show_message("The holodeck overloads!")
 
@@ -271,7 +271,7 @@
 			linkedholodeck().gravitychange(1)
 
 		set_active(0)
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/loadProgram(prog, check_delay = 1)
 	if(!prog)
@@ -300,7 +300,7 @@
 
 	start_change_cooldowns()
 	set_active(1)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 	for(var/item in holographic_objs)
 		derez(item)
@@ -369,7 +369,7 @@
 	COOLDOWN_START(src, gravity_short_cooldown, 1.5 SECONDS)
 	COOLDOWN_START(src, gravity_long_cooldown, 2.5 SECONDS)
 	set_active(1)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 	if(A.get_gravity())
 		A.gravitychange(0)
@@ -384,7 +384,7 @@
 		linkedholodeck().gravitychange(1)
 
 	set_active(0)
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/computer/HolodeckControl/proc/atmos_test_ignite(turf/T)
 	var/datum/effect/effect/system/spark_spread/s = new /datum/effect/effect/system/spark_spread

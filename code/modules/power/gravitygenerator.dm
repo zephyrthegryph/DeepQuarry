@@ -173,7 +173,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 		if(count == 5) // Middle
 			middle_handle = om_handle(part)
 		if(count <= 3) // Their sprite is the top part of the generator
-			part.density = FALSE
+			part.set_density(FALSE)
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
@@ -341,7 +341,7 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 // Set the state of the gravity.
 /obj/machinery/gravity_generator/main/proc/set_gravity_state(new_state)
 	charging_state = POWER_IDLE
-	update_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	set_use_power(new_state ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
 	// Sound the alert if gravity was just enabled or disabled.
 	var/alert = FALSE

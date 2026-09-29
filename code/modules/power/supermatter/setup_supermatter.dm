@@ -129,7 +129,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 		return SETUP_WARNING
 	P.set_target_pressure(P.max_pressure_setting)
 	P.set_on(TRUE)
-	P.update_use_power(USE_POWER_IDLE)
+	P.set_use_power(USE_POWER_IDLE)
 	P.update_rust_device()
 	P.update_icon()
 	return SETUP_OK
@@ -263,7 +263,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 				return SETUP_WARNING
 		F.rebuild_filtering_list()
 
-	F.update_use_power(USE_POWER_IDLE)
+	F.set_use_power(USE_POWER_IDLE)
 	F.update_icon()
 	return SETUP_OK
 

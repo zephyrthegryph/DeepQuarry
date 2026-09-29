@@ -75,7 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 
 /obj/machinery/power/supply_beacon/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(expended)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		to_chat(user, span_warning("\The [src] has used up its charge."))
 		return TRUE
 	if(anchored)
@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		return
 	set_light(3, 3, "#00CCAA")
 	icon_state = "beacon_active"
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	if(user) to_chat(user, span_notice("You activate the beacon. The supply drop will be dispatched soon."))
 
 /obj/machinery/power/supply_beacon/proc/deactivate(mob/user, permanent)
@@ -105,7 +105,7 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 	else
 		icon_state = "beacon"
 	set_light(0)
-	update_use_power(USE_POWER_OFF)
+	set_use_power(USE_POWER_OFF)
 	target_drop_time = null
 	if(user) to_chat(user, span_notice("You deactivate the beacon."))
 

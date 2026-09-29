@@ -94,7 +94,7 @@
 /datum/om/stage/life/type_post/simple_mob/vore/demonAI/perform(mob/living/simple_mob/vore/demonAI/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shifted_out)
-		self.density = FALSE
+		self.set_density(FALSE)
 
 /datum/om/stage/life/environment/simple_mob/vore/demonAI
 	of = /mob/living/simple_mob/vore/demonAI

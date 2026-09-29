@@ -347,7 +347,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		new_bin.name = "[initial(new_bin.name)]([nametag])"
 	new_bin.set_stat(stat) // ALLOW(sys_stat_bits): copies the whole condition onto the replacement bin
 	new_bin.dir = new_dir
-	new_bin.mode = mode
+	new_bin.set_mode(mode)
 	new_bin.update_icon() // sets up wall outlets
 	new_bin.update_icon()
 	new_bin.visible_message("\The [src] reconfigures into \a [new_bin]!")
@@ -581,11 +581,11 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // charge the gas reservoir and perform flush if ready
 /obj/machinery/disposal/machine_step()
 	if(!air_contents || (has_stat(BROKEN)))			// nothing can happen if broken
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return PROCESS_KILL
 
 	if(mode != DISPOSALMODE_CHARGING && !flush && !length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		flush_count = 0
 		sleep_until_keys()
 		return
@@ -602,7 +602,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		flush()
 
 	if(mode != DISPOSALMODE_CHARGING) //if off or ready, no need to charge
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	else if(air_contents.return_pressure() >= SEND_PRESSURE)
 		set_mode(DISPOSALMODE_CHARGED) //if full enough, switch to ready mode
 		update_icon()
@@ -616,7 +616,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 /obj/machinery/disposal/proc/pressurize()
 	if(has_stat(NOPOWER))			// won't charge if no power
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return FALSE
 
 	var/atom/L = loc						// recharging from loc turf
@@ -755,8 +755,8 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 	transfer_fingerprints_to(C)
 	C.ptype = 6 // 6 = disposal unit
 	C.update_icon()
-	C.anchored = TRUE
-	C.density = TRUE
+	C.set_anchored(TRUE)
+	C.set_density(TRUE)
 	//End of "temporary" code
 	for(var/atom/movable/AM in slot_contents(CONTAINER_SLOT_DISPOSAL))
 		AM.forceMove(T)
