@@ -5,7 +5,6 @@ doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, sourc
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)
 doc_unknown_name	doc/rewrite/migration_guide.md	if(do_after(user, 6, target = src))
-doc_unknown_name	doc/rewrite/migration_guide.md	. += cap_use_self("Shout", PROC_REF(shout), needs = PROC_REF(can_broadcast))
 doc_unknown_name	doc/rewrite/migration_guide.md	look.gauge("can-o", level = pressure_band(), levels = 4) // can-o0..can-o3
 doc_unknown_name	doc/rewrite/migration_guide.md	look.state(is_powered(src) ? "doorctrl0" : "doorctrl-p")
 doc_unknown_name	doc/rewrite/migration_guide.md	var/why_not = shuttle_api_why_cant_call()
@@ -13,7 +12,6 @@ doc_unknown_name	doc/rewrite/migration_guide.md	shuttle_api_call_evac(caller = u
 doc_unknown_name	doc/rewrite/migration_guide.md	release_or_move_site(site, new_name = descriptor_name) // emits site_moved
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(TRUE)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_recharging(FALSE)
-doc_unknown_name	doc/rewrite/migration_guide.md	. += cap_use_at("Point", PROC_REF(laser_act), range = world.view) // [planned] items wave; until then keep afterattack
 doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/cell_powered)
 doc_unknown_name	doc/rewrite/object_model.md	A.include(/bundle/switchable)
 doc_unknown_name	doc/rewrite/object_model.md	A.ui(/ui/space_heater)
