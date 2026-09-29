@@ -85,6 +85,10 @@ GLOBAL_VAR(latent_last_refusal)
 DECLARE_SHARED_CACHE(latent_eligible, GLOBAL_PROC_REF(build_latent_eligible), SC_NEVER)
 
 /proc/dq_latent_eligible(path)
+	// A starts_with line can be an inline new-with-vars literal (an object, not a path): never
+	// latent, and not a stable cache key.
+	if(!ispath(path))
+		return FALSE
 	return CACHED(latent_eligible, path)
 
 /proc/build_latent_eligible(path)
