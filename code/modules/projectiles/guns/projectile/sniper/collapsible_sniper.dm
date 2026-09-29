@@ -71,15 +71,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper/collapsible, INTERACT_V
 	trigger_group_handle = om_handle(src)
 
 DECLARE_INTERACTIONS(/obj/item/sniper_rifle_part, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
+	INTERACT_USE(null, PROC_REF(interaction_self), REQ_NOT(REQ_FIELD_EQ("part_count", 1, "you can't disassemble this further"))), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 )
 
 /// Old attack_self.
 /obj/item/sniper_rifle_part/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(part_count == 1)
-		to_chat(user, span_warning("You can't disassemble this further!"))
-		return TRUE
 
 	to_chat(user, span_notice("You start disassembling \the [src]."))
 	om_task_timed(user, 4 SECONDS, src, src, PROC_REF(disassembled), list(user))

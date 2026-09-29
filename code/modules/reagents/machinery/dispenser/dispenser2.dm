@@ -104,23 +104,19 @@
 	name = "Set container"
 	held_type = list(/obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)
 	effect = /obj/machinery/chemical_dispenser/proc/interaction_set_container
+	also_requires = list(REQ_FIELD_NOT("container"), REQ_TARGET_STATE(/obj/machinery/chemical_dispenser/proc/can_take_container))
+
+/// Requirement: TRUE, or why this container can't be set on the dispenser.
+/obj/machinery/chemical_dispenser/proc/can_take_container(mob/user, atom/target, obj/item/held)
+	if(!accept_drinking && istype(held, /obj/item/reagent_containers/food))
+		return "this machine only accepts beakers"
+	if(!held?.is_open_container())
+		return "you don't see how it could dispense reagents into [held]"
+	if(istype(held, /obj/item/reagent_containers/glass/cooler_bottle))
+		return "you don't see how [held] could fit into it"
+	return TRUE
 
 /obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	if(container)
-		to_chat(user, span_warning("There is already \a [container] on \the [src]!"))
-		return TRUE
-
-	if(!accept_drinking && istype(RC,/obj/item/reagent_containers/food))
-		to_chat(user, span_warning("This machine only accepts beakers!"))
-		return TRUE
-
-	if(!RC.is_open_container())
-		to_chat(user, span_warning("You don't see how \the [src] could dispense reagents into \the [RC]."))
-		return TRUE
-	if(istype(RC, /obj/item/reagent_containers/glass/cooler_bottle))
-		to_chat(user, span_warning("You don't see how \the [RC] could fit into \the [src]."))
-		return TRUE
-
 	container =  RC
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)

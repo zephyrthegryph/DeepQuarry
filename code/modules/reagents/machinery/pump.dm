@@ -140,21 +140,21 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 	name = "Insert power cell"
 	held_type = /obj/item/cell
 	effect = /obj/machinery/pump/proc/interaction_insert_cell
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/pump/proc/can_take_cell))
+
+/// Requirement: TRUE, or why a cell can't go in now.
+/obj/machinery/pump/proc/can_take_cell(mob/user, atom/target, obj/item/held)
+	if(!open)
+		return unlocked ? "the battery panel is screwed shut" : "the battery panel is watertight and cannot be opened without a crowbar"
+	if(istype(cell))
+		return "there is a power cell already installed"
+	return TRUE
 
 /**
  * The old attackby returned early (skipping the trailing RefreshParts()/update_icon()) when the
  * panel was closed or already held a cell; those calls only ran after a successful insert.
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
-	if(!open)
-		if(unlocked)
-			to_chat(user, span_notice("The battery panel is screwed shut."))
-		else
-			to_chat(user, span_notice("The battery panel is watertight and cannot be opened without a crowbar."))
-		return TRUE
-	if(istype(cell))
-		to_chat(user, span_notice("There is a power cell already installed."))
-		return TRUE
 	user.drop_from_inventory(W, src)
 	cell = W // Link the cell to us
 	to_chat(user, span_notice("You insert the power cell."))

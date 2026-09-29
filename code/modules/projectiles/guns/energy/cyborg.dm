@@ -314,7 +314,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/jaws/small, INTERACT_USE(null, PROC
 
 DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
+	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_PROC(/proc/dq_actor_can_act, "you can't do that right now")), \
 )
 
 /// Old attack_self.
@@ -349,9 +349,6 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 /// Old click_alt.
 /obj/item/melee/robotic/blade/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
 	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-	if(user.incapacitated() || !istype(user))
-		to_chat(user, span_warning("You can't do that right now!"))
 		return TRUE
 
 	var/_answer_k349 = rerun_ask(user, "k349", PROC_REF(interaction_alt), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to recolor your blade?", title = "Confirm Recolor", choices = list("Yes", "No"))

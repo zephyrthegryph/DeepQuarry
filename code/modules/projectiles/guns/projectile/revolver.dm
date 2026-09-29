@@ -54,15 +54,23 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver, INTERACT_VERB("Spin cylin
 	caliber = ".38"
 	ammo_type = /obj/item/ammo_casing/a38
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("Name Gun", PROC_REF(det_revolver_verb_rename), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("Name Gun", PROC_REF(det_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")))
+
+/// Requirement for naming the detective's gun: the actor is the detective. No mind is left to the verb, which does nothing.
+/proc/dq_actor_is_detective_for_naming(mob/actor, atom/target, obj/item/held)
+	return !actor?.mind || actor.mind.assigned_role == JOB_DETECTIVE
+
+/// Requirement for naming a security sidearm: the actor holds a security job. No mind is left to the verb.
+/proc/dq_actor_is_security_for_naming(mob/actor, atom/target, obj/item/held)
+	if(!actor?.mind)
+		return TRUE
+	var/job = actor.mind.assigned_role
+	return job == JOB_DETECTIVE || job == JOB_SECURITY_OFFICER || job == JOB_WARDEN || job == JOB_HEAD_OF_SECURITY
 
 /// Old Name Gun verb: Click to rename your gun. If you're the detective.
 /obj/item/gun/projectile/revolver/detective/proc/det_revolver_verb_rename(mob/user, obj/item/held, datum/interaction/interaction)
 	var/mob/M = user
 	if(!M.mind)	return 0
-	if(M.mind.assigned_role != JOB_DETECTIVE)
-		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
-		return 0
 
 	var/_answer_k69 = rerun_ask(M, "k69", PROC_REF(det_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k69))
@@ -83,7 +91,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective, INTERACT_VERB("
 	max_shells = 6
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
-	INTERACT_VERB("Name Gun", PROC_REF(det45_revolver_verb_rename), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Name Gun", PROC_REF(det45_revolver_verb_rename), REQ_IN_INVENTORY, REQ_PROC(/proc/dq_actor_is_detective_for_naming, "you don't feel cool enough to name this gun, chump")), \
 	INTERACT_VERB("Resprite gun", PROC_REF(det45_revolver_verb_reskin), REQ_IN_INVENTORY), \
 )
 
@@ -92,9 +100,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/detective45, \
 	var/mob/M = user
 	if(!M.mind)	return 0
 	var/job = M.mind.assigned_role
-	if(job != JOB_DETECTIVE)
-		to_chat(M, span_notice("You don't feel cool enough to name this gun, chump."))
-		return 0
 
 	var/_answer_k96 = rerun_ask(M, "k96", PROC_REF(det45_revolver_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the gun?", title = "Rename Revolver", max_length = MAX_NAME_LEN, encode = FALSE)
 	if(isnull(_answer_k96))
