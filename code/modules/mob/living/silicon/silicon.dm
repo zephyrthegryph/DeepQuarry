@@ -33,6 +33,8 @@
 	var/idcard_type = /obj/item/card/id/synthetic
 
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
+	if(silicon_subsystems)
+		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
 	. = ..()
 	if(!is_decoy)
 		init_id(idcard_type)

@@ -118,7 +118,7 @@
 	var/list/language_keys = list()		// List of language keys indexing languages
 	var/species_language = null			// For species who want reset to use a specified default.
 	var/only_species_language  = 0		// For species who can only speak their default and no other languages. Does not affect understanding.
-	// ALLOW(instance_list): c: read-only per-subtype table on a mob (26 subtype overrides); mobs are few, a getter is not worth it
+	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/speak_emote = list("says") // Verbs used when speaking. Defaults to 'say' if speak_emote is null.
 	var/emote_type = 1		// Define emote default type, 1 for seen emotes, 2 for heard emotes
 	var/facing_dir = null   // Used for the ancient art of moonwalking.
@@ -235,7 +235,7 @@
 	//so don't treat them as being SSD even though their client var is null.
 	var/tmp/mob/teleop = null
 
-	// ALLOW(instance_list): c: read-only per-subtype table on a mob (1 subtype overrides); mobs are few, a getter is not worth it
+	// ALLOW(instance_list): c: interned per subtype by shared_type_list() in Initialize(), so instances share one list
 	var/list/shouldnt_see = list(/mob/observer/eye)	//list of objects that this mob shouldn't see in the stat panel. this silliness is needed because of AI alt+click and cult blood runes. Interned per subtype in /mob/Initialize().
 
 	var/list/active_genes

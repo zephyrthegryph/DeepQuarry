@@ -58,7 +58,7 @@
 	pain_emote_3p = list("yelps", "whines", "barks", "growls")
 
 	//This is copypastad from protean code, hope it isnt too painful lol
-	// ALLOW(instance_list): c: read-only per-subtype table on a mob (0 subtype overrides); mobs are few, a getter is not worth it
+	// ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
 	var/list/goia_overlays = list( //all 10 overlays, in order
 		"zorgoia_belly" = "#FFFFFF",
 		"zorgoia_main" = "#FFFFFF",

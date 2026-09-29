@@ -24,11 +24,13 @@
 
 	universal_understand = TRUE
 
-	var/list/has_langs = list(LANGUAGE_ANIMAL) // ALLOW(instance_list): c: read-only per-subtype table on a mob (27 subtype overrides); mobs are few, a getter is not worth it
 	var/tmp/datum/language/default_language_static
 
 /mob/observer/blob/get_default_language()
 	return default_language()
+
+/// The languages the overmind knows.
+TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 
 /mob/observer/blob/Initialize(mapload, pre_placed = 0, starting_points = 60, desired_blob_type = null)
 	blob_points = starting_points
@@ -47,7 +49,7 @@
 	if(blob_core())
 		blob_core().update_icon()
 
-	for(var/L in has_langs)
+	for(var/L in TYPE_TABLE_GET(src, blob_langs))
 		languages |= GLOB.all_languages[L]
 	if(languages.len)
 		default_language_static = languages[1]

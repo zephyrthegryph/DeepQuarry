@@ -91,7 +91,7 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 		if(isnull(new_time_left))
 			return
 
-		GLOB.emergency_shuttle_service.launch_time = world.time + (new_time_left SECONDS)
+		EXPIRY_SET(GLOB.emergency_shuttle_service, launch_time, (new_time_left SECONDS), CLOCK_WORLD)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
@@ -99,7 +99,7 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 		var/new_time_left = topic_ask(user, args, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = GLOB.emergency_shuttle_service.estimate_arrival_time())
 		if(isnull(new_time_left))
 			return
-		GLOB.emergency_shuttle_service.shuttle.arrive_time = world.time + (new_time_left SECONDS)
+		EXPIRY_SET(GLOB.emergency_shuttle_service.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's arrival time to [new_time_left SECONDS]"), 1)

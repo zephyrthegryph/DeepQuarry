@@ -509,7 +509,7 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
 	if(!M.regulating_temperature)
 		return TRUE
-	if((M.stat & (NOPOWER|BROKEN)) || M.shorted || !get_turf(M))
+	if(M.has_stat(NOPOWER|BROKEN) || M.shorted || !get_turf(M))
 		return TRUE
 	var/area/A = M.alarm_area_ref()
 	if(!A)

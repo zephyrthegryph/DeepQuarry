@@ -362,7 +362,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Opt-in MC liveness probe for hung-server triage; localhost only.
 	if (T == "mcdiag" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
 		var/list/d = list(
-			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline,
+			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline, // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 			"mc_iteration" = Master?.iteration, "mc_last_run" = Master?.last_run, "mc_sleep_delta" = Master?.sleep_delta,
 			"mc_processing" = Master?.processing, "mc_runlevel" = Master?.current_runlevel, "mc_init_stage" = Master?.init_stage_completed,
 			"mc_tickdrift" = Master?.tickdrift, "mc_queue_head" = "[Master?.queue_head()]", "failsafe_lasttick" = Failsafe?.lasttick,

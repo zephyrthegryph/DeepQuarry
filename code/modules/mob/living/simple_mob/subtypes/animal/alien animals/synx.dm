@@ -36,7 +36,7 @@
 	var/forcefeedchance = 20 //This needs to be defined in the parent because code.
 	// Recycling bigdragon code for modular system. Hope this works! -Azel
 		//Sprites are layered ontop of one-another in order of this list
-	var/list/overlay_colors = list( // ALLOW(instance_list): c: read-only per-subtype table on a mob (0 subtype overrides); mobs are few, a getter is not worth it
+	var/list/overlay_colors = list( // ALLOW(instance_list): d: per-instance colours, rolled at spawn and repainted by the player
 		"Body" = "#FFFFFF",
 		"Horns" = "#FFFFFF",
 		"Marks" = "#FFFFFF",
@@ -55,13 +55,6 @@
 		"Capra",
 	)
 	var/horns
-	var/list/marking_styles = list( // ALLOW(instance_list): c: read-only per-subtype table on a mob (0 subtype overrides); mobs are few, a getter is not worth it
-		"None",
-		"Basic",
-		"Star",
-		"Short",
-		"Long",
-	)
 	var/markings
 	var/static/list/eye_styles = list(
 		"Normal"
@@ -127,6 +120,9 @@
 	max_n2 = 0 //Maybe add a max
 	// TODO: Set a max temperature of about 20-30 above room temperatures. Synx don't like the heat.
 
+
+/// The marking styles a synx can roll or pick.
+TYPE_TABLE_DECLARE(/mob/living/simple_mob/animal/synx, synx_marking_styles, list("None", "Basic", "Star", "Short", "Long"))
 
 /mob/living/simple_mob/animal/synx/get_available_emotes()
 	. = ..()
@@ -613,7 +609,7 @@
 		var/list/horncolors = list("#FFE100","#A75A35","#1C4DFF","#FF0000","#404C6D","#2F2F2F","#55CE21","#711BFF","#DEDEE0")
 		overlay_colors["Horns"] = pick(horncolors)
 		var/list/markingcolors = list("#2F2F2F")
-		markings = pick(marking_styles)
+		markings = pick(TYPE_TABLE_GET(src, synx_marking_styles))
 		overlay_colors["Marks"] = pick(markingcolors)
 		var/list/eyecolors = list("#FFE100","#FF6A00","#1C4DFF","#FF0000","#3D5EBE","#FF006E","#55CE21","#711BFF","#939EFF")
 		eyes = pick(eye_styles)
@@ -673,7 +669,7 @@
 			options = horn_styles
 			state_prefix = "synx_horns"
 		if("Marks")
-			options = marking_styles
+			options = TYPE_TABLE_GET(src, synx_marking_styles)
 			state_prefix = "synx_markings"
 		if("Eyes")
 			options = eye_styles

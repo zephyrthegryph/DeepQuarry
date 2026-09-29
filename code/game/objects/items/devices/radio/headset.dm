@@ -762,9 +762,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		return FALSE
 	tele_threshold -= damage
 	if(tele_threshold <= 0)
-		var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
-		spark_system.set_up(5, 0, user.loc)
-		spark_system.start()
+		fx_sparks(user.loc, 5, FALSE)
 		play_sfx(src, SFX_SPARKS)
 		act_message(user, null, others = span_danger("%U% is abruptly flung somewhere else in response to the damage!"))
 		do_teleport(user, locate(telex,teley,telez), channel = TELEPORT_CHANNEL_QUANTUM)

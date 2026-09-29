@@ -36,29 +36,27 @@ TOPIC_ACTION(/datum/admins, "toglang", PROC_REF(topic_toglang), TOPIC_RIGHTS(R_S
 TOPIC_ACTION(/datum/admins, "cryoplayer", PROC_REF(topic_cryoplayer), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_REF("cryoplayer", /mob/living/carbon))
 
 /// The mob types the rudimentary-transformation links (simplemake=<key>) can turn a mob into.
-/datum/admins/proc/simplemake_types()
-	var/static/list/types = list(
-		"observer" = /mob/observer/dead,
-		"larva" = /mob/living/carbon/alien/larva,
-		"nymph" = /mob/living/carbon/alien/diona,
-		"human" = /mob/living/carbon/human,
-		"slime" = /mob/living/simple_mob/slime/xenobio,
-		"monkey" = /mob/living/carbon/human/monkey,
-		"robot" = /mob/living/silicon/robot,
-		"cat" = /mob/living/simple_mob/animal/passive/cat,
-		"runtime" = /mob/living/simple_mob/animal/passive/cat/runtime,
-		"corgi" = /mob/living/simple_mob/animal/passive/dog/corgi,
-		"ian" = /mob/living/simple_mob/animal/passive/dog/corgi/Ian,
-		"crab" = /mob/living/simple_mob/animal/passive/crab,
-		"coffee" = /mob/living/simple_mob/animal/passive/crab/Coffee,
-		"parrot" = /mob/living/simple_mob/animal/passive/bird/parrot,
-		"polyparrot" = /mob/living/simple_mob/animal/passive/bird/parrot/poly,
-		"constructarmoured" = /mob/living/simple_mob/construct/juggernaut,
-		"constructbuilder" = /mob/living/simple_mob/construct/artificer,
-		"constructwraith" = /mob/living/simple_mob/construct/wraith,
-		"shade" = /mob/living/simple_mob/construct/shade,
-	)
-	return types
+GLOBAL_LIST_INIT(admin_simplemake_types, list( \
+		"observer" = /mob/observer/dead, \
+		"larva" = /mob/living/carbon/alien/larva, \
+		"nymph" = /mob/living/carbon/alien/diona, \
+		"human" = /mob/living/carbon/human, \
+		"slime" = /mob/living/simple_mob/slime/xenobio, \
+		"monkey" = /mob/living/carbon/human/monkey, \
+		"robot" = /mob/living/silicon/robot, \
+		"cat" = /mob/living/simple_mob/animal/passive/cat, \
+		"runtime" = /mob/living/simple_mob/animal/passive/cat/runtime, \
+		"corgi" = /mob/living/simple_mob/animal/passive/dog/corgi, \
+		"ian" = /mob/living/simple_mob/animal/passive/dog/corgi/Ian, \
+		"crab" = /mob/living/simple_mob/animal/passive/crab, \
+		"coffee" = /mob/living/simple_mob/animal/passive/crab/Coffee, \
+		"parrot" = /mob/living/simple_mob/animal/passive/bird/parrot, \
+		"polyparrot" = /mob/living/simple_mob/animal/passive/bird/parrot/poly, \
+		"constructarmoured" = /mob/living/simple_mob/construct/juggernaut, \
+		"constructbuilder" = /mob/living/simple_mob/construct/artificer, \
+		"constructwraith" = /mob/living/simple_mob/construct/wraith, \
+		"shade" = /mob/living/simple_mob/construct/shade, \
+))
 
 /datum/admins/proc/topic_simplemake(mob/user, list/args)
 	var/mob/M = args["mob"]
@@ -80,7 +78,7 @@ TOPIC_ACTION(/datum/admins, "cryoplayer", PROC_REF(topic_cryoplayer), TOPIC_RIGH
 	log_admin("[key_name(user)] has used rudimentary transformation on [key_name(M)]. Transforming to [kind]; deletemob=[delmob]")
 	message_admins(span_blue("[key_name_admin(user)] has used rudimentary transformation on [key_name_admin(M)]. Transforming to [kind]; deletemob=[delmob]"), 1)
 
-	var/new_type = simplemake_types()[kind]
+	var/new_type = GLOB.admin_simplemake_types[kind]
 	if(!new_type)
 		return
 	if(kind == "human")
