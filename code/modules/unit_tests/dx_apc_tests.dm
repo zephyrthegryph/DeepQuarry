@@ -4,23 +4,22 @@
 /// A test APC that stays out of its area's power (the area keeps its real APC) and lets the test
 /// decide the window gate (a test mob has no client, which can_use() requires).
 /obj/machinery/power/apc/dx_test
-	cell_type = /obj/item/cell/apc
+	cell_type = null
 	var/ui_ok = TRUE
 
 /obj/machinery/power/apc/dx_test/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED
-	own_set(src, nameof(cell), new cell_type(src))
-	cell.charge = cell.maxcharge
 
 /obj/machinery/power/apc/dx_test/ui_allowed(mob/user, action)
 	return ui_ok
 
-/// The cell would spill onto the test block (OWN_SPILL): the test APC takes it along.
-/obj/machinery/power/apc/dx_test/on_destroy(force)
-	var/obj/item/cell/C = own_take(src, nameof(cell))
-	if(C)
-		qdel(C)
-	..()
+/// A test APC with a full cell, both allocated (so the test block takes both back).
+/datum/unit_test/proc/dx_apc_make(turf/T)
+	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/item/cell/apc/C = allocate(/obj/item/cell/apc, A)
+	C.charge = C.maxcharge
+	own_set(A, nameof(A.cell), C)
+	return A
 
 /// The capability entry of A named `name`, or null.
 /proc/dx_apc_entry_named(atom/A, name)
@@ -31,7 +30,7 @@
 
 /// The APC's bundles give it the standard capabilities, one per key, in draw order.
 /datum/unit_test/dx_apc_capabilities/Run()
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, run_loc_floor_bottom_left)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(run_loc_floor_bottom_left)
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/cover), "a cover")
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/panel), "a wire panel")
 	TEST_ASSERT_NOTNULL(cap_of(A, /datum/capability/wires), "wires")
@@ -53,7 +52,7 @@
 /datum/unit_test/dx_apc_cover_lock/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	var/datum/interaction/capability/cover = cap_test_entry(A, "cover:[TOOL_CROWBAR]")
 	TEST_ASSERT_NOTNULL(cover, "a crowbar cover")
 	TEST_ASSERT_EQUAL(cap_gate_reason(A, H, null, cover), "the cover is locked", "locked with a charged cell")
@@ -75,7 +74,7 @@
 /datum/unit_test/dx_apc_panel_and_wires/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	var/datum/interaction/capability/panel = cap_test_entry(A, "panel:[TOOL_SCREWDRIVER]")
 	var/datum/interaction/capability/pulse = cap_test_entry(A, "wires:multitool")
 	var/datum/interaction/capability/secure = dx_apc_entry_named(A, "Secure electronics")
@@ -96,7 +95,7 @@
 /datum/unit_test/dx_apc_id_lock/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	var/obj/item/card/id/card = allocate(/obj/item/card/id, T)
 	card.access = list(ACCESS_ENGINE_EQUIP)
 	var/datum/capability/lock/L = cap_of(A, /datum/capability/lock)
@@ -121,7 +120,7 @@
 /datum/unit_test/dx_apc_emag/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	var/obj/item/card/emag/card = allocate(/obj/item/card/emag, T)
 	var/datum/interaction/capability/emag = cap_test_entry(A, "emag")
 	TEST_ASSERT_NOTNULL(emag, "an emag entry")
@@ -143,7 +142,7 @@
 /datum/unit_test/dx_apc_cell_bay/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, T)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(T)
 	TEST_ASSERT_EQUAL(cell_charge_percent(A), 100, "a full cell reads 100%")
 	TEST_ASSERT(A.cap_cell_charged(H, null) == TRUE, "charged")
 	cap_set(A, CAP_COVER_OPEN, TRUE)
@@ -164,7 +163,7 @@
 
 /// power_channels() owns channel / breaker / nightshift: tgui_act reaches its act_ procs, validated and logged.
 /datum/unit_test/dx_apc_power_channel_actions/Run()
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, run_loc_floor_bottom_left)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(run_loc_floor_bottom_left)
 	var/datum/tgui/ui = ui_test_window(A)
 	var/records = length(GLOB.dispatch_records)
 	TEST_ASSERT(A.tgui_act("channel", list("channel" = POWER_CHANNEL_LIGHTING, "mode" = POWERCHAN_OFF_AUTO), ui), "act_channel ran")
@@ -194,7 +193,7 @@
 
 /// A power failure is a timed_set(): on for its time, then back off by itself; a reboot ends it.
 /datum/unit_test/dx_apc_power_failure/Run()
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, run_loc_floor_bottom_left)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(run_loc_floor_bottom_left)
 	A.energy_fail(10)
 	TEST_ASSERT(A.power_failed, "failed")
 	TEST_ASSERT(time_left(A, nameof(A.power_failed)) > 0, "for a while")
@@ -213,7 +212,7 @@
 
 /// draw(): the library layers, the bluescreen, the glows and the light.
 /datum/unit_test/dx_apc_draw/Run()
-	var/obj/machinery/power/apc/dx_test/A = allocate(/obj/machinery/power/apc/dx_test, run_loc_floor_bottom_left)
+	var/obj/machinery/power/apc/dx_test/A = dx_apc_make(run_loc_floor_bottom_left)
 	var/datum/look/L = GLOB.look_builder
 	L.reset()
 	A.draw(L)

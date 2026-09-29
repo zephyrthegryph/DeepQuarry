@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "APCs are built from capabilities (cover, wire panel, ID lock, cell bay, power channels); their look, window and tool steps work as before."
