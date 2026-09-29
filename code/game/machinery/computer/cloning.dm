@@ -202,7 +202,6 @@ UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autopro
 
 	return data
 
-DECLARE_UI_MODAL(/obj/machinery/computer/cloning)
 
 /obj/machinery/computer/cloning/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE

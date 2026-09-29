@@ -11,7 +11,6 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 	var/tmp/datum/host
 	var/list/using_access
 
-	var/tgui_id
 	var/ntos = FALSE
 
 /datum/tgui_module/New(host)

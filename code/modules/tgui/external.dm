@@ -31,7 +31,10 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return ui_declared_data(src, user, ui, state) // UI_DATA fields
+	. = ui_declared_data(src, user, ui, state) // UI_DATA fields
+	if(isatom(src))
+		var/atom/A = src
+		A.caps_ui_data(user, .) // capabilities add theirs (code/datums/capabilities/)
 
 /**
  * public

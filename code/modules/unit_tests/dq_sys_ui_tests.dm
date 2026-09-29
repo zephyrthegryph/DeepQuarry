@@ -5,7 +5,7 @@ GLOBAL_LIST_EMPTY(ui_test_calls)
 /datum/ui_test_host
 	var/name = "ui test host"
 	var/charge = 7
-	var/tgui_id = "UiTestFromVar"
+	tgui_id = "UiTestFromVar"
 	var/list/things
 	var/refuse_all = FALSE
 	var/datum/ui_test_host/forward_to

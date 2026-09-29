@@ -59,7 +59,6 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 /datum/shuttle/New(_name, obj/effect/shuttle_landmark/initial_location)
 	..()
-	lifecycle_decls_init(src) // starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize)
 	if(_name)
 		src.name = _name
 
@@ -93,6 +92,11 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		if(GLOB.supply_service.shuttle)
 			CRASH("A supply shuttle is already defined.")
 		GLOB.supply_service.shuttle = src
+	// Starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize). Only once
+	// registered: a shuttle that skipped registration above is dropped by its creator, and a
+	// started declaration would give it an OM record that keeps it alive (an ownership-audit
+	// "dropped with a rec" orphan).
+	lifecycle_decls_init(src)
 
 // leaves SSshuttles and the supply shuttle slot.
 /datum/shuttle/lifecycle_dematerialize()

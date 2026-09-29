@@ -914,9 +914,16 @@ REL_LIST(/datum/unit_test, allocated)
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
 
 	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
-	// definition and start the periodic owner-stamp audit before the first test.
-	def_freeze_snapshot()
-	own_audit_periodic()
+	// definition and start the periodic owner-stamp audit before the first test. A finding is
+	// reported as a runtime, which would otherwise unwind this proc and stop the suite silently
+	// (the world then idles until the DreamDaemon watchdog): fail the run and carry on.
+	var/list/framework_failures = list()
+	try
+		def_freeze_snapshot()
+		own_audit_periodic()
+	catch(var/exception/pre_e)
+		framework_failures += "SUITE START: [pre_e.name] at [pre_e.file]:[pre_e.line]"
+		log_test("OWNERSHIP FRAMEWORK CHECK at suite start: [pre_e.name] at [pre_e.file]:[pre_e.line] -- [pre_e.desc]")
 
 	//Hell code, we're bound to end the round somehow so let's stop if from ending while we work
 	SSticker.delay_end = TRUE
@@ -940,7 +947,6 @@ REL_LIST(/datum/unit_test, allocated)
 	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
 	var/list/frozen = def_freeze_verify()
 	var/list/orphans = own_audit(quiet = TRUE)
-	var/list/framework_failures = list()
 	for(var/line in frozen)
 		framework_failures += "DEF FREEZE: [line]"
 	for(var/line in orphans)

@@ -38,7 +38,6 @@
 	var/combine_first = FALSE // If TRUE, this appliance will do combination cooking before checking recipes
 	var/food_safety = FALSE	// If true, the appliance automatically ejects food instead of burning it
 
-	var/tgui_id
 
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_power = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_power")
