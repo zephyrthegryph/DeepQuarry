@@ -156,8 +156,7 @@
 				qdel(integrated_ai())
 				rel_clear(src, "integrated_ai")
 			if(ai_card)
-				qdel(ai_card)
-				own_take(src, "ai_card")
+				own_clear(src, "ai_card", OWN_DELETE)
 		else if(user)
 			user.put_in_hands(ai_card)
 		else

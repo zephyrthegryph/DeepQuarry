@@ -57,7 +57,7 @@
 /obj/item/gun/projectile/multi_cannon/unload_ammo(mob/user, allow_dump=1)
 	.=..()
 	update_icon()
-	own_take(src, "chambered")
+	rel_clear(src, "chambered")
 
 /obj/item/gun/projectile/multi_cannon/get_ammo_count() // Custom handling for the Curabitur.
 	if(istype(chambered, /obj/item/ammo_casing/macrobattery))

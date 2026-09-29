@@ -307,8 +307,8 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	GLOB.blackbox = src
 
 // ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
-/obj/machinery/blackbox_recorder/lifecycle_unbind()
 // it owns (an owned list): the replacement takes the list over.
+/obj/machinery/blackbox_recorder/lifecycle_unbind()
 	var/turf/T = locate(1,1,2)
 	if(T)
 		GLOB.blackbox = null
@@ -323,10 +323,12 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.msg_syndicate = msg_syndicate
 		BR.msg_cargo = msg_cargo
 		BR.msg_service = msg_service
-		own_set(BR, "feedback", feedback)
+		// The feedback datums move over one by one (the replacement takes the list over).
+		own_clear(BR, "feedback", OWN_DELETE)
+		for(var/datum/entry as anything in own_take_all(src, "feedback"))
+			own_add(BR, "feedback", entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
-		own_take(src, "feedback")
 	return ..()
 
 /obj/machinery/blackbox_recorder/proc/find_feedback_datum(variable)
