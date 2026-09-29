@@ -21,9 +21,10 @@ Rules:
       (changed, cap_set, timed_set/timed_cancel, own_*/rel_* writers, om_set, qdel, forceMove,
       set_light, set_<x>() on anything but the look builder, update_icon, add_fingerprint,
       to_chat, playsound). Allowed: locals and parameters (`data[k] = v` in ui_data), the return
-      value (`. = ..()`, `.[k] = v`, `. += x`) and the look builder (`look.*`). DreamChecker's
-      SHOULD_BE_PURE sits on should_run/gate/ui_data/hidden_verbs; draw and examine can't carry it
-      (the builder writes itself, examine reads memoized tables), so this rule covers all of them.
+      value (`. = ..()`, `.[k] = v`, `. += x`) and the look builder (`look.*`). This rule stands in
+      for DreamChecker's SHOULD_BE_PURE, which these hooks can't carry: its purity is transitive over
+      every write, and every capability lookup (caps_of/cap_of/cap_data) memoizes through a
+      shared_cache, and every look.* call writes the builder.
   dx_caps_instance_read (M3)
       capabilities() reads an instance var (`src.x`, or a bare name that is a var of the type, its
       path ancestors or a DM builtin). capabilities() is built ONCE per type, so the first

@@ -39,16 +39,11 @@
 
 /// Examine lines for user, in list order.
 /datum/capability/proc/examine(atom/holder, mob/user)
-	// Not SHOULD_BE_PURE: DreamChecker's purity is transitive over every write, and examine lines
-	// read memoized tables (caps_of(), ladders). dx_reactive's dx_reactive_write rule covers it.
 	return null
 
 /// Adds this capability's layers to look (look.state/overlay/gauge/glow). Called before the
 /// holder's own draw() body runs past ..() (DM reserves the name appearance).
 /datum/capability/proc/draw(atom/holder, datum/look/look)
-	SHOULD_NOT_SLEEP(TRUE)
-	// Not SHOULD_BE_PURE: every look.* builder call writes the builder, which DreamChecker counts as
-	// impure. dx_reactive's dx_reactive_write rule checks that draw() writes nothing else.
 	return
 
 /// Action -> LOG_GAME / LOG_ADMIN for this capability's own act_<action> procs. A capability owns
@@ -60,7 +55,6 @@
 /// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
 /// data["caps"][ui_key()] (caps_ui_data()).
 /datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
-	SHOULD_BE_PURE(TRUE)
 	return
 
 /// This capability's key under data["caps"]: its layer name, else its key.
@@ -73,13 +67,10 @@
 /// every entry whose `behind` includes COVER while it is closed; the lock does the same for
 /// `locked_by`.
 /datum/capability/proc/gate(atom/holder, mob/user, datum/interaction/entry)
-	SHOULD_NOT_SLEEP(TRUE)
-	SHOULD_BE_PURE(TRUE)
 	return null
 
 /// Verbs to hide on holder right now (re-evaluated on change).
 /datum/capability/proc/hidden_verbs(atom/holder)
-	SHOULD_BE_PURE(TRUE)
 	return null
 
 /// Native verbs this capability adds to its holder type.

@@ -127,8 +127,9 @@ shrink-only; new code is held to 0. `// ALLOW(<lint>): <reason>` keeps a justifi
     capability's `draw`/`gate`/`ui_data`/`examine`, a `needs =` proc) reads another object's var that
     isn't `TRACKED`/`SETTER` or behind a watched relation.
   - `dx_reactive_write` (H5): a derived proc writes anything but locals, the `data` list, `.` and
-    `look.*`. `SHOULD_BE_PURE` sits on `should_run`/`gate`/`ui_data`/`hidden_verbs`; DreamChecker's
-    transitive purity can't take `draw` (the builder writes itself) or `examine` (memoized tables).
+    `look.*`. It replaces `SHOULD_BE_PURE`, which these hooks can't carry: DreamChecker's purity is
+    transitive over every write, and every capability lookup (`caps_of`/`cap_of`/`cap_data`) memoizes
+    through a shared_cache and every `look.*` call writes the builder.
   - `dx_caps_instance_read` (M3): `capabilities()` reads an instance var.
   - `dx_timed_write` (M5): a `timed_set()` var written other than through it or its setter.
   - `dx_string_names`: a string literal as the var name of an `own_*`/`rel_*`/`om_set`/`timed_*`
