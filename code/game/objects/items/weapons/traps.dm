@@ -145,9 +145,10 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
 	..()
 
-// ALLOW(sys_update_icon): sets per-instance alpha when camouflaged
-/obj/item/beartrap/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/beartrap, PROC_REF(appearance_overlays), list())
+/obj/item/beartrap/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(!deployed)
 		if(camo_net)

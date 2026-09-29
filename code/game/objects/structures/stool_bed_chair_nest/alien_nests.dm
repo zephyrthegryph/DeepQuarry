@@ -9,9 +9,7 @@
 	unacidable = TRUE
 	flippable = FALSE
 
-// ALLOW(sys_update_icon): opts out of /obj/structure/bed's procedural material overlays
-/obj/structure/bed/nest/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/nest)
 
 /obj/structure/bed/nest/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	if(buckled_mob)

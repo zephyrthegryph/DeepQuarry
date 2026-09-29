@@ -32,8 +32,9 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 	else
 		. += span_notice("The \"manipulator missing\" indicator is lit. [src] consumes [mat_cost] units of [ammo_material] per shot.")
 
-// ALLOW(sys_update_icon): reads cell/capacitor charge (other objects) and replaces the whole overlay list
-/obj/item/gun/magnetic/matfed/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic/matfed, PROC_REF(appearance_overlays), list())
+/obj/item/gun/magnetic/matfed/appearance_overlays()
+	. = list()
 	var/list/overlays_to_add = list()
 	if(removable_components)
 		if(cell)
@@ -49,8 +50,8 @@ DECLARE_REF(/obj/item/gun/magnetic/matfed, "manipulator", OWNED, null)
 	if(mat_storage)
 		overlays_to_add += image(icon, "[icon_state]_loaded")
 
-	overlays = overlays_to_add
-	..()
+	. += overlays_to_add
+	. += ..()
 
 EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(matfed_interaction_hand)))
 

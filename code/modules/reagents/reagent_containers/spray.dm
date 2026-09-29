@@ -224,18 +224,18 @@ DECLARE_REF(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay"
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()
 
-// ALLOW(sys_update_icon): hose overlay shown when any hose connector (another object) is paired
-/obj/item/reagent_containers/spray/chemsprayer/hosed/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/spray/chemsprayer/hosed, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/spray/chemsprayer/hosed/appearance_overlays()
+	. = list()
+	. += ..()
 
-	cut_overlays()
 
 	if(!hose_overlay)
 		hose_overlay = new/icon(icon, "[icon_state]+hose")
 
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		if(HC.get_pairing())
-			add_overlay(hose_overlay)
+			. += hose_overlay
 			break
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERACT_ALT("Turn dial", PROC_REF(hosed_alt)))

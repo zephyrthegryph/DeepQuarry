@@ -77,9 +77,10 @@
 	if(get_dist(user, src) == 0)
 		. += "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional."
 
-// ALLOW(sys_update_icon): sets per-instance alpha from anchored
-/obj/item/camerabug/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/camerabug, PROC_REF(appearance_overlays), list())
+/obj/item/camerabug/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(anchored)	// Standard versions are relatively obvious if not hidden in a container. Anchoring them is advised, to disguise them.
 		alpha = 50

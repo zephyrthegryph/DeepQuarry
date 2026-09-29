@@ -135,28 +135,28 @@
 		else
 			new /obj/item/research_sample/common(src)
 
-// ALLOW(sys_update_icon): reads the harvested anomaly's stability
-/obj/machinery/anomaly_harvester/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/anomaly_harvester, PROC_REF(appearance_overlays), list())
+/obj/machinery/anomaly_harvester/appearance_overlays()
+	. = list()
 	if(!operable() || !anchored)
-		add_overlay("harvester_off")
+		. += "harvester_off"
 	else
-		add_overlay("harvester_on")
+		. += "harvester_on"
 
 	if(harvested)
 		var/obj/effect/anomaly/anom = om_resolve(harvested)
 		if(!istype(anom))
-			return
+			return .
 
 		var/datum/anomaly_stats/stats = anom.stats
 
 		switch(stats.stability)
 			if(ANOMALY_STABLE)
-				add_overlay("harvester_stable")
+				. += "harvester_stable"
 			if(ANOMALY_DECAYING)
-				add_overlay("harvester_decay")
+				. += "harvester_decay"
 			else
-				add_overlay("harvester_grow")
+				. += "harvester_grow"
 
 /obj/machinery/anomaly_harvester/tgui_state(mob/user)
 	return GLOB.tgui_default_state

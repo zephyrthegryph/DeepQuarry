@@ -32,11 +32,11 @@
 		use_power_oneoff(active_power_usage)
 		reagents.clear_reagents()
 
-// ALLOW(sys_update_icon): intake overlays from neighbouring refinery machines (update_input_connection_overlays)
-/obj/machinery/reagent_refinery/waste_processor/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/waste_processor, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/waste_processor/appearance_overlays()
+	. = list()
 	if(anchored)
-		update_input_connection_overlays("waste_intakes")
+		. += update_input_connection_overlays("waste_intakes")
 
 /obj/machinery/reagent_refinery/waste_processor/examine(mob/user, infix, suffix)
 	. = ..()

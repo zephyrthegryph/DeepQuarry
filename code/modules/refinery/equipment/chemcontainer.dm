@@ -102,10 +102,10 @@
 /obj/item/reagent_containers/chem_canister/on_reagent_change(changetype)
 	update_icon()
 
-// ALLOW(sys_update_icon): reagent fill overlay tinted with reagents.get_color()
-/obj/item/reagent_containers/chem_canister/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/chem_canister, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/chem_canister/appearance_overlays()
+	. = list()
+	. += ..()
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
@@ -115,7 +115,7 @@
 			if(75 to INFINITY)	percent = 100
 		var/image/chems = image(icon, icon_state = "[icon_state]_c[percent]", dir = NORTH)
 		chems.color = reagents.get_color()
-		add_overlay(chems)
+		. += chems
 
 
 // Preloads

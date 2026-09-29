@@ -386,8 +386,9 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 // ─────────────────────────────────────────────────────────────────────────────
 
 // update_icon() — called by interactions; delegates to the renderer.
-// ALLOW(sys_update_icon): delegates to the per-instance icon_renderer datum, which composites the APC's cover/charge/lock/channel overlays procedurally.
-/obj/machinery/power/apc/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/apc, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/apc/appearance_overlays()
+	. = list()
 	if(icon_renderer)
 		icon_renderer.apply(src)
 

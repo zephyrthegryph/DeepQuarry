@@ -27,17 +27,17 @@ DECLARE_SHARED_CACHE(ashtray_overlays, GLOBAL_PROC_REF(build_ashtray_overlay), S
 	randpixel_xy()
 	update_icon()
 
-// ALLOW(sys_update_icon): material-coloured cached overlays from contents count; also sets desc
-/obj/item/material/ashtray/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/material/ashtray, PROC_REF(appearance_overlays), list())
+/obj/item/material/ashtray/appearance_overlays()
+	. = list()
 	color = null
-	cut_overlays()
-	add_overlay(CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour))
+	. += CACHED_KEY(ashtray_overlays, "base-[material.name]", "ashtray", material.icon_colour)
 
 	if (contents_count(src) == max_butts)
-		add_overlay(CACHED_KEY(ashtray_overlays, "full", "ashtray_full", null))
+		. += CACHED_KEY(ashtray_overlays, "full", "ashtray_full", null)
 		desc = "It's stuffed full."
 	else if (contents_count(src) > max_butts/2)
-		add_overlay(CACHED_KEY(ashtray_overlays, "half", "ashtray_half", null))
+		. += CACHED_KEY(ashtray_overlays, "half", "ashtray_half", null)
 		desc = "It's half-filled."
 	else
 		desc = "An ashtray made of [material.display_name]."

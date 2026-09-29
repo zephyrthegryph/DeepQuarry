@@ -165,34 +165,34 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-// ALLOW(sys_update_icon): battery overlay from the inserted cell's charge percent (another object's state)
-/obj/item/suit_cooling_unit/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/suit_cooling_unit, PROC_REF(appearance_overlays), list())
+/obj/item/suit_cooling_unit/appearance_overlays()
+	. = list()
 	if(cover_open)
 		if(cell)
 			icon_state = "suitcooler1"
 		else
 			icon_state = "suitcooler2"
-		return
+		return .
 
 	icon_state = "suitcooler0"
 
 	if(!cell || !on)
-		return
+		return .
 
 	switch(round(cell.percent()))
 		if(86 to INFINITY)
-			add_overlay("battery-0")
+			. += "battery-0"
 		if(69 to 85)
-			add_overlay("battery-1")
+			. += "battery-1"
 		if(52 to 68)
-			add_overlay("battery-2")
+			. += "battery-2"
 		if(35 to 51)
-			add_overlay("battery-3")
+			. += "battery-3"
 		if(18 to 34)
-			add_overlay("battery-4")
+			. += "battery-4"
 		if(-INFINITY to 17)
-			add_overlay("battery-5")
+			. += "battery-5"
 
 /obj/item/suit_cooling_unit/examine(mob/user)
 	. = ..()
@@ -223,9 +223,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 	cell = /obj/item/cell
 	w_class = ITEMSIZE_NORMAL
 
-// ALLOW(sys_update_icon): opts out of /obj/item/suit_cooling_unit's procedural cell-charge overlays
-/obj/item/suit_cooling_unit/emergency/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/suit_cooling_unit/emergency)
 
 /obj/item/suit_cooling_unit/emergency/get_cell()
 	if(on)

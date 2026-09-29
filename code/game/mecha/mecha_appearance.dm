@@ -21,8 +21,9 @@
 	animate(src, transform = M, time = 10)
 	return
 
-// ALLOW(sys_update_icon): composites the pilot's compound icon blended with a cutter mask, face overlay and each equipment's overlays
-/obj/mecha/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/mecha, PROC_REF(appearance_overlays), list())
+/obj/mecha/appearance_overlays()
+	. = list()
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!initial_icon)
 		initial_icon = initial(icon_state)
@@ -32,7 +33,6 @@
 	else
 		icon_state = "[initial_icon]-open"
 
-	cut_overlays()
 
 	if(show_pilot)
 		if(occupant)
@@ -52,7 +52,7 @@
 
 				Pilot.pixel_y = pilot_lift
 
-				add_overlay(Pilot)
+				. += Pilot
 		else
 			pilot_image = null
 
@@ -60,11 +60,11 @@
 		face_overlay = new(src.icon, icon_state = face_state)
 
 	if(face_overlay)
-		add_overlay(face_overlay)
+		. += face_overlay
 
 	for(var/obj/item/mecha_parts/mecha_equipment/ME in equipment)
 		ME.add_equip_overlay(src)
-	return
+	return .
 
 DECLARE_REF(/obj/mecha, "face_overlay", OWNED, null)
 DECLARE_REF(/obj/mecha, "pilot_image", OWNED, null)

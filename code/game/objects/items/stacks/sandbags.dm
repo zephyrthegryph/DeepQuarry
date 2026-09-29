@@ -43,8 +43,9 @@
 		return INITIALIZE_HINT_QDEL
 	color = M.icon_colour
 
-// ALLOW(sys_update_icon): recomputes slowdown from amount (side effect run with the redraw); opts out of /obj/item/stack's drawing
-/obj/item/stack/sandbags/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/sandbags, PROC_REF(appearance_overlays), list())
+/obj/item/stack/sandbags/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 
 	slowdown = round(amount / 10, 0.1)

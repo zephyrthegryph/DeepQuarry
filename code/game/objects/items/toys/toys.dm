@@ -82,8 +82,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/balloon, INTERACT_ITEM(null, PROC_REF(interac
 		expire(5)
 	return
 
-// ALLOW(sys_update_icon): icon_state from reagent fill volume
-/obj/item/toy/balloon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/balloon, PROC_REF(appearance_overlays), list())
+/obj/item/toy/balloon/appearance_overlays()
+	. = list()
 	if(src.reagents.total_volume >= 1)
 		icon_state = "waterballoon"
 	else
@@ -186,14 +187,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/sword, \
 	add_fingerprint(user)
 	return TRUE
 
-// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance (lcolor) and refreshes the user's hands
-/obj/item/toy/sword/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, PROC_REF(appearance_overlays), list())
+/obj/item/toy/sword/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_inv_l_hand()
@@ -1729,11 +1730,11 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/borgplushie/drake, INTERACT_ALT(null, 
 	update_icon()
 	return TRUE
 
-// ALLOW(sys_update_icon): emissive overlay built from the instance's current icon_state
-/obj/item/toy/plushie/borgplushie/drake/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/toy/plushie/borgplushie/drake, PROC_REF(appearance_overlays), list())
+/obj/item/toy/plushie/borgplushie/drake/appearance_overlays()
+	. = list()
 	if (lights_glowing)
-		add_overlay(emissive_appearance(icon, "[icon_state]-lights"))
+		. += emissive_appearance(icon, "[icon_state]-lights")
 
 /obj/item/toy/plushie/borgplushie/drake/get_mechanics_info(list/additional_information)
 	return "The lights on the plushie can be toggled [lights_glowing ? "off" : "on"] by alt-clicking on it."

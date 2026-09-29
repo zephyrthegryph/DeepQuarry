@@ -115,19 +115,19 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 	if(target && reagents.total_volume > 0)
 		transfer_tank( reagents, target, dir)
 
-// ALLOW(sys_update_icon): reagent overlay tinted with its own or its beaker's reagents.get_color()
-/obj/machinery/reagent_refinery/furnace/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/furnace/appearance_overlays()
+	. = list()
 	icon_state = "furnace_[filter_side == 1 ? "r" : "l"]"
 
 	if(reagents && reagents.total_volume > 0)
 		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 	else if(beaker && beaker.reagents && beaker.reagents.total_volume > 0)
 		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
 		filling.color = beaker.reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 /obj/machinery/reagent_refinery/furnace/declare_interactions(list/into)
 	into += list(

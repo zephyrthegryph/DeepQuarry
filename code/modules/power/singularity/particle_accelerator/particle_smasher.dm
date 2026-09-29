@@ -147,9 +147,9 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
 
-// ALLOW(sys_update_icon): material overlays tinted by the target material, light range from stored energy
-/obj/machinery/particle_smasher/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, PROC_REF(appearance_overlays), list())
+/obj/machinery/particle_smasher/appearance_overlays()
+	. = list()
 	if(!material_layer)
 		material_layer = image(icon, "[initial(icon_state)]-material")
 	if(!material_glow)
@@ -162,12 +162,12 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 		if(target)
 			var/target_color = target_material_color()
 			material_layer.color = target_color
-			add_overlay(material_layer)
+			. += material_layer
 			if(successful_craft)
 				material_glow.color = target_color
-				add_overlay(material_glow)
+				. += material_glow
 		if(reagent_container())
-			add_overlay(reagent_layer)
+			. += reagent_layer
 	else
 		icon_state = initial(icon_state)
 

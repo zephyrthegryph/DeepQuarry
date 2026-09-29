@@ -332,68 +332,57 @@ OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
 	lamp_shade = 0
 
 DECLARE_REF(/obj/machinery/light, "cell", OWNED, null)
-DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 /// Phase 2: stops watching player chunks for flicker.
 /obj/machinery/light/lifecycle_dematerialize()
 	. = ..()
 	stop_flicker_watch()
 
-// ALLOW(sys_update_icon): drives set_on() and the light overlay (add/remove_light_overlay) from status, alongside the sprite.
-/obj/machinery/light/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/light, PROC_REF(appearance_overlays), list())
+/obj/machinery/light/appearance_overlays()
+	. = list()
 
 	switch(status)		// set icon_states
 		if(LIGHT_OK)
 			if(shows_alerts && current_alert && on)
 				icon_state = "[base_state]-alert-[current_alert]"
-				add_light_overlay(FALSE, icon_state)
+				. += add_light_overlay(FALSE, icon_state)
 			else
 				icon_state = "[base_state][on]"
 				if(on)
-					add_light_overlay()
-				else
-					remove_light_overlay()
+					. += add_light_overlay()
 		if(LIGHT_EMPTY)
 			icon_state = "[base_state]-empty"
-			set_on(0)
-			remove_light_overlay()
 		if(LIGHT_BURNED)
 			icon_state = "[base_state]-burned"
-			set_on(0)
-			remove_light_overlay()
 		if(LIGHT_BROKEN)
 			icon_state = "[base_state]-broken"
-			set_on(0)
-			remove_light_overlay()
-	return
+	return .
 
-// ALLOW(sys_update_icon): rewrites base_state by lamp_shade and drives set_on()/light overlays, falling back to /obj/machinery/light's procedural redraw.
-/obj/machinery/light/flamp/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, PROC_REF(appearance_overlays), list())
+/obj/machinery/light/flamp/appearance_overlays()
+	. = list()
 	if(lamp_shade)
 		base_state = "flampshade"
 		switch(status)		// set icon_states
 			if(LIGHT_OK)
 				icon_state = "[base_state][on]"
 				if(on)
-					add_light_overlay()
-				else
-					remove_light_overlay()
-			if(LIGHT_EMPTY)
-				set_on(0)
-				icon_state = "[base_state][on]"
-				remove_light_overlay()
-			if(LIGHT_BURNED)
-				set_on(0)
-				icon_state = "[base_state][on]"
-				remove_light_overlay()
-			if(LIGHT_BROKEN)
-				set_on(0)
-				icon_state = "[base_state][on]"
-				remove_light_overlay()
-		return
+					. += add_light_overlay()
+			if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
+				icon_state = "[base_state]0"
+		return .
 	else
 		base_state = "flamp"
-		..()
+		. += ..()
+
+/// The fixture's bulb state. A missing, burned or broken bulb switches the light off (the redraw
+/// only draws; it used to do this).
+/obj/machinery/light/proc/set_status(value)
+	status = value
+	if(status != LIGHT_OK)
+		set_on(FALSE)
+	update_icon()
 
 /obj/machinery/light/proc/set_alert_atmos()
 	if(!shows_alerts)
@@ -463,7 +452,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 					explode()
 			else if( prob( min(60, switchcount*switchcount*0.01) ) )
 				if(status == LIGHT_OK && trigger)
-					status = LIGHT_BURNED
+					set_status(LIGHT_BURNED)
 					update_icon()
 					set_on(0)
 					set_light(0)
@@ -611,7 +600,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	switchcount = 0
 	installed_light = null
 	latent_bulb = FALSE
-	status = LIGHT_EMPTY
+	set_status(LIGHT_EMPTY)
 	update()
 
 /obj/machinery/light/declare_interactions(list/into)
@@ -793,7 +782,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	var/obj/item/cell/C = emergency_cell()
 	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
 		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
-		status = LIGHT_BURNED
+		set_status(LIGHT_BURNED)
 		if(installed_light)
 			installed_light.status = status
 		return FALSE
@@ -973,7 +962,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 			play_sfx(src, SFX_EFFECTS_GLASSHIT)
 		if(on)
 			fx_sparks(src, 3)
-	status = LIGHT_BROKEN //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
+	set_status(LIGHT_BROKEN) //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
 	if(installed_light) // a latent bulb takes the fixture's status
 		installed_light.status = status
 		installed_light.update_icon()
@@ -990,7 +979,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 /obj/machinery/light/proc/fix()
 	if(status == LIGHT_OK)
 		return
-	status = LIGHT_OK
+	set_status(LIGHT_OK)
 	if(installed_light)
 		installed_light.status = LIGHT_OK
 	set_on(1)
@@ -1309,8 +1298,9 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	MATERIAL_BULK(MAT_GLASS, 100)
 
 // update the icon state and description of the light
-// ALLOW(sys_update_icon): rewrites desc (built from name) together with the status sprite.
-/obj/item/light/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/light, PROC_REF(appearance_overlays), list())
+/obj/item/light/appearance_overlays()
+	. = list()
 	switch(status)
 		if(LIGHT_OK)
 			icon_state = base_state
@@ -1484,7 +1474,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		declare_emergency_cell()
 	if(construct)
 		start_with_cell = FALSE
-		status = LIGHT_EMPTY
+		set_status(LIGHT_EMPTY)
 		construct_type = construct.type
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
@@ -1627,11 +1617,11 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1
 	auto_flicker = TRUE
 
 /obj/machinery/light
-	var/image/overlay_layer = null
 	var/overlay_above_everything = TRUE
 
 /obj/machinery/light/proc/add_light_overlay(do_color = TRUE, provided_state = null)
-	remove_light_overlay()
+	. = list()
+	var/image/overlay_layer
 	if(provided_state)
 		overlay_layer = image(icon, "[provided_state]-overlay")
 	else
@@ -1644,13 +1634,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1
 	else
 		overlay_layer.plane = PLANE_EMISSIVE
 
-	add_overlay(overlay_layer)
-
-/obj/machinery/light/proc/remove_light_overlay()
-	if(overlay_layer)
-		cut_overlay(overlay_layer)
-		qdel(overlay_layer)
-		overlay_layer = null
+	. += overlay_layer
 
 /obj/machinery/light/lamppost
 	icon = 'icons/obj/lighting32x64.dmi'

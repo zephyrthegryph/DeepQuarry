@@ -988,8 +988,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 		return
 	..()
 
-// ALLOW(sys_update_icon): icon_state from the selected sprite datum plus set_light() per state; light side effect runs with the redraw
-/mob/living/silicon/ai/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, PROC_REF(appearance_overlays), list())
+/mob/living/silicon/ai/appearance_overlays()
+	. = list()
 	if(!selected_sprite) selected_sprite = GLOB.default_ai_icon
 
 	if(stat == DEAD)

@@ -41,13 +41,13 @@
 		return amount_per_transfer_from_this
 	return 0
 
-// ALLOW(sys_update_icon): reagent overlay tinted with reagents.get_color() in the machine dir
-/obj/machinery/reagent_refinery/pump/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/pump, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/pump/appearance_overlays()
+	. = list()
 	if(reagents && reagents.total_volume >= 5)
 		var/image/filling = image(icon, loc, "pump_r",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 /obj/machinery/reagent_refinery/pump/declare_interactions(list/into)
 	into += list(

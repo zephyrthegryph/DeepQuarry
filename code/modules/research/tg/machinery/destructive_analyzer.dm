@@ -45,8 +45,9 @@ It is used to destroy hand-held objects and advance technological research. Used
 	T *= 0.1
 	decon_mod = clamp(T, 0, 1)
 
-// ALLOW(sys_update_icon): resolves the loaded item's handle to draw the loaded state
-/obj/machinery/rnd/destructive_analyzer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, PROC_REF(appearance_overlays), list())
+/obj/machinery/rnd/destructive_analyzer/appearance_overlays()
+	. = list()
 	var/current_item = om_resolve(loaded_item)
 	if(panel_open)
 		icon_state = "d_analyzer_t"

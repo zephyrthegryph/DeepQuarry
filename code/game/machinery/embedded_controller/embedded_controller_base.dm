@@ -103,8 +103,9 @@ DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 	set_frequency(frequency) // Set it before parent instantiates program
 	. = ..()
 
-// ALLOW(sys_update_icon): state from its program's memory (another datum)
-/obj/machinery/embedded_controller/radio/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio, PROC_REF(appearance_overlays), list())
+/obj/machinery/embedded_controller/radio/appearance_overlays()
+	. = list()
 	if(on && program)
 		if(program.memory["processing"])
 			icon_state = "airlock_control_process"

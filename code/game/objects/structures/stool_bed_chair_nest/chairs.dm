@@ -43,9 +43,10 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 /obj/structure/bed/chair/post_buckle_mob()
 	update_icon()
 
-// ALLOW(sys_update_icon): armrest overlay on the mob plane tinted with padding colour while buckled
-/obj/structure/bed/chair/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_buckled_mobs())
 		var/cache_key = "[base_icon]-armrest-[padding_material ? padding_material.name : "no_material"]"
 		if(isnull(GLOB.stool_cache[cache_key]))
@@ -55,7 +56,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 			if(padding_material)
 				I.color = padding_material.icon_colour
 			GLOB.stool_cache[cache_key] = I
-		add_overlay(GLOB.stool_cache[cache_key])
+		. += GLOB.stool_cache[cache_key]
 
 /obj/structure/bed/chair/proc/update_layer()
 	if(src.dir == NORTH)
@@ -90,20 +91,21 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	icon_state = "comfychair"
 	base_icon = "comfychair"
 
-// ALLOW(sys_update_icon): over-mob overlays tinted with material and padding colours
-/obj/structure/bed/chair/comfy/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/comfy/appearance_overlays()
+	. = list()
+	. += ..()
 	var/image/I = image(icon, "[base_icon]_over")
 	I.layer = ABOVE_MOB_LAYER
 	I.plane = MOB_PLANE
 	I.color = material.icon_colour
-	add_overlay(I)
+	. += I
 	if(padding_material)
 		I = image(icon, "[base_icon]_padding_over")
 		I.layer = ABOVE_MOB_LAYER
 		I.plane = MOB_PLANE
 		I.color = padding_material.icon_colour
-		add_overlay(I)
+		. += I
 
 /obj/structure/bed/chair/comfy/brown/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BROWN)
@@ -182,9 +184,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	anchored = FALSE
 	buckle_movable = 1
 
-// ALLOW(sys_update_icon): opts out of /obj/structure/bed/chair's procedural material overlays
-/obj/structure/bed/chair/office/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/chair/office)
 
 /// Overrides chair's interaction_item(): no padding this chair with a stack.
 /obj/structure/bed/chair/office/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -252,9 +252,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	desc = "Old is never too old to not be in fashion."
 	icon_state = "wooden_chair"
 
-// ALLOW(sys_update_icon): opts out of /obj/structure/bed/chair's procedural material overlays
-/obj/structure/bed/chair/wood/update_icon()
-	return
+APPEARANCE_NONE(/obj/structure/bed/chair/wood)
 
 /// Overrides chair's interaction_item(): no padding this chair with a stack.
 /obj/structure/bed/chair/wood/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -283,8 +281,9 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	var/corner_piece = FALSE
 	resistance_flags = FLAMMABLE
 
-// ALLOW(sys_update_icon): sets colour from sofa_material and refreshes name
-/obj/structure/bed/chair/sofa/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/sofa/appearance_overlays()
+	. = list()
 	if(applies_material_colour && sofa_material)
 		var/datum/material/color_material = get_material_by_name(sofa_material)
 		color = color_material.icon_colour
@@ -315,9 +314,10 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	base_icon = "sofacorner"
 	corner_piece = TRUE
 
-// ALLOW(sys_update_icon): permanent armrest overlay on the mob plane tinted with padding colour
-/obj/structure/bed/chair/sofa/corner/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/sofa/corner, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/sofa/corner/appearance_overlays()
+	. = list()
+	. += ..()
 	var/cache_key = "[base_icon]-armrest-[padding_material ? padding_material.name : "no_material"]-permanent"
 	if(isnull(GLOB.stool_cache[cache_key]))
 		var/image/I = image(icon, "[base_icon]_armrest")
@@ -326,7 +326,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 		if(padding_material)
 			I.color = padding_material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	add_overlay(GLOB.stool_cache[cache_key])
+	. += GLOB.stool_cache[cache_key]
 
 // Wooden nonsofa - no corners
 /obj/structure/bed/chair/sofa/pew
@@ -642,8 +642,9 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	applies_material_colour = 0
 
 // Baystation12 chairs with their larger update_icons proc
-// ALLOW(sys_update_icon): layered overlays tinted per material/padding colour on the mob plane, and name/desc refresh
-/obj/structure/bed/chair/bay/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/bay/appearance_overlays()
+	. = list()
 	// Strings.
 	desc = initial(desc)
 	if(padding_material)
@@ -655,7 +656,6 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 
 	// Prep icon.
 	icon_state = ""
-	cut_overlays()
 
 	// Base icon (base material color)
 	var/cache_key = "[base_icon]-[material.name]"
@@ -664,7 +664,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 		if(applies_material_colour)
 			I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	add_overlay(GLOB.stool_cache[cache_key])
+	. += GLOB.stool_cache[cache_key]
 
 	// Padding ('_padding') (padding material color)
 	if(padding_material)
@@ -673,7 +673,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 			var/image/I =  image(icon, "[base_icon]_padding")
 			I.color = padding_material.icon_colour
 			GLOB.stool_cache[padding_cache_key] = I
-		add_overlay(GLOB.stool_cache[padding_cache_key])
+		. += GLOB.stool_cache[padding_cache_key]
 
 	// Over ('_over') (base material color)
 	cache_key = "[base_icon]-[material.name]-over"
@@ -684,7 +684,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 		if(applies_material_colour)
 			I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	add_overlay(GLOB.stool_cache[cache_key])
+	. += GLOB.stool_cache[cache_key]
 
 	// Padding Over ('_padding_over') (padding material color)
 	if(padding_material)
@@ -695,7 +695,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 			I.plane = MOB_PLANE
 			I.layer = ABOVE_MOB_LAYER
 			GLOB.stool_cache[padding_cache_key] = I
-		add_overlay(GLOB.stool_cache[padding_cache_key])
+		. += GLOB.stool_cache[padding_cache_key]
 
 	if(has_buckled_mobs())
 		if(padding_material)
@@ -708,7 +708,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 			if(applies_material_colour)
 				I.color = material.icon_colour
 			GLOB.stool_cache[cache_key] = I
-		add_overlay(GLOB.stool_cache[cache_key])
+		. += GLOB.stool_cache[cache_key]
 		if(padding_material)
 			cache_key = "[base_icon]-padding-armrest-[padding_material.name]"
 			// Padding Armrest ('_padding_armrest') (padding material color)
@@ -718,7 +718,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 				I.layer = ABOVE_MOB_LAYER
 				I.color = padding_material.icon_colour
 				GLOB.stool_cache[cache_key] = I
-			add_overlay(GLOB.stool_cache[cache_key])
+			. += GLOB.stool_cache[cache_key]
 
 /obj/structure/bed/chair/bay/chair
 	name = "mounted chair"
@@ -799,13 +799,14 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 	icon_state = "capchair_preview"
 	base_icon = "capchair"
 
-// ALLOW(sys_update_icon): adds a mob-plane overlay on top of the parent's procedural overlays
-/obj/structure/bed/chair/bay/comfy/captain/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/comfy/captain, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/bay/comfy/captain/appearance_overlays()
+	. = list()
+	. += ..()
 	var/image/I = image(icon, "[base_icon]_special")
 	I.plane = MOB_PLANE
 	I.layer = ABOVE_MOB_LAYER
-	add_overlay(I)
+	. += I
 
 /obj/structure/bed/chair/bay/comfy/captain/Initialize(mapload, new_material, new_padding_material)
 	. = ..(mapload, MAT_STEEL, MAT_CLOTH_BLUE)
@@ -830,16 +831,17 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(int
 		base_icon = "shuttle_chair"
 	..()
 
-// ALLOW(sys_update_icon): mob-plane overlay tinted with the material colour when unbuckled
-/obj/structure/bed/chair/bay/shuttle/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/bay/shuttle, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/bay/shuttle/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!has_buckled_mobs())
 		var/image/I = image(icon, "[base_icon]_special")
 		I.plane = MOB_PLANE
 		I.layer = ABOVE_MOB_LAYER
 		if(applies_material_colour)
 			I.color = material.icon_colour
-		add_overlay(I)
+		. += I
 
 /obj/structure/bed/chair/bay/chair/padded/red/smallnest
 	name = "teshari nest"

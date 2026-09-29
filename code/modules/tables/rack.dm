@@ -14,11 +14,12 @@
 /obj/structure/table/rack/update_desc()
 	return
 
-// ALLOW(sys_update_icon): colours the rack from its material's icon_colour; opts out of /obj/structure/table's procedural connection overlays
-/obj/structure/table/rack/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, PROC_REF(appearance_overlays), list())
+/obj/structure/table/rack/appearance_overlays()
+	. = list()
 	if(material()) // for rack colors based on materials
 		color = material().icon_colour
-	return
+	return .
 
 /obj/structure/table/rack/holorack/dismantle(obj/item/tool/wrench/W, mob/user)
 	to_chat(user, span_warning("You cannot dismantle \the [src]."))

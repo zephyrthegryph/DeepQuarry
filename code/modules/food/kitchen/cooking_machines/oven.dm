@@ -61,8 +61,9 @@ DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 			try_toggle_door(ui.user)
 			return TRUE
 
-// ALLOW(sys_update_icon): starts/stops the oven_loop sound, then chains cooker's pixel-offset light image
-/obj/machinery/appliance/cooker/oven/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/oven, PROC_REF(appearance_overlays), list())
+/obj/machinery/appliance/cooker/oven/appearance_overlays()
+	. = list()
 	if(!open)
 		if(!has_stat(MACHINE_STAT_ANY))
 			icon_state = "ovenclosed_on"
@@ -82,7 +83,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 		icon_state = "ovenopen"
 		if(oven_loop)
 			oven_loop.stop(src)
-	..()
+	. += ..()
 
 EXTEND_INTERACTIONS(/obj/machinery/appliance/cooker/oven, \
 	INTERACT_ITEM(null, PROC_REF(appliance_interaction_part_replace)), \

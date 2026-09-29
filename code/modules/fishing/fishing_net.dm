@@ -89,12 +89,12 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 				L.attackby(W, user)
 	return FALSE
 
-// ALLOW(sys_update_icon): underlays copied from the contained mobs' icons; rewrites name/desc from contents
-/obj/item/material/fishing_net/update_icon() // Also updates name and desc
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net, PROC_REF(appearance_overlays), list())
+/obj/item/material/fishing_net/appearance_overlays() // Also updates name and desc
+	. = list()
 	underlays.Cut()
-	cut_overlays()
 
-	..()
+	. += ..()
 
 	name = initial(name)
 	desc = initial(desc)
@@ -112,7 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net, \
 	else
 		icon_state = empty_state
 
-	return
+	return .
 
 /obj/item/material/fishing_net/proc/update_weight()
 	if(icon_state == contain_state)	// Let's not do a for loop just to see if a mob is in here.
@@ -214,10 +214,10 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	else
 		to_chat(M, span_warning("You fail to escape \the [src]."))
 
-// ALLOW(sys_update_icon): state and name/desc depend on contained mobs; opts out of the parent's mob underlays
-/obj/item/material/fishing_net/butterfly_net/update_icon() // Also updates name and desc
+DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_net/butterfly_net, PROC_REF(appearance_overlays), list())
+/obj/item/material/fishing_net/butterfly_net/appearance_overlays() // Also updates name and desc
+	. = list()
 	underlays.Cut()
-	cut_overlays()
 
 	name = initial(name)
 	desc = initial(desc)
@@ -233,7 +233,7 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_net/butterfly_net, INTERACT_USE("
 	else
 		icon_state = empty_state
 
-	return
+	return .
 
 /datum/crafting_recipe/butterfly_net
 	name = "butterfly net"

@@ -71,8 +71,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 /datum/om/stage/life/special/mechanical/ward/monitor/perform(mob/living/simple_mob/mechanical/ward/monitor/self, datum/om/frame/life/ctx)
 	self.detect_mobs()
 
-// ALLOW(sys_update_icon): glow colour and refresh_glow() side effects keyed on seen_mobs
-/mob/living/simple_mob/mechanical/ward/monitor/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/ward/monitor, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/mechanical/ward/monitor/appearance_overlays()
+	. = list()
 	if(seen_mobs.len)
 		icon_living = "[initial(icon_state)]_spotted"
 		set_glow_color("#FF0000")
@@ -80,7 +81,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 		icon_living = "[initial(icon_state)]"
 		set_glow_color("#00FF00")
 	refresh_glow() // Update the light immediately.
-	..()
+	. += ..()
 
 /mob/living/simple_mob/mechanical/ward/monitor/proc/detect_mobs()
 	var/last_seen_mobs_len = seen_mobs.len

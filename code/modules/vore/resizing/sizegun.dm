@@ -65,8 +65,9 @@
 	if(size_set_to < RESIZE_MINIMUM || size_set_to > RESIZE_MAXIMUM)
 		to_chat(usr, span_notice("Note: Resizing limited to 25-200% automatically while outside dormatory areas.")) //hint that we clamp it in resize
 
-// ALLOW(sys_update_icon): charge state from its power cell (another object), refreshes the in-hand sprite
-/obj/item/gun/energy/sizegun/update_icon(ignore_inhands)
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/sizegun, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/sizegun/appearance_overlays()
+	. = list()
 	var/grow_mode = "shrink"
 	if(size_set_to > 1)
 		grow_mode = "grow"
@@ -82,7 +83,7 @@
 		icon_state = "[initial_icon_state]-[grow_mode][ratio]"
 		item_state = "[initial_icon_state]-[grow_mode]"
 
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 /obj/item/gun/energy/sizegun/examine(mob/user)
 	. = ..()

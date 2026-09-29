@@ -211,11 +211,11 @@ OM_TIMER_SLOT(/obj/item/gun/energy/kinetic_accelerator, recharge_timerid)
 	overheat = FALSE
 	update_icon()
 
-// ALLOW(sys_update_icon): reads overheat and the power cell's charge (another object) to add the per-instance emptystate overlay
-/obj/item/gun/energy/kinetic_accelerator/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/kinetic_accelerator, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/kinetic_accelerator/appearance_overlays()
+	. = list()
 	if(overheat || !power_supply || (power_supply.charge == 0))
-		add_overlay(emptystate)
+		. += emptystate
 
 #define KA_ENVIRO_TYPE_COLD 0
 #define KA_ENVIRO_TYPE_HOT 1

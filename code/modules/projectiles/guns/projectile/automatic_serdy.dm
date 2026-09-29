@@ -1147,9 +1147,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r[appearance_ma
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-// ALLOW(sys_update_icon): chains with ..() onto the earlier sts35 update_icon() in automatic.dm, which refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/sts35/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 
 /obj/item/gun/projectile/automatic/sts35/Initialize(mapload)
@@ -1167,9 +1168,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r[appearance_ma
 	icon_expected_width = 64
 
 /* //Dont need it
-// ALLOW(sys_update_icon): commented-out dead code inside this block comment, never compiled
-/obj/item/gun/projectile/automatic/wt550/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/wt550, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/wt550/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = ammo_magazine ? "[initial(icon_state)]" : "[initial(icon_state)]-e"
 */
 /obj/item/gun/projectile/automatic/wt550/Initialize(mapload)
@@ -1186,14 +1188,15 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/c20r, "c20r[appearance_ma
 	icon_expected_height = 32
 	icon_expected_width = 64
 
-// ALLOW(sys_update_icon): chains with ..() onto the earlier z8 update_icon() in automatic.dm, which refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/z8/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/z8/appearance_overlays()
+	. = list()
+	. += ..()
 	if(ammo_magazine)
 		icon_state = "carbine-[round(CLAMP(ammo_magazine.stored_ammo.len/2,0,10),2)]"
 	else
 		icon_state = "carbine-e"
-	return
+	return .
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
@@ -1260,8 +1263,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/mini_uzi, "[initial(icon_
 	.=..()
 	update_icon()
 
-// ALLOW(sys_update_icon): swaps the icon file to icons/obj/gun.dmi for a per-instance unique_reskin state
-/obj/item/gun/projectile/colt/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/colt, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/colt/appearance_overlays()
+	. = list()
 	if(ammo_magazine)
 		if(unique_reskin)
 			icon = 'icons/obj/gun.dmi'

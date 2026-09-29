@@ -112,15 +112,15 @@
 	. = ..()
 	update_rust_device()
 
-// ALLOW(sys_update_icon): overlay is an atmos icon fetched from GLOB.icon_manager and skipped off-turf
-/obj/machinery/atmospherics/unary/vent_scrubber/update_icon(safety = 0)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/unary/vent_scrubber/appearance_overlays()
+	. = list()
 
 	var/scrubber_icon = "scrubber"
 
 	var/turf/T = get_turf(src)
 	if(!istype(T))
-		return
+		return .
 
 	if(welded)
 		scrubber_icon += "weld"
@@ -129,7 +129,7 @@
 	else
 		scrubber_icon += "[use_power ? "[scrubbing ? "on" : "in"]" : "off"]"
 
-	add_overlay(GLOB.icon_manager.get_atmos_icon("device", , , scrubber_icon))
+	. += GLOB.icon_manager.get_atmos_icon("device", , , scrubber_icon)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/update_underlays()
 	..()

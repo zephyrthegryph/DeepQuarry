@@ -667,25 +667,25 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	return ITEM_INTERACT_BLOCKING
 
 APPEARANCE_NONE(/obj/machinery/power/smes/buildable/hybrid)
-// ALLOW(sys_update_icon): hybrid ignores buildable's failing/smes-crit override; kept procedural to keep that exact behaviour instead of redeclaring the smes overlay stack.
-/obj/machinery/power/smes/buildable/hybrid/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/buildable/hybrid, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/smes/buildable/hybrid/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))	return
 
-	add_overlay("smes-op[outputting]")
+	. += "smes-op[outputting]"
 
 	if(inputting == 2)
-		add_overlay("smes-oc2")
+		. += "smes-oc2"
 	else if (inputting == 1)
-		add_overlay("smes-oc1")
+		. += "smes-oc1"
 	else
 		if(input_attempt)
-			add_overlay("smes-oc0")
+			. += "smes-oc0"
 
 	var/clevel = chargedisplay()
 	if(clevel>0)
-		add_overlay("smes-og[clevel]")
-	return
+		. += "smes-og[clevel]"
+	return .
 
 /// Hybrid units make their own charge every frame, so they never idle.
 /obj/machinery/power/smes/buildable/hybrid/power_step()

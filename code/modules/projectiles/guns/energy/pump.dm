@@ -40,12 +40,12 @@
 /obj/item/gun/energy/gun/martin/proc/update_mode()
 	var/datum/firemode/current_mode = LAZYACCESS(firemodes, sel_mode)
 	switch(current_mode.name)
-		if("stun") add_overlay("taser_pdw")
 		if("lethal") add_overlay("lazer_pdw")
+		if("stun") add_overlay("taser_pdw")
 
-// ALLOW(sys_update_icon): update_mode() must run with the redraw (re-derives the firemode overlays)
-/obj/item/gun/energy/gun/martin/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/martin, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/gun/martin/appearance_overlays()
+	. = list()
 	update_mode()
 
 //Gun Locking Mechanism
@@ -131,13 +131,14 @@
 	update_icon()
 	user?.hud_used?.update_ammo_hud(user, src) // Update one last time once we're finished!
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
-/obj/item/gun/energy/locked/frontier/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/locked/frontier/appearance_overlays()
+	. = list()
 	if(recharging)
 		icon_state = "[initial(icon_state)]_pump"
 		update_held_icon()
-		return
-	..()
+		return .
+	. += ..()
 
 /obj/item/gun/energy/locked/frontier/emp_act(severity)
 	return ..(severity+2)
@@ -169,13 +170,14 @@
 		list(mode_name="burst", burst=3, fire_delay=10, move_delay=4, burst_accuracy=list(0,0,0), dispersion=list(0.0, 0.2, 0.5), projectile_type=/obj/item/projectile/beam/phaser/light, charge_cost = 90), // Added this
 	)
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
-/obj/item/gun/energy/locked/frontier/carbine/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/locked/frontier/carbine/appearance_overlays()
+	. = list()
 	if(recharging)
 		icon_state = "[modifystate]_pump"
 		update_held_icon()
-		return
-	..()
+		return .
+	. += ..()
 
 /obj/item/gun/energy/locked/frontier/carbine/unlocked
 	desc = "An ergonomically improved version of the venerable frontier phaser, the carbine is a fairly new weapon, and has only been produced in limited numbers so far. Includes a built-in crank charger for recharging away from civilization."
@@ -241,13 +243,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("U
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
 	toggle_scope(2.0)
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon() and defers to the procedural energy-gun parent
-/obj/item/gun/energy/locked/frontier/rifle/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/rifle, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/locked/frontier/rifle/appearance_overlays()
+	. = list()
 	if(recharging)
 		icon_state = "[modifystate]_pump"
 		update_held_icon()
-		return
-	..()
+		return .
+	. += ..()
 
 /obj/item/gun/energy/locked/frontier/rifle/unlocked
 	desc = "A much larger, heavier weapon than the typical frontier-type weapons, this DMR can be fired both from the hip, and in scope. Includes a built-in crank charger for recharging away from civilization."

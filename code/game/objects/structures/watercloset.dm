@@ -610,16 +610,16 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	. = ..()
 	. += span_notice("You can <b>alt-click</b> to change the temperature.")
 
-// ALLOW(sys_update_icon): water overlay coloured from the reagents being sprayed, per dir
-/obj/machinery/shower/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/shower, PROC_REF(appearance_overlays), list())
+/obj/machinery/shower/appearance_overlays()
+	. = list()
 	if(on)
 		if(reagent_id == REAGENT_ID_WATER)
-			add_overlay(image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir))
+			. += image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 		else
 			var/mutable_appearance/colorful_shower = image('icons/obj/watercloset.dmi', src, "water", MOB_LAYER + 1, dir)
 			colorful_shower.color = reagents.get_color() //Whatever the fuck happens to be spewing out of here.
-			add_overlay(colorful_shower)
+			. += colorful_shower
 
 /obj/machinery/shower/proc/handle_mist()
 	// If there is no mist, and the shower was turned on (on a non-freezing temp): make mist in 5 seconds

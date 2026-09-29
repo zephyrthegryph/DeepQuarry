@@ -375,11 +375,11 @@
 		verbs |= /atom/movable/proc/turn_around
 
 //merges adjacent full-tile windows into one (blatant ripoff from game/smoothwall.dm)
-// ALLOW(sys_update_icon): tilt rotation for damage and neighbour-dependent full-tile smoothing overlays
-/obj/structure/window/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/window, PROC_REF(appearance_overlays), list("get_integrity"))
+/obj/structure/window/appearance_overlays()
+	. = list()
 	//A little cludge here, since I don't know how it will work with slim windows. Most likely VERY wrong.
 	//this way it will only update full-tile ones
-	cut_overlays()
 	if(!is_fulltile())
 		// Rotate the sprite somewhat so non-fulltiled windows can be seen as needing repair.
 		var/full_tilt_degrees = 15
@@ -389,7 +389,7 @@
 		adjust_rotation(LERP(0, full_tilt_degrees, tilt_to_apply))
 
 		icon_state = "[basestate]"
-		return
+		return .
 	else
 		flags &= ~ON_BORDER // Removes ON_BORDER
 	var/list/dirs = list()
@@ -399,7 +399,7 @@
 				dirs += get_dir(src, W)
 
 	icon_state = ""
-	add_overlay(window_overlay_images(dirs_to_corner_states(dirs)))
+	. += window_overlay_images(dirs_to_corner_states(dirs))
 
 /// The overlay images for a full-tile window in this state (doc/rewrite/init_and_turfs.md sec 3.5):
 /// built once per (icon, basestate, corner connections, damage step, layer) and shared by every

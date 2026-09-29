@@ -224,9 +224,9 @@
 				L.adjust_fire_stacks(get_fuel_amount() / 4)
 				L.ignite_mob()
 
-// ALLOW(sys_update_icon): fuel-level overlays with RESET_COLOR and a pixel-offset/layered buckled-mob image, plus set_light side effect
-/obj/structure/bonfire/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, PROC_REF(appearance_overlays), list())
+/obj/structure/bonfire/appearance_overlays()
+	. = list()
 	if(burning)
 		var/state
 		switch(get_fuel_amount())
@@ -236,14 +236,14 @@
 				state = "bonfire_hot"
 		var/image/I = image(icon, state)
 		I.appearance_flags = RESET_COLOR
-		add_overlay(I)
+		. += I
 
 		if(has_buckled_mobs() && get_fuel_amount() >= 5)
 			I = image(icon, "bonfire_intense")
 			I.pixel_y = 13
 			I.layer = MOB_LAYER + 0.1
 			I.appearance_flags = RESET_COLOR
-			add_overlay(I)
+			. += I
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
 		set_light(light_strength, light_strength, "#FF9933")
@@ -253,7 +253,7 @@
 	if(grill)
 		var/image/grille_image = image(icon, "bonfire_grill")
 		grille_image.appearance_flags = RESET_COLOR
-		add_overlay(grille_image)
+		. += grille_image
 
 
 /obj/structure/bonfire/periodic_step()
@@ -436,9 +436,9 @@
 			var/obj/O = A
 			O.fire_act(1000, 500)
 
-// ALLOW(sys_update_icon): fuel-level fire overlays derived from icon_state, plus set_light side effect
-/obj/structure/fireplace/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, PROC_REF(appearance_overlays), list())
+/obj/structure/fireplace/appearance_overlays()
+	. = list()
 	if(burning)
 		var/state
 		switch(get_fuel_amount())
@@ -452,10 +452,10 @@
 				state = "[icon_state]_fire3"
 			if(8 to 10)
 				state = "[icon_state]_fire4"
-		add_overlay(mutable_appearance(icon, state))
-		add_overlay(emissive_appearance(icon, state))
-		add_overlay(mutable_appearance(icon, "[icon_state]_glow"))
-		add_overlay(emissive_appearance(icon, "[icon_state]_glow"))
+		. += mutable_appearance(icon, state)
+		. += emissive_appearance(icon, state)
+		. += mutable_appearance(icon, "[icon_state]_glow")
+		. += emissive_appearance(icon, "[icon_state]_glow")
 
 		var/light_strength = max(get_fuel_amount() / 2, 2)
 		set_light(light_strength, light_strength, "#FF9933")
@@ -504,8 +504,9 @@
 	density = TRUE
 	anchored = FALSE
 
-// ALLOW(sys_update_icon): set_light strength from fuel must run with the redraw
-/obj/structure/fireplace/barrel/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/fireplace/barrel, PROC_REF(appearance_overlays), list())
+/obj/structure/fireplace/barrel/appearance_overlays()
+	. = list()
 	if(burning)
 		icon_state = "[initial(icon_state)]1"
 		var/light_strength = max(get_fuel_amount() / 2, 2)

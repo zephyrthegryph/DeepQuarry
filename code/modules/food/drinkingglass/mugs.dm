@@ -46,9 +46,9 @@
 	volume = 30
 	var/fillsource = "coffeecup"
 
-// ALLOW(sys_update_icon): fill overlay from the reagent level, tinted by the reagents
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/appearance_overlays()
+	. = list()
 
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/drinks_mugs.dmi', src, null)
@@ -56,12 +56,12 @@
 		switch(percent)
 			if(0 to 39)
 				filling.icon_state = null
-				return
+				return .
 			if(40 to 79) 	filling.icon_state = "[fillsource]40"
 			if(80 to 99)	filling.icon_state = "[fillsource]80"
 			if(100 to INFINITY)	filling.icon_state = "[fillsource]100"
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 // Government
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/sol
@@ -223,9 +223,9 @@
 	fillsource = "coffeecup_tall"
 	volume = 60
 
-// ALLOW(sys_update_icon): fill overlay from the reagent level, tinted by the reagents
-/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/appearance_overlays()
+	. = list()
 
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/drinks_mugs_tall.dmi', src, null)
@@ -233,12 +233,12 @@
 		switch(percent)
 			if(0 to 69)
 				filling.icon_state = null
-				return
+				return .
 			if(70 to 89) 	filling.icon_state = "[fillsource]70"
 			if(90 to 99)	filling.icon_state = "[fillsource]90"
 			if(100 to INFINITY)	filling.icon_state = "[fillsource]100"
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 /obj/item/reagent_containers/food/drinks/glass2/coffeemug/tall/black
 	name = "tall black coffee mug"

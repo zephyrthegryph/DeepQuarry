@@ -80,9 +80,7 @@
 /obj/item/paper/card
 	plane_foldable = FALSE //No fun allowed
 
-// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural drawing
-/obj/item/paper/card/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/paper/card)
 
 /obj/item/paper/card/smile
 	name = "happy card"
@@ -110,8 +108,9 @@
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "alienpaper"
 
-// ALLOW(sys_update_icon): replaces /obj/item/paper's procedural drawing with the alien paper states
-/obj/item/paper/alien/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/alien, PROC_REF(appearance_overlays), list())
+/obj/item/paper/alien/appearance_overlays()
+	. = list()
 	if(info)
 		icon_state = "alienpaper_words"
 	else
@@ -157,13 +156,14 @@
 	update_space(info)
 	updateinfolinks()
 
-// ALLOW(sys_update_icon): leaves icon states set elsewhere alone (talisman) and otherwise picks the written state
-/obj/item/paper/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper, PROC_REF(appearance_overlays), list())
+/obj/item/paper/appearance_overlays()
+	. = list()
 	if(icon_state == "paper_talisman")
-		return
+		return .
 	if(info)
 		icon_state = "paper_words"
-		return
+		return .
 	icon_state = "paper"
 
 /obj/item/paper/proc/update_space(new_text)
@@ -757,9 +757,7 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 	name = "paper scrap"
 	icon_state = "scrap"
 
-// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural drawing
-/obj/item/paper/crumpled/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/paper/crumpled)
 
 /obj/item/paper/crumpled/bloody
 	icon_state = "scrap_bloodied"

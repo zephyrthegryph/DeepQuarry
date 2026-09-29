@@ -71,11 +71,12 @@
 
 	update_icon()
 
-// ALLOW(sys_update_icon): appends to the current icon_state (not a fixed base), so the result depends on the previous state
-/obj/item/gun/projectile/shotgun/pump/update_icon()//This adds empty sprite capability for shotguns.
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/shotgun/pump, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/shotgun/pump/appearance_overlays()//This adds empty sprite capability for shotguns.
+	. = list()
+	. += ..()
 	if(!empty_sprite)//Just a dirty check
-		return
+		return .
 	if((loaded.len) || (chambered))
 		icon_state = "[icon_state]"
 	else

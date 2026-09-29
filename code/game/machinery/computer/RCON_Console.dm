@@ -30,10 +30,9 @@ DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 /obj/machinery/computer/rcon/tgui_interact(mob/user, datum/tgui/ui)
 	rcon.tgui_interact(user, ui)
 
-// ALLOW(sys_update_icon): adds its screen overlay on top of /obj/machinery/computer's procedural screen compositing (which cuts every overlay)
-/obj/machinery/computer/rcon/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/rcon, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/rcon/appearance_overlays()
+	. = list()
+	. += ..()
 	if(operable())
-		add_overlay("ai-fixer-empty")
-	else
-		cut_overlay("ai-fixer-empty")
+		. += "ai-fixer-empty"

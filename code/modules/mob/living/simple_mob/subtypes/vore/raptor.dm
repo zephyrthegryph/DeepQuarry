@@ -123,15 +123,16 @@
 	if(past_state != wg_state)
 		update_icon()
 
-// ALLOW(sys_update_icon): weight-gain icon_living plus vore fullness states, eye refresh, update_transform
-/mob/living/simple_mob/vore/raptor/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/raptor, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/raptor/appearance_overlays()
+	. = list()
 	if(wg_state == 1)
 		icon_living = "[initial_icon]_fat"
 		icon_state = icon_living
 	else
 		icon_living = "[initial_icon]"
 		icon_state = icon_living
-	. = ..()
+	. += ..()
 	if(vore_active)
 		var/voremob_awake = FALSE
 		if(icon_state == icon_living)
@@ -139,7 +140,7 @@
 		update_fullness()
 		if(!vore_fullness)
 			update_transform()
-			return 0
+			return .
 		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
 			icon_state = "[icon_living]-[vore_fullness]"
 		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))

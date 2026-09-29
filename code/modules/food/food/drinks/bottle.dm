@@ -149,8 +149,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(rag) return
 	..()
 
-// ALLOW(sys_update_icon): rag underlay reads the rag's on_fire state and copies its light via set_light().
-/obj/item/reagent_containers/food/drinks/bottle/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/bottle/appearance_overlays()
+	. = list()
 	underlays.Cut()
 	if(rag)
 		var/underlay_image = image(icon='icons/obj/drinks.dmi', icon_state=rag.on_fire? "[rag_underlay]_lit" : rag_underlay)

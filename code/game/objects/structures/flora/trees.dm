@@ -359,11 +359,11 @@
 	. = ..()
 	update_icon()
 
-// ALLOW(sys_update_icon): glow overlays from per-instance light_shift, plus set_light side effect
-/obj/structure/flora/tree/sif/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/flora/tree/sif, PROC_REF(appearance_overlays), list())
+/obj/structure/flora/tree/sif/appearance_overlays()
+	. = list()
 	var/bulbs = (5 - light_shift)
 	if(bulbs > 0)
 		set_light(bulbs, 1, "#33ccff")	// 5 variants, missing bulbs. 5th has no bulbs, so no glow.
-		add_overlay(mutable_appearance(icon, "[base_state][bulbs]_glow"))
-		add_overlay(emissive_appearance(icon, "[base_state][bulbs]_glow"))
+		. += mutable_appearance(icon, "[base_state][bulbs]_glow")
+		. += emissive_appearance(icon, "[base_state][bulbs]_glow")

@@ -50,24 +50,24 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 	cell = locate_within(src, /obj/item/cell)
 
-// ALLOW(sys_update_icon): volume overlay tinted with reagent colour; overlay names derived from the current icon_state and cell charge check
-/obj/machinery/pump/update_icon()
-	..()
-	cut_overlays()
-	add_overlay("[icon_state]-tank")
+DECLARE_APPEARANCE_PROC(/obj/machinery/pump, PROC_REF(appearance_overlays), list())
+/obj/machinery/pump/appearance_overlays()
+	. = list()
+	. += ..()
+	. += "[icon_state]-tank"
 	if(!(cell?.check_charge(active_power_usage)))
-		add_overlay("[icon_state]-lowpower")
+		. += "[icon_state]-lowpower"
 
 	if(reagents.total_volume >= 1)
 		var/image/I = image(icon, "[icon_state]-volume")
 		I.color = reagents.get_color()
-		add_overlay(I)
-	add_overlay("[icon_state]-glass")
+		. += I
+	. += "[icon_state]-glass"
 
 	if(open)
-		add_overlay("[icon_state]-open")
+		. += "[icon_state]-open"
 		if(istype(cell))
-			add_overlay("[icon_state]-cell")
+			. += "[icon_state]-cell"
 
 	icon_state = "[initial(icon_state)][on ? "-running" : ""]"
 

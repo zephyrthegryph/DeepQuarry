@@ -31,9 +31,9 @@
 
 	refinery_transfer()
 
-// ALLOW(sys_update_icon): reagent fill tinted by reagents.get_color() plus neighbour intake overlays
-/obj/machinery/reagent_refinery/vat/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/vat, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/vat/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
@@ -45,15 +45,15 @@
 			if(80 to INFINITY)	percent = 10
 		var/image/filling = image(icon, loc, "vat_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "vat_cons", dir = dir)
-	add_overlay(pipe)
+	. += pipe
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ amount_per_transfer_from_this > 0 ? "on" : "off" ]")
-			add_overlay(dot)
-		update_input_connection_overlays("vat_intakes")
+			. += dot
+		. += update_input_connection_overlays("vat_intakes")
 
 /obj/machinery/reagent_refinery/vat/examine(mob/user, infix, suffix)
 	. = ..()

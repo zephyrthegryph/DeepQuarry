@@ -744,8 +744,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/structure/window/reinforced/survival_pod/is_fulltile()
 	return FALSE
 
-// ALLOW(sys_update_icon): opts out of /obj/structure/window procedural smoothing/overlays; icon_state from basestate
-/obj/structure/window/reinforced/survival_pod/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, PROC_REF(appearance_overlays), list())
+/obj/structure/window/reinforced/survival_pod/appearance_overlays()
+	. = list()
 	icon_state = basestate
 
 //Polarized windows
@@ -774,8 +775,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	can_plate = FALSE
 	can_flip_verb = FALSE
 
-// ALLOW(sys_update_icon): opts out of /obj/structure/table procedural connection overlays
-/obj/structure/table/survival_pod/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, PROC_REF(appearance_overlays), list())
+/obj/structure/table/survival_pod/appearance_overlays()
+	. = list()
 	icon_state = "table"
 
 /obj/structure/table/survival_pod/Initialize(mapload)
@@ -794,12 +796,11 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	stasis_level = /datum/body_effect/stasis/complete //Just one setting
 
 APPEARANCE_NONE(/obj/machinery/sleeper/survival_pod)
-// ALLOW(sys_update_icon): opts out of the sleeper template; cover overlay added/cut against the occupant slot without resetting icon_state
-/obj/machinery/sleeper/survival_pod/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/sleeper/survival_pod, PROC_REF(appearance_overlays), list())
+/obj/machinery/sleeper/survival_pod/appearance_overlays()
+	. = list()
 	if(src?.slot_item(OCCUPANT_SLOT_SLEEPER))
-		add_overlay("sleeper_cover")
-	else
-		cut_overlays()
+		. += "sleeper_cover"
 
 //Computer
 /obj/item/gps/computer

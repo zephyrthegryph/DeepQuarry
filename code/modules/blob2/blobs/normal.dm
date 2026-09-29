@@ -10,9 +10,10 @@
 	. = ..()
 	update_integrity(21) // Doesn't start at full health.
 
-// ALLOW(sys_update_icon): runs the blob's overmind colouring, then picks a damaged state from integrity
-/obj/structure/blob/normal/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/normal, PROC_REF(appearance_overlays), list("get_integrity"))
+/obj/structure/blob/normal/appearance_overlays()
+	. = list()
+	. += ..()
 	if(get_integrity() <= 15)
 		icon_state = "blob_damaged"
 		desc = "A thin lattice of slightly twitching tendrils."

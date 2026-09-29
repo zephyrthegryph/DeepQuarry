@@ -141,18 +141,18 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 	SHOULD_CALL_PARENT(FALSE)
 	return
 
-// ALLOW(sys_update_icon): edge overlays per adjacent shield dir, redraws neighbours and sets coloured light
-/obj/effect/energy_field/update_icon(update_neightbors = 0)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+/obj/effect/energy_field/appearance_overlays()
+	. = list()
 	var/list/adjacent_shields_dir = list()
 	for(var/direction in GLOB.cardinal)
 		var/turf/T = get_step(src, direction)
 		if(T) // Incase we somehow stepped off the map.
 			for(var/obj/effect/energy_field/F in turf_contents_of_type(T, /obj/effect/energy_field))
-				if(update_neightbors)
-					F.update_icon(0)
 				adjacent_shields_dir |= direction
 				break
+	// Adjacent fields draw edges toward us: tell them when we appear, go down or come back.
+	appearance_notify_neighbours("[density]|[x],[y],[z]", /obj/effect/energy_field)
 	// Icon_state and Glow
 	if(density)
 		icon_state = "shield"
@@ -163,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/effect/energy_field, \
 
 	// Edge overlays
 	for(var/found_dir in adjacent_shields_dir)
-		add_overlay(image(src.icon, src, icon_state = "shield_edge", dir = found_dir))
+		. += image(src.icon, src, icon_state = "shield_edge", dir = found_dir)
 
 // Small visual effect, makes the shield tiles brighten up by becoming more opaque for a moment, and spreads to nearby shields.
 /obj/effect/energy_field/proc/impact_effect(i, list/affected_shields = list())

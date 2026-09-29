@@ -6,22 +6,23 @@
 	var/iscopy = 0
 
 
-// ALLOW(sys_update_icon): replaces /obj/item/paper's procedural drawing (which honours icon states set elsewhere) with the carbon copy states
-/obj/item/paper/carbon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/carbon, PROC_REF(appearance_overlays), list())
+/obj/item/paper/carbon/appearance_overlays()
+	. = list()
 	if(iscopy)
 		if(info)
 			icon_state = "cpaper_words"
-			return
+			return .
 		icon_state = "cpaper"
 	else if (copied)
 		if(info)
 			icon_state = "paper_words"
-			return
+			return .
 		icon_state = "paper"
 	else
 		if(info)
 			icon_state = "paper_stack_words"
-			return
+			return .
 		icon_state = "paper_stack"
 
 

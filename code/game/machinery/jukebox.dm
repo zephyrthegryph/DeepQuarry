@@ -368,8 +368,11 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return
-// ALLOW(sys_update_icon): animate()s alpha while playing; opts out of the jukebox's declared drawing
-/obj/machinery/media/jukebox/ghost/update_icon()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/machinery/media/jukebox/ghost)
+DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, PROC_REF(appearance_overlays), list())
+/obj/machinery/media/jukebox/ghost/appearance_overlays()
+	. = list()
 	if(playing)
 		animate(src, alpha = 200, time = 5, loop = -1)
 	else

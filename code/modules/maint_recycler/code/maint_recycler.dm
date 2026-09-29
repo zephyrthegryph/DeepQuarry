@@ -370,8 +370,9 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	open_door(user)
 	update_icon()
 
-// ALLOW(sys_update_icon): overlay copies the inserted item's appearance with per-instance offsets and scale
-/obj/machinery/maint_recycler/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, PROC_REF(appearance_overlays), list())
+/obj/machinery/maint_recycler/appearance_overlays()
+	. = list()
 	if(inserted_item != null)
 		item_overlay.appearance = inserted_item.appearance;
 		//todo, assoc list for icon states from type
@@ -395,7 +396,7 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 		item_overlay.overlays = null
 		item_overlay.underlays = null
 
-	. = ..()
+	. += ..()
 
 /datum/interaction/machine_hand/maint_recycler_use
 	id = "maint_recycler_use"

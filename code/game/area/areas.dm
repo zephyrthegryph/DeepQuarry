@@ -236,8 +236,9 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 		firedoors_update()
 	return
 
-// ALLOW(sys_update_icon): alarm states hand off to lights by nulling icon_state, which a declaration row cannot express; reads area power channel
-/area/update_icon()
+DECLARE_APPEARANCE_PROC(/area, PROC_REF(appearance_overlays), list())
+/area/appearance_overlays()
+	. = list()
 	if ((fire || eject || party) && (!requires_power||power_environ) && !istype(src, /area/space))//If it doesn't require power, can still activate this proc.
 		if(fire && !eject && !party)
 			icon_state = null // Let lights take care of it

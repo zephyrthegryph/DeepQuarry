@@ -66,15 +66,15 @@
 	else
 		return 1
 
-// ALLOW(sys_update_icon): overlays chosen from the type of the held coat
-/obj/structure/coatrack/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/coatrack, PROC_REF(appearance_overlays), list())
+/obj/structure/coatrack/appearance_overlays()
+	. = list()
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat))
-		add_overlay("coat_lab")
+		. += "coat_lab"
 	if (istype(coat(), /obj/item/clothing/suit/storage/toggle/labcoat/cmo))
-		add_overlay("coat_cmo")
+		. += "coat_cmo"
 	if (istype(coat(), /obj/item/clothing/suit/storage/det_trench))
-		add_overlay("coat_det")
+		. += "coat_det"
 
 /// LC-refs: coat -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/coatrack/proc/coat() as /obj/item/clothing/suit

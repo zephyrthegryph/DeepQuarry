@@ -130,8 +130,9 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	update_icon()
 
 APPEARANCE_NONE(/obj/machinery/appliance/mixer)
-// ALLOW(sys_update_icon): starts/stops the mixer_loop sound together with the on/off redraw
-/obj/machinery/appliance/mixer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer, PROC_REF(appearance_overlays), list())
+/obj/machinery/appliance/mixer/appearance_overlays()
+	. = list()
 	if (!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(mixer_loop)

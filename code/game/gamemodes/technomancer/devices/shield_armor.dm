@@ -75,13 +75,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/shield, INTERACT_USE("Toggle",
 	user.update_inv_wear_suit()
 	user.update_mob_action_buttons()
 
-// ALLOW(sys_update_icon): sets item_state and set_light() glow with the active sprite.
-/obj/item/clothing/suit/armor/shield/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/armor/shield, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/suit/armor/shield/appearance_overlays()
+	. = list()
 	icon_state = "shield_armor_[active]"
 	item_state = "shield_armor_[active]"
 	if(active)
 		set_light(2, 1, l_color = "#006AFF")
 	else
 		set_light(0, 0, l_color = "#000000")
-	..()
-	return
+	. += ..()
+	return .

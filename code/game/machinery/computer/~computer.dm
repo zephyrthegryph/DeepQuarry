@@ -3,15 +3,16 @@
 	icon_keyboard = "power_key"
 	icon_screen = "power_monitor"
 
-// ALLOW(sys_update_icon): picks the screen then runs /obj/machinery/computer's procedural compositing
-/obj/machinery/computer/power_monitor/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/power_monitor, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/power_monitor/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_screen = "broken"
 	else if(alerting)
 		icon_screen = "power_monitor_warn"
 	else
 		icon_screen = "power_monitor"
-	..()
+	. += ..()
 
 /obj/machinery/computer/rcon
 	icon_keyboard = "power_key"

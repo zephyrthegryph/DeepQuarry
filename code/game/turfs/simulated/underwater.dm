@@ -72,9 +72,10 @@
 	name = "deeper waters"
 	desc = "The watery depths seem to go even deeper here."
 
-// ALLOW(sys_update_icon): overrides icon/icon_state after the procedural water/floor parent drawing
-/turf/simulated/floor/water/underwater/open/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, PROC_REF(appearance_overlays), list())
+/turf/simulated/floor/water/underwater/open/appearance_overlays()
+	. = list()
+	. += ..()
 	icon = 'icons/turf/open_space.dmi'
 	icon_state = "black_open_lighter"
 
@@ -118,9 +119,10 @@
 	. = ..()
 	make_z_transparent(FALSE)
 
-// ALLOW(sys_update_icon): overrides icon/icon_state after the procedural water/floor parent drawing
-/turf/simulated/floor/water/underwater/indoors/open/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/indoors/open, PROC_REF(appearance_overlays), list())
+/turf/simulated/floor/water/underwater/indoors/open/appearance_overlays()
+	. = list()
+	. += ..()
 	icon = 'icons/turf/open_space.dmi'
 	icon_state = "black_open_lighter"
 

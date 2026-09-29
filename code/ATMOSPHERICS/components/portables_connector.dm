@@ -58,8 +58,9 @@
 /obj/machinery/atmospherics/portables_connector/init_dir()
 	initialize_directions = dir
 
-// ALLOW(sys_update_icon): opts out of /obj/machinery/atmospherics stub (which does not apply declarations); fixed state set directly
-/obj/machinery/atmospherics/portables_connector/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/portables_connector, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/portables_connector/appearance_overlays()
+	. = list()
 	icon_state = "connector"
 
 /obj/machinery/atmospherics/portables_connector/update_underlays()

@@ -214,12 +214,12 @@ TYPE_TABLE(/obj/item/storage/pouch/flares, hold_spec, list(HOLD_ONLY(list(/obj/i
 /obj/item/storage/pouch/flares/full_glow
 	starts_with = list(/obj/item/flashlight/glowstick = 14) // Full box of glowsticks.
 
-// ALLOW(sys_update_icon): overlay from stored item count (contents)
-/obj/item/storage/pouch/flares/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, PROC_REF(appearance_overlays), list())
+/obj/item/storage/pouch/flares/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		add_overlay("flare_[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
-	..()
+		. += "flare_[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+	. += ..()
 
 /obj/item/storage/pouch/holster
 	name = "storage pouch (holster)"
@@ -234,12 +234,12 @@ TYPE_TABLE(/obj/item/storage/pouch/holster, hold_spec, list(HOLD_ONLY(list(/obj/
 /obj/item/storage/pouch/holster/full_taser
 	starts_with = list(/obj/item/gun/energy/taser)
 
-// ALLOW(sys_update_icon): overlay from whether it holds contents
-/obj/item/storage/pouch/holster/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, PROC_REF(appearance_overlays), list())
+/obj/item/storage/pouch/holster/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		add_overlay("pistol_layer")
-	..()
+		. += "pistol_layer"
+	. += ..()
 
 /obj/item/storage/pouch/baton
 	name = "storage pouch (melee)"
@@ -252,12 +252,12 @@ TYPE_TABLE(/obj/item/storage/pouch/baton, hold_spec, list(HOLD_ONLY(list(/obj/it
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 
-// ALLOW(sys_update_icon): overlay from whether it holds contents
-/obj/item/storage/pouch/baton/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/baton, PROC_REF(appearance_overlays), list())
+/obj/item/storage/pouch/baton/appearance_overlays()
+	. = list()
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		add_overlay("baton_layer")
-	..()
+		. += "baton_layer"
+	. += ..()
 
 /obj/item/storage/pouch/holding
 	name = "storage pouch of holding"

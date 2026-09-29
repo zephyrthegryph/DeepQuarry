@@ -1014,9 +1014,9 @@ TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/clothing/accessory/medal \
 		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-// ALLOW(sys_update_icon): overlay picked from the type of the first stored item
-/obj/item/storage/trinketbox/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, PROC_REF(appearance_overlays), list())
+/obj/item/storage/trinketbox/appearance_overlays()
+	. = list()
 	if(open)
 		icon_state = open_state
 
@@ -1030,7 +1030,7 @@ TYPE_TABLE(/obj/item/storage/trinketbox, hold_spec, list(HOLD_ONLY(list( \
 			else if(istype(held[1], /obj/item/clothing/accessory/medal))
 				contained_image = "medal_trinket"
 			if(contained_image)
-				add_overlay(contained_image)
+				. += contained_image
 	else
 		icon_state = closed_state
 

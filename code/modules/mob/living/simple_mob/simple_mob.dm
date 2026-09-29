@@ -537,9 +537,10 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(myid)
 		return myid
 
-// ALLOW(sys_update_icon): vore fullness icon states, eye refresh, update_transform and per-belly fullness overlays
-/mob/living/simple_mob/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/appearance_overlays()
+	. = list()
+	. += ..()
 	if(vore_active)
 		var/voremob_awake = FALSE
 		if(icon_state == icon_living)
@@ -547,7 +548,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		update_fullness()
 		if(!vore_fullness)
 			update_transform()
-			return 0
+			return .
 		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
 			icon_state = "[icon_living]-[vore_fullness]"
 		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
@@ -558,7 +559,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 			remove_eyes()
 			add_eyes()
 	update_transform()
-	add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.
+	. += add_vore_fullness_overlays() // Appends per-belly-class overlays; see living_bellies.dm.
 
 /mob/living/simple_mob/regenerate_icons()
 	..()

@@ -113,16 +113,16 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 	new /obj/item/material/shard(src.loc)
 	return ..()
 
-// ALLOW(sys_update_icon): re-applies set_dir(angle2dir(adir)) (tracking angle) with the panel overlay.
-/obj/machinery/power/solar/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/solar/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_stat(BROKEN))
-		add_overlay("solar_panel-b")
+		. += "solar_panel-b"
 	else
-		add_overlay("solar_panel")
+		. += "solar_panel"
 		src.set_dir(angle2dir(adir))
-	return
+	return .
 
 //calculates the fraction of the sun that the panel recieves
 /obj/machinery/power/solar/proc/update_solar_exposure()
@@ -403,21 +403,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			if(connected_tracker())
 				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
 
-// ALLOW(sys_update_icon): overlay image whose dir is computed from cdir (tracking angle) each redraw.
-/obj/machinery/power/solar_control/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/solar_control/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = "broken"
-		cut_overlays()
-		return
+		return .
 	if(has_stat(NOPOWER))
 		icon_state = "c_unpowered"
-		cut_overlays()
-		return
+		return .
 	icon_state = "solar"
-	cut_overlays()
 	if(cdir > -1)
-		add_overlay(image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir)))
-	return
+		. += image('icons/obj/computer.dmi', "solcon-o", FLY_LAYER, angle2dir(cdir))
+	return .
 
 /obj/machinery/power/solar_control/declare_interactions(list/into)
 	into += list(

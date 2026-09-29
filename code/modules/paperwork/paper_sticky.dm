@@ -124,8 +124,9 @@ DECLARE_INTERACTIONS(/obj/item/sticky_pad, \
 	..()
 	reset_persistence_tracking()
 
-// ALLOW(sys_update_icon): keeps a scrap's state and otherwise picks the written state (opts out of /obj/item/paper's drawing)
-/obj/item/paper/sticky/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/sticky, PROC_REF(appearance_overlays), list())
+/obj/item/paper/sticky/appearance_overlays()
+	. = list()
 	if(icon_state != "scrap")
 		icon_state = info ? "paper_words" : "paper"
 

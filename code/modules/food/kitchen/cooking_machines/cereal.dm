@@ -21,9 +21,10 @@
 
 DECLARE_REF(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop", OWNED, null)
 
-// ALLOW(sys_update_icon): starts/stops the cerealmaker_loop sound together with the on/off redraw
-/obj/machinery/appliance/mixer/cereal/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, PROC_REF(appearance_overlays), list())
+/obj/machinery/appliance/mixer/cereal/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon

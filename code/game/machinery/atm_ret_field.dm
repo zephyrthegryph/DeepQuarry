@@ -190,9 +190,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_[appearanc
 	light_on = TRUE
 	rad_insulation = RAD_LIGHT_INSULATION
 
-// ALLOW(sys_update_icon): neighbour-dependent corner smoothing: overlays built from adjacent retention fields' directions
-/obj/structure/atmospheric_retention_field/update_icon()
-	cut_overlays() //overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/structure/atmospheric_retention_field, PROC_REF(appearance_overlays), list())
+/obj/structure/atmospheric_retention_field/appearance_overlays()
+	. = list()
 	var/list/dirs = list()
 	for(var/obj/structure/atmospheric_retention_field/F in orange(src,1))
 		dirs += get_dir(src, F)
@@ -202,9 +202,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospheric_field_generator, "arfg_[appearanc
 	icon_state = ""
 	for(var/i = 1 to 4)
 		var/image/I = image(icon, "[basestate][connections[i]]", dir = 1<<(i-1))
-		add_overlay(I)
+		. += I
 
-	return
+	return .
 
 /obj/structure/atmospheric_retention_field/Initialize(mapload)
 	. = ..()

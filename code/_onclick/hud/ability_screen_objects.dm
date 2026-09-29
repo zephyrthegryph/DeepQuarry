@@ -88,8 +88,9 @@ DECLARE_REF(/atom/movable/screen/movable/ability_master, "my_mob_handle", BACK_H
 		ability.maptext = "[ability.index]" // Slot number
 		i++
 
-// ALLOW(sys_update_icon): sets invisibility from the ability_objects list, not an icon state
-/atom/movable/screen/movable/ability_master/update_icon()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, PROC_REF(appearance_overlays), list())
+/atom/movable/screen/movable/ability_master/appearance_overlays()
+	. = list()
 	if(length(ability_objects))
 		invisibility = INVISIBILITY_NONE
 	else
@@ -172,15 +173,15 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 			master.update_icon()
 	..()
 
-// ALLOW(sys_update_icon): overlay state is the per-instance ability_icon_state var
-/atom/movable/screen/ability/update_icon()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, PROC_REF(appearance_overlays), list())
+/atom/movable/screen/ability/appearance_overlays()
+	. = list()
 
 
 
-	cut_overlays()
 	icon_state = "[background_base_state]_spell_base"
 
-	overlays += ability_icon_state
+	. += ability_icon_state
 
 
 /atom/movable/screen/ability/Click()

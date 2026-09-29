@@ -51,16 +51,16 @@ MATERIAL_MIX(/obj/item/assembly/timer, list(MAT_STEEL = 500, MAT_GLASS = 50))
 		timer_end()
 		time = 10
 
-// ALLOW(sys_update_icon): records the overlays its holder composites and redraws the holder
-/obj/item/assembly/timer/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/timer, PROC_REF(appearance_overlays), list())
+/obj/item/assembly/timer/appearance_overlays()
+	. = list()
 	attached_overlays = list()
 	if(timing)
-		add_overlay("timer_timing")
+		. += "timer_timing"
 		attached_overlays += "timer_timing"
 	if(holder())
 		holder().update_icon()
-	return
+	return .
 
 /obj/item/assembly/timer/tgui_interact(mob/user, datum/tgui/ui)
 	if(!secured)

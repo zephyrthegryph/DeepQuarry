@@ -14,9 +14,7 @@
 	var/reason = "NOT SPECIFIED"
 	special_handling = TRUE
 
-// ALLOW(sys_update_icon): opts out of /obj/item/card's blended sprite-stack icon
-/obj/item/card/id/guest/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/card/id/guest)
 
 /obj/item/card/id/guest/GetAccess()
 	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))

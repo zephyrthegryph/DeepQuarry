@@ -71,8 +71,9 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "sec_ticket" // ALLOW(decl): see above
 
-// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural written/stamp overlays
-/obj/item/paper/sec_ticket/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/sec_ticket, PROC_REF(appearance_overlays), list())
+/obj/item/paper/sec_ticket/appearance_overlays()
+		. = list()
 		icon = icon
 		icon_state = icon_state
 
@@ -113,7 +114,8 @@ DECLARE_INTERACTIONS(/obj/item/ticket_printer, INTERACT_USE(null, PROC_REF(inter
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "permit_ticket" // ALLOW(decl): see above
 
-// ALLOW(sys_update_icon): opts out of /obj/item/paper's procedural written/stamp overlays
-/obj/item/paper/permit_ticket/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper/permit_ticket, PROC_REF(appearance_overlays), list())
+/obj/item/paper/permit_ticket/appearance_overlays()
+		. = list()
 		icon = icon
 		icon_state = icon_state

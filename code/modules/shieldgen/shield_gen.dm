@@ -283,8 +283,9 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 				continue
 			new /obj/effect/energy_field(O, src)
 
-// ALLOW(sys_update_icon): sets or clears its light and stops the shield_hum loop along with the redraw
-/obj/machinery/shield_gen/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, PROC_REF(appearance_overlays), list())
+/obj/machinery/shield_gen/appearance_overlays()
+	. = list()
 	if(has_stat(BROKEN))
 		icon_state = "broke"
 		set_light(0)

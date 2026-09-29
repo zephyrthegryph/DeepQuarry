@@ -183,12 +183,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	else
 		set_light(light_range_on, light_power_on)
 
-// ALLOW(sys_update_icon): generated minimap image, holomap datum initialisation and floor marking offsets
-/obj/machinery/station_map/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/station_map, PROC_REF(appearance_overlays), list())
+/obj/machinery/station_map/appearance_overlays()
+	. = list()
 	if(!holomap_datum)
-		return //Not yet.
+		return .
 
-	cut_overlays()
 	if(has_stat(BROKEN))
 		icon_state = "station_mapb"
 	else if((has_stat(NOPOWER)) || !anchored)
@@ -200,7 +200,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			holomap_datum.initialize_holomap_bogus()
 		else
 			small_station_map = image(SSholomaps.extraMiniMaps["[HOLOMAP_EXTRA_STATIONMAPSMALL]_[original_zLevel]"], dir = src.dir)
-			add_overlay(small_station_map)
+			. += small_station_map
 			holomap_datum.initialize_holomap(get_turf(src))
 
 	// Put the little "map" overlay down where it looks nice
@@ -208,12 +208,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 		floor_markings.dir = src.dir
 		floor_markings.pixel_x = -src.pixel_x
 		floor_markings.pixel_y = -src.pixel_y
-		add_overlay(floor_markings)
+		. += floor_markings
 
 	if(panel_open)
-		add_overlay("station_map-panel")
-	else
-		cut_overlay("station_map-panel")
+		. += "station_map-panel"
 
 /// Old attackby: fingerprinted, then always fell through to ..().
 /datum/interaction/machine_item/station_map_fingerprint

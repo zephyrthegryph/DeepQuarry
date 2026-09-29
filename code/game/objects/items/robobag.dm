@@ -24,10 +24,10 @@
 	if(corptag && Adjacent(user))
 		. += span_notice("[src] has a [corptag] attached to it.")
 
-// ALLOW(sys_update_icon): corptag overlay picked from the inserted badge's type and icon_state
-/obj/structure/closet/body_bag/cryobag/robobag/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag/robobag, PROC_REF(appearance_overlays), list())
+/obj/structure/closet/body_bag/cryobag/robobag/appearance_overlays()
+	. = list()
+	. += ..()
 	if(corptag)
 		var/corptag_icon_state = "tag_blank"
 		if(istype(corptag,/obj/item/clothing/accessory/badge/holo/detective) || istype(corptag, /obj/item/clothing/accessory/badge/holo/hos) || istype(corptag, /obj/item/clothing/accessory/badge/old) || istype(corptag, /obj/item/clothing/accessory/badge/sheriff))
@@ -39,7 +39,7 @@
 		else if(istype(corptag, /obj/item/clothing/accessory/badge/corporate_tag))
 			corptag_icon_state = corptag.icon_state
 
-		add_overlay(corptag_icon_state)
+		. += corptag_icon_state
 
 EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \

@@ -26,27 +26,23 @@ MATERIAL_MIX(/obj/item/fusion_coil, list(MAT_STEEL = 6000, MAT_COPPER = 4000, MA
 
 	update_icon()
 
-// ALLOW(sys_update_icon): emissive mutable_appearances plus set_light() colour/range that must change with the damaged/charged sprite.
-/obj/item/fusion_coil/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/fusion_coil, PROC_REF(appearance_overlays), list())
+/obj/item/fusion_coil/appearance_overlays()
+	. = list()
 	icon_state = "fc_spent"
 
-	cut_overlays()
-
-	var/list/overlays = list()
 
 	if(coil_damaged)
-		overlays += mutable_appearance(icon, "fc_unstable")
-		overlays += emissive_appearance(icon, "fc_unstable")
+		. += mutable_appearance(icon, "fc_unstable")
+		. += emissive_appearance(icon, "fc_unstable")
 		set_light(1, 3, light_color_danger)
-		add_overlay(overlays)
-		return
+		return .
 
 	if(coil_charged)
-		overlays += mutable_appearance(icon, "fc_charged")
-		overlays += emissive_appearance(icon, "fc_charged")
+		. += mutable_appearance(icon, "fc_charged")
+		. += emissive_appearance(icon, "fc_charged")
 		set_light(1, 2, light_color)
-		add_overlay(overlays)
-		return
+		return .
 
 	set_light(0)
 

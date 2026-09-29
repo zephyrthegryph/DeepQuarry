@@ -411,10 +411,10 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 
 /obj/effect/constructing_effect/Initialize(mapload, rcd_delay, rcd_status)
 	. = ..()
-	update_icon(rcd_delay, rcd_status)
+	start_animation(rcd_delay, rcd_status)
 
-// ALLOW(sys_update_icon): takes delay/status arguments and schedules end_animation
-/obj/effect/constructing_effect/update_icon(delay = 30, status)
+/// Plays the construction animation for `delay` (shorter states for faster work), then the end animation.
+/obj/effect/constructing_effect/proc/start_animation(delay, status)
 	icon_state = "rcd"
 	if (delay < 10)
 		icon_state += "_shortest"

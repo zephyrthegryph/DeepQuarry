@@ -26,8 +26,9 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 	signal()
 	return TRUE
 
-// ALLOW(sys_update_icon): redraws its holder (another object)
-/obj/item/assembly/signaler/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly/signaler, PROC_REF(appearance_overlays), list())
+/obj/item/assembly/signaler/appearance_overlays()
+	. = list()
 	if(holder())
 		holder().update_icon()
 

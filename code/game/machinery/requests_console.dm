@@ -88,9 +88,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 			GLOB.req_console_information -= department
 	..()
 
-// ALLOW(sys_update_icon): sets the console light on/off with the priority overlays
-/obj/machinery/requests_console/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/requests_console, PROC_REF(appearance_overlays), list())
+/obj/machinery/requests_console/appearance_overlays()
+	. = list()
 
 	if(has_stat(NOPOWER))
 		set_light(0)
@@ -98,8 +98,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 		icon_state = "req_comp_off"
 	else
 		icon_state = "req_comp_[newmessagepriority]"
-		add_overlay(mutable_appearance(icon, "req_comp_ov[newmessagepriority]"))
-		add_overlay(emissive_appearance(icon, "req_comp_ov[newmessagepriority]"))
+		. += mutable_appearance(icon, "req_comp_ov[newmessagepriority]")
+		. += emissive_appearance(icon, "req_comp_ov[newmessagepriority]")
 		set_light(2)
 		set_light_on(TRUE)
 

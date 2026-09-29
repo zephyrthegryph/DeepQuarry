@@ -204,13 +204,13 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 /obj/item/weldingtool/proc/isOn()
 	return welding
 
-// ALLOW(sys_update_icon): fuel-ratio overlay, item_state, light and holder hand refresh
-/obj/item/weldingtool/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool, PROC_REF(appearance_overlays), list())
+/obj/item/weldingtool/appearance_overlays()
+	. = list()
+	. += ..()
 	// Welding overlay.
 	if(welding)
-		add_overlay("[icon_state]-on")
+		. += "[icon_state]-on"
 		item_state = "[initial(item_state)]1"
 	else
 		item_state = initial(item_state)
@@ -219,7 +219,7 @@ DECLARE_INTERACTIONS(/obj/item/weldingtool, \
 	if(change_icons && get_max_fuel())
 		var/ratio = get_fuel() / get_max_fuel()
 		ratio = CEILING(ratio * 4, 1) * 25
-		add_overlay("[icon_state][ratio]")
+		. += "[icon_state][ratio]"
 
 	// Lights
 	if(welding && flame_intensity)

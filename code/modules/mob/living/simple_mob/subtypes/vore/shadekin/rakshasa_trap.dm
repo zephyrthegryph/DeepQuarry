@@ -15,9 +15,10 @@
 /obj/structure/gootrap/proc/can_use(mob/user)
 	return (user.IsAdvancedToolUser() && !issilicon(user) && !user.stat && !user.restrained())
 
-// ALLOW(sys_update_icon): per-instance colour from basecolor
-/obj/structure/gootrap/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/gootrap, PROC_REF(appearance_overlays), list())
+/obj/structure/gootrap/appearance_overlays()
+	. = list()
+	. += ..()
 	color = basecolor
 
 /obj/structure/gootrap/Initialize(mapload)

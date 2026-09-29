@@ -344,22 +344,22 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 
-// ALLOW(sys_update_icon): adds the per-instance mapped special_frame overlay alongside held-gear overlays
-/obj/machinery/gear_dispenser/suit_fancy/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, PROC_REF(appearance_overlays), list())
+/obj/machinery/gear_dispenser/suit_fancy/appearance_overlays()
+	. = list()
 
 	if(special_frame)
-		add_overlay(special_frame)
+		. += special_frame
 
 	if(needs_power && !operable())
-		add_overlay("nopower")
+		. += "nopower"
 	else
-		add_overlay("light1")
+		. += "light1"
 
 	if(held_gear_disp())
-		add_overlay("fullsuit")
+		. += "fullsuit"
 		if(operable())
-			add_overlay("light2")
+			. += "light2"
 
 /obj/machinery/gear_dispenser/suit_fancy/declare_interactions(list/into)
 	into += list(

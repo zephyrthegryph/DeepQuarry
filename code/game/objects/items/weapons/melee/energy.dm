@@ -185,9 +185,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 /obj/item/melee/energy/get_cell()
 	return bcell
 
-// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance (lcolor/rainbow) and refreshes the user's hands
-/obj/item/melee/energy/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, PROC_REF(appearance_overlays), list())
+/obj/item/melee/energy/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
 	color = lcolor
@@ -195,9 +196,8 @@ DECLARE_INTERACTIONS(/obj/item/melee/energy, \
 		blade_overlay = mutable_appearance(icon, "[icon_state]_blade_rainbow")
 		blade_overlay.color = "FFFFFF"
 		color = "FFFFFF"
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_inv_l_hand()
@@ -566,9 +566,10 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	colorable = FALSE
 	lcolor = "#FFFFFF"
 
-// ALLOW(sys_update_icon): chains into /obj/item/melee/energy's procedural coloured blade overlay
-/obj/item/melee/energy/sword/altevian/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, PROC_REF(appearance_overlays), list())
+/obj/item/melee/energy/sword/altevian/appearance_overlays()
+	. = list()
+	. += ..()
 	if(active)
 		icon_state = "[initial(icon_state)]_active"
 	else

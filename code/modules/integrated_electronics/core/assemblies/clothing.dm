@@ -15,9 +15,10 @@
 /obj/item/electronic_assembly/clothing/tgui_host()
 	return clothing().tgui_host()
 
-// ALLOW(sys_update_icon): mirrors its icon state onto the clothing it is built into (another object)
-/obj/item/electronic_assembly/clothing/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, PROC_REF(appearance_overlays), list())
+/obj/item/electronic_assembly/clothing/appearance_overlays()
+	. = list()
+	. += ..()
 	clothing().icon_state = icon_state
 	// We don't need to update the mob sprite since it won't (and shouldn't) actually get changed.
 

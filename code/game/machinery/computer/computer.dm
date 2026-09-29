@@ -35,9 +35,9 @@
 /obj/machinery/computer/blob_act()
 	ex_act(2)
 
-// ALLOW(sys_update_icon): neighbour-dependent frame (adjacent computers), keyboard/screen overlays and emissive screen, terminal sounds
-/obj/machinery/computer/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/appearance_overlays()
+	. = list()
 
 	. = list()
 
@@ -59,7 +59,8 @@
 	if(icon_keyboard)
 		if(has_stat(NOPOWER))
 			play_sfx(src, SFX_MACHINES_TERMINAL_OFF)
-			return add_overlay("[icon_keyboard]_off")
+			. += "[icon_keyboard]_off"
+			return .
 		. += icon_keyboard
 
 	// This whole block lets screens ignore lighting and be visible even in the darkest room
@@ -71,7 +72,6 @@
 	. += emissive_appearance(icon, overlay_state)
 	play_sfx(src, SFX_MACHINES_TERMINAL_ON)
 
-	add_overlay(.)
 
 /obj/machinery/computer/power_change()
 	. = ..()

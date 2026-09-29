@@ -687,8 +687,9 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 	air_contents.add_thermal_energy(15000)
 
-// ALLOW(sys_update_icon): draws on the attached tank (another object)
-/obj/item/tankassemblyproxy/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/tankassemblyproxy, PROC_REF(appearance_overlays), list())
+/obj/item/tankassemblyproxy/appearance_overlays()
+	. = list()
 	if(assembly)
 		tank.update_icon()
 		tank.add_overlay("bomb_assembly")

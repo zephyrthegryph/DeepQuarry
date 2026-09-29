@@ -22,8 +22,9 @@
 	lit = !lit
 	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 
-// ALLOW(sys_update_icon): sets the sign light (signlight colour) together with the on/off state
-/obj/machinery/neonsign/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/neonsign, PROC_REF(appearance_overlays), list())
+/obj/machinery/neonsign/appearance_overlays()
+	. = list()
 	if(!lit)
 		icon_state = off_icon
 		set_light(0)

@@ -62,8 +62,9 @@
 	if(epitaph && get_dist(src, user) < 2)
 		. += epitaph
 
-// ALLOW(sys_update_icon): icon_changes=FALSE leaves an icon_state set elsewhere untouched
-/obj/item/material/gravemarker/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/material/gravemarker, PROC_REF(appearance_overlays), list())
+/obj/item/material/gravemarker/appearance_overlays()
+	. = list()
 	if(icon_changes)
 		if(grave_name && epitaph)
 			icon_state = "[initial(icon_state)]_3"
@@ -74,7 +75,7 @@
 		else
 			icon_state = initial(icon_state)
 
-	..()
+	. += ..()
 
 DECLARE_INTERACTIONS(/obj/item/material/gravemarker, INTERACT_USE(null, PROC_REF(interaction_self)))
 

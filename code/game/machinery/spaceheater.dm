@@ -66,9 +66,10 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 	var/cap_over = get_part_rating(/obj/item/stock_parts/capacitor) - get_part_count(/obj/item/stock_parts/capacitor)
 	power_efficiency -= cap_over * 0.06 //Four T2 parts = 24% more efficient. Four T5 parts = 96% more efficient
 	min_temperature = max(1, min_temperature)
-// ALLOW(sys_update_icon): drawing is declared; the override only sets heat/cool-coloured lights after ..()
-/obj/machinery/space_heater/update_icon()
-	..() // declared appearance
+DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, PROC_REF(appearance_overlays), list())
+/obj/machinery/space_heater/appearance_overlays()
+	. = list()
+	. += ..()
 	switch(state)
 		// start, fixing runtimes
 		if(SHEATER_OFF)

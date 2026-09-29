@@ -19,11 +19,12 @@
 		update_icon()
 	. = ..()
 
-// ALLOW(sys_update_icon): per-direction footprint images from crossed_dirs on top of the procedural floor drawing
-/turf/simulated/floor/outdoors/snow/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/outdoors/snow, PROC_REF(appearance_overlays), list())
+/turf/simulated/floor/outdoors/snow/appearance_overlays()
+	. = list()
+	. += ..()
 	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
+		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
 
 EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/snow, \
 	INTERACT_INSERT(/obj/item/shovel, PROC_REF(snow_shovel), "Dig up"), \

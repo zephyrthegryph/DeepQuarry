@@ -66,8 +66,9 @@
 		eject_materials(f, -1)
 	..()
 
-// ALLOW(sys_update_icon): flick()s the lid-open animation based on the previous icon_state
-/obj/machinery/partslathe/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, PROC_REF(appearance_overlays), list())
+/obj/machinery/partslathe/appearance_overlays()
+	. = list()
 	if(panel_open)
 		icon_state = "partslathe-open"
 	else if(!operable())

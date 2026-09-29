@@ -26,10 +26,7 @@
 
 	can_pain_emote = FALSE
 
-// ALLOW(sys_update_icon): opts out of /mob/living/simple_mob's procedural drawing so copy_appearance() is preserved
-/mob/living/simple_mob/illusion/update_icon() // We don't want the appearance changing AT ALL unless by copy_appearance().
-	return
-
+APPEARANCE_NONE(/mob/living/simple_mob/illusion)
 /mob/living/simple_mob/illusion/proc/copy_appearance(atom/movable/thing_to_copy)
 	if(!thing_to_copy)
 		return FALSE

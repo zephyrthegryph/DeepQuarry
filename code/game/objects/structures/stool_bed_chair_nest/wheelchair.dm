@@ -42,12 +42,12 @@
 			to_chat(M, span_warning("You are too large to use \the [src]."))
 			. = FALSE
 
-// ALLOW(sys_update_icon): overlay placed on the mob plane above mobs (layer/plane per image)
-/obj/structure/bed/chair/wheelchair/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, PROC_REF(appearance_overlays), list())
+/obj/structure/bed/chair/wheelchair/appearance_overlays()
+	. = list()
 	var/image/O = image(icon = icon, icon_state = "[icon_state]_overlay", layer = ABOVE_MOB_LAYER)
 	O.plane = MOB_PLANE
-	add_overlay(O)
+	. += O
 
 /obj/structure/bed/chair/wheelchair/set_dir()
 	. = ..()

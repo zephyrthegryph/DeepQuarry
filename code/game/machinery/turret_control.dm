@@ -226,9 +226,10 @@
 	. = ..()
 	updateTurrets()
 
-// ALLOW(sys_update_icon): sets a mode-coloured light (kill/stun/standby) with the icon_state
-/obj/machinery/turretid/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, PROC_REF(appearance_overlays), list())
+/obj/machinery/turretid/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_stat(NOPOWER))
 		icon_state = "control_off"
 		set_light(0)

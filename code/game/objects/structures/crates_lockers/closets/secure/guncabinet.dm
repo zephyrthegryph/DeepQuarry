@@ -14,11 +14,11 @@
 	update_icon()
 
 APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
-// ALLOW(sys_update_icon): gun overlays counted from contents with per-index pixel offsets
-/obj/structure/closet/secure_closet/guncabinet/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, PROC_REF(appearance_overlays), list())
+/obj/structure/closet/secure_closet/guncabinet/appearance_overlays()
+	. = list()
 	if(opened)
-		add_overlay("door_open")
+		. += "door_open"
 	else
 		var/lazors = 0
 		var/shottas = 0
@@ -38,19 +38,19 @@ APPEARANCE_NONE(/obj/structure/closet/secure_closet/guncabinet)
 					shottas--
 					gun.icon_state = "projectile"
 				gun.pixel_x = i*4
-				add_overlay(gun)
+				. += gun
 
-		add_overlay("door")
+		. += "door"
 
 		if(sealed)
-			add_overlay("sealed")
+			. += "sealed"
 
 		if(broken)
-			add_overlay("broken")
+			. += "broken"
 		else if (locked)
-			add_overlay("locked")
+			. += "locked"
 		else
-			add_overlay("open")
+			. += "open"
 
 /obj/structure/closet/secure_closet/guncabinet/excursion
 	name = "expedition weaponry cabinet"

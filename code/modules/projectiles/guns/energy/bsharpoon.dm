@@ -227,8 +227,9 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 	dropnoms_active = !dropnoms_active
 	to_chat(user,span_info("You switch \the [src]'s spatial rearrangement [dropnoms_active ? "on" : "off"]. (Telenoms [dropnoms_active ? "enabled" : "disabled"])"))
 
-// ALLOW(sys_update_icon): plays a flick() transition animation and resets the transforming flag as a side effect
-/obj/item/bluespace_harpoon/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, PROC_REF(appearance_overlays), list())
+/obj/item/bluespace_harpoon/appearance_overlays()
+	. = list()
 	if(transforming)
 		switch(mode)
 			if(0)

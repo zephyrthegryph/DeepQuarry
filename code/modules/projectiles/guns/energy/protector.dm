@@ -71,14 +71,14 @@
 	return TRUE
 
 //Update icons from /tg/, so fancy! Use this more!
-// ALLOW(sys_update_icon): charge pips stacked with per-pip pixel offsets from the cell's charge, plus flashlight overlay offsets
-/obj/item/gun/energy/gun/protector/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/protector, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/gun/protector/appearance_overlays()
+	. = list()
 	var/ratio = 0
 
 	var/iconState = "[icon_state]_charge"
 	if (modifystate)
-		add_overlay("[icon_state]_[modifystate]")
+		. += "[icon_state]_[modifystate]"
 		iconState += "_[modifystate]"
 		/* Don't have one for this gun
 		if(itemState)
@@ -88,21 +88,21 @@
 		ratio = CEILING(((power_supply.charge / power_supply.maxcharge) * charge_sections), 1)
 
 		if(power_supply.charge < charge_cost)
-			add_overlay("[icon_state]_empty")
+			. += "[icon_state]_empty"
 		else
 			if(!shaded_charge)
 				var/mutable_appearance/charge_overlay = mutable_appearance(icon, iconState)
 				for(var/i = ratio, i >= 1, i--)
 					charge_overlay.pixel_x = ammo_x_offset * (i - 1)
-					add_overlay(charge_overlay)
+					. += charge_overlay
 			else
-				add_overlay("[icon_state]_[modifystate][ratio]")
+				. += "[icon_state]_[modifystate][ratio]"
 
 	if(can_flashlight & gun_light_on)
 		var/mutable_appearance/flashlight_overlay = mutable_appearance(icon, light_state)
 		flashlight_overlay.pixel_x = flight_x_offset
 		flashlight_overlay.pixel_y = flight_y_offset
-		add_overlay(light_state)
+		. += light_state
 
 /obj/item/gun/energy/gun/protector/unlocked
 	emagged = TRUE

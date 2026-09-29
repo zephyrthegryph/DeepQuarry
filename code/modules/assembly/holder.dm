@@ -46,17 +46,17 @@ DECLARE_REF(/obj/item/assembly_holder, "a_right", BACK_VIA, "holder_handle")
 /obj/item/assembly_holder/proc/detached()
 	return
 
-// ALLOW(sys_update_icon): overlays from both attached assemblies' states and overlays, and redraws its master
-/obj/item/assembly_holder/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, PROC_REF(appearance_overlays), list())
+/obj/item/assembly_holder/appearance_overlays()
+	. = list()
 	if(a_left)
-		add_overlay("[a_left.icon_state]_left")
+		. += "[a_left.icon_state]_left"
 		for(var/O in a_left.attached_overlays)
-			add_overlay("[O]_l")
+			. += "[O]_l"
 	if(a_right)
-		add_overlay("[a_right.icon_state]_right")
+		. += "[a_right.icon_state]_right"
 		for(var/O in a_right.attached_overlays)
-			add_overlay("[O]_r")
+			. += "[O]_r"
 	if(master)
 		master.update_icon()
 

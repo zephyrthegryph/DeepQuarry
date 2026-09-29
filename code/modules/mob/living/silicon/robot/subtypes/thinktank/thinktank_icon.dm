@@ -1,14 +1,14 @@
-// ALLOW(sys_update_icon): module-coloured underlay/armour/decal/eye image overlays with per-instance colours
-/mob/living/silicon/robot/platform/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot/platform, PROC_REF(appearance_overlays), list())
+/mob/living/silicon/robot/platform/appearance_overlays()
+	. = list()
 
-	cut_overlays()
 	underlays.Cut()
 	var/obj/item/robot_module/robot/platform/tank_module = module
 	if(!istype(tank_module))
 		icon = initial(icon)
 		icon_state = initial(icon_state)
 		color = initial(color)
-		return
+		return .
 
 	// This is necessary due to Polaris' liberal use of KEEP_TOGETHER and propensity for scaling transforms.
 	// If we just apply state/colour to the base icon, RESET_COLOR on the additional overlays is ignored.
@@ -24,29 +24,29 @@
 		I = image(icon, "[tank_module.user_icon_state]_armour")
 		I.color = tank_module.armor_color
 		I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-		add_overlay(I)
+		. += I
 
 	for(var/decal in tank_module.decals)
 		I = image(icon, "[tank_module.user_icon_state]_[decal]")
 		I.color = tank_module.decals[decal]
 		I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-		add_overlay(I)
+		. += I
 
 	if(tank_module.eye_color)
 		I = image(icon, "[tank_module.user_icon_state]_eyes")
 		I.color = tank_module.eye_color
 		I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-		add_overlay(I)
+		. += I
 
 	if(client && key && stat == CONSCIOUS && tank_module.pupil_color)
 		I = image(icon, "[tank_module.user_icon_state]_pupils")
 		I.color = tank_module.pupil_color
 		I.plane = PLANE_LIGHTING_ABOVE
 		I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-		add_overlay(I)
+		. += I
 
 	if(opened)
-		add_overlay("[tank_module.user_icon_state]-open")
+		. += "[tank_module.user_icon_state]-open"
 		if(wiresexposed)
 			I = image(icon, "[tank_module.user_icon_state]-wires")
 		else if(cell)
@@ -54,7 +54,7 @@
 		else
 			I = image(icon, "[tank_module.user_icon_state]-nowires")
 		I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
-		add_overlay(I)
+		. += I
 
 /mob/living/silicon/robot/platform/proc/try_paint(obj/item/floor_painter/painting, mob/user)
 

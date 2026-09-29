@@ -16,10 +16,7 @@
 
 DECLARE_PERIODIC(/obj/singularity/narsie/large/exit, PERIODIC_SLOW)
 
-// ALLOW(sys_update_icon): wipes every overlay on each redraw (the exit portal draws none)
-/obj/singularity/narsie/large/exit/update_icon()
-	overlays = 0
-
+APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 /obj/singularity/narsie/large/exit/periodic_step()
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(M.client)

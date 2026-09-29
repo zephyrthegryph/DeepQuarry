@@ -219,15 +219,16 @@
 // if NOPOWER, display blank
 // if BROKEN, display blue screen of death icon AI uses
 // if timing=true, run update display function
-// ALLOW(sys_update_icon): maptext countdown and status pictures from its timer
-/obj/machinery/door_timer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, PROC_REF(appearance_overlays), list())
+/obj/machinery/door_timer/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
 		icon_state = "frame"
-		return
+		return .
 
 	if(has_stat(BROKEN))
 		set_picture("ai_bsod")
-		return
+		return .
 
 	if(timing)
 		var/disp1 = id
@@ -239,7 +240,7 @@
 	else
 		if(maptext)
 			maptext = ""
-	return
+	return .
 
 // Adds an icon in case the screen is broken/off, stolen from status_display.dm
 /obj/machinery/door_timer/proc/set_picture(state)

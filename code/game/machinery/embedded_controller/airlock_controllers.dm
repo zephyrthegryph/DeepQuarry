@@ -83,11 +83,11 @@
 		airlock_program.set_tag(ask.tag_name, new_tag)
 		SStgui.update_uis(src)
 
-// ALLOW(sys_update_icon): cuts every overlay and adds the open-panel one (other overlays are its program's)
-/obj/machinery/embedded_controller/radio/airlock/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock, PROC_REF(appearance_overlays), list())
+/obj/machinery/embedded_controller/radio/airlock/appearance_overlays()
+	. = list()
 	if(panel_open)
-		add_overlay("airlock_control_open")
+		. += "airlock_control_open"
 
 //Advanced airlock controller for when you want a more versatile airlock controller - useful for turning simple access control rooms into airlocks
 /obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller
@@ -144,8 +144,9 @@
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-// ALLOW(sys_update_icon): state from its program's memory (another datum)
-/obj/machinery/embedded_controller/radio/airlock/access_controller/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/embedded_controller/radio/airlock/access_controller, PROC_REF(appearance_overlays), list())
+/obj/machinery/embedded_controller/radio/airlock/access_controller/appearance_overlays()
+	. = list()
 	if(on && program)
 		if(program.memory["processing"])
 			icon_state = "access_control_process"

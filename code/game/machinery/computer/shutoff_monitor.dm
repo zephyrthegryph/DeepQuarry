@@ -27,10 +27,9 @@ DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 	monitor.tgui_interact(user)
 	return TRUE
 
-// ALLOW(sys_update_icon): adds its screen overlay on top of /obj/machinery/computer's procedural screen compositing (which cuts every overlay)
-/obj/machinery/computer/shutoff_monitor/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/shutoff_monitor, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/shutoff_monitor/appearance_overlays()
+	. = list()
+	. += ..()
 	if(operable())
-		add_overlay("ai-fixer-empty")
-	else
-		cut_overlay("ai-fixer-empty")
+		. += "ai-fixer-empty"

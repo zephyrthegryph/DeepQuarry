@@ -148,11 +148,12 @@
 	if(!restoring)
 		return PROCESS_KILL
 
-// ALLOW(sys_update_icon): screen overlays from the occupying AI's stat (another mob's state)
-/obj/machinery/computer/aifixer/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/aifixer, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/aifixer/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!operable())
-		return
+		return .
 
 	if(restoring)
 		. += "ai-fixer-on"

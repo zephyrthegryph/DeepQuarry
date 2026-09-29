@@ -29,9 +29,10 @@
 
 	req_one_access = list(ACCESS_HEADS)
 
-// ALLOW(sys_update_icon): runs /obj/machinery/computer's procedural screen/keyboard/neighbour drawing via ..() then sets icon_state
-/obj/machinery/computer/cryopod/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/cryopod, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/cryopod/appearance_overlays()
+	. = list()
+	. += ..()
 	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))
 		icon_state = "[initial(icon_state)]-p"
 	else

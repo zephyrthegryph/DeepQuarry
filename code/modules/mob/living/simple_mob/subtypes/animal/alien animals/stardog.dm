@@ -931,9 +931,10 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	name = "Use"
 	effect = /atom/proc/interaction_swallow
 
-// ALLOW(sys_update_icon): forces icon_state after the computer parent's procedural screen overlays
-/obj/machinery/computer/ship/navigation/telescreen/dog_eye/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/ship/navigation/telescreen/dog_eye, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/ship/navigation/telescreen/dog_eye/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "screen_eye"
 
 /obj/machinery/computer/ship/navigation/declare_interactions(list/into)

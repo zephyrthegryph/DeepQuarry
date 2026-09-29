@@ -112,14 +112,15 @@
 	several TSCs have been trying to get a hold of the blueprints for half a decade."
 	var/unique_reskin
 
-// ALLOW(sys_update_icon): reads the power cell's charge (another object) for the meter state and refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/energy/stunrevolver/detective/update_icon(ignore_inhands)
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/stunrevolver/detective, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/stunrevolver/detective/appearance_overlays()
+	. = list()
 	if(power_supply == null)
 		if(unique_reskin)
 			icon_state = "[unique_reskin]_open"
 		else
 			icon_state = "[initial(icon_state)]_open"
-		return
+		return .
 	else if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 
@@ -140,7 +141,7 @@
 		else
 			icon_state = "[initial(icon_state)]"
 
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 EXTEND_INTERACTIONS(/obj/item/gun/energy/stunrevolver/detective, \
 	INTERACT_VERB("Name Gun", PROC_REF(det_stunrevolver_verb_rename), REQ_IN_INVENTORY), \

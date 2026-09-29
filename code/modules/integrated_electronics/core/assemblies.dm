@@ -269,8 +269,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/proc/can_move()
 	return FALSE
 
-// ALLOW(sys_update_icon): detail overlay tinted with the instance's detail colour
-/obj/item/electronic_assembly/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly, PROC_REF(appearance_overlays), list())
+/obj/item/electronic_assembly/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = initial(icon_state) + "-open"
 	// else if(locked)
@@ -278,12 +279,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 		// icon_state = initial(icon_state) // + "-locked" would be added once sprites are made
 	else
 		icon_state = initial(icon_state)
-	cut_overlays()
 	if(detail_color == COLOR_ASSEMBLY_BLACK) //Black colored overlay looks almost but not exactly like the base sprite, so just cut the overlay and avoid it looking kinda off.
-		return
+		return .
 	var/mutable_appearance/detail_overlay = mutable_appearance('icons/obj/integrated_electronics/electronic_setups.dmi', "[icon_state]-color")
 	detail_overlay.color = detail_color
-	add_overlay(detail_overlay)
+	. += detail_overlay
 
 /obj/item/electronic_assembly/examine(mob/user)
 	. = ..()

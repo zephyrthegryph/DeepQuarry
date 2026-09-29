@@ -27,9 +27,9 @@
 
 	. = ..(mapload, new_age) // mapload, age
 
-// ALLOW(sys_update_icon): generated icons: the art blended with the instance's paint and shade colours
-/obj/effect/decal/cleanable/crayon/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/crayon, PROC_REF(appearance_overlays), list())
+/obj/effect/decal/cleanable/crayon/appearance_overlays()
+	. = list()
 	var/icon/mainOverlay = new/icon('icons/effects/crayondecal.dmi',"[art_type]",2.1)
 	var/icon/shadeOverlay = new/icon('icons/effects/crayondecal.dmi',"[art_type]s",2.1)
 
@@ -37,8 +37,8 @@
 		mainOverlay.Blend(art_color,ICON_ADD)
 		shadeOverlay.Blend(art_shade,ICON_ADD)
 
-		add_overlay(mainOverlay)
-		add_overlay(shadeOverlay)
+		. += mainOverlay
+		. += shadeOverlay
 
-	add_janitor_hud_overlay()
-	return
+	. += add_janitor_hud_overlay()
+	return .

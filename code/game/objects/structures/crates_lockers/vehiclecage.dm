@@ -70,16 +70,16 @@
 	user.visible_message(span_notice("[user] begins cutting \the [src]'s bolts."))
 	return tool_disassemble(user, W, 7 SECONDS, TOOL_WIRECUTTER)
 
-// ALLOW(sys_update_icon): frame overlay tinted with per-instance paint_color and an underlay copied from the caged vehicle
-/obj/structure/vehiclecage/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, PROC_REF(appearance_overlays), list())
+/obj/structure/vehiclecage/appearance_overlays()
+	. = list()
+	. += ..()
 	underlays.Cut()
 
 	var/image/framepaint = new(icon = 'icons/obj/storage.dmi', icon_state = "[initial(icon_state)]_a", layer = MOB_LAYER + 1.1)
 	framepaint.plane = MOB_PLANE
 	framepaint.color = paint_color
-	add_overlay(framepaint)
+	. += framepaint
 
 	for(var/obj/vehicle/V in slot_contents(CONTAINER_SLOT_VEHICLE_CAGE))
 		var/image/showcase = new(V)

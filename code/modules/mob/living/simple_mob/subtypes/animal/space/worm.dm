@@ -96,9 +96,10 @@
 	..()
 	self.update_body_faction()
 
-// ALLOW(sys_update_icon): state and dir from the neighbouring worm segment (set_dir)
-/mob/living/simple_mob/animal/space/space_worm/head/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm/head, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/animal/space/space_worm/head/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!open_maw && !stat)
 		icon_state = "[icon_living][previous ? 1 : 0]_hunt"
 	else
@@ -219,8 +220,9 @@
 		currentlyEating = null
 		. = ..(obstacle)
 
-// ALLOW(sys_update_icon): segment sprite from dirs to neighbouring segments, set_dir and colour copied from next segment
-/mob/living/simple_mob/animal/space/space_worm/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/animal/space/space_worm/appearance_overlays()
+	. = list()
 	if(previous) //midsection
 		icon_state = "spaceworm[get_dir(src,previous) | get_dir(src,next)]"
 		if(stat)
@@ -235,7 +237,7 @@
 	if(next)
 		color = next.color
 
-	return
+	return .
 
 /// Bump()'s deferred half: starts eating what the maw ran into.
 /mob/living/simple_mob/animal/space/space_worm/proc/bump_eat(atom/obstacle)

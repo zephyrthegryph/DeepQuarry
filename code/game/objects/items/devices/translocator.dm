@@ -49,8 +49,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 // its beacons forget it.
 DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
 
-// ALLOW(sys_update_icon): reads the power cell's charge (another object's state)
-/obj/item/perfect_tele/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele, PROC_REF(appearance_overlays), list())
+/obj/item/perfect_tele/appearance_overlays()
+	. = list()
 	if(!power_source)
 		icon_state = "[initial(icon_state)]_o"
 	else if(ready && (power_source.check_charge(charge_cost) || power_source.fully_charged()))
@@ -58,7 +59,7 @@ DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
 	else
 		icon_state = "[initial(icon_state)]_w"
 
-	..()
+	. += ..()
 
 /obj/item/perfect_tele/proc/rebuild_radial_images()
 	LAZYCLEARLIST(radial_images)
@@ -528,13 +529,14 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 	recharging = 0
 	update_icon()
 
-// ALLOW(sys_update_icon): calls update_held_icon() and chains into the parent's cell-reading draw
-/obj/item/perfect_tele/frontier/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/perfect_tele/frontier, PROC_REF(appearance_overlays), list())
+/obj/item/perfect_tele/frontier/appearance_overlays()
+	. = list()
 	if(recharging)
 		icon_state = "[initial(icon_state)]_o"
 		update_held_icon()
-		return
-	..()
+		return .
+	. += ..()
 
 /obj/item/perfect_tele/frontier/staff
 	name = "centcom translocator"

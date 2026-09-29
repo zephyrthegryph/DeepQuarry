@@ -82,9 +82,10 @@
 		qdel(mane_overlay)
 		mane_overlay = null
 
-// ALLOW(sys_update_icon): per-instance mane overlay add/remove
-/mob/living/simple_mob/vore/retaliate/lion/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/retaliate/lion, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/retaliate/lion/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_mane)
 		add_mane()
 	else

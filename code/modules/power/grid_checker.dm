@@ -28,8 +28,9 @@
 	. = ..()
 	connect_to_network()
 
-// ALLOW(sys_update_icon): set_light() colour change must run with the power_failing sprite swap.
-/obj/machinery/power/grid_checker/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/grid_checker/appearance_overlays()
+	. = list()
 	if(power_failing)
 		icon_state = "gridchecker_off"
 		set_light(2, 2, "#F86060")

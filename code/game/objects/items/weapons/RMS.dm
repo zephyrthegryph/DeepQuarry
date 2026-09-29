@@ -65,13 +65,13 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	update_icon()
 
 
-// ALLOW(sys_update_icon): floors the charge ratio into charge_stage (read elsewhere) with the redraw
-/obj/item/rms/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/rms, PROC_REF(appearance_overlays), list())
+/obj/item/rms/appearance_overlays()
+	. = list()
 	charge_stage = round((stored_charge/max_charge)*4)
 	if(charge_stage >= 4)
 		charge_stage = 4
-	cut_overlays()
-	add_overlay("rms_charge[charge_stage]")
+	. += "rms_charge[charge_stage]"
 
 /obj/item/rms/examine(mob/user)
 	. = ..()

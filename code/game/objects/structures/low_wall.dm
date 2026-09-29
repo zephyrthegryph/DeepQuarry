@@ -217,9 +217,11 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	return FALSE
 
 // Bay's version
-// ALLOW(sys_update_icon): per-direction neighbour connection images tinted with material and stripe colours
-/obj/structure/low_wall/bay/update_icon()
-	cut_overlays()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/structure/low_wall/bay)
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/bay, PROC_REF(appearance_overlays), list())
+/obj/structure/low_wall/bay/appearance_overlays()
+	. = list()
 
 	var/image/I
 	var/main_color = material.icon_colour
@@ -230,7 +232,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 		else
 			I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 			I.color = main_color
-		add_overlay(I)
+		. += I
 
 	if(stripe_color)
 		for(var/i = 1 to 4)
@@ -239,26 +241,28 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 			else
 				I = image(icon, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
-			add_overlay(I)
+			. += I
 
 // Eris's version
-// ALLOW(sys_update_icon): per-direction neighbour connection images tinted with the material colour
-/obj/structure/low_wall/eris/update_icon()
-	cut_overlays()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/structure/low_wall/eris)
+DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, PROC_REF(appearance_overlays), list())
+/obj/structure/low_wall/eris/appearance_overlays()
+	. = list()
 
 	var/image/I
 	var/main_color = material.icon_colour
 	for(var/i = 1 to 4)
 		I = image(icon, "frame[connections[i]]", dir = 1<<(i-1))
 		I.color = main_color
-		add_overlay(I)
+		. += I
 
 		if(other_connections[i] != "0")
 			I = image(icon, "frame_other[other_connections[i]]", dir = 1<<(i-1))
 			I.plane = ABOVE_OBJ_PLANE
 			I.layer = ABOVE_WINDOW_LAYER
 			I.color = main_color
-			add_overlay(I)
+			. += I
 
 /// Emitters and the like can't take a low wall down in one shot.
 /obj/structure/low_wall/projectile_damage(obj/item/projectile/P, def_zone)
@@ -354,11 +358,11 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neighbor_type = /obj/structure/grille))
 
 APPEARANCE_NONE(/obj/structure/grille/bay)
-// ALLOW(sys_update_icon): reads the low wall on its turf and draws per-direction neighbour connection images
-/obj/structure/grille/bay/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/grille/bay, PROC_REF(appearance_overlays), list())
+/obj/structure/grille/bay/appearance_overlays()
+	. = list()
 	var/on_frame = locate_on(loc, /obj/structure/low_wall/bay)
 
-	cut_overlays()
 	if(destroyed)
 		if(on_frame)
 			icon_state = "broke_onframe"
@@ -373,14 +377,14 @@ APPEARANCE_NONE(/obj/structure/grille/bay)
 					I = image(icon, "grille_other_onframe[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille_onframe[connections[i]]", dir = 1<<(i-1))
-				add_overlay(I)
+				. += I
 		else
 			for(var/i = 1 to 4)
 				if(other_connections[i] != "0")
 					I = image(icon, "grille_other[connections[i]]", dir = 1<<(i-1))
 				else
 					I = image(icon, "grille[connections[i]]", dir = 1<<(i-1))
-				add_overlay(I)
+				. += I
 
 /**
  * The window types for both types of short walls
@@ -408,9 +412,9 @@ APPEARANCE_NONE(/obj/structure/grille/bay)
 	icon_state = ""
 	update_icon()
 
-// ALLOW(sys_update_icon): runs update_connections() and draws per-direction connection images with colour and damage alpha
-/obj/structure/window/bay/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/window/bay, PROC_REF(appearance_overlays), list("get_integrity"))
+/obj/structure/window/bay/appearance_overlays()
+	. = list()
 	if(!anchored)
 		connections = string_list(list("0","0","0","0"))
 		other_connections = string_list(list("0","0","0","0"))
@@ -434,14 +438,14 @@ APPEARANCE_NONE(/obj/structure/grille/bay)
 		else
 			I = image(icon, "[basestate]_onframe[connections[i]]", dir = img_dir)
 			I.color = color
-		add_overlay(I)
+		. += I
 
 	if(damage_alpha)
 		var/image/D
 		D = image(icon, "window0_damage", dir = img_dir)
 		D.blend_mode = BLEND_MULTIPLY
 		D.alpha = damage_alpha
-		add_overlay(D)
+		. += D
 
 /obj/structure/window/bay/reinforced
 	name = "reinforced window"
@@ -498,9 +502,9 @@ APPEARANCE_NONE(/obj/structure/grille/bay)
 	icon_state = ""
 	update_icon()
 
-// ALLOW(sys_update_icon): runs update_connections() and draws per-direction neighbour connection images
-/obj/structure/window/eris/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/window/eris, PROC_REF(appearance_overlays), list())
+/obj/structure/window/eris/appearance_overlays()
+	. = list()
 	if(!anchored)
 		connections = string_list(list("0","0","0","0"))
 		other_connections = string_list(list("0","0","0","0"))
@@ -515,7 +519,7 @@ APPEARANCE_NONE(/obj/structure/grille/bay)
 			I = image(icon, "[basestate][other_connections[i]]", dir = img_dir)
 		else
 			I = image(icon, "[basestate][connections[i]]", dir = img_dir)
-		add_overlay(I)
+		. += I
 
 /obj/structure/window/eris/reinforced
 	name = "reinforced window"

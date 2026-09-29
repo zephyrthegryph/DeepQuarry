@@ -40,12 +40,12 @@
 	if(node)
 		node.update_underlays()
 
-// ALLOW(sys_update_icon): overlays come from GLOB.icon_manager generated atmos icons tinted by per-instance pipe_color.
-/obj/machinery/atmospherics/pipe/cap/update_icon(safety = 0)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/cap, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/cap/appearance_overlays()
+	. = list()
 	alpha = 255
 
-	cut_overlays()
-	add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]"))
+	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "cap[icon_connect_type]")
 
 /obj/machinery/atmospherics/pipe/cap/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src, dir))

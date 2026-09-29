@@ -3914,10 +3914,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
 
-// ALLOW(sys_update_icon): composites the contained pizza's icon, stacked box count/tag offsets, and rewrites desc.
-/obj/item/pizzabox/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, PROC_REF(appearance_overlays), list())
+/obj/item/pizzabox/appearance_overlays()
+	. = list()
 
-	cut_overlays()
 
 	// Set appropriate description
 	if( open && pizza )
@@ -3945,9 +3945,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 		if( pizza )
 			var/image/pizzaimg = image(icon = pizza.icon, icon_state = pizza.icon_state) // Icons for bad pizza
 			pizzaimg.pixel_y = -3
-			add_overlay(pizzaimg)
+			. += pizzaimg
 
-		return
+		return .
 	else
 		// Stupid code because byondcode sucks
 		var/doimgtag = 0
@@ -3962,7 +3962,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 		if( doimgtag )
 			var/image/tagimg = image('icons/obj/food.dmi', icon_state = "pizzabox_tag")
 			tagimg.pixel_y = boxes.len * 3
-			add_overlay(tagimg)
+			. += tagimg
 
 	icon_state = "pizzabox[boxes.len+1]"
 
@@ -7475,8 +7475,9 @@ TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item
 	update_icon()
 	return
 
-// ALLOW(sys_update_icon): sprite counts snack items in contents.
-/obj/item/storage/box/wings/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, PROC_REF(appearance_overlays), list())
+/obj/item/storage/box/wings/appearance_overlays()
+	. = list()
 	var/i = 0
 	for(var/obj/item/reagent_containers/food/snacks/W in contents)
 		i++

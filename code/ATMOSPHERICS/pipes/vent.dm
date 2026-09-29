@@ -32,8 +32,9 @@
 /obj/machinery/atmospherics/pipe/vent/pipeline_expansion()
 	return list(node1)
 
-// ALLOW(sys_update_icon): turns the vent to face node1 via set_dir() when connected.
-/obj/machinery/atmospherics/pipe/vent/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/vent, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/vent/appearance_overlays()
+	. = list()
 	if(node1)
 		icon_state = "intact"
 

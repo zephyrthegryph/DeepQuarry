@@ -326,9 +326,10 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 ///		Icon generation stuff
 ///
 
-// ALLOW(sys_update_icon): build_icons() per-instance coloured composition
-/mob/living/simple_mob/vore/bigdragon/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/bigdragon/appearance_overlays()
+	. = list()
+	. += ..()
 	update_fullness()
 	build_icons()
 

@@ -19,26 +19,24 @@
 	default_apply_parts()
 	add_overlay("ccharger1")
 
-// ALLOW(sys_update_icon): overlays the inserted cell's own icon/icon_state and its connector type plus a charge level from the cell
-/obj/machinery/cell_charger/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, PROC_REF(appearance_overlays), list())
+/obj/machinery/cell_charger/appearance_overlays()
+	. = list()
 	if(!anchored)
-		cut_overlays()
 		icon_state = "ccharger2"
 
 	if(charging && operable())
 		var/newlevel = 	round(charging.percent() * 4.0 / 99)
 
-		cut_overlays()
-		add_overlay("ccharger-o[newlevel]")
+		. += "ccharger-o[newlevel]"
 
 		chargelevel = newlevel
-		add_overlay(image(charging.icon, charging.icon_state))
-		add_overlay("ccharger-[charging.connector_type]-on")
+		. += image(charging.icon, charging.icon_state)
+		. += "ccharger-[charging.connector_type]-on"
 
 	else if(anchored)
-		cut_overlays()
 		icon_state = "ccharger0"
-		add_overlay("ccharger1")
+		. += "ccharger1"
 
 /obj/machinery/cell_charger/examine(mob/user)
 	. = ..()

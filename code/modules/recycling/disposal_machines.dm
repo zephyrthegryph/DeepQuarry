@@ -546,33 +546,38 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		AM.pipe_eject(0)
 	update_icon()
 
-// update the icon & overlays to reflect mode & status
-// ALLOW(sys_update_icon): broken redraw also forces mode off and clears flush; full light reads the disposal container slot contents
-/obj/machinery/disposal/update_icon()
-	cut_overlays()
-	if(has_stat(BROKEN))
-		icon_state = "disposal-broken"
+/// A broken bin stops pumping and won't flush (the redraw used to do this).
+/obj/machinery/disposal/atom_break(damage_flag)
+	. = ..()
+	if(.)
 		set_mode(DISPOSALMODE_OFF)
 		flush = 0
-		return
+
+// update the icon & overlays to reflect mode & status
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, PROC_REF(appearance_overlays), list())
+/obj/machinery/disposal/appearance_overlays()
+	. = list()
+	if(has_stat(BROKEN))
+		icon_state = "disposal-broken"
+		return .
 
 	// flush handle
 	if(flush)
-		add_overlay("[controls_iconstate]-handle")
+		. += "[controls_iconstate]-handle"
 
 	// only handle is shown if no power
 	if(has_stat(NOPOWER) || mode == DISPOSALMODE_EJECTONLY)
-		return
+		return .
 
 	// 	check for items in disposal - occupied light
 	if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)) > 0)
-		add_overlay("[controls_iconstate]-full")
+		. += "[controls_iconstate]-full"
 
 	// charging and ready light
 	if(mode == DISPOSALMODE_CHARGING)
-		add_overlay("[controls_iconstate]-charge")
+		. += "[controls_iconstate]-charge"
 	else if(mode == DISPOSALMODE_CHARGED)
-		add_overlay("[controls_iconstate]-ready")
+		. += "[controls_iconstate]-ready"
 
 // timed process
 // charge the gas reservoir and perform flush if ready
@@ -778,9 +783,10 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 
 	density = FALSE
 
-// ALLOW(sys_update_icon): sets pixel_x/pixel_y from dir to sit on the wall
-/obj/machinery/disposal/wall/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/machinery/disposal/wall, PROC_REF(appearance_overlays), list())
+/obj/machinery/disposal/wall/appearance_overlays()
+	. = list()
+	. += ..()
 	switch(dir)
 		if(NORTH)
 			pixel_x = 0

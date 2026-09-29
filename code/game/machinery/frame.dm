@@ -314,9 +314,10 @@ GLOBAL_LIST(construction_frame_floor)
 		D = "Requires [english_list(component_list)]."
 	desc = D
 
-// ALLOW(sys_update_icon): icon and icon_state come from the frame_type datum (icon_override, get_icon_state(state))
-/obj/structure/frame/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/frame, PROC_REF(appearance_overlays), list())
+/obj/structure/frame/appearance_overlays()
+	. = list()
+	. += ..()
 	if(frame_type.icon_override)
 		icon = frame_type.icon_override
 	icon_state = frame_type.get_icon_state(state)

@@ -188,9 +188,10 @@ DECLARE_INTERACTIONS(/obj/item/spaceflare, INTERACT_USE(null, PROC_REF(interacti
 	T.hotspot_expose(1500, 5)
 	update_icon()
 
-// ALLOW(sys_update_icon): turns its light on with the lit state
-/obj/item/spaceflare/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/spaceflare, PROC_REF(appearance_overlays), list())
+/obj/item/spaceflare/appearance_overlays()
+	. = list()
+	. += ..()
 	if(active)
 		icon_state = "bluflare_on"
 		set_light(0.3, 0.1, 6, 2, "85d1ff")

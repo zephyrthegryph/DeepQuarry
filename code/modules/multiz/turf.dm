@@ -92,11 +92,11 @@ GLOBAL_DATUM_INIT(openspace_backdrop_one_for_all, /atom/movable/openspace_backdr
 			depth += 1
 		. += "It is about [depth] levels deep."
 
-// ALLOW(sys_update_icon): edge overlays via update_icon_edge() from neighbours plus shared backdrop object
-/turf/simulated/open/update_icon()
-	cut_overlays()
-	update_icon_edge()
-	add_overlay(GLOB.openspace_backdrop_one_for_all) //Special grey square for projecting backdrop darkness filter on it.
+DECLARE_APPEARANCE_PROC(/turf/simulated/open, PROC_REF(appearance_overlays), list())
+/turf/simulated/open/appearance_overlays()
+	. = list()
+	. += update_icon_edge()
+	. += GLOB.openspace_backdrop_one_for_all //Special grey square for projecting backdrop darkness filter on it.
 
 // Straight copy from space.
 EXTEND_INTERACTIONS(/turf/simulated/open, INTERACT_ITEM("Build", PROC_REF(open_space_build)))

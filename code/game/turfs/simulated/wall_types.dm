@@ -247,13 +247,13 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	. = ..()
 	update_icon()
 
-// ALLOW(sys_update_icon): stripe overlay image tinted with per-instance stripe_color
-/turf/simulated/shuttle/wall/voidcraft/update_icon()
+DECLARE_APPEARANCE_PROC(/turf/simulated/shuttle/wall/voidcraft, PROC_REF(appearance_overlays), list())
+/turf/simulated/shuttle/wall/voidcraft/appearance_overlays()
+	. = list()
 	if(stripe_color)
-		cut_overlays()
 		var/image/I = image(icon = src.icon, icon_state = "o_[icon_state]")
 		I.color = stripe_color
-		add_overlay(I)
+		. += I
 
 // Fake corners for making hulls look pretty
 /obj/structure/hull_corner
@@ -360,16 +360,17 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 /turf/simulated/wall/bay/can_join_with_low_wall(obj/structure/low_wall/WF)
 	return istype(WF, /obj/structure/low_wall/bay)
 
-// ALLOW(sys_update_icon): per-connection stripe images tinted with per-instance stripe_color
-/turf/simulated/wall/bay/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/bay, PROC_REF(appearance_overlays), list())
+/turf/simulated/wall/bay/appearance_overlays()
+	. = list()
+	. += ..()
 	if(stripe_color)
 		var/image/I
 		var/list/connections = get_wall_connections()
 		for(var/i = 1 to 4)
 			I = image(wall_masks, "stripe[connections[i]]", dir = 1<<(i-1))
 			I.color = stripe_color
-			add_overlay(I)
+			. += I
 
 /turf/simulated/wall/bay/special_wall_connections(list/dirs, list/inrange)
 	..()
@@ -408,12 +409,12 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 	var/diagonal_blending = FALSE
 
 // *INHALE
-// ALLOW(sys_update_icon): icon_state from smoothing connections and damage-fraction overlays
-/turf/simulated/wall/tgmc/update_icon()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/tgmc, PROC_REF(appearance_overlays), list())
+/turf/simulated/wall/tgmc/appearance_overlays()
+	. = list()
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
 
-	cut_overlays()
 
 	if(force_icon)
 		icon_state = "[wall_base_state][force_icon]"
@@ -426,7 +427,7 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/skipjack, INTERACT_ITEM("Nothing", TYPE
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 
-		add_overlay(damage_overlays[overlay])
+		. += damage_overlays[overlay]
 
 /turf/simulated/wall/tgmc/update_connections(propagate)
 	if(!material)
@@ -523,9 +524,9 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 /proc/build_flesh_side_overlay(place_dir)
 	return image('icons/turf/stomach_vr.dmi', "flesh_side", dir = place_dir)
 
-// ALLOW(sys_update_icon): side overlays from adjacent turf density and neighbour redraws
-/turf/simulated/flesh/update_icon(update_neighbors)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/simulated/flesh, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/flesh/appearance_overlays()
+	. = list()
 
 	if(density)
 		icon = 'icons/turf/stomach_vr.dmi'
@@ -534,13 +535,9 @@ DECLARE_SHARED_CACHE(flesh_side_overlays, GLOBAL_PROC_REF(build_flesh_side_overl
 			var/turf/T = get_step(src,direction)
 			if(istype(T) && !T.density)
 				var/place_dir = turn(direction, 180)
-				add_overlay(CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir))
+				. += CACHED_KEY(flesh_side_overlays, "flesh_side_[place_dir]", place_dir)
 
-	if(update_neighbors)
-		for(var/direction in GLOB.alldirs)
-			if(istype(get_step(src, direction), /turf/simulated/flesh))
-				var/turf/simulated/flesh/F = get_step(src, direction)
-				F.update_icon()
+	appearance_notify_neighbours("[type]", /turf/simulated/flesh)
 
 /turf/simulated/gore
 	name = "wall of viscera"

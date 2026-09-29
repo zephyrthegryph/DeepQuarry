@@ -56,9 +56,9 @@
 /// numbers) the provider reads; a change to any of them re-runs it on the presentation lane. A
 /// subtype refines it by overriding the proc (`. = ..()` then add). A provider changes no state.
 #define DECLARE_APPEARANCE_PROC(PATH, PROC, FIELDS) _LIFECYCLE_DECL(PATH, set_appearance_proc(PROC, FIELDS))
-/// Drops every inherited appearance declaration (template, layers, levels, emissives, slots, the
-/// provider and watches): the type keeps whatever icon_state it was mapped or declared with. A later line on the
-/// same type may declare anew.
+/// Drops every inherited drawing declaration (template, layers, levels, emissives, slots and the
+/// provider): the type keeps whatever icon_state it was mapped or declared with. Watches stay (a
+/// machine still refreshes on its core fields). A later line on the same type may declare anew.
 #define APPEARANCE_NONE(PATH) _LIFECYCLE_DECL(PATH, clear_appearance())
 
 // Template part kinds (code/datums/sys/appearance.dm).

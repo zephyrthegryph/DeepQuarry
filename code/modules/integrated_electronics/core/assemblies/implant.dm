@@ -13,9 +13,10 @@
 /obj/item/electronic_assembly/implant/tgui_host()
 	return implant().tgui_host()
 
-// ALLOW(sys_update_icon): mirrors its icon state onto the implant it is built into (another object)
-/obj/item/electronic_assembly/implant/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/implant, PROC_REF(appearance_overlays), list())
+/obj/item/electronic_assembly/implant/appearance_overlays()
+	. = list()
+	. += ..()
 	implant().icon_state = icon_state
 
 /// LC-refs: the implant this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.

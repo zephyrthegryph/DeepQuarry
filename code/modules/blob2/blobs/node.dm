@@ -16,16 +16,16 @@ DECLARE_PERIODIC(/obj/structure/blob/node, PERIODIC_SLOW)
 	. = ..()
 	update_icon()
 
-// ALLOW(sys_update_icon): overlay tinted with its overmind's blob colour, name from the blob type
-/obj/structure/blob/node/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/node, PROC_REF(appearance_overlays), list())
+/obj/structure/blob/node/appearance_overlays()
+	. = list()
 	color = null
 	var/mutable_appearance/blob_overlay = mutable_appearance('icons/mob/blob.dmi', "blob")
 	if(overmind)
 		name = "[overmind.blob_type.name] [base_name]"
 		blob_overlay.color = overmind.blob_type.color
-	add_overlay(blob_overlay)
-	add_overlay("blob_node_overlay")
+	. += blob_overlay
+	. += "blob_node_overlay"
 
 /obj/structure/blob/node/periodic_step()
 	if(overmind) // This check is so that if the core is killed, the nodes stop.

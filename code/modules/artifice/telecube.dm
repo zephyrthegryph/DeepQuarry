@@ -73,9 +73,10 @@
 
 	update_icon()
 
-// ALLOW(sys_update_icon): glow/charge images get per-instance glow_color and a plane that depends on whether the cube is on a turf
-/obj/item/telecube/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/telecube, PROC_REF(appearance_overlays), list())
+/obj/item/telecube/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(isturf(loc))
 		glow.plane = PLANE_LIGHTING_ABOVE
@@ -89,11 +90,9 @@
 		charge.color = glow_color
 
 	if(!ready)
-		cut_overlays()
-		add_overlay(charge)
+		. += charge
 	else
-		cut_overlays()
-		add_overlay(glow)
+		. += glow
 
 // its mate collapses into an explosion.
 /obj/item/telecube/on_destroy(force)

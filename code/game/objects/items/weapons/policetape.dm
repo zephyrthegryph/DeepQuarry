@@ -45,8 +45,9 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	var/tape_dir = 0
 	var/icon_base = "tape"
 
-// ALLOW(sys_update_icon): sets dir from tape_dir with the redraw
-/obj/item/tape/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/tape, PROC_REF(appearance_overlays), list())
+/obj/item/tape/appearance_overlays()
+	. = list()
 	//Possible directional bitflags: 0 (AIRLOCK), 1 (NORTH), 2 (SOUTH), 4 (EAST), 8 (WEST), 3 (VERTICAL), 12 (HORIZONTAL)
 	switch (tape_dir)
 		if(0)  // AIRLOCK
@@ -114,9 +115,9 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 	req_one_access = list(ACCESS_ENGINE,ACCESS_ATMOSPHERICS)
 	color = COLOR_DEEP_SKY_BLUE
 
-// ALLOW(sys_update_icon): overlay depends on being held by a mob and the stored start point
-/obj/item/taperoll/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/taperoll, PROC_REF(appearance_overlays), list())
+/obj/item/taperoll/appearance_overlays()
+	. = list()
 	var/image/overlay = image(icon = src.icon)
 	overlay.appearance_flags = RESET_COLOR
 	if(ismob(loc))
@@ -124,7 +125,7 @@ GLOBAL_LIST_EMPTY(tape_roll_applications)
 			overlay.icon_state = "start"
 		else
 			overlay.icon_state = "stop"
-		add_overlay(overlay)
+		. += overlay
 
 
 /obj/item/taperoll/dropped(mob/user, equipping, slot)

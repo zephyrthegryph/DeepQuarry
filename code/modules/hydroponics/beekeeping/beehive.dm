@@ -16,24 +16,24 @@
 	. = ..()
 	make_climbable()
 
-// ALLOW(sys_update_icon): numbered overlays computed from frame contents count, honeycomb amount and bee_count ranges
-/obj/machinery/beehive/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, PROC_REF(appearance_overlays), list())
+/obj/machinery/beehive/appearance_overlays()
+	. = list()
 	icon_state = "beehive"
 	if(closed)
-		add_overlay("lid")
+		. += "lid"
 	if(length(frames))
-		add_overlay("empty[length(frames)]")
+		. += "empty[length(frames)]"
 	if(honeycombs >= 100)
-		add_overlay("full[round(honeycombs / 100)]")
+		. += "full[round(honeycombs / 100)]"
 	if(!smoked)
 		switch(bee_count)
 			if(1 to 40)
-				add_overlay("bees1")
+				. += "bees1"
 			if(41 to 80)
-				add_overlay("bees2")
+				. += "bees2"
 			if(81 to 100)
-				add_overlay("bees3")
+				. += "bees3"
 
 /obj/machinery/beehive/examine(mob/user)
 	. = ..()

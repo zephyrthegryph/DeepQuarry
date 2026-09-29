@@ -48,18 +48,19 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 	build_icons()
 
-// ALLOW(sys_update_icon): swaps in precomputed per-instance overlay/underlay lists built from port configuration.
-/obj/machinery/atmospherics/omni/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/omni, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/omni/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
-		overlays = overlays_off
+		. += overlays_off
 	else if(error_check())
-		overlays = overlays_error
+		. += overlays_error
 	else
-		overlays = use_power ? (overlays_on) : (overlays_off)
+		. += use_power ? (overlays_on) : (overlays_off)
 
 	underlays = underlays_current
 
-	return
+	return .
 
 /obj/machinery/atmospherics/omni/proc/error_check()
 	return

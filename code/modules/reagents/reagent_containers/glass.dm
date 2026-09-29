@@ -208,9 +208,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEF
 	interaction_pick_up(user, held, interaction)
 	update_icon()
 
-// ALLOW(sys_update_icon): fill overlay tinted with reagent colour, names from current icon_state
-/obj/item/reagent_containers/glass/beaker/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/glass/beaker/appearance_overlays()
+	. = list()
 
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
@@ -225,13 +225,13 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEF
 			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
 
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 	if (!is_open_container())
-		add_overlay("lid_[initial(icon_state)]")
+		. += "lid_[initial(icon_state)]"
 
 	if (label_text)
-		add_overlay("label_[initial(icon_state)]")
+		. += "label_[initial(icon_state)]"
 
 /obj/item/reagent_containers/glass/beaker/large
 	name = "large beaker"

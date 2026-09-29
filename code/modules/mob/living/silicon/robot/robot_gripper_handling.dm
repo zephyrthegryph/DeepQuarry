@@ -428,12 +428,12 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 
 	return ITEM_INTERACT_SUCCESS
 
-// ALLOW(sys_update_icon): draws the wrapped item as a scaled mutable_appearance overlay
-/obj/item/gripper/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gripper, PROC_REF(appearance_overlays), list())
+/obj/item/gripper/appearance_overlays()
+	. = list()
 	var/obj/item/wrapped = get_wrapped_item()
 	if(!wrapped)
-		return
+		return .
 
 	// Draw the held item as a mini-image in the gripper itself
 	var/mutable_appearance/item_display = new(wrapped)
@@ -442,7 +442,7 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 	item_display.pixel_y = 0
 	item_display.plane = plane
 	item_display.layer = layer + 0.01
-	add_overlay(item_display)
+	. += item_display
 
 //HELPER PROCS
 ///Use this to get what the current pocket is. Returns NULL if no

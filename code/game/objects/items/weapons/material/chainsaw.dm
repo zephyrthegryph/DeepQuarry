@@ -132,8 +132,9 @@ DECLARE_INTERACTIONS(/obj/item/chainsaw, INTERACT_USE(null, PROC_REF(interaction
 	if(max_fuel && get_dist(user, src) == 0)
 		. += span_notice("The [src] feels like it contains roughtly [get_fuel()] units of fuel left.")
 
-// ALLOW(sys_update_icon): also sets item_state with the redraw
-/obj/item/chainsaw/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/chainsaw, PROC_REF(appearance_overlays), list())
+/obj/item/chainsaw/appearance_overlays()
+	. = list()
 	if(on)
 		icon_state = "chainsaw1"
 		item_state = "chainsaw1"

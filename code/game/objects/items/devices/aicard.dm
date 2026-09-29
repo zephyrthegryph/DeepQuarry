@@ -90,12 +90,12 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 	return TRUE
 
-// ALLOW(sys_update_icon): reads the carded AI mob's stat and control_disabled (another object's state)
-/obj/item/aicard/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/aicard, PROC_REF(appearance_overlays), list())
+/obj/item/aicard/appearance_overlays()
+	. = list()
 	if(carded_ai())
 		if (!carded_ai().control_disabled)
-			add_overlay("aicard-on")
+			. += "aicard-on"
 		if(carded_ai().stat)
 			icon_state = "aicard-404"
 		else

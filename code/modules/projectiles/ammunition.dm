@@ -124,8 +124,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 		BB.name = "[initial(BB.name)] (\"[label_text]\")"
 	return ITEM_INTERACT_SUCCESS
 
-// ALLOW(sys_update_icon): only rewrites icon_state once spent; a loaded casing keeps whatever icon_state other code (subtypes, microbattery) set, which a template would overwrite.
-/obj/item/ammo_casing/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, PROC_REF(appearance_overlays), list())
+/obj/item/ammo_casing/appearance_overlays()
+	. = list()
 	if(!BB)
 		icon_state = "[initial(icon_state)]-spent"
 
@@ -302,8 +303,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	if(latent_rounds && loc && !isturf(loc) && !loc.latent_contents)
 		make_rounds_real()
 
-// ALLOW(sys_update_icon): sprite looked up by threshold scan over per-type icon_keys/ammo_states lists against ammo_count().
-/obj/item/ammo_magazine/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine, PROC_REF(appearance_overlays), list())
+/obj/item/ammo_magazine/appearance_overlays()
+	. = list()
 	if(multiple_sprites)
 		//find the lowest key greater than or equal to stored_ammo.len
 		var/new_state = null

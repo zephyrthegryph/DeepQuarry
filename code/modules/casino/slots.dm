@@ -31,21 +31,21 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-// ALLOW(sys_update_icon): toggles its light with the powered/broken sprite
-/obj/machinery/slot_machine/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, PROC_REF(appearance_overlays), list())
+/obj/machinery/slot_machine/appearance_overlays()
+	. = list()
 	if(!ispowered || isbroken)
 		icon_state = "slotmachine_off"
 		if(isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			add_overlay("slotmachine_broken")
+			. += "slotmachine_broken"
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 
 	icon_state = "slotmachine"
 	set_light(2)
 	set_light_on(TRUE)
-	return
+	return .
 
 /obj/machinery/slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.
@@ -177,21 +177,21 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
-// ALLOW(sys_update_icon): toggles its light with the powered/broken sprite
-/obj/machinery/station_slot_machine/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, PROC_REF(appearance_overlays), list())
+/obj/machinery/station_slot_machine/appearance_overlays()
+	. = list()
 	if(!ispowered || isbroken)
 		icon_state = "ntslotmachine_off"
 		if(isbroken) //If the thing is smashed, add crack overlay on top of the unpowered sprite.
-			add_overlay("ntslotmachine_broken")
+			. += "ntslotmachine_broken"
 		set_light(0)
 		set_light_on(FALSE)
-		return
+		return .
 
 	icon_state = "ntslotmachine"
 	set_light(2)
 	set_light_on(TRUE)
-	return
+	return .
 
 /obj/machinery/station_slot_machine/power_change()
 	if(isbroken) //Broken shit can't be powered.

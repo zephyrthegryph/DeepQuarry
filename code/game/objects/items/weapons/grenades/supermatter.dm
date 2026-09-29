@@ -13,11 +13,11 @@
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 
-// ALLOW(sys_update_icon): overlay image from a different icon file (icons/rust.dmi)
-/obj/item/grenade/supermatter/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/grenade/supermatter, PROC_REF(appearance_overlays), list())
+/obj/item/grenade/supermatter/appearance_overlays()
+	. = list()
 	if(implode_at)
-		add_overlay(image(icon = 'icons/rust.dmi', icon_state = "emfield_s1"))
+		. += image(icon = 'icons/rust.dmi', icon_state = "emfield_s1")
 
 /obj/item/grenade/supermatter/periodic_step()
 	if(!isturf(loc))

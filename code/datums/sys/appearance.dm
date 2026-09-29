@@ -69,10 +69,10 @@
 	appearance_levels = null
 	appearance_emissives = null
 	appearance_slots = null
-	appearance_watch = null
 
 /datum/lifecycle_decls/proc/drop_appearance()
 	clear_appearance()
+	appearance_watch = null
 	appearance_procs = null
 	appearance_mask = 0
 	appearance_draws = FALSE
@@ -389,6 +389,36 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
 	if(decls?.appearance_draws)
 		decls.apply_appearance(src)
+
+/atom
+	/// What this atom showed its neighbours at its last draw (appearance_notify_neighbours()).
+	var/tmp/appearance_neighbour_key
+
+/// Smoothing: called from a provider with `key`, everything a neighbour's sprite reads of src (type,
+/// density, material, dir, anchoring...). When it differs from the last draw, CHANGE_NEIGHBOURS is
+/// raised on the atoms of `kind` around src (the eight turfs for a turf kind; for a movable kind the
+/// atoms of that kind on those turfs and on src's own), whose providers declare that channel. Their
+/// own key is unchanged, so the notice stops there. A first draw during map load notifies nobody:
+/// every neighbour draws itself at init anyway.
+/atom/proc/appearance_notify_neighbours(key, kind)
+	if(appearance_neighbour_key == key)
+		return
+	var/first = isnull(appearance_neighbour_key)
+	appearance_neighbour_key = key
+	if(first && SSatoms.initialized == INITIALIZATION_INNEW_MAPLOAD)
+		return
+	var/turf/center = get_turf(src)
+	if(!center)
+		return
+	var/turf_kind = ispath(kind, /turf)
+	for(var/turf/T in range(1, center))
+		if(turf_kind)
+			if(T != src && istype(T, kind))
+				om_changed(T, CHANGE_NEIGHBOURS)
+			continue
+		for(var/atom/movable/A as anything in T)
+			if(A != src && istype(A, kind))
+				om_changed(A, CHANGE_NEIGHBOURS)
 
 /// The default DECLARE_APPEARANCE_PROC provider: no overlays. Types override it and declare it.
 /atom/proc/appearance_overlays()

@@ -337,8 +337,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	else
 		add_overlay("inspector_on")
 
-// ALLOW(sys_update_icon): update_charge() must run with the redraw
-/obj/item/gun/projectile/revolver/consul/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/revolver/consul, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/revolver/consul/appearance_overlays()
+	. = list()
 	update_charge()
 
 

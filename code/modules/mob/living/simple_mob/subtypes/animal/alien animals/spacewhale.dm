@@ -123,9 +123,10 @@
 			ai_brain.wander = TRUE
 		update_icon()
 
-// ALLOW(sys_update_icon): updates the child overmap marker's icon_state and emits messages (another object's state)
-/mob/living/simple_mob/vore/overmap/spacewhale/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/overmap/spacewhale, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/overmap/spacewhale/appearance_overlays()
+	. = list()
+	. += ..()
 	if(child_om_marker?.known == TRUE)
 		if(restless)
 			child_om_marker.icon_state = "space_whale_restless"

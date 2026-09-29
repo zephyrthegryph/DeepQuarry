@@ -164,9 +164,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			if (weights[I])
 				holder.trans_to_obj(I, weights[I] / total)
 
-// ALLOW(sys_update_icon): fill overlay derived from food_items/max_space thresholds over the current icon_state
-/obj/item/reagent_containers/cooking_container/update_icon()
-	overlays.Cut()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/cooking_container, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/cooking_container/appearance_overlays()
+	. = list()
 
 	if(food_items)
 		var/image/filling = image('icons/obj/cooking_machines.dmi', src, "[icon_state]10")
@@ -180,7 +180,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			if(75 to 79)        filling.icon_state = "[icon_state]4"
 			if(80 to INFINITY)  filling.icon_state = "[icon_state]5"
 
-		overlays += filling
+		. += filling
 
 /obj/item/reagent_containers/cooking_container/oven
 	name = "oven dish"

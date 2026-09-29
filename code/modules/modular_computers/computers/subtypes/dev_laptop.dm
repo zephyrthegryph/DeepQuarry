@@ -41,12 +41,12 @@ EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_R
 	update_icon()
 	return TRUE
 
-// ALLOW(sys_update_icon): closed laptops cut overlays and set_light(0); otherwise defers to modular_computer's procedural redraw.
-/obj/item/modular_computer/laptop/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/modular_computer/laptop, PROC_REF(appearance_overlays), list())
+/obj/item/modular_computer/laptop/appearance_overlays()
+	. = list()
 	if(anchored)
-		..()
+		. += ..()
 	else
-		cut_overlays()
 		set_light(0)		// No glow from closed laptops
 		icon_state = icon_state_closed
 

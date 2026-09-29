@@ -188,15 +188,15 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 	add_fingerprint(user)
 	return TRUE
 
-// ALLOW(sys_update_icon): blade mutable_appearance coloured per instance, sets light and item_state
-/obj/item/shield/energy/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, PROC_REF(appearance_overlays), list())
+/obj/item/shield/energy/appearance_overlays()
+	. = list()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	if(lcolor)
 		blade_overlay.color = lcolor
 		color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 		item_state = "[icon_state]_blade"
 		set_light(lrange, lpower, lcolor)
 	else

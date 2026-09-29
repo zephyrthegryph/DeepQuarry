@@ -79,22 +79,22 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 26 : -26)
 	pixel_y = (dir & 3) ? (dir == 1 ? -26 : 26) : 0
 
-// ALLOW(sys_update_icon): sets security-level-coloured lights alongside the overlays
-/obj/machinery/firealarm/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/firealarm, PROC_REF(appearance_overlays), list())
+/obj/machinery/firealarm/appearance_overlays()
+	. = list()
 
 	if(panel_open)
 		set_light(0)
-		return
+		return .
 
 	if(has_stat(BROKEN))
 		icon_state = "firex"
 		set_light(0)
-		return
+		return .
 	else if(has_stat(NOPOWER))
 		icon_state = "firep"
 		set_light(0)
-		return
+		return .
 
 	var/fire_state
 
@@ -106,13 +106,13 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	else
 		fire_state = "fire0"
 		switch(seclevel)
-			if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
-			if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
-			if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
-			if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
 			if("blue")	set_light(l_range = 2, l_power = 0.25, l_color = "#1024A9")
-			if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
 			if("delta")	set_light(l_range = 4, l_power = 0.9, l_color = "#FF6633")
+			if("green")	set_light(l_range = 2, l_power = 0.25, l_color = "#00ff00")
+			if("orange")	set_light(l_range = 2, l_power = 0.25, l_color = "#ff9900")
+			if("red")	set_light(l_range = 4, l_power = 0.9, l_color = "#ff0000")
+			if("violet")	set_light(l_range = 2, l_power = 0.25, l_color = "#9933ff")
+			if("yellow")	set_light(l_range = 2, l_power = 0.25, l_color = "#ffff00")
 
 	. += mutable_appearance(icon, fire_state)
 	. += emissive_appearance(icon, fire_state)
@@ -121,7 +121,6 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 		. += mutable_appearance(icon, "overlay_[seclevel]")
 		. += emissive_appearance(icon, "overlay_[seclevel]")
 
-	add_overlay(.)
 
 /// Heat behaviour rule: the detector trips above 200 C.
 /obj/machinery/firealarm/proc/rule_heat_alarm(datum/rule/rule)

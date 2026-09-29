@@ -34,9 +34,10 @@ DECLARE_INTERACTIONS(/obj/item/nailpolish, INTERACT_USE(null, PROC_REF(interacti
 	update_icon()
 	return TRUE
 
-// ALLOW(sys_update_icon): underlays tinted with the instance's polish colour
-/obj/item/nailpolish/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, PROC_REF(appearance_overlays), list())
+/obj/item/nailpolish/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[initial(icon_state)][open ? "-open" : ""]"
 	top_underlay.icon_state = "top[open ? "-open" : ""]"
 	color_underlay.icon_state = "color[open ? "-open" : ""]"

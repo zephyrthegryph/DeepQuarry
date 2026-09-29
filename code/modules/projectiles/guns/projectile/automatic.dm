@@ -79,14 +79,15 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/advanced_smg, "advanced_s
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15,-30), dispersion=list(0.0, 0.6, 0.6))
 		)
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon(); automatic_serdy.dm's later sts35 redefinition chains onto this with ..()
-/obj/item/gun/projectile/automatic/sts35/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sts35, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sts35/appearance_overlays()
+	. = list()
+	. += ..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m545/small))
 		icon_state = "arifle-small" // If using the small magazines, use the small magazine sprite.
 	else
 		icon_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 /*
  * X-9mm (PDW)
@@ -203,15 +204,16 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550[appearance_
 	else
 		..()
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon(); automatic_serdy.dm's later z8 redefinition chains onto this with ..()
-/obj/item/gun/projectile/automatic/z8/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/z8, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/z8/appearance_overlays()
+	. = list()
+	. += ..()
 	if(ammo_magazine)
 		icon_state = "carbine-[round(ammo_magazine.stored_ammo.len,2)]"
 	else
 		icon_state = "carbine"
-	if(!ignore_inhands) update_held_icon()
-	return
+	update_held_icon()
+	return .
 
 /obj/item/gun/projectile/automatic/z8/examine(mob/user)
 	. = ..()
@@ -288,8 +290,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550[appearance_
 		return TRUE
 	return ..() //once open, behave like normal
 
-// ALLOW(sys_update_icon): sets item_state and refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/l6_saw/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/l6_saw, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/l6_saw/appearance_overlays()
+	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
 		icon_state = "l6[cover_open ? "open" : "closed"]mag"
 		item_state = icon_state
@@ -419,8 +422,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot[ammo_magazin
 		list(mode_name="3-round bursts", burst=3, fire_delay=null, move_delay=4,    burst_accuracy=list(0,-15,-15), dispersion=list(0.0, 0.6, 1.0))
 		)
 
-// ALLOW(sys_update_icon): refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/tommygun/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/tommygun, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/tommygun/appearance_overlays()
+	. = list()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommy))
 		icon_state = "tommygun-mag"
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m45tommydrum))
@@ -455,17 +459,17 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/as24, "ashot[ammo_magazin
 		list(mode_name="2-round bursts", burst=2, fire_delay=null, move_delay=6,    burst_accuracy=list(0,-15), dispersion=list(0.0, 0.6))
 		)
 
-// ALLOW(sys_update_icon): sets item_state and refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/bullpup/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/bullpup, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/bullpup/appearance_overlays()
+	. = list()
+	. += ..()
 	if(istype(ammo_magazine,/obj/item/ammo_magazine/m762))
 		icon_state = "bullpup-small"
 	else if(istype(ammo_magazine,/obj/item/ammo_magazine/m762/ext))
 		icon_state = "bullpup"
 	else
 		item_state = "bullpup-empty"
-	if(!ignore_inhands)
-		update_held_icon()
+	update_held_icon()
 
 /*
  * Combat SMG (PP3 Ten)
@@ -650,12 +654,13 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "[initial(icon_state
 	allowed_magazines = list(/obj/item/ammo_magazine/mtg)
 	load_method = MAGAZINE
 
-// ALLOW(sys_update_icon): sets item_state and refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/stg/update_icon(ignore_inhands)
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/stg, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/stg/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = (ammo_magazine)? "stg60" : "stg60-empty"
 	item_state = (ammo_magazine)? "arifle" : "arifle-empty"
-	if(!ignore_inhands) update_held_icon()
+	update_held_icon()
 
 //////////////////// Eris Ported Guns ////////////////////
 // No idea what this is for.
@@ -686,10 +691,10 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "[initial(icon_state
 	ratio = round(ratio, 0.25) * 100
 	add_overlay("smg_[ratio]")
 
-// ALLOW(sys_update_icon): update_charge() must run with the redraw and cut_overlays() clears the charge overlays it adds
-/obj/item/gun/projectile/automatic/sol/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/sol, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/sol/appearance_overlays()
+	. = list()
 	icon_state = (ammo_magazine)? "SMG-IS" : "SMG-IS-empty"
-	cut_overlays()
 	update_charge()
 
 //--------------- StG-60 ----------------
@@ -812,8 +817,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/fal, "[initial(icon_state
 		return TRUE
 	return ..() //once open, behave like normal
 
-// ALLOW(sys_update_icon): sets item_state and refreshes the in-hand sprite via update_held_icon()
-/obj/item/gun/projectile/automatic/mg42/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/automatic/mg42, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/automatic/mg42/appearance_overlays()
+	. = list()
 	icon_state = "mg42[cover_open ? "open" : "closed"][ammo_magazine ? "" : "-empty"][cover_open && ammo_magazine && ammo_magazine.stored_ammo.len == 0 ? "0" : ""]"
 	item_state = "mg42"
 	update_held_icon()

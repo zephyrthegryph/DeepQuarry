@@ -32,8 +32,9 @@
 	)
 	..()
 
-// ALLOW(sys_update_icon): redraw also switches the mixer off (set_use_power) when nodes are missing; side effect must run with the redraw
-/obj/machinery/atmospherics/trinary/mixer/update_icon(safety = 0)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/mixer, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/trinary/mixer/appearance_overlays()
+	. = list()
 	if(tee)
 		icon_state = "t"
 	else if(mirrored)
@@ -47,7 +48,6 @@
 		icon_state += use_power ? "on" : "off"
 	else
 		icon_state += "off"
-		set_use_power(USE_POWER_OFF)
 
 /obj/machinery/atmospherics/trinary/mixer/Initialize(mapload)
 	. = ..()
@@ -213,3 +213,14 @@
 /obj/machinery/atmospherics/trinary/mixer/arm_wakes()
 	..()
 	hibernate_until_input_changes()
+
+/// A mixer missing a node can't run: it switches off when it loses one (the redraw used to do this).
+/obj/machinery/atmospherics/trinary/mixer/disconnect(obj/machinery/atmospherics/reference)
+	. = ..()
+	if(!(node1 && node2 && node3))
+		set_use_power(USE_POWER_OFF)
+
+/obj/machinery/atmospherics/trinary/mixer/atmos_init()
+	. = ..()
+	if(!(node1 && node2 && node3))
+		set_use_power(USE_POWER_OFF)

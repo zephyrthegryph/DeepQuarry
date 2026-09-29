@@ -393,17 +393,17 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 
 	return incoming
 
-// ALLOW(sys_update_icon): renders the occupant as a filtered/rotated image, sets health-coloured lights and pushes h_ratio to the linked console
-/obj/machinery/bodyscanner/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/bodyscanner, PROC_REF(appearance_overlays), list())
+/obj/machinery/bodyscanner/appearance_overlays()
+	. = list()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
-	cut_overlays()
 
 	if(!occupant)
 		icon_state = "scanner_open"
 		set_light(0)
 		if(console)
-			console.update_icon(0)
-		return
+			console.set_scan_ratio(0)
+		return .
 
 	// base image
 	icon_state = "new_scanner_off"
@@ -415,7 +415,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	if(occupant.stat == DEAD || (occupant.status_flags & FAKEDEATH))
 		h_ratio = -1 //shows up dead
 	if(console)
-		console.update_icon(h_ratio)
+		console.set_scan_ratio(h_ratio)
 
 	if(!operable())
 		state = "gradient_gray"
@@ -445,24 +445,36 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 		filter("type" = "alpha", "icon" = icon(icon, "alpha_mask", dir = dir == EAST ? EAST : WEST)),
 		filter("type" = "color", "color" = "#000000")
 	)
-	add_overlay(occ)
+	. += occ
 
 	if(scan)
 		// Second, we render the scan beam
 		var/image/scan_beam = image(icon(icon, "scan_beam"))
 		scan_beam.plane = plane
 		scan_beam.layer = layer + 0.2
-		add_overlay(scan_beam)
+		. += scan_beam
 
 	if(state)
 		// Third, we tint everything
 		var/image/gradient = image(icon(icon, state))
 		gradient.plane = plane
 		gradient.layer = layer + 0.3
-		add_overlay(gradient)
+		. += gradient
 
-// ALLOW(sys_update_icon): state comes from an h_ratio argument pushed by the linked scanner (another object's occupant) and sets coloured lights
-/obj/machinery/body_scanconsole/update_icon(h_ratio)
+/obj/machinery/body_scanconsole
+	/// The occupant's health ratio its scanner last reported (-1 dead, 0 critical, 1 healthy; 0 empty).
+	var/tmp/h_ratio = 0
+
+/// The scanner reports its occupant's health ratio; the console redraws when it changes.
+/obj/machinery/body_scanconsole/proc/set_scan_ratio(value)
+	if(h_ratio == value)
+		return
+	h_ratio = value
+	update_icon()
+
+DECLARE_APPEARANCE_PROC(/obj/machinery/body_scanconsole, PROC_REF(appearance_overlays), list())
+/obj/machinery/body_scanconsole/appearance_overlays()
+	. = list()
 	if(!operable())
 		icon_state = "scanner_terminal_off"
 		set_light(0)

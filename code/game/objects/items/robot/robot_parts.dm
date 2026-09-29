@@ -69,21 +69,21 @@
 	. = ..()
 	update_icon()
 
-// ALLOW(sys_update_icon): overlays composited from which part objects are installed
-/obj/item/robot_parts/robot_suit/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/robot_parts/robot_suit, PROC_REF(appearance_overlays), list())
+/obj/item/robot_parts/robot_suit/appearance_overlays()
+	. = list()
 	if(src.l_arm)
-		add_overlay("l_arm+o")
+		. += "l_arm+o"
 	if(src.r_arm)
-		add_overlay("r_arm+o")
+		. += "r_arm+o"
 	if(src.chest)
-		add_overlay("chest+o")
+		. += "chest+o"
 	if(src.l_leg)
-		add_overlay("l_leg+o")
+		. += "l_leg+o"
 	if(src.r_leg)
-		add_overlay("r_leg+o")
+		. += "r_leg+o"
 	if(src.head)
-		add_overlay("head+o")
+		. += "head+o"
 
 /obj/item/robot_parts/robot_suit/proc/check_completion()
 	if(src.l_arm && src.r_arm)

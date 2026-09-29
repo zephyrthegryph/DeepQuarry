@@ -53,9 +53,10 @@
 					else
 						qdel(B)
 
-// ALLOW(sys_update_icon): per-instance blood colour (random for rainbow), name/desc by blood type, janitor HUD overlay
-/obj/effect/decal/cleanable/blood/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, PROC_REF(appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/appearance_overlays()
 	if(basecolor == "rainbow") basecolor = get_random_colour(1)
+	. = list()
 	color = basecolor
 
 	if(basecolor == SYNTH_BLOOD_COLOUR)
@@ -67,8 +68,7 @@
 	else
 		name = initial(name)
 		desc = initial(desc)
-	cut_overlays()
-	add_janitor_hud_overlay()
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/blood/Crossed(mob/living/carbon/human/perp)
 	if(perp.is_incorporeal())
@@ -201,8 +201,9 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6")
 	var/fleshcolor = "#FFFFFF"
 
-// ALLOW(sys_update_icon): generated icon: blood blended with the instance colour, flesh overlay in the instance colour
-/obj/effect/decal/cleanable/blood/gibs/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, PROC_REF(appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/gibs/appearance_overlays()
+	. = list()
 
 	var/image/giblets = new(base_icon, "[icon_state]_flesh", dir)
 	if(!fleshcolor || fleshcolor == "rainbow")
@@ -214,9 +215,8 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/blood, \
 	blood.Blend(basecolor,ICON_MULTIPLY)
 
 	icon = blood
-	cut_overlays()
-	add_overlay(giblets)
-	add_janitor_hud_overlay()
+	. += giblets
+	. += add_janitor_hud_overlay()
 
 /obj/effect/decal/cleanable/blood/gibs/up
 	random_icon_states = list("gib1", "gib2", "gib3", "gib5", "gib6","gibup1","gibup1","gibup1")

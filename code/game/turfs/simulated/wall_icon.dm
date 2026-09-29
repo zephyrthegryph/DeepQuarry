@@ -81,24 +81,24 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	update_material()
 	check_radioactive()
 
-// ALLOW(sys_update_icon): material-coloured images and cached connection/damage overlay sets built per wall state
-/turf/simulated/wall/update_icon()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall, PROC_REF(appearance_overlays), list())
+/turf/simulated/wall/appearance_overlays()
+	. = list()
 	if(!material)
-		return
+		return .
 
 	if(!damage_overlays[1]) //list hasn't been populated
 		generate_overlays()
 
-	cut_overlays()
 	var/image/I
 
 	if(!density)
 		I = image(wall_masks, "[material.icon_base]fwall_open")
 		I.color = material.icon_colour
-		add_overlay(I)
-		return
+		. += I
+		return .
 
-	add_overlay(wall_overlay_images())
+	. += wall_overlay_images()
 
 /// The overlay images for this wall's state (doc/rewrite/init_and_turfs.md sec 3.5), built
 /// once per (masks, material, reinforcement, connections, construction stage, damage step) and

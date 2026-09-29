@@ -49,21 +49,21 @@
 			L.update_connections()
 			L.update_icon() //so siding get updated properly
 
-// ALLOW(sys_update_icon): runs update_connections() and draws per-direction neighbour connection images plus a plating_color tint
-/obj/structure/catwalk/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, PROC_REF(appearance_overlays), list())
+/obj/structure/catwalk/appearance_overlays()
+	. = list()
 	update_connections()
-	cut_overlays()
 	icon_state = ""
 	var/image/I
 	if(!hatch_open)
 		for(var/i = 1 to 4)
 			var/connect = connections?[i] || 0
 			I = image(icon, "catwalk[connect]", dir = 1<<(i-1))
-			add_overlay(I)
+			. += I
 	if(plating_color)
 		I = image(icon, "plated")
 		I.color = plating_color
-		add_overlay(I)
+		. += I
 
 /obj/structure/catwalk
 	silicon_use = ROBOT_USE_HAND_ADJACENT

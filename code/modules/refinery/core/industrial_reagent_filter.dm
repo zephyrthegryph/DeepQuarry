@@ -54,15 +54,15 @@
 		if(target && reagents.total_volume > 0)
 			transfer_tank( reagents, target, dir)
 
-// ALLOW(sys_update_icon): reagent overlay image tinted with reagents.get_color() and drawn in the machine dir
-/obj/machinery/reagent_refinery/filter/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/filter/appearance_overlays()
+	. = list()
 	icon_state = "filter_[filter_side == 1 ? "r" : "l"]"
 
 	if(reagents && reagents.total_volume > 0)
 		var/image/filling = image(icon, loc, "[icon_state]_r",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 /obj/machinery/reagent_refinery/filter/declare_interactions(list/into)
 	into += list(

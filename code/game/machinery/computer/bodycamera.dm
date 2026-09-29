@@ -69,10 +69,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 		return
 	..()
 
-// ALLOW(sys_update_icon): opts out of /obj/machinery/computer's procedural screen compositing
-/obj/machinery/computer/security/telescreen/bodycamera/update_icon()
-	return // NUH
-
+APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.
 /obj/machinery/computer/security/telescreen/bodycamera/machine_step()
 	if(!showing || !the_camera)

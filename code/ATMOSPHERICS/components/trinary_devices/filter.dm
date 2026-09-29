@@ -67,8 +67,9 @@
 	if(frequency)
 		set_frequency(frequency)
 
-// ALLOW(sys_update_icon): redraw also switches the filter off (set_use_power) when nodes are missing; side effect must run with the redraw
-/obj/machinery/atmospherics/trinary/atmos_filter/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/trinary/atmos_filter/appearance_overlays()
+	. = list()
 	if(mirrored)
 		icon_state = "m"
 	else
@@ -80,7 +81,6 @@
 		icon_state += use_power ? "on" : "off"
 	else
 		icon_state += "off"
-		set_use_power(USE_POWER_OFF)
 
 /// R10/M2 bridge (rust_architecture.md §8.5 step 6's filter/mixer slice):
 /// a filter is a masked flow to the filter port plus a pass-through flow
@@ -260,3 +260,14 @@
 	hibernate_until_input_changes()
 
 DECLARE_REF(/obj/machinery/atmospherics/trinary/atmos_filter, "radio_connection", STATIC, null)
+
+/// A filter missing a node can't run: it switches off when it loses one (the redraw used to do this).
+/obj/machinery/atmospherics/trinary/filter/disconnect(obj/machinery/atmospherics/reference)
+	. = ..()
+	if(!(node1 && node2 && node3))
+		set_use_power(USE_POWER_OFF)
+
+/obj/machinery/atmospherics/trinary/filter/atmos_init()
+	. = ..()
+	if(!(node1 && node2 && node3))
+		set_use_power(USE_POWER_OFF)

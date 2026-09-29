@@ -95,9 +95,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/hooded/toggle, \
 		T.update_clothing_icon()
 	update_clothing_icon() //so our overlays update
 
-// ALLOW(sys_update_icon): must write icon_state after /obj/item/clothing/suit's has_hood_sprite icon_state write in the ..() chain (a declaration applies before it).
-/obj/item/clothing/suit/storage/hooded/toggle/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit/storage/hooded/toggle, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/suit/storage/hooded/toggle/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[toggleicon][open ? "_open" : ""][hood_up ? "_t" : ""]"
 
 //New Vest 4 pocket storage and badge toggles, until suit accessories are a thing.

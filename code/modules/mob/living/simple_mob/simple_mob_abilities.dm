@@ -29,9 +29,10 @@
 
 
 
-// ALLOW(sys_update_icon): pounce icon/state swaps with icon caching, pixel offset shifts and spit warning overlay
-/mob/living/simple_mob/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/appearance_overlays()
+	. = list()
+	. += ..()
 	//use prepounce or pounce sprites, if any
 	if(pouncing && (status_flags & LEAPING)) //pouncing, flying through the air
 		if(!isnull(icon_state_pounce)) // if state is set
@@ -98,7 +99,7 @@
 			I.appearance_flags |= (RESET_COLOR|PIXEL_SCALE)
 			I.plane = MOB_PLANE
 			I.layer = MOB_LAYER
-			add_overlay(I)
+			. += I
 
 // Pouncing procs.
 // Pouncing consists of a series of functions:

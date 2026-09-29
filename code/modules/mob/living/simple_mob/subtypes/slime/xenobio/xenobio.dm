@@ -47,12 +47,13 @@
 // any direct caller still finds the proc.
 /mob/living/simple_mob/slime/xenobio/proc/inherit_information(mob/living/simple_mob/slime/xenobio/predecessor)
 	return
-// ALLOW(sys_update_icon): computes icon_living/icon_dead/icon_rest then defers to the procedural simple_mob/slime redraw
-/mob/living/simple_mob/slime/xenobio/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/slime/xenobio/appearance_overlays()
+	. = list()
 	icon_living = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"][victim ? " eating" : ""]"
 	icon_dead = "[icon_state_override ? "[icon_state_override] slime" : "slime"] [is_adult ? "adult" : "baby"] dead"
 	icon_rest = icon_dead
-	..() // This will apply the correct icon_state and do the other overlay-related things.
+	. += ..()
 
 /datum/om/stage/life/special/slime/xenobio
 	of = /mob/living/simple_mob/slime/xenobio

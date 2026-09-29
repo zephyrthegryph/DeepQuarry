@@ -224,11 +224,11 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		if(user)
 			om_changed(user, CHANGE_MOB_TARGETING)
 
-// ALLOW(sys_update_icon): mutable_appearance for the selected zone kept in selecting_appearance
-/atom/movable/screen/zone_sel/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, PROC_REF(appearance_overlays), list())
+/atom/movable/screen/zone_sel/appearance_overlays()
+	. = list()
 	selecting_appearance = mutable_appearance('icons/mob/zone_sel.dmi', "[selecting]")
-	add_overlay(selecting_appearance)
+	. += selecting_appearance
 
 /atom/movable/screen/Click(location, control, params)
 	..() // why the FUCK was this not called before
@@ -696,19 +696,19 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 /atom/movable/screen/inventory/hand
 	var/image/handcuff_overlay
 
-// ALLOW(sys_update_icon): reads the owning mob's handcuff slot through the HUD (another object's state)
-/atom/movable/screen/inventory/hand/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, PROC_REF(appearance_overlays), list())
+/atom/movable/screen/inventory/hand/appearance_overlays()
+	. = list()
+	. += ..()
 	if(!owner_hud())
-		return
+		return .
 	if(!handcuff_overlay)
 		var/state = (owner_hud().l_hand_hud_object == src) ? "l_hand_hud_handcuffs" : "r_hand_hud_handcuffs"
 		handcuff_overlay = image("icon"='icons/mob/screen_gen.dmi', "icon_state"=state)
-	cut_overlays()
 	if(owner_hud().mymob() && iscarbon(owner_hud().mymob()))
 		var/mob/living/carbon/C = owner_hud().mymob()
 		if(C.get_equipped_item(SLOT_ID_HANDCUFFED))
-			add_overlay(handcuff_overlay)
+			. += handcuff_overlay
 
 // PIP stuff
 /atom/movable/screen/component_button

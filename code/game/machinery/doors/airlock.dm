@@ -401,9 +401,9 @@ About the new airlock wires panel:
 		return FALSE
 
 APPEARANCE_NONE(/obj/machinery/door/airlock)
-// ALLOW(sys_update_icon): overlays from integrity (sparks), weld and panel, lock lights from its power systems, snow overlay while frozen
-/obj/machinery/door/airlock/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/door/airlock, PROC_REF(appearance_overlays), list("get_integrity"))
+/obj/machinery/door/airlock/appearance_overlays()
+	. = list()
 	if(density)
 		if(locked && lights && arePowerSystemsOn())
 			icon_state = "door_locked"
@@ -411,23 +411,23 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 			icon_state = "door_closed"
 		if(p_open || welded)
 			if(p_open)
-				add_overlay("panel_open")
+				. += "panel_open"
 			if (!has_stat(NOPOWER))
 				if(has_stat(BROKEN))
-					add_overlay("sparks_broken")
+					. += "sparks_broken"
 				else if (get_integrity() < max_integrity * 3/4)
-					add_overlay("sparks_damaged")
+					. += "sparks_damaged"
 			if(welded)
-				add_overlay("welded")
+				. += "welded"
 		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
-			add_overlay("sparks_damaged")
+			. += "sparks_damaged"
 	else
 		icon_state = "door_open"
 		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
-			add_overlay("sparks_open")
+			. += "sparks_open"
 	if(frozen)
-		add_overlay(image(icon = 'icons/turf/overlays.dmi', icon_state = "snowairlock"))
-	return
+		. += image(icon = 'icons/turf/overlays.dmi', icon_state = "snowairlock")
+	return .
 
 /obj/machinery/door/airlock/do_animate(animation)
 	switch(animation)

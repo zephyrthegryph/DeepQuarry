@@ -198,23 +198,23 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		return
 	..()
 
-// ALLOW(sys_update_icon): paint-coloured body and over-mob overlays per instance colour
-/obj/vehicle/bike/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/bike, PROC_REF(appearance_overlays), list())
+/obj/vehicle/bike/appearance_overlays()
+	. = list()
 
 	if(custom_icon)
 		if(on)
 			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_a", src.layer)
 			bodypaint.color = paint_color
-			add_overlay(bodypaint)
+			. += bodypaint
 
 			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
 			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
 			overmob.plane = MOB_PLANE
 			overmob_color.plane = MOB_PLANE
 			overmob_color.color = paint_color
-			add_overlay(overmob)
-			add_overlay(overmob_color)
+			. += overmob
+			. += overmob_color
 			if(open)
 				icon_state = "[bike_icon]_on-open"
 			else
@@ -222,34 +222,34 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 		else
 			var/image/bodypaint = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_a", src.layer)
 			bodypaint.color = paint_color
-			add_overlay(bodypaint)
+			. += bodypaint
 
 			var/image/overmob = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
 			var/image/overmob_color = image('icons/obj/custom_items_vehicle.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
 			overmob.plane = MOB_PLANE
 			overmob_color.plane = MOB_PLANE
 			overmob_color.color = paint_color
-			add_overlay(overmob)
-			add_overlay(overmob_color)
+			. += overmob
+			. += overmob_color
 			if(open)
 				icon_state = "[bike_icon]_off-open"
 			else
 				icon_state = "[bike_icon]_off"
-		..()
-		return
+		. += ..()
+		return .
 
 	if(on)
 		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_on_a", src.layer)
 		bodypaint.color = paint_color
-		add_overlay(bodypaint)
+		. += bodypaint
 
 		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay", MOB_LAYER + 1)
 		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_on_overlay_a", MOB_LAYER + 1)
 		overmob.plane = MOB_PLANE
 		overmob_color.plane = MOB_PLANE
 		overmob_color.color = paint_color
-		add_overlay(overmob)
-		add_overlay(overmob_color)
+		. += overmob
+		. += overmob_color
 		if(open)
 			icon_state = "[bike_icon]_on-open"
 		else
@@ -257,20 +257,20 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 	else
 		var/image/bodypaint = image('icons/obj/bike.dmi', "[bike_icon]_off_a", src.layer)
 		bodypaint.color = paint_color
-		add_overlay(bodypaint)
+		. += bodypaint
 
 		var/image/overmob = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay", MOB_LAYER + 1)
 		var/image/overmob_color = image('icons/obj/bike.dmi', "[bike_icon]_off_overlay_a", MOB_LAYER + 1)
 		overmob.plane = MOB_PLANE
 		overmob_color.plane = MOB_PLANE
 		overmob_color.color = paint_color
-		add_overlay(overmob)
-		add_overlay(overmob_color)
+		. += overmob
+		. += overmob_color
 		if(open)
 			icon_state = "[bike_icon]_off-open"
 		else
 			icon_state = "[bike_icon]_off"
 
-	..()
+	. += ..()
 
 DECLARE_REF(/obj/vehicle/bike, "ion", OWNED, null)

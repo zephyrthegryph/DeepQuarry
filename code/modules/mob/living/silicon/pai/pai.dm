@@ -575,16 +575,17 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 // Update icons
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-// ALLOW(sys_update_icon): chassis datum lookup, holo icon swap, belly fullness states and eye overlays
-/mob/living/silicon/pai/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, PROC_REF(appearance_overlays), list())
+/mob/living/silicon/pai/appearance_overlays()
+	. = list()
+	. += ..()
 
 	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
 	if(chassis_data.holo_projector)
 		icon_state = null
 		icon = holo_icon_south
 		add_eyes()
-		return
+		return .
 
 	update_fullness()
 

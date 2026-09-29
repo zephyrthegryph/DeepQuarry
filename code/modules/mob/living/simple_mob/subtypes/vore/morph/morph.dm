@@ -221,11 +221,13 @@
 	else
 		..()
 
-// ALLOW(sys_update_icon): skips the procedural simple_mob redraw while morphed into another appearance
-/mob/living/simple_mob/vore/morph/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/morph, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/morph/appearance_overlays()
+	. = list()
 	if(morphed)
-		return
-	return ..()
+		return .
+	. += ..()
+	return .
 
 /mob/living/simple_mob/vore/morph/update_icons()
 	if(morphed)

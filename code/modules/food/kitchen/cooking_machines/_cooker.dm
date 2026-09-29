@@ -74,9 +74,9 @@
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
 
 APPEARANCE_NONE(/obj/machinery/appliance/cooker)
-// ALLOW(sys_update_icon): light overlay is an image with per-instance light_x/light_y pixel offsets
-/obj/machinery/appliance/cooker/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, PROC_REF(appearance_overlays), list())
+/obj/machinery/appliance/cooker/appearance_overlays()
+	. = list()
 	var/image/light
 	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "light_idle")
@@ -86,7 +86,7 @@ APPEARANCE_NONE(/obj/machinery/appliance/cooker)
 		light = image(icon, "light_off")
 	light.pixel_x = light_x
 	light.pixel_y = light_y
-	add_overlay(light)
+	. += light
 
 /obj/machinery/appliance/cooker/machine_step()
 	if (!has_stat(MACHINE_STAT_ANY))

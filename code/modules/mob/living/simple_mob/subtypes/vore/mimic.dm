@@ -246,8 +246,11 @@
 	mimic_chance = 30
 	mimic_active = TRUE
 
-// ALLOW(sys_update_icon): opts out of the closet's procedural door/lock overlays
-/obj/structure/closet/crate/mimic/closet/update_icon()
+/// Draws itself entirely: drop the parent's keyed declarations.
+APPEARANCE_NONE(/obj/structure/closet/crate/mimic/closet)
+DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, PROC_REF(appearance_overlays), list())
+/obj/structure/closet/crate/mimic/closet/appearance_overlays()
+	. = list()
 	if(opened)
 		icon_state = "copen"
 	else

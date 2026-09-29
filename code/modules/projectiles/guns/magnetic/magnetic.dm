@@ -99,23 +99,23 @@ DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 	if(needs_update)
 		update_icon()
 
-// ALLOW(sys_update_icon): overlay names built from the current (subtype-changed) icon_state, and cut_overlays() clears overlays the subtypes add
-/obj/item/gun/magnetic/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, PROC_REF(appearance_overlays), list())
+/obj/item/gun/magnetic/appearance_overlays()
+	. = list()
 	if(state & ICON_CELL)
-		add_overlay("[icon_state]_cell")
+		. += "[icon_state]_cell"
 	if(state & ICON_CAP)
-		add_overlay("[icon_state]_capacitor")
+		. += "[icon_state]_capacitor"
 	if(state & ICON_BAD)
-		add_overlay("[icon_state]_red")
+		. += "[icon_state]_red"
 	if(state & ICON_CHARGE)
-		add_overlay("[icon_state]_amber")
+		. += "[icon_state]_amber"
 	if(state & ICON_READY)
-		add_overlay("[icon_state]_green")
+		. += "[icon_state]_green"
 	if(state & ICON_LOADED)
-		add_overlay("[icon_state]_loaded")
+		. += "[icon_state]_loaded"
 
-	..()
+	. += ..()
 
 /obj/item/gun/magnetic/proc/show_ammo()
 	var/list/ammotext = list()

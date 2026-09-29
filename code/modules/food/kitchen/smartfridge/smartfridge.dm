@@ -112,38 +112,37 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 	for(var/datum/stored_item/I as anything in item_records)
 		. += I.get_amount()
 
-// ALLOW(sys_update_icon): fill overlays picked from stored_count() of its item records (contents), per icon_base/icon_contents
-/obj/machinery/smartfridge/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/smartfridge, PROC_REF(appearance_overlays), list())
+/obj/machinery/smartfridge/appearance_overlays()
+	. = list()
 	if(panel_open)
-		add_overlay("[icon_base]-panel")
+		. += "[icon_base]-panel"
 
 	if(has_stat(BROKEN))
-		cut_overlays()
 		icon_state = "[icon_base]-broken"
 
 	if(has_stat(NOPOWER))
 		icon_state = "[icon_base]-off"
 		switch(stored_count())
 			if(0)
-				add_overlay("[icon_base]-0-off")
+				. += "[icon_base]-0-off"
 			if(1 to 3)
-				add_overlay("[icon_base]-[icon_contents]1-off")
+				. += "[icon_base]-[icon_contents]1-off"
 			if(3 to 6)
-				add_overlay("[icon_base]-[icon_contents]2-off")
+				. += "[icon_base]-[icon_contents]2-off"
 			if(6 to INFINITY)
-				add_overlay("[icon_base]-[icon_contents]3-off")
+				. += "[icon_base]-[icon_contents]3-off"
 	else
 		icon_state = icon_base
 		switch(stored_count())
 			if(0)
-				add_overlay("[icon_base]-0")
+				. += "[icon_base]-0"
 			if(1 to 3)
-				add_overlay("[icon_base]-[icon_contents]1")
+				. += "[icon_base]-[icon_contents]1"
 			if(3 to 6)
-				add_overlay("[icon_base]-[icon_contents]2")
+				. += "[icon_base]-[icon_contents]2"
 			if(6 to INFINITY)
-				add_overlay("[icon_base]-[icon_contents]3")
+				. += "[icon_base]-[icon_contents]3"
 
 EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 	INTERACT_ITEM(null, PROC_REF(smartfridge_interaction_item)), \

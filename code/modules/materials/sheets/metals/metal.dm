@@ -20,8 +20,9 @@
 	default_type = MAT_PLASTEELREBAR
 	apply_colour = 1
 
-// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural amount drawing (and its item_state update) with rod counts
-/obj/item/stack/material/plasteel/rebar/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/material/plasteel/rebar, PROC_REF(appearance_overlays), list())
+/obj/item/stack/material/plasteel/rebar/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	if((amount <= 5) && (amount > 0))
 		icon_state = "rods-[amount]"

@@ -125,15 +125,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 	if(panel_open)
 		. += "It has [cartridges.len] cartridges installed, and has space for [SYNTHESIZER_MAX_CARTRIDGES - cartridges.len] more."
 
-// ALLOW(sys_update_icon): underlays tinted with catalyst/vessel reagent colours
-/obj/machinery/chemical_synthesizer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, PROC_REF(appearance_overlays), list())
+/obj/machinery/chemical_synthesizer/appearance_overlays()
+	. = list()
 	underlays.Cut()
 	if(has_stat(BROKEN))
 		icon_state = "synth_broken"
-		return
+		return .
 	if(has_stat(NOPOWER))
 		icon_state = "synth_off"
-		return
+		return .
 	if(!busy)
 		if(catalyst)
 			icon_state = "synth_idle_bottle"

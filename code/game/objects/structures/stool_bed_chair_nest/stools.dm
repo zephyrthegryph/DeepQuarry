@@ -34,18 +34,18 @@
 /obj/item/stool/padded/Initialize(mapload, new_material)
 	. = ..(mapload, MAT_STEEL, MAT_CARPET)
 
-// ALLOW(sys_update_icon): overlays tinted per material/padding colour, and name/desc refresh
-/obj/item/stool/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stool, PROC_REF(appearance_overlays), list())
+/obj/item/stool/appearance_overlays()
+	. = list()
 	// Prep icon.
 	icon_state = ""
-	cut_overlays()
 	// Base icon.
 	var/cache_key = "[base_icon]-[material.name]"
 	if(isnull(GLOB.stool_cache[cache_key]))
 		var/image/I = image(icon, base_icon)
 		I.color = material.icon_colour
 		GLOB.stool_cache[cache_key] = I
-	add_overlay(GLOB.stool_cache[cache_key])
+	. += GLOB.stool_cache[cache_key]
 	// Padding overlay.
 	if(padding_material)
 		var/padding_cache_key = "[base_icon]-padding-[padding_material.name]"
@@ -53,7 +53,7 @@
 			var/image/I =  image(icon, "[base_icon]_padding")
 			I.color = padding_material.icon_colour
 			GLOB.stool_cache[padding_cache_key] = I
-		add_overlay(GLOB.stool_cache[padding_cache_key])
+		. += GLOB.stool_cache[padding_cache_key]
 	// Strings.
 	if(padding_material)
 		name = "[padding_material.display_name] [initial(name)]" //this is not perfect but it will do for now.

@@ -54,8 +54,9 @@
 	for(var/M in .)
 		.[M] *= amount
 
-// ALLOW(sys_update_icon): also sets item_state from the icon, and subtypes replace it without ..()
-/obj/item/stack/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack, PROC_REF(appearance_overlays), list())
+/obj/item/stack/appearance_overlays()
+	. = list()
 	if(no_variants)
 		icon_state = initial(icon_state)
 	else

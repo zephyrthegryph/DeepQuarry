@@ -108,8 +108,9 @@ EXTEND_INTERACTIONS(/obj/structure/lift/button, INTERACT_ITEM(null, PROC_REF(int
 	light_up = TRUE
 	update_icon()
 
-// ALLOW(sys_update_icon): state from its lift's fire and priority modes (another datum)
-/obj/structure/lift/button/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/lift/button, PROC_REF(appearance_overlays), list())
+/obj/structure/lift/button/appearance_overlays()
+	. = list()
 	if(lift().fire_mode)
 		icon_state = "button_fire"
 	else if(lift().priority_mode)
@@ -209,8 +210,9 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 	if(.)
 		pressed(ui.user)
 
-// ALLOW(sys_update_icon): state from its lift's fire mode (another datum)
-/obj/structure/lift/panel/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/lift/panel, PROC_REF(appearance_overlays), list())
+/obj/structure/lift/panel/appearance_overlays()
+	. = list()
 	if(lift().fire_mode)
 		icon_state = "panel_fire"
 	else

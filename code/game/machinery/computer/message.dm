@@ -55,13 +55,14 @@
 		else
 			to_chat(user, span_notice("A no server error appears on the screen."))
 
-// ALLOW(sys_update_icon): picks the screen then runs /obj/machinery/computer's procedural compositing
-/obj/machinery/computer/message_monitor/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/computer/message_monitor, PROC_REF(appearance_overlays), list())
+/obj/machinery/computer/message_monitor/appearance_overlays()
+	. = list()
 	if(emag || hacking)
 		icon_screen = hack_icon
 	else
 		icon_screen = initial(icon_screen)
-	..()
+	. += ..()
 
 /obj/machinery/computer/message_monitor/Initialize(mapload)
 	..()

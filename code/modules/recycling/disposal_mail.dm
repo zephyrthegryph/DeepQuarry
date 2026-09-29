@@ -96,9 +96,9 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	unwrap()
 	return TRUE
 
-// ALLOW(sys_update_icon): label/tag images with randomised per-instance pixel offsets
-/obj/structure/bigDelivery/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/structure/bigDelivery, PROC_REF(appearance_overlays), list())
+/obj/structure/bigDelivery/appearance_overlays()
+	. = list()
 	if(nameset || examtext)
 		var/image/I = new/image('icons/obj/storage.dmi',"delivery_label")
 		if(icon_state == "deliverycloset")
@@ -111,7 +111,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				label_x = rand(-8, 6)
 			I.pixel_x = label_x
 			I.pixel_y = -3
-		add_overlay(I)
+		. += I
 	if(src.sortTag)
 		var/image/I = new/image('icons/obj/storage.dmi',"delivery_tag")
 		if(icon_state == "deliverycloset")
@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 				tag_x = rand(-8, 6)
 			I.pixel_x = tag_x
 			I.pixel_y = -3
-		add_overlay(I)
+		. += I
 
 /obj/structure/bigDelivery/examine(mob/user)
 	. = ..()
@@ -244,14 +244,14 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 	attack_self(user)
 	return TRUE
 
-// ALLOW(sys_update_icon): tag image with per-crate pixel offsets and a randomised tag_x
-/obj/item/smallDelivery/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, PROC_REF(appearance_overlays), list())
+/obj/item/smallDelivery/appearance_overlays()
+	. = list()
 	if((nameset || examtext) && icon_state != "deliverycrate1")
 		var/image/I = new/image('icons/obj/storage.dmi',"delivery_label")
 		if(icon_state == "deliverycrate5")
 			I.pixel_y = -1
-		add_overlay(I)
+		. += I
 	if(src.sortTag)
 		var/image/I = new/image('icons/obj/storage.dmi',"delivery_tag")
 		switch(icon_state)
@@ -268,7 +268,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 				I.pixel_y = 3
 			if("deliverycrate5")
 				I.pixel_y = -3
-		add_overlay(I)
+		. += I
 
 /obj/item/smallDelivery/examine(mob/user)
 	. = ..()

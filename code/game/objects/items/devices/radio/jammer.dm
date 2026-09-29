@@ -112,8 +112,9 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 		return TRUE
 	return FALSE
 
-// ALLOW(sys_update_icon): overlay from the power cell's charge percent (another object's state), cached in last_overlay_percent
-/obj/item/radio_jammer/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/radio_jammer, PROC_REF(appearance_overlays), list())
+/obj/item/radio_jammer/appearance_overlays()
+	. = list()
 	if(on)
 		icon_state = active_state
 	else
@@ -127,8 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 
 	// Only Cut() if we need to.
 	if(overlay_percent != last_overlay_percent)
-		cut_overlays()
-		add_overlay("jammer_overlay_[overlay_percent]")
+		. += "jammer_overlay_[overlay_percent]"
 		last_overlay_percent = overlay_percent
 
 //Unlimited use, unlimited range jammer for admins. Turn it on, drop it somewhere, it works.

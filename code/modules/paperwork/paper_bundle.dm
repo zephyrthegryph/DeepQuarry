@@ -211,11 +211,12 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 	return
 
 
-// ALLOW(sys_update_icon): copies its first page's appearance and draws one offset underlay per page, photo overlays
-/obj/item/paper_bundle/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/paper_bundle, PROC_REF(appearance_overlays), list())
+/obj/item/paper_bundle/appearance_overlays()
+	. = list()
 	var/obj/item/paper/P = pages[1]
 	icon_state = P.icon_state
-	copy_overlays(P, TRUE)
+	. += P.overlays
 	underlays = 0
 	var/i = 0
 	var/photo
@@ -233,15 +234,15 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 			var/obj/item/photo/Ph = O
 			img = Ph.tiny
 			photo = 1
-			add_overlay(img)
+			. += img
 	if(i>1)
 		desc =  "[i] papers clipped to each other."
 	else
 		desc = "A single sheet of paper."
 	if(photo)
 		desc += "\nThere is a photo attached to it."
-	add_overlay(image('icons/obj/bureaucracy.dmi', "clip"))
-	return
+	. += image('icons/obj/bureaucracy.dmi', "clip")
+	return .
 
 /obj/item/paper_bundle/proc/burn_through(mob/user, obj/item/flame/P, class)
 	if(get_dist(src, user) < 2 && user.get_active_hand() == P && P.lit)

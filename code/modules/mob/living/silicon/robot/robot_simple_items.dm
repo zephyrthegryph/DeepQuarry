@@ -160,9 +160,10 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	welding = FALSE
 	no_passive_burn = TRUE
 
-// ALLOW(sys_update_icon): redraws the containing robotic multibelt's overlays (another object's appearance)
-/obj/item/weldingtool/electric/mounted/cyborg/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/weldingtool/electric/mounted/cyborg, PROC_REF(appearance_overlays), list())
+/obj/item/weldingtool/electric/mounted/cyborg/appearance_overlays()
+	. = list()
+	. += ..()
 	if(isrobotmultibelt(loc))
 		var/obj/item/robotic_multibelt/our_belt = loc
 		our_belt.cut_overlays()
@@ -193,8 +194,9 @@ DECLARE_INTERACTIONS(/obj/item/robotic_multibelt, INTERACT_USE(null, PROC_REF(in
 	icon_state = "toolkit_engiborg_multitool"
 	toolspeed = 0.5
 
-// ALLOW(sys_update_icon): opts out of /obj/item/multitool's procedural state (parent override never reaches the declared appearance)
-/obj/item/multitool/cyborg/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/cyborg, PROC_REF(appearance_overlays), list())
+/obj/item/multitool/cyborg/appearance_overlays()
+	. = list()
 	icon_state = "toolkit_engiborg_multitool"
 
 /obj/item/multitool/ai_detector/cyborg/get_mechanics_info(list/additional_information)

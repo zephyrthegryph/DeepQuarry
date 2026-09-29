@@ -74,8 +74,9 @@
 	// If we reach this point, AI or sec isn't near us.
 	return PROXIMITY_NONE
 
-// ALLOW(sys_update_icon): replaces /obj/item/multitool's procedural update_icon, which never reaches the base drawing
-/obj/item/multitool/ai_detector/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/multitool/ai_detector, PROC_REF(appearance_overlays), list())
+/obj/item/multitool/ai_detector/appearance_overlays()
+	. = list()
 	icon_state = "[initial(icon_state)][detect_state]"
 
 /obj/item/multitool/ai_detector/proc/update_warning(old_state, new_state)

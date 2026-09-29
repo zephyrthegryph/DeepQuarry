@@ -490,14 +490,19 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 		qdel(src)
 	return
 
-// ALLOW(sys_update_icon): one image per card with random/offset pixel positions and a direction matrix; also renames and qdels empty hands.
-/obj/item/hand/update_icon(direction = 0)
+/obj/item/hand
+	/// The direction of whoever laid it on a table (the fan follows it), or null.
+	var/tmp/direction
+
+DECLARE_APPEARANCE_PROC(/obj/item/hand, PROC_REF(appearance_overlays), list())
+/obj/item/hand/appearance_overlays()
+	. = list()
 
 	var/cardNumber = cards.len
 
 	if(!cardNumber)
 		qdel(src)
-		return
+		return .
 	else if(cardNumber > 1)
 		name = "hand of cards ([cardNumber])"
 		desc = "Some playing cards."
@@ -505,7 +510,6 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 		name = "a playing card"
 		desc = "A playing card."
 
-	cut_overlays()
 
 
 	if(cardNumber == 1)
@@ -513,8 +517,8 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 		var/image/I = new(src.icon, (concealed ? "[P.back_icon]" : "[P.card_icon]") )
 		I.pixel_x += (-5+rand(10))
 		I.pixel_y += (-5+rand(10))
-		add_overlay(I)
-		return
+		. += I
+		return .
 
 	var/offset = FLOOR(20/cardNumber, 1)
 
@@ -544,16 +548,14 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 			else
 				I.pixel_x = -7+(offset*i)
 		I.transform = M
-		add_overlay(I)
+		. += I
 		i++
 
 
 /obj/item/hand/dropped(mob/user, equipping, slot)
 	..()
-	if(locate(/obj/structure/table, loc))
-		src.update_icon(user.dir)
-	else
-		update_icon()
+	direction = locate(/obj/structure/table, loc) ? user.dir : null
+	update_icon()
 
 /obj/item/hand/pickup(mob/user)
 	..()

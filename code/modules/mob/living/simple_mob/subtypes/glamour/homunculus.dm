@@ -28,9 +28,7 @@
 	qdel(src)
 	return TRUE
 
-// ALLOW(sys_update_icon): opts out of /mob/living/simple_mob's procedural state/overlay drawing
-/mob/living/simple_mob/homunculus/update_icon()
-	return
+APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
 
 /mob/living/simple_mob/homunculus/update_icons()
 	return

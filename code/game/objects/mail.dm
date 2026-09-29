@@ -177,14 +177,14 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 /obj/item/mail/blank/proc/attack_self_timed_failed()
 	sealed = FALSE
 
-// ALLOW(sys_update_icon): envelope in the instance colour, stamp images per stamp, randomly offset postmark
-/obj/item/mail/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/mail, PROC_REF(appearance_overlays), list())
+/obj/item/mail/appearance_overlays()
+	. = list()
+	. += ..()
 	if(colored_envelope)
 		var/image/envelope = image(icon, icon_state)
 		envelope.color = colored_envelope
-		add_overlay(envelope)
+		. += envelope
 	var/bonus_stamp_offset = 0
 	for(var/stamp in stamps)
 		var/image/stamp_image = image(
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 			pixel_y = stamp_offset_y + bonus_stamp_offset
 		)
 		stamp_image.appearance_flags |= RESET_COLOR
-		add_overlay(stamp_image)
+		. += stamp_image
 		bonus_stamp_offset -= 5
 
 	if(postmarked == TRUE)
@@ -204,7 +204,7 @@ EXTEND_INTERACTIONS(/obj/item/mail/blank, \
 			pixel_y = stamp_offset_y + rand(bonus_stamp_offset + 3, 1)
 		)
 		postmark_image.appearance_flags |= RESET_COLOR
-		add_overlay(postmark_image)
+		. += postmark_image
 
 /// Old attackby: destination tagging.
 /obj/item/mail/proc/interaction_tag(mob/user, obj/item/destTagger/O, datum/interaction/interaction)

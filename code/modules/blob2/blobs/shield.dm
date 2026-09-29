@@ -11,9 +11,10 @@
 /obj/structure/blob/shield/core
 	point_return = 0
 
-// ALLOW(sys_update_icon): runs the blob's overmind colouring, then picks a damaged state from integrity
-/obj/structure/blob/shield/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/structure/blob/shield, PROC_REF(appearance_overlays), list("get_integrity"))
+/obj/structure/blob/shield/appearance_overlays()
+	. = list()
+	. += ..()
 	if(get_integrity() <= 75)
 		icon_state = "blob_shield_damaged"
 		desc = "A wall of twitching tendrils."

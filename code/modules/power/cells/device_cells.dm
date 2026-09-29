@@ -29,10 +29,7 @@
 	charge = 240
 	maxcharge = 240
 
-// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
-/obj/item/cell/device/crap/update_icon() //No visible charge indicator
-	return
-
+APPEARANCE_NONE(/obj/item/cell/device/crap)
 /obj/item/cell/device/crap/empty
 	charge = 0
 
@@ -143,10 +140,7 @@
 	var/swaps_to = /obj/item/cell/void
 	standard_overlays = FALSE
 
-// ALLOW(sys_update_icon): opts out of /obj/item/cell's charge overlay
-/obj/item/cell/device/weapon/recharge/alien/update_icon()
-	return // No overlays please.
-
+APPEARANCE_NONE(/obj/item/cell/device/weapon/recharge/alien)
 EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/recharge/alien, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /// Old attack_self.

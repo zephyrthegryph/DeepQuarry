@@ -49,9 +49,9 @@
 	update_icon()
 	got_input = FALSE
 
-// ALLOW(sys_update_icon): reagent fill tinted by reagents.get_color(), neighbour intake overlays and an arm image rotated by mixer_angle
-/obj/machinery/reagent_refinery/mixer/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/mixer, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/mixer/appearance_overlays()
+	. = list()
 	// GOOBY!
 	if(reagents && reagents.total_volume >= 5)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
@@ -63,18 +63,18 @@
 			if(80 to INFINITY)	percent = 10
 		var/image/filling = image(icon, loc, "mixer_r_[percent]",dir = dir)
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "mixer_cons", dir = dir)
-	add_overlay(pipe)
+	. += pipe
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "mixer_dot_[ got_input ? "on" : "off" ]")
-			add_overlay(dot)
-		update_input_connection_overlays("mixer_intakes")
+			. += dot
+		. += update_input_connection_overlays("mixer_intakes")
 	// Get mixer overlay
 	var/image/arm = image(icon, icon_state = "mixer_arm", dir = angle2dir(mixer_angle))
-	add_overlay(arm)
+	. += arm
 
 /obj/machinery/reagent_refinery/mixer/declare_interactions(list/into)
 	into += list(

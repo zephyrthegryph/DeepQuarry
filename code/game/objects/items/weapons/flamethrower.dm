@@ -62,19 +62,19 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 		location.hotspot_expose(700, 2)
 	return
 
-// ALLOW(sys_update_icon): also sets item_state with the redraw; overlay reads the igniter status
-/obj/item/flamethrower/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, PROC_REF(appearance_overlays), list())
+/obj/item/flamethrower/appearance_overlays()
+	. = list()
 	if(igniter)
-		add_overlay("+igniter[status]")
+		. += "+igniter[status]"
 	if(ptank)
-		add_overlay("+ptank")
+		. += "+ptank"
 	if(lit)
-		add_overlay("+lit")
+		. += "+lit"
 		item_state = "flamethrower_1"
 	else
 		item_state = "flamethrower_0"
-	return
+	return .
 
 /obj/item/flamethrower/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
 	if(!lit || !COOLDOWN_FINISHED(src, operating))

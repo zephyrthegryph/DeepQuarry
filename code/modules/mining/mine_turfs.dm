@@ -190,9 +190,9 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && mineral())
 		MineralSpread()
 
-// ALLOW(sys_update_icon): neighbour-dependent borders, archaeology overlays, name changes and neighbour redraws
-/turf/simulated/mineral/update_icon(update_neighbors, ignore_list)
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, PROC_REF(appearance_overlays), list(CHANGE_NEIGHBOURS))
+/turf/simulated/mineral/appearance_overlays()
+	. = list()
 
 	//We are a wall (why does this system work like this??)
 	if(density)
@@ -208,13 +208,13 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src,direction)
 			if(T && !T.density)
-				add_overlay(get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state))
+				. += get_cached_border(rock_side_icon_state,direction,icon,rock_side_icon_state)
 
 			if(archaeo_overlay)
-				add_overlay(archaeo_overlay)
+				. += archaeo_overlay
 
 			if(excav_overlay)
-				add_overlay(excav_overlay)
+				. += excav_overlay
 
 	//We are a sand floor
 	else
@@ -223,33 +223,23 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		icon_state = sand_icon_state
 
 		if(sand_dug)
-			add_overlay("dug_overlay")
+			. += "dug_overlay"
 
 		//Apply overlays if there's space
 		for(var/direction in GLOB.cardinal)
 			var/turf/T = get_step(src, direction)
 			if(istype(T, /turf/space) && !istype(T, /turf/space/cracked_asteroid))
-				add_overlay(get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0))
+				. += get_cached_border("asteroid_edge",direction,icon,"asteroid_edges", 0)
 			//Or any time
 			else
 				if(T?.density)
-					add_overlay(get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state))
+					. += get_cached_border(rock_side_icon_state,direction,rock_icon_path,rock_side_icon_state)
 
 		if(overlay_detail)
-			add_overlay(overlay_detail_icon_path,overlay_detail)
+			. += overlay_detail_icon_path
 
-		if(update_neighbors)
-			for(var/direction in GLOB.alldirs)
-				var/turf/T = get_step(src, direction)
-				// don't double update during cave generation
-				if(LAZYACCESS(ignore_list, T))
-					continue
-
-				if(ismineralturf(T))
-					T.update_icon()
-
-				if(istype(T, /turf/simulated/wall/solidrock))
-					T.update_icon()
+	// Neighbouring rock, sand and walls draw edges against us: tell them when we change.
+	appearance_notify_neighbours("[type]|[density]", /turf/simulated)
 
 /// Rock is drilled out by a blast rather than losing integrity.
 /turf/simulated/mineral/receive_explosion(severity)

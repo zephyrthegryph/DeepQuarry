@@ -178,12 +178,12 @@ DECLARE_INTERACTIONS(/obj/structure/disposalpipe/sortjunction, INTERACT_ITEM(nul
 
 	return P
 
-// ALLOW(sys_update_icon): panel overlay name is built from the runtime icon_state (base_icon_state set at construction) of each junction variant
-/obj/structure/disposalpipe/sortjunction/update_icon()
-	cut_overlays()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/structure/disposalpipe/sortjunction, PROC_REF(appearance_overlays), list())
+/obj/structure/disposalpipe/sortjunction/appearance_overlays()
+	. = list()
+	. += ..()
 	if(panel_open)
-		add_overlay("[icon_state]-open")
+		. += "[icon_state]-open"
 
 //a three-way junction that filters all wrapped and tagged items
 /obj/structure/disposalpipe/sortjunction/wildcard

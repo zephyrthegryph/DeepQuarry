@@ -65,8 +65,9 @@
 /obj/structure/girder/get_material()
 	return girder_material
 
-// ALLOW(sys_update_icon): other procs (reinforce_girder, displace) set icon_state directly; auto-refresh from a template would clobber them
-/obj/structure/girder/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/girder, PROC_REF(appearance_overlays), list())
+/obj/structure/girder/appearance_overlays()
+	. = list()
 	if(anchored)
 		icon_state = initial(icon_state)
 	else
@@ -336,8 +337,9 @@
 	girder_material = "cult"
 	applies_material_colour = 0
 
-// ALLOW(sys_update_icon): other procs set icon_state directly; kept procedural like its parent
-/obj/structure/girder/cult/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/girder/cult, PROC_REF(appearance_overlays), list())
+/obj/structure/girder/cult/appearance_overlays()
+	. = list()
 	if(anchored)
 		icon_state = "cultgirder"
 	else

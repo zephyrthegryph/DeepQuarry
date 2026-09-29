@@ -32,8 +32,9 @@
 		return 0
 	return 1
 
-// ALLOW(sys_update_icon): starts/stops the soundloop alongside the redraw
-/obj/machinery/ntnet_relay/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/ntnet_relay, PROC_REF(appearance_overlays), list())
+/obj/machinery/ntnet_relay/appearance_overlays()
+	. = list()
 	if(operable())
 		icon_state = initial(icon_state)
 		if(!noisy)

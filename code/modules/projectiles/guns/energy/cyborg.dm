@@ -330,13 +330,13 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	update_icon()
 	return TRUE
 
-// ALLOW(sys_update_icon): blade overlay tinted with per-instance lcolor, and refresh_light() must run with the redraw
-/obj/item/melee/robotic/blade/update_icon()
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
+DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, PROC_REF(appearance_overlays), list())
+/obj/item/melee/robotic/blade/appearance_overlays()
+	. = list()
 	if(active)
 		var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 		blade_overlay.color = lcolor
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	refresh_light()
 
 /obj/item/melee/robotic/blade/refresh_light(clear)
@@ -448,8 +448,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/robotic/blade, \
 	var/lightcolor = "#FF6A00"
 	borg_flags = COUNTS_AS_ROBOTIC_MELEE
 
-// ALLOW(sys_update_icon): refresh_light() must run with the redraw
-/obj/item/melee/robotic/baton/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/baton, PROC_REF(appearance_overlays), list())
+/obj/item/melee/robotic/baton/appearance_overlays()
+	. = list()
 	if(status)
 		icon_state = "[initial(name)]_active"
 	else

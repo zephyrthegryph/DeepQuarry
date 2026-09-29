@@ -64,10 +64,11 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/holofloor, INTERACT_ITEM("Nothing", TY
 	name = "\proper space"
 	icon_state = "white"
 
-// ALLOW(sys_update_icon): space dust overlay picked from its coordinates
-/turf/simulated/floor/holofloor/space/update_icon()
-	. = ..()
-	add_overlay(skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"])
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, PROC_REF(appearance_overlays), list())
+/turf/simulated/floor/holofloor/space/appearance_overlays()
+	. = list()
+	. += ..()
+	. += skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'
@@ -381,14 +382,14 @@ DECLARE_INTERACTIONS(/obj/item/holo/esword, \
 		update_icon()
 	return FALSE
 
-// ALLOW(sys_update_icon): blade overlay in the instance's blade colour, refreshes the wielder's hand icons
-/obj/item/holo/esword/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, PROC_REF(appearance_overlays), list())
+/obj/item/holo/esword/appearance_overlays()
+	. = list()
+	. += ..()
 	var/mutable_appearance/blade_overlay = mutable_appearance(icon, "[icon_state]_blade")
 	blade_overlay.color = lcolor
-	cut_overlays()		//So that it doesn't keep stacking overlays non-stop on top of each other
 	if(active)
-		add_overlay(blade_overlay)
+		. += blade_overlay
 	if(ishuman(usr))
 		var/mob/living/carbon/human/H = usr
 		H.update_inv_l_hand()

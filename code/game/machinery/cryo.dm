@@ -217,14 +217,14 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	put_mob(target)
 	return TRUE
 
-// ALLOW(sys_update_icon): fluid overlay is tinted with the beaker reagents' mixed colour
-/obj/machinery/atmospherics/unary/cryo_cell/update_icon()
-	cut_overlay(fluid)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/unary/cryo_cell/appearance_overlays()
+	. = list()
 	fluid.color = null
 	if(on)
 		if(beaker)
 			fluid.color = beaker.reagents.get_color()
-		add_overlay(fluid)
+		. += fluid
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/process_occupant()
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)

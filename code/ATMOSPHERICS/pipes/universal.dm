@@ -10,12 +10,12 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-// ALLOW(sys_update_icon): pipe_color-tinted overlay plus universal_underlays() per node direction (neighbour-dependent).
-/obj/machinery/atmospherics/pipe/simple/visible/universal/update_icon(safety = 0)
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/visible/universal, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/simple/visible/universal/appearance_overlays()
+	. = list()
 	alpha = 255
 
-	cut_overlays()
-	add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal"))
+	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal")
 	underlays.Cut()
 
 	if (node1)
@@ -46,12 +46,12 @@
 	construction_type = /obj/item/pipe/binary
 	pipe_state = "universal"
 
-// ALLOW(sys_update_icon): pipe_color-tinted overlay plus universal_underlays() per node direction (neighbour-dependent).
-/obj/machinery/atmospherics/pipe/simple/hidden/universal/update_icon(safety = 0)	// Doesn't leak. It's a special pipe.
+DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple/hidden/universal, PROC_REF(appearance_overlays), list())
+/obj/machinery/atmospherics/pipe/simple/hidden/universal/appearance_overlays()	// Doesn't leak. It's a special pipe.
+	. = list()
 	alpha = 255
 
-	cut_overlays()
-	add_overlay(GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal"))
+	. += GLOB.icon_manager.get_atmos_icon("pipe", , pipe_color, "universal")
 	underlays.Cut()
 
 	if (node1)

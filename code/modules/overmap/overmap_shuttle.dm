@@ -157,8 +157,9 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 	update_icon()
 	return TRUE
 
-// ALLOW(sys_update_icon): filled state from its contents
-/obj/structure/fuel_port/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, PROC_REF(appearance_overlays), list())
+/obj/structure/fuel_port/appearance_overlays()
+	. = list()
 	if(opened)
 		if(contents_count(src) > 0)
 			icon_state = icon_full
@@ -166,7 +167,7 @@ DECLARE_INTERACTIONS(/obj/structure/fuel_port, \
 			icon_state = icon_empty
 	else
 		icon_state = icon_closed
-	..()
+	. += ..()
 
 /// Old attackby.
 /obj/structure/fuel_port/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

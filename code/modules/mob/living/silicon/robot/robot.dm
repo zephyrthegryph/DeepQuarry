@@ -1286,23 +1286,23 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 // update_icon() composes the sprite from providers: base, accents, status,
 // belly, panel and hat.
 
-// ALLOW(sys_update_icon): sprite datum driven base appearance, indicators, accent/status/panel/hat overlays
-/mob/living/silicon/robot/update_icon()
+DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, PROC_REF(appearance_overlays), list())
+/mob/living/silicon/robot/appearance_overlays()
+	. = list()
 	if(!sprite_datum)
-		return
-	cut_overlays()
+		return .
 	apply_base_appearance()
 	if(stat == DEAD && sprite_datum.has_dead_sprite)
-		add_dead_overlays()
+		. += add_dead_overlays()
 	else
-		add_overlay(active_thinking_indicator)
-		add_overlay(active_typing_indicator)
+		. += active_thinking_indicator
+		. += active_typing_indicator
 		handle_status_indicators() // needed as we don't have priority overlays anymore
-		add_accent_overlays()
+		. += add_accent_overlays()
 		if(stat == CONSCIOUS)
-			add_status_overlays()
-	add_panel_overlay()
-	add_hat_overlay()
+			. += add_status_overlays()
+	. += add_panel_overlay()
+	. += add_hat_overlay()
 
 /mob/living/silicon/robot/proc/apply_base_appearance()
 	icon = sprite_datum.sprite_icon
@@ -1314,21 +1314,23 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		old_x = sprite_datum.pixel_x
 
 /mob/living/silicon/robot/proc/add_dead_overlays()
+	. = list()
 	icon_state = sprite_datum.get_dead_sprite(src)
 	if(sprite_datum.has_dead_sprite_overlay)
-		add_overlay(sprite_datum.get_dead_sprite_overlay(src))
+		. += sprite_datum.get_dead_sprite_overlay(src)
 
 /// Glow accents and decals. Emissive overlays go on first so everything
 /// else layers over them.
 /mob/living/silicon/robot/proc/add_accent_overlays()
+	. = list()
 	if(sprite_datum.has_glow_sprites && glowy_enabled)
-		add_overlay(mutable_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src)))
-		add_overlay(emissive_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src)))
+		. += mutable_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
+		. += emissive_appearance(sprite_datum.sprite_icon, sprite_datum.get_glow_overlay(src))
 	if(LAZYLEN(robotdecal_on) && LAZYLEN(sprite_datum.sprite_decals) && has_eyes())
 		for(var/enabled_decal in robotdecal_on)
 			var/robotdecal_overlay = sprite_datum.get_robotdecal_overlay(src, enabled_decal)
 			if(robotdecal_overlay)
-				add_overlay(robotdecal_overlay)
+				. += robotdecal_overlay
 
 /// Shell borgs that are not deployed have no eyes.
 /mob/living/silicon/robot/has_eyes()
@@ -1336,11 +1338,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 
 /// Eyes, bellies, equipment, rest pose and eye lights.
 /mob/living/silicon/robot/proc/add_status_overlays()
+	. = list()
 	update_fullness()
 	if(sprite_datum.has_eye_sprites && has_eyes())
 		var/eyes_overlay = sprite_datum.get_eyes_overlay(src)
 		if(eyes_overlay)
-			add_overlay(eyes_overlay)
+			. += eyes_overlay
 	add_belly_overlays()
 	sprite_datum.handle_extra_icon_updates(src) // Various equipment-based sprites go here.
 	if(resting && sprite_datum.has_rest_sprites)
@@ -1348,7 +1351,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	if(lights_on && sprite_datum.has_eye_light_sprites && has_eyes())
 		var/eyes_overlay = sprite_datum.get_eye_light_overlay(src)
 		if(eyes_overlay)
-			add_overlay(eyes_overlay)
+			. += eyes_overlay
 
 /// Fullness a belly class shows. Components (the sleeper belly) may adjust it.
 /mob/living/silicon/robot/proc/belly_display_fullness(belly_class)
@@ -1357,6 +1360,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return fullness_ref[1]
 
 /mob/living/silicon/robot/proc/add_belly_overlays()
+	. = list()
 	for(var/belly_class in vore_fullness_ex)
 		reset_belly_lights(belly_class)
 		var/vs_fullness = belly_display_fullness(belly_class)
@@ -1373,10 +1377,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		if(glowy_enabled)
 			var/mutable_appearance/MA = mutable_appearance(sprite_datum.sprite_icon, belly_state)
 			MA.appearance_flags = KEEP_APART
-			add_overlay(MA)
-			add_overlay(emissive_appearance(sprite_datum.sprite_icon, belly_state))
+			. += MA
+			. += emissive_appearance(sprite_datum.sprite_icon, belly_state)
 		else
-			add_overlay(belly_state)
+			. += belly_state
 
 /// The sleeper indicator shows red while the belly is busy (see the belly component).
 /mob/living/silicon/robot/proc/sleeper_red_light()
@@ -1384,11 +1388,12 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return belly?.sleeper_state == SLEEPER_STATE_BUSY
 
 /mob/living/silicon/robot/proc/add_panel_overlay()
+	. = list()
 	if(!opened)
-		return
+		return .
 	var/open_overlay = sprite_datum.get_open_sprite(src)
 	if(open_overlay)
-		add_overlay(open_overlay)
+		. += open_overlay
 
 // --- Hats (robots and drones) -----------------------------------------------------------------
 
@@ -1410,10 +1415,11 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 	return old_hat
 
 /mob/living/silicon/robot/proc/add_hat_overlay()
+	. = list()
 	if(!hat)
 		if(hat_overlay)
 			QDEL_NULL(hat_overlay)
-		return
+		return .
 	hat_overlay = hat.make_worn_icon(SPECIES_HUMAN, slot_head_str, default_icon = 'icons/inventory/head/mob.dmi', default_layer = 0)
 	update_worn_icons()
 

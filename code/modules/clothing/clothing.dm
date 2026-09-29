@@ -47,12 +47,12 @@
 		verbs |= /obj/item/clothing/proc/change_color
 	// start
 
-// ALLOW(sys_update_icon): wipes overlays and re-adds the per-instance blood overlay from forensic blood DNA/colour
-/obj/item/clothing/update_icon()
-	cut_overlays() //This removes all the overlays on the sprite and then goes down a checklist adding them as required.
+DECLARE_APPEARANCE_PROC(/obj/item/clothing, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/appearance_overlays()
+	. = list()
 	if(forensic_data?.has_blooddna())
 		add_blood()
-	. = ..()
+	. += ..()
 
 /obj/item/clothing/equipped(mob/user,slot)
 	..()
@@ -507,18 +507,19 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		to_chat(user, span_notice("You crawl under \the [src]."))
 	return 1
 
-// ALLOW(sys_update_icon): helmet light overlay from a global cache plus the wearer-bodytype on-mob light, and redraws the wearer's head slot
-/obj/item/clothing/head/update_icon(mob/user)
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/head/appearance_overlays()
+	. = list()
 	var/mob/living/carbon/human/H
-	if(ishuman(user))
-		H = user
+	if(ishuman(loc))
+		H = loc
 
 	if(light_on)
 		// Generate object icon.
 		if(!GLOB.light_overlay_cache["[light_overlay]_icon"])
 			GLOB.light_overlay_cache["[light_overlay]_icon"] = image(icon = 'icons/obj/light_overlays.dmi', icon_state = "[light_overlay]")
 		helmet_light = GLOB.light_overlay_cache["[light_overlay]_icon"]
-		add_overlay(helmet_light)
+		. += helmet_light
 
 		// Generate and cache the on-mob icon, which is used in update_inv_head().
 		var/body_type = (H && H.species.get_bodytype(H))
@@ -528,7 +529,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 			GLOB.light_overlay_cache[cache_key] = image(icon = use_icon, icon_state = "[light_overlay]")
 
 	else if(helmet_light)
-		cut_overlay(helmet_light)
 		helmet_light = null
 
 	user?.update_inv_head() //Will redraw the helmet with the light on the mob
@@ -696,11 +696,12 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	shoes_under_pants = !shoes_under_pants
 	update_icon()
 
-// ALLOW(sys_update_icon): knife overlay over the current icon_state, washes contamination and refreshes the wearer's shoe slot
-/obj/item/clothing/shoes/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/shoes/appearance_overlays()
+	. = list()
+	. += ..()
 	if(holding)
-		add_overlay("[icon_state]_knife")
+		. += "[icon_state]_knife"
 	// .contaminated + GLOB.contamination_overlay branch removed;
 	// see /obj/item/wash for the matching cleanup.
 	if(gurgled)
@@ -938,9 +939,10 @@ TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKE
 
 DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 
-// ALLOW(sys_update_icon): chains clothing's procedural blood overlays; only hooded suits (has_hood_sprite) swap icon_state from toggleicon
-/obj/item/clothing/suit/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/suit/appearance_overlays()
+	. = list()
+	. += ..()
 	if(has_hood_sprite) //If we have a special hood_sprite, great, let's use it! Only used by /obj/item/clothing/suit/storage/hooded atm.
 		icon_state = "[toggleicon][hood_up ? "_t" : ""]"
 

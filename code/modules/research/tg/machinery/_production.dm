@@ -51,18 +51,18 @@ DECLARE_REF(/obj/machinery/rnd/production, "available_designs", DEF, null)
 DECLARE_REF(/obj/machinery/rnd/production, "print_sound", OWNED, null)
 DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 
-// ALLOW(sys_update_icon): stripe overlay in the instance's stripe colour
-/obj/machinery/rnd/production/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, PROC_REF(appearance_overlays), list())
+/obj/machinery/rnd/production/appearance_overlays()
+	. = list()
 
 	icon_state = "[initial(icon_state)][panel_open ? "_t" : ""]"
 
 	if(!stripe_color)
-		return
+		return .
 
 	var/mutable_appearance/stripe = mutable_appearance('icons/obj/machines/research_vr.dmi', "protolathe_stripe[panel_open ? "_t" : ""]")
 	stripe.color = stripe_color
-	add_overlay(stripe)
+	. += stripe
 
 /obj/machinery/rnd/production/examine(mob/user, infix, suffix)
 	. = ..()

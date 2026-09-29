@@ -40,31 +40,31 @@
 	max_universal_equip = 1
 	max_special_equip = 1
 
-// ALLOW(sys_update_icon): paint mask images tinted with per-instance paint colours
-/obj/mecha/working/hoverpod/shuttlecraft/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/mecha/working/hoverpod/shuttlecraft, PROC_REF(appearance_overlays), list())
+/obj/mecha/working/hoverpod/shuttlecraft/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(base_paint)
 		if(!base_paint_mask)
 			base_paint_mask = image(icon, "[initial_icon]-mask+base", src.layer + 1)
 		base_paint_mask.color = base_paint
-		add_overlay(base_paint_mask)
+		. += base_paint_mask
 	if(front_paint)
 		if(!front_paint_mask)
 			front_paint_mask = image(icon, "[initial_icon]-mask+front", src.layer + 1)
 		front_paint_mask.color = front_paint
-		add_overlay(front_paint_mask)
+		. += front_paint_mask
 	if(engine_paint)
 		if(!engine_paint_mask)
 			engine_paint_mask = image(icon, "[initial_icon]-mask+engine", src.layer + 1)
 		engine_paint_mask.color = engine_paint
-		add_overlay(engine_paint_mask)
+		. += engine_paint_mask
 	if(central_paint)
 		if(!central_paint_mask)
 			central_paint_mask = image(icon, "[initial_icon]-mask+central", src.layer + 2)
 		central_paint_mask.color = central_paint
-		add_overlay(central_paint_mask)
+		. += central_paint_mask
 
 EXTEND_INTERACTIONS(/obj/mecha/working/hoverpod/shuttlecraft, INTERACT_ITEM("Paint hull", PROC_REF(interaction_shuttlecraft_paint)))
 

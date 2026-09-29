@@ -202,13 +202,14 @@ GLOBAL_LIST_EMPTY(limb_icon_cache) // ALLOW(cache): mutable /icon values, condit
 
 // new damage icon system
 // adjusted to set damage_state to brute/burn code only (without r_name0 as before)
-// ALLOW(sys_update_icon): not a redraw: caches damage_state and returns whether it changed
-/obj/item/organ/external/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/organ/external, PROC_REF(appearance_overlays), list())
+/obj/item/organ/external/appearance_overlays()
+	. = list()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)
 		damage_state = n_is
-		return 1
-	return 0
+		return .
+	return .
 
 
 // Returns an image for use by the human health dolly HUD element.

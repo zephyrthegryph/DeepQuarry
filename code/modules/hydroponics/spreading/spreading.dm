@@ -127,8 +127,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		var/turf/T = get_turf(src)
 		T.ex_act(prob(80) ? 3 : 2)
 
-// ALLOW(sys_update_icon): wall-flush transform with a random offset by dir, colour and bioluminescence from its seed
-/obj/effect/plant/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/plant, PROC_REF(appearance_overlays), list())
+/obj/effect/plant/appearance_overlays()
+	. = list()
 	//TODO: should really be caching this.
 	refresh_icon()
 	if(growth_type == 0 && !floor)
@@ -157,7 +158,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 		if(blight >= 5)
 			blight = 5
 		set_light(blight, 0.5, l_color = clr)
-		return
+		return .
 	else
 		set_light(0)
 

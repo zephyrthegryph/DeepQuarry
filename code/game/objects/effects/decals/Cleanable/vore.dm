@@ -36,9 +36,10 @@
 	update_icon()
 	om_task_periodic(src, PERIODIC_SLOW)
 
-// ALLOW(sys_update_icon): per-instance colour, name and desc (random for rainbow)
-/obj/effect/decal/cleanable/blood/reagent/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/reagent, PROC_REF(appearance_overlays), list())
+/obj/effect/decal/cleanable/blood/reagent/appearance_overlays()
 	if(custombasecolor == "rainbow") custombasecolor = get_random_colour(1)
+	. = list()
 
 	color = custombasecolor
 	name = custombasename

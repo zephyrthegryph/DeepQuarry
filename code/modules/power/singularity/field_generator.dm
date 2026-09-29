@@ -49,23 +49,23 @@
 		if(2)
 			. += span_notice("It has been bolted down securely and welded down into place.")
 
-// ALLOW(sys_update_icon): overlays from its live field list and a stored-power level
-/obj/machinery/field_generator/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, PROC_REF(appearance_overlays), list())
+/obj/machinery/field_generator/appearance_overlays()
+	. = list()
 	if(!active)
 		if(warming_up)
-			add_overlay("+a[warming_up]")
+			. += "+a[warming_up]"
 	if(fields.len)
-		add_overlay("+on")
+		. += "+on"
 	// Power level indicator
 	// Scale % power to % num_power_levels and truncate value
 	var/level = round(num_power_levels * power / field_generator_max_power)
 	// Clamp between 0 and num_power_levels for out of range power values
 	level = between(0, level, num_power_levels)
 	if(level)
-		add_overlay("+p[level]")
+		. += "+p[level]"
 
-	return
+	return .
 
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()

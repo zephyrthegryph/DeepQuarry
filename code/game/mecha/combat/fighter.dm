@@ -302,19 +302,19 @@ TOPIC_ACTION(/obj/mecha/combat/fighter, "toggle_landing_gear", PROC_REF(topic_to
 	ME = new /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay(src)
 	ME.attach(src)
 
-// ALLOW(sys_update_icon): stripe overlays tinted with per-instance stripe colours
-/obj/mecha/combat/fighter/gunpod/update_icon()
-	cut_overlays()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/mecha/combat/fighter/gunpod, PROC_REF(appearance_overlays), list())
+/obj/mecha/combat/fighter/gunpod/appearance_overlays()
+	. = list()
+	. += ..()
 
 	if(stripe1_color)
 		stripe1_overlay = image("gunpod_stripes1")
 		stripe1_overlay.color = stripe1_color
-		add_overlay(stripe1_overlay)
+		. += stripe1_overlay
 	if(stripe2_color)
 		stripe2_overlay = image("gunpod_stripes2")
 		stripe2_overlay.color = stripe2_color
-		add_overlay(stripe2_overlay)
+		. += stripe2_overlay
 
 EXTEND_INTERACTIONS(/obj/mecha/combat/fighter/gunpod, INTERACT_ITEM("Paint stripes", PROC_REF(interaction_gunpod_paint)))
 

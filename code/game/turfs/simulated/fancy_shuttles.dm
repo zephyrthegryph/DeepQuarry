@@ -113,17 +113,17 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		underlays += under_EM
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-// ALLOW(sys_update_icon): icon and icon_state read from the fancy_shuttle helper object and coordinates, plus underlay and damage overlays
-/turf/simulated/wall/fancy_shuttle/update_icon()
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall/fancy_shuttle, PROC_REF(appearance_overlays), list())
+/turf/simulated/wall/fancy_shuttle/appearance_overlays()
+	. = list()
 	if(!damage_overlays[1])
 		generate_overlays()
 
-	cut_overlays()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!F)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return
+			return .
 		icon = F.split_icon
 		icon_state = "walls [x - F.x],[y - F.y]"
 
@@ -135,7 +135,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 		if(overlay > damage_overlays.len)
 			overlay = damage_overlays.len
 
-		add_overlay(damage_overlays[overlay])
+		. += damage_overlays[overlay]
 
 /turf/simulated/wall/fancy_shuttle/update_connections()
 	return
@@ -183,13 +183,14 @@ INITIALIZE_IMMEDIATE(/obj/effect/fancy_shuttle)
 	var/fancy_shuttle_tag
 
 // Trust me, this is WAY faster than the normal wall overlays shenanigans, don't worry about performance
-// ALLOW(sys_update_icon): icon/icon_state read from the fancy_shuttle helper object and position offsets; opts out of window smoothing
-/obj/structure/window/fancy_shuttle/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/structure/window/fancy_shuttle, PROC_REF(appearance_overlays), list())
+/obj/structure/window/fancy_shuttle/appearance_overlays()
+	. = list()
 	if(fancy_shuttle_tag) // after a shuttle jump it won't be set anymore, but the shuttle jump proc will set our icon and state
 		var/obj/effect/fancy_shuttle/F = GLOB.fancy_shuttles[fancy_shuttle_tag]
 		if(!F)
 			WARNING("Fancy shuttle wall at [x],[y],[z] couldn't locate a helper with tag [fancy_shuttle_tag]")
-			return
+			return .
 		icon = F.split_icon
 		icon_state = "walls [x - F.x],[y - F.y]"
 

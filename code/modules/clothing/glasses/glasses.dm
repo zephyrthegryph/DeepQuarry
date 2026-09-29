@@ -536,8 +536,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/sunglasses/sechud/aviator, INTERA
 		user.update_inv_glasses()
 		user.update_mob_action_buttons()
 
-// ALLOW(sys_update_icon): deliberately bypasses /obj/item/clothing's procedural cut_overlays/blood-overlay redraw; deleting it would re-enable that
-/obj/item/clothing/glasses/sunglasses/sechud/aviator/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/glasses/sunglasses/sechud/aviator, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/glasses/sunglasses/sechud/aviator/appearance_overlays()
+	. = list()
 	if(on)
 		icon_state = initial(icon_state)
 	else

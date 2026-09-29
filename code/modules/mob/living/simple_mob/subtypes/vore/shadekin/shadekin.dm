@@ -213,16 +213,16 @@
 	if(ctx.fact("alive"))
 		self.shadekin.handle_comp()
 
-// ALLOW(sys_update_icon): per-instance tail image tracking icon_state and eye overlay
-/mob/living/simple_mob/shadekin/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/shadekin/appearance_overlays()
+	. = list()
+	. += ..()
 
-	cut_overlay(tailimage)
 
 	tailimage.icon_state = icon_state
 
-	add_overlay(tailimage)
-	add_overlay(eye_icon_state)
+	. += tailimage
+	. += eye_icon_state
 
 /mob/living/simple_mob/shadekin
 	death_message = "phases to somewhere far away!"

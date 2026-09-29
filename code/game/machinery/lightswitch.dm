@@ -33,9 +33,9 @@
 	set_on(area().lightswitch)
 	update_icon()
 
-// ALLOW(sys_update_icon): sets an on/off-coloured light alongside the emissive overlay
-/obj/machinery/light_switch/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, PROC_REF(appearance_overlays), list())
+/obj/machinery/light_switch/appearance_overlays()
+	. = list()
 	if(has_stat(NOPOWER))
 		icon_state = "light-p"
 		set_light(0)
@@ -45,7 +45,7 @@
 		. = list()
 		. += emissive_appearance(icon, "light[on]-overlay")
 
-	return add_overlay(.)
+	return .
 
 /obj/machinery/light_switch/examine(mob/user)
 	. = ..()

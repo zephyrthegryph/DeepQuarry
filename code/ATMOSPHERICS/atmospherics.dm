@@ -279,9 +279,6 @@ Pipelines + Other Objects -> Pipe network
 
 /obj/machinery/atmospherics/proc/disconnect(obj/machinery/atmospherics/reference)
 
-// ALLOW(sys_update_icon): base stub; every atmospherics subtype draws pipe/underlay overlays procedurally from node connections and dirs
-/obj/machinery/atmospherics/update_icon()
-	return null
 
 /obj/machinery/atmospherics/proc/can_unwrench()
 

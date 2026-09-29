@@ -127,8 +127,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell
 			status = 0
 			update_held_icon()
 
-// ALLOW(sys_update_icon): sets item_state and a coloured light with the redraw
-/obj/item/melee/shock_maul/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/melee/shock_maul, PROC_REF(appearance_overlays), list())
+/obj/item/melee/shock_maul/appearance_overlays()
+	. = list()
 	if(status)
 		icon_state = "[initial(icon_state)]_active[wielded]"
 		item_state = icon_state

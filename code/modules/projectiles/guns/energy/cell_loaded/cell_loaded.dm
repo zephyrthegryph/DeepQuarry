@@ -102,13 +102,13 @@
 	chambered = null
 	return ..()
 
-// ALLOW(sys_update_icon): composites mode/barrel/charge overlays tinted with the chambered battery's colour, one charge pip per pixel offset
-/obj/item/gun/projectile/cell_loaded/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/projectile/cell_loaded, PROC_REF(appearance_overlays), list())
+/obj/item/gun/projectile/cell_loaded/appearance_overlays()
+	. = list()
 	update_charge()
 
-	cut_overlays()
 	if(!chambered)
-		return
+		return .
 
 	var/obj/item/ammo_casing/microbattery/batt = chambered
 	var/batt_color = batt.type_color //Used many times
@@ -116,13 +116,13 @@
 	//Mode bar
 	var/image/mode_bar = image(icon, icon_state = "[initial(icon_state)]_type")
 	mode_bar.color = batt_color
-	add_overlay(mode_bar)
+	. += mode_bar
 
 	//Barrel color
 	var/image/barrel_color = image(icon, icon_state = "[initial(icon_state)]_barrel")
 	barrel_color.alpha = 150
 	barrel_color.color = batt_color
-	add_overlay(barrel_color)
+	. += barrel_color
 
 	//Charge bar
 	var/ratio = CEILING(((charge_left / max_charge) * charge_sections), 1)
@@ -130,7 +130,7 @@
 		var/image/charge_bar = image(icon, icon_state = "[initial(icon_state)]_charge")
 		charge_bar.pixel_x = i
 		charge_bar.color = batt_color
-		add_overlay(charge_bar)
+		. += charge_bar
 
 // The Magazine //
 /obj/item/ammo_magazine/cell_mag
@@ -175,25 +175,25 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(istype(M))
 			M?.hud_used?.update_ammo_hud(M, cell_load)
 
-// ALLOW(sys_update_icon): draws one tinted cap and charge overlay per stored battery with per-index pixel offsets
-/obj/item/ammo_magazine/cell_mag/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_magazine/cell_mag, PROC_REF(appearance_overlays), list())
+/obj/item/ammo_magazine/cell_mag/appearance_overlays()
+	. = list()
 	if(!stored_ammo.len)
-		return //Why bother
+		return .
 
 	var/current = 0
 	for(var/obj/item/ammo_casing/microbattery/batt as anything in stored_ammo)
 		var/image/cap = image(icon, icon_state = "[capname]_cap")
 		cap.color = batt.type_color
 		cap.pixel_x = current * x_offset //Caps don't need a pixel_y offset
-		add_overlay(cap)
+		. += cap
 
 		if(batt.shots_left)
 			var/ratio = CEILING(((batt.shots_left / initial(batt.shots_left)) * 4), 1) //4 is how many lights we have a sprite for
 			var/image/charge = image(icon, icon_state = "[chargename]_charge-[ratio]")
 			charge.color = "#29EAF4" //Could use battery color but eh.
 			charge.pixel_x = current * x_offset
-			add_overlay(charge)
+			. += charge
 
 		current++ //Increment for offsets
 
@@ -227,13 +227,13 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 	pixel_y = rand(-10, 10)
 	update_icon()
 
-// ALLOW(sys_update_icon): tints the ends overlay with this battery's per-instance type_color
-/obj/item/ammo_casing/microbattery/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, PROC_REF(appearance_overlays), list())
+/obj/item/ammo_casing/microbattery/appearance_overlays()
+	. = list()
 
 	var/image/ends = image(icon, icon_state = "[initial(icon_state)]_ends")
 	ends.color = type_color
-	add_overlay(ends)
+	. += ends
 
 /obj/item/ammo_casing/microbattery/expend()
 	shots_left--

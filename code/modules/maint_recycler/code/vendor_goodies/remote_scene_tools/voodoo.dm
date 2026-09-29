@@ -95,9 +95,10 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disa
 
 	return input
 
-// ALLOW(sys_update_icon): displacement-map and layer images generated from the linked wearer's body
-/obj/item/remote_scene_tool/voodoo_doll/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool/voodoo_doll, PROC_REF(appearance_overlays), list())
+/obj/item/remote_scene_tool/voodoo_doll/appearance_overlays()
+	. = list()
+	. += ..()
 	//reset
 	overlays?.Cut()
 	underlays?.Cut()
@@ -109,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disa
 	transform = rotateMatrix
 
 	if(!linked())
-		return
+		return .
 
 	var/mob/owner = linked().getWearer()
 	if(!owner) return;
@@ -161,13 +162,13 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool/voodoo_doll, INTERACT_VERB("Disa
 
 		//add them all
 		overlays |= displacement_rendered
-		overlays += ear_image
-		overlays += hat_image
+		. += ear_image
+		. += hat_image
 
 		if(!is_tail_taur)
 			underlays += tail_image
 		else
-			overlays += tail_image
+			. += tail_image
 
 		underlays |= wing_image
 		underlays |= under_wing_image

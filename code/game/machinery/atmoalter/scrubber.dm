@@ -35,9 +35,9 @@
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)
 
-// ALLOW(sys_update_icon): reads the installed cell's charge (another object) and connected_port() lookup for the sprite and overlays.
-/obj/machinery/portable_atmospherics/powered/scrubber/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, PROC_REF(appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/scrubber/appearance_overlays()
+	. = list()
 
 	if(on && cell && cell.charge)
 		icon_state = "pscrubber:1"
@@ -45,12 +45,12 @@
 		icon_state = "pscrubber:0"
 
 	if(holding)
-		add_overlay("scrubber-open")
+		. += "scrubber-open"
 
 	if(connected_port())
-		add_overlay("scrubber-connector")
+		. += "scrubber-connector"
 
-	return
+	return .
 
 // Machine pipeline (code/game/machinery/machine_pipeline.dm, "portable pumps and scrubbers"
 // section): polls = FALSE (declared with the other vars above) moves this off SSmachines'
@@ -203,9 +203,9 @@
 	to_chat(user, span_notice("You can't directly interact with this machine. Use the scrubber control console."))
 	return TRUE
 
-// ALLOW(sys_update_icon): opts out of scrubber's procedural cell/port overlays and sets the huge scrubber sprite.
-/obj/machinery/portable_atmospherics/powered/scrubber/huge/update_icon()
-	src.overlays = 0
+DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber/huge, PROC_REF(appearance_overlays), list())
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/appearance_overlays()
+	. = list()
 
 	if(on && operable())
 		icon_state = "scrubber:1"

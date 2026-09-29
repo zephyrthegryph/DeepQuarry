@@ -379,14 +379,14 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine, \
 	else
 		set_anchored(TRUE)
 
-// ALLOW(sys_update_icon): a directed over-mob overlay on the FLY layer that follows dir
-/obj/vehicle/train/engine/update_icon()
-	..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, PROC_REF(appearance_overlays), list())
+/obj/vehicle/train/engine/appearance_overlays()
+	. = list()
+	. += ..()
 	var/image/O = image(icon = 'icons/obj/vehicles.dmi', icon_state = "cargo_engine_overlay", dir = src.dir)
 	O.layer = FLY_LAYER
 	O.plane = MOB_PLANE
-	add_overlay(O)
+	. += O
 
 /obj/vehicle/train/engine/set_dir()
 	..()
@@ -506,10 +506,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 	. = ..()
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u."
 
-// ALLOW(sys_update_icon): reagent fill overlay tinted by the reagents, paint overlay in the instance colour
-/obj/vehicle/train/trolley_tank/update_icon()
-	. = ..()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/vehicle/train/trolley_tank, PROC_REF(appearance_overlays), list())
+/obj/vehicle/train/trolley_tank/appearance_overlays()
+	. = list()
+	. += ..()
 	if(reagents && reagents.total_volume > 0)
 		var/percent = (reagents.total_volume / reagents.maximum_volume) * 100
 		switch(percent)
@@ -525,10 +525,10 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 			if(90 to INFINITY)	percent = 100
 		var/image/chems = image(icon, icon_state = "[icon_state]_r_[percent]", dir = NORTH)
 		chems.color = reagents.get_color()
-		add_overlay(chems)
+		. += chems
 	var/image/Bodypaint = image(icon, icon_state = "[icon_state]_c", dir = NORTH)
 	Bodypaint.color = paint_color
-	add_overlay(Bodypaint)
+	. += Bodypaint
 
 /obj/vehicle/train/trolley_tank/on_reagent_change(changetype)
 	update_icon()

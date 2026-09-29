@@ -11,8 +11,9 @@
 	. = ..()
 	update_icon()
 
-// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural update_icon, which never reaches the base drawing
-/obj/item/stack/arcadeticket/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/arcadeticket, PROC_REF(appearance_overlays), list())
+/obj/item/stack/arcadeticket/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	switch(amount)
 		if(12 to INFINITY)

@@ -636,7 +636,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 	if(owner)
 		src.update_wounds()
 
-	var/result = update_icon()
+	var/result = update_damage_state()
 	return result
 
 //Helper proc used by various tools for repairing robot limbs
@@ -711,9 +711,9 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			owner.mend(TREAT_WIRING_REPAIR, repair_amount, organ_tag)
 	else
 		switch(damage_type)
+			if("omni")src.heal_wound_damage(repair_amount, repair_amount, 0, 1)
 			if(BRUTE) src.heal_wound_damage(repair_amount, 0, 0, 1)
 			if(BURN)  src.heal_wound_damage(0, repair_amount, 0, 1)
-			if("omni")src.heal_wound_damage(repair_amount, repair_amount, 0, 1)
 
 	if(damage_desc)
 		var/fix_verb = "patches"
@@ -978,7 +978,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 				removed_any = TRUE
 		if(removed_any)
 			update_damages()
-			if(update_icon())
+			if(update_damage_state())
 				owner?.UpdateDamageIcon(1)
 		return
 
@@ -1046,8 +1046,8 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 // new damage icon system
 // adjusted to set damage_state to brute/burn code only (without r_name0 as before)
-// ALLOW(sys_update_icon): not a redraw: caches damage_state and returns whether it changed
-/obj/item/organ/external/update_icon()
+/// Caches damage_state from the limb's damage; TRUE when it changed (the owner's body then redraws).
+/obj/item/organ/external/proc/update_damage_state()
 	var/n_is = damage_state_text()
 	if (n_is != damage_state)
 		damage_state = n_is

@@ -31,8 +31,9 @@
 	recipes = GLOB.rods_recipes
 	update_icon()
 
-// ALLOW(sys_update_icon): replaces /obj/item/stack's procedural amount drawing (and its item_state update) with rod counts
-/obj/item/stack/rods/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/stack/rods, PROC_REF(appearance_overlays), list())
+/obj/item/stack/rods/appearance_overlays()
+	. = list()
 	var/amount = get_amount()
 	if((amount <= 5) && (amount > 0))
 		icon_state = "rods-[amount]"

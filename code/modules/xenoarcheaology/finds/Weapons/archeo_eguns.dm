@@ -5,9 +5,7 @@
 	icon = 'icons/obj/xenoarchaeology.dmi'
 	one_handed_penalty = FALSE
 
-// ALLOW(sys_update_icon): opts out of the energy gun's procedural charge overlays
-/obj/item/gun/energy/laser/xenoarch/update_icon()
-		return
+APPEARANCE_NONE(/obj/item/gun/energy/laser/xenoarch)
 
 
 /obj/item/gun/energy/laser/xenoarch

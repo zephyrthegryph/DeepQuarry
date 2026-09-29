@@ -17,11 +17,11 @@
 	lid_color = pick("black", "red", "blue")
 	update_icon()
 
-// ALLOW(sys_update_icon): runs glass2's procedural reagent drawing, then sets its lid-coloured state
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[base_icon]_[lid_color]"
-	cut_overlays()
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake
 	name = "protein shake"
@@ -36,9 +36,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pr
 	. = ..()
 	cut_overlays()
 
-// ALLOW(sys_update_icon): opts out of glass2's procedural reagent drawing
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteinshake)
 
 
 /obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake
@@ -54,6 +52,4 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/pr
 	. = ..()
 	cut_overlays()
 
-// ALLOW(sys_update_icon): opts out of glass2's procedural reagent drawing
-/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake/update_icon()
-	return
+APPEARANCE_NONE(/obj/item/reagent_containers/food/drinks/glass2/fitnessflask/proteanshake)

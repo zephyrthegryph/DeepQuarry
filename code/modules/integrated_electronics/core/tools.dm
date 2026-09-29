@@ -187,8 +187,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_electronics/debugger, INTERACT_USE(nul
 	var/tmp/selected_io_handle
 	var/mode = 0
 
-// ALLOW(sys_update_icon): state from its selected IO, buffer and connection handles (other objects)
-/obj/item/multitool/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/multitool, PROC_REF(appearance_overlays), list())
+/obj/item/multitool/appearance_overlays()
+	. = list()
 	if(selected_io())
 		if(buffer() || connecting() || connectable())
 			icon_state = "multitool_tracking"

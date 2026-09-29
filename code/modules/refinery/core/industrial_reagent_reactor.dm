@@ -64,17 +64,17 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 		if(target)
 			transfer_tank( reagents, target, dir)
 
-// ALLOW(sys_update_icon): dir-drawn pipe image plus intake overlays from neighbouring refinery machines
-/obj/machinery/reagent_refinery/reactor/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/reactor, PROC_REF(appearance_overlays), list())
+/obj/machinery/reagent_refinery/reactor/appearance_overlays()
+	. = list()
 	// Get main dir pipe
 	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
-	add_overlay(pipe)
+	. += pipe
 	if(anchored)
 		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ toggle_mode > REACTOR_MODE_INTAKE ? "on" : "off" ]") // Show refinery output mode
-			add_overlay(dot)
-		update_input_connection_overlays("reactor_intakes")
+			. += dot
+		. += update_input_connection_overlays("reactor_intakes")
 
 /obj/machinery/reagent_refinery/reactor/handle_transfer(atom/origin_machine, datum/reagents/RT, source_forward_dir, transfer_rate, filter_id = "")
 	// no back/forth, filters don't use just their forward, they send the side too!

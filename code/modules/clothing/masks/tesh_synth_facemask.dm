@@ -34,8 +34,9 @@ TYPE_TABLE(/obj/item/clothing/mask/synthfacemask, equip_spec, dq_spec_join(..(),
 	var/obj/item/organ/external/E = H.organs_by_name[BP_HEAD]
 	return istype(E) && (E.is_robotic())
 
-// ALLOW(sys_update_icon): refreshes the wearer's mask icon (update_inv_wear_mask) with the sprite.
-/obj/item/clothing/mask/synthfacemask/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/mask/synthfacemask/appearance_overlays()
+	. = list()
 	var/mob/living/carbon/human/H = loc
 	switch(visor_state)
 		if (DEAD)

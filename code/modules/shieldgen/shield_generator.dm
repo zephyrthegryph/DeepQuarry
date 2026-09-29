@@ -42,8 +42,9 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
-// ALLOW(sys_update_icon): sets or clears its coloured light along with the redraw
-/obj/machinery/power/shield_generator/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, PROC_REF(appearance_overlays), list())
+/obj/machinery/power/shield_generator/appearance_overlays()
+	. = list()
 	if(running)
 		icon_state = "generator1"
 		set_light(1, 2, "#66FFFF")

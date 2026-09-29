@@ -391,11 +391,12 @@
 		update_icon()
 	. = ..()
 
-// ALLOW(sys_update_icon): footprint image overlays per entry in crossed_dirs, each with its own dir.
-/turf/simulated/floor/snow/update_icon()
-	..()
+DECLARE_APPEARANCE_PROC(/turf/simulated/floor/snow, PROC_REF(appearance_overlays), list())
+/turf/simulated/floor/snow/appearance_overlays()
+	. = list()
+	. += ..()
 	for(var/d in crossed_dirs)
-		add_overlay(image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d)))
+		. += image(icon = 'icons/turf/outdoors.dmi', icon_state = "snow_footprints", dir = text2num(d))
 
 //**** Here ends snow ****
 

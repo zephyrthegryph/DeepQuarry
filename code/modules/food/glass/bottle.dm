@@ -38,9 +38,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEF
 	if(!icon_state)
 		icon_state = "bottle-[rand(1,4)]"
 
-// ALLOW(sys_update_icon): reagent fill overlay coloured by reagents.get_color() at the current fill level
-/obj/item/reagent_containers/glass/bottle/update_icon()
-	cut_overlays()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/bottle, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/glass/bottle/appearance_overlays()
+	. = list()
 
 	if(reagents.total_volume)
 		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
@@ -55,13 +55,13 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bottle, INTERACT_HAND_DEF
 			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
 
 		filling.color = reagents.get_color()
-		add_overlay(filling)
+		. += filling
 
 	if (!is_open_container())
-		add_overlay("lid_[icon_state]")
+		. += "lid_[icon_state]"
 
 	if (label_text)
-		add_overlay("label_[icon_state]")
+		. += "label_[icon_state]"
 
 /obj/item/reagent_containers/glass/bottle/inaprovaline
 	name = "inaprovaline bottle"

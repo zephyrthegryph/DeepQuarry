@@ -171,9 +171,10 @@
 				return
 	update_icon()
 
-// ALLOW(sys_update_icon): eye image cached per icon/state layered on the procedural simple_mob state
-/mob/living/simple_mob/vore/squirrel/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/squirrel, PROC_REF(appearance_overlays), list())
+/mob/living/simple_mob/vore/squirrel/appearance_overlays()
+	. = list()
+	. += ..()
 	var/combine_key
 	if(icon == 'icons/mob/alienanimals_x32.dmi')
 		combine_key = "small"
@@ -186,7 +187,7 @@
 		extra_image = image(icon,null,"[icon_state]_eye")
 		extra_image.appearance_flags = RESET_COLOR|KEEP_APART|PIXEL_SCALE
 		overlays_cache[combine_key] = extra_image
-	add_overlay(extra_image)
+	. += extra_image
 
 /mob/living/simple_mob/vore/squirrel/proc/winterize()
 	desc = desc + " It looks all plumped up for winter! Adorable!"

@@ -9,14 +9,15 @@
 	charge_cost = 400 //Low energy cost.
 	fire_delay = 10 //Rapid fire!
 
-// ALLOW(sys_update_icon): reads the power cell's charge (another object) to pick the charge-meter icon_state
-/obj/item/gun/energy/bolagun/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/bolagun, PROC_REF(appearance_overlays), list())
+/obj/item/gun/energy/bolagun/appearance_overlays()
+	. = list()
 	if(power_supply == null)
 		if(modifystate)
 			icon_state = "[modifystate]_open"
 		else
 			icon_state = "[initial(icon_state)]_open"
-		return
+		return .
 	else if(charge_meter)
 		var/ratio = power_supply.charge / power_supply.maxcharge
 

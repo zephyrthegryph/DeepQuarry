@@ -217,9 +217,10 @@
 	M.ghostjoin = TRUE
 	to_chat(U, span_notice("\The [bound_mob] is now eligable to be joined by ghosts. It will need to be out of the crystal to be able to be joined."))
 
-// ALLOW(sys_update_icon): checks bound mob containment and schedules a redraw after the cooldown
-/obj/item/capture_crystal/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, PROC_REF(appearance_overlays), list())
+/obj/item/capture_crystal/appearance_overlays()
+	. = list()
+	. += ..()
 	if(spawn_mob_type)
 		icon_state = full_icon
 	else if(!bound_mob)

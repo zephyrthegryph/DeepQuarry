@@ -76,8 +76,9 @@
 
 	return TRUE
 
-// ALLOW(sys_update_icon): liquid underlays from the reagents (fill level, colour, glass specials) and garnish images from its extras
-/obj/item/reagent_containers/food/drinks/glass2/update_icon()
+DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, PROC_REF(appearance_overlays), list())
+/obj/item/reagent_containers/food/drinks/glass2/appearance_overlays()
+	. = list()
 	underlays.Cut()
 
 	if (reagents.reagent_list.len > 0)

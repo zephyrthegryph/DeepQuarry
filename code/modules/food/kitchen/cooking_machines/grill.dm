@@ -34,8 +34,9 @@
 
 DECLARE_REF(/obj/machinery/appliance/cooker/grill, "grill_loop", OWNED, null)
 
-// ALLOW(sys_update_icon): starts/stops the grill_loop sound together with the on/off redraw
-/obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
+DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, PROC_REF(appearance_overlays), list())
+/obj/machinery/appliance/cooker/grill/appearance_overlays() // TODO: Cooking icon
+	. = list()
 	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(cooking == TRUE)

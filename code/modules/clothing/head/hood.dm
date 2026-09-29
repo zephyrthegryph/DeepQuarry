@@ -330,9 +330,10 @@
 	desc = "It's the hood part of a hoodie. What kind of hoodie would it be without one? A poser, obviously."
 	icon_state = "choodie"
 
-// ALLOW(sys_update_icon): chains the procedural head light/on-mob redraw before setting the open state
-/obj/item/clothing/head/hood/toggleable/colorable/update_icon()
-	. = ..()
+DECLARE_APPEARANCE_PROC(/obj/item/clothing/head/hood/toggleable/colorable, PROC_REF(appearance_overlays), list())
+/obj/item/clothing/head/hood/toggleable/colorable/appearance_overlays()
+	. = list()
+	. += ..()
 	icon_state = "[initial(icon_state)][open ? "_open" : ""]"
 
 /obj/item/clothing/head/hood/winter/snowsuit
