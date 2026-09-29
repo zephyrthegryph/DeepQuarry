@@ -52,3 +52,9 @@
 #define CLOCK_WORLD 0
 /// The holder's own clock (paused in stasis or suspension).
 #define CLOCK_OWN 1
+
+// ---- emag() modes ----
+/// The emag works once: a second swipe is refused with already_say.
+#define EMAG_ONCE 0
+/// The emag works every time (its effect runs again).
+#define EMAG_REPEATABLE 1
