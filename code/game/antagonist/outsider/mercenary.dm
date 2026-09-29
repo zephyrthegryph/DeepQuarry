@@ -26,8 +26,8 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 /datum/antagonist/mercenary/create_global_objectives()
 	if(!..())
 		return 0
-	global_objectives = list()
-	LAZYOR(global_objectives, new /datum/objective/nuclear)
+	own_clear(src, "global_objectives", OWN_DELETE)
+	own_add(src, "global_objectives", new /datum/objective/nuclear)
 	return 1
 
 /datum/antagonist/mercenary/equip(mob/living/carbon/human/player)

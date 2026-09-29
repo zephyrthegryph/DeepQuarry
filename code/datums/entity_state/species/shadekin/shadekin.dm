@@ -65,8 +65,8 @@
 	var/created_dark_tunnel = FALSE
 
 	//Dark Maw Vars (Unused on Virgo)
-	///Our current active dark maws
-	var/list/active_dark_maws
+	///Our current active dark maws: a relation list view (a maw that dies leaves it)
+	var/list/obj/effect/abstract/dark_maw/active_dark_maws
 
 	//Ability Vars
 	///Ability ids (code/datums/abilities/ability.dm) this variant grants while
@@ -359,3 +359,5 @@
 
 /datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.shadekin?.handle_comp()
+
+REL_LIST(/datum/shadekin, active_dark_maws)

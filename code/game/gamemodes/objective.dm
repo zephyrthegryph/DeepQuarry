@@ -301,7 +301,7 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 /datum/objective/survive/check_completion()
 	if(!owner.current || owner.current.stat == DEAD || isbrain(owner.current))
 		return 0		//Brains no longer win survive objectives. --NEO
-	var/mob/living/original = om_resolve(owner.original_character)
+	var/mob/living/original = owner.original_character
 	if(issilicon(owner.current) && (original && (owner.current != original)))
 		return 0
 	return 1
@@ -837,6 +837,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		return 0
 	return rval
 
-REL_PAIR(/datum/objective, owner, objectives)
-REL_PAIR_LIST(/datum/mind, objectives, owner)
+// The mind owns its objectives (mind.objectives, OWN); owner is the one-sided back view.
+REL(/datum/objective, owner)
 // Minds live for the round; the objective only reads its target.

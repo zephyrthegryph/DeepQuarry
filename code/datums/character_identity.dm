@@ -53,8 +53,8 @@
 /mob/living
 	/// The mob's own identity (owned): what it embodies until a mind brings its character.
 	var/datum/character_identity/own_identity = new
-	/// OM handle of the identity this mob embodies (its mind's, or its own). Read with identity().
-	var/datum/identity
+	/// The identity this mob embodies (its mind's, or its own): a relation view. Read with identity().
+	var/datum/character_identity/identity
 
 
 /// The identity of the character this mob embodies: its mind's when one is (or was) bound, else
@@ -111,10 +111,11 @@
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
+	var/datum/character_identity/I = identity()
 	if(present)
-		LAZYDISTINCTADD(identity().genetic_effects, effect_type)
+		LAZYDISTINCTADD(I.genetic_effects, effect_type)
 	else
-		LAZYREMOVE(identity().genetic_effects, effect_type)
+		LAZYREMOVE(I.genetic_effects, effect_type)
 
 // --- Mind side -----------------------------------------------------------------------
 

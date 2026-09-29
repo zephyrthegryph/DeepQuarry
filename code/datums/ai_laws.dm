@@ -26,6 +26,7 @@
 	var/list/datum/ai_law/inherent_laws = list() // ALLOW(instance_list): d: per law set; every silicon has inherent laws
 	var/list/datum/ai_law/supplied_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
 	var/list/datum/ai_law/ion/ion_laws = list() // ALLOW(instance_list): d: per law set, edited through the law procs; one per silicon
+	/// Derived order of the laws this set owns: a relation list view, rebuilt by sort_laws().
 	var/list/datum/ai_law/sorted_laws
 
 	var/state_zeroth = 0
@@ -56,20 +57,20 @@
 		return
 
 	for(var/ion_law in ion_laws)
-		LAZYADD(sorted_laws, ion_law)
+		rel_add(src, "sorted_laws", ion_law)
 
 	if(zeroth_law)
-		LAZYADD(sorted_laws, zeroth_law)
+		rel_add(src, "sorted_laws", zeroth_law)
 
 	var/index = 1
 	for(var/datum/ai_law/inherent_law in inherent_laws)
 		inherent_law.index = index++
 		if(supplied_laws.len < inherent_law.index || !istype(supplied_laws[inherent_law.index], /datum/ai_law))
-			LAZYADD(sorted_laws, inherent_law)
+			rel_add(src, "sorted_laws", inherent_law)
 
 	for(var/datum/ai_law/AL in supplied_laws)
 		if(istype(AL))
-			LAZYADD(sorted_laws, AL)
+			rel_add(src, "sorted_laws", AL)
 
 /datum/ai_laws/proc/sync(mob/living/silicon/S, full_sync = 1)
 	// Add directly to laws to avoid log-spam
@@ -114,7 +115,7 @@
 		own_set(src, "zeroth_law_borg", new /datum/ai_law/zero(law_borg))
 	else
 		own_take(src, "zeroth_law_borg")
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/add_ion_law(law)
 	if(!law)
@@ -129,7 +130,7 @@
 	if(state_ion.len < ion_laws.len)
 		state_ion += 1
 
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/add_inherent_law(law)
 	if(!law)
@@ -144,7 +145,7 @@
 	if(state_inherent.len < inherent_laws.len)
 		state_inherent += 1
 
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/add_supplied_law(number, law)
 	if(!law)
@@ -168,7 +169,7 @@
 	if(state_supplied.len < supplied_laws.len)
 		state_supplied += 1
 
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /****************
 *	Remove Laws	*
@@ -200,7 +201,7 @@
 		laws -= law
 		for(index, index < state.len, index++)
 			state[index] = state[index+1]
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /****************
 *	Clear Laws	*
@@ -211,15 +212,15 @@
 
 /datum/ai_laws/proc/clear_ion_laws()
 	own_take_all(src, "ion_laws")
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/clear_inherent_laws()
 	own_take_all(src, "inherent_laws")
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/clear_supplied_laws()
 	own_take_all(src, "supplied_laws")
-	LAZYCLEARLIST(sorted_laws)
+	rel_clear(src, "sorted_laws")
 
 /datum/ai_laws/proc/get_formatted_laws()
 	sort_laws()
@@ -306,3 +307,4 @@
 	L = L ? L.Copy() : list()
 	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
+REL_LIST(/datum/ai_laws, sorted_laws)

@@ -53,7 +53,7 @@
 	var/datum/shadekin/SK = actor.get_shadekin_state()
 	if(!SK)
 		return FALSE
-	for(var/obj/effect/abstract/dark_maw/dm as anything in SK.active_dark_maws)
+	for(var/obj/effect/abstract/dark_maw/dm as anything in SK.active_dark_maws?.Copy())
 		dm.dispel()
 	return TRUE
 
@@ -99,7 +99,7 @@
 		expire(3 SECONDS)
 	else
 		if(SK)
-			LAZYADD(SK.active_dark_maws, src)
+			rel_add(SK, "active_dark_maws", src)
 		flick("dark_maw", src)
 		om_task_periodic(src, PERIODIC_SLOW)
 
@@ -107,8 +107,6 @@
 /obj/effect/abstract/dark_maw/proc/drop_everything_and_delete(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	qdel(src)
-
-// leaves its shadekin's maw list (the shadekin datum lives on the owner, not in a var).
 
 /obj/effect/abstract/dark_maw/Crossed(O)
 	. = ..()

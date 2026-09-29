@@ -124,7 +124,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 
 	var/i = 1
 	var/max_objectives = pick(2,2,2,2,3,3,3,4)
-	global_objectives = list()
+	own_clear(src, "global_objectives", OWN_DELETE)
 	while(i<= max_objectives)
 		var/list/goals = list("kidnap","loot","salvage")
 		var/goal = pick(goals)
@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		LAZYOR(global_objectives, O)
+		own_add(src, "global_objectives", O)
 
 		i++
 
-	LAZYOR(global_objectives, new /datum/objective/heist/preserve_crew)
+	own_add(src, "global_objectives", new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()

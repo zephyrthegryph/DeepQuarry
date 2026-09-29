@@ -51,8 +51,9 @@
 	bar.appearance_flags = APPEARANCE_UI_IGNORE_ALPHA
 	rel_set(src, "user", User)
 
-	LAZYADDASSOCLIST(user().progressbars, bar_loc, src)
-	var/list/bars = user().progressbars[bar_loc]
+	var/mob/bar_user = user
+	LAZYADDASSOCLIST(bar_user.progressbars, bar_loc, src)
+	var/list/bars = bar_user.progressbars[bar_loc]
 	listindex = bars.len
 
 	if(user().client)
@@ -67,7 +68,7 @@
 		update(starting_amount)
 
 /// Phase 1: the bars above it on the same mob slide down to close the gap, and its image (owned,
-/// dropped in phase 4) leaves the client. The user's bars are keyed by the target's handle.
+/// dropped in phase 4) leaves the client. The user's bars are keyed by the target.
 /datum/progressbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)

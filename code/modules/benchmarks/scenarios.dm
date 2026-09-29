@@ -203,13 +203,16 @@
 	id = "major_events"
 	description = "Tick cost of explosions, supermatter, mass fire and decompression"
 	var/tmp/turf/open/event_center
+	/// The fixture floor: a turf relation list view (z release clears it).
 	var/list/turf/open/event_turfs
 
 /datum/benchmark/major_events/Run()
 	wait_for_assets()
 	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
 	for(var/event_name in events)
-		event_turfs = build_floor_fixture(64)
+		rel_clear(src, "event_turfs")
+		for(var/turf/open/T as anything in build_floor_fixture(64))
+			rel_add(src, "event_turfs", T)
 		var/turf/corner = event_turfs[1]
 		rel_set(src, "event_center", locate(33, 33, corner.z))
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -427,9 +430,9 @@
 	var/text = "The quick brown fox jumps over the lazy dog"
 	var/json = "{\"a\":\[1,2,3\],\"b\":\"c\"}"
 	var/log_file = "data/bench/rustg_dispatch.log"
-	var/static/hash_handle = load_ext(RUST_G, "hash_string")
-	var/static/json_handle = load_ext(RUST_G, "json_is_valid")
-	var/static/log_handle = load_ext(RUST_G, "log_write")
+	var/static/hash_fn = load_ext(RUST_G, "hash_string")
+	var/static/json_fn = load_ext(RUST_G, "json_is_valid")
+	var/static/log_fn = load_ext(RUST_G, "log_write")
 	var/list/best = list()
 	for(var/round in 1 to rounds)
 		stoplag() // start each round on a fresh tick // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -440,7 +443,7 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(hash_handle)(RUSTG_HASH_XXH64, text)
+			call_ext(hash_fn)(RUSTG_HASH_XXH64, text)
 		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
@@ -450,7 +453,7 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(json_handle)(json)
+			call_ext(json_fn)(json)
 		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
@@ -460,12 +463,12 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(log_handle)(log_file, text, "false")
+			call_ext(log_fn)(log_file, text, "false")
 		best["log_write_cached_us"] = min(best["log_write_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		fdel(log_file)
 	for(var/name in best)
 		metric(name, best[name], "us/call")
-	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
+	if(call_ext(hash_fn)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
 /// Idle mob Life cost with parking off, then on (doc/rewrite/life_on_om.md §5).

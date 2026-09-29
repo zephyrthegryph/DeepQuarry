@@ -30,10 +30,11 @@
 
 /// Cinematic datum. Used to show an animation to everyone.
 /datum/cinematic
-	/// OM handles ("@ckey") of all clients watching the cinematic
-	var/list/watching
-	/// A list of all mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic
-	var/list/locked = list() // ALLOW(instance_list): d: cinematics exist to lock viewers
+	/// All clients watching the cinematic: a relation list view (a returning player is shown it
+	/// again through the mob_client_login hook).
+	var/list/client/watching
+	/// All mobs who have TRAIT_NO_TRANSFORM set while watching the cinematic: a relation list view.
+	var/list/mob/locked
 	/// Whether the cinematic is a global cinematic or not
 	var/is_global = FALSE
 	/// Refernce to the cinematic screen shown to everyohne
@@ -113,24 +114,21 @@
 		lock_mob(watching_mob)
 
 	// Only show the actual cinematic to cliented mobs.
-	if(!watching_client || (om_handle(watching_client) in watching))
+	if(!watching_client || (watching_client in watching))
 		return
 
-	LAZYADD(watching, om_handle(watching_client))
+	rel_add(src, "watching", watching_client)
 	watching_mob.overlay_fullscreen("cinematic", /atom/movable/screen/fullscreen/cinematic_backdrop)
 	watching_client.screen += screen
-	// Clients cannot be hooked; a client that goes away is dropped by
-	// stop_cinematic() when its handle no longer resolves.
+	// Clients cannot be hooked; a client that goes away leaves a null the loops skip.
 
 /// Simple helper for playing sounds from the cinematic.
 /datum/cinematic/proc/play_cinematic_sound(sound_to_play)
 	if(is_global)
 		SEND_SOUND(world, sound_to_play)
 	else
-		for(var/watcher_handle in watching)
-			var/client/watching_client = om_resolve(watcher_handle)
-			if(watching_client)
-				SEND_SOUND(watching_client, sound_to_play)
+		for(var/client/watching_client in watching)
+			SEND_SOUND(watching_client, sound_to_play)
 
 /// Invoke any special callbacks for actual effects synchronized with animation.
 /// (Such as a real nuke explosion happening midway)
@@ -143,27 +141,23 @@
 
 /// Stops the cinematic and removes it from all the viewers.
 /datum/cinematic/proc/stop_cinematic()
-	for(var/watcher_handle in watching?.Copy())
-		var/client/viewing_client = om_resolve(watcher_handle)
-		if(viewing_client)
-			remove_watcher(viewing_client)
-		else
-			LAZYREMOVE(watching, watcher_handle)
+	for(var/client/viewing_client in watching?.Copy())
+		remove_watcher(viewing_client)
+	rel_clear(src, "watching")
 
-	for(var/locked_ref as anything in locked)
-		unlock_mob(locked_ref)
+	for(var/mob/locked_mob in locked?.Copy())
+		unlock_mob(locked_mob)
 
 	qdel(src)
 
 /// Locks a mob, preventing them from moving, being hurt, or acting
 /datum/cinematic/proc/lock_mob(mob/to_lock)
-	locked += om_handle(to_lock)
+	rel_add(src, "locked", to_lock)
 	add_trait(to_lock, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 
-/// Unlocks a previously locked mob (by OM handle)
-/datum/cinematic/proc/unlock_mob(mob_ref)
-	var/mob/locked_mob = om_resolve(mob_ref)
-	if(isnull(locked_mob))
+/// Unlocks a previously locked mob
+/datum/cinematic/proc/unlock_mob(mob/locked_mob)
+	if(QDELETED(locked_mob))
 		return
 	remove_trait(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
 	om_unhook(locked_mob, /datum/om/event/mob_client_login, src)
@@ -171,8 +165,7 @@
 /// Removes the passed client from our watching list.
 /datum/cinematic/proc/remove_watcher(client/no_longer_watching)
 
-	var/watcher_handle = om_handle(no_longer_watching)
-	if(!(watcher_handle in watching))
+	if(!(no_longer_watching in watching))
 		CRASH("cinematic remove_watcher was passed a client which wasn't watching.")
 
 	// We'll clear the cinematic if they have a mob which has one,
@@ -180,7 +173,10 @@
 	no_longer_watching.mob?.clear_fullscreen("cinematic")
 	no_longer_watching.screen -= screen
 
-	LAZYREMOVE(watching, watcher_handle)
+	rel_remove(src, "watching", no_longer_watching)
+
+REL_LIST(/datum/cinematic, watching)
+REL_LIST(/datum/cinematic, locked)
 
 #undef CINEMATIC_SOURCE
 

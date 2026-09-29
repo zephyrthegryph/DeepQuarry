@@ -37,14 +37,14 @@
 	var/needs_update = LIGHTING_NO_UPDATE
 
 /datum/light_source/New(atom/owner, atom/top)
-	rel_set(src, "source_atom", owner) // Set our new owner.
-	LAZYADD(source_atom.light_sources, src)
+	rel_set(src, "source_atom", owner) // Set our new owner (it owns us in its `light` var).
+	rel_add(source_atom, "light_sources", src)
 	rel_set(src, "top_atom", top)
 	if (top_atom != source_atom)
-		LAZYADD(top_atom.light_sources, src)
+		rel_add(top_atom, "light_sources", src)
 
-	source_turf = top_atom
-	pixel_turf = get_turf_pixel(top_atom) || source_turf
+	source_turf = top_atom // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
+	pixel_turf = get_turf_pixel(top_atom) || source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 
 	light_power = source_atom.light_power
 	light_range = source_atom.light_range
@@ -54,13 +54,11 @@
 
 	update()
 
-/// SSlighting's light source queue (DECLARE_REF(..., QUEUE)).
-/proc/lifecycle_lighting_sources_queue()
-	return SSlighting?.sources_queue
-
-
-// lighting engine: the source removes its light from the corners it lit.
+// lighting engine: the source leaves SSlighting's queue (while queued; SSlighting.fire() steps
+// back one when update_corners() deletes it) and removes its light from the corners it lit.
 /datum/light_source/on_destroy(force)
+	if(needs_update != LIGHTING_NO_UPDATE)
+		SSlighting.sources_queue -= src
 	remove_lum()
 	..()
 
@@ -78,12 +76,12 @@
 	// This top atom is different.
 	if (new_top_atom && new_top_atom != top_atom)
 		if(top_atom != source_atom && top_atom.light_sources) // Remove ourselves from the light sources of that top atom.
-			LAZYREMOVE(top_atom.light_sources, src)
+			rel_remove(top_atom, "light_sources", src)
 
 		rel_set(src, "top_atom", new_top_atom)
 
 		if (top_atom != source_atom)
-			LAZYADD(top_atom.light_sources, src) // Add ourselves to the light sources of our new top atom.
+			rel_add(top_atom, "light_sources", src) // Add ourselves to the light sources of our new top atom.
 
 	EFFECT_UPDATE(LIGHTING_CHECK_UPDATE)
 
@@ -163,20 +161,20 @@
 	SETUP_CORNERS_REMOVAL_CACHE(src)
 	applied = FALSE
 	for (var/datum/lighting_corner/corner as anything in effect_str)
-		LAZYREMOVE(corner.affecting, src)
+		LAZYREMOVE(corner.affecting, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 		REMOVE_CORNER(corner)
 
-	effect_str = null
+	effect_str = null // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 
 /datum/light_source/proc/recalc_corner(datum/lighting_corner/corner)
 	SETUP_CORNERS_CACHE(src)
-	LAZYINITLIST(effect_str)
+	LAZYINITLIST(effect_str) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 	if (effect_str[corner]) // Already have one.
 		REMOVE_CORNER(corner)
-		effect_str[corner] = 0
+		effect_str[corner] = 0 // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 
 	APPLY_CORNER(corner)
-	effect_str[corner] = .
+	effect_str[corner] = . // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 
 /datum/light_source/proc/get_turfs_in_range()
 	return view(CEILING(light_range, 1), source_turf)
@@ -207,17 +205,17 @@
 
 	if (isturf(top_atom))
 		if (source_turf != top_atom)
-			source_turf = top_atom
-			pixel_turf = source_turf
+			source_turf = top_atom // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
+			pixel_turf = source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 			update = TRUE
 	else if (top_atom.loc != source_turf)
-		source_turf = top_atom.loc
-		pixel_turf = get_turf_pixel(top_atom)
+		source_turf = top_atom.loc // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
+		pixel_turf = get_turf_pixel(top_atom) // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 		update = TRUE
 	else
 		var/pixel_loc = get_turf_pixel(top_atom)
 		if (pixel_loc != pixel_turf)
-			pixel_turf = pixel_loc
+			pixel_turf = pixel_loc // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 			update = TRUE
 
 	if (!isturf(source_turf))
@@ -227,7 +225,7 @@
 
 	// A pixel offset past the map edge (a tracer or impact effect at the edge) has no turf.
 	if (!pixel_turf)
-		pixel_turf = source_turf
+		pixel_turf = source_turf // ALLOW(ownership): lighting engine turf cache, rewritten on every light move; a turf relation index entry per move would grow without bound
 
 	if (light_range && light_power && !applied)
 		update = TRUE
@@ -266,7 +264,7 @@
 	SETUP_CORNERS_CACHE(src)
 
 	var/list/datum/lighting_corner/new_corners = (corners - src.effect_str)
-	LAZYINITLIST(src.effect_str)
+	LAZYINITLIST(src.effect_str) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 	var/list/effect_str = src.effect_str
 	if (needs_update == LIGHTING_VIS_UPDATE)
 		for (var/datum/lighting_corner/corner in new_corners)
@@ -282,7 +280,7 @@
 			if (. != 0)
 				effect_str[corner] = .
 			else
-				LAZYREMOVE(corner.affecting, src)
+				LAZYREMOVE(corner.affecting, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 				effect_str -= corner
 			corner.update_lumcount						\
 			(											\
@@ -294,7 +292,7 @@
 
 	var/list/datum/lighting_corner/gone_corners = effect_str - corners
 	for (var/datum/lighting_corner/corner as anything in gone_corners)
-		LAZYREMOVE(corner.affecting, src)
+		LAZYREMOVE(corner.affecting, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
 		REMOVE_CORNER(corner)
 	effect_str -= gone_corners
 
@@ -311,11 +309,10 @@
 #undef SETUP_CORNERS_REMOVAL_CACHE
 #undef SETUP_CORNERS_CACHE
 
-// Membership in the atoms' light_sources lazylists (Destroy() also removes them by hand).
-REL_PAIR(/datum/light_source, source_atom, light_sources)
-REL_PAIR_LIST(/atom, light_sources, source_atom)
-REL_PAIR(/datum/light_source, top_atom, light_sources)
-REL_PAIR_LIST(/atom, light_sources, top_atom)
-// Corner -> strength; lighting corners are immortal, so keying by them strongly is safe on the hot path.
+// source_atom owns the source (atom.light); source_atom and top_atom are one-sided back views.
+// atom.light_sources is a relation list view of the sources lighting from it (as source or top
+// atom), kept in step by New() and update(). effect_str (corner -> strength) and corner.affecting
+// are the engine's own symmetric links (see the ALLOW notes above).
+REL_LIST(/atom, light_sources)
 
 

@@ -22,7 +22,7 @@
 
 	current_underlay = mutable_appearance(LIGHTING_ICON, "transparent", source.z, PLANE_LIGHTING, 255, RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM)
 
-	affected_turf = source
+	affected_turf = source // ALLOW(ownership): lighting engine back ref to the turf this object shades, set once; the object dies with the turf, and a turf index entry per turf would cost the whole map
 	if (affected_turf.lighting_object)
 		qdel(affected_turf.lighting_object, force = TRUE)
 		stack_trace("a lighting object was assigned to a turf that already had a lighting object!")
@@ -40,13 +40,10 @@
 // Lighting engine: only a forced qdel() deletes a lighting object.
 LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 
-/// SSlighting's lighting object queue (DECLARE_REF(..., QUEUE)).
-/proc/lifecycle_lighting_objects_queue()
-	return SSlighting?.objects_queue
-
-
-// The turf's overlay resets.
+// The object leaves SSlighting's queue (while queued), and the turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
+	if(needs_update)
+		SSlighting.objects_queue -= src
 	if (isturf(affected_turf))
 		rel_clear(affected_turf, "lighting_object")
 		affected_turf.set_luminosity(1)

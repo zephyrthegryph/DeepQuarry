@@ -25,8 +25,9 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 	var/digest_robot = FALSE
 	var/active = FALSE
 	var/usesmes = TRUE
-	var/moblink
-	var/linkedsmes //when the nanites digest something, it becomes power in an SMES
+	/// The mob fed by the nanites: a relation view.
+	var/mob/living/moblink
+	var/obj/machinery/power/smes/linkedsmes //when the nanites digest something, it becomes power in an SMES (a relation view)
 	var/id = null
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/Initialize(mapload)
@@ -37,7 +38,7 @@ REGISTRY_MEMBERSHIP(/turf/simulated/floor/water/digestive_enzymes/nanites, REGIS
 		if(!get_area(tolink))
 			continue
 		if(get_area(tolink) == get_area(src))
-			linkedsmes = om_handle(tolink)
+			rel_set(src, "linkedsmes", tolink)
 
 EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	INTERACT_HAND_UNGATED("Interface", PROC_REF(nanites_hand)), \
@@ -46,8 +47,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 
 /// Old attack_hand: a protean may interface with the pool; the turf's own touch always follows.
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	var/mob/living/nutrienttarget = om_resolve(moblink)
-	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
+	var/mob/living/nutrienttarget = moblink
+	var/obj/machinery/power/smes/smes = linkedsmes
 	if(check_target() && (user != nutrienttarget))//prioritize this here, so mobs can turn the turf off
 		return FALSE
 	if(ishuman(user))
@@ -110,22 +111,22 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 				om_task_timed(checker, 3 SECONDS, src, src, PROC_REF(toggle_all), list(FALSE))
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/interface_on(mob/user, choice2)
-	moblink = om_handle(user)
+	rel_set(src, "moblink", user)
 	switch(choice2)
 		if("None")
-			moblink = om_handle(user)
+			rel_set(src, "moblink", user)
 			toggle_all(TRUE)
 		if("All")
-			moblink = om_handle(user)
+			rel_set(src, "moblink", user)
 			toggle_all(TRUE, TRUE, TRUE, TRUE)
 		if("Organics and Cyborgs")
-			moblink = om_handle(user)
+			rel_set(src, "moblink", user)
 			toggle_all(TRUE, TRUE, TRUE)
 		if("Organics and Synthetics")
-			moblink = om_handle(user)
+			rel_set(src, "moblink", user)
 			toggle_all(TRUE, TRUE, FALSE, TRUE)
 		if("Only Organics")
-			moblink = om_handle(user)
+			rel_set(src, "moblink", user)
 			toggle_all(TRUE, TRUE)
 
 /// Old attack_ai. Cyborgs (shells included) never reached it: turfs send their Use to
@@ -133,7 +134,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanites_silicon_interface(mob/user, obj/item/held, datum/interaction/interaction)
 	if(isrobot(user))
 		return FALSE
-	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/mob/living/nutrienttarget = moblink
 	if(check_target())
 		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
 			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
@@ -149,19 +150,19 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			to_chat(user, span_warning("With you in control, \the [src] will not attempt to recycle your body, no matter the setting you pick"))
 			switch(choice2)
 				if("None")
-					moblink = om_handle(user)
+					rel_set(src, "moblink", user)
 					toggle_all(TRUE)
 				if("All")
-					moblink = om_handle(user)
+					rel_set(src, "moblink", user)
 					toggle_all(TRUE, TRUE, TRUE, TRUE)
 				if("Organics and Cyborgs")
-					moblink = om_handle(user)
+					rel_set(src, "moblink", user)
 					toggle_all(TRUE, TRUE, TRUE)
 				if("Organics and Synthetics")
-					moblink = om_handle(user)
+					rel_set(src, "moblink", user)
 					toggle_all(TRUE, TRUE, FALSE, TRUE)
 				if("Only Organics")
-					moblink = om_handle(user)
+					rel_set(src, "moblink", user)
 					toggle_all(TRUE, TRUE)
 
 		if("Off")
@@ -170,7 +171,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/can_digest(atom/movable/AM) //copypasting the entire proc because we use an SMES instead of a linked mob
 	. = FALSE
-	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/mob/living/nutrienttarget = moblink
 	if(!active)
 		return FALSE
 	if(!check_target())
@@ -220,8 +221,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/check_target()//check if the target is in the area, or if this is a
-	var/mob/living/nutrienttarget = om_resolve(moblink)
-	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
+	var/mob/living/nutrienttarget = moblink
+	var/obj/machinery/power/smes/smes = linkedsmes
 	if(nutrienttarget)
 		if(nutrienttarget.client && !nutrienttarget.stat)
 			if(smes && isAI(nutrienttarget))
@@ -300,8 +301,8 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	give_nutrients(nutrients)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/give_nutrients(amt)
-	var/mob/living/nutrienttarget = om_resolve(moblink)
-	var/obj/machinery/power/smes/smes = om_resolve(linkedsmes)
+	var/mob/living/nutrienttarget = moblink
+	var/obj/machinery/power/smes/smes = linkedsmes
 	if(smes)
 		smes.charge += (amt * 20)
 		return
@@ -322,12 +323,12 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 	return ..()
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/toggle_all(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)
-	var/mob/living/nutrienttarget = om_resolve(moblink)
+	var/mob/living/nutrienttarget = moblink
 	for(var/turf/simulated/floor/water/digestive_enzymes/nanites/nanites in REGISTRY_MEMBERS(REGISTRY_NANITE_TURFS))
 		if(nanites.id == id)
-			nanites.moblink = null
+			rel_clear(nanites, "moblink")
 			if(on)
-				nanites.moblink = om_handle(nutrienttarget)
+				rel_set(nanites, "moblink", nutrienttarget)
 			nanites.select_state(on, digest, robot, synth)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/select_state(on = TRUE, digest = FALSE, robot = FALSE, synth = FALSE)

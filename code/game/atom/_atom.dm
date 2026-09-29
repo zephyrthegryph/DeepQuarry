@@ -151,7 +151,7 @@
 	EVENT_HANDLER
 	HasProximity(source, event.arrived, event.old_loc)
 
-//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived_handle, old_loc);
+//Register listeners on turfs in a certain range. Entries call HasProximity(turf, arrived, old_loc);
 // `callback` is kept for the callers' readability and must be HasProximity.
 /atom/proc/sense_proximity(range = 1, callback)
 	ASSERT(callback)

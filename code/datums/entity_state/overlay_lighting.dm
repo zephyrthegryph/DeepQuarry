@@ -181,7 +181,7 @@
 /datum/overlay_lighting/proc/clean_old_turfs()
 	for(var/turf/lit_turf as anything in affected_turfs)
 		lit_turf.dynamic_lumcount -= lum_power
-	affected_turfs = null
+	affected_turfs = null // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
 
 ///Populates the affected_turfs lazylist, adding to its contents the effects of being near the light.
 /datum/overlay_lighting/proc/get_new_turfs()
@@ -193,7 +193,7 @@
 		lit_turf.dynamic_lumcount += lum_power
 		. += lit_turf
 	if(length(.))
-		affected_turfs = .
+		affected_turfs = . // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
 
 ///Clears the old affected turfs and populates the new ones.
 /datum/overlay_lighting/proc/make_luminosity_update()

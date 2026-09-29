@@ -35,9 +35,9 @@ GLOBAL_DATUM(borers, /datum/antagonist/borer)
 /datum/antagonist/borer/create_objectives(datum/mind/player)
 	if(!..())
 		return
-	own_add(player, "objectives", new /datum/objective/borer_survive())
-	own_add(player, "objectives", new /datum/objective/borer_reproduce())
-	own_add(player, "objectives", new /datum/objective/escape())
+	player.add_objective(new /datum/objective/borer_survive())
+	player.add_objective(new /datum/objective/borer_reproduce())
+	player.add_objective(new /datum/objective/escape())
 
 /datum/antagonist/borer/place_mob(mob/living/mob)
 	var/mob/living/simple_mob/animal/borer/borer = mob

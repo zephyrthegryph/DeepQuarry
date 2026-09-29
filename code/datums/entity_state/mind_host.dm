@@ -70,17 +70,16 @@
 
 /// The brain organ backing the view's status.
 /datum/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
-	// Compare handles, not tissue(): a tissue being deleted already resolves to
-	// null (QDELETED), so on_tissue_deleted()'s set_tissue(null) would look like
-	// a no-op and the view would never learn its brain is gone.
-	var/new_handle = om_handle(new_tissue)
-	if(tissue == new_handle)
+	// Compare the view var, not tissue(): a tissue being deleted already reads null through
+	// tissue() (QDELETED), so on_tissue_deleted()'s set_tissue(null) would look like a no-op
+	// and the view would never learn its brain is gone.
+	if(tissue == new_tissue)
 		return
-	if(tissue())
-		om_unhook(tissue(), /datum/om/event/qdeleting, src)
-	rel_set(src, "tissue", new_handle)
-	if(tissue())
-		om_hook(tissue(), /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
+	if(tissue)
+		om_unhook(tissue, /datum/om/event/qdeleting, src)
+	rel_set(src, "tissue", QDELETED(new_tissue) ? null : new_tissue)
+	if(tissue)
+		om_hook(tissue, /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
 
 /datum/mind_host/proc/on_tissue_deleted(datum/source, datum/om/event/qdeleting/event)

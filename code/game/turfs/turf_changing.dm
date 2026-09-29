@@ -64,7 +64,7 @@
 	var/datum/sunlight_handler/old_shandler
 	var/turf/simulated/simself = src
 	if(istype(simself) && simself.shandler)
-		old_shandler = simself.shandler
+		old_shandler = own_take(simself, "shandler") // survives the turf's qdel below
 
 	var/turf/Ab = GetAbove(src)
 	if(Ab)
@@ -105,11 +105,14 @@
 	W.lighting_corners_initialised = old_lighting_corners_initialized
 	var/turf/simulated/W_sim = W
 	if(istype(W_sim) && old_shandler)
-		rel_set(W_sim, "shandler", old_shandler)
+		own_set(W_sim, "shandler", old_shandler)
 		rel_set(old_shandler, "holder", W)
-	else if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
-		rel_set(W_sim, "shandler", new /datum/sunlight_handler(src))
-		W_sim.shandler.manualInit()
+	else
+		if(old_shandler) // the new turf can't hold one
+			qdel(old_shandler)
+		if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
+			own_set(W_sim, "shandler", new /datum/sunlight_handler(src))
+			W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 
 	if(tell_universe)
