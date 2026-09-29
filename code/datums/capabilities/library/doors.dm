@@ -54,9 +54,6 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
-/proc/is_bolted(atom/A)
-	return !!(A.cap_state & CAP_BOLTED)
-
 /datum/capability/bolts/draw(atom/holder, datum/look/look)
 	if(layer)
 		look.overlay(layer, when = is_bolted(holder))
@@ -136,9 +133,6 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	cap_gating(C, behind = behind, blocked_by = blocked_by, locked_by = locked_by, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
-/proc/is_welded(atom/A)
-	return !!(A.cap_state & CAP_WELDED)
-
 /// Welds A shut or unwelds it with no welder (a construct's spell, a mech clamp tearing it open).
 /proc/set_welded(atom/A, on)
 	return cap_set(A, CAP_WELDED, on)
@@ -147,7 +141,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	. = list()
 	for(var/stance in GLOB.cap_all_stances)
 		var/datum/capability/entry/wrapper = cap_tool("Weld shut", tool_quality, TYPE_PROC_REF(/atom, cap_weld_toggle), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_weld_name))
-		var/datum/interaction/capability/E = own_entry(wrapper, id = "weld_shut:[tool_quality]:[stance]")
+		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "weld_shut:[tool_quality]:[stance]")
 		// The handler plays the welder's sound itself, louder, as the old weld did.
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
 		. += E
@@ -201,7 +195,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	. = list()
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
 		var/datum/capability/entry/wrapper = cap_tool("Force open or closed", tool_quality, TYPE_PROC_REF(/atom, cap_pry_force), needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
-		var/datum/interaction/capability/E = own_entry(wrapper, id = "pry:[tool_quality]:[stance]")
+		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "pry:[tool_quality]:[stance]")
 		cap_entry_setup(E, stance = stance, tool_volume = 0)
 		. += E
 

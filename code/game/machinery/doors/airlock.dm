@@ -788,10 +788,10 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	. = list()
 	for(var/quality in list(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER))
 		var/datum/capability/entry/wrapper = cap_tool("Clear the ice", quality, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 100)
-		. += cap_entry_setup(own_entry(wrapper, id = "frozen_shut:[quality]"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE, tool_volume = 0)
+		. += cap_entry_setup(adopt_entry(wrapper, id = "frozen_shut:[quality]"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE, tool_volume = 0)
 	// Below the emag (50), above the airlock's other item uses.
 	var/datum/capability/entry/by_item = cap_use_on("Clear the ice", /obj/item, TYPE_PROC_REF(/obj/machinery/door/airlock, deice), works_broken = TRUE, works_unpowered = TRUE, priority = 40)
-	. += cap_entry_setup(own_entry(by_item, id = "frozen_shut:item"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE)
+	. += cap_entry_setup(adopt_entry(by_item, id = "frozen_shut:item"), applies = TYPE_PROC_REF(/obj/machinery/door/airlock, is_frozen), insulated = TRUE)
 
 /datum/capability/frozen_shut/examine(atom/holder, mob/user)
 	var/obj/machinery/door/airlock/A = holder

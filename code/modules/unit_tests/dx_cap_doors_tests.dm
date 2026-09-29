@@ -26,6 +26,17 @@
 	shocks++
 	return TRUE
 
+/// Every capability's UI data flattened into one list (as AiAirlock.tsx reads data.caps).
+/proc/dx_flat_caps_data(atom/A, mob/user)
+	. = list()
+	var/list/data = list()
+	A.caps_ui_data(user, data)
+	var/list/caps = data["caps"]
+	for(var/key in caps)
+		var/list/part = caps[key]
+		for(var/field in part)
+			.[field] = part[field]
+
 /// Bolts and emergency access: the bits, the layers, the examine line and the UI data.
 /datum/unit_test/dx_cap_doors_bolts/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -176,7 +187,7 @@
 	TEST_ASSERT_EQUAL(A.lights, !was_lights, "the bolt lights toggled")
 	TEST_ASSERT(A.tgui_act("emergency-toggle", list(), ui), "emergency-toggle ran")
 	TEST_ASSERT(emergency_access_on(A), "emergency access engaged")
-	var/list/data = A.tgui_data(H)
+	var/list/data = dx_flat_caps_data(A, H)
 	TEST_ASSERT_EQUAL(data["bolted"], TRUE, "the window sees the bolts")
 	TEST_ASSERT_EQUAL(data["emergency"], TRUE, "and emergency access")
 	TEST_ASSERT_NOTNULL(data["wires"], "and the wires")
@@ -245,8 +256,7 @@
 	for(var/obj/effect/decal/cleanable/mess in T)
 		qdel(mess)
 	TEST_ASSERT_EQUAL(A.door_safeties_on(), TRUE, "the safeties start on")
-	var/list/data = list()
-	A.caps_ui_data(H, data)
+	var/list/data = dx_flat_caps_data(A, H)
 	TEST_ASSERT_EQUAL(data["safe"], TRUE, "the window sees the safeties")
 
 	A.normalspeed = FALSE
