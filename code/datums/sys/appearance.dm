@@ -129,8 +129,7 @@
 				var/branch = branches[i]
 				if(copytext(branch, 1, 2) == "@")
 					var/var_name = copytext(branch, 2)
-					if(!(var_name in D.vars))
-						stack_trace("[what]([owner_type], \"[template]\"): @[var_name] is not a var; dropped")
+					if(!appearance_name_ok(D, var_name, what))
 						return null
 					branches[i] = list(var_name)
 			if(!appearance_name_ok(D, name, what))
@@ -242,7 +241,7 @@
 			value = value ? P[3] : P[4]
 			if(islist(value))
 				var/list/branch = value
-				value = A.vars[branch[1]]
+				value = appearance_value(A, branch[1])
 		. += "[value]"
 
 /// A's combined appearance key, five sections joined by newlines: the template's icon_state; each
@@ -377,11 +376,19 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 
 /// Init (lifecycle_decls_init()): draws the declared appearance and starts listening on the watch
 /// mask, so a declared field's setter refreshes it from then on.
+/// A keyed declaration that reads only vars is drawn right here; one that calls a reader proc may
+/// depend on what the subtype's Initialize() sets up after `. = ..()`, so it is queued and drawn on
+/// the next presentation pass instead. A provider first runs on the type's own first update_icon()
+/// (its Initialize() draws, as before).
 /datum/lifecycle_decls/proc/init_appearance(atom/A)
 	if(appearance_mask)
 		A.om_listen |= appearance_mask
-	if(appearance_draws)
-		apply_appearance_keyed(A) // a provider first runs on the first update_icon(): subtype init isn't done yet
+	if(!appearance_draws)
+		return
+	if(appearance_procs)
+		appearance_queue(A)
+		return
+	apply_appearance_keyed(A)
 
 /// Re-applies A's declared appearance. The base /atom/update_icon() calls it, so a declared type only
 /// needs update_icon() (or ..() from a procedural override).

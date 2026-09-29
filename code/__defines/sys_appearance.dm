@@ -18,7 +18,7 @@
 // Template tokens (inside { } in a template or a level format; braces, because DM would read
 // [ ] inside a string literal as an embedded expression at the declaration):
 //   {name}            the value of name, as text (TRUE is "1", null is "")
-//   {name?A:B}        A when name is truthy, else B; A and B are literal text, or @var for the
+//   {name?A:B}        A when name is truthy, else B; A and B are literal text, or @name for the
 //                     value of another var ({charging?@icon_state_charging:@icon_state_idle})
 //   {initial(name)}   the concrete type's initial value of var name (resolved per subtype)
 //

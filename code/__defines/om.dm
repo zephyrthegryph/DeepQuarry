@@ -385,10 +385,11 @@
 /// Machine family: a mode another machine or program may wait on changed (door bolts, power,
 /// electrification, open state; an APC's operating state).
 #define CHANGE_MACHINE_MODE (1<<18)
+// Bits 22 and 23 are the last two a DM bitfield holds (24-bit bitwise operators).
 /// Any atom: its integrity changed (update_integrity()); the get_integrity derived field.
 #define CHANGE_INTEGRITY (1<<23)
 /// Any atom: what a neighbour shows it changed (appearance_notify_neighbours(), smoothing providers).
-#define CHANGE_NEIGHBOURS (1<<24)
+#define CHANGE_NEIGHBOURS (1<<22)
 /// An area's power channels or light switch changed (area power_change()).
 #define CHANGE_AREA_POWER CHANGE_DATUM_A
 /// Power machine family, raised on every machine bound to a power region
