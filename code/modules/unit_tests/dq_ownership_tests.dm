@@ -174,17 +174,17 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 	rel_set(H, "view", T)
 	TEST_ASSERT_EQUAL(H.view, T, "a turf can be a relation target")
 	var/list/by_turf = GLOB.rel_turf_index["[T.z]"]
-	TEST_ASSERT(by_turf && by_turf[ref(T)], "a view naming a turf is indexed under its z-level")
+	TEST_ASSERT(by_turf && by_turf[own_key(T)], "a view naming a turf is indexed under its z-level")
 	rel_clear(H, "view")
-	var/list/index = by_turf ? by_turf[ref(T)] : null
-	TEST_ASSERT(!index || !index[ref(H)], "clearing the view leaves the turf index")
+	var/list/index = by_turf ? by_turf[own_key(T)] : null
+	TEST_ASSERT(!index || !index[own_key(H)], "clearing the view leaves the turf index")
 	// Releasing a z-level clears every view naming its turfs. The test map's own z-level holds the
 	// harness's views too, so the release is exercised on a private key with this turf's entry.
 	rel_set(H, "view", T)
-	var/list/entry = by_turf[ref(T)]
+	var/list/entry = by_turf[own_key(T)]
 	var/fake_z = 90000 + T.z
-	GLOB.rel_turf_index["[fake_z]"] = list("[ref(T)]" = list("[ref(H)]" = "view"))
-	entry -= ref(H)
+	GLOB.rel_turf_index["[fake_z]"] = list("[own_key(T)]" = list("[own_key(H)]" = "view"))
+	entry -= own_key(H)
 	var/cleared = rel_drop_z(fake_z)
 	TEST_ASSERT(isnull(H.view) && cleared == 1, "releasing the z-level clears views naming its turfs ([cleared])")
 	// A turf handle carries the z-level's generation.

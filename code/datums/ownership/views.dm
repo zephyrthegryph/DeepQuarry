@@ -1,21 +1,21 @@
 // Light relation edges: REF views (doc/rewrite/ownership.md §4.1).
 //
 // A REF var holds a direct reference (reads are free). The target keeps a lazy reverse index,
-// `om_refs_in`: the source's ref text -> the var name (or a list of var names) naming it. The
-// index is weak (ref text), so source and target never form a reference cycle. When either end
+// `om_refs_in`: the source's key (own_key()) -> the var name (or a list of var names) naming it. The
+// index is weak (keys, not references), so source and target never form a reference cycle. When either end
 // dies the framework clears its side; nothing is kept by hand.
 //
 // Targets that never die need no index: registry singletons (REGISTRY_TYPE) and areas. Turfs
 // are indexed per z-level (ChangeTurf resets a turf's vars), and rel_drop_z() clears them when
 // the z-level is released.
 
-/// Reverse index: source ref text -> var name, or a list of var names.
+/// Reverse index: source key (own_key()) -> var name, or a list of var names.
 /datum/var/tmp/list/om_refs_in
 
-/// z (text) -> turf ref text -> that turf's reverse index (as om_refs_in). A turf keeps no index of
+/// z (text) -> turf key (own_key()) -> that turf's reverse index (as om_refs_in). A turf keeps no index of
 /// its own: ChangeTurf() resets its vars, while its ref (its position) stays.
 GLOBAL_LIST_EMPTY(rel_turf_index)
-/// Handle id (text) -> flat list, stride 2: source ref text, var name. Edges to an entity that
+/// Handle id (text) -> flat list, stride 2: source key (own_key()), var name. Edges to an entity that
 /// collapsed into latent data, re-linked when it re-materializes into the same handle slot.
 GLOBAL_LIST_EMPTY(rel_dormant)
 
@@ -29,7 +29,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return FALSE
 	return isturf(target) || !is_registered(target)
 
-/// `target`'s reverse index (source ref text -> var name or list of names), made when `create`.
+/// `target`'s reverse index (source key (own_key()) -> var name or list of names), made when `create`.
 /proc/_rel_index_of(datum/target, create = FALSE)
 	if(isturf(target))
 		var/turf/where = target
@@ -38,17 +38,20 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		if(!by_turf)
 			if(!create)
 				return null
-			by_turf = list()
+			by_turf = alist() // a z-level holds tens of thousands of turf keys: see below
 			GLOB.rel_turf_index[zkey] = by_turf
-		var/tkey = ref(where)
+		var/tkey = OWN_KEY(where)
 		var/list/index = by_turf[tkey]
 		if(!index && create)
-			index = list()
+			index = alist()
 			by_turf[tkey] = index
 		return index
 	var/list/index = target.om_refs_in
 	if(!index && create)
-		index = list()
+		// An alist, like every ref-keyed index here: inserting a new key into a plain assoc list
+		// is linear in its length, so a target named by thousands of sources (a pipe network's
+		// members, a z-level's turfs) made boot quadratic. An alist inserts in constant time.
+		index = alist()
 		target.om_refs_in = index
 	return index
 
@@ -59,7 +62,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(isturf(target))
 		var/turf/where = target
 		var/list/by_turf = GLOB.rel_turf_index["[where.z]"]
-		by_turf?.Remove(ref(where))
+		by_turf?.Remove(own_key(where))
 	else
 		target.om_refs_in = null
 
@@ -67,10 +70,10 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!rel_tracked(target))
 		return
 	var/list/index = _rel_index_of(target, TRUE)
-	var/source_ref = ref(source)
+	var/source_ref = OWN_KEY(source)
 	var/current = index[source_ref]
 	if(isnull(current))
-		if(length(index) >= REL_INDEX_PRUNE_AT && !(length(index) % REL_INDEX_PRUNE_AT))
+		if(_rel_index_prune_due(length(index)))
 			_rel_index_prune(target, index)
 		index[source_ref] = var_name
 	else if(islist(current))
@@ -79,21 +82,34 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	else if(current != var_name)
 		index[source_ref] = list(current, var_name)
 
+/// TRUE when an index of `len` sources should prune: at REL_INDEX_PRUNE_AT and each doubling of it
+/// (96, 192, 384, ...). Pruning every REL_INDEX_PRUNE_AT additions made a target named by tens of
+/// thousands of sources (the world native watch every rule binding names) quadratic; doubling keeps
+/// it amortized constant per addition. Stale entries in between are harmless: every reader
+/// re-checks that the source still names the target (rel_incoming_refs() included).
+/proc/_rel_index_prune_due(len)
+	if(len < REL_INDEX_PRUNE_AT || (len % REL_INDEX_PRUNE_AT))
+		return FALSE
+	var/multiple = len / REL_INDEX_PRUNE_AT
+	return !(multiple & (multiple - 1))
+
+/// TRUE when `source` still names `target` through one of `names` (a var name or a list of them).
+/// `live_only`: a source being destroyed doesn't count (pruning); otherwise it still holds the reference.
+/proc/_rel_source_names(datum/source, names, datum/target, live_only = FALSE)
+	if(!isdatum(source) || (live_only && QDELETED(source)))
+		return FALSE
+	for(var/name in (islist(names) ? names : list(names)))
+		if(!(name in source.vars))
+			continue
+		var/value = source.vars[name]
+		if(value == target || (islist(value) && (target in value)))
+			return TRUE
+	return FALSE
+
 /// Removes entries whose source no longer exists or no longer names `target` through the var.
 /proc/_rel_index_prune(datum/target, list/index)
 	for(var/source_ref in index.Copy())
-		var/datum/S = locate(source_ref)
-		var/names = index[source_ref]
-		var/keep = FALSE
-		if(isdatum(S) && !QDELETED(S))
-			for(var/name in (islist(names) ? names : list(names)))
-				if(!(name in S.vars))
-					continue
-				var/value = S.vars[name]
-				if(value == target || (islist(value) && (target in value)))
-					keep = TRUE
-					break
-		if(!keep)
+		if(!_rel_source_names(own_locate(source_ref), index[source_ref], target, TRUE))
 			index -= source_ref
 
 /proc/_rel_unindex(datum/target, datum/source, var_name)
@@ -102,7 +118,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	var/list/index = _rel_index_of(target)
 	if(!index)
 		return
-	var/source_ref = ref(source)
+	var/source_ref = OWN_KEY(source)
 	var/current = index[source_ref]
 	if(isnull(current))
 		return
@@ -117,6 +133,21 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	else if(current == var_name)
 		index -= source_ref
 	_rel_index_drop_if_empty(target, index)
+
+/// TRUE when source.var_name (a relation view) names `target`, read from target's reverse index in
+/// constant time instead of scanning a long list view. Every framework write keeps the index in
+/// step with the view, so this answers exactly as `target in source.var_name` would.
+/proc/rel_names(datum/source, var_name, datum/target)
+	if(!source || !target)
+		return FALSE
+	if(!rel_tracked(target))
+		var/value = source.vars[var_name]
+		return islist(value) ? (target in value) : value == target
+	var/list/index = _rel_index_of(target)
+	if(!index)
+		return FALSE
+	var/names = index[OWN_KEY(source)]
+	return islist(names) ? (var_name in names) : names == var_name
 
 /// The REF entry for source.var_name (learned as an implicit REF when undeclared; reported when
 /// the var is another kind).
@@ -142,9 +173,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(entry[OWNE_LIST])
 		OWN_REPORT("rel_set on list view [source.type].[var_name]: use rel_add/rel_remove")
 		return null
-	var/datum/old = source.vars[var_name]
-	if(old == target)
-		return target
+	var/datum/old = source.vars[var_name] // unchanged since the check above (_rel_entry writes no var)
 	if(old)
 		_rel_detach(source, var_name, old, entry)
 	if(target)
@@ -211,7 +240,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			L = list()
 			source.vars[var_name] = L // ALLOW(api, ownership): the accessor
 			own_field_changed(source, var_name)
-		L |= target
+		// rel_add() (the only list caller) already found `target` absent: append, don't rescan.
+		L += target
 	else
 		source.vars[var_name] = target // ALLOW(api, ownership): the accessor
 		own_field_changed(source, var_name)
@@ -235,7 +265,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			TL = list()
 			target.vars[partner_var] = TL // ALLOW(api, ownership): the accessor
 			own_field_changed(target, partner_var)
-		TL |= source
+		TL += source // absent (checked above): a pipeline's thousands of members stay linear
 		_rel_index(source, target, partner_var)
 		return
 	if(theirs == source)
@@ -285,7 +315,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	. = list()
 	var/list/index = target ? _rel_index_of(target) : null
 	for(var/source_ref in index)
-		var/datum/S = locate(source_ref)
+		var/datum/S = own_locate(source_ref)
 		if(!isdatum(S))
 			continue
 		var/names = index[source_ref]
@@ -298,8 +328,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	. = 0
 	var/list/index = target ? _rel_index_of(target) : null
 	for(var/source_ref in index)
+		var/datum/S = own_locate(source_ref)
 		var/names = index[source_ref]
-		. += islist(names) ? length(names) : 1
+		// Only live entries count (an index may hold stale ones between prunes).
+		for(var/name in (islist(names) ? names : list(names)))
+			if(_rel_source_names(S, name, target))
+				.++
 
 // ---------------------------------------------------------------- lifecycle
 
@@ -310,7 +344,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(index)
 		D.om_refs_in = null
 		for(var/source_ref in index)
-			var/datum/S = locate(source_ref)
+			var/datum/S = own_locate(source_ref)
 			if(!isdatum(S) || S == D)
 				continue
 			var/names = index[source_ref]
@@ -348,12 +382,12 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	GLOB.rel_turf_index -= zkey
 	. = 0
 	for(var/turf_ref in by_turf)
-		var/turf/T = locate(turf_ref)
+		var/turf/T = own_locate(turf_ref)
 		var/list/index = by_turf[turf_ref]
 		if(!isturf(T))
 			continue
 		for(var/source_ref in index)
-			var/datum/S = locate(source_ref)
+			var/datum/S = own_locate(source_ref)
 			if(!isdatum(S))
 				continue
 			var/names = index[source_ref]
@@ -385,9 +419,11 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		dormant = list()
 		GLOB.rel_dormant["[h]"] = dormant
 	for(var/source_ref in index)
+		var/datum/S = own_locate(source_ref)
 		var/names = index[source_ref]
 		for(var/name in (islist(names) ? names : list(names)))
-			dormant += list(source_ref, name)
+			if(_rel_source_names(S, name, D)) // a stale entry (between prunes) is not a view
+				dormant += list(source_ref, name)
 
 /// `D` re-materialized into handle slot `h`: the dormant views re-link to it.
 /proc/rel_wake(datum/D, h)
@@ -396,7 +432,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	GLOB.rel_dormant -= "[h]"
 	for(var/i in 1 to length(dormant) step 2)
-		var/datum/S = locate(dormant[i])
+		var/datum/S = own_locate(dormant[i])
 		var/name = dormant[i + 1]
 		if(!isdatum(S) || QDELETED(S) || !(name in S.vars))
 			continue
@@ -443,8 +479,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	var/id = original.om_hid
 	if(id && !successor.om_hid)
 		var/list/slots = GLOB.om_handle_slots
-		if(id <= length(slots) && slots[id] == REF(original))
-			slots[id] = REF(successor)
+		if(id <= length(slots) && slots[id] == own_key(original))
+			slots[id] = own_key(successor)
 			var/list/types = GLOB.om_handle_types
 			if(length(types) >= id)
 				types[id] = successor.type
@@ -492,9 +528,9 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 // ---------------------------------------------------------------- keyed auto-linking
 
-/// Target type path (text) -> key value (text) -> list of target ref texts.
+/// Target type path (text) -> key value (text) -> list of target keys (own_key()).
 GLOBAL_LIST_EMPTY(rel_key_targets)
-/// Target type path (text) -> key value (text) -> flat list (source ref text, var name).
+/// Target type path (text) -> key value (text) -> flat list (source key, var name).
 GLOBAL_LIST_EMPTY(rel_key_waiters)
 
 /// KEYED_TARGET(PATH, KEY_VAR): the var REL_KEYED sources match against, or null.
@@ -515,10 +551,10 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 			if(!refs)
 				refs = list()
 				by_key[key] = refs
-			refs |= ref(D)
+			refs |= own_key(D)
 			var/list/waiting = GLOB.rel_key_waiters[path]?[key]
 			for(var/i in 1 to length(waiting) step 2)
-				var/datum/S = locate(waiting[i])
+				var/datum/S = own_locate(waiting[i])
 				if(isdatum(S) && !QDELETED(S))
 					rel_keyed_link(S, waiting[i + 1], D)
 	var/datum/own_table/T = own_table_of(D)
@@ -538,9 +574,9 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 		if(!waiting)
 			waiting = list()
 			waiters_by_key[key] = waiting
-		waiting += list(ref(D), var_name)
+		waiting += list(own_key(D), var_name)
 		for(var/target_ref in GLOB.rel_key_targets[path]?[key])
-			var/datum/target = locate(target_ref)
+			var/datum/target = own_locate(target_ref)
 			if(isdatum(target) && !QDELETED(target))
 				rel_keyed_link(D, var_name, target)
 
@@ -561,7 +597,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 		var/key = "[D.vars[key_var]]"
 		for(var/path in rel_keyed_type_chain(D.type))
 			var/list/refs = GLOB.rel_key_targets[path]?[key]
-			refs?.Remove(ref(D))
+			refs?.Remove(own_key(D))
 	var/datum/own_table/T = own_table_of(D)
 	for(var/var_name in T.keyed_vars)
 		var/list/entry = T.entries[var_name]
@@ -572,7 +608,7 @@ GLOBAL_LIST_EMPTY(rel_key_waiters)
 		var/list/waiting = GLOB.rel_key_waiters["[spec[1]]"]?["[our_key]"]
 		if(!waiting)
 			continue
-		var/self_ref = ref(D)
+		var/self_ref = own_key(D)
 		for(var/i = length(waiting) - 1, i >= 1, i -= 2)
 			if(waiting[i] == self_ref && waiting[i + 1] == var_name)
 				waiting.Cut(i, i + 2)
