@@ -1,0 +1,7 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - bugfix: "Fixed a loot panel runtime logged twice whenever a player disconnected."
+  - code_imp: "Server boot queues far fewer deferred jobs (lattice redraws, alarm power settles, material service samples), so the round settles sooner after startup."
+  - code_imp: "Gas dependency watches register cheaply and only re-read the turfs that actually changed, instead of every watched turf whenever any vent writes gas."
+  - code_imp: "Lower steady-state cost for power machines checking their grid and for the latent-collapse reference scan."

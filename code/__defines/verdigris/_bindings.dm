@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "00d63bbd20739000"
+#define VERDIGRIS_ABI "92e87bfb0975be2b"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -1324,6 +1324,17 @@
 // /proc/vg_power_region_read (verdigris/ffi/src/power.rs)
 /proc/vg_power_region_read(region)
 	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_read_ffi")
+	VG_COUNT_FFI_CALL
+	return call_ext(__f)(region)
+
+/// How many nodes `region` holds, or 0 for a retired or bad id. O(1): the
+/// region keeps its count. `power_refresh_network()` asks it of every power
+/// machine each machine step to tell a real grid from a lone node, which
+/// `vg_power_region_members` answered by building a DM list of the whole
+/// station grid per machine.
+// /proc/vg_power_region_size (verdigris/ffi/src/power.rs)
+/proc/vg_power_region_size(region)
+	var/static/__f = load_ext(VERDIGRIS, "byond:power_region_size_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(region)
 

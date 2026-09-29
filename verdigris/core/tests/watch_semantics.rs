@@ -788,3 +788,42 @@ proptest! {
         }
     }
 }
+
+#[test]
+fn evaluate_fresh_primes_only_new_watches() {
+    let mut h = Harness::new();
+    // An existing watch, evaluated once and settled.
+    h.watch(1, threshold(3, Level::above(ch::PRESSURE, kpa(100.0))));
+    h.frame();
+    // A change the existing watch would read, but evaluate_fresh must leave alone.
+    h.kpa(3, 150.0);
+    h.kpa(40, 200.0);
+    let changed = h.watch(
+        2,
+        Cond::Changed {
+            cell: 40,
+            mask: ch::PRESSURE.bit(),
+        },
+    );
+    let holds = h.watch(3, threshold(41, Level::below(ch::PRESSURE, kpa(50.0))));
+    h.port.dispatch(&mut h.state);
+    h.state.evaluate_fresh(&h.store, &mut h.out);
+    let primed: Vec<u32> = h.drain().wakes().iter().map(|w| w.subscriber).collect();
+    assert_eq!(
+        primed,
+        vec![3],
+        "a new threshold that already holds fires; Changed only takes its baseline"
+    );
+    // The next full pass sees the existing watch's crossing and nothing from the primed Changed.
+    let wakes: Vec<u32> = h.frame().iter().map(|w| w.subscriber).collect();
+    assert_eq!(wakes, vec![1]);
+    // A write after priming moves the Changed watch off its baseline.
+    h.kpa(40, 210.0);
+    let wakes = h.frame();
+    assert_eq!(wakes.len(), 1);
+    assert_eq!(wakes[0].watch, changed);
+    let _ = holds;
+    // Unchanged store: the pass is skipped and nothing fires.
+    assert!(h.frame().is_empty());
+    assert_eq!(h.state.stats().evaluated, 0);
+}

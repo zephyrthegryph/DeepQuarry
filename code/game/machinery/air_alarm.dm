@@ -1050,11 +1050,17 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 /obj/machinery/alarm/power_change()
 	invalidate_gas_dependencies()
 	. = ..()
+	// Settles after a random short delay; a burst of power changes (every grid binding at boot)
+	// shares the one pending settle instead of stacking a timer per change.
+	if(om_timer_slot_pending(src, "power_settle"))
+		return
 	var/delay_time = rand(0,15)
 	if(delay_time)
-		om_after(src, delay_time, PROC_REF(process_power_change))
+		om_after_slot(src, "power_settle", delay_time, PROC_REF(process_power_change))
 		return
 	process_power_change()
+
+OWN_TIMER(/obj/machinery/alarm, power_settle)
 
 /obj/machinery/alarm/proc/process_power_change()
 	update_icon()

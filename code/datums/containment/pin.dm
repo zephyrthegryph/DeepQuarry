@@ -51,13 +51,27 @@
 /// The single read: whether `A` must stay real right now, for any reason.
 /// Combines explicit pins, the collapse blockers (behaviour, outside refs,
 /// the weakref gap, state.md §1/collapse.dm) and sitting on a turf.
-/proc/dq_latent_pinned(atom/movable/A)
+/// `caller_refs`: references to `A` held by the frames above this one (each caller's own
+/// variable or argument naming it), which the collapse check must not count as outside holders.
+/// The default, 1, is a caller holding A in one variable.
+/proc/dq_latent_pinned(atom/movable/A, caller_refs = 1)
 	if(!A || QDELETED(A))
 		return TRUE
 	if(A.latent_explicitly_pinned())
 		return TRUE
 	if(isturf(A.loc))
 		return TRUE
-	// held_refs = 1: this proc's own `A` local, same convention as
-	// latent_collapse_refusal()'s held_refs bookkeeping.
-	return length(A.state_collapse_blockers(2)) > 0
+	// held_refs: this frame's own two (the `A` argument, and the reference a frame keeps to the
+	// last object it called a method on: latent_explicitly_pinned() above) plus every caller
+	// frame's reference. A fixed 2 left the callers' references uncounted, so every item the sweep
+	// offered (loop var -> dq_latent_attempt_collapse -> can_be_latent -> here) read as held from
+	// outside and the sweep never collapsed anything. A caller that itself called a method on A
+	// holds that extra reference too and must count it in caller_refs.
+	var/list/blockers = A.state_collapse_blockers(2 + caller_refs)
+	if(!length(blockers))
+		return FALSE
+	GLOB.latency_last_pin_reason = jointext(blockers, "; ")
+	return TRUE
+
+/// The collapse blockers behind the last dq_latent_pinned() that returned TRUE for them.
+GLOBAL_VAR_INIT(latency_last_pin_reason, "")

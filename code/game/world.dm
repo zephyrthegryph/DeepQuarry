@@ -369,22 +369,6 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			"ticker_state" = SSticker?.current_state, "ticker_next_fire" = SSticker?.next_fire, "profiler_next_fire" = SSprofiler?.next_fire,
 		)
 		return json_encode(d)
-	// Opt-in proc profiler for the same triage (localhost only): mcprof_start, then mcprof_dump
-	// returns the top procs by real time as JSON.
-	if ((T == "mcprof_start" || T == "mcprof_dump") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		if(T == "mcprof_start")
-			world.Profile(PROFILE_CLEAR)
-			world.Profile(PROFILE_START)
-			return "started"
-		var/list/rows = json_decode(world.Profile(PROFILE_REFRESH, null, "json"))
-		var/list/top = list()
-		for(var/list/row as anything in rows)
-			top += list(list("n" = row["name"], "self" = row["self"], "total" = row["total"], "real" = row["real"], "calls" = row["calls"]))
-		sortTim(top, GLOBAL_PROC_REF(cmp_mcprof_real))
-		if(length(top) > 40)
-			top.Cut(41)
-		return json_encode(top)
-
 	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
 	// many of them the step stage's idle rule would settle (watch armed / no work).
 	if (T == "omsteps" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
@@ -435,9 +419,33 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 				by_behaviour["[bname][is_live ? "" : " (stale)"]"] = (by_behaviour["[bname][is_live ? "" : " (stale)"]"] || 0) + 1
 		return json_encode(list("total" = total, "live" = live, "stale" = total - live, "max_bucket" = max_bucket, "by_owner" = by_owner, "by_behaviour" = by_behaviour))
 
+	// Localhost-only census of light source updates by source atom type since the last call
+	// (SSlighting.fire()), top 40; the call resets the counts.
+	if (T == "lightcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/census = GLOB.lighting_update_census.Copy()
+		GLOB.lighting_update_census.Cut()
+		var/list/rows = list()
+		for(var/source_type in census)
+			rows["[source_type]"] = census[source_type]
+		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(rows) > 40)
+			rows.Cut(41)
+		return json_encode(list("world_time" = world.time, "queued" = length(SSlighting.sources_queue), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
+
+	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
+	if (T == "qdelcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		var/list/rows = list()
+		for(var/path in SSgarbage.items)
+			var/datum/qdel_item/item = SSgarbage.items[path]
+			rows[item.name] = item.qdels
+		rows = sortTim(rows, GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+		if(length(rows) > 40)
+			rows.Cut(41)
+		return json_encode(list("world_time" = world.time, "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
+
 	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
-	// sendmaps profile, mcprof_dump writes both as JSON into the round log dir and returns the paths,
-	// mcprof_stop ends collection.
+	// sendmaps profile; mcprof_dump writes both as JSON into the round log dir (logged with their
+	// paths) and returns the top 40 procs by real time as JSON; mcprof_stop ends collection.
 	if ((T == "mcprof_start" || T == "mcprof_dump" || T == "mcprof_stop") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
 		if(T == "mcprof_start")
 			world.Profile(PROFILE_CLEAR)
@@ -451,13 +459,20 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			world.Profile(PROFILE_STOP, type = "sendmaps")
 			log_runtime("MCPROF: stopped at [world.time]")
 			return "stopped"
+		var/proc_json = world.Profile(PROFILE_REFRESH, format = "json")
 		var/stamp = "[world.time]"
 		var/proc_path = "[GLOB.log_directory]/profiler/mcprof-[stamp].json"
 		var/maps_path = "[GLOB.log_directory]/profiler/mcprof-sendmaps-[stamp].json"
-		WRITE_FILE(file(proc_path), world.Profile(PROFILE_REFRESH, format = "json"))
+		WRITE_FILE(file(proc_path), proc_json)
 		WRITE_FILE(file(maps_path), world.Profile(PROFILE_REFRESH, type = "sendmaps", format = "json"))
 		log_runtime("MCPROF: dumped [proc_path] and [maps_path]")
-		return "[proc_path]|[maps_path]"
+		var/list/top = list()
+		for(var/list/row as anything in json_decode(proc_json))
+			top += list(list("n" = row["name"], "self" = row["self"], "total" = row["total"], "real" = row["real"], "calls" = row["calls"]))
+		sortTim(top, GLOBAL_PROC_REF(cmp_mcprof_real))
+		if(length(top) > 40)
+			top.Cut(41)
+		return json_encode(top)
 
 	if (T == "ping")
 		var/x = 1

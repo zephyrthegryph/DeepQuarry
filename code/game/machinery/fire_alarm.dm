@@ -186,7 +186,11 @@ DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
 
 /obj/machinery/firealarm/power_change()
 	. = ..()
-	om_after(src, rand(0,15), PROC_REF(power_change_settle))
+	// A burst of power changes (every grid binding at boot) shares one pending settle.
+	if(!om_timer_slot_pending(src, "power_settle"))
+		om_after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
+
+OWN_TIMER(/obj/machinery/firealarm, power_settle)
 
 /datum/interaction/machine_hand/ungated/firealarm_use
 	id = "firealarm_use"
