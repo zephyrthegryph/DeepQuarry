@@ -136,7 +136,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return SSjob?.type_occupations[D.type]
 
 /proc/registry_access(datum/access/D)
-	return SSaccess?.priv_all_access_datums_id["[D.id]"]
+	return SSaccess?.get_access_by_id(D.id)
 
 /proc/registry_ore(datum/ore/D)
 	return GLOB.ore_data[D.name]

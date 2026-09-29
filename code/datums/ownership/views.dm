@@ -230,6 +230,15 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		for(var/name in (islist(names) ? names : list(names)))
 			. += list(list(S, name))
 
+/// How many references to `target` relation views hold (one per single view, one per list view
+/// holding it). For refcount accounting (latent collapse).
+/proc/rel_incoming_refs(datum/target)
+	. = 0
+	var/list/index = target?.om_refs_in
+	for(var/source_ref in index)
+		var/names = index[source_ref]
+		. += islist(names) ? length(names) : 1
+
 // ---------------------------------------------------------------- lifecycle
 
 /// Phase 4: `D` is dying. Every view naming it is cleared (sources), then every view it holds
@@ -326,6 +335,60 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 			rel_add(S, name, D)
 		else if(isnull(S.vars[name]))
 			rel_set(S, name, D)
+
+// ---------------------------------------------------------------- replace_with identity
+
+/// replace_with(): `successor` takes over `original`'s identity before the original is destroyed.
+/// - its handle slot (old handles resolve to the successor), unless the successor has its own;
+/// - every relation view naming the original re-links to the successor;
+/// - its FORWARD_STATE vars: an owned value moves, a relation view re-links, a value is copied.
+/proc/om_handle_forward(datum/original, datum/successor)
+	if(!original || !successor || original == successor)
+		return
+	var/id = original.om_hid
+	if(id && !successor.om_hid)
+		var/list/slots = GLOB.om_handle_slots
+		if(id <= length(slots) && slots[id] == REF(original))
+			slots[id] = REF(successor)
+			var/list/types = GLOB.om_handle_types
+			if(length(types) >= id)
+				types[id] = successor.type
+			successor.om_hid = id
+			original.om_hid = 0
+	for(var/list/pair as anything in rel_sources(original))
+		var/datum/S = pair[1]
+		var/name = pair[2]
+		if(S == original || S == successor || QDELETED(S))
+			continue
+		var/list/entry = own_table_of(S).entries[name]
+		if(!entry)
+			continue
+		if(entry[OWNE_LIST])
+			rel_remove(S, name, original)
+			rel_add(S, name, successor)
+		else if(S.vars[name] == original)
+			rel_set(S, name, successor)
+	for(var/name in original.declared_forward_vars())
+		if(!(name in successor.vars))
+			continue
+		var/value = original.vars[name]
+		var/list/entry = own_table_of(original).entries[name]
+		switch(entry?[OWNE_KIND])
+			if(OWNK_OWN)
+				for(var/datum/child as anything in own_values(original, name))
+					own_move(child, successor, name)
+			if(OWNK_REL)
+				var/list/targets = rel_targets(original, name)
+				for(var/datum/target as anything in targets.Copy())
+					if(islist(successor.vars[name]) || entry[OWNE_LIST])
+						rel_add(successor, name, target)
+					else
+						rel_set(successor, name, target)
+			else
+				if(islist(value))
+					var/list/L = value
+					value = L.Copy()
+				successor.vars[name] = value // ALLOW(ownership): declared forwarded state
 
 // ---------------------------------------------------------------- keyed auto-linking
 

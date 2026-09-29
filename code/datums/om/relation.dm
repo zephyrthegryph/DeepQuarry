@@ -151,12 +151,28 @@
 /// turf end on `z` is unlinked (RELATION_Z_RELEASED). Movables on the z-level drop their own
 /// edges when they are destroyed.
 /proc/om_drop_z(z)
+	om_z_generation_bump(z)
 	. = rel_drop_z(z)
 	for(var/turf/T as anything in block(locate(1, 1, z), locate(world.maxx, world.maxy, z)))
 		for(var/datum/om/edge/edge as anything in T.om_rec?.edges?.Copy())
 			edge.unlink_reason = RELATION_Z_RELEASED
 			om_unlink_edge(edge)
 			.++
+
+/// Per z-level: bumped each time the level is released (om_drop_z()), carried in turf handles.
+GLOBAL_LIST_EMPTY(om_z_generations)
+
+/proc/om_z_generation(z)
+	var/list/gens = GLOB.om_z_generations
+	return (z > 0 && z <= length(gens)) ? gens[z] : 0
+
+/proc/om_z_generation_bump(z)
+	if(z <= 0)
+		return
+	var/list/gens = GLOB.om_z_generations
+	if(length(gens) < z)
+		gens.len = z
+	gens[z] = (gens[z] || 0) + 1
 
 /proc/om_edge_from(datum/om/rec/rec, datum/om/relation/R, as_source)
 	for(var/datum/om/edge/edge as anything in rec.edges)
