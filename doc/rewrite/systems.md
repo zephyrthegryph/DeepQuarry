@@ -251,6 +251,28 @@ act_message_t(user, target, /datum/msg/pry)                          // declared
 - Replaces `user.visible_message(self, others)` pairs and interaction `message_self/others`.
 - Lint `sys_visible_pair`.
 
+As built (rewrite/sys-messages):
+- Runtime `code/modules/messages/act_message.dm`, defines `code/__defines/messages.dm`.
+  `act_message(user, target, self, others, blind, range = world.view, item, exclude)`; a non-mob
+  user (a machine acting) has only the others/blind lines. `MSG_SELF/MSG_OTHERS/MSG_BLIND` are
+  readability wrappers; callers keep their own span_*() wrapping.
+- Tokens render `	he [x]` (`%U%`, `%T%`, `%I%`), capitalised when they open a line (after
+  leading tags). Pronoun tokens: `%THEY% %THEM% %THEIR% %THEIRS% %THEMSELVES% %THEYRE% %THEYVE%
+  %S% %ES%` and capitalised `%They% %Them% %Their% %Theyre%`.
+- `/datum/msg` (a DEF type in state_schema_lint): `self`, `others`, `blind`, `span_class`
+  (default "notice"), `range`; `texts(user, target, item)` may be overridden for wording that
+  depends on the call. `msg_def(type)` returns the singleton. One-line declarations:
+  `MSG_DEF(name, self, others)`, `MSG_DEF_SELF(name, self)`.
+- Interactions: `feedback` / `start_feedback` (msg types, picked by `feedback_for()` /
+  `start_feedback_for()` before the effect runs) replace `message_self/message_others`,
+  `messages()`, `start_messages()`, `fill_message()` and construction `start_self/start_others`.
+  Templates mirror the interaction path: `/datum/msg/interaction/...` and
+  `/datum/msg/start/interaction/...`. `use_tool()` takes `start_feedback` or inline
+  `start_self/start_others` (renamed from message_self/message_others).
+- Lint `sys_visible_pair` (tools/ci/sys_rules/messages.py): a visible_message call outside the
+  runtime that passes a mob self message, interpolates the actor (`[R]` for a mob receiver R,
+  `[src]` in a bare call in a /mob proc, `[user]`/`[usr]`), or follows `to_chat(R, ...)`.
+
 ## 16. Sound and effect sets
 
 ```dm
