@@ -185,7 +185,7 @@
 /obj/machinery/computer/HolodeckControl/Initialize(mapload)
 	. = ..()
 	current_program = powerdown_program
-	rel_set(src, "linkedholodeck", locate(projection_area))
+	linkedholodeck = locate(projection_area) // an area: a plain var
 	if(!linkedholodeck())
 		to_chat(world, span_danger("Holodeck computer at [x],[y],[z] failed to locate projection area."))
 

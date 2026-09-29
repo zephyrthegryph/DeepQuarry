@@ -509,7 +509,7 @@ DECLARE_INTERACTIONS(/obj/structure/holohoop, INTERACT_ITEM(null, PROC_REF(inter
 	if(!user.IsAdvancedToolUser())
 		return TRUE
 
-	rel_set(src, "currentarea", get_area(src.loc))
+	currentarea = get_area(src.loc) // a location: a plain var
 	if(!currentarea())
 		qdel(src)
 		return TRUE

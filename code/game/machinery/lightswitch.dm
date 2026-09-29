@@ -22,10 +22,10 @@
 /obj/machinery/light_switch/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, "area", get_area(src))
+	area = get_area(src) // a location: a plain var
 
 	if(otherarea)
-		rel_set(src, "area", locate(text2path("/area/[otherarea]")))
+		area = locate(text2path("/area/[otherarea]"))
 
 	if(!name)
 		name = "light switch ([area().name])"

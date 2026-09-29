@@ -224,8 +224,8 @@
 
 	user.drop_item()
 	C.add_fingerprint(user)
-	own_set(src, "cell", C)
 	C.forceMove(src)
+	own_set(src, "cell", C) // CONTAINED: in contents first
 	user.visible_message(span_notice("[user] opens the panel on [src] and inserts [C]."), span_notice("You open the panel on [src] and insert [C]."))
 	power_change()
 	return TRUE

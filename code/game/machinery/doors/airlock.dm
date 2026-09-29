@@ -1369,8 +1369,9 @@ About the new airlock wires panel:
 	if (assembly && istype(assembly))
 		assembly_type = assembly.type
 
-		own_set(src, "electronics", assembly.electronics)
-		electronics.forceMove(src)
+		var/obj/item/airlock_electronics/assembly_electronics = assembly.electronics
+		assembly_electronics.forceMove(src)
+		own_move(assembly_electronics, src, "electronics") // from the assembly to the door
 
 		//update the door's access to match the electronics'
 		secured_wires = electronics.secure
@@ -1418,9 +1419,9 @@ About the new airlock wires panel:
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		own_set(src, "electronics", new/obj/item/airlock_electronics/secure(get_turf(src)))
+		own_set(src, "electronics", new/obj/item/airlock_electronics/secure(src))
 	else
-		own_set(src, "electronics", new/obj/item/airlock_electronics(get_turf(src)))
+		own_set(src, "electronics", new/obj/item/airlock_electronics(src))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))
