@@ -277,6 +277,6 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 #undef DEFAULT_HEATING_POWER
 
 
-/obj/machinery/space_heater/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/space_heater/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

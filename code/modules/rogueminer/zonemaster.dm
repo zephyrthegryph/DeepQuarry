@@ -449,7 +449,7 @@
 	return myshuttle_landmark
 
 
-/datum/rogue/zonemaster/declare_ownership(decl)
-	..()
-	rel(decl, nameof(rockspawns), list = TRUE)
-	rel(decl, nameof(mobspawns), list = TRUE)
+/datum/rogue/zonemaster/relations()
+	. = ..()
+	. += rel_many(nameof(rockspawns))
+	. += rel_many(nameof(mobspawns))

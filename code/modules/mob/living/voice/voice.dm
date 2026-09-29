@@ -151,6 +151,6 @@
 	no_vore = TRUE
 	can_pain_emote = FALSE
 
-/mob/living/voice/declare_ownership(decl)
-	..()
-	rel(decl, nameof(comm))
+/mob/living/voice/relations()
+	. = ..()
+	. += rel_one(nameof(comm))

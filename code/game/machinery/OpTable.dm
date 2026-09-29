@@ -141,6 +141,6 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		return 0
 	return 1
 
-/obj/machinery/optable/declare_ownership(decl)
-	..()
-	rel(decl, nameof(computer), pair = nameof(/obj/machinery/computer/operating::table))
+/obj/machinery/optable/relations()
+	. = ..()
+	. += rel_one(nameof(computer), back = nameof(/obj/machinery/computer/operating::table))

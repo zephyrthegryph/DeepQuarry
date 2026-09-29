@@ -28,9 +28,9 @@
 			rel_set(table, nameof(table.computer), src)
 			break
 
-/obj/machinery/computer/operating/declare_ownership(decl)
-	..()
-	rel(decl, nameof(table), pair = nameof(/obj/machinery/optable::computer))
+/obj/machinery/computer/operating/relations()
+	. = ..()
+	. += rel_one(nameof(table), back = nameof(/obj/machinery/optable::computer))
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 	INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/obj/machinery, interaction_open_ui_powered_fingerprint)), \

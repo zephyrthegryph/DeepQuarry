@@ -1054,8 +1054,11 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 
 /// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
 /// clears by itself when that shuttle is deleted).
-/datum/world_service/supply/declare_ownership(decl)
-	..()
-	rel(decl, nameof(shuttle))
+/datum/world_service/supply/ownership()
+	. = ..()
 	/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
-	shared(decl, nameof(supply_pack))
+	. += shares(nameof(supply_pack))
+
+/datum/world_service/supply/relations()
+	. = ..()
+	. += rel_one(nameof(shuttle))

@@ -306,6 +306,6 @@ DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp)
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-/obj/item/melee/shock_maul/declare_ownership(decl)
-	..()
-	own(decl, nameof(bcell), policy = OWN_CONTAINED)
+/obj/item/melee/shock_maul/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED)

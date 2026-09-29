@@ -9,10 +9,10 @@ Every object-typed var, and every list that holds objects, is exactly one of fou
 
 | Concept | The var holds | Cleared by | Declared |
 |---|---|---|---|
-| **Own** | the one owner's child(ren) | the owner's teardown, by policy | implicit (`own_*` writes); `own(decl, nameof(v), policy = ...)` for other policies |
+| **Own** | the one owner's child(ren) | the owner's teardown, by policy | implicit (`own_*` writes); `ownership()` with `owns(nameof(v), policy = ...)` for other policies |
 | **Shared** | an immortal registered singleton or DEF | nobody: it never dies | implicit for registry-typed vars; `SHARED(...)` for untyped ones |
 | **Proto** | a shared prototype, or an owner-stamped private copy of it | teardown deletes private copies only | `PROTO(...)` |
-| **Relation** | a non-owning reference to an entity | the framework, when either end dies | implicit (`rel_*` writes); `rel(decl, nameof(v), pair = / symmetric = / keyed = ...)` for other shapes |
+| **Relation** | a non-owning reference to an entity | the framework, when either end dies | implicit (`rel_link` writes); `relations()` with `rel_one()` / `rel_many()` for pairs, hooks, keys |
 
 Locals inside a running proc are the only unowned references.
 
@@ -61,45 +61,45 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
 ### 1.2 Declaring
 
 Most owned vars need no declaration: the first `own_set()` / `own_add()` / `own_put()` on a var
-records it in its type's table as an implicit `own(policy = OWN_DELETE)`. A var that is never written
-through an accessor holds nothing owned. Declare only the exceptions:
-
-Declarations are calls to four concept procs (`code/datums/ownership/table.dm`) inside the one
-well-known override `declare_ownership(decl)`, which runs once per type and is cached:
+records it in its type's table as an implicit `owns(policy = OWN_DELETE)`. A var that is never
+written through an accessor holds nothing owned. Declare only the exceptions, in two per-type list
+overrides (`code/datums/ownership/table.dm`), built once per type by `type_list()` exactly like
+`capabilities()`: the body is pure (no instance reads), `. = ..()` first, then `. += entry`.
 
 ```dm
-/obj/machinery/sleeper/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_SPILL)        // drops to the floor with the holder
-/obj/item/device/radio/declare_ownership(decl)
-	..()
-	own(decl, nameof(keyslot), policy = OWN_CONTAINED)   // in contents: the ledger slot decides
-/obj/item/modular_computer/declare_ownership(decl)
-	..()
-	own(decl, nameof(hard_drive), policy_proc = TYPE_PROC_REF(/obj/item/modular_computer, part_policy))
-/obj/mecha/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_SPILL, if_var = nameof(salvageable), else_policy = OWN_DELETE)
+/obj/machinery/sleeper/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_SPILL)          // drops to the floor with the holder
+/obj/item/device/radio/ownership()
+	. = ..()
+	. += owns(nameof(keyslot), policy = OWN_CONTAINED)     // in contents: the ledger slot decides
+/obj/item/modular_computer/ownership()
+	. = ..()
+	. += owns(nameof(hard_drive), policy_proc = PROC_REF(part_policy))
+/obj/mecha/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_SPILL, if_var = nameof(salvageable), else_policy = OWN_DELETE)
 ```
 
-- The four concepts: `own(decl, var, policy =, policy_proc =, if_var =, else_policy =,
-  keep_after_destroy =, pool_reset =, forward =)`, `shared(decl, var)`, `proto(decl, var)` and
-  `rel(decl, var, list =, pair =, symmetric =, keyed =, keyed_target =, watch =)`.
+- **`ownership()` entries**: `owns(var, policy =, policy_proc =, if_var =, else_policy =,
+  keep_after_destroy =, pool_reset =, forward =)`, `shares(var)`, `proto(var)`.
+- **`relations()` entries** (§4.1): `rel_one(var, ...)`, `rel_many(var, ...)`, `rel_key(var)`.
+- The runtime table (`own_table_of()`) is built from these two lists; nothing else declares.
 - **Every var name is `nameof()`**: `nameof(var)` for the holder's own var (or `nameof(H.var)` in
   a proc), `nameof(/partner/type::var)` for another type's. The compiler rejects a misspelt name.
   The same holds for every accessor call (`own_set(src, nameof(beaker), B)`); string literals are
-  banned by `tools/ci/sys_rules/dx_ownership_forms.py`, which also bans the retired macro forms
-  (`OWN`, `OWN_POLICY`, `OWN_IF`, `SHARED`, `PROTO`, `REL*`, `KEYED_TARGET`, `KEEP_AFTER_DESTROY`,
-  `POOL_RESET`, `FORWARD_STATE`).
+  banned by `tools/ci/sys_rules/dx_ownership_forms.py`, which also bans the retired forms: the 16
+  macros (`OWN`, `OWN_POLICY`, `OWN_IF`, `SHARED`, `PROTO`, `REL*`, `KEYED_TARGET`,
+  `KEEP_AFTER_DESTROY`, `POOL_RESET`, `FORWARD_STATE`) and the interim `declare_ownership(decl)`.
 - One kind per var across the hierarchy: a subtype may change an own policy or a relation's
   options, never the kind (`own_validate_table` reports a conflict).
 - **Shape comes from the value**: one value, a list of members, or an assoc list of values.
-- **Policies.** `OWN_DELETE` destroys. `OWN_SPILL` moves a movable still inside the holder to its
-  drop location (anything else is destroyed). `OWN_CONTAINED` leaves a movable in the holder's
-  contents to the ledger slot policy; `own_set` moves the value into the holder's contents itself
-  (§1.3a), wherever it was.
-- **Conditional policy**: `policy_proc =` names a holder proc returning the policy at teardown;
-  `if_var =` / `else_policy =` pick between two by a flag var.
+- **Policies.** `OWN_DELETE` (the default) destroys. `OWN_SPILL` moves a movable still inside the
+  holder to its drop location (anything else is destroyed). `OWN_CONTAINED` leaves a movable in the
+  holder's contents to the ledger slot policy; `own_set` moves the value into the holder's contents
+  itself (§1.3a), wherever it was. `OWN_KEEP` only releases the value: it outlives the holder.
+- **Conditional policy**: `policy_proc = PROC_REF(x)` names a holder proc returning the policy at
+  teardown; `if_var =` / `else_policy =` pick between two by a flag var.
 - **Gas mixtures and other arena resources** are owned by the holder that makes them (deleting a
   mixture frees its arena slot); a pipe network's shared mixture is the network's, and components
   hold it as a relation or `proto()`, never as a second owner (lint `matrix`).
@@ -249,44 +249,62 @@ a new key in linear time), `rel_names()` answers "does this list view name X" fr
 an index prunes stale entries at each doubling rather than every 48 additions.
 
 ```dm
-/obj/machinery/sleeper/declare_ownership(decl)
-	..()
-	rel(decl, nameof(console), pair = nameof(/obj/machinery/sleeper_console::sleeper))  // two-sided
-/obj/machinery/sleeper_console/declare_ownership(decl)
-	..()
-	rel(decl, nameof(sleeper), pair = nameof(/obj/machinery/sleeper::console))
-/obj/item/shield_projector/declare_ownership(decl)
-	..()
-	rel(decl, nameof(active_shields), list = TRUE, pair = nameof(/obj/effect/directional_shield::projector))  // the "many" side
-/obj/machinery/atmospherics/declare_ownership(decl)
-	..()
-	rel(decl, nameof(nodes), symmetric = TRUE)                    // symmetric membership
-/obj/machinery/button/remote/blast_door/declare_ownership(decl)
-	..()
-	rel(decl, nameof(door), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
-/obj/machinery/door/blast/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id_tag))                             // a keyed target
-/obj/machinery/computer/monitor/declare_ownership(decl)
-	..()
-	rel(decl, nameof(sensor), watch = list(nameof(/obj/machinery/sensor::reading)))  // watched
+/obj/machinery/sleeper/relations()
+	. = ..()
+	. += rel_one(nameof(console), back = nameof(/obj/machinery/sleeper_console::sleeper))  // two-sided
+/obj/machinery/sleeper_console/relations()
+	. = ..()
+	. += rel_one(nameof(sleeper), back = nameof(/obj/machinery/sleeper::console))
+/obj/item/shield_projector/relations()
+	. = ..()
+	. += rel_many(nameof(active_shields), back = nameof(/obj/effect/directional_shield::projector))
+/obj/machinery/atmospherics/relations()
+	. = ..()
+	. += rel_many(nameof(nodes), back = nameof(/obj/machinery/atmospherics::nodes))  // symmetric
+/obj/machinery/button/remote/blast_door/relations()
+	. = ..()
+	. += rel_one(nameof(door), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
+/obj/machinery/door/blast/relations()
+	. = ..()
+	. += rel_key(nameof(id_tag))                                     // a keyed target
+/obj/machinery/computer/monitor/relations()
+	. = ..()
+	. += rel_one(nameof(sensor), watch = list(nameof(/obj/machinery/sensor::reading)))  // watched
+/atom/movable/relations()
+	. = ..()
+	. += rel_one(nameof(throwing), back = nameof(/datum/thrownthing::subject), other_deleted = DELETE_ME, on_unlink = PROC_REF(throw_ended))
 ```
 
-- **Pairs are written from one side only.** `rel_set(A, nameof(A.console), C)` sets `C.sleeper`
-  too; never write the partner's var by hand (both ends declare the pair).
+- **`rel_one(var, ...)` / `rel_many(var, ...)`**: a single view or a list view. Options:
+  - `back = nameof(/other/type::var)`: two-sided; the other end's var names us back (single or a
+    list; the other type declares its end too). `rel_many(v, back = nameof(/same/type::v))` is
+    symmetric membership. Replaces `REL_PAIR[_LIST]` and `REL_SET`.
+  - `other_deleted = CLEAR` (default: the view drops the dead entity) or `DELETE_ME` (the holder is
+    deleted with it).
+  - `on_unlink = PROC_REF(x)`: `holder.x(other)` runs whenever a link on this var goes (unlinked,
+    replaced, or the other end died). Views drop dead targets, so a handler never sees null; a
+    holder being destroyed is not called.
+  - `keyed = nameof(our key var)`, `keyed_target = /type`: auto-linking by id (below).
+  - `watch = list(nameof(/target/type::var), ...)`: a watched relation (below).
+- **`rel_key(var)`**: instances of this type are keyed targets found through `var`.
+- **Writes: `rel_link(src, nameof(var), target)` / `rel_unlink(src, nameof(var), target)`** (not
+  `link()`, a BYOND built-in). `rel_link` points a `rel_one()` view at the target (unlinking the old
+  one) or adds it to a `rel_many()` view; `rel_unlink` with no target empties the view. The older
+  names `rel_set` / `rel_add` / `rel_remove` / `rel_clear` are the same primitives by shape and
+  still work. An undeclared var written with them is an implicit one-sided view (single, or a list
+  for `rel_add`). A two-sided write sets both sides; a single end is exclusive, so linking a new
+  partner unlinks the old one on both sides. A link to an entity being destroyed is refused.
+- **Pairs are written from one side only.** `rel_link(A, nameof(A.console), C)` sets `C.sleeper`
+  too; never write the other side by hand.
 - **Watched relations** (`watch =`): the holder's reactive procs (`draw`, `should_run`,
   `hidden_verbs`, `tgui_data`, needs procs) read the listed vars of the target. While linked, a
   `changed()` of the target (which every TRACKED setter raises) marks the holder changed too, once
   per frame (`rel_notify_watchers`, `views.dm`). The list documents which vars are read; the
   notification is per target, not per var.
-
-- **Writes**: `rel_set`, `rel_clear`, `rel_add`, `rel_remove`. An undeclared var written with them is
-  an implicit one-sided `REL` (single for `rel_set`, list for `rel_add`). A pair write sets both
-  sides; a single end is exclusive, so linking a new partner unlinks the old one on both sides. A
-  link to an entity being destroyed is refused.
 - **Reads**: the var itself; `rel_targets(src, nameof(var))`, `rel_sources(target)`.
 - **Keyed auto-linking** replaces init-time scans and id matching: when a keyed target
-  (`rel(decl, keyed =)`) or a keyed source (`rel(decl, v, keyed =, keyed_target =)`) materializes, sources and targets with matching keys link.
+  (`rel_key()`) or a keyed source (`keyed =`, `keyed_target =`) materializes, sources and targets
+  with matching keys link.
 - **Turfs** can be targets (indexed per z-level, since `ChangeTurf` resets a turf's vars).
   `om_drop_z(z)` clears every view naming a turf on a released level and bumps the level's
   generation. Areas are plain vars.
@@ -339,8 +357,8 @@ assoc values) and refuses a datum used as an assoc key.
 
 ## 5. Annotations that are not kinds
 
-Options on any concept proc; `own(decl, nameof(v), <option> = TRUE)` alone annotates a var
-without giving it a kind:
+Options on any entry; `owns(nameof(v), policy = OWN_NONE, <option> = TRUE)` annotates a var without
+giving it a kind (plain data a pool resets, a diagnostics var):
 
 - `keep_after_destroy = TRUE`: diagnostics; the leak check skips it.
 - `pool_reset = TRUE`: pooling; `pool_release()` resets it.
@@ -396,12 +414,12 @@ A site kept on purpose carries `// ALLOW(ownership): <reason>`.
 | 3 | Proto cases: species, seeds, contagions, gas mixtures, robot/AI sprites | `PROTO` with `proto_private`/`proto_set`/`proto_replace`. Species: the mob holds the registered species until a trait or per-mob change calls `proto_private`; the limb table is resolved before interning, so spawning never writes a registered species. Seeds diverge through `register_line`. Machine gas ports are PROTO and network air is owned by the network, with an arena slot leak test. | 8917247920, 14d56e5ae8, fd9a38d649, f2479957ca, 2201fe6a4b, 9fe498d6d0 |
 | 4 | Replace without qdel (243 sites), phase 8 silent nulling, `rec.owner` cycle | `own_set` disposes of the value it replaces by policy; the scripted conversion moved every owned write onto the accessors, and the lint fails on raw writes. Phase 8 (`own_scrub`) reports and deletes re-set values. `own_audit` finds entities kept alive only by their own rec and tears the rec down. | c374ee7dac, 77ef714568, 21c8e14995, f1cb158574, b9c945e4c9 |
 | 5 | HELD misuse; gas mixtures made by the holder; owned things deleted by hand in destroy hooks; foreign refs blocking GC | HELD is split: 179 relations, 192 `OWN_CONTAINED`, 41 `OWN`. `OWN_IF`/`OWN_POLICY` give conditional policy; gas mixtures follow the resource rule (PROTO or network-owned). Teardown disposes of owned values, so hand deletes in destroy hooks were removed. Foreign refs are relation views, cleared when their target dies. | 24d6e46889, a99bb2230b, 2201fe6a4b, 7da08b961e, b680fc5053 |
-| 6 | Two-sided kinds written directly; vars carrying two kinds | `rel(pair =)` keeps both sides through `rel_set`. `own_validate_table` reports a var declared with two kinds across the hierarchy, and the lint's `contradiction`/`kinds` checks do the same statically (modular computer hardware, mecha minihud, morgue tray, nif comm, fusion field fixed). | 24d6e46889, a99bb2230b, 68aac387dc, d824161a3f |
+| 6 | Two-sided kinds written directly; vars carrying two kinds | `rel_one/rel_many(back =)` keeps both sides through one `rel_link`. `own_validate_table` reports a var declared with two kinds across the hierarchy, and the lint's `contradiction`/`kinds` checks do the same statically (modular computer hardware, mecha minihud, morgue tray, nif comm, fusion field fixed). | 24d6e46889, a99bb2230b, 68aac387dc, d824161a3f |
 | 7 | Invisible refs: shallow `om_capture_args`, CALLBACK in content, expedition mission held by a CALLBACK, blood `data["viruses"]` aliasing, `GLOB.x[key] = src` | Deferred arguments are captured deeply and a datum used as an assoc key is refused. `om_callable`/`om_run` replace CALLBACK in content (the lint bans it outside the core); the expedition descriptor owns its mission while the callable runs. Reagent data has a declared codec. Keyed registries replace the self-registrations, and `registry_lint` catches new ones. | bf5a4a00d3, 4f26485fc8, 22244825e7, 4a021ac94b, 88193384da |
 | 8 | Serializer duplicating ownership | Codecs derive from the ownership kind (`state_ownership_codec`); the owned codec reuses or disposes of the existing child; relation views re-link inside the subtree. `ALLOW(state_ref)` is gone (the master merge's new ones were stripped too). | 24d6e46889, 5928775320, this merge |
 | 9 | Identity: latent collapse, replace_with, turf handles, STATIC turf/area refs | Collapse parks the handle slot and re-materialization unparks into it; `om_handle_forward()` carries the handle and `FORWARD_STATE` vars; turf handles carry a z generation and `om_drop_z` releases per-z relation indexes. Turf and area refs are relation views. | a02c27e735, 47a587135b, 64431fd2e0 |
 | 10 | DuplicateObject shallow copy; manual ownership moves | `entity_clone()` serialises and re-materialises the owned subtree (the holodeck uses it); `DuplicateObject` is deleted. `own_transfer`/`own_move` do explicit moves (expedition mission, gifts, event drafts). | 24d6e46889, ceac183451, b9c945e4c9 |
-| 11 | Missing relation primitives | Views with reverse indexes, `linked()`, the shapes (`rel()` with `list =`, `pair =`, `symmetric =`), exclusivity, `holds_while`, keyed auto-linking (`rel(keyed =, keyed_target =)`), list-undo hooks, derived views, owned-child release hooks, `om_drop_z`, typed views instead of `om_resolve`. | 24d6e46889, ceac183451, 47a587135b, 1216e81f58 |
+| 11 | Missing relation primitives | Views with reverse indexes, `linked()`, the shapes (`rel_one()`, `rel_many()`, `back =`), exclusivity, `holds_while`, keyed auto-linking (`keyed =`, `keyed_target =`, `rel_key()`), list-undo hooks, derived views, owned-child release hooks, `om_drop_z`, typed views instead of `om_resolve`. | 24d6e46889, ceac183451, 47a587135b, 1216e81f58 |
 | 12 | DECLARE_DEFAULT_CHILD without an owning kind | The declaration requires an owning kind on the var (it reports and drops otherwise), adopts through `own_set`/`own_add`, and wires the child's back relation (`default_child_backref()`). | 24d6e46889, 5928775320 |
 | 13 | Kind inference | `ownership_lint.py` indexes every declaration and accessor write and fails on contradictions. Undeclared vars learn their kind from the first `own_*`/`rel_*` write, so declarations are needed only for exceptions (policy, relation shape, SHARED/PROTO). | dac8f82da8, a4af88a051, this merge |
 

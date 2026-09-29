@@ -50,9 +50,9 @@
 	var/datum/trait/linked_trait = null // Internal use, do not assign.
 	var/list/conflict_traits // Lazy. Cache known traits that don't work with this one, instead of doing it all at once, or EVERY time we do a mutation check
 
-/datum/gene/trait/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_trait), pair = nameof(/datum/trait::linked_gene))
+/datum/gene/trait/relations()
+	. = ..()
+	. += rel_one(nameof(linked_trait), back = nameof(/datum/trait::linked_gene))
 
 // Use these when displaying info to players
 /datum/gene/trait/proc/get_name()

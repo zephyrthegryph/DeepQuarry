@@ -323,10 +323,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-/obj/item/clothing/gloves/declare_ownership(decl)
-	..()
-	own(decl, nameof(contents), policy = OWN_SPILL)
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/item/clothing/gloves/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -1349,9 +1349,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
-/obj/item/clothing/declare_ownership(decl)
-	..()
-	own(decl, nameof(contents), policy = OWN_SPILL)
+/obj/item/clothing/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 // Attached accessories are part of the garment: deleted with it, not spilled
 // (dq_lifecycle_spill_declared skips owned children held in contents).
 

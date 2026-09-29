@@ -155,9 +155,9 @@
 	rel_set(src, nameof(last_piece), NC)
 	return 1
 
-/obj/machinery/cablelayer/declare_ownership(decl)
-	..()
-	own(decl, nameof(cable), policy = OWN_CONTAINED)
+/obj/machinery/cablelayer/ownership()
+	. = ..()
+	. += owns(nameof(cable), policy = OWN_CONTAINED)
 
 /// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable

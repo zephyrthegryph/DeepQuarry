@@ -19,9 +19,9 @@
 	findsleeper()
 	return ..()
 
-/obj/machinery/sleep_console/declare_ownership(decl)
-	..()
-	rel(decl, nameof(sleeper), pair = nameof(/obj/machinery/sleeper::console))
+/obj/machinery/sleep_console/relations()
+	. = ..()
+	. += rel_one(nameof(sleeper), back = nameof(/obj/machinery/sleeper::console))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3): the
 /// sleeper's own field is the occupant's environment, same as before the
@@ -131,10 +131,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/sleeper, MACHINE_PIPELINE, list("opera
 	default_apply_parts()
 	update_icon()
 
-/obj/machinery/sleeper/declare_ownership(decl)
-	..()
-	rel(decl, nameof(console), pair = nameof(/obj/machinery/sleep_console::sleeper))
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/sleeper/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+
+/obj/machinery/sleeper/relations()
+	. = ..()
+	. += rel_one(nameof(console), back = nameof(/obj/machinery/sleep_console::sleeper))
 
 /obj/machinery/sleeper/RefreshParts(limited = 0)
 	var/man_rating = 0

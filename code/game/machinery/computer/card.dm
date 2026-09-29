@@ -328,7 +328,7 @@ UI_ACT_PROC(/obj/machinery/computer/card, ui_act_terminate)
 		for(var/A in modify.access)
 			P.info += "  [SSaccess.get_access_desc(A)]"
 
-/obj/machinery/computer/card/declare_ownership(decl)
-	..()
-	own(decl, nameof(scan), policy = OWN_CONTAINED)
-	own(decl, nameof(modify), policy = OWN_CONTAINED)
+/obj/machinery/computer/card/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)
+	. += owns(nameof(modify), policy = OWN_CONTAINED)

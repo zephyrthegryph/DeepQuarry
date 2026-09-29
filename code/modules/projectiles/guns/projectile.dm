@@ -726,9 +726,12 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-/obj/item/gun/projectile/declare_ownership(decl)
-	..()
-	own(decl, nameof(ammo_magazine), policy = OWN_CONTAINED)
+/obj/item/gun/projectile/ownership()
+	. = ..()
+	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
+
+/obj/item/gun/projectile/relations()
+	. = ..()
 	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
-	rel(decl, nameof(chambered))
+	. += rel_one(nameof(chambered))
 

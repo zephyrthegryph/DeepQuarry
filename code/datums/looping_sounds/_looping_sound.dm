@@ -249,8 +249,8 @@
 /datum/looping_sound/proc/remove_output(atom/thing)
 	rel_remove(src, nameof(output_atoms), thing)
 
-/datum/looping_sound/declare_ownership(decl)
-	..()
-	rel(decl, nameof(output_atoms), list = TRUE)
+/datum/looping_sound/relations()
+	. = ..()
+	. += rel_many(nameof(output_atoms))
 
 OWN_TIMER(/datum/looping_sound, loop_token)

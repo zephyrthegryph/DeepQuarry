@@ -704,9 +704,9 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 #undef WELDER_FUEL_BURN_INTERVAL
 
-/obj/item/weldingtool/electric/declare_ownership(decl)
-	..()
-	own(decl, nameof(power_supply), policy = OWN_CONTAINED)
+/obj/item/weldingtool/electric/ownership()
+	. = ..()
+	. += owns(nameof(power_supply), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
 
 /// Relation view: equip mount (reads null once it is gone).

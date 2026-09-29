@@ -2761,12 +2761,12 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	return "brute"
 
 // selected, active_jetpack and energy_relay name mounted equipment: relation views (implicit REL).
-// cell and internal_tank are implicit own(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
+// cell and internal_tank are implicit owns(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
-/obj/mecha/declare_ownership(decl)
-	..()
-	proto(decl, nameof(cabin_air))
+/obj/mecha/ownership()
+	. = ..()
+	. += proto(nameof(cabin_air))
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.

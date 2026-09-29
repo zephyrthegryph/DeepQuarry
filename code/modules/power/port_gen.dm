@@ -1186,6 +1186,6 @@ DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
 
-/obj/machinery/power/rtg/abductor/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/power/rtg/abductor/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

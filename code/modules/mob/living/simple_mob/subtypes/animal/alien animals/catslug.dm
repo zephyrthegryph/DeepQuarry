@@ -110,9 +110,9 @@ DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/proc/hide)
 DECLARE_VERB(/mob/living/simple_mob/vore/alienanimals/catslug, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
-/mob/living/simple_mob/vore/alienanimals/catslug/declare_ownership(decl)
-	..()
-	own(decl, nameof(hat), policy = OWN_SPILL)
+/mob/living/simple_mob/vore/alienanimals/catslug/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \
@@ -229,7 +229,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/catslug, TYPE_P
 	else if(!can_wear_hat)
 		to_chat(user, span_warning("\The [src] is unable to wear \a [hat]."))
 	else
-		if(!own_set(src, "hat", new_hat, user = user))
+		if(!own_set(src, nameof(src.hat), new_hat, user = user))
 			return
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src]. How adorable!"))
 		update_icon()

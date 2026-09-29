@@ -278,12 +278,12 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	return src
 
 /// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
-/datum/native_watch/heat/declare_ownership(decl)
-	..()
-	rel(decl, nameof(target), pair = nameof(/atom::heat_watches))
-/atom/declare_ownership(decl)
-	..()
-	rel(decl, nameof(heat_watches), list = TRUE, pair = nameof(/datum/native_watch/heat::target))
+/datum/native_watch/heat/relations()
+	. = ..()
+	. += rel_one(nameof(target), back = nameof(/atom::heat_watches))
+/atom/relations()
+	. = ..()
+	. += rel_many(nameof(heat_watches), back = nameof(/datum/native_watch/heat::target))
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))

@@ -28,10 +28,10 @@
 
 // Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
 // whichever of the two materializes first (replaces the static id map).
-/obj/machinery/power/quantumpad/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/power/quantumpad)
-	rel(decl, keyed = nameof(map_pad_id))
+/obj/machinery/power/quantumpad/relations()
+	. = ..()
+	. += rel_one(nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/power/quantumpad)
+	. += rel_key(nameof(map_pad_id))
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()

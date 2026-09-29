@@ -132,6 +132,6 @@ APPEARANCE_TEMPLATE(/obj/structure/extinguisher_cabinet, "{initial(icon_state)}{
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
 
-/obj/structure/extinguisher_cabinet/declare_ownership(decl)
-	..()
-	own(decl, nameof(has_extinguisher), policy = OWN_CONTAINED)
+/obj/structure/extinguisher_cabinet/ownership()
+	. = ..()
+	. += owns(nameof(has_extinguisher), policy = OWN_CONTAINED)

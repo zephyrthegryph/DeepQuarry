@@ -30,10 +30,10 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
-/obj/machinery/computer/telescience/declare_ownership(decl)
-	..()
-	own(decl, nameof(inserted_gps), policy = OWN_SPILL)
-	own(decl, nameof(crystals), policy = OWN_SPILL)
+/obj/machinery/computer/telescience/ownership()
+	. = ..()
+	. += owns(nameof(inserted_gps), policy = OWN_SPILL)
+	. += owns(nameof(crystals), policy = OWN_SPILL)
 
 // its crystals are ejected.
 /obj/machinery/computer/telescience/on_destroy(force)

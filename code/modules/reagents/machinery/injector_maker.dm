@@ -385,6 +385,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/injector_maker, TYPE_PROC_REF(/atom, appe
 				if(new_name)
 					P.name = new_name
 
-/obj/machinery/injector_maker/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/injector_maker/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

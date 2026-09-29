@@ -96,6 +96,6 @@ UI_ACT_PROC(/obj/item/implantpad, ui_act_tracking_id)
 	T.id = clamp(T.id, 1, 1000)
 	return TRUE
 
-/obj/item/implantpad/declare_ownership(decl)
-	..()
-	own(decl, nameof(case), policy = OWN_CONTAINED)
+/obj/item/implantpad/ownership()
+	. = ..()
+	. += owns(nameof(case), policy = OWN_CONTAINED)

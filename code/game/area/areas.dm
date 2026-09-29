@@ -678,6 +678,6 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 
 /// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
 /// areas are never relation targets). A dying APC leaves it.
-/area/declare_ownership(decl)
-	..()
-	rel(decl, nameof(apc))
+/area/relations()
+	. = ..()
+	. += rel_one(nameof(apc))

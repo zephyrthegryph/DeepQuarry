@@ -392,7 +392,7 @@
 		var/mob/living/living_mob = holder.held_mob
 
 		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, "held_mob")
+		rel_clear(holder, nameof(holder.held_mob))
 		consume(holder, user)
 
 		to_chat(user, "Stuffed [living_mob] into \the [src].")
@@ -477,9 +477,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	return (slices_num && slice_path && slices_num > 0)
 
 // things stuffed inside drop out.
-/obj/item/reagent_containers/food/snacks/declare_ownership(decl)
-	..()
-	own(decl, nameof(contents), policy = OWN_SPILL)
+/obj/item/reagent_containers/food/snacks/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
 	package = FALSE
@@ -8495,9 +8495,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 
-/obj/item/pizzabox/declare_ownership(decl)
-	..()
-	own(decl, nameof(pizza), policy = OWN_CONTAINED)
+/obj/item/pizzabox/ownership()
+	. = ..()
+	. += owns(nameof(pizza), policy = OWN_CONTAINED)
 
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating

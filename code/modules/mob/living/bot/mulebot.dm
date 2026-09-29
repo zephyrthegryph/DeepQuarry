@@ -390,6 +390,6 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 /mob/living/bot/mulebot/handle_micro_bump_other() // Can't drive over micros or macros regardless of intent.
 	return 0
 
-/mob/living/bot/mulebot/declare_ownership(decl)
-	..()
-	own(decl, nameof(load), policy = OWN_CONTAINED)
+/mob/living/bot/mulebot/ownership()
+	. = ..()
+	. += owns(nameof(load), policy = OWN_CONTAINED)

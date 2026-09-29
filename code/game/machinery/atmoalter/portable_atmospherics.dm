@@ -254,15 +254,15 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 
-/obj/machinery/portable_atmospherics/powered/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/portable_atmospherics/powered/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port
 
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
-/obj/machinery/portable_atmospherics/declare_ownership(decl)
-	..()
-	proto(decl, nameof(air_contents))
+/obj/machinery/portable_atmospherics/ownership()
+	. = ..()
+	. += proto(nameof(air_contents))

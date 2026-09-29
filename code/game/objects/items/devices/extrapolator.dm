@@ -319,6 +319,6 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 /obj/item/extrapolator/tier5
 	default_scanning_module = /obj/item/stock_parts/scanning_module
 
-/obj/item/extrapolator/declare_ownership(decl)
-	..()
-	own(decl, nameof(scanner), policy = OWN_CONTAINED)
+/obj/item/extrapolator/ownership()
+	. = ..()
+	. += owns(nameof(scanner), policy = OWN_CONTAINED)

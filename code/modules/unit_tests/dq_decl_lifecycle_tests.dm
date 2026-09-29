@@ -57,10 +57,10 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 	var/saw_reagents_in_initialize = 0
 	var/saw_part_in_initialize = FALSE
 
-/obj/item/dq_decl_probe/declare_ownership(decl)
-	..()
-	own(decl, nameof(part), policy = OWN_CONTAINED)
-	own(decl, nameof(mapped_part), policy = OWN_CONTAINED)
+/obj/item/dq_decl_probe/ownership()
+	. = ..()
+	. += owns(nameof(part), policy = OWN_CONTAINED)
+	. += owns(nameof(mapped_part), policy = OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "helper", /datum/dq_decl_owned_child)
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "part", /obj/item/dq_decl_part)

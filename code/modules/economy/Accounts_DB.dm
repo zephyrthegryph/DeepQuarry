@@ -324,9 +324,9 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_print)
 	P.info = text
 	state("The terminal prints out a report.")
 
-/obj/machinery/account_database/declare_ownership(decl)
-	..()
-	own(decl, nameof(held_card), policy = OWN_CONTAINED)
+/obj/machinery/account_database/ownership()
+	. = ..()
+	. += owns(nameof(held_card), policy = OWN_CONTAINED)
 
 /// the detailed_account_view this refers to (a relation view: null once it is deleted).
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account

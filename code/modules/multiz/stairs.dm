@@ -74,10 +74,10 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/bottom/declare_ownership(decl)
-	..()
-	rel(decl, nameof(top), pair = nameof(/obj/structure/stairs/top::bottom))
-	rel(decl, nameof(middle), pair = nameof(/obj/structure/stairs/middle::bottom))
+/obj/structure/stairs/bottom/relations()
+	. = ..()
+	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::bottom))
+	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::bottom))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -247,10 +247,10 @@
 		return INITIALIZE_HINT_QDEL
 	make_climbable()
 
-/obj/structure/stairs/middle/declare_ownership(decl)
-	..()
-	rel(decl, nameof(top), pair = nameof(/obj/structure/stairs/top::middle))
-	rel(decl, nameof(bottom), pair = nameof(/obj/structure/stairs/bottom::middle))
+/obj/structure/stairs/middle/relations()
+	. = ..()
+	. += rel_one(nameof(top), back = nameof(/obj/structure/stairs/top::middle))
+	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::middle))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -329,10 +329,10 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-/obj/structure/stairs/top/declare_ownership(decl)
-	..()
-	rel(decl, nameof(middle), pair = nameof(/obj/structure/stairs/middle::top))
-	rel(decl, nameof(bottom), pair = nameof(/obj/structure/stairs/bottom::top))
+/obj/structure/stairs/top/relations()
+	. = ..()
+	. += rel_one(nameof(middle), back = nameof(/obj/structure/stairs/middle::top))
+	. += rel_one(nameof(bottom), back = nameof(/obj/structure/stairs/bottom::top))
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,

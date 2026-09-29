@@ -24,10 +24,10 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/radio/intercom)
 
-/obj/machinery/computer/timeclock/declare_ownership(decl)
-	..()
-	own(decl, nameof(card), policy = OWN_SPILL)
-	own(decl, nameof(announce), policy = OWN_CONTAINED)
+/obj/machinery/computer/timeclock/ownership()
+	. = ..()
+	. += owns(nameof(card), policy = OWN_SPILL)
+	. += owns(nameof(announce), policy = OWN_CONTAINED)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/computer/timeclock, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/computer/timeclock/appearance_overlays()

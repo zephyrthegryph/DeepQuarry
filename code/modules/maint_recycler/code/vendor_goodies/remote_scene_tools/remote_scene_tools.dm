@@ -36,7 +36,7 @@ why aren't these accessories?
 		return
 
 	rel_set(src, nameof(linked), to_link)
-	// rel(pair =): the partner now names us back.
+	// rel_one(back =): the partner now names us back.
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -216,6 +216,6 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
 
-/obj/item/remote_scene_tool/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked), pair = nameof(/obj/item/remote_scene_tool::linked))
+/obj/item/remote_scene_tool/relations()
+	. = ..()
+	. += rel_one(nameof(linked), back = nameof(/obj/item/remote_scene_tool::linked))

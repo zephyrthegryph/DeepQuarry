@@ -352,6 +352,6 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 	return FALSE
 // END FLESH ORGAN PRINTER
 
-/obj/machinery/organ_printer/declare_ownership(decl)
-	..()
-	own(decl, nameof(container), policy = OWN_CONTAINED)
+/obj/machinery/organ_printer/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)

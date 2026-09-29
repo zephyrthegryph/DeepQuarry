@@ -183,7 +183,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, "id")
+			var/obj/old_id = own_take(src, nameof(src.id))
 			if(!own_set(src, nameof(src.id), I, user = user))
 				own_set(src, nameof(src.id), old_id)
 				return 0
@@ -384,9 +384,9 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
 DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
-/obj/item/communicator/declare_ownership(decl)
-	..()
-	own(decl, nameof(id), policy = OWN_SPILL)
+/obj/item/communicator/ownership()
+	. = ..()
+	. += owns(nameof(id), policy = OWN_SPILL)
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)

@@ -109,6 +109,6 @@
 	for(var/key in last_key to HIGHEST_KEY)
 		own_put(src, nameof(samples), num2text(key), new /datum/instrument_key(last_sample, key, key - last_key))
 
-/datum/instrument/declare_ownership(decl)
-	..()
-	rel(decl, nameof(songs_using), list = TRUE)
+/datum/instrument/relations()
+	. = ..()
+	. += rel_many(nameof(songs_using))

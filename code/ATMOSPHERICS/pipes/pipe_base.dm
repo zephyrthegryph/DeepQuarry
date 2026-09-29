@@ -321,7 +321,7 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-/obj/machinery/atmospherics/pipe/declare_ownership(decl)
-	..()
-	rel(decl, nameof(parent), pair = nameof(/datum/pipeline::members))
-	rel(decl, nameof(edge_pipelines), list = TRUE, pair = nameof(/datum/pipeline::edges))
+/obj/machinery/atmospherics/pipe/relations()
+	. = ..()
+	. += rel_one(nameof(parent), back = nameof(/datum/pipeline::members))
+	. += rel_many(nameof(edge_pipelines), back = nameof(/datum/pipeline::edges))

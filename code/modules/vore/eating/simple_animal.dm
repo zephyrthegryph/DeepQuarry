@@ -143,6 +143,6 @@
 			break
 		heal_amount -= mend(treat_tag, heal_amount)
 
-/mob/living/simple_mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(prey_excludes), list = TRUE)
+/mob/living/simple_mob/relations()
+	. = ..()
+	. += rel_many(nameof(prey_excludes))

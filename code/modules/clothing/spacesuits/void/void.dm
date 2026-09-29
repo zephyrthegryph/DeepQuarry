@@ -489,8 +489,8 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 /obj/item/clothing/suit/space/void
 	can_breach = 0
 
-/obj/item/clothing/suit/space/void/declare_ownership(decl)
-	..()
-	own(decl, nameof(boots), policy = OWN_CONTAINED)
-	own(decl, nameof(tank), policy = OWN_CONTAINED)
-	own(decl, nameof(cooler), policy = OWN_CONTAINED)
+/obj/item/clothing/suit/space/void/ownership()
+	. = ..()
+	. += owns(nameof(boots), policy = OWN_CONTAINED)
+	. += owns(nameof(tank), policy = OWN_CONTAINED)
+	. += owns(nameof(cooler), policy = OWN_CONTAINED)

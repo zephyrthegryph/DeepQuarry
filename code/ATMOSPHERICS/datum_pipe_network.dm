@@ -275,8 +275,8 @@
 	return
 
 // Rosters: two-sided with each member's network_memberships (ownership.md §4.1).
-/datum/pipe_network/declare_ownership(decl)
-	..()
-	rel(decl, nameof(normal_members), list = TRUE, pair = nameof(/obj/machinery/atmospherics::network_memberships))
-	rel(decl, nameof(line_members), list = TRUE, pair = nameof(/datum/pipeline::network_memberships))
+/datum/pipe_network/relations()
+	. = ..()
+	. += rel_many(nameof(normal_members), back = nameof(/obj/machinery/atmospherics::network_memberships))
+	. += rel_many(nameof(line_members), back = nameof(/datum/pipeline::network_memberships))
 

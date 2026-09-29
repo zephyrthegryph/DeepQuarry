@@ -889,12 +889,12 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 
 /////////////////////////// DNA MACHINES
 
-/obj/machinery/dna_scannernew/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
-/obj/machinery/computer/scan_consolenew/declare_ownership(decl)
-	..()
-	own(decl, nameof(disk), policy = OWN_CONTAINED)
+/obj/machinery/dna_scannernew/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/computer/scan_consolenew/ownership()
+	. = ..()
+	. += owns(nameof(disk), policy = OWN_CONTAINED)
 
 /// connected: a relation view, null once the scanner is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew

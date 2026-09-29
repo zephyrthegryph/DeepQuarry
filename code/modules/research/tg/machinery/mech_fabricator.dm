@@ -574,6 +574,6 @@ DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 
-/obj/machinery/mecha_part_fabricator_tg/declare_ownership(decl)
-	..()
-	own(decl, nameof(stored_part), policy = OWN_CONTAINED)
+/obj/machinery/mecha_part_fabricator_tg/ownership()
+	. = ..()
+	. += owns(nameof(stored_part), policy = OWN_CONTAINED)

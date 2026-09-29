@@ -125,9 +125,9 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 
 /// LC-refs: the actions granted to this player on each login are theirs.
 
-/datum/persistent_client/declare_ownership(decl)
-	..()
-	rel(decl, nameof(mob), pair = nameof(/mob::persistent_client))
-/mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(persistent_client), pair = nameof(/datum/persistent_client::mob))
+/datum/persistent_client/relations()
+	. = ..()
+	. += rel_one(nameof(mob), back = nameof(/mob::persistent_client))
+/mob/relations()
+	. = ..()
+	. += rel_one(nameof(persistent_client), back = nameof(/datum/persistent_client::mob))

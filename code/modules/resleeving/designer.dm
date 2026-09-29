@@ -27,9 +27,9 @@
 	. = ..()
 	our_db_static = GLOB.transcore_service.db_by_key(db_key)
 
-/obj/machinery/computer/transhuman/designer/declare_ownership(decl)
-	..()
-	own(decl, nameof(disk), policy = OWN_SPILL)
+/obj/machinery/computer/transhuman/designer/ownership()
+	. = ..()
+	. += owns(nameof(disk), policy = OWN_SPILL)
 
 /obj/machinery/computer/transhuman/designer/dismantle()
 	if(disk)

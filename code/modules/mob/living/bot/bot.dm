@@ -622,8 +622,11 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
-/mob/living/bot/declare_ownership(decl)
-	..()
-	own(decl, nameof(paicard), policy = OWN_CONTAINED)
+/mob/living/bot/ownership()
+	. = ..()
+	. += owns(nameof(paicard), policy = OWN_CONTAINED)
+
+/mob/living/bot/relations()
+	. = ..()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
-	rel(decl, nameof(ignore_list), list = TRUE)
+	. += rel_many(nameof(ignore_list))

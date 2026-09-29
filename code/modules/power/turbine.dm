@@ -475,6 +475,6 @@ UI_ACT_PROC(/obj/machinery/computer/turbine_computer, ui_act_doors)
 /obj/machinery/compressor/proc/turbine() as /obj/machinery/power/turbine
 	return turbine
 
-/obj/machinery/computer/turbine_computer/declare_ownership(decl)
-	..()
-	rel(decl, nameof(doors), list = TRUE)
+/obj/machinery/computer/turbine_computer/relations()
+	. = ..()
+	. += rel_many(nameof(doors))

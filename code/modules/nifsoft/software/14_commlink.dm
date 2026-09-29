@@ -49,9 +49,9 @@ TOPIC_ACTION(/datum/nifsoft/commlink, "open", PROC_REF(topic_open))
 
 // The NIF creates and owns its commlink (in its contents, deleted with it); the commlink's `nif`
 // is a plain back relation.
-/obj/item/nif/declare_ownership(decl)
-	..()
-	own(decl, nameof(comm), policy = OWN_DELETE)
+/obj/item/nif/ownership()
+	. = ..()
+	. += owns(nameof(comm), policy = OWN_DELETE)
 
 /obj/item/communicator/commlink/register_device(new_name)
 	owner = new_name

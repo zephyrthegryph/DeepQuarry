@@ -482,13 +482,13 @@
 #undef MIN_SIZE_SOUND
 #undef INSUFFICIENT
 
-/obj/effect/hotspot/declare_ownership(decl)
-	..()
-	rel(decl, nameof(our_hot_group), pair = nameof(/datum/hot_group::spot_list))
-/datum/hot_group/declare_ownership(decl)
-	..()
-	rel(decl, nameof(spot_list), list = TRUE, pair = nameof(/obj/effect/hotspot::our_hot_group))
-	rel(decl, nameof(current_sound_loc))
+/obj/effect/hotspot/relations()
+	. = ..()
+	. += rel_one(nameof(our_hot_group), back = nameof(/datum/hot_group::spot_list))
+/datum/hot_group/relations()
+	. = ..()
+	. += rel_many(nameof(spot_list), back = nameof(/obj/effect/hotspot::our_hot_group))
+	. += rel_one(nameof(current_sound_loc))
 
 // ---------------------------------------------------------------- the hotspot pipeline
 

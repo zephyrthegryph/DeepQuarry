@@ -317,6 +317,6 @@
 /datum/om/behaviour/proc/on_climb_shake(datum/E, datum/om/event/climb_shake/event)
 	return
 
-/obj/declare_ownership(decl)
-	..()
-	rel(decl, nameof(climbers), list = TRUE)
+/obj/relations()
+	. = ..()
+	. += rel_many(nameof(climbers))

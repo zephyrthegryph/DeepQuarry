@@ -472,9 +472,9 @@
 /datum/expedition_objective/proc/site() as /datum/expedition_site
 	return site
 
-/datum/expedition_objective/declare_ownership(decl)
-	..()
-	rel(decl, nameof(tracked), list = TRUE)
-/datum/expedition_objective/commission_engine/declare_ownership(decl)
-	..()
-	rel(decl, nameof(generators), list = TRUE)
+/datum/expedition_objective/relations()
+	. = ..()
+	. += rel_many(nameof(tracked))
+/datum/expedition_objective/commission_engine/relations()
+	. = ..()
+	. += rel_many(nameof(generators))

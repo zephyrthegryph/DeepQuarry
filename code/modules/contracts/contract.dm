@@ -768,7 +768,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 	return TRUE
 
 // A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-/datum/contract/declare_ownership(decl)
-	..()
-	rel(decl, nameof(parent), pair = nameof(/datum/contract::children))
-	rel(decl, nameof(children), list = TRUE, pair = nameof(/datum/contract::parent))
+/datum/contract/relations()
+	. = ..()
+	. += rel_one(nameof(parent), back = nameof(/datum/contract::children))
+	. += rel_many(nameof(children), back = nameof(/datum/contract::parent))

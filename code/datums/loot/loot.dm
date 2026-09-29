@@ -483,6 +483,6 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 
 /// The items spawned for allocated gamma loot (a relation list: a deleted item leaves it).
 /datum/world_service/pois/var/list/obj/item/allocated_gamma_items
-/datum/world_service/pois/declare_ownership(decl)
-	..()
-	rel(decl, nameof(allocated_gamma_items), list = TRUE)
+/datum/world_service/pois/relations()
+	. = ..()
+	. += rel_many(nameof(allocated_gamma_items))

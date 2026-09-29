@@ -139,6 +139,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothin
 	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))
 
-/obj/mecha/combat/gygax/serenity/declare_ownership(decl)
-	..()
-	own(decl, nameof(hud), policy = OWN_CONTAINED)
+/obj/mecha/combat/gygax/serenity/ownership()
+	. = ..()
+	. += owns(nameof(hud), policy = OWN_CONTAINED)

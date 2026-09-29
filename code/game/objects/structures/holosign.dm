@@ -15,12 +15,12 @@
 		alpha = 0
 */
 
-/obj/structure/holosign/declare_ownership(decl)
-	..()
-	rel(decl, nameof(projector), pair = nameof(/obj/item/holosign_creator::signs))
-/obj/item/holosign_creator/declare_ownership(decl)
-	..()
-	rel(decl, nameof(signs), list = TRUE, pair = nameof(/obj/structure/holosign::projector))
+/obj/structure/holosign/relations()
+	. = ..()
+	. += rel_one(nameof(projector), back = nameof(/obj/item/holosign_creator::signs))
+/obj/item/holosign_creator/relations()
+	. = ..()
+	. += rel_many(nameof(signs), back = nameof(/obj/structure/holosign::projector))
 
 /obj/structure/holosign/declare_interactions(list/into)
 	into += list(

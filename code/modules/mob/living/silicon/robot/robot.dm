@@ -1908,13 +1908,16 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	return (given_type in module.supported_upgrades)
 
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/robot_ui)
-/mob/living/silicon/robot/declare_ownership(decl)
-	..()
-	own(decl, nameof(hat), policy = OWN_SPILL)
+/mob/living/silicon/robot/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 	// on_destroy() still takes these apart in order: the MMI hands its mind on, the cell unhooks.
 	// The module, radio, camera and components are deleted by phase 4, after the AI link and shell are undone.
-	own(decl, nameof(mmi), policy = OWN_CONTAINED)
-	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
-	rel(decl, nameof(cell))
+	. += owns(nameof(mmi), policy = OWN_CONTAINED)
 	// A registered robot sprite, or the robot's private fallback default (copy-on-write).
-	proto(decl, nameof(sprite_datum))
+	. += proto(nameof(sprite_datum))
+
+/mob/living/silicon/robot/relations()
+	. = ..()
+	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
+	. += rel_one(nameof(cell))

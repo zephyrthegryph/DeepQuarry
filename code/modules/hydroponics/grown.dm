@@ -408,6 +408,6 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/item/reagent_containers/food/snacks/grown/declare_ownership(decl)
-	..()
-	proto(decl, nameof(seed_static))
+/obj/item/reagent_containers/food/snacks/grown/ownership()
+	. = ..()
+	. += proto(nameof(seed_static))

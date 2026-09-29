@@ -809,6 +809,6 @@ APPEARANCE_TEMPLATE(/obj/structure/flora/sif/frostbelle, "{initial(icon_state)}{
 	desc = "A bunch of mossy rocks."
 	icon_state = "rocks2"
 
-/obj/structure/flora/pottedplant/declare_ownership(decl)
-	..()
-	own(decl, nameof(stored_item), policy = OWN_CONTAINED)
+/obj/structure/flora/pottedplant/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)

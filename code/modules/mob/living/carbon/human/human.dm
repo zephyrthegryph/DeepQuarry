@@ -2062,9 +2062,9 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	create_new_area(usr)
 	return
 
-/mob/living/carbon/human/declare_ownership(decl)
-	..()
-	own(decl, nameof(wearing_rig), policy = OWN_CONTAINED)
+/mob/living/carbon/human/ownership()
+	. = ..()
+	. += owns(nameof(wearing_rig), policy = OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
 
 DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)

@@ -112,9 +112,9 @@ GLOBAL_LIST_INIT(sys_periodic_defs, build_sys_periodic_defs())
 
 /// The declarations are boot-time singletons (sys_periodic_defs()): shared, never owned.
 REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def))
-/datum/sys_periodic_table/declare_ownership(decl)
-	..()
-	shared(decl, nameof(while_def))
+/datum/sys_periodic_table/ownership()
+	. = ..()
+	. += shares(nameof(while_def))
 
 /proc/registry_sys_periodic_def(datum/D)
 	return (D in sys_periodic_defs()) ? D : null

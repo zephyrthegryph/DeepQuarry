@@ -56,10 +56,10 @@
 		/obj/machinery/power/supermatter
 	)
 
-/mob/living/silicon/robot/platform/declare_ownership(decl)
-	..()
-	rel(decl, nameof(recharging))
-	rel(decl, nameof(stored_atoms), list = TRUE)
+/mob/living/silicon/robot/platform/relations()
+	. = ..()
+	. += rel_one(nameof(recharging))
+	. += rel_many(nameof(stored_atoms))
 
 /mob/living/silicon/robot/platform/Login()
 	. = ..()

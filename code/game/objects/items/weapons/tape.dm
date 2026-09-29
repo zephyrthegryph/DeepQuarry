@@ -123,7 +123,7 @@
 	return stuck.examine(user)
 
 /obj/item/ducttape/proc/attach(obj/item/W)
-	own_move(W, src, "stuck") // CONTAINED: the move takes it in
+	own_move(W, src, nameof(src.stuck)) // CONTAINED: the move takes it in
 	icon_state = W.icon_state + "_taped"
 	name = W.name + " (taped)"
 	overlays = W.overlays
@@ -200,6 +200,6 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
 
-/obj/item/ducttape/declare_ownership(decl)
-	..()
-	own(decl, nameof(stuck), policy = OWN_CONTAINED)
+/obj/item/ducttape/ownership()
+	. = ..()
+	. += owns(nameof(stuck), policy = OWN_CONTAINED)

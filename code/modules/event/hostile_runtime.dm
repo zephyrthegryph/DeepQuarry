@@ -75,6 +75,6 @@
 /datum/event/hostile_runtime/proc/apc() as /obj/machinery/power/apc
 	return apc
 
-/datum/event/hostile_runtime/declare_ownership(decl)
-	..()
-	rel(decl, nameof(target_airlocks), list = TRUE)
+/datum/event/hostile_runtime/relations()
+	. = ..()
+	. += rel_many(nameof(target_airlocks))

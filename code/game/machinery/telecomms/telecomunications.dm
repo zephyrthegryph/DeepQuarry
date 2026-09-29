@@ -169,9 +169,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 
 // Links are symmetric membership: linking A to B lists each in the other's links, and a dying
 // machine leaves every partner's list (the framework clears both sides).
-/obj/machinery/telecomms/declare_ownership(decl)
-	..()
-	rel(decl, nameof(links), symmetric = TRUE)
+/obj/machinery/telecomms/relations()
+	. = ..()
+	. += rel_many(nameof(links), back = nameof(/obj/machinery/telecomms::links))
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)

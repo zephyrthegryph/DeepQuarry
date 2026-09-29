@@ -249,14 +249,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/suspension_gen, TYPE_PROC_REF(/atom, appe
 	anchored = 1
 	density = 1
 
-/obj/effect/suspension_field/declare_ownership(decl)
-	..()
-	own(decl, nameof(contents), policy = OWN_SPILL)
+/obj/effect/suspension_field/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 
-/obj/machinery/suspension_gen/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/suspension_gen/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

@@ -169,6 +169,6 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 	register_gas_dependencies()
 
 
-/obj/machinery/atmospherics/unary/declare_ownership(decl)
-	..()
-	proto(decl, nameof(air_contents))
+/obj/machinery/atmospherics/unary/ownership()
+	. = ..()
+	. += proto(nameof(air_contents))

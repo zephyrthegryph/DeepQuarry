@@ -48,9 +48,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.
-/obj/item/perfect_tele/declare_ownership(decl)
-	..()
-	rel(decl, nameof(beacons), list = TRUE)
+/obj/item/perfect_tele/relations()
+	. = ..()
+	. += rel_many(nameof(beacons))
 
 /// The beacon in `beacons` named `name`, or null.
 /obj/item/perfect_tele/proc/find_beacon(name)

@@ -8,10 +8,10 @@
 	var/keep = "kept"
 
 POOL_DECLARE(/datum/pool_test_item)
-/datum/pool_test_item/declare_ownership(decl)
-	..()
-	own(decl, nameof(held), pool_reset = TRUE)
-	own(decl, nameof(count), pool_reset = TRUE)
+/datum/pool_test_item/ownership()
+	. = ..()
+	. += owns(nameof(held), policy = OWN_NONE, pool_reset = TRUE)
+	. += owns(nameof(count), policy = OWN_NONE, pool_reset = TRUE)
 
 /datum/pool_test_item/proc/touch()
 	POOL_ASSERT_LIVE(src)

@@ -51,9 +51,9 @@
 	add_overlay(tank)
 	update_icon()
 
-/obj/machinery/atmospherics/unary/cryo_cell/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_SPILL)
+/obj/machinery/atmospherics/unary/cryo_cell/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_SPILL)
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/unary/cryo_cell, MACHINE_PIPELINE, list("on", "node"))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).

@@ -34,10 +34,10 @@
 // Its linked pads go with it.
 
 // Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
-/obj/machinery/hyperpad/centre/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/hyperpad/centre)
-	rel(decl, keyed = nameof(map_pad_id))
+/obj/machinery/hyperpad/centre/relations()
+	. = ..()
+	. += rel_one(nameof(linked_pad), keyed = nameof(map_pad_link_id), keyed_target = /obj/machinery/hyperpad/centre)
+	. += rel_key(nameof(map_pad_id))
 
 /// Always usable, powered or not.
 /obj/machinery/hyperpad/operable(additional_flags = 0)

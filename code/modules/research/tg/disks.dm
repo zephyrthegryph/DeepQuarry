@@ -53,6 +53,6 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-/obj/item/disk/tech_disk/declare_ownership(decl)
-	..()
-	proto(decl, nameof(stored_research_static))
+/obj/item/disk/tech_disk/ownership()
+	. = ..()
+	. += proto(nameof(stored_research_static))

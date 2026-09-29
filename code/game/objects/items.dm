@@ -1129,9 +1129,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
 	return I?.hidden_uplink
 
-/obj/item/declare_ownership(decl)
-	..()
-	own(decl, nameof(hidden_uplink), policy = OWN_CONTAINED)
+/obj/item/ownership()
+	. = ..()
+	. += owns(nameof(hidden_uplink), policy = OWN_CONTAINED)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ

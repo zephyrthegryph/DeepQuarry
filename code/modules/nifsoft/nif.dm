@@ -760,9 +760,9 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
 // The implanted human and its NIF name each other (the NIF lives in an organ's implants).
-/obj/item/nif/declare_ownership(decl)
-	..()
-	rel(decl, nameof(human), pair = nameof(/mob/living/carbon/human::nif))
-/mob/living/carbon/human/declare_ownership(decl)
-	..()
-	rel(decl, nameof(nif), pair = nameof(/obj/item/nif::human))
+/obj/item/nif/relations()
+	. = ..()
+	. += rel_one(nameof(human), back = nameof(/mob/living/carbon/human::nif))
+/mob/living/carbon/human/relations()
+	. = ..()
+	. += rel_one(nameof(nif), back = nameof(/obj/item/nif::human))

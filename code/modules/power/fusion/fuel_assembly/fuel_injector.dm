@@ -27,9 +27,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 	default_apply_parts()
 	make_rotatable()
 
-/obj/machinery/fusion_fuel_injector/declare_ownership(decl)
-	..()
-	own(decl, nameof(cur_assembly), policy = OWN_SPILL)
+/obj/machinery/fusion_fuel_injector/ownership()
+	. = ..()
+	. += owns(nameof(cur_assembly), policy = OWN_SPILL)
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE
@@ -84,7 +84,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 	else
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " inserts \a [held] into %T%."))
 
-	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
+	var/obj/item/fuel_assembly/old_assembly = own_take(src, nameof(src.cur_assembly)) // swapped out to the user
 	if(!own_set(src, nameof(src.cur_assembly), held, user = user))
 		own_set(src, nameof(src.cur_assembly), old_assembly)
 		return TRUE

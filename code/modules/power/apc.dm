@@ -203,13 +203,16 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-/obj/machinery/power/apc/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_SPILL)
-	rel(decl, nameof(hacker), pair = nameof(/mob/living/silicon/ai::hacked_apcs))
-/mob/living/silicon/ai/declare_ownership(decl)
-	..()
-	rel(decl, nameof(hacked_apcs), list = TRUE, pair = nameof(/obj/machinery/power/apc::hacker))
+/obj/machinery/power/apc/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_SPILL)
+
+/obj/machinery/power/apc/relations()
+	. = ..()
+	. += rel_one(nameof(hacker), back = nameof(/mob/living/silicon/ai::hacked_apcs))
+/mob/living/silicon/ai/relations()
+	. = ..()
+	. += rel_many(nameof(hacked_apcs), back = nameof(/obj/machinery/power/apc::hacker))
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()

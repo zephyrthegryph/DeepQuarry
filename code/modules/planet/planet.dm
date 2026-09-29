@@ -87,7 +87,7 @@
 // Turfs are never deleted.
 
 // The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
-/datum/planet/declare_ownership(decl)
-	..()
-	rel(decl, nameof(planet_floors), list = TRUE)
-	rel(decl, nameof(planet_walls), list = TRUE)
+/datum/planet/relations()
+	. = ..()
+	. += rel_many(nameof(planet_floors))
+	. += rel_many(nameof(planet_walls))

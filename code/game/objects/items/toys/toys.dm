@@ -2990,12 +2990,12 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/dragon, INTERACT_USE("Squeeze", PROC_R
 	om_after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), "nuketoycool")
 	om_after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), "nuketoyidle")
 
-/obj/structure/plushie/declare_ownership(decl)
-	..()
-	own(decl, nameof(stored_item), policy = OWN_CONTAINED)
-/obj/item/toy/plushie/declare_ownership(decl)
-	..()
-	own(decl, nameof(stored_item), policy = OWN_CONTAINED)
+/obj/structure/plushie/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)
+/obj/item/toy/plushie/ownership()
+	. = ..()
+	. += owns(nameof(stored_item), policy = OWN_CONTAINED)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie, \

@@ -196,9 +196,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fuel_port, TYPE_PROC_REF(/atom, appearanc
 	return myship
 
 /// A fuel port sits in its shuttle's fuel_ports; deleting it leaves the list.
-/obj/structure/fuel_port/declare_ownership(decl)
-	..()
-	rel(decl, nameof(parent_shuttle), pair = nameof(/datum/shuttle/autodock/overmap::fuel_ports))
-/datum/shuttle/autodock/overmap/declare_ownership(decl)
-	..()
-	rel(decl, nameof(fuel_ports), list = TRUE, pair = nameof(/obj/structure/fuel_port::parent_shuttle))
+/obj/structure/fuel_port/relations()
+	. = ..()
+	. += rel_one(nameof(parent_shuttle), back = nameof(/datum/shuttle/autodock/overmap::fuel_ports))
+/datum/shuttle/autodock/overmap/relations()
+	. = ..()
+	. += rel_many(nameof(fuel_ports), back = nameof(/obj/structure/fuel_port::parent_shuttle))

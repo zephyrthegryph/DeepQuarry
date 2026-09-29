@@ -144,6 +144,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/fishing_rod, TYPE_PROC_REF(/atom, app
 	toolspeed = 0.5
 
 // The bait sits in the rod's contents.
-/obj/item/material/fishing_rod/declare_ownership(decl)
-	..()
-	own(decl, nameof(Bait), policy = OWN_CONTAINED)
+/obj/item/material/fishing_rod/ownership()
+	. = ..()
+	. += owns(nameof(Bait), policy = OWN_CONTAINED)

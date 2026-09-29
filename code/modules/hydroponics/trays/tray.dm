@@ -797,6 +797,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 #undef AGE_MOD_MAX
 
 /// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
-/obj/machinery/portable_atmospherics/hydroponics/declare_ownership(decl)
-	..()
-	proto(decl, nameof(seed))
+/obj/machinery/portable_atmospherics/hydroponics/ownership()
+	. = ..()
+	. += proto(nameof(seed))

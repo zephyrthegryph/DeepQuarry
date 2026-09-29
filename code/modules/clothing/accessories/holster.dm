@@ -256,6 +256,6 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 
 TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
 
-/obj/item/clothing/accessory/holster/declare_ownership(decl)
-	..()
-	own(decl, nameof(holstered), policy = OWN_CONTAINED)
+/obj/item/clothing/accessory/holster/ownership()
+	. = ..()
+	. += owns(nameof(holstered), policy = OWN_CONTAINED)

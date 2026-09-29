@@ -582,9 +582,9 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 /obj/item/electronic_assembly/proc/is_valid_tool(obj/item/I)
 	return I.has_tool_quality(TOOL_CROWBAR) || I.has_tool_quality(TOOL_SCREWDRIVER) || istype(I, /obj/item/integrated_circuit) || istype(I, /obj/item/cell/device) || istype(I, /obj/item/integrated_electronics)
 
-/obj/item/electronic_assembly/declare_ownership(decl)
-	..()
-	own(decl, nameof(battery), policy = OWN_CONTAINED)
+/obj/item/electronic_assembly/ownership()
+	. = ..()
+	. += owns(nameof(battery), policy = OWN_CONTAINED)
 
 /// ID card for door access (a relation view: null once that is deleted).
 /obj/item/electronic_assembly/proc/access_card() as /obj/item/card/id

@@ -66,10 +66,10 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	..()
 */
 
-/obj/machinery/botany/declare_ownership(decl)
-	..()
-	own(decl, nameof(seed), policy = OWN_SPILL)
-	own(decl, nameof(loaded_disk), policy = OWN_SPILL)
+/obj/machinery/botany/ownership()
+	. = ..()
+	. += owns(nameof(seed), policy = OWN_SPILL)
+	. += owns(nameof(loaded_disk), policy = OWN_SPILL)
 
 /obj/machinery/botany/machine_step()
 
@@ -392,6 +392,6 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 /obj/machinery/botany/extractor/proc/genetics() as /datum/seed
 	return genetics_static
 
-/obj/machinery/botany/extractor/declare_ownership(decl)
-	..()
-	proto(decl, nameof(genetics_static))
+/obj/machinery/botany/extractor/ownership()
+	. = ..()
+	. += proto(nameof(genetics_static))

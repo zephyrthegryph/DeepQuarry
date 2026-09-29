@@ -502,9 +502,9 @@
 			AddParticles(reactant, react_pool[reactant])
 
 // The core owns its field (own_set in fusion_core/Startup()); the field names its core back.
-/obj/effect/fusion_em_field/declare_ownership(decl)
-	..()
-	rel(decl, nameof(owned_core))
+/obj/effect/fusion_em_field/relations()
+	. = ..()
+	. += rel_one(nameof(owned_core))
 
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)

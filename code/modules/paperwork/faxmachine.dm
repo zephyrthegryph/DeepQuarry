@@ -659,6 +659,6 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
 	sendcooldown = 0
 
-/obj/machinery/photocopier/faxmachine/declare_ownership(decl)
-	..()
-	own(decl, nameof(scan), policy = OWN_CONTAINED)
+/obj/machinery/photocopier/faxmachine/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)

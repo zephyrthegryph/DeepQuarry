@@ -147,9 +147,9 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 		master.show_message(rendered, type)
 	return
 
-/obj/machinery/hologram/holopad/declare_ownership(decl)
-	..()
-	rel(decl, nameof(masters), list = TRUE)
+/obj/machinery/hologram/holopad/relations()
+	. = ..()
+	. += rel_many(nameof(masters))
 
 /obj/machinery/hologram/holopad/proc/create_holo(mob/living/silicon/ai/A, turf/T = loc)
 	var/obj/effect/overlay/aiholo/hologram = new(T) // Spawn a blank effect at the location. // to specific type for adding vars

@@ -121,6 +121,6 @@
 /datum/om/behaviour/proc/on_closet_closed(datum/E, datum/om/event/closet_closed/event)
 	return
 
-/obj/structure/closet/declare_ownership(decl)
-	..()
-	rel(decl, nameof(bluespace_exit_points), list = TRUE)
+/obj/structure/closet/relations()
+	. = ..()
+	. += rel_many(nameof(bluespace_exit_points))

@@ -378,8 +378,8 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	processing_revive = FALSE
 	update_icon()
 
-/obj/machinery/protean_reconstitutor/declare_ownership(decl)
-	..()
-	own(decl, nameof(protean_brain), policy = OWN_CONTAINED)
-	own(decl, nameof(protean_orchestrator), policy = OWN_CONTAINED)
-	own(decl, nameof(protean_refactory), policy = OWN_CONTAINED)
+/obj/machinery/protean_reconstitutor/ownership()
+	. = ..()
+	. += owns(nameof(protean_brain), policy = OWN_CONTAINED)
+	. += owns(nameof(protean_orchestrator), policy = OWN_CONTAINED)
+	. += owns(nameof(protean_refactory), policy = OWN_CONTAINED)

@@ -1588,6 +1588,6 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	return transit_area
 
 
-/datum/generated_station_materialization/declare_ownership(decl)
-	..()
-	rel(decl, nameof(furnishings), list = TRUE)
+/datum/generated_station_materialization/relations()
+	. = ..()
+	. += rel_many(nameof(furnishings))

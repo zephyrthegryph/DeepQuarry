@@ -390,7 +390,10 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 
 DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
-/obj/item/mmi/declare_ownership(decl)
-	..()
-	own(decl, nameof(brainobj), policy = OWN_CONTAINED)
-	rel(decl, nameof(mecha)) // the mech we are installed in
+/obj/item/mmi/ownership()
+	. = ..()
+	. += owns(nameof(brainobj), policy = OWN_CONTAINED)
+
+/obj/item/mmi/relations()
+	. = ..()
+	. += rel_one(nameof(mecha)) // the mech we are installed in

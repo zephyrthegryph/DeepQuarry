@@ -101,7 +101,7 @@
 
 
 
-/obj/machinery/atmospherics/binary/declare_ownership(decl)
-	..()
-	proto(decl, nameof(air1))
-	proto(decl, nameof(air2))
+/obj/machinery/atmospherics/binary/ownership()
+	. = ..()
+	. += proto(nameof(air1))
+	. += proto(nameof(air2))

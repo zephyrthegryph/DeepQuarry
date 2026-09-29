@@ -123,9 +123,9 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 	rel_set(src, nameof(last_piece), NC)
 	return 1
 
-/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/declare_ownership(decl)
-	..()
-	own(decl, nameof(cable), policy = OWN_CONTAINED)
+/obj/item/mecha_parts/mecha_equipment/tool/cable_layer/ownership()
+	. = ..()
+	. += owns(nameof(cable), policy = OWN_CONTAINED)
 
 /// old turf
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf

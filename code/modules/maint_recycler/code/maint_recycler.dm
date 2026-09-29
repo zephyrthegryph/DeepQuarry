@@ -116,9 +116,9 @@
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_recycler/declare_ownership(decl)
-	..()
-	own(decl, nameof(inserted_item), policy = OWN_SPILL)
+/obj/machinery/maint_recycler/ownership()
+	. = ..()
+	. += owns(nameof(inserted_item), policy = OWN_SPILL)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()

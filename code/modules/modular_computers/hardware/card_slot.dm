@@ -11,16 +11,16 @@
 /obj/item/computer_hardware/card_slot/get_slot_var()
 	return "card_slot"
 
-/obj/item/modular_computer/declare_ownership(decl)
-	..()
-	own(decl, nameof(processor_unit), policy = OWN_CONTAINED)
-	own(decl, nameof(network_card), policy = OWN_CONTAINED)
-	own(decl, nameof(hard_drive), policy = OWN_CONTAINED)
-	own(decl, nameof(battery_module), policy = OWN_CONTAINED)
-	own(decl, nameof(card_slot), policy = OWN_CONTAINED)
-	own(decl, nameof(nano_printer), policy = OWN_CONTAINED)
-	own(decl, nameof(portable_drive), policy = OWN_CONTAINED)
-	own(decl, nameof(tesla_link), policy = OWN_CONTAINED)
+/obj/item/modular_computer/ownership()
+	. = ..()
+	. += owns(nameof(processor_unit), policy = OWN_CONTAINED)
+	. += owns(nameof(network_card), policy = OWN_CONTAINED)
+	. += owns(nameof(hard_drive), policy = OWN_CONTAINED)
+	. += owns(nameof(battery_module), policy = OWN_CONTAINED)
+	. += owns(nameof(card_slot), policy = OWN_CONTAINED)
+	. += owns(nameof(nano_printer), policy = OWN_CONTAINED)
+	. += owns(nameof(portable_drive), policy = OWN_CONTAINED)
+	. += owns(nameof(tesla_link), policy = OWN_CONTAINED)
 
 // Hardware slots are one kind: owned while installed, in the computer's contents (OWN_CONTAINED).
 // A destroyed part leaves its slot in phase 2; the card slot's card drops at the computer's turf.

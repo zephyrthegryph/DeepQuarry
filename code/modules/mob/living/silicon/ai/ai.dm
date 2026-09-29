@@ -1131,6 +1131,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	hacking = 0
 
 // A registered AI icon, or the AI's private custom icon (copy-on-write).
-/mob/living/silicon/ai/declare_ownership(decl)
-	..()
-	proto(decl, nameof(selected_sprite))
+/mob/living/silicon/ai/ownership()
+	. = ..()
+	. += proto(nameof(selected_sprite))

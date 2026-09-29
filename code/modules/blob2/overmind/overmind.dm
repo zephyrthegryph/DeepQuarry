@@ -175,6 +175,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	return default_language_static
 
 // blob_type is owned (implicit OWN, own_set in Initialize); blob_mobs names spawned mobs.
-/mob/observer/blob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(blob_mobs), list = TRUE)
+/mob/observer/blob/relations()
+	. = ..()
+	. += rel_many(nameof(blob_mobs))

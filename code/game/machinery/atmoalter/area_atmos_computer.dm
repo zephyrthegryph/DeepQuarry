@@ -16,9 +16,9 @@
 	//Simple variable to prevent me from doing attack_hand in both this and the child computer
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
-/obj/machinery/computer/area_atmos/declare_ownership(decl)
-	..()
-	rel(decl, nameof(connectedscrubbers), list = TRUE)
+/obj/machinery/computer/area_atmos/relations()
+	. = ..()
+	. += rel_many(nameof(connectedscrubbers))
 
 /// The connected scrubber with this id, or null.
 /obj/machinery/computer/area_atmos/proc/scrubber_by_id(scrub_id)

@@ -140,7 +140,8 @@
 
 /// Disposes of an owned value leaving its var by policy: DELETE destroys it, SPILL moves a
 /// movable still inside the holder to the drop location (anything else is destroyed),
-/// CONTAINED leaves a movable to the holder's ledger slot. The value is unstamped first.
+/// CONTAINED leaves a movable to the holder's ledger slot, KEEP only lets it go. The value is
+/// unstamped first.
 /proc/own_dispose(datum/holder, var_name, datum/value, list/entry, policy)
 	if(!isdatum(value))
 		return
@@ -151,6 +152,8 @@
 	if(isnull(policy))
 		policy = own_policy(holder, var_name, entry)
 	switch(policy)
+		if(OWN_KEEP)
+			return // released above: it outlives the holder
 		if(OWN_CONTAINED)
 			// A contained thing belongs to the holder's ledger slot: in the holder's teardown the
 			// slot has already resolved it (phase 3), and one that left the contents is no longer
@@ -439,7 +442,7 @@
 				if(isdatum(child))
 					. += child
 
-/// What an `own(decl, nameof(contents), ...)` declaration owns: the holder's contents, less the movables
+/// What an `owns(nameof(contents), ...)` declaration owns: the holder's contents, less the movables
 /// another owned var of the holder names (an attached accessory, a suit's hood): those are
 /// disposed of by their own var's policy, not spilled with the rest. `contents` is a built-in
 /// list with no associated values (indexing it by an object is a "bad index" runtime), so it is

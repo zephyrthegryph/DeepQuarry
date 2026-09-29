@@ -315,8 +315,8 @@
 // atom.light_sources is a relation list view of the sources lighting from it (as source or top
 // atom), kept in step by New() and update(). effect_str (corner -> strength) and corner.affecting
 // are the engine's own symmetric links (see the ALLOW notes above).
-/atom/declare_ownership(decl)
-	..()
-	rel(decl, nameof(light_sources), list = TRUE)
+/atom/relations()
+	. = ..()
+	. += rel_many(nameof(light_sources))
 
 

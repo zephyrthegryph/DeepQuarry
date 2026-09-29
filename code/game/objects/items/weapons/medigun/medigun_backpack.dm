@@ -566,8 +566,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-/obj/item/medigun_backpack/declare_ownership(decl)
-	..()
-	own(decl, nameof(ccell), policy = OWN_CONTAINED)
-	own(decl, nameof(sbin), policy = OWN_CONTAINED)
+/obj/item/medigun_backpack/ownership()
+	. = ..()
+	. += owns(nameof(ccell), policy = OWN_CONTAINED)
+	. += owns(nameof(sbin), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)

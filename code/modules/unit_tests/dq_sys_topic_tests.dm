@@ -7,9 +7,9 @@
 	var/list/last_args
 	var/list/obj/item/pool
 
-/datum/dq_topic_probe/declare_ownership(decl)
-	..()
-	rel(decl, nameof(pool), list = TRUE)
+/datum/dq_topic_probe/relations()
+	. = ..()
+	. += rel_many(nameof(pool))
 TOPIC_ACTION(/datum/dq_topic_probe, "pick", PROC_REF(topic_pick), TOPIC_REF("pick", /obj/item))
 TOPIC_ACTION(/datum/dq_topic_probe, "pooled", PROC_REF(topic_pooled), TOPIC_REF("pooled", /obj/item, PROC_REF(topic_pool)))
 TOPIC_ACTION(/datum/dq_topic_probe, "set", PROC_REF(topic_set), TOPIC_NUM("amount"), TOPIC_TEXT("label", 4))

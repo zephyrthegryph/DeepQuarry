@@ -116,8 +116,11 @@
 			return null
 
 // The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
-/datum/omni_port/declare_ownership(decl)
-	..()
-	rel(decl, nameof(master))
-	proto(decl, nameof(air))
+/datum/omni_port/ownership()
+	. = ..()
+	. += proto(nameof(air))
+
+/datum/omni_port/relations()
+	. = ..()
+	. += rel_one(nameof(master))
 

@@ -406,6 +406,6 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/machinery/photocopier/declare_ownership(decl)
-	..()
-	own(decl, nameof(copyitem), policy = OWN_CONTAINED)
+/obj/machinery/photocopier/ownership()
+	. = ..()
+	. += owns(nameof(copyitem), policy = OWN_CONTAINED)

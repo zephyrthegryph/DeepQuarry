@@ -28,9 +28,9 @@
 	var/list/integrated_tool_images
 
 /// The selected tool: one of cyborg_integrated_tools, which owns it.
-/obj/item/robotic_multibelt/declare_ownership(decl)
-	..()
-	rel(decl, nameof(selected_item))
+/obj/item/robotic_multibelt/relations()
+	. = ..()
+	. += rel_one(nameof(selected_item))
 
 /obj/item/robotic_multibelt/item_ctrl_click(mob/user)
 	if(selected_item)
@@ -580,10 +580,10 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	var/special_handling = FALSE
 
 /// The selected pocket (one of `pockets`) or item.
-/obj/item/gripper/declare_ownership(decl)
-	..()
-	rel(decl, nameof(current_pocket))
-	rel(decl, nameof(our_robot))
+/obj/item/gripper/relations()
+	. = ..()
+	. += rel_one(nameof(current_pocket))
+	. += rel_one(nameof(our_robot))
 
 /obj/item/storage/internal/gripper
 	max_storage_space = ITEMSIZE_COST_HUGE

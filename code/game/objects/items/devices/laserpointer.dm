@@ -224,9 +224,9 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			set_recharging(FALSE)
 			recharge_locked = FALSE
 
-/obj/item/laser_pointer/declare_ownership(decl)
-	..()
-	own(decl, nameof(diode), policy = OWN_CONTAINED)
+/obj/item/laser_pointer/ownership()
+	. = ..()
+	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
 OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
 // The battery trickles back while recharging.

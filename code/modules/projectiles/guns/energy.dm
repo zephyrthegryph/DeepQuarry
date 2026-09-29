@@ -286,9 +286,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy, TYPE_PROC_REF(/atom, appearance_ov
 
 // power_supply names the cell in the gun's contents (the contents own it and it goes with the gun), or, for
 // the shield generator's gun, the generator's cell: a relation view across the hierarchy.
-/obj/item/gun/energy/declare_ownership(decl)
-	..()
-	rel(decl, nameof(power_supply))
+/obj/item/gun/energy/relations()
+	. = ..()
+	. += rel_one(nameof(power_supply))
 
 /obj/item/gun/energy/note_shot()
 	..()

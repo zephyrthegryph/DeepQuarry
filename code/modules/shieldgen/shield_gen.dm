@@ -33,11 +33,11 @@
 	energy_conversion_rate = 0.0012
 
 // Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
-/obj/machinery/shield_gen/declare_ownership(decl)
-	..()
-	rel(decl, nameof(capacitors), list = TRUE, pair = nameof(/obj/machinery/shield_capacitor::owned_gen))
+/obj/machinery/shield_gen/relations()
+	. = ..()
+	. += rel_many(nameof(capacitors), back = nameof(/obj/machinery/shield_capacitor::owned_gen))
 	// Remote shield buttons find generators by id (REL_KEYED sources).
-	rel(decl, keyed = nameof(id))
+	. += rel_key(nameof(id))
 
 /obj/machinery/shield_gen/Initialize(mapload)
 	if(anchored)

@@ -279,8 +279,8 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, 
 	if(air_in && air_out)
 		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
-/obj/machinery/atmospherics/pipeturbine/declare_ownership(decl)
-	..()
-	proto(decl, nameof(air_in))
-	proto(decl, nameof(air_out))
+/obj/machinery/atmospherics/pipeturbine/ownership()
+	. = ..()
+	. += proto(nameof(air_in))
+	. += proto(nameof(air_out))
 

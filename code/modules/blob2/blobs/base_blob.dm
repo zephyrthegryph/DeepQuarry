@@ -464,9 +464,9 @@ DAMAGE_REACTION(/obj/structure/grille, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_
 
 // Every blob names its overmind (a one-sided view); only resource blobs pair with its
 // resource_blobs list (resource.dm).
-/obj/structure/blob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(overmind))
-/mob/observer/blob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(resource_blobs), list = TRUE, pair = nameof(/obj/structure/blob/resource::overmind))
+/obj/structure/blob/relations()
+	. = ..()
+	. += rel_one(nameof(overmind))
+/mob/observer/blob/relations()
+	. = ..()
+	. += rel_many(nameof(resource_blobs), back = nameof(/obj/structure/blob/resource::overmind))

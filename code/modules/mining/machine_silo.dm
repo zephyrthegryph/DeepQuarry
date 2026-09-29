@@ -267,7 +267,7 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
 	return msg.Join()
 
 
-/obj/machinery/ore_silo/declare_ownership(decl)
-	..()
-	rel(decl, nameof(holds), list = TRUE)
-	rel(decl, nameof(ore_connected_machines), list = TRUE)
+/obj/machinery/ore_silo/relations()
+	. = ..()
+	. += rel_many(nameof(holds))
+	. += rel_many(nameof(ore_connected_machines))

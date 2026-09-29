@@ -153,9 +153,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 		return 1
 	return ..()
 
-/obj/machinery/feeder/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/feeder/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human

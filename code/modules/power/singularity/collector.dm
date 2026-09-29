@@ -185,6 +185,6 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
 	return P
 
-/obj/machinery/power/rad_collector/declare_ownership(decl)
-	..()
-	own(decl, nameof(P), policy = OWN_SPILL)
+/obj/machinery/power/rad_collector/ownership()
+	. = ..()
+	. += owns(nameof(P), policy = OWN_SPILL)

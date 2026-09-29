@@ -36,9 +36,9 @@
 
 // Values are the compiled predicates interned by dq_predicate_for()'s cache (shared by key across
 // every item using the same spec), never owned or deleted by the item.
-/obj/item/declare_ownership(decl)
-	..()
-	shared(decl, nameof(constraint_overrides))
+/obj/item/ownership()
+	. = ..()
+	. += shares(nameof(constraint_overrides))
 
 /// The spec for constraint `kind` on this type. Called once per type.
 /obj/item/proc/constraint_spec(kind)

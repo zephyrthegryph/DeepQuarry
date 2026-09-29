@@ -879,9 +879,9 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 
 DECLARE_DEFAULT_CHILD(/obj/item/radio, "secure_radio_connections", list())
 DECLARE_REGISTRY(/obj/item/radio, REGISTRY_LISTENING_OBJECTS)
-/obj/item/radio/borg/declare_ownership(decl)
-	..()
-	own(decl, nameof(keyslot), policy = OWN_CONTAINED)
+/obj/item/radio/borg/ownership()
+	. = ..()
+	. += owns(nameof(keyslot), policy = OWN_CONTAINED)
 
 /// Relation view: radio connection (reads null once it is gone).
 /obj/item/radio/proc/radio_connection() as /datum/radio_frequency

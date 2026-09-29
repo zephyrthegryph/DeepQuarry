@@ -175,6 +175,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
-/obj/machinery/floodlight/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/floodlight/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

@@ -313,6 +313,6 @@ UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_issue)
 	else
 		to_chat(user, span_warning("Invalid duration."))
 
-/obj/machinery/computer/guestpass/declare_ownership(decl)
-	..()
-	own(decl, nameof(giver), policy = OWN_CONTAINED)
+/obj/machinery/computer/guestpass/ownership()
+	. = ..()
+	. += owns(nameof(giver), policy = OWN_CONTAINED)

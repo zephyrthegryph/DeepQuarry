@@ -266,6 +266,6 @@
 	return active_expedition
 
 
-/datum/flight_destination/declare_ownership(decl)
-	..()
-	rel(decl, nameof(active_plans), list = TRUE)
+/datum/flight_destination/relations()
+	. = ..()
+	. += rel_many(nameof(active_plans))

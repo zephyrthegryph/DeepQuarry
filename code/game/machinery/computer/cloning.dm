@@ -27,10 +27,13 @@
 	light_color = "#315ab4"
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
-/obj/machinery/computer/cloning/declare_ownership(decl)
-	..()
-	rel(decl, nameof(pods), list = TRUE, pair = nameof(/obj/machinery/clonepod::connected))
-	own(decl, nameof(diskette), policy = OWN_CONTAINED)
+/obj/machinery/computer/cloning/ownership()
+	. = ..()
+	. += owns(nameof(diskette), policy = OWN_CONTAINED)
+
+/obj/machinery/computer/cloning/relations()
+	. = ..()
+	. += rel_many(nameof(pods), back = nameof(/obj/machinery/clonepod::connected))
 
 /obj/machinery/computer/cloning/Initialize(mapload)
 	. = ..()

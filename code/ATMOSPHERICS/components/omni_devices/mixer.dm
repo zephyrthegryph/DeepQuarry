@@ -370,7 +370,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
 
-/obj/machinery/atmospherics/omni/mixer/declare_ownership(decl)
-	..()
-	rel(decl, nameof(output))
-	rel(decl, nameof(inputs), list = TRUE)
+/obj/machinery/atmospherics/omni/mixer/relations()
+	. = ..()
+	. += rel_one(nameof(output))
+	. += rel_many(nameof(inputs))

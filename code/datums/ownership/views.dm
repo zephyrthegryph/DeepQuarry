@@ -11,7 +11,7 @@
 
 /// Reverse index: source key (own_key()) -> var name, or a list of var names.
 /datum/var/tmp/list/om_refs_in
-/// Watching sources (rel(..., watch = ...)): source key (own_key()) -> how many watched views of
+/// Watching sources (rel_one/rel_many(watch = ...)): source key (own_key()) -> how many watched views of
 /// that source name us. changed() on this datum marks each of them changed.
 /datum/var/tmp/list/rel_watchers
 
@@ -213,6 +213,25 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	_rel_detach(source, var_name, target, entry)
 	return TRUE
 
+/// Links source.var_name to `target`: points a rel_one() view at it (unlinking the old one) or adds
+/// it to a rel_many() view. A two-sided view (back =) writes the other side too: never write both.
+/// Returns the target, or null when refused.
+/proc/rel_link(datum/source, var_name, datum/target)
+	var/list/entry = own_table_of(source).entries[var_name]
+	if(entry ? entry[OWNE_LIST] : islist(source.vars[var_name]))
+		return rel_add(source, var_name, target)
+	return rel_set(source, var_name, target)
+
+/// Unlinks `target` from source.var_name (both sides of a two-sided view), or every target when
+/// `target` is null. Returns TRUE when something was unlinked.
+/proc/rel_unlink(datum/source, var_name, datum/target = null)
+	if(isnull(target))
+		if(isnull(source.vars[var_name]))
+			return FALSE
+		rel_clear(source, var_name)
+		return TRUE
+	return rel_remove(source, var_name, target)
+
 /// Empties source.var_name: every target unlinked (partners too).
 /proc/rel_clear(datum/source, var_name)
 	var/list/entry = own_table_of(source).entries[var_name]
@@ -259,7 +278,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		return
 	var/list/pentry = own_table_of(target).entries[partner_var]
 	if(!pentry || pentry[OWNE_KIND] != OWNK_REL)
-		OWN_REPORT("[source.type].[var_name]: partner var [target.type].[partner_var] is not declared rel(pair =) / rel(symmetric =)")
+		OWN_REPORT("[source.type].[var_name]: partner var [target.type].[partner_var] is not declared rel_one/rel_many(back =)")
 		return
 	var/theirs = target.vars[partner_var]
 	if(pentry[OWNE_LIST])
@@ -297,6 +316,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	_rel_unindex(target, source, var_name)
 	if(entry?[OWNE_WATCH])
 		_rel_unwatch(target, source)
+	_rel_unlinked(source, target, entry)
 	var/partner_var = entry?[OWNE_PARTNER]
 	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target) || !(partner_var in target.vars))
 		return
@@ -313,8 +333,21 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 		own_field_changed(target, partner_var)
 		_rel_unindex(source, target, partner_var)
 		unlinked = TRUE
-	if(unlinked && own_table_of(target).entries[partner_var]?[OWNE_WATCH])
+	if(!unlinked)
+		return
+	var/list/pentry = own_table_of(target).entries[partner_var]
+	if(pentry?[OWNE_WATCH])
 		_rel_unwatch(source, target)
+	_rel_unlinked(target, source, pentry)
+
+/// A link of holder's view (declared by `entry`) to `other` just went: runs the view's on_unlink
+/// hook (rel_one/rel_many(on_unlink = PROC_REF(x))) as holder.x(other). A holder being destroyed
+/// is not told: its own teardown releases everything.
+/proc/_rel_unlinked(datum/holder, datum/other, list/entry)
+	var/hook = entry?[OWNE_ON_UNLINK]
+	if(!hook || QDELETED(holder))
+		return
+	call(holder, hook)(other)
 
 /// `watcher` has a watched view naming `target`: changed(target) now marks `watcher` too.
 /proc/_rel_watch(datum/target, datum/watcher)
@@ -383,6 +416,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /// Phase 4: `D` is dying. Every view naming it is cleared (sources), then every view it holds
 /// stops being indexed on its targets, and its partners stop naming it.
 /proc/rel_teardown(datum/D)
+	var/list/doomed
 	D.rel_watchers = null // its watchers' views are cleared below with the rest of the index
 	var/list/index = D.om_refs_in
 	if(index)
@@ -396,12 +430,28 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 				if(!(name in S.vars))
 					continue
 				var/value = S.vars[name]
+				var/dropped = FALSE
 				if(value == D)
 					S.vars[name] = null // ALLOW(api, ownership): relation teardown
 					own_field_changed(S, name)
+					dropped = TRUE
 				else if(islist(value))
 					var/list/L = value
-					L -= D
+					if(D in L)
+						L -= D
+						dropped = TRUE
+				if(!dropped)
+					continue
+				var/list/sentry = own_table_of(S).entries[name]
+				if(!sentry)
+					continue
+				_rel_unlinked(S, D, sentry)
+				if(sentry[OWNE_OTHER_DELETED] == DELETE_ME && !QDELETED(S))
+					LAZYOR(doomed, S)
+	// other_deleted = DELETE_ME: the holders go with D, once every view naming D is cleared.
+	for(var/datum/S as anything in doomed)
+		if(!QDELETED(S))
+			qdel(S) // ALLOW(lifecycle): rel_one/rel_many(other_deleted = DELETE_ME)
 	var/datum/own_table/T = own_table_of(D)
 	for(var/var_name in T.ref_vars)
 		var/value = D.vars[var_name]

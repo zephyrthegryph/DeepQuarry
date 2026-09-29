@@ -835,7 +835,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-/obj/machinery/chemical_synthesizer/declare_ownership(decl)
-	..()
-	own(decl, nameof(catalyst), policy = OWN_CONTAINED)
+/obj/machinery/chemical_synthesizer/ownership()
+	. = ..()
+	. += owns(nameof(catalyst), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

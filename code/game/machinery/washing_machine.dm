@@ -35,9 +35,9 @@
 	default_apply_parts()
 	make_climbable()
 
-/obj/machinery/washing_machine/declare_ownership(decl)
-	..()
-	own(decl, nameof(washing), policy = OWN_SPILL)
+/obj/machinery/washing_machine/ownership()
+	. = ..()
+	. += owns(nameof(washing), policy = OWN_SPILL)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(

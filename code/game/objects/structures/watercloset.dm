@@ -1367,9 +1367,9 @@ DECLARE_EMAG_REPEATABLE(/obj/structure/biowaste_tank, PROC_REF(on_emag), null)
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
 
-/obj/structure/toilet/declare_ownership(decl)
-	..()
-	own(decl, nameof(teleplumb_crystal), policy = OWN_CONTAINED)
+/obj/structure/toilet/ownership()
+	. = ..()
+	. += owns(nameof(teleplumb_crystal), policy = OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 

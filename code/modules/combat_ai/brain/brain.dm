@@ -647,7 +647,7 @@
 /datum/ai_brain/proc/home_turf() as /turf
 	return home_turf
 
-/datum/ai_brain/declare_ownership(decl)
-	..()
-	rel(decl, nameof(behavior_sources), list = TRUE)
-	rel(decl, nameof(personal_mobs), list = TRUE)
+/datum/ai_brain/relations()
+	. = ..()
+	. += rel_many(nameof(behavior_sources))
+	. += rel_many(nameof(personal_mobs))

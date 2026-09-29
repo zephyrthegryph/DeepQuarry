@@ -71,9 +71,9 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).
-/obj/item/dogborg/sleeper/declare_ownership(decl)
-	..()
-	rel(decl, nameof(items_preserved), list = TRUE)
+/obj/item/dogborg/sleeper/relations()
+	. = ..()
+	. += rel_many(nameof(items_preserved))
 
 // the patient is let out.
 /obj/item/dogborg/sleeper/on_destroy(force)

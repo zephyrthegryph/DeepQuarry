@@ -443,6 +443,6 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	volume_chan = VOLUME_CHANNEL_AMBIENCE
 
 
-/obj/vehicle/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/vehicle/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

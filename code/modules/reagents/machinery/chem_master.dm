@@ -524,7 +524,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_create_condi_bottle)
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
 
-/obj/machinery/chem_master/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
-	own(decl, nameof(loaded_pill_bottle), policy = OWN_CONTAINED)
+/obj/machinery/chem_master/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
+	. += owns(nameof(loaded_pill_bottle), policy = OWN_CONTAINED)

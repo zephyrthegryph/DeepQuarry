@@ -400,10 +400,10 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_start_sim)
 /obj/machinery/bomb_tester/step_start_condition()
 	return simulating
 
-/obj/machinery/bomb_tester/declare_ownership(decl)
-	..()
-	own(decl, nameof(tank1), policy = OWN_CONTAINED)
-	own(decl, nameof(tank2), policy = OWN_CONTAINED)
+/obj/machinery/bomb_tester/ownership()
+	. = ..()
+	. += owns(nameof(tank1), policy = OWN_CONTAINED)
+	. += owns(nameof(tank2), policy = OWN_CONTAINED)
 
 /// test canister (a relation view: it reads null once the target is deleted).
 /obj/machinery/bomb_tester/proc/test_canister() as /obj/machinery/portable_atmospherics/canister

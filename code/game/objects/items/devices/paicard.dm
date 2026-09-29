@@ -932,7 +932,7 @@ DECLARE_LOOT(/obj/random/paicard, LOOT_TABLE(/obj/item/paicard, /obj/item/paicar
 	if(pai?.digestable)
 		return ..()
 
-/obj/machinery/declare_ownership(decl)
-	..()
-	own(decl, nameof(paicard), policy = OWN_CONTAINED)
+/obj/machinery/ownership()
+	. = ..()
+	. += owns(nameof(paicard), policy = OWN_CONTAINED)
 

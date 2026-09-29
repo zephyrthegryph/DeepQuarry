@@ -165,9 +165,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
-/mob/living/simple_mob/vore/overmap/stardog/declare_ownership(decl)
-	..()
-	rel(decl, nameof(control_node), pair = nameof(/obj/structure/control_pod::host))
+/mob/living/simple_mob/vore/overmap/stardog/relations()
+	. = ..()
+	. += rel_one(nameof(control_node), back = nameof(/obj/structure/control_pod::host))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -837,9 +837,9 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 		if(!dog.control_node)
 			rel_set(src, nameof(host), dog)
 
-/obj/structure/control_pod/declare_ownership(decl)
-	..()
-	rel(decl, nameof(host), pair = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
+/obj/structure/control_pod/relations()
+	. = ..()
+	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
 DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 

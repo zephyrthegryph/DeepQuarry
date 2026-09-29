@@ -20,9 +20,9 @@
 	var/underslung = FALSE
 
 // Loaded grenades sit in the launcher's contents; the chambered one is a view (chambered).
-/obj/item/gun/launcher/grenade/declare_ownership(decl)
-	..()
-	own(decl, nameof(grenades), policy = OWN_CONTAINED)
+/obj/item/gun/launcher/grenade/ownership()
+	. = ..()
+	. += owns(nameof(grenades), policy = OWN_CONTAINED)
 
 //revolves the magazine, allowing players to choose between multiple grenade types
 /obj/item/gun/launcher/grenade/proc/pump(mob/user)

@@ -245,6 +245,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // AI
 
 // The worn headset sits in the parrot's contents.
-/mob/living/simple_mob/animal/passive/bird/parrot/declare_ownership(decl)
-	..()
-	own(decl, nameof(my_headset), policy = OWN_CONTAINED)
+/mob/living/simple_mob/animal/passive/bird/parrot/ownership()
+	. = ..()
+	. += owns(nameof(my_headset), policy = OWN_CONTAINED)

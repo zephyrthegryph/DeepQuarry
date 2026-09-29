@@ -772,6 +772,6 @@ VV_TOPIC_ACTION(/obj/structure/sign/painting, "removepainting", PROC_REF(vv_topi
 	return TRUE
 
 // The easel's painting sits on its turf (one-sided REL view).
-/obj/structure/sign/painting/declare_ownership(decl)
-	..()
-	own(decl, nameof(current_canvas), policy = OWN_CONTAINED)
+/obj/structure/sign/painting/ownership()
+	. = ..()
+	. += owns(nameof(current_canvas), policy = OWN_CONTAINED)

@@ -362,10 +362,10 @@
 
 // A route names both endpoints (one-sided views); each endpoint lists the route (a list view).
 // Not pairs: one routes list would need two partner vars (start and end).
-/datum/shuttle_route/declare_ownership(decl)
-	..()
-	rel(decl, nameof(start))
-	rel(decl, nameof(end))
-/datum/shuttle_destination/declare_ownership(decl)
-	..()
-	rel(decl, nameof(routes), list = TRUE)
+/datum/shuttle_route/relations()
+	. = ..()
+	. += rel_one(nameof(start))
+	. += rel_one(nameof(end))
+/datum/shuttle_destination/relations()
+	. = ..()
+	. += rel_many(nameof(routes))

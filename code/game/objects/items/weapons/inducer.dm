@@ -294,9 +294,9 @@ DECLARE_APPEARANCE(/obj/item/inducer, "appearance_compartment", list( \
 /obj/vehicle/get_cell()
 	return cell
 
-/obj/item/inducer/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/item/inducer/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

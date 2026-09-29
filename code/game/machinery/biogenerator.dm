@@ -325,6 +325,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
 
-/obj/machinery/biogenerator/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/biogenerator/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

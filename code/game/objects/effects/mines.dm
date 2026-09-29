@@ -364,7 +364,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		own_transfer(src, nameof(src.trap), R, "trap") // CONTAINED on the mine: the transfer moves it in
+		own_transfer(src, nameof(src.trap), R, nameof(R.trap)) // CONTAINED on the mine: the transfer moves it in
 	if(explode_now)
 		R.explode(user)
 	consume(src)
@@ -505,6 +505,6 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-/obj/item/mine/declare_ownership(decl)
-	..()
-	own(decl, nameof(trap), policy = OWN_CONTAINED)
+/obj/item/mine/ownership()
+	. = ..()
+	. += owns(nameof(trap), policy = OWN_CONTAINED)

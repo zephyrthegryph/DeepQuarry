@@ -577,6 +577,6 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_MIN_URGENCY
 #undef MEDBOT_MAX_URGENCY
 
-/mob/living/bot/medbot/declare_ownership(decl)
-	..()
-	own(decl, nameof(reagent_glass), policy = OWN_CONTAINED)
+/mob/living/bot/medbot/ownership()
+	. = ..()
+	. += owns(nameof(reagent_glass), policy = OWN_CONTAINED)

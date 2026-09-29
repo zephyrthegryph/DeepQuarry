@@ -51,9 +51,9 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 
 // Switches find their conveyors (and each other) by id: keyed relations, linked when either end
 // materializes; a dying conveyor leaves every switch's list by itself.
-/obj/machinery/conveyor/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id))
+/obj/machinery/conveyor/relations()
+	. = ..()
+	. += rel_key(nameof(id))
 
 /obj/machinery/conveyor/Moved(atom/old_loc, direction, forced = FALSE)
 	if(old_loc)
@@ -261,11 +261,11 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/conveyor, MACHINE_PIPELINE, list("oper
 OM_FIELD(/obj/machinery/conveyor_switch, operated, FALSE, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/conveyor_switch, MACHINE_PIPELINE, "operated")
 
-/obj/machinery/conveyor_switch/declare_ownership(decl)
-	..()
-	rel(decl, nameof(conveyors), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/conveyor)
-	rel(decl, nameof(linked_switches), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/conveyor_switch)
-	rel(decl, keyed = nameof(id))
+/obj/machinery/conveyor_switch/relations()
+	. = ..()
+	. += rel_many(nameof(conveyors), keyed = nameof(id), keyed_target = /obj/machinery/conveyor)
+	. += rel_many(nameof(linked_switches), keyed = nameof(id), keyed_target = /obj/machinery/conveyor_switch)
+	. += rel_key(nameof(id))
 
 /obj/machinery/conveyor_switch/Initialize(mapload)
 	. = ..()

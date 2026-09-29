@@ -68,7 +68,7 @@
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending
 	return originMachine
 
-/datum/event/brand_intelligence/declare_ownership(decl)
-	..()
-	rel(decl, nameof(vendingMachines), list = TRUE)
-	rel(decl, nameof(infectedVendingMachines), list = TRUE)
+/datum/event/brand_intelligence/relations()
+	. = ..()
+	. += rel_many(nameof(vendingMachines))
+	. += rel_many(nameof(infectedVendingMachines))

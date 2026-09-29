@@ -134,6 +134,6 @@
 		EXPIRY_STAMP(record, last_notification, CLOCK_WORLD)
 		to_chat(src, span_notice("New notification has been sent."))
 
-/mob/living/carbon/brain/declare_ownership(decl)
-	..()
-	rel(decl, nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob
+/mob/living/carbon/brain/relations()
+	. = ..()
+	. += rel_one(nameof(container)) // back reference to what holds us (an MMI, a soulcatcher); never owned by the brainmob

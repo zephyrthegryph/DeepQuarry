@@ -311,6 +311,6 @@
 	L = L ? L.Copy() : list()
 	L["sorted_laws"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
-/datum/ai_laws/declare_ownership(decl)
-	..()
-	rel(decl, nameof(sorted_laws), list = TRUE)
+/datum/ai_laws/relations()
+	. = ..()
+	. += rel_many(nameof(sorted_laws))

@@ -446,9 +446,9 @@ DECLARE_INTERACTIONS(/obj/item/farmbot_arm_assembly, \
 	act_message(src, null, others = span_warning("%U% buzzes oddly."))
 	emagged = 1
 
-/obj/item/farmbot_arm_assembly/declare_ownership(decl)
-	..()
-	own(decl, nameof(tank), policy = OWN_CONTAINED)
-/mob/living/bot/farmbot/declare_ownership(decl)
-	..()
-	own(decl, nameof(tank), policy = OWN_CONTAINED)
+/obj/item/farmbot_arm_assembly/ownership()
+	. = ..()
+	. += owns(nameof(tank), policy = OWN_CONTAINED)
+/mob/living/bot/farmbot/ownership()
+	. = ..()
+	. += owns(nameof(tank), policy = OWN_CONTAINED)

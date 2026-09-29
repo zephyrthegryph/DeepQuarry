@@ -209,6 +209,6 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 
 /// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
-/datum/uplink/declare_ownership(decl)
-	..()
-	shared(decl, nameof(items_assoc))
+/datum/uplink/ownership()
+	. = ..()
+	. += shares(nameof(items_assoc))

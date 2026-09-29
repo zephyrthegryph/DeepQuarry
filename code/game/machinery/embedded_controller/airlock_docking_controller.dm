@@ -115,12 +115,12 @@ UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/airlock/docking_port, "
 /datum/embedded_program/airlock/docking
 	var/datum/embedded_program/docking/airlock/master_prog
 
-/datum/embedded_program/airlock/docking/declare_ownership(decl)
-	..()
-	rel(decl, nameof(master_prog), pair = nameof(/datum/embedded_program/docking/airlock::airlock_program))
-/datum/embedded_program/docking/airlock/declare_ownership(decl)
-	..()
-	rel(decl, nameof(airlock_program), pair = nameof(/datum/embedded_program/airlock/docking::master_prog))
+/datum/embedded_program/airlock/docking/relations()
+	. = ..()
+	. += rel_one(nameof(master_prog), back = nameof(/datum/embedded_program/docking/airlock::airlock_program))
+/datum/embedded_program/docking/airlock/relations()
+	. = ..()
+	. += rel_one(nameof(airlock_program), back = nameof(/datum/embedded_program/airlock/docking::master_prog))
 
 /datum/embedded_program/airlock/docking/receive_user_command(command)
 	if (master_prog.undocked() || master_prog.override_enabled)	//only allow the port to be used as an airlock if nothing is docked here or the override is enabled

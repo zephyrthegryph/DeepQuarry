@@ -424,6 +424,6 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 /datum/song/proc/music_player() as /atom
 	return music_player
 
-/datum/song/declare_ownership(decl)
-	..()
-	rel(decl, nameof(hearing_mobs), list = TRUE)
+/datum/song/relations()
+	. = ..()
+	. += rel_many(nameof(hearing_mobs))

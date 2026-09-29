@@ -128,7 +128,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 	add_fingerprint(user)
 	return TRUE
 
-/obj/item/cane/concealed/declare_ownership(decl)
-	..()
-	own(decl, nameof(concealed_blade), policy = OWN_CONTAINED)
+/obj/item/cane/concealed/ownership()
+	. = ..()
+	. += owns(nameof(concealed_blade), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/cane/concealed, "concealed_blade", /obj/item/material/sword/katana/caneblade)

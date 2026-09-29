@@ -270,6 +270,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 		target.resize(size/100)
 	activate_pin(2)
 
-/obj/item/integrated_circuit/manipulation/weapon_firing/declare_ownership(decl)
-	..()
-	own(decl, nameof(installed_gun), policy = OWN_CONTAINED)
+/obj/item/integrated_circuit/manipulation/weapon_firing/ownership()
+	. = ..()
+	. += owns(nameof(installed_gun), policy = OWN_CONTAINED)

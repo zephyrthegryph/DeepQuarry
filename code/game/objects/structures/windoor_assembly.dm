@@ -314,6 +314,6 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	update_icon()
 	return
 
-/obj/structure/windoor_assembly/declare_ownership(decl)
-	..()
-	own(decl, nameof(electronics), policy = OWN_CONTAINED)
+/obj/structure/windoor_assembly/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)

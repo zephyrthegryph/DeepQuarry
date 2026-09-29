@@ -399,6 +399,6 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE
 
-/obj/machinery/computer/pandemic/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/computer/pandemic/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

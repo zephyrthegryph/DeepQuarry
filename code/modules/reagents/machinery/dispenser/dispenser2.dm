@@ -329,7 +329,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove_recipe)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/chemical_dispenser/declare_ownership(decl)
-	..()
-	own(decl, nameof(container), policy = OWN_CONTAINED)
+/obj/machinery/chemical_dispenser/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

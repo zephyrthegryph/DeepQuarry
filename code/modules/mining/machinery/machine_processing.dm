@@ -31,9 +31,9 @@
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
 		qdel(src)
 
-/obj/machinery/mineral/processing_unit_console/declare_ownership(decl)
-	..()
-	own(decl, nameof(inserted_id), policy = OWN_SPILL)
+/obj/machinery/mineral/processing_unit_console/ownership()
+	. = ..()
+	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
 /obj/machinery/mineral/processing_unit_console/declare_interactions(list/into)
 	into += list(

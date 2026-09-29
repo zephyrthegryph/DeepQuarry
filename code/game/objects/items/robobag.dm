@@ -93,7 +93,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 			if(corptag)
 				var/old_tag = corptag
 				corptag.forceMove(get_turf(src))
-				own_take(src, "corptag")
+				own_take(src, nameof(src.corptag))
 				if(!user.unEquip(W))
 					return FALSE
 				W.moveToNullspace()

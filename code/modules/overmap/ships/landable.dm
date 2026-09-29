@@ -120,9 +120,9 @@
 
 // core_landmark is a one-sided view; visitors lists only the landmarks with a shuttle stationed
 // (not a pair: a visitor landmark exists long before anything docks there).
-/obj/effect/shuttle_landmark/ship/declare_ownership(decl)
-	..()
-	rel(decl, nameof(visitors), list = TRUE)
+/obj/effect/shuttle_landmark/ship/relations()
+	. = ..()
+	. += rel_many(nameof(visitors))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/is_valid(datum/shuttle/shuttle)
 	. = ..()

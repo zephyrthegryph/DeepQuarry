@@ -445,7 +445,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 
 // Shared techwebs, scipaper partners and the two error placeholders live for the round.
 
-/datum/world_service/research/declare_ownership(decl)
-	..()
-	proto(decl, nameof(error_design))
-	proto(decl, nameof(error_node))
+/datum/world_service/research/ownership()
+	. = ..()
+	. += proto(nameof(error_design))
+	. += proto(nameof(error_node))

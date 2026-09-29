@@ -62,12 +62,12 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-/obj/structure/lift/button/declare_ownership(decl)
-	..()
-	rel(decl, nameof(floor), pair = nameof(/datum/turbolift_floor::ext_panel))
-/datum/turbolift_floor/declare_ownership(decl)
-	..()
-	rel(decl, nameof(ext_panel), pair = nameof(/obj/structure/lift/button::floor))
+/obj/structure/lift/button/relations()
+	. = ..()
+	. += rel_one(nameof(floor), back = nameof(/datum/turbolift_floor::ext_panel))
+/datum/turbolift_floor/relations()
+	. = ..()
+	. += rel_one(nameof(ext_panel), back = nameof(/obj/structure/lift/button::floor))
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE

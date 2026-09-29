@@ -303,6 +303,6 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 	return data
 
-/obj/item/analyzer/plant_analyzer/declare_ownership(decl)
-	..()
-	proto(decl, nameof(last_seed))
+/obj/item/analyzer/plant_analyzer/ownership()
+	. = ..()
+	. += proto(nameof(last_seed))

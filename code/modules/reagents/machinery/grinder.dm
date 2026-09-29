@@ -237,6 +237,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 	update_icon()
 	return TRUE
 
-/obj/machinery/reagentgrinder/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/reagentgrinder/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

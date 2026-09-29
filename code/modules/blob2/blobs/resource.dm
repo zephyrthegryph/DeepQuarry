@@ -10,9 +10,9 @@
 	var/resource_cooldown = 4 SECONDS
 
 // Pairs with the overmind's resource_blobs (declared in base_blob.dm): setting overmind lists us.
-/obj/structure/blob/resource/declare_ownership(decl)
-	..()
-	rel(decl, nameof(overmind), pair = nameof(/mob/observer/blob::resource_blobs))
+/obj/structure/blob/resource/relations()
+	. = ..()
+	. += rel_one(nameof(overmind), back = nameof(/mob/observer/blob::resource_blobs))
 
 /obj/structure/blob/resource/pulsed()
 	. = ..()

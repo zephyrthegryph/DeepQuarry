@@ -319,6 +319,6 @@ DECLARE_INTERACTIONS(/obj/item/crossbowframe, INTERACT_ITEM(null, PROC_REF(inter
 /obj/item/gun/launcher/crossbow/proc/cell() as /obj/item/cell
 	return cell
 
-/obj/item/gun/launcher/crossbow/declare_ownership(decl)
-	..()
-	own(decl, nameof(bolt), policy = OWN_CONTAINED)
+/obj/item/gun/launcher/crossbow/ownership()
+	. = ..()
+	. += owns(nameof(bolt), policy = OWN_CONTAINED)

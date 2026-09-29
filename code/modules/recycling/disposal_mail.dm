@@ -278,9 +278,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/smallDelivery, TYPE_PROC_REF(/atom, appearance
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-/obj/item/smallDelivery/declare_ownership(decl)
-	..()
-	own(decl, nameof(wrapped), policy = OWN_CONTAINED)
+/obj/item/smallDelivery/ownership()
+	. = ..()
+	. += owns(nameof(wrapped), policy = OWN_CONTAINED)
 
 /// the wrapped this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/bigDelivery/proc/wrapped() as /obj

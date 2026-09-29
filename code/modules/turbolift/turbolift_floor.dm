@@ -12,9 +12,9 @@
 	/// The floor's call panel (REL_PAIR with its `floor`).
 	var/tmp/obj/structure/lift/button/ext_panel
 
-/datum/turbolift_floor/declare_ownership(decl)
-	..()
-	rel(decl, nameof(doors), list = TRUE)
+/datum/turbolift_floor/relations()
+	. = ..()
+	. += rel_many(nameof(doors))
 
 /datum/turbolift_floor/proc/set_area_ref(ref)
 	var/area/turbolift/A = locate(ref)

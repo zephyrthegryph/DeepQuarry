@@ -245,8 +245,8 @@ GLOBAL_DATUM_INIT(pai_service, /datum/world_service/pai, new)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	asked -= ghost_ref
 
-/datum/world_service/pai/declare_ownership(decl)
-	..()
-	rel(decl, nameof(pai_ghosts), list = TRUE)
+/datum/world_service/pai/relations()
+	. = ..()
+	. += rel_many(nameof(pai_ghosts))
 
 #undef PAI_DELAY_TIME

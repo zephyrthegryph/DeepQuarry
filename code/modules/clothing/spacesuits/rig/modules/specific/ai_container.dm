@@ -207,9 +207,9 @@
 	return
 
 
-/obj/item/rig_module/ai_container/declare_ownership(decl)
-	..()
-	own(decl, nameof(ai_card), policy = OWN_CONTAINED)
+/obj/item/rig_module/ai_container/ownership()
+	. = ..()
+	. += owns(nameof(ai_card), policy = OWN_CONTAINED)
 
 /// Direct reference to the actual mob held in the suit. (a relation view: null once it is deleted).
 /obj/item/rig_module/ai_container/proc/integrated_ai() as /mob

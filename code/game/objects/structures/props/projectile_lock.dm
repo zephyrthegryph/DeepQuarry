@@ -12,9 +12,9 @@
 	var/list/linked_objects
 
 // many-to-many with puzzle doors: leaves each door's lock list.
-/obj/structure/prop/lock/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_objects), list = TRUE, pair = nameof(/obj/machinery/door/blast/puzzle::locks))
+/obj/structure/prop/lock/relations()
+	. = ..()
+	. += rel_many(nameof(linked_objects), back = nameof(/obj/machinery/door/blast/puzzle::locks))
 
 /obj/structure/prop/lock/proc/toggle_lock()
 	enabled = !enabled

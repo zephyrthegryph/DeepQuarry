@@ -941,9 +941,9 @@ DAMAGE_REACTION(/obj/machinery/computer/skills, DAMAGE_EMP, PROC_REF(skills_emp)
 
 #undef FIELD
 
-/obj/machinery/computer/skills/declare_ownership(decl)
-	..()
-	own(decl, nameof(scan), policy = OWN_CONTAINED)
+/obj/machinery/computer/skills/ownership()
+	. = ..()
+	. += owns(nameof(scan), policy = OWN_CONTAINED)
 
 /// The selected record (a relation view).
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record

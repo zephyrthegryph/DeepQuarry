@@ -369,9 +369,9 @@ APPEARANCE_NONE(/obj/vehicle/train/rover)
 	else
 		set_anchored(TRUE)
 
-/obj/vehicle/train/rover/engine/declare_ownership(decl)
-	..()
-	own(decl, nameof(key), policy = OWN_CONTAINED)
+/obj/vehicle/train/rover/engine/ownership()
+	. = ..()
+	. += owns(nameof(key), policy = OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_running(mob/actor, atom/target, obj/item/held)

@@ -560,6 +560,6 @@ DECLARE_INTERACTIONS(/obj/structure/hyperball_goal, INTERACT_ITEM(null, PROC_REF
 /obj/structure/redgate/proc/target() as /obj/structure/redgate
 	return target
 
-/obj/structure/redgate/declare_ownership(decl)
-	..()
-	rel(decl, nameof(target), pair = nameof(/obj/structure/redgate::target))
+/obj/structure/redgate/relations()
+	. = ..()
+	. += rel_one(nameof(target), back = nameof(/obj/structure/redgate::target))

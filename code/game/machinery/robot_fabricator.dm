@@ -138,6 +138,6 @@ UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
 	operating = FALSE
 	cut_overlay("fab-active")
 
-/obj/machinery/robotic_fabricator/declare_ownership(decl)
-	..()
-	own(decl, nameof(being_built), policy = OWN_CONTAINED)
+/obj/machinery/robotic_fabricator/ownership()
+	. = ..()
+	. += owns(nameof(being_built), policy = OWN_CONTAINED)

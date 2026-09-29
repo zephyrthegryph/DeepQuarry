@@ -308,9 +308,9 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
-/obj/effect/spider/cocoon/declare_ownership(decl)
-	..()
-	own(decl, nameof(contents), policy = OWN_SPILL)
+/obj/effect/spider/cocoon/ownership()
+	. = ..()
+	. += owns(nameof(contents), policy = OWN_SPILL)
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

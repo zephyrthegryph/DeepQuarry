@@ -623,9 +623,12 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 
 // Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
 // back relation. Either end dying drops the link.
-/obj/machinery/computer/transhuman/resleeving/declare_ownership(decl)
-	..()
-	rel(decl, nameof(pods), list = TRUE)
-	rel(decl, nameof(spods), list = TRUE)
-	rel(decl, nameof(sleevers), list = TRUE)
-	own(decl, nameof(disk), policy = OWN_SPILL)
+/obj/machinery/computer/transhuman/resleeving/ownership()
+	. = ..()
+	. += owns(nameof(disk), policy = OWN_SPILL)
+
+/obj/machinery/computer/transhuman/resleeving/relations()
+	. = ..()
+	. += rel_many(nameof(pods))
+	. += rel_many(nameof(spods))
+	. += rel_many(nameof(sleevers))

@@ -424,6 +424,6 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 // The stock the trader spawned into itself at Initialize().
 
 /// Stock items sit in the trader's contents; one leaving (sold) drops out of the list.
-/obj/trader/declare_ownership(decl)
-	..()
-	own(decl, nameof(products), policy = OWN_CONTAINED)
+/obj/trader/ownership()
+	. = ..()
+	. += owns(nameof(products), policy = OWN_CONTAINED)

@@ -27,7 +27,7 @@
 		if(!own_set(src, slot, H, user = user))
 			return
 		to_chat(user, "You install \the [H] into \the [src]")
-		rel_set(H, "holder2", src)
+		rel_set(H, nameof(H.holder2), src)
 
 // Installs hardware during preset construction (no user interaction).
 // Used by install_default_hardware() overrides and the laptop vendor.

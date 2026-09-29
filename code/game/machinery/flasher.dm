@@ -153,12 +153,12 @@ DAMAGE_REACTION(/obj/machinery/flasher, DAMAGE_EMP, PROC_REF(flasher_emp))
 
 /// Flashers sharing our id (keyed: linked when either end materializes).
 /obj/machinery/button/flasher/var/list/obj/machinery/flasher/controlled_flashers
-/obj/machinery/button/flasher/declare_ownership(decl)
-	..()
-	rel(decl, nameof(controlled_flashers), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/flasher)
-/obj/machinery/flasher/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id))
+/obj/machinery/button/flasher/relations()
+	. = ..()
+	. += rel_many(nameof(controlled_flashers), keyed = nameof(id), keyed_target = /obj/machinery/flasher)
+/obj/machinery/flasher/relations()
+	. = ..()
+	. += rel_key(nameof(id))
 
 /obj/machinery/button/flasher/proc/interaction_trigger(mob/user, obj/item/held, datum/interaction/interaction)
 	use_power(5)

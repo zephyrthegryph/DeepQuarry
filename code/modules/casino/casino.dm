@@ -294,9 +294,9 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	if(trapped && trapped.held_mob)
 		to_chat(trapped.held_mob, span_critical("THE WHOLE WORLD IS SENT WHIRLING AS THE ROULETTE SPINS!!!"))
 
-/obj/item/roulette_ball/hollow/declare_ownership(decl)
-	..()
-	own(decl, nameof(trapped), policy = OWN_SPILL)
+/obj/item/roulette_ball/hollow/ownership()
+	. = ..()
+	. += owns(nameof(trapped), policy = OWN_SPILL)
 
 /obj/item/roulette_ball/cheat
 	cheatball = TRUE
@@ -1027,6 +1027,6 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 	flick("[icon_state]-winning",src)
 	icon_state = "wheel_of_fortune"
 
-/obj/structure/casino_table/roulette_table/declare_ownership(decl)
-	..()
-	own(decl, nameof(ball), policy = OWN_CONTAINED)
+/obj/structure/casino_table/roulette_table/ownership()
+	. = ..()
+	. += owns(nameof(ball), policy = OWN_CONTAINED)

@@ -853,9 +853,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 	..()
 
-/obj/item/gun/declare_ownership(decl)
-	..()
-	own(decl, nameof(attached_lock), policy = OWN_CONTAINED)
+/obj/item/gun/ownership()
+	. = ..()
+	. += owns(nameof(attached_lock), policy = OWN_CONTAINED)
 
 /// the auto_target this refers to (a relation view: null once it is deleted).
 /obj/item/gun/proc/auto_target()

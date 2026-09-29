@@ -319,7 +319,7 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
 // The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).
-/obj/structure/AIcore/declare_ownership(decl)
-	..()
-	own(decl, nameof(circuit), policy = OWN_CONTAINED)
-	own(decl, nameof(brain), policy = OWN_CONTAINED)
+/obj/structure/AIcore/ownership()
+	. = ..()
+	. += owns(nameof(circuit), policy = OWN_CONTAINED)
+	. += owns(nameof(brain), policy = OWN_CONTAINED)

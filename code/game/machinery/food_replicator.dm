@@ -252,6 +252,6 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	set_stat(BROKEN)
 	explosion(src, 0, 0, 2)
 
-/obj/machinery/food_replicator/declare_ownership(decl)
-	..()
-	own(decl, nameof(container), policy = OWN_CONTAINED)
+/obj/machinery/food_replicator/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)

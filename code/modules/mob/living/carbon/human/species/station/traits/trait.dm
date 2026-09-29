@@ -208,6 +208,6 @@
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-/datum/trait/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_gene), pair = nameof(/datum/gene/trait::linked_trait))
+/datum/trait/relations()
+	. = ..()
+	. += rel_one(nameof(linked_gene), back = nameof(/datum/gene/trait::linked_trait))

@@ -242,11 +242,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/transfer_valve, TYPE_PROC_REF(/atom, appearanc
 /obj/item/transfer_valve/proc/c_state()
 	return
 
-/obj/item/transfer_valve/declare_ownership(decl)
-	..()
-	own(decl, nameof(tank_one), policy = OWN_CONTAINED)
-	own(decl, nameof(tank_two), policy = OWN_CONTAINED)
-	own(decl, nameof(attached_device), policy = OWN_CONTAINED)
+/obj/item/transfer_valve/ownership()
+	. = ..()
+	. += owns(nameof(tank_one), policy = OWN_CONTAINED)
+	. += owns(nameof(tank_two), policy = OWN_CONTAINED)
+	. += owns(nameof(attached_device), policy = OWN_CONTAINED)
 
 /// Relation view: attacher (reads null once it is gone).
 /obj/item/transfer_valve/proc/attacher() as /mob

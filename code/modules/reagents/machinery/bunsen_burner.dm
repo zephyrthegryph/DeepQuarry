@@ -201,6 +201,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/bunsen_burner, TYPE_PROC_REF(/atom, appea
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
-/obj/machinery/bunsen_burner/declare_ownership(decl)
-	..()
-	own(decl, nameof(held_container), policy = OWN_CONTAINED)
+/obj/machinery/bunsen_burner/ownership()
+	. = ..()
+	. += owns(nameof(held_container), policy = OWN_CONTAINED)

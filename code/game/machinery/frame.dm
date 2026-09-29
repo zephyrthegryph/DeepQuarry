@@ -474,9 +474,9 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	to_chat(user, desc)
 	return TRUE
 
-/obj/structure/frame/declare_ownership(decl)
-	..()
-	own(decl, nameof(circuit), policy = OWN_CONTAINED)
+/obj/structure/frame/ownership()
+	. = ..()
+	. += owns(nameof(circuit), policy = OWN_CONTAINED)
 	// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
-	own(decl, nameof(frame_type), policy = OWN_DELETE)
+	. += owns(nameof(frame_type), policy = OWN_DELETE)
 

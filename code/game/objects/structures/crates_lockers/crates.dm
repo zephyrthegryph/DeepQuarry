@@ -811,6 +811,6 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 	closet_appearance = /datum/decl/closet_appearance/crate/fennec
 	points_per_crate = 0
 
-/obj/structure/closet/crate/declare_ownership(decl)
-	..()
-	own(decl, nameof(shipping_ledger), policy = OWN_CONTAINED)
+/obj/structure/closet/crate/ownership()
+	. = ..()
+	. += owns(nameof(shipping_ledger), policy = OWN_CONTAINED)

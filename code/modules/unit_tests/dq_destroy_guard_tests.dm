@@ -11,10 +11,10 @@
 	var/datum/species/shared_species
 	var/fired = 0
 
-/datum/guard_test_holder/declare_ownership(decl)
-	..()
-	proto(decl, nameof(species))
-	shared(decl, nameof(shared_species))
+/datum/guard_test_holder/ownership()
+	. = ..()
+	. += proto(nameof(species))
+	. += shares(nameof(shared_species))
 OWN_TIMER(/datum/guard_test_holder, guard_slot)
 
 /datum/guard_test_holder/proc/on_tick()

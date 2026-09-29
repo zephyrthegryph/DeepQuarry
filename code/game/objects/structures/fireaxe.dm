@@ -207,6 +207,6 @@ APPEARANCE_TEMPLATE(/obj/structure/fireaxecabinet, "fireaxe{appearance_hasaxe}{o
 /obj/structure/fireaxecabinet/empty
 	fireaxe_type = null
 
-/obj/structure/fireaxecabinet/declare_ownership(decl)
-	..()
-	own(decl, nameof(fireaxe), policy = OWN_CONTAINED)
+/obj/structure/fireaxecabinet/ownership()
+	. = ..()
+	. += owns(nameof(fireaxe), policy = OWN_CONTAINED)

@@ -358,6 +358,6 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/effect/plant/declare_ownership(decl)
-	..()
-	proto(decl, nameof(seed_static))
+/obj/effect/plant/ownership()
+	. = ..()
+	. += proto(nameof(seed_static))

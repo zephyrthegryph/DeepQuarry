@@ -175,10 +175,10 @@
 
 	rel_remove(src, nameof(watching), no_longer_watching)
 
-/datum/cinematic/declare_ownership(decl)
-	..()
-	rel(decl, nameof(watching), list = TRUE)
-	rel(decl, nameof(locked), list = TRUE)
+/datum/cinematic/relations()
+	. = ..()
+	. += rel_many(nameof(watching))
+	. += rel_many(nameof(locked))
 
 #undef CINEMATIC_SOURCE
 

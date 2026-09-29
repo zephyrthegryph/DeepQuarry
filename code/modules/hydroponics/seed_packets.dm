@@ -384,6 +384,6 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 /obj/item/seeds/proc/seed() as /datum/seed
 	return seed_static
 
-/obj/item/seeds/declare_ownership(decl)
-	..()
-	proto(decl, nameof(seed_static))
+/obj/item/seeds/ownership()
+	. = ..()
+	. += proto(nameof(seed_static))

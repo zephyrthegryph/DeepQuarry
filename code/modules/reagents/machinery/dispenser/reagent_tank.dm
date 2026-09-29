@@ -568,6 +568,6 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 
 DECLARE_REAGENTS(/obj/structure/reagent_dispensers/space_cleaner, null, list(REAGENT_ID_CLEANER = 1000))
 
-/obj/structure/reagent_dispensers/fueltank/declare_ownership(decl)
-	..()
-	own(decl, nameof(rig), policy = OWN_CONTAINED)
+/obj/structure/reagent_dispensers/fueltank/ownership()
+	. = ..()
+	. += owns(nameof(rig), policy = OWN_CONTAINED)

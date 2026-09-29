@@ -367,6 +367,6 @@
 		return PROJECTILE_CONTINUE
 	return ..()
 
-/obj/structure/door_assembly/declare_ownership(decl)
-	..()
-	own(decl, nameof(electronics), policy = OWN_CONTAINED)
+/obj/structure/door_assembly/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)

@@ -45,10 +45,10 @@ Nothing else in the console has ID requirements.
 	if(stored_research)
 		rel_add(stored_research, nameof(stored_research.consoles_accessing), src)
 
-/obj/machinery/computer/rdconsole_tg/declare_ownership(decl)
-	..()
-	own(decl, nameof(t_disk), policy = OWN_SPILL)
-	own(decl, nameof(d_disk), policy = OWN_SPILL)
+/obj/machinery/computer/rdconsole_tg/ownership()
+	. = ..()
+	. += owns(nameof(t_disk), policy = OWN_SPILL)
+	. += owns(nameof(d_disk), policy = OWN_SPILL)
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(

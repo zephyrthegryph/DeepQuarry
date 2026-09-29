@@ -300,12 +300,12 @@
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-/mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(control_object)) // the object an admin possesses
-	rel(decl, nameof(spell_list), list = TRUE)
-	rel(decl, nameof(actions), list = TRUE)
-	rel(decl, nameof(exploit_addons), list = TRUE, pair = nameof(/obj/item::exploit_for))
-/obj/item/declare_ownership(decl)
-	..()
-	rel(decl, nameof(exploit_for), pair = nameof(/mob::exploit_addons))
+/mob/relations()
+	. = ..()
+	. += rel_one(nameof(control_object)) // the object an admin possesses
+	. += rel_many(nameof(spell_list))
+	. += rel_many(nameof(actions))
+	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))
+/obj/item/relations()
+	. = ..()
+	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))

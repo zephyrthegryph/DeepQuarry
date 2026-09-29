@@ -395,7 +395,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_remove_mat)
 /obj/machinery/partslathe/step_start_condition()
 	return busy
 
-/obj/machinery/partslathe/declare_ownership(decl)
-	..()
-	own(decl, nameof(copy_board), policy = OWN_CONTAINED)
+/obj/machinery/partslathe/ownership()
+	. = ..()
+	. += owns(nameof(copy_board), policy = OWN_CONTAINED)
 

@@ -755,6 +755,6 @@ UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_switch_idle)
 	hacked = TRUE
 
 // Segments currently down and regenerating (they leave the list when they die).
-/obj/machinery/power/shield_generator/declare_ownership(decl)
-	..()
-	rel(decl, nameof(damaged_segments), list = TRUE)
+/obj/machinery/power/shield_generator/relations()
+	. = ..()
+	. += rel_many(nameof(damaged_segments))

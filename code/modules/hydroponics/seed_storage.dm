@@ -7,10 +7,10 @@
 	var/ID
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
-/datum/seed_pile/declare_ownership(decl)
-	..()
-	own(decl, nameof(seeds), policy = OWN_SPILL)
-	proto(decl, nameof(seed_type_static))
+/datum/seed_pile/ownership()
+	. = ..()
+	. += owns(nameof(seeds), policy = OWN_SPILL)
+	. += proto(nameof(seed_type_static))
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name

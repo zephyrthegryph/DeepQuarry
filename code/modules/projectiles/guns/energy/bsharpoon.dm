@@ -239,6 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/bluespace_harpoon, TYPE_PROC_REF(/atom, appear
 				icon_state = "harpoon-2"
 		transforming = 0
 
-/obj/item/bluespace_harpoon/declare_ownership(decl)
-	..()
-	own(decl, nameof(scanmod), policy = OWN_CONTAINED)
+/obj/item/bluespace_harpoon/ownership()
+	. = ..()
+	. += owns(nameof(scanmod), policy = OWN_CONTAINED)

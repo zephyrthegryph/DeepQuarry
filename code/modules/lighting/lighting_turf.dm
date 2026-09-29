@@ -157,6 +157,6 @@
 
 
 /// A relation list view: an opaque movable deleted on the turf leaves it with its teardown.
-/turf/declare_ownership(decl)
-	..()
-	rel(decl, nameof(opacity_sources), list = TRUE)
+/turf/relations()
+	. = ..()
+	. += rel_many(nameof(opacity_sources))

@@ -93,9 +93,9 @@
 	var/datum/om/prompt/om_prompt
 	var/menu_id
 
-/datum/radial_menu/om/declare_ownership(decl)
-	..()
-	rel(decl, nameof(om_prompt), pair = nameof(/datum/om/prompt::ui))
+/datum/radial_menu/om/relations()
+	. = ..()
+	. += rel_one(nameof(om_prompt), back = nameof(/datum/om/prompt::ui))
 
 /datum/radial_menu/om/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)

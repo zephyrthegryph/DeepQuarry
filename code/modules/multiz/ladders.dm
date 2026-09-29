@@ -31,10 +31,10 @@
 				break
 	update_icon()
 
-/obj/structure/ladder/declare_ownership(decl)
-	..()
-	rel(decl, nameof(target_down), pair = nameof(/obj/structure/ladder::target_up))
-	rel(decl, nameof(target_up), pair = nameof(/obj/structure/ladder::target_down))
+/obj/structure/ladder/relations()
+	. = ..()
+	. += rel_one(nameof(target_down), back = nameof(/obj/structure/ladder::target_up))
+	. += rel_one(nameof(target_up), back = nameof(/obj/structure/ladder::target_down))
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

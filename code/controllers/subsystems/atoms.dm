@@ -267,9 +267,9 @@ SUBSYSTEM_DEF(atoms)
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
-/datum/controller/subsystem/atoms/declare_ownership(decl)
-	..()
-	rel(decl, nameof(queued_deletions), list = TRUE)
+/datum/controller/subsystem/atoms/relations()
+	. = ..()
+	. += rel_many(nameof(queued_deletions))
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
 /datum/controller/subsystem/atoms/var/list/atom/queued_deletions

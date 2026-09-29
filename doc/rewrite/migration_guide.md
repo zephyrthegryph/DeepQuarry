@@ -232,7 +232,7 @@ The decision table. **Read it before writing anything with a timer.**
 |---|---|---|
 | A owns B (B moves and dies with A) | `OWN(type, var, policy)` and `own_set(src, nameof(var), B)`, which takes B from its hand, slot or container, moves it in and adopts it. Replacing disposes of the old value by policy | [built] |
 | Dispose of what a var owns now | `own_clear(src, nameof(var))` | [built] |
-| A points at B (cleaned up on both ends) | today `REL(type, var)` + `rel_set(src, nameof(var), B)` (never a string name). Planned: `relations()` with `rel_one()`/`rel_many()` and `rel_link()`/`rel_unlink()` (not `link()`, which is a BYOND built-in) | REL [built]; `relations()` [planned] (plan §2.9) |
+| A points at B (cleaned up on both ends) | `relations()` with `rel_one()`/`rel_many()` (`back =`, `other_deleted =`, `on_unlink =`, `keyed =`, `watch =`), written with `rel_link(src, nameof(var), B)` / `rel_unlink()` (not `link()`, which is a BYOND built-in; never a string name) | `relations()` [built]; typed `/datum/om/relation` conversion [planned] (plan §2.9) |
 | Two-sided pair | write **one** side; the framework writes the other | [built] |
 | Remove and destroy a consumed item | `consume(item, actor)` | [built] |
 | Turn into something else | `replace_with(path, ...)` | [built] |
@@ -290,8 +290,8 @@ Every form that goes away is listed here with its count on `integrate/b17` and t
 | B14 | `om_after*` variants, `om_qdel_after`, `OWN_TIMER` | 1,505 + 109 + 47 + 52 | *(new: `timer_forms`)* | `after` / slot / cadence / `expire` | A9 |
 | B15 | temporary-state vars and fields (`failure_until`, `emp_until`, `jammed`…) | n/a | *(review)* | timed grant | A9 |
 | B16 | direct `qdel()` | ~3,270 | *(new: `direct_qdel` in converted folders)* | lifecycle verbs | A10 |
-| B17 | typed `/datum/om/relation/*`, `om_link`, `REL*` + `rel_*` | ~120 + 35 + 276 + 2,208 | *(new)* | `relations()` [planned] | A10 |
-| B18 | 16 ownership macro spellings | ~635 | *(new)* | `ownership()` [planned] | A10 |
+| B17 | typed `/datum/om/relation/*`, `om_link`, `REL*` + `rel_*` | ~120 + 35 + 276 + 2,208 | *(new)* | `relations()` [built; REL* migrated; om relations planned: `tools/dx/convert_relations.py --dry-run`] | A10 |
+| B18 | 16 ownership macro spellings | ~635 | *(new)* | `ownership()` [built, migrated; lint `sys/dx_ownership_forms`] | A10 |
 | B19 | new base-type vars; `= list()` instance vars | n/a | *(new: `base_vars`)* | capability / lazy list | A14 |
 | B20 | `set category = "..."` literals; old-style admin/debug verbs | 656 + 28 | *(new: `verb_category`)* | `VERB_CAT_*`, `ADMIN_VERB`, `DEBUG_VERB` | A6 |
 | B21 | `check_rights()`, raw `.holder`, `rights & R_` | 82 + 327 + 17 | `check_grep.sh` baseline | `admin_can` / `admin_require` / `TOPIC_RIGHTS` | B21 |
@@ -721,7 +721,7 @@ Any var or field that exists only to hold a temporary condition with behaviour b
 
 About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. Classify each call before converting it, and never convert a `qdel(src)` inside the object's own teardown.
 
-## B17. Relations → `relations()` [planned]
+## B17. Relations → `relations()` [built; typed relations planned]
 
 ```dm
 // BEFORE: throw_of in three storages (thrownthing.dm:10-19, :73; atoms_movable.dm:572)
@@ -739,17 +739,19 @@ About 3,270 direct calls remain: 725 `qdel(src)` and about 2,500 `qdel(local)`. 
 /atom/movable/relations()
 	. = ..()
 	. += rel_one(nameof(throwing), back = nameof(/datum/thrownthing::subject), other_deleted = DELETE_ME, on_unlink = PROC_REF(throw_ended))
-... rel_link(src, "throwing", TT)
+... rel_link(src, nameof(throwing), TT)
 ```
 
-**Until `relations()` lands:**
-- Use `REL` + `rel_set` for plain links, writing **one side only**.
+`relations()` and the REL* migration are built (doc/rewrite/ownership.md §4.1); the typed
+`/datum/om/relation` types are not converted yet (`python tools/dx/convert_relations.py --dry-run`
+lists each with its proposed entry and what blocks it). Meanwhile:
+- Declare links in `relations()` and write them with `rel_link`, **one side only**.
 - Don't add new `/datum/om/relation` types.
 - Never store the same link twice (a relation plus a plain var copy, like the borer's `host =`).
 
-## B18. Ownership declarations → one form [planned]
+## B18. Ownership declarations → one form [built]
 
-Today there are 16 spellings (`OWN` 211, `REL_LIST` 91, `REL_PAIR` 77, `OWN_TIMER` 49, `REL` 48, `DECLARE_SHARED_CACHE` 46, `REL_PAIR_LIST` 34, `PROTO` 27, …). The target is `ownership()` entries (`owns(var, policy)`, `shares(var)`, `proto(var)`) plus `relations()` for links. **Until then,** keep the existing macros and use the plainest one that fits. Don't invent new macro combinations.
+The 16 declaration macros (`OWN` 211, `REL_LIST` 91, `REL_PAIR` 77, `REL` 48, `REL_PAIR_LIST` 34, `PROTO` 27, …) are gone. Declare in `ownership()` (`owns(nameof(var), policy = ...)`, `shares(nameof(var))`, `proto(nameof(var))`) and `relations()` (`rel_one`, `rel_many`, `rel_key`); see doc/rewrite/ownership.md §1.2. `sys/dx_ownership_forms` bans the old macros, the interim `declare_ownership(decl)`, and string var names in accessors. (`OWN_TIMER` and `DECLARE_SHARED_CACHE` are separate and stay.)
 
 ## B19. Base-type vars and per-instance lists
 
@@ -964,7 +966,9 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			energy = max_energy
 			set_recharging(FALSE)
 			recharge_locked = FALSE
-OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)
+/obj/item/laser_pointer/ownership()
+	. = ..()
+	. += owns(nameof(diode), policy = OWN_CONTAINED)
 OM_FIELD(/obj/item/laser_pointer, recharging, 0, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 ```
@@ -981,7 +985,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 	periodic_cadence = CADENCE_SLOW
 	COOLDOWN_DECLARE(point_cooldown)
 
-OWN(/obj/item/laser_pointer, diode, OWN_CONTAINED)         // stays until ownership() lands (B18)
+/obj/item/laser_pointer/ownership()
+	. = ..()
+	. += owns(nameof(diode), policy = OWN_CONTAINED)
 
 /obj/item/laser_pointer/capabilities()
 	. = ..()

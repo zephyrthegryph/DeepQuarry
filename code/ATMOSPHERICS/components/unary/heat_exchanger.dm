@@ -112,6 +112,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
-/obj/machinery/atmospherics/unary/heat_exchanger/declare_ownership(decl)
-	..()
-	rel(decl, nameof(partner), pair = nameof(/obj/machinery/atmospherics/unary/heat_exchanger::partner))
+/obj/machinery/atmospherics/unary/heat_exchanger/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/obj/machinery/atmospherics/unary/heat_exchanger::partner))

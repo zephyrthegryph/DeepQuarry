@@ -47,9 +47,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owne
 
 	default_apply_parts()
 
-/obj/machinery/power/fusion_core/declare_ownership(decl)
-	..()
-	own(decl, nameof(material_sample), policy = OWN_SPILL)
+/obj/machinery/power/fusion_core/ownership()
+	. = ..()
+	. += owns(nameof(material_sample), policy = OWN_SPILL)
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(has_stat(BROKEN))

@@ -93,9 +93,9 @@
 	var/obj/item/reagent_containers/glass/beaker/vial/loaded_vial //Wow, what a name.
 	volume = 0
 
-/obj/item/reagent_containers/hypospray/vial/declare_ownership(decl)
-	..()
-	own(decl, nameof(loaded_vial), policy = OWN_CONTAINED)
+/obj/item/reagent_containers/hypospray/vial/ownership()
+	. = ..()
+	. += owns(nameof(loaded_vial), policy = OWN_CONTAINED)
 // Comes with an empty vial.
 DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial", /obj/item/reagent_containers/glass/beaker/vial)
 

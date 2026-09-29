@@ -555,9 +555,9 @@
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return parent_ui
 
-/datum/tgui/declare_ownership(decl)
-	..()
-	rel(decl, nameof(user), pair = nameof(/mob::tgui_open_uis))
-/mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(tgui_open_uis), list = TRUE, pair = nameof(/datum/tgui::user))
+/datum/tgui/relations()
+	. = ..()
+	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis))
+/mob/relations()
+	. = ..()
+	. += rel_many(nameof(tgui_open_uis), back = nameof(/datum/tgui::user))

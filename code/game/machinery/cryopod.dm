@@ -852,9 +852,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-/obj/machinery/cryopod/declare_ownership(decl)
-	..()
-	own(decl, nameof(announce), policy = OWN_CONTAINED)
+/obj/machinery/cryopod/ownership()
+	. = ..()
+	. += owns(nameof(announce), policy = OWN_CONTAINED)
 
 /// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

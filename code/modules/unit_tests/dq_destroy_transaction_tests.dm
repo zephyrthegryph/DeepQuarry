@@ -94,9 +94,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 /datum/dq_destroy_transaction_pair_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 
-/datum/dq_destroy_transaction_pair_fixture/declare_ownership(decl)
-	..()
-	rel(decl, nameof(partner), pair = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
+/datum/dq_destroy_transaction_pair_fixture/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 // ---- Tests: phase ordering ----
 
@@ -296,9 +296,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/datum/dq_destroy_transaction_reentrant_pair/partner
 	var/qdel_partner_on_signal = FALSE
 
-/datum/dq_destroy_transaction_reentrant_pair/declare_ownership(decl)
-	..()
-	rel(decl, nameof(partner), pair = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
+/datum/dq_destroy_transaction_reentrant_pair/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_reentrant_pair::partner))
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
@@ -329,9 +329,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 	var/reset_after_links = FALSE
 
-/datum/dq_destroy_transaction_scrub_fixture/declare_ownership(decl)
-	..()
-	rel(decl, nameof(partner), pair = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
+/datum/dq_destroy_transaction_scrub_fixture/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/datum/dq_destroy_transaction_pair_fixture::partner))
 
 /// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
 /// cleared it: only phase 8's scrub can null it again.

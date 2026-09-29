@@ -217,8 +217,8 @@
 
 
 
-/obj/machinery/atmospherics/trinary/declare_ownership(decl)
-	..()
-	proto(decl, nameof(air1))
-	proto(decl, nameof(air2))
-	proto(decl, nameof(air3))
+/obj/machinery/atmospherics/trinary/ownership()
+	. = ..()
+	. += proto(nameof(air1))
+	. += proto(nameof(air2))
+	. += proto(nameof(air3))

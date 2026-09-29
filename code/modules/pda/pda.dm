@@ -391,7 +391,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name)
-			var/obj/old_id = own_take(src, "id") // handed back below, not disposed of
+			var/obj/old_id = own_take(src, nameof(src.id)) // handed back below, not disposed of
 			if(!own_set(src, nameof(src.id), I, user = user))
 				own_set(src, nameof(src.id), old_id)
 				return 0
@@ -526,9 +526,9 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 	icon_state = "pda-pilot"		//New sprites, but still no ROM cartridge or anything
 
 // Its ID drops out when it is destroyed, unless flagged (delete_id) to go with it.
-/obj/item/pda/declare_ownership(decl)
-	..()
-	own(decl, nameof(id), policy = OWN_DELETE, if_var = nameof(delete_id), else_policy = OWN_SPILL)
+/obj/item/pda/ownership()
+	. = ..()
+	. += owns(nameof(id), policy = OWN_DELETE, if_var = nameof(delete_id), else_policy = OWN_SPILL)
 
 /// The scanmode this refers to (a relation view: null once that is deleted).
 /obj/item/pda/proc/scanmode() as /datum/data/pda/utility/scanmode

@@ -1,9 +1,9 @@
 /obj/item/modular_computer
 	var/list/paired_uavs //The paired UAVs (a relation list)
 
-/obj/item/modular_computer/declare_ownership(decl)
-	..()
-	rel(decl, nameof(paired_uavs), list = TRUE)
+/obj/item/modular_computer/relations()
+	. = ..()
+	. += rel_many(nameof(paired_uavs))
 
 /datum/computer_file/program/uav
 	filename = "rigger"

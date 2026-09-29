@@ -75,6 +75,6 @@ EXTEND_INTERACTIONS(/obj/structure/bed/chair/e_chair, \
 	INTERACT_VERB("Toggle Electric Chair", PROC_REF(e_chair_toggle_effect)), \
 )
 
-/obj/structure/bed/chair/e_chair/declare_ownership(decl)
-	..()
-	own(decl, nameof(part), policy = OWN_CONTAINED)
+/obj/structure/bed/chair/e_chair/ownership()
+	. = ..()
+	. += owns(nameof(part), policy = OWN_CONTAINED)

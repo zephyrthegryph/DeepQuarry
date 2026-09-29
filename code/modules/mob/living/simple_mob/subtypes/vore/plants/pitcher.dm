@@ -343,6 +343,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTE
 #undef PITCHER_SATED
 #undef PITCHER_HUNGRY
 
-/obj/item/reagent_containers/food/snacks/pitcher_fruit/declare_ownership(decl)
-	..()
-	own(decl, nameof(pit), policy = OWN_CONTAINED)
+/obj/item/reagent_containers/food/snacks/pitcher_fruit/ownership()
+	. = ..()
+	. += owns(nameof(pit), policy = OWN_CONTAINED)

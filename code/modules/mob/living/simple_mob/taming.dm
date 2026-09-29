@@ -5,9 +5,9 @@
 	// Mobs who are 'friends' (a relation list: a friend going away drops out).
 	var/list/tamers
 
-/mob/living/simple_mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(tamers), list = TRUE)
+/mob/living/simple_mob/relations()
+	. = ..()
+	. += rel_many(nameof(tamers))
 
 /mob/living/simple_mob/IIsAlly(mob/living/L)
 	. = ..()

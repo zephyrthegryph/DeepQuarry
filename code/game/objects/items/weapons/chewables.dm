@@ -320,7 +320,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 		var/mob/living/M = H.held_mob
 
 		own_add(src, nameof(src.victims), M, user = user, into = TRUE) // out of the holder
-		rel_clear(H, "held_mob")
+		rel_clear(H, nameof(H.held_mob))
 		consume(H, user)
 
 		to_chat(user, span_notice("You stick [M] to \the [src]."))
@@ -372,6 +372,6 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGEN
 			to_chat(loc, span_notice("There's no more of \the [name] left!"))
 		spitout(0)
 
-/obj/item/clothing/mask/chewable/candy/lolli/declare_ownership(decl)
-	..()
-	own(decl, nameof(victims), policy = OWN_SPILL)
+/obj/item/clothing/mask/chewable/candy/lolli/ownership()
+	. = ..()
+	. += owns(nameof(victims), policy = OWN_SPILL)

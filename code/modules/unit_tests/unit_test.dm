@@ -473,9 +473,9 @@ GLOBAL_VAR(dq_test_select_names)
 /// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
 /// list, never ownership: production code adopts allocated things freely, and whatever is still
 /// alive here when the test is torn down is deleted (deleted entries have left the view).
-/datum/unit_test/declare_ownership(decl)
-	..()
-	rel(decl, nameof(allocated), list = TRUE)
+/datum/unit_test/relations()
+	. = ..()
+	. += rel_many(nameof(allocated))
 
 /datum/unit_test/on_destroy(force)
 	for(var/datum/thing as anything in allocated?.Copy())

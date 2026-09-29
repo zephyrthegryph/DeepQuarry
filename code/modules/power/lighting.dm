@@ -1714,12 +1714,12 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1
 	set_on(1)
 	broken()
 
-/obj/machinery/light/declare_ownership(decl)
-	..()
-	own(decl, nameof(installed_light), policy = OWN_CONTAINED)
-/obj/machinery/light_construct/declare_ownership(decl)
-	..()
-	own(decl, nameof(cell), policy = OWN_CONTAINED)
+/obj/machinery/light/ownership()
+	. = ..()
+	. += owns(nameof(installed_light), policy = OWN_CONTAINED)
+/obj/machinery/light_construct/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
 
 /// the newlight this refers to: a relation view, null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light

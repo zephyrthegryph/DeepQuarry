@@ -31,10 +31,10 @@
 	var/list/air_alarms
 
 // The area's air alarms (members leave when they die) and its elected main alarm.
-/area/declare_ownership(decl)
-	..()
-	rel(decl, nameof(air_alarms), list = TRUE)
-	rel(decl, nameof(main_air_alarm))
+/area/relations()
+	. = ..()
+	. += rel_many(nameof(air_alarms))
+	. += rel_one(nameof(main_air_alarm))
 
 /area/proc/elect_main_air_alarm(exclude_self = FALSE)
 	// loop through all sensors to update the area's sensor list as well

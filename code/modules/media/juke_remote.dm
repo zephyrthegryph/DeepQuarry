@@ -118,9 +118,9 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 	return paired_juke
 
 /// A paired speaker and its jukebox name each other; either one dying unpairs them.
-/obj/item/juke_remote/declare_ownership(decl)
-	..()
-	rel(decl, nameof(paired_juke), pair = nameof(/obj/machinery/media/jukebox::remotes))
-/obj/machinery/media/jukebox/declare_ownership(decl)
-	..()
-	rel(decl, nameof(remotes), list = TRUE, pair = nameof(/obj/item/juke_remote::paired_juke))
+/obj/item/juke_remote/relations()
+	. = ..()
+	. += rel_one(nameof(paired_juke), back = nameof(/obj/machinery/media/jukebox::remotes))
+/obj/machinery/media/jukebox/relations()
+	. = ..()
+	. += rel_many(nameof(remotes), back = nameof(/obj/item/juke_remote::paired_juke))

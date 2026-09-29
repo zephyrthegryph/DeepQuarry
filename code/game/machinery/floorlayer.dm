@@ -148,9 +148,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)
 
-/obj/machinery/floorlayer/declare_ownership(decl)
-	..()
-	own(decl, nameof(T), policy = OWN_CONTAINED)
+/obj/machinery/floorlayer/ownership()
+	. = ..()
+	. += owns(nameof(T), policy = OWN_CONTAINED)
 
 /// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf

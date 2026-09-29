@@ -70,6 +70,6 @@
 		animate(owner, pixel_x = owner.pixel_x - owner.swarm_offset_x, pixel_y = owner.pixel_y - owner.swarm_offset_y, time = 2)
 		owner.is_swarming = FALSE
 
-/atom/movable/declare_ownership(decl)
-	..()
-	rel(decl, nameof(swarm_members), list = TRUE)
+/atom/movable/relations()
+	. = ..()
+	. += rel_many(nameof(swarm_members))

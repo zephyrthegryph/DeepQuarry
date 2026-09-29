@@ -180,9 +180,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 			return FALSE
 	return TRUE
 
-/obj/machinery/pointdefense_control/declare_ownership(decl)
-	..()
-	rel(decl, nameof(targets), list = TRUE)
+/obj/machinery/pointdefense_control/relations()
+	. = ..()
+	. += rel_many(nameof(targets))
 
 /obj/machinery/pointdefense/proc/Shoot(obj/effect/meteor/M)
 	if(!istype(M))

@@ -57,9 +57,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null
 	return TRUE
 
 // The generator this capacitor feeds (two-sided with its capacitors list).
-/obj/machinery/shield_capacitor/declare_ownership(decl)
-	..()
-	rel(decl, nameof(owned_gen), pair = nameof(/obj/machinery/shield_gen::capacitors))
+/obj/machinery/shield_capacitor/relations()
+	. = ..()
+	. += rel_one(nameof(owned_gen), back = nameof(/obj/machinery/shield_gen::capacitors))
 
 /obj/machinery/shield_capacitor/wrench_act(mob/user, obj/item/W)
 	set_anchored(!anchored)

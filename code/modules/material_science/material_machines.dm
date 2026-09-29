@@ -62,10 +62,10 @@ OWN_TIMER(/obj/machinery/material_furnace, firing_timer)
 	var/datum/gas_mixture/chamber_air
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
-/obj/machinery/material_furnace/declare_ownership(decl)
-	..()
-	own(decl, nameof(feedstock), policy = OWN_CONTAINED)
-	own(decl, nameof(carbon_feed), policy = OWN_CONTAINED)
+/obj/machinery/material_furnace/ownership()
+	. = ..()
+	. += owns(nameof(feedstock), policy = OWN_CONTAINED)
+	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)

@@ -28,9 +28,9 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-/obj/machinery/bodyscanner/declare_ownership(decl)
-	..()
-	rel(decl, nameof(console), pair = nameof(/obj/machinery/body_scanconsole::scanner))
+/obj/machinery/bodyscanner/relations()
+	. = ..()
+	. += rel_one(nameof(console), back = nameof(/obj/machinery/body_scanconsole::scanner))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -318,9 +318,9 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 	. = ..()
 	findscanner()
 
-/obj/machinery/body_scanconsole/declare_ownership(decl)
-	..()
-	rel(decl, nameof(scanner), pair = nameof(/obj/machinery/bodyscanner::console))
+/obj/machinery/body_scanconsole/relations()
+	. = ..()
+	. += rel_one(nameof(scanner), back = nameof(/obj/machinery/bodyscanner::console))
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \

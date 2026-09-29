@@ -596,9 +596,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
 
-/obj/item/gun/energy/floragun/declare_ownership(decl)
-	..()
-	own(decl, nameof(emitter), policy = OWN_CONTAINED)
+/obj/item/gun/energy/floragun/ownership()
+	. = ..()
+	. += owns(nameof(emitter), policy = OWN_CONTAINED)
 
 /// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene

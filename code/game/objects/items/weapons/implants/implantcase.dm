@@ -263,6 +263,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/vrlanguage, "imp", /obj/item/implant
 	I.reagents.trans_to_obj(imp, 5)
 	to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))
 
-/obj/item/implantcase/declare_ownership(decl)
-	..()
-	own(decl, nameof(imp), policy = OWN_CONTAINED)
+/obj/item/implantcase/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED)

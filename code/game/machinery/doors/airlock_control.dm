@@ -424,6 +424,6 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 	return radio_connection
 
 // Remote door buttons find airlocks by id_tag (REL_KEYED sources).
-/obj/machinery/door/airlock/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id_tag))
+/obj/machinery/door/airlock/relations()
+	. = ..()
+	. += rel_key(nameof(id_tag))

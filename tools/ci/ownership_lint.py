@@ -28,14 +28,15 @@ contradicts itself or a declaration. It checks:
                   nameof(x.var) / nameof(/type::var), so the compiler checks them.
   removed         the deleted forms: DECLARE_REF, OM_STATIC_TYPE, REFKIND_*, link_set/link_clear,
                   WEAK_LIST_*, weak_list_live, DuplicateObject, and the declaration macros that
-                  declare_ownership() replaced (OWN, OWN_POLICY, OWN_IF, SHARED, PROTO, REL,
+                  ownership()/relations() replaced (OWN, OWN_POLICY, OWN_IF, SHARED, PROTO, REL,
                   REL_LIST, REL_PAIR, REL_PAIR_LIST, REL_SET, REL_KEYED, REL_KEYED_LIST,
                   KEYED_TARGET, KEEP_AFTER_DESTROY, POOL_RESET, FORWARD_STATE) with their procs
                   (declared_ownership, own_declare, keyed_target_var, declared_keep_vars,
-                  declared_pool_reset, declared_forward_vars).
+                  declared_pool_reset, declared_forward_vars, declare_ownership).
 
-Declarations are read from `/type/declare_ownership(decl)` overrides: each body line
-`own(decl, nameof(v), policy = ...)`, `shared(...)`, `proto(...)` or `rel(...)` declares v on the type.
+Declarations are read from `/type/ownership()` and `/type/relations()` overrides: each body line
+`. += owns(nameof(v), policy = ...)`, `shares(...)`, `proto(...)`, `rel_one(...)` or `rel_many(...)`
+declares v on the type.
 
 A site kept on purpose carries `// ALLOW(ownership): <reason>` (tools/ci/allow_annotations.py).
 
@@ -74,18 +75,18 @@ MEMBER = re.compile(r"^\s+(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/
 OM_FIELD_DECL = re.compile(r"^OM_FIELD(?:(?:_TYPED|_VIEW)\(\s*(/[\w/]+)\s*,\s*([\w/]+)\s*,|\(\s*(/[\w/]+)\s*,())\s*(\w+)\s*,")
 ABS_MEMBER = re.compile(r"^(/[\w/]+?)/(?:var|VAR_PRIVATE|VAR_PROTECTED|VAR_FINAL)/((?:[\w]+/)*)(\w+)\b")
 TYPED_NAME = re.compile(r"(?:var/)?((?:/?\w+)(?:/\w+)+)/(\w+)\b")
-DECLARE_HEAD = re.compile(r"^(/[\w/]+)/declare_ownership\(")
-DECLARE_CALL = re.compile(r"^\s+(own|shared|proto|rel)\(\s*decl\s*,\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$")
+DECLARE_HEAD = re.compile(r"^(/[\w/]+)/(?:ownership|relations)\(\)")
+DECLARE_CALL = re.compile(r"^\s+\.\s*\+=\s*(owns|shares|proto|rel_one|rel_many)\(\s*nameof\((\w+)\)\s*(?:,\s*(.*?))?\)\s*(?://.*)?$")
 # An accessor's var-name argument: a string literal (banned, `string_name`) or nameof(v) /
 # nameof(x.v) / nameof(/type::v). Group: the var name.
 VAR_ARG = r"(?:\"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:\"|\))"
 REGISTRY = re.compile(r"^REGISTRY_TYPE\(\s*(/[\w/]+)\s*,")
-ACCESSOR = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*" + VAR_ARG)
+ACCESSOR = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_clear|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|proto_set|proto_private|shared_set)\(\s*([\w.]+)\s*,\s*" + VAR_ARG)
 TRANSFER_DEST = re.compile(r"\bown_transfer\([^,]+,\s*" + VAR_ARG.replace("(\\w+)", "\\w+") + r"\s*,\s*([\w.]+)\s*,\s*" + VAR_ARG)
-STRING_NAME = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()\"]|\([^()]*\))*,\s*\"\w+\""
+STRING_NAME = re.compile(r"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()\"]|\([^()]*\))*,\s*\"\w+\""
                          r"|\b(own_move)\((?:[^,()\"]|\([^()]*\))*,(?:[^,()\"]|\([^()]*\))*,\s*\"\w+\"")
 OWN_FUNCS = {"own_set", "own_take", "own_add", "own_remove", "own_put", "own_take_member", "own_clear", "own_transfer"}
-REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear"}
+REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"}
 PROTO_FUNCS = {"proto_set", "proto_private"}
 
 WRITE_ASSIGN = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
@@ -95,7 +96,7 @@ WRITE_MACRO = re.compile(r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSO
 CALLBACK = re.compile(r"\bCALLBACK\(")
 HANDLE_CALL = re.compile(r"\bom_(handle|resolve|handle_of|handle_is|resolve_all)\(")
 HANDLE_VAR = re.compile(r"^\s*var/(?:[\w]+/)*(\w+_handle)\b|^(/[\w/]+?)/var/(?:[\w]+/)*(\w+_handle)\b")
-REMOVED = re.compile(r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs|declared_ownership|own_declare|keyed_target_var|declared_keep_vars|declared_pool_reset|declared_forward_vars)\b"
+REMOVED = re.compile(r"\b(DECLARE_REF|OM_STATIC_TYPE|REFKIND_\w+|link_set|link_clear|link_backlist_add|link_backlist_remove|WEAK_LIST_ADD|WEAK_LIST_REMOVE|WEAK_LIST_HAS|weak_list_live|DuplicateObject|dq_lifecycle_link_table|declared_refs|declared_ownership|own_declare|keyed_target_var|declared_keep_vars|declared_pool_reset|declared_forward_vars|declare_ownership)\b"
                      r"|\b(?:OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)(?=\()")
 LOCAL_DECL = re.compile(r"\bvar/(?:[\w]+/)*(\w+)")
 
@@ -160,18 +161,22 @@ class Index:
         self.name_decls[name].append((owner, vtype, is_list))
 
     def add_decl(self, owner, func, name, opts, r, no):
-        """One concept call in owner's declare_ownership(): recorded under the kind's old macro name
+        """One entry in owner's ownership()/relations() list: recorded under the kind's old macro name
         (the checks below key on it). An own() with no policy only annotates: no kind."""
         opts = opts or ""
-        if func == "own":
+        if func == "owns":
             if "policy_proc" in opts:
                 macro = "OWN_POLICY"
             elif "if_var" in opts:
                 macro = "OWN_IF"
-            elif re.search(r"\bpolicy\s*=", opts):
-                macro = "OWN"
-            else:
+            elif re.search(r"\bpolicy\s*=\s*OWN_NONE\b", opts):
                 macro = "ANNOTATE"
+            else:
+                macro = "OWN"
+        elif func == "shares":
+            macro = "SHARED"
+        elif func in ("rel_one", "rel_many"):
+            macro = "REL"
         else:
             macro = func.upper()
         self.decls[owner][name] = (macro, opts, r, no)

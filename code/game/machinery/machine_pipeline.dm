@@ -204,9 +204,9 @@
 /// Machines waiting for the boot bulk first-wake pass, in join order. A relation list on the global
 /// owner: a deleted machine drops out on its own (its relation teardown), nothing takes it out.
 /datum/om/global_owner/var/list/obj/machinery/machine_first_wakes
-/datum/om/global_owner/declare_ownership(decl)
-	..()
-	rel(decl, nameof(machine_first_wakes), list = TRUE)
+/datum/om/global_owner/relations()
+	. = ..()
+	. += rel_many(nameof(machine_first_wakes))
 /// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
 GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
@@ -706,9 +706,9 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// The item being recharged.
 OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-/obj/machinery/recharger/declare_ownership(decl)
-	..()
-	own(decl, nameof(charging), policy = OWN_SPILL)
+/obj/machinery/recharger/ownership()
+	. = ..()
+	. += owns(nameof(charging), policy = OWN_SPILL)
 /// The cell being charged.
 OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
 /// TRUE while the fire alarm's countdown runs.

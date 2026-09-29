@@ -349,8 +349,8 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_filter)
 			P.connect()
 	P.update = 1
 
-/obj/machinery/atmospherics/omni/atmos_filter/declare_ownership(decl)
-	..()
-	rel(decl, nameof(input))
-	rel(decl, nameof(output))
-	rel(decl, nameof(atmos_filters), list = TRUE)
+/obj/machinery/atmospherics/omni/atmos_filter/relations()
+	. = ..()
+	. += rel_one(nameof(input))
+	. += rel_one(nameof(output))
+	. += rel_many(nameof(atmos_filters))

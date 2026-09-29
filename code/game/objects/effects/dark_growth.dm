@@ -118,12 +118,12 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 		dark_tile.unlinked()
 	..()
 
-/obj/effect/dark/declare_ownership(decl)
-	..()
-	rel(decl, nameof(linked_node), pair = nameof(/obj/structure/prop/dark_node::children_effects))
-/obj/structure/prop/dark_node/declare_ownership(decl)
-	..()
-	rel(decl, nameof(children_effects), list = TRUE, pair = nameof(/obj/effect/dark::linked_node))
+/obj/effect/dark/relations()
+	. = ..()
+	. += rel_one(nameof(linked_node), back = nameof(/obj/structure/prop/dark_node::children_effects))
+/obj/structure/prop/dark_node/relations()
+	. = ..()
+	. += rel_many(nameof(children_effects), back = nameof(/obj/effect/dark::linked_node))
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1

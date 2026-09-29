@@ -117,12 +117,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/doorbell, "doorbell-{operable?standby:
 
 /// Chimes whose id_tag matches our id (keyed).
 /obj/machinery/button/doorbell/var/list/obj/machinery/doorbell_chime/chimes
-/obj/machinery/button/doorbell/declare_ownership(decl)
-	..()
-	rel(decl, nameof(chimes), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/doorbell_chime)
-/obj/machinery/doorbell_chime/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id_tag))
+/obj/machinery/button/doorbell/relations()
+	. = ..()
+	. += rel_many(nameof(chimes), keyed = nameof(id), keyed_target = /obj/machinery/doorbell_chime)
+/obj/machinery/doorbell_chime/relations()
+	. = ..()
+	. += rel_key(nameof(id_tag))
 
 /obj/machinery/button/doorbell/proc/interaction_press_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)

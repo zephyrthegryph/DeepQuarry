@@ -157,9 +157,9 @@
 	/// The stamp not currently mounted as `device`; the two swap on toggle.
 	var/obj/item/stamp/spare_stamp
 
-/obj/item/rig_module/device/stamp/declare_ownership(decl)
-	..()
-	own(decl, nameof(spare_stamp), policy = OWN_CONTAINED)
+/obj/item/rig_module/device/stamp/ownership()
+	. = ..()
+	. += owns(nameof(spare_stamp), policy = OWN_CONTAINED)
 
 /obj/item/rig_module/device/stamp/Initialize(mapload)
 	. = ..()
@@ -183,6 +183,6 @@
 			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
 
-/obj/item/rig_module/device/declare_ownership(decl)
-	..()
-	own(decl, nameof(device), policy = OWN_CONTAINED)
+/obj/item/rig_module/device/ownership()
+	. = ..()
+	. += owns(nameof(device), policy = OWN_CONTAINED)

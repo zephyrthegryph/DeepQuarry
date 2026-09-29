@@ -184,9 +184,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/v
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-/obj/item/implanter/declare_ownership(decl)
-	..()
-	own(decl, nameof(imp), policy = OWN_CONTAINED)
+/obj/item/implanter/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/implanter, \

@@ -48,9 +48,9 @@
 	var/obj/item/clothing/head/hat = null // The hat the armadillo may be wearing.
 
 //Hat simulator stolen from slime code.
-/mob/living/simple_mob/animal/passive/armadillo/declare_ownership(decl)
-	..()
-	own(decl, nameof(hat), policy = OWN_SPILL)
+/mob/living/simple_mob/animal/passive/armadillo/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()

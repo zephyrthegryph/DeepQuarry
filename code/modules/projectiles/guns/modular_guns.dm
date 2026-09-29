@@ -29,9 +29,9 @@
 
 
 // Fitted parts sit in the gun's contents.
-/obj/item/gun/energy/modular/declare_ownership(decl)
-	..()
-	own(decl, nameof(guncomponents), policy = OWN_CONTAINED)
+/obj/item/gun/energy/modular/ownership()
+	. = ..()
+	. += owns(nameof(guncomponents), policy = OWN_CONTAINED)
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()

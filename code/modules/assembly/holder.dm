@@ -25,8 +25,8 @@
 	if(D.secured || D2.secured)
 		return FALSE
 
-	rel_set(D, "holder", src)
-	rel_set(D2, "holder", src)
+	rel_set(D, nameof(D.holder), src)
+	rel_set(D2, nameof(D2.holder), src)
 	own_set(src, nameof(src.a_left), D, user = user, into = TRUE)
 	own_set(src, nameof(src.a_right), D2, user = user, into = TRUE)
 	name = "[D.name]-[D2.name] assembly"
@@ -248,10 +248,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	else
 		to_chat(usr, span_notice("You cannot do this while [usr.stat ? "unconscious/dead" : "restrained"]."))
 
-/obj/item/assembly_holder/declare_ownership(decl)
-	..()
-	own(decl, nameof(a_left), policy = OWN_CONTAINED)
-	own(decl, nameof(a_right), policy = OWN_CONTAINED)
+/obj/item/assembly_holder/ownership()
+	. = ..()
+	. += owns(nameof(a_left), policy = OWN_CONTAINED)
+	. += owns(nameof(a_right), policy = OWN_CONTAINED)
 
 /// the special_assembly this refers to (a relation view: null once it is deleted).
 /obj/item/assembly_holder/proc/special_assembly() as /obj

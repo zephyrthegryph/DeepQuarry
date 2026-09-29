@@ -430,11 +430,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	icon_state = "rightsecure"
 	base_state = "rightsecure"
 
-/obj/machinery/door/window/declare_ownership(decl)
-	..()
-	own(decl, nameof(electronics), policy = OWN_CONTAINED)
+/obj/machinery/door/window/ownership()
+	. = ..()
+	. += owns(nameof(electronics), policy = OWN_CONTAINED)
 
 // Brig timers find their doors by id (REL_KEYED sources).
-/obj/machinery/door/window/brigdoor/declare_ownership(decl)
-	..()
-	rel(decl, keyed = nameof(id))
+/obj/machinery/door/window/brigdoor/relations()
+	. = ..()
+	. += rel_key(nameof(id))

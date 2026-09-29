@@ -47,11 +47,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
 	..()
 	return INITIALIZE_HINT_LATELOAD
 
-/obj/machinery/door_timer/declare_ownership(decl)
-	..()
-	rel(decl, nameof(targets), list = TRUE)
-	rel(decl, nameof(brig_doors), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/door/window/brigdoor)
-	rel(decl, nameof(brig_flashers), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/flasher)
+/obj/machinery/door_timer/relations()
+	. = ..()
+	. += rel_many(nameof(targets))
+	. += rel_many(nameof(brig_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/window/brigdoor)
+	. += rel_many(nameof(brig_flashers), keyed = nameof(id), keyed_target = /obj/machinery/flasher)
 
 /obj/machinery/door_timer/LateInitialize()
 	// Brig closets are objects without a keyed index (outside this scope): still found by scan.

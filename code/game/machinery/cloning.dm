@@ -66,11 +66,14 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-/obj/machinery/clonepod/declare_ownership(decl)
-	..()
-	own(decl, nameof(containers), policy = OWN_SPILL)
+/obj/machinery/clonepod/ownership()
+	. = ..()
+	. += owns(nameof(containers), policy = OWN_SPILL)
+
+/obj/machinery/clonepod/relations()
+	. = ..()
 	// Linked console: the pod is one of its pods (two-sided; clears when either dies).
-	rel(decl, nameof(connected), pair = nameof(/obj/machinery/computer/cloning::pods))
+	. += rel_one(nameof(connected), back = nameof(/obj/machinery/computer/cloning::pods))
 
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).

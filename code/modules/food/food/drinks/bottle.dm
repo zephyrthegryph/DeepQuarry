@@ -24,9 +24,9 @@
 		drop_sound = SFX_ITEMS_DROP_BOTTLE
 		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
-/obj/item/reagent_containers/food/drinks/bottle/declare_ownership(decl)
-	..()
-	own(decl, nameof(rag), policy = OWN_SPILL)
+/obj/item/reagent_containers/food/drinks/bottle/ownership()
+	. = ..()
+	. += owns(nameof(rag), policy = OWN_SPILL)
 
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)

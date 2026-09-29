@@ -200,6 +200,6 @@
 		return TRUE
 	return FALSE
 
-/datum/reactive_icon_update/declare_ownership(decl)
-	..()
-	rel(decl, nameof(watched_containers), list = TRUE)
+/datum/reactive_icon_update/relations()
+	. = ..()
+	. += rel_many(nameof(watched_containers))

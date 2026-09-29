@@ -408,6 +408,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/recharge_station/ghost_pod_recharger, TYP
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
 
-/obj/machinery/recharge_station/declare_ownership(decl)
-	..()
-	rel(decl, nameof(cell)) // component_parts owns the cell
+/obj/machinery/recharge_station/relations()
+	. = ..()
+	. += rel_one(nameof(cell)) // component_parts owns the cell

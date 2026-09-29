@@ -224,7 +224,7 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, "cell")
+	rel_clear(assembly, nameof(assembly.cell))
 	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
@@ -442,7 +442,7 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, "cell")
+	rel_clear(assembly, nameof(assembly.cell))
 	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE
@@ -613,7 +613,7 @@
 	to_chat(actor, span_notice("You finish \the [product]"))
 	product.forceMove(get_turf(assembly))
 	var/obj/item/cell/moved_cell = assembly.cell()
-	rel_clear(assembly, "cell")
+	rel_clear(assembly, nameof(assembly.cell))
 	own_set(product, nameof(product.cell), moved_cell, into = TRUE)
 	consume(assembly, actor)
 	return TRUE

@@ -62,7 +62,7 @@ OWN_TIMER(/datum, periodic_interval)
 			stack_trace(msg)
 #endif
 	refresh_trace_note(E, channel)
-	// Sources watching E through a relation view (rel(..., watch = ...)) re-derive too. Only on
+	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
 	// E's first mark this frame, so two entities watching each other stop after one round.
 	if(E.rel_watchers && !E.refresh_queued)
 		E.refresh_queued = TRUE

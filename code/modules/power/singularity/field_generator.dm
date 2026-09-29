@@ -353,7 +353,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 	. = ..()
 	update_icon()
 
-/obj/machinery/field_generator/declare_ownership(decl)
-	..()
-	rel(decl, nameof(fields), list = TRUE)
-	rel(decl, nameof(connected_gens), symmetric = TRUE)
+/obj/machinery/field_generator/relations()
+	. = ..()
+	. += rel_many(nameof(fields))
+	. += rel_many(nameof(connected_gens), back = nameof(/obj/machinery/field_generator::connected_gens))

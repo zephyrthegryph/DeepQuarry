@@ -192,9 +192,9 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		return TRUE
 	return ..()
 
-/obj/machinery/iv_drip/declare_ownership(decl)
-	..()
-	own(decl, nameof(beaker), policy = OWN_CONTAINED)
+/obj/machinery/iv_drip/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human

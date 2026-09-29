@@ -140,6 +140,6 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 		rel_add(src, nameof(supporting_limbs), E)
 
-/obj/item/clothing/suit/space/declare_ownership(decl)
-	..()
-	rel(decl, nameof(supporting_limbs), list = TRUE)
+/obj/item/clothing/suit/space/relations()
+	. = ..()
+	. += rel_many(nameof(supporting_limbs))

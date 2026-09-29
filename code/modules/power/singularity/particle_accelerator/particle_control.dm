@@ -264,6 +264,6 @@ UI_ACT_PROC(/obj/machinery/particle_accelerator/control_box, ui_act_remove_stren
 	. = ..()
 	update_icon()
 
-/obj/machinery/particle_accelerator/control_box/declare_ownership(decl)
-	..()
-	rel(decl, nameof(connected_parts), list = TRUE)
+/obj/machinery/particle_accelerator/control_box/relations()
+	. = ..()
+	. += rel_many(nameof(connected_parts))

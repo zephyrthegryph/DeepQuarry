@@ -82,6 +82,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food, \
 )
 
 /// Micros stuffed into the food are in its contents: they drop out when it is destroyed.
-/obj/item/reagent_containers/food/declare_ownership(decl)
-	..()
-	own(decl, nameof(food_inserted_micros), policy = OWN_SPILL)
+/obj/item/reagent_containers/food/ownership()
+	. = ..()
+	. += owns(nameof(food_inserted_micros), policy = OWN_SPILL)

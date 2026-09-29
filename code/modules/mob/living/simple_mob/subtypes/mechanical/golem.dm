@@ -157,6 +157,6 @@ TYPE_TABLE(/datum/decl/mob_organ_names/golem, mob_organ_hit_zones, list("helmet"
 	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
 	value = CATALOGUER_REWARD_MEDIUM
 
-/mob/living/simple_mob/mechanical/technomancer_golem/declare_ownership(decl)
-	..()
-	own(decl, nameof(active_spell), policy = OWN_CONTAINED)
+/mob/living/simple_mob/mechanical/technomancer_golem/ownership()
+	. = ..()
+	. += owns(nameof(active_spell), policy = OWN_CONTAINED)

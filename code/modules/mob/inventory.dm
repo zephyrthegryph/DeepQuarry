@@ -480,6 +480,6 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	for(var/entry in get_equipped_items())
 		consume(entry, src)
 
-/mob/declare_ownership(decl)
-	..()
-	rel(decl, nameof(s_active)) // the storage being viewed, anywhere nearby
+/mob/relations()
+	. = ..()
+	. += rel_one(nameof(s_active)) // the storage being viewed, anywhere nearby

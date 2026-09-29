@@ -587,10 +587,10 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_uv)
 	apply_paintjob()
 	finished_job(user)
 
-/obj/machinery/suit_cycler/declare_ownership(decl)
-	..()
-	own(decl, nameof(suit), policy = OWN_CONTAINED)
-	own(decl, nameof(helmet), policy = OWN_CONTAINED)
+/obj/machinery/suit_cycler/ownership()
+	. = ..()
+	. += owns(nameof(suit), policy = OWN_CONTAINED)
+	. += owns(nameof(helmet), policy = OWN_CONTAINED)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/suit_cycler/proc/target_department() as /datum/suit_cycler_choice/department

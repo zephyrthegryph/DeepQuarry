@@ -45,9 +45,9 @@
 			rel_add(src, nameof(locks), L) // the pair adds us to L.linked_objects
 
 // many-to-many with locks: a dying door leaves each lock's door list and vice versa.
-/obj/machinery/door/blast/puzzle/declare_ownership(decl)
-	..()
-	rel(decl, nameof(locks), list = TRUE, pair = nameof(/obj/structure/prop/lock::linked_objects))
+/obj/machinery/door/blast/puzzle/relations()
+	. = ..()
+	. += rel_many(nameof(locks), back = nameof(/obj/structure/prop/lock::linked_objects))
 
 /obj/machinery/door/blast/puzzle/declare_interactions(list/into)
 	into += list(

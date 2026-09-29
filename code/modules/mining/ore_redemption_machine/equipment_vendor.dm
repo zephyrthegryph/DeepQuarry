@@ -19,9 +19,9 @@
 	var/list/prize_list //Generated during Initialize
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
-/obj/machinery/mineral/equipment_vendor/declare_ownership(decl)
-	..()
-	own(decl, nameof(inserted_id), policy = OWN_SPILL)
+/obj/machinery/mineral/equipment_vendor/ownership()
+	. = ..()
+	. += owns(nameof(inserted_id), policy = OWN_SPILL)
 
 // prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/on_destroy(force)

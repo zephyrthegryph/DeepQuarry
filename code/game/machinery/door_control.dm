@@ -124,9 +124,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 
 /// Airlocks whose id_tag matches our id (keyed: linked when either end materializes).
 /obj/machinery/button/remote/airlock/var/list/obj/machinery/door/airlock/controlled_airlocks
-/obj/machinery/button/remote/airlock/declare_ownership(decl)
-	..()
-	rel(decl, nameof(controlled_airlocks), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/door/airlock)
+/obj/machinery/button/remote/airlock/relations()
+	. = ..()
+	. += rel_many(nameof(controlled_airlocks), keyed = nameof(id), keyed_target = /obj/machinery/door/airlock)
 
 /obj/machinery/button/remote/airlock/trigger()
 	for(var/obj/machinery/door/airlock/D as anything in controlled_airlocks)
@@ -173,9 +173,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 
 /// Blast doors whose id matches ours (keyed).
 /obj/machinery/button/remote/blast_door/var/list/obj/machinery/door/blast/controlled_doors
-/obj/machinery/button/remote/blast_door/declare_ownership(decl)
-	..()
-	rel(decl, nameof(controlled_doors), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
+/obj/machinery/button/remote/blast_door/relations()
+	. = ..()
+	. += rel_many(nameof(controlled_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
 
 /obj/machinery/button/remote/blast_door/trigger()
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
@@ -225,10 +225,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 /// Blast doors and mass drivers whose id matches ours (keyed).
 /obj/machinery/button/remote/driver/var/list/obj/machinery/door/blast/controlled_doors
 /obj/machinery/button/remote/driver/var/list/obj/machinery/mass_driver/controlled_drivers
-/obj/machinery/button/remote/driver/declare_ownership(decl)
-	..()
-	rel(decl, nameof(controlled_doors), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
-	rel(decl, nameof(controlled_drivers), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
+/obj/machinery/button/remote/driver/relations()
+	. = ..()
+	. += rel_many(nameof(controlled_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
+	. += rel_many(nameof(controlled_drivers), keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
 
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)
@@ -293,9 +293,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_ac
 
 /// Shield generators whose id matches ours (keyed).
 /obj/machinery/button/remote/shields/var/list/obj/machinery/shield_gen/controlled_shields
-/obj/machinery/button/remote/shields/declare_ownership(decl)
-	..()
-	rel(decl, nameof(controlled_shields), list = TRUE, keyed = nameof(id), keyed_target = /obj/machinery/shield_gen)
+/obj/machinery/button/remote/shields/relations()
+	. = ..()
+	. += rel_many(nameof(controlled_shields), keyed = nameof(id), keyed_target = /obj/machinery/shield_gen)
 
 /obj/machinery/button/remote/shields/trigger(mob/user)
 	for(var/obj/machinery/shield_gen/SG as anything in controlled_shields)

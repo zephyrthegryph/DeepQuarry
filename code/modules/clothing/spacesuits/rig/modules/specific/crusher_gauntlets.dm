@@ -54,6 +54,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 	for(var/obj/item/kinetic_crusher/machete/gauntlets/gaming in contents_of(M))
 		M.drop_from_inventory(gaming, src)
 
-/obj/item/rig_module/gauntlets/declare_ownership(decl)
-	..()
-	own(decl, nameof(stored_gauntlets), policy = OWN_CONTAINED)
+/obj/item/rig_module/gauntlets/ownership()
+	. = ..()
+	. += owns(nameof(stored_gauntlets), policy = OWN_CONTAINED)

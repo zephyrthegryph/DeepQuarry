@@ -578,7 +578,7 @@
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
 
-/datum/techweb/declare_ownership(decl)
-	..()
-	rel(decl, nameof(consoles_accessing), list = TRUE)
-	rel(decl, nameof(techweb_servers), list = TRUE)
+/datum/techweb/relations()
+	. = ..()
+	. += rel_many(nameof(consoles_accessing))
+	. += rel_many(nameof(techweb_servers))

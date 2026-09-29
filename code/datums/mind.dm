@@ -525,6 +525,6 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(shared_objectives)
 		. += shared_objectives
 
-/datum/mind/declare_ownership(decl)
-	..()
-	rel(decl, nameof(shared_objectives), list = TRUE)
+/datum/mind/relations()
+	. = ..()
+	. += rel_many(nameof(shared_objectives))

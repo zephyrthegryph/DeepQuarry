@@ -587,9 +587,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/at
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-/obj/item/melee/energy/declare_ownership(decl)
-	..()
-	own(decl, nameof(bcell), policy = OWN_CONTAINED)
+/obj/item/melee/energy/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 
 /// Relation view: creator (reads null once it is gone).
