@@ -842,6 +842,7 @@
 #include "code\datums\state\latent_safe_types.dm"
 #include "code\datums\state\schema.dm"
 #include "code\datums\state\serializer.dm"
+#include "code\datums\sys\contents.dm"
 #include "code\datums\sys\expiry.dm"
 #include "code\datums\status_effects\_status_effect.dm"
 #include "code\datums\status_effects\_status_effect_helpers.dm"

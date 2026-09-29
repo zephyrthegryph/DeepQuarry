@@ -30,7 +30,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/cooking_container, "max_reagents",
 	. = ..()
 	if (contents_count(src))
 		var/string = "It contains....</br>"
-		for (var/atom/movable/A in contents)
+		FOR_REAL_CONTENTS(var/atom/movable/A, src)
 			string += "[A.name] </br>"
 		. += span_notice("[string]")
 	if (reagents.total_volume)

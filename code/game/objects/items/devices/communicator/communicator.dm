@@ -219,7 +219,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 /obj/item/communicator/examine(mob/user)
 	. = ..()
 
-	for(var/mob/living/voice/voice in contents)
+	FOR_REAL_CONTENTS(var/mob/living/voice/voice, src)
 		. += span_notice("On the screen, you can see a image feed of [voice].")
 
 		if(voice && voice.key)

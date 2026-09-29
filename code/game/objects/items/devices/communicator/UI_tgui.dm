@@ -202,7 +202,7 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 			)))
 
 	//Now for all the voice mobs inside the communicator.
-	for(var/mob/living/voice/voice in contents)
+	FOR_REAL_CONTENTS(var/mob/living/voice/voice, src)
 		voices.Add(list(list(
 			"name" = sanitize("[voice.name]'s communicator"),
 			"true_name" = sanitize(voice.name),

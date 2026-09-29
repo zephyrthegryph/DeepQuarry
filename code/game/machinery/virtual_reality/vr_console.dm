@@ -76,7 +76,7 @@
 	icon_state = "[base_state][occupant ? "1" : "0"]"
 
 /obj/machinery/vr_sleeper/examine(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_VR_POD)
 	. = ..()
 	if(occupant)
 		. += span_notice("[occupant] is inside.")

@@ -342,7 +342,7 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 		ui.open()
 
 /obj/machinery/suit_cycler/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SUIT_CYCLER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
 	data["model_text"] = model_text

@@ -294,9 +294,11 @@ ELAPSED(src, started_at, CLOCK_WORLD)               // clock-aware elapsed
 `FOR_REAL_CONTENTS(var/x as anything, A)` iterates materialized direct contents without
 resolving the latent generator or materializing entries (non-copying). Lint
 `sys_materializing_walk` (`tools/ci/sys_rules/contents.py`) bans `FOR_CONTENTS`, `contents_of`,
-`slot_contents`, `get_all_contents` and `latent_materialize(_all)` inside `tgui_data()` and
+`slot_contents`, `slot_item`, `latent_entries`, `get_all_contents`, `latent_materialize(_all)` and the raw
+`in contents` / `in X.contents` / `in src` walks inside `tgui_data()` and
 `examine()` bodies; latent things are shown from type data (`latent_names()`,
-`latent_count()`) and materialized by the action that takes them. **As built:** 18 sites fixed,
+`latent_count()`) and materialized by the action that takes them. A single occupant is read with
+`slot_item_real(slot)` (`code/datums/sys/contents.dm`), which never builds the ledger. **As built:** 37 sites fixed,
 including `anomaly_harvester.dm` (its `tgui_data` materialized the whole machine every UI tick);
 lint at 0.
 

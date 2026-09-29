@@ -273,7 +273,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 		. += span_info("You peer into \the [src].")
 		if(syringe)
 			. += span_info("It has a syringe added to it.")
-		for(var/mob/living/L in contents) // ALLOW(latent): mobs are never latent
+		FOR_REAL_CONTENTS(var/mob/living/L, src)
 			. += L.examine(user)
 
 /// Old attackby: while closed, scan the occupant or load an injector.

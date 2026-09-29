@@ -110,7 +110,7 @@
 		ui.open()
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_data(mob/user)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
+	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()
 	data["has_occupant"] = occupant ? 1 : 0
 	if(!occupant)

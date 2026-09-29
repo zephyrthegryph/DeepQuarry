@@ -1958,7 +1958,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 		list("label" = "Universal",     "used" = length(universal_equipment),     "max" = max_universal_equip),
 		list("label" = "Special",       "used" = length(special_equipment),       "max" = max_special_equip),
 	)
-	data["can_eject"] = !!slot_item(MECHA_SLOT_PILOT)
+	data["can_eject"] = !!slot_item_real(MECHA_SLOT_PILOT)
 	return data
 
 /obj/mecha/tgui_act(action, list/params)
