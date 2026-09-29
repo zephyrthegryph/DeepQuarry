@@ -31,7 +31,8 @@
 	max_charge = 12e6
 	max_charge_rate = 600000
 
-/obj/machinery/shield_capacitor/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_capacitor, PROC_REF(on_emag), null)
+/obj/machinery/shield_capacitor/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")

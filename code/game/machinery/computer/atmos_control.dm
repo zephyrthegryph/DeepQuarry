@@ -34,7 +34,8 @@
 	)
 	..()
 
-/obj/machinery/computer/atmoscontrol/emag_act(remaining_carges, mob/user)
+DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null)
+/obj/machinery/computer/atmoscontrol/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		act_message(user, src, MSG_SELF(span_warning("You cause the screen to flash as you gain full control.")), \
 			MSG_OTHERS(span_warning("%U% does something %T%, causing the screen to flash!")), \

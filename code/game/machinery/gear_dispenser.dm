@@ -157,9 +157,9 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
-/obj/machinery/gear_dispenser/custom/emag_act(remaining_charges, mob/user, emag_source)
+/obj/machinery/gear_dispenser/custom/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_warning("Your moral standards prevent you from emagging this machine!"))
-	return -1 // Letting people emag this one would be bad times
+	return EMAG_DECLINED // Letting people emag this one would be bad times
 
 /obj/machinery/gear_dispenser/Initialize(mapload)
 	. = ..()
@@ -309,8 +309,9 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	flick("[icon_state]-dispense",src)
 	dispenser_flags |= GD_BUSY
 
-/obj/machinery/gear_dispenser/emag_act(remaining_charges, mob/user, emag_source)
-	. = ..()
+DECLARE_EMAG(/obj/machinery/gear_dispenser, PROC_REF(on_emag), null)
+/obj/machinery/gear_dispenser/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	. = EMAG_DECLINED
 	if(!emagged)
 		set_emagged(TRUE)
 		act_message(user, src, others = span_warning("%U% slides a weird looking ID into %T%!"), \

@@ -16,7 +16,8 @@ MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 	var/locked = 1
 	var/emagged = 0
 
-/obj/item/airlock_electronics/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/item/airlock_electronics, PROC_REF(on_emag), null)
+/obj/item/airlock_electronics/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		emagged = 1
 		to_chat(user, span_notice("You remove the access restrictions on [src]!"))
@@ -147,6 +148,6 @@ DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(
 	desc = "designed to be somewhat more resistant to hacking than standard electronics."
 	secure = 1
 
-/obj/item/airlock_electronics/secure/emag_act(remaining_charges, mob/user)
+/obj/item/airlock_electronics/secure/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_warning("You don't appear to be able to bypass this hardened device!"))
-	return -1
+	return EMAG_DECLINED

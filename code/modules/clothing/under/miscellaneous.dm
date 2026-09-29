@@ -1857,8 +1857,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/hyperfiber/bluespace, \
 		if(emagged)
 			. += span_warning("The crystal is flickering.")
 
-/obj/item/clothing/gloves/bluespace/emag_act(R_charges, mob/user, emag_source)
-	. = ..()
+DECLARE_EMAG(/obj/item/clothing/gloves/bluespace, PROC_REF(on_emag), null)
+/obj/item/clothing/gloves/bluespace/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	. = EMAG_DECLINED
 	if(!emagged)
 		emagged = TRUE
 		target_size = (rand(25,200)) /100 // set to our rule cap

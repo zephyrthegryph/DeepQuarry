@@ -44,7 +44,8 @@
 /obj/machinery/computer/supplycomp/proc/lets_in(mob/actor, atom/target, obj/item/held)
 	return allowed(actor)
 
-/obj/machinery/computer/supplycomp/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), null)
+/obj/machinery/computer/supplycomp/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!can_order_contraband)
 		to_chat(user, span_notice("Special supplies unlocked."))
 		authorization |= SUP_CONTRABAND

@@ -179,7 +179,7 @@
 
 	return 1
 
-/obj/machinery/computer/shuttle_control/emergency/emag_act(remaining_charges, mob/user)
+/obj/machinery/computer/shuttle_control/emergency/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (!emagged)
 		to_chat(user, span_notice("You short out \the [src]'s authorization protocols."))
 		set_emagged(1)

@@ -289,7 +289,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	to_chat(user, span_danger("\The [src] is hermetically sealed. You can't open the case."))
 	return ITEM_INTERACT_BLOCKING
 
-/mob/living/silicon/robot/drone/emag_act(remaining_charges, mob/user)
+/mob/living/silicon/robot/drone/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!client || stat == DEAD)
 		to_chat(user, span_danger("There's not much point subverting this heap of junk."))
 		return

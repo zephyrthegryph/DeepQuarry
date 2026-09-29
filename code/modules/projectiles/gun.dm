@@ -337,7 +337,8 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	attached_lock = null
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/gun/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
+/obj/item/gun/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(dna_lock && attached_lock.controller_lock)
 		to_chat(user, span_notice("You short circuit the internal locking mechanisms of \the [src]!"))
 		attached_lock.controller_dna = null

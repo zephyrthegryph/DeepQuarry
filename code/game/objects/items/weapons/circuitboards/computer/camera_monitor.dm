@@ -63,7 +63,8 @@ MATERIAL_MIX(/obj/item/circuitboard/security/telescreen/bodycamera, list(MAT_STE
 	if (..(C))
 		network = C.network.Copy()
 
-/obj/item/circuitboard/security/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/item/circuitboard/security, PROC_REF(on_emag), null)
+/obj/item/circuitboard/security/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(emagged)
 		to_chat(user, "Circuit lock is already removed.")
 		return

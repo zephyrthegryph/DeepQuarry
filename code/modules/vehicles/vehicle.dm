@@ -234,7 +234,8 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	set_light(0)
 	update_icon()
 
-/obj/vehicle/emag_act(remaining_charges, mob/user as mob)
+DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
+/obj/vehicle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!mechanical)
 		return FALSE
 

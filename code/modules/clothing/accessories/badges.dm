@@ -109,7 +109,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge, INTERACT_SELF("Display",
 	icon_state = "holobadge-cord"
 	slot_flags = SLOT_MASK | SLOT_TIE | SLOT_BELT
 
-/obj/item/clothing/accessory/badge/holo/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/item/clothing/accessory/badge/holo, PROC_REF(on_emag), null)
+/obj/item/clothing/accessory/badge/holo/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (emagged)
 		to_chat(user, span_danger("\The [src] is already cracked."))
 		return

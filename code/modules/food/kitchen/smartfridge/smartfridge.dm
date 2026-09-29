@@ -223,7 +223,8 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 /obj/machinery/smartfridge/multitool_act(mob/user, obj/item/tool)
 	return wirecutter_act(user, tool)
 
-/obj/machinery/smartfridge/secure/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null)
+/obj/machinery/smartfridge/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		set_emagged(1)
 		set_locked(-1)

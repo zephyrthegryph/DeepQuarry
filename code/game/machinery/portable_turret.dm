@@ -609,7 +609,8 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 		visible_message(span_infoplain(span_bold("\The [L]") + " bonks \the [src]'s casing!"))
 	return ..()
 
-/obj/machinery/porta_turret/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null)
+/obj/machinery/porta_turret/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		//Emagging the turret makes it go bonkers and stun everyone. It also makes
 		//the turret shoot much, much faster.

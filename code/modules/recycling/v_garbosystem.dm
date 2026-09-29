@@ -86,7 +86,8 @@ DECLARE_REAGENTS(/obj/machinery/v_garbosystem, CARGOTANKER_VOLUME * 2, null)
 	affecting = loc.contents - src
 	om_after(src, 1, PROC_REF(grind_affecting))
 
-/obj/machinery/v_garbosystem/emag_act(remaining_charges, mob/user, emag_source)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
+/obj/machinery/v_garbosystem/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	set_emagged(!emagged)
 	update()
 

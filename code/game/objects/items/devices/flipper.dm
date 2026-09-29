@@ -7,8 +7,8 @@
 	name 		= "Vix"
 
 /obj/item/paicard/flipper/Initialize(mapload)
-	emag_act()
-	pai = new /mob/living/silicon/pai/flipper(src) // ALLOW(decl): must exist before the paicard's own init, after emag_act()
+	emag_target(src)
+	pai = new /mob/living/silicon/pai/flipper(src) // ALLOW(decl): must exist before the paicard's own init, after emag_target()
 	. = ..()
 	desc = "The [name] is a versatile security device designed to protect and empower users in a variety of contexts. With features such as wireless hacking, radio analysis, signal jamming, and physical lock picking, the [name] is the ultimate tool for security professionals, hobbyists, and anyone seeking to better understand and defend against modern threats. Whether you're investigating a security breach, testing your own defenses, or simply curious about the workings of wireless technology, the [name] has you covered."
 	setEmotion(4)

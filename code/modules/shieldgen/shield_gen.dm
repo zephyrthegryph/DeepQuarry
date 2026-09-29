@@ -49,7 +49,8 @@
 DECLARE_REF(/obj/machinery/shield_gen, "shield_hum", OWNED, null)
 DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 
-/obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
+/obj/machinery/shield_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(prob(75))
 		set_locked(!src.locked)
 		to_chat(user, "Controls are now [src.locked ? "locked." : "unlocked."]")

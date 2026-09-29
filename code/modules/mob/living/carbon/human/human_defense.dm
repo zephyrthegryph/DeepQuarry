@@ -310,14 +310,15 @@ emp_act
 		return 1
 	return 0
 
-/mob/living/carbon/human/emag_act(remaining_charges, mob/user, emag_source)
+DECLARE_EMAG_REPEATABLE(/mob/living/carbon/human, PROC_REF(on_emag), null)
+/mob/living/carbon/human/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	var/obj/item/organ/external/affecting = get_organ(user.zone_sel.selecting)
 	if(!affecting || !(affecting.is_robotic()))
 		to_chat(user, span_warning("That limb isn't robotic."))
-		return -1
+		return EMAG_DECLINED
 	if(affecting.sabotaged)
 		to_chat(user, span_warning("[src]'s [affecting.name] is already sabotaged!"))
-		return -1
+		return EMAG_DECLINED
 	to_chat(user, span_notice("You sneakily slide [emag_source] into the dataport on [src]'s [affecting.name] and short out the safeties."))
 	affecting.sabotaged = 1
 	return 1

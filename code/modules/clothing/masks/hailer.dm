@@ -98,7 +98,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/sechailer, \
 			else
 				to_chat(user, span_notice("It's broken."))
 
-/obj/item/clothing/mask/gas/sechailer/emag_act(mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag), null)
+/obj/item/clothing/mask/gas/sechailer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(safety)
 		safety = 0
 		to_chat(user, span_warning("You silently fry [src]'s vocal circuit with the cryptographic sequencer."))

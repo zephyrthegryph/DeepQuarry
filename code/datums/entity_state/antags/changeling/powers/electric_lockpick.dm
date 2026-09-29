@@ -74,7 +74,7 @@
 		to_chat(user, span_warning("We require more chemicals to do that."))
 		return
 
-	//Airlocks require an ugly block of code, but we don't want to just call emag_act(), since we don't want to break airlocks forever.
+	//Airlocks require an ugly block of code, but we don't want to just call emag_target(), since we don't want to break airlocks forever.
 	if(istype(target,/obj/machinery/door))
 		var/obj/machinery/door/door = target
 		to_chat(user, span_notice("We send an electrical pulse up our finger, and into \the [target], attempting to open it."))
@@ -93,7 +93,7 @@
 		var/obj/O = target
 		to_chat(user, span_notice("We send an electrical pulse up our finger, and into \the [O]."))
 		O.add_fingerprint(user)
-		O.emag_act(1,user,src)
+		emag_target(O, 1,user,src)
 		log_and_message_admins("finger-lockpicked \an [O].")
 		ling_datum.chem_charges -= 10
 

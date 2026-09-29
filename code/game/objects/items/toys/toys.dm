@@ -2521,7 +2521,8 @@ DECLARE_INTERACTIONS(/obj/item/toy/snake_popper, \
 		return ITEM_INTERACT_FAILURE
 	return NONE
 
-/obj/item/toy/snake_popper/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/item/toy/snake_popper, PROC_REF(on_emag), null)
+/obj/item/toy/snake_popper/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(real != 2)
 		real = 2
 		to_chat(user, span_notice("You short out the bluespace refill system of [src]."))

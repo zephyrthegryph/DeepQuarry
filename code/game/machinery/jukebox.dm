@@ -271,7 +271,8 @@
 
 	replace_with(src, /obj/effect/decal/cleanable/blood/oil)
 
-/obj/machinery/media/jukebox/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null)
+/obj/machinery/media/jukebox/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		set_emagged(1)
 		StopPlaying()
@@ -355,7 +356,7 @@
 	return
 /obj/machinery/media/jukebox/ghost/power_change()
 	return
-/obj/machinery/media/jukebox/ghost/emag_act(remaining_charges, mob/user)
+/obj/machinery/media/jukebox/ghost/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	return
 /obj/machinery/media/jukebox/ghost/explode()
 	return

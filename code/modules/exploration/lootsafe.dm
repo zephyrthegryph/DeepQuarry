@@ -9,7 +9,7 @@
 	locked = 1
 	var/hackguard = 10
 
-/obj/structure/closet/crate/secure/lootsafe/emag_act(remaining_charges, mob/user)
+/obj/structure/closet/crate/secure/lootsafe/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (locked)
 		if(prob(60 - hackguard))
 			to_chat(user, span_notice("The safe unlocks!"))

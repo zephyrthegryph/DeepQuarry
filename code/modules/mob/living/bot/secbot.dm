@@ -164,7 +164,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 			declare_arrests = !declare_arrests
 			. = TRUE
 
-/mob/living/bot/secbot/emag_act(remaining_uses, mob/user)
+/mob/living/bot/secbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		if(user)

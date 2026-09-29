@@ -210,7 +210,7 @@
 
 	return TRUE
 
-/obj/machinery/door/window/emag_act(remaining_charges, mob/user)
+/obj/machinery/door/window/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (density && operable())
 		operating = -1
 		flick("[src.base_state]spark", src)
@@ -228,7 +228,7 @@
 	return operating != 1
 
 /obj/machinery/door/window/proc/interaction_emag_slice(mob/user, obj/item/I, datum/interaction/interaction)
-	if(emag_act(10, user))
+	if(emag_target(src, 10, user))
 		fx_sparks(src.loc, 5, FALSE)
 		play_sfx(src, SFX_SPARKS)
 		play_sfx(src, SFX_WEAPONS_BLADE1)

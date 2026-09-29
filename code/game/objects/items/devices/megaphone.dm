@@ -60,7 +60,8 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 	COOLDOWN_START(src, spamcheck, 20)
 	do_broadcast(user, message)
 
-/obj/item/megaphone/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null)
+/obj/item/megaphone/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		to_chat(user, span_warning("You overload [src]'s voice synthesizer."))
 		emagged = TRUE
@@ -82,7 +83,7 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!", "HOOOOOOOONK!", "...!", "HUNK.", "Honk?"))
 
 
-/obj/item/megaphone/super/emag_act(remaining_charges, mob/user)
+/obj/item/megaphone/super/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	..()
 	if(emagged)
 		if(!(11 in volume_options))

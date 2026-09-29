@@ -40,7 +40,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(
 		else
 			to_chat(user, span_warning("Access Denied"))
 	else if(istype(W, /obj/item/melee/energy/blade))
-		if(emag_act(INFINITY, user, W, "The locker has been sliced open by [user] with an energy blade!", "You hear metal being sliced and sparks flying."))
+		if(break_lock("The locker has been sliced open by [user] with an energy blade!", "You hear metal being sliced and sparks flying."))
 			fx_sparks(src.loc, 5, FALSE)
 			play_sfx(src, SFX_WEAPONS_BLADE1)
 			play_sfx(src, SFX_SPARKS)
@@ -57,7 +57,12 @@ EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(
 		..()
 	return
 
-/obj/item/storage/lockbox/emag_act(remaining_charges, mob/user, emag_source, visual_feedback = "", audible_feedback = "")
+DECLARE_EMAG_REPEATABLE(/obj/item/storage/lockbox, PROC_REF(on_emag), null)
+/obj/item/storage/lockbox/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	return break_lock(null, null, user)
+
+/// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
+/obj/item/storage/lockbox/proc/break_lock(visual_feedback, audible_feedback, mob/user)
 	if(!broken)
 		if(visual_feedback)
 			visual_feedback = span_warning("[visual_feedback]")

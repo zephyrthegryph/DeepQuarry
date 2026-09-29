@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 		tgui_interact(user)
 	return TRUE
 
-/mob/living/bot/farmbot/emag_act(remaining_charges, mob/user)
+/mob/living/bot/farmbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		if(user)

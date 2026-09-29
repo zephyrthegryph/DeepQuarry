@@ -105,7 +105,8 @@
 		"internalTemplateName" = "EscapePodBerthConsole",
 	)
 
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth, PROC_REF(on_emag), null)
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (!emagged)
 		to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
 		set_emagged(1)

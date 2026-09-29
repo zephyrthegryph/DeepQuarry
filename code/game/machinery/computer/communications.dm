@@ -14,7 +14,8 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/communications, "communications", /datum/tgui_module/communications)
 
-/obj/machinery/computer/communications/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/computer/communications, PROC_REF(on_emag), null)
+/obj/machinery/computer/communications/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		set_emagged(TRUE)
 		communications.emagged = TRUE

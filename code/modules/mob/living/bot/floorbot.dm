@@ -62,7 +62,7 @@
 
 EXTEND_INTERACTIONS(/mob/living/bot/floorbot, INTERACT_HAND_UNGATED("Open controls", TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/mob/living/bot/floorbot/emag_act(remaining_charges, mob/user)
+/mob/living/bot/floorbot/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()
 	if(!emagged)
 		emagged = 1

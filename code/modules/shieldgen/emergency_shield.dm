@@ -268,7 +268,8 @@ DAMAGE_REACTION(/obj/machinery/shieldgen, DAMAGE_EMP, PROC_REF(emp_scramble))
 			to_chat(user, "The device must first be secured to the floor.")
 	return TRUE
 
-/obj/machinery/shieldgen/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
+/obj/machinery/shieldgen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!malfunction)
 		malfunction = TRUE
 		update_icon()

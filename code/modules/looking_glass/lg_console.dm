@@ -109,7 +109,8 @@
 
 	add_fingerprint(ui.user)
 
-/obj/machinery/computer/looking_glass/emag_act(remaining_charges, mob/user as mob)
+DECLARE_EMAG(/obj/machinery/computer/looking_glass, PROC_REF(on_emag), null)
+/obj/machinery/computer/looking_glass/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (!emagged)
 		play_sfx(src, SFX_EFFECTS_SPARKS4)
 		set_emagged(1)

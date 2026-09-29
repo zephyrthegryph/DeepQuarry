@@ -217,13 +217,14 @@
 	if(is_type_in_list(W, list(/obj/item/packageWrap, /obj/item/stack/cable_coil, /obj/item/radio/electropack, /obj/item/tool/wirecutters)))
 		return ..()
 	if(istype(W, /obj/item/melee/energy/blade))
-		emag_act(INFINITY, user)
+		emag_target(src, INFINITY, user)
 	if(!opened)
 		src.togglelock(user)
 		return TRUE
 	return ..()
 
-/obj/structure/closet/crate/secure/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/structure/closet/crate/secure, PROC_REF(on_emag), null)
+/obj/structure/closet/crate/secure/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!broken)
 		play_sfx(src, SFX_SPARKS, 1.2)
 		locked = 0

@@ -60,7 +60,8 @@ DECLARE_PERIODIC(/obj/item/ammo_magazine/smart, PERIODIC_SLOW)
 		icon_state = "smartmag-empty"
 
 // Emagging lets you remove bullets from your bullet-making magazine
-/obj/item/ammo_magazine/smart/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/item/ammo_magazine/smart, PROC_REF(on_emag), null)
+/obj/item/ammo_magazine/smart/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		to_chat(user, span_notice("You overload \the [src]'s security measures causing widespread destabilisation. It is likely you could empty \the [src] now."))
 		emagged = TRUE

@@ -73,7 +73,7 @@ DAMAGE_REACTION(/obj/structure/closet/secure_closet, DAMAGE_EMP, PROC_REF(secure
 		if(W)
 			W.forceMove(loc)
 	else if(istype(W, /obj/item/melee/energy/blade))
-		if(emag_act(INFINITY, user, span_danger("The locker has been sliced open by [user] with \an [W]!"), span_danger("You hear metal being sliced and sparks flying.")))
+		if(break_lock(user, null, span_danger("The locker has been sliced open by [user] with \an [W]!"), span_danger("You hear metal being sliced and sparks flying.")))
 			fx_sparks(loc, 5, FALSE)
 			play_sfx(src, SFX_WEAPONS_BLADE1)
 			play_sfx(src, SFX_SPARKS)
@@ -83,7 +83,12 @@ DAMAGE_REACTION(/obj/structure/closet/secure_closet, DAMAGE_EMP, PROC_REF(secure
 		togglelock(user)
 	return TRUE
 
-/obj/structure/closet/secure_closet/emag_act(remaining_charges, mob/user, emag_source, visual_feedback = "", audible_feedback = "")
+DECLARE_EMAG_REPEATABLE(/obj/structure/closet/secure_closet, PROC_REF(on_emag), null)
+/obj/structure/closet/secure_closet/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
+	return break_lock(user, emag_source)
+
+/// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
+/obj/structure/closet/secure_closet/proc/break_lock(mob/user, obj/item/emag_source, visual_feedback, audible_feedback)
 	if(!broken)
 		broken = 1
 		locked = 0

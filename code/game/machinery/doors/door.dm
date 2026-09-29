@@ -415,7 +415,8 @@ DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_a
 
 	return FALSE
 
-/obj/machinery/door/emag_act(remaining_charges)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/door, PROC_REF(on_emag), null)
+/obj/machinery/door/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(density && operable())
 		do_animate("spark")
 		om_after(src, 0.6 SECONDS, PROC_REF(trigger_emag))

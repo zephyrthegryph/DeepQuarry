@@ -295,7 +295,8 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	return
 
 
-/obj/machinery/computer/arcade/battle/emag_act(charges, mob/user)
+DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null)
+/obj/machinery/computer/arcade/battle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Hyper-Lethal Mode."))
 
@@ -1025,7 +1026,8 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
-/obj/machinery/computer/arcade/orion_trail/emag_act(mob/user)
+DECLARE_EMAG(/obj/machinery/computer/arcade/orion_trail, PROC_REF(on_emag), null)
+/obj/machinery/computer/arcade/orion_trail/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		to_chat(user, span_notice("You override the cheat code menu and skip to Cheat #[rand(1, 50)]: Realism Mode."))
 		name = "The Orion Trail: Realism Edition"
@@ -1334,7 +1336,8 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 	icon_state = "clawmachine_new"
 	gameStatus = "CLAWMACHINE_END"
 
-/obj/machinery/computer/arcade/clawmachine/emag_act(mob/user)
+DECLARE_EMAG(/obj/machinery/computer/arcade/clawmachine, PROC_REF(on_emag), null)
+/obj/machinery/computer/arcade/clawmachine/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		to_chat(user, span_info("You modify the claw of the machine. The next one is sure to win! You just have to pay..."))
 		name = "AlliCo Snag-A-Prize"

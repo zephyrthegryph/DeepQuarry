@@ -320,9 +320,6 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 /atom/proc/ex_act(strength = 3)
 	return (OM_EMIT(src, /datum/om/event/before/atom_ex_act, strength, src) & COMPONENT_IGNORE_EXPLOSION)
 
-/atom/proc/emag_act(remaining_charges, mob/user, emag_source)
-	return -1
-
 /**
  * Respond to fire being used on our atom
  *

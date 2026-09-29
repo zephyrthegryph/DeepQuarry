@@ -100,28 +100,37 @@
 	item_state = "card-id"
 	var/uses = 10
 
+/// The card acts before the target's own attackby: the target's declared Emag interaction
+/// (code/datums/sys/emag.dm) runs, or the card is an ordinary item when it declares none.
 /obj/item/card/emag/resolve_attackby(atom/A, mob/user, attack_modifier, click_parameters)
-	var/used_uses = A.emag_act(uses, user, src)
-	if(used_uses < 0)
+	var/datum/interaction/emag = emag_interaction_for(A)
+	if(!emag || isnull(emag.attempt(user, A, src)))
 		return ..(A, user, click_parameters)
+	return 1
 
-	uses -= used_uses
+/// Whether the card can still emag anything.
+/obj/item/card/emag/proc/can_emag(mob/user)
+	return uses > 0
+
+/// Pays `used` uses for emagging A and logs it; a spent card breaks.
+/obj/item/card/emag/proc/spend(mob/user, atom/A, used)
+	uses -= used
 	A.add_fingerprint(user)
 	// Because some things (read lift doors) don't get emagged
-	if(used_uses)
+	if(used)
 		log_and_message_admins("emagged \an [A].")
 	else
 		log_and_message_admins("attempted to emag \an [A].")
-	// End of Edit
+	if(uses < 1)
+		spent(user)
 
-	if(uses<1)
-		user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
-		user.drop_item()
-		var/obj/item/card/emag_broken/junk = new(user.loc)
-		junk.add_fingerprint(user)
-		consume(src, user)
-
-	return 1
+/// Out of uses.
+/obj/item/card/emag/proc/spent(mob/user)
+	user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
+	user.drop_item()
+	var/obj/item/card/emag_broken/junk = new(user.loc)
+	junk.add_fingerprint(user)
+	consume(src, user)
 
 DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -144,24 +153,17 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 
 /obj/item/card/emag/borg/afterattack(atom/A, mob/user, proximity, click_parameters)
 	if(!proximity || burnt_out) return
-	var/used_uses = A.emag_act(uses, user, src)
-	if(used_uses < 0)
+	var/datum/interaction/emag = emag_interaction_for(A)
+	if(!emag || isnull(emag.attempt(user, A, src)))
 		return ..(A, user, proximity, click_parameters)
-
-	uses -= used_uses
-	A.add_fingerprint(user)
-	// Because some things (read lift doors) don't get emagged
-	if(used_uses)
-		log_and_message_admins("emagged \an [A].")
-	else
-		log_and_message_admins("attempted to emag \an [A].")
-	// End of Edit
-
-	if(uses<1)
-		user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
-		burnt_out = TRUE
-
 	return 1
+
+/obj/item/card/emag/borg/can_emag(mob/user)
+	return !burnt_out && ..()
+
+/obj/item/card/emag/borg/spent(mob/user)
+	user.visible_message(span_warning("\The [src] fizzles and sparks - it seems it's been used once too often, and is now spent."))
+	burnt_out = TRUE
 
 /// FLUFF PERMIT
 

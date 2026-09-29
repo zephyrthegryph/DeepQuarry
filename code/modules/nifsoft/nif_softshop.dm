@@ -160,7 +160,7 @@ DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 	if(index != WIRE_CONTRABAND)
 		..(index)
 
-/obj/machinery/vending/nifsoft_shop/emag_act(remaining_charges, mob/user) //Yeees, YEEES! Give me that black market tech.
+/obj/machinery/vending/nifsoft_shop/on_emag(remaining_charges, mob/user, obj/item/emag_source) //Yeees, YEEES! Give me that black market tech.
 	if(!emagged || !(categories & CAT_HIDDEN))
 		set_emagged(1)
 		categories |= CAT_HIDDEN

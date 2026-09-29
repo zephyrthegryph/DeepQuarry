@@ -166,7 +166,8 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 			return 0
 	return 1
 
-/obj/machinery/computer/specops_shuttle/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/specops_shuttle, PROC_REF(on_emag), null)
+/obj/machinery/computer/specops_shuttle/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_notice("The electronic systems in this console are far too advanced for your primitive hacking peripherals."))
 
 // structured TGUI Specops Shuttle (see

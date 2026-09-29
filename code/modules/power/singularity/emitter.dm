@@ -298,7 +298,8 @@
 	balloon_alert_visible("changed to [chosen_particle]")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/power/emitter/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null)
+/obj/machinery/power/emitter/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(!emagged)
 		set_locked(0)
 		set_emagged(1)

@@ -172,7 +172,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		if(!locked)
 			return 1
 
-/obj/machinery/suspension_gen/emag_act(remaining_charges, mob/user)
+DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
+/obj/machinery/suspension_gen/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(cell && cell.charge > 0 && locked)
 		set_locked(0)
 		return 1
