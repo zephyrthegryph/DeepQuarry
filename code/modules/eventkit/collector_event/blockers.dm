@@ -45,23 +45,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/structure/event_collector_blocker, REGISTRY_EVENT_COLLECTOR_BLOCKERS)
 
-/obj/structure/event_collector_blocker/Initialize(mapload)
-	. = ..()
-
-	if(GLOB.event_collector_associations == null)
-		GLOB.event_collector_associations = list()
-
-	if(GLOB.event_collector_associations[blocker_channel] == null)
-		GLOB.event_collector_associations[blocker_channel] = list()
-
-	GLOB.event_collector_associations[blocker_channel] |= src
-
-/// Phase 2: leaves its channel's blocker list.
-/obj/structure/event_collector_blocker/lifecycle_dematerialize()
-	. = ..()
-	if(GLOB.event_collector_associations[blocker_channel])
-		GLOB.event_collector_associations[blocker_channel] -= src
-
 /obj/structure/event_collector_blocker/update_icon()
 	. = ..()
 	icon_state = "[base_icon]_[block_amount ? "off" : "on"]"

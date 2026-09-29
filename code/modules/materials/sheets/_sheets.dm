@@ -39,7 +39,7 @@
 		stack_trace("Material of type: [default_type] does not exist.")
 		return INITIALIZE_HINT_QDEL
 
-	recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
+	recipes = material.get_recipes()
 	stacktype = material.stack_type
 
 	if(apply_colour)
@@ -100,7 +100,7 @@
 		return null
 	new_stack.default_type = material.name
 	new_stack.material = material
-	new_stack.recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
+	new_stack.recipes = material.get_recipes()
 	new_stack.stacktype = material.stack_type
 	new_stack.feedstock_purity = feedstock_purity
 	new_stack.feedstock_lot_id = feedstock_lot_id

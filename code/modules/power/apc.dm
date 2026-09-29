@@ -189,7 +189,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 	if(building)
 		area = get_area(src)
-		area().apc = src
+		rel_set(area(), "apc", src)
 		opened    = 1
 		operating = 0
 		name = "[area().name] APC"
@@ -220,7 +220,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
-		area().apc = null
+		rel_clear(area(), "apc")
 		area().power_light  = 0
 		area().power_equip  = 0
 		area().power_environ = 0
@@ -344,7 +344,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	else
 		area = get_area_name(areastring)
 		name = "\improper [area().name] APC"
-	area().apc = src
+	rel_set(area(), "apc", src)
 
 	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
@@ -1237,8 +1237,8 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 	var/area/NA = get_area(src)
 	if(NA != area())
 		if(area().apc == src)
-			area().apc = null
-		NA.apc = src
+			rel_clear(area(), "apc")
+		rel_set(NA, "apc", src)
 		area = NA
 		name = "[area().name] APC"
 	update()

@@ -75,7 +75,7 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	if(queued_echo_turfs[REF(T)]) // Already echoing
 		return
 	all_pings_round++
-	OM_EMIT(src, /datum/om/event/movable_motiontracker, om_handle(source), T) // ALLOW(ownership): the event's constructor (code/datums/om_events) takes a handle
+	OM_EMIT(src, /datum/om/event/movable_motiontracker, source, T)
 
 // We get this back from anything that handles the signal, and queues up a turf to draw the echo on
 // The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming

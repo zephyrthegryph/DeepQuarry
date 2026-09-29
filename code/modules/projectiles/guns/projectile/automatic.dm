@@ -192,7 +192,7 @@
 
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
-	launcher = new(src)
+	own_set(src, "launcher", new /obj/item/gun/launcher/grenade/underslung(src))
 
 /// Old attackby.
 /obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)

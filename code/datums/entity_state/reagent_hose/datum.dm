@@ -42,7 +42,7 @@
 			playsound(A,'sound/effects/crate_close.ogg',50)
 			playsound(A,'sound/effects/plop.ogg',45)
 		node1.remove_hose()
-		node1 = null
+		rel_clear(src, "node1")
 	if(node2)
 		var/atom/A = node2.get_carrier()
 		if(A)
@@ -51,7 +51,7 @@
 			playsound(A,'sound/effects/crate_close.ogg',50)
 			playsound(A,'sound/effects/plop.ogg',45)
 		node2.remove_hose()
-		node2 = null
+		rel_clear(src, "node2")
 	// Drop hose at one of the locations if no user is specified
 	if((user || drop_locs.len) && initial_distance)
 		new /obj/item/stack/hose(user ? get_turf(user) : pick(drop_locs), initial_distance)
@@ -60,8 +60,8 @@
 
 /datum/hose/proc/set_hose(datum/hose_connector/target1, datum/hose_connector/target2, distancetonode)
 	if(target1 && target2)
-		node1 = target1
-		node2 = target2
+		rel_set(src, "node1", target1)
+		rel_set(src, "node2", target2)
 
 	node1.connect(src)
 	node2.connect(src)

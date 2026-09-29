@@ -97,8 +97,7 @@
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	own_set(src, "id", ident)
-	if(istext(id))id=new(id)
+	own_set(src, "id", istext(ident) ? new /datum/node/identifier(ident) : ident)
 
 /datum/node/expression/value/variable/ToString()
 	return src.id.ToString()

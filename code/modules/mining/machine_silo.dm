@@ -7,11 +7,9 @@
 	density = TRUE
 	circuit = /obj/item/circuitboard/machine/ore_silo
 
-	/// List of all connected components that are on hold from accessing materials.
+	/// Connections on hold from accessing materials (relation list, written by /datum/remote_materials).
 	var/list/holds
-	/// List of all components that are sharing ores with this silo. A relation list in the model
-	/// (REL_PAIR_LIST with remote_materials' silo); /datum/remote_materials still writes it with
-	/// LAZYADD/LAZYREMOVE, so the declaration waits for that file's conversion.
+	/// Connections sharing ores with this silo (relation list, written by /datum/remote_materials).
 	var/list/datum/remote_materials/ore_connected_machines
 	/// Material Container
 	var/datum/material_container/materials
@@ -112,7 +110,7 @@
 			list(
 				"icon" = icon2base64(icon(initial(parent.icon), initial(parent.icon_state), frame = 1)),
 				"name" = parent.name,
-				"onHold" = !!LAZYACCESS(holds, remote),
+				"onHold" = (remote in holds),
 				"location" = get_area_name(parent, TRUE),
 			)
 		)
@@ -284,3 +282,6 @@
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
 
+
+REL_LIST(/obj/machinery/ore_silo, holds)
+REL_LIST(/obj/machinery/ore_silo, ore_connected_machines)

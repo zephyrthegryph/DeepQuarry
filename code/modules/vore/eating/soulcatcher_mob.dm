@@ -15,7 +15,7 @@
 		gem().notify_holder("Mind unloaded: [name]")
 		gem().brainmobs -= src
 		rel_clear(src, "gem")
-	own_take(src, "container")
+	rel_clear(src, "container")
 	..()
 
 // Handling the automatic transcore backups in a set interval

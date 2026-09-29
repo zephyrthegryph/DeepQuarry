@@ -46,7 +46,7 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()

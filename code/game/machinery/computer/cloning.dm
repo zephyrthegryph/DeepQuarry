@@ -301,7 +301,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 						set_temp("Error: The data could not be saved.", "danger")
 						return
 
-					diskette.stored = new(active_BR()) // Traitgenes Storing the entire body record
+					own_set(diskette, "stored", new /datum/transhuman/body_record(active_BR())) // Traitgenes Storing the entire body record
 					diskette.name = "data disk - '[active_BR().mydna.dna.real_name]'"
 					set_temp("Successfully saved to disk.", "success")
 				if("eject")

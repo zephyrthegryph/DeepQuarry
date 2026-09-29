@@ -705,7 +705,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	rel_set(src, "storage", S)
 	own_set(src, "backdrop", list())
 	own_set(src, "catchers", list())
-	var/master = om_handle(S) // ALLOW(ownership): /atom/movable/screen.master_ref (code/_onclick) is still a handle var
+	var/obj/item/storage/master = S
 	if(S.storage_slots)
 		own_add(src, "backdrop", new_backdrop(master, "block"))
 	else
@@ -713,7 +713,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		own_add(src, "backdrop", new_backdrop(master, "storage_continue"))
 		own_add(src, "backdrop", new_backdrop(master, "storage_end"))
 	own_set(src, "closer", new /atom/movable/screen/close())
-	closer.master_ref = master
+	rel_set(closer, "master_ref", master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()
 	GLOB.storage_hud_count++
@@ -729,10 +729,10 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		I.latent_unpin(src)
 	..()
 
-/datum/storage_hud/proc/new_backdrop(master, state)
+/datum/storage_hud/proc/new_backdrop(obj/item/storage/master, state)
 	var/atom/movable/screen/storage/B = new()
 	B.name = "storage"
-	B.master_ref = master
+	rel_set(B, "master_ref", master)
 	B.icon_state = state
 	return B
 

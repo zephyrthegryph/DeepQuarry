@@ -1370,8 +1370,8 @@
 	GLOB.data_core.general += general_record
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
-	security_console.active1_handle = om_handle(general_record)
-	security_console.active2_handle = om_handle(security_record)
+	rel_set(security_console, "active1", general_record)
+	rel_set(security_console, "active2", security_record)
 	var/area/original_area = get_area(test_turf)
 	var/area/security/brig/test_brig = new
 	ChangeArea(test_turf, test_brig)
@@ -1491,8 +1491,8 @@
 	general_record.fields["name"] = "Nobody Aboard"
 	var/datum/data/record/security_record = new
 	security_record.fields["criminal"] = "Released"
-	security_console.active1_handle = om_handle(general_record)
-	security_console.active2_handle = om_handle(security_record)
+	rel_set(security_console, "active1", general_record)
+	rel_set(security_console, "active2", security_record)
 	TEST_ASSERT(security_console.record_security_disposition("Incarcerated", "Released", null), "fake disposition did not publish its auditable rejected fact")
 	TEST_ASSERT_EQUAL(security.state, CONTRACT_ACTIVE, "a record with no physical prisoner completed the Security contract")
 	qdel(security_console)

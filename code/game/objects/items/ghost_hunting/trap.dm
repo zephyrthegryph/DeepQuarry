@@ -23,7 +23,7 @@
 	. = ..()
 	if(deployed)
 		update_icon()
-	ghost_reporter = new(null) // ALLOW(decl): made in nullspace, not in src
+	own_set(src, "ghost_reporter", new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
 		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),

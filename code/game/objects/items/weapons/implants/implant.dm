@@ -385,7 +385,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 /obj/item/implant/chem/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(50)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 
 /obj/item/implant/chem/trigger(emote, source as mob)

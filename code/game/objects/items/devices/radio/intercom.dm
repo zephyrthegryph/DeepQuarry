@@ -157,7 +157,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	playsound(src, tool.usesound, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
-	rel_set(frame, "frame_type", board.board_type) // the board owns its frame type; the frame names it
+	own_set(frame, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	frame.pixel_x = pixel_x
 	frame.pixel_y = pixel_y
 	board.forceMove(frame)

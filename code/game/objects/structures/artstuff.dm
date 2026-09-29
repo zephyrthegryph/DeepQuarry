@@ -700,7 +700,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	current_canvas = new_canvas
+	own_set(src, "current_canvas", new_canvas)
 	loaded = TRUE
 	update_appearance()
 	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)

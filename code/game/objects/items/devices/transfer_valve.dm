@@ -63,7 +63,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF) // ALLOW(ownership): HasProximity() passes a handle (proximity API outside code/game/objects)
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 	attached_device?.HasProximity(T, WF, old_loc)

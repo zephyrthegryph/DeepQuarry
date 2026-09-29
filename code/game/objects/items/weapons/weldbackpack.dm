@@ -15,7 +15,7 @@
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	own_set(src, "nozzle", new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)

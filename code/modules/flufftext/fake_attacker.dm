@@ -212,7 +212,6 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 		step_away(src,M)
 
 	if(get_dist(src,M) > 10 || get_dist(src,M) < 2 || (flee && prob(10)))
-		target = null
 		qdel(src)
 
 REL_LIST(/obj/effect/fake_attacker, clients)

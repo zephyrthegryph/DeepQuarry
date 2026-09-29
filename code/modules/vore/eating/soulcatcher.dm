@@ -21,16 +21,16 @@
 /obj/soulgem/state_codecs()
 	return ..() + list("linked_belly" = /datum/state_codec/soulgem_belly)
 
-// v2: the linked belly var became linked_belly (LC-refs); saves before
-// that (v1, and pre-L1 legacy blobs) carry it as "linked_belly".
+// v2 saved the linked belly as "linked_belly_handle" (LC-refs); v3 is back to "linked_belly"
+// (a relation view). v1 and pre-L1 legacy blobs already carry it as "linked_belly".
 /obj/soulgem
-	state_version = 2
+	state_version = 3
 
 /obj/soulgem/state_migrate(list/vars, from_version)
 	..()
-	if(from_version < 2 && ("linked_belly" in vars))
-		vars["linked_belly"] = vars["linked_belly"]
-		vars -= "linked_belly"
+	if(from_version == 2 && ("linked_belly_handle" in vars))
+		vars["linked_belly"] = vars["linked_belly_handle"]
+		vars -= "linked_belly_handle"
 
 /obj/soulgem/Initialize(mapload)
 	. = ..()
@@ -138,7 +138,7 @@
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/vore/brainmob = new(src)
 	rel_set(brainmob, "gem", src)
-	own_set(brainmob, "container", src)
+	rel_set(brainmob, "container", src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
@@ -494,7 +494,7 @@
 		rel_clear(src, "own_mind")
 	brainmobs -= M
 	rel_set(M, "gem", gem)
-	own_set(M, "container", gem)
+	rel_set(M, "container", gem)
 	gem.brainmobs += M
 	if(M == selected_soul())
 		update_selected_soul()

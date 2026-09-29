@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/effect/anomaly, \
 	return FALSE
 
 /obj/effect/anomaly/proc/attackby_timed_done(mob/user, obj/item/anomaly_scanner/scanner)
-	scanner.buffered_anomaly = om_handle(src) // ALLOW(ownership): /obj/item/anomaly_scanner.buffered_anomaly (code/modules/anomalies) is still a handle var
+	rel_set(scanner, "buffered_anomaly", src)
 	scanner.tgui_interact(user)
 	return TRUE
 

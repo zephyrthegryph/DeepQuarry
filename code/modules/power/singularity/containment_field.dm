@@ -74,7 +74,7 @@
 /obj/machinery/containment_field/HasProximity(turf/T, WF, old_loc)
 	if(isnull(WF))
 		return
-	var/atom/movable/AM = om_resolve(WF) // ALLOW(ownership): the proximity protocol (observation/turf_enterexit.dm) hands the arrival over as a handle
+	var/atom/movable/AM = WF
 	if(isnull(AM))
 		log_runtime("DEBUG: HasProximity called without reference on [src].")
 		return

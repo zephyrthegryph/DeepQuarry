@@ -72,10 +72,10 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	if(istype(W, /obj/item/integrated_circuit/input/video_camera_input))
 		var/obj/item/integrated_circuit/input/video_camera_input/input = W
 		if(src in input.paired_cameras)
-			LAZYREMOVE(input.paired_cameras, src)
+			rel_remove(input, "paired_cameras", src)
 			to_chat(user, span_notice("You unpair \the [input] from \the [src]."))
 		else
-			LAZYADD(input.paired_cameras, src)
+			rel_add(input, "paired_cameras", src)
 			to_chat(user, span_notice("You pair \the [input] with \the [src]. The input circuit will now receive this camera's feed."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE

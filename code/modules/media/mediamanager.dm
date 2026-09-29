@@ -19,7 +19,7 @@
 // Set up player on login.
 /client/New()
 	. = ..()
-	own_set(src, "media", new /datum/media_manager(src))
+	media = new /datum/media_manager(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	media.open()
 	media.update_music()
 

@@ -37,7 +37,7 @@
 /obj/item/toy/balloon/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(10)
-	reagents = R
+	own_set(src, "reagents", R)
 	rel_set(R, "my_atom", src)
 
 /obj/item/toy/balloon/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)

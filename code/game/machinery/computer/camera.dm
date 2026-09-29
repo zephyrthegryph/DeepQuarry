@@ -180,8 +180,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 		pinboard.vis_contents = null
 	rel_clear(src, "showing")
 
-/obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(thingref)
-	if(showing == thingref)
+/obj/machinery/computer/security/telescreen/entertainment/proc/maybe_stop_showing(atom/thing)
+	if(showing == thing)
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/entertainment/power_change()

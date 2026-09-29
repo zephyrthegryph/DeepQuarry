@@ -2264,13 +2264,13 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes/Run()
 	var/datum/pipe_network/net = new
 	var/datum/pipeline/line_a = new
-	own_set(line_a, "air", new /datum/gas_mixture(70))
+	atmos_air_set(line_a, "air", new /datum/gas_mixture(70))
 	line_a.volume = 70
 	rel_set(line_a, "network", net)
 	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
 	line_a.air.set_temperature(T20C)
 	var/datum/pipeline/line_b = new
-	own_set(line_b, "air", new /datum/gas_mixture(70))
+	atmos_air_set(line_b, "air", new /datum/gas_mixture(70))
 	line_b.volume = 70
 	rel_set(line_b, "network", net)
 	line_b.air.set_temperature(T0C + 80)
@@ -3467,7 +3467,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Manually-built pipeline (sidesteps HE pipe two-node auto-connection).
 	var/datum/pipeline/P = new
-	own_set(P, "air", new /datum/gas_mixture(70))
+	atmos_air_set(P, "air", new /datum/gas_mixture(70))
 	P.air.adjust_gas(/datum/gas/nitrogen, 50)
 	P.air.set_temperature(T0C + 500) // hot
 
@@ -3871,7 +3871,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.alarm_area_ref().main_air_alarm = om_handle(A)
+	rel_set(A.alarm_area_ref(), "main_air_alarm", A)
 	A.stat &= ~(NOPOWER | BROKEN)
 	A.shorted = FALSE
 	A.scan_atmo()
@@ -5035,7 +5035,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_pipenet_gas_reacts_in_pipeline/Run()
 	var/datum/pipeline/P = new
-	own_set(P, "air", new /datum/gas_mixture(CELL_VOLUME))
+	atmos_air_set(P, "air", new /datum/gas_mixture(CELL_VOLUME))
 	P.air.adjust_gas(/datum/gas/plasma, 50)
 	P.air.adjust_gas(/datum/gas/oxygen, 200)
 	P.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
@@ -6210,7 +6210,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/pipe_network/receiver = new
 	var/datum/pipe_network/donor = new
 	var/datum/pipeline/line = new
-	own_set(line, "air", new /datum/gas_mixture(70))
+	atmos_air_set(line, "air", new /datum/gas_mixture(70))
 	rel_set(line, "network", donor)
 	donor.add_line_member(line)
 	own_set(donor, "air", new /datum/gas_mixture(line.air.return_volume()))
@@ -6284,7 +6284,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_thermal = 0
 	for(var/i = 1 to 3)
 		var/datum/pipeline/line = new
-		own_set(line, "air", new /datum/gas_mixture(70))
+		atmos_air_set(line, "air", new /datum/gas_mixture(70))
 		line.volume = 70
 		rel_set(line, "network", net)
 		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)

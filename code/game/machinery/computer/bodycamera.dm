@@ -111,8 +111,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 	rel_clear(src, "showing")
 	rel_clear(src, "the_camera")
 
-/obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(thingref)
-	if(showing == thingref)
+/obj/machinery/computer/security/telescreen/bodycamera/proc/maybe_stop_showing(atom/thing)
+	if(showing == thing)
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/bodycamera/power_change()

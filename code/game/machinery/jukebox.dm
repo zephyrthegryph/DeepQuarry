@@ -31,7 +31,7 @@
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	wires = new/datum/wires/jukebox(src)
+	own_set(src, "wires", new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		stat |= BROKEN

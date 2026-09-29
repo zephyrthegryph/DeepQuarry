@@ -33,7 +33,7 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
-	var/atom/echo_source = om_resolve(event.handle) // ALLOW(ownership): /datum/om/event/movable_motiontracker (code/datums/om_events) carries a handle
+	var/atom/echo_source = event.source
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc

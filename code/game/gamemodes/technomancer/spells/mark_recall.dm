@@ -30,12 +30,12 @@
 	image_anchor(I, null)
 
 //This is global, to avoid looping through a list of all objects, or god forbid, looping through world.
-/// Every placed mark (owned here); one per caster.
-GLOBAL_LIST_EMPTY_TYPED(mark_spells, /datum/technomancer_marker)
+/// Every placed mark (owned by the antag service); one per caster.
+/datum/world_service/antag/var/list/datum/technomancer_marker/mark_spells
 
 /// `user`'s placed mark, or null.
 /proc/technomancer_marker_of(mob/user)
-	for(var/datum/technomancer_marker/marker as anything in GLOB.mark_spells)
+	for(var/datum/technomancer_marker/marker as anything in GLOB.antag_service.mark_spells)
 		if(marker.caster == user)
 			return marker
 	return null
@@ -55,12 +55,12 @@ GLOBAL_LIST_EMPTY_TYPED(mark_spells, /datum/technomancer_marker)
 		var/datum/technomancer_marker/marker = technomancer_marker_of(user)
 		//They have one in the list
 		if(istype(marker))
-			own_remove(GLOB, "mark_spells", marker)
+			own_remove(GLOB.antag_service, "mark_spells", marker)
 			to_chat(user, span_notice("Your mark is moved from its old position to \the [get_turf(user)] under you."))
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		own_add(GLOB, "mark_spells", new /datum/technomancer_marker(user))
+		own_add(GLOB.antag_service, "mark_spells", new /datum/technomancer_marker(user))
 		adjust_instability(5)
 		return 1
 	else

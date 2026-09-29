@@ -29,10 +29,6 @@ SUBSYSTEM_DEF(atoms)
 	/// cable binds (doc/rewrite/init_and_turfs.md sec 4.6). Null outside a batch.
 	var/list/deferred_machine_binds
 
-	/// Atoms that will be deleted once the subsystem is initialized
-	/// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
-	var/list/atom/queued_deletions
-
 	var/init_start_time
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
@@ -259,3 +255,6 @@ SUBSYSTEM_DEF(atoms)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
 REL_LIST(/datum/controller/subsystem/atoms, queued_deletions)
+
+/// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
+/datum/controller/subsystem/atoms/var/list/atom/queued_deletions

@@ -2025,7 +2025,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 	user.unEquip(T)
 	translocator_unequip(translocator, user)
 	T.forceMove(src)
-	translocator = T
+	own_set(src, "translocator", T)
 	user.show_message("[icon2html(src, user.client)]*click!*")
 	playsound(src, 'sound/machines/click.ogg', 30, 1)
 
@@ -2036,7 +2036,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/storage/fluff/jacket, \
 			user.show_message("[icon2html(src, user.client)]*click!*")
 		else
 			translocator.forceMove(get_turf(src))
-		translocator = null
+		own_take(src, "translocator")
 		playsound(src, 'sound/machines/click.ogg', 30, 1)
 
 /obj/item/clothing/head/fluff/nikki/proc/teleport_fail(mob/user, mob/target)

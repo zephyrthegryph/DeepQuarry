@@ -31,7 +31,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return FALSE
 	default_type = material_name
 	material = new_material
-	recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
+	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	if(apply_colour || pass_color)
 		color = material.icon_colour
@@ -409,7 +409,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		return FALSE
 	default_type = material_name
 	material = new_material
-	recipes = material.get_recipes() // ALLOW(ownership): a shared global recipe table (stack_recipe definitions, never owned); /obj/item/stack.recipes needs a SHARED declaration in stack.dm
+	recipes = material.get_recipes()
 	stacktype = material.stack_type
 	color = material.icon_colour
 	if(material.conductive)

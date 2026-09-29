@@ -17,7 +17,7 @@
 
 /obj/machinery/portable_atmospherics/Initialize(mapload)
 	..()
-	own_set(src, "air_contents", new /datum/gas_mixture)
+	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 	air_contents.set_volume(volume)
 	air_contents.set_temperature(T20C)
 	return INITIALIZE_HINT_LATELOAD
@@ -77,7 +77,7 @@
 	return air_contents
 
 /obj/machinery/portable_atmospherics/set_port_network_air(datum/gas_mixture/new_air)
-	own_set(src, "air_contents", new_air)
+	atmos_air_set(src, "air_contents", new_air)
 	return TRUE
 
 /obj/machinery/portable_atmospherics/update_icon()
@@ -265,3 +265,6 @@ OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 /// connected port (a relation view: it reads null once the target is deleted).
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector
 	return connected_port
+
+// air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
+PROTO(/obj/machinery/portable_atmospherics, air_contents)

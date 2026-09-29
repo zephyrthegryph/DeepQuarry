@@ -12,8 +12,8 @@
 
 	/// Relation view: the anomaly that owns these stats.
 	var/obj/effect/anomaly/attached_anomaly
-	/// The harvester draining this anomaly: still an om handle, written by /obj/machinery/anomaly_harvester (code/modules/anomalies).
-	var/attached_harvester
+	/// The harvester draining this anomaly (a relation view, written by /obj/machinery/anomaly_harvester).
+	var/obj/machinery/anomaly_harvester/attached_harvester
 
 	TIMESTAMP_VAR(next_activation)
 	// Total of points we'll get once the anomaly does a pulse
@@ -182,7 +182,7 @@
 			stability = ANOMALY_STABLE
 
 	if(attached_harvester)
-		var/obj/machinery/anomaly_harvester/harvester = om_resolve(attached_harvester) // ALLOW(ownership): attached_harvester is written as a handle by code/modules/anomalies/anomaly_harvester.dm
+		var/obj/machinery/anomaly_harvester/harvester = attached_harvester
 		if(!istype(harvester))
 			return
 

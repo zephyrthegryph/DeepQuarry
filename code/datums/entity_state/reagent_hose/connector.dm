@@ -34,7 +34,7 @@
 
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
-	carrier = new_carrier
+	rel_set(src, "carrier", new_carrier)
 	own_set(src, "reagents", new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
@@ -191,7 +191,7 @@
 	return null
 
 /datum/hose_connector/proc/remove_hose()
-	my_hose = null
+	rel_clear(src, "my_hose")
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
 	periodic_step()

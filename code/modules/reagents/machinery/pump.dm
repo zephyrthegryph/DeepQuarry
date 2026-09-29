@@ -44,8 +44,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	qdel(src.reagents)
-	src.reagents = R
+	own_set(src, "reagents", R)
 
 	own_set(src, "cell", locate_within(src, /obj/item/cell))
 

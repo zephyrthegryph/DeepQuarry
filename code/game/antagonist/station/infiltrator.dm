@@ -38,12 +38,12 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 				to put into a headset after making some room instead.  Once that is done, you can talk to your team using <b>:t</b>")
 				traitor_mob.equip_to_slot_or_del(encrypt_key, SLOT_ID_IN_BACKPACK)
 			else
-				if(R.keyslot1)
-					R.keyslot2 = encrypt_key
-				else
-					R.keyslot1 = encrypt_key
-
 				encrypt_key.forceMove(R)
+				if(R.keyslot1)
+					own_set(R, "keyslot2", encrypt_key)
+				else
+					own_set(R, "keyslot1", encrypt_key)
+
 				R.recalculateChannels()
 				to_chat(traitor_mob, "Your headset has had a special encryption key installed, which allows you to talk to your team privately, using \
 				<b>:t</b>")
@@ -58,7 +58,8 @@ GLOBAL_DATUM(infiltrators, /datum/antagonist/traitor/infiltrator)
 			else
 				to_chat(traitor_mob, "Your radio systems has had a special encryption key installed, which allows you to talk to your team privately, by using \
 				<b>:t</b>")
-			borg.radio.keyslot = encrypt_key // Might replace an already existing key, but oh well.
+			encrypt_key.forceMove(borg.radio)
+			own_set(borg.radio, "keyslot", encrypt_key) // Might replace an already existing key (own_set deletes it), but oh well.
 			borg.radio.recalculateChannels()
 		else // Something bugged.
 			to_chat(traitor_mob, "You do not appear to have a radio installed.  This is probably a bug and you should adminhelp.")

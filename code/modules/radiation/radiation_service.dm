@@ -41,8 +41,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	while (processing.len)
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
 
-		var/source_ref = pulse_information.source_ref
-		var/atom/source = om_resolve(source_ref) // ALLOW(ownership): radiation_pulse() (_helpers/radiation.dm) records the source as a handle; becomes a relation view with it
+		var/atom/source = pulse_information.source_ref
 		if (isnull(source))
 			profile_dropped_sources++
 			own_remove(src, "processing", pulse_information)

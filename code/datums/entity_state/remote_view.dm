@@ -52,7 +52,7 @@
 	// Set config
 	if(!vconfig_path)
 		vconfig_path = /datum/remote_view_config
-	settings = new vconfig_path
+	own_set(src, "settings", new vconfig_path)
 	// Safety check, focus on ourselves if the target is deleted, and flag any movement to end the view.
 	if(QDELETED(focused_on))
 		focused_on = host_mob
@@ -340,7 +340,7 @@
 	. = ..()
 	if(!.)
 		return
-	host_item = our_item
+	rel_set(src, "host_item", our_item)
 	om_hook(host_item, list(
 		/datum/om/event/qdeleting,
 		/datum/om/event/moved,
@@ -384,7 +384,7 @@
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
 		host_mob.refresh_vision()
-	host_item = null
+	rel_clear(src, "host_item")
 	. = ..()
 
 /**
@@ -426,8 +426,6 @@
 	. = ..()
 	if(!.)
 		return
-	if(!islist(viewer_list)) // BAD BAD BAD NO
-		CRASH("Passed a viewer_list that was not a list, or was null, to /datum/remote_view/viewer_managed. Ensure the viewer_list exists before passing it into begin_remote_view().")
 	rel_set(src, "view_coordinator", coordinator)
 	view_coordinator.look(host_mob)
 	if("viewers" in view_coordinator.vars)

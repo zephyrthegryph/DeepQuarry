@@ -54,9 +54,7 @@
 
 	set_wires(new /datum/wires/autolathe(src))
 
-	if(!GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe])
-		GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe] = new /datum/techweb/autounlocking/autolathe
-	stored_research_static = GLOB.autounlock_techwebs[/datum/techweb/autounlocking/autolathe]
+	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 
 	default_apply_parts()
 	RefreshParts()

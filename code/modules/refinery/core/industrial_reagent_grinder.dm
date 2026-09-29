@@ -52,7 +52,7 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 				continue
 			failed = 0
 			bag.remove_from_storage(G, src)
-			holdingitems += G
+			own_add(src, "holdingitems", G)
 			if(holdingitems && holdingitems.len >= limit)
 				break
 
@@ -86,7 +86,7 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 		return TRUE
 
 	user.drop_from_inventory(O,src)
-	holdingitems += O
+	own_add(src, "holdingitems", O)
 	update_icon()
 	return TRUE
 
@@ -141,7 +141,7 @@ OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 	if(!GLOB.sheet_reagents[AM.type] && !GLOB.ore_reagents[AM.type] && (!AM.reagents || !AM.reagents.total_volume))
 		return FALSE
 	AM.forceMove(src)
-	holdingitems += AM
+	own_add(src, "holdingitems", AM)
 	return TRUE
 
 /obj/machinery/reagent_refinery/grinder/examine(mob/user, infix, suffix)

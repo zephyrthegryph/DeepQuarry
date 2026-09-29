@@ -9,7 +9,7 @@
 
 /obj/item/projectile/bullet/chemdart/Initialize(mapload)
 	. = ..()
-	reagents = new/datum/reagents(reagent_amount)
+	create_reagents(reagent_amount)
 	rel_set(reagents, "my_atom", src)
 
 /obj/item/ammo_casing/chemdart

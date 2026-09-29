@@ -95,7 +95,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/entertainment/ES as anything in REGISTRY_MEMBERS(REGISTRY_ENTERTAINMENT_SCREENS))
-		ES.maybe_stop_showing(om_handle(showing)) // ALLOW(ownership): the telescreens (code/game/machinery/computer) still compare handles
+		ES.maybe_stop_showing(showing)
 	om_task_periodic_stop(src)
 	rel_clear(src, "showing")
 	showing_name = null
@@ -251,7 +251,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 	if(!showing)
 		return
 	for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
-		ES.maybe_stop_showing(om_handle(showing)) // ALLOW(ownership): the telescreens (code/game/machinery/computer) still compare handles
+		ES.maybe_stop_showing(showing)
 	om_task_periodic_stop(src)
 	rel_clear(src, "showing")
 	showing_name = null

@@ -1,6 +1,6 @@
 /datum/tgui_module/ship
 	var/tmp/obj/effect/overmap/visitable/ship/linked
-	var/list/viewers //The list handed to the coordinated remote view (it keeps its own entries in it)
+	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
 	var/list/watchers //Who is viewing through us (a relation list, kept by look()/unlook())
 	var/extra_view = 0
 	var/map_view_used = FALSE
@@ -137,7 +137,6 @@
 		if(!get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 			return FALSE
 		else if(!viewing_overmap(ui.user))
-			if(!viewers) viewers = list() // List must exist for pass by reference to work
 			start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 		else
 			ui.user.reset_perspective()
@@ -427,7 +426,6 @@
 			if(ui.user.blinded || !linked())
 				return FALSE
 			else  if(!viewing_overmap(ui.user))
-				if(!viewers) viewers = list()
 				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()

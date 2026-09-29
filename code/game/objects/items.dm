@@ -58,7 +58,7 @@
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
 	/// All items can have an uplink hidden inside, just remember to add the triggers.
-	var/hidden_uplink_handle // ALLOW(ownership): written as a handle outside code/game/objects (traitor.dm, pda messenger); convert with them
+	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -1099,7 +1099,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
 	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
-	candidate.mind = null // Remove the mind from the mob to avoid issues with multi TF interactions
+	rel_clear(candidate, "mind") // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
@@ -1128,9 +1128,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	return FALSE
 
 
-/// The hidden uplink (a handle until its writers convert); a global helper keeps the proc off the base type.
+/// The hidden uplink (owned, in the item's contents); a global helper keeps the proc off the base type.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return om_resolve(I?.hidden_uplink_handle) // ALLOW(ownership): written as a handle outside code/game/objects (traitor.dm, pda messenger); convert with them
+	return I?.hidden_uplink
+
+OWN(/obj/item, hidden_uplink, OWN_CONTAINED)
 
 /// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ

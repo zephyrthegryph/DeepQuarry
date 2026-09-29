@@ -218,7 +218,7 @@ handles linking back and forth.
 
 /// returns TRUE if this connection put on hold by the silo
 /datum/remote_materials/proc/on_hold()
-	return check_z_level() ? LAZYACCESS(silo().holds, src) : FALSE
+	return check_z_level() ? (src in silo().holds) : FALSE
 
 /**
  * Check if this connection can use any materials from the silo()

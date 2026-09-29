@@ -1396,9 +1396,9 @@ About the new airlock wires panel:
 	if(T && (T.z in using_map.admin_levels))
 		secured_wires = 1
 	if (secured_wires)
-		wires = new/datum/wires/airlock/secure(src)
+		own_set(src, "wires", new/datum/wires/airlock/secure(src))
 	else
-		wires = new/datum/wires/airlock(src)
+		own_set(src, "wires", new/datum/wires/airlock(src))
 
 	. = ..()
 

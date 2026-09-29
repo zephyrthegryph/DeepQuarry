@@ -843,10 +843,10 @@
 	var/datum/material_power_graph/graph = net.material_graph
 	TEST_ASSERT_EQUAL(length(graph.vertices), 2, "A real straight cable run should reduce to its two attachment vertices")
 	TEST_ASSERT_EQUAL(length(graph.edges), 1, "Real cable connectivity should produce one reduced edge")
-	var/list/sources = list()
-	var/list/consumers = list()
-	sources[om_handle(start)] = 10000
-	consumers[om_handle(end)] = 10000
+	var/alist/sources = alist()
+	var/alist/consumers = alist()
+	sources[graph.vertex_for(start)] = 10000
+	consumers[graph.vertex_for(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
 	graph.deposit_losses(12000)
@@ -855,6 +855,10 @@
 		cable.set_engineered_material(MAT_COPPER)
 	net.rebuild_material_cache()
 	graph = net.material_graph
+	sources = alist()
+	consumers = alist()
+	sources[graph.vertex_for(start)] = 10000
+	consumers[graph.vertex_for(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
@@ -866,7 +870,7 @@
 		after += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
 	TEST_ASSERT(abs(after - before - 12000) < 2, "Paid loss must become exactly that much heat across the real cable run")
 	TEST_ASSERT(!graph.resistance_dirty && length(graph.dirty_edges) == 1, "Heating a cable run must invalidate that run without requesting a full network resistance scan")
-	graph.resolve_loads(sources, list())
+	graph.resolve_loads(sources, alist())
 	graph.deposit_losses(0)
 	TEST_ASSERT_EQUAL(middle.material_current, 0, "Disconnecting the load must clear the cable's current")
 	qdel(start)

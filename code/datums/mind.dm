@@ -137,7 +137,7 @@
 	// fully structured TGUI panel; see
 	// code/modules/admin/edit_memory_panel.dm.
 	if(!tgui_edit_memory_panel)
-		rel_set(src, "tgui_edit_memory_panel", new /datum/edit_memory_panel(src, user))
+		own_set(src, "tgui_edit_memory_panel", new /datum/edit_memory_panel(src, user))
 	tgui_edit_memory_panel.tgui_interact(user)
 
 /datum/mind/Topic(href, href_list)

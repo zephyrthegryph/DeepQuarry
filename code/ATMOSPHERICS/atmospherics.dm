@@ -79,7 +79,7 @@ REL_PAIR_LIST(/obj/machinery/atmospherics, network_memberships, normal_members)
 	if(!value || !value.own_holder_ref || (value.own_holder_ref == ref(holder) && value.own_slot == var_name) || !owner_of(value))
 		return proto_set(holder, var_name, value)
 	proto_set(holder, var_name, null)
-	holder.vars[var_name] = value // ALLOW(ownership): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network
+	holder.vars[var_name] = value // ALLOW(api, ownership): a PROTO gas port naming the network-owned mixture (ownership.md §3, gas mixtures); proto_teardown leaves it to the network
 	return value
 
 /obj/machinery/atmospherics/proc/engineered_material()

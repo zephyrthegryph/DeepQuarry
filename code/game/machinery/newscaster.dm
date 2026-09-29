@@ -601,14 +601,14 @@ REGISTRY_MEMBERSHIP(/obj/machinery/newscaster, REGISTRY_CASTERS)
 	WANTED.backup_author = scanned_user //I know, a bit wacky
 	if(photo_data)
 		WANTED.img = photo_data.photo().img
-	rel_set(GLOB.news_network, "wanted_issue_owned", WANTED)
+	own_set(GLOB.news_network, "wanted_issue_owned", WANTED)
 	GLOB.news_network.alert_readers()
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	return TRUE
 
 /obj/machinery/newscaster/proc/wanted_removal_confirmed(datum/om/prompt/confirm/ask)
 	if(GLOB.news_network.wanted_issue() && !GLOB.news_network.wanted_issue().is_admin_message)
-		rel_clear(GLOB.news_network, "wanted_issue_owned")
+		own_clear(GLOB.news_network, "wanted_issue_owned", OWN_DELETE)
 		for(var/obj/machinery/newscaster/NEWSCASTER in REGISTRY_MEMBERS(REGISTRY_CASTERS))
 			NEWSCASTER.update_icon()
 		set_temp("Wanted issue taken down.", "success", FALSE)

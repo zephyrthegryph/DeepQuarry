@@ -35,7 +35,7 @@
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	A.frame_type = board.board_type
+	own_set(A, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	board.forceMove(A)
 	own_move(board, A, "circuit") // the board goes from this machine to the frame
 	A.need_circuit = FALSE
@@ -49,7 +49,7 @@
 			C.forceMove(A)
 			continue
 		C.forceMove(loc)
-	A.forensic_data = forensic_data //carry crime data over.
+	own_transfer(src, "forensic_data", A, "forensic_data") //carry crime data over.
 	A.state = FRAME_WIRED
 	A.update_icon()
 	qdel(src)

@@ -1,4 +1,3 @@
-GLOBAL_LIST_INIT(event_collector_associations,list())
 
 /obj/structure/event_collector //set anchored, solid, etc to taste.
 	name = "event collector"
@@ -60,10 +59,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 
 /obj/structure/event_collector/proc/get_blockers()
 	. = 0
-	if(GLOB.event_collector_associations)
-		if(GLOB.event_collector_associations[blocker_channel])
-			for(var/obj/structure/event_collector_blocker/blocker in GLOB.event_collector_associations[blocker_channel])
-				. += blocker.block_amount
+	// Blockers join REGISTRY_EVENT_COLLECTOR_BLOCKERS; ours share our channel.
+	for(var/obj/structure/event_collector_blocker/blocker as anything in REGISTRY_MEMBERS(REGISTRY_EVENT_COLLECTOR_BLOCKERS))
+		if(blocker.blocker_channel == blocker_channel)
+			. += blocker.block_amount
 
 /obj/structure/event_collector/proc/jiggle_animation(intensity = 1)
 	var/matrix/secondary_effect = matrix()

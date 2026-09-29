@@ -289,7 +289,6 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 			if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
 				return FALSE
 			else if(!viewing_overmap(ui.user) && linked())
-				if(!viewers) viewers = list() // List must exist for pass by reference to work
 				start_coordinated_remoteview(src, ui.user, linked(), viewers, /datum/remote_view_config/overmap_ship_control)
 			else
 				ui.user.reset_perspective()

@@ -68,8 +68,7 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 					do_transfer = TRUE
 
 			if(do_transfer)
-				F.forceMove(src)
-				loading.food_inserted_micros -= F
+				F.forceMove(src) // leaving the food's contents releases it from food_inserted_micros (OWN_SPILL)
 				own_add(src, "food_inserted_micros", F)
 
 	if (loading.reagents.total_volume <= 0)

@@ -573,7 +573,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 		to_chat(user, span_notice("The [name] doesn't do anything."))
 		return
 
-	owner = user	//We're paired to this guy
+	rel_set(src, "owner", user)	//We are paired to this guy
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))

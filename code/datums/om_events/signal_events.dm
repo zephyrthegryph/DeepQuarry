@@ -1052,11 +1052,15 @@
 /// From /datum/controller/subsystem/motion_tracker/notice() (source_atom,/turf/echo_turf_location)
 /datum/om/event/movable_motiontracker
 	sync = TRUE
+	/// The moving atom that made the echo.
+	var/atom/source
+	/// Legacy handle to `source`, until /mob/proc/handle_motion_tracking (code/modules/mob/motiontracker.dm) reads `source`.
 	var/handle
 	var/echo_turf_location
 
-/datum/om/event/movable_motiontracker/New(handle, echo_turf_location)
-	src.handle = handle
+/datum/om/event/movable_motiontracker/New(atom/source, echo_turf_location)
+	src.source = source // ALLOW(ownership): a sync event payload that lives for one emit and is never destroyed
+	src.handle = om_handle(source) // ALLOW(ownership): transitional; the mob reader (code/modules/mob/motiontracker.dm) still resolves it and converts with that scope
 	src.echo_turf_location = echo_turf_location
 
 /// From base of atom/movable/Moved(): (/atom)

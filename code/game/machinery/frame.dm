@@ -33,8 +33,14 @@ GLOBAL_LIST(construction_frame_floor)
 	if(!istype(source))
 		return value
 	var/datum/frame/frame_types/copy = new source.type
-	for(var/var_name in list("icon_override", "name", "frame_size", "frame_class", "circuit", "frame_style", "x_offset", "y_offset"))
-		copy.vars[var_name] = source.vars[var_name]
+	copy.icon_override = source.icon_override
+	copy.name = source.name
+	copy.frame_size = source.frame_size
+	copy.frame_class = source.frame_class
+	copy.circuit = source.circuit
+	copy.frame_style = source.frame_style
+	copy.x_offset = source.x_offset
+	copy.y_offset = source.y_offset
 	return copy
 
 // Get the icon state to use at a given state.  Default implementation is based on the frame's name

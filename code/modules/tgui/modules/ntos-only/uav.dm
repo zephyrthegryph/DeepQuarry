@@ -5,7 +5,7 @@
 	var/tmp/obj/item/uav/current_uav	//The UAV we're watching
 	var/signal_strength = 0 //Our last signal strength report (cached for a few seconds)
 	var/signal_test_counter = 0 //How long until next signal strength check
-	var/list/viewers //The list handed to the coordinated remote view (it keeps its own entries in it)
+	var/list/viewers // Mobs in coordinated remote view (relation list, filled by /datum/remote_view/viewer_managed)
 	var/list/watchers //Who's viewing a UAV through us (a relation list, kept by look()/unlook())
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
@@ -76,7 +76,6 @@
 				if(get_dist(ui.user, tgui_host()) > 1 || ui.user.blinded)
 					return FALSE
 				else if(!viewing_uav(ui.user))
-					if(!viewers) viewers = list() // List must exist for pass by reference to work
 					start_coordinated_remoteview(src, ui.user, current_uav(), viewers, /datum/remote_view_config/uav_control)
 				else
 					ui.user.reset_perspective()
