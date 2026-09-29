@@ -1133,7 +1133,7 @@ REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
-	if(!A || !A.hacked_apcs || hacker || aidisabled || A.stat == DEAD)
+	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
 	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
 	locked = 1

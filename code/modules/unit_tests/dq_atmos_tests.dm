@@ -505,7 +505,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	TEST_ASSERT(turf_plasma > 100, "donor plasma didn't land on player turf: [turf_plasma]")
 
 	// Make sure player has no internals / mask filtering distorting the test.
-	own_take(H, "internal")
+	rel_clear(H, "internal")
 	H.drop_from_inventory(H.get_equipped_item(SLOT_ID_MASK))
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
@@ -6590,7 +6590,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 	TEST_ASSERT(Tank.loc == H, "tank not in human contents — setup invalid")
-	own_set(H, "internal", Tank)
+	rel_set(H, "internal", Tank)
 
 	var/initial_tank_moles = Tank.air_contents.total_moles()
 	TEST_ASSERT(initial_tank_moles > 0, "tank starts empty — setup invalid")

@@ -313,7 +313,7 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 	player.equip_to_slot_or_del(new /obj/item/tank/vox(player), SLOT_ID_BACK)
 	player.equip_to_slot_or_del(new /obj/item/flashlight(player), SLOT_ID_POCKET_R)
 
-	own_set(player, "internal", locate_within(player, /obj/item/tank))
+	rel_set(player, "internal", locate_within(player, /obj/item/tank))
 	if(istype(player.internal,/obj/item/tank) && player.internals)
 		player.internals.icon_state = "internal1"
 

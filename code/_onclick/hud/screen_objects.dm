@@ -312,7 +312,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 				var/mob/living/carbon/C = usr
 				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
-						own_take(C, "internal") // OWN_CONTAINED: the tank stays in the inventory
+						rel_clear(C, "internal") // a relation: the tank stays in its inventory slot
 						to_chat(C, span_notice("No longer running on internals."))
 						if(C.internals)
 							C.internals.icon_state = "internal0"
@@ -418,7 +418,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 
 							if(best)
 								to_chat(C, span_notice("You are now running on internals from [tankcheck[best]] [from] your [nicename[best]]."))
-								own_set(C, "internal", tankcheck[best])
+								rel_set(C, "internal", tankcheck[best])
 
 							if(C.internal)
 								if(C.internals)

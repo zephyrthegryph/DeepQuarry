@@ -53,7 +53,7 @@
 	if(istype(Vac))
 		rel_set(Vac, "output_dest", vore_selected)
 		Vac.vac_power = 3
-		Vac.vac_owner = src
+		rel_set(Vac, "vac_owner", src)
 
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/IIsAlly(mob/living/L)
 	. = ..()

@@ -336,7 +336,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 	if(istype(loc,/mob/living/carbon))
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
-			own_take(location, "internal")
+			rel_clear(location, "internal")
 			location.internals.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
 			if (location.internals)
@@ -351,7 +351,7 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 					can_open_valve = 1
 
 			if(can_open_valve)
-				own_set(location, "internal", src)
+				rel_set(location, "internal", src)
 				to_chat(user, span_notice("You open \the [src] valve."))
 				if (location.internals)
 					location.internals.icon_state = "internal1"

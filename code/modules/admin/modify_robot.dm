@@ -201,7 +201,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 				own_set(src, "source", new /mob/living/silicon/robot(null))
 			source.modtype = params["new_source"]
 			var/obj/item/robot_module/robot/robot_type = new module_type(source)
-			source.sprite_datum = pick(SSrobot_sprites.get_module_sprites(source.modtype, source))
+			proto_set(source, "sprite_datum", pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
 			source.update_icon()
 			source.emag_items = TRUE
 			if(!istype(robot_type, /obj/item/robot_module/robot))
@@ -241,7 +241,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 			var/module_type = GLOB.robot_modules[target().modtype]
 			source.modtype = target().modtype
 			new module_type(source)
-			source.sprite_datum = target().sprite_datum
+			// The target's sprite is shared (a registered sprite) or its private copy: copy a private one.
+			var/datum/robot_sprite/target_sprite = target().sprite_datum
+			proto_set(source, "sprite_datum", (!target_sprite || is_registered(target_sprite)) ? target_sprite : target_sprite.proto_copy())
 			source.update_icon()
 			source.emag_items = TRUE
 			// Target

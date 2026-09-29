@@ -22,7 +22,8 @@
 			"DANGEROUS" = 8,
 			"output destination" = 9
 			)
-	var/vac_owner = null
+	/// The mob this attachment is built into (a relation view; the mob owns the attachment through Vac).
+	var/tmp/mob/living/vac_owner
 	var/sucksound = 'sound/machines/kitchen/candymaker/candymaker-mid1.ogg'
 	var/suckverb = "vacuum"
 	var/suckanim = TRUE

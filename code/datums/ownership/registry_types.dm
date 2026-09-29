@@ -189,6 +189,8 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return (D == GLOB.default_ai_icon || (D in GLOB.ai_icons)) ? D : null
 
 /proc/registry_robolimb(datum/robolimb/D)
+	if(D == GLOB.basic_robolimb)
+		return D
 	return GLOB.all_robolimbs[D.company]
 
 /proc/registry_enum_species()

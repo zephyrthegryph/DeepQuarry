@@ -815,4 +815,4 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 /obj/item/radio/headset/event/proc/wearer() as /mob/living/carbon/human
 	return wearer
 
-// The AI owns this radio through common_radio; myAi is the back reference.
+// The AI owns this radio through aiRadio; myAi is the back reference.
