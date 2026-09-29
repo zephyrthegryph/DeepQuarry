@@ -173,7 +173,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
 /mob/living/simple_mob/Initialize(mapload)
-	remove_verb(src, /mob/verb/observe)
+	remove_verb(src, /mob/verb/observe) // ALLOW(sys_add_verb_pair): /mob/verb/observe is a static verb on /mob; simple mobs suppress it, not a grant
 
 	// Per-subtype constant tables: share one list across every instance of
 	// this type instead of allocating a fresh copy per mob. attacktext can
@@ -201,20 +201,20 @@
 		add_eyes()
 
 	if(vore_active)	// Moved here so the verb is useable before initialising vorgans.
-		add_verb(src,/mob/living/simple_mob/proc/animal_nom)
-		add_verb(src,/mob/living/proc/shred_limb)
-	add_verb(src,/mob/living/simple_mob/proc/nutrition_heal)
+		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, src)
+		om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/nutrition_heal, src)
 
 	if(organ_names)
 		organ_names = GET_DECL(organ_names)
 
 	if(CONFIG_GET(flag/allow_simple_mob_recolor))
-		add_verb(src, /mob/living/simple_mob/proc/ColorMate)
+		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, src)
 
 	enable_footsteps(FOOTSTEP_MOB_SHOE, 1, -6) // Need to go through all of the mobs to give them proper footsteps...
 
-	add_verb(src,/mob/living/simple_mob/proc/use_headset) // TGPanel
-	add_verb(src,/mob/living/simple_mob/proc/use_pda) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/use_headset, src) // TGPanel
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/use_pda, src) // TGPanel
 
 	return ..()
 
@@ -231,13 +231,13 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 //Client attached
 /mob/living/simple_mob/Login()
 	. = ..()
-	add_verb(src,/mob/living/simple_mob/proc/pick_size)
-	add_verb(src,/mob/living/simple_mob/proc/pick_color)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_size, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
 	to_chat(src,span_boldnotice("You are \the [src].") + " [player_msg]")
 	if(vore_active && !voremob_loaded)
 		init_vore(TRUE)
 	if(hasthermals)
-		add_verb(src, /mob/living/simple_mob/proc/hunting_vision) //So that maint preds can see prey through walls, to make it easier to find them.
+		om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/hunting_vision, src) //So that maint preds can see prey through walls, to make it easier to find them.
 
 /mob/living/simple_mob/proc/pick_size()
 	set name = "Pick Size"
@@ -680,14 +680,14 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 		soulgem = new(src)
 
 	// Since they have bellies, add verbs to toggle settings on them.
-	add_verb(src, /mob/living/simple_mob/proc/toggle_digestion)
-	add_verb(src, /mob/living/simple_mob/proc/toggle_fancygurgle)
-	add_verb(src, /mob/living/proc/vertical_nom)
-	add_verb(src, /mob/living/simple_mob/proc/animal_nom)
-	add_verb(src, /mob/living/proc/shred_limb)
-	add_verb(src, /mob/living/simple_mob/proc/nutrition_heal)
-	add_verb(src, /mob/living/proc/eat_trash)
-	add_verb(src, /mob/living/proc/toggle_trash_catching)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_digestion, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_fancygurgle, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/vertical_nom, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_nom, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/nutrition_heal, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/eat_trash, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_trash_catching, src)
 
 	if(LAZYLEN(vore_organs))
 		return

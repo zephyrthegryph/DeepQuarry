@@ -61,10 +61,10 @@
 	/obj/effect))
 
 /mob/living/simple_mob/vore/morph/Initialize(mapload)
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/simple_mob/vore/morph/proc/take_over_prey)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/morph/proc/take_over_prey, src)
 	if(!istype(src, /mob/living/simple_mob/vore/morph/dominated_prey))
-		add_verb(src, /mob/living/simple_mob/vore/morph/proc/morph_color)
+		om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/morph/proc/morph_color, src)
 
 	return ..()
 

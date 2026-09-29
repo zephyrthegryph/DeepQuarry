@@ -123,7 +123,7 @@
 
 	update_icon()
 
-	add_verb(src, /mob/proc/adjust_hive_range)
+	om_grant(src, GRANT_VERB, /mob/proc/adjust_hive_range, src)
 
 	return ..()
 

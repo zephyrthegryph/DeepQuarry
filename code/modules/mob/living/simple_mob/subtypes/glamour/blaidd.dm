@@ -48,9 +48,9 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
-	verbs |= /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/blaidd/load_default_bellies()

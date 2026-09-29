@@ -55,8 +55,8 @@
 	ghostjoin = TRUE
 	ghostjoin_icon()
 
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
@@ -219,7 +219,7 @@
 	desc = "A small [new_mouse_colour] rodent, often seen hiding in maintenance areas and making a nuisance of itself."
 	holder_type = text2path("/obj/item/holder/mouse/[new_mouse_colour]")
 	to_chat(src, span_notice("You are now a [new_mouse_colour] mouse!"))
-	remove_verb(src,/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour)
+	remove_verb(src,/mob/living/simple_mob/animal/passive/mouse/verb/set_mouse_colour) // ALLOW(sys_add_verb_pair): set_mouse_colour is a static verb of the mouse type; one-shot suppression after use, not a grant
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology
 	name = "Fleming"
@@ -321,8 +321,8 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 /mob/living/simple_mob/animal/passive/mouse/mining/Initialize(mapload)
 	. = ..()
 
-	add_verb(src,/mob/living/proc/ventcrawl)
-	add_verb(src,/mob/living/proc/hide)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	icon_state = "mouse_miner" // ALLOW(decl): overrides the parent's colour pick
 	item_state = "mouse_miner"
 	icon_living = "mouse_miner"
@@ -343,7 +343,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 
 /mob/living/simple_mob/animal/passive/mouse/beastmode/Initialize(mapload)
 	. = ..()
-	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
+	om_revoke(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) //No ventcrawl for hanner
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
 DECLARE_REF(/mob/living/simple_mob/animal/passive/mouse, "rat_diseases", OWNED_LIST, null)

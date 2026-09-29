@@ -56,8 +56,8 @@
 
 /mob/living/simple_mob/vore/overmap/stardog/Login()
 	. = ..()
-	remove_verb(src, /mob/living/simple_mob/proc/set_name)
-	remove_verb(src, /mob/living/simple_mob/proc/set_desc)
+	om_revoke(src, GRANT_VERB, /mob/living/simple_mob/proc/set_name, src)
+	om_revoke(src, GRANT_VERB, /mob/living/simple_mob/proc/set_desc, src)
 
 /mob/living/simple_mob/vore/overmap/stardog/proc/fur_pick_done(mob/living/user, mob/living/that_one)
 	if(!istype(that_one.loc,/turf/simulated/floor/outdoors/fur))

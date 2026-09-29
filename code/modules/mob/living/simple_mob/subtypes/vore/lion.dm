@@ -124,8 +124,8 @@
 
 /mob/living/simple_mob/vore/retaliate/lion/Login()
 	. = ..()
-	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex)
-	add_verb(src,/mob/living/simple_mob/proc/pick_color)
-	add_verb(src, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/retaliate/lion/proc/set_sex, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/pick_color, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/retaliate/lion/proc/set_mane_color, src)
 
 DECLARE_REF(/mob/living/simple_mob/vore/retaliate/lion, "mane_overlay", OWNED, null)

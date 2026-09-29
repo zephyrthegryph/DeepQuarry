@@ -94,7 +94,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	emote_hear = list("squishes")
 
 /mob/living/simple_mob/slime/Initialize(mapload)
-	add_verb(src, /mob/living/proc/ventcrawl)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
 	update_mood()
 	set_glow_color(color)
 	refresh_glow()

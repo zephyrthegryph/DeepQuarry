@@ -101,8 +101,8 @@
 
 /mob/living/simple_mob/animal/passive/opossum/Initialize(mapload)
 	. = ..()
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 
 /mob/living/simple_mob/animal/passive/opossum/poppy
 	name = "Poppy the Safety Possum"
@@ -124,4 +124,4 @@
 
 /mob/living/simple_mob/animal/passive/opossum/beastmode/Initialize(mapload)
 	. = ..()
-	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
+	om_revoke(src, GRANT_VERB, /mob/living/proc/ventcrawl, src) //No ventcrawl for hanner

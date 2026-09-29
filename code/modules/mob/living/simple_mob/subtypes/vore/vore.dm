@@ -10,9 +10,9 @@
 
 /mob/living/simple_mob/Login()
 	. = ..()
-	add_verb(src, /mob/living/simple_mob/proc/set_name)
-	add_verb(src, /mob/living/simple_mob/proc/set_desc)
-	add_verb(src, /mob/living/simple_mob/proc/set_gender)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/set_name, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/set_desc, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/set_gender, src)
 
 	if(copy_prefs_to_mob)
 		login_prefs()

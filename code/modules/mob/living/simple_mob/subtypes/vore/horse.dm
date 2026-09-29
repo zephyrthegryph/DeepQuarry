@@ -71,8 +71,8 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	add_verb(src, /mob/living/simple_mob/proc/animal_mount)
-	add_verb(src, /mob/living/proc/toggle_rider_reins)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
 	movement_cooldown = -2
 
 /mob/living/simple_mob/vore/horse/load_default_bellies()

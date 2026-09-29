@@ -204,14 +204,14 @@
 		init_vore()
 	if(is_pet)
 		return
-	add_verb(src,/mob/living/proc/ventcrawl)
-	add_verb(src,/mob/living/simple_mob/animal/synx/proc/distend_stomach)
-	add_verb(src,/mob/living/simple_mob/proc/contort)
-	add_verb(src,/mob/living/simple_mob/animal/synx/proc/sonar_ping)
-	add_verb(src,/mob/living/proc/shred_limb)
-	add_verb(src,/mob/living/simple_mob/animal/synx/proc/disguise)
-	add_verb(src,/mob/living/simple_mob/animal/synx/proc/randomspeech)
-	add_verb(src,/mob/living/simple_mob/animal/synx/proc/set_style)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/distend_stomach, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/contort, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/sonar_ping, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/shred_limb, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/disguise, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/randomspeech, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/proc/set_style, src)
 	realname = name
 	voices += "Garbled voice"
 	voices += "Unidentifiable Voice"
@@ -935,9 +935,9 @@
 
 /mob/living/simple_mob/animal/synx/ai/pet/debug/Initialize(mapload)
 	. = ..(mapload, TRUE)
-	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename)
-	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite)
-	add_verb(src,/mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/rename, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/resprite, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/animal/synx/ai/pet/debug/proc/redesc, src)
 
 ////////////////////////////////////////
 ////////////////SYNX SPAWNER////////////

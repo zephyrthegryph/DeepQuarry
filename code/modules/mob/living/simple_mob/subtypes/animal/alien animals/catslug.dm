@@ -109,9 +109,9 @@
 
 /mob/living/simple_mob/vore/alienanimals/catslug/Initialize(mapload)
 	. = ..()
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
-	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, src)
 
 DECLARE_REF(/mob/living/simple_mob/vore/alienanimals/catslug, "hat", SPILL, null)
 
@@ -293,9 +293,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 
 /mob/living/simple_mob/vore/alienanimals/catslug/custom/Initialize(mapload)
 	. = ..()
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
-	remove_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)	//Most of these have custom sprites with colour already, so we'll not let them have this.
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
+	om_revoke(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color, src)	//Most of these have custom sprites with colour already, so we'll not let them have this.
 
 /datum/category_item/catalogue/fauna/catslug/custom/spaceslug
 	name = "Alien Wildlife - Catslug - Miros"
@@ -1009,7 +1009,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/Initialize(mapload)
 	. = ..()
-	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate)
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/vore/alienanimals/catslug/suslug/proc/assussinate, src)
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/catslug/suslug/update_icon()

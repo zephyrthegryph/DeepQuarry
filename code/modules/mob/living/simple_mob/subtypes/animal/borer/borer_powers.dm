@@ -254,7 +254,7 @@
 	set desc = "Send a jolt of electricity through your host, reviving them."
 
 	// This is meant to be a bit silly, cause borers don't have much options otherwise
-	remove_verb(src, /mob/living/carbon/human/proc/jumpstart)
+	om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/jumpstart, src)
 	visible_message(span_danger("With a hideous, rattling moan, [src] shudders back to life!"))
 
 	// Dump damage or we won't be able to revive properly

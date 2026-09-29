@@ -52,7 +52,7 @@ GLOBAL_LIST_EMPTY(grub_machine_overlays)
 	. = ..()
 	sparks.set_up()
 	sparks.attach(src)
-	add_verb(src, /mob/living/proc/ventcrawl)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
 
 /mob/living/simple_mob/animal/solargrub_larva/on_death(gibbed)
 	powermachine.draining = 0

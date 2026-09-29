@@ -88,11 +88,11 @@
 	. = ..()
 	if(!riding_datum)
 		riding_datum = new /datum/riding/simple_mob(src)
-	verbs |= /mob/living/simple_mob/proc/animal_mount
-	verbs |= /mob/living/proc/toggle_rider_reins
-	verbs |= /mob/living/proc/set_size
-	verbs |= /mob/living/proc/polymorph
-	verbs |= /mob/living/proc/glamour_invisibility
+	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/animal_mount, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/toggle_rider_reins, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/set_size, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/polymorph, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/glamour_invisibility, src)
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/ddraig/load_default_bellies()
@@ -387,7 +387,7 @@
 	var/mob/living/new_mob = spawn_polymorph_mob(beast_type)
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
-		new_mob.verbs |= /mob/living/proc/revert_beast_form
-		new_mob.verbs |= /mob/living/proc/set_size
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message("<b>\The [src]</b> has transformed into \the [chosen_beast]!")

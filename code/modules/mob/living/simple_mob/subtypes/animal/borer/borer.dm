@@ -79,8 +79,8 @@
 
 /mob/living/simple_mob/animal/borer/Initialize(mapload)
 	add_language("Cortical Link")
-	add_verb(src, /mob/living/proc/ventcrawl)
-	add_verb(src, /mob/living/proc/hide)
+	om_grant(src, GRANT_VERB, /mob/living/proc/ventcrawl, src)
+	om_grant(src, GRANT_VERB, /mob/living/proc/hide, src)
 	motiontracker_subscribe()
 
 	true_name = "[pick("Primary","Secondary","Tertiary","Quaternary")] [rand(1000,9999)]"
@@ -247,9 +247,9 @@
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
-	remove_verb(host, /mob/living/carbon/proc/release_control)
-	remove_verb(host, /mob/living/carbon/proc/punish_host)
-	remove_verb(host, /mob/living/carbon/proc/spawn_larvae)
+	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
+	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/punish_host, src)
+	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/spawn_larvae, src)
 
 	// This entire section is awful and a relic of ancient times. It needs to be replaced
 	if(host_brain)
