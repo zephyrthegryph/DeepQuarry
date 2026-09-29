@@ -95,9 +95,9 @@ DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_
 	if(!glass && anchored)
 		return FALSE
 	if(glass)
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to weld the glass panel out of \the [src].", message_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to weld the glass panel out of \the [src].", start_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 		return TRUE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, message_self = "You start to disassemble \the [src].", message_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to disassemble \the [src].", start_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 	return TRUE
 
 /obj/structure/firedoor_assembly/proc/welder_act_tool_done(mob/user)

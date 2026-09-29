@@ -103,7 +103,7 @@
 	morphed = TRUE
 	form = target
 
-	visible_message(span_warning("[src] suddenly twists and changes shape, becoming a copy of [target]!"))
+	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
 	color = null
 	name = target.name
 	desc = target.desc
@@ -144,7 +144,7 @@
 	morphed = FALSE
 
 	if(!silent)
-		visible_message(span_warning("[src] suddenly collapses in on itself, dissolving into a pile of flesh!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
 
 	form = null
 	name = initial(name)
@@ -184,7 +184,7 @@
 
 /mob/living/simple_mob/vore/morph/on_death(gibbed)
 	if(morphed)
-		visible_message(span_warning("[src] twists and dissolves into a pile of flesh!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% twists and dissolves into a pile of flesh!")))
 		restore(TRUE)
 	..()
 

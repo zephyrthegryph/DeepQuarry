@@ -156,7 +156,7 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED,
 				self.my_storage.rangedload(T, self)
 
 		if(contents_count(self.my_storage) >= self.my_storage.max_storage_space)
-			self.visible_message(span_infoplain(span_bold("\The [self]") + " emits a shrill beep, indicating its storage is full."))
+			act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " emits a shrill beep, indicating its storage is full.")))
 
 		var/obj/structure/ore_box/OB = locate_in_list(view(2, self), /obj/structure/ore_box)
 

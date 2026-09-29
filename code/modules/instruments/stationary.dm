@@ -69,7 +69,7 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 	broken_icon_state = "minimoogbroken"
 
 /obj/structure/musician/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, message_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", message_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2 SECONDS, volume = 100, start_self = "You start [anchored ? "un" : ""]securing \the [src] from the floor.", start_others = "[user] begins [anchored ? "un" : ""]securing \the [src] from the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/musician/proc/wrench_act_tool_done(mob/user)

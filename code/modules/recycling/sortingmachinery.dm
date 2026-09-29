@@ -63,7 +63,7 @@
 /obj/machinery/disposal/deliveryChute/welder_act(mob/user, obj/item/I)
 	if(!c_mode)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start slicing the floorweld off the delivery chute.", receiver = src, on_done = PROC_REF(welder_act_tool_done_sorter), done_args = list(user))
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start slicing the floorweld off the delivery chute.", receiver = src, on_done = PROC_REF(welder_act_tool_done_sorter), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/disposal/deliveryChute/proc/welder_act_tool_done_sorter(mob/user)

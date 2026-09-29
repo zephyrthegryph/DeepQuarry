@@ -461,7 +461,7 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 		to_chat(user, span_filter_notice(span_warning("You must remove the floor plating first.")))
 	else
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, message_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
+		use_tool(user, tool, src, delay = 5 SECONDS, volume = 0, start_self = "You begin to cut the cables...", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user, term))
 	building_terminal = FALSE
 	return ITEM_INTERACT_SUCCESS
 

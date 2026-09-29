@@ -103,7 +103,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 	. = TRUE
 	if(O.force)
 		if(prob(20))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -111,12 +111,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(35))
-		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
+		act_message(src, null, null, MSG_OTHERS(span_bolddanger("%U% blocks [Proj] with its shield!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return
@@ -331,7 +331,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/melee/sword, INTERACT_I
 		return TRUE	//End these commands here.
 	// ition End
 
-	visible_message(span_danger(span_bold("\The [src]") + " fires at \the [orig_targ]!"))
+	act_message(src, null, null, MSG_OTHERS(span_danger(span_bold("%U%") + " fires at \the [orig_targ]!")))
 	shoot(A)
 	if(casingtype)
 		new casingtype(loc)
@@ -518,19 +518,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/merc/ranged/space/suppressor
 	. = TRUE
 	if(O.force)
 		if(prob(50))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
 		else
 			return FALSE
 	else
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/ranged/space/suppressor/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(50))
-		visible_message(span_warning("[src] blocks [Proj] with its shield!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% blocks [Proj] with its shield!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return

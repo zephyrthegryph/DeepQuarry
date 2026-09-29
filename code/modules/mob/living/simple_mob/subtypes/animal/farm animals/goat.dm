@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC
 	. = TRUE
 	var/obj/item/reagent_containers/glass/G = O
 	if(stat == CONSCIOUS && istype(G) && G.is_open_container())
-		user.visible_message(span_notice("[user] milks [src] using \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_notice("%U% milks %T% using %I%.")), item = O)
 		var/transfered = udder.trans_id_to(G, REAGENT_ID_MILK, rand(5,10))
 		if(G.reagents.total_volume >= G.volume)
 			to_chat(user, span_red("The [O] is full."))

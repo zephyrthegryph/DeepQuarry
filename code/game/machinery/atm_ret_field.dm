@@ -71,7 +71,7 @@
 /obj/machinery/atmospheric_field_generator/welder_act(mob/user, obj/item/tool)
 	if(!hatch_open)
 		return NONE
-	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, message_self = "You start to disassemble \the [src].", message_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 1.5 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start to disassemble \the [src].", start_others = "[user] starts to disassemble \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/atmospheric_field_generator/proc/welder_act_tool_done(mob/user)

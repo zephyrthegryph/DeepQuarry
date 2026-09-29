@@ -217,7 +217,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 
 	// Otherwise they're probably fighting the slime.
 	if(prob(25) && can_miss)
-		visible_message(span_warning("\The [user]'s [I] passes right through \the [src]!"))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% passes right through %T%!")), item = I)
 		user.setClickCooldown(user.get_attack_speed(I))
 		return
 	return FALSE
@@ -265,7 +265,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 
 /mob/living/simple_mob/slime/proc/squish()
 	play_sfx(src, SFX_EFFECTS_SLIME_SQUISH, vary = FALSE)
-	visible_message(span_infoplain(span_bold("\The [src]") + " squishes!"))
+	act_message(src, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " squishes!")))
 
 /datum/decl/mob_organ_names/slime
 TYPE_TABLE(/datum/decl/mob_organ_names/slime, mob_organ_hit_zones, list("cytoplasmic membrane"))

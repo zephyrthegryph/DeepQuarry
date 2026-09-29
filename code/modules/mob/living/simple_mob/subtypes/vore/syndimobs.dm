@@ -88,7 +88,7 @@
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
 	status_flags |= LEAPING
-	visible_message(span_danger("\The [src] leaps at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
@@ -118,7 +118,7 @@
 
 	if(victim)
 		victim.status_at_least(EFFECT_WEAKENED, 2)
-		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
+		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 
@@ -220,7 +220,7 @@
 	resize(oursize)
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s explosive implant lets out a shrill beep!!!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s explosive implant lets out a shrill beep!!!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(syndimob_warning_flash(delay))
 
@@ -303,7 +303,7 @@
 /mob/living/simple_mob/vore/wolftaur/syndicate/proc/implant_detonates()
 	// The actual boom.
 	if(src && !exploded)
-		visible_message(span_danger("\The [src]'s body violentl explodes!"))
+		act_message(src, null, null, MSG_OTHERS(span_danger("%U%'s body violentl explodes!")))
 		exploded = TRUE
 		new /obj/effect/decal/cleanable/blood/gibs(src.loc)
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)

@@ -44,7 +44,7 @@ REGISTRY_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/species")
 # The one list; add a type only when no instance of it is ever qdel'd or made per
 # holder. /datum/species is left out on purpose: produceCopy() makes per-mob copies.
 DEF_TYPES = ("/datum/material", "/datum/decl", "/decl", "/datum/language",
-             "/datum/property_def")
+             "/datum/property_def", "/datum/msg")
 # Base types whose vars are reported by --report (the tmp hygiene pass).
 BASE_TYPES = ("/datum", "/atom", "/atom/movable", "/obj", "/obj/item",
               "/obj/machinery", "/mob")

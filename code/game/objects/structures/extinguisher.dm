@@ -60,7 +60,7 @@
 		opened = !opened
 		update_icon()
 		return TRUE
-	use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50, message_self = "You start to unwrench the extinguisher cabinet.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, O, src, delay = 1.5 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "You start to unwrench the extinguisher cabinet.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return TRUE
 
 /obj/structure/extinguisher_cabinet/proc/wrench_act_tool_done(mob/user)

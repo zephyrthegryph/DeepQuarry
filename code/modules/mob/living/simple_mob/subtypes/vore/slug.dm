@@ -112,7 +112,7 @@
 		if(missed) // Most likely we have a slow attack and they dodged it or we somehow got moved.
 			add_attack_logs(src, A, "Animal-attacked (dodged)", admin_notify = FALSE)
 			play_sfx(src, SFX_RAKSHASA_DECAY1)
-			visible_message(span_warning("\The [src] misses."))
+			act_message(src, null, null, MSG_OTHERS(span_warning("%U% misses.")))
 			return FALSE
 		tryBumpNom(A) //Meant for bump noms but this works as intended here and has sanity checks.
 

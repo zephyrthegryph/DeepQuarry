@@ -80,7 +80,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		if(self.attached)
 			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))
-				self.visible_message(span_infoplain(span_bold("\The [self]") + " begins to sink power from the net."))
+				act_message(self, null, null, MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins to sink power from the net.")))
 			if(prob(5))
 				fx_sparks(get_turf(self), 5, FALSE)
 			self.set_anchored(TRUE)
@@ -108,7 +108,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.death_star()
 
 /mob/living/simple_mob/vore/solargrub/proc/death_star()
-	visible_message(span_warning("\The [src]'s shell rips open and evolves!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s shell rips open and evolves!")))
 
 /*
 //Commenting this bit out. It's unncecessary, especially since we only use one form.

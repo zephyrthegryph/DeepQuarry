@@ -113,7 +113,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 	forceMove(M)
 	powermachine.draining = 2
 	MACHINE_WAKE(powermachine)
-	visible_message(span_warning("\The [src] finds an opening and crawls inside \the [M]."))
+	act_message(src, M, null, MSG_OTHERS(span_warning("%U% finds an opening and crawls inside %T%.")))
 	if(!(M.type in GLOB.grub_machine_overlays))
 		generate_machine_effect(M)
 	machine_effect = image(GLOB.grub_machine_overlays[M.type], M) //Can't do this the reasonable way with an overlay,
@@ -169,7 +169,7 @@ DECLARE_REF(/mob/living/simple_mob/animal/solargrub_larva, "machine_effect", OWN
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/expand_grub()
 	eject_from_machine()
-	visible_message(span_warning("\The [src] suddenly balloons in size!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly balloons in size!")))
 	log_game("A larva has matured into a grub in area [src.loc.name] ([src.x],[src.y],[src.z]")
 	var/mob/living/simple_mob/vore/solargrub/adult = new(get_turf(src))
 	adult.tracked = tracked

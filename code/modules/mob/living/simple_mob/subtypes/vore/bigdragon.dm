@@ -756,7 +756,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 	status_flags |= LEAPING
 	flying  = 1		//So we can thunk into things
 	dq_set_hovering(src, 1)	// So we don't hurt ourselves running off cliffs
-	visible_message(span_danger("\The [src] charges at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% charges at %T%!")))
 	throw_at(A, 7, 2)
 	playsound(src, charge_sound, 75, 1)
 	if(status_flags & LEAPING)
@@ -795,7 +795,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/bigdragon, chargetimer)
 		ai_busy_end()
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
-	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% spews fire at %T%!")))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()

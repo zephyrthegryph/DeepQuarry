@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/succlet, INTERACT_I
 /mob/living/simple_mob/vore/alienanimals/succlet/proc/succlet_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	. = TRUE
 	if(istype(O, /obj/item/newspaper) && !ckey && isturf(user.loc))
-		user.visible_message(span_info("[user] swats [src] with [O]!"))
+		act_message(user, src, null, MSG_OTHERS(span_info("%U% swats %T% with %I%!")), item = O)
 		release_vore_contents()
 	else
 		return FALSE

@@ -63,7 +63,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 /mob/living/simple_mob/construct/wraith/proc/do_special_attack_1(atom/A, turf/destination, turf/starting_turf)
 
 	// Do the dig!
-	visible_message(span_danger("\The [src] vanishes into thin air \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% vanishes into thin air %T%!")))
 	flick("phase_shift",A)
 	icon_state = "phase_shift"
 
@@ -87,7 +87,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/wraith, mob_organ_hit_zones, list("body",
 		if(L == src)
 			continue
 
-		visible_message(span_danger("\The [src] appears in a flurry of slashes \the [L]!"))
+		act_message(src, L, null, MSG_OTHERS(span_danger("%U% appears in a flurry of slashes %T%!")))
 		play_sfx(L, SFX_WEAPONS_HEAVYSMASH)
 		L.apply_body_effect(/datum/body_effect/entangled, 1 SECONDS)
 		overshoot = FALSE

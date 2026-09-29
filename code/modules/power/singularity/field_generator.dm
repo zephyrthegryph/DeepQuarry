@@ -152,9 +152,9 @@
 				to_chat(user, span_red("The [src.name] needs to be wrenched to the floor."))
 				return
 			if(1)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [src] to the floor.", message_others = "[user.name] starts to weld the [src.name] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [src] to the floor.", start_others = "[user.name] starts to weld the [src.name] to the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done), done_args = list(user))
 			if(2)
-				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to cut the [src] free from the floor.", message_others = "[user.name] starts to cut the [src.name] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
+				use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to cut the [src] free from the floor.", start_others = "[user.name] starts to cut the [src.name] free from the floor.", receiver = src, on_done = PROC_REF(construction_tool_act_tool_done2), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/field_generator/proc/construction_tool_act_tool_done(mob/user)

@@ -392,7 +392,7 @@
 	to_chat(src, span_warning("You can feel the will of your prey diminishing as you gather them!"))
 
 	if(istype(G) && M == G?.grab_target())
-		src.visible_message(span_danger("[src] seems to be doing something to [M], resulting in [M]'s body looking increasingly drowsy with every passing moment!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to be doing something to %T%, resulting in %T%'s body looking increasingly drowsy with every passing moment!")))
 	om_task_start(/datum/om/task/timed/living_dominate_prey_living, src, M, G = G)
 	return TRUE
 
@@ -414,7 +414,7 @@
 	to_chat(src, span_notice("You feel your mind expanded as [M] is incorporated into you."))
 	to_chat(M, span_warning("Your mind is gathered into \the [src], becoming part of them..."))
 	if(istype(G) && M == G?.grab_target())
-		visible_message(span_danger("[src] seems to finish whatever they were doing to [M]."))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% seems to finish whatever they were doing to %T%.")))
 
 /mob/living/proc/dominate_prey_living_failed(datum/om/task/timed/living_dominate_prey_living/task)
 	var/mob/living/M = task.target

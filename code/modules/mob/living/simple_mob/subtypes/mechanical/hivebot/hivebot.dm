@@ -24,7 +24,7 @@
 
 /mob/living/simple_mob/mechanical/hivebot/on_death(gibbed)
 	..()
-	visible_message(span_warning("\The [src] blows apart!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% blows apart!")))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	fx_sparks(src, 3)
 

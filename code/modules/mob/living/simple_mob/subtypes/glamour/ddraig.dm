@@ -154,7 +154,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% rears back, ready to lunge!")))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
@@ -189,7 +189,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	set_light(glow_range, glow_intensity, glow_color) //Setting it here so the light starts immediately
 	flames = 1
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] opens its maw, emitting flames!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
 	do_windup_animation(A, charge_warmup)
 	om_after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
@@ -200,7 +200,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 		ai_busy_end()
 		return
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/dragon(get_turf(src))
-	src.visible_message(span_danger("\The [src] spews fire at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% spews fire at %T%!")))
 	playsound(src, "sound/weapons/Flamer.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 	ai_busy_end()
@@ -211,7 +211,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	if(!isturf(get_turf(A)))
 		return
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] begins to shimmer with a rainbow hue!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to shimmer with a rainbow hue!")))
 	do_windup_animation(A, tf_warmup)
 	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)
 
@@ -219,7 +219,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam_1(atom/A)
 	ai_busy_end()
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/mouselaser/ddraig(get_turf(src))
-	src.visible_message(span_danger("\The [src] breathes a beam at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% breathes a beam at %T%!")))
 	playsound(src, "sound/weapons/sparkle.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 
@@ -335,7 +335,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 		to_chat(src, span_warning("You are too injured to transform into a beast."))
 		return
 
-	visible_message("<b>\The [src]</b> begins significantly shifting their form.")
+	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> begins significantly shifting their form."))
 	om_task_start(/datum/om/task/timed/living_polymorph_living, src, src, beast_options = beast_options, chosen_beast = chosen_beast)
 	return TRUE
 
@@ -356,7 +356,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
 
 /mob/living/proc/polymorph_living_failed(datum/om/task/timed/living_polymorph_living/task)
-	visible_message("<b>\The [src]</b> ceases shifting their form.")
+	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
 	return 0
 
 /mob/living/proc/spawn_polymorph_mob(chosen_beast)

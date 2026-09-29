@@ -258,11 +258,11 @@
 		update_state()
 		return NONE
 	if(istext(glass))
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the [glass] plating off the airlock assembly.", message_others = "[user] welds the [glass] plating off the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [glass] plating off the airlock assembly.", start_others = "[user] welds the [glass] plating off the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	else if(glass == 1)
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld the glass panel out of the airlock assembly.", message_others = "[user] welds the glass panel out of the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the glass panel out of the airlock assembly.", start_others = "[user] welds the glass panel out of the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 	else if(!anchored)
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to dissassemble the airlock assembly.", message_others = "[user] dissassembles the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done3), done_args = list(user))
+		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to dissassemble the airlock assembly.", start_others = "[user] dissassembles the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done3), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -284,7 +284,7 @@
 		update_state()
 		return NONE
 	var/was_anchored = anchored
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, message_self = "You starts [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", message_others = "[user] begins [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, was_anchored))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You starts [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", start_others = "[user] begins [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, was_anchored))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -296,7 +296,7 @@
 	if(state != 1)
 		update_state()
 		return NONE
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, message_self = "You start to cut the wires from airlock assembly.", message_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, start_self = "You start to cut the wires from airlock assembly.", start_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 
@@ -315,7 +315,7 @@
 		update_state()
 		return ITEM_INTERACT_SUCCESS
 
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, message_self = "You start removing the electronics from the airlock assembly.", message_others = "\The [user] starts removing the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start removing the electronics from the airlock assembly.", start_others = "\The [user] starts removing the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	update_state()
 	return ITEM_INTERACT_SUCCESS
 

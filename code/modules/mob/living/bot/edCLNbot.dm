@@ -187,6 +187,7 @@
 	return TRUE
 
 /datum/interaction/construction/secbot/edCLN/wire
+	start_feedback = /datum/msg/start/interaction/construction/secbot/edCLN/wire
 	from_state = 5
 	to_state = 6
 	step_text = "wire it"
@@ -195,7 +196,9 @@
 	item_use = CONSTRUCTION_ITEM_USE
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "You start to wire %TARGET%."
+
+/datum/msg/start/interaction/construction/secbot/edCLN/wire
+	self = "You start to wire %T%."
 
 /datum/interaction/construction/secbot/edCLN/wire/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target
@@ -219,6 +222,7 @@
 	return TRUE
 
 /datum/interaction/construction/secbot/edCLN/attach_mop
+	start_feedback = /datum/msg/start/interaction/construction/secbot/edCLN/attach_mop
 	from_state = 7
 	to_state = 8
 	step_text = "attach the mop to the frame"
@@ -226,7 +230,9 @@
 	tool_volume = 100
 	duration = 4 SECONDS
 	tool_scaled = FALSE
-	start_self = "Attatching the mop to the frame..."
+
+/datum/msg/start/interaction/construction/secbot/edCLN/attach_mop
+	self = "Attatching the mop to the frame..."
 
 /datum/interaction/construction/secbot/edCLN/attach_mop/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/item/secbot_assembly/edCLN_assembly/assembly = target

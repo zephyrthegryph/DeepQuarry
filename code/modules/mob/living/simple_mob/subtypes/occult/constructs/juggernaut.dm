@@ -44,8 +44,9 @@
 		var/projectile_kind = P.injury_kind
 		var/incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 		if(!(istype(P, /obj/item/projectile/energy) || istype(P, /obj/item/projectile/beam)))
-			visible_message(span_danger("The [P.name] bounces off of [src]'s shell!"), \
-						span_userdanger("The [P.name] bounces off of [src]'s shell!"))
+			act_message(src, null, \
+				MSG_SELF(span_userdanger("The [P.name] bounces off of %U%'s shell!")), \
+				MSG_OTHERS(span_danger("The [P.name] bounces off of %U%'s shell!")))
 			new /obj/item/material/shard/shrapnel(src.loc)
 			if(!P.obj_damage_type())
 				projectile_kind = INJURY_BLUNT
@@ -53,8 +54,9 @@
 			injure(projectile_kind, incoming_damage, null, P, P.armor_penetration, flags = INJURE_ARMORED)
 			return -1 //Doesn't reflect non-beams or non-energy projectiles. They just smack and drop with little to no effect.
 		else
-			visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
-						span_userdanger("The [P.name] gets reflected by [src]'s shell!"))
+			act_message(src, null, \
+				MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s shell!")), \
+				MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s shell!")))
 			damage_mod = rand(3,5)
 			incoming_damage = (round(P.damage / damage_mod) - (round((P.damage / damage_mod) * 0.3)))
 			if(!P.obj_damage_type())
@@ -105,8 +107,9 @@
 /mob/living/simple_mob/construct/juggernaut/behemoth/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage*2) // We have lower damage values now
 	if(prob(reflectchance))
-		visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
-						span_userdanger("The [P.name] gets reflected by [src]'s shell!"))
+		act_message(src, null, \
+			MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s shell!")), \
+			MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s shell!")))
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)
@@ -140,8 +143,9 @@ TYPE_TABLE(/datum/decl/mob_organ_names/juggernaut, mob_organ_hit_zones, list("bo
 /mob/living/simple_mob/construct/juggernaut/behemoth/unstoppable/bullet_act(obj/item/projectile/P)
 	var/reflectchance = 100 - round(P.damage*2)
 	if(prob(reflectchance))
-		visible_message(span_danger("The [P.name] gets reflected by [src]'s shell!"), \
-						span_userdanger("The [P.name] gets reflected by [src]'s shell!"))
+		act_message(src, null, \
+			MSG_SELF(span_userdanger("The [P.name] gets reflected by %U%'s shell!")), \
+			MSG_OTHERS(span_danger("The [P.name] gets reflected by %U%'s shell!")))
 
 		// Find a turf near or on the original location to bounce to
 		if(P.starting)

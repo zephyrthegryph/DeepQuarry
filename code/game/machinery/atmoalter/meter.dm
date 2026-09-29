@@ -152,7 +152,7 @@
 	return ..()
 
 /obj/machinery/meter/wrench_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, message_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, volume = 50, start_self = "You begin to unfasten \the [src]...", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/meter/proc/wrench_act_tool_done(mob/user)

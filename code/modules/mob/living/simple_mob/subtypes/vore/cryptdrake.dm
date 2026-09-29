@@ -105,7 +105,7 @@
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src]'s eyes flash ominously!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U%'s eyes flash ominously!")))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)

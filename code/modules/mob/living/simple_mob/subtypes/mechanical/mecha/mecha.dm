@@ -99,7 +99,7 @@
 
 /mob/living/simple_mob/mechanical/mecha/bullet_act(obj/item/projectile/P)
 	if(prob(deflect_chance))
-		visible_message(span_warning("\The [P] is deflected by \the [src]'s armor!"))
+		act_message(P, src, null, MSG_OTHERS(span_warning("%U% is deflected by %T%'s armor!")))
 		deflect_sprite()
 		return 0
 	fx_sparks(src, 3)
@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null,
 /mob/living/simple_mob/mechanical/mecha/proc/mecha_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	. = TRUE
 	if(prob(deflect_chance))
-		visible_message(span_warning("\The [user]'s [I] bounces off \the [src]'s armor!"))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% bounces off %T%'s armor!")), item = I)
 		deflect_sprite()
 		user.setClickCooldown(user.get_attack_speed(I))
 		return

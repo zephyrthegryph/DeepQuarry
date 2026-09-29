@@ -54,7 +54,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/screwdriver_act(mob/user, obj/item/tool)
-	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, message_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2.5 SECONDS, volume = 75, start_self = "You begin dismantling \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/bookcase/proc/screwdriver_act_tool_done(mob/user)

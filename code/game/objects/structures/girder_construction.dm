@@ -48,13 +48,19 @@
 	tool_volume = 100
 
 /datum/interaction/construction/girder/secure
+	feedback = /datum/msg/interaction/construction/girder/secure
+	start_feedback = /datum/msg/start/interaction/construction/girder/secure
 	from_state = "displaced"
 	to_state = "anchored"
 	step_text = "secure the girder"
 	tool = TOOL_WRENCH
 	duration = 4 SECONDS
-	start_self = "Now securing the girder..."
-	message_self = "You secured the girder!"
+
+/datum/msg/interaction/construction/girder/secure
+	self = "You secured the girder!"
+
+/datum/msg/start/interaction/construction/girder/secure
+	self = "Now securing the girder..."
 
 /datum/interaction/construction/girder/secure/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/girder/girder = target
@@ -62,13 +68,19 @@
 	return TRUE
 
 /datum/interaction/construction/girder/dislodge
+	feedback = /datum/msg/interaction/construction/girder/dislodge
+	start_feedback = /datum/msg/start/interaction/construction/girder/dislodge
 	from_state = "anchored"
 	to_state = "displaced"
 	step_text = "dislodge the girder"
 	tool = TOOL_CROWBAR
 	duration = 4 SECONDS
-	start_self = "Now dislodging the girder..."
-	message_self = "You dislodged the girder!"
+
+/datum/msg/interaction/construction/girder/dislodge
+	self = "You dislodged the girder!"
+
+/datum/msg/start/interaction/construction/girder/dislodge
+	self = "Now dislodging the girder..."
 
 /datum/interaction/construction/girder/dislodge/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/girder/girder = target
@@ -76,12 +88,18 @@
 	return TRUE
 
 /datum/interaction/construction/girder/disassemble
+	feedback = /datum/msg/interaction/construction/girder/disassemble
+	start_feedback = /datum/msg/start/interaction/construction/girder/disassemble
 	from_state = "anchored"
 	to_state = CONSTRUCTION_DONE
 	step_text = "disassemble the girder"
 	tool = TOOL_WRENCH
-	start_self = "Now disassembling the girder..."
-	message_self = "You dissasembled the girder!"
+
+/datum/msg/interaction/construction/girder/disassemble
+	self = "You dissasembled the girder!"
+
+/datum/msg/start/interaction/construction/girder/disassemble
+	self = "Now disassembling the girder..."
 
 /datum/interaction/construction/girder/disassemble/available_on(atom/target)
 	var/obj/structure/girder/girder = target
@@ -123,13 +141,19 @@
 	return TRUE
 
 /datum/interaction/construction/girder/unsecure_struts
+	feedback = /datum/msg/interaction/construction/girder/unsecure_struts
+	start_feedback = /datum/msg/start/interaction/construction/girder/unsecure_struts
 	from_state = "reinforced"
 	to_state = "struts_loose"
 	step_text = "unsecure the support struts"
 	tool = TOOL_SCREWDRIVER
 	duration = 4 SECONDS
-	start_self = "Now unsecuring support struts..."
-	message_self = "You unsecured the support struts!"
+
+/datum/msg/interaction/construction/girder/unsecure_struts
+	self = "You unsecured the support struts!"
+
+/datum/msg/start/interaction/construction/girder/unsecure_struts
+	self = "Now unsecuring support struts..."
 
 /datum/interaction/construction/girder/unsecure_struts/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/girder/girder = target
@@ -137,13 +161,19 @@
 	return TRUE
 
 /datum/interaction/construction/girder/remove_struts
+	feedback = /datum/msg/interaction/construction/girder/remove_struts
+	start_feedback = /datum/msg/start/interaction/construction/girder/remove_struts
 	from_state = "struts_loose"
 	to_state = "anchored"
 	step_text = "remove the support struts"
 	tool = TOOL_WIRECUTTER
 	duration = 4 SECONDS
-	start_self = "Now removing support struts..."
-	message_self = "You removed the support struts!"
+
+/datum/msg/interaction/construction/girder/remove_struts
+	self = "You removed the support struts!"
+
+/datum/msg/start/interaction/construction/girder/remove_struts
+	self = "Now removing support struts..."
 
 /datum/interaction/construction/girder/remove_struts/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/girder/girder = target
@@ -174,13 +204,19 @@
 	return
 
 /datum/interaction/construction/girder/cult_disassemble
+	feedback = /datum/msg/interaction/construction/girder/cult_disassemble
+	start_feedback = /datum/msg/start/interaction/construction/girder/cult_disassemble
 	from_state = "column"
 	to_state = CONSTRUCTION_DONE
 	step_text = "disassemble the column"
 	tool = TOOL_WRENCH
 	duration = 4 SECONDS
-	start_self = "Now disassembling the girder..."
-	message_self = "You disassembled the girder!"
+
+/datum/msg/interaction/construction/girder/cult_disassemble
+	self = "You disassembled the girder!"
+
+/datum/msg/start/interaction/construction/girder/cult_disassemble
+	self = "Now disassembling the girder..."
 
 /datum/interaction/construction/girder/cult_disassemble/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/girder/girder = target

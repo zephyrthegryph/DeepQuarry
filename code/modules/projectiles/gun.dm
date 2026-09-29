@@ -329,7 +329,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 	if(!dna_lock || !attached_lock || attached_lock.controller_lock)
 		to_chat(user, span_warning("\The [src] is not accepting modifications at this time."))
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, message_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 2.5 SECONDS, quality = TOOL_SCREWDRIVER, volume = 50, start_self = "You begin removing \the [attached_lock] from \the [src].", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/gun/proc/screwdriver_act_tool_done(mob/user)

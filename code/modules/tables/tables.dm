@@ -141,7 +141,7 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	var/obj/item/weldingtool/welder = tool.get_welder()
 	if(!welder.welding)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, message_self = "You begin repairing damage to \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), claims = TRUE)
+	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing damage to \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), claims = TRUE)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/table/proc/welder_act_tool_done(mob/user)

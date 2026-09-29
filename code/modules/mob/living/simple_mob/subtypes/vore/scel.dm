@@ -162,7 +162,7 @@
 		return FALSE
 
 	ai_busy_begin()
-	visible_message(span_warning("\The [src] rears back, ready to lunge!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% rears back, ready to lunge!")))
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
@@ -194,7 +194,7 @@
 
 /mob/living/simple_mob/vore/scel/proc/tongue(atom/A)
 	var/obj/item/projectile/P = new /obj/item/projectile/beam/appendage(get_turf(src))
-	src.visible_message(span_danger("\The [src] launches a black appendage at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% launches a black appendage at %T%!")))
 	playsound(src, "sound/effects/slime_squish.ogg", 50, 1)
 	P.launch_projectile(A, BP_TORSO, src)
 

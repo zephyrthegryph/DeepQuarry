@@ -57,11 +57,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/spacecritter, INTERACT_ITEM(null
 	L = new evolve(get_turf(src))
 	if(mind)
 		src.mind.transfer_to(L)
-	visible_message(span_warning("\The [src] suddenly evolves!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
 	qdel(src)
 
 /mob/living/simple_mob/vore/spacecritter/proc/duplicate()
-	visible_message(span_warning("\The [src] splits into two!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% splits into two!")))
 	new copy (src.loc)
 
 

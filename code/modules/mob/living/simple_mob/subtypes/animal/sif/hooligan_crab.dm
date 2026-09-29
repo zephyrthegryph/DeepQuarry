@@ -80,8 +80,8 @@
 		if(was_stunned) // Try to prevent chain-stuns by having them thrown.
 			var/throwdir = get_dir(src, L)
 			L.throw_at(get_edge_target_turf(L, throwdir), 5, 1, src)
-			visible_message(span_danger("\The [src] hurls \the [L] away!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% hurls %T% away!")))
 		else
-			visible_message(span_danger("\The [src] crushes \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% crushes %T%!")))
 
 // The AI for hooligan crabs. Follows people for awhile.

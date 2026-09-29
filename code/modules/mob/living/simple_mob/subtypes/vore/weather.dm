@@ -196,7 +196,7 @@
 		return
 
 	status_flags |= LEAPING
-	visible_message(span_danger("\The [src] leaps at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
 	om_after(src, 5, PROC_REF(dash_attack_1), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
@@ -226,7 +226,7 @@
 
 	if(victim)
 		victim.status_at_least(EFFECT_WEAKENED, 2)
-		victim.visible_message(span_danger("\The [src] knocks down \the [victim]!"))
+		act_message(src, victim, null, MSG_OTHERS(span_danger("%U% knocks down %T%!")))
 		to_chat(victim, span_critical("\The [src] jumps on you!"))
 		. = TRUE
 

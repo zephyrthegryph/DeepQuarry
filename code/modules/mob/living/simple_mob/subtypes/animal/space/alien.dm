@@ -117,7 +117,7 @@
 
 /mob/living/simple_mob/animal/space/alien/on_death(gibbed)
 	..()
-	visible_message("[src] lets out a waning guttural screech, green blood bubbling from its maw...")
+	act_message(src, null, null, MSG_OTHERS("%U% lets out a waning guttural screech, green blood bubbling from its maw..."))
 	play_sfx(src, SFX_VOICE_HISS6)
 
 

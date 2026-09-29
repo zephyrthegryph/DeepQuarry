@@ -312,7 +312,7 @@
 	if(get_integrity() >= max_integrity)
 		to_chat(user, span_warning("[src] is already in good condition!"))
 		return TRUE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, message_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
 	return TRUE
 
 /obj/machinery/door/window/proc/welder_act_tool_done_windoor(mob/user)
@@ -323,7 +323,7 @@
 /obj/machinery/door/window/crowbar_act(mob/user, obj/item/tool)
 	if(operating == 1 || density)
 		return FALSE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50, message_self = "You start to pry the windoor out of the frame.", message_others = "[user] begins prying the windoor out of the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You start to pry the windoor out of the frame.", start_others = "[user] begins prying the windoor out of the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/door/window/proc/crowbar_act_tool_done(mob/user)

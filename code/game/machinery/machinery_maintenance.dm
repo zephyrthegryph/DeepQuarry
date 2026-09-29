@@ -46,9 +46,12 @@
 	var/obj/machinery/machine = target
 	return machine.panel_open ? "Close maintenance panel" : "Open maintenance panel"
 
-/datum/interaction/maintainable/panel/messages(mob/actor, atom/target, obj/item/held)
+/datum/interaction/maintainable/panel/feedback_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
-	return list("You [machine.panel_open ? "close" : "open"] the maintenance hatch of %TARGET%.", null)
+	return machine.panel_open ? /datum/msg/interaction/maintenance_panel/close : /datum/msg/interaction/maintenance_panel/open
+
+MSG_DEF_SELF(interaction/maintenance_panel/open, "You open the maintenance hatch of %T%.")
+MSG_DEF_SELF(interaction/maintenance_panel/close, "You close the maintenance hatch of %T%.")
 
 /obj/machinery/proc/toggle_maintenance_panel(mob/actor, obj/item/held, datum/interaction/interaction)
 	panel_open = !panel_open
@@ -94,15 +97,18 @@
 	var/obj/machinery/machine = target
 	return tool_delay(actor, held, machine.maintenance_wrench_time, tool)
 
-/datum/interaction/maintainable/anchor/start_messages(mob/actor, atom/target, obj/item/held)
+/datum/interaction/maintainable/anchor/start_feedback_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
-	var/un = machine.anchored ? "un" : ""
-	return list("You start [un]securing %TARGET%.", "%ACTOR% begins [un]securing %TARGET%.")
+	return machine.anchored ? /datum/msg/start/interaction/machine_anchor/unsecure : /datum/msg/start/interaction/machine_anchor/secure
 
-/datum/interaction/maintainable/anchor/messages(mob/actor, atom/target, obj/item/held)
+/datum/interaction/maintainable/anchor/feedback_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
-	var/un = machine.anchored ? "un" : ""
-	return list("You [un]secure %TARGET%.", "%ACTOR% has [un]secured %TARGET%.")
+	return machine.anchored ? /datum/msg/interaction/machine_anchor/unsecure : /datum/msg/interaction/machine_anchor/secure
+
+MSG_DEF(start/interaction/machine_anchor/secure, "You start securing %T%.", "%U% begins securing %T%.")
+MSG_DEF(start/interaction/machine_anchor/unsecure, "You start unsecuring %T%.", "%U% begins unsecuring %T%.")
+MSG_DEF(interaction/machine_anchor/secure, "You secure %T%.", "%U% has secured %T%.")
+MSG_DEF(interaction/machine_anchor/unsecure, "You unsecure %T%.", "%U% has unsecured %T%.")
 
 /obj/machinery/proc/toggle_maintenance_anchor(mob/actor, obj/item/held, datum/interaction/interaction)
 	set_anchored(!anchored)
@@ -125,16 +131,13 @@
 		REQ_PROC(/proc/dq_held_welder_lit, "the welding tool must be on"),
 	)
 	effect = /obj/machinery/proc/maintenance_repair
+	feedback = /datum/msg/interaction/machine_repair
 
 /datum/interaction/maintainable/repair/duration_for(mob/actor, atom/target, obj/item/held)
 	var/obj/machinery/machine = target
 	return tool_delay(actor, held, machine.maintenance_weld_time, tool)
 
-/// The repair interaction's feedback (self, others). Shared; interaction code only reads it.
-GLOBAL_LIST_INIT(maintenance_repair_messages, list("You repair %TARGET%.", "%ACTOR% repairs %TARGET%."))
-
-/datum/interaction/maintainable/repair/messages(mob/actor, atom/target, obj/item/held)
-	return GLOB.maintenance_repair_messages
+MSG_DEF(interaction/machine_repair, "You repair %T%.", "%U% repairs %T%.")
 
 /obj/machinery/proc/maintenance_repair(mob/actor, obj/item/held, datum/interaction/interaction)
 	repair_damage(max_integrity)

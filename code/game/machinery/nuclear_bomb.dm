@@ -125,10 +125,10 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	switch(removal_stage)
 		if(0)
-			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, message_self = "You start cutting loose the anchoring bolt covers with [tool]...", message_others = "[user] starts cutting loose the anchoring bolt covers on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 0, start_self = "You start cutting loose the anchoring bolt covers with [tool]...", start_others = "[user] starts cutting loose the anchoring bolt covers on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 		if(2)
-			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, message_self = "You start cutting apart the anchoring system's sealant with [tool]...", message_others = "[user] starts cutting apart the anchoring system sealant on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
+			use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, amount = 5, volume = 50, start_self = "You start cutting apart the anchoring system's sealant with [tool]...", start_others = "[user] starts cutting apart the anchoring system sealant on [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -149,10 +149,10 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	switch(removal_stage)
 		if(1)
-			use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, message_self = "You start forcing open the anchoring bolt covers with [tool]...", message_others = "[user] starts forcing open the bolt covers on [src].", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+			use_tool(user, tool, src, delay = 15, quality = TOOL_CROWBAR, volume = 50, start_self = "You start forcing open the anchoring bolt covers with [tool]...", start_others = "[user] starts forcing open the bolt covers on [src].", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 		if(4)
-			use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, message_self = "You begin lifting the device off the anchors...", message_others = "[user] begins lifting [src] off of the anchors.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done2), done_args = list(user))
+			use_tool(user, tool, src, delay = 8 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You begin lifting the device off the anchors...", start_others = "[user] begins lifting [src] off of the anchors.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done2), done_args = list(user))
 			return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
@@ -174,7 +174,7 @@ GLOBAL_VAR(bomb_set)
 		return NONE
 	if(removal_stage != 3)
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, message_self = "You begin unwrenching the anchoring bolts...", message_others = "[user] begins unwrenching the anchoring bolts on [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
+	use_tool(user, tool, src, delay = 5 SECONDS, quality = TOOL_WRENCH, volume = 50, start_self = "You begin unwrenching the anchoring bolts...", start_others = "[user] begins unwrenching the anchoring bolts on [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/nuclearbomb/proc/wrench_act_tool_done(mob/user)

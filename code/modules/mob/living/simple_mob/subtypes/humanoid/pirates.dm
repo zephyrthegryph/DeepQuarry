@@ -150,7 +150,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 	. = TRUE
 	if(O.force)
 		if(prob(15))
-			visible_message(span_danger("\The [src] blocks \the [O] with its shield!"))
+			act_message(src, O, null, MSG_OTHERS(span_danger("%U% blocks %T% with its shield!")))
 			if(user)
 				ai_brain.react_to_attack(user)
 			return
@@ -158,12 +158,12 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/pirate/shield, INTERACT_ITEM
 			return FALSE
 	else
 		to_chat(user, span_warning("This weapon is ineffective, it does no damage."))
-		visible_message(span_warning("\The [user] gently taps [src] with \the [O]."))
+		act_message(user, src, null, MSG_OTHERS(span_warning("%U% gently taps %T% with %I%.")), item = O)
 
 /mob/living/simple_mob/humanoid/merc/melee/sword/bullet_act(obj/item/projectile/Proj)
 	if(!Proj)	return
 	if(prob(25))
-		visible_message(span_bolddanger("[src] blocks [Proj] with its shield!"))
+		act_message(src, null, null, MSG_OTHERS(span_bolddanger("%U% blocks [Proj] with its shield!")))
 		if(Proj.firer)
 			ai_brain.react_to_attack(Proj.firer)
 		return

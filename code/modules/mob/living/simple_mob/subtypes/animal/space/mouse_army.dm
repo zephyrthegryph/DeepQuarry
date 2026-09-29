@@ -137,7 +137,7 @@
 	var/ruptured = 0
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s tank groans!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank groans!")))
 	var/delay = rand(1, 3)
 	color_sequence(mouse_warning_flash(delay))
 
@@ -173,7 +173,7 @@
 
 
 /mob/living/simple_mob/animal/space/mouse_army/ammo/on_death(gibbed)
-	visible_message(span_critical("\The [src]'s body begins to rupture!"))
+	act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body begins to rupture!")))
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(mouse_warning_flash(delay))
 
@@ -434,14 +434,14 @@
 
 /mob/living/simple_mob/animal/space/mouse_army/pyro/proc/rupture()
 	if(!ruptured)
-		visible_message(span_critical("\The [src]'s tank ruptures!"))
+		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s tank ruptures!")))
 		ruptured = 1
 		adjust_fire_stacks(2)
 		ignite_mob()
 
 /mob/living/simple_mob/animal/space/mouse_army/ammo/proc/detonate()
 	if(src && !exploded)
-		visible_message(span_critical("\The [src]'s body detonates!"))
+		act_message(src, null, null, MSG_OTHERS(span_critical("%U%'s body detonates!")))
 		exploded = 1
 		explosion(src.loc, explosion_dev_range, explosion_heavy_range, explosion_light_range, explosion_flash_range)
 		qdel(src)

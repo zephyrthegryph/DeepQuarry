@@ -68,9 +68,9 @@
 		var/mob/living/L = A
 		if(prob(knockdown_chance))
 			L.apply_body_effect(/datum/body_effect/entangled, 4 SECONDS) // replacing weaken/slowdown with slow down
-			L.visible_message(span_danger("\The [src] buffets \the [L]!"))
+			act_message(src, L, null, MSG_OTHERS(span_danger("%U% buffets %T%!")))
 			ai_brain?.lose_target()
-			L.visible_message(span_notice("\The [src] seems to lose interest in \the [L]..."))
+			act_message(src, L, null, MSG_OTHERS(span_notice("%U% seems to lose interest in %T%...")))
 
 /datum/say_list/space_ray
 	emote_see = list("swoops","dives","drifts on a solar current","glides elegantly through the void","briefly tumbles")

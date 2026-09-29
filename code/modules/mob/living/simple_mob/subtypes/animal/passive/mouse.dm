@@ -306,7 +306,7 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	for(var/L in contents)
 		if(isanimal(L))
 			var/mob/living/simple_mob/S = L
-			user.visible_message(span_notice("[user] [S.response_help] \the [S]."))
+			act_message(user, S, null, MSG_OTHERS(span_notice("%U% [S.response_help] %T%.")))
 	return TRUE
 
 /mob/living/simple_mob/animal/passive/mouse/mining

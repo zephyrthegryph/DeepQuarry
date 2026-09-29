@@ -634,9 +634,9 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	if(prob(successrate)) // pounce success!
 		M.status_at_least(EFFECT_WEAKENED, 5)
 		M.status_adjust(EFFECT_STUNNED, 2)
-		M.visible_message(span_danger("\The [src] pounces on \the [M]!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% pounces on %T%!")))
 	else // pounce misses!
-		M.visible_message(span_danger("\The [src] attempts to pounce \the [M] but misses!"))
+		act_message(src, M, null, MSG_OTHERS(span_danger("%U% attempts to pounce %T% but misses!")))
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
 
 	if(will_eat(M) && (M.lying || vore_standing_too)) //if they're edible then eat them too
@@ -756,7 +756,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 			return FALSE
 		if(tmob.canmove && prob(vore_pounce_chance)) //if they'd pounce for other noms, pounce for these too, otherwise still try and eat them if they hold still
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
-		tmob.visible_message(span_danger("\The [src] [vore_bump_emote] \the [tmob]!"))
+		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
 		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
 			animal_nom(tmob)
@@ -913,7 +913,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 	status_flags |= LEAPING
 	pixel_y = pixel_y + 10
 
-	visible_message(span_danger("\The [src] leaps at [T]!"))
+	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y

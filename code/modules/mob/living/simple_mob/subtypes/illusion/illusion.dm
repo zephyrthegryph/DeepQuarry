@@ -68,20 +68,19 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	. = TRUE
 	if(!realistic)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS)
-		visible_message(span_warning("\The [M]'s hand goes through \the [src]!"))
+		act_message(M, src, null, MSG_OTHERS(span_warning("%U%'s hand goes through %T%!")))
 		return
 	else
 		switch(interaction.stance)
 			if(I_HELP)
-				M.visible_message(
-					span_notice("\The [M] hugs [src] to make [p_them()] feel better!"), \
-					span_notice("You hug [src] to make [p_them()] feel better!")
-					) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
+				act_message(M, src, \
+					MSG_SELF(span_notice("You hug %T% to make [p_them()] feel better!")), \
+					MSG_OTHERS(span_notice("%U% hugs %T% to make [p_them()] feel better!"))) // slightly redundant as at the moment most mobs still use the normal gender var, but it works and future-proofs it
 				play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 
 			if(I_DISARM)
 				play_sfx(src, SFX_WEAPONS_PUNCHMISS)
-				visible_message(span_danger("\The [M] attempted to disarm [src]!"))
+				act_message(M, src, null, MSG_OTHERS(span_danger("%U% attempted to disarm %T%!")))
 				M.do_attack_animation(src)
 
 			if(I_GRAB)
@@ -89,7 +88,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 
 			if(I_HURT)
 				injure(INJURY_BLUNT, harm_intent_damage, source = M)
-				M.visible_message(span_danger("\The [M] [response_harm] \the [src]"))
+				act_message(M, src, null, MSG_OTHERS(span_danger("%U% [response_harm] %T%")))
 				M.do_attack_animation(src)
 
 /mob/living/simple_mob/illusion/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
@@ -97,7 +96,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 		return ..()
 
 	play_sfx(src, SFX_WEAPONS_PUNCHMISS)
-	visible_message(span_warning("\The [user]'s [I] goes through \the [src]!"))
+	act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% goes through %T%!")), item = I)
 	return FALSE
 
 /mob/living/simple_mob/illusion/ex_act()

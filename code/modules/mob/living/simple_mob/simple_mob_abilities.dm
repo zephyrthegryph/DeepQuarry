@@ -305,7 +305,7 @@
 		return
 
 	new /obj/effect/alien/acid(get_turf(O), O)
-	visible_message(span_alium(span_bold("[src] vomits globs of vile stuff all over [O]. It begins to sizzle and melt under the bubbling mess of acid!")))
+	act_message(src, O, null, MSG_OTHERS(span_alium(span_bold("%U% vomits globs of vile stuff all over %T%. It begins to sizzle and melt under the bubbling mess of acid!"))))
 
 	return
 

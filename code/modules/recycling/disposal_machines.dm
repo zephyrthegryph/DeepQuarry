@@ -269,7 +269,7 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			to_chat(user, "Eject the items first!")
 		return ITEM_INTERACT_BLOCKING
-	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, message_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
+	use_tool(user, I, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 100, start_self = "You start slicing the floorweld off the disposal unit.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/disposal/proc/welder_act_tool_done(mob/user)

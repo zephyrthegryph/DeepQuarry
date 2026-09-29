@@ -104,7 +104,7 @@ TYPE_TABLE(/datum/decl/mob_organ_names/hivebotsupport, mob_organ_hit_zones, list
 
 /mob/living/simple_mob/mechanical/hivebot/support/harry/on_death(gibbed)
 	..()
-	visible_message(span_warning("Connection... terminated... Sweet Release... obtained."),span_danger("\The [src] blows apart!"))
+	act_message(src, null, MSG_SELF(span_danger("%U% blows apart!")), MSG_OTHERS(span_warning("Connection... terminated... Sweet Release... obtained.")))
 	new /obj/effect/decal/cleanable/blood/gibs/robot(src.loc)
 	fx_sparks(src, 3)
 

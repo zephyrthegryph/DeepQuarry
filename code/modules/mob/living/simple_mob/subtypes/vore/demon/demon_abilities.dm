@@ -260,7 +260,7 @@
 
 	setClickCooldown(8)
 	T.resize(size_amount)
-	visible_message(span_warning("[src] shrinks [T]!"),span_notice("You shrink [T]."))
+	act_message(src, T, MSG_SELF(span_notice("You shrink %T%.")), MSG_OTHERS(span_warning("%U% shrinks %T%!")))
 
 /mob/living/simple_mob/vore/demon
 	var/size_amount = RESIZE_TINY //Adding a var to keep track of sizespell setting
@@ -305,7 +305,7 @@
 
 	setClickCooldown(8)
 	T.reagents.add_reagent(poison_type, poison_per_bite)
-	visible_message(span_warning("[src] bites [T]!"),span_notice("You bite [T]."))
+	act_message(src, T, MSG_SELF(span_notice("You bite %T%.")), MSG_OTHERS(span_warning("%U% bites %T%!")))
 
 /mob/living/simple_mob/vore/demon/proc/phase_shift_wears_off()
 	shifted_out = FALSE

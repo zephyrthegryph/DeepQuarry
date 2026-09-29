@@ -1048,7 +1048,7 @@ About the new airlock wires panel:
 
 /obj/machinery/door/airlock/proc/interaction_pry(mob/user, obj/item/tool, datum/interaction/interaction)
 	if(can_remove_electronics())
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, message_self = "You start to remove electronics from the airlock assembly.", message_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 75, start_self = "You start to remove electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
 		return TRUE
 
 	if(arePowerSystemsOn())

@@ -50,7 +50,7 @@
 
 
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_microsingularity(atom/target)
-	visible_message(span_warning("\The [src] drops a ticking time bomb!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% drops a ticking time bomb!")))
 
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
 	if(istype(G))
@@ -60,7 +60,7 @@
 
 	ai_busy_end()
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/launch_rockets(atom/target)
-	visible_message(span_warning("\The [src] creates weak looking hivebots!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% creates weak looking hivebots!")))
 
 	var/obj/item/grenade/G = new grenade_type2(get_turf(src))
 	if(istype(G))
@@ -71,7 +71,7 @@
 	ai_busy_end()
 /mob/living/simple_mob/mechanical/hivebot/precusor/chrono/proc/electric_defense(atom/target)
 	var/turf/T = get_turf(target)
-	visible_message(span_warning("\The [src] fires an energetic sphere into the air!"))
+	act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires an energetic sphere into the air!")))
 	play_sfx(src, SFX_WEAPONS_LASER)
 	face_atom(T)
 	var/obj/item/projectile/arc/microsingulo/sphere = new(loc)

@@ -490,7 +490,7 @@ DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 /obj/machinery/camera/proc/weld(obj/item/tool, mob/user, on_done, list/done_args)
 	if(om_busy(src)) // a weld in progress claims it
 		return 0
-	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, message_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
+	var/result = use_tool(user, tool, src, delay = 10 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld [src]..", receiver = src, on_done = PROC_REF(weld_finished), done_args = list(on_done, done_args), claims = TRUE)
 	return result
 
 /obj/machinery/camera/proc/weld_finished(on_done, list/done_args)

@@ -361,7 +361,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/zorgoia, \
 				if(M.zone_sel.selecting == BP_GROIN)
 					if(M.vore_bellyrub(src))
 						return TRUE
-				M.visible_message(span_notice("[M] [response_help] \the [src]."))
+				act_message(M, src, null, MSG_OTHERS(span_notice("%U% [response_help] %T%.")))
 				if(ai_brain)
 					var/datum/ai_brain/AI = ai_brain
 					AI.lose_target()  // sleep-style state — drop current target

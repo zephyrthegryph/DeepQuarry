@@ -44,7 +44,7 @@
 	if(missed) // Most likely we have a slow attack and they dodged it or we somehow got moved.
 		add_attack_logs(src, A, "Animal-attacked (dodged)", admin_notify = FALSE)
 		play_sfx(src, SFX_WEAPONS_PUNCHMISS, 3, extrarange = 0)
-		visible_message(span_warning("\The [src] misses their attack."))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% misses their attack.")))
 		return FALSE
 
 	var/damage_to_do = rand(melee_damage_lower, melee_damage_upper)
@@ -125,7 +125,7 @@
 			EXPIRY_SET(src, ranged_cooldown, ranged_cooldown_time + ((injury_level / 2) SECONDS), CLOCK_WORLD) //Special addition here. This is a timer. Keeping updating the time after shooting. Add that ranged cooldown time specified in the mob to the world time.
 		return TRUE
 
-	visible_message(span_danger(span_bold("\The [src]") + " fires at \the [A]!"))
+	act_message(src, A, null, MSG_OTHERS(span_danger(span_bold("%U%") + " fires at %T%!")))
 	shoot(A)
 	if(casingtype)
 		new casingtype(loc)
@@ -245,7 +245,7 @@
 /mob/living/simple_mob/proc/rocket_volley_step(atom/target, rocket_type, count, retract_message, then_proc, i)
 	var/turf/T = get_turf(target)
 	if(T)
-		visible_message(span_warning("\The [src] fires a rocket into the air!"))
+		act_message(src, null, null, MSG_OTHERS(span_warning("%U% fires a rocket into the air!")))
 		play_sfx(src, SFX_WEAPONS_RPG, volume = 70)
 		face_atom(T)
 		var/obj/item/projectile/arc/explosive_rocket/rocket = new rocket_type(loc)
