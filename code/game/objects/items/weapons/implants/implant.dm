@@ -125,7 +125,7 @@ DECLARE_REF(/obj/item/implant/tracking, "part", BACK_VIA, "implants")
 		implant_mob = O.owner
 
 	if(ismob(implant_mob) && implant_mob.stat == DEAD)
-		if(world.time >= implant_mob.timeofdeath + degrade_time)
+		if(ELAPSED(implant_mob, timeofdeath, CLOCK_WORLD) >= degrade_time)
 			name = "melted implant"
 			desc = "Charred circuit in melted plastic case. Wonder what that used to be..."
 			icon_state = "implant_melted"

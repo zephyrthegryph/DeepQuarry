@@ -27,7 +27,7 @@
 	density = FALSE       		// can walk through it.
 	flags = WALL_ITEM
 	var/id = null     		// id of door it controls.
-	var/activation_time = 0
+	EXPIRY_DECLARE(activation_time)
 	var/timer_duration = 0
 
 	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
@@ -73,7 +73,7 @@
 		return PROCESS_KILL
 	if(stat & (NOPOWER|BROKEN))
 		return sleep_until_powered()
-	if(world.time - activation_time >= timer_duration)
+	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
 	update_icon()
 	if(!timing)
@@ -92,7 +92,7 @@
 	if(stat & (NOPOWER|BROKEN))
 		return 0
 
-	activation_time = world.time
+	EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 	timing = TRUE
 	MACHINE_WAKE(src)
 
@@ -145,7 +145,7 @@
 	. = new_time == timer_duration //return 1 on no change
 	timer_duration = new_time
 	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
-		activation_time = world.time
+		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 
 /obj/machinery/door_timer/declare_interactions(list/into)
 	into += list(
@@ -216,7 +216,7 @@
 					preset_time = PRESET_LONG
 			set_timer(timer_duration + preset_time)
 			if(timing)
-				activation_time = world.time
+				EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 		else
 			. = FALSE
 

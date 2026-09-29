@@ -484,7 +484,7 @@ SUBSYSTEM_DEF(garbage)
 		if (QDEL_HINT_QUEUE) //qdel should queue the object for deletion.
 			SSgarbage.Queue(to_delete)
 		if (QDEL_HINT_IWILLGC)
-			to_delete.gc_destroyed = world.time
+			to_delete.gc_destroyed = world.time // ALLOW(sys_world_time_write): gc_destroyed doubles as the QDELETED flag and GC queue stamp; GC internals
 			return
 		if (QDEL_HINT_LETMELIVE) //qdel should let the object live after calling destory.
 			if(!force)

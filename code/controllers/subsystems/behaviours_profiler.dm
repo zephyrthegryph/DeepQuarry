@@ -5,7 +5,7 @@
 
 /datum/controller/subsystem/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
-	var/profile_reset_time = 0
+	EXPIRY_DECLARE(profile_reset_time)
 
 /datum/controller/subsystem/behaviours/tgui_state(mob/user)
 	return ADMIN_STATE(R_DEBUG)
@@ -151,7 +151,7 @@
 				sched.stats = list()
 				sched.stage_cost = list()
 				sched.stage_calls = list()
-			profile_reset_time = world.time
+			EXPIRY_STAMP(src, profile_reset_time, CLOCK_WORLD)
 			log_admin("[key_name(user)] reset the OM profiler counters.")
 			return TRUE
 

@@ -7,7 +7,7 @@
 	var/revive_ready = REVIVING_READY
 	/// Time before another regeneration may start.
 	COOLDOWN_DECLARE(revive_cooldown)
-	var/revive_finished = FALSE
+	EXPIRY_DECLARE(revive_finished)
 	VAR_PRIVATE/regen_sounds = list(
 		'sound/effects/mob_effects/xenochimera/regen_1.ogg',
 		'sound/effects/mob_effects/xenochimera/regen_2.ogg',
@@ -69,7 +69,7 @@ DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 
 /datum/xenochimera/proc/set_revival_delay(time)
 	revive_ready = REVIVING_NOW
-	revive_finished = (world.time + time SECONDS) // When do we finish reviving? Allows us to find out when we're done, called by the alert currently.
+	EXPIRY_SET(src, revive_finished, time SECONDS, CLOCK_WORLD) // When do we finish reviving? Allows us to find out when we're done, called by the alert currently.
 
 /datum/xenochimera/proc/trigger_revival(from_save_slot)
 	ASSERT(revival_record)

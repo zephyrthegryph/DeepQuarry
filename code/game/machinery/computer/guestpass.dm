@@ -18,14 +18,14 @@
 	return
 
 /obj/item/card/id/guest/GetAccess()
-	if(world.time > expiration_time)
+	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		return access
 	else
 		return temp_access
 
 /obj/item/card/id/guest/examine(mob/user)
 	. = ..()
-	if(world.time < expiration_time)
+	if(EXPIRY_ACTIVE(src, expiration_time, CLOCK_WORLD))
 		. += span_notice("This pass expires at [worldtime2stationtime(expiration_time)].")
 	else
 		. += span_warning("It expired at [worldtime2stationtime(expiration_time)].")
@@ -33,7 +33,7 @@
 /obj/item/card/id/guest/id_read_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!Adjacent(user))
 		return //Too far to read
-	if(world.time > expiration_time)
+	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		to_chat(user, span_notice("This pass expired at [worldtime2stationtime(expiration_time)]."))
 	else
 		to_chat(user, span_notice("This pass expires at [worldtime2stationtime(expiration_time)]."))
@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 		user.visible_message(span_infoplain(span_bold("\The [user]") + "deactivates \the [src]."))
 		icon_state = "guest-invalid"
 		update_icon()
-		expiration_time = world.time
+		EXPIRY_STAMP(src, expiration_time, CLOCK_WORLD)
 		expired = 1
 
 /obj/item/card/id/guest/Initialize(mapload)
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/card/id/guest, INTERACT_USE_AS(I_HELP, "Show", PRO
 DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 
 /obj/item/card/id/guest/periodic_step()
-	if(expired == 0 && world.time >= expiration_time)
+	if(expired == 0 && EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		visible_message(span_warning("\The [src] flashes a few times before turning red."))
 		icon_state = "guest-invalid"
 		update_icon()
@@ -271,7 +271,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 				var/obj/item/card/id/guest/pass = new(src.loc)
 				pass.temp_access = LAZYCOPY(accesses)
 				pass.registered_name = giv_name
-				pass.expiration_time = world.time + duration*10*60
+				EXPIRY_SET(pass, expiration_time, duration*10*60, CLOCK_WORLD)
 				pass.reason = reason
 				pass.name = "guest pass #[number]"
 			else

@@ -172,13 +172,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTE
+		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTE, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
@@ -259,7 +259,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return
@@ -392,13 +392,13 @@
 		return FALSE
 
 	if(istype(consumed_fuel, /obj/item/stack/material/log))
-		next_fuel_consumption = world.time + 6 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 6 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
 
 	else if(istype(consumed_fuel, /obj/item/stack/material/wood)) // One log makes two planks of wood.
-		next_fuel_consumption = world.time + 3 MINUTES
+		EXPIRY_SET(src, next_fuel_consumption, 3 MINUTES, CLOCK_WORLD)
 		consume(consumed_fuel)
 		update_icon()
 		return TRUE
@@ -464,7 +464,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
-	if(world.time >= next_fuel_consumption)
+	if(EXPIRY_EXPIRED(src, next_fuel_consumption, CLOCK_WORLD))
 		if(!consume_fuel(pop(contents)))
 			extinguish()
 			return

@@ -124,8 +124,8 @@ DECLARE_INTERACTIONS(/obj/item/supply_beacon, INTERACT_USE(null, PROC_REF(intera
 		deactivate()
 		return
 	if(!target_drop_time)
-		target_drop_time = world.time + drop_delay
-	else if(world.time >= target_drop_time)
+		EXPIRY_SET(src, target_drop_time, drop_delay, CLOCK_WORLD)
+	else if(EXPIRY_EXPIRED(src, target_drop_time, CLOCK_WORLD))
 		deactivate(permanent = 1)
 		var/drop_x = src.x - 2
 		var/drop_y = src.y - 2

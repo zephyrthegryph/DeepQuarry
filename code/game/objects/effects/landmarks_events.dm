@@ -12,7 +12,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 	var/isRepeating = FALSE
 	var/coordinates = ""
 	var/cooldown = 0 //Given in seconds in set_vars() but stored in ticks
-	var/last_trigger = 0
+	EXPIRY_DECLARE(last_trigger)
 	COOLDOWN_DECLARE(trigger_cooldown)
 	var/isLoud = FALSE
 	var/isNarrate = FALSE
@@ -114,7 +114,7 @@ Admin verb is called by code\modules\admin\verbs\event_triggers.dm
 		return FALSE
 	if(!isRepeating && last_trigger) //Used to avoid spam if qdel(src) fires too slowly
 		return FALSE
-	last_trigger = world.time
+	EXPIRY_STAMP(src, last_trigger, CLOCK_WORLD)
 	COOLDOWN_START(src, trigger_cooldown, cooldown)
 
 	if(!creator_ckey)	//For some reason, the user didn't have a ckey. Let's clean up

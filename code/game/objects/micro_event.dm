@@ -90,7 +90,7 @@
 
 /obj/structure/timer_door/Initialize(mapload)
 	. = ..()
-	start_time = world.time
+	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
 DECLARE_START_TIMER(/obj/structure/timer_door, "time_til_open", /datum/proc/qdel_self)
 

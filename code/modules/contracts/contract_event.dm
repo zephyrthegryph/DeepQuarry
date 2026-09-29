@@ -5,7 +5,7 @@
 /datum/contract_event
 	var/id
 	var/event_type
-	var/occurred_at
+	EXPIRY_DECLARE(occurred_at)
 	var/occurrence_id
 	/// Stable identity and monotonic revision for gameplay facts that can be
 	/// corrected (for example, a paid invoice becoming refunded).

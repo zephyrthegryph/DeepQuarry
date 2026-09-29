@@ -57,7 +57,7 @@
 				//Update the gas networks.
 				network1.mark_dirty()
 
-				last_worldtime_transfer = world.time
+				EXPIRY_STAMP(src, last_worldtime_transfer, CLOCK_WORLD)
 				// The "running" overlay times out 5 s after the last transfer: one timer,
 				// re-armed per transfer, instead of a machine polling the clock.
 				om_after_replace(src, 5 SECONDS, PROC_REF(expire_transfer_display))
@@ -73,7 +73,7 @@
 	return last_stored_energy_transferred
 
 /obj/machinery/atmospherics/binary/circulator/proc/expire_transfer_display()
-	if(!recent_moles_transferred || last_worldtime_transfer > world.time - 50)
+	if(!recent_moles_transferred || ELAPSED(src, last_worldtime_transfer, CLOCK_WORLD) < 5 SECONDS)
 		return
 	recent_moles_transferred = 0
 	update_icon()

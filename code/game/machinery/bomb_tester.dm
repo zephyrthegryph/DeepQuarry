@@ -53,7 +53,7 @@
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
 		test_canister_handle = null
-	if(simulating && world.time >= simulation_started + simulation_delay)
+	if(simulating && ELAPSED(src, simulation_started, CLOCK_WORLD) >= simulation_delay)
 		simulation_finish()
 
 /obj/machinery/bomb_tester/update_icon()
@@ -219,7 +219,7 @@
 		return
 	simulating = 1
 	update_use_power(USE_POWER_ACTIVE)
-	simulation_started = world.time
+	EXPIRY_STAMP(src, simulation_started, CLOCK_WORLD)
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)

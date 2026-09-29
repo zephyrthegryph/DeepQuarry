@@ -3,12 +3,12 @@
 	icon_state = "banana"
 	item_state = "emergency_engi"
 	arm_sound = 'sound/effects/3.wav'
-	var/implode_at
+	EXPIRY_DECLARE(implode_at)
 
 /obj/item/grenade/supermatter/detonate()
 	..()
 	om_task_periodic(src, PERIODIC_SLOW)
-	implode_at = world.time + 10 SECONDS
+	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
 	update_icon()
 	playsound(src, 'sound/weapons/wave.ogg', 100)
 
@@ -25,6 +25,6 @@
 		forceMove(get_turf(src))
 	playsound(src, 'sound/effects/supermatter.ogg', 100)
 	supermatter_pull(src, world.view, STAGE_THREE)
-	if(world.time > implode_at)
+	if(EXPIRY_EXPIRED(src, implode_at, CLOCK_WORLD))
 		explosion(loc, 1, 3, 5, 4)
 		qdel(src)

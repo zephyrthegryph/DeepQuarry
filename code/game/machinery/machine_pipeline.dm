@@ -356,7 +356,7 @@
 	of = /obj/machinery/power/apc
 
 /datum/om/stage/machine/power/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
-	if(M.failure_until && world.time >= M.failure_until)
+	if(M.failure_until && EXPIRY_EXPIRED(M, failure_until, CLOCK_WORLD))
 		M.failure_timer = 0
 		M.failure_until = 0
 		M.queue_icon_update()
@@ -365,7 +365,7 @@
 	return STAGE_IDLE
 
 /datum/om/stage/machine/power/apc/rewake_delay(obj/machinery/power/apc/M)
-	return M.failure_until > world.time ? M.failure_until - world.time : 0
+	return EXPIRY_LEFT(M, failure_until, CLOCK_WORLD)
 
 /// Icon updates, at most every APC_UPDATE_ICON_COOLDOWN.
 /datum/om/stage/machine/present/apc

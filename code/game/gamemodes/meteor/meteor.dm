@@ -8,11 +8,12 @@
 	required_players = 0
 	votable = 0
 	deny_respawn = 0
-	var/next_wave_at = METEOR_DELAY
+	EXPIRY_DECLARE(next_wave_at)
+	next_wave_at = METEOR_DELAY
 
 /datum/game_mode/meteor/periodic_step()
-	if(world.time >= next_wave_at)
-		next_wave_at = world.time + GLOB.meteor_wave_delay
+	if(EXPIRY_EXPIRED(src, next_wave_at, CLOCK_WORLD))
+		EXPIRY_SET(src, next_wave_at, GLOB.meteor_wave_delay, CLOCK_WORLD)
 		spawn_meteors(6, GLOB.meteors_normal)
 
 /datum/game_mode/meteor/declare_completion()

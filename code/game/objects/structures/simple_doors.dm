@@ -109,7 +109,7 @@
 		if(locked && state == 0)
 			to_chat(M,span_warning("It's locked!"))
 			return
-		if(world.time - last_bumped <= 60)
+		if(ELAPSED(src, last_bumped, CLOCK_WORLD) <= 6 SECONDS)
 			return
 		if(M.client)
 			if(iscarbon(M))

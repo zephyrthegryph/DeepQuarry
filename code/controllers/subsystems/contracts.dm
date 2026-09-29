@@ -154,7 +154,7 @@ SUBSYSTEM_DEF(contracts)
 	var/active = is_physically_custodied(subject)
 	if(active && !started_at)
 		var/start_revision = next_custody_revision++
-		custody_started_by_subject[key] = world.time
+		custody_started_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -169,7 +169,7 @@ SUBSYSTEM_DEF(contracts)
 		var/duration = max(0, world.time - started_at)
 		custody_started_by_subject -= key
 		custody_last_duration_by_subject[key] = duration
-		custody_last_ended_at_by_subject[key] = world.time
+		custody_last_ended_at_by_subject[key] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 		emit_contract_event(CONTRACT_EVENT_CUSTODY_CHANGED, list(
 			"subject_id" = key,
 			"subject_name" = subject.real_name,
@@ -213,7 +213,7 @@ SUBSYSTEM_DEF(contracts)
 	var/ended_at = custody_last_ended_at_by_subject[identity.id] || 0
 	var/turf/current_location = get_turf(subject)
 	var/released_alive_outside_brig = subject.stat != DEAD && !istype(current_location?.loc, /area/security/brig)
-	var/recently_released = released_alive_outside_brig && ended_at && world.time - ended_at <= 2 MINUTES
+	var/recently_released = released_alive_outside_brig && ended_at && ELAPSED_SINCE(src, ended_at, CLOCK_WORLD) <= 2 MINUTES
 	return list(
 		"verified" = !!started_at || recently_released,
 		"active" = !!started_at,
@@ -466,7 +466,7 @@ SUBSYSTEM_DEF(contracts)
 			event_occurrence_order.Cut(1, 2)
 			seen_event_occurrences -= expired_key
 	event.id = "DQ-CE-[next_event_id++]"
-	event.occurred_at = world.time
+	EXPIRY_STAMP(event, occurred_at, CLOCK_WORLD)
 	events_published++
 	recent_events += event
 	if(length(recent_events) > CONTRACT_EVENT_HISTORY_LIMIT)
@@ -645,14 +645,14 @@ SUBSYSTEM_DEF(contracts)
 		"negotiation_clauses" = negotiation_rows(contract),
 		"deadline" = contract.deadline,
 		"offer_expires_at" = contract.offer_expires_at,
-		"offer_time_remaining" = contract.offer_expires_at > world.time ? DisplayTimeText(contract.offer_expires_at - world.time, 1) : null,
+		"offer_time_remaining" = EXPIRY_ACTIVE(contract, offer_expires_at, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, offer_expires_at, CLOCK_WORLD), 1) : null,
 		"accepted_at" = contract.accepted_at,
-		"deadline_remaining" = contract.deadline > world.time ? DisplayTimeText(contract.deadline - world.time, 1) : null,
+		"deadline_remaining" = EXPIRY_ACTIVE(contract, deadline, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, deadline, CLOCK_WORLD), 1) : null,
 		"can_accept" = can_accept && contract.state == CONTRACT_OFFERED,
 		"can_decline" = can_accept && contract.state == CONTRACT_OFFERED,
 		"offer_kind" = contract.offer_kind,
 		"closure_code" = contract.closure_code,
-		"grace_time_remaining" = contract.grace_until > world.time ? DisplayTimeText(contract.grace_until - world.time, 1) : null,
+		"grace_time_remaining" = EXPIRY_ACTIVE(contract, grace_until, CLOCK_WORLD) ? DisplayTimeText(EXPIRY_LEFT(contract, grace_until, CLOCK_WORLD), 1) : null,
 		"requirements" = requirement_rows(contract),
 		"contributor_count" = length(contract.contributions),
 	)

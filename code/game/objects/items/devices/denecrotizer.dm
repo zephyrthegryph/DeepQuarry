@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	icon_state = "denecrotizer"
 	w_class = ITEMSIZE_COST_NORMAL
 	var/charges = 5 //your army of minions can only be this big
-	var/last_used
+	EXPIRY_DECLARE(last_used)
 	var/cooldown = 10 MINUTES //LONG
 	var/revive_time = 30 SECONDS //Don't do this in combat
 	var/advanced = 1 //allows for ghosts to join mobs who get revived by this, and updates their faction to yours
@@ -142,7 +142,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	if(!istype(target))
 		to_chat(user, span_notice("[target] seems to be too complicated for [src] to interface with."))
 		return FALSE
-	if(!(world.time - last_used > cooldown))
+	if(!(ELAPSED(src, last_used, CLOCK_WORLD) > cooldown))
 		to_chat(user, span_notice("[src] doesn't seem to be ready yet."))
 		return FALSE
 	if(!charges)
@@ -177,7 +177,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	target.ghostjoin = 1
 	registry_join(REGISTRY_GHOST_PODS, target)
 	target.ghostjoin_icon()
-	last_used = world.time
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	log_and_message_admins("used a denecrotizer to tame/offer a simplemob to ghosts: [target]. [ADMIN_FLW(src)]", user)
 	target.visible_message("[target]'s eyes widen, as though in revelation as it looks at [user].", runemessage = "eyes widen")
@@ -201,7 +201,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 		target.ghostjoin = 1
 		registry_join(REGISTRY_GHOST_PODS, target)
 		target.ghostjoin_icon()
-	last_used = world.time
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"
@@ -222,7 +222,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	target.revive()
 	target.update_icon()
 	visible_message("[target] lifts its head and looks at [user].", runemessage = "lifts its head and looks at [user]")
-	last_used = world.time
+	EXPIRY_STAMP(src, last_used, CLOCK_WORLD)
 	charges--
 	if(charges == 0)
 		icon_state = "[initial(icon_state)]-o"

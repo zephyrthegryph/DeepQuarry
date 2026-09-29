@@ -20,7 +20,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	var/temp = null
 	var/hacked = 0
 	var/allowedtocall = 0
-	var/specops_shuttle_timereset = 0
+	EXPIRY_DECLARE(specops_shuttle_timereset)
 
 /proc/specops_return()
 	var/obj/item/radio/intercom/announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
@@ -75,7 +75,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 	GLOB.specops_shuttle_at_station = 0
 
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
+		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
 	qdel(announcer)
 
@@ -133,7 +133,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 		to_chat(M, span_notice("You have arrived to [station_name()]. Commence operation!"))
 
 	for(var/obj/machinery/computer/specops_shuttle/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		S.specops_shuttle_timereset = world.time + SPECOPS_RETURN_DELAY
+		EXPIRY_SET(S, specops_shuttle_timereset, SPECOPS_RETURN_DELAY, CLOCK_WORLD)
 
 	qdel(announcer)
 

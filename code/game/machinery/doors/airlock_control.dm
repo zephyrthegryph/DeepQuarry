@@ -119,7 +119,7 @@
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
 		signal.data["tag"] = id_tag
-		signal.data["timestamp"] = world.time
+		signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 
 		signal.data["door_status"] = density?("closed"):("open")
 		signal.data["lock_status"] = locked?("locked"):("unlocked")
@@ -243,7 +243,7 @@
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
 			signal.data["tag"] = id_tag
-			signal.data["timestamp"] = world.time
+			signal.data["timestamp"] = EXPIRY_AT(src, CLOCK_WORLD, 0)
 			signal.data["pressure"] = num2text(pressure)
 
 			radio_connection().post_signal(src, signal, range = AIRLOCK_CONTROL_RANGE, radio_filter = RADIO_AIRLOCK)

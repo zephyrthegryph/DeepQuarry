@@ -564,12 +564,12 @@ DECLARE_REF(/obj/machinery/alarm, "soundloop", OWNED, null)
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area_ref().air_vent_names)
 		var/list/I = LAZYACCESS(alarm_area_ref().air_vent_info, id_tag)
-		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
+		if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 			continue
 		send_signal(id_tag, list("status"))
 	for(var/id_tag in alarm_area_ref().air_scrub_names)
 		var/list/I = LAZYACCESS(alarm_area_ref().air_scrub_info, id_tag)
-		if(I && I["timestamp"] + AALARM_REPORT_TIMEOUT / 2 > world.time)
+		if(I && ELAPSED_SINCE(src, I["timestamp"], CLOCK_WORLD) < AALARM_REPORT_TIMEOUT / 2)
 			continue
 		send_signal(id_tag, list("status"))
 
