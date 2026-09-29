@@ -35,6 +35,18 @@
 		return list("It has no cell.")
 	return list("It has \a [cell] installed, charged to [round(cell.percent())]%.")
 
+// A cell going in or out is state a charger's should_run() and the examine line read: mark the
+// holder, whichever path moved it (an entry, slot_insert() / slot_eject() from code).
+/datum/capability/slot/cell_holder/adopt(atom/holder, obj/item/item, mob/user)
+	. = ..()
+	if(.)
+		changed(holder)
+
+/datum/capability/slot/cell_holder/eject(atom/holder, mob/user, drop = FALSE, message)
+	. = ..()
+	if(.)
+		changed(holder)
+
 /// The live cell in holder, or null. Pure.
 /datum/capability/slot/cell_holder/proc/cell_in(atom/holder)
 	var/obj/item/cell/cell = holder.vars[slot_var]
