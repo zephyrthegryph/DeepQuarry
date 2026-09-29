@@ -18,15 +18,15 @@
 
 /// Every hotkey verb the registry provides; the forms component grants them.
 /proc/protean_power_verbs()
-	var/static/list/power_verbs
-	if(power_verbs)
-		return power_verbs
-	power_verbs = list()
+	var/static/list/verb_paths
+	if(verb_paths)
+		return verb_paths
+	verb_paths = list()
 	for(var/power_type in protean_powers())
 		var/datum/protean_power/P = protean_powers()[power_type]
 		if(P.verb_path)
-			power_verbs += P.verb_path
-	return power_verbs
+			verb_paths += P.verb_path
+	return verb_paths
 
 /mob/living/carbon/human/proc/activate_protean_power(power_type)
 	var/datum/protean_power/P = protean_powers()[power_type]

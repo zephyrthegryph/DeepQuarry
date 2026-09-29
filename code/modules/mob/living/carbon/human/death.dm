@@ -99,7 +99,7 @@
 			B.host_brain.name = "host brain"
 			B.host_brain.real_name = "host brain"
 
-		remove_verb(src, /mob/living/carbon/proc/release_control)
+		om_revoke(src, GRANT_VERB, /mob/living/carbon/proc/release_control, B)
 
 	// Handle vorny
 	if(isbelly(loc))

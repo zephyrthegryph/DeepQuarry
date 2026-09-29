@@ -128,12 +128,15 @@
 	G.was_rayed = TRUE
 
 	if (can_unpetrify)
-		add_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
+		om_grant(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, G)
 		comp?.cooldown = 0
 	else
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_transformation)
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_pause)
-		remove_verb(statue,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation))
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, grant_source)
+		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause))
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause, grant_source)
+		for(var/datum/grant_source as anything in om_grant_sources(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy))
+			om_revoke(statue, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy, grant_source)
 		comp?.cooldown = INFINITY
 
 	if (!petrifier)

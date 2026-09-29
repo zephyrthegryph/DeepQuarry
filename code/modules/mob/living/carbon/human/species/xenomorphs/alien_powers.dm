@@ -96,7 +96,8 @@
 
 	if(!CONFIG_GET(flag/aliens_allowed))
 		to_chat(src, "You begin to lay an egg, but hesitate. You suspect it isn't allowed.")
-		remove_verb(src, /mob/living/carbon/human/proc/lay_egg)
+		for(var/datum/grant_source as anything in om_grant_sources(src, GRANT_VERB, /mob/living/carbon/human/proc/lay_egg))
+			om_revoke(src, GRANT_VERB, /mob/living/carbon/human/proc/lay_egg, grant_source)
 		return
 
 	if(locate_within(get_turf(src), /obj/structure/ghost_pod/automatic/xenomorph_egg))

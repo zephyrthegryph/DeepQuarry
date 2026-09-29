@@ -247,7 +247,7 @@
 	controlling = FALSE
 
 	host.remove_language("Cortical Link")
-	remove_verb(host, /mob/living/carbon/proc/release_control)
+	om_revoke(host, GRANT_VERB, /mob/living/carbon/proc/release_control, src)
 	remove_verb(host, /mob/living/carbon/proc/punish_host)
 	remove_verb(host, /mob/living/carbon/proc/spawn_larvae)
 

@@ -190,7 +190,7 @@
 		comp.transformed = FALSE
 	else
 		if(was_rayed)
-			remove_verb(gargoyle,/mob/living/carbon/human/proc/gargoyle_transformation)
+			om_revoke(gargoyle, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, src)
 	if(gargoyle.loc == src)
 		gargoyle.forceMove(loc)
 		gargoyle.transform = transform

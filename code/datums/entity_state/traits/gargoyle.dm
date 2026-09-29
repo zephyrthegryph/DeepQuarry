@@ -16,9 +16,9 @@
 /datum/trait_state/gargoyle/setup()
 	if (!ishuman(owner))
 		return FALSE
-	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_transformation)
-	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_pause)
-	add_verb(owner,/mob/living/carbon/human/proc/gargoyle_checkenergy)
+	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_transformation, src)
+	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_pause, src)
+	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/gargoyle_checkenergy, src)
 	return TRUE
 
 // detach(): the base drops every hook, including the Moved hook gargoyle_pause() adds.

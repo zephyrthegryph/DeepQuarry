@@ -106,8 +106,8 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		else
 			changelingID = "[rand(1,999)]"
 
-		add_verb(owner,/mob/proc/EvolutionMenu)
-		add_verb(owner,/mob/proc/changeling_respec)
+		om_grant(owner, GRANT_VERB, /mob/proc/EvolutionMenu, src)
+		om_grant(owner, GRANT_VERB, /mob/proc/changeling_respec, src)
 		owner.add_language("Changeling")
 
 //Former /datum/changeling procs
@@ -166,7 +166,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 			if(lesser_form && !P.allowduringlesserform)
 				continue
 			if(!(P in src.verbs))
-				add_verb(src, P.verbpath)
+				om_grant(src, GRANT_VERB, P.verbpath, comp)
 			if(P.make_hud_button)
 				if(!src.ability_master)
 					src.ability_master = new /atom/movable/screen/movable/ability_master(src)
@@ -183,7 +183,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 	var/mob/living/carbon/human/H = src
 	if(istype(H))
-		add_verb(H, /mob/living/carbon/human/proc/innate_shapeshifting)
+		om_grant(H, GRANT_VERB, /mob/living/carbon/human/proc/innate_shapeshifting, comp)
 		var/saved_dna = H.dna.Clone() /// Prevent transform from breaking.
 		var/datum/absorbed_dna/newDNA = new(H.real_name, saved_dna, H.species.name, H.languages, H.identifying_gender, H.flavor_texts, H.identity()?.genetic_effects?.Copy())
 		absorbDNA(newDNA)
@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		return
 	for(var/datum/power/changeling/P in comp.purchased_powers)
 		if(P.isVerb)
-			remove_verb(src, P.verbpath)
+			om_revoke(src, GRANT_VERB, P.verbpath, comp)
 			var/atom/movable/screen/ability/verb_based/changeling/C = ability_master.get_ability_by_proc_ref(P.verbpath)
 			if(C)
 				ability_master.remove_ability(C)

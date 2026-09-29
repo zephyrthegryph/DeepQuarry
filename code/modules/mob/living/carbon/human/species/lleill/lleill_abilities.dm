@@ -764,9 +764,9 @@
 	if(new_mob && isliving(new_mob))
 		new_mob.faction = faction
 		species.lleill_energy -= energy_cost
-		add_verb(new_mob, /mob/living/proc/revert_beast_form)
-		add_verb(new_mob, /mob/living/proc/set_size)
-		add_verb(new_mob, /mob/living/simple_mob/proc/ColorMate)
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/revert_beast_form, new_mob)
+		om_grant(new_mob, GRANT_VERB, /mob/living/proc/set_size, new_mob)
+		om_grant(new_mob, GRANT_VERB, /mob/living/simple_mob/proc/ColorMate, new_mob)
 		transfer_mob_identity(new_mob)
 		new_mob.visible_message(span_infoplain(span_bold("\The [src]") + " has transformed into \the [chosen_beast]!"))
 

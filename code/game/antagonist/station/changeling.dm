@@ -28,7 +28,7 @@
 	if(comp)
 		var/mob/living/ling_mob = comp.owner
 		ling_mob.remove_changeling_powers()
-		remove_verb(ling_mob, /mob/proc/EvolutionMenu)
+		om_revoke(ling_mob, GRANT_VERB, /mob/proc/EvolutionMenu, comp)
 		ling_mob.changeling_state = null
 		if(ling_mob.mind)
 			ling_mob.mind.antag_holder.changeling_handle = null

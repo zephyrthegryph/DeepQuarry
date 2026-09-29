@@ -18,13 +18,13 @@
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = protean_power_verbs()
 	if(length(power_verbs))
-		add_verb(H, power_verbs)
+		om_grant_each(H, GRANT_VERB, power_verbs, src)
 
 /datum/forms/protean/detach()
 	var/mob/living/carbon/human/H = owner
 	var/list/power_verbs = protean_power_verbs()
 	if(length(power_verbs))
-		remove_verb(H, power_verbs)
+		om_revoke_each(H, GRANT_VERB, power_verbs, src)
 	return ..()
 
 // the protean's rig forgets its protean.
