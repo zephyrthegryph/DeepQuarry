@@ -563,11 +563,17 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	after(src, vend_delay, PROC_REF(finish_vend), R, user)
 
 /obj/machinery/vending/proc/bonus_vend(datum/stored_item/vending_product/R)
-	if(R.get_product(get_turf(src)))
+	if(R && R.get_product(get_turf(src)))
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks as it vends an additional item."))
 
+/// after() callback: R or user may have been deleted during the vend delay and arrive as null; the
+/// machine still resets (vend_ready) either way.
 /obj/machinery/vending/proc/finish_vend(datum/stored_item/vending_product/R, mob/user)
-	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
+	if(!R)
+		vend_ready = 1
+		rel_clear(src, nameof(currently_vending))
+		return
+	if(user && has_trait(user, TRAIT_UNLUCKY) && prob(10))
 		visible_message(span_infoplain(span_bold("\The [src]") + " clunks and fails to dispense any item."))
 		playsound(src, "sound/[vending_sound]", 100, TRUE, 1)
 		vend_ready = 1
@@ -586,6 +592,8 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	rel_clear(src, nameof(currently_vending))
 
 /obj/machinery/vending/proc/do_logging(datum/stored_item/vending_product/R, mob/user, vending = 0)
+	if(!R || !user)
+		return
 	if(user.GetIdCard())
 		var/obj/item/card/id/tempid = user.GetIdCard()
 		var/list/list_item = list()

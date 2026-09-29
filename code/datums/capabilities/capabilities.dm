@@ -164,6 +164,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		for(var/datum/capability/C as anything in caps_of(src))
 			C.on_holder_init(src, mapload)
 			cap_join_systems(src, C)
+		refresh_granted_verbs(src) // capability verbs are there from init, not a frame later
 	if(flags || periodic_cadence || periodic_interval)
 		changed(src)
 
@@ -326,6 +327,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// Whether the handler takes the held item: (mob/user, obj/item/held, ...). hand() handlers are
 	/// (mob/user, ...); tool()/use_on()/insert() and library item entries pass `held`.
 	var/passes_held = TRUE
+	/// Whether the handler takes the clicked atom as `target` (use_at entries: (mob/user, atom/target, ...)).
+	var/passes_target = FALSE
 	/// Whether the handler also gets its capability as the named arg `cap` (review 2 M15: a handler
 	/// that serves several capability instances is told which, never looks it up after a sleep).
 	var/passes_cap = FALSE
@@ -372,6 +375,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	if(isnull(.))
 		. = TRUE // a handler that returned nothing (or went async to ask) handled it
 
+/// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
+/datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
+	return ctx.target
 /atom
 	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
 	var/tmp/list/entry_cooldowns
@@ -396,17 +402,21 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /atom/proc/caps_suspended()
 	return FALSE
 
-/// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()).
+/// Runs the entry's form and handler for ctx, async when it prompts (dispatch_call()). The handler runs
+/// on, and the dispatch marks/fingerprints/logs, the entry's HOLDER (holder_of(): the target, except a
+/// use_at entry, whose holder is the held item).
 /proc/cap_dispatch(datum/dispatch_context/ctx)
 	var/datum/interaction/capability/E = ctx.entry
 	var/list/named = list("user" = ctx.user)
 	if(E.passes_held)
 		named["held"] = ctx.held
+	if(E.passes_target)
+		named["target"] = ctx.target
 	if(E.passes_cap)
 		named["cap"] = E.cap
 	if(length(E.form))
 		return cap_dispatch_form(ctx, named)
-	return dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
+	return dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /proc/cap_dispatch_form(datum/dispatch_context/ctx, list/named)
 	set waitfor = FALSE
@@ -426,7 +436,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		named["cap"] = E.cap
 	else
 		named -= "cap"
-	dispatch_call(ctx, ctx.target, E.handler, named, E.name, E.log)
+	if(E.passes_target)
+		named["target"] = ctx.target
+	dispatch_call(ctx, E.holder_of(ctx), E.handler, named, E.name, E.log)
 
 /**
  * Merges capability C's gating (its constructor's behind / blocked_by / locked_by / needs / else_say /

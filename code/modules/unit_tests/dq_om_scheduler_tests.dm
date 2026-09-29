@@ -155,18 +155,39 @@
 	scheduler_advance(2.5)
 	TEST_ASSERT("fast" in E.log, "a doubled clock halves the wait")
 
-/datum/unit_test/om/timer_arg_deleted_cancels
+/// The default (om_after()/after()): a deleted argument arrives as null and the call still runs,
+/// counted and logged (SStimer's semantics: cleanup like vend_ready = TRUE always happens).
+/datum/unit_test/om/timer_arg_deleted_is_nulled
 
-/datum/unit_test/om/timer_arg_deleted_cancels/run_om(list/made)
+/datum/unit_test/om/timer_arg_deleted_is_nulled/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/arg = entity(made)
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "weak", arg)
+	var/nulled = sched.timers_nulled
 	var/dropped = sched.timers_dropped
 	qdel(arg)
 	scheduler_advance(2)
-	TEST_ASSERT(!("weak" in E.log), "a timer whose argument was deleted does not run")
+	TEST_ASSERT("weak" in E.log, "a timer whose argument was deleted still runs (the argument arrives as null)")
+	TEST_ASSERT_EQUAL(sched.timers_nulled, nulled + 1, "the nulled call is counted")
+	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped, "and not dropped")
+	TEST_ASSERT(om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "late", arg), "an already-deleted argument is scheduled as null")
+	scheduler_advance(2)
+	TEST_ASSERT("late" in E.log, "and the call runs")
+
+/// after_if_alive(): a pure effect is dropped when an argument is gone, and refused up front when
+/// one is already deleted.
+/datum/unit_test/om/timer_arg_deleted_if_alive_drops
+
+/datum/unit_test/om/timer_arg_deleted_if_alive_drops/run_om(list/made)
+	var/datum/om_test_entity/E = entity(made)
+	var/datum/om_test_entity/arg = entity(made)
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "weak", arg)
+	var/dropped = sched.timers_dropped
+	qdel(arg)
+	scheduler_advance(2)
+	TEST_ASSERT(!("weak" in E.log), "an after_if_alive() call whose argument was deleted does not run")
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 1, "the dropped call is counted")
-	TEST_ASSERT(!om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "x", arg), "a deleted argument is refused up front")
+	TEST_ASSERT(!after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "x", arg), "a deleted argument is refused up front")
 
 /datum/om_test_entity/proc/timer_hit_list(tag, list/others)
 	log += tag
@@ -175,7 +196,8 @@
 
 /// A datum inside a list argument (one level deep, as a member or under a text
 /// key) is captured as a handle too: the pending record holds no reference to
-/// it, so deleting it can't hard-delete, and the call is dropped when it fires.
+/// it, so deleting it can't hard-delete; after_if_alive() drops the call when it fires, the default
+/// passes the member as null.
 /datum/unit_test/om/timer_list_arg_deleted_is_dropped
 
 /datum/unit_test/om/timer_list_arg_deleted_is_dropped/run_om(list/made)
@@ -183,9 +205,11 @@
 	var/datum/om_test_entity/member = entity(made)
 	var/datum/om_test_entity/keyed = entity(made)
 	var/datum/om_test_entity/kept = entity(made)
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "listed", list(member))
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "keyed", list("who" = keyed))
-	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "kept", list(kept))
+	var/datum/om_test_entity/nulled = entity(made)
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "listed", list(member))
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "keyed", list("who" = keyed))
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "kept", list(kept))
+	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "defaulted", list(nulled, kept))
 	var/list/T = E.om_rec.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
 		var/list/captured = T[i + 3]
@@ -197,12 +221,15 @@
 	var/dropped = sched.timers_dropped
 	qdel(member)
 	qdel(keyed)
+	qdel(nulled)
 	scheduler_advance(2)
 	TEST_ASSERT(!("listed" in E.log), "a call whose list member was deleted does not run")
 	TEST_ASSERT(!("keyed" in E.log), "a call whose keyed list value was deleted does not run")
 	TEST_ASSERT("kept" in E.log, "a call whose list member lives runs")
 	TEST_ASSERT("kept via" in kept.log, "and gets the resolved datum back")
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 2, "both dropped calls are counted")
+	TEST_ASSERT("defaulted" in E.log, "the default runs with the deleted member passed as null")
+	TEST_ASSERT("defaulted via" in kept.log, "and the live member still resolves")
 
 // ---------------------------------------------------------------- task steps
 

@@ -107,7 +107,7 @@ Every constructor below also takes the standard gating arguments `behind`, `bloc
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
 | **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair_tool)` (panel, breakable, power, anchor, deconstruct behind the panel), `wall_machine(board, offset, repair_tool)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(wires, access, cover_locked_while, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_effect, emag_mode)` (cover + panel + wires behind it + lock + emag; the lock and emag only work closed up; the coverlock only holds the cover shut) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
 | **Bundles** [in progress]: `cell_bay(slot_var)`, `power_channels()` (owns `act_channel`/`act_breaker`/`act_nightshift`), `powered_by(system, role)` (rewrite/dx-apc); `door(...)` (rewrite/dx-doors) | [in progress] | |
-| Items: `cap_use_self(name, handler)`, `cap_use_at(name, handler, range)` (replace `attack_self`/`afterattack`) | [planned] (items wave) | |
+| Items: `cap_use_self(name, handler, ...gating, form =, log =, cooldown =, in_inventory = FALSE)`, `cap_use_at(name, handler, range = 1, target_types =, ...gating, form =, log =, cooldown =)` (replace `attack_self`/`afterattack`) | [built] | `cap_use_self`: item in hand used on itself, handler `(mob/user, ...form)`, runs from `attack_self`, answers `INPUT_ACTION_SELF_USE`, refused unless held when offered through the resolver/Menu (`needs cap_in_hand`; a direct `attack_self()` call, e.g. an action button, is trusted as before, since its callers decide reach; `in_inventory = TRUE` also accepts worn). It replaces the old `self_use()` helper. `cap_use_at`: the held item is the holder, the clicked atom the target, handler `(mob/user, atom/target, ...form)`; `range` 1 = adjacent, >1 also ranged; `target_types` filters. Click order: target `attackby` first, then the item's `use_at` entries (via `after_click()`), then legacy `afterattack`. The dispatch marks, fingerprints and logs the ITEM; mark the target yourself with `changed(target)` |
 | Mobs: `cap_ai(targets)`, `cap_ai_behaviors(...)`, species `species_capabilities()` | [planned] | plan §2.3, §2.4 |
 | `cap_system(path)` membership (`systems()`) | [built] (O(1) join/leave) | used by `/datum/system` once it exists |
 
@@ -148,7 +148,7 @@ Verbs:
 - **Always on:** native `/verb/` declarations.
 - **Conditional:** `hidden_verbs()` returns the verbs to hide right now; it is re-evaluated on change and applied through the verb store [built].
 - **Per subtype:** `type_verbs()` [built].
-- **Species, traits and capabilities:** `granted_verbs()` [planned].
+- **Species, traits and capabilities:** `granted_verbs()` [built]: per instance, derived; default returns every capability's `verbs()`, and a human adds `/datum/trait/proc/granted_verbs()` of its species' traits (example: `xenomorph_hunter`). `hidden_verbs()` still wins.
 - **Admin:** `ADMIN_VERB(...)` (unchanged).
 - **Debug:** `DEBUG_VERB(...)`, compiled out of release [planned].
 - **Categories:** `set category = VERB_CAT_*` defines only [planned: plan §2.12]. Until the defines land, don't invent new category strings.
@@ -414,7 +414,7 @@ DECLARE_INTERACTIONS(/obj/item/megaphone, INTERACT_USE(null, PROC_REF(interactio
 /obj/item/megaphone/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	om_ask(user, /datum/om/prompt/text, PROC_REF(shout_entered), title = "Megaphone",
 		message = "Shout a message?", ask_flags = ASK_CARRIED | ASK_CAPABLE)
-// AFTER (the use-self entry is [planned] with the items wave; needs and ask_text are [built])
+// AFTER (cap_use_self, needs and ask_text are all [built])
 /obj/item/megaphone/capabilities()
 	. = ..()
 	. += cap_use_self("Shout", PROC_REF(shout), needs = PROC_REF(can_broadcast))
@@ -607,7 +607,7 @@ DECLARE_VERB(/obj/item/healthanalyzer/scroll, /obj/item/healthanalyzer/proc/togg
 | `DECLARE_VERB(type, verb)` | a native `/verb/`, or `type_verbs()` for a per-subtype set |
 | `DECLARE_VERB_IF(type, verb, "varname")` | `hidden_verbs()` returning the verb while the var is false |
 | `DECLARE_VERB_HIDE` | `hidden_verbs()` |
-| a trait or species granting verbs in `apply()` | `granted_verbs()` [planned]; until then keep `om_grant` in `apply()` |
+| a trait or species granting verbs in `apply()` | `/datum/trait/proc/granted_verbs()` [built] (see `xenomorph_hunter`); species-level grants still use `om_grant` in `apply()` |
 
 ## B12. Periodic → a cadence
 
@@ -993,9 +993,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/laser_pointer, PERIODIC_SLOW, "recharging")
 /obj/item/laser_pointer/capabilities()
 	. = ..()
 	. += cap_slot(nameof(diode), /obj/item/stock_parts/micro_laser, eject_tool = TOOL_SCREWDRIVER)
-	. += cap_use_at("Point", PROC_REF(laser_act), range = world.view)   // [planned] items wave; until then keep afterattack
+	. += cap_use_at("Point", PROC_REF(laser_act), range = world.view)   // [built]; delete afterattack
 
-/obj/item/laser_pointer/proc/laser_act(atom/target, mob/living/user)
+/obj/item/laser_pointer/proc/laser_act(mob/user, atom/target)   // cap_use_at handler: (user, target)
 	if(!COOLDOWN_FINISHED(src, point_cooldown))
 		return
 	...                                                     // the effect code is unchanged

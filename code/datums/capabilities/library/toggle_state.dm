@@ -84,18 +84,8 @@
 		return else_say || "you can't do that right now"
 
 /datum/capability/toggle_state/interactions(atom/holder)
-	var/datum/interaction/capability/toggle/E = new
-	E.name = verb_name
-	E.id = "self:toggle:[bit]"
-	E.handler = TYPE_PROC_REF(/obj/item, cap_toggle_run)
-	E.works_broken = TRUE
-	E.works_unpowered = TRUE
-	E.entry = INTERACTION_ENTRY_SELF
-	E.category = INTERACTION_CAT_TOGGLE
-	E.default_action = INPUT_ACTION_USE
-	E.requires = list(REQ_IN_INVENTORY)
-	E.cap = src
-	return list(E)
+	var/datum/capability/entry/wrapper = cap_use_self(verb_name, TYPE_PROC_REF(/obj/item, cap_toggle_run), works_broken = TRUE, works_unpowered = TRUE, in_inventory = TRUE, entry_type = /datum/interaction/capability/toggle)
+	return list(adopt_entry(wrapper, "self:toggle:[bit]"))
 
 /datum/capability/toggle_state/verbs()
 	return list(verb_ref)
