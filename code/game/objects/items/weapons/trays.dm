@@ -82,7 +82,7 @@
 			location.add_blood(M)
 
 	playsound(src, tray_sound, 50, 1)
-	user.visible_message(span_danger("[user] slams [M] [face_hit ? "in the face " : ""]with the tray!"), runemessage = "CLANG!") // ALLOW(sys_visible_pair): passes a runemessage (chat bubble), which act_message does not carry
+	act_message(user, M, others = span_danger("%U% slams %T% [face_hit ? "in the face " : ""]with the tray!"), runemessage = "CLANG!")
 	M.injure(INJURY_BLUNT, rand(min_bonus_damage, max_bonus_damage), source = src)
 	return ITEM_INTERACT_SUCCESS
 
