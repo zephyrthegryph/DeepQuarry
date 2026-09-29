@@ -106,27 +106,19 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/radiocarbon_spectrometer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchSpectrometer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/radiocarbon_spectrometer, "XenoarchSpectrometer")
 
-/obj/machinery/radiocarbon_spectrometer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/radiocarbon_spectrometer, "last_scan_data:text", "scanning:num", "scan_progress:num", "scanner_rpm:num", "scanner_rpm_delta:num", "radiation:num", "heat:num", "merge:ui_data_obj_machinery_radiocarbon_spectrometer{scanned_item:unknown,scanned_item_desc:unknown,coolant:num}")
+
+/// The computed part of /obj/machinery/radiocarbon_spectrometer's window data (declared on its UI_DATA row).
+/obj/machinery/radiocarbon_spectrometer/proc/ui_data_obj_machinery_radiocarbon_spectrometer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// this is the data which will be sent to the ui
 	data["scanned_item"] = (scanned_item() ? scanned_item().name : "")
 	data["scanned_item_desc"] = (scanned_item() ? (scanned_item().desc ? scanned_item().desc : "No information on record.") : "")
-	data["last_scan_data"] = last_scan_data
-	data["scanning"] = scanning
-	data["scan_progress"] = scan_progress
 
 	// Mechanics
-	data["scanner_rpm"] = scanner_rpm
-	data["scanner_rpm_delta"] = scanner_rpm_delta
-	data["radiation"] = radiation
-	data["heat"] = heat
 	data["coolant"] = reagents.total_volume
 
 	return data
@@ -147,39 +139,43 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 	return data
 
-/obj/machinery/radiocarbon_spectrometer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/radiocarbon_spectrometer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("scanItem")
-			if(scanning)
-				stop_scanning()
-				return
-			if(!scanned_item())
-				to_chat(ui.user, span_warning("Insert an item to scan."))
-				return
-			start_scanning()
-			to_chat(ui.user, span_notice("Scan initiated."))
-			return TRUE
+	return TRUE
 
-		if("ejectItem")
-			if(scanned_item())
-				scanned_item().forceMove(loc)
-				rel_clear(src, "scanned_item")
-			return TRUE
+UI_ACT(/obj/machinery/radiocarbon_spectrometer, "scanItem", ui_act_scanitem)
+UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_scanitem)
+	if(scanning)
+		stop_scanning()
+		return
+	if(!scanned_item())
+		to_chat(ui.user, span_warning("Insert an item to scan."))
+		return
+	start_scanning()
+	to_chat(ui.user, span_notice("Scan initiated."))
+	return TRUE
 
-		if("set_scanner_rpm_delta")
-			scanner_rpm_delta = CLAMP(params["delta"], -RPM_MAX_DELTA, RPM_MAX_DELTA)
-			return TRUE
+UI_ACT(/obj/machinery/radiocarbon_spectrometer, "ejectItem", ui_act_ejectitem)
+UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_ejectitem)
+	if(scanned_item())
+		scanned_item().forceMove(loc)
+		rel_clear(src, "scanned_item")
+	return TRUE
 
-		if("inject_radiation")
-			if(!scanning)
-				radiation = 0
-				return
-			radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
-			return TRUE
+UI_ACT(/obj/machinery/radiocarbon_spectrometer, "set_scanner_rpm_delta", ui_act_set_scanner_rpm_delta, UI_ARG_NUM("delta"))
+UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_set_scanner_rpm_delta)
+	scanner_rpm_delta = CLAMP(params["delta"], -RPM_MAX_DELTA, RPM_MAX_DELTA)
+	return TRUE
+
+UI_ACT(/obj/machinery/radiocarbon_spectrometer, "inject_radiation", ui_act_inject_radiation)
+UI_ACT_PROC(/obj/machinery/radiocarbon_spectrometer, ui_act_inject_radiation)
+	if(!scanning)
+		radiation = 0
+		return
+	radiation = CLAMP(radiation + RADIATION_INJECTION_AMT, 0, RADIATION_MAX)
+	return TRUE
 
 /// Runs the scan while scanning; otherwise it sleeps until start_scanning().
 /obj/machinery/radiocarbon_spectrometer/machine_step()

@@ -75,14 +75,13 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 
 
 // TGUI
-/obj/machinery/computer/supplycomp/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SupplyConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/supplycomp, "SupplyConsole")
 
-/obj/machinery/computer/supplycomp/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/supplycomp, "merge:ui_data_obj_machinery_computer_supplycomp{shuttle_auth:num,order_auth:num,shuttle:list,supply_points:unknown,can_personal_order:bool,personal_balance:unknown,orders:list,receipts:list,contraband:num,market_auth:unknown,market:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/supplycomp's window data (declared on its UI_DATA row).
+/obj/machinery/computer/supplycomp/proc/ui_data_obj_machinery_computer_supplycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/list/shuttle_status = list()
 
 	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
@@ -227,196 +226,240 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	data["categories"] = GLOB.all_supply_groups
 	return data
 
-/obj/machinery/computer/supplycomp/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+DECLARE_UI_MODAL(/obj/machinery/computer/supplycomp)
+
+/obj/machinery/computer/supplycomp/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
 	if(!GLOB.supply_service)
 		log_runtime(EXCEPTION("## ERROR: The GLOB.supply_service datum is missing."))
-		return TRUE
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+		return FALSE
 	if(!shuttle)
 		log_runtime(EXCEPTION("## ERROR: The supply shuttle datum is missing."))
-		return TRUE
+		return FALSE
+	return TRUE
 
-	if(tgui_modal_act(src, action, params))
-		return TRUE
+UI_ACT(/obj/machinery/computer/supplycomp, "market_request", ui_act_market_request, UI_ARG_BOOL("contract"), UI_ARG_TEXT("id"), UI_ARG_BOOL("personal"))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_market_request)
+	var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(params["id"])
+	if(!listing)
+		return FALSE
+	var/personal_funding = !!params["personal"]
+	var/contract_funding = !!params["contract"]
+	if(!personal_funding && !contract_funding && !can_trade_market(ui.user))
+		return FALSE
+	om_ask(ui.user, /datum/om/prompt/text/supply_market_justification, PROC_REF(market_request_justified), listing = listing, personal = personal_funding, contract = contract_funding)
+	. = TRUE
+	add_fingerprint(ui.user)
 
-	switch(action)
-		if("market_request")
-			var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(params["id"])
-			if(!listing)
-				return FALSE
-			var/personal_funding = !!params["personal"]
-			var/contract_funding = !!params["contract"]
-			if(!personal_funding && !contract_funding && !can_trade_market(ui.user))
-				return FALSE
-			om_ask(ui.user, /datum/om/prompt/text/supply_market_justification, PROC_REF(market_request_justified), listing = listing, personal = personal_funding, contract = contract_funding)
-			. = TRUE
-		if("market_route")
-			var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(params["bid"])
-			var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[bid?.counterparty_id]
-			if(!can_trade_market(ui.user) && !has_faction_market_access(ui.user, counterparty?.faction_id))
-				return FALSE
-			var/obj/structure/closet/crate/crate = locate(params["crate"])
-			if(!istype(crate))
-				return FALSE
-			if(!GLOB.supply_service.route_market_crate(crate, params["bid"], ui.user, can_order_contraband || (authorization & SUP_CONTRABAND)))
-				to_chat(ui.user, span_warning("That route is no longer valid for this crate."))
-				return FALSE
-			. = TRUE
-		if("view_crate")
-			var/datum/supply_pack/P = locate(params["crate"])
-			if(!istype(P))
-				return FALSE
-			var/list/payload = list(
-				"name" = P.name,
-				"desc" = P.desc,
-				"cost" = P.cost,
-				"manifest" = uniqueList(P.manifest),
-				"ref" = "\ref[P]",
-				"random" = P.num_contained,
-			)
-			tgui_modal_message(src, action, "", null, payload)
-			. = TRUE
-		if("request_crate_multi")
-			var/datum/supply_pack/S = locate(params["ref"])
+UI_ACT(/obj/machinery/computer/supplycomp, "market_route", ui_act_market_route, UI_ARG_TEXT("bid"), UI_ARG_REF("crate", null, /obj/structure/closet/crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_market_route)
+	var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(params["bid"])
+	var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[bid?.counterparty_id]
+	if(!can_trade_market(ui.user) && !has_faction_market_access(ui.user, counterparty?.faction_id))
+		return FALSE
+	var/obj/structure/closet/crate/crate = params["crate"]
+	if(!istype(crate))
+		return FALSE
+	if(!GLOB.supply_service.route_market_crate(crate, params["bid"], ui.user, can_order_contraband || (authorization & SUP_CONTRABAND)))
+		to_chat(ui.user, span_warning("That route is no longer valid for this crate."))
+		return FALSE
+	. = TRUE
+	add_fingerprint(ui.user)
 
-			// Invalid ref
-			if(!istype(S))
-				return FALSE
+UI_ACT(/obj/machinery/computer/supplycomp, "view_crate", ui_act_view_crate, UI_ARG_REF("crate", null, /datum/supply_pack))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_view_crate)
+	var/datum/supply_pack/P = params["crate"]
+	if(!istype(P))
+		return FALSE
+	var/list/payload = list(
+		"name" = P.name,
+		"desc" = P.desc,
+		"cost" = P.cost,
+		"manifest" = uniqueList(P.manifest),
+		"ref" = "\ref[P]",
+		"random" = P.num_contained,
+	)
+	tgui_modal_message(src, action, "", null, payload)
+	. = TRUE
+	add_fingerprint(ui.user)
 
-			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
-				return FALSE
+UI_ACT(/obj/machinery/computer/supplycomp, "request_crate_multi", ui_act_request_crate_multi, UI_ARG_BOOL("personal"), UI_ARG_REF("ref", null, /datum/supply_pack))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_request_crate_multi)
+	var/datum/supply_pack/S = params["ref"]
 
-			if(!COOLDOWN_FINISHED(src, reqtime))
-				visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
-				return FALSE
+	// Invalid ref
+	if(!istype(S))
+		return FALSE
 
-			om_ask(ui.user, /datum/om/prompt/number/supply_crate_amount, PROC_REF(crate_amount_entered), pack = S, personal = !!params["personal"])
-			. = TRUE
+	if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
+		return FALSE
 
-		if("request_crate")
-			var/datum/supply_pack/S = locate(params["ref"])
+	if(!COOLDOWN_FINISHED(src, reqtime))
+		visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
+		return FALSE
 
-			// Invalid ref
-			if(!istype(S))
-				return FALSE
+	om_ask(ui.user, /datum/om/prompt/number/supply_crate_amount, PROC_REF(crate_amount_entered), pack = S, personal = !!params["personal"])
+	. = TRUE
+	add_fingerprint(ui.user)
 
-			if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
-				return FALSE
+UI_ACT(/obj/machinery/computer/supplycomp, "request_crate", ui_act_request_crate, UI_ARG_BOOL("personal"), UI_ARG_REF("ref", null, /datum/supply_pack))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_request_crate)
+	var/datum/supply_pack/S = params["ref"]
 
-			if(!COOLDOWN_FINISHED(src, reqtime))
-				visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
-				return FALSE
+	// Invalid ref
+	if(!istype(S))
+		return FALSE
 
-			om_ask(ui.user, /datum/om/prompt/text/supply_crate_reason, PROC_REF(crate_requested), pack = S, personal = !!params["personal"])
-			. = TRUE
-		// Approving Orders
-		if("edit_order_value")
-			var/datum/supply_order/O = locate(params["ref"])
-			if(!istype(O))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(order_value_entered), message = params["edit"], default = params["default"], edited = O, field = params["edit"])
-			. = TRUE
-		if("approve_order")
-			var/datum/supply_order/O = locate(params["ref"])
-			if(!istype(O))
-				return FALSE
-			if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(ui.user, O.funding_department))
-				return FALSE
-			GLOB.supply_service.approve_order(O, ui.user)
-			. = TRUE
-		if("deny_order")
-			var/datum/supply_order/O = locate(params["ref"])
-			if(!istype(O))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			GLOB.supply_service.deny_order(O, ui.user)
-			. = TRUE
-		if("delete_order")
-			var/datum/supply_order/O = locate(params["ref"])
-			if(!istype(O))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			GLOB.supply_service.delete_order(O, ui.user)
-			. = TRUE
-		if("clear_all_requests")
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			GLOB.supply_service.deny_all_pending(ui.user)
-			. = TRUE
-		// Exports
-		if("export_edit_field")
-			var/datum/exported_crate/E = locate(params["ref"])
-			// Invalid ref
-			if(!istype(E))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			om_ask(ui.user, /datum/om/prompt/choice/supply_export_field, PROC_REF(ask_export_value), crate = E, index = params["index"])
-			. = TRUE
-		if("export_delete_field")
-			var/datum/exported_crate/E = locate(params["ref"])
-			// Invalid ref
-			if(!istype(E))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			E.contents.Cut(params["index"], params["index"] + 1) // ALLOW(containment): datum field list named contents, not atom contents
-			. = TRUE
-		if("export_add_field")
-			var/datum/exported_crate/E = locate(params["ref"])
-			// Invalid ref
-			if(!istype(E))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			GLOB.supply_service.add_export_item(E, ui.user)
-			. = TRUE
-		if("export_edit")
-			var/datum/exported_crate/E = locate(params["ref"])
-			// Invalid ref
-			if(!istype(E))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(export_value_entered), message = params["edit"], default = params["default"], edited = E, field = params["edit"])
-			. = TRUE
-		if("export_delete")
-			var/datum/exported_crate/E = locate(params["ref"])
-			// Invalid ref
-			if(!istype(E))
-				return FALSE
-			if(!(authorization & SUP_ACCEPT_ORDERS))
-				return FALSE
-			GLOB.supply_service.delete_export(E, ui.user)
-			. = TRUE
-		if("send_shuttle")
-			if(!(authorization & SUP_SEND_SHUTTLE))
-				return FALSE
-			switch(params["mode"])
-				if("send_away")
-					if (shuttle.forbidden_atoms_check())
-						to_chat(ui.user, span_warning("For safety reasons the automated supply shuttle cannot transport live organisms, classified nuclear weaponry or homing beacons."))
-					else
-						shuttle.launch(src)
-						to_chat(ui.user, span_notice("Initiating launch sequence."))
+	if(S.contraband && !(authorization & SUP_CONTRABAND || can_order_contraband))
+		return FALSE
 
-				if("send_to_station")
-					shuttle.launch(src)
-					to_chat(ui.user, span_notice("The supply shuttle has been called and will arrive in approximately [round(GLOB.supply_service.movetime/600,1)] minutes."))
+	if(!COOLDOWN_FINISHED(src, reqtime))
+		visible_message(span_warning("[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""))
+		return FALSE
 
-				if("cancel_shuttle")
-					shuttle.cancel_launch(src)
+	om_ask(ui.user, /datum/om/prompt/text/supply_crate_reason, PROC_REF(crate_requested), pack = S, personal = !!params["personal"])
+	. = TRUE
+	// Approving Orders
+	add_fingerprint(ui.user)
 
-				if("force_shuttle")
-					shuttle.force_launch(src)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/supplycomp, "edit_order_value", ui_act_edit_order_value, UI_ARG_TEXT("default"), UI_ARG_TEXT("edit"), UI_ARG_REF("ref", null, /datum/supply_order))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_edit_order_value)
+	var/datum/supply_order/O = params["ref"]
+	if(!istype(O))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(order_value_entered), message = params["edit"], default = params["default"], edited = O, field = params["edit"])
+	. = TRUE
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/computer/supplycomp, "approve_order", ui_act_approve_order, UI_ARG_REF("ref", null, /datum/supply_order))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_approve_order)
+	var/datum/supply_order/O = params["ref"]
+	if(!istype(O))
+		return FALSE
+	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(ui.user, O.funding_department))
+		return FALSE
+	GLOB.supply_service.approve_order(O, ui.user)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "deny_order", ui_act_deny_order, UI_ARG_REF("ref", null, /datum/supply_order))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_deny_order)
+	var/datum/supply_order/O = params["ref"]
+	if(!istype(O))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	GLOB.supply_service.deny_order(O, ui.user)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "delete_order", ui_act_delete_order, UI_ARG_REF("ref", null, /datum/supply_order))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_delete_order)
+	var/datum/supply_order/O = params["ref"]
+	if(!istype(O))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	GLOB.supply_service.delete_order(O, ui.user)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "clear_all_requests", ui_act_clear_all_requests)
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_clear_all_requests)
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	GLOB.supply_service.deny_all_pending(ui.user)
+	. = TRUE
+	// Exports
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "export_edit_field", ui_act_export_edit_field, UI_ARG_NUM("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_edit_field)
+	var/datum/exported_crate/E = params["ref"]
+	// Invalid ref
+	if(!istype(E))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	om_ask(ui.user, /datum/om/prompt/choice/supply_export_field, PROC_REF(ask_export_value), crate = E, index = params["index"])
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "export_delete_field", ui_act_export_delete_field, UI_ARG_NUM("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_delete_field)
+	var/datum/exported_crate/E = params["ref"]
+	// Invalid ref
+	if(!istype(E))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	E.contents.Cut(params["index"], params["index"] + 1) // ALLOW(containment): datum field list named contents, not atom contents
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "export_add_field", ui_act_export_add_field, UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_add_field)
+	var/datum/exported_crate/E = params["ref"]
+	// Invalid ref
+	if(!istype(E))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	GLOB.supply_service.add_export_item(E, ui.user)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "export_edit", ui_act_export_edit, UI_ARG_TEXT("default"), UI_ARG_TEXT("edit"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_edit)
+	var/datum/exported_crate/E = params["ref"]
+	// Invalid ref
+	if(!istype(E))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	om_ask(ui.user, /datum/om/prompt/text/supply_field, PROC_REF(export_value_entered), message = params["edit"], default = params["default"], edited = E, field = params["edit"])
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "export_delete", ui_act_export_delete, UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_delete)
+	var/datum/exported_crate/E = params["ref"]
+	// Invalid ref
+	if(!istype(E))
+		return FALSE
+	if(!(authorization & SUP_ACCEPT_ORDERS))
+		return FALSE
+	GLOB.supply_service.delete_export(E, ui.user)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/supplycomp, "send_shuttle", ui_act_send_shuttle, UI_ARG_TEXT("mode"))
+UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_send_shuttle)
+	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	if(!(authorization & SUP_SEND_SHUTTLE))
+		return FALSE
+	switch(params["mode"])
+		if("send_away")
+			if (shuttle.forbidden_atoms_check())
+				to_chat(ui.user, span_warning("For safety reasons the automated supply shuttle cannot transport live organisms, classified nuclear weaponry or homing beacons."))
+			else
+				shuttle.launch(src)
+				to_chat(ui.user, span_notice("Initiating launch sequence."))
+
+		if("send_to_station")
+			shuttle.launch(src)
+			to_chat(ui.user, span_notice("The supply shuttle has been called and will arrive in approximately [round(GLOB.supply_service.movetime/600,1)] minutes."))
+
+		if("cancel_shuttle")
+			shuttle.cancel_launch(src)
+
+		if("force_shuttle")
+			shuttle.force_launch(src)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /datum/om/prompt/text/supply_market_justification

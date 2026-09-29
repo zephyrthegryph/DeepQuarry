@@ -40,20 +40,19 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 		return
 	tgui_interact(my_client().mob)
 
-/datum/managed_browser/feedback_form/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/managed_browser/feedback_form, GLOB.tgui_always_state)
 
-/datum/managed_browser/feedback_form/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "FeedbackForm", title)
-		ui.open()
+DECLARE_UI(/datum/managed_browser/feedback_form, "FeedbackForm")
 
-/datum/managed_browser/feedback_form/tgui_data(mob/user)
+/datum/managed_browser/feedback_form/ui_title(mob/user)
+	return title
+
+UI_DATA_REPLACE(/datum/managed_browser/feedback_form, "topic=feedback_topic", "hide_author=feedback_hide_author:num", "merge:ui_data_datum_managed_browser_feedback_form{body:bool,author_ckey:text,author_hashed:unknown,can_be_private:bool,topics:unknown,max_length:num,cooldown_days:num}")
+
+/// The computed part of /datum/managed_browser/feedback_form's window data (declared on its UI_DATA row).
+/datum/managed_browser/feedback_form/proc/ui_data_datum_managed_browser_feedback_form(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["topic"] = feedback_topic
 	data["body"] = feedback_body || ""
-	data["hide_author"] = feedback_hide_author
 	data["author_ckey"] = my_client()?.ckey
 	data["author_hashed"] = my_client() ? md5(ckey(lowertext(my_client().ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""
 	data["can_be_private"] = can_be_private() ? TRUE : FALSE
@@ -62,64 +61,67 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	data["cooldown_days"] = CONFIG_GET(number/sqlite_feedback_cooldown)
 	return data
 
-/datum/managed_browser/feedback_form/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
+/datum/managed_browser/feedback_form/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!my_client())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/managed_browser/feedback_form, "edit_body", ui_act_edit_body)
+UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_edit_body)
+	var/_answer_k80 = act_ask(my_client(), action, params, ui, "k80", /datum/om/prompt/text, message = "Please write your feedback here.", title = "Feedback Body", default = feedback_body, multiline = TRUE, max_length = MAX_TGUI_INPUT)
+	if(isnull(_answer_k80))
 		return
+	feedback_body = _answer_k80
+	return TRUE
 
-	switch(action)
-		if("edit_body")
-			var/_answer_k80 = act_ask(my_client(), action, params, ui, "k80", /datum/om/prompt/text, message = "Please write your feedback here.", title = "Feedback Body", default = feedback_body, multiline = TRUE, max_length = MAX_TGUI_INPUT)
-			if(isnull(_answer_k80))
-				return
-			feedback_body = _answer_k80
-			return TRUE
+UI_ACT(/datum/managed_browser/feedback_form, "set_hide_author", ui_act_set_hide_author, UI_ARG_BOOL("hide"))
+UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_set_hide_author)
+	if(!can_be_private())
+		feedback_hide_author = FALSE
+	else
+		feedback_hide_author = !!params["hide"]
+	return TRUE
 
-		if("set_hide_author")
-			if(!can_be_private())
-				feedback_hide_author = FALSE
-			else
-				feedback_hide_author = !!params["hide"]
-			return TRUE
+UI_ACT(/datum/managed_browser/feedback_form, "choose_topic", ui_act_choose_topic)
+UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_choose_topic)
+	var/picked = act_ask(my_client(), action, params, ui, "k91", /datum/om/prompt/choice, message = "Choose the topic you want to submit your feedback under.", title = "Feedback Topic", choices = CONFIG_GET(str_list/sqlite_feedback_topics))
+	if(isnull(picked))
+		return
+	if(picked)
+		feedback_topic = picked
+	return TRUE
 
-		if("choose_topic")
-			var/picked = act_ask(my_client(), action, params, ui, "k91", /datum/om/prompt/choice, message = "Choose the topic you want to submit your feedback under.", title = "Feedback Topic", choices = CONFIG_GET(str_list/sqlite_feedback_topics))
-			if(isnull(picked))
-				return
-			if(picked)
-				feedback_topic = picked
-			return TRUE
+UI_ACT(/datum/managed_browser/feedback_form, "submit", ui_act_submit)
+UI_ACT_PROC(/datum/managed_browser/feedback_form, ui_act_submit)
+	if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
+		to_chat(my_client(), span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
+		limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
+		return TRUE
 
-		if("submit")
-			if(length(feedback_body) > MAX_FEEDBACK_LENGTH)
-				to_chat(my_client(), span_warning("Your feedback is too long, at [length(feedback_body)] characters, where as the \
-				limit is [MAX_FEEDBACK_LENGTH]. Please shorten it and try again."))
-				return TRUE
+	var/text = sanitize(feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE)
+	if(!text)
+		to_chat(my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
+		return TRUE
 
-			var/text = sanitize(feedback_body, max_length = 0, encode = TRUE, trim = FALSE, extra = FALSE)
-			if(!text)
-				to_chat(my_client(), span_warning("It appears you didn't write anything, or it was invalid."))
-				return TRUE
+	var/_answer_k107 = act_ask(my_client(), action, params, ui, "k107", /datum/om/prompt/choice/alert, message = "Are you sure you want to submit your feedback?", title = "Confirm Submission", choices = list("No", "Yes"))
+	if(isnull(_answer_k107))
+		return
+	if(_answer_k107 != "Yes")
+		return TRUE
 
-			var/_answer_k107 = act_ask(my_client(), action, params, ui, "k107", /datum/om/prompt/choice/alert, message = "Are you sure you want to submit your feedback?", title = "Confirm Submission", choices = list("No", "Yes"))
-			if(isnull(_answer_k107))
-				return
-			if(_answer_k107 != "Yes")
-				return TRUE
+	var/author_text = my_client().ckey
+	if(can_be_private() && feedback_hide_author)
+		author_text = md5(my_client().ckey + SSsqlite.get_feedback_pepper())
 
-			var/author_text = my_client().ckey
-			if(can_be_private() && feedback_hide_author)
-				author_text = md5(my_client().ckey + SSsqlite.get_feedback_pepper())
+	var/success = SSsqlite.insert_feedback(author = author_text, topic = feedback_topic, content = feedback_body, sqlite_object = SSsqlite.sqlite_db)
+	if(!success)
+		to_chat(my_client(), span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
+		If this happens again, you should contact a developer."))
+		return TRUE
 
-			var/success = SSsqlite.insert_feedback(author = author_text, topic = feedback_topic, content = feedback_body, sqlite_object = SSsqlite.sqlite_db)
-			if(!success)
-				to_chat(my_client(), span_warning("Something went wrong while inserting your feedback into the database. Please try again. \
-				If this happens again, you should contact a developer."))
-				return TRUE
-
-			SStgui.close_uis(src)
-			qdel(src)
-			return TRUE
+	SStgui.close_uis(src)
+	qdel(src)
+	return TRUE
 

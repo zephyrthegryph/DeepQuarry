@@ -32,32 +32,32 @@ GLOBAL_LIST_INIT(dq_flavor_zones, list("general", "head", "face", "eyes", "torso
 		"robot_modules" = GLOB.robot_module_types,
 	)
 
-/datum/preference_editor/flavor/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_flavor")
-			// Whitelist zone against the static list — a forged Topic could otherwise write
-			// arbitrary assoc-list keys into the savefile.
-			var/zone = params["zone"]
-			if(!(zone in GLOB.dq_flavor_zones))
-				return PREF_UPDATE_REJECTED
-			var/text = strip_html_simple(params["text"])
-			if(istext(text) && length_char(text) > MAX_MESSAGE_LEN)
-				text = copytext_char(text, 1, MAX_MESSAGE_LEN + 1)
-			var/list/flavor = preferences.read_preference(/datum/preference/flavor_texts) || list()
-			flavor[zone] = text
-			preferences.update_preference_by_type(/datum/preference/flavor_texts, flavor)
-			return PREF_UPDATE_ACCEPTED
-		if("set_robot_flavor")
-			var/module = params["module"]
-			// "Default" is the explicit fallback slot that the React side ships for the
-			// generic case; everything else must be a known module type.
-			if(module != "Default" && !(module in GLOB.robot_module_types))
-				return PREF_UPDATE_REJECTED
-			var/text = strip_html_simple(params["text"])
-			if(istext(text) && length_char(text) > MAX_MESSAGE_LEN)
-				text = copytext_char(text, 1, MAX_MESSAGE_LEN + 1)
-			var/list/robot_flavor = preferences.read_preference(/datum/preference/flavour_texts_robot) || list()
-			robot_flavor[module] = text
-			preferences.update_preference_by_type(/datum/preference/flavour_texts_robot, robot_flavor)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/flavor, "set_flavor", ui_act_set_flavor, UI_ARG_TEXT("text"), UI_ARG_VALUE("zone"))
+UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_flavor)
+	// Whitelist zone against the static list — a forged Topic could otherwise write
+	// arbitrary assoc-list keys into the savefile.
+	var/zone = params["zone"]
+	if(!(zone in GLOB.dq_flavor_zones))
+		return PREF_UPDATE_REJECTED
+	var/text = strip_html_simple(params["text"])
+	if(istext(text) && length_char(text) > MAX_MESSAGE_LEN)
+		text = copytext_char(text, 1, MAX_MESSAGE_LEN + 1)
+	var/list/flavor = preferences.read_preference(/datum/preference/flavor_texts) || list()
+	flavor[zone] = text
+	preferences.update_preference_by_type(/datum/preference/flavor_texts, flavor)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/flavor, "set_robot_flavor", ui_act_set_robot_flavor, UI_ARG_TEXT("module"), UI_ARG_TEXT("text"))
+UI_ACT_PREF_PROC(/datum/preference_editor/flavor, ui_act_set_robot_flavor)
+	var/module = params["module"]
+	// "Default" is the explicit fallback slot that the React side ships for the
+	// generic case; everything else must be a known module type.
+	if(module != "Default" && !(module in GLOB.robot_module_types))
+		return PREF_UPDATE_REJECTED
+	var/text = strip_html_simple(params["text"])
+	if(istext(text) && length_char(text) > MAX_MESSAGE_LEN)
+		text = copytext_char(text, 1, MAX_MESSAGE_LEN + 1)
+	var/list/robot_flavor = preferences.read_preference(/datum/preference/flavour_texts_robot) || list()
+	robot_flavor[module] = text
+	preferences.update_preference_by_type(/datum/preference/flavour_texts_robot, robot_flavor)
+	return PREF_UPDATE_ACCEPTED

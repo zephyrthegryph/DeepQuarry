@@ -171,72 +171,68 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
 
-/obj/machinery/space_heater/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/space_heater, GLOB.tgui_physical_state)
 
 /obj/machinery/space_heater/tgui_status(mob/user)
 	if(!panel_open)
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/space_heater/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SpaceHeater", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/space_heater, "SpaceHeater")
 
-/obj/machinery/space_heater/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/space_heater, "temp=set_temperature", "minTemp=min_temperature", "maxTemp=max_temperature:num", "merge:ui_data_obj_machinery_space_heater{cell:bool,power:num}")
+
+/// The computed part of /obj/machinery/space_heater's window data (declared on its UI_DATA row).
+/obj/machinery/space_heater/proc/ui_data_obj_machinery_space_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["cell"] = !!cell
 	data["power"] = round(cell?.percent(), 1)
-	data["temp"] = set_temperature
-	data["minTemp"] = min_temperature
-	data["maxTemp"] = max_temperature
 
 	return data
 
-/obj/machinery/space_heater/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/space_heater/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!panel_open)
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("temp")
-			// limit to 0-90 degC
-			set_temperature = clamp(text2num(params["newtemp"]), min_temperature, max_temperature)
+UI_ACT(/obj/machinery/space_heater, "temp", ui_act_temp, UI_ARG_NUM("newtemp"))
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_temp)
+	// limit to 0-90 degC
+	set_temperature = clamp(params["newtemp"], min_temperature, max_temperature)
+	if(state)
+		MACHINE_WAKE(src)
+	. = TRUE
+
+UI_ACT(/obj/machinery/space_heater, "cellremove", ui_act_cellremove)
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellremove)
+	if(cell && !ui.user.get_active_hand())
+		act_message(ui.user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
+		cell.update_icon()
+		ui.user.put_in_hands(cell)
+		cell.add_fingerprint(ui.user)
+		own_take(src, "cell")
+		power_change()
+		. = TRUE
+
+UI_ACT(/obj/machinery/space_heater, "cellinstall", ui_act_cellinstall)
+UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
+	if(!cell)
+		var/obj/item/cell/C = ui.user.get_active_hand()
+		if(istype(C))
+			ui.user.drop_item()
+			C.forceMove(src)
+			own_set(src, "cell", C) // CONTAINED: in contents first
+			C.add_fingerprint(ui.user)
+			power_change()
 			if(state)
 				MACHINE_WAKE(src)
-			. = TRUE
-
-		if("cellremove")
-			if(cell && !ui.user.get_active_hand())
-				act_message(ui.user, src, MSG_SELF(span_notice("You remove [cell] from %T%.")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%.")))
-				cell.update_icon()
-				ui.user.put_in_hands(cell)
-				cell.add_fingerprint(ui.user)
-				own_take(src, "cell")
-				power_change()
-				. = TRUE
-
-
-		if("cellinstall")
-			if(!cell)
-				var/obj/item/cell/C = ui.user.get_active_hand()
-				if(istype(C))
-					ui.user.drop_item()
-					C.forceMove(src)
-					own_set(src, "cell", C) // CONTAINED: in contents first
-					C.add_fingerprint(ui.user)
-					power_change()
-					if(state)
-						MACHINE_WAKE(src)
-					act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
-						MSG_OTHERS(span_notice("%U% inserts %I% into %T%.")), \
-						item = C)
-				. = TRUE
+			act_message(ui.user, src, MSG_SELF(span_notice("You insert %I% into %T%.")), \
+				MSG_OTHERS(span_notice("%U% inserts %I% into %T%.")), \
+				item = C)
+		. = TRUE
 
 /obj/machinery/space_heater/machine_step()
 	if(!state)

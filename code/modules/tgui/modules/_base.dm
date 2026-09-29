@@ -65,28 +65,25 @@ Code is pretty much ripped verbatim from nano modules, but with un-needed stuff 
 	if(istype(host))
 		. += host.get_header_data()
 
-/datum/tgui_module/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+// The NTOS header buttons, when the module runs on a modular computer.
+UI_ACT(/datum/tgui_module, "PC_exit", ui_act_pc_exit)
+UI_ACT(/datum/tgui_module, "PC_shutdown", ui_act_pc_exit)
+UI_ACT(/datum/tgui_module, "PC_minimize", ui_act_pc_exit)
+UI_ACT_PROC(/datum/tgui_module, ui_act_pc_exit)
 	var/obj/item/modular_computer/host = tgui_host()
-	if(istype(host))
-		if(action == "PC_exit")
+	if(!istype(host))
+		return FALSE
+	switch(action)
+		if("PC_exit")
 			host.kill_program()
-			return TRUE
-		if(action == "PC_shutdown")
+		if("PC_shutdown")
 			host.shutdown_computer()
-			return TRUE
-		if(action == "PC_minimize")
-			host.minimize_program(ui.user)
-			return TRUE
+		if("PC_minimize")
+			host.minimize_program(user)
+	return TRUE
 
-// Just a nice little default interact in case the subtypes don't need any special behavior here
-/datum/tgui_module/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui/parent_ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, name, parent_ui)
-		ui.open()
+// Each module subtype names its interface in tgui_id.
+DECLARE_UI(/datum/tgui_module, UI_FROM_VAR("tgui_id"))
 
 /datum/tgui_module/proc/relaymove(mob/user, direction)
 	return FALSE

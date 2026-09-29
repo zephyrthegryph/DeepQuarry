@@ -25,16 +25,27 @@
 		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
 	..()
 
-/datum/belly_overlay_tgui/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/belly_overlay_tgui, GLOB.tgui_always_state)
 
 /datum/belly_overlay_tgui/ui_assets(mob/user)
 	// Belly overlay files are registered + sent lazily via
 	// dq_send_belly_overlay_urls() in show(), not as a static bundle.
 	return list()
 
-/datum/belly_overlay_tgui/tgui_data(mob/user)
-	return state
+DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
+
+/// Renders in the client's `mapwindow.belly_overlay` browser element.
+/datum/belly_overlay_tgui/ui_window(mob/user)
+	return new /datum/tgui_window(user.client, "mapwindow.belly_overlay")
+
+/datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
+	own_set(src, "active_ui", ui)
+
+UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
+
+/// The computed part of /datum/belly_overlay_tgui's window data (declared on its UI_DATA row).
+/datum/belly_overlay_tgui/proc/ui_data_datum_belly_overlay_tgui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	return src.state
 
 /datum/belly_overlay_tgui/tgui_close(mob/user)
 	hide()
@@ -45,13 +56,12 @@
 	var/client/C = owner().client
 	winset(C, "mapwindow.belly_overlay", "is-visible=true;inner-background-color=#00000000")
 	if(!active_ui)
-		var/datum/tgui_window/win = new(C, "mapwindow.belly_overlay")
-		own_set(src, "active_ui", new /datum/tgui(owner(), src, "BellyOverlay", "Belly Overlay", null, null, null, win))
 		// Opening the window touches blocking BYOND UI calls (winexists / asset
 		// stoplag). This UI can be reached from no-sleep contexts (e.g. a death
 		// triggered during atom Initialize), so fire the open asynchronously — it
 		// is inherently fire-and-forget — to keep those callers non-blocking.
-		INVOKE_ASYNC(active_ui, TYPE_PROC_REF(/datum/tgui, open)) // ALLOW(scheduler): tgui open may block on asset/window setup
+		// ui_opening() records active_ui before the first sleep.
+		INVOKE_ASYNC(src, PROC_REF(tgui_interact), owner()) // ALLOW(scheduler): tgui open may block on asset/window setup
 
 /datum/belly_overlay_tgui/proc/build_show_signature(obj/belly/B, mob/prey)
 	// Cheap signature of everything that affects the rendered layer set. Continuous

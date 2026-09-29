@@ -32,38 +32,35 @@
 	title = report_title
 	rel_set(src, "forward_host", host)
 
-/datum/admin_report/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT)
+DECLARE_UI_STATE(/datum/admin_report, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT))
 
-/datum/admin_report/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AdminReport", title)
-		ui.open()
+DECLARE_UI(/datum/admin_report, "AdminReport")
 
-/datum/admin_report/tgui_data(mob/user)
+/datum/admin_report/ui_title(mob/user)
+	return title
+
+UI_DATA_REPLACE(/datum/admin_report, "title:text", "intro_html:text", "body_html:text", "merge:ui_data_datum_admin_report{lines:bool,columns:bool,rows:bool,has_host:bool}")
+
+/// The computed part of /datum/admin_report's window data (declared on its UI_DATA row).
+/datum/admin_report/proc/ui_data_datum_admin_report(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["title"] = title
-	data["intro_html"] = intro_html
 	data["lines"] = lines || list()
 	data["columns"] = columns || list()
 	data["rows"] = rows || list()
-	data["body_html"] = body_html
 	data["has_host"] = !!forward_host()
 	return data
 
-/datum/admin_report/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "forward_topic")
-		dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
-		SStgui.update_uis(src)
-		return TRUE
-	if(action == "close")
-		SStgui.close_uis(src)
-		qdel(src)
-		return TRUE
+UI_ACT(/datum/admin_report, "forward_topic", ui_act_forward_topic, UI_ARG_TEXT("href"))
+UI_ACT_PROC(/datum/admin_report, ui_act_forward_topic)
+	dispatch_forwarded_topic(ui.user, forward_host(), "[params["href"]]")
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/admin_report, "close", ui_act_close)
+UI_ACT_PROC(/datum/admin_report, ui_act_close)
+	SStgui.close_uis(src)
+	qdel(src)
+	return TRUE
 
 /// Show a report with a list of preformatted lines.
 /proc/dq_admin_report_lines(mob/user, title, list/lines, intro_html = "", datum/host = null)
@@ -104,16 +101,17 @@
 	stock_name = name
 	points = series ? series.Copy() : list()
 
-/datum/dq_stock_chart_panel/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/datum/dq_stock_chart_panel, GLOB.tgui_default_state)
 
-/datum/dq_stock_chart_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "StockChart", "Share Value: [stock_name]")
-		ui.open()
+DECLARE_UI(/datum/dq_stock_chart_panel, "StockChart")
 
-/datum/dq_stock_chart_panel/tgui_data(mob/user)
+/datum/dq_stock_chart_panel/ui_title(mob/user)
+	return "Share Value: [stock_name]"
+
+UI_DATA_REPLACE(/datum/dq_stock_chart_panel, "merge:ui_data_datum_dq_stock_chart_panel{stock_name:unknown,points:bool}")
+
+/// The computed part of /datum/dq_stock_chart_panel's window data (declared on its UI_DATA row).
+/datum/dq_stock_chart_panel/proc/ui_data_datum_dq_stock_chart_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"stock_name" = stock_name,
 		"points" = points || list(),

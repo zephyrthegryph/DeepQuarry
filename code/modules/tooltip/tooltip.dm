@@ -57,10 +57,12 @@
 		window.close()
 	return ..()
 
-/datum/tooltip/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tooltip, GLOB.tgui_always_state)
 
-/datum/tooltip/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control:text,title:text,theme:text,cursor_params:text,screen_loc:text,view_w:num,view_h:num,revision:num,tile_size:unknown}")
+
+/// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
+/datum/tooltip/proc/ui_data_datum_tooltip(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"visible" = _visible,
 		"control" = control,
@@ -75,6 +77,12 @@
 		// world.icon_size was overridden, so we ship it directly.
 		"tile_size" = isnum(world.icon_size) ? world.icon_size : 32,
 	)
+
+DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
+
+/// Renders in the client's persistent tooltip browser element.
+/datum/tooltip/ui_window(mob/user)
+	return tooltip_window
 
 /datum/tooltip/proc/show(atom/movable/thing, params = null, title = null, content = null, theme = "default", special = "none")
 	if(!thing || !params || (!title && !content) || !owner())
@@ -115,11 +123,7 @@
 	// data to React (and mounts it on first hover). Tooltip.tsx measures the box,
 	// sizes the element to it at the cursor, and shows it — DM never winsets
 	// is-visible here, so the element only ever appears already positioned.
-	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
-	if(!ui)
-		ui = new(owner().mob, src, "Tooltip", window = tooltip_window)
-		ui.closeable = FALSE
-		ui.open()
+	tgui_interact(owner().mob)
 
 	showing = 0
 	if(queueHide)
@@ -171,13 +175,10 @@
 	if(owner())
 		winset(owner(), control, "is-visible=false")
 
-/datum/tooltip/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	if(action == "dismiss")
-		hide()
-		return TRUE
+UI_ACT(/datum/tooltip, "dismiss", ui_act_dismiss)
+UI_ACT_PROC(/datum/tooltip, ui_act_dismiss)
+	hide()
+	return TRUE
 
 //Open a tooltip for user, at a location based on params
 //Theme is a CSS class in Tooltip.tsx, by default this wrapper chooses a CSS class based on the user's UI_style (Midnight, Plasmafire, Retro, etc)

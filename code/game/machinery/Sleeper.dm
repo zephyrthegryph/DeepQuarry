@@ -70,21 +70,20 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 	else
 		icon_state = initial(icon_state)
 
-/obj/machinery/sleep_console/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Sleeper", "Sleeper")
-		ui.open()
+DECLARE_UI(/obj/machinery/sleep_console, "Sleeper", UI_TITLE("Sleeper"))
 
-/obj/machinery/sleep_console/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/sleep_console, "merge:ui_data_obj_machinery_sleep_console{}")
+
+/// The computed part of /obj/machinery/sleep_console's window data (declared on its UI_DATA row).
+/obj/machinery/sleep_console/proc/ui_data_obj_machinery_sleep_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(sleeper)
 		return sleeper.tgui_data(user)
 	return null
 
-/obj/machinery/sleep_console/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
-	if(sleeper)
-		return sleeper.tgui_act(action, params, ui, state)
-	return ..()
+/// The console's window is its sleeper's panel: every action goes to the sleeper.
+UI_ACT_FORWARD(/obj/machinery/sleep_console, ui_forward_to_sleeper)
+/obj/machinery/sleep_console/proc/ui_forward_to_sleeper(mob/user, action)
+	return sleeper
 
 /obj/machinery/sleeper
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -182,18 +181,16 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		tgui_interact(user)
 	return TRUE
 
-/obj/machinery/sleeper/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Sleeper", "Sleeper")
-		ui.open()
+DECLARE_UI(/obj/machinery/sleeper, "Sleeper", UI_TITLE("Sleeper"))
 
-/obj/machinery/sleeper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/sleeper, "amounts:list", "maxchem=max_chem:num", "dialysis=filtering:num", "stomachpumping=pumping:num", "auto_eject_dead:num", "merge:ui_data_obj_machinery_sleeper{hasOccupant:num,occupant:list,isBeakerLoaded:num,beakerMaxSpace:num,beakerFreeSpace:unknown,stasis:text,chemicals:list}")
+
+/// The computed part of /obj/machinery/sleeper's window data (declared on its UI_DATA row).
+/obj/machinery/sleeper/proc/ui_data_obj_machinery_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SLEEPER)
-	var/data[0]
-	data["amounts"] = amounts
+	var/list/data = list()
 	data["hasOccupant"] = occupant ? 1 : 0
-	var/occupantData[0]
+	var/list/occupantData = list()
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
@@ -247,10 +244,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 			occupantData["bloodType"] = occupant.dna.b_type
 
 	data["occupant"] = occupantData
-	data["maxchem"] = max_chem
-	data["dialysis"] = filtering
-	data["stomachpumping"] = pumping
-	data["auto_eject_dead"] = auto_eject_dead
 	if(beaker)
 		data["isBeakerLoaded"] = 1
 		if(beaker.reagents)
@@ -269,7 +262,7 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 			break
 	data["stasis"] = stasis_level_name
 
-	var/chemicals[0]
+	var/list/chemicals = list()
 	for(var/re in available_chemicals)
 		var/datum/reagent/temp = chemistry_service().chemical_reagents[re]
 		if(temp)
@@ -293,48 +286,76 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 	data["chemicals"] = chemicals
 	return data
 
-/obj/machinery/sleeper/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/sleeper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	if(..())
-		return TRUE
 	if(!controls_inside && ui.user == occupant)
-		return
+		return FALSE
 	if(panel_open)
 		to_chat(ui.user, span_notice("Close the maintenance panel first."))
-		return
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/sleeper, "chemical", ui_act_chemical, UI_ARG_NUM("amount"), UI_ARG_NUM("chemid"))
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_chemical)
 	. = TRUE
-	switch(action)
-		if("chemical")
-			if(!occupant)
-				return
-			if(occupant.stat == DEAD)
-				to_chat(ui.user, span_danger("This person has no life to preserve anymore. Take [occupant.p_them()] to a department capable of reanimating [occupant.p_them()]."))
-				return
-			var/chemical = params["chemid"]
-			var/amount = text2num(params["amount"])
-			if(!length(chemical) || amount <= 0)
-				return
-			if(occupant.vitality() > 0) //|| (chemical in emergency_chems))
-				inject_chemical(ui.user, chemical, amount)
-			else
-				to_chat(ui.user, span_danger("This person is not in good enough condition for sleepers to be effective! Use another means of treatment, such as cryogenics!"))
-		if("removebeaker")
-			remove_beaker()
-		if("togglefilter")
-			toggle_filter()
-		if("togglepump")
-			toggle_pump()
-		if("ejectify")
-			go_out()
-		if("changestasis")
-			om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(stasis_level_chosen), title = "Stasis Level", message = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices, requires = PROMPT_USABLE)
-		if("auto_eject_dead_on")
-			auto_eject_dead = TRUE
-		if("auto_eject_dead_off")
-			auto_eject_dead = FALSE
-		else
-			return FALSE
+	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
+	if(!occupant)
+		return
+	if(occupant.stat == DEAD)
+		to_chat(ui.user, span_danger("This person has no life to preserve anymore. Take [occupant.p_them()] to a department capable of reanimating [occupant.p_them()]."))
+		return
+	var/chemical = params["chemid"]
+	var/amount = params["amount"]
+	if(!length(chemical) || amount <= 0)
+		return
+	if(occupant.vitality() > 0) //|| (chemical in emergency_chems))
+		inject_chemical(ui.user, chemical, amount)
+	else
+		to_chat(ui.user, span_danger("This person is not in good enough condition for sleepers to be effective! Use another means of treatment, such as cryogenics!"))
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "removebeaker", ui_act_removebeaker)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_removebeaker)
+	. = TRUE
+	remove_beaker()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "togglefilter", ui_act_togglefilter)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_togglefilter)
+	. = TRUE
+	toggle_filter()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "togglepump", ui_act_togglepump)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_togglepump)
+	. = TRUE
+	toggle_pump()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "ejectify", ui_act_ejectify)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_ejectify)
+	. = TRUE
+	go_out()
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "changestasis", ui_act_changestasis)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_changestasis)
+	. = TRUE
+	om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(stasis_level_chosen), title = "Stasis Level", message = "Levels deeper than 50% stasis level will render the patient unconscious.", choices = stasis_choices, requires = PROMPT_USABLE)
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "auto_eject_dead_on", ui_act_auto_eject_dead_on)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_auto_eject_dead_on)
+	. = TRUE
+	auto_eject_dead = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/sleeper, "auto_eject_dead_off", ui_act_auto_eject_dead_off)
+UI_ACT_PROC(/obj/machinery/sleeper, ui_act_auto_eject_dead_off)
+	. = TRUE
+	auto_eject_dead = FALSE
 	add_fingerprint(ui.user)
 
 /datum/om/prompt/number/machine_ui

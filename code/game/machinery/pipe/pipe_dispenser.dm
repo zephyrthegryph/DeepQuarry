@@ -31,13 +31,12 @@
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-/obj/machinery/pipedispenser/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PipeDispenser", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/pipedispenser, "PipeDispenser")
 
-/obj/machinery/pipedispenser/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_pipedispenser{disposals:num,p_layer:unknown,pipe_layers:list,categories:list}")
+
+/// The computed part of /obj/machinery/pipedispenser's window data (declared on its UI_DATA row).
+/obj/machinery/pipedispenser/proc/ui_data_obj_machinery_pipedispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"disposals" = disposals,
 		"p_layer" = p_layer,
@@ -69,45 +68,49 @@
 
 	return data
 
-/obj/machinery/pipedispenser/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/pipedispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(unwrenched || !ui.user.canmove || ui.user.stat || ui.user.restrained() || !in_range(loc, ui.user))
-		return TRUE
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/pipedispenser, "p_layer", ui_act_p_layer, UI_ARG_NUM("p_layer"))
+UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_p_layer)
 	. = TRUE
-	switch(action)
-		if("p_layer")
-			p_layer = text2num(params["p_layer"])
-		if("dispense_pipe")
-			if(COOLDOWN_FINISHED(src, wait))
-				var/datum/pipe_recipe/recipe = locate(params["ref"])
-				if(!istype(recipe))
-					return
+	p_layer = params["p_layer"]
 
-				var/target_dir = NORTH
-				if(params["bent"])
-					target_dir = NORTHEAST
+UI_ACT(/obj/machinery/pipedispenser, "dispense_pipe", ui_act_dispense_pipe, UI_ARG_VALUE("bent"), UI_ARG_REF("ref", null, /datum/pipe_recipe))
+UI_ACT_PROC(/obj/machinery/pipedispenser, ui_act_dispense_pipe)
+	. = TRUE
+	if(COOLDOWN_FINISHED(src, wait))
+		var/datum/pipe_recipe/recipe = params["ref"]
+		if(!istype(recipe))
+			return
 
-				var/obj/created_object = null
-				if(istype(recipe, /datum/pipe_recipe/pipe))
-					var/datum/pipe_recipe/pipe/R = recipe
-					created_object = new R.construction_type(loc, recipe.pipe_type, target_dir)
-					var/obj/item/pipe/P = created_object
-					P.setPipingLayer(p_layer)
-				else if(istype(recipe, /datum/pipe_recipe/disposal))
-					var/datum/pipe_recipe/disposal/D = recipe
-					var/obj/structure/disposalconstruct/C = new(loc, D.pipe_type, target_dir, 0, D.subtype ? D.subtype : 0)
-					C.update()
-					created_object = C
-				else if(istype(recipe, /datum/pipe_recipe/meter))
-					created_object = new recipe.pipe_type(loc)
-				else
-					log_runtime(EXCEPTION("Warning: [ui.user] attempted to spawn pipe recipe type by params [json_encode(params)] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
-					return
+		var/target_dir = NORTH
+		if(params["bent"])
+			target_dir = NORTHEAST
 
-				created_object.add_fingerprint(ui.user)
-				COOLDOWN_START(src, wait, 15)
+		var/obj/created_object = null
+		if(istype(recipe, /datum/pipe_recipe/pipe))
+			var/datum/pipe_recipe/pipe/R = recipe
+			created_object = new R.construction_type(loc, recipe.pipe_type, target_dir)
+			var/obj/item/pipe/P = created_object
+			P.setPipingLayer(p_layer)
+		else if(istype(recipe, /datum/pipe_recipe/disposal))
+			var/datum/pipe_recipe/disposal/D = recipe
+			var/obj/structure/disposalconstruct/C = new(loc, D.pipe_type, target_dir, 0, D.subtype ? D.subtype : 0)
+			C.update()
+			created_object = C
+		else if(istype(recipe, /datum/pipe_recipe/meter))
+			created_object = new recipe.pipe_type(loc)
+		else
+			log_runtime(EXCEPTION("Warning: [ui.user] attempted to spawn pipe recipe type by ref [params["ref"]] ([recipe] [recipe?.type]), but it was not allowed by this machine ([src] [type])"))
+			return
+
+		created_object.add_fingerprint(ui.user)
+		COOLDOWN_START(src, wait, 15)
 
 
 /datum/interaction/machine_item/pipedispenser_return

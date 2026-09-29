@@ -100,11 +100,7 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_input_number/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NumberInputModal")
-		ui.open()
+DECLARE_UI(/datum/tgui_input_number, "NumberInputModal")
 
 /datum/tgui_input_number/tgui_close(mob/user)
 	. = ..()
@@ -125,33 +121,34 @@
 	data["round_value"] = round_value
 	return data
 
-/datum/tgui_input_number/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_input_number, "merge:ui_data_datum_tgui_input_number{timeout:num}")
+
+/// The computed part of /datum/tgui_input_number's window data (declared on its UI_DATA row).
+/datum/tgui_input_number/proc/ui_data_datum_tgui_input_number(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-/datum/tgui_input_number/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if (.)
-		return
-	switch(action)
-		if("submit")
-			if(!isnum(params["entry"]))
-				CRASH("A non number was input into tgui input number by [ui.user]")
-			var/choice = round_value ? round(params["entry"]) : params["entry"]
-			if(choice > max_value)
-				CRASH("A number greater than the max value was input into tgui input number by [ui.user]")
-			if(choice < min_value)
-				CRASH("A number less than the min value was input into tgui input number by [ui.user]")
-			set_entry(choice)
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+UI_ACT(/datum/tgui_input_number, "submit", ui_act_submit, UI_ARG_NUM("entry"))
+UI_ACT_PROC(/datum/tgui_input_number, ui_act_submit)
+	if(!isnum(params["entry"]))
+		CRASH("A non number was input into tgui input number by [ui.user]")
+	var/choice = round_value ? round(params["entry"]) : params["entry"]
+	if(choice > max_value)
+		CRASH("A number greater than the max value was input into tgui input number by [ui.user]")
+	if(choice < min_value)
+		CRASH("A number less than the min value was input into tgui input number by [ui.user]")
+	set_entry(choice)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_number, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_input_number, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_input_number/proc/set_entry(entry)
 	src.entry = entry

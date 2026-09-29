@@ -1,19 +1,18 @@
-/datum/song/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if (!ui)
-		ui = new(user, src, "InstrumentEditor", parent().name)
-		ui.open()
+DECLARE_UI(/datum/song, "InstrumentEditor")
+
+/datum/song/ui_title(mob/user)
+	return parent().name
 
 /datum/song/tgui_host(mob/user)
 	return parent()
 
-/datum/song/tgui_data(mob/user)
-	var/list/data = ..()
-	data["id"] = id
+UI_DATA(/datum/song, "id", "note_shift:num", "sustain_mode", "volume:num", "volume_dropoff_threshold=sustain_dropoff_volume:num", "sustain_indefinitely=full_sustain_held_note:num", "playing:num", "repeat:num", "merge:ui_data_datum_song{using_instrument:unknown,octaves:num,sustain_mode_button:text,sustain_mode_duration:num,sustain_mode_min:num,sustain_mode_max:unknown,instrument_ready:unknown,bpm:num,lines:list}")
+
+/// The computed part of /datum/song's window data (declared on its UI_DATA row).
+/datum/song/proc/ui_data_datum_song(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["using_instrument"] = using_instrument()?.name || "No instrument loaded!"
-	data["note_shift"] = note_shift
 	data["octaves"] = round(note_shift / 12, 0.01)
-	data["sustain_mode"] = sustain_mode
 	switch(sustain_mode)
 		if(SUSTAIN_LINEAR)
 			data["sustain_mode_button"] = "Linear Sustain Duration (in seconds)"
@@ -26,11 +25,6 @@
 			data["sustain_mode_min"] = INSTRUMENT_EXP_FALLOFF_MIN
 			data["sustain_mode_max"] = INSTRUMENT_EXP_FALLOFF_MAX
 	data["instrument_ready"] = using_instrument()?.ready()
-	data["volume"] = volume
-	data["volume_dropoff_threshold"] = sustain_dropoff_volume
-	data["sustain_indefinitely"] = full_sustain_held_note
-	data["playing"] = playing
-	data["repeat"] = repeat
 	data["bpm"] = round(60 SECONDS / tempo)
 	data["lines"] = list()
 	var/linecount
@@ -58,143 +52,173 @@
 	data["max_lines"] = MUSIC_MAXLINES
 	return data
 
-/datum/song/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	var/mob/user = ui.user
+/datum/song/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!istype(user))
 		return FALSE
+	return TRUE
 
-	switch(action)
-		//SETTINGS
-		if("play_music")
-			if(!playing)
-				start_playing(user)
-			else
-				stop_playing()
-			return TRUE
-		if("set_instrument_id")
-			var/new_id = reject_bad_name(LOWER_TEXT(params["id"]), max_length = 20, allow_numbers = TRUE, cap_after_symbols = FALSE)
-			if(new_id)
-				id = new_id
-			return TRUE
-		if("change_instrument")
-			var/new_instrument = params["new_instrument"]
-			//only one instrument, so no need to bother changing it.
-			if(!length(allowed_instrument_ids))
-				return FALSE
-			if(!(new_instrument in allowed_instrument_ids))
-				return FALSE
-			set_instrument(new_instrument)
-			return TRUE
-		if("tempo")
-			var/move_direction = params["tempo_change"]
-			var/tempo_diff
-			if(move_direction == "increase_speed")
-				tempo_diff = world.tick_lag
-			else
-				tempo_diff = -world.tick_lag
-			tempo = sanitize_tempo(tempo + tempo_diff)
-			return TRUE
+UI_ACT(/datum/song, "play_music", ui_act_play_music)
+UI_ACT_PROC(/datum/song, ui_act_play_music)
+	if(!playing)
+		start_playing(user)
+	else
+		stop_playing()
+	return TRUE
 
-		//SONG MAKING
-		if("import_song")
-			var/song_text = ""
-			do
-				var/_answer_k103 = act_ask(user, action, params, ui, "k103", /datum/om/prompt/text, message = "Please paste the entire song, formatted:", title = name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
-				if(isnull(_answer_k103))
-					return
-				song_text = _answer_k103
-				if(!in_range(parent(), user))
-					return
+UI_ACT(/datum/song, "set_instrument_id", ui_act_set_instrument_id, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/datum/song, ui_act_set_instrument_id)
+	var/new_id = reject_bad_name(LOWER_TEXT(params["id"]), max_length = 20, allow_numbers = TRUE, cap_after_symbols = FALSE)
+	if(new_id)
+		id = new_id
+	return TRUE
 
-				if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-					var/should_continue = act_ask(user, action, params, ui, "k108", /datum/om/prompt/choice/alert, message = "Your message is too long! Would you like to continue editing it?", title = "Warning", choices = list("Yes", "No"))
-					if(isnull(should_continue))
-						return
-					if(should_continue != "Yes")
-						break
-			while(length_char(song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
-			ParseSong(user, song_text)
-			return TRUE
-		if("start_new_song")
-			name = ""
-			lines = new()
-			tempo = sanitize_tempo(5) // default 120 BPM
-			return TRUE
-		if("add_new_line")
-			var/newline = act_ask(user, action, params, ui, "k120", /datum/om/prompt/text, message = "Enter your line", title = parent().name, max_length = MUSIC_MAXLINECHARS)
-			if(isnull(newline))
-				return
-			if(!newline || !in_range(parent(), user))
-				return
-			if(lines.len > MUSIC_MAXLINES)
-				return
-			if(length(newline) > MUSIC_MAXLINECHARS)
-				newline = copytext(newline, 1, MUSIC_MAXLINECHARS)
-			lines.Add(newline)
-		if("delete_line")
-			var/line_to_delete = params["line_deleted"]
-			if(line_to_delete > lines.len || line_to_delete < 1)
-				return FALSE
-			lines.Cut(line_to_delete, line_to_delete + 1)
-			return TRUE
-		if("modify_line")
-			var/line_to_edit = params["line_editing"]
-			if(line_to_edit > lines.len || line_to_edit < 1)
-				return FALSE
-			var/new_line_text = act_ask(user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter your line ", title = parent().name, default = lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
-			if(isnull(new_line_text))
-				return
-			if(isnull(new_line_text) || !in_range(parent(), user))
-				return FALSE
-			lines[line_to_edit] = new_line_text
-			return TRUE
+UI_ACT(/datum/song, "change_instrument", ui_act_change_instrument, UI_ARG_TEXT("new_instrument"))
+UI_ACT_PROC(/datum/song, ui_act_change_instrument)
+	var/new_instrument = params["new_instrument"]
+	//only one instrument, so no need to bother changing it.
+	if(!length(allowed_instrument_ids))
+		return FALSE
+	if(!(new_instrument in allowed_instrument_ids))
+		return FALSE
+	set_instrument(new_instrument)
+	return TRUE
 
-		//MODE STUFF
-		if("set_sustain_mode")
-			var/new_mode = params["new_mode"]
-			if(isnull(new_mode) || !(new_mode in instrument_service().note_sustain_modes))
-				return FALSE
-			sustain_mode = new_mode
-			return TRUE
-		if("set_note_shift")
-			var/amount = params["amount"]
-			if(!isnum(amount))
-				return FALSE
-			note_shift = clamp(amount, note_shift_min, note_shift_max)
-			return TRUE
-		if("set_volume")
-			var/new_volume = params["amount"]
-			if(!isnum(new_volume))
-				return FALSE
-			set_volume(new_volume)
-			return TRUE
-		if("set_dropoff_volume")
-			var/dropoff_threshold = params["amount"]
-			if(!isnum(dropoff_threshold))
-				return FALSE
-			set_dropoff_volume(dropoff_threshold)
-			return TRUE
-		if("toggle_sustain_hold_indefinitely")
-			full_sustain_held_note = !full_sustain_held_note
-			return TRUE
-		if("set_repeat_amount")
-			if(playing)
+UI_ACT(/datum/song, "tempo", ui_act_tempo, UI_ARG_TEXT("tempo_change"))
+UI_ACT_PROC(/datum/song, ui_act_tempo)
+	var/move_direction = params["tempo_change"]
+	var/tempo_diff
+	if(move_direction == "increase_speed")
+		tempo_diff = world.tick_lag
+	else
+		tempo_diff = -world.tick_lag
+	tempo = sanitize_tempo(tempo + tempo_diff)
+	return TRUE
+
+//SONG MAKING
+
+UI_ACT(/datum/song, "import_song", ui_act_import_song)
+UI_ACT_PROC(/datum/song, ui_act_import_song)
+	var/song_text = ""
+	do
+		var/_answer_k103 = act_ask(user, action, params, ui, "k103", /datum/om/prompt/text, message = "Please paste the entire song, formatted:", title = name, max_length = (MUSIC_MAXLINES * MUSIC_MAXLINECHARS), multiline = TRUE)
+		if(isnull(_answer_k103))
+			return
+		song_text = _answer_k103
+		if(!in_range(parent(), user))
+			return
+
+		if(length_char(song_text) >= MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+			var/should_continue = act_ask(user, action, params, ui, "k108", /datum/om/prompt/choice/alert, message = "Your message is too long! Would you like to continue editing it?", title = "Warning", choices = list("Yes", "No"))
+			if(isnull(should_continue))
 				return
-			var/repeat_amount = params["amount"]
-			if(!isnum(repeat_amount))
-				return FALSE
-			set_repeats(repeat_amount)
-			return TRUE
-		if("edit_sustain_mode")
-			var/sustain_amount = params["amount"]
-			if(isnull(sustain_amount) || !isnum(sustain_amount))
-				return
-			switch(sustain_mode)
-				if(SUSTAIN_LINEAR)
-					set_linear_falloff_duration(sustain_amount)
-				if(SUSTAIN_EXPONENTIAL)
-					set_exponential_drop_rate(sustain_amount)
+			if(should_continue != "Yes")
+				break
+	while(length_char(song_text) > MUSIC_MAXLINES * MUSIC_MAXLINECHARS)
+	ParseSong(user, song_text)
+	return TRUE
+
+UI_ACT(/datum/song, "start_new_song", ui_act_start_new_song)
+UI_ACT_PROC(/datum/song, ui_act_start_new_song)
+	name = ""
+	lines = new()
+	tempo = sanitize_tempo(5) // default 120 BPM
+	return TRUE
+
+UI_ACT(/datum/song, "add_new_line", ui_act_add_new_line)
+UI_ACT_PROC(/datum/song, ui_act_add_new_line)
+	var/newline = act_ask(user, action, params, ui, "k120", /datum/om/prompt/text, message = "Enter your line", title = parent().name, max_length = MUSIC_MAXLINECHARS)
+	if(isnull(newline))
+		return
+	if(!newline || !in_range(parent(), user))
+		return
+	if(lines.len > MUSIC_MAXLINES)
+		return
+	if(length(newline) > MUSIC_MAXLINECHARS)
+		newline = copytext(newline, 1, MUSIC_MAXLINECHARS)
+	lines.Add(newline)
+
+UI_ACT(/datum/song, "delete_line", ui_act_delete_line, UI_ARG_NUM("line_deleted"))
+UI_ACT_PROC(/datum/song, ui_act_delete_line)
+	var/line_to_delete = params["line_deleted"]
+	if(line_to_delete > lines.len || line_to_delete < 1)
+		return FALSE
+	lines.Cut(line_to_delete, line_to_delete + 1)
+	return TRUE
+
+UI_ACT(/datum/song, "modify_line", ui_act_modify_line, UI_ARG_NUM("line_editing"))
+UI_ACT_PROC(/datum/song, ui_act_modify_line)
+	var/line_to_edit = params["line_editing"]
+	if(line_to_edit > lines.len || line_to_edit < 1)
+		return FALSE
+	var/new_line_text = act_ask(user, action, params, ui, "k138", /datum/om/prompt/text, message = "Enter your line ", title = parent().name, default = lines[line_to_edit], max_length = MUSIC_MAXLINECHARS)
+	if(isnull(new_line_text))
+		return
+	if(isnull(new_line_text) || !in_range(parent(), user))
+		return FALSE
+	lines[line_to_edit] = new_line_text
+	return TRUE
+
+//MODE STUFF
+
+UI_ACT(/datum/song, "set_sustain_mode", ui_act_set_sustain_mode, UI_ARG_VALUE("new_mode"))
+UI_ACT_PROC(/datum/song, ui_act_set_sustain_mode)
+	var/new_mode = params["new_mode"]
+	if(isnull(new_mode) || !(new_mode in instrument_service().note_sustain_modes))
+		return FALSE
+	sustain_mode = new_mode
+	return TRUE
+
+UI_ACT(/datum/song, "set_note_shift", ui_act_set_note_shift, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/datum/song, ui_act_set_note_shift)
+	var/amount = params["amount"]
+	if(!isnum(amount))
+		return FALSE
+	note_shift = clamp(amount, note_shift_min, note_shift_max)
+	return TRUE
+
+UI_ACT(/datum/song, "set_volume", ui_act_set_volume, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/datum/song, ui_act_set_volume)
+	var/new_volume = params["amount"]
+	if(!isnum(new_volume))
+		return FALSE
+	set_volume(new_volume)
+	return TRUE
+
+UI_ACT(/datum/song, "set_dropoff_volume", ui_act_set_dropoff_volume, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/datum/song, ui_act_set_dropoff_volume)
+	var/dropoff_threshold = params["amount"]
+	if(!isnum(dropoff_threshold))
+		return FALSE
+	set_dropoff_volume(dropoff_threshold)
+	return TRUE
+
+UI_ACT(/datum/song, "toggle_sustain_hold_indefinitely", ui_act_toggle_sustain_hold_indefinitely)
+UI_ACT_PROC(/datum/song, ui_act_toggle_sustain_hold_indefinitely)
+	full_sustain_held_note = !full_sustain_held_note
+	return TRUE
+
+UI_ACT(/datum/song, "set_repeat_amount", ui_act_set_repeat_amount, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/datum/song, ui_act_set_repeat_amount)
+	if(playing)
+		return
+	var/repeat_amount = params["amount"]
+	if(!isnum(repeat_amount))
+		return FALSE
+	set_repeats(repeat_amount)
+	return TRUE
+
+UI_ACT(/datum/song, "edit_sustain_mode", ui_act_edit_sustain_mode, UI_ARG_NUM("amount"))
+UI_ACT_PROC(/datum/song, ui_act_edit_sustain_mode)
+	var/sustain_amount = params["amount"]
+	if(isnull(sustain_amount) || !isnum(sustain_amount))
+		return
+	switch(sustain_mode)
+		if(SUSTAIN_LINEAR)
+			set_linear_falloff_duration(sustain_amount)
+		if(SUSTAIN_EXPONENTIAL)
+			set_exponential_drop_rate(sustain_amount)
 
 /**
  * Parses a song the user has input into lines and stores them.

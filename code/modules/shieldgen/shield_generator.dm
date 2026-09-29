@@ -429,19 +429,15 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	MACHINE_WAKE(src)
 	update_icon()
 
-/obj/machinery/power/shield_generator/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OvermapShieldGenerator", name) // 500, 800
-		ui.open()
+DECLARE_UI(/obj/machinery/power/shield_generator, "OvermapShieldGenerator")
 
-/obj/machinery/power/shield_generator/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/shield_generator, "running:num", "overloaded:num", "mitigation_max:num", "field_radius:num", "target_radius:num", "hacked:num", "idle_multiplier:num", "idle_valid_values:list", "spinup_counter:num", "merge:ui_data_obj_machinery_power_shield_generator{modes:unknown,mitigation_physical:num,mitigation_em:num,mitigation_heat:num,field_integrity:unknown,max_energy:num,current_energy:num,percentage_energy:num,total_segments:num,functional_segments:unknown,input_cap_kw:num,upkeep_power_usage:num,power_usage:num,offline_for:num}")
+
+/// The computed part of /obj/machinery/power/shield_generator's window data (declared on its UI_DATA row).
+/obj/machinery/power/shield_generator/proc/ui_data_obj_machinery_power_shield_generator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["running"] = running
 	data["modes"] = get_flag_descriptions()
-	data["overloaded"] = overloaded
-	data["mitigation_max"] = mitigation_max
 	data["mitigation_physical"] = round(mitigation_physical, 0.1)
 	data["mitigation_em"] = round(mitigation_em, 0.1)
 	data["mitigation_heat"] = round(mitigation_heat, 0.1)
@@ -451,16 +447,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	data["percentage_energy"] = round(data["current_energy"] / data["max_energy"] * 100)
 	data["total_segments"] = field_segments ? field_segments.len : 0
 	data["functional_segments"] = damaged_segments ? data["total_segments"] - damaged_segments.len : data["total_segments"]
-	data["field_radius"] = field_radius
-	data["target_radius"] = target_radius
 	data["input_cap_kw"] = round(input_cap / 1000)
 	data["upkeep_power_usage"] = round(upkeep_power_usage / 1000, 0.1)
 	data["power_usage"] = round(power_usage / 1000)
-	data["hacked"] = hacked
 	data["offline_for"] = offline_for * 2
-	data["idle_multiplier"] = idle_multiplier
-	data["idle_valid_values"] = idle_valid_values
-	data["spinup_counter"] = spinup_counter
 
 	return data
 
@@ -483,98 +473,106 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		return min(..(), STATUS_DISABLED)
 	return ..()
 
-/obj/machinery/power/shield_generator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+UI_ACT(/obj/machinery/power/shield_generator, "begin_shutdown", ui_act_begin_shutdown)
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_begin_shutdown)
+	if(running < SHIELD_RUNNING) // Discharging or off
+		return
+	var/alert = act_ask(ui.user, action, params, ui, "k504", /datum/om/prompt/choice/alert, message = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", title = "Are you sure?", choices = list("Yes", "No"))
+	if(isnull(alert))
+		return
+	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		return
+	if(running < SHIELD_RUNNING)
+		return
+	if(alert == "Yes")
+		set_idle(TRUE) // do this first to clear the field
+		running = SHIELD_DISCHARGING
+	return TRUE
+
+UI_ACT(/obj/machinery/power/shield_generator, "start_generator", ui_act_start_generator)
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_start_generator)
+	if(offline_for)
+		return
+	set_idle(TRUE)
+	return TRUE
+
+UI_ACT(/obj/machinery/power/shield_generator, "toggle_idle", ui_act_toggle_idle, UI_ARG_NUM("toggle_idle"))
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_toggle_idle)
+	if(running < SHIELD_RUNNING)
+		return TRUE
+	set_idle(params["toggle_idle"])
+	return TRUE
+
+// Instantly drops the shield, but causes a cooldown before it may be started again. Also carries a risk of EMP at high charge.
+
+UI_ACT(/obj/machinery/power/shield_generator, "emergency_shutdown", ui_act_emergency_shutdown)
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_emergency_shutdown)
+	if(!running)
 		return TRUE
 
-	switch(action)
-		if("begin_shutdown")
-			if(running < SHIELD_RUNNING) // Discharging or off
-				return
-			var/alert = act_ask(ui.user, action, params, ui, "k504", /datum/om/prompt/choice/alert, message = "Are you sure you wish to do this? It will drain the power inside the internal storage rapidly.", title = "Are you sure?", choices = list("Yes", "No"))
-			if(isnull(alert))
-				return
-			if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-				return
-			if(running < SHIELD_RUNNING)
-				return
-			if(alert == "Yes")
-				set_idle(TRUE) // do this first to clear the field
-				running = SHIELD_DISCHARGING
-			return TRUE
+	var/choice = act_ask(ui.user, action, params, ui, "k531", /datum/om/prompt/choice/alert, message = "Are you sure that you want to initiate an emergency shield shutdown? This will instantly drop the shield, and may result in unstable release of stored electromagnetic energy. Proceed at your own risk.", title = "Confirmation", choices = list("No", "Yes"))
+	if(isnull(choice))
+		return
+	if((choice != "Yes") || !running)
+		return TRUE
 
-		if("start_generator")
-			if(offline_for)
-				return
-			set_idle(TRUE)
-			return TRUE
+	// If the shield would take 5 minutes to disperse and shut down using regular methods, it will take x1.5 (7 minutes and 30 seconds) of this time to cool down after emergency shutdown
+	offline_for = round(current_energy / (SHIELD_SHUTDOWN_DISPERSION_RATE / 1.5))
+	var/old_energy = current_energy
+	shutdown_field()
+	log_and_message_admins("has triggered \the [src]'s emergency shutdown!", ui.user)
+	empulse(src, old_energy / 60000000, old_energy / 32000000, 1) // If shields are charged at 450 MJ, the EMP will be 7.5, 14.0625. 90 MJ, 1.5, 2.8125
+	old_energy = 0
 
-		if("toggle_idle")
-			if(running < SHIELD_RUNNING)
-				return TRUE
-			set_idle(text2num(params["toggle_idle"]))
-			return TRUE
+	return TRUE
 
-		// Instantly drops the shield, but causes a cooldown before it may be started again. Also carries a risk of EMP at high charge.
-		if("emergency_shutdown")
-			if(!running)
-				return TRUE
-
-			var/choice = act_ask(ui.user, action, params, ui, "k531", /datum/om/prompt/choice/alert, message = "Are you sure that you want to initiate an emergency shield shutdown? This will instantly drop the shield, and may result in unstable release of stored electromagnetic energy. Proceed at your own risk.", title = "Confirmation", choices = list("No", "Yes"))
-			if(isnull(choice))
-				return
-			if((choice != "Yes") || !running)
-				return TRUE
-
-			// If the shield would take 5 minutes to disperse and shut down using regular methods, it will take x1.5 (7 minutes and 30 seconds) of this time to cool down after emergency shutdown
-			offline_for = round(current_energy / (SHIELD_SHUTDOWN_DISPERSION_RATE / 1.5))
-			var/old_energy = current_energy
-			shutdown_field()
-			log_and_message_admins("has triggered \the [src]'s emergency shutdown!", ui.user)
-			empulse(src, old_energy / 60000000, old_energy / 32000000, 1) // If shields are charged at 450 MJ, the EMP will be 7.5, 14.0625. 90 MJ, 1.5, 2.8125
-			old_energy = 0
-
-			return TRUE
-
+UI_ACT(/obj/machinery/power/shield_generator, "set_range", ui_act_set_range)
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_set_range)
 	if(mode_changes_locked)
 		return TRUE
+	var/new_range = act_ask(ui.user, action, params, ui, "k550", /datum/om/prompt/number, message = "Enter new field range (1-[world.maxx]). Leave blank to cancel.", title = "Field Radius Control", default = field_radius, max = world.maxx, min = 1)
+	if(isnull(new_range))
+		return
+	if(!new_range)
+		return TRUE
+	target_radius = between(1, new_range, world.maxx)
+	return TRUE
 
-	switch(action)
-		if("set_range")
-			var/new_range = act_ask(ui.user, action, params, ui, "k550", /datum/om/prompt/number, message = "Enter new field range (1-[world.maxx]). Leave blank to cancel.", title = "Field Radius Control", default = field_radius, max = world.maxx, min = 1)
-			if(isnull(new_range))
-				return
-			if(!new_range)
-				return TRUE
-			target_radius = between(1, new_range, world.maxx)
-			return TRUE
+UI_ACT(/obj/machinery/power/shield_generator, "set_input_cap", ui_act_set_input_cap)
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_set_input_cap)
+	if(mode_changes_locked)
+		return TRUE
+	var/_answer_k557 = act_ask(ui.user, action, params, ui, "k557", /datum/om/prompt/number, message = "Enter new input cap (in kW). Enter 0 or nothing to disable input cap.", title = "Generator Power Control", default = round(input_cap / 1000))
+	if(isnull(_answer_k557))
+		return
+	var/new_cap = round(_answer_k557)
+	if(!new_cap)
+		input_cap = 0
+		return
+	input_cap = max(0, new_cap) * 1000
+	return TRUE
 
-		if("set_input_cap")
-			var/_answer_k557 = act_ask(ui.user, action, params, ui, "k557", /datum/om/prompt/number, message = "Enter new input cap (in kW). Enter 0 or nothing to disable input cap.", title = "Generator Power Control", default = round(input_cap / 1000))
-			if(isnull(_answer_k557))
-				return
-			var/new_cap = round(_answer_k557)
-			if(!new_cap)
-				input_cap = 0
-				return
-			input_cap = max(0, new_cap) * 1000
-			return TRUE
+UI_ACT(/obj/machinery/power/shield_generator, "toggle_mode", ui_act_toggle_mode, UI_ARG_NUM("toggle_mode"))
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_toggle_mode)
+	if(mode_changes_locked)
+		return TRUE
+	// Toggling hacked-only modes requires the hacked var to be set to 1
+	if((params["toggle_mode"] & (MODEFLAG_BYPASS | MODEFLAG_OVERCHARGE)) && !hacked)
+		return TRUE
 
-		if("toggle_mode")
-			// Toggling hacked-only modes requires the hacked var to be set to 1
-			if((text2num(params["toggle_mode"]) & (MODEFLAG_BYPASS | MODEFLAG_OVERCHARGE)) && !hacked)
-				return TRUE
+	toggle_flag(params["toggle_mode"])
+	return TRUE
 
-			toggle_flag(text2num(params["toggle_mode"]))
-			return TRUE
-
-		if("switch_idle")
-			if(running == SHIELD_SPINNING_UP)
-				return TRUE
-			var/new_idle = text2num(params["switch_idle"])
-			if(new_idle in idle_valid_values)
-				idle_multiplier = new_idle
-			return TRUE
+UI_ACT(/obj/machinery/power/shield_generator, "switch_idle", ui_act_switch_idle, UI_ARG_NUM("switch_idle"))
+UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_switch_idle)
+	if(mode_changes_locked)
+		return TRUE
+	if(running == SHIELD_SPINNING_UP)
+		return TRUE
+	var/new_idle = params["switch_idle"]
+	if(new_idle in idle_valid_values)
+		idle_multiplier = new_idle
+	return TRUE
 
 /obj/machinery/power/shield_generator/proc/field_integrity()
 	if(full_shield_strength)

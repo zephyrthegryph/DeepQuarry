@@ -652,19 +652,16 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		return TRUE
 	return FALSE
 
-/obj/machinery/appliance/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_id, name)
-		ui.open()
+DECLARE_UI(/obj/machinery/appliance, UI_FROM_VAR("tgui_id"))
 
-/obj/machinery/appliance/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merge:ui_data_obj_machinery_appliance{on:bool,containersRemovable:unknown,output_options:bool,our_contents:list}")
+
+/// The computed part of /obj/machinery/appliance's window data (declared on its UI_DATA row).
+/obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["on"] = !has_stat(POWEROFF)
-	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
-	data["selected_option"] = selected_option
 	data["output_options"] = (output_options || list())
 
 	var/list/our_contents = list()
@@ -687,37 +684,41 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 	return data
 
-/obj/machinery/appliance/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
+UI_ACT(/obj/machinery/appliance, "toggle_power", ui_act_toggle_power)
+UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_power)
+	attempt_toggle_power(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/appliance, "toggle_safety", ui_act_toggle_safety)
+UI_ACT_PROC(/obj/machinery/appliance, ui_act_toggle_safety)
+	toggle_safety(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/appliance, "change_output", ui_act_change_output, UI_ARG_VALUE("value"))
+UI_ACT_PROC(/obj/machinery/appliance, ui_act_change_output)
+	choose_output(ui.user, params["value"])
+	return TRUE
+
+UI_ACT(/obj/machinery/appliance, "slot", ui_act_slot, UI_ARG_NUM("slot"))
+UI_ACT_PROC(/obj/machinery/appliance, ui_act_slot)
+	var/slot = params["slot"]
+	var/obj/item/I = ui.user.get_active_hand()
+	if(slot <= LAZYLEN(cooking_objs)) // Inserting
+		var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
+
+		if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
+			attackby(I, ui.user)
+		else if(istype(CI) && can_remove_items(ui.user))
+			eject(CI, ui.user)
 		return TRUE
+	if(istype(I)) // Why do hard work when we can just make them smack us?
+		attackby(I, ui.user)
+	return TRUE
 
-	switch(action)
-		if("toggle_power")
-			attempt_toggle_power(ui.user)
-			return TRUE
-		if("toggle_safety")
-			toggle_safety(ui.user)
-			return TRUE
-		if("change_output")
-			choose_output(ui.user, params["value"])
-			return TRUE
-		if("slot")
-			var/slot = params["slot"]
-			var/obj/item/I = ui.user.get_active_hand()
-			if(slot <= LAZYLEN(cooking_objs)) // Inserting
-				var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, slot)
-
-				if(istype(I) && can_insert(I)) // Why do hard work when we can just make them smack us?
-					attackby(I, ui.user)
-				else if(istype(CI) && can_remove_items(ui.user))
-					eject(CI, ui.user)
-				return TRUE
-			if(istype(I)) // Why do hard work when we can just make them smack us?
-				attackby(I, ui.user)
-			return TRUE
-		if("remove_menu")
-			removal_menu(ui.user)
-			return TRUE
+UI_ACT(/obj/machinery/appliance, "remove_menu", ui_act_remove_menu)
+UI_ACT_PROC(/obj/machinery/appliance, ui_act_remove_menu)
+	removal_menu(ui.user)
+	return TRUE
 
 /obj/machinery/appliance/proc/removal_menu(mob/user)
 	if (can_remove_items(user))

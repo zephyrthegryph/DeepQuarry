@@ -11,19 +11,19 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
  * tgui_interact() is the proc that opens the UI. It doesn't really do anything else, unlike NanoV1.
  * We add an extra argument, custom_state, for the things that want a custom state for their UI.
  */
-/obj/item/rig/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, datum/tgui_state/custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, (loc != user ? ai_interface_path : interface_path), interface_title)
-		ui.open()
-	if(custom_state)
-		ui.set_state(custom_state)
+DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
+
+/// The AI (worn-suit control from outside) gets its own interface.
+/obj/item/rig/ui_interface(mob/user)
+	return loc != user ? ai_interface_path : interface_path
+
+/obj/item/rig/ui_title(mob/user)
+	return interface_title
 
 /*
  * tgui_state() gives the UI the state to use by default.
  */
-/obj/item/rig/tgui_state()
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/rig, GLOB.tgui_inventory_state)
 
 /*
  * tgui_status() is middlewere for objects to add little exceptions or special cases to the state they use.
@@ -41,7 +41,10 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 /*
  * tgui_data() is the heavy lifter, it gives the UI it's relevant datastructure every SStgui tick.
  */
-/obj/item/rig/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/rig, "cooling=cooling_on:num", "sealing", "emagged=subverted:num", "coverlock=locked:num", "interfacelock=interface_locked:num", "aicontrol=control_overridden:num", "aioverride=ai_override_enabled:num", "securitycheck=security_check_enabled:num", "malf=malfunction_delay:num", "merge:ui_data_obj_item_rig{primarysystem:text,ai:bool,sealed:bool,helmet:text,gauntlets:text,boots:text,chest:text,helmetDeployed:bool,gauntletsDeployed:bool,bootsDeployed:bool,chestDeployed:bool,charge:num,maxcharge:num,chargestatus:num,modules:list}")
+
+/// The computed part of /obj/item/rig's window data (declared on its UI_DATA row).
+/obj/item/rig/proc/ui_data_obj_item_rig(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(selected_module)
@@ -54,9 +57,7 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 	else
 		data["ai"] = FALSE
 
-	data["cooling"] = cooling_on
 	data["sealed"] = !canremove
-	data["sealing"] = sealing
 	data["helmet"] = (helmet ? "[helmet.name]" : "None.")
 	data["gauntlets"] = (gloves ? "[gloves.name]" : "None.")
 	data["boots"] = (boots ?  "[boots.name]" :  "None.")
@@ -71,13 +72,6 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 	data["maxcharge"] = cell ? cell.maxcharge : 0
 	data["chargestatus"] = cell ? FLOOR((cell.charge/cell.maxcharge)*50, 1) : 0
 
-	data["emagged"] = subverted
-	data["coverlock"] = locked
-	data["interfacelock"] = interface_locked
-	data["aicontrol"] = control_overridden
-	data["aioverride"] = ai_override_enabled
-	data["securitycheck"] = security_check_enabled
-	data["malf"] = malfunction_delay
 
 	var/list/module_list = list()
 	if(!canremove && !sealing)
@@ -143,53 +137,64 @@ GLOBAL_DATUM_INIT(rigsuit_ui_icon, /icon, 'icons/hud/rig/rig_ui_slots.dmi')
 /*
  * tgui_act() is the TGUI equivelent of Topic(). It's responsible for all of the "actions" you can take in the UI.
  */
-/obj/item/rig/tgui_act(action, params, datum/tgui/ui)
-	// This parent call is very important, as it's responsible for invoking tgui_status and checking our state's rules.
-	if(..())
-		return TRUE
-
+/obj/item/rig/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("toggle_seals")
-			toggle_seals(ui.user)
-			. = TRUE
-		if("toggle_cooling")
-			toggle_cooling(ui.user) // cooling toggles have its own to_chats, tbf
-			. = TRUE
-		if("toggle_ai_control")
-			ai_override_enabled = !ai_override_enabled
-			notify_ai("Synthetic suit control has been [ai_override_enabled ? "enabled" : "disabled"].")
-			. = TRUE
-		if("toggle_suit_lock")
-			locked = !locked
-			. = TRUE
-		if("toggle_piece")
-			if(ishuman(ui.user) && (ui.user.stat || ui.user.has_status(EFFECT_STUNNED) || ui.user.lying))
-				return FALSE
-			toggle_piece(params["piece"], ui.user)
-			. = TRUE
-		if("interact_module")
-			var/module_index = text2num(params["module"])
+UI_ACT(/obj/item/rig, "toggle_seals", ui_act_toggle_seals)
+UI_ACT_PROC(/obj/item/rig, ui_act_toggle_seals)
+	toggle_seals(ui.user)
+	. = TRUE
 
-			if(module_index > 0 && module_index <= length(installed_modules))
-				var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
-				switch(params["module_mode"])
-					if("select")
-						rel_set(src, "selected_module", module)
-						. = TRUE
-					if("engage")
-						module.engage()
-						. = TRUE
-					if("toggle")
-						if(module.active)
-							module.deactivate()
-						else
-							module.activate()
-						. = TRUE
-					if("select_charge_type")
-						module.charge_selected = params["charge_type"]
-						. = TRUE
-		if("tank_settings")
-			air_supply?.attack_self(ui.user)
-			. = TRUE
+UI_ACT(/obj/item/rig, "toggle_cooling", ui_act_toggle_cooling)
+UI_ACT_PROC(/obj/item/rig, ui_act_toggle_cooling)
+	toggle_cooling(ui.user) // cooling toggles have its own to_chats, tbf
+	. = TRUE
+
+UI_ACT(/obj/item/rig, "toggle_ai_control", ui_act_toggle_ai_control)
+UI_ACT_PROC(/obj/item/rig, ui_act_toggle_ai_control)
+	ai_override_enabled = !ai_override_enabled
+	notify_ai("Synthetic suit control has been [ai_override_enabled ? "enabled" : "disabled"].")
+	. = TRUE
+
+UI_ACT(/obj/item/rig, "toggle_suit_lock", ui_act_toggle_suit_lock)
+UI_ACT_PROC(/obj/item/rig, ui_act_toggle_suit_lock)
+	locked = !locked
+	. = TRUE
+
+UI_ACT(/obj/item/rig, "toggle_piece", ui_act_toggle_piece, UI_ARG_TEXT("piece"))
+UI_ACT_PROC(/obj/item/rig, ui_act_toggle_piece)
+	if(ishuman(ui.user) && (ui.user.stat || ui.user.has_status(EFFECT_STUNNED) || ui.user.lying))
+		return FALSE
+	toggle_piece(params["piece"], ui.user)
+	. = TRUE
+
+UI_ACT(/obj/item/rig, "interact_module", ui_act_interact_module, UI_ARG_TEXT("charge_type"), UI_ARG_NUM("module"), UI_ARG_TEXT("module_mode"))
+UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
+	var/module_index = params["module"]
+
+	if(module_index > 0 && module_index <= length(installed_modules))
+		var/obj/item/rig_module/module = LAZYACCESS(installed_modules, module_index)
+		switch(params["module_mode"])
+			if("select")
+				rel_set(src, "selected_module", module)
+				. = TRUE
+			if("engage")
+				module.engage()
+				. = TRUE
+			if("toggle")
+				if(module.active)
+					module.deactivate()
+				else
+					module.activate()
+				. = TRUE
+			if("select_charge_type")
+				module.charge_selected = params["charge_type"]
+				. = TRUE
+
+UI_ACT(/obj/item/rig, "tank_settings", ui_act_tank_settings)
+UI_ACT_PROC(/obj/item/rig, ui_act_tank_settings)
+	air_supply?.attack_self(ui.user)
+	. = TRUE

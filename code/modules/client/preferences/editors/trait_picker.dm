@@ -55,35 +55,39 @@
 		"negative_traits" = paths_to_text(GLOB.negative_traits),
 	)
 
-/datum/preference_editor/trait_picker/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("add_trait")
-			var/trait_path = text2path(params["trait_path"])
-			if(!trait_path)
-				return PREF_UPDATE_REJECTED
-			var/list_type = pref_for_category(params["category"])
-			if(!list_type)
-				return PREF_UPDATE_REJECTED
-			preferences.update_many(om_callable(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
-			return PREF_UPDATE_ACCEPTED
-		if("remove_trait")
-			var/trait_path = text2path(params["trait_path"])
-			var/list_type = pref_for_category(params["category"])
-			if(!trait_path || !list_type)
-				return PREF_UPDATE_REJECTED
-			var/list/current = preferences.read_preference(list_type)
-			current -= trait_path
-			preferences.update_preference_by_type(list_type, current)
-			return PREF_UPDATE_ACCEPTED
-		if("toggle_cheating")
-			var/cur = preferences.read_preference(/datum/preference/numeric/human/traits_cheating)
-			preferences.update_preference_by_type(/datum/preference/numeric/human/traits_cheating, !cur)
-			return PREF_UPDATE_ACCEPTED
-		if("set_blood_color")
-			// open BYOND's color picker so the user can actually pick a color.
-			var/current = preferences.read_preference(/datum/preference/color/human/blood_color) || "#A10808"
-			om_ask(user, /datum/om/prompt/color/prefs, PROC_REF(blood_color_picked), title = "Color picker", message = "Blood color", default = current, preferences = preferences, ui_refresh = preferences)
-			return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/trait_picker, "add_trait", ui_act_add_trait, UI_ARG_VALUE("category"), UI_ARG_PATH("trait_path", /datum))
+UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_add_trait)
+	var/trait_path = params["trait_path"]
+	if(!trait_path)
+		return PREF_UPDATE_REJECTED
+	var/list_type = pref_for_category(params["category"])
+	if(!list_type)
+		return PREF_UPDATE_REJECTED
+	preferences.update_many(om_callable(src, PROC_REF(add_trait_atomic), preferences, list_type, trait_path))
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/trait_picker, "remove_trait", ui_act_remove_trait, UI_ARG_VALUE("category"), UI_ARG_PATH("trait_path", /datum))
+UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_remove_trait)
+	var/trait_path = params["trait_path"]
+	var/list_type = pref_for_category(params["category"])
+	if(!trait_path || !list_type)
+		return PREF_UPDATE_REJECTED
+	var/list/current = preferences.read_preference(list_type)
+	current -= trait_path
+	preferences.update_preference_by_type(list_type, current)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/trait_picker, "toggle_cheating", ui_act_toggle_cheating)
+UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_toggle_cheating)
+	var/cur = preferences.read_preference(/datum/preference/numeric/human/traits_cheating)
+	preferences.update_preference_by_type(/datum/preference/numeric/human/traits_cheating, !cur)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/trait_picker, "set_blood_color", ui_act_set_blood_color)
+UI_ACT_PREF_PROC(/datum/preference_editor/trait_picker, ui_act_set_blood_color)
+	// open BYOND's color picker so the user can actually pick a color.
+	var/current = preferences.read_preference(/datum/preference/color/human/blood_color) || "#A10808"
+	om_ask(user, /datum/om/prompt/color/prefs, PROC_REF(blood_color_picked), title = "Color picker", message = "Blood color", default = current, preferences = preferences, ui_refresh = preferences)
 	return PREF_UPDATE_UNCHANGED
 
 /datum/preference_editor/trait_picker/proc/blood_color_picked(datum/om/prompt/color/prefs/ask)

@@ -1,21 +1,15 @@
 /datum/vore_look/import_panel/proc/open_import_panel(mob/user)
 	tgui_interact(user)
 
-/datum/vore_look/import_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VorePanelImport", "Vore Import Panel")
-		ui.open()
+DECLARE_UI(/datum/vore_look/import_panel, "VorePanelImport", UI_TITLE("Vore Import Panel"))
 
-/datum/vore_look/import_panel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/datum/vore_look/import_panel, "import_soulcatcher", ui_act_import_soulcatcher, UI_ARG_VALUE("data"))
+UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_soulcatcher)
+	import_soulcatcher(host(), params["data"])
 
-	switch(action)
-		if("import_soulcatcher")
-			import_soulcatcher(host(), params["data"])
-		if("import_bellies")
-			import_belly(ui.user, params["data"])
+UI_ACT(/datum/vore_look/import_panel, "import_bellies", ui_act_import_bellies, UI_ARG_VALUE("data"))
+UI_ACT_PROC(/datum/vore_look/import_panel, ui_act_import_bellies)
+	import_belly(ui.user, params["data"])
 
 /datum/vore_look/import_panel/proc/import_belly(mob/host, list/input_data)
 	var/list/valid_names = list()

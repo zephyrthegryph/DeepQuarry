@@ -294,23 +294,14 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 		if(.)
 			SStgui.update_uis(src)
 
-/obj/machinery/chemical_synthesizer/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ChemSynthesizer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/chemical_synthesizer, "ChemSynthesizer")
 
-/obj/machinery/chemical_synthesizer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/chemical_synthesizer, "busy:num", "production_mode", "panel_open:num", "use_catalyst", "drug_substance:num", "bottle_icon:num", "pill_icon:num", "patch_icon:num", "merge:ui_data_obj_machinery_chemical_synthesizer{queue:list,recipes:list,rxn_vessel:list,catalyst:num,catalyst_reagents:list,catalystCurrentVolume:num,catalystMaxVolume:num,chemicals:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/chemical_synthesizer's window data (declared on its UI_DATA row).
+/obj/machinery/chemical_synthesizer/proc/ui_data_obj_machinery_chemical_synthesizer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["busy"] = busy
-	data["production_mode"] = production_mode
-	data["panel_open"] = panel_open
-	data["use_catalyst"] = use_catalyst
-	data["drug_substance"] = drug_substance
-	data["bottle_icon"] = bottle_icon
-	data["pill_icon"] = pill_icon
-	data["patch_icon"] = patch_icon
 
 	var/list/tmp_queue = list()
 	for(var/i = 1, i <= queue.len, i++)
@@ -355,153 +346,185 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 
 	return data
 
-/obj/machinery/chemical_synthesizer/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	if(tgui_act_modal(action, params, ui, state))
-		return TRUE
-
+/obj/machinery/chemical_synthesizer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(usr)
+	return TRUE
 
+UI_ACT(/obj/machinery/chemical_synthesizer, "start_queue", ui_act_start_queue)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_start_queue)
 	. = TRUE
-	switch(action)
-		if("start_queue")
-			// Start up the queue.
-			if(!busy)
-				start_queue(usr)
-		if("rem_queue")
-			// Remove a single entry from the queue. Sanity checks also prevent removing the first entry if the machine is busy though UI should already prevent that.
-			var/index = text2num(params["q_index"])
-			if(!isnum(index) || !ISINTEGER(index) || !istype(queue) || (index<1 || index>length(queue) || (busy && index == 1)))
-				return
-			queue -= queue[index]
-		if("clear_queue")
-			// Remove all entries from the queue except the currently processing recipe.
-			var/confirm = act_ask(usr, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Are you sure you want to clear the running queue?", title = "Confirm", choices = list("No", "Yes"))
-			if(isnull(confirm))
-				return
-			if(confirm == "Yes")
-				if(busy)
-					// Oh no, I've broken code convention to remove all entries but the first.
-					for(var/i = queue.len, i >= 2, i--)
-						queue -= queue[i]
-				else
-					queue = list()
-		if("eject_catalyst")
-			// Removes the catalyst bottle from the machine.
-			if(!busy && catalyst)
-				catalyst.forceMove(get_turf(src))
-				own_take(src, "catalyst")
-				update_icon()
-		if("toggle_catalyst")
-			// Decides if the machine uses the catalyst.
-			if(!busy)
-				use_catalyst = !use_catalyst
-		if("emergency_stop")
-			// Stops everything if that's desirable for some reason.
-			if(busy)
-				var/confirm = act_ask(usr, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Are you sure you want to stall the machine?", title = "Confirm", choices = list("Yes", "No"))
-				if(isnull(confirm))
-					return
-				if(confirm == "Yes")
-					stalled = TRUE
-		if("bottle_product")
-			// Bottles the reaction mixture if stalled.
-			if(!busy)
-				bottle_product()
-		if("panel_toggle")
-			// Opens/closes the panel.
-			if(!busy)
-				panel_open = !panel_open
-		if("mode_toggle")
-			// Toggles production mode.
-			production_mode = !production_mode
-		if("add_recipe")
-			// Allows the user to add a recipe. Kinda vital for this machine to do anything useful.
-			if(recipes.len >= SYNTHESIZER_MAX_RECIPES)
-				to_chat(usr, span_warning("Maximum recipes exceeded!"))
-				return
-			if(!production_mode)
-				babystep_recipe(usr)
-			else
-				import_recipe(usr)
-		if("rem_recipe")
-			// Allows the user to remove recipes while the machine is idle.
-			if(!busy)
-				var/confirm = act_ask(usr, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove this recipe?", title = "Confirm", choices = list("No", "Yes"))
-				if(isnull(confirm))
-					return
-				if(confirm == "Yes")
-					var/index = params["rm_index"]
-					if(index in recipes)
-						recipes.Remove(list(index)) // Fuck off Byond.
-			else
-				to_chat(usr, span_warning("You cannot remove recipes while the machine is running!"))
-		if("exp_recipe")
-			// Allows the user to export recipes to chat formatted for easy importing.
-			var/index = params["exp_index"]
-			export_recipe(usr, index)
-		if("add_queue")
-			// Adds recipes to the queue.
-			if(queue.len >= SYNTHESIZER_MAX_QUEUE)
-				to_chat(usr, span_warning("Synthesizer queue full!"))
-				return
-			var/index = params["qa_index"]
-			// If you forgot, this is a string returned by the user pressing the "add to queue" button on a recipe.
+	// Start up the queue.
+	if(!busy)
+		start_queue(usr)
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "rem_queue", ui_act_rem_queue, UI_ARG_NUM("q_index"))
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_queue)
+	. = TRUE
+	// Remove a single entry from the queue. Sanity checks also prevent removing the first entry if the machine is busy though UI should already prevent that.
+	var/index = params["q_index"]
+	if(!isnum(index) || !ISINTEGER(index) || !istype(queue) || (index<1 || index>length(queue) || (busy && index == 1)))
+		return
+	queue -= queue[index]
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "clear_queue", ui_act_clear_queue)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_clear_queue)
+	. = TRUE
+	// Remove all entries from the queue except the currently processing recipe.
+	var/confirm = act_ask(usr, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Are you sure you want to clear the running queue?", title = "Confirm", choices = list("No", "Yes"))
+	if(isnull(confirm))
+		return
+	if(confirm == "Yes")
+		if(busy)
+			// Oh no, I've broken code convention to remove all entries but the first.
+			for(var/i = queue.len, i >= 2, i--)
+				queue -= queue[i]
+		else
+			queue = list()
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "eject_catalyst", ui_act_eject_catalyst)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_eject_catalyst)
+	. = TRUE
+	// Removes the catalyst bottle from the machine.
+	if(!busy && catalyst)
+		catalyst.forceMove(get_turf(src))
+		own_take(src, "catalyst")
+		update_icon()
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "toggle_catalyst", ui_act_toggle_catalyst)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_toggle_catalyst)
+	. = TRUE
+	// Decides if the machine uses the catalyst.
+	if(!busy)
+		use_catalyst = !use_catalyst
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "emergency_stop", ui_act_emergency_stop)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_emergency_stop)
+	. = TRUE
+	// Stops everything if that's desirable for some reason.
+	if(busy)
+		var/confirm = act_ask(usr, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Are you sure you want to stall the machine?", title = "Confirm", choices = list("Yes", "No"))
+		if(isnull(confirm))
+			return
+		if(confirm == "Yes")
+			stalled = TRUE
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "bottle_product", ui_act_bottle_product)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_bottle_product)
+	. = TRUE
+	// Bottles the reaction mixture if stalled.
+	if(!busy)
+		bottle_product()
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "panel_toggle", ui_act_panel_toggle)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_panel_toggle)
+	. = TRUE
+	// Opens/closes the panel.
+	if(!busy)
+		panel_open = !panel_open
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "mode_toggle", ui_act_mode_toggle)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_mode_toggle)
+	. = TRUE
+	// Toggles production mode.
+	production_mode = !production_mode
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "add_recipe", ui_act_add_recipe)
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_recipe)
+	. = TRUE
+	// Allows the user to add a recipe. Kinda vital for this machine to do anything useful.
+	if(recipes.len >= SYNTHESIZER_MAX_RECIPES)
+		to_chat(usr, span_warning("Maximum recipes exceeded!"))
+		return
+	if(!production_mode)
+		babystep_recipe(usr)
+	else
+		import_recipe(usr)
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "rem_recipe", ui_act_rem_recipe, UI_ARG_TEXT("rm_index"))
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_recipe)
+	. = TRUE
+	// Allows the user to remove recipes while the machine is idle.
+	if(!busy)
+		var/confirm = act_ask(usr, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove this recipe?", title = "Confirm", choices = list("No", "Yes"))
+		if(isnull(confirm))
+			return
+		if(confirm == "Yes")
+			var/index = params["rm_index"]
 			if(index in recipes)
-				queue[++queue.len] = index
-		if("drug_form")
-			// Toggles between bottles, pills, and patches.
-			drug_substance = params["drug_index"]
+				recipes.Remove(list(index)) // Fuck off Byond.
+	else
+		to_chat(usr, span_warning("You cannot remove recipes while the machine is running!"))
 
-/obj/machinery/chemical_synthesizer/proc/tgui_act_modal(action, params, datum/tgui/ui, datum/tgui_state/state)
+UI_ACT(/obj/machinery/chemical_synthesizer, "exp_recipe", ui_act_exp_recipe, UI_ARG_TEXT("exp_index"))
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_exp_recipe)
 	. = TRUE
-	var/id = params["id"] // The modal's ID
-	var/list/arguments = istext(params["arguments"]) ? json_decode(params["arguments"]) : params["arguments"]
-	switch(tgui_modal_act(src, action, params))
-		if(TGUI_MODAL_OPEN)
-			switch(id)
-				if("change_pill_style")
-					var/list/choices = list()
-					for(var/i = 1 to MAX_PILL_SPRITE)
-						choices += "chem_master32x32 pill[i]"
-					tgui_modal_bento_spritesheet(src, id, "Please select the new style for pills:", null, arguments, pill_icon, choices)
-				if("change_patch_style")
-					var/list/choices = list()
-					for(var/i = 1 to MAX_PATCH_SPRITE)
-						choices += "chem_master32x32 patch[i]"
-					tgui_modal_bento_spritesheet(src, id, "Please select the new style for patches:", null, arguments, patch_icon, choices)
-				if("change_bottle_style")
-					var/list/choices = list()
-					for(var/i = 1 to MAX_BOTTLE_SPRITE)
-						choices += "chem_master32x32 bottle-[i]"
-					tgui_modal_bento_spritesheet(src, id, "Please select the new style for bottles:", null, arguments, bottle_icon, choices)
-				else
-					return FALSE
-		if(TGUI_MODAL_ANSWER)
-			var/answer = params["answer"]
-			switch(id)
-				if("change_pill_style")
-					var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_PILL_SPRITE)
-					if(!new_style)
-						return
-					pill_icon = new_style
-				if("change_patch_style")
-					var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_PATCH_SPRITE)
-					if(!new_style)
-						return
-					patch_icon = new_style
-				if("change_bottle_style")
-					var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_BOTTLE_SPRITE)
-					if(!new_style)
-						return
-					bottle_icon = new_style
-				else
-					return FALSE
+	// Allows the user to export recipes to chat formatted for easy importing.
+	var/index = params["exp_index"]
+	export_recipe(usr, index)
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "add_queue", ui_act_add_queue, UI_ARG_TEXT("qa_index"))
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_queue)
+	. = TRUE
+	// Adds recipes to the queue.
+	if(queue.len >= SYNTHESIZER_MAX_QUEUE)
+		to_chat(usr, span_warning("Synthesizer queue full!"))
+		return
+	var/index = params["qa_index"]
+	// If you forgot, this is a string returned by the user pressing the "add to queue" button on a recipe.
+	if(index in recipes)
+		queue[++queue.len] = index
+
+UI_ACT(/obj/machinery/chemical_synthesizer, "drug_form", ui_act_drug_form, UI_ARG_NUM("drug_index"))
+UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
+	. = TRUE
+	// Toggles between bottles, pills, and patches.
+	drug_substance = params["drug_index"]
+
+DECLARE_UI_MODAL(/obj/machinery/chemical_synthesizer)
+
+/obj/machinery/chemical_synthesizer/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	. = TRUE
+	switch(id)
+		if("change_pill_style")
+			var/list/choices = list()
+			for(var/i = 1 to MAX_PILL_SPRITE)
+				choices += "chem_master32x32 pill[i]"
+			tgui_modal_bento_spritesheet(src, id, "Please select the new style for pills:", null, arguments, pill_icon, choices)
+		if("change_patch_style")
+			var/list/choices = list()
+			for(var/i = 1 to MAX_PATCH_SPRITE)
+				choices += "chem_master32x32 patch[i]"
+			tgui_modal_bento_spritesheet(src, id, "Please select the new style for patches:", null, arguments, patch_icon, choices)
+		if("change_bottle_style")
+			var/list/choices = list()
+			for(var/i = 1 to MAX_BOTTLE_SPRITE)
+				choices += "chem_master32x32 bottle-[i]"
+			tgui_modal_bento_spritesheet(src, id, "Please select the new style for bottles:", null, arguments, bottle_icon, choices)
 		else
 			return FALSE
 
+/obj/machinery/chemical_synthesizer/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	. = TRUE
+	switch(id)
+		if("change_pill_style")
+			var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_PILL_SPRITE)
+			if(!new_style)
+				return
+			pill_icon = new_style
+		if("change_patch_style")
+			var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_PATCH_SPRITE)
+			if(!new_style)
+				return
+			patch_icon = new_style
+		if("change_bottle_style")
+			var/new_style = CLAMP(text2num(answer) || 0, 0, MAX_BOTTLE_SPRITE)
+			if(!new_style)
+				return
+			bottle_icon = new_style
+		else
+			return FALSE
 /// Old attack_ghost: view the interface while it works. Never fell through.
 /obj/machinery/chemical_synthesizer/proc/chem_synthesizer_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
 	if(operable())

@@ -89,14 +89,13 @@
 	name = "Use"
 	effect = /obj/machinery/proc/interaction_open_ui_powered_fingerprint
 
-/obj/machinery/artifact_harvester/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchArtifactHarvester", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/artifact_harvester, "XenoarchArtifactHarvester")
 
-/obj/machinery/artifact_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/artifact_harvester, "merge:ui_data_obj_machinery_artifact_harvester{info:list}")
+
+/// The computed part of /obj/machinery/artifact_harvester's window data (declared on its UI_DATA row).
+/obj/machinery/artifact_harvester/proc/ui_data_obj_machinery_artifact_harvester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["info"] = list(
 		"no_scanner" = TRUE,
@@ -120,53 +119,56 @@
 				data["info"]["inserted_battery"]["artifact_id"] = "N/A"
 	return data
 
-/obj/machinery/artifact_harvester/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/artifact_harvester/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("harvest")
-			harvest(ui.user)
-			return TRUE
+UI_ACT(/obj/machinery/artifact_harvester, "harvest", ui_act_harvest)
+UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_harvest)
+	harvest(ui.user)
+	return TRUE
 
-		if("stopharvest")
-			if(harvesting)
-				if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
-					inserted_battery().battery_effect.ToggleActivate()
-				harvesting = 0
-				cur_artifact().anchored = FALSE
-				cur_artifact().in_use = 0
-				rel_clear(src, "cur_artifact")
-				atom_say("Energy harvesting interrupted.")
-				icon_state = "incubator"
-			return TRUE
+UI_ACT(/obj/machinery/artifact_harvester, "stopharvest", ui_act_stopharvest)
+UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_stopharvest)
+	if(harvesting)
+		if(harvesting < 0 && inserted_battery().battery_effect && inserted_battery().battery_effect.activated)
+			inserted_battery().battery_effect.ToggleActivate()
+		harvesting = 0
+		cur_artifact().anchored = FALSE
+		cur_artifact().in_use = 0
+		rel_clear(src, "cur_artifact")
+		atom_say("Energy harvesting interrupted.")
+		icon_state = "incubator"
+	return TRUE
 
-		if("ejectbattery")
-			if(inserted_battery())
-				inserted_battery().forceMove(loc)
-				rel_clear(src, "inserted_battery")
-			return TRUE
+UI_ACT(/obj/machinery/artifact_harvester, "ejectbattery", ui_act_ejectbattery)
+UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_ejectbattery)
+	if(inserted_battery())
+		inserted_battery().forceMove(loc)
+		rel_clear(src, "inserted_battery")
+	return TRUE
 
-		if("drainbattery")
-			if(inserted_battery())
-				if(inserted_battery().battery_effect && inserted_battery().stored_charge > 0)
-					var/_answer_k162 = act_ask(ui.user, action, params, ui, "k162", /datum/om/prompt/choice/alert, message = "This action will dump all charge, safety gear is recommended before proceeding", title = "Warning", choices = list("Continue","Cancel"))
-					if(isnull(_answer_k162))
-						return
-					if(_answer_k162 == "Continue")
-						if(!inserted_battery().battery_effect.activated)
-							inserted_battery().battery_effect.ToggleActivate(1)
-						harvesting = -1
-						set_use_power(USE_POWER_ACTIVE)
-						icon_state = "incubator_on"
-						atom_say("Warning, battery charge dump commencing.")
-				else
-					atom_say("Cannot dump energy. Battery is drained of charge already.")
-			else
-				atom_say("Cannot dump energy. No battery inserted.")
-			return TRUE
+UI_ACT(/obj/machinery/artifact_harvester, "drainbattery", ui_act_drainbattery)
+UI_ACT_PROC(/obj/machinery/artifact_harvester, ui_act_drainbattery)
+	if(inserted_battery())
+		if(inserted_battery().battery_effect && inserted_battery().stored_charge > 0)
+			var/_answer_k162 = act_ask(ui.user, action, params, ui, "k162", /datum/om/prompt/choice/alert, message = "This action will dump all charge, safety gear is recommended before proceeding", title = "Warning", choices = list("Continue","Cancel"))
+			if(isnull(_answer_k162))
+				return
+			if(_answer_k162 == "Continue")
+				if(!inserted_battery().battery_effect.activated)
+					inserted_battery().battery_effect.ToggleActivate(1)
+				harvesting = -1
+				set_use_power(USE_POWER_ACTIVE)
+				icon_state = "incubator_on"
+				atom_say("Warning, battery charge dump commencing.")
+		else
+			atom_say("Cannot dump energy. Battery is drained of charge already.")
+	else
+		atom_say("Cannot dump energy. No battery inserted.")
+	return TRUE
 
 
 /obj/machinery/artifact_harvester/proc/harvest(mob/user)

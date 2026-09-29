@@ -1,13 +1,8 @@
 /datum/economy_dashboard
 
-/datum/economy_dashboard/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_DEBUG)
+DECLARE_UI_STATE(/datum/economy_dashboard, ADMIN_STATE(R_ADMIN|R_DEBUG))
 
-/datum/economy_dashboard/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EconomyDashboard", "Economy Observatory")
-		ui.open()
+DECLARE_UI(/datum/economy_dashboard, "EconomyDashboard", UI_TITLE("Economy Observatory"))
 
 /datum/economy_dashboard/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -25,7 +20,10 @@
 	var/index = clamp(round(1 + (length(sorted_balances) - 1) * percentile), 1, length(sorted_balances))
 	return sorted_balances[index]
 
-/datum/economy_dashboard/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/economy_dashboard, "merge:ui_data_datum_economy_dashboard{}")
+
+/// The computed part of /datum/economy_dashboard's window data (declared on its UI_DATA row).
+/datum/economy_dashboard/proc/ui_data_datum_economy_dashboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/account_currency = 0
 	var/personal_currency = 0
 	var/personal_accounts = 0

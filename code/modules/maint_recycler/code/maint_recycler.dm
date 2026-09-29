@@ -405,13 +405,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/maint_recycler, TYPE_PROC_REF(/atom, appe
 /*
 TGUI PROCS
 */
-/obj/machinery/maint_recycler/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user,src,ui)
-	if(!ui)
-		ui = new(user,src,"RecyclerInterface")
-		ui.open()
+DECLARE_UI(/obj/machinery/maint_recycler, "RecyclerInterface")
 
-/obj/machinery/maint_recycler/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_maint_recycler{heldItemName:text,heldItemValue:unknown,userName:text,userBalance:unknown,itemIcon:text}")
+
+/// The computed part of /obj/machinery/maint_recycler's window data (declared on its UI_DATA row).
+/obj/machinery/maint_recycler/proc/ui_data_obj_machinery_maint_recycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["heldItemName"] = inserted_item?.name
 	data["heldItemValue"] = try_get_obj_value(inserted_item)
@@ -432,28 +431,35 @@ TGUI PROCS
 		get_asset_datum(/datum/asset/simple/maint_recycler)
 	)
 
-/obj/machinery/maint_recycler/tgui_act(action,params,datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/maint_recycler/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	if(action == "eject")
-		eject_item(ui.user)
-		. = TRUE
-	if(action == "recycle")
-		if(canRecycle(ui.user, try_get_obj_value(inserted_item)))
-			start_recycling(ui.user)
-		else
-			deny_act(inserted_item,ui.user)
-			to_chat(ui.user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
-		. = TRUE
-	if(action == "close")
-		close_door(ui.user)
-		. = TRUE
-	if(action == "open")
-		open_door(ui.user)
-		. = TRUE
+UI_ACT(/obj/machinery/maint_recycler, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_eject)
+	eject_item(ui.user)
+	. = TRUE
+
+UI_ACT(/obj/machinery/maint_recycler, "recycle", ui_act_recycle)
+UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_recycle)
+	if(canRecycle(ui.user, try_get_obj_value(inserted_item)))
+		start_recycling(ui.user)
+	else
+		deny_act(inserted_item,ui.user)
+		to_chat(ui.user,span_warning("You have reached your daily RecyclePoints(tm) Allowance!"))
+	. = TRUE
+
+UI_ACT(/obj/machinery/maint_recycler, "close", ui_act_close)
+UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_close)
+	close_door(ui.user)
+	. = TRUE
+
+UI_ACT(/obj/machinery/maint_recycler, "open", ui_act_open)
+UI_ACT_PROC(/obj/machinery/maint_recycler, ui_act_open)
+	open_door(ui.user)
+	. = TRUE
 
 /obj/machinery/maint_recycler/tgui_close(mob/user)
 	. = ..()

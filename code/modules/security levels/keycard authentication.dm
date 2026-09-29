@@ -117,39 +117,39 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/keycard_auth/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "KeycardAuth", "Keycard Authentication")
-		ui.open()
+DECLARE_UI(/obj/machinery/keycard_auth, "KeycardAuth", UI_TITLE("Keycard Authentication"))
 
-/obj/machinery/keycard_auth/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_data_obj_machinery_keycard_auth{ert_admin_only:num}")
+
+/// The computed part of /obj/machinery/keycard_auth's window data (declared on its UI_DATA row).
+/obj/machinery/keycard_auth/proc/ui_data_obj_machinery_keycard_auth(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["screen"] = screen
-	data["event"] = event
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
 	return data
 
-/obj/machinery/keycard_auth/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/keycard_auth/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(om_busy(src))
 		to_chat(usr, "This device is busy.")
-		return TRUE
+		return FALSE
 	if(usr.stat || !operable())
 		to_chat(usr, "This device is without power.")
-		return TRUE
-	switch(action)
-		if("triggerevent")
-			event = params["event"]
-			screen = 2
-			add_fingerprint(usr)
-			return TRUE
-		if("reset")
-			reset()
-			add_fingerprint(usr)
-			return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_TEXT("event"))
+UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_triggerevent)
+	event = params["event"]
+	screen = 2
+	add_fingerprint(usr)
+	return TRUE
+
+UI_ACT(/obj/machinery/keycard_auth, "reset", ui_act_reset)
+UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
+	reset()
+	add_fingerprint(usr)
+	return TRUE
 
 /obj/machinery/keycard_auth/proc/reset()
 	set_active(0)

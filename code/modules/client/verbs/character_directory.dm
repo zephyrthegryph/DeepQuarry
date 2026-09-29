@@ -18,17 +18,15 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 
 // This is a global singleton. Keep in mind that all operations should occur on usr, not src.
 /datum/character_directory
-/datum/character_directory/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/character_directory, GLOB.tgui_always_state)
 
-/datum/character_directory/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "CharacterDirectory", "Character Directory")
-		ui.open()
+DECLARE_UI(/datum/character_directory, "CharacterDirectory", UI_TITLE("Character Directory"))
 
-/datum/character_directory/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/character_directory, "merge:ui_data_datum_character_directory{personalVisibility:unknown,personalTag:bool,personalErpTag:bool,personalEventTag:unknown,personalGenderTag:bool,personalSexualityTag:bool}")
+
+/// The computed part of /datum/character_directory's window data (declared on its UI_DATA row).
+/datum/character_directory/proc/ui_data_datum_character_directory(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if (user?.mind)
 		data["personalVisibility"] = user.mind.show_in_directory
@@ -262,21 +260,25 @@ GLOBAL_LIST_EMPTY(chardirectory_photos)
 	return data
 
 
-/datum/character_directory/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/datum/character_directory, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/character_directory, ui_act_refresh)
+	// This is primarily to stop malicious users from trying to lag the server by spamming this verb
+	if(!user.checkMoveCooldown())
+		to_chat(user, span_warning("Don't spam character directory refresh."))
 		return
+	user.setMoveCooldown(10)
+	update_tgui_static_data(user, ui)
+	return TRUE
 
-	if(action == "refresh")
-		// This is primarily to stop malicious users from trying to lag the server by spamming this verb
-		if(!ui.user.checkMoveCooldown())
-			to_chat(ui.user, span_warning("Don't spam character directory refresh."))
-			return
-		ui.user.setMoveCooldown(10)
-		update_tgui_static_data(ui.user, ui)
-		return TRUE
-	else
-		return check_for_mind_or_prefs(ui.user, action, params["overwrite_prefs"])
+UI_ACT(/datum/character_directory, "setTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "setErpTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "setVisible", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "editAd", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "setGenderTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "setSexualityTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT(/datum/character_directory, "setEventTag", ui_act_directory_setting, UI_ARG_BOOL("overwrite_prefs"))
+UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
+	return check_for_mind_or_prefs(user, action, params["overwrite_prefs"])
 
 /datum/character_directory/proc/check_for_mind_or_prefs(mob/user, action, overwrite_prefs)
 	if (!user.client)

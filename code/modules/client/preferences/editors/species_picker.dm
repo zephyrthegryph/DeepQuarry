@@ -165,45 +165,45 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 		"all_species" = all_species,
 	)
 
-/datum/preference_editor/species_picker/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_species")
-			var/value = params["value"]
-			if(value == DQ_PLAY_MODE_ROBOT_KEY)
-				preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "robot")
-				// Auto-bump the Cyborg job to high priority. Without this, picking
-				// "Robot" in the species picker only flipped UI flags — the player
-				// would still spawn as whatever organic job their priorities pointed
-				// at (usually Intern → human). The player can still demote Cyborg
-				// back down via the Jobs tab if they wanted a non-roundstart cyborg
-				// flow (e.g. wait for a posibrain shell).
-				preferences.set_job_priority(JOB_CYBORG, "high")
-				return PREF_UPDATE_ACCEPTED
-			if(value == DQ_PLAY_MODE_PAI_KEY)
-				preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "pai")
-				// pAIs aren't roundstart — clear any Cyborg priority that the
-				// player set previously when in robot mode. Other organic job
-				// priorities are left alone so switching back to a human picks
-				// up where they left off.
-				preferences.set_job_priority(JOB_CYBORG, "off")
-				return PREF_UPDATE_ACCEPTED
-			if(!(value in GLOB.playable_species))
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "human")
-			preferences.update_preference_by_type(/datum/preference/choiced/species, value)
-			// Clear Cyborg priority when switching back to an organic species so
-			// the player doesn't accidentally spawn as a cyborg with a human
-			// appearance just because Robot was selected earlier in the session.
-			preferences.set_job_priority(JOB_CYBORG, "off")
-			return PREF_UPDATE_ACCEPTED
-		if("set_custom_species")
-			// Plain display-name override — applies on top of whatever species
-			// the player picked. custom_base (sprite override) is no longer
-			// exposed; players who want a different sprite pick a different
-			// species.
-			preferences.update_preference_by_type(/datum/preference/text/human/custom_species, params["value"] || "")
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/species_picker, "set_species", ui_act_set_species, UI_ARG_VALUE("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_species)
+	var/value = params["value"]
+	if(value == DQ_PLAY_MODE_ROBOT_KEY)
+		preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "robot")
+		// Auto-bump the Cyborg job to high priority. Without this, picking
+		// "Robot" in the species picker only flipped UI flags — the player
+		// would still spawn as whatever organic job their priorities pointed
+		// at (usually Intern → human). The player can still demote Cyborg
+		// back down via the Jobs tab if they wanted a non-roundstart cyborg
+		// flow (e.g. wait for a posibrain shell).
+		preferences.set_job_priority(JOB_CYBORG, "high")
+		return PREF_UPDATE_ACCEPTED
+	if(value == DQ_PLAY_MODE_PAI_KEY)
+		preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "pai")
+		// pAIs aren't roundstart — clear any Cyborg priority that the
+		// player set previously when in robot mode. Other organic job
+		// priorities are left alone so switching back to a human picks
+		// up where they left off.
+		preferences.set_job_priority(JOB_CYBORG, "off")
+		return PREF_UPDATE_ACCEPTED
+	if(!(value in GLOB.playable_species))
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/text/human/play_mode, "human")
+	preferences.update_preference_by_type(/datum/preference/choiced/species, value)
+	// Clear Cyborg priority when switching back to an organic species so
+	// the player doesn't accidentally spawn as a cyborg with a human
+	// appearance just because Robot was selected earlier in the session.
+	preferences.set_job_priority(JOB_CYBORG, "off")
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/species_picker, "set_custom_species", ui_act_set_custom_species, UI_ARG_VALUE("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/species_picker, ui_act_set_custom_species)
+	// Plain display-name override — applies on top of whatever species
+	// the player picked. custom_base (sprite override) is no longer
+	// exposed; players who want a different sprite pick a different
+	// species.
+	preferences.update_preference_by_type(/datum/preference/text/human/custom_species, params["value"] || "")
+	return PREF_UPDATE_ACCEPTED
 
 #undef DQ_PLAY_MODE_ROBOT_KEY
 #undef DQ_PLAY_MODE_PAI_KEY

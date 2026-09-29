@@ -37,17 +37,22 @@
 	else
 		linked().set_light(0)
 
-/obj/machinery/computer/ship/sensors/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/computer/ship/sensors, "OvermapShipSensors")
+
+/obj/machinery/computer/ship/sensors/ui_prepare(mob/user, datum/tgui/ui)
 	if(!linked())
 		display_reconnect_dialog(user, "sensors")
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OvermapShipSensors", "[linked().name] Sensors Control") // 420, 530
-		ui.open()
+	return TRUE
 
-/obj/machinery/computer/ship/sensors/tgui_data(mob/user)
+/obj/machinery/computer/ship/sensors/ui_title(mob/user)
+	return "[linked().name] Sensors Control"
+
+UI_DATA_REPLACE(/obj/machinery/computer/ship/sensors, "merge:ui_data_obj_machinery_computer_ship_sensors{viewing:unknown,on:unknown,range:unknown,health:unknown,max_health:num,heat:num,critical_heat:num,status:text,contacts:list}")
+
+/// The computed part of /obj/machinery/computer/ship/sensors's window data (declared on its UI_DATA row).
+/obj/machinery/computer/ship/sensors/proc/ui_data_obj_machinery_computer_ship_sensors(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["viewing"] = viewing_overmap(user)
@@ -89,50 +94,64 @@
 
 	return data
 
-/obj/machinery/computer/ship/sensors/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/ship/sensors/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!linked())
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("viewing")
-			if(ui.user && !isAI(ui.user))
-				if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
-					. = FALSE
-				else if(!viewing_overmap(ui.user) && linked())
-					start_coordinated_remoteview(src, ui.user, linked(), viewers)
-				else
-					ui.user.reset_perspective()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/sensors, "viewing", ui_act_viewing)
+UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_viewing)
+	if(ui.user && !isAI(ui.user))
+		if(get_dist(ui.user, src) > 1 || ui.user.blinded || !linked())
+			. = FALSE
+		else if(!viewing_overmap(ui.user) && linked())
+			start_coordinated_remoteview(src, ui.user, linked(), viewers)
+		else
+			ui.user.reset_perspective()
+	. = TRUE
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("link")
-			find_sensors()
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/sensors, "link", ui_act_link)
+UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_link)
+	find_sensors()
+	. = TRUE
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-		if("scan")
-			var/obj/effect/overmap/O = locate(params["scan"])
-			if(istype(O) && !QDELETED(O) && (O in view(7,linked())))
-				new/obj/item/paper/(get_turf(src), O.get_scan_data(ui.user), "paper (Sensor Scan - [O])")
-				playsound(src, "sound/machines/printer.ogg", 30, 1)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/ship/sensors, "scan", ui_act_scan, UI_ARG_REF("scan", null, /obj/effect/overmap))
+UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_scan)
+	var/obj/effect/overmap/O = params["scan"]
+	if(istype(O) && !QDELETED(O) && (O in view(7,linked())))
+		new/obj/item/paper/(get_turf(src), O.get_scan_data(ui.user), "paper (Sensor Scan - [O])")
+		playsound(src, "sound/machines/printer.ogg", 30, 1)
+	. = TRUE
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
-	if(sensors())
-		switch(action)
-			if("range")
-				var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
-				if(isnull(nrange))
-					return
-				if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
-					return FALSE
-				if(nrange)
-					sensors().set_range(CLAMP(nrange, 1, world.view))
-				. = TRUE
-			if("toggle_sensor")
-				sensors().toggle()
-				. = TRUE
+UI_ACT(/obj/machinery/computer/ship/sensors, "range", ui_act_range)
+UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_range)
+	if(!(sensors()))
+		return FALSE
+	var/nrange = act_ask(ui.user, action, params, ui, "k125", /datum/om/prompt/number, message = "Set new sensors range", title = "Sensor range", default = sensors().range, max = world.view, round_entry = FALSE)
+	if(isnull(nrange))
+		return
+	if(tgui_status(ui.user, state) != STATUS_INTERACTIVE)
+		return FALSE
+	if(nrange)
+		sensors().set_range(CLAMP(nrange, 1, world.view))
+	. = TRUE
+	if(. && !issilicon(ui.user))
+		play_sfx(src, SFX_TERMINAL_TYPE)
 
+UI_ACT(/obj/machinery/computer/ship/sensors, "toggle_sensor", ui_act_toggle_sensor)
+UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
+	if(!(sensors()))
+		return FALSE
+	sensors().toggle()
+	. = TRUE
 	if(. && !issilicon(ui.user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
 

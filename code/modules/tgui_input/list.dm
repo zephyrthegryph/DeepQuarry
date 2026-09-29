@@ -102,11 +102,7 @@
 	while (!choice && !closed)
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_list_input/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ListInputModal")
-		ui.open()
+DECLARE_UI(/datum/tgui_list_input, "ListInputModal")
 
 /datum/tgui_list_input/tgui_close(mob/user)
 	. = ..()
@@ -125,28 +121,29 @@
 	data["title"] = title
 	return data
 
-/datum/tgui_list_input/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_list_input, "merge:ui_data_datum_tgui_list_input{timeout:num}")
+
+/// The computed part of /datum/tgui_list_input's window data (declared on its UI_DATA row).
+/datum/tgui_list_input/proc/ui_data_datum_tgui_list_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data
 
-/datum/tgui_list_input/tgui_act(action, list/params)
-	. = ..()
-	if (.)
+UI_ACT(/datum/tgui_list_input, "submit", ui_act_submit, UI_ARG_VALUE("entry"))
+UI_ACT_PROC(/datum/tgui_list_input, ui_act_submit)
+	if (!(params["entry"] in items))
 		return
-	switch(action)
-		if("submit")
-			if (!(params["entry"] in items))
-				return
-			set_choice(items_map[params["entry"]])
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+	set_choice(items_map[params["entry"]])
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_list_input, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_list_input, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /datum/tgui_list_input/proc/set_choice(choice)
 	src.choice = choice

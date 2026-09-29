@@ -146,28 +146,13 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 	)
 	..()
 
-/obj/machinery/computer/arcade/battle/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ArcadeBattle", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/arcade/battle, "ArcadeBattle")
 
-/obj/machinery/computer/arcade/battle/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["name"] = name
-	data["temp"] = temp
-	data["enemyAction"] = enemy_action
-	data["enemyName"] = enemy_name
-	data["playerHP"] = player_hp
-	data["playerMP"] = player_mp
-	data["enemyHP"] = enemy_hp
-	data["gameOver"] = gameover
-	return data
+UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyAction=enemy_action:text", "enemyName=enemy_name:text", "playerHP=player_hp:num", "playerMP=player_mp:num", "enemyHP=enemy_hp:num", "gameOver=gameover:num")
 
-/obj/machinery/computer/arcade/battle/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/arcade/battle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!blocked && !gameover)
 		switch(action)
 			if("attack")
@@ -177,9 +162,7 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 				play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
 				if(turtle > 0)
 					turtle--
-
 				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, attackamt, 0, 0)
-
 			if(XENO_CHEM_HEAL)
 				blocked = 1
 				var/pointamt = rand(1,3)
@@ -187,9 +170,7 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 				temp = "You use [pointamt] magic to heal for [healamt] damage!"
 				play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
 				turtle++
-
 				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, pointamt, healamt)
-
 			if("charge")
 				blocked = 1
 				var/chargeamt = rand(4,7)
@@ -198,23 +179,22 @@ DAMAGE_REACTION(/obj/machinery/computer/arcade, DAMAGE_EMP, PROC_REF(arcade_emp)
 				player_mp += chargeamt
 				if(turtle > 0)
 					turtle--
-
 				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, 0, 0)
+	return TRUE
 
+UI_ACT(/obj/machinery/computer/arcade/battle, "newgame", ui_act_newgame)
+UI_ACT_PROC(/obj/machinery/computer/arcade/battle, ui_act_newgame)
+	temp = "New Round"
+	player_hp = 30
+	player_mp = 10
+	enemy_hp = 45
+	enemy_mp = 20
+	gameover = 0
+	turtle = 0
 
-	if(action == "newgame") //Reset everything
-		temp = "New Round"
-		player_hp = 30
-		player_mp = 10
-		enemy_hp = 45
-		enemy_mp = 20
-		gameover = 0
-		turtle = 0
-
-		if(emagged)
-			randomize_characters()
-			set_emagged(0)
-
+	if(emagged)
+		randomize_characters()
+		set_emagged(0)
 	add_fingerprint(ui.user)
 	return TRUE
 
@@ -1268,45 +1248,32 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 
 /// TGUI Stuff
 
-/obj/machinery/computer/arcade/clawmachine/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ClawMachine", name, ui_x = 300, ui_y = 400)
-		ui.autoupdate = TRUE
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/arcade/clawmachine, "ClawMachine", UI_AUTOUPDATE)
 
-/obj/machinery/computer/arcade/clawmachine/tgui_data(mob/user)
-	var/list/data = list()
+UI_DATA_REPLACE(/obj/machinery/computer/arcade/clawmachine, "wintick:num", "instructions:text", "gameStatus:text", "winscreen:text")
 
-	data["wintick"] = wintick
-	data["instructions"] = instructions
-	data["gameStatus"] = gameStatus
-	data["winscreen"] = winscreen
-
-	return data
-
-/obj/machinery/computer/arcade/clawmachine/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
-
-	if(action == "newgame" && gamepaid == 0)
+UI_ACT(/obj/machinery/computer/arcade/clawmachine, "newgame", ui_act_newgame)
+UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_newgame)
+	if(gamepaid == 0)
 		play_sfx(src, SFX_ARCADE_STEAL, ignore_walls = FALSE)
-
-	if(action == "newgame" && gamepaid == 1)
+	else if(gamepaid == 1)
 		gameStatus = "CLAWMACHINE_ON"
 		icon_state = "clawmachine_new_move"
 		instructions = "Guide the claw to the prize you want!"
 		wintick = 0
 
-	if(action == "return" && gameStatus == "CLAWMACHINE_END")
+UI_ACT(/obj/machinery/computer/arcade/clawmachine, "return", ui_act_return)
+UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_return)
+	if(gameStatus == "CLAWMACHINE_END")
 		gameStatus = "CLAWMACHINE_NEW"
 
-	if(action == "pointless" && wintick < 10)
+UI_ACT(/obj/machinery/computer/arcade/clawmachine, "pointless", ui_act_pointless)
+UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_pointless)
+	if(wintick < 10)
 		wintick += 1
-
-	if(action == "pointless" && wintick >= 10)
+	if(wintick >= 10)
 		instructions = "Insert 1 thaler or swipe a card to play!"
-		clawvend(ui.user)
+		clawvend(user)
 
 /obj/machinery/computer/arcade/clawmachine/proc/clawvend(mob/user) /// True to a real claw machine, it's NEARLY impossible to win.
 	winprob += 1 /// Yeah.

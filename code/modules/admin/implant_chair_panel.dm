@@ -17,16 +17,14 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/implantchair/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/implantchair, GLOB.tgui_default_state)
 
-/obj/machinery/implantchair/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ImplantChair", "Implanter Status")
-		ui.open()
+DECLARE_UI(/obj/machinery/implantchair, "ImplantChair", UI_TITLE("Implanter Status"))
 
-/obj/machinery/implantchair/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/implantchair, "merge:ui_data_obj_machinery_implantchair{has_occupant:bool,occupant_name:text,health_text:text,dead:bool,damaged:unknown,implants_left:num,ready:bool}")
+
+/// The computed part of /obj/machinery/implantchair's window data (declared on its UI_DATA row).
+/obj/machinery/implantchair/proc/ui_data_obj_machinery_implantchair(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_IMPLANT_CHAIR)
 	data["has_occupant"] = !!occupant
@@ -40,16 +38,14 @@
 	data["ready"] = !!ready
 	return data
 
-/obj/machinery/implantchair/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	switch(action)
-		if("implant")
-			start_implant(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
-		if("replenish")
-			start_replenish(ui.user)
-			SStgui.update_uis(src)
-			return TRUE
+UI_ACT(/obj/machinery/implantchair, "implant", ui_act_implant)
+UI_ACT_PROC(/obj/machinery/implantchair, ui_act_implant)
+	start_implant(ui.user)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/obj/machinery/implantchair, "replenish", ui_act_replenish)
+UI_ACT_PROC(/obj/machinery/implantchair, ui_act_replenish)
+	start_replenish(ui.user)
+	SStgui.update_uis(src)
+	return TRUE

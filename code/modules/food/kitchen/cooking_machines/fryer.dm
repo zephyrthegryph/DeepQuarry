@@ -67,8 +67,11 @@
 			message += span_warning(" OVERFILLED")
 		to_chat(user, message)
 
-/obj/machinery/appliance/cooker/fryer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
+UI_DATA(/obj/machinery/appliance/cooker/fryer, "merge:ui_data_obj_machinery_appliance_cooker_fryer{reagents:listmap}")
+
+/// The computed part of /obj/machinery/appliance/cooker/fryer's window data (declared on its UI_DATA row).
+/obj/machinery/appliance/cooker/fryer/proc/ui_data_obj_machinery_appliance_cooker_fryer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	. = list()
 	.["reagents"] = list("name" = oil.get_master_reagent_name(), "volume" = oil.total_volume, "max" = oil.maximum_volume)
 
 /obj/machinery/appliance/cooker/fryer/heat_up()

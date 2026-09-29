@@ -91,21 +91,23 @@ APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}
 	to_chat(user, span_warning("Access denied."))
 	return FALSE
 
-/obj/machinery/navbeacon/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/navbeacon, "NavBeacon")
+
+/obj/machinery/navbeacon/ui_prepare(mob/user, datum/tgui/ui)
 	var/turf/T = loc
 	if(!T.is_plating())
-		return		// prevent intraction when T-scanner revealed
+		return FALSE
 
 	if(!open && !isAI(user))	// can't alter controls if not open, unless you're an AI
 		to_chat(user, span_warning("The beacon's control cover is closed."))
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NavBeacon", name)
-		ui.open()
+	return TRUE
 
-/obj/machinery/navbeacon/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/navbeacon, "merge:ui_data_obj_machinery_navbeacon{siliconUser:num,locked:num,open:num,location:text,codes:bool}")
+
+/// The computed part of /obj/machinery/navbeacon's window data (declared on its UI_DATA row).
+/obj/machinery/navbeacon/proc/ui_data_obj_machinery_navbeacon(mob/user, datum/tgui/ui, datum/tgui_state/state)
 
 	return list(
 		"siliconUser" = issilicon(user),
@@ -115,71 +117,79 @@ APPEARANCE_TEMPLATE(/obj/machinery/navbeacon, "navbeacon{open}{invisibility?-f:}
 		"codes" = (codes || list()),
 	)
 
-/obj/machinery/navbeacon/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/obj/machinery/navbeacon, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_lock)
+	if(!open)
 		return
+	return togglelock(ui.user)
 
-	switch(action)
-		if("lock")
-			if(!open)
-				return
-			return togglelock(ui.user)
-
-	return access_action(action, params, ui.user)
-
-/obj/machinery/navbeacon/proc/access_action(action, list/params, mob/user)
+UI_ACT(/obj/machinery/navbeacon, "loc_edit", ui_act_loc_edit, UI_ARG_TEXT("new_loc"))
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_loc_edit)
 	if(!open || locked)
 		return FALSE
+	var/new_loc = sanitize(params["new_loc"], MAX_NAME_LEN)
+	if(!new_loc)
+		return FALSE
+	location = new_loc
+	return TRUE
 
-	switch(action)
-		if("loc_edit")
-			var/new_loc = sanitize(params["new_loc"], MAX_NAME_LEN)
-			if(!new_loc)
-				return FALSE
-			location = new_loc
-			return TRUE
-		if("trans_edit_key")
-			var/codekey = params["code"]
-			if(!codekey || !(codekey in codes))
-				return FALSE
-			var/new_key = sanitize(params["new_key"], MAX_NAME_LEN)
-			if(!new_key)
-				return FALSE
-			var/list/new_codes = list()
-			for(var/key, value in codes)
-				if(key == codekey)
-					new_codes[new_key] = value
-					continue
-				new_codes[key] = value
-			codes = new_codes
-			return TRUE
-		if("trans_edit_code")
-			var/codekey = params["code"]
-			if(!codekey)
-				return FALSE
-			var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
-			if(!new_val)
-				return FALSE
-			LAZYSET(codes, codekey, new_val)
-			return TRUE
-		if("trans_add_code")
-			var/new_key = sanitize(params["new_key"], MAX_NAME_LEN)
-			if(!new_key)
-				return FALSE
-			if(LAZYACCESS(codes, new_key))
-				return FALSE
-			var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
-			if(!new_val)
-				return FALSE
-			LAZYSET(codes, new_key, new_val)
-			return TRUE
-		if("trans_del")
-			var/codekey = params["code"]
-			if(!codekey)
-				return FALSE
-			LAZYREMOVE(codes, codekey)
-			return TRUE
+UI_ACT(/obj/machinery/navbeacon, "trans_edit_key", ui_act_trans_edit_key, UI_ARG_TEXT("code"), UI_ARG_TEXT("new_key"))
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_edit_key)
+	if(!open || locked)
+		return FALSE
+	var/codekey = params["code"]
+	if(!codekey || !(codekey in codes))
+		return FALSE
+	var/new_key = sanitize(params["new_key"], MAX_NAME_LEN)
+	if(!new_key)
+		return FALSE
+	var/list/new_codes = list()
+	for(var/key, value in codes)
+		if(key == codekey)
+			new_codes[new_key] = value
+			continue
+		new_codes[key] = value
+	codes = new_codes
+	return TRUE
+
+UI_ACT(/obj/machinery/navbeacon, "trans_edit_code", ui_act_trans_edit_code, UI_ARG_TEXT("code"), UI_ARG_TEXT("new_val"))
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_edit_code)
+	if(!open || locked)
+		return FALSE
+	var/codekey = params["code"]
+	if(!codekey)
+		return FALSE
+	var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
+	if(!new_val)
+		return FALSE
+	LAZYSET(codes, codekey, new_val)
+	return TRUE
+
+UI_ACT(/obj/machinery/navbeacon, "trans_add_code", ui_act_trans_add_code, UI_ARG_TEXT("new_key"), UI_ARG_TEXT("new_val"))
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_add_code)
+	if(!open || locked)
+		return FALSE
+	var/new_key = sanitize(params["new_key"], MAX_NAME_LEN)
+	if(!new_key)
+		return FALSE
+	if(LAZYACCESS(codes, new_key))
+		return FALSE
+	var/new_val = sanitize(params["new_val"], MAX_NAME_LEN)
+	if(!new_val)
+		return FALSE
+	LAZYSET(codes, new_key, new_val)
+	return TRUE
+
+UI_ACT(/obj/machinery/navbeacon, "trans_del", ui_act_trans_del, UI_ARG_TEXT("code"))
+UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_del)
+	if(!open || locked)
+		return FALSE
+	var/codekey = params["code"]
+	if(!codekey)
+		return FALSE
+	LAZYREMOVE(codes, codekey)
+	return TRUE
+
 
 //
 // Nav Beacon Mapping

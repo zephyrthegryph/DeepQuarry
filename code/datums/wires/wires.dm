@@ -106,16 +106,17 @@
 /datum/wires/tgui_host()
 	return holder
 
-/datum/wires/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, tgui_template, "[proper_name] wires")
-		ui.open()
+DECLARE_UI(/datum/wires, UI_FROM_VAR("tgui_template"))
 
-/datum/wires/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+/datum/wires/ui_title(mob/user)
+	return "[proper_name] wires"
 
-/datum/wires/tgui_data(mob/user)
+DECLARE_UI_STATE(/datum/wires, GLOB.tgui_physical_state)
+
+UI_DATA_REPLACE(/datum/wires, "merge:ui_data_datum_wires{wires:list,status:list}")
+
+/// The computed part of /datum/wires's window data (declared on its UI_DATA row).
+/datum/wires/proc/ui_data_datum_wires(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/replace_colors
 
@@ -167,14 +168,18 @@
 	data["status"] = status
 	return data
 
-/datum/wires/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/datum/wires/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!interactable(ui.user))
-		return
+		return FALSE
+	holder.add_hiddenprint(ui.user)
+	return TRUE
 
+UI_ACT(/datum/wires, "cut", ui_act_cut, UI_ARG_TEXT("wire"))
+UI_ACT_PROC(/datum/wires, ui_act_cut)
 	var/obj/item/I = ui.user.get_active_hand()
+	var/color = lowertext(params["wire"])
 	if(istype(I, /obj/item/paicard)) // Get pai builtin emag tools
 		var/obj/item/paicard/card = I
 		if(card.emagged && card.has_emag_toolkit)
@@ -183,52 +188,70 @@
 					I = card.multitool
 				if("Signaler")
 					I = card.signaler
+	if(!istype(I) || !I.has_tool_quality(TOOL_WIRECUTTER))
+		to_chat(ui.user, span_warning("You need wirecutters!"))
+		return
+
+	playsound(holder, I.usesound, 20, 1)
+	cut_color(color)
+	return TRUE
+
+// Pulse a wire.
+
+UI_ACT(/datum/wires, "pulse", ui_act_pulse, UI_ARG_TEXT("wire"))
+UI_ACT_PROC(/datum/wires, ui_act_pulse)
+	var/obj/item/I = ui.user.get_active_hand()
 	var/color = lowertext(params["wire"])
-	holder.add_hiddenprint(ui.user)
+	if(istype(I, /obj/item/paicard)) // Get pai builtin emag tools
+		var/obj/item/paicard/card = I
+		if(card.emagged && card.has_emag_toolkit)
+			switch(card.selected_system)
+				if("MultiTool")
+					I = card.multitool
+				if("Signaler")
+					I = card.signaler
+	if(!istype(I) || !I.has_tool_quality(TOOL_MULTITOOL))
+		to_chat(ui.user, span_warning("You need a multitool!"))
+		return
 
-	switch(action)
-		// Toggles the cut/mend status.
-		if("cut")
-			if(!istype(I) || !I.has_tool_quality(TOOL_WIRECUTTER))
-				to_chat(ui.user, span_warning("You need wirecutters!"))
-				return
+	play_sfx(holder, SFX_WEAPONS_EMPTY, 0.4)
+	pulse_color(color)
 
-			playsound(holder, I.usesound, 20, 1)
-			cut_color(color)
+	// If they pulse the electrify wire, call interactable() and try to shock them.
+	if(get_wire(color) == WIRE_ELECTRIFY)
+		interactable(ui.user)
+
+	return TRUE
+
+// Attach a signaler to a wire.
+
+UI_ACT(/datum/wires, "attach", ui_act_attach, UI_ARG_TEXT("wire"))
+UI_ACT_PROC(/datum/wires, ui_act_attach)
+	var/obj/item/I = ui.user.get_active_hand()
+	var/color = lowertext(params["wire"])
+	if(istype(I, /obj/item/paicard)) // Get pai builtin emag tools
+		var/obj/item/paicard/card = I
+		if(card.emagged && card.has_emag_toolkit)
+			switch(card.selected_system)
+				if("MultiTool")
+					I = card.multitool
+				if("Signaler")
+					I = card.signaler
+	if(is_attached(color))
+		var/obj/item/O = detach_assembly(color)
+		if(O)
+			ui.user.put_in_hands(O)
 			return TRUE
 
-		// Pulse a wire.
-		if("pulse")
-			if(!istype(I) || !I.has_tool_quality(TOOL_MULTITOOL))
-				to_chat(ui.user, span_warning("You need a multitool!"))
-				return
+	if(!istype(I, /obj/item/assembly/signaler))
+		to_chat(ui.user, span_warning("You need a remote signaller!"))
+		return
 
-			play_sfx(holder, SFX_WEAPONS_EMPTY, 0.4)
-			pulse_color(color)
-
-			// If they pulse the electrify wire, call interactable() and try to shock them.
-			if(get_wire(color) == WIRE_ELECTRIFY)
-				interactable(ui.user)
-
-			return TRUE
-
-		// Attach a signaler to a wire.
-		if("attach")
-			if(is_attached(color))
-				var/obj/item/O = detach_assembly(color)
-				if(O)
-					ui.user.put_in_hands(O)
-					return TRUE
-
-			if(!istype(I, /obj/item/assembly/signaler))
-				to_chat(ui.user, span_warning("You need a remote signaller!"))
-				return
-
-			if(ui.user.unEquip(I))
-				attach_assembly(color, I)
-				return TRUE
-			else
-				to_chat(ui.user, span_warning("[I] is stuck to your hand!"))
+	if(ui.user.unEquip(I))
+		attach_assembly(color, I)
+		return TRUE
+	else
+		to_chat(ui.user, span_warning("[I] is stuck to your hand!"))
 
 /**
  * Proc called to determine if the user can see wire define information, such as "Contraband", "Door Bolts", etc.

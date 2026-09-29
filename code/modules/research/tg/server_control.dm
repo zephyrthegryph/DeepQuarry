@@ -46,14 +46,12 @@ DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, n
 	balloon_alert(user, "console emagged")
 	return TRUE
 
-/obj/machinery/computer/rdservercontrol/tgui_interact(mob/user, datum/tgui/ui)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ServerControl", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/rdservercontrol, "ServerControl")
 
-/obj/machinery/computer/rdservercontrol/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/rdservercontrol, "merge:ui_data_obj_machinery_computer_rdservercontrol{server_connected:bool,logs:list,servers:list,consoles:list}")
+
+/// The computed part of /obj/machinery/computer/rdservercontrol's window data (declared on its UI_DATA row).
+/obj/machinery/computer/rdservercontrol/proc/ui_data_obj_machinery_computer_rdservercontrol(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["server_connected"] = !!stored_research()
@@ -79,28 +77,38 @@ DECLARE_EMAG(/obj/machinery/computer/rdservercontrol, PROC_REF(on_emag), null, n
 
 	return data
 
-/obj/machinery/computer/rdservercontrol/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return TRUE
+/obj/machinery/computer/rdservercontrol/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!allowed(usr) && !emagged)
 		balloon_alert(usr, "access denied!")
 		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("lockdown_server")
-			var/obj/machinery/rnd/server/server_selected = locate_in_list(stored_research().techweb_servers, params["selected_server"])
-			if(!server_selected)
-				return FALSE
-			server_selected.toggle_disable(usr)
-			return TRUE
-		if("lock_console")
-			var/obj/machinery/computer/rdconsole_tg/console_selected = locate_in_list(stored_research().consoles_accessing, params["selected_console"])
-			if(!console_selected)
-				return FALSE
-			console_selected.set_locked(!console_selected.locked)
-			return TRUE
+UI_ACT(/obj/machinery/computer/rdservercontrol, "lockdown_server", ui_act_lockdown_server, UI_ARG_REF("selected_server", "proc:ui_source_stored_research_techweb_servers", /obj/machinery/rnd/server))
+UI_ACT_PROC(/obj/machinery/computer/rdservercontrol, ui_act_lockdown_server)
+	var/obj/machinery/rnd/server/server_selected = params["selected_server"]
+	if(!server_selected)
+		return FALSE
+	server_selected.toggle_disable(usr)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/rdservercontrol, "lock_console", ui_act_lock_console, UI_ARG_REF("selected_console", "proc:ui_source_stored_research_consoles_accessing", /obj/machinery/computer/rdconsole_tg))
+UI_ACT_PROC(/obj/machinery/computer/rdservercontrol, ui_act_lock_console)
+	var/obj/machinery/computer/rdconsole_tg/console_selected = params["selected_console"]
+	if(!console_selected)
+		return FALSE
+	console_selected.set_locked(!console_selected.locked)
+	return TRUE
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/machinery/computer/rdservercontrol/proc/ui_source_stored_research_consoles_accessing()
+	return stored_research().consoles_accessing
+
+/// The list the UI_ARG_REF rows resolve refs in.
+/obj/machinery/computer/rdservercontrol/proc/ui_source_stored_research_techweb_servers()
+	return stored_research().techweb_servers
 
 /// A shared definition/flyweight (never cleared).
 /obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb

@@ -8,7 +8,10 @@
 	. = ..()
 	refresh_sensors()
 
-/datum/tgui_module/power_monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/power_monitor, "merge:ui_data_datum_tgui_module_power_monitor{all_sensors:list,focus:unknown}")
+
+/// The computed part of /datum/tgui_module/power_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/power_monitor/proc/ui_data_datum_tgui_module_power_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/sensors = list()
@@ -37,20 +40,20 @@
 
 	return data
 
-/datum/tgui_module/power_monitor/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/power_monitor, "clear", ui_act_clear)
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_clear)
+	active_sensor = null
+	. = TRUE
 
-	switch(action)
-		if("clear")
-			active_sensor = null
-			. = TRUE
-		if("refresh")
-			refresh_sensors()
-			. = TRUE
-		if("setsensor")
-			active_sensor = params["id"]
-			. = TRUE
+UI_ACT(/datum/tgui_module/power_monitor, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_refresh)
+	refresh_sensors()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/power_monitor, "setsensor", ui_act_setsensor, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/datum/tgui_module/power_monitor, ui_act_setsensor)
+	active_sensor = params["id"]
+	. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()
 	for(var/obj/machinery/power/sensor/S in LAZYCOPY(grid_sensors))
@@ -83,7 +86,6 @@
 
 // Subtype for self_state
 /datum/tgui_module/power_monitor/robot
-/datum/tgui_module/power_monitor/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/power_monitor/robot, GLOB.tgui_self_state)
 
 /// Sensors on the grid, rebuilt by refresh_sensors().

@@ -1,10 +1,9 @@
-/obj/item/medigun_backpack/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Medigun", name)
-		ui.open()
+DECLARE_UI(/obj/item/medigun_backpack, "Medigun")
 
-/obj/item/medigun_backpack/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/medigun_backpack, "merge:ui_data_obj_item_medigun_backpack{volume:num,max_volume:num}")
+
+/// The computed part of /obj/item/medigun_backpack's window data (declared on its UI_DATA row).
+/obj/item/medigun_backpack/proc/ui_data_obj_item_medigun_backpack(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)
 		return list()
@@ -71,77 +70,85 @@
 		"sbin" = sbin ? list("name" = sbin.name, "chemcap" = chemcap, "tankmax" = tankmax, "rating" = sbin.get_rating()) : null
 	)
 
-/obj/item/medigun_backpack/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/item/medigun_backpack, "celleject", ui_act_celleject)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_celleject)
+	. = TRUE
+	cell_eject(ui.user)
+	return TRUE
+
+UI_ACT(/obj/item/medigun_backpack, "cancel_healing", ui_act_cancel_healing)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_cancel_healing)
+	. = TRUE
+	var/obj/item/bork_medigun/medigun = get_medigun()
+	if(medigun?.busy)
+		medigun.busy = MEDIGUN_CANCELLED
 		return TRUE
 
+UI_ACT(/obj/item/medigun_backpack, "toggle_maintenance", ui_act_toggle_maintenance)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_toggle_maintenance)
 	. = TRUE
+	maintenance = !maintenance
+	return TRUE
 
-	var/obj/item/bork_medigun/medigun = get_medigun()
+UI_ACT(/obj/item/medigun_backpack, "rem_smodule", ui_act_rem_smodule)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_smodule)
+	. = TRUE
+	if(!smodule || !maintenance)
+		return FALSE
+	smodule.forceMove(get_turf(loc))
+	to_chat(ui.user, span_notice("You remove the [smodule] from \the [src]."))
+	own_take(src, "smodule")
+	update_icon()
+	return TRUE
 
-	switch(action)
-		if("celleject")
-			cell_eject(ui.user)
-			return TRUE
+UI_ACT(/obj/item/medigun_backpack, "rem_mani", ui_act_rem_mani)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_mani)
+	. = TRUE
+	if(!smanipulator || !maintenance)
+		return FALSE
+	om_task_periodic_stop(src)
+	smanipulator.forceMove(get_turf(loc))
+	to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
+	own_take(src, "smanipulator")
+	smaniptier = 0
+	update_icon()
+	return TRUE
 
-		if("cancel_healing")
-			if(medigun?.busy)
-				medigun.busy = MEDIGUN_CANCELLED
-				return TRUE
+UI_ACT(/obj/item/medigun_backpack, "rem_laser", ui_act_rem_laser)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_laser)
+	. = TRUE
+	if(!slaser || !maintenance)
+		return FALSE
+	slaser.forceMove(get_turf(loc))
+	to_chat(ui.user, span_notice("You remove the [slaser] from \the [src]."))
+	own_take(src, "slaser")
+	update_icon()
+	return TRUE
 
-		if("toggle_maintenance")
-			maintenance = !maintenance
-			return TRUE
+UI_ACT(/obj/item/medigun_backpack, "rem_cap", ui_act_rem_cap)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_cap)
+	. = TRUE
+	if(!scapacitor || !maintenance)
+		return FALSE
+	om_task_periodic_stop(src)
+	scapacitor.forceMove(get_turf(loc))
+	to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
+	own_take(src, "scapacitor")
+	update_icon()
+	return TRUE
 
-		if("rem_smodule")
-			if(!smodule || !maintenance)
-				return FALSE
-			smodule.forceMove(get_turf(loc))
-			to_chat(ui.user, span_notice("You remove the [smodule] from \the [src]."))
-			own_take(src, "smodule")
-			update_icon()
-			return TRUE
-
-		if("rem_mani")
-			if(!smanipulator || !maintenance)
-				return FALSE
-			om_task_periodic_stop(src)
-			smanipulator.forceMove(get_turf(loc))
-			to_chat(ui.user, span_notice("You remove the [smanipulator] from \the [src]."))
-			own_take(src, "smanipulator")
-			smaniptier = 0
-			update_icon()
-			return TRUE
-
-		if("rem_laser")
-			if(!slaser || !maintenance)
-				return FALSE
-			slaser.forceMove(get_turf(loc))
-			to_chat(ui.user, span_notice("You remove the [slaser] from \the [src]."))
-			own_take(src, "slaser")
-			update_icon()
-			return TRUE
-
-		if("rem_cap")
-			if(!scapacitor || !maintenance)
-				return FALSE
-			om_task_periodic_stop(src)
-			scapacitor.forceMove(get_turf(loc))
-			to_chat(ui.user, span_notice("You remove the [scapacitor] from \the [src]."))
-			own_take(src, "scapacitor")
-			update_icon()
-			return TRUE
-
-		if("rem_bin")
-			if(!sbin || !maintenance)
-				return FALSE
-			om_task_periodic_stop(src)
-			sbin.forceMove(get_turf(loc))
-			to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
-			own_take(src, "sbin")
-			sbintier = 0
-			update_icon()
-			return TRUE
+UI_ACT(/obj/item/medigun_backpack, "rem_bin", ui_act_rem_bin)
+UI_ACT_PROC(/obj/item/medigun_backpack, ui_act_rem_bin)
+	. = TRUE
+	if(!sbin || !maintenance)
+		return FALSE
+	om_task_periodic_stop(src)
+	sbin.forceMove(get_turf(loc))
+	to_chat(ui.user, span_notice("You remove the [sbin] from \the [src]."))
+	own_take(src, "sbin")
+	sbintier = 0
+	update_icon()
+	return TRUE
 
 /obj/item/medigun_backpack/inspected_by(mob/user)
 	. = ..()

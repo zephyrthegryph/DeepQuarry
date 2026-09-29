@@ -103,21 +103,14 @@
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui_fingerprint
 
-/obj/machinery/computer/secure_data/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SecurityRecords", "Security Records") // 800, 380
-		ui.open()
-		ui.set_autoupdate(FALSE)
+DECLARE_UI(/obj/machinery/computer/secure_data, "SecurityRecords", UI_TITLE("Security Records"))
 
-/obj/machinery/computer/secure_data/tgui_data(mob/user)
-	var/data[0]
-	data["temp"] = temp
+UI_DATA_REPLACE(/obj/machinery/computer/secure_data, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_secure_data{scan:text,isAI:num,isRobot:num,records:list,general:list,security:list,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/secure_data's window data (declared on its UI_DATA row).
+/obj/machinery/computer/secure_data/proc/ui_data_obj_machinery_computer_secure_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["authenticated"] = authenticated
-	data["rank"] = rank
-	data["screen"] = screen
-	data["printing"] = printing
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)
@@ -195,175 +188,251 @@
 	data["modal"] = tgui_modal_data(src)
 	return data
 
-/obj/machinery/computer/secure_data/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/secure_data/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!(active1() in GLOB.data_core.general))
 		rel_clear(src, "active1")
 	if(!(active2() in GLOB.data_core.security))
 		rel_clear(src, "active2")
+	return TRUE
 
+UI_ACT(/obj/machinery/computer/secure_data, "cleartemp", ui_act_cleartemp)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_cleartemp)
 	. = TRUE
-	if(tgui_act_modal(action, params, ui.user))
-		return
+	temp = null
 
-	switch(action)
-		if("cleartemp")
-			temp = null
-		if("scan")
-			if(scan)
-				scan.forceMove(loc)
-				if(ishuman(ui.user) && !ui.user.get_active_hand())
-					ui.user.put_in_hands(scan)
-				own_take(src, "scan")
-			else
-				var/obj/item/I = ui.user.get_active_hand()
-				if(istype(I, /obj/item/card/id))
-					ui.user.drop_item()
-					I.forceMove(src)
-					own_set(src, "scan", I)
-		if("login")
-			var/login_type = text2num(params["login_type"])
-			if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
-				if(check_access(scan))
-					authenticated = scan.registered_name
-					rank = scan.assignment
-			else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
-				authenticated = ui.user.name
-				rank = JOB_AI
-			else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
-				authenticated = ui.user.name
-				var/mob/living/silicon/robot/R = ui.user
-				rank = "[R.modtype] [R.braintype]"
-			if(authenticated)
-				rel_clear(src, "active1")
-				rel_clear(src, "active2")
-				screen = SEC_DATA_R_LIST
-		else
-			. = FALSE
+UI_ACT(/obj/machinery/computer/secure_data, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_scan)
+	. = TRUE
+	if(scan)
+		scan.forceMove(loc)
+		if(ishuman(ui.user) && !ui.user.get_active_hand())
+			ui.user.put_in_hands(scan)
+		own_take(src, "scan")
+	else
+		var/obj/item/I = ui.user.get_active_hand()
+		if(istype(I, /obj/item/card/id))
+			ui.user.drop_item()
+			I.forceMove(src)
+			own_set(src, "scan", I)
 
-	if(.)
-		return
-
+UI_ACT(/obj/machinery/computer/secure_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_login)
+	. = TRUE
+	var/login_type = params["login_type"]
+	if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
+		if(check_access(scan))
+			authenticated = scan.registered_name
+			rank = scan.assignment
+	else if(login_type == LOGIN_TYPE_AI && isAI(ui.user))
+		authenticated = ui.user.name
+		rank = JOB_AI
+	else if(login_type == LOGIN_TYPE_ROBOT && isrobot(ui.user))
+		authenticated = ui.user.name
+		var/mob/living/silicon/robot/R = ui.user
+		rank = "[R.modtype] [R.braintype]"
 	if(authenticated)
-		. = TRUE
-		switch(action)
-			if("logout")
-				if(scan)
-					scan.forceMove(loc)
-					if(ishuman(ui.user) && !ui.user.get_active_hand())
-						ui.user.put_in_hands(scan)
-					own_take(src, "scan")
-				authenticated = null
-				screen = null
-				rel_clear(src, "active1")
-				rel_clear(src, "active2")
-			if("screen")
-				screen = clamp(text2num(params["screen"]) || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-				rel_clear(src, "active1")
-				rel_clear(src, "active2")
-			if("del_all")
-				for(var/datum/data/record/R in GLOB.data_core.security)
-					qdel(R)
-				set_temp("All security records deleted.")
-			if("del_r")
-				if(active2())
-					set_temp("Security record deleted.")
-					qdel(active2())
-			if("del_r_2")
-				if(active1())
-					set_temp("All records for [active1().fields["name"]] deleted.")
-					for(var/datum/data/record/R in GLOB.data_core.medical)
-						if((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
-							qdel(R)
-					qdel(active1())
-				if(active2())
-					qdel(active2())
-			if("sync_r")
-				if(active2())
-					set_temp(client_update_record(src,ui.user))
-			if("edit_notes")
-				// The modal input in tgui is busted for this sadly...
-				om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
-			if("d_rec")
-				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!(general_record in GLOB.data_core.general))
-					set_temp("Record not found.", "danger")
-					return
+		rel_clear(src, "active1")
+		rel_clear(src, "active2")
+		screen = SEC_DATA_R_LIST
 
-				var/datum/data/record/security_record
-				for(var/datum/data/record/M in GLOB.data_core.security)
-					if(M.fields["name"] == general_record.fields["name"] && M.fields["id"] == general_record.fields["id"])
-						security_record = M
-						break
+UI_ACT(/obj/machinery/computer/secure_data, "logout", ui_act_logout)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_logout)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(scan)
+		scan.forceMove(loc)
+		if(ishuman(ui.user) && !ui.user.get_active_hand())
+			ui.user.put_in_hands(scan)
+		own_take(src, "scan")
+	authenticated = null
+	screen = null
+	rel_clear(src, "active1")
+	rel_clear(src, "active2")
 
-				rel_set(src, "active1", general_record)
-				rel_set(src, "active2", security_record)
-				screen = SEC_DATA_RECORD
-			if("new")
-				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
-					var/datum/data/record/R = new /datum/data/record()
-					R.fields["name"] = active1().fields["name"]
-					R.fields["id"] = active1().fields["id"]
-					R.name = "Security Record #[R.fields["id"]]"
-					R.fields["brain_type"]	= "Unknown"
-					R.fields["criminal"]	= "None"
-					R.fields["mi_crim"]		= "None"
-					R.fields["mi_crim_d"]	= "No minor crime convictions."
-					R.fields["ma_crim"]		= "None"
-					R.fields["ma_crim_d"]	= "No major crime convictions."
-					R.fields["notes"]		= "No notes."
-					R.fields["notes"]		= "No notes."
-					own_add(GLOB.data_core, "security", R)
-					rel_set(src, "active2", R)
-					screen = SEC_DATA_RECORD
-					set_temp("Security record created.", "success")
-			if("del_c")
-				var/index = text2num(params["del_c"] || "")
-				if(!index || !istype(active2(), /datum/data/record))
-					return
+UI_ACT(/obj/machinery/computer/secure_data, "screen", ui_act_screen, UI_ARG_NUM("screen"))
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_screen)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	screen = clamp(params["screen"] || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
+	rel_clear(src, "active1")
+	rel_clear(src, "active2")
 
-				var/list/comments = active2().fields["comments"]
-				index = clamp(index, 1, length(comments))
-				if(comments[index])
-					comments.Cut(index, index + 1)
-			if("search")
-				rel_clear(src, "active1")
-				rel_clear(src, "active2")
-				var/t1 = lowertext(params["t1"] || "")
-				if(!length(t1))
-					return
+UI_ACT(/obj/machinery/computer/secure_data, "del_all", ui_act_del_all)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_del_all)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	for(var/datum/data/record/R in GLOB.data_core.security)
+		qdel(R)
+	set_temp("All security records deleted.")
 
-				for(var/datum/data/record/R in GLOB.data_core.general)
-					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-						rel_set(src, "active1", R)
-						break
-				if(!active1())
-					set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
-					return
-				for(var/datum/data/record/E in GLOB.data_core.security)
-					if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
-						rel_set(src, "active2", E)
-						break
-				screen = SEC_DATA_RECORD
-			if("print_p")
-				if(!printing)
-					printing = TRUE
-					SStgui.update_uis(src)
-					om_after(src, 5 SECONDS, PROC_REF(print_finish))
-			if("photo_front")
-				var/icon/photo = get_photo(ui.user)
-				if(photo && active1())
-					active1().fields["photo_front"] = photo
-					active1().fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
-			if("photo_side")
-				var/icon/photo = get_photo(ui.user)
-				if(photo && active1())
-					active1().fields["photo_side"] = photo
-					active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
-			else
-				return FALSE
+UI_ACT(/obj/machinery/computer/secure_data, "del_r", ui_act_del_r)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_del_r)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(active2())
+		set_temp("Security record deleted.")
+		qdel(active2())
+
+UI_ACT(/obj/machinery/computer/secure_data, "del_r_2", ui_act_del_r_2)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_del_r_2)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(active1())
+		set_temp("All records for [active1().fields["name"]] deleted.")
+		for(var/datum/data/record/R in GLOB.data_core.medical)
+			if((R.fields["name"] == active1().fields["name"] || R.fields["id"] == active1().fields["id"]))
+				qdel(R)
+		qdel(active1())
+	if(active2())
+		qdel(active2())
+
+UI_ACT(/obj/machinery/computer/secure_data, "sync_r", ui_act_sync_r)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_sync_r)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(active2())
+		set_temp(client_update_record(src,ui.user))
+
+UI_ACT(/obj/machinery/computer/secure_data, "edit_notes", ui_act_edit_notes)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_edit_notes)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+		// The modal input in tgui is busted for this sadly...
+	om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
+
+UI_ACT(/obj/machinery/computer/secure_data, "d_rec", ui_act_d_rec, UI_ARG_REF("d_rec", null, /datum/data/record))
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_d_rec)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/datum/data/record/general_record = params["d_rec"]
+	if(!(general_record in GLOB.data_core.general))
+		set_temp("Record not found.", "danger")
+		return
+
+	var/datum/data/record/security_record
+	for(var/datum/data/record/M in GLOB.data_core.security)
+		if(M.fields["name"] == general_record.fields["name"] && M.fields["id"] == general_record.fields["id"])
+			security_record = M
+			break
+
+	rel_set(src, "active1", general_record)
+	rel_set(src, "active2", security_record)
+	screen = SEC_DATA_RECORD
+
+UI_ACT(/obj/machinery/computer/secure_data, "new", ui_act_new)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_new)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
+		var/datum/data/record/R = new /datum/data/record()
+		R.fields["name"] = active1().fields["name"]
+		R.fields["id"] = active1().fields["id"]
+		R.name = "Security Record #[R.fields["id"]]"
+		R.fields["brain_type"]	= "Unknown"
+		R.fields["criminal"]	= "None"
+		R.fields["mi_crim"]		= "None"
+		R.fields["mi_crim_d"]	= "No minor crime convictions."
+		R.fields["ma_crim"]		= "None"
+		R.fields["ma_crim_d"]	= "No major crime convictions."
+		R.fields["notes"]		= "No notes."
+		R.fields["notes"]		= "No notes."
+		own_add(GLOB.data_core, "security", R)
+		rel_set(src, "active2", R)
+		screen = SEC_DATA_RECORD
+		set_temp("Security record created.", "success")
+
+UI_ACT(/obj/machinery/computer/secure_data, "del_c", ui_act_del_c, UI_ARG_NUM("del_c"))
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_del_c)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/index = params["del_c"]
+	if(!index || !istype(active2(), /datum/data/record))
+		return
+
+	var/list/comments = active2().fields["comments"]
+	index = clamp(index, 1, length(comments))
+	if(comments[index])
+		comments.Cut(index, index + 1)
+
+UI_ACT(/obj/machinery/computer/secure_data, "search", ui_act_search, UI_ARG_TEXT("t1"))
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_search)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	rel_clear(src, "active1")
+	rel_clear(src, "active2")
+	var/t1 = lowertext(params["t1"] || "")
+	if(!length(t1))
+		return
+
+	for(var/datum/data/record/R in GLOB.data_core.general)
+		if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
+			rel_set(src, "active1", R)
+			break
+	if(!active1())
+		set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
+		return
+	for(var/datum/data/record/E in GLOB.data_core.security)
+		if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
+			rel_set(src, "active2", E)
+			break
+	screen = SEC_DATA_RECORD
+
+UI_ACT(/obj/machinery/computer/secure_data, "print_p", ui_act_print_p)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_print_p)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	if(!printing)
+		printing = TRUE
+		SStgui.update_uis(src)
+		om_after(src, 5 SECONDS, PROC_REF(print_finish))
+
+UI_ACT(/obj/machinery/computer/secure_data, "photo_front", ui_act_photo_front)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_photo_front)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/icon/photo = get_photo(ui.user)
+	if(photo && active1())
+		active1().fields["photo_front"] = photo
+		active1().fields["photo-south"] = "'data:image/png;base64,[icon2base64(photo)]'"
+
+UI_ACT(/obj/machinery/computer/secure_data, "photo_side", ui_act_photo_side)
+UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_photo_side)
+	. = TRUE
+	if(!(authenticated))
+		return FALSE
+	. = TRUE
+	var/icon/photo = get_photo(ui.user)
+	if(photo && active1())
+		active1().fields["photo_side"] = photo
+		active1().fields["photo-west"] = "'data:image/png;base64,[icon2base64(photo)]'"
 
 /obj/machinery/computer/secure_data/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
 	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)
@@ -380,76 +449,65 @@
 		active2().fields["notes"] = notes
 		SStgui.update_uis(src)
 
-/**
- * Called in tgui_act() to process modal actions
- *
- * Arguments:
- * * action - The action passed by tgui
- * * params - The params passed by tgui
- */
-/obj/machinery/computer/secure_data/proc/tgui_act_modal(action, params, mob/living/user)
+DECLARE_UI_MODAL(/obj/machinery/computer/secure_data)
+
+/obj/machinery/computer/secure_data/ui_modal_opened(mob/user, id, list/arguments, datum/tgui/ui, datum/tgui_state/state)
 	. = TRUE
-	var/id = params["id"] // The modal's ID
-	var/list/arguments = istext(params["arguments"]) ? json_decode(params["arguments"]) : params["arguments"]
-	switch(tgui_modal_act(src, action, params))
-		if(TGUI_MODAL_OPEN)
-			switch(id)
-				if("edit")
-					var/field = arguments["field"]
-					if(!length(field) || !field_edit_questions[field])
-						return
-					var/question = field_edit_questions[field]
-					var/choices = field_edit_choices[field]
-					if(length(choices))
-						tgui_modal_choice(src, id, question, arguments = arguments, value = arguments["value"], choices = choices)
-					else
-						tgui_modal_input(src, id, question, arguments = arguments, value = arguments["value"])
-				if("add_c")
-					tgui_modal_input(src, id, "Please enter your message:")
-				else
-					return FALSE
-		if(TGUI_MODAL_ANSWER)
-			var/answer = params["answer"]
-			switch(id)
-				if("edit")
-					var/field = arguments["field"]
-					if(!length(field) || !field_edit_questions[field])
-						return
-					var/list/choices = field_edit_choices[field]
-					if(length(choices) && !(answer in choices))
-						return
-
-					if(field == "age")
-						answer = text2num(answer)
-
-					if(field == "rank")
-						if(answer in SSjob.occupations_by_name)
-							active1().fields["real_rank"] = answer
-
-					var/old_criminal_status
-					if(field == "criminal")
-						old_criminal_status = active2()?.fields?["criminal"]
-						for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-							BITSET(H.hud_updateflag, WANTED_HUD)
-
-					if(istype(active2(), /datum/data/record) && (field in active2().fields))
-						active2().fields[field] = answer
-					if(istype(active1(), /datum/data/record) && (field in active1().fields))
-						active1().fields[field] = answer
-					if(field == "criminal" && old_criminal_status != answer)
-						record_security_disposition(old_criminal_status, answer, user)
-				if("add_c")
-					if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
-						return
-					active2().fields["comments"] += list(list(
-						header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
-						text = answer
-					))
-				else
-					return FALSE
+	switch(id)
+		if("edit")
+			var/field = arguments["field"]
+			if(!length(field) || !field_edit_questions[field])
+				return
+			var/question = field_edit_questions[field]
+			var/choices = field_edit_choices[field]
+			if(length(choices))
+				tgui_modal_choice(src, id, question, arguments = arguments, value = arguments["value"], choices = choices)
+			else
+				tgui_modal_input(src, id, question, arguments = arguments, value = arguments["value"])
+		if("add_c")
+			tgui_modal_input(src, id, "Please enter your message:")
 		else
 			return FALSE
 
+/obj/machinery/computer/secure_data/ui_modal_answered(mob/user, id, answer, list/arguments, datum/tgui/ui, datum/tgui_state/state)
+	. = TRUE
+	switch(id)
+		if("edit")
+			var/field = arguments["field"]
+			if(!length(field) || !field_edit_questions[field])
+				return
+			var/list/choices = field_edit_choices[field]
+			if(length(choices) && !(answer in choices))
+				return
+
+			if(field == "age")
+				answer = text2num(answer)
+
+			if(field == "rank")
+				if(answer in SSjob.occupations_by_name)
+					active1().fields["real_rank"] = answer
+
+			var/old_criminal_status
+			if(field == "criminal")
+				old_criminal_status = active2()?.fields?["criminal"]
+				for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+					BITSET(H.hud_updateflag, WANTED_HUD)
+
+			if(istype(active2(), /datum/data/record) && (field in active2().fields))
+				active2().fields[field] = answer
+			if(istype(active1(), /datum/data/record) && (field in active1().fields))
+				active1().fields[field] = answer
+			if(field == "criminal" && old_criminal_status != answer)
+				record_security_disposition(old_criminal_status, answer, user)
+		if("add_c")
+			if(!length(answer) || !istype(active2(), /datum/data/record) || !length(authenticated))
+				return
+			active2().fields["comments"] += list(list(
+				header = "Made by [authenticated] ([rank]) at [worldtime2stationtime(world.time)]",
+				text = answer
+			))
+		else
+			return FALSE
 /obj/machinery/computer/secure_data/proc/record_security_disposition(old_status, new_status, mob/living/user)
 	if(!istype(active2(), /datum/data/record) || !istext(new_status))
 		return FALSE

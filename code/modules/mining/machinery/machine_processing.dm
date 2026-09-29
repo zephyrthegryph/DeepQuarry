@@ -70,14 +70,13 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/mineral/processing_unit_console/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "MiningOreProcessingConsole", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/mineral/processing_unit_console, "MiningOreProcessingConsole")
 
-/obj/machinery/mineral/processing_unit_console/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/mineral/processing_unit_console, "showAllOres=show_all_ores:num", "merge:ui_data_obj_machinery_mineral_processing_unit_console{unclaimedPoints:unknown,has_id:bool,id:list,ores:list,power:num,speed:unknown}")
+
+/// The computed part of /obj/machinery/mineral/processing_unit_console's window data (declared on its UI_DATA row).
+/obj/machinery/mineral/processing_unit_console/proc/ui_data_obj_machinery_mineral_processing_unit_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["unclaimedPoints"] = machine().points
 
 	if(inserted_id)
@@ -104,69 +103,79 @@ OWN(/obj/machinery/mineral/processing_unit_console, inserted_id, OWN_SPILL)
 			"processing" = LAZYACCESS(machine().ores_processing, ore) ? LAZYACCESS(machine().ores_processing, ore) : 0,
 		)))
 	data["ores"] = ores
-	data["showAllOres"] = show_all_ores
 	data["power"] = machine().active
 	data["speed"] = machine().speed_process
 
 	return data
 
-/obj/machinery/mineral/processing_unit_console/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/mineral/processing_unit_console/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("toggleSmelting")
-			var/ore = params["ore"]
-			var/new_setting = params["set"]
-			if(new_setting == null)
-				new_setting = act_ask(ui.user, action, params, ui, "setting", /datum/om/prompt/choice, message = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
-				if(!new_setting)
-					return
-				switch(new_setting)
-					if("Nothing") new_setting = PROCESS_NONE
-					if("Smelting") new_setting = PROCESS_SMELT
-					if("Compressing") new_setting = PROCESS_COMPRESS
-					if("Alloying") new_setting = PROCESS_ALLOY
-			var/obj/machinery/mineral/processing_unit/unit = machine()
-			LAZYSET(unit.ores_processing, ore, new_setting)
-			. = TRUE
-		if("power")
-			machine().active = !machine().active
-			machine().wake_mining()
-			. = TRUE
-		if("showAllOres")
-			show_all_ores = !show_all_ores
-			. = TRUE
-		if("logoff")
-			if(!inserted_id)
-				return
-			ui.user.put_in_hands(inserted_id)
-			own_take(src, "inserted_id")
-			. = TRUE
-		if("claim")
-			if(istype(inserted_id))
-				if(ACCESS_MINING_STATION in inserted_id.GetAccess())
-					var/datum/money_account/account = get_account(inserted_id.associated_account_number)
-					if(account?.credit(machine().points, name, "Processed ore proceeds", name))
-						machine().points = 0
-				else
-					to_chat(ui.user, span_warning("Required access not found."))
-			. = TRUE
-		if("insert")
-			var/obj/item/card/id/I = ui.user.get_active_hand()
-			if(istype(I))
-				ui.user.drop_item()
-				I.forceMove(src)
-				own_set(src, "inserted_id", I)
-			else
-				to_chat(ui.user, span_warning("No valid ID."))
-			. = TRUE
-		if("speed_toggle")
-			machine().toggle_speed()
-			. = TRUE
+	return TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "toggleSmelting", ui_act_togglesmelting, UI_ARG_TEXT("ore"), UI_ARG_TEXT("set"))
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_togglesmelting)
+	var/ore = params["ore"]
+	var/new_setting = params["set"]
+	if(new_setting == null)
+		new_setting = act_ask(ui.user, action, params, ui, "setting", /datum/om/prompt/choice, message = "What setting do you wish to use for processing [ore]?", title = "Process Setting", choices = list("Smelting","Compressing","Alloying","Nothing"))
+		if(!new_setting)
+			return
+		switch(new_setting)
+			if("Nothing") new_setting = PROCESS_NONE
+			if("Smelting") new_setting = PROCESS_SMELT
+			if("Compressing") new_setting = PROCESS_COMPRESS
+			if("Alloying") new_setting = PROCESS_ALLOY
+	var/obj/machinery/mineral/processing_unit/unit = machine()
+	LAZYSET(unit.ores_processing, ore, new_setting)
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_power)
+	machine().active = !machine().active
+	machine().wake_mining()
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "showAllOres", ui_act_showallores)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_showallores)
+	show_all_ores = !show_all_ores
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "logoff", ui_act_logoff)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_logoff)
+	if(!inserted_id)
+		return
+	ui.user.put_in_hands(inserted_id)
+	own_take(src, "inserted_id")
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "claim", ui_act_claim)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_claim)
+	if(istype(inserted_id))
+		if(ACCESS_MINING_STATION in inserted_id.GetAccess())
+			var/datum/money_account/account = get_account(inserted_id.associated_account_number)
+			if(account?.credit(machine().points, name, "Processed ore proceeds", name))
+				machine().points = 0
 		else
-			return FALSE
+			to_chat(ui.user, span_warning("Required access not found."))
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "insert", ui_act_insert)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_insert)
+	var/obj/item/card/id/I = ui.user.get_active_hand()
+	if(istype(I))
+		ui.user.drop_item()
+		I.forceMove(src)
+		own_set(src, "inserted_id", I)
+	else
+		to_chat(ui.user, span_warning("No valid ID."))
+	. = TRUE
+
+UI_ACT(/obj/machinery/mineral/processing_unit_console, "speed_toggle", ui_act_speed_toggle)
+UI_ACT_PROC(/obj/machinery/mineral/processing_unit_console, ui_act_speed_toggle)
+	machine().toggle_speed()
+	. = TRUE
 
 /**********************Mineral processing unit**************************/
 

@@ -9,18 +9,18 @@
 	tgui_id = "NtosFishing"
 	usage_flags = PROGRAM_ALL
 
-/datum/computer_file/program/fishing/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/fishing, "merge:ui_data_datum_computer_file_program_fishing{}")
+
+/// The computed part of /datum/computer_file/program/fishing's window data (declared on its UI_DATA row).
+/datum/computer_file/program/fishing/proc/ui_data_datum_computer_file_program_fishing(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return get_header_data()
 
-/datum/computer_file/program/fishing/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/computer_file/program/fishing, "lose", ui_act_lose)
+UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_lose)
+	play_sfx(computer(), SFX_ARCADE_LOSE)
+	. = TRUE
 
-	switch(action)
-		if("lose")
-			play_sfx(computer(), SFX_ARCADE_LOSE)
-			. = TRUE
-		if("win")
-			play_sfx(computer(), SFX_ARCADE_WIN)
-			. = TRUE
+UI_ACT(/datum/computer_file/program/fishing, "win", ui_act_win)
+UI_ACT_PROC(/datum/computer_file/program/fishing, ui_act_win)
+	play_sfx(computer(), SFX_ARCADE_WIN)
+	. = TRUE

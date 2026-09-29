@@ -714,7 +714,8 @@
 	return data
 
 /// List format is list(list(name = ..., amount = ..., ref = ..., etc.), list(...))
-/datum/material_container/tgui_data(mob/user, skip_empty = FALSE)
+/// The stored materials as UI rows (a machine embeds them in its window data).
+/datum/material_container/proc/material_list_data(mob/user, skip_empty = FALSE)
 	var/list/data = list()
 
 	for(var/datum/material/material as anything in materials)

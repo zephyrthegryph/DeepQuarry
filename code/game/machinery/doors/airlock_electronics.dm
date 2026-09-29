@@ -36,13 +36,12 @@ DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/airlock_electronics/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AirlockElectronics", "Airlock Electronics")
-		ui.open()
+DECLARE_UI(/obj/item/airlock_electronics, "AirlockElectronics", UI_TITLE("Airlock Electronics"))
 
-/obj/item/airlock_electronics/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/airlock_electronics, "merge:ui_data_obj_item_airlock_electronics{locked:bool,one_access:bool,last_configurator:bool,all_selected:bool,accesses:list}")
+
+/// The computed part of /obj/item/airlock_electronics's window data (declared on its UI_DATA row).
+/obj/item/airlock_electronics/proc/ui_data_obj_item_airlock_electronics(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["locked"] = !!locked
 	data["one_access"] = !!one_access
@@ -59,70 +58,78 @@ DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(
 	data["accesses"] = access_list
 	return data
 
-/obj/item/airlock_electronics/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/airlock_electronics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat || usr.restrained() || (!ishuman(usr) && !istype(usr, /mob/living/silicon)))
-		return TRUE
-	switch(action)
-		if("login")
-			if(emagged || issilicon(usr))
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/airlock_electronics, "login", ui_act_login)
+UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_login)
+	if(emagged || issilicon(usr))
+		locked = 0
+		last_configurator = usr.name
+	else if(isliving(usr))
+		var/obj/item/card/id/id
+		if(ishuman(usr))
+			var/mob/living/carbon/human/H = usr
+			id = H.get_idcard()
+			if(id && check_access(id))
 				locked = 0
-				last_configurator = usr.name
-			else if(isliving(usr))
-				var/obj/item/card/id/id
-				if(ishuman(usr))
-					var/mob/living/carbon/human/H = usr
-					id = H.get_idcard()
-					if(id && check_access(id))
-						locked = 0
-						last_configurator = id.registered_name
-				if(locked)
-					var/obj/item/I = usr.get_active_hand()
-					id = I?.GetID()
-					if(id && check_access(id))
-						locked = 0
-						last_configurator = id.registered_name
-			return TRUE
+				last_configurator = id.registered_name
+		if(locked)
+			var/obj/item/I = usr.get_active_hand()
+			id = I?.GetID()
+			if(id && check_access(id))
+				locked = 0
+				last_configurator = id.registered_name
+	return TRUE
+
+UI_ACT(/obj/item/airlock_electronics, "logout", ui_act_logout)
+UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_logout)
 	if(locked)
 		return TRUE
-	switch(action)
-		if("logout")
-			locked = 1
-			return TRUE
-		if("one_access")
-			one_access = !one_access
-			return TRUE
-		if("access")
-			// Re-validate the client-supplied access against what this user may actually program.
-			var/acc = params["access"]
-			var/list/available = get_available_accesses(usr)
-			if(!length(available))
-				return TRUE
-			if(acc == "all")
-				// "all" clears all access requirements; only allow users who may program any access.
-				if(length(available) >= length(SSaccess.get_all_station_access()))
-					toggle_access(acc)
-			else if(text2num(acc) in available)
-				toggle_access(acc)
-			return TRUE
+	locked = 1
+	return TRUE
 
-/obj/item/airlock_electronics/proc/toggle_access(acc)
-	if (acc == "all")
+UI_ACT(/obj/item/airlock_electronics, "one_access", ui_act_one_access)
+UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_one_access)
+	if(locked)
+		return TRUE
+	one_access = !one_access
+	return TRUE
+
+UI_ACT(/obj/item/airlock_electronics, "access_all", ui_act_access_all)
+UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access_all)
+	if(locked)
+		return TRUE
+	// Clears all access requirements; only allow users who may program any access.
+	var/list/available = get_available_accesses(usr)
+	if(length(available) && length(available) >= length(SSaccess.get_all_station_access()))
 		conf_access = null
+	return TRUE
+
+UI_ACT(/obj/item/airlock_electronics, "access", ui_act_access, UI_ARG_NUM("access"))
+UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access)
+	if(locked)
+		return TRUE
+	// Re-validate the client-supplied access against what this user may actually program.
+	var/acc = params["access"]
+	if(acc in get_available_accesses(usr))
+		toggle_access(acc)
+	return TRUE
+
+/obj/item/airlock_electronics/proc/toggle_access(req)
+	// Copy: conf_access may be a door's interned access list (intern_access_lists()).
+	conf_access = conf_access ? conf_access.Copy() : list()
+
+	if (!(req in conf_access))
+		conf_access += req
 	else
-		var/req = text2num(acc)
-
-		// Copy: conf_access may be a door's interned access list (intern_access_lists()).
-		conf_access = conf_access ? conf_access.Copy() : list()
-
-		if (!(req in conf_access))
-			conf_access += req
-		else
-			conf_access -= req
-			if (!conf_access.len)
-				conf_access = null
+		conf_access -= req
+		if (!conf_access.len)
+			conf_access = null
 
 /obj/item/airlock_electronics/proc/get_available_accesses(mob/user)
 	var/obj/item/card/id/id

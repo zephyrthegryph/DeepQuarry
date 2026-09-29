@@ -433,23 +433,19 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom,
 	)
 	..()
 
-/obj/machinery/power/solar_control/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "SolarControl", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/solar_control, "SolarControl")
 
-/obj/machinery/power/solar_control/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rotation_rate=trackrate:num", "tracking_state=track:num", "merge:ui_data_obj_machinery_power_solar_control{generated:num,generated_ratio:num,sun_angle:unknown,max_rotation_rate:num,connected_panels:num,connected_tracker:unknown}")
+
+/// The computed part of /obj/machinery/power/solar_control's window data (declared on its UI_DATA row).
+/obj/machinery/power/solar_control/proc/ui_data_obj_machinery_power_solar_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 
 	data["generated"] = round(connected_power)
 	data["generated_ratio"] = data["generated"] / round(max(length(connected_panels), 1) * GLOB.solar_gen_rate)
 
 	data["sun_angle"] = GLOB.solar_service.get_solar_angle(get_turf(src))
-	data["array_angle"] = cdir
-	data["rotation_rate"] = trackrate
 	data["max_rotation_rate"] = 7200
-	data["tracking_state"] = track
 
 	data["connected_panels"] = length(connected_panels)
 	data["connected_tracker"] = (connected_tracker() ? TRUE : FALSE)
@@ -508,49 +504,50 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom,
 	set_power_supply(connected_power)
 	return PROCESS_KILL
 
-/obj/machinery/power/solar_control/tgui_act(action, params)
-	if(..())
+UI_ACT(/obj/machinery/power/solar_control, "azimuth", ui_act_azimuth, UI_ARG_NUM("adjust"), UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth)
+	var/adjust = params["adjust"]
+	var/value = params["value"]
+	if(adjust)
+		value = cdir + adjust
+	if(value != null)
+		cdir = value
+		set_panels(cdir)
 		return TRUE
+	return FALSE
 
-	switch(action)
-		if("azimuth")
-			var/adjust = text2num(params["adjust"])
-			var/value = text2num(params["value"])
-			if(adjust)
-				value = cdir + adjust
-			if(value != null)
-				cdir = value
-				set_panels(cdir)
-				return TRUE
-			return FALSE
-		if("azimuth_rate")
-			var/adjust = text2num(params["adjust"])
-			var/value = text2num(params["value"])
-			if(adjust)
-				value = trackrate + adjust
-			if(value != null)
-				trackrate = round(clamp(value, -7200, 7200), 0.01)
-				if(trackrate)
-					EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
-				return TRUE
-			return TRUE
-		if("tracking")
-			var/mode = text2num(params["mode"])
-			track = mode
-			if(track == 2)
-				if(connected_tracker())
-					connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
-					set_panels(cdir)
-			else if(track == 1) //begin manual tracking
-				targetdir = cdir
-				if(trackrate)
-					EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
-				set_panels(targetdir)
-			return TRUE
+UI_ACT(/obj/machinery/power/solar_control, "azimuth_rate", ui_act_azimuth_rate, UI_ARG_NUM("adjust"), UI_ARG_NUM("value"))
+UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_azimuth_rate)
+	var/adjust = params["adjust"]
+	var/value = params["value"]
+	if(adjust)
+		value = trackrate + adjust
+	if(value != null)
+		trackrate = round(clamp(value, -7200, 7200), 0.01)
+		if(trackrate)
+			EXPIRY_SET(src, nexttime, 36000 / abs(trackrate), CLOCK_WORLD)
+		return TRUE
+	return TRUE
 
-		if("refresh")
-			search_for_connected()
-			return TRUE
+UI_ACT(/obj/machinery/power/solar_control, "tracking", ui_act_tracking, UI_ARG_NUM("mode"))
+UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_tracking)
+	var/mode = params["mode"]
+	track = mode
+	if(track == 2)
+		if(connected_tracker())
+			connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
+			set_panels(cdir)
+	else if(track == 1) //begin manual tracking
+		targetdir = cdir
+		if(trackrate)
+			EXPIRY_SET(src, nexttime, 36000/abs(trackrate), CLOCK_WORLD)
+		set_panels(targetdir)
+	return TRUE
+
+UI_ACT(/obj/machinery/power/solar_control, "refresh", ui_act_refresh)
+UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_refresh)
+	search_for_connected()
+	return TRUE
 
 /// rotates all connected panels to the passed angle, very expensive as it does them all at once in a single frame. This is what the solar world service does, but much more rude about it.
 /obj/machinery/power/solar_control/proc/set_panels(cdir)

@@ -143,17 +143,15 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 	)
 	..()
 
-/obj/machinery/door_timer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BrigTimer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/door_timer, "BrigTimer")
 
-/obj/machinery/door_timer/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/door_timer, "timing:num", "merge:ui_data_obj_machinery_door_timer{time_left:unknown,max_time_left:num,flash_found:bool,flash_charging:bool,preset_short:unknown,preset_medium:unknown,preset_long:unknown}")
+
+/// The computed part of /obj/machinery/door_timer's window data (declared on its UI_DATA row).
+/obj/machinery/door_timer/proc/ui_data_obj_machinery_door_timer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["time_left"] = time_left()
 	data["max_time_left"] = MAX_TIMER
-	data["timing"] = timing
 	data["flash_found"] = FALSE
 	data["flash_charging"] = FALSE
 	data["preset_short"] = PRESET_SHORT
@@ -166,49 +164,59 @@ REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flas
 			break
 	return data
 
-/obj/machinery/door_timer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
-	. = TRUE
-
+/obj/machinery/door_timer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!allowed(ui.user))
 		to_chat(ui.user, span_warning("Access denied."))
 		return FALSE
+	return TRUE
 
-	switch(action)
-		if("time")
-			var/real_new_time = 0
-			var/new_time = params["time"]
-			var/list/L = splittext(new_time, ":")
-			if(LAZYLEN(L))
-				for(var/i in 1 to LAZYLEN(L))
-					real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-			else
-				real_new_time = text2num(new_time)
-			if(real_new_time)
-				set_timer(real_new_time * 10)
-		if("start")
-			timer_start()
-		if("stop")
-			timer_end(forced = TRUE)
-		if("flash")
-			for(var/obj/machinery/flasher/F as anything in brig_flashers)
-				F.flash()
-		if("preset")
-			var/preset = params["preset"]
-			var/preset_time = time_left()
-			switch(preset)
-				if("short")
-					preset_time = PRESET_SHORT
-				if("medium")
-					preset_time = PRESET_MEDIUM
-				if("long")
-					preset_time = PRESET_LONG
-			set_timer(timer_duration + preset_time)
-			if(timing)
-				EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
-		else
-			. = FALSE
+UI_ACT(/obj/machinery/door_timer, "time", ui_act_time, UI_ARG_NUM("time"))
+UI_ACT_PROC(/obj/machinery/door_timer, ui_act_time)
+	. = TRUE
+	var/real_new_time = 0
+	var/new_time = params["time"]
+	if(isnum(new_time))
+		real_new_time = new_time
+	else
+		var/list/L = splittext(new_time, ":")
+		for(var/i in 1 to LAZYLEN(L))
+			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
+	if(real_new_time)
+		set_timer(real_new_time * 10)
+
+UI_ACT(/obj/machinery/door_timer, "start", ui_act_start)
+UI_ACT_PROC(/obj/machinery/door_timer, ui_act_start)
+	. = TRUE
+	timer_start()
+
+UI_ACT(/obj/machinery/door_timer, "stop", ui_act_stop)
+UI_ACT_PROC(/obj/machinery/door_timer, ui_act_stop)
+	. = TRUE
+	timer_end(forced = TRUE)
+
+UI_ACT(/obj/machinery/door_timer, "flash", ui_act_flash)
+UI_ACT_PROC(/obj/machinery/door_timer, ui_act_flash)
+	. = TRUE
+	for(var/obj/machinery/flasher/F as anything in brig_flashers)
+		F.flash()
+
+UI_ACT(/obj/machinery/door_timer, "preset", ui_act_preset, UI_ARG_TEXT("preset"))
+UI_ACT_PROC(/obj/machinery/door_timer, ui_act_preset)
+	. = TRUE
+	var/preset = params["preset"]
+	var/preset_time = time_left()
+	switch(preset)
+		if("short")
+			preset_time = PRESET_SHORT
+		if("medium")
+			preset_time = PRESET_MEDIUM
+		if("long")
+			preset_time = PRESET_LONG
+	set_timer(timer_duration + preset_time)
+	if(timing)
+		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 
 //icon update function
 // if NOPOWER, display blank

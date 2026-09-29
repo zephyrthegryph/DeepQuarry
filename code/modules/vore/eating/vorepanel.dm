@@ -61,12 +61,7 @@
 		user.write_preference_directly(/datum/preference/text/preset_colors, preset_colors)
 	. = ..()
 
-/datum/vore_look/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "VorePanel", "Vore Panel")
-		ui.open()
-		ui.set_autoupdate(FALSE)
+DECLARE_UI(/datum/vore_look, "VorePanel", UI_TITLE("Vore Panel"))
 
 // This looks weird, but all tgui_host is used for is state checking
 // So this allows us to use the self_state just fine.
@@ -75,8 +70,7 @@
 
 // Note, in order to allow others to look at others vore panels, this state would need
 // to be modified.
-/datum/vore_look/tgui_state(mob/user)
-	return GLOB.tgui_vorepanel_state
+DECLARE_UI_STATE(/datum/vore_look, GLOB.tgui_vorepanel_state)
 
 /datum/vore_look/var/static/list/nom_icons
 /datum/vore_look/proc/cached_nom_icon(atom/target)
@@ -119,17 +113,17 @@
 
 	return data
 
-/datum/vore_look/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/vore_look, "unsaved_changes:num", "active_tab:num", "presets=preset_colors:list", "merge:ui_data_datum_vore_look{persist_edit_mode:num,inside:unknown,host_mobtype:unknown,show_pictures:num,icon_overflow:num,prey_abilities:unknown,intent_data:unknown,our_bellies:unknown,selected:unknown,soulcatcher:unknown,abilities:unknown,prefs:unknown,general_pref_data:unknown,active_vore_tab:num}")
+
+/// The computed part of /datum/vore_look's window data (declared on its UI_DATA row).
+/datum/vore_look/proc/ui_data_datum_vore_look(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(!host())
 		return data
 
 	// General Data
-	data["unsaved_changes"] = unsaved_changes
-	data["active_tab"] = active_tab
 	data["persist_edit_mode"] = host().persistend_edit_mode
-	data["presets"] = preset_colors
 
 	// Inisde Data
 	data["inside"] = get_inside_data(host())
@@ -192,754 +186,942 @@
 
 	return data
 
-/datum/vore_look/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+// A belly's settings: each attribute is a UI_SUBACT row (panel_databackend/vorepanel_set_*attribute.dm)
+// whose "val" arg has that attribute's own type.
+UI_ACT_NESTED(/datum/vore_look, "set_attribute", "attr", "attribute")
+UI_ACT_NESTED(/datum/vore_look, "liq_set_attribute", "liq", "attribute")
+
+/datum/vore_look/ui_nested_allowed(namespace, action, mob/user)
+	if(!host().vore_selected)
+		tgui_alert_async(user, "No belly selected to modify.")
+		return FALSE
+	return ..()
+
+/datum/vore_look/ui_nested_done(namespace, action, result, mob/user)
+	// Turbo mode, liquid generation or other scheduled belly settings may have changed.
+	host().vore_selected?.belly_reschedule()
+	return ..()
+
+UI_ACT(/datum/vore_look, "change_tab", ui_act_change_tab, UI_ARG_NUM("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_tab)
+	var/new_tab = params["tab"]
+	if(isnum(new_tab))
+		active_tab = new_tab
+	return TRUE
+
+UI_ACT(/datum/vore_look, "change_vore_tab", ui_act_change_vore_tab, UI_ARG_NUM("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_vore_tab)
+	var/new_tab = params["tab"]
+	if(isnum(new_tab))
+		active_vore_tab = new_tab
+	return TRUE
+
+UI_ACT(/datum/vore_look, "change_message_option", ui_act_change_message_option, UI_ARG_NUM("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_message_option)
+	var/new_tab = params["tab"]
+	if(isnum(new_tab))
+		message_option = new_tab
+		message_subtab = null
+		selected_message = null
+	return TRUE
+
+UI_ACT(/datum/vore_look, "change_message_type", ui_act_change_message_type, UI_ARG_TEXT("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_message_type)
+	var/new_tab = params["tab"]
+	if(istext(new_tab))
+		message_subtab = new_tab
+		selected_message = null
+	return TRUE
+
+UI_ACT(/datum/vore_look, "set_current_message", ui_act_set_current_message, UI_ARG_TEXT("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_set_current_message)
+	var/new_tab = params["tab"]
+	if(istext(new_tab))
+		selected_message = new_tab
+	return TRUE
+
+UI_ACT(/datum/vore_look, "change_sc_message_option", ui_act_change_sc_message_option, UI_ARG_TEXT("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_sc_message_option)
+	var/new_tab = params["tab"]
+	if(istext(new_tab))
+		sc_message_subtab = new_tab
+	return TRUE
+
+UI_ACT(/datum/vore_look, "change_aset_message_option", ui_act_change_aset_message_option, UI_ARG_TEXT("tab"))
+UI_ACT_PROC(/datum/vore_look, ui_act_change_aset_message_option)
+	var/new_tab = params["tab"]
+	if(istext(new_tab))
+		aset_message_subtab = new_tab
+	return TRUE
+
+UI_ACT(/datum/vore_look, "show_pictures", ui_act_show_pictures)
+UI_ACT_PROC(/datum/vore_look, ui_act_show_pictures)
+	show_pictures = !show_pictures
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_editmode_persistence", ui_act_toggle_editmode_persistence)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_editmode_persistence)
+	host().persistend_edit_mode = !host().persistend_edit_mode
+	return TRUE
+
+UI_ACT(/datum/vore_look, "newbelly", ui_act_newbelly, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_newbelly)
+	if(length(host().vore_organs) >= BELLIES_MAX)
+		return FALSE
+
+	var/new_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
+
+	if(!new_name)
+		return FALSE
+
+	var/failure_msg
+	if(length(new_name) > BELLIES_NAME_MAX || length(new_name) < BELLIES_NAME_MIN)
+		failure_msg = "Entered belly name length invalid (must be longer than [BELLIES_NAME_MIN], no more than than [BELLIES_NAME_MAX])."
+	else
+		for(var/obj/belly/B as anything in host().vore_organs)
+			if(lowertext(new_name) == lowertext(B.name))
+				failure_msg = "No duplicate belly names, please."
+				break
+
+	if(failure_msg) //Something went wrong.
+		tgui_alert_async(ui.user, failure_msg, "Error!")
 		return TRUE
 
-	switch(action)
-		if("change_tab")
-			var/new_tab = params["tab"]
-			if(isnum(new_tab))
-				active_tab = new_tab
-			return TRUE
+	var/obj/belly/NB = new(host())
+	NB.name = new_name
+	host().vore_selected = NB
+	//Ensures that new stomachs that are made have the same silicon overlay pref as the first stomach.
+	if(LAZYLEN(host().vore_organs))
+		var/obj/belly/belly_to_check = host().vore_organs[1]
+		NB.silicon_belly_overlay_preference = belly_to_check.silicon_belly_overlay_preference
+	unsaved_changes = TRUE
+	return TRUE
 
-		if("change_vore_tab")
-			var/new_tab = params["tab"]
-			if(isnum(new_tab))
-				active_vore_tab = new_tab
-			return TRUE
+UI_ACT(/datum/vore_look, "importpanel", ui_act_importpanel)
+UI_ACT_PROC(/datum/vore_look, ui_act_importpanel)
+	var/datum/vore_look/import_panel/importPanel
+	if(!importPanel)
+		importPanel = new(ui.user)
 
-		if("change_message_option")
-			var/new_tab = params["tab"]
-			if(isnum(new_tab))
-				message_option = new_tab
-				message_subtab = null
-				selected_message = null
-			return TRUE
+	if(!importPanel)
+		to_chat(ui.user,span_notice("Import panel undefined: [importPanel]"))
+		return FALSE
 
-		if("change_message_type")
-			var/new_tab = params["tab"]
-			if(istext(new_tab))
-				message_subtab = new_tab
-				selected_message = null
-			return TRUE
+	importPanel.open_import_panel(ui.user)
+	return TRUE
 
-		if("set_current_message")
-			var/new_tab = params["tab"]
-			if(istext(new_tab))
-				selected_message = new_tab
-			return TRUE
+UI_ACT(/datum/vore_look, "bellypick", ui_act_bellypick, UI_ARG_REF("bellypick", null))
+UI_ACT_PROC(/datum/vore_look, ui_act_bellypick)
+	host().vore_selected = params["bellypick"]
+	return TRUE
 
-		if("change_sc_message_option")
-			var/new_tab = params["tab"]
-			if(istext(new_tab))
-				sc_message_subtab = new_tab
-			return TRUE
+UI_ACT(/datum/vore_look, "move_belly", ui_act_move_belly, UI_ARG_NUM("dir"))
+UI_ACT_PROC(/datum/vore_look, ui_act_move_belly)
+	var/dir = params["dir"]
+	if(LAZYLEN(host().vore_organs) <= 1)
+		to_chat(ui.user, span_warning("You can't sort bellies with only one belly to sort..."))
+		return TRUE
 
-		if("change_aset_message_option")
-			var/new_tab = params["tab"]
-			if(istext(new_tab))
-				aset_message_subtab = new_tab
-			return TRUE
+	var/current_index = host().vore_organs.Find(host().vore_selected)
+	if(current_index)
+		var/new_index = clamp(current_index + dir, 1, LAZYLEN(host().vore_organs))
+		host().vore_organs.Swap(current_index, new_index)
+		unsaved_changes = TRUE
+	return TRUE
 
-		if("show_pictures")
-			show_pictures = !show_pictures
+UI_ACT(/datum/vore_look, "saveprefs", ui_act_saveprefs)
+UI_ACT_PROC(/datum/vore_look, ui_act_saveprefs)
+	if(isnewplayer(host()))
+		var/choice = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
 			return TRUE
+	else if(host().real_name != host().client.prefs.read_preference(/datum/preference/name/real_name) || (!ishuman(host()) && !issilicon(host())))
+		var/choice = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
+			return TRUE
+	// Lets check for unsavable bellies...
+	var/list/unsavable_bellies = list()
+	for(var/obj/belly/B in host().vore_organs)
+		if(B.prevent_saving)
+			unsavable_bellies += B.name
+	if(LAZYLEN(unsavable_bellies))
+		var/choice = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
+		if(isnull(choice))
+			return
+		if(choice != "Yes, save.")
+			return TRUE
+	if(!host().save_vore_prefs())
+		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to save!","Error")
+	else
+		to_chat(ui.user, span_notice(STATION_PREF_NAME + "-specific preferences saved!"))
+		unsaved_changes = FALSE
+	return TRUE
 
-		if("toggle_editmode_persistence")
-			host().persistend_edit_mode = !host().persistend_edit_mode
-			return TRUE
+UI_ACT(/datum/vore_look, "reloadprefs", ui_act_reloadprefs)
+UI_ACT_PROC(/datum/vore_look, ui_act_reloadprefs)
+	var/alert = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", title = "Confirmation", choices = list("Reload","Cancel"))
+	if(isnull(alert))
+		return
+	if(alert != "Reload")
+		return FALSE
+	if(!host().apply_vore_prefs())
+		tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to apply!","Error")
+	else
+		to_chat(ui.user,span_notice(STATION_PREF_NAME + "-specific preferences applied from active slot!"))
+		unsaved_changes = FALSE
+	return TRUE
 
-		if("prey_ability")
-			if(!isliving(ui.user))
-				return FALSE
-			return perform_prey_ability(ui.user, params)
+UI_ACT(/datum/vore_look, "loadprefsfromslot", ui_act_loadprefsfromslot)
+UI_ACT_PROC(/datum/vore_look, ui_act_loadprefsfromslot)
+	var/alert = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/choice/alert, message = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", title = "Confirmation", choices = list("Load","Cancel"))
+	if(isnull(alert))
+		return
+	if(alert != "Load")
+		return FALSE
+	// The slot is picked next; picking it applies the preferences.
+	host().load_vore_prefs_from_slot()
+	unsaved_changes = TRUE
+	return TRUE
+//"Belly HTML Export Earlyport"
 
-		// Host is inside someone else, and is trying to interact with something else inside that person.
-		if("pick_from_inside")
-			return pick_from_inside(ui.user, params)
+UI_ACT(/datum/vore_look, "exportpanel", ui_act_exportpanel)
+UI_ACT_PROC(/datum/vore_look, ui_act_exportpanel)
+	if(!ui.user)
+		return FALSE
 
-		// Host is trying to interact with something in host's belly.
-		if("pick_from_outside")
-			return pick_from_outside(ui.user, params)
+	var/datum/vore_look/export_panel/exportPanel
+	if(!exportPanel)
+		exportPanel = new(ui.user)
 
-		if("newbelly")
-			if(length(host().vore_organs) >= BELLIES_MAX)
-				return FALSE
+	if(!exportPanel)
+		to_chat(ui.user,span_notice("Export panel undefined: [exportPanel]"))
+		return FALSE
 
-			var/new_name = sanitize(params["val"], BELLIES_NAME_MAX, FALSE, TRUE, FALSE)
+	exportPanel.open_export_panel(ui.user)
 
-			if(!new_name)
-				return FALSE
+	return TRUE
 
-			var/failure_msg
-			if(length(new_name) > BELLIES_NAME_MAX || length(new_name) < BELLIES_NAME_MIN)
-				failure_msg = "Entered belly name length invalid (must be longer than [BELLIES_NAME_MIN], no more than than [BELLIES_NAME_MAX])."
-			else
-				for(var/obj/belly/B as anything in host().vore_organs)
-					if(lowertext(new_name) == lowertext(B.name))
-						failure_msg = "No duplicate belly names, please."
-						break
+UI_ACT(/datum/vore_look, TASTE_FLAVOR, ui_act_taste_flavor, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_taste_flavor)
+	host().vore_taste = sanitize(params["val"], FLAVOR_MAX, FALSE, TRUE, FALSE)
+	unsaved_changes = TRUE
+	return TRUE
 
-			if(failure_msg) //Something went wrong.
-				tgui_alert_async(ui.user, failure_msg, "Error!")
-				return TRUE
+UI_ACT(/datum/vore_look, SMELL_FLAVOR, ui_act_smell_flavor, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_smell_flavor)
+	host().vore_smell = sanitize(params["val"], FLAVOR_MAX, FALSE, TRUE, FALSE)
+	unsaved_changes = TRUE
+	return TRUE
 
-			var/obj/belly/NB = new(host())
-			NB.name = new_name
-			host().vore_selected = NB
-			//Ensures that new stomachs that are made have the same silicon overlay pref as the first stomach.
-			if(LAZYLEN(host().vore_organs))
-				var/obj/belly/belly_to_check = host().vore_organs[1]
-				NB.silicon_belly_overlay_preference = belly_to_check.silicon_belly_overlay_preference
-			unsaved_changes = TRUE
-			return TRUE
-		if("importpanel")
-			var/datum/vore_look/import_panel/importPanel
-			if(!importPanel)
-				importPanel = new(ui.user)
+UI_ACT(/datum/vore_look, "toggle_dropnom_pred", ui_act_toggle_dropnom_pred)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_dropnom_pred)
+	host().can_be_drop_pred = !host().can_be_drop_pred
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.can_be_drop_pred = host().can_be_drop_pred
+	unsaved_changes = TRUE
+	return TRUE
 
-			if(!importPanel)
-				to_chat(ui.user,span_notice("Import panel undefined: [importPanel]"))
-				return FALSE
+UI_ACT(/datum/vore_look, "toggle_dropnom_prey", ui_act_toggle_dropnom_prey)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_dropnom_prey)
+	host().can_be_drop_prey = !host().can_be_drop_prey
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.can_be_drop_prey = host().can_be_drop_prey
+	unsaved_changes = TRUE
+	return TRUE
 
-			importPanel.open_import_panel(ui.user)
-			return TRUE
-		if("bellypick")
-			host().vore_selected = locate(params["bellypick"])
-			return TRUE
-		if("move_belly")
-			var/dir = text2num(params["dir"])
-			if(LAZYLEN(host().vore_organs) <= 1)
-				to_chat(ui.user, span_warning("You can't sort bellies with only one belly to sort..."))
-				return TRUE
+UI_ACT(/datum/vore_look, "toggle_afk_pred", ui_act_toggle_afk_pred)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_afk_pred)
+	host().can_be_afk_pred = !host().can_be_afk_pred
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.can_be_afk_pred = host().can_be_afk_pred
+	unsaved_changes = TRUE
+	return TRUE
 
-			var/current_index = host().vore_organs.Find(host().vore_selected)
-			if(current_index)
-				var/new_index = clamp(current_index + dir, 1, LAZYLEN(host().vore_organs))
-				host().vore_organs.Swap(current_index, new_index)
-				unsaved_changes = TRUE
-			return TRUE
+UI_ACT(/datum/vore_look, "toggle_afk_prey", ui_act_toggle_afk_prey)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_afk_prey)
+	host().can_be_afk_prey = !host().can_be_afk_prey
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.can_be_afk_prey = host().can_be_afk_prey
+	unsaved_changes = TRUE
+	return TRUE
 
-		if("set_attribute")
-			. = set_attr(ui.user, params)
-			host().vore_selected?.belly_reschedule() // Turbo mode or liquid settings may have changed.
-			return .
+UI_ACT(/datum/vore_look, "toggle_latejoin_vore", ui_act_toggle_latejoin_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_latejoin_vore)
+	host().latejoin_vore = !host().latejoin_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.latejoin_vore = host().latejoin_vore
+	unsaved_changes = TRUE
+	return TRUE
 
-		if("saveprefs")
-			if(isnewplayer(host()))
-				var/choice = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while in the lobby will save it to the CURRENTLY LOADED character slot, and potentially overwrite it. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-				if(isnull(choice))
-					return
-				if(choice != "Yes, save.")
-					return TRUE
-			else if(host().real_name != host().client.prefs.read_preference(/datum/preference/name/real_name) || (!ishuman(host()) && !issilicon(host())))
-				var/choice = act_ask(ui.user, action, params, ui, "a2", /datum/om/prompt/choice/alert, message = "Warning: Saving your vore panel while playing what is very-likely not your normal character will overwrite whatever character you have loaded in character setup. Maybe this is your 'playing a simple mob' slot, though. Are you SURE you want to overwrite your current slot with these vore bellies?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-				if(isnull(choice))
-					return
-				if(choice != "Yes, save.")
-					return TRUE
-			// Lets check for unsavable bellies...
-			var/list/unsavable_bellies = list()
-			for(var/obj/belly/B in host().vore_organs)
-				if(B.prevent_saving)
-					unsavable_bellies += B.name
-			if(LAZYLEN(unsavable_bellies))
-				var/choice = act_ask(ui.user, action, params, ui, "a3", /datum/om/prompt/choice/alert, message = "Warning: One or more of your vore organs are unsavable. Saving now will save every vore belly except \[[jointext(unsavable_bellies, ", ")]\]. Are you sure you want to save?", title = "WARNING!", choices = list("No, abort!", "Yes, save."))
-				if(isnull(choice))
-					return
-				if(choice != "Yes, save.")
-					return TRUE
-			if(!host().save_vore_prefs())
-				tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to save!","Error")
-			else
-				to_chat(ui.user, span_notice(STATION_PREF_NAME + "-specific preferences saved!"))
-				unsaved_changes = FALSE
-			return TRUE
-		if("reloadprefs")
-			var/alert = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to reload character slot preferences? This will remove your current vore organs and eject their contents.", title = "Confirmation", choices = list("Reload","Cancel"))
-			if(isnull(alert))
-				return
-			if(alert != "Reload")
-				return FALSE
-			if(!host().apply_vore_prefs())
-				tgui_alert_async(ui.user, "ERROR: " + STATION_PREF_NAME + "-specific preferences failed to apply!","Error")
-			else
-				to_chat(ui.user,span_notice(STATION_PREF_NAME + "-specific preferences applied from active slot!"))
-				unsaved_changes = FALSE
-			return TRUE
-		if("loadprefsfromslot")
-			var/alert = act_ask(ui.user, action, params, ui, "a5", /datum/om/prompt/choice/alert, message = "Are you sure you want to load another character slot's preferences? This will remove your current vore organs and eject their contents. This will not be immediately saved to your character slot, and you will need to save manually to overwrite your current bellies and preferences.", title = "Confirmation", choices = list("Load","Cancel"))
-			if(isnull(alert))
-				return
-			if(alert != "Load")
-				return FALSE
-			// The slot is picked next; picking it applies the preferences.
-			host().load_vore_prefs_from_slot()
-			unsaved_changes = TRUE
-			return TRUE
-		//"Belly HTML Export Earlyport"
-		if("exportpanel")
-			if(!ui.user)
-				return FALSE
+UI_ACT(/datum/vore_look, "toggle_latejoin_prey", ui_act_toggle_latejoin_prey)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_latejoin_prey)
+	host().latejoin_prey = !host().latejoin_prey
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.latejoin_prey = host().latejoin_prey
+	unsaved_changes = TRUE
+	return TRUE
 
-			var/datum/vore_look/export_panel/exportPanel
-			if(!exportPanel)
-				exportPanel = new(ui.user)
+UI_ACT(/datum/vore_look, "toggle_allow_spontaneous_tf", ui_act_toggle_allow_spontaneous_tf)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_allow_spontaneous_tf)
+	host().allow_spontaneous_tf = !host().allow_spontaneous_tf
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.allow_spontaneous_tf = host().allow_spontaneous_tf
+	unsaved_changes = TRUE
+	return TRUE
 
-			if(!exportPanel)
-				to_chat(ui.user,span_notice("Export panel undefined: [exportPanel]"))
-				return FALSE
+UI_ACT(/datum/vore_look, "toggle_digest", ui_act_toggle_digest)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_digest)
+	host().digestable = !host().digestable
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.digestable = host().digestable
+	unsaved_changes = TRUE
+	return TRUE
 
-			exportPanel.open_export_panel(ui.user)
+UI_ACT(/datum/vore_look, "toggle_allowtemp", ui_act_toggle_allowtemp)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_allowtemp)
+	host().allowtemp = !host().allowtemp
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.allowtemp = host().allowtemp
+	unsaved_changes = TRUE
+	return TRUE
 
-			return TRUE
-		if(TASTE_FLAVOR)
-			host().vore_taste = sanitize(params["val"], FLAVOR_MAX, FALSE, TRUE, FALSE)
-			unsaved_changes = TRUE
-			return TRUE
-		if(SMELL_FLAVOR)
-			host().vore_smell = sanitize(params["val"], FLAVOR_MAX, FALSE, TRUE, FALSE)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_dropnom_pred")
-			host().can_be_drop_pred = !host().can_be_drop_pred
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.can_be_drop_pred = host().can_be_drop_pred
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_dropnom_prey")
-			host().can_be_drop_prey = !host().can_be_drop_prey
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.can_be_drop_prey = host().can_be_drop_prey
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_afk_pred")
-			host().can_be_afk_pred = !host().can_be_afk_pred
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.can_be_afk_pred = host().can_be_afk_pred
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_afk_prey")
-			host().can_be_afk_prey = !host().can_be_afk_prey
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.can_be_afk_prey = host().can_be_afk_prey
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_latejoin_vore")
-			host().latejoin_vore = !host().latejoin_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.latejoin_vore = host().latejoin_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_latejoin_prey")
-			host().latejoin_prey = !host().latejoin_prey
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.latejoin_prey = host().latejoin_prey
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_allow_spontaneous_tf")
-			host().allow_spontaneous_tf = !host().allow_spontaneous_tf
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.allow_spontaneous_tf = host().allow_spontaneous_tf
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_digest")
-			host().digestable = !host().digestable
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.digestable = host().digestable
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_allowtemp")
-			host().allowtemp = !host().allowtemp
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.allowtemp = host().allowtemp
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_global_privacy")
-			host().eating_privacy_global = !host().eating_privacy_global
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.eating_privacy_global = host().eating_privacy_global
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_death_privacy")
-			host().vore_death_privacy = !host().vore_death_privacy
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.vore_death_privacy = host().vore_death_privacy
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_mimicry")
-			host().allow_mimicry = !host().allow_mimicry
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.allow_mimicry = host().allow_mimicry
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_devour")
-			host().devourable = !host().devourable
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.devourable = host().devourable
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_resize")
-			host().resizable = !host().resizable
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.resizable = host().resizable
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_feed")
-			host().feeding = !host().feeding
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.feeding = host().feeding
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_absorbable")
-			host().absorbable = !host().absorbable
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.absorbable = host().absorbable
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_leaveremains")
-			host().digest_leave_remains = !host().digest_leave_remains
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.digest_leave_remains = host().digest_leave_remains
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_mobvore")
-			host().allowmobvore = !host().allowmobvore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.allowmobvore = host().allowmobvore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_steppref")
-			host().step_mechanics_pref = !host().step_mechanics_pref
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.step_mechanics_pref = host().step_mechanics_pref
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_pickuppref")
-			host().pickup_pref = !host().pickup_pref
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.pickup_pref = host().pickup_pref
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_strippref")
-			host().strip_pref = !host().strip_pref
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.strip_pref = host().strip_pref
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_contaminate_pref")
-			host().contaminate_pref = !host().contaminate_pref
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.contaminate_pref = host().contaminate_pref
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_allow_mind_transfer")
-			host().allow_mind_transfer = !host().allow_mind_transfer
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.allow_mind_transfer = host().allow_mind_transfer
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_healbelly")
-			host().permit_healbelly = !host().permit_healbelly
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.permit_healbelly = host().permit_healbelly
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_fx")
-			host().show_vore_fx = !host().show_vore_fx
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.show_vore_fx = host().show_vore_fx
-			if (isbelly(host().loc))
-				var/obj/belly/B = host().loc
-				B.vore_fx(host())
-			else
-				host().clear_fullscreen("belly")
-				host().belly_overlay_tgui?.hide() // hide TGUI belly overlay
-			if(!host().hud_used.hud_shown)
-				host().toggle_hud_vis()
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_noisy")
-			host().noisy = !host().noisy
-			unsaved_changes = TRUE
-			return TRUE
-		if("set_max_voreoverlay_alpha")
-			var/new_alpha = CLAMP(params["val"], 0, 255)
-			host().max_voreoverlay_alpha = new_alpha
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.max_voreoverlay_alpha = host().max_voreoverlay_alpha
-			if (isbelly(host().loc))
-				var/obj/belly/B = host().loc
-				B.vore_fx(host())
-			unsaved_changes = TRUE
-			return TRUE
-		// liquid belly code
-		if("liq_set_attribute")
-			. = liq_set_attr(ui.user, params)
-			host().vore_selected?.belly_reschedule() // Liquid generation may have started or stopped.
-			return .
-		if("toggle_liq_rec")
-			host().receive_reagents = !host().receive_reagents
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.receive_reagents = host().receive_reagents
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_liq_giv")
-			host().give_reagents = !host().give_reagents
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.give_reagents = host().give_reagents
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_liq_apply")
-			host().apply_reagents = !host().apply_reagents
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.apply_reagents = host().apply_reagents
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_autotransferable")
-			host().autotransferable = !host().autotransferable
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.autotransferable = host().autotransferable
-			unsaved_changes = TRUE
-			return TRUE
-		//Belch code
-		if("toggle_noisy_full")
-			host().noisy_full = !host().noisy_full
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_drop_vore")
-			host().drop_vore = !host().drop_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.drop_vore = host().drop_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_slip_vore")
-			host().slip_vore = !host().slip_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.slip_vore = host().slip_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_stumble_vore")
-			host().stumble_vore = !host().stumble_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.stumble_vore = host().stumble_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_throw_vore")
-			host().throw_vore = !host().throw_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.throw_vore = host().throw_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_phase_vore")
-			host().phase_vore = !host().phase_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.phase_vore = host().phase_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_food_vore")
-			host().food_vore = !host().food_vore
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.food_vore = host().food_vore
-			unsaved_changes = TRUE
-			return TRUE
-		if("set_spont_belly")
-			return set_spont_belly(params)
-		if("toggle_consume_liquid_belly")
-			host().consume_liquid_belly = !host().consume_liquid_belly
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.consume_liquid_belly = host().consume_liquid_belly
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_digest_pain")
-			host().digest_pain = !host().digest_pain
-			unsaved_changes = TRUE
-			return TRUE
-		if("switch_selective_mode_pref")
-			var/new_selective_preference = params["val"]
-			if(new_selective_preference == host().selective_preference)
-				return FALSE
-			host().selective_preference = new_selective_preference
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.selective_preference = host().selective_preference
-			unsaved_changes = TRUE
-			return TRUE
-		if("switch_strip_mode_pref")
-			var/new_size_strip_pref = text2num(params["val"])
-			new_size_strip_pref = clamp(new_size_strip_pref, SIZESTRIP_NONE, SIZESTRIP_ALL)
-			if(new_size_strip_pref == host().size_strip_preference)
-				return FALSE
-			host().size_strip_preference = new_size_strip_pref
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.size_strip_preference = host().size_strip_preference
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_nutrition_ex")
-			host().nutrition_message_visible = !host().nutrition_message_visible
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_weight_ex")
-			host().weight_message_visible = !host().weight_message_visible
-			unsaved_changes = TRUE
-			return TRUE
-		if("set_vs_color")
-			var/belly_choice = params["attribute"]
-			if(!(belly_choice in host().vore_icon_bellies))
-				return FALSE
-			var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
-			if(!newcolor)
-				return FALSE
-			host().vore_sprite_color[belly_choice] = newcolor
-			host().update_icons_body()
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_vs_multiply")
-			var/belly_choice = params["attribute"]
-			if(!(belly_choice in host().vore_icon_bellies))
-				return FALSE
-			if(!host().vore_sprite_multiply[belly_choice])
-				host().vore_sprite_multiply[belly_choice] = TRUE
-			else
-				host().vore_sprite_multiply[belly_choice] = !host().vore_sprite_multiply[belly_choice]
-			host().update_icons_body()
-			unsaved_changes = TRUE
-			return TRUE
-		//vore sprites color
-		if("set_belly_rub")
-			var/rub_target = html_encode(params["val"])
-			if(rub_target == "Current Selected")
-				host().belly_rub_target = null
-			else
-				host().belly_rub_target = rub_target
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.belly_rub_target = host().belly_rub_target
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_no_latejoin_vore_warning")
-			host().no_latejoin_vore_warning = !host().no_latejoin_vore_warning
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_vore_warning = host().no_latejoin_vore_warning
-			if(host().no_latejoin_vore_warning_persists)
-				unsaved_changes = TRUE
-			return TRUE
-		if("toggle_no_latejoin_prey_warning")
-			host().no_latejoin_prey_warning = !host().no_latejoin_prey_warning
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_prey_warning = host().no_latejoin_prey_warning
-			if(host().no_latejoin_prey_warning_persists)
-				unsaved_changes = TRUE
-			return TRUE
-		if("adjust_no_latejoin_vore_warning_time")
-			host().no_latejoin_vore_warning_time = text2num(params["new_pred_time"])
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_vore_warning_time = host().no_latejoin_vore_warning_time
-			if(host().no_latejoin_vore_warning_persists)
-				unsaved_changes = TRUE
-			return TRUE
-		if("adjust_no_latejoin_prey_warning_time")
-			host().no_latejoin_prey_warning_time = text2num(params["new_prey_time"])
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_prey_warning_time = host().no_latejoin_prey_warning_time
-			if(host().no_latejoin_prey_warning_persists)
-				unsaved_changes = TRUE
-			return TRUE
-		if("toggle_no_latejoin_vore_warning_persists")
-			host().no_latejoin_vore_warning_persists = !host().no_latejoin_vore_warning_persists
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_vore_warning_persists = host().no_latejoin_vore_warning_persists
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_no_latejoin_prey_warning_persists")
-			host().no_latejoin_prey_warning_persists = !host().no_latejoin_prey_warning_persists
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.no_latejoin_prey_warning_persists = host().no_latejoin_prey_warning_persists
-			unsaved_changes = TRUE
-			return TRUE
-		//Soulcatcher prefs
-		if("toggle_soulcatcher_allow_capture")
-			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_CAPTURE
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_soulcatcher_allow_transfer")
-			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TRANSFER
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_soulcatcher_allow_takeover")
-			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TAKEOVER
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_soulcatcher_allow_deletion")
-			var/current_number = global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION) + global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION_INSTANT)
-			switch(current_number)
-				if(0)
-					host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION
-				if(1)
-					host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION_INSTANT
-				if(2)
-					host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION)
-					host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION_INSTANT)
-			if(host().client.prefs_vr)
-				host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
-			unsaved_changes = TRUE
-			return TRUE
-		if("adjust_own_size")
-			var/new_size = text2num(params["new_mob_size"])
-			new_size = clamp(new_size, RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
-			if(istype(host(), /mob/living))
-				var/mob/living/living_host = host()
-				if(new_size == living_host.size_multiplier)
-					return FALSE
-				if(living_host.nutrition >= VORE_RESIZE_COST)
-					living_host.adjust_nutrition(-VORE_RESIZE_COST)
-					living_host.resize(new_size, uncapped = living_host.has_large_resize_bounds(), ignore_prefs = TRUE)
-			return TRUE
-		//Soulcatcher functions
-		if("soulcatcher_release_all")
-			host().soulgem.release_mobs()
-			return TRUE
-		if("soulcatcher_erase_all")
-			host().soulgem.erase_mobs()
-			return TRUE
-		if("soulcatcher_release")
-			host().soulgem.release_selected()
-			return TRUE
-		if("soulcatcher_transfer")
-			host().soulgem.transfer_selected()
-			return TRUE
-		if("soulcatcher_delete")
-			host().soulgem.delete_selected()
-			return TRUE
-		if("soulcatcher_transfer_control")
-			host().soulgem.take_control_selected()
-			return TRUE
-		if("soulcatcher_release_control")
-			host().soulgem.take_control_owner()
-			return TRUE
-		if("soulcatcher_select")
-			var/mob/picked_soul = locate_in_list(host().soulgem.brainmobs, params["selected_soul"])
-			if(picked_soul)
-				rel_set(host().soulgem, "selected_soul", picked_soul)
-			return TRUE
-		//Soulcatcher settings
-		if("soulcatcher_toggle")
-			host().soulgem.toggle_setting(SOULGEM_ACTIVE)
-			unsaved_changes = TRUE
-			return TRUE
-		if("soulcatcher_sfx")
-			var/obj/belly = locate(params["val"])
-			if(!istype(belly))
-				host().soulgem.update_linked_belly(null)
-				return TRUE
-			host().soulgem.update_linked_belly(belly)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_self_catching")
-			host().soulgem.toggle_setting(NIF_SC_CATCHING_ME)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_prey_catching")
-			host().soulgem.toggle_setting(NIF_SC_CATCHING_OTHERS)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_drain_catching")
-			host().soulgem.toggle_setting(SOULGEM_CATCHING_DRAIN)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_ghost_catching")
-			host().soulgem.toggle_setting(SOULGEM_CATCHING_GHOSTS)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_ext_hearing")
-			host().soulgem.toggle_setting(NIF_SC_ALLOW_EARS)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_ext_vision")
-			host().soulgem.toggle_setting(NIF_SC_ALLOW_EYES)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_mind_backup")
-			host().soulgem.toggle_setting(NIF_SC_BACKUPS)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_sr_projecting")
-			host().soulgem.toggle_setting(NIF_SC_PROJECTING)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_vore_sfx")
-			host().soulgem.toggle_setting(SOULGEM_SHOW_VORE_SFX)
-			unsaved_changes = TRUE
-			return TRUE
-		if("toggle_sr_vision")
-			host().soulgem.toggle_setting(SOULGEM_SEE_SR_SOULS)
-			unsaved_changes = TRUE
-			return TRUE
-		if("soulcatcher_rename")
-			var/new_name = params["val"]
-			if(!host().soulgem.rename(new_name))
-				return FALSE
-			unsaved_changes = TRUE
-			return TRUE
-		if(SC_INTERIOR_MESSAGE)
-			var/new_flavor = params["val"]
-			if(new_flavor)
-				unsaved_changes = TRUE
-				host().soulgem.adjust_interior(new_flavor)
-			return TRUE
-		if(SC_CAPTURE_MEESAGE)
-			var/message = params["val"]
-			if(message)
-				unsaved_changes = TRUE
-				host().soulgem.set_custom_message(message, SC_CAPTURE_MEESAGE)
-			return TRUE
-		if(SC_TRANSIT_MESSAGE)
-			var/message = params["val"]
-			if(message)
-				unsaved_changes = TRUE
-				host().soulgem.set_custom_message(message, SC_TRANSIT_MESSAGE)
-			return TRUE
-		if(SC_RELEASE_MESSAGE)
-			var/message = params["val"]
-			if(message)
-				unsaved_changes = TRUE
-				host().soulgem.set_custom_message(message, SC_RELEASE_MESSAGE)
-			return TRUE
-		if(SC_TRANSFERE_MESSAGE)
-			var/message = params["val"]
-			if(message)
-				unsaved_changes = TRUE
-				host().soulgem.set_custom_message(message, SC_TRANSFERE_MESSAGE)
-			return TRUE
-		if(SC_DELETE_MESSAGE)
-			var/message = params["val"]
-			if(message)
-				unsaved_changes = TRUE
-				host().soulgem.set_custom_message(message, SC_DELETE_MESSAGE)
-			return TRUE
-		if("preset")
-			var/raw_data = lowertext(params["color"])
-			var/index = text2num(params["index"])
-			var/list/entries = splittext(preset_colors, ";")
-			while(LAZYLEN(entries) < 20)
-				entries += "#FFFFFF"
-			if(LAZYLEN(entries) > 20)
-				entries.Cut(21)
-			var/hex = sanitize_hexcolor(raw_data)
-			if (!hex || !isnum(index) || entries[index] == hex)
-				return
-			entries[index] = hex
-			preset_colors = entries.Join(";")
-			return TRUE
+UI_ACT(/datum/vore_look, "toggle_global_privacy", ui_act_toggle_global_privacy)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_global_privacy)
+	host().eating_privacy_global = !host().eating_privacy_global
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.eating_privacy_global = host().eating_privacy_global
+	unsaved_changes = TRUE
+	return TRUE
 
-/datum/vore_look/proc/pick_from_inside(mob/user, params)
-	var/atom/movable/target = locate(params["pick"])
-	var/obj/belly/OB = locate(params["belly"])
+UI_ACT(/datum/vore_look, "toggle_death_privacy", ui_act_toggle_death_privacy)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_death_privacy)
+	host().vore_death_privacy = !host().vore_death_privacy
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.vore_death_privacy = host().vore_death_privacy
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_mimicry", ui_act_toggle_mimicry)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_mimicry)
+	host().allow_mimicry = !host().allow_mimicry
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.allow_mimicry = host().allow_mimicry
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_devour", ui_act_toggle_devour)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_devour)
+	host().devourable = !host().devourable
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.devourable = host().devourable
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_resize", ui_act_toggle_resize)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_resize)
+	host().resizable = !host().resizable
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.resizable = host().resizable
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_feed", ui_act_toggle_feed)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_feed)
+	host().feeding = !host().feeding
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.feeding = host().feeding
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_absorbable", ui_act_toggle_absorbable)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_absorbable)
+	host().absorbable = !host().absorbable
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.absorbable = host().absorbable
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_leaveremains", ui_act_toggle_leaveremains)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_leaveremains)
+	host().digest_leave_remains = !host().digest_leave_remains
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.digest_leave_remains = host().digest_leave_remains
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_mobvore", ui_act_toggle_mobvore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_mobvore)
+	host().allowmobvore = !host().allowmobvore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.allowmobvore = host().allowmobvore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_steppref", ui_act_toggle_steppref)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_steppref)
+	host().step_mechanics_pref = !host().step_mechanics_pref
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.step_mechanics_pref = host().step_mechanics_pref
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_pickuppref", ui_act_toggle_pickuppref)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_pickuppref)
+	host().pickup_pref = !host().pickup_pref
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.pickup_pref = host().pickup_pref
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_strippref", ui_act_toggle_strippref)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_strippref)
+	host().strip_pref = !host().strip_pref
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.strip_pref = host().strip_pref
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_contaminate_pref", ui_act_toggle_contaminate_pref)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_contaminate_pref)
+	host().contaminate_pref = !host().contaminate_pref
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.contaminate_pref = host().contaminate_pref
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_allow_mind_transfer", ui_act_toggle_allow_mind_transfer)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_allow_mind_transfer)
+	host().allow_mind_transfer = !host().allow_mind_transfer
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.allow_mind_transfer = host().allow_mind_transfer
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_healbelly", ui_act_toggle_healbelly)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_healbelly)
+	host().permit_healbelly = !host().permit_healbelly
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.permit_healbelly = host().permit_healbelly
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_fx", ui_act_toggle_fx)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_fx)
+	host().show_vore_fx = !host().show_vore_fx
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.show_vore_fx = host().show_vore_fx
+	if (isbelly(host().loc))
+		var/obj/belly/B = host().loc
+		B.vore_fx(host())
+	else
+		host().clear_fullscreen("belly")
+		host().belly_overlay_tgui?.hide() // hide TGUI belly overlay
+	if(!host().hud_used.hud_shown)
+		host().toggle_hud_vis()
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_noisy", ui_act_toggle_noisy)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_noisy)
+	host().noisy = !host().noisy
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "set_max_voreoverlay_alpha", ui_act_set_max_voreoverlay_alpha, UI_ARG_NUM("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_set_max_voreoverlay_alpha)
+	var/new_alpha = CLAMP(params["val"], 0, 255)
+	host().max_voreoverlay_alpha = new_alpha
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.max_voreoverlay_alpha = host().max_voreoverlay_alpha
+	if (isbelly(host().loc))
+		var/obj/belly/B = host().loc
+		B.vore_fx(host())
+	unsaved_changes = TRUE
+	return TRUE
+// liquid belly code
+
+UI_ACT(/datum/vore_look, "toggle_liq_rec", ui_act_toggle_liq_rec)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_liq_rec)
+	host().receive_reagents = !host().receive_reagents
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.receive_reagents = host().receive_reagents
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_liq_giv", ui_act_toggle_liq_giv)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_liq_giv)
+	host().give_reagents = !host().give_reagents
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.give_reagents = host().give_reagents
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_liq_apply", ui_act_toggle_liq_apply)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_liq_apply)
+	host().apply_reagents = !host().apply_reagents
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.apply_reagents = host().apply_reagents
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_autotransferable", ui_act_toggle_autotransferable)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_autotransferable)
+	host().autotransferable = !host().autotransferable
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.autotransferable = host().autotransferable
+	unsaved_changes = TRUE
+	return TRUE
+//Belch code
+
+UI_ACT(/datum/vore_look, "toggle_noisy_full", ui_act_toggle_noisy_full)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_noisy_full)
+	host().noisy_full = !host().noisy_full
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_drop_vore", ui_act_toggle_drop_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_drop_vore)
+	host().drop_vore = !host().drop_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.drop_vore = host().drop_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_slip_vore", ui_act_toggle_slip_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_slip_vore)
+	host().slip_vore = !host().slip_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.slip_vore = host().slip_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_stumble_vore", ui_act_toggle_stumble_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_stumble_vore)
+	host().stumble_vore = !host().stumble_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.stumble_vore = host().stumble_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_throw_vore", ui_act_toggle_throw_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_throw_vore)
+	host().throw_vore = !host().throw_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.throw_vore = host().throw_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_phase_vore", ui_act_toggle_phase_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_phase_vore)
+	host().phase_vore = !host().phase_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.phase_vore = host().phase_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_food_vore", ui_act_toggle_food_vore)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_food_vore)
+	host().food_vore = !host().food_vore
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.food_vore = host().food_vore
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_consume_liquid_belly", ui_act_toggle_consume_liquid_belly)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_consume_liquid_belly)
+	host().consume_liquid_belly = !host().consume_liquid_belly
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.consume_liquid_belly = host().consume_liquid_belly
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_digest_pain", ui_act_toggle_digest_pain)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_digest_pain)
+	host().digest_pain = !host().digest_pain
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "switch_selective_mode_pref", ui_act_switch_selective_mode_pref, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_switch_selective_mode_pref)
+	var/new_selective_preference = params["val"]
+	if(new_selective_preference == host().selective_preference)
+		return FALSE
+	host().selective_preference = new_selective_preference
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.selective_preference = host().selective_preference
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "switch_strip_mode_pref", ui_act_switch_strip_mode_pref, UI_ARG_NUM("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_switch_strip_mode_pref)
+	var/new_size_strip_pref = params["val"]
+	new_size_strip_pref = clamp(new_size_strip_pref, SIZESTRIP_NONE, SIZESTRIP_ALL)
+	if(new_size_strip_pref == host().size_strip_preference)
+		return FALSE
+	host().size_strip_preference = new_size_strip_pref
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.size_strip_preference = host().size_strip_preference
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_nutrition_ex", ui_act_toggle_nutrition_ex)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_nutrition_ex)
+	host().nutrition_message_visible = !host().nutrition_message_visible
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_weight_ex", ui_act_toggle_weight_ex)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_weight_ex)
+	host().weight_message_visible = !host().weight_message_visible
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "set_vs_color", ui_act_set_vs_color, UI_ARG_TEXT("attribute"), UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_set_vs_color)
+	var/belly_choice = params["attribute"]
+	if(!(belly_choice in host().vore_icon_bellies))
+		return FALSE
+	var/newcolor = sanitize_hexcolor(lowertext(params["val"]))
+	if(!newcolor)
+		return FALSE
+	host().vore_sprite_color[belly_choice] = newcolor
+	host().update_icons_body()
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_vs_multiply", ui_act_toggle_vs_multiply, UI_ARG_TEXT("attribute"))
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_vs_multiply)
+	var/belly_choice = params["attribute"]
+	if(!(belly_choice in host().vore_icon_bellies))
+		return FALSE
+	if(!host().vore_sprite_multiply[belly_choice])
+		host().vore_sprite_multiply[belly_choice] = TRUE
+	else
+		host().vore_sprite_multiply[belly_choice] = !host().vore_sprite_multiply[belly_choice]
+	host().update_icons_body()
+	unsaved_changes = TRUE
+	return TRUE
+//vore sprites color
+
+UI_ACT(/datum/vore_look, "set_belly_rub", ui_act_set_belly_rub, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_set_belly_rub)
+	var/rub_target = html_encode(params["val"])
+	if(rub_target == "Current Selected")
+		host().belly_rub_target = null
+	else
+		host().belly_rub_target = rub_target
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.belly_rub_target = host().belly_rub_target
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_no_latejoin_vore_warning", ui_act_toggle_no_latejoin_vore_warning)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_no_latejoin_vore_warning)
+	host().no_latejoin_vore_warning = !host().no_latejoin_vore_warning
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_vore_warning = host().no_latejoin_vore_warning
+	if(host().no_latejoin_vore_warning_persists)
+		unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_no_latejoin_prey_warning", ui_act_toggle_no_latejoin_prey_warning)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_no_latejoin_prey_warning)
+	host().no_latejoin_prey_warning = !host().no_latejoin_prey_warning
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_prey_warning = host().no_latejoin_prey_warning
+	if(host().no_latejoin_prey_warning_persists)
+		unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "adjust_no_latejoin_vore_warning_time", ui_act_adjust_no_latejoin_vore_warning_time, UI_ARG_NUM("new_pred_time"))
+UI_ACT_PROC(/datum/vore_look, ui_act_adjust_no_latejoin_vore_warning_time)
+	host().no_latejoin_vore_warning_time = params["new_pred_time"]
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_vore_warning_time = host().no_latejoin_vore_warning_time
+	if(host().no_latejoin_vore_warning_persists)
+		unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "adjust_no_latejoin_prey_warning_time", ui_act_adjust_no_latejoin_prey_warning_time, UI_ARG_NUM("new_prey_time"))
+UI_ACT_PROC(/datum/vore_look, ui_act_adjust_no_latejoin_prey_warning_time)
+	host().no_latejoin_prey_warning_time = params["new_prey_time"]
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_prey_warning_time = host().no_latejoin_prey_warning_time
+	if(host().no_latejoin_prey_warning_persists)
+		unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_no_latejoin_vore_warning_persists", ui_act_toggle_no_latejoin_vore_warning_persists)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_no_latejoin_vore_warning_persists)
+	host().no_latejoin_vore_warning_persists = !host().no_latejoin_vore_warning_persists
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_vore_warning_persists = host().no_latejoin_vore_warning_persists
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_no_latejoin_prey_warning_persists", ui_act_toggle_no_latejoin_prey_warning_persists)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_no_latejoin_prey_warning_persists)
+	host().no_latejoin_prey_warning_persists = !host().no_latejoin_prey_warning_persists
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.no_latejoin_prey_warning_persists = host().no_latejoin_prey_warning_persists
+	unsaved_changes = TRUE
+	return TRUE
+//Soulcatcher prefs
+
+UI_ACT(/datum/vore_look, "toggle_soulcatcher_allow_capture", ui_act_toggle_soulcatcher_allow_capture)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_soulcatcher_allow_capture)
+	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_CAPTURE
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_soulcatcher_allow_transfer", ui_act_toggle_soulcatcher_allow_transfer)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_soulcatcher_allow_transfer)
+	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TRANSFER
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_soulcatcher_allow_takeover", ui_act_toggle_soulcatcher_allow_takeover)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_soulcatcher_allow_takeover)
+	host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_TAKEOVER
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_soulcatcher_allow_deletion", ui_act_toggle_soulcatcher_allow_deletion)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_soulcatcher_allow_deletion)
+	var/current_number = global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION) + global_flag_check(host().soulcatcher_pref_flags, SOULCATCHER_ALLOW_DELETION_INSTANT)
+	switch(current_number)
+		if(0)
+			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION
+		if(1)
+			host().soulcatcher_pref_flags ^= SOULCATCHER_ALLOW_DELETION_INSTANT
+		if(2)
+			host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION)
+			host().soulcatcher_pref_flags &= ~(SOULCATCHER_ALLOW_DELETION_INSTANT)
+	if(host().client.prefs_vr)
+		host().client.prefs_vr.soulcatcher_pref_flags = host().soulcatcher_pref_flags
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "adjust_own_size", ui_act_adjust_own_size, UI_ARG_NUM("new_mob_size"))
+UI_ACT_PROC(/datum/vore_look, ui_act_adjust_own_size)
+	var/new_size = params["new_mob_size"]
+	new_size = clamp(new_size, RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS)
+	if(istype(host(), /mob/living))
+		var/mob/living/living_host = host()
+		if(new_size == living_host.size_multiplier)
+			return FALSE
+		if(living_host.nutrition >= VORE_RESIZE_COST)
+			living_host.adjust_nutrition(-VORE_RESIZE_COST)
+			living_host.resize(new_size, uncapped = living_host.has_large_resize_bounds(), ignore_prefs = TRUE)
+	return TRUE
+//Soulcatcher functions
+
+UI_ACT(/datum/vore_look, "soulcatcher_release_all", ui_act_soulcatcher_release_all)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_release_all)
+	host().soulgem.release_mobs()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_erase_all", ui_act_soulcatcher_erase_all)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_erase_all)
+	host().soulgem.erase_mobs()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_release", ui_act_soulcatcher_release)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_release)
+	host().soulgem.release_selected()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_transfer", ui_act_soulcatcher_transfer)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_transfer)
+	host().soulgem.transfer_selected()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_delete", ui_act_soulcatcher_delete)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_delete)
+	host().soulgem.delete_selected()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_transfer_control", ui_act_soulcatcher_transfer_control)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_transfer_control)
+	host().soulgem.take_control_selected()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_release_control", ui_act_soulcatcher_release_control)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_release_control)
+	host().soulgem.take_control_owner()
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_select", ui_act_soulcatcher_select, UI_ARG_REF("selected_soul", null))
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_select)
+	var/mob/picked_soul = params["selected_soul"]
+	if(picked_soul && (picked_soul in host().soulgem.brainmobs))
+		rel_set(host().soulgem, "selected_soul", picked_soul)
+	return TRUE
+//Soulcatcher settings
+
+UI_ACT(/datum/vore_look, "soulcatcher_toggle", ui_act_soulcatcher_toggle)
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_toggle)
+	host().soulgem.toggle_setting(SOULGEM_ACTIVE)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_sfx", ui_act_soulcatcher_sfx, UI_ARG_REF("val", null, /obj))
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_sfx)
+	var/obj/belly = params["val"]
+	if(!istype(belly))
+		host().soulgem.update_linked_belly(null)
+		return TRUE
+	host().soulgem.update_linked_belly(belly)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_self_catching", ui_act_toggle_self_catching)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_self_catching)
+	host().soulgem.toggle_setting(NIF_SC_CATCHING_ME)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_prey_catching", ui_act_toggle_prey_catching)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_prey_catching)
+	host().soulgem.toggle_setting(NIF_SC_CATCHING_OTHERS)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_drain_catching", ui_act_toggle_drain_catching)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_drain_catching)
+	host().soulgem.toggle_setting(SOULGEM_CATCHING_DRAIN)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_ghost_catching", ui_act_toggle_ghost_catching)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_ghost_catching)
+	host().soulgem.toggle_setting(SOULGEM_CATCHING_GHOSTS)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_ext_hearing", ui_act_toggle_ext_hearing)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_ext_hearing)
+	host().soulgem.toggle_setting(NIF_SC_ALLOW_EARS)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_ext_vision", ui_act_toggle_ext_vision)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_ext_vision)
+	host().soulgem.toggle_setting(NIF_SC_ALLOW_EYES)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_mind_backup", ui_act_toggle_mind_backup)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_mind_backup)
+	host().soulgem.toggle_setting(NIF_SC_BACKUPS)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_sr_projecting", ui_act_toggle_sr_projecting)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_sr_projecting)
+	host().soulgem.toggle_setting(NIF_SC_PROJECTING)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_vore_sfx", ui_act_toggle_vore_sfx)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_vore_sfx)
+	host().soulgem.toggle_setting(SOULGEM_SHOW_VORE_SFX)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "toggle_sr_vision", ui_act_toggle_sr_vision)
+UI_ACT_PROC(/datum/vore_look, ui_act_toggle_sr_vision)
+	host().soulgem.toggle_setting(SOULGEM_SEE_SR_SOULS)
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, "soulcatcher_rename", ui_act_soulcatcher_rename, UI_ARG_TEXT("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_rename)
+	var/new_name = params["val"]
+	if(!host().soulgem.rename(new_name))
+		return FALSE
+	unsaved_changes = TRUE
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_INTERIOR_MESSAGE, ui_act_sc_interior_message, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_interior_message)
+	var/new_flavor = params["val"]
+	if(new_flavor)
+		unsaved_changes = TRUE
+		host().soulgem.adjust_interior(new_flavor)
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_CAPTURE_MEESAGE, ui_act_sc_capture_meesage, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_capture_meesage)
+	var/message = params["val"]
+	if(message)
+		unsaved_changes = TRUE
+		host().soulgem.set_custom_message(message, SC_CAPTURE_MEESAGE)
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_TRANSIT_MESSAGE, ui_act_sc_transit_message, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_transit_message)
+	var/message = params["val"]
+	if(message)
+		unsaved_changes = TRUE
+		host().soulgem.set_custom_message(message, SC_TRANSIT_MESSAGE)
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_RELEASE_MESSAGE, ui_act_sc_release_message, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_release_message)
+	var/message = params["val"]
+	if(message)
+		unsaved_changes = TRUE
+		host().soulgem.set_custom_message(message, SC_RELEASE_MESSAGE)
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_TRANSFERE_MESSAGE, ui_act_sc_transfere_message, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_transfere_message)
+	var/message = params["val"]
+	if(message)
+		unsaved_changes = TRUE
+		host().soulgem.set_custom_message(message, SC_TRANSFERE_MESSAGE)
+	return TRUE
+
+UI_ACT(/datum/vore_look, SC_DELETE_MESSAGE, ui_act_sc_delete_message, UI_ARG_VALUE("val"))
+UI_ACT_PROC(/datum/vore_look, ui_act_sc_delete_message)
+	var/message = params["val"]
+	if(message)
+		unsaved_changes = TRUE
+		host().soulgem.set_custom_message(message, SC_DELETE_MESSAGE)
+	return TRUE
+
+UI_ACT(/datum/vore_look, "preset", ui_act_preset, UI_ARG_TEXT("color"), UI_ARG_NUM("index"))
+UI_ACT_PROC(/datum/vore_look, ui_act_preset)
+	var/raw_data = lowertext(params["color"])
+	var/index = params["index"]
+	var/list/entries = splittext(preset_colors, ";")
+	while(LAZYLEN(entries) < 20)
+		entries += "#FFFFFF"
+	if(LAZYLEN(entries) > 20)
+		entries.Cut(21)
+	var/hex = sanitize_hexcolor(raw_data)
+	if (!hex || !isnum(index) || entries[index] == hex)
+		return
+	entries[index] = hex
+	preset_colors = entries.Join(";")
+	return TRUE
+
+UI_ACT(/datum/vore_look, "pick_from_inside", pick_from_inside, UI_ARG_REF("pick", null, /atom/movable), UI_ARG_REF("belly", null, /obj/belly), UI_ARG_TEXT("option", 64))
+/// Host is inside someone else, and is trying to interact with something else inside that person.
+UI_ACT_PROC(/datum/vore_look, pick_from_inside)
+	var/atom/movable/target = params["pick"]
+	var/obj/belly/OB = params["belly"]
 
 	if(!(target in OB))
 		return TRUE // Aren't here anymore, need to update menu
@@ -1043,13 +1225,15 @@
 			handle_absorb_langs(M, owner)
 		TB.nom_atom(M)
 
-/datum/vore_look/proc/pick_from_outside(mob/user, params)
+UI_ACT(/datum/vore_look, "pick_from_outside", pick_from_outside, UI_ARG_BOOL("pickall"), UI_ARG_TEXT("intent", 64), UI_ARG_REF("val", null, /obj/belly), UI_ARG_REF("pick", null, /atom/movable), UI_ARG_TEXT("option", 64), UI_ARG_REF("targetBelly", null, /obj/belly))
+/// Host is trying to interact with something in host's belly (its answers re-run it with rerun_ask()).
+UI_ACT_PROC(/datum/vore_look, pick_from_outside)
 	var/intent
 
 	if(params["pickall"])
 		return pick_all_from_outside(user, params)
 
-	var/atom/movable/target = locate(params["pick"])
+	var/atom/movable/target = params["pick"]
 	if(!(target in host().vore_selected))
 		return TRUE // Not in our X anymore, update UI
 	var/list/available_options = list("Examine", "Eject", "Launch", "Move", "Transfer")
@@ -1109,7 +1293,7 @@
 				to_chat(user,span_warning("You can't do that in your state!"))
 				return TRUE
 
-			var/obj/belly/choice = locate(params["val"])
+			var/obj/belly/choice = params["val"]
 			if(!choice)
 				return FALSE
 
@@ -1158,7 +1342,7 @@
 	if(host().stat)
 		to_chat(user,span_warning("You can't do that in your state!"))
 		return TRUE
-	var/obj/belly/choice = locate(params["targetBelly"])
+	var/obj/belly/choice = params["targetBelly"]
 	if(!(choice in host().vore_organs))
 		var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(pick_from_outside), list(user, params), /datum/om/prompt/choice, message = "Move [target] where?", title = "Select Belly", choices = host().vore_organs)
 		if(isnull(_answer_a2))
@@ -1404,8 +1588,11 @@
 		to_chat(user, span_vwarning("\The [target] is currently [condition], they will not be able to [condition_consequences]."))
 	return FALSE
 
-/datum/vore_look/proc/perform_prey_ability(mob/living/user, params)
-	var/obj/belly/OB = locate(params["belly"])
+UI_ACT(/datum/vore_look, "prey_ability", perform_prey_ability, UI_ARG_REF("belly", null, /obj/belly), UI_ARG_TEXT("ability", 64))
+UI_ACT_PROC(/datum/vore_look, perform_prey_ability)
+	if(!isliving(user))
+		return FALSE
+	var/obj/belly/OB = params["belly"]
 
 	if(!(user in OB))
 		return TRUE // Aren't here anymore, need to update menu
@@ -1418,11 +1605,13 @@
 		if("devour_as_absorbed")
 			if(!(OB.mode_flags & DM_FLAG_ABSORBEDVORE))
 				return FALSE
-			user.absorb_devour()
+			var/mob/living/living_user = user
+			living_user.absorb_devour()
 
 	return TRUE
 
-/datum/vore_look/proc/set_spont_belly(params)
+UI_ACT(/datum/vore_look, "set_spont_belly", set_spont_belly, UI_ARG_TEXT("attribute", 64), UI_ARG_TEXT("val", MAX_NAME_LEN))
+UI_ACT_PROC(/datum/vore_look, set_spont_belly)
 	switch(params["attribute"])
 		if("rear")
 			var/spont_target = html_encode(params["val"])

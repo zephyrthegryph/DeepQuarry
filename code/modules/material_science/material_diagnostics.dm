@@ -170,13 +170,15 @@
 /datum/material_service/tgui_host(mob/user)
 	return owner()
 
-/datum/material_service/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "EngineeringAssembly", "[owner().name] — diagnostics")
-		ui.open()
+DECLARE_UI(/datum/material_service, "EngineeringAssembly")
 
-/datum/material_service/tgui_data(mob/user)
+/datum/material_service/ui_title(mob/user)
+	return "[owner().name] — diagnostics"
+
+UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{status:unknown,temperature:num,buffer:num,input:num,output:num,lossEnergy:num,parts:list,limiting:unknown,configuration:num,liner:num,shell:num,fatigue:num,monitoring:bool,reading:unknown,emitter:map}")
+
+/// The computed part of /datum/material_service's window data (declared on its UI_DATA row).
+/datum/material_service/proc/ui_data_datum_material_service(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/parts = list()
 	for(var/role in owner().material_roles())
 		var/datum/material/material = owner().material_for_role(role)
@@ -207,25 +209,29 @@
 			return "Controls motion: [round(material.elasticity)] elasticity, [round(material.hardness)] hardness."
 	return "Functional behavior follows this material's measured physical properties."
 
-/datum/material_service/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
+/datum/material_service/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(QDELETED(owner()) || !user.Adjacent(owner()) || user.incapacitated())
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/material_service, "emitter_setting", ui_act_emitter_setting, UI_ARG_CHOICE("setting", list("output", "cadence")), UI_ARG_NUM("value", 0.25, 3))
+UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
+	var/obj/machinery/power/emitter/emitter = owner()
+	if(!istype(emitter))
+		return FALSE
+	if(!emitter.allowed(user) || emitter.locked)
 		return TRUE
-	if(QDELETED(owner()) || !ui.user.Adjacent(owner()) || ui.user.incapacitated())
+	var/value = params["value"]
+	if(!isnum(value))
 		return TRUE
-	if(action == "emitter_setting" && istype(owner(), /obj/machinery/power/emitter))
-		var/obj/machinery/power/emitter/emitter = owner()
-		if(!emitter.allowed(ui.user) || emitter.locked)
-			return TRUE
-		var/value = text2num(params["value"])
-		if(!isnum(value))
-			return TRUE
-		if(params["setting"] == "output")
-			emitter.material_output_setting = clamp(value, 0.25, 3)
-		else if(params["setting"] == "cadence")
-			emitter.material_cadence_setting = clamp(value, 0.25, 3)
-		emitter.material_service_changed()
-		return TRUE
-	return FALSE
+	if(params["setting"] == "output")
+		emitter.material_output_setting = value
+	else if(params["setting"] == "cadence")
+		emitter.material_cadence_setting = value
+	emitter.material_service_changed()
+	return TRUE
 
 /datum/material_service/proc/reset_observation()
 	EXPIRY_STAMP(src, monitor_started, CLOCK_WORLD)

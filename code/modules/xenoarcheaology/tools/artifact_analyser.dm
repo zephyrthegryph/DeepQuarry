@@ -53,73 +53,74 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/artifact_analyser/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/machinery/artifact_analyser, "XenoarchArtifactAnalyzer")
+
+/obj/machinery/artifact_analyser/ui_prepare(mob/user, datum/tgui/ui)
 	if(!owned_scanner())
 		reconnect_scanner()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchArtifactAnalyzer", name)
-		ui.open()
+	return TRUE
 
-/obj/machinery/artifact_analyser/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data_obj_machinery_artifact_analyser{owned_scanner:unknown}")
+
+/// The computed part of /obj/machinery/artifact_analyser's window data (declared on its UI_DATA row).
+/obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["owned_scanner"] = owned_scanner()
-	data["scan_in_progress"] = scan_in_progress
 
 	return data
 
-/obj/machinery/artifact_analyser/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/artifact_analyser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("scan")
-			if(scan_in_progress)
-				scan_in_progress = FALSE
-				atom_say("Scanning halted.")
-				return TRUE
-			if(!owned_scanner())
-				reconnect_scanner()
-			if(owned_scanner())
-				var/artifact_in_use = 0
-				var/obj/secondary_priority
-				for(var/obj/O in owned_scanner().loc)
-					if(O == owned_scanner())
-						continue
-					if(O.invisibility)
-						continue
-					if(istype(O, /obj/machinery/artifact))
-						var/obj/machinery/artifact/A = O
-						if(A.in_use)
-							artifact_in_use = 1
-						else
-							A.set_anchored(TRUE)
-							A.in_use = 1
-
-					if(artifact_in_use)
-						atom_say("Cannot scan. Too much interference.")
-					else
-						for(var/otype in priority_objects)
-							if(istype(O, otype))
-								rel_set(src, "scanned_object", O)
-								break
-						if(scanned_object())
-							break
-						else
-							secondary_priority = O
-				if(secondary_priority && !scanned_object())
-					rel_set(src, "scanned_object", secondary_priority)
-				if(!scanned_object())
-					atom_say("Unable to isolate scan target.")
+UI_ACT(/obj/machinery/artifact_analyser, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/artifact_analyser, ui_act_scan)
+	if(scan_in_progress)
+		scan_in_progress = FALSE
+		atom_say("Scanning halted.")
+		return TRUE
+	if(!owned_scanner())
+		reconnect_scanner()
+	if(owned_scanner())
+		var/artifact_in_use = 0
+		var/obj/secondary_priority
+		for(var/obj/O in owned_scanner().loc)
+			if(O == owned_scanner())
+				continue
+			if(O.invisibility)
+				continue
+			if(istype(O, /obj/machinery/artifact))
+				var/obj/machinery/artifact/A = O
+				if(A.in_use)
+					artifact_in_use = 1
 				else
-					scan_in_progress = 1
-					EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
-					om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
-					atom_say("Scanning begun.")
-			return TRUE
+					A.set_anchored(TRUE)
+					A.in_use = 1
+
+			if(artifact_in_use)
+				atom_say("Cannot scan. Too much interference.")
+			else
+				for(var/otype in priority_objects)
+					if(istype(O, otype))
+						rel_set(src, "scanned_object", O)
+						break
+				if(scanned_object())
+					break
+				else
+					secondary_priority = O
+		if(secondary_priority && !scanned_object())
+			rel_set(src, "scanned_object", secondary_priority)
+		if(!scanned_object())
+			atom_say("Unable to isolate scan target.")
+		else
+			scan_in_progress = 1
+			EXPIRY_SET(src, scan_completion_time, scan_duration, CLOCK_WORLD)
+			om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
+			atom_say("Scanning begun.")
+	return TRUE
 
 /// A scan finishes on its timer (om_after() at the completion time), not by polling.
 /obj/machinery/artifact_analyser/proc/scan_timer_fired()

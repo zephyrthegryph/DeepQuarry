@@ -112,29 +112,32 @@
 			download_netspeed = NTNETSPEED_ETHERNET
 	download_completion += download_netspeed
 
-/datum/computer_file/program/ntnetdownload/tgui_act(action, params)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_downloadfile")
-			if(!downloaded_file)
-				begin_file_download(params["filename"])
-			else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
-				LAZYADD(downloads_queue, params["filename"])
-			return TRUE
-		if("PRG_removequeued")
-			LAZYREMOVE(downloads_queue, params["filename"])
-			return TRUE
-		if("PRG_reseterror")
-			if(downloaderror)
-				download_completion = 0
-				download_netspeed = 0
-				own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
-				downloaderror = ""
-			return TRUE
-	return FALSE
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_TEXT("filename"))
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_downloadfile)
+	if(!downloaded_file)
+		begin_file_download(params["filename"])
+	else if(check_file_download(params["filename"]) && !LAZYFIND(downloads_queue, params["filename"]) && downloaded_file.filename != params["filename"])
+		LAZYADD(downloads_queue, params["filename"])
+	return TRUE
 
-/datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_removequeued", ui_act_prg_removequeued, UI_ARG_TEXT("filename"))
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_removequeued)
+	LAZYREMOVE(downloads_queue, params["filename"])
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_reseterror", ui_act_prg_reseterror)
+UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
+	if(downloaderror)
+		download_completion = 0
+		download_netspeed = 0
+		own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
+		downloaderror = ""
+	return TRUE
+
+UI_DATA_REPLACE(/datum/computer_file/program/ntnetdownload, "merge:ui_data_datum_computer_file_program_ntnetdownload{downloading:bool,error:bool,downloadname:text,downloaddesc:text,downloadsize:num,downloadspeed:num,downloadcompletion:num,disk_size:num,disk_used:num,hackedavailable:bool,hacked_programs:list,downloadable_programs:list,downloads_queue:bool}")
+
+/// The computed part of /datum/computer_file/program/ntnetdownload's window data (declared on its UI_DATA row).
+/datum/computer_file/program/ntnetdownload/proc/ui_data_datum_computer_file_program_ntnetdownload(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	rel_set(src, "my_computer", computer())
 	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
@@ -153,7 +156,7 @@
 
 	data["disk_size"] = my_computer().hard_drive.max_capacity
 	data["disk_used"] = my_computer().hard_drive.used_capacity
-	var/list/all_entries[0]
+	var/list/all_entries = list()
 	for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_station_software)
 		// Only those programs our user can run will show in the list.
 		// Pass the card inserted in the laptop's slot so slotted IDs are respected.
@@ -169,7 +172,7 @@
 		)))
 	data["hackedavailable"] = FALSE
 	if(computer_emagged) // If we are running on emagged computer we have access to some "bonus" software
-		var/list/hacked_programs[0]
+		var/list/hacked_programs = list()
 		for(var/datum/computer_file/program/P in GLOB.ntnet_global.available_antag_software)
 			if(my_computer().hard_drive.find_file_by_name(P.filename))
 				continue

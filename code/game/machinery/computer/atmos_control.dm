@@ -42,8 +42,8 @@ DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null
 	atmos_control.emagged = 1
 	return 1
 
-/obj/machinery/computer/atmoscontrol/tgui_interact(mob/user)
+/obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)
 	if(!atmos_control)
 		own_set(src, "atmos_control", new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
-	atmos_control.tgui_interact(user)
+	return atmos_control
 

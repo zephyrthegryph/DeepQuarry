@@ -7,16 +7,14 @@
 	/// world.time the profiler counters were last cleared (0: since boot).
 	EXPIRY_DECLARE(profile_reset_time)
 
-/datum/controller/subsystem/behaviours/tgui_state(mob/user)
-	return ADMIN_STATE(R_DEBUG)
+DECLARE_UI_STATE(/datum/controller/subsystem/behaviours, ADMIN_STATE(R_DEBUG))
 
-/datum/controller/subsystem/behaviours/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OmProfiler", "Object Model Profiler")
-		ui.open()
+DECLARE_UI(/datum/controller/subsystem/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
 
-/datum/controller/subsystem/behaviours/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
+
+/// The computed part of /datum/controller/subsystem/behaviours's window data (declared on its UI_DATA row).
+/datum/controller/subsystem/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()
@@ -137,23 +135,23 @@
 		)
 	return data
 
-/datum/controller/subsystem/behaviours/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-	var/mob/user = ui?.user
+/datum/controller/subsystem/behaviours/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!user || !check_rights_for(user.client, R_DEBUG))
-		return
-	switch(action)
-		if("reset")
-			var/datum/om/scheduler/sched = GLOB.om_live_sched
-			if(sched)
-				sched.stats = list()
-				sched.stage_cost = list()
-				sched.stage_calls = list()
-			EXPIRY_STAMP(src, profile_reset_time, CLOCK_WORLD)
-			log_admin("[key_name(user)] reset the OM profiler counters.")
-			return TRUE
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/controller/subsystem/behaviours, "reset", ui_act_reset)
+UI_ACT_PROC(/datum/controller/subsystem/behaviours, ui_act_reset)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	if(sched)
+		sched.stats = list()
+		sched.stage_cost = list()
+		sched.stage_calls = list()
+	EXPIRY_STAMP(src, profile_reset_time, CLOCK_WORLD)
+	log_admin("[key_name(user)] reset the OM profiler counters.")
+	return TRUE
 
 ADMIN_VERB(om_profiler, R_DEBUG, "OM Profiler", "Opens the object-model profiler: cost per behaviour, per lane and per pipeline stage.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
 	SSbehaviours.tgui_interact(user.mob)

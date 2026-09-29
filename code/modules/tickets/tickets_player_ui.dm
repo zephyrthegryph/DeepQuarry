@@ -5,22 +5,25 @@
 /datum/ticket_chat
 	var/tmp/datum/ticket/T
 
-/datum/ticket_chat/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TicketChat", "Ticket #[T().id] - [T().LinkedReplyName("\ref[T()]")]")
-		ui.open()
-		user.clear_alert("open ticket")
+DECLARE_UI(/datum/ticket_chat, "TicketChat")
+
+/datum/ticket_chat/ui_opening(mob/user, datum/tgui/ui)
+	user.clear_alert("open ticket")
+
+/datum/ticket_chat/ui_title(mob/user)
+	return "Ticket #[T().id] - [T().LinkedReplyName("\ref[T()]")]"
 
 /datum/ticket_chat/tgui_close(mob/user)
 	. = ..()
 	if(user.client?.current_ticket())
 		user.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-/datum/ticket_chat/tgui_state(mob/user)
-	return GLOB.tgui_ticket_state
+DECLARE_UI_STATE(/datum/ticket_chat, GLOB.tgui_ticket_state)
 
-/datum/ticket_chat/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/ticket_chat, "merge:ui_data_datum_ticket_chat{id:num,level:num,handler:text,log:list}")
+
+/// The computed part of /datum/ticket_chat's window data (declared on its UI_DATA row).
+/datum/ticket_chat/proc/ui_data_datum_ticket_chat(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["id"] = T().id
@@ -32,24 +35,21 @@
 
 	return data
 
-/datum/ticket_chat/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/datum/ticket_chat, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"))
+UI_ACT_PROC(/datum/ticket_chat, ui_act_send_msg)
+	if(!params["msg"])
 		return
-	switch(action)
-		if("send_msg")
-			if(!params["msg"])
-				return
 
-			var/sane_message = sanitize(params["msg"])
-			switch(T().level)
-				if (0)
-					ui.user.client.cmd_mentor_pm(T().handler_client(), sane_message, T())
-					return TRUE
-				if (1)
-					ui.user.client.cmd_admin_pm(T().handler_client(), sane_message, T())
-					return TRUE
+	var/sane_message = sanitize(params["msg"])
+	switch(T().level)
+		if (0)
+			ui.user.client.cmd_mentor_pm(T().handler_client(), sane_message, T())
+			return TRUE
+		if (1)
+			ui.user.client.cmd_admin_pm(T().handler_client(), sane_message, T())
+			return TRUE
 
-			. = TRUE
+	. = TRUE
 
 /// The T this refers to (a relation view: null once that is deleted).
 /datum/ticket_chat/proc/T() as /datum/ticket

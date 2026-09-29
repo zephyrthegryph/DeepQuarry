@@ -174,19 +174,16 @@
 		transfer_moles += (set_flow_rate * P.concentration / P.air.return_volume()) * P.air.total_moles()
 	return transfer_moles > MINIMUM_MOLES_TO_FILTER
 
-/obj/machinery/atmospherics/omni/mixer/tgui_interact(mob/user,datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OmniMixer", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/atmospherics/omni/mixer, "OmniMixer")
 
-/obj/machinery/atmospherics/omni/mixer/tgui_data(mob/user)
-	var/list/data = new()
+UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/mixer, "power=use_power", "config=configuring:num", "merge:ui_data_obj_machinery_atmospherics_omni_mixer{ports:list,set_flow_rate:num,last_flow_rate:num}")
 
-	data["power"] = use_power
-	data["config"] = configuring
+/// The computed part of /obj/machinery/atmospherics/omni/mixer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/omni/mixer/proc/ui_data_obj_machinery_atmospherics_omni_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
-	var/portData[0]
+
+	var/list/portData = list()
 	for(var/datum/omni_port/P in ports)
 		if(!configuring && P.mode == 0)
 			continue
@@ -213,47 +210,67 @@
 
 	return data
 
-/obj/machinery/atmospherics/omni/mixer/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/machinery/atmospherics/omni/mixer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	wake_for_state_change()
+	return TRUE
 
-	switch(action)
-		if("power")
-			. = TRUE
-			if(!configuring)
-				set_use_power(!use_power)
-			else
-				set_use_power(USE_POWER_OFF)
-		if("configure")
-			. = TRUE
-			configuring = !configuring
-			if(configuring)
-				set_use_power(USE_POWER_OFF)
-		if("set_flow_rate")
-			. = TRUE
-			if(!configuring || use_power)
-				return
-			var/new_flow_rate = act_ask(ui.user, action, params, ui, "k237", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
-			if(isnull(new_flow_rate))
-				return
-			set_flow_rate = between(0, new_flow_rate, max_flow_rate)
-		if("switch_mode")
-			. = TRUE
-			if(!configuring || use_power)
-				return
-			switch_mode(dir_flag(params["dir"]), params["mode"])
-		if("switch_con")
-			. = TRUE
-			if(!configuring || use_power)
-				return
-			change_concentration(dir_flag(params["dir"]), ui.user)
-		if("switch_conlock")
-			. = TRUE
-			if(!configuring || use_power)
-				return
-			con_lock(dir_flag(params["dir"]))
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_power)
+	. = TRUE
+	if(!configuring)
+		set_use_power(!use_power)
+	else
+		set_use_power(USE_POWER_OFF)
+	wake_for_state_change()
+	update_icon()
 
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "configure", ui_act_configure)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_configure)
+	. = TRUE
+	configuring = !configuring
+	if(configuring)
+		set_use_power(USE_POWER_OFF)
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "set_flow_rate", ui_act_set_flow_rate)
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_set_flow_rate)
+	. = TRUE
+	if(!configuring || use_power)
+		return
+	var/new_flow_rate = act_ask(ui.user, action, params, ui, "k237", /datum/om/prompt/number, message = "Enter new flow rate limit (0-[max_flow_rate]L/s)", title = "Flow Rate Control", default = set_flow_rate, max = max_flow_rate)
+	if(isnull(new_flow_rate))
+		return
+	set_flow_rate = between(0, new_flow_rate, max_flow_rate)
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_TEXT("mode"))
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_mode)
+	. = TRUE
+	if(!configuring || use_power)
+		return
+	switch_mode(dir_flag(params["dir"]), params["mode"])
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_con", ui_act_switch_con, UI_ARG_VALUE("dir"))
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_con)
+	. = TRUE
+	if(!configuring || use_power)
+		return
+	change_concentration(dir_flag(params["dir"]), ui.user)
+	wake_for_state_change()
+	update_icon()
+
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_conlock", ui_act_switch_conlock, UI_ARG_VALUE("dir"))
+UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_conlock)
+	. = TRUE
+	if(!configuring || use_power)
+		return
+	con_lock(dir_flag(params["dir"]))
 	wake_for_state_change()
 	update_icon()
 

@@ -57,12 +57,7 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 	INTERACT_ITEM(null, PROC_REF(icecream_vat_interaction_item)), \
 )
 
-/obj/machinery/icecream_vat/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "IcecreamVat", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
 
 /obj/machinery/icecream_vat/proc/build_icecream_data(list/ice_types)
 	var/ice_data = list()
@@ -72,8 +67,10 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
-/obj/machinery/icecream_vat/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/icecream_vat, "merge:ui_data_obj_machinery_icecream_vat{current_flavor:text,icecrem_data:list,cone_data:list,reagent_data:list}")
 
+/// The computed part of /obj/machinery/icecream_vat's window data (declared on its UI_DATA row).
+/obj/machinery/icecream_vat/proc/ui_data_obj_machinery_icecream_vat(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/reagent_data = list()
 	for(var/datum/reagent/current_reagent in reagents.reagent_list)
 		UNTYPED_LIST_ADD(reagent_data, list("name" = current_reagent.name, "volume" = current_reagent.volume, "id" = current_reagent.id))
@@ -85,48 +82,47 @@ EXTEND_INTERACTIONS(/obj/machinery/icecream_vat, \
 		"reagent_data" = reagent_data
 	)
 
-/obj/machinery/icecream_vat/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/obj/machinery/icecream_vat, "index_action", ui_act_index_action, UI_ARG_NUM("iceIndex"))
+UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
+	var/index_action = params["iceIndex"]
+	if(index_action <= 0)
+		return FALSE
+	if(index_action < 5)
+		dispense_flavour = index_action
+		flavour_name = get_flavour_name(dispense_flavour)
+		visible_message(span_notice("[ui.user] sets [src] to dispense [flavour_name] flavoured icecream."))
+		return TRUE
+	if(index_action < 7)
+		var/cone_name = get_flavour_name(index_action)
+		if(LAZYACCESS(product_types, index_action) >= 1)
+			product_types[index_action] -= 1
+			var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
+			I.cone_type = cone_name
+			I.icon_state = "icecream_cone_[cone_name]"
+			I.desc = "Delicious [cone_name] cone, but no ice cream."
+			visible_message(span_info("[ui.user] dispenses a crunchy [cone_name] cone from [src]."))
+		else
+			to_chat(ui.user, span_warning("There are no [cone_name] cones left!"))
+	return TRUE
 
-	switch(action)
-		if("index_action")
-			var/index_action = text2num(params["iceIndex"])
-			if(index_action <= 0)
-				return FALSE
-			if(index_action < 5)
-				dispense_flavour = index_action
-				flavour_name = get_flavour_name(dispense_flavour)
-				visible_message(span_notice("[ui.user] sets [src] to dispense [flavour_name] flavoured icecream."))
-				return TRUE
-			if(index_action < 7)
-				var/cone_name = get_flavour_name(index_action)
-				if(LAZYACCESS(product_types, index_action) >= 1)
-					product_types[index_action] -= 1
-					var/obj/item/reagent_containers/food/snacks/icecream/I = new(src.loc)
-					I.cone_type = cone_name
-					I.icon_state = "icecream_cone_[cone_name]"
-					I.desc = "Delicious [cone_name] cone, but no ice cream."
-					visible_message(span_info("[ui.user] dispenses a crunchy [cone_name] cone from [src]."))
-				else
-					to_chat(ui.user, span_warning("There are no [cone_name] cones left!"))
-			return TRUE
-		if("make_type")
-			var/amount = text2num(params["amount"])
-			if(amount <= 0 || amount > 10)
-				return FALSE
-			var/index = text2num(params["index"])
-			if(index <= 0 || index > 6)
-				return FALSE
-			make(ui.user, index, amount)
-			return TRUE
-		if("clear_reagent")
-			var/reagent_id = params["id"]
-			if(!reagent_id)
-				return FALSE
-			reagents.del_reagent(reagent_id)
-			return TRUE
+UI_ACT(/obj/machinery/icecream_vat, "make_type", ui_act_make_type, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
+UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_make_type)
+	var/amount = params["amount"]
+	if(amount <= 0 || amount > 10)
+		return FALSE
+	var/index = params["index"]
+	if(index <= 0 || index > 6)
+		return FALSE
+	make(ui.user, index, amount)
+	return TRUE
+
+UI_ACT(/obj/machinery/icecream_vat, "clear_reagent", ui_act_clear_reagent, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
+	var/reagent_id = params["id"]
+	if(!reagent_id)
+		return FALSE
+	reagents.del_reagent(reagent_id)
+	return TRUE
 
 /// Old attackby.
 /obj/machinery/icecream_vat/proc/icecream_vat_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)

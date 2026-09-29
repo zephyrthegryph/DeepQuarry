@@ -214,6 +214,108 @@ UI_ACT(/obj/machinery/recharger, "select", PROC_REF(ui_select), UI_ARG_CHOICE("i
   `-DUI_TYPES_DUMP` boot and writes `tgui/packages/tgui/interfaces/generated/<Interface>.d.ts`.
 - Lint `sys_tgui_interact_boilerplate`, `sys_text2num_params` (in `tgui_act`/`Topic`).
 
+**As built (rewrite/sys-ui).** Defines `code/__defines/sys_ui.dm`, runtime `code/datums/sys/ui.dm`,
+test `code/modules/unit_tests/dq_sys_ui_tests.dm`, lint `tools/ci/sys_rules/ui.py`, TS generator
+`tools/build/lib/ui_types.ts`.
+
+- **Rows live on marker types.** Every row macro defines a proc on `/datum/ui_declared<host path>`
+  (DM's implicit parents are re-parented so `/obj` rows inherit from `/atom/movable`, and so on).
+  Rows therefore inherit along the host hierarchy, a subtype row replaces its parent's, and the
+  whole table is readable per type without an instance: `ui_decl_of(D)` builds a `/datum/ui_decl`
+  once per host type (walking up to the nearest declaring parent) and the dump reads the markers.
+  A `UI_DATA` field missing from the first live instance is a `stack_trace`.
+- **Declaration.** `DECLARE_UI(type, "Interface" | UI_FROM_VAR("var"), opts...)` with
+  `UI_STATE(state)`, `UI_TITLE(text)`, `UI_AUTOUPDATE`, `UI_PINNED` (closeable = FALSE) and
+  `UI_PREINITIALIZED`. The base `/datum/tgui_interact()` is the generated one (`ui_open()`): redirect,
+  prepare, reuse (`SStgui.try_update_ui`, custom_state re-applied), new window, state, autoupdate,
+  `ui_opening()`, `open()`, `ui_opened()`, then `om_ui_bind(ui, host, decl.watch)`; the window
+  records the bound host and `close()` unbinds. Hooks a host overrides instead of the old override:
+  `ui_redirect(user)` (show another datum's UI: consoles showing their module, programs showing
+  their computer), `ui_prepare(user, ui)` (guards and lazy setup before open or refresh; FALSE
+  refuses and closes), `ui_interface(user)`, `ui_title(user)` (UI_TITLE, else the host's `name`),
+  `ui_window(user)` (a dedicated skin element: lobby, tooltip, media panel, belly overlay),
+  `ui_opening(user, ui)` and `ui_opened(user, ui)` (map views attach after open). **Deviation:** the
+  positional state argument of the sketch above became the `UI_STATE()` option (most hosts keep
+  their `tgui_state()` override).
+- **Data.** `UI_DATA(type, "var", "proc:getter", "slot:SLOT", "name:type"...)`; the base
+  `tgui_data()` returns the declared fields and overrides extend it with `. = ..()`. A var field's
+  OM_FIELD channel joins the watch mask (with `UI_WATCH(type, mask)` for more), so declared fields
+  push the window when they change. `"slot:X"` calls `ui_slot_fragment(slot, user)`, the hook the
+  slot system (#4) implements. Existing `tgui_data()` overrides were not rewritten: the model
+  replaces the interact and act boilerplate, and data is declared where a host is simple.
+- **Actions.** `UI_ACT(type, "action", handler, args...)` names a bare proc (checked at compile time
+  with `TYPE_PROC_REF`); `UI_ACT_PROC(type, handler)` is the header
+  `(mob/user, list/params, datum/tgui/ui, datum/tgui_state/state, action)` and `UI_ACT_OVERRIDE`
+  a subtype's override. `params` holds only the declared args, parsed centrally by
+  `ui_parse_args()`: `UI_ARG_NUM(name[, lo, hi])` (numeric text accepted, clamped), `UI_ARG_INT`
+  (rounded), `UI_ARG_TEXT(name[, maxlen])`, `UI_ARG_BOOL`, `UI_ARG_CHOICE(name, source)`,
+  `UI_ARG_REF(name, source[, types...])` (locate-in, deleted datums refused), plus
+  `UI_ARG_PATH(name, base)`, `UI_ARG_LIST(name)` (array/object or JSON text of one) and
+  `UI_ARG_VALUE(name[, maxlen])` (a scalar the frontend sends as number *or* text: keywords like
+  "max" next to amounts, select values, ids; passed through as sent). Sources are a list, a host
+  var name, `"proc:getter"` or `"glob:NAME"`; ref sources the old code built inline became small
+  host getters (`ui_source_*`, `all_pins()`, `event_containers()`...). An absent arg reads null; a
+  present invalid one is logged (`log_tgui`) and the handler is not called.
+  `ui_act_allowed(user, action, ui, state)` is the type-wide guard (old pre-switch guards, access
+  checks, fingerprints) and runs before every row.
+- **Dispatch variants** (no tgui_act override remains; the base `/datum/tgui_act` is the one
+  dispatcher): `UI_ACT_FALLBACK(type, handler)` for actions that are data (an embedded
+  controller's program commands); `UI_ACT_FORWARD(type, proc)` hands actions the host has no row for
+  to other datums' rows (PDA to its app, preferences to their middleware, the sleeper console to its
+  sleeper, the PDA power app to its monitor); `UI_ACT_NESTED(type, "action", "ns", "subkey")` with
+  `UI_SUBACT(type, "ns", "sub", handler, args...)` for actions that name a sub-action whose args
+  differ per sub-action (vore belly attributes: 153 typed sub-actions; the dispatcher routes and
+  parses, `ui_nested_allowed()` / `ui_nested_done()` wrap them); `ui_subdispatch()` does the same
+  from inside a handler (board games' `game_action`). Modals: `DECLARE_UI_MODAL(type)` adds the
+  `modal_open` / `modal_answer` / `modal_close` rows and the host implements `ui_modal_opened()` /
+  `ui_modal_answered()`; `tgui_modal_act()` is deleted. Preference editors keep their nested
+  `dq_editor_action` protocol: each editor's actions are `UI_ACT` rows with `UI_ACT_PREF_PROC`
+  handlers and `handle_action()` parses them the same way.
+- **Answers re-run typed.** `act_ask()` answers re-run the row through `ui_dispatch_typed()` with the
+  handler's typed params plus the server-side answer (the same interactive and `ui_act_allowed()`
+  gates, no re-parse); `GLOB.ui_rerun` is TRUE meanwhile. A client can no longer send an answer key
+  itself (undeclared keys are dropped).
+- **TS types.** `tools/build/build.sh ui-types` boots a `-DUI_TYPES_DUMP` world (`ui_types_dump()`
+  writes `data/ui_types.json` and exits; the proc is always compiled and unit tested) and writes
+  `tgui/packages/tgui/interfaces/generated/<Interface>.d.ts` with `<Interface>Data` and
+  `<Interface>Actions` (hosts sharing an interface merge; nested sub-actions become a union).
+  `bun tools/build/lib/ui_types.ts --check` fails on stale files. The generated directory is
+  excluded from Biome.
+- **Migration.** Every `tgui_interact()` override (381) and every `tgui_act()` override (404) was
+  converted: 345 `DECLARE_UI`, 2,624 `UI_ACT`/`UI_SUBACT` rows and 2,584 handlers, with helper
+  dispatchers (access panels, modal procs, `set_attr`, board games, preference editors, telecomms
+  options) folded into rows. Dead UI code went (the cryopod console's unreachable actions, the helm's
+  shadowed window, the autolathe's legacy single-material param, empty overrides). Behaviour notes:
+  pre-switch guards now also apply to a subtype's rows (they did only when the subtype called
+  `..()` first, which all did); an old parent-first `if(..()) return TRUE` for an action both parent
+  and child handle is kept as a child `UI_ACT_OVERRIDE` starting `. = ..()` / `if(.) return`.
+- **Lint** (`tools/ci/sys_rules/ui.py`, all at 0, empty baseline, no ALLOW):
+  `tgui_interact_boilerplate` (any `tgui_interact()` override; `SStgui.try_update_ui(`,
+  `new /datum/tgui(`, `ui = new(` outside the tgui core and the runtime); `ui_act_dispatch` (any
+  `tgui_act()` override); `text2num_params` (every raw parse of a params value anywhere:
+  `text2num`/`locate`/`locate_in_list`/`locate_within`/`text2path`/`json_decode`/`params2list`
+  of `params[...]`; in a handler, a key no row for it declares, a dynamic key, a local copied from
+  params and then parsed, or params handed to a proc that is not a typed-param helper, that is one
+  that only reads declared keys or passes them to `act_ask()`/`rerun_ask()`). The vendored TGS
+  DMAPI (`code/modules/tgs/`, world.Topic query strings) is outside the rule. Href parsing in
+  `Topic()` is section 20's (`sys_topic_*`).
+- **Data and state declared (rewrite/sys-ui-data).** Every `tgui_data()` override is gone: a key
+  read straight from a host var is a var field (`"key=var:type"`), and whatever is computed stays
+  in one getter per type declared as `"merge:ui_data_<type>{key:type,...}"`, so the dump (and the
+  generated `<Interface>Data`) knows every key. Getters take `(mob/user, datum/tgui/ui,
+  datum/tgui_state/state)`; `UI_DATA_REPLACE` is for a type whose old override did not call
+  `..()`. Key types are inferred from the assignments (77% typed; the rest, mostly proc results,
+  are `unknown`). A shared tgui state is `DECLARE_UI_STATE(type, state)` and the base
+  `tgui_state()` returns it; only the 12 instance-dependent states remain overrides. Lint:
+  `tgui_data_override` and `tgui_state_override` (a constant-returning override), both 0.
+  `UI_ARG_VALUE` was audited against the TSX (TypeScript checker types of every `act()` payload,
+  generic components followed through their `action` props): 458 became 153, the rest are args
+  no literal `act()` sends (dynamic action names), `any`-typed payloads or genuinely mixed.
+- **Bench** (3 exclusive runs each, virgo_minitest, against the stored `13ff5ddbe5` baseline): no
+  count or timing regression beyond noise; `types_datum` +532 (+2.5%, the marker types) and
+  booted private memory +22 MB (+2.5%, the ~5,200 row and handler procs that replaced inline
+  switch cases); idle tick and overruns unchanged within noise.
+
 ## 4. Slot-generated interactions, examine lines and UI fragments
 
 ```dm

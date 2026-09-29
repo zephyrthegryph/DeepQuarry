@@ -46,9 +46,8 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/antag_optin, get_flag_table, list( \
 		labels[row["key"]] = row["label"]
 	return list("labels" = labels)
 
-/datum/preference_editor/antag_optin/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	if(action != "toggle_flag")
-		return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/antag_optin, "toggle_flag", ui_act_toggle_flag, UI_ARG_TEXT("flag", 64))
+UI_ACT_PREF_PROC(/datum/preference_editor/antag_optin, ui_act_toggle_flag)
 	var/key = params["flag"]
 	var/bit
 	for(var/list/row in TYPE_TABLE_GET(src, get_flag_table))

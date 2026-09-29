@@ -119,22 +119,24 @@
 	new_pai.apply_preferences(new_pai.client)
 	return new_pai
 
-/obj/item/paicard/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
+
+/obj/item/paicard/ui_prepare(mob/user, datum/tgui/ui)
 	if(is_damage_critical())
 		to_chat(user, span_warning("WARNING: CRITICAL HARDWARE FAILURE, SERVICE DEVICE IMMEDIATELY"))
-		return
+		return FALSE
 
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PAICard", "Personal AI Device")
-		ui.open()
+	return TRUE
 
 /obj/item/paicard/ui_assets(mob/user)
 	return list(
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-/obj/item/paicard/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_data:unknown,selected_pai_data:unknown,available_pais:unknown,waiting_for_response:num,emag_systems:unknown}")
+
+/// The computed part of /obj/item/paicard's window data (declared on its UI_DATA row).
+/obj/item/paicard/proc/ui_data_obj_item_paicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"active_pai_data" = null,
 		"selected_pai_data" = null,
@@ -187,143 +189,134 @@
 		"emag_data" = emag_data,
 	)
 
-/obj/item/paicard/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/paicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(is_damage_critical())
 		return FALSE
-	if(..())
-		return TRUE
 	add_fingerprint(ui.user)
+	return TRUE
 
-	switch(action)
-		if("preview")
-			if(pai)
-				return FALSE
-			if(in_use)
-				return FALSE
-			var/new_selection = params["ref"]
-			if(!istext(new_selection))
-				return FALSE
-			selected_pai = new_selection
+UI_ACT(/obj/item/paicard, "preview", ui_act_preview, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/obj/item/paicard, ui_act_preview)
+	if(pai)
+		return FALSE
+	if(in_use)
+		return FALSE
+	var/new_selection = params["ref"]
+	if(!istext(new_selection))
+		return FALSE
+	selected_pai = new_selection
+	return TRUE
+
+UI_ACT(/obj/item/paicard, "clear_preview", ui_act_clear_preview)
+UI_ACT_PROC(/obj/item/paicard, ui_act_clear_preview)
+	if(pai)
+		return FALSE
+	if(in_use)
+		return FALSE
+	selected_pai = null
+	return TRUE
+
+UI_ACT(/obj/item/paicard, "setdna", ui_act_setdna)
+UI_ACT_PROC(/obj/item/paicard, ui_act_setdna)
+	if(!pai)
+		return FALSE
+	if(pai.master_dna)
+		return FALSE
+
+	var/mob/M = ui.user
+	var/has_dna = FALSE
+	if(istype(M, /mob/living/carbon))
+		var/mob/living/carbon/carby = M
+		var/datum/species/spec = carby.species
+		has_dna = TRUE
+		if(spec.flags & NO_DNA)
+			has_dna = FALSE
+
+	if(has_dna)
+		var/datum/dna/dna = M.dna
+		pai.master = M.real_name
+		pai.master_dna = dna.unique_enzymes
+		to_chat(pai, span_warning(span_large("You have been bound to a new master.")))
+		return TRUE
+	to_chat(ui.user, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
+	return FALSE
+
+UI_ACT(/obj/item/paicard, "cleardna", ui_act_cleardna)
+UI_ACT_PROC(/obj/item/paicard, ui_act_cleardna)
+	if(!pai)
+		return FALSE
+	pai.master = null
+	pai.master_dna = null
+	return TRUE
+
+UI_ACT(/obj/item/paicard, "wires", ui_act_wires, UI_ARG_NUM("wires"))
+UI_ACT_PROC(/obj/item/paicard, ui_act_wires)
+	if(!pai)
+		return FALSE
+	switch(params["wires"])
+		if(4)
+			radio.ToggleBroadcast()
 			return TRUE
-		if("clear_preview")
-			if(pai)
-				return FALSE
-			if(in_use)
-				return FALSE
-			selected_pai = null
+		if(2)
+			radio.ToggleReception()
 			return TRUE
-		if("setdna")
-			if(!pai)
-				return FALSE
-			if(pai.master_dna)
-				return FALSE
+	return FALSE
 
-			var/mob/M = ui.user
-			var/has_dna = FALSE
-			if(istype(M, /mob/living/carbon))
-				var/mob/living/carbon/carby = M
-				var/datum/species/spec = carby.species
-				has_dna = TRUE
-				if(spec.flags & NO_DNA)
-					has_dna = FALSE
+UI_ACT(/obj/item/paicard, "setlaws", ui_act_setlaws, UI_ARG_TEXT("directive"))
+UI_ACT_PROC(/obj/item/paicard, ui_act_setlaws)
+	if(!pai)
+		return FALSE
+	if(in_use)
+		return FALSE
+	var/newlaws = sanitize(params["directive"], MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	if(newlaws)
+		pai.pai_laws = newlaws
+		show_laws(TRUE)
+	return TRUE
 
-			if(has_dna)
-				var/datum/dna/dna = M.dna
-				pai.master = M.real_name
-				pai.master_dna = dna.unique_enzymes
-				to_chat(pai, span_warning(span_large("You have been bound to a new master.")))
-				return TRUE
-			to_chat(ui.user, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
-			return FALSE
+UI_ACT(/obj/item/paicard, "clearlaws", ui_act_clearlaws)
+UI_ACT_PROC(/obj/item/paicard, ui_act_clearlaws)
+	if(!pai)
+		return FALSE
+	pai.pai_laws = null
+	return TRUE
 
-		if("cleardna")
-			if(!pai)
-				return FALSE
-			pai.master = null
-			pai.master_dna = null
+UI_ACT(/obj/item/paicard, "select_pai", ui_act_select_pai, UI_ARG_TEXT("ref"))
+UI_ACT_PROC(/obj/item/paicard, ui_act_select_pai)
+	if(pai)
+		return FALSE
+	if(in_use)
+		return FALSE
+	in_use = TRUE
+	GLOB.pai_service.invite_ghost(ui.user, params["ref"], src)
+	in_use = FALSE
+	selected_pai = null
+	return TRUE
+
+UI_ACT(/obj/item/paicard, "select_tool", ui_act_select_tool, UI_ARG_VALUE("tool"))
+UI_ACT_PROC(/obj/item/paicard, ui_act_select_tool)
+	if(!emagged || !has_emag_toolkit)
+		return FALSE
+	var/new_tool = params["tool"]
+	if(!(new_tool in systems_list))
+		return FALSE
+	selected_system = new_tool
+	return TRUE
+
+UI_ACT(/obj/item/paicard, "activate_tool", ui_act_activate_tool)
+UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
+	if(!emagged || !has_emag_toolkit || !selected_system)
+		return FALSE
+	switch(selected_system)
+		if("MultiTool")
+			multitool.attack_self(ui.user)
 			return TRUE
-		/*
-		if("wipe")
-			if(!pai)
-				return FALSE
-			if(in_use)
-				return FALSE
-			in_use = TRUE
-			var/confirm = tgui_alert(usr, "Are you CERTAIN you wish to delete the current personality? This action cannot be undone.", "Personality Wipe", list("Yes", "No"))
-			in_use = FALSE
-			if(!confirm)
-				return FALSE
-			if(confirm == "Yes")
-				for(var/mob/M in src)
-					to_chat(M, span_red("<h2>You feel yourself slipping away from reality.</h2>"))
-					to_chat(M, "<font color = #ff4d4d><h3>Byte by byte you lose your sense of self.</h3></font>")
-					to_chat(M, "<font color = #ff8787><h4>Your mental faculties leave you.</h4></font>")
-					to_chat(M, "<font color = #ffc4c4><h5>oblivion... </h5></font>")
-					M.death(0)
-				removePersonality()
+		if("Signaler")
+			signaler.attack_self(ui.user)
 			return TRUE
-		*/
-
-		if("wires")
-			if(!pai)
-				return FALSE
-			switch(text2num(params["wires"]))
-				if(4)
-					radio.ToggleBroadcast()
-					return TRUE
-				if(2)
-					radio.ToggleReception()
-					return TRUE
-			return FALSE
-
-		if("setlaws")
-			if(!pai)
-				return FALSE
-			if(in_use)
-				return FALSE
-			var/newlaws = sanitize(params["directive"], MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
-			if(newlaws)
-				pai.pai_laws = newlaws
-				show_laws(TRUE)
-			return TRUE
-
-		if("clearlaws")
-			if(!pai)
-				return FALSE
-			pai.pai_laws = null
-			return TRUE
-
-		if("select_pai")
-			if(pai)
-				return FALSE
-			if(in_use)
-				return FALSE
-			in_use = TRUE
-			GLOB.pai_service.invite_ghost(ui.user, params["ref"], src)
-			in_use = FALSE
-			selected_pai = null
-			return TRUE
-
-		if("select_tool") // Emag tools
-			if(!emagged || !has_emag_toolkit)
-				return FALSE
-			var/new_tool = params["tool"]
-			if(!(new_tool in systems_list))
-				return FALSE
-			selected_system = new_tool
-			return TRUE
-
-		if("activate_tool") // Emag tools
-			if(!emagged || !has_emag_toolkit || !selected_system)
-				return FALSE
-			switch(selected_system)
-				if("MultiTool")
-					multitool.attack_self(ui.user)
-					return TRUE
-				if("Signaler")
-					signaler.attack_self(ui.user)
-					return TRUE
-			return FALSE
+	return FALSE
 
 /obj/item/paicard/pre_attack(atom/A, mob/user, params)
 	if(emagged && has_emag_toolkit)

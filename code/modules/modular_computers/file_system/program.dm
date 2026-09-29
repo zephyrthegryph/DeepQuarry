@@ -164,19 +164,18 @@
 		get_asset_datum(/datum/asset/simple/headers)
 	)
 
-/datum/computer_file/program/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/computer_file/program, UI_FROM_VAR("tgui_id"))
+
+/// An inactive program shows its computer; a program wrapping a tgui module shows the module.
+/datum/computer_file/program/ui_redirect(mob/user)
 	if(program_state != PROGRAM_STATE_ACTIVE)
-		if(ui)
-			ui.close()
-		return computer().tgui_interact(user)
+		return computer()
 	if(istype(TM))
-		TM.tgui_interact(user)
-		return 0
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui && tgui_id)
-		ui = new(user, src, tgui_id, filedesc)
-		ui.open()
-	return 1
+		return TM
+	return null
+
+/datum/computer_file/program/ui_title(mob/user)
+	return filedesc
 
 // CONVENTIONS, READ THIS WHEN CREATING NEW PROGRAM AND OVERRIDING THIS PROC:
 // Topic calls are automagically forwarded from NanoModule this program contains.
@@ -192,33 +191,38 @@
 // Calls beginning with "PRG_" are reserved for programs handling.
 // Calls beginning with "PC_" are reserved for computer handling (by whatever runs the program)
 // ALWAYS INCLUDE PARENT CALL ..() OR DIE IN FIRE.
-/datum/computer_file/program/tgui_act(action,list/params, datum/tgui/ui)
-	if(..())
-		return 1
-	if(computer())
-		switch(action)
-			if("PC_exit")
-				computer().kill_program()
-				ui.close()
-				return 1
-			if("PC_shutdown")
-				computer().shutdown_computer()
-				ui.close()
-				return 1
-			if("PC_minimize")
-				if(!computer().active_program())
-					return
+UI_ACT(/datum/computer_file/program, "PC_exit", ui_act_pc_exit)
+UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_exit)
+	if(!(computer()))
+		return
+	computer().kill_program()
+	ui.close()
+	return 1
 
-				var/mob/user = ui.user
-				rel_add(computer(), "idle_threads", computer().active_program())
-				program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
+UI_ACT(/datum/computer_file/program, "PC_shutdown", ui_act_pc_shutdown)
+UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_shutdown)
+	if(!(computer()))
+		return
+	computer().shutdown_computer()
+	ui.close()
+	return 1
 
-				rel_clear(computer(), "active_program")
-				computer().update_icon()
-				ui.close()
+UI_ACT(/datum/computer_file/program, "PC_minimize", ui_act_pc_minimize)
+UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_minimize)
+	if(!(computer()))
+		return
+	if(!computer().active_program())
+		return
 
-				if(istype(user))
-					computer().tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
+	rel_add(computer(), "idle_threads", computer().active_program())
+	program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
+
+	rel_clear(computer(), "active_program")
+	computer().update_icon()
+	ui.close()
+
+	if(istype(user))
+		computer().tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
 
 
 /// Device that runs this program. (a relation view: null once that is deleted).

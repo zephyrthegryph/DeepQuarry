@@ -25,12 +25,7 @@
 	reset_contents()
 	..()
 
-/datum/lootpanel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "LootPanel")
-		ui.set_autoupdate(FALSE)
-		ui.open()
+DECLARE_UI(/datum/lootpanel, "LootPanel")
 
 /datum/lootpanel/tgui_close(mob/user)
 	. = ..()
@@ -38,7 +33,10 @@
 	rel_clear(src, "source_turf")
 	reset_contents()
 
-/datum/lootpanel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/lootpanel, "merge:ui_data_datum_lootpanel{contents:unknown,is_blind:bool,searching:num}")
+
+/// The computed part of /datum/lootpanel's window data (declared on its UI_DATA row).
+/datum/lootpanel/proc/ui_data_datum_lootpanel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["contents"] = get_contents()
@@ -57,18 +55,9 @@
 
 	return STATUS_INTERACTIVE
 
-/datum/lootpanel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
-	switch(action)
-		if("grab")
-			return grab(usr, params)
-		if("refresh")
-			return populate_contents()
-
-	return FALSE
+UI_ACT(/datum/lootpanel, "refresh", ui_act_refresh)
+UI_ACT_PROC(/datum/lootpanel, ui_act_refresh)
+	return populate_contents()
 
 /// The source_turf this refers to (a relation view: null once that is deleted).
 /datum/lootpanel/proc/source_turf() as /turf

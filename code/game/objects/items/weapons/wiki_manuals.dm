@@ -26,31 +26,29 @@
 		return
 	tgui_interact(user)
 
-/obj/item/book/manual/wiki/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/book/manual/wiki, GLOB.tgui_default_state)
 
-/obj/item/book/manual/wiki/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "WikiBook", title || name)
-		ui.open()
+DECLARE_UI(/obj/item/book/manual/wiki, "WikiBook")
 
-/obj/item/book/manual/wiki/tgui_data(mob/user)
+/obj/item/book/manual/wiki/ui_title(mob/user)
+	return title || name
+
+UI_DATA_REPLACE(/obj/item/book/manual/wiki, "merge:ui_data_obj_item_book_manual_wiki{title:bool,intro:text,url:unknown}")
+
+/// The computed part of /obj/item/book/manual/wiki's window data (declared on its UI_DATA row).
+/obj/item/book/manual/wiki/proc/ui_data_obj_item_book_manual_wiki(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"title" = title || name,
 		"intro" = wiki_intro_html,
 		"url" = get_wiki_url(),
 	)
 
-/obj/item/book/manual/wiki/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-	if(action == "open_wiki")
-		var/url = get_wiki_url()
-		if(url && ui.user?.client)
-			ui.user.client << link(url)
-		return TRUE
+UI_ACT(/obj/item/book/manual/wiki, "open_wiki", ui_act_open_wiki)
+UI_ACT_PROC(/obj/item/book/manual/wiki, ui_act_open_wiki)
+	var/url = get_wiki_url()
+	if(url && ui.user?.client)
+		ui.user.client << link(url)
+	return TRUE
 
 /obj/item/book/manual/wiki/engineering_construction
 	name = "Station Repairs and Construction"

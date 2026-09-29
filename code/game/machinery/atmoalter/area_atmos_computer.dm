@@ -35,13 +35,12 @@ REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
 	)
 	..()
 
-/obj/machinery/computer/area_atmos/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AreaScrubberControl", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/computer/area_atmos, "AreaScrubberControl")
 
-/obj/machinery/computer/area_atmos/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/area_atmos, "merge:ui_data_obj_machinery_computer_area_atmos{}")
+
+/// The computed part of /obj/machinery/computer/area_atmos's window data (declared on its UI_DATA row).
+/obj/machinery/computer/area_atmos/proc/ui_data_obj_machinery_computer_area_atmos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/working = list()
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber as anything in connectedscrubbers)
 		if(!validscrubber(scrubber))
@@ -59,30 +58,34 @@ REL_LIST(/obj/machinery/computer/area_atmos, connectedscrubbers)
 
 	return list("scrubbers" = working)
 
-/obj/machinery/computer/area_atmos/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/obj/machinery/computer/area_atmos, "toggle", ui_act_toggle, UI_ARG_TEXT("id"))
+UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_toggle)
+	var/scrub_id = params["id"]
+	var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
+	if(!validscrubber(S))
+		rel_remove(src, "connectedscrubbers", S)
 		return TRUE
+	S.set_on(!S.on)
+	MACHINE_WAKE(S)
+	. = TRUE
+	add_fingerprint(ui.user)
 
-	switch(action)
-		if("toggle")
-			var/scrub_id = params["id"]
-			var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S = scrubber_by_id(scrub_id)
-			if(!validscrubber(S))
-				rel_remove(src, "connectedscrubbers", S)
-				return TRUE
-			S.set_on(!S.on)
-			MACHINE_WAKE(S)
-			. = TRUE
-		if("allon")
-			toggle_all(TRUE)
-			. = TRUE
-		if("alloff")
-			toggle_all(FALSE)
-			. = TRUE
-		if("scan")
-			scanscrubbers_user(ui.user)
-			. = TRUE
+UI_ACT(/obj/machinery/computer/area_atmos, "allon", ui_act_allon)
+UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_allon)
+	toggle_all(TRUE)
+	. = TRUE
+	add_fingerprint(ui.user)
 
+UI_ACT(/obj/machinery/computer/area_atmos, "alloff", ui_act_alloff)
+UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_alloff)
+	toggle_all(FALSE)
+	. = TRUE
+	add_fingerprint(ui.user)
+
+UI_ACT(/obj/machinery/computer/area_atmos, "scan", ui_act_scan)
+UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
+	scanscrubbers_user(ui.user)
+	. = TRUE
 	add_fingerprint(ui.user)
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)

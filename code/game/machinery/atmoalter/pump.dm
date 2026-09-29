@@ -134,18 +134,16 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortablePump", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/portable_atmospherics/powered/pump, "PortablePump")
 
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/powered/pump, GLOB.tgui_physical_state)
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_data(mob/user)
-	var/list/data[0]
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_data_obj_machinery_portable_atmospherics_powered_pump{on:bool,direction:bool,connected:bool,pressure:unknown,target_pressure:num,default_pressure:num,min_pressure:num,max_pressure:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/powered/pump's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_data_obj_machinery_portable_atmospherics_powered_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["on"] = on ? TRUE : FALSE
 	data["direction"] = !direction_out ? TRUE : FALSE
 	data["connected"] = connected_port() ? TRUE : FALSE
@@ -168,41 +166,44 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/pump, DAMAGE_EMP, P
 
 	return data
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_power)
+	set_on(!on)
+	if(on)
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
+	. = 1
+	update_icon()
 
-	switch(action)
-		if("power")
-			set_on(!on)
-			if(on)
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
-			. = 1
-		if("direction")
-			direction_out = !direction_out
-			. = 1
-		if("eject")
-			if(holding)
-				holding.forceMove(loc)
-				own_take(src, "holding")
-			. = 1
-		if("pressure")
-			var/pressure = params["pressure"]
-			if(pressure == "reset")
-				pressure = initial(target_pressure)
-				. = TRUE
-			else if(pressure == "min")
-				pressure = pressuremin
-				. = TRUE
-			else if(pressure == "max")
-				pressure = pressuremax
-				. = TRUE
-			else if(text2num(pressure) != null)
-				pressure = text2num(pressure)
-				. = TRUE
-			if(.)
-				target_pressure = clamp(round(pressure), pressuremin, pressuremax)
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "direction", ui_act_direction)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_direction)
+	direction_out = !direction_out
+	. = 1
+	update_icon()
 
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_eject)
+	if(holding)
+		holding.forceMove(loc)
+		own_take(src, "holding")
+	. = 1
+	update_icon()
+
+UI_ACT(/obj/machinery/portable_atmospherics/powered/pump, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/pump, ui_act_pressure)
+	var/pressure = params["pressure"]
+	if(pressure == "reset")
+		pressure = initial(target_pressure)
+		. = TRUE
+	else if(pressure == "min")
+		pressure = pressuremin
+		. = TRUE
+	else if(pressure == "max")
+		pressure = pressuremax
+		. = TRUE
+	else if(isnum(pressure))
+		. = TRUE
+	if(.)
+		target_pressure = clamp(round(pressure), pressuremin, pressuremax)
 	update_icon()
 
 

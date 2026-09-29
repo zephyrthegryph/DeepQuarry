@@ -180,18 +180,14 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 		return STATUS_CLOSE
 	. = ..()
 
-/obj/machinery/media/jukebox/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Jukebox", "RetroBox - Space Style")
-		ui.open()
+DECLARE_UI(/obj/machinery/media/jukebox, "Jukebox", UI_TITLE("RetroBox - Space Style"))
 
-/obj/machinery/media/jukebox/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/media/jukebox, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_machinery_media_jukebox{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list,admin:num}")
 
-	data["playing"] = playing
-	data["loop_mode"] = loop_mode
-	data["volume"] = volume
+/// The computed part of /obj/machinery/media/jukebox's window data (declared on its UI_DATA row).
+/obj/machinery/media/jukebox/proc/ui_data_obj_machinery_media_jukebox(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["current_track_ref"] = null
 	data["current_track"] = null
 	data["current_genre"] = null
@@ -209,58 +205,66 @@ DECLARE_APPEARANCE(/obj/machinery/media/jukebox/casinojukebox, "appearance_runni
 
 	return data
 
-/obj/machinery/media/jukebox/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/media/jukebox, "change_track", ui_act_change_track, UI_ARG_REF("change_track", "proc:getTracksList", /datum/track))
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_change_track)
+	var/datum/track/T = params["change_track"]
+	if(istype(T))
+		rel_set(src, "current_track", T)
+		StartPlaying()
+	return TRUE
 
-	switch(action)
-		if("change_track")
-			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
-			if(istype(T))
-				rel_set(src, "current_track", T)
-				StartPlaying()
-			return TRUE
-		if("loopmode")
-			var/newval = text2num(params["loopmode"])
-			loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
-			return TRUE
-		if("volume")
-			var/newval = text2num(params["val"])
-			volume = clamp(newval, 0, 1)
-			update_music() // To broadcast volume change without restarting song
-			return TRUE
-		if("stop")
-			StopPlaying()
-			return TRUE
-		if("play")
-			if(emagged)
-				play_sfx(src, SFX_ITEMS_AIRHORN)
-				for(var/mob/living/carbon/M in ohearers(6, src))
-					if(M.get_ear_protection() >= 2)
-						continue
-					M.status_set(EFFECT_SLEEPING, 0)
-					M.status_adjust(EFFECT_STUTTERING, 20)
-					M.status_adjust(EFFECT_DEAFENED, 30)
-					M.deaf_loop.start() // Ear Ringing/Deafness
-					M.status_at_least(EFFECT_WEAKENED, 3)
-					if(prob(30))
-						M.status_at_least(EFFECT_STUNNED, 10)
-						M.status_at_least(EFFECT_PARALYZED, 4)
-					else
-						M.status_adjust(EFFECT_JITTERY, 500)
-				om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
-			else if(current_track() == null)
-				to_chat(ui.user, "No track selected.")
+UI_ACT(/obj/machinery/media/jukebox, "loopmode", ui_act_loopmode, UI_ARG_NUM("loopmode"))
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_loopmode)
+	var/newval = params["loopmode"]
+	loop_mode = sanitize_inlist(newval, list(JUKEMODE_NEXT, JUKEMODE_RANDOM, JUKEMODE_REPEAT_SONG, JUKEMODE_PLAY_ONCE), loop_mode)
+	return TRUE
+
+UI_ACT(/obj/machinery/media/jukebox, "volume", ui_act_volume, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_volume)
+	var/newval = params["val"]
+	volume = clamp(newval, 0, 1)
+	update_music() // To broadcast volume change without restarting song
+	return TRUE
+
+UI_ACT(/obj/machinery/media/jukebox, "stop", ui_act_stop)
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_stop)
+	StopPlaying()
+	return TRUE
+
+UI_ACT(/obj/machinery/media/jukebox, "play", ui_act_play)
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
+	if(emagged)
+		play_sfx(src, SFX_ITEMS_AIRHORN)
+		for(var/mob/living/carbon/M in ohearers(6, src))
+			if(M.get_ear_protection() >= 2)
+				continue
+			M.status_set(EFFECT_SLEEPING, 0)
+			M.status_adjust(EFFECT_STUTTERING, 20)
+			M.status_adjust(EFFECT_DEAFENED, 30)
+			M.deaf_loop.start() // Ear Ringing/Deafness
+			M.status_at_least(EFFECT_WEAKENED, 3)
+			if(prob(30))
+				M.status_at_least(EFFECT_STUNNED, 10)
+				M.status_at_least(EFFECT_PARALYZED, 4)
 			else
-				StartPlaying()
-			return TRUE
-		if("add_new_track")
-			SSmedia_tracks.add_track(ui.user, params["url"], params["title"], text2num(params["duration"]) * 10, params["artist"], params["genre"], text2num(params["secret"]), text2num(params["lobby"]))
-		if("remove_new_track")
-			var/datum/track/track_to_remove = locate_in_list(getTracksList(), params["ref"])
-			if(track_to_remove == current_track() && playing)
-				StopPlaying()
-			SSmedia_tracks.remove_track(ui.user, track_to_remove)
+				M.status_adjust(EFFECT_JITTERY, 500)
+		om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
+	else if(current_track() == null)
+		to_chat(ui.user, "No track selected.")
+	else
+		StartPlaying()
+	return TRUE
+
+UI_ACT(/obj/machinery/media/jukebox, "add_new_track", ui_act_add_new_track, UI_ARG_TEXT("artist"), UI_ARG_NUM("duration"), UI_ARG_TEXT("genre"), UI_ARG_NUM("lobby"), UI_ARG_NUM("secret"), UI_ARG_TEXT("title"), UI_ARG_TEXT("url"))
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_add_new_track)
+	SSmedia_tracks.add_track(ui.user, params["url"], params["title"], params["duration"] * 10, params["artist"], params["genre"], params["secret"], params["lobby"])
+
+UI_ACT(/obj/machinery/media/jukebox, "remove_new_track", ui_act_remove_new_track, UI_ARG_REF("ref", "proc:getTracksList", /datum/track))
+UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_remove_new_track)
+	var/datum/track/track_to_remove = params["ref"]
+	if(track_to_remove == current_track() && playing)
+		StopPlaying()
+	SSmedia_tracks.remove_track(ui.user, track_to_remove)
 
 /// The old attack_hand: never called ..(), just interacted.
 /datum/interaction/machine_hand/ungated/jukebox_interact

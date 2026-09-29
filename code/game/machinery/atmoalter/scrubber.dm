@@ -106,13 +106,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 	into += dq_interaction_from_spec(type, INTERACT_OBSERVER("View", TYPE_PROC_REF(/atom, interaction_as_touch)))
 	..()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PortableScrubber", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/portable_atmospherics/powered/scrubber, "PortableScrubber")
 
-/obj/machinery/portable_atmospherics/powered/scrubber/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/scrubber, "merge:ui_data_obj_machinery_portable_atmospherics_powered_scrubber{on:num,connected:num,pressure:unknown,rate:num,minrate:num,maxrate:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/powered/scrubber's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_data_obj_machinery_portable_atmospherics_powered_scrubber(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["on"] = on ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0
@@ -134,25 +133,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, T
 
 	return data
 
-/obj/machinery/portable_atmospherics/powered/scrubber/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "power", ui_act_power)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_power)
+	set_on(!on)
+	if(on)
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
+	. = TRUE
+	update_icon()
 
-	switch(action)
-		if("power")
-			set_on(!on)
-			if(on)
-				om_changed(src, CHANGE_MACHINE_SETTINGS)
-			. = TRUE
-		if("eject")
-			if(holding)
-				holding.forceMove(loc)
-				own_take(src, "holding")
-			. = TRUE
-		if("volume_adj")
-			volume_rate = CLAMP(text2num(params["vol"]), minrate, maxrate)
-			. = TRUE
+UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "eject", ui_act_eject)
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_eject)
+	if(holding)
+		holding.forceMove(loc)
+		own_take(src, "holding")
+	. = TRUE
+	update_icon()
 
+UI_ACT(/obj/machinery/portable_atmospherics/powered/scrubber, "volume_adj", ui_act_volume_adj, UI_ARG_NUM("vol"))
+UI_ACT_PROC(/obj/machinery/portable_atmospherics/powered/scrubber, ui_act_volume_adj)
+	volume_rate = CLAMP(params["vol"], minrate, maxrate)
+	. = TRUE
 	update_icon()
 
 

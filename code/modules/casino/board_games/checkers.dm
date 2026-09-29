@@ -38,18 +38,17 @@
 	EXPIRY_DECLARE(turn_start_time)
 	var/winner
 
-/datum/board_game/checkers/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ChessCheckers", name)
-		ui.open()
+DECLARE_UI(/datum/board_game/checkers, "ChessCheckers")
 
 GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 
 /datum/board_game/checkers/tgui_static_data(mob/user)
 	return GLOB.checkers_static_data
 
-/datum/board_game/checkers/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/checkers, "merge:ui_data_datum_board_game_checkers{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_figure:bool,valid_moves:bool,game_state:unknown,winner:unknown,has_won:bool,possible_jumps:bool}")
+
+/// The computed part of /datum/board_game/checkers's window data (declared on its UI_DATA row).
+/datum/board_game/checkers/proc/ui_data_datum_board_game_checkers(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = player_one
 	var/mob/player_two_mob = player_two
 
@@ -67,85 +66,94 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		"possible_jumps" = (possible_jumps || list())
 	)
 
-/datum/board_game/checkers/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/board_game/checkers, "be_player_one", ui_act_be_player_one)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_be_player_one)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_one == ui.user)
+		rel_clear(src, "player_one")
+		return TRUE
+	rel_set(src, "player_one", ui.user)
+	return TRUE
 
-	switch(action)
-		if("be_player_one")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_one == ui.user)
-				rel_clear(src, "player_one")
-				return TRUE
-			rel_set(src, "player_one", ui.user)
+UI_ACT(/datum/board_game/checkers, "be_player_two", ui_act_be_player_two)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_be_player_two)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(player_two == ui.user)
+		rel_clear(src, "player_two")
+		return TRUE
+	rel_set(src, "player_two", ui.user)
+	return TRUE
+
+UI_ACT(/datum/board_game/checkers, "swap_players", ui_act_swap_players)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_swap_players)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+
+UI_ACT(/datum/board_game/checkers, "clear_game", ui_act_clear_game)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_clear_game)
+	if(game_state == GAME_SETUP)
+		return FALSE
+	reset(TRUE)
+	return TRUE
+
+UI_ACT(/datum/board_game/checkers, "start_game", ui_act_start_game)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_start_game)
+	if(game_state != GAME_SETUP)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	current_board = get_defaultboard()
+	game_state = GAME_PLAYER_ONE
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/checkers, "play_again", ui_act_play_again)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_play_again)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/checkers, "play_again_swapped", ui_act_play_again_swapped)
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_play_again_swapped)
+	if(game_state < GAME_OVER)
+		return FALSE
+	if(!player_one || !player_two)
+		return FALSE
+	reset()
+	var/mob/temp_player = player_one
+	rel_set(src, "player_one", player_two)
+	rel_set(src, "player_two", temp_player)
+	EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
+	return TRUE
+
+UI_ACT(/datum/board_game/checkers, "game_action", ui_act_game_action, UI_ARG_TEXT("action", 64), UI_ARG_LIST("data"))
+UI_ACT_PROC(/datum/board_game/checkers, ui_act_game_action)
+	if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "w")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_TWO
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("be_player_two")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(player_two == ui.user)
-				rel_clear(src, "player_two")
-				return TRUE
-			rel_set(src, "player_two", ui.user)
+	if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
+		var/game_action = ui_subdispatch(src, "game", params["action"], params["data"], ui.user, ui, state, "b")
+		if(game_action)
+			if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
+				game_state = GAME_PLAYER_ONE
+				EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
 			return TRUE
-		if("swap_players")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
-		if("clear_game")
-			if(game_state == GAME_SETUP)
-				return FALSE
-			reset(TRUE)
-			return TRUE
-		if("start_game")
-			if(game_state != GAME_SETUP)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			current_board = get_defaultboard()
-			game_state = GAME_PLAYER_ONE
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("play_again_swapped")
-			if(game_state < GAME_OVER)
-				return FALSE
-			if(!player_one || !player_two)
-				return FALSE
-			reset()
-			var/mob/temp_player = player_one
-			rel_set(src, "player_one", player_two)
-			rel_set(src, "player_two", temp_player)
-			EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-			return TRUE
-		if("game_action")
-			if(ui.user == player_one && game_state == GAME_PLAYER_ONE)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "w")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_TWO
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			if(ui.user == player_two && game_state == GAME_PLAYER_TWO)
-				var/game_action = player_actions(params["action"], params["data"], ui.user, "b")
-				if(game_action)
-					if(game_state < GAME_OVER && game_action == GAME_ACTION_END_TURN)
-						game_state = GAME_PLAYER_ONE
-						EXPIRY_STAMP(src, turn_start_time, CLOCK_WORLD)
-					return TRUE
-			return FALSE
+	return FALSE
 
 /datum/board_game/checkers/proc/reset(full)
 	winner = null
@@ -162,84 +170,84 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		current_board = get_defaultboard()
 		game_state = GAME_PLAYER_ONE
 
-/datum/board_game/checkers/proc/player_actions(action, list/params, mob/user, active_color)
-	switch(action)
-		if("select_figure")
-			var/list/validated_data = validate_coords(params)
-			if (!validated_data)
-				return GAME_ACTION_NONE
+UI_SUBACT(/datum/board_game/checkers, "game", "select_figure", game_select_figure, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/checkers, game_select_figure)
+	var/list/validated_data = validate_coords(params["loc_x"], params["loc_y"])
+	if (!validated_data)
+		return GAME_ACTION_NONE
 
-			var/piece = current_board[validated_data[2]][validated_data[1]]
-			if(!piece || piece[1] != active_color)
-				return GAME_ACTION_NONE
+	var/piece = current_board[validated_data[2]][validated_data[1]]
+	if(!piece || piece[1] != extra)
+		return GAME_ACTION_NONE
 
-			if(has_available_jumps(active_color))
-				var/list/jumps = generate_valid_moves(validated_data[1], validated_data[2], TRUE)
-				if (length(jumps) == 0)
-					return GAME_ACTION_NONE
+	if(has_available_jumps(extra))
+		var/list/jumps = generate_valid_moves(validated_data[1], validated_data[2], TRUE)
+		if (length(jumps) == 0)
+			return GAME_ACTION_NONE
 
-			selected_figure = validated_data
+	selected_figure = validated_data
+	update_valid_moves()
+	return GAME_ACTION_SELECT
+
+UI_SUBACT(/datum/board_game/checkers, "game", "move_figure", game_move_figure, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"))
+UI_SUBACT_PROC(/datum/board_game/checkers, game_move_figure)
+	var/list/coords = validate_coords(params["loc_x"], params["loc_y"])
+	if(!coords || !selected_figure)
+		return GAME_ACTION_NONE
+
+	var/to_x = coords[1]
+	var/to_y = coords[2]
+
+	if(!valid_move(to_x, to_y))
+		return GAME_ACTION_NONE
+
+	var/from_x = LAZYACCESS(selected_figure, 1)
+	var/from_y = LAZYACCESS(selected_figure, 2)
+	var/moving_piece = current_board[from_y][from_x]
+
+	if(moving_piece[2] == "M" && ((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE)))
+		moving_piece = moving_piece[1] + "K"
+
+	current_board[to_y][to_x] = moving_piece
+	current_board[from_y][from_x] = null
+
+	var/did_jump = FALSE
+	if(abs(to_x - from_x) >= 2 && abs(to_y - from_y) >= 2)
+		var/step_x = (to_x - from_x) / abs(to_x - from_x)
+		var/step_y = (to_y - from_y) / abs(to_y - from_y)
+		var/x = from_x + step_x
+		var/y = from_y + step_y
+
+		while(x != to_x && y != to_y)
+			var/p = current_board[y][x]
+			if(p && p[1] != moving_piece[1])
+				current_board[y][x] = null
+				did_jump = TRUE
+				break
+			x += step_x
+			y += step_y
+
+		if(did_jump && piece_can_jump_again(to_x, to_y))
+			selected_figure = list(to_x, to_y)
 			update_valid_moves()
+			validate_victory(extra)
+			possible_jumps = get_mandatory_jumps(extra)
 			return GAME_ACTION_SELECT
 
-		if("move_figure")
-			var/list/coords = validate_coords(params)
-			if(!coords || !selected_figure)
-				return GAME_ACTION_NONE
+	var/turn_duration = world.time - turn_start_time
+	if(game_state == GAME_PLAYER_ONE)
+		player_one_time += turn_duration
+	else if(game_state == GAME_PLAYER_TWO)
+		player_two_time += turn_duration
 
-			var/to_x = coords[1]
-			var/to_y = coords[2]
-
-			if(!valid_move(to_x, to_y))
-				return GAME_ACTION_NONE
-
-			var/from_x = LAZYACCESS(selected_figure, 1)
-			var/from_y = LAZYACCESS(selected_figure, 2)
-			var/moving_piece = current_board[from_y][from_x]
-
-			if(moving_piece[2] == "M" && ((moving_piece[1] == "w" && to_y == 1) || (moving_piece[1] == "b" && to_y == GRID_SIZE)))
-				moving_piece = moving_piece[1] + "K"
-
-			current_board[to_y][to_x] = moving_piece
-			current_board[from_y][from_x] = null
-
-			var/did_jump = FALSE
-			if(abs(to_x - from_x) >= 2 && abs(to_y - from_y) >= 2)
-				var/step_x = (to_x - from_x) / abs(to_x - from_x)
-				var/step_y = (to_y - from_y) / abs(to_y - from_y)
-				var/x = from_x + step_x
-				var/y = from_y + step_y
-
-				while(x != to_x && y != to_y)
-					var/p = current_board[y][x]
-					if(p && p[1] != moving_piece[1])
-						current_board[y][x] = null
-						did_jump = TRUE
-						break
-					x += step_x
-					y += step_y
-
-				if(did_jump && piece_can_jump_again(to_x, to_y))
-					selected_figure = list(to_x, to_y)
-					update_valid_moves()
-					validate_victory(active_color)
-					possible_jumps = get_mandatory_jumps(active_color)
-					return GAME_ACTION_SELECT
-
-			var/turn_duration = world.time - turn_start_time
-			if(game_state == GAME_PLAYER_ONE)
-				player_one_time += turn_duration
-			else if(game_state == GAME_PLAYER_TWO)
-				player_two_time += turn_duration
-
-			LAZYCLEARLIST(selected_figure)
-			update_valid_moves()
-			validate_victory(active_color)
-			if(game_state != GAME_OVER)
-				possible_jumps = get_mandatory_jumps(active_color == "w" ? "b" : "w")
-			else
-				LAZYCLEARLIST(possible_jumps)
-			return GAME_ACTION_END_TURN
+	LAZYCLEARLIST(selected_figure)
+	update_valid_moves()
+	validate_victory(extra)
+	if(game_state != GAME_OVER)
+		possible_jumps = get_mandatory_jumps(extra == "w" ? "b" : "w")
+	else
+		LAZYCLEARLIST(possible_jumps)
+	return GAME_ACTION_END_TURN
 
 /datum/board_game/checkers/proc/get_mandatory_jumps(active_color)
 	var/list/jumping_pieces = list()
@@ -491,9 +499,7 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 		return FALSE
 	return TRUE
 
-/datum/board_game/checkers/proc/validate_coords(list/params)
-	var/x_loc = text2num(params["loc_x"])
-	var/y_loc = text2num(params["loc_y"])
+/datum/board_game/checkers/proc/validate_coords(x_loc, y_loc)
 
 	if(!isnum(x_loc) || !isnum(y_loc))
 		return null

@@ -27,12 +27,10 @@ GLOBAL_LIST_INIT(persistence_editor_static_data, list( 	"labels" = list( 		"spaw
 /datum/preference_editor/persistence/build_ui_static_data(datum/preferences/preferences)
 	return GLOB.persistence_editor_static_data
 
-/datum/preference_editor/persistence/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	if(action != "toggle_flag")
-		return PREF_UPDATE_UNCHANGED
-	var/flag_name = params["flag"]
+UI_ACT(/datum/preference_editor/persistence, "toggle_flag", ui_act_toggle_flag, UI_ARG_CHOICE("flag", list("spawn", "weight", "organs", "markings", "size")))
+UI_ACT_PREF_PROC(/datum/preference_editor/persistence, ui_act_toggle_flag)
 	var/bit
-	switch(flag_name)
+	switch(params["flag"])
 		if("spawn")    bit = PERSIST_SPAWN
 		if("weight")   bit = PERSIST_WEIGHT
 		if("organs")   bit = PERSIST_ORGANS

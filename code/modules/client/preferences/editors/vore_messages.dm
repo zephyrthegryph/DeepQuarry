@@ -16,38 +16,49 @@
 		"cold" = preferences.read_preference(/datum/preference/custom_cold) || list(),
 	)
 
-/datum/preference_editor/vore_messages/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+UI_ACT(/datum/preference_editor/vore_messages, "add_message", ui_act_add_message, UI_ARG_TEXT("text"), UI_ARG_TEXT("which"))
+UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_add_message)
 	var/which = params["which"]
-	if(which != "heat" && which != "cold")
-		return PREF_UPDATE_REJECTED
 	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
 	var/list/messages = preferences.read_preference(pref_type) || list()
+	if(which != "heat" && which != "cold")
+		return FALSE
+	var/text = strip_html_simple(trim(params["text"] || ""))
+	if(!text || length(text) > 400)
+		return PREF_UPDATE_REJECTED
+	if(messages.len >= 10)
+		return PREF_UPDATE_REJECTED
+	messages += text
+	preferences.update_preference_by_type(pref_type, messages)
+	return PREF_UPDATE_ACCEPTED
 
-	switch(action)
-		if("add_message")
-			var/text = strip_html_simple(trim(params["text"] || ""))
-			if(!text || length(text) > 400)
-				return PREF_UPDATE_REJECTED
-			if(messages.len >= 10)
-				return PREF_UPDATE_REJECTED
-			messages += text
-			preferences.update_preference_by_type(pref_type, messages)
-			return PREF_UPDATE_ACCEPTED
-		if("edit_message")
-			var/index = text2num(params["index"])
-			var/text = strip_html_simple(trim(params["text"] || ""))
-			if(!index || index < 1 || index > messages.len)
-				return PREF_UPDATE_REJECTED
-			if(!text || length(text) > 400)
-				return PREF_UPDATE_REJECTED
-			messages[index] = text
-			preferences.update_preference_by_type(pref_type, messages)
-			return PREF_UPDATE_ACCEPTED
-		if("remove_message")
-			var/index = text2num(params["index"])
-			if(!index || index < 1 || index > messages.len)
-				return PREF_UPDATE_REJECTED
-			messages.Cut(index, index + 1)
-			preferences.update_preference_by_type(pref_type, messages)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/vore_messages, "edit_message", ui_act_edit_message, UI_ARG_NUM("index"), UI_ARG_TEXT("text"), UI_ARG_TEXT("which"))
+UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_edit_message)
+	var/which = params["which"]
+	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
+	var/list/messages = preferences.read_preference(pref_type) || list()
+	if(which != "heat" && which != "cold")
+		return FALSE
+	var/index = params["index"]
+	var/text = strip_html_simple(trim(params["text"] || ""))
+	if(!index || index < 1 || index > messages.len)
+		return PREF_UPDATE_REJECTED
+	if(!text || length(text) > 400)
+		return PREF_UPDATE_REJECTED
+	messages[index] = text
+	preferences.update_preference_by_type(pref_type, messages)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/vore_messages, "remove_message", ui_act_remove_message, UI_ARG_NUM("index"), UI_ARG_TEXT("which"))
+UI_ACT_PREF_PROC(/datum/preference_editor/vore_messages, ui_act_remove_message)
+	var/which = params["which"]
+	var/pref_type = which == "heat" ? /datum/preference/custom_heat : /datum/preference/custom_cold
+	var/list/messages = preferences.read_preference(pref_type) || list()
+	if(which != "heat" && which != "cold")
+		return FALSE
+	var/index = params["index"]
+	if(!index || index < 1 || index > messages.len)
+		return PREF_UPDATE_REJECTED
+	messages.Cut(index, index + 1)
+	preferences.update_preference_by_type(pref_type, messages)
+	return PREF_UPDATE_ACCEPTED

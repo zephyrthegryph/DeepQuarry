@@ -56,8 +56,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
-/datum/board_game/tgui_state(mob/user)
-	return GLOB.tgui_board_game_state
+DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
 
 /datum/board_game/New(atom/holder)
 	. = ..()
@@ -66,26 +65,20 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 /datum/board_game/tgui_host(mob/user)
 	return parent()
 
-/datum/board_game/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/datum/board_game, "invite_player", ui_act_invite_player)
+UI_ACT_PROC(/datum/board_game, ui_act_invite_player)
+	var/list/possible_mobs = ui.user.living_mobs_in_view(1, TRUE, TRUE)
+	for(var/obj/belly/our_belly in ui.user.vore_organs)
+		for(var/mob/living/prey in contents_of(our_belly))
+			if(prey.client)
+				possible_mobs += prey
+	var/mob/living/new_player = act_ask(ui.user, action, params, ui, "k83", /datum/om/prompt/choice, message = "Invite a nearby player to the game.", title = "Invite Player", choices = possible_mobs)
+	if(isnull(new_player))
 		return
-
-	switch(action)
-		if("invite_player")
-			var/list/possible_mobs = ui.user.living_mobs_in_view(1, TRUE, TRUE)
-			for(var/obj/belly/our_belly in ui.user.vore_organs)
-				for(var/mob/living/prey in contents_of(our_belly))
-					if(prey.client)
-						possible_mobs += prey
-			var/mob/living/new_player = act_ask(ui.user, action, params, ui, "k83", /datum/om/prompt/choice, message = "Invite a nearby player to the game.", title = "Invite Player", choices = possible_mobs)
-			if(isnull(new_player))
-				return
-			if(!new_player)
-				return FALSE
-			tgui_interact(new_player)
-			return TRUE
-	return FALSE
+	if(!new_player)
+		return FALSE
+	tgui_interact(new_player)
+	return TRUE
 
 /// The table this game sits on (a relation view: null once it is deleted).
 /datum/board_game/proc/parent() as /atom

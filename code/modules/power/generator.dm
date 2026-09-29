@@ -241,22 +241,18 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/power/generator/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TEGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/generator, "TEGenerator")
 
-/obj/machinery/power/generator/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/generator, "totalOutput=effective_gen:num", "maxTotalOutput=max_power:num", "thermalOutput=last_thermal_gen:num", "merge:ui_data_obj_machinery_power_generator{primary:list,secondary:list}")
+
+/// The computed part of /obj/machinery/power/generator's window data (declared on its UI_DATA row).
+/obj/machinery/power/generator/proc/ui_data_obj_machinery_power_generator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/vertical = 0
 	if (dir == NORTH || dir == SOUTH)
 		vertical = 1
 
 	var/list/data = list()
-	data["totalOutput"] = effective_gen
-	data["maxTotalOutput"] = max_power
-	data["thermalOutput"] = last_thermal_gen
 
 	data["primary"] = null
 	if(circ1())

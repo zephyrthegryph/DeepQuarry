@@ -67,46 +67,40 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
-/obj/machinery/suspension_gen/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "XenoarchSuspension", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/suspension_gen, "XenoarchSuspension")
 
-/obj/machinery/suspension_gen/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui_data_obj_machinery_suspension_gen{cellCharge:num,cellMaxCharge:num,locked:num}")
 
-	data["cell"] = cell
+/// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
+/obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["cellCharge"] = cell?.charge
 	data["cellMaxCharge"] = cell?.maxcharge
 
 	data["locked"] = locked
-	data["suspension_field"] = suspension_field
 
 	return data
 
-/obj/machinery/suspension_gen/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
-	switch(action)
-		if("toggle_field")
-			if(locked)
-				return
-			if(!suspension_field)
-				if(cell.charge > 0)
-					if(anchored)
-						activate()
-					else
-						to_chat(ui.user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
+UI_ACT(/obj/machinery/suspension_gen, "toggle_field", ui_act_toggle_field)
+UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_toggle_field)
+	if(locked)
+		return
+	if(!suspension_field)
+		if(cell.charge > 0)
+			if(anchored)
+				activate()
 			else
-				deactivate()
-			return TRUE
+				to_chat(ui.user, span_warning("You are unable to activate [src] until it is properly secured on the ground."))
+	else
+		deactivate()
+	return TRUE
 
-		if("lock")
-			if(allowed(ui.user))
-				set_locked(!locked)
-				return TRUE
+UI_ACT(/obj/machinery/suspension_gen, "lock", ui_act_lock)
+UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_lock)
+	if(allowed(ui.user))
+		set_locked(!locked)
+		return TRUE
 
 /obj/machinery/suspension_gen/screwdriver_act(mob/user, obj/item/tool)
 	if(locked || suspension_field)

@@ -11,24 +11,21 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/destTagger/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/destTagger, GLOB.tgui_inventory_state)
 
-/obj/item/destTagger/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DestinationTagger", name)
-		ui.open()
+DECLARE_UI(/obj/item/destTagger, "DestinationTagger")
 
 /obj/item/destTagger/tgui_static_data(mob/user)
 	. = ..()
 	.["level_names"] = using_map.zlevels
 
-/obj/item/destTagger/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/destTagger, "currTag:num", "merge:ui_data_obj_item_destTagger{taggerLocs:unknown}")
+
+/// The computed part of /obj/item/destTagger's window data (declared on its UI_DATA row).
+/obj/item/destTagger/proc/ui_data_obj_item_destTagger(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["taggerLocs"] = GLOB.tagger_locations
-	data["currTag"] = currTag
 
 	return data
 
@@ -39,23 +36,27 @@ DECLARE_INTERACTIONS(/obj/item/destTagger, INTERACT_USE(null, PROC_REF(interacti
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/destTagger/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+/obj/item/destTagger/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	add_fingerprint(ui.user)
-	switch(action)
-		if("set_tag")
-			var/new_tag = params["tag"]
-			if(!(new_tag in GLOB.tagger_locations))
-				return FALSE
-			currTag = new_tag
-			return TRUE
-		if("new_tag")
-			var/dest_tag = sanitizeName(params["tag"], allow_numbers = TRUE)
-			if(!istext(dest_tag) || length(dest_tag) < 3)
-				return FALSE
-			if(dest_tag in GLOB.tagger_locations)
-				return FALSE
-			GLOB.tagger_locations[dest_tag] = null
-			currTag = dest_tag
-			return TRUE
+	return TRUE
+
+UI_ACT(/obj/item/destTagger, "set_tag", ui_act_set_tag, UI_ARG_TEXT("tag"))
+UI_ACT_PROC(/obj/item/destTagger, ui_act_set_tag)
+	var/new_tag = params["tag"]
+	if(!(new_tag in GLOB.tagger_locations))
+		return FALSE
+	currTag = new_tag
+	return TRUE
+
+UI_ACT(/obj/item/destTagger, "new_tag", ui_act_new_tag, UI_ARG_TEXT("tag"))
+UI_ACT_PROC(/obj/item/destTagger, ui_act_new_tag)
+	var/dest_tag = sanitizeName(params["tag"], allow_numbers = TRUE)
+	if(!istext(dest_tag) || length(dest_tag) < 3)
+		return FALSE
+	if(dest_tag in GLOB.tagger_locations)
+		return FALSE
+	GLOB.tagger_locations[dest_tag] = null
+	currTag = dest_tag
+	return TRUE

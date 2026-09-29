@@ -105,11 +105,7 @@
 	while (!entry && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_input_text/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TextInputModal")
-		ui.open()
+DECLARE_UI(/datum/tgui_input_text, "TextInputModal")
 
 /datum/tgui_input_text/tgui_close(mob/user)
 	. = ..()
@@ -130,31 +126,32 @@
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
-/datum/tgui_input_text/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_input_text, "merge:ui_data_datum_tgui_input_text{timeout:num}")
+
+/// The computed part of /datum/tgui_input_text's window data (declared on its UI_DATA row).
+/datum/tgui_input_text/proc/ui_data_datum_tgui_input_text(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)
 	return data
 
-/datum/tgui_input_text/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if (.)
-		return
-	switch(action)
-		if("submit")
-			if(max_length)
-				if(length(params["entry"]) > max_length)
-					CRASH("[ui.user] typed a text string longer than the max length")
-				if(encode && (length(html_encode(params["entry"])) > max_length))
-					to_chat(ui.user, span_notice("Your message was clipped due to special character usage."))
-			set_entry(params["entry"])
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
-		if("cancel")
-			closed = TRUE
-			SStgui.close_uis(src)
-			return TRUE
+UI_ACT(/datum/tgui_input_text, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
+UI_ACT_PROC(/datum/tgui_input_text, ui_act_submit)
+	if(max_length)
+		if(length(params["entry"]) > max_length)
+			CRASH("[ui.user] typed a text string longer than the max length")
+		if(encode && (length(html_encode(params["entry"])) > max_length))
+			to_chat(ui.user, span_notice("Your message was clipped due to special character usage."))
+	set_entry(params["entry"])
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
+
+UI_ACT(/datum/tgui_input_text, "cancel", ui_act_cancel)
+UI_ACT_PROC(/datum/tgui_input_text, ui_act_cancel)
+	closed = TRUE
+	SStgui.close_uis(src)
+	return TRUE
 
 /**
  * Sets the return value for the tgui text proc.

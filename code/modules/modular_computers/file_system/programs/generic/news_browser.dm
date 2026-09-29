@@ -36,12 +36,13 @@
 		requires_ntnet = 0 // Turn off NTNet requirement as we already loaded the file into local memory.
 	SStgui.update_uis(src)
 
-/datum/computer_file/program/newsbrowser/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/newsbrowser, "message:text", "showing_archived=show_archived:num", "merge:ui_data_datum_computer_file_program_newsbrowser{download:list,article:list,all_articles:list}")
+
+/// The computed part of /datum/computer_file/program/newsbrowser's window data (declared on its UI_DATA row).
+/datum/computer_file/program/newsbrowser/proc/ui_data_datum_computer_file_program_newsbrowser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
 	var/list/all_articles = list()
-	data["message"] = message
-	data["showing_archived"] = show_archived
 	data["download"] = null
 	data["article"] = null
 	if(loaded_article && !downloading) 	// Viewing an article.
@@ -78,46 +79,51 @@
 	downloading = FALSE
 	show_archived = FALSE
 
-/datum/computer_file/program/newsbrowser/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
+UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_openarticle", ui_act_prg_openarticle, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_openarticle)
+	. = TRUE
+	if(downloading || loaded_article)
 		return TRUE
-	switch(action)
-		if("PRG_openarticle")
-			. = TRUE
-			if(downloading || loaded_article)
-				return TRUE
 
-			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
-				if(N.uid == text2num(params["uid"]))
-					own_set(src, "loaded_article", N.clone())
-					downloading = 1
-					break
-		if("PRG_reset")
-			. = TRUE
-			downloading = 0
-			download_progress = 0
-			requires_ntnet = 1
-			own_clear(src, "loaded_article", OWN_DELETE)
-		if("PRG_clearmessage")
-			. = TRUE
-			message = ""
-		if("PRG_savearticle")
-			. = TRUE
-			if(downloading || !loaded_article)
-				return
+	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
+		if(N.uid == params["uid"])
+			own_set(src, "loaded_article", N.clone())
+			downloading = 1
+			break
 
-			var/savename = act_ask(ui.user, action, params, ui, "k109", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "Save article", default = loaded_article.filename)
-			if(isnull(savename))
-				return
-			if(!savename)
-				return TRUE
-			var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
-			if(!HDD)
-				return TRUE
-			var/datum/computer_file/data/news_article/N = loaded_article.clone()
-			N.filename = savename
-			HDD.store_file(N)
-		if("PRG_toggle_archived")
-			. = TRUE
-			show_archived = !show_archived
+UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_reset)
+	. = TRUE
+	downloading = 0
+	download_progress = 0
+	requires_ntnet = 1
+	own_clear(src, "loaded_article", OWN_DELETE)
+
+UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_clearmessage", ui_act_prg_clearmessage)
+UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_clearmessage)
+	. = TRUE
+	message = ""
+
+UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_savearticle", ui_act_prg_savearticle)
+UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_savearticle)
+	. = TRUE
+	if(downloading || !loaded_article)
+		return
+
+	var/savename = act_ask(ui.user, action, params, ui, "k109", /datum/om/prompt/text, message = "Enter file name or leave blank to cancel:", title = "Save article", default = loaded_article.filename)
+	if(isnull(savename))
+		return
+	if(!savename)
+		return TRUE
+	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
+	if(!HDD)
+		return TRUE
+	var/datum/computer_file/data/news_article/N = loaded_article.clone()
+	N.filename = savename
+	HDD.store_file(N)
+
+UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_toggle_archived", ui_act_prg_toggle_archived)
+UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_toggle_archived)
+	. = TRUE
+	show_archived = !show_archived
 

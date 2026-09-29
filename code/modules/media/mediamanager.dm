@@ -133,10 +133,12 @@
 		window.close()
 	return ..()
 
-/datum/media_manager/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/media_manager, GLOB.tgui_always_state)
 
-/datum/media_manager/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:text,start_time:num,volume:num}")
+
+/// The computed part of /datum/media_manager's window data (declared on its UI_DATA row).
+/datum/media_manager/proc/ui_data_datum_media_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/should_play = TRUE
 	if(owner()?.prefs)
 		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""
@@ -147,6 +149,12 @@
 	)
 
 // Actually pop open the player in the background.
+DECLARE_UI(/datum/media_manager, "MediaPlayer", UI_PINNED, UI_PREINITIALIZED)
+
+/// Renders in the hidden media browser element open() initializes.
+/datum/media_manager/ui_window(mob/user)
+	return media_window
+
 /datum/media_manager/proc/open()
 	if(!owner())
 		return
@@ -161,11 +169,7 @@
 		assets = list(get_asset_datum(/datum/asset/simple/tgui)),
 	)
 
-	var/datum/tgui/ui = SStgui.try_update_ui(owner().mob, src, null)
-	if(!ui)
-		ui = new(owner().mob, src, "MediaPlayer", window = media_window)
-		ui.closeable = FALSE
-		ui.open(preinitialized = TRUE)
+	tgui_interact(owner().mob)
 
 // Push a fresh state to the React side; it'll re-sync audio src/volume/time.
 /datum/media_manager/proc/send_update()

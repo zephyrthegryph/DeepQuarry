@@ -119,15 +119,13 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/folder/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Folder", name)
-		ui.open()
+DECLARE_UI(/obj/item/folder, "Folder")
 
-/obj/item/folder/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_item_folder{items:list}")
+
+/// The computed part of /obj/item/folder's window data (declared on its UI_DATA row).
+/obj/item/folder/proc/ui_data_obj_item_folder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["folder_name"] = name
 	var/list/items = list()
 	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
 		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))
@@ -138,42 +136,53 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 	data["items"] = items
 	return data
 
-/obj/item/folder/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/item/folder/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(usr.stat || usr.restrained())
-		return TRUE
+		return FALSE
 	if(loc != usr)
-		return TRUE
-	var/obj/item/O = locate(params["ref"])
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/item/folder, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/folder, ui_act_remove)
+	var/obj/item/O = params["ref"]
 	if(!O || O.loc != src)
-		return TRUE
-	switch(action)
-		if("remove")
-			if(slot_remove(O, usr.loc, usr))
-				usr.put_in_hands(O)
-			return TRUE
-		if("rename")
-			if(istype(O, /obj/item/paper))
-				var/obj/item/paper/p = O
-				p.paper_verb_rename(usr)
-			else if(istype(O, /obj/item/photo))
-				var/obj/item/photo/ph = O
-				ph.photo_verb_rename(usr)
-			else if(istype(O, /obj/item/paper_bundle))
-				var/obj/item/paper_bundle/pb = O
-				pb.paper_bundle_verb_rename(usr)
-			return TRUE
-		if("open")
-			switch(params["kind"])
-				if("paper")
-					var/obj/item/paper/p = O
-					p.show_content(usr)
-				if("photo")
-					var/obj/item/photo/ph = O
-					ph.show(usr)
-				if("bundle")
-					var/obj/item/paper_bundle/pb = O
-					pb.attack_self(usr)
-			return TRUE
+		return FALSE
+	if(slot_remove(O, usr.loc, usr))
+		usr.put_in_hands(O)
+	return TRUE
+
+UI_ACT(/obj/item/folder, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/folder, ui_act_rename)
+	var/obj/item/O = params["ref"]
+	if(!O || O.loc != src)
+		return FALSE
+	if(istype(O, /obj/item/paper))
+		var/obj/item/paper/p = O
+		p.paper_verb_rename(usr)
+	else if(istype(O, /obj/item/photo))
+		var/obj/item/photo/ph = O
+		ph.photo_verb_rename(usr)
+	else if(istype(O, /obj/item/paper_bundle))
+		var/obj/item/paper_bundle/pb = O
+		pb.paper_bundle_verb_rename(usr)
+	return TRUE
+
+UI_ACT(/obj/item/folder, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/obj/item/folder, ui_act_open)
+	var/obj/item/O = params["ref"]
+	if(!O || O.loc != src)
+		return FALSE
+	switch(params["kind"])
+		if("paper")
+			var/obj/item/paper/p = O
+			p.show_content(usr)
+		if("photo")
+			var/obj/item/photo/ph = O
+			ph.show(usr)
+		if("bundle")
+			var/obj/item/paper_bundle/pb = O
+			pb.attack_self(usr)
+	return TRUE

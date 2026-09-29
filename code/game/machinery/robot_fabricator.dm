@@ -67,43 +67,52 @@
 	cut_overlay("fab-load-metal")
 	inserting = FALSE
 
-/obj/machinery/robotic_fabricator/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	. = ..()
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AncientDroneFab", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/robotic_fabricator, "AncientDroneFab")
 
-/obj/machinery/robotic_fabricator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/robotic_fabricator, "merge:ui_data_obj_machinery_robotic_fabricator{operating:num,metal_amount:num}")
+
+/// The computed part of /obj/machinery/robotic_fabricator's window data (declared on its UI_DATA row).
+/obj/machinery/robotic_fabricator/proc/ui_data_obj_machinery_robotic_fabricator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"operating" = operating,
 		"metal_amount" = metal_amount
 	)
 
-/obj/machinery/robotic_fabricator/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
+/obj/machinery/robotic_fabricator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(operating)
 		return FALSE
-
 	add_fingerprint(ui.user)
-	switch(action)
-		if("build_l_arm")
-			return try_start_building("/obj/item/robot_parts/l_arm", 20 SECONDS, 25000)
-		if("build_r_arm")
-			return try_start_building("/obj/item/robot_parts/r_arm", 20 SECONDS, 25000)
-		if("build_l_leg")
-			return try_start_building("/obj/item/robot_parts/l_leg", 20 SECONDS, 25000)
-		if("build_r_leg")
-			return try_start_building("/obj/item/robot_parts/r_leg", 20 SECONDS, 25000)
-		if("build_chest")
-			return try_start_building("/obj/item/robot_parts/chest", 35 SECONDS, 50000)
-		if("build_head")
-			return try_start_building("/obj/item/robot_parts/head", 35 SECONDS, 50000)
-		if("build_frame")
-			return try_start_building("/obj/item/robot_parts/robot_suit", 60 SECONDS, 75000)
+	return TRUE
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_l_arm", ui_act_build_l_arm)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_l_arm)
+	return try_start_building("/obj/item/robot_parts/l_arm", 20 SECONDS, 25000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_r_arm", ui_act_build_r_arm)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_r_arm)
+	return try_start_building("/obj/item/robot_parts/r_arm", 20 SECONDS, 25000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_l_leg", ui_act_build_l_leg)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_l_leg)
+	return try_start_building("/obj/item/robot_parts/l_leg", 20 SECONDS, 25000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_r_leg", ui_act_build_r_leg)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_r_leg)
+	return try_start_building("/obj/item/robot_parts/r_leg", 20 SECONDS, 25000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_chest", ui_act_build_chest)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_chest)
+	return try_start_building("/obj/item/robot_parts/chest", 35 SECONDS, 50000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_head", ui_act_build_head)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_head)
+	return try_start_building("/obj/item/robot_parts/head", 35 SECONDS, 50000)
+
+UI_ACT(/obj/machinery/robotic_fabricator, "build_frame", ui_act_build_frame)
+UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
+	return try_start_building("/obj/item/robot_parts/robot_suit", 60 SECONDS, 75000)
 
 /obj/machinery/robotic_fabricator/proc/try_start_building(build_type, build_time, build_cost)
 	var/building = text2path(build_type)

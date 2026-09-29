@@ -89,19 +89,18 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/sheetmaterials)
 	)
 
-/obj/machinery/ore_silo/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "OreSilo")
-		ui.open()
+DECLARE_UI(/obj/machinery/ore_silo, "OreSilo")
 
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-/obj/machinery/ore_silo/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials:unknown,machines:list,logs:list}")
 
-	data["materials"] = materials.tgui_data(user)
+/// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
+/obj/machinery/ore_silo/proc/ui_data_obj_machinery_ore_silo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
+	data["materials"] = materials.material_list_data(user)
 
 	data["machines"] = list()
 	for(var/datum/remote_materials/remote as anything in ore_connected_machines)
@@ -131,59 +130,44 @@
 
 	return data
 
-/obj/machinery/ore_silo/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
+UI_ACT(/obj/machinery/ore_silo, "remove", ui_act_remove, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove)
+	var/index = params["id"]
+	if(isnull(index))
 		return
 
-	switch(action)
-		if("remove")
-			var/index = params["id"]
-			if(isnull(index))
-				return
+	var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
+	if(isnull(remote))
+		return
 
-			index = text2num(index)
-			if(isnull(index))
-				return
+	remote.disconnect()
+	return TRUE
 
-			var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
-			if(isnull(remote))
-				return
+UI_ACT(/obj/machinery/ore_silo, "hold", ui_act_hold, UI_ARG_NUM("id"))
+UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
+	var/index = params["id"]
+	if(isnull(index))
+		return
 
-			remote.disconnect()
-			return TRUE
+	var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
+	if(isnull(remote))
+		return
 
-		if("hold")
-			var/index = params["id"]
-			if(isnull(index))
-				return
+	remote.toggle_holding()
+	return TRUE
 
-			index = text2num(index)
-			if(isnull(index))
-				return
+UI_ACT(/obj/machinery/ore_silo, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
+UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
+	var/datum/material/ejecting = GET_MATERIAL_REF(params["id"])
+	if(!istype(ejecting))
+		return
 
-			var/datum/remote_materials/remote = LAZYACCESS(ore_connected_machines, index)
-			if(isnull(remote))
-				return
+	var/amount = params["amount"]
+	if(isnull(amount))
+		return
 
-			remote.toggle_holding()
-			return TRUE
-
-		if("remove_mat")
-			var/datum/material/ejecting = GET_MATERIAL_REF(params["id"])
-			if(!istype(ejecting))
-				return
-
-			var/amount = params["amount"]
-			if(isnull(amount))
-				return
-
-			amount = text2num(amount)
-			if(isnull(amount))
-				return
-
-			materials.retrieve_sheets(amount, ejecting, drop_location())
-			return TRUE
+	materials.retrieve_sheets(amount, ejecting, drop_location())
+	return TRUE
 
 /**
  * Creates a log entry for depositing/withdrawing from the silo both ingame and in text based log

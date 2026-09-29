@@ -6,8 +6,7 @@
 	var/new_name
 	var/datum/robot_sprite/sprite_datum
 
-/datum/tgui_module/robot_ui_module/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/robot_ui_module, GLOB.tgui_self_state)
 
 /datum/tgui_module/robot_ui_module/tgui_close(mob/user)
 	. = ..()
@@ -17,9 +16,9 @@
 	if(!QDELETED(src))
 		qdel(src)
 
-/datum/tgui_module/robot_ui_module/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
-	. = ..()
-	if(isrobot(user) && ui)
+/datum/tgui_module/robot_ui_module/ui_opening(mob/user, datum/tgui/ui)
+	..()
+	if(isrobot(user))
 		var/mob/living/silicon/robot/R = user
 		R.selecting_module = TRUE
 
@@ -65,8 +64,11 @@
 
 	return data
 
-/datum/tgui_module/robot_ui_module/tgui_data()
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/robot_ui_module, "merge:ui_data_datum_tgui_module_robot_ui_module{currentName:text,isDefaultName:bool,selected_module:unknown,possible_sprites:list,sprite_datum:unknown,sprite_datum_class:text,sprite_datum_size:num}")
+
+/// The computed part of /datum/tgui_module/robot_ui_module's window data (declared on its UI_DATA row).
+/datum/tgui_module/robot_ui_module/proc/ui_data_datum_tgui_module_robot_ui_module(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
 
@@ -105,57 +107,60 @@
 
 	return data
 
-/datum/tgui_module/robot_ui_module/tgui_act(action, params)
-	. = ..()
-	if(.)
-		return
-
+UI_ACT(/datum/tgui_module/robot_ui_module, "pick_module", ui_act_pick_module, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_module)
 	var/mob/living/silicon/robot/R = host()
+	if(R.module)
+		return FALSE
+	var/new_module = params["value"]
+	if(!(new_module in GLOB.robot_modules))
+		return FALSE
+	if(!is_borg_whitelisted(R, new_module))
+		return FALSE
+	selected_module = new_module
+	if(sprite_datum)
+		var/new_datum
+		var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
+		for(var/datum/robot_sprite/S in module_sprites)
+			if(S.name == sprite_datum.name)
+				new_datum = S
+				break
+		sprite_datum = new_datum
+	return TRUE
 
-	switch(action)
-		if("pick_module")
-			if(R.module)
-				return FALSE
-			var/new_module = params["value"]
-			if(!(new_module in GLOB.robot_modules))
-				return FALSE
-			if(!is_borg_whitelisted(R, new_module))
-				return FALSE
-			selected_module = new_module
-			if(sprite_datum)
-				var/new_datum
-				var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
-				for(var/datum/robot_sprite/S in module_sprites)
-					if(S.name == sprite_datum.name)
-						new_datum = S
-						break
-				sprite_datum = new_datum
-			return TRUE
-		if("pick_icon")
-			var/sprite = params["value"]
-			if(!sprite)
-				return FALSE
-			var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
-			for(var/datum/robot_sprite/S in module_sprites)
-				if(S.name == sprite)
-					sprite_datum = S
-					break
-			return TRUE
-		if("rename")
-			var/name = params["value"]
-			if(name)
-				new_name = sanitizeSafe(name, MAX_NAME_LEN)
-				R.sprite_name = new_name
-			return TRUE
-		if("confirm")
-			if(!sprite_datum || !selected_module)
-				return TRUE
-			R.apply_name(new_name)
-			R.apply_module(sprite_datum, selected_module)
-			R.update_multibelly()
-			R.transform_module()
-			close_ui()
-			return TRUE
+UI_ACT(/datum/tgui_module/robot_ui_module, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_icon)
+	var/mob/living/silicon/robot/R = host()
+	var/sprite = params["value"]
+	if(!sprite)
+		return FALSE
+	var/list/module_sprites = SSrobot_sprites.get_module_sprites(selected_module, R)
+	for(var/datum/robot_sprite/S in module_sprites)
+		if(S.name == sprite)
+			sprite_datum = S
+			break
+	return TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui_module, "rename", ui_act_rename, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_rename)
+	var/mob/living/silicon/robot/R = host()
+	var/name = params["value"]
+	if(name)
+		new_name = sanitizeSafe(name, MAX_NAME_LEN)
+		R.sprite_name = new_name
+	return TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui_module, "confirm", ui_act_confirm)
+UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_confirm)
+	var/mob/living/silicon/robot/R = host()
+	if(!sprite_datum || !selected_module)
+		return TRUE
+	R.apply_name(new_name)
+	R.apply_module(sprite_datum, selected_module)
+	R.update_multibelly()
+	R.transform_module()
+	close_ui()
+	return TRUE
 
 /mob/living/silicon/robot/proc/apply_name(new_name)
 	if(!custom_name)

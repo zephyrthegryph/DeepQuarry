@@ -102,37 +102,35 @@
 /**
  * The NIF State ensures that only our authorized implanted user can touch us.
  */
-/obj/item/nif/tgui_state(mob/user)
-	return GLOB.tgui_nif_main_state
+DECLARE_UI_STATE(/obj/item/nif, GLOB.tgui_nif_main_state)
 
 /**
  * Standard TGUI stub to open the NIF.js template.
  */
-/obj/item/nif/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+DECLARE_UI(/obj/item/nif, "NIF")
+
+/obj/item/nif/ui_prepare(mob/user, datum/tgui/ui)
 	if(!ishuman(user))
 		return FALSE
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "NIF", name)
-		ui.open()
+	return TRUE
 
 /**
  * tgui_data gives the UI any relevant data it needs.
  * In our case, that's basically everything from our statpanel.
  */
-/obj/item/nif/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/nif, "valid_themes=valid_ui_themes:list", "last_notification", "nif_stat=stat", "merge:ui_data_obj_item_nif{theme:unknown,nutrition:num,isSynthetic:unknown,nif_percent:num,modules:list}")
 
-	data["valid_themes"] = valid_ui_themes
+/// The computed part of /obj/item/nif's window data (declared on its UI_DATA row).
+/obj/item/nif/proc/ui_data_obj_item_nif(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["theme"] = save_data["ui_theme"]
-	data["last_notification"] = last_notification
 
 	// Random biometric information
 	data["nutrition"] = human.nutrition
 	data["isSynthetic"] = HAS_SYNTHETIC_BIOLOGY(human)
 
 	data["nif_percent"] = round((durability/initial(durability))*100)
-	data["nif_stat"] = stat
 
 	var/list/modules = list()
 	if(stat == NIF_WORKING)
@@ -160,34 +158,36 @@
 /**
  * tgui_act handles all user input in the UI.
  */
-/obj/item/nif/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/nif, "setTheme", ui_act_settheme, UI_ARG_VALUE("theme"))
+UI_ACT_PROC(/obj/item/nif, ui_act_settheme)
+	if((params["theme"] in valid_ui_themes) || params["theme"] == null)
+		save_data["ui_theme"] = params["theme"]
+	return TRUE
 
-	switch(action)
-		if("setTheme")
-			if((params["theme"] in valid_ui_themes) || params["theme"] == null)
-				save_data["ui_theme"] = params["theme"]
-			return TRUE
-		if("toggle_module")
-			var/datum/nifsoft/NS = locate_in_list(nifsofts, params["module"])
-			if(!istype(NS))
-				return
-			if(NS.activates)
-				if(NS.active)
-					NS.deactivate()
-				else
-					NS.activate()
-			return TRUE
-		if("uninstall")
-			var/datum/nifsoft/NS = locate_in_list(nifsofts, params["module"])
-			if(!istype(NS))
-				return
-			NS.uninstall()
-			return TRUE
-		if("dismissNotification")
-			last_notification = null
-			return TRUE
+UI_ACT(/obj/item/nif, "toggle_module", ui_act_toggle_module, UI_ARG_REF("module", "nifsofts", /datum/nifsoft))
+UI_ACT_PROC(/obj/item/nif, ui_act_toggle_module)
+	var/datum/nifsoft/NS = params["module"]
+	if(!istype(NS))
+		return
+	if(NS.activates)
+		if(NS.active)
+			NS.deactivate()
+		else
+			NS.activate()
+	return TRUE
+
+UI_ACT(/obj/item/nif, "uninstall", ui_act_uninstall, UI_ARG_REF("module", "nifsofts", /datum/nifsoft))
+UI_ACT_PROC(/obj/item/nif, ui_act_uninstall)
+	var/datum/nifsoft/NS = params["module"]
+	if(!istype(NS))
+		return
+	NS.uninstall()
+	return TRUE
+
+UI_ACT(/obj/item/nif, "dismissNotification", ui_act_dismissnotification)
+UI_ACT_PROC(/obj/item/nif, ui_act_dismissnotification)
+	last_notification = null
+	return TRUE
 
 /// The NIF's HUD menu helper, owned by the NIF (created on implant, deleted on unimplant or with the NIF).
 /obj/item/nif/proc/menu() as /datum/nif_menu

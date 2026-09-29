@@ -13,18 +13,19 @@
 	rel_set(src, "host", host_mob)
 	rel_set(src, "channel", CHANNEL)
 
-/datum/news_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/news_panel, GLOB.tgui_always_state)
 
-/datum/news_panel/tgui_interact(mob/user, datum/tgui/ui)
+DECLARE_UI(/datum/news_panel, "LatestNews", UI_TITLE("Latest News"))
+
+/datum/news_panel/ui_prepare(mob/user, datum/tgui/ui)
 	if(!host || user != host)
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "LatestNews", "Latest News")
-		ui.open()
+		return FALSE
+	return TRUE
 
-/datum/news_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:text,page:bool,total:num,has_messages:bool,title:text,author:text,body:text}")
+
+/// The computed part of /datum/news_panel's window data (declared on its UI_DATA row).
+/datum/news_panel/proc/ui_data_datum_news_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host || !channel)
 		return data
@@ -39,25 +40,30 @@
 		data["body"] = M.body
 	return data
 
-/datum/news_panel/tgui_act(action, list/params, datum/tgui/ui)
-	. = ..()
-	if(. || !host || !channel)
-		return
-	switch(action)
-		if("next")
-			if(!host.current_news_page || !channel.messages || host.current_news_page == channel.messages.len)
-				return TRUE
-			host.current_news_page++
-			play_sfx(host.loc, SFX_PAGETURN)
-			SStgui.update_uis(src)
-			return TRUE
-		if("prev")
-			if(!host.current_news_page || !channel.messages || host.current_news_page <= 1)
-				return TRUE
-			host.current_news_page--
-			play_sfx(host.loc, SFX_PAGETURN)
-			SStgui.update_uis(src)
-			return TRUE
+/datum/news_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
+	if(!host || !channel)
+		return FALSE
+	return TRUE
+
+UI_ACT(/datum/news_panel, "next", ui_act_next)
+UI_ACT_PROC(/datum/news_panel, ui_act_next)
+	if(!host.current_news_page || !channel.messages || host.current_news_page == channel.messages.len)
+		return TRUE
+	host.current_news_page++
+	play_sfx(host.loc, SFX_PAGETURN)
+	SStgui.update_uis(src)
+	return TRUE
+
+UI_ACT(/datum/news_panel, "prev", ui_act_prev)
+UI_ACT_PROC(/datum/news_panel, ui_act_prev)
+	if(!host.current_news_page || !channel.messages || host.current_news_page <= 1)
+		return TRUE
+	host.current_news_page--
+	play_sfx(host.loc, SFX_PAGETURN)
+	SStgui.update_uis(src)
+	return TRUE
 
 /mob/new_player/proc/show_latest_news(datum/feed_channel/CHANNEL)
 	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())

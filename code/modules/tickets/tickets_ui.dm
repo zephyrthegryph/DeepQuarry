@@ -2,14 +2,9 @@
 //TICKET MANAGER
 //
 
-/datum/tickets/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TicketsPanel", "Tickets")
-		ui.open()
+DECLARE_UI(/datum/tickets, "TicketsPanel", UI_TITLE("Tickets"))
 
-/datum/tickets/tgui_state(mob/user)
-	return GLOB.tgui_mentor_state
+DECLARE_UI_STATE(/datum/tickets, GLOB.tgui_mentor_state)
 
 /datum/tickets/proc/get_ticket_state(state)
 	var/ticket_state
@@ -26,7 +21,10 @@
 
 	return ticket_state
 
-/datum/tickets/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tickets, "merge:ui_data_datum_tickets{tickets:list,is_admin:num,selected_ticket:unknown}")
+
+/// The computed part of /datum/tickets's window data (declared on its UI_DATA row).
+/datum/tickets/proc/ui_data_datum_tickets(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/tickets = list()
 
@@ -99,105 +97,114 @@
 
 	return data
 
-/datum/tickets/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/datum/tickets, "legacy", ui_act_legacy)
+UI_ACT_PROC(/datum/tickets, ui_act_legacy)
+	var/choice = act_ask(ui.user, action, params, ui, "k107", /datum/om/prompt/choice, message = "Which tickets do you want to list?", title = "Tickets", choices = list("Active", "Closed", "Resolved"))
+	if(isnull(choice))
 		return
-	switch(action)
-		if("legacy")
-			var/choice = act_ask(ui.user, action, params, ui, "k107", /datum/om/prompt/choice, message = "Which tickets do you want to list?", title = "Tickets", choices = list("Active", "Closed", "Resolved"))
-			if(isnull(choice))
-				return
-			TicketListLegacy(ui.user, choice)
-			. = TRUE
-		if("new_ticket")
-			var/list/ckeys = list()
-			for(var/client/C in GLOB.clients)
-				ckeys += C.key
+	TicketListLegacy(ui.user, choice)
+	. = TRUE
 
-			var/_answer_k115 = act_ask(ui.user, action, params, ui, "k115", /datum/om/prompt/choice, message = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
-			if(isnull(_answer_k115))
-				return
-			var/ckey = lowertext(_answer_k115)
-			if(!ckey)
-				return
+UI_ACT(/datum/tickets, "new_ticket", ui_act_new_ticket)
+UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
+	var/list/ckeys = list()
+	for(var/client/C in GLOB.clients)
+		ckeys += C.key
 
-			var/client/player
-			for(var/client/C in GLOB.clients)
-				if(C.ckey == ckey)
-					player = C
+	var/_answer_k115 = act_ask(ui.user, action, params, ui, "k115", /datum/om/prompt/choice, message = "Please select the ckey of the user.", title = "Select CKEY", choices = ckeys)
+	if(isnull(_answer_k115))
+		return
+	var/ckey = lowertext(_answer_k115)
+	if(!ckey)
+		return
 
-			if(!player)
-				to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
-				return
+	var/client/player
+	for(var/client/C in GLOB.clients)
+		if(C.ckey == ckey)
+			player = C
 
-			var/ticket_text = act_ask(ui.user, action, params, ui, "k128", /datum/om/prompt/text, message = "What should the initial text be?", title = "New Ticket")
-			if(isnull(ticket_text))
-				return
-			if(!ticket_text)
-				to_chat(ui.user, span_warning("Ticket message cannot be empty."))
-				return
+	if(!player)
+		to_chat(ui.user, span_warning("Ckey ([ckey]) not online."))
+		return
 
-			var/level = act_ask(ui.user, action, params, ui, "k133", /datum/om/prompt/choice/alert, message = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"))
-			if(isnull(level))
-				return
-			if(!level)
-				return
+	var/ticket_text = act_ask(ui.user, action, params, ui, "k128", /datum/om/prompt/text, message = "What should the initial text be?", title = "New Ticket")
+	if(isnull(ticket_text))
+		return
+	if(!ticket_text)
+		to_chat(ui.user, span_warning("Ticket message cannot be empty."))
+		return
 
-			feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	var/level = act_ask(ui.user, action, params, ui, "k133", /datum/om/prompt/choice/alert, message = "Is this ticket Admin-Level or Mentor-Level?", title = "Ticket Level", choices = list("Admin", "Mentor"))
+	if(isnull(level))
+		return
+	if(!level)
+		return
+
+	feedback_add_details("admin_verb","Admincreatedticket") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	if(player.current_ticket())
+		var/input = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/choice/alert, message = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
+		if(isnull(input))
+			return
+		if(!input)
+			return
+		if(input == "Yes")
 			if(player.current_ticket())
-				var/input = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/choice/alert, message = "The player already has a ticket open. Is this for the same issue?", title = "Duplicate?", choices = list("Yes","No"))
-				if(isnull(input))
-					return
-				if(!input)
-					return
-				if(input == "Yes")
-					if(player.current_ticket())
-						player.current_ticket().MessageNoRecipient(ticket_text)
-						to_chat(ui.user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
-						return
-					else
-						to_chat(ui.user, span_warning("Ticket not found, creating new one..."))
-				else
-					player.current_ticket().AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
-					player.current_ticket().Close(ui.user)
-
-			// Create a new ticket and handle it. You created it afterall!
-			var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level)
-			if(level == "Admin")
-				T.level = 1
-			else
-				T.level = 0
-			T.HandleIssue(ui.user)
-			switch(T.level)
-				if (0)
-					ui.user.client.cmd_mentor_pm(player, ticket_text, T)
-				if (1)
-					ui.user.client.cmd_admin_pm(player, ticket_text, T)
-			. = TRUE
-		if("pick_ticket")
-			var/datum/ticket/T = ID2Ticket(params["ticket_id"])
-			ui.user.client.selected_ticket_id = T?.id
-			. = TRUE
-		if("retitle_ticket")
-			ui.user.client.selected_ticket().Retitle()
-			. = TRUE
-		if("reopen_ticket")
-			ui.user.client.selected_ticket().Reopen(ui.user)
-			. = TRUE
-		if("undock_ticket")
-			ui.user.client.selected_ticket().tgui_interact(ui.user)
-			ui.user.client.selected_ticket_id = null
-			. = TRUE
-		if("send_msg")
-			if(!params["msg"])
+				player.current_ticket().MessageNoRecipient(ticket_text)
+				to_chat(ui.user, span_adminnotice("PM to-" + span_bold("Admins") + ": [ticket_text]"))
 				return
+			else
+				to_chat(ui.user, span_warning("Ticket not found, creating new one..."))
+		else
+			player.current_ticket().AddInteraction("[key_name_admin(ui.user)] opened a new ticket.")
+			player.current_ticket().Close(ui.user)
 
-			switch(ui.user.client.selected_ticket().level)
-				if (0)
-					ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
-				if (1)
-					ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
-			. = TRUE
+	// Create a new ticket and handle it. You created it afterall!
+	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level)
+	if(level == "Admin")
+		T.level = 1
+	else
+		T.level = 0
+	T.HandleIssue(ui.user)
+	switch(T.level)
+		if (0)
+			ui.user.client.cmd_mentor_pm(player, ticket_text, T)
+		if (1)
+			ui.user.client.cmd_admin_pm(player, ticket_text, T)
+	. = TRUE
+
+UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_NUM("ticket_id"))
+UI_ACT_PROC(/datum/tickets, ui_act_pick_ticket)
+	var/datum/ticket/T = ID2Ticket(params["ticket_id"])
+	ui.user.client.selected_ticket_id = T?.id
+	. = TRUE
+
+UI_ACT(/datum/tickets, "retitle_ticket", ui_act_retitle_ticket)
+UI_ACT_PROC(/datum/tickets, ui_act_retitle_ticket)
+	ui.user.client.selected_ticket().Retitle()
+	. = TRUE
+
+UI_ACT(/datum/tickets, "reopen_ticket", ui_act_reopen_ticket)
+UI_ACT_PROC(/datum/tickets, ui_act_reopen_ticket)
+	ui.user.client.selected_ticket().Reopen(ui.user)
+	. = TRUE
+
+UI_ACT(/datum/tickets, "undock_ticket", ui_act_undock_ticket)
+UI_ACT_PROC(/datum/tickets, ui_act_undock_ticket)
+	ui.user.client.selected_ticket().tgui_interact(ui.user)
+	ui.user.client.selected_ticket_id = null
+	. = TRUE
+
+UI_ACT(/datum/tickets, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"))
+UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
+	if(!params["msg"])
+		return
+
+	switch(ui.user.client.selected_ticket().level)
+		if (0)
+			ui.user.client.cmd_mentor_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
+		if (1)
+			ui.user.client.cmd_admin_pm(ui.user.client.selected_ticket().initiator(), params["msg"], ui.user.client.selected_ticket())
+	. = TRUE
 
 /datum/tickets/tgui_fallback(payload, user)
 	if(..())
@@ -213,22 +220,21 @@
 //TICKET DATUM
 //
 
-/datum/ticket/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Ticket", "Ticket #[id] - [LinkedReplyName("\ref[src]")]")
-		ui.open()
+DECLARE_UI(/datum/ticket, "Ticket")
 
-/datum/ticket/tgui_state(mob/user)
-	return GLOB.tgui_mentor_state
+/datum/ticket/ui_title(mob/user)
+	return "Ticket #[id] - [LinkedReplyName("\ref[src]")]"
 
-/datum/ticket/tgui_data(mob/user)
+DECLARE_UI_STATE(/datum/ticket, GLOB.tgui_mentor_state)
+
+UI_DATA_REPLACE(/datum/ticket, "id", "title=name:text", "level:num", "handler:text", "log=_interactions:list", "merge:ui_data_datum_ticket{name:unknown,ticket_ref:text,state:text,opened_at:num,closed_at:num,opened_at_date:unknown,closed_at_date:unknown,actions:num}")
+
+/// The computed part of /datum/ticket's window data (declared on its UI_DATA row).
+/datum/ticket/proc/ui_data_datum_ticket(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["id"] = id
 
 	var/ref_src = "\ref[src]"
-	data["title"] = name
 	data["name"] = LinkedReplyName(ref_src)
 	data["ticket_ref"] = ref_src
 
@@ -243,8 +249,6 @@
 		else
 			data["state"] = "unknown"
 
-	data["level"] = level
-	data["handler"] = handler
 
 	data["opened_at"] = (world.time - opened_at)
 	data["closed_at"] = (world.time - closed_at)
@@ -253,36 +257,38 @@
 
 	data["actions"] = FullMonty(ref_src, check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)))
 
-	data["log"] = _interactions
 
 	return data
 
-/datum/ticket/tgui_act(action, params, datum/tgui/ui)
-	if(..())
+UI_ACT(/datum/ticket, "retitle", ui_act_retitle)
+UI_ACT_PROC(/datum/ticket, ui_act_retitle)
+	Retitle()
+	. = TRUE
+
+UI_ACT(/datum/ticket, "reopen", ui_act_reopen)
+UI_ACT_PROC(/datum/ticket, ui_act_reopen)
+	Reopen(ui.user)
+	. = TRUE
+
+UI_ACT(/datum/ticket, "legacy", ui_act_legacy)
+UI_ACT_PROC(/datum/ticket, ui_act_legacy)
+	TicketPanelLegacy(ui.user)
+	. = TRUE
+
+UI_ACT(/datum/ticket, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"), UI_ARG_REF("ticket_ref", null, /datum/ticket))
+UI_ACT_PROC(/datum/ticket, ui_act_send_msg)
+	if(!params["msg"] || !params["ticket_ref"])
 		return
-	switch(action)
-		if("retitle")
-			Retitle()
-			. = TRUE
-		if("reopen")
-			Reopen(ui.user)
-			. = TRUE
-		if("legacy")
-			TicketPanelLegacy(ui.user)
-			. = TRUE
-		if("send_msg")
-			if(!params["msg"] || !params["ticket_ref"])
-				return
 
-			var/datum/ticket/T = locate(params["ticket_ref"])
+	var/datum/ticket/T = params["ticket_ref"]
 
-			switch(level)
-				if (0)
-					ui.user.client.cmd_mentor_pm(T.initiator(), sanitize(params["msg"]), T)
-				if (1)
-					ui.user.client.cmd_admin_pm(T.initiator(), sanitize(params["msg"]), T)
+	switch(level)
+		if (0)
+			ui.user.client.cmd_mentor_pm(T.initiator(), sanitize(params["msg"]), T)
+		if (1)
+			ui.user.client.cmd_admin_pm(T.initiator(), sanitize(params["msg"]), T)
 
-			. = TRUE
+	. = TRUE
 
 /datum/ticket/tgui_fallback(payload, user)
 	if(..())

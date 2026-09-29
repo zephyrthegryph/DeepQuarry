@@ -40,13 +40,15 @@
 
 	..(forced)
 
-/datum/computer_file/program/ntnet_dos/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/ntnet_dos, "error:text", "merge:ui_data_datum_computer_file_program_ntnet_dos{target:bool,speed:num,overload:num,capacity:num,relays:list,focus:unknown}")
+
+/// The computed part of /datum/computer_file/program/ntnet_dos's window data (declared on its UI_DATA row).
+/datum/computer_file/program/ntnet_dos/proc/ui_data_datum_computer_file_program_ntnet_dos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global)
 		return
 
 	var/list/data = get_header_data()
 
-	data["error"] = error
 	if(target() && executed)
 		data["target"] = TRUE
 		data["speed"] = dos_speed
@@ -62,32 +64,33 @@
 
 	return data
 
-/datum/computer_file/program/ntnet_dos/tgui_act(action, params)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_target_relay")
-			for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
-				if(R.uid == text2num(params["targid"]))
-					rel_set(src, "target", R)
-					break
-			return TRUE
-		if("PRG_reset")
-			if(target())
-				rel_remove(target(), "dos_sources", src)
-				rel_clear(src, "target")
-			executed = FALSE
-			error = ""
-			return TRUE
-		if("PRG_execute")
-			if(target())
-				executed = TRUE
-				rel_add(target(), "dos_sources", src)
-				if(GLOB.ntnet_global.intrusion_detection_enabled)
-					var/obj/item/computer_hardware/network_card/network_card = computer().network_card
-					GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
-					GLOB.ntnet_global.intrusion_detection_alarm = TRUE
-			return TRUE
+UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_target_relay", ui_act_prg_target_relay, UI_ARG_NUM("targid"))
+UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_target_relay)
+	for(var/obj/machinery/ntnet_relay/R in GLOB.ntnet_global.relays)
+		if(R.uid == params["targid"])
+			rel_set(src, "target", R)
+			break
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_reset)
+	if(target())
+		rel_remove(target(), "dos_sources", src)
+		rel_clear(src, "target")
+	executed = FALSE
+	error = ""
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/ntnet_dos, "PRG_execute", ui_act_prg_execute)
+UI_ACT_PROC(/datum/computer_file/program/ntnet_dos, ui_act_prg_execute)
+	if(target())
+		executed = TRUE
+		rel_add(target(), "dos_sources", src)
+		if(GLOB.ntnet_global.intrusion_detection_enabled)
+			var/obj/item/computer_hardware/network_card/network_card = computer().network_card
+			GLOB.ntnet_global.add_log("IDS WARNING - Excess traffic flood targeting relay [target().uid] detected from device: [network_card.get_network_tag()]")
+			GLOB.ntnet_global.intrusion_detection_alarm = TRUE
+	return TRUE
 
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnet_dos/proc/target() as /obj/machinery/ntnet_relay

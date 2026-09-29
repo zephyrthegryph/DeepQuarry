@@ -14,30 +14,33 @@
 			// "engines_charging" = ((shuttle.last_move + (shuttle.cooldown SECONDS)) > world.time), // Replaced by longer warmup_time
 		)
 
-/obj/machinery/computer/shuttle_control/multi/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/computer/shuttle_control/multi/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	var/datum/shuttle/autodock/multi/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(ui.user, span_warning("Unable to establish link with the shuttle."))
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/shuttle_control/multi, "pick", ui_act_pick)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/multi, ui_act_pick)
+	var/datum/shuttle/autodock/multi/shuttle = SSshuttles.shuttles[shuttle_tag]
+	var/dest_key = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations())
+	if(isnull(dest_key))
+		return
+	if(dest_key && CanInteract(ui.user, GLOB.tgui_default_state))
+		shuttle.set_destination(dest_key, ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/shuttle_control/multi, "toggle_cloaked", ui_act_toggle_cloaked)
+UI_ACT_PROC(/obj/machinery/computer/shuttle_control/multi, ui_act_toggle_cloaked)
+	var/datum/shuttle/autodock/multi/shuttle = SSshuttles.shuttles[shuttle_tag]
+	if(!shuttle.can_cloak)
 		return TRUE
-
-	switch(action)
-		if("pick")
-			var/dest_key = act_ask(ui.user, action, params, ui, "k28", /datum/om/prompt/choice, message = "Choose shuttle destination", title = "Shuttle Destination", choices = shuttle.get_destinations())
-			if(isnull(dest_key))
-				return
-			if(dest_key && CanInteract(ui.user, GLOB.tgui_default_state))
-				shuttle.set_destination(dest_key, ui.user)
-			return TRUE
-
-		if("toggle_cloaked")
-			if(!shuttle.can_cloak)
-				return TRUE
-			shuttle.cloaked = !shuttle.cloaked
-			if(shuttle.legit)
-				to_chat(ui.user, span_notice("Ship ATC inhibitor systems have been [(shuttle.cloaked ? "activated. The station will not" : "deactivated. The station will")] be notified of our arrival."))
-			else
-				to_chat(ui.user, span_warning("Ship stealth systems have been [(shuttle.cloaked ? "activated. The station will not" : "deactivated. The station will")] be warned of our arrival."))
-			return TRUE
+	shuttle.cloaked = !shuttle.cloaked
+	if(shuttle.legit)
+		to_chat(ui.user, span_notice("Ship ATC inhibitor systems have been [(shuttle.cloaked ? "activated. The station will not" : "deactivated. The station will")] be notified of our arrival."))
+	else
+		to_chat(ui.user, span_warning("Ship stealth systems have been [(shuttle.cloaked ? "activated. The station will not" : "deactivated. The station will")] be warned of our arrival."))
+	return TRUE

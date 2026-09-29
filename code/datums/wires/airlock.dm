@@ -42,8 +42,11 @@
 	. += "The 'Check Timing Mechanism' light is [(A.normalspeed == 0 && haspower) ? "on" : "off"]."
 	. += "The IDScan light is [(A.aiDisabledIdScanner == 0 && haspower) ? "on" : "off."]"
 
-/datum/wires/airlock/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/wires/airlock, "merge:ui_data_datum_wires_airlock{id_tag:text,frequency:num,min_freq:num,max_freq:num}")
+
+/// The computed part of /datum/wires/airlock's window data (declared on its UI_DATA row).
+/datum/wires/airlock/proc/ui_data_datum_wires_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/obj/machinery/door/airlock/A = holder
 	data["id_tag"] = A.id_tag
@@ -53,29 +56,27 @@
 
 	return data
 
-/datum/wires/airlock/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
-
+UI_ACT(/datum/wires/airlock, "set_id_tag", ui_act_set_id_tag)
+UI_ACT_PROC(/datum/wires/airlock, ui_act_set_id_tag)
 	var/obj/machinery/door/airlock/A = holder
+	var/new_id = act_ask(usr, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
+	if(isnull(new_id))
+		return
+	if(new_id)
+		keyed_set_id(A, "id_tag", new_id) // re-links the keyed relations matching on it
+		return TRUE
 
-	switch(action)
-		if("set_id_tag")
-			var/new_id = act_ask(usr, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
-			if(isnull(new_id))
-				return
-			if(new_id)
-				keyed_set_id(A, "id_tag", new_id) // re-links the keyed relations matching on it
-				return TRUE
+UI_ACT(/datum/wires/airlock, "set_frequency", ui_act_set_frequency, UI_ARG_NUM("freq"))
+UI_ACT_PROC(/datum/wires/airlock, ui_act_set_frequency)
+	var/obj/machinery/door/airlock/A = holder
+	A.set_frequency(sanitize_frequency(params["freq"], RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
+	return TRUE
 
-		if("set_frequency")
-			A.set_frequency(sanitize_frequency(text2num(params["freq"]), RADIO_LOW_FREQ, RADIO_HIGH_FREQ))
-			return TRUE
-
-		if("clear_frequency")
-			A.set_frequency(null)
-			return TRUE
+UI_ACT(/datum/wires/airlock, "clear_frequency", ui_act_clear_frequency)
+UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
+	var/obj/machinery/door/airlock/A = holder
+	A.set_frequency(null)
+	return TRUE
 
 /datum/wires/airlock/on_cut(wire, mend)
 	var/obj/machinery/door/airlock/A = holder

@@ -78,45 +78,61 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-/obj/item/transfer_valve/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/transfer_valve, GLOB.tgui_inventory_state)
 
-/obj/item/transfer_valve/tgui_interact(mob/user, datum/tgui/ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "TransferValve", name) // 460, 320
-		ui.open()
+DECLARE_UI(/obj/item/transfer_valve, "TransferValve")
 
-/obj/item/transfer_valve/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/transfer_valve, "valve=valve_open:num", "merge:ui_data_obj_item_transfer_valve{tank_one:text,tank_two:text,attached_device:text}")
+
+/// The computed part of /obj/item/transfer_valve's window data (declared on its UI_DATA row).
+/obj/item/transfer_valve/proc/ui_data_obj_item_transfer_valve(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tank_one"] = tank_one ? tank_one.name : null
 	data["tank_two"] = tank_two ? tank_two.name : null
 	data["attached_device"] = attached_device ? attached_device.name : null
-	data["valve"] = valve_open
 	return data
 
-/obj/item/transfer_valve/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return
+UI_ACT(/obj/item/transfer_valve, "tankone", ui_act_tankone)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tankone)
 	. = TRUE
-	switch(action)
-		if("tankone")
-			remove_tank(tank_one)
-		if("tanktwo")
-			remove_tank(tank_two)
-		if("toggle")
-			toggle_valve()
-		if("device")
-			if(attached_device)
-				attached_device.attack_self(ui.user)
-		if("remove_device")
-			if(attached_device)
-				attached_device.forceMove(get_turf(src))
-				rel_clear(attached_device, "holder")
-				own_take(src, "attached_device")
-				update_icon()
-		else
-			. = FALSE
+	remove_tank(tank_one)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "tanktwo", ui_act_tanktwo)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_tanktwo)
+	. = TRUE
+	remove_tank(tank_two)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_toggle)
+	. = TRUE
+	toggle_valve()
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "device", ui_act_device)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_device)
+	. = TRUE
+	if(attached_device)
+		attached_device.attack_self(ui.user)
+	if(.)
+		update_icon()
+		add_fingerprint(ui.user)
+
+UI_ACT(/obj/item/transfer_valve, "remove_device", ui_act_remove_device)
+UI_ACT_PROC(/obj/item/transfer_valve, ui_act_remove_device)
+	. = TRUE
+	if(attached_device)
+		attached_device.forceMove(get_turf(src))
+		rel_clear(attached_device, "holder")
+		own_take(src, "attached_device")
+		update_icon()
 	if(.)
 		update_icon()
 		add_fingerprint(ui.user)

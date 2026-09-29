@@ -90,63 +90,60 @@
 //////////////////////////////////////////
 // TGUI                                 //
 //////////////////////////////////////////
-/datum/tgui_shock/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_shock, GLOB.tgui_always_state)
 
-/datum/tgui_shock/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ShockConfigurator", "Shock Configurator")
-		ui.open()
+DECLARE_UI(/datum/tgui_shock, "ShockConfigurator", UI_TITLE("Shock Configurator"))
 
-/datum/tgui_shock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_shock, "port:num", "connected:num", "intensity:num", "duration:num", "selectedDevice=selected_device:num", "availableDevices=available_devices:list", "enabledFlags=enabled_flags:num")
 
-	data["port"] = port
-	data["connected"] = connected
-	data["intensity"] = intensity
-	data["duration"] = duration
-	data["selectedDevice"] = selected_device
-	data["availableDevices"] = available_devices
-	data["enabledFlags"] = enabled_flags
+UI_ACT(/datum/tgui_shock, "connect", ui_act_connect)
+UI_ACT_PROC(/datum/tgui_shock, ui_act_connect)
+	if(connected)
+		estop()
+	else
+		// TODO: preferences
+		connect()
+	. = TRUE
 
-	return data
+UI_ACT(/datum/tgui_shock, "request_devices", ui_act_request_devices)
+UI_ACT_PROC(/datum/tgui_shock, ui_act_request_devices)
+	request_devices()
+	. = TRUE
 
-/datum/tgui_shock/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
+UI_ACT(/datum/tgui_shock, "estop", ui_act_estop)
+UI_ACT_PROC(/datum/tgui_shock, ui_act_estop)
+	estop()
+	. = TRUE
 
-	switch(action)
-		if("connect")
-			if(connected)
-				estop()
-			else
-				// TODO: preferences
-				connect()
-			. = TRUE
-		if("request_devices")
-			request_devices()
-			. = TRUE
-		if("estop")
-			estop()
-			. = TRUE
-		if("setSelectedDevice")
-			selected_device = text2num(params["device"])
-			. = TRUE
-		if("test")
-			shock(SHOCKFLAG_TEST)
-			. = TRUE
-		if("set_flag")
-			enabled_flags ^= text2num(params["flag"])
-			. = TRUE
-		if("port")
-			port = text2num(params["port"])
-			. = TRUE
-		if("intensity")
-			intensity = text2num(params["intensity"])
-			. = TRUE
-		if("duration")
-			duration = text2num(params["duration"])
-			. = TRUE
+UI_ACT(/datum/tgui_shock, "setSelectedDevice", ui_act_setselecteddevice, UI_ARG_NUM("device"))
+UI_ACT_PROC(/datum/tgui_shock, ui_act_setselecteddevice)
+	selected_device = params["device"]
+	. = TRUE
+
+UI_ACT(/datum/tgui_shock, "test", ui_act_test)
+UI_ACT_PROC(/datum/tgui_shock, ui_act_test)
+	shock(SHOCKFLAG_TEST)
+	. = TRUE
+
+UI_ACT(/datum/tgui_shock, "set_flag", ui_act_set_flag, UI_ARG_NUM("flag"))
+UI_ACT_PROC(/datum/tgui_shock, ui_act_set_flag)
+	enabled_flags ^= params["flag"]
+	. = TRUE
+
+UI_ACT(/datum/tgui_shock, "port", ui_act_port, UI_ARG_NUM("port"))
+UI_ACT_PROC(/datum/tgui_shock, ui_act_port)
+	port = params["port"]
+	. = TRUE
+
+UI_ACT(/datum/tgui_shock, "intensity", ui_act_intensity, UI_ARG_NUM("intensity"))
+UI_ACT_PROC(/datum/tgui_shock, ui_act_intensity)
+	intensity = params["intensity"]
+	. = TRUE
+
+UI_ACT(/datum/tgui_shock, "duration", ui_act_duration, UI_ARG_NUM("duration"))
+UI_ACT_PROC(/datum/tgui_shock, ui_act_duration)
+	duration = params["duration"]
+	. = TRUE
 
 
 

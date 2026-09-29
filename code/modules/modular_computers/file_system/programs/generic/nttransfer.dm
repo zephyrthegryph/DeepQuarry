@@ -78,10 +78,12 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	rel_clear(src, "remote")
 	download_completion = 0
 
-/datum/computer_file/program/nttransfer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui_data_datum_computer_file_program_nttransfer{downloading:bool,download_size:num,download_progress:num,download_netspeed:num,download_name:text,uploading:bool,upload_uid:unknown,upload_clients:num,upload_haspassword:num,upload_filename:text,upload_filelist:list,servers:list}")
+
+/// The computed part of /datum/computer_file/program/nttransfer's window data (declared on its UI_DATA row).
+/datum/computer_file/program/nttransfer/proc/ui_data_datum_computer_file_program_nttransfer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
-	data["error"] = error
 
 	data["downloading"] = !!downloaded_file
 	if(downloaded_file)
@@ -124,62 +126,67 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 	return data
 
-/datum/computer_file/program/nttransfer/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-	switch(action)
-		if("PRG_downloadfile")
-			for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
-				if(P.unique_token == text2num(params["uid"]))
-					rel_set(src, "remote", P)
-					break
-			if(!remote() || !remote().provided_file())
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_downloadfile", ui_act_prg_downloadfile, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
+	for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
+		if(P.unique_token == params["uid"])
+			rel_set(src, "remote", P)
+			break
+	if(!remote() || !remote().provided_file())
+		return
+	if(remote().server_password)
+		var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
+		if(isnull(pass))
+			return
+		if(pass != remote().server_password)
+			error = "Incorrect Password"
+			return
+	own_set(src, "downloaded_file", remote().provided_file().clone())
+	rel_add(remote(), "connected_clients", src)
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_reset", ui_act_prg_reset)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_reset)
+	error = ""
+	upload_menu = 0
+	finalize_download()
+	if(src in GLOB.ntnet_global.fileservers)
+		rel_remove(GLOB.ntnet_global, "fileservers", src)
+	for(var/datum/computer_file/program/nttransfer/T in connected_clients)
+		T.crash_download("Remote server has forcibly closed the connection")
+	rel_clear(src, "provided_file")
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_setpassword", ui_act_prg_setpassword)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_setpassword)
+	var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
+	if(isnull(pass))
+		return
+	if(!pass)
+		return
+	if(pass == "none")
+		server_password = ""
+		return
+	server_password = pass
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadfile", ui_act_prg_uploadfile, UI_ARG_NUM("uid"))
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadfile)
+	for(var/datum/computer_file/F in computer().hard_drive.stored_files)
+		if(F.uid == params["uid"])
+			if(F.unsendable)
+				error = "I/O Error: File locked."
 				return
-			if(remote().server_password)
-				var/pass = act_ask(ui.user, action, params, ui, "k139", /datum/om/prompt/text, message = "Code 401 Unauthorized. Please enter password:", title = "Password required")
-				if(isnull(pass))
-					return
-				if(pass != remote().server_password)
-					error = "Incorrect Password"
-					return
-			own_set(src, "downloaded_file", remote().provided_file().clone())
-			rel_add(remote(), "connected_clients", src)
-			return TRUE
-		if("PRG_reset")
-			error = ""
-			upload_menu = 0
-			finalize_download()
-			if(src in GLOB.ntnet_global.fileservers)
-				rel_remove(GLOB.ntnet_global, "fileservers", src)
-			for(var/datum/computer_file/program/nttransfer/T in connected_clients)
-				T.crash_download("Remote server has forcibly closed the connection")
-			rel_clear(src, "provided_file")
-			return TRUE
-		if("PRG_setpassword")
-			var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
-			if(isnull(pass))
-				return
-			if(!pass)
-				return
-			if(pass == "none")
-				server_password = ""
-				return
-			server_password = pass
-			return TRUE
-		if("PRG_uploadfile")
-			for(var/datum/computer_file/F in computer().hard_drive.stored_files)
-				if(F.uid == text2num(params["uid"]))
-					if(F.unsendable)
-						error = "I/O Error: File locked."
-						return
-					rel_set(src, "provided_file", F)
-					rel_add(GLOB.ntnet_global, "fileservers", src)
-					return
-			error = "I/O Error: Unable to locate file on hard drive."
-			return TRUE
-		if("PRG_uploadmenu")
-			upload_menu = 1
-			return TRUE
+			rel_set(src, "provided_file", F)
+			rel_add(GLOB.ntnet_global, "fileservers", src)
+			return
+	error = "I/O Error: Unable to locate file on hard drive."
+	return TRUE
+
+UI_ACT(/datum/computer_file/program/nttransfer, "PRG_uploadmenu", ui_act_prg_uploadmenu)
+UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_uploadmenu)
+	upload_menu = 1
+	return TRUE
 
 
 /// File which is provided to clients. (a relation view: null once that is deleted).

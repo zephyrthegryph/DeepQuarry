@@ -486,13 +486,12 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 	rel_remove(src, "terminals", term)
 	qdel(term)
 
-/obj/machinery/power/smes/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Smes", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/power/smes, "Smes")
 
-/obj/machinery/power/smes/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/power/smes, "merge:ui_data_obj_machinery_power_smes{capacity:num,capacityPercent:num,charge:num,inputAttempt:num,inputting:num,inputLevel:num,inputLevel_text:unknown,inputLevelMax:num,inputAvailable:num,outputAttempt:num,outputting:num,outputLevel:num,outputLevel_text:unknown,outputLevelMax:num,outputUsed:num}")
+
+/// The computed part of /obj/machinery/power/smes's window data (declared on its UI_DATA row).
+/obj/machinery/power/smes/proc/ui_data_obj_machinery_power_smes(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"capacity" = capacity,
 		"capacityPercent" = round(100*charge/capacity, 0.1),
@@ -517,26 +516,29 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes, "appearance_smes_charge", list("1"
 		return 0
 	return round(100.0*charge/capacity, 0.1)
 
-/obj/machinery/power/smes/tgui_act(action, params)
-	if(..())
-		return TRUE
-	switch(action)
-		if("tryinput")
-			inputting(!input_attempt)
-			update_icon()
-			. = TRUE
-		if("tryoutput")
-			outputting(!output_attempt)
-			if(output_attempt)
-				play_sfx(loc, SFX_EFFECTS_CONTACTOR_ON)
-			else
-				play_sfx(loc, SFX_EFFECTS_CONTACTOR_OFF)
-			update_icon()
-			. = TRUE
-		if("input")
-			tgui_set_io(SMES_TGUI_INPUT, params["target"], text2num(params["adjust"]))
-		if("output")
-			tgui_set_io(SMES_TGUI_OUTPUT, params["target"], text2num(params["adjust"]))
+UI_ACT(/obj/machinery/power/smes, "tryinput", ui_act_tryinput)
+UI_ACT_PROC(/obj/machinery/power/smes, ui_act_tryinput)
+	inputting(!input_attempt)
+	update_icon()
+	. = TRUE
+
+UI_ACT(/obj/machinery/power/smes, "tryoutput", ui_act_tryoutput)
+UI_ACT_PROC(/obj/machinery/power/smes, ui_act_tryoutput)
+	outputting(!output_attempt)
+	if(output_attempt)
+		play_sfx(loc, SFX_EFFECTS_CONTACTOR_ON)
+	else
+		play_sfx(loc, SFX_EFFECTS_CONTACTOR_OFF)
+	update_icon()
+	. = TRUE
+
+UI_ACT(/obj/machinery/power/smes, "input", ui_act_input, UI_ARG_NUM("adjust"), UI_ARG_VALUE("target"))
+UI_ACT_PROC(/obj/machinery/power/smes, ui_act_input)
+	tgui_set_io(SMES_TGUI_INPUT, params["target"], params["adjust"])
+
+UI_ACT(/obj/machinery/power/smes, "output", ui_act_output, UI_ARG_NUM("adjust"), UI_ARG_VALUE("target"))
+UI_ACT_PROC(/obj/machinery/power/smes, ui_act_output)
+	tgui_set_io(SMES_TGUI_OUTPUT, params["target"], params["adjust"])
 
 /obj/machinery/power/smes/proc/tgui_set_io(io, target, adjust)
 	if(target == "min")

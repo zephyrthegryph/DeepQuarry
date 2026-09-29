@@ -3,8 +3,7 @@
 	name = "Robotact"
 	tgui_id = "Robotact"
 
-/datum/tgui_module/robot_ui/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/robot_ui, GLOB.tgui_self_state)
 
 /datum/tgui_module/robot_ui/tgui_static_data()
 	var/list/data = ..()
@@ -43,8 +42,11 @@
 
 	return data
 
-/datum/tgui_module/robot_ui/tgui_data()
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/robot_ui, "merge:ui_data_datum_tgui_module_robot_ui{module_name:text,theme:unknown,name:text,ai:text,charge:num,max_charge:num,health:num,max_health:num,light_color:text,weapon_lock:bool,modules:list,emag_modules:list,diag_functional:unknown,components:list,faults:list}")
+
+/// The computed part of /datum/tgui_module/robot_ui's window data (declared on its UI_DATA row).
+/datum/tgui_module/robot_ui/proc/ui_data_datum_tgui_module_robot_ui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
 
@@ -111,82 +113,124 @@
 
 	return data
 
-/datum/tgui_module/robot_ui/tgui_act(action, params, datum/tgui/ui)
-	. = ..()
-	if(.)
-		return
-
+UI_ACT(/datum/tgui_module/robot_ui, "set_light_col", ui_act_set_light_col, UI_ARG_TEXT("value"))
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_set_light_col)
 	var/mob/living/silicon/robot/R = host()
+	var/new_color = params["value"]
+	if(findtext(new_color, GLOB.is_color))
+		R.robot_light_col = new_color
+	. = TRUE
 
-	switch(action)
-		if("set_light_col")
-			var/new_color = params["value"]
-			if(findtext(new_color, GLOB.is_color))
-				R.robot_light_col = new_color
-			. = TRUE
-		if("select_module")
-			R.pick_module()
-			. = TRUE
-		if("toggle_component")
-			var/slot = text2num(params["component"])
-			var/datum/robot_component/C = R.get_component(slot)
-			if(istype(C) && !C.internal && R.toggle_component(slot))
-				if(C.toggled)
-					to_chat(ui.user, span_notice("You enable [C]."))
-				else
-					to_chat(ui.user, span_warning("You disable [C]."))
-			. = TRUE
-		if("toggle_module")
-			if(om_timer_slot_pending(R, "weapon_lock"))
-				to_chat(ui.user, span_danger("Error: Modules locked."))
-				return
-			var/obj/item/module = locate(params["ref"])
-			if(istype(module))
-				if(R.activated(module))
-					R.uneq_specific(module)
-				else
-					R.activate_module(module)
-			. = TRUE
-		if("activate_module")
-			var/obj/item/module = locate(params["ref"])
-			if(istype(module) && module.loc == R)
-				module.attack_self(R)
-			. = TRUE
+UI_ACT(/datum/tgui_module/robot_ui, "select_module", ui_act_select_module)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_select_module)
+	var/mob/living/silicon/robot/R = host()
+	R.pick_module()
+	. = TRUE
 
-		// Quick actions
-		if("quick_action_comm")
-			R.communicator?.attack_self(R)
-			. = TRUE
-		if("quick_action_pda")
-			R.rbPDA?.tgui_interact(R)
-			. = TRUE
-		if("quick_action_crew_manifest")
-			R.subsystem_crew_manifest()
-			. = TRUE
-		if("quick_action_law_manager")
-			R.subsystem_law_manager()
-			. = TRUE
-		if("quick_action_alarm_monitoring")
-			R.subsystem_alarm_monitor()
-			. = TRUE
-		if("quick_action_power_monitoring")
-			R.subsystem_power_monitor()
-			. = TRUE
-		if("quick_action_take_image")
-			R.take_image()
-			. = TRUE
-		if("quick_action_view_images")
-			R.view_images()
-			. = TRUE
-		if("quick_action_delete_images")
-			R.delete_images()
-			. = TRUE
-		if("quick_action_flashlight")
-			dq_use_ability(R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
-			. = TRUE
-		if("quick_action_sensors")
-			dq_use_ability(R, ABILITY_ID_ROBOT_SENSOR_MODE)
-			. = TRUE
-		if("quick_action_sparks")
-			dq_use_ability(R, ABILITY_ID_ROBOT_SPARK_PLUG)
-			. = TRUE
+UI_ACT(/datum/tgui_module/robot_ui, "toggle_component", ui_act_toggle_component, UI_ARG_NUM("component"))
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_toggle_component)
+	var/mob/living/silicon/robot/R = host()
+	var/slot = params["component"]
+	var/datum/robot_component/C = R.get_component(slot)
+	if(istype(C) && !C.internal && R.toggle_component(slot))
+		if(C.toggled)
+			to_chat(ui.user, span_notice("You enable [C]."))
+		else
+			to_chat(ui.user, span_warning("You disable [C]."))
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "toggle_module", ui_act_toggle_module, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_toggle_module)
+	var/mob/living/silicon/robot/R = host()
+	if(om_timer_slot_pending(R, "weapon_lock"))
+		to_chat(ui.user, span_danger("Error: Modules locked."))
+		return
+	var/obj/item/module = params["ref"]
+	if(istype(module))
+		if(R.activated(module))
+			R.uneq_specific(module)
+		else
+			R.activate_module(module)
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "activate_module", ui_act_activate_module, UI_ARG_REF("ref", null, /obj/item))
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_activate_module)
+	var/mob/living/silicon/robot/R = host()
+	var/obj/item/module = params["ref"]
+	if(istype(module) && module.loc == R)
+		module.attack_self(R)
+	. = TRUE
+
+// Quick actions
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_comm", ui_act_quick_action_comm)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_comm)
+	var/mob/living/silicon/robot/R = host()
+	R.communicator?.attack_self(R)
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_pda", ui_act_quick_action_pda)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_pda)
+	var/mob/living/silicon/robot/R = host()
+	R.rbPDA?.tgui_interact(R)
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_crew_manifest", ui_act_quick_action_crew_manifest)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_crew_manifest)
+	var/mob/living/silicon/robot/R = host()
+	R.subsystem_crew_manifest()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_law_manager", ui_act_quick_action_law_manager)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_law_manager)
+	var/mob/living/silicon/robot/R = host()
+	R.subsystem_law_manager()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_alarm_monitoring", ui_act_quick_action_alarm_monitoring)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_alarm_monitoring)
+	var/mob/living/silicon/robot/R = host()
+	R.subsystem_alarm_monitor()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_power_monitoring", ui_act_quick_action_power_monitoring)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_power_monitoring)
+	var/mob/living/silicon/robot/R = host()
+	R.subsystem_power_monitor()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_take_image", ui_act_quick_action_take_image)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_take_image)
+	var/mob/living/silicon/robot/R = host()
+	R.take_image()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_view_images", ui_act_quick_action_view_images)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_view_images)
+	var/mob/living/silicon/robot/R = host()
+	R.view_images()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_delete_images", ui_act_quick_action_delete_images)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_delete_images)
+	var/mob/living/silicon/robot/R = host()
+	R.delete_images()
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_flashlight", ui_act_quick_action_flashlight)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_flashlight)
+	var/mob/living/silicon/robot/R = host()
+	dq_use_ability(R, ABILITY_ID_ROBOT_TOGGLE_LIGHTS)
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_sensors", ui_act_quick_action_sensors)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_sensors)
+	var/mob/living/silicon/robot/R = host()
+	dq_use_ability(R, ABILITY_ID_ROBOT_SENSOR_MODE)
+	. = TRUE
+
+UI_ACT(/datum/tgui_module/robot_ui, "quick_action_sparks", ui_act_quick_action_sparks)
+UI_ACT_PROC(/datum/tgui_module/robot_ui, ui_act_quick_action_sparks)
+	var/mob/living/silicon/robot/R = host()
+	dq_use_ability(R, ABILITY_ID_ROBOT_SPARK_PLUG)
+	. = TRUE

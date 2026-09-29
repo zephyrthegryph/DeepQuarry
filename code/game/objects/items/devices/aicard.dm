@@ -29,19 +29,15 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 /obj/item/aicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-/obj/item/aicard/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui_state/custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AICard", "[name]") // 600, 394
-		ui.open()
-	if(custom_state)
-		ui.set_state(custom_state)
+DECLARE_UI(/obj/item/aicard, "AICard")
 
-/obj/item/aicard/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/aicard, GLOB.tgui_inventory_state)
 
-/obj/item/aicard/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,name:text,integrity:unknown,backup_capacitor:unknown,radio:bool,wireless:bool,operational:bool,flushing:unknown,laws:list,has_laws:num}")
+
+/// The computed part of /obj/item/aicard's window data (declared on its UI_DATA row).
+/obj/item/aicard/proc/ui_data_obj_item_aicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["has_ai"] = carded_ai() != null
 	if(carded_ai())
@@ -53,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 		data["operational"] = carded_ai().stat != DEAD
 		data["flushing"] = flush
 
-		var/laws[0]
+		var/list/laws = list()
 		for(var/datum/ai_law/law in carded_ai().laws.all_laws())
 			if(law in carded_ai().laws.ion_laws) // If we're an ion law, give it an ion index code
 				laws.Add(ionnum() + ". " + law.law)
@@ -64,30 +60,35 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 	return data
 
-/obj/item/aicard/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/item/aicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!carded_ai())
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("wipe")
-			msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
-			add_attack_logs(ui.user,carded_ai(),"Purged from AI Card")
-			wipe_ai()
-		if("radio")
-			carded_ai().aiRadio.disabledAi = !carded_ai().aiRadio.disabledAi
-			to_chat(carded_ai(), span_warning("Your Subspace Transceiver has been [carded_ai().aiRadio.disabledAi ? "disabled" : "enabled"]!"))
-			to_chat(ui.user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
-		if("wireless")
-			carded_ai().control_disabled = !carded_ai().control_disabled
-			to_chat(carded_ai(), span_warning("Your wireless interface has been [carded_ai().control_disabled ? "disabled" : "enabled"]!"))
-			to_chat(ui.user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
-			if(carded_ai().control_disabled && carded_ai().deployed_shell)
-				carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
-			update_icon()
+UI_ACT(/obj/item/aicard, "wipe", ui_act_wipe)
+UI_ACT_PROC(/obj/item/aicard, ui_act_wipe)
+	msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
+	add_attack_logs(ui.user,carded_ai(),"Purged from AI Card")
+	wipe_ai()
+	return TRUE
 
+UI_ACT(/obj/item/aicard, "radio", ui_act_radio)
+UI_ACT_PROC(/obj/item/aicard, ui_act_radio)
+	carded_ai().aiRadio.disabledAi = !carded_ai().aiRadio.disabledAi
+	to_chat(carded_ai(), span_warning("Your Subspace Transceiver has been [carded_ai().aiRadio.disabledAi ? "disabled" : "enabled"]!"))
+	to_chat(ui.user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
+	return TRUE
+
+UI_ACT(/obj/item/aicard, "wireless", ui_act_wireless)
+UI_ACT_PROC(/obj/item/aicard, ui_act_wireless)
+	carded_ai().control_disabled = !carded_ai().control_disabled
+	to_chat(carded_ai(), span_warning("Your wireless interface has been [carded_ai().control_disabled ? "disabled" : "enabled"]!"))
+	to_chat(ui.user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
+	if(carded_ai().control_disabled && carded_ai().deployed_shell)
+		carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
+	update_icon()
 	return TRUE
 
 DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())

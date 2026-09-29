@@ -21,8 +21,11 @@
 	own_set(src, "wires", new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
 	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
-/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user)
-	. = ..()
+UI_DATA(/obj/machinery/vending/nifsoft_shop, "merge:ui_data_obj_machinery_vending_nifsoft_shop{chargesMoney:bool}")
+
+/// The computed part of /obj/machinery/vending/nifsoft_shop's window data (declared on its UI_DATA row).
+/obj/machinery/vending/nifsoft_shop/proc/ui_data_obj_machinery_vending_nifsoft_shop(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	. = list()
 	.["chargesMoney"] = TRUE
 
 

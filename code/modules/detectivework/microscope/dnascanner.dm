@@ -60,53 +60,56 @@
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-/obj/machinery/dnaforensics/tgui_interact(mob/user, datum/tgui/ui)
-	if(has_stat(NOPOWER))
-		return
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "DNAForensics", "QuikScan DNA Analyzer") // 540, 326
-		ui.open()
+DECLARE_UI(/obj/machinery/dnaforensics, "DNAForensics", UI_TITLE("QuikScan DNA Analyzer"))
 
-/obj/machinery/dnaforensics/tgui_data(mob/user)
-	var/list/data = ..()
+/obj/machinery/dnaforensics/ui_prepare(mob/user, datum/tgui/ui)
+	if(has_stat(NOPOWER))
+		return FALSE
+	return TRUE
+
+UI_DATA(/obj/machinery/dnaforensics, "scanning:num", "merge:ui_data_obj_machinery_dnaforensics{scan_progress:num,bloodsamp:unknown,bloodsamp_desc:unknown}")
+
+/// The computed part of /obj/machinery/dnaforensics's window data (declared on its UI_DATA row).
+/obj/machinery/dnaforensics/proc/ui_data_obj_machinery_dnaforensics(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan_progress"] = round(scanner_progress)
-	data["scanning"] = scanning
 	data["bloodsamp"] = (bloodsamp() ? bloodsamp().name : "")
 	data["bloodsamp_desc"] = (bloodsamp() ? (bloodsamp().desc ? bloodsamp().desc : "No information on record.") : "")
 	return data
 
-/obj/machinery/dnaforensics/tgui_act(action, list/params, datum/tgui/ui)
-	if(..())
-		return TRUE
-
+/obj/machinery/dnaforensics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(has_stat(NOPOWER))
-		return FALSE // don't update UIs attached to this object
+		return FALSE
+	return TRUE
 
+UI_ACT(/obj/machinery/dnaforensics, "scanItem", ui_act_scanitem)
+UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_scanitem)
 	. = TRUE
-	switch(action)
-		if("scanItem")
-			if(scanning)
-				scanning = FALSE
-				update_icon()
-			else
-				if(bloodsamp())
-					scanner_progress = 0
-					scanning = TRUE
-					EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
-					MACHINE_WAKE(src)
-					to_chat(ui.user, span_notice("Scan initiated."))
-					update_icon()
-				else
-					to_chat(ui.user, span_warning("Insert an item to scan."))
-			. = TRUE
+	if(scanning)
+		scanning = FALSE
+		update_icon()
+	else
+		if(bloodsamp())
+			scanner_progress = 0
+			scanning = TRUE
+			EXPIRY_STAMP(src, last_process_worldtime, CLOCK_WORLD)
+			MACHINE_WAKE(src)
+			to_chat(ui.user, span_notice("Scan initiated."))
+			update_icon()
+		else
+			to_chat(ui.user, span_warning("Insert an item to scan."))
+	. = TRUE
 
-		if("ejectItem")
-			if(bloodsamp())
-				bloodsamp().forceMove(loc)
-				rel_clear(src, "bloodsamp")
-				scanning = FALSE
-				update_icon()
+UI_ACT(/obj/machinery/dnaforensics, "ejectItem", ui_act_ejectitem)
+UI_ACT_PROC(/obj/machinery/dnaforensics, ui_act_ejectitem)
+	. = TRUE
+	if(bloodsamp())
+		bloodsamp().forceMove(loc)
+		rel_clear(src, "bloodsamp")
+		scanning = FALSE
+		update_icon()
 
 /// Scans while scanning (started from its UI); otherwise it sleeps.
 /obj/machinery/dnaforensics/machine_step()

@@ -297,11 +297,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /*******************
 *   Microwave Menu
 ********************/
-/obj/machinery/microwave/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Microwave", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 /obj/machinery/microwave/ui_assets(mob/user)
 	return list(
@@ -318,11 +314,12 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 	return data
 
-/obj/machinery/microwave/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_obj_machinery_microwave{dirty:bool,items:list,reagents:list}")
 
-	data["broken"] = broken
-	data["operating"] = operating
+/// The computed part of /obj/machinery/microwave's window data (declared on its UI_DATA row).
+/obj/machinery/microwave/proc/ui_data_obj_machinery_microwave(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["dirty"] = dirty == MAX_MICROWAVE_DIRTINESS
 	data["items"] = get_items_list()
 
@@ -367,21 +364,22 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 	return data
 
-/obj/machinery/microwave/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
-
+/obj/machinery/microwave/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(operating)
-		return TRUE
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("cook")
-			cook()
-			return TRUE
+UI_ACT(/obj/machinery/microwave, "cook", ui_act_cook)
+UI_ACT_PROC(/obj/machinery/microwave, ui_act_cook)
+	cook()
+	return TRUE
 
-		if("dispose")
-			dispose()
-			return TRUE
+UI_ACT(/obj/machinery/microwave, "dispose", ui_act_dispose)
+UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
+	dispose()
+	return TRUE
 
 /***********************************
 *   Microwave Menu Handling/Cooking

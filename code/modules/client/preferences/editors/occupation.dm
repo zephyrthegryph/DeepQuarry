@@ -123,36 +123,38 @@
 		"alt_titles_by_job" = alt_titles_by_job,
 	)
 
-/datum/preference_editor/occupation/handle_action(datum/preferences/preferences, action, list/params, mob/user)
-	switch(action)
-		if("set_priority")
-			var/title = params["job"]
-			var/priority = params["priority"]
-			return set_priority(preferences, title, priority)
-		if("set_alternate_option")
-			var/value = text2num(params["value"])
-			if(isnull(value) || value < 0 || value > 2)
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/numeric/human/alternate_option, value)
-			return PREF_UPDATE_ACCEPTED
-		if("set_alt_title")
-			var/title = params["job"]
-			var/alt = params["alt"]
-			if(!title)
-				return PREF_UPDATE_REJECTED
-			var/datum/job/job = SSjob.get_job(title)
-			if(!job)
-				return PREF_UPDATE_REJECTED
-			var/list/saved = preferences.read_preference(/datum/preference/player_alt_titles) || list()
-			if(!alt || alt == title)
-				saved -= title
-			else if(LAZYLEN(job.alt_titles) && (alt in job.alt_titles))
-				saved[title] = alt
-			else
-				return PREF_UPDATE_REJECTED
-			preferences.update_preference_by_type(/datum/preference/player_alt_titles, saved)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+UI_ACT(/datum/preference_editor/occupation, "set_priority", ui_act_set_priority, UI_ARG_VALUE("job"), UI_ARG_VALUE("priority"))
+UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_priority)
+	var/title = params["job"]
+	var/priority = params["priority"]
+	return set_priority(preferences, title, priority)
+
+UI_ACT(/datum/preference_editor/occupation, "set_alternate_option", ui_act_set_alternate_option, UI_ARG_NUM("value"))
+UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_alternate_option)
+	var/value = params["value"]
+	if(isnull(value) || value < 0 || value > 2)
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/numeric/human/alternate_option, value)
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/occupation, "set_alt_title", ui_act_set_alt_title, UI_ARG_VALUE("alt"), UI_ARG_VALUE("job"))
+UI_ACT_PREF_PROC(/datum/preference_editor/occupation, ui_act_set_alt_title)
+	var/title = params["job"]
+	var/alt = params["alt"]
+	if(!title)
+		return PREF_UPDATE_REJECTED
+	var/datum/job/job = SSjob.get_job(title)
+	if(!job)
+		return PREF_UPDATE_REJECTED
+	var/list/saved = preferences.read_preference(/datum/preference/player_alt_titles) || list()
+	if(!alt || alt == title)
+		saved -= title
+	else if(LAZYLEN(job.alt_titles) && (alt in job.alt_titles))
+		saved[title] = alt
+	else
+		return PREF_UPDATE_REJECTED
+	preferences.update_preference_by_type(/datum/preference/player_alt_titles, saved)
+	return PREF_UPDATE_ACCEPTED
 
 /datum/preference_editor/occupation/proc/set_priority(datum/preferences/preferences, title, priority)
 	if(!title || !(priority in list("off", "low", "med", "high")))

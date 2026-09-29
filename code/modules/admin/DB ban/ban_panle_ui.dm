@@ -21,19 +21,14 @@
 	rel_set(src, "admin_datum", admind)
 	database_lookup()
 
-/datum/tgui_ban_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_BAN)
+DECLARE_UI_STATE(/datum/tgui_ban_panel, ADMIN_STATE(R_BAN))
 
 /datum/tgui_ban_panel/tgui_close()
 	rel_clear(src, "holder")
 	rel_clear(src, "admin_datum")
 	qdel(src)
 
-/datum/tgui_ban_panel/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "BanPanel", "Ban Panel")
-		ui.open()
+DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))
 
 /datum/tgui_ban_panel/tgui_static_data(mob/user)
 	var/list/bantypes = list("traitor","changeling","operative","revolutionary","cultist","wizard") //For legacy bans.
@@ -53,93 +48,93 @@
 	return data
 
 
-/datum/tgui_ban_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/tgui_ban_panel, "merge:ui_data_datum_tgui_ban_panel{min_search:num}")
+
+/// The computed part of /datum/tgui_ban_panel's window data (declared on its UI_DATA row).
+/datum/tgui_ban_panel/proc/ui_data_datum_tgui_ban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 							"min_search" = min_search,
 						)
 	return data
 
-/datum/tgui_ban_panel/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+UI_ACT(/datum/tgui_ban_panel, "confirmBan", ui_act_confirmban, UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_NUM("duration"), UI_ARG_TEXT("ip"), UI_ARG_TEXT("job"), UI_ARG_TEXT("reason"), UI_ARG_NUM("type"))
+UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 
-	switch(action)
-		if("confirmBan")
+	var/bantype = params["type"]
+	var/banip = params["ip"]
+	var/banduration = params["duration"]
+	var/banckey = ckey(params["ckey"])
+	var/bancid = params["cid"]
+	var/banjob = params["job"]
+	var/banreason = params["reason"]
 
-			var/bantype = text2num(params["type"])
-			var/banip = params["ip"]
-			var/banduration = text2num(params["duration"])
-			var/banckey = ckey(params["ckey"])
-			var/bancid = params["cid"]
-			var/banjob = params["job"]
-			var/banreason = params["reason"]
+	switch(bantype)
+		if(BANTYPE_PERMA)
+			if(!banckey || !banreason)
+				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
+				return
+			banduration = null
+			banjob = null
+		if(BANTYPE_TEMP)
+			if(!banckey || !banreason || !banduration)
+				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
+				return
+			banjob = null
+		if(BANTYPE_JOB_PERMA)
+			if(!banckey || !banreason || !banjob)
+				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				return
+			banduration = null
+		if(BANTYPE_JOB_TEMP)
+			if(!banckey || !banreason || !banjob || !banduration)
+				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				return
 
-			switch(bantype)
-				if(BANTYPE_PERMA)
-					if(!banckey || !banreason)
-						to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
-						return
-					banduration = null
-					banjob = null
-				if(BANTYPE_TEMP)
-					if(!banckey || !banreason || !banduration)
-						to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
-						return
-					banjob = null
-				if(BANTYPE_JOB_PERMA)
-					if(!banckey || !banreason || !banjob)
-						to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-						return
-					banduration = null
-				if(BANTYPE_JOB_TEMP)
-					if(!banckey || !banreason || !banjob || !banduration)
-						to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
-						return
+	var/mob/playermob
 
-			var/mob/playermob
+	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
+		if(M.ckey == banckey)
+			playermob = M
+			break
 
-			for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-				if(M.ckey == banckey)
-					playermob = M
-					break
+	banreason = "(MANUAL BAN) " + banreason
 
-			banreason = "(MANUAL BAN) " + banreason
+	if(!playermob)
+		if(banip)
+			banreason = "[banreason] (CUSTOM IP)"
+		if(bancid)
+			banreason = "[banreason] (CUSTOM CID)"
+	else
+		message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
+	notes_add(banckey, banreason, ui.user)
 
-			if(!playermob)
-				if(banip)
-					banreason = "[banreason] (CUSTOM IP)"
-				if(bancid)
-					banreason = "[banreason] (CUSTOM CID)"
-			else
-				message_admins("Ban process: A mob matching [playermob.ckey] was found at location [playermob.x], [playermob.y], [playermob.z]. Custom ip and computer id fields replaced with the ip and computer id from the located mob")
-			notes_add(banckey, banreason, ui.user)
+	admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
+	if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
+		qdel(playermob.client)
 
-			admin_datum().DB_ban_record(bantype, playermob, banduration, banreason, banjob, null, banckey, banip, bancid )
-			if((bantype == BANTYPE_PERMA || bantype == BANTYPE_TEMP) && playermob?.client)
-				qdel(playermob.client)
+	return TRUE
 
-			return TRUE
+UI_ACT(/datum/tgui_ban_panel, "searchBans", ui_act_searchbans, UI_ARG_TEXT("aCkey"), UI_ARG_NUM("banType"), UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_TEXT("ip"), UI_ARG_NUM("minMatch"))
+UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_searchbans)
+	playerckey = ckey(params["ckey"])
+	adminckey = ckey(params["aCkey"])
+	playerip = params["ip"]
+	playercid = params["cid"]
+	dbbantype = params["banType"]
+	min_search = params["minMatch"]
+	database_lookup()
+	update_tgui_static_data(ui.user, ui)
+	return TRUE
 
-		if("searchBans")
-			playerckey = ckey(params["ckey"])
-			adminckey = ckey(params["aCkey"])
-			playerip = params["ip"]
-			playercid = params["cid"]
-			dbbantype = text2num(params["banType"])
-			min_search = text2num(params["minMatch"])
-			database_lookup()
-			update_tgui_static_data(ui.user, ui)
-			return TRUE
+UI_ACT(/datum/tgui_ban_panel, "banEdit", ui_act_banedit, UI_ARG_TEXT("action"), UI_ARG_NUM("banid"))
+UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_banedit)
+	var/banedit = params["action"]
+	var/banid = params["banid"]
+	if(!banedit || !banid)
+		return FALSE
 
-		if("banEdit")
-			var/banedit = params["action"]
-			var/banid = text2num(params["banid"])
-			if(!banedit || !banid)
-				return FALSE
-
-			admin_datum().DB_ban_edit(ui.user.client, banid, banedit)
-			return TRUE
+	admin_datum().DB_ban_edit(ui.user.client, banid, banedit)
+	return TRUE
 
 /// Starts the ban search for the current filters; the rows arrive in sql_rows_arrived().
 /datum/tgui_ban_panel/proc/database_lookup()

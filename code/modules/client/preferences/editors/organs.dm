@@ -67,55 +67,63 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/organs, internal_organ_labels, list(
 		"internal_order"  = list(O_HEART, O_LUNGS, O_LIVER, O_KIDNEYS, O_SPLEEN, O_STOMACH, O_INTESTINE, O_VOICE, O_EYES, O_BRAIN),
 	)
 
-/datum/preference_editor/organs/handle_action(datum/preferences/preferences, action, list/params, mob/user)
+UI_ACT(/datum/preference_editor/organs, "set_external_status", ui_act_set_external_status, UI_ARG_VALUE("limb"), UI_ARG_TEXT("status"))
+UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_status)
 	var/limb = params["limb"]
 	if(!limb)
+		return FALSE
+	var/status = params["status"]
+	if(!(status in list("normal", "amputated", "cyborg")))
 		return PREF_UPDATE_REJECTED
-	switch(action)
-		if("set_external_status")
-			var/status = params["status"]
-			if(!(status in list("normal", "amputated", "cyborg")))
-				return PREF_UPDATE_REJECTED
-			if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
-				return PREF_UPDATE_REJECTED
-			var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-			var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
-			if(status == "normal")
-				organ_data -= limb
-				rlimb_data -= limb
-			else
-				organ_data[limb] = status
-				if(status != "cyborg")
-					rlimb_data -= limb
-			preferences.begin_update_batch()
-			preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
-			preferences.update_preference_by_type(/datum/preference/rlimb_data, rlimb_data)
-			preferences.end_update_batch()
-			return PREF_UPDATE_ACCEPTED
-		if("set_external_model")
-			var/model = params["model"]
-			if(!(model in GLOB.all_robolimbs))
-				return PREF_UPDATE_REJECTED
-			var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-			var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
-			organ_data[limb] = "cyborg"
-			rlimb_data[limb] = model
-			preferences.begin_update_batch()
-			preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
-			preferences.update_preference_by_type(/datum/preference/rlimb_data, rlimb_data)
-			preferences.end_update_batch()
-			return PREF_UPDATE_ACCEPTED
-		if("set_internal_status")
-			var/status = params["status"]
-			if(!(status in list("normal", FBP_ASSISTED, FBP_MECHANICAL, FBP_DIGITAL)))
-				return PREF_UPDATE_REJECTED
-			if(!(limb in TYPE_TABLE_GET(src, internal_organ_labels)))
-				return PREF_UPDATE_REJECTED
-			var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
-			if(status == "normal")
-				organ_data -= limb
-			else
-				organ_data[limb] = status
-			preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
-			return PREF_UPDATE_ACCEPTED
-	return PREF_UPDATE_UNCHANGED
+	if(!(limb in TYPE_TABLE_GET(src, external_limb_labels)))
+		return PREF_UPDATE_REJECTED
+	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
+	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
+	if(status == "normal")
+		organ_data -= limb
+		rlimb_data -= limb
+	else
+		organ_data[limb] = status
+		if(status != "cyborg")
+			rlimb_data -= limb
+	preferences.begin_update_batch()
+	preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
+	preferences.update_preference_by_type(/datum/preference/rlimb_data, rlimb_data)
+	preferences.end_update_batch()
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/organs, "set_external_model", ui_act_set_external_model, UI_ARG_VALUE("limb"), UI_ARG_VALUE("model"))
+UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_external_model)
+	var/limb = params["limb"]
+	if(!limb)
+		return FALSE
+	var/model = params["model"]
+	if(!(model in GLOB.all_robolimbs))
+		return PREF_UPDATE_REJECTED
+	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
+	var/list/rlimb_data = preferences.read_preference(/datum/preference/rlimb_data) || list()
+	organ_data[limb] = "cyborg"
+	rlimb_data[limb] = model
+	preferences.begin_update_batch()
+	preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
+	preferences.update_preference_by_type(/datum/preference/rlimb_data, rlimb_data)
+	preferences.end_update_batch()
+	return PREF_UPDATE_ACCEPTED
+
+UI_ACT(/datum/preference_editor/organs, "set_internal_status", ui_act_set_internal_status, UI_ARG_VALUE("limb"), UI_ARG_TEXT("status"))
+UI_ACT_PREF_PROC(/datum/preference_editor/organs, ui_act_set_internal_status)
+	var/limb = params["limb"]
+	if(!limb)
+		return FALSE
+	var/status = params["status"]
+	if(!(status in list("normal", FBP_ASSISTED, FBP_MECHANICAL, FBP_DIGITAL)))
+		return PREF_UPDATE_REJECTED
+	if(!(limb in TYPE_TABLE_GET(src, internal_organ_labels)))
+		return PREF_UPDATE_REJECTED
+	var/list/organ_data = preferences.read_preference(/datum/preference/organ_data) || list()
+	if(status == "normal")
+		organ_data -= limb
+	else
+		organ_data[limb] = status
+	preferences.update_preference_by_type(/datum/preference/organ_data, organ_data)
+	return PREF_UPDATE_ACCEPTED

@@ -110,23 +110,19 @@ EMP_DISABLE(/obj/machinery/exonet_node, 300 SECONDS, "emp_until")
 // Proc: tgui_interact()
 // Parameters: 2 (user - person interacting with the UI, ui - the UI itself, in a refresh)
 // Description: Handles opening the TGUI interface
-/obj/machinery/exonet_node/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ExonetNode", src)
-		ui.open()
+DECLARE_UI(/obj/machinery/exonet_node, "ExonetNode")
 
 // Proc: tgui_data()
 // Parameters: 1 (user - the person using the interface)
 // Description: Allows the user to turn the machine on or off, or open or close certain 'ports' for things like external PDA messages, newscasters, etc.
-/obj/machinery/exonet_node/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/exonet_node, "allowPDAs=allow_external_PDAs:num", "allowCommunicators=allow_external_communicators:num", "allowNewscasters=allow_external_newscasters:num", "merge:ui_data_obj_machinery_exonet_node{on:num,logs:bool}")
+
+/// The computed part of /obj/machinery/exonet_node's window data (declared on its UI_DATA row).
+/obj/machinery/exonet_node/proc/ui_data_obj_machinery_exonet_node(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 
 	data["on"] = toggle ? 1 : 0
-	data["allowPDAs"] = allow_external_PDAs
-	data["allowCommunicators"] = allow_external_communicators
-	data["allowNewscasters"] = allow_external_newscasters
 	data["logs"] = (logs || list())
 
 	return data
@@ -134,40 +130,44 @@ EMP_DISABLE(/obj/machinery/exonet_node, 300 SECONDS, "emp_until")
 // Proc: tgui_act()
 // Parameters: 2 (standard tgui_act arguments)
 // Description: Responds to button presses on the TGUI interface.
-/obj/machinery/exonet_node/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/exonet_node, "toggle_power", ui_act_toggle_power)
+UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_power)
+	. = TRUE
+	toggle = !toggle
+	update_power()
+	if(!toggle)
+		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src] off, at [x],[y],[z]."
+		message_admins(msg)
+		log_game(msg)
+	update_icon()
+	add_fingerprint(ui.user)
 
-	switch(action)
-		if("toggle_power")
-			. = TRUE
-			toggle = !toggle
-			update_power()
-			if(!toggle)
-				var/msg = "[ui.user.client.key] ([ui.user]) has turned [src] off, at [x],[y],[z]."
-				message_admins(msg)
-				log_game(msg)
+UI_ACT(/obj/machinery/exonet_node, "toggle_PDA_port", ui_act_toggle_pda_port)
+UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_pda_port)
+	. = TRUE
+	allow_external_PDAs = !allow_external_PDAs
+	update_icon()
+	add_fingerprint(ui.user)
 
-		if("toggle_PDA_port")
-			. = TRUE
-			allow_external_PDAs = !allow_external_PDAs
+UI_ACT(/obj/machinery/exonet_node, "toggle_communicator_port", ui_act_toggle_communicator_port)
+UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_communicator_port)
+	. = TRUE
+	allow_external_communicators = !allow_external_communicators
+	if(!allow_external_communicators)
+		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s communicator port off, at [x],[y],[z]."
+		message_admins(msg)
+		log_game(msg)
+	update_icon()
+	add_fingerprint(ui.user)
 
-		if("toggle_communicator_port")
-			. = TRUE
-			allow_external_communicators = !allow_external_communicators
-			if(!allow_external_communicators)
-				var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s communicator port off, at [x],[y],[z]."
-				message_admins(msg)
-				log_game(msg)
-
-		if("toggle_newscaster_port")
-			. = TRUE
-			allow_external_newscasters = !allow_external_newscasters
-			if(!allow_external_newscasters)
-				var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s newscaster port off, at [x],[y],[z]."
-				message_admins(msg)
-				log_game(msg)
-
+UI_ACT(/obj/machinery/exonet_node, "toggle_newscaster_port", ui_act_toggle_newscaster_port)
+UI_ACT_PROC(/obj/machinery/exonet_node, ui_act_toggle_newscaster_port)
+	. = TRUE
+	allow_external_newscasters = !allow_external_newscasters
+	if(!allow_external_newscasters)
+		var/msg = "[ui.user.client.key] ([ui.user]) has turned [src]'s newscaster port off, at [x],[y],[z]."
+		message_admins(msg)
+		log_game(msg)
 	update_icon()
 	add_fingerprint(ui.user)
 

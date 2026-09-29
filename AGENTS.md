@@ -618,6 +618,17 @@ accident or assume they work:
   machine pipeline (`code/game/machinery/machine_pipeline.dm`, `polls = FALSE`) and park when
   settled. Their producers raise `CHANGE_MACHINE_*` (`power_change()`, `atom_break()` and
   `atom_fix()` do it for every machine).
+- **tgui windows and actions are declared** (`doc/rewrite/systems.md` section 3). Never override
+  `tgui_interact()` or `tgui_act()` and never parse `params` yourself: `DECLARE_UI(type, "Interface",
+  opts)` plus the `ui_prepare`/`ui_redirect`/`ui_opening`/`ui_opened`/`ui_title`/`ui_interface`/
+  `ui_window` hooks open the window; `UI_ACT(type, "action", handler, UI_ARG_NUM/INT/TEXT/BOOL/CHOICE/
+  REF/PATH/LIST/VALUE(...))` rows with `UI_ACT_PROC` handlers take its actions, which receive only
+  the declared args, typed and validated; `ui_act_allowed()` is the type-wide guard.
+  `UI_ACT_FORWARD`, `UI_ACT_FALLBACK`, `UI_ACT_NESTED`/`UI_SUBACT` and `DECLARE_UI_MODAL` cover
+  forwarding, data-driven actions, nested actions and modals. `UI_DATA` declares the window's data
+  (var fields, `"proc:x"`/`"merge:x{key:type}"` getters; never a `tgui_data()` override) and
+  `DECLARE_UI_STATE` its shared state. `tools/ci/sys_rules/ui.py` keeps all of this at 0;
+  `tools/build/build.sh ui-types` regenerates `tgui/packages/tgui/interfaces/generated/*.d.ts`.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
   cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf

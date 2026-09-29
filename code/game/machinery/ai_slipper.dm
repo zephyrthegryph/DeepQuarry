@@ -77,45 +77,45 @@ APPEARANCE_TEMPLATE(/obj/machinery/ai_slipper, "liquid_dispenser{appearance_on?_
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/ai_slipper/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AiSlipper", "AI Liquid Dispenser")
-		ui.open()
+DECLARE_UI(/obj/machinery/ai_slipper, "AiSlipper", UI_TITLE("AI Liquid Dispenser"))
 
-/obj/machinery/ai_slipper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/ai_slipper, "uses:num", "cooldown_timeleft:num", "merge:ui_data_obj_machinery_ai_slipper{area_name:unknown,locked:bool,is_silicon:num,disabled:bool,cooldown_on:bool}")
+
+/// The computed part of /obj/machinery/ai_slipper's window data (declared on its UI_DATA row).
+/obj/machinery/ai_slipper/proc/ui_data_obj_machinery_ai_slipper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/area/A = get_area(src)
 	data["area_name"] = A?.name || "Unknown"
 	data["locked"] = !!locked
 	data["is_silicon"] = istype(user, /mob/living/silicon)
 	data["disabled"] = !!disabled
-	data["uses"] = uses
 	data["cooldown_on"] = !!cooldown_on
-	data["cooldown_timeleft"] = cooldown_timeleft
 	return data
 
-/obj/machinery/ai_slipper/tgui_act(action, list/params)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/ai_slipper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(locked && !istype(usr, /mob/living/silicon))
 		to_chat(usr, "Control panel is locked!")
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/ai_slipper, "toggle_on", ui_act_toggle_on)
+UI_ACT_PROC(/obj/machinery/ai_slipper, ui_act_toggle_on)
+	disabled = !disabled
+	update_icon()
+	return TRUE
+
+UI_ACT(/obj/machinery/ai_slipper, "toggle_use", ui_act_toggle_use)
+UI_ACT_PROC(/obj/machinery/ai_slipper, ui_act_toggle_use)
+	if(cooldown_on || disabled || uses <= 0)
 		return TRUE
-	switch(action)
-		if("toggle_on")
-			disabled = !disabled
-			update_icon()
-			return TRUE
-		if("toggle_use")
-			if(cooldown_on || disabled || uses <= 0)
-				return TRUE
-			new /obj/effect/effect/foam(src.loc)
-			uses--
-			cooldown_on = 1
-			cooldown_time = world.timeofday + 100
-			slip_process()
-			return TRUE
+	new /obj/effect/effect/foam(src.loc)
+	uses--
+	cooldown_on = 1
+	cooldown_time = world.timeofday + 100
+	slip_process()
+	return TRUE
 
 /obj/machinery/ai_slipper/proc/slip_process()
 	var/ticksleft = cooldown_time - world.timeofday

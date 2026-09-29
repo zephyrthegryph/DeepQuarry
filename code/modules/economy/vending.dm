@@ -414,13 +414,12 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emag), null, null)
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-/obj/machinery/vending/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Vending", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/vending, "Vending")
 
-/obj/machinery/vending/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/vending, "merge:ui_data_obj_machinery_vending{chargesMoney:bool,products:list,coin:unknown,actively_vending:text,panel:num,speaker:num,guestNotice:text,userMoney:num,user:list}")
+
+/// The computed part of /obj/machinery/vending's window data (declared on its UI_DATA row).
+/obj/machinery/vending/proc/ui_data_obj_machinery_vending(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/listed_products = list()
 
@@ -485,119 +484,122 @@ DECLARE_EMAG(/obj/machinery/vending, PROC_REF(on_emag), null, null)
 
 	return data
 
-/obj/machinery/vending/tgui_act(action, params, datum/tgui/ui)
+/obj/machinery/vending/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!operable())
-		return
+		return FALSE
 	if(ui.user.stat || ui.user.restrained())
+		return FALSE
+	return TRUE
+
+UI_ACT(/obj/machinery/vending, "remove_coin", ui_act_remove_coin)
+UI_ACT_PROC(/obj/machinery/vending, ui_act_remove_coin)
+	. = TRUE
+	if(issilicon(ui.user))
+		return FALSE
+
+	if(!coin)
+		to_chat(ui.user, span_filter_notice("There is no coin in this machine."))
 		return
-	if(..())
+
+	coin.forceMove(src.loc)
+	if(!ui.user.get_active_hand())
+		ui.user.put_in_hands(coin)
+
+	to_chat(ui.user, span_notice("You remove \the [coin] from \the [src]."))
+	own_take(src, "coin")
+	categories &= ~CAT_COIN
+	return TRUE
+
+UI_ACT(/obj/machinery/vending, "vend", ui_act_vend, UI_ARG_NUM("vend"))
+UI_ACT_PROC(/obj/machinery/vending, ui_act_vend)
+	. = TRUE
+	if(!vend_ready)
+		to_chat(ui.user, span_warning("[src] is busy!"))
+		return
+	if(!allowed(ui.user) && !emagged && scan_id)
+		to_chat(ui.user, span_warning("Access denied."))	//Unless emagged of course
+		flick("[icon_state]-deny",src)
+		play_sfx(src, SFX_MACHINES_DENIEDBEEP)
+		return
+	if(panel_open)
+		to_chat(ui.user, span_warning("[src] cannot dispense products while its service panel is open!"))
+		return
+
+	var/key = params["vend"]
+	var/datum/stored_item/vending_product/R = product_records[key]
+
+	// This should not happen unless the request from NanoUI was bad
+	if(!(R.category & categories))
+		return
+
+	if(!can_buy(R, ui.user))
+		return
+
+	if(R.price <= 0)
+		vend(R, ui.user)
+		add_fingerprint(ui.user)
 		return TRUE
 
-	. = TRUE
-	switch(action)
-		if("remove_coin")
-			if(issilicon(ui.user))
-				return FALSE
+	if(issilicon(ui.user)) //If the item is not free, provide feedback if a synth is trying to buy something.
+		to_chat(ui.user, span_danger("Lawed unit recognized.  Lawed units cannot complete this transaction.  Purchase canceled."))
+		return
+	if(!ishuman(ui.user))
+		return
 
-			if(!coin)
-				to_chat(ui.user, span_filter_notice("There is no coin in this machine."))
-				return
-
-			coin.forceMove(src.loc)
-			if(!ui.user.get_active_hand())
-				ui.user.put_in_hands(coin)
-
-			to_chat(ui.user, span_notice("You remove \the [coin] from \the [src]."))
-			own_take(src, "coin")
-			categories &= ~CAT_COIN
-			return TRUE
-		if("vend")
-			if(!vend_ready)
-				to_chat(ui.user, span_warning("[src] is busy!"))
-				return
-			if(!allowed(ui.user) && !emagged && scan_id)
-				to_chat(ui.user, span_warning("Access denied."))	//Unless emagged of course
-				flick("[icon_state]-deny",src)
-				play_sfx(src, SFX_MACHINES_DENIEDBEEP)
-				return
-			if(panel_open)
-				to_chat(ui.user, span_warning("[src] cannot dispense products while its service panel is open!"))
-				return
-
-			var/key = text2num(params["vend"])
-			var/datum/stored_item/vending_product/R = product_records[key]
-
-			// This should not happen unless the request from NanoUI was bad
-			if(!(R.category & categories))
-				return
-
-			if(!can_buy(R, ui.user))
-				return
-
-			if(R.price <= 0)
-				vend(R, ui.user)
-				add_fingerprint(ui.user)
+	// Card payments ask for the PIN first; the answer re-runs this action.
+	var/pin
+	if(!istype(ui.user.get_active_hand(), /obj/item/spacecash))
+		var/obj/item/card/id/pin_card = ui.user.GetIdCard()
+		if(istype(pin_card) && id_card_needs_pin(pin_card))
+			pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Vendor transaction")
+			if(isnull(pin))
 				return TRUE
 
-			if(issilicon(ui.user)) //If the item is not free, provide feedback if a synth is trying to buy something.
-				to_chat(ui.user, span_danger("Lawed unit recognized.  Lawed units cannot complete this transaction.  Purchase canceled."))
-				return
-			if(!ishuman(ui.user))
-				return
+	vend_ready = FALSE // From this point onwards, vendor is locked to performing this transaction only, until it is resolved.
 
-			// Card payments ask for the PIN first; the answer re-runs this action.
-			var/pin
-			if(!istype(ui.user.get_active_hand(), /obj/item/spacecash))
-				var/obj/item/card/id/pin_card = ui.user.GetIdCard()
-				if(istype(pin_card) && id_card_needs_pin(pin_card))
-					pin = act_ask(ui.user, action, params, ui, "pin", /datum/om/prompt/number, message = "Enter pin code", title = "Vendor transaction")
-					if(isnull(pin))
-						return TRUE
+	var/mob/living/carbon/human/H = ui.user
+	var/obj/item/card/id/C = H.GetIdCard()
 
-			vend_ready = FALSE // From this point onwards, vendor is locked to performing this transaction only, until it is resolved.
+	if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
+		to_chat(ui.user, span_filter_notice("Vendor account offline. Unable to process transaction."))
+		flick("[icon_state]-deny",src)
+		vend_ready = TRUE
+		return
 
-			var/mob/living/carbon/human/H = ui.user
-			var/obj/item/card/id/C = H.GetIdCard()
+	rel_set(src, "currently_vending", R)
 
-			if(!GLOB.vendor_account || GLOB.vendor_account.suspended)
-				to_chat(ui.user, span_filter_notice("Vendor account offline. Unable to process transaction."))
-				flick("[icon_state]-deny",src)
-				vend_ready = TRUE
-				return
+	var/paid = FALSE
 
-			rel_set(src, "currently_vending", R)
+	if(istype(ui.user.get_active_hand(), /obj/item/spacecash))
+		var/obj/item/spacecash/cash = ui.user.get_active_hand()
+		paid = pay_with_cash(cash, ui.user)
+	else if(istype(ui.user.get_active_hand(), /obj/item/spacecash/ewallet))
+		var/obj/item/spacecash/ewallet/wallet = ui.user.get_active_hand()
+		paid = pay_with_ewallet(wallet, ui.user)
+	else if(istype(C, /obj/item/card))
+		paid = pay_with_card(C, ui.user, pin)
+	else
+		to_chat(ui.user, span_warning("Payment failure: you have no ID or other method of payment."))
+		vend_ready = TRUE
+		flick("[icon_state]-deny",src)
+		return TRUE // we set this because they shouldn't even be able to get this far, and we want the UI to update.
+	if(paid)
+		vend(currently_vending(), ui.user) // vend will handle vend_ready
+		. = TRUE
+	else
+		to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
+		vend_ready = TRUE
 
-			var/paid = FALSE
-
-			if(istype(ui.user.get_active_hand(), /obj/item/spacecash))
-				var/obj/item/spacecash/cash = ui.user.get_active_hand()
-				paid = pay_with_cash(cash, ui.user)
-			else if(istype(ui.user.get_active_hand(), /obj/item/spacecash/ewallet))
-				var/obj/item/spacecash/ewallet/wallet = ui.user.get_active_hand()
-				paid = pay_with_ewallet(wallet, ui.user)
-			else if(istype(C, /obj/item/card))
-				paid = pay_with_card(C, ui.user, pin)
-			/*else if(ui.user.can_advanced_admin_interact())
-				to_chat(ui.user, span_notice("Vending object due to admin interaction."))
-				paid = TRUE*/
-			else
-				to_chat(ui.user, span_warning("Payment failure: you have no ID or other method of payment."))
-				vend_ready = TRUE
-				flick("[icon_state]-deny",src)
-				return TRUE // we set this because they shouldn't even be able to get this far, and we want the UI to update.
-			if(paid)
-				vend(currently_vending(), ui.user) // vend will handle vend_ready
-				. = TRUE
-			else
-				to_chat(ui.user, span_warning("Payment failure: unable to process payment."))
-				vend_ready = TRUE
-
-		if("togglevoice")
-			if(!panel_open)
-				return FALSE
-			shut_up = !shut_up
-			if(!shut_up)
-				MACHINE_WAKE(src)
+UI_ACT(/obj/machinery/vending, "togglevoice", ui_act_togglevoice)
+UI_ACT_PROC(/obj/machinery/vending, ui_act_togglevoice)
+	. = TRUE
+	if(!panel_open)
+		return FALSE
+	shut_up = !shut_up
+	if(!shut_up)
+		MACHINE_WAKE(src)
 
 /obj/machinery/vending/proc/can_buy(datum/stored_item/vending_product/R, mob/user)
 	if(!allowed(user) && !emagged && scan_id)

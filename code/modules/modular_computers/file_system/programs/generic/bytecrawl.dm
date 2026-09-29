@@ -9,6 +9,9 @@
 	program_icon_state = "generic"
 	usage_flags = PROGRAM_ALL
 
-/datum/computer_file/program/bytecrawl/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/bytecrawl, "merge:ui_data_datum_computer_file_program_bytecrawl{}")
+
+/// The computed part of /datum/computer_file/program/bytecrawl's window data (declared on its UI_DATA row).
+/datum/computer_file/program/bytecrawl/proc/ui_data_datum_computer_file_program_bytecrawl(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = get_header_data()
 

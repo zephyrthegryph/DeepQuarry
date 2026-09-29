@@ -96,13 +96,12 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/obj/item/anomaly_scanner/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "AnomalyScanner", name)
-		ui.open()
+DECLARE_UI(/obj/item/anomaly_scanner, "AnomalyScanner")
 
-/obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scanner{anomaly_name:text,severity:num,stability:num,point_output:unknown,danger_type:unknown,unstable_type:unknown,containment_type:unknown,transformation_type:unknown,modifier:unknown,countdown:unknown}")
+
+/// The computed part of /obj/item/anomaly_scanner's window data (declared on its UI_DATA row).
+/obj/item/anomaly_scanner/proc/ui_data_obj_item_anomaly_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/obj/effect/anomaly/anom = buffered_anomaly
 

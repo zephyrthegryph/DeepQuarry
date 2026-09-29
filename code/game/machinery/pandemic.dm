@@ -37,68 +37,76 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/computer/pandemic, TYPE_PROC_REF(/atom, a
 		return .
 	icon_state = "pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]"
 
-/obj/machinery/computer/pandemic/tgui_act(action, params, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	if(.)
-		return
+/obj/machinery/computer/pandemic/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+	if(!..())
+		return FALSE
 	if(!operable())
-		return
+		return FALSE
+	return TRUE
 
-	switch(action)
-		if("create_culture_bottle")
-			if(wait)
-				return FALSE
-			create_culture_bottle(params["index"])
-			return TRUE
-		if("create_vaccine_bottle")
-			if(wait)
-				atom_say("The replicator is not ready yet.")
-				return FALSE
-			create_vaccine_bottle(params["index"])
-			return TRUE
-		if("eject_beaker")
-			eject_beaker()
-			update_tgui_static_data(ui.user)
-			return TRUE
-		if("destroy_eject_beaker")
-			beaker.reagents.clear_reagents()
-			eject_beaker()
-			update_tgui_static_data(ui.user)
-			return TRUE
-		if("empty_beaker")
-			beaker.reagents.clear_reagents()
-			return TRUE
-		if("rename_disease")
-			rename_disease(params["index"], params["name"])
-			return TRUE
-		if("print_release_form")
-			var/strain_index = text2num(params["index"])
-			if(isnull(strain_index))
-				atom_say("Unable to respond to command.")
-				return FALSE
-			var/type = get_virus_id_by_index(strain_index)
-			if(!type)
-				atom_say("Unable to find requested strain.")
-				return FALSE
-			var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[type]
-			if(!A)
-				atom_say("Unable to find requested strain.")
-				return FALSE
-			print_form(A, ui.user)
-			return TRUE
-		else
-			return FALSE
+UI_ACT(/obj/machinery/computer/pandemic, "create_culture_bottle", ui_act_create_culture_bottle, UI_ARG_NUM("index"))
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_culture_bottle)
+	if(wait)
+		return FALSE
+	create_culture_bottle(params["index"])
+	return TRUE
 
-/obj/machinery/computer/pandemic/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+UI_ACT(/obj/machinery/computer/pandemic, "create_vaccine_bottle", ui_act_create_vaccine_bottle, UI_ARG_TEXT("index"))
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_vaccine_bottle)
+	if(wait)
+		atom_say("The replicator is not ready yet.")
+		return FALSE
+	create_vaccine_bottle(params["index"])
+	return TRUE
 
-/obj/machinery/computer/pandemic/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui = null)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "Pandemic", name)
-		ui.open()
+UI_ACT(/obj/machinery/computer/pandemic, "eject_beaker", ui_act_eject_beaker)
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_eject_beaker)
+	eject_beaker()
+	update_tgui_static_data(ui.user)
+	return TRUE
 
-/obj/machinery/computer/pandemic/tgui_data(mob/user)
+UI_ACT(/obj/machinery/computer/pandemic, "destroy_eject_beaker", ui_act_destroy_eject_beaker)
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_destroy_eject_beaker)
+	beaker.reagents.clear_reagents()
+	eject_beaker()
+	update_tgui_static_data(ui.user)
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/pandemic, "empty_beaker", ui_act_empty_beaker)
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_empty_beaker)
+	beaker.reagents.clear_reagents()
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/pandemic, "rename_disease", ui_act_rename_disease, UI_ARG_VALUE("index"), UI_ARG_TEXT("name"))
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_rename_disease)
+	rename_disease(params["index"], params["name"])
+	return TRUE
+
+UI_ACT(/obj/machinery/computer/pandemic, "print_release_form", ui_act_print_release_form, UI_ARG_NUM("index"))
+UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_print_release_form)
+	var/strain_index = params["index"]
+	if(isnull(strain_index))
+		atom_say("Unable to respond to command.")
+		return FALSE
+	var/type = get_virus_id_by_index(strain_index)
+	if(!type)
+		atom_say("Unable to find requested strain.")
+		return FALSE
+	var/datum/affliction/contagion/engineered/A = GLOB.archive_diseases[type]
+	if(!A)
+		atom_say("Unable to find requested strain.")
+		return FALSE
+	print_form(A, ui.user)
+	return TRUE
+
+DECLARE_UI_STATE(/obj/machinery/computer/pandemic, GLOB.tgui_default_state)
+
+DECLARE_UI(/obj/machinery/computer/pandemic, "Pandemic")
+
+UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_computer_pandemic{is_ready:bool,has_beaker:bool,has_blood:bool,beaker:list,blood:list,viruses:unknown,resistances:unknown}")
+
+/// The computed part of /obj/machinery/computer/pandemic's window data (declared on its UI_DATA row).
+/obj/machinery/computer/pandemic/proc/ui_data_obj_machinery_computer_pandemic(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["is_ready"] = !wait
 	if(!beaker)

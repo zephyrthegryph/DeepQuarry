@@ -37,17 +37,15 @@
 // ALLOW(interactions): its Use opens the plant UI instead of the gas scan
 DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_PROC_REF(/atom, interaction_open_ui)))
 
-/obj/item/analyzer/plant_analyzer/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "PlantAnalyzer", name)
-		ui.open()
+DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
 
-/obj/item/analyzer/plant_analyzer/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/analyzer/plant_analyzer, GLOB.tgui_inventory_state)
 
-/obj/item/analyzer/plant_analyzer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge:ui_data_obj_item_analyzer_plant_analyzer{no_seed:bool,seed:unknown}")
+
+/// The computed part of /obj/item/analyzer/plant_analyzer's window data (declared on its UI_DATA row).
+/obj/item/analyzer/plant_analyzer/proc/ui_data_obj_item_analyzer_plant_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/datum/seed/grown_seed = last_seed
 	if(!istype(grown_seed))
@@ -55,22 +53,19 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 
 	data["no_seed"] = FALSE
 	data["seed"] = grown_seed.get_tgui_analyzer_data(user)
-	data["reagents"] = last_reagents
 
 	return data
 
-/obj/item/analyzer/plant_analyzer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
-	if(..())
-		return TRUE
+UI_ACT(/obj/item/analyzer/plant_analyzer, "print", ui_act_print)
+UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_print)
+	print_report(ui.user)
+	return TRUE
 
-	switch(action)
-		if("print")
-			print_report(ui.user)
-			return TRUE
-		if("close")
-			proto_set(src, "last_seed", null)
-			last_reagents = null
-			return TRUE
+UI_ACT(/obj/item/analyzer/plant_analyzer, "close", ui_act_close)
+UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
+	proto_set(src, "last_seed", null)
+	last_reagents = null
+	return TRUE
 
 /obj/item/analyzer/plant_analyzer/afterattack(obj/target, mob/user, flag)
 	if(!flag)

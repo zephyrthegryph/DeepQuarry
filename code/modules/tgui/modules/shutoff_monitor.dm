@@ -2,29 +2,29 @@
 	name = "Shutoff Valve Monitoring"
 	tgui_id = "ShutoffMonitor"
 
-/datum/tgui_module/shutoff_monitor/tgui_act(action, params)
-	if(..())
-		return TRUE
+UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_enable", ui_act_toggle_enable, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
+UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_enable)
+	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+	if(!istype(S))
+		return FALSE
+	S.close_on_leaks = !S.close_on_leaks
+	return TRUE
 
-	switch(action)
-		if("toggle_enable")
-			var/obj/machinery/atmospherics/valve/shutoff/S = locate(params["valve"])
-			if(!istype(S))
-				return FALSE
-			S.close_on_leaks = !S.close_on_leaks
-			return TRUE
+UI_ACT(/datum/tgui_module/shutoff_monitor, "toggle_open", ui_act_toggle_open, UI_ARG_REF("valve", null, /obj/machinery/atmospherics/valve/shutoff))
+UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_open)
+	var/obj/machinery/atmospherics/valve/shutoff/S = params["valve"]
+	if(!istype(S))
+		return FALSE
+	if(S.open)
+		S.close()
+	else
+		S.open()
+	return TRUE
 
-		if("toggle_open")
-			var/obj/machinery/atmospherics/valve/shutoff/S = locate(params["valve"])
-			if(!istype(S))
-				return FALSE
-			if(S.open)
-				S.close()
-			else
-				S.open()
-			return TRUE
+UI_DATA_REPLACE(/datum/tgui_module/shutoff_monitor, "merge:ui_data_datum_tgui_module_shutoff_monitor{valves:list}")
 
-/datum/tgui_module/shutoff_monitor/tgui_data(mob/user)
+/// The computed part of /datum/tgui_module/shutoff_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/shutoff_monitor/proc/ui_data_datum_tgui_module_shutoff_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/valves = list()
 

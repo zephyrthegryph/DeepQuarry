@@ -111,18 +111,17 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/shield_gen/tgui_interact(mob/user, datum/tgui/ui)
-	ui = SStgui.try_update_ui(user, src, ui)
-	if(!ui)
-		ui = new(user, src, "ShieldGenerator", name)
-		ui.open()
+DECLARE_UI(/obj/machinery/shield_gen, "ShieldGenerator")
 
 /obj/machinery/shield_gen/tgui_status(mob/user)
 	if(has_stat(BROKEN))
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/shield_gen/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_gen{capacitors:list,active:num,failing:bool,radius:num,max_radius:num,z_range:num,max_z_range:num,average_field_strength:num,target_field_strength:num,max_field_strength:num,shields:num,upkeep:num,strengthen_rate:num,max_strengthen_rate:num,gen_power:num}")
+
+/// The computed part of /obj/machinery/shield_gen's window data (declared on its UI_DATA row).
+/obj/machinery/shield_gen/proc/ui_data_obj_machinery_shield_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/lockedData = list()
 
 	if(!locked)
@@ -213,29 +212,33 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shield_gen, PROC_REF(on_emag), null)
 	else
 		average_field_strength = 0
 
-/obj/machinery/shield_gen/tgui_act(action, params, datum/tgui/ui)
-	if(..())
-		return TRUE
+UI_ACT(/obj/machinery/shield_gen, "toggle", ui_act_toggle)
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_toggle)
+	if (!active && !anchored)
+		to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
+		return
+	toggle()
+	. = TRUE
 
-	switch(action)
-		if("toggle")
-			if (!active && !anchored)
-				to_chat(ui.user, span_red("The [src] needs to be firmly secured to the floor first."))
-				return
-			toggle()
-			. = TRUE
-		if("change_radius")
-			field_radius = clamp(text2num(params["val"]), 0, max_field_radius)
-			. = TRUE
-		if("strengthen_rate")
-			strengthen_rate = clamp(text2num(params["val"]), 0, max_strengthen_rate)
-			. = TRUE
-		if("target_field_strength")
-			target_field_strength = clamp(text2num(params["val"]), 1, max_field_strength)
-			. = TRUE
-		if("z_range")
-			z_range = clamp(text2num(params["val"]), 0, 10)
-			. = TRUE
+UI_ACT(/obj/machinery/shield_gen, "change_radius", ui_act_change_radius, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_change_radius)
+	field_radius = clamp(params["val"], 0, max_field_radius)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "strengthen_rate", ui_act_strengthen_rate, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_strengthen_rate)
+	strengthen_rate = clamp(params["val"], 0, max_strengthen_rate)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "target_field_strength", ui_act_target_field_strength, UI_ARG_NUM("val"))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_target_field_strength)
+	target_field_strength = clamp(params["val"], 1, max_field_strength)
+	. = TRUE
+
+UI_ACT(/obj/machinery/shield_gen, "z_range", ui_act_z_range, UI_ARG_NUM("val", 0, 10))
+UI_ACT_PROC(/obj/machinery/shield_gen, ui_act_z_range)
+	z_range = params["val"]
+	. = TRUE
 
 DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))
 
