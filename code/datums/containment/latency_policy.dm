@@ -221,7 +221,6 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 	if(!count)
 		return
 	var/checked = 0
-	var/collapsed = 0
 	var/index = cursor % count
 	// Snapshot the keys: deleted holders are pruned after the pass, never mid-iteration,
 	// so the indexes below stay valid for the whole frame.
@@ -260,7 +259,6 @@ GLOBAL_DATUM_INIT(latency_sweep, /datum/latency_sweep, new)
 				continue
 			// Through dq_latent_attempt_collapse(): its frame is part of the calibrated held_refs.
 			if(dq_latent_attempt_collapse(A, LATENCY_SWEEP_FRAME_REFS))
-				collapsed++
 				break // holder.contents changed; the rest wait for next turn
 			// Refused by latent_collapse() itself: back off for the holder's idle
 			// delay instead of re-offering it (and re-running its refusal) every frame.
