@@ -303,6 +303,9 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 			M.cancel_sleep_keys()
 		else if(!M.step_on_power_change && (!M.step_waiting_power || (!M.operable())))
 			return STAGE_IDLE
+		if(!sys_periodic_allows(M, MACHINE_PIPELINE))
+			M.set_step_waiting_power(FALSE)
+			return STAGE_IDLE
 		M.set_step_active(TRUE)
 	M.set_step_waiting_power(FALSE)
 	if(M.machine_step() == PROCESS_KILL)
@@ -636,6 +639,9 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 	reads = list("step_active")
 
 /datum/om/stage/machine/power/step/perform(obj/machinery/M, datum/om/frame/machine/F)
+	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
+		M.set_step_active(FALSE)
+		return STAGE_IDLE
 	M.set_step_active(M.machine_step() != PROCESS_KILL)
 	if(!M.step_active)
 		return STAGE_IDLE

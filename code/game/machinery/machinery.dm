@@ -245,12 +245,19 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// A machine in fast mode (speed_process) runs its machine_step() on the fast periodic pipeline.
 /obj/machinery/periodic_step(delta)
+	// A declared MACHINE_PIPELINE state that doesn't hold ends fast mode too; its declaration
+	// restarts it when the state holds again (code/datums/sys/periodic.dm).
+	if(!sys_periodic_allows(src, MACHINE_PIPELINE))
+		return PROCESS_KILL
 	return machine_step()
 
 /// Gives `M` step work: the machine pipeline runs its machine_step() from the next frame until
 /// it returns PROCESS_KILL. Joins the pipeline if `M` isn't on it yet (machines start asleep).
 /proc/machine_wake(obj/machinery/M)
 	if(!M || QDELETED(M))
+		return
+	// A DECLARE_PERIODIC_WHILE(..., MACHINE_PIPELINE, ...) whose state doesn't hold refuses (code/datums/sys/periodic.dm).
+	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
 		return
 	M.machine_wake_count++
 	M.set_step_active(TRUE)
