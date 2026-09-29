@@ -116,7 +116,6 @@
 			if(trigger.kind == RULE_TRIGGER_KEY)
 				LAZYOR(key_kinds, trigger.key_kind)
 
-OM_STATIC_TYPE(/datum/rule_type_table)
 
 /// Per-object rule state. The rule list and key kinds live in the shared
 /// /datum/rule_type_table; per-rule flags are bits of three numbers, and every

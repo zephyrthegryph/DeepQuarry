@@ -56,7 +56,7 @@ GLOBAL_LIST_EMPTY(om_rec_audit_index)
 /// not a registered singleton, and refcount() accounted for by the record's internal references.
 /proc/own_audit_rec_dropped(datum/om/rec/rec)
 	var/datum/O = rec.owner
-	if(QDELETED(O) || registry_has(O) || owner_of(O))
+	if(QDELETED(O) || is_registered(O) || owner_of(O))
 		return FALSE
 	if(isatom(O))
 		var/atom/A = O

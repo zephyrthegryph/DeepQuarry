@@ -13,7 +13,7 @@
 		for(var/location_tag in crash_location_ids)
 			var/obj/effect/shuttle_landmark/L = SSshuttles.get_landmark(location_tag)
 			if(L)
-				WEAK_LIST_ADD(crash_locations, L)
+				rel_add(src, "crash_locations", L)
 	..()
 
 // Return 0 to let the jump continue, 1 to abort the jump.
@@ -30,7 +30,7 @@
 // Actually crash the shuttle
 /datum/shuttle/proc/do_crash(obj/effect/shuttle_landmark/intended_destination)
 	// Choose the target
-	var/obj/effect/shuttle_landmark/target = pick(weak_list_live(crash_locations))
+	var/obj/effect/shuttle_landmark/target = pick(LAZYCOPY(crash_locations))
 	ASSERT(istype(target))
 
 	// Blow up the target area?

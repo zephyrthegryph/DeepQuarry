@@ -16,7 +16,7 @@
 	GLOB.machine_service.process_power()
 	TEST_ASSERT_EQUAL(S.power_region, P, "a power step kept the sensor on its detached test grid")
 	M.power_monitor.grid_sensors = null
-	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
+	rel_add(M.power_monitor, "grid_sensors", S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(M.asleep_on_keys(), "stable power monitor did not sleep on its grid keys")

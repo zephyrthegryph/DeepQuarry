@@ -40,13 +40,13 @@
 	valid_apcs = null
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in valid_z_levels)
-			WEAK_LIST_ADD(valid_apcs, A)
+			rel_add(src, "valid_apcs", A)
 
 /datum/event2/event/electrical_fault/start()
 	GLOB.command_announcement.Announce("Irregularities detected in \the [location_name()] power grid.", "[location_name()] Power Grid Monitoring", ANNOUNCER_MSG_WIRING_FAULT_START)
 
 /datum/event2/event/electrical_fault/event_tick()
-	var/list/live_apcs = weak_list_live(valid_apcs)
+	var/list/live_apcs = LAZYCOPY(valid_apcs)
 	if(!live_apcs.len)
 		log_game("ELECTRICAL EVENT: No valid APCs found for electrical fault event. Aborting.")
 		abort()

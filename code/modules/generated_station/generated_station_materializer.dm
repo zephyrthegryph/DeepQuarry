@@ -193,9 +193,9 @@
 
 /// Registers a furnishing and every movable it created inside itself for teardown.
 /datum/generated_station_materialization/proc/register_furnishing(atom/movable/furnishing)
-	if(!furnishing || WEAK_LIST_HAS(furnishings, furnishing))
+	if(!furnishing || (furnishings && (furnishing in furnishings)))
 		return
-	WEAK_LIST_ADD(furnishings, furnishing)
+	rel_add(src, "furnishings", furnishing)
 	register_owned_furnishing_atom(furnishing)
 
 /datum/generated_station_materialization/proc/register_owned_furnishing_atom(atom/movable/furnishing)
@@ -695,7 +695,7 @@
 /// Resolves cross-room access constraints after every authored fragment and
 /// generated furnishing exists, while the station can still be rejected safely.
 /datum/generated_station_materializer/proc/finalize_furnishing_access()
-	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(result.furnishings))
 		var/turf/current = get_turf(furnishing)
 		if(!current)
 			continue
@@ -717,7 +717,7 @@
 						break
 				if(!destination)
 					if(generated_station_is_removable_decor(furnishing))
-						WEAK_LIST_REMOVE(result.furnishings, furnishing)
+						rel_remove(result, "furnishings", furnishing)
 						result.owned_furnishing_atoms -= furnishing
 						qdel(furnishing)
 						continue
@@ -745,7 +745,7 @@
 		var/area/generated_station/A = result.module_areas[module_id]
 		while(!generated_station_room_area_is_accessible(A))
 			var/atom/movable/removable
-			var/list/live_furnishings = weak_list_live(result.furnishings)
+			var/list/live_furnishings = LAZYCOPY(result.furnishings)
 			for(var/i in length(live_furnishings) to 1 step -1)
 				var/atom/movable/candidate = live_furnishings[i]
 				if(get_area(candidate) == A && generated_station_is_removable_decor(candidate))
@@ -758,7 +758,7 @@
 				// authored fixture still partitions the room after relocation, drop
 				// that fixture and publish a degraded but fully traversable room.
 				var/atom/movable/required_blocker
-				var/list/live_blockers = weak_list_live(result.furnishings)
+				var/list/live_blockers = LAZYCOPY(result.furnishings)
 				for(var/i in length(live_blockers) to 1 step -1)
 					var/atom/movable/candidate = live_blockers[i]
 					if(get_area(candidate) == A && candidate.density && !istype(candidate, /obj/machinery/door))
@@ -766,7 +766,7 @@
 						break
 				if(required_blocker)
 					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
-					WEAK_LIST_REMOVE(result.furnishings, required_blocker)
+					rel_remove(result, "furnishings", required_blocker)
 					result.owned_furnishing_atoms -= required_blocker
 					qdel(required_blocker)
 					continue
@@ -779,7 +779,7 @@
 							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
 				log_world("Generated station could not repair furnishing access for [A.name]: [jointext(blockers, ", ")]")
 				return FALSE
-			WEAK_LIST_REMOVE(result.furnishings, removable)
+			rel_remove(result, "furnishings", removable)
 			result.owned_furnishing_atoms -= removable
 			qdel(removable)
 			generation_checkpoint("Opening final room circulation", 55)
@@ -788,7 +788,7 @@
 /// Moves a required dense furnishing to another valid socket when the complete
 /// room graph proves its authored position is an articulation point.
 /datum/generated_station_materializer/proc/relocate_blocking_room_furnishing(area/generated_station/A)
-	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(result.furnishings))
 		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
 			continue
 		var/turf/original = get_turf(furnishing)

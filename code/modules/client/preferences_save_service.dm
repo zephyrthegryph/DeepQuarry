@@ -11,7 +11,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	var/list/preferences_datums = list()
 	var/list/newplayers_requiring_init = list()
 
-	/// Preferences waiting to be saved, as a weak list (DECLARE_REF(..., WEAK_LIST)): the client owns them.
+	/// Preferences waiting to be saved, a REL_LIST view: the client owns them.
 	var/list/save_queue
 /*
 /datum/world_service/character_setup/Initialize()
@@ -43,7 +43,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 /datum/world_service/character_setup/proc/queue_preferences_save(datum/preferences/prefs)
 	if(!prefs)
 		return
-	WEAK_LIST_ADD(save_queue, prefs)
+	rel_add(src, "save_queue", prefs)
 	demand()
 
 /datum/world_service/character_setup/has_work()

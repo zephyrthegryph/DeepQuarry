@@ -121,7 +121,7 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				if(entry[OWNE_PARTNER] && !(entry[OWNE_PARTNER] in D.vars))
 					OWN_REPORT("[D.type].[var_name]: OWN_IF flag [entry[OWNE_PARTNER]] is not a var")
 				var/datum/held = value
-				if(isdatum(held) && registry_has(held))
+				if(isdatum(held) && is_registered(held))
 					OWN_REPORT("[D.type].[var_name]: OWN of registry type [held.type] (a registered instance is SHARED; a per-holder copy is PROTO)")
 			if(OWNK_REL)
 				if(entry[OWNE_ARG] == RELS_SYMMETRIC && !islist(value) && !isnull(value))

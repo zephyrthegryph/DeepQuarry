@@ -81,7 +81,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return (D in GLOB.research_service?.techwebs) ? D : null
 
 /proc/registry_planet(datum/D)
-	return (D in planet_service()?.planets) ? D : null
+	return (D in GLOB.planet_service?.planets) ? D : null
 
 /proc/registry_asset(datum/D)
 	return GLOB.asset_datums[D.type]
@@ -102,7 +102,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GLOB.name_to_material[D.name]
 
 /proc/registry_body_effect(datum/D)
-	return body_effect_registered(D.type)
+	return body_effect_def(D.type) // a def is made once per type and never replaced
 
 /proc/registry_body_factor_def(datum/body_factor_def/D)
 	var/list/defs = body_factor_defs()
@@ -130,7 +130,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return dq_rules()[D.type]
 
 /proc/registry_rule_type_table(datum/rule_type_table/D)
-	return dq_rule_table_registered(D)
+	return dq_rule_table_for(D.rules) == D ? D : null
 
 /proc/registry_job(datum/D)
 	return SSjob?.type_occupations[D.type]
@@ -158,10 +158,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return (D == GLOB.global_underwear || D == GLOB.catalogue_data) ? D : null
 
 /proc/registry_category_group(datum/category_group/D)
-	return D.collection?.categories_by_name[D.name]
+	return D.collection_static?.categories_by_name[D.name]
 
 /proc/registry_category_item(datum/category_item/D)
-	return D.category?.items_by_name[D.name]
+	return D.category_static?.items_by_name[D.name]
 
 /proc/registry_instrument(datum/instrument/D)
 	return GLOB.instrument_service?.instrument_data[D.id]

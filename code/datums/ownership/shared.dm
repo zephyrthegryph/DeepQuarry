@@ -14,7 +14,7 @@
 	return isdatum(D) && !isnull(D.registry_getter())
 
 /// TRUE when `D` is the registered instance of its registry: shared, immortal, never tracked.
-/proc/registry_has(datum/D)
+/proc/is_registered(datum/D)
 	if(!isdatum(D))
 		return FALSE
 	var/getter = D.registry_getter()
@@ -24,7 +24,7 @@
 
 /// Points holder.var_name at a registered instance (or null). Asserts registration.
 /proc/shared_set(datum/holder, var_name, datum/value)
-	if(!isnull(value) && !registry_has(value))
+	if(!isnull(value) && !is_registered(value))
 		OWN_REPORT("[holder.type].[var_name] is SHARED but [value.type] is not a registered instance (own it, or make the var PROTO)")
 	holder.vars[var_name] = value // ALLOW(ownership): the accessor
 	return value

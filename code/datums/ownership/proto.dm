@@ -32,7 +32,7 @@
 	if(old == value)
 		return value
 	var/old_private = proto_is_private(holder, var_name)
-	if(isdatum(value) && !registry_has(value))
+	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
 	holder.vars[var_name] = value // ALLOW(ownership): the accessor

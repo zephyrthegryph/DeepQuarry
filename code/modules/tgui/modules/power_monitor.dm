@@ -19,7 +19,7 @@
 	var/list/map_levels = using_map.get_map_levels(z)
 
 	// Build list of data from sensor readings.
-	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(grid_sensors))
 		if(!(S.z in map_levels))
 			continue
 		sensors.Add(list(list(
@@ -53,7 +53,7 @@
 			. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()
-	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(grid_sensors))
 		if(S.check_grid_warning())
 			return TRUE
 	return FALSE
@@ -74,7 +74,7 @@
 			if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
 				WARNING("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
 			else
-				WEAK_LIST_ADD(grid_sensors, S)
+				rel_add(src, "grid_sensors", S)
 
 /datum/tgui_module/power_monitor/ntos
 	ntos = TRUE

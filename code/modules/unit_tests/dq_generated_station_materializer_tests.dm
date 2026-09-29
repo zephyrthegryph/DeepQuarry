@@ -103,7 +103,7 @@
 	TEST_ASSERT(length(materialized.furnishings) >= 16, "Functional modules did not receive credible furnishing sets")
 	var/fire_alarms = 0
 	var/emergency_closets = 0
-	for(var/atom/movable/furnishing in weak_list_live(materialized.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))
 		if(istype(furnishing, /obj/machinery/firealarm))
 			var/obj/machinery/firealarm/fire_alarm = furnishing
 			TEST_ASSERT(istype(get_step(get_turf(fire_alarm), turn(fire_alarm.dir, 180)), /turf/simulated/wall), "Fire alarm is not visually mounted against its wall")
@@ -248,7 +248,7 @@
 		if(solution_module?.role in machinery_roles && !findtext(solution.definition_id, "-compact-"))
 			TEST_ASSERT(machinery_count > 0, "Operational room [solution.module_id] contains no machinery")
 	var/list/furnished_departments = list()
-	for(var/atom/movable/furnishing in weak_list_live(materialized.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))
 		var/area/generated_station/furnishing_area = get_area(furnishing)
 		if(furnishing_area?.department_id)
 			furnished_departments[furnishing_area.department_id] = TRUE

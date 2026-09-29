@@ -19,7 +19,7 @@
 				found += alarm
 		// machines may not yet be ordered at this point
 		for(var/obj/machinery/alarm/alarm as anything in dd_sortedObjectList(found))
-			WEAK_LIST_ADD(monitored_alarms, alarm)
+			rel_add(src, "monitored_alarms", alarm)
 
 /datum/tgui_module/atmos_control/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -28,7 +28,7 @@
 	switch(action)
 		if("alarm")
 			if(ui_ref)
-				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
+				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
 				if(alarm)
 					var/datum/tgui_state/TS = generate_state(alarm)
 					alarm.tgui_interact(ui.user, parent_ui = ui_ref, state = TS)
@@ -57,7 +57,7 @@
 
 	// TODO: Move these to a cache, similar to cameras
 	var/alarms[0]
-	for(var/obj/machinery/alarm/alarm in (LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
+	for(var/obj/machinery/alarm/alarm in (LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
 		if(!LAZYLEN(monitored_alarms) && alarm.alarms_hidden)
 			continue
 		if(!(alarm.z in map_levels))

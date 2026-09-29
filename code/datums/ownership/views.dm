@@ -22,7 +22,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 /proc/rel_tracked(datum/target)
 	if(!isdatum(target) || isarea(target))
 		return FALSE
-	return !registry_has(target)
+	return !is_registered(target)
 
 /proc/_rel_index(datum/target, datum/source, var_name)
 	if(isturf(target))

@@ -217,6 +217,21 @@
 			D.vars[var_name] = null // ALLOW(ownership): the type path placeholder is replaced by the owned child
 			lifecycle_decl_adopt_child(D, var_name, new path(D), FALSE)
 
+/// A list of children from `spec`: paths become new instances (a `path = count` entry makes
+/// count of them), instances already in it are kept.
+/proc/lifecycle_decl_child_list(datum/D, list/spec)
+	var/list/made = list()
+	for(var/entry in spec)
+		if(ispath(entry))
+			var/count = spec[entry]
+			if(!isnum(count) || count < 1)
+				count = 1
+			for(var/i in 1 to count)
+				made += new entry(D)
+		else if(isdatum(entry))
+			made += entry
+	return made
+
 /// Adopts a declared default child through the ownership accessors (DECLARE_DEFAULT_CHILD needs
 /// an OWN declaration on the var; a movable child in contents may be CONTAINED), then wires the
 /// child's back relation when its type names one (default_child_backref()).

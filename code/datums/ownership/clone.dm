@@ -21,7 +21,7 @@
 		var/list/errors = list()
 		var/list/blob = state_serialize(A, STATE_FULL, errors)
 		if(!blob)
-			log_debug("entity_clone: [A.type] refused: [jointext(errors, "; ")]")
+			log_world("entity_clone: [A.type] refused: [jointext(errors, "; ")]")
 			return null
 		clone = state_materialize(blob, loc || (ismovable(A) ? A.loc : null), STATE_FULL, errors)
 	else
@@ -31,7 +31,7 @@
 		if(nested)
 			clone = ctx.materialize_datum(nested)
 		if(ctx.errors)
-			log_debug("entity_clone: [D.type] refused: [jointext(ctx.errors, "; ")]")
+			log_world("entity_clone: [D.type] refused: [jointext(ctx.errors, "; ")]")
 		qdel(ctx)
 	if(clone && new_owner && slot)
 		if(islist(new_owner.vars[slot]))

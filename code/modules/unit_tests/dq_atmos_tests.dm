@@ -4588,7 +4588,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/computer/power_monitor/M = new(T)
 	power_test_join(P, S)
 	M.power_monitor.grid_sensors = null
-	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
+	rel_add(M.power_monitor, "grid_sensors", S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(!machine_stepping(M), "stable power monitor remained scheduled")
@@ -4934,7 +4934,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
 		var/datum/chunk/camera/chunk = LAZYACCESS(GLOB.cameranet.chunks, chunk_key)
-		TEST_ASSERT(!WEAK_LIST_HAS(chunk.cameras, test_camera), "deleted camera remained retained by camera chunk [chunk_key]")
+		TEST_ASSERT(!(chunk.cameras && (test_camera in chunk.cameras)), "deleted camera remained retained by camera chunk [chunk_key]")
 
 
 // =====================================================================
