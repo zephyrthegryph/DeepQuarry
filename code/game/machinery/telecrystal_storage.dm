@@ -94,6 +94,7 @@
 	var/amount_to_spawn = 5
 
 MAP_RESOLVER(/obj/tcspawner, GLOBAL_PROC_REF(resolve_tcspawner))
+MAP_RESOLVER_VARS(/obj/tcspawner, "amount_to_spawn")
 
 /// MAP_RESOLVER for telecrystal spawners: one stack, inside the closet on the tile if there is one.
 /proc/resolve_tcspawner(atom/loc, path, list/varedits)

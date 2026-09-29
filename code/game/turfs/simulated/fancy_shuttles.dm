@@ -148,6 +148,7 @@ MAP_RESOLVER(/obj/effect/fancy_shuttle_floor_preview, GLOBAL_PROC_REF(map_resolv
 	var/fancy_shuttle_tag
 
 MAP_RESOLVER(/obj/effect/floor_decal/fancy_shuttle, GLOBAL_PROC_REF(resolve_fancy_shuttle_decal))
+MAP_RESOLVER_VARS(/obj/effect/floor_decal/fancy_shuttle, "fancy_shuttle_tag")
 
 /// MAP_RESOLVER for fancy shuttle floors: cuts this tile's piece out of the helper's split icon,
 /// once the load is in place (the helper may be loaded after the decal).

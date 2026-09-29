@@ -54,6 +54,7 @@ ADMIN_VERB(spawn_tanktransferbomb, R_SPAWN, "Instant TTV", "Spawn a tank transfe
 /obj/effect/spawner/newbomb/radio/custom
 
 MAP_RESOLVER(/obj/effect/spawner/newbomb, GLOBAL_PROC_REF(resolve_newbomb))
+MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt")
 
 /// MAP_RESOLVER for mapped TTV bombs.
 /proc/resolve_newbomb(atom/loc, path, list/varedits)

@@ -11,6 +11,7 @@
 	var/admin_spawned = FALSE
 
 MAP_RESOLVER(/obj/effect/falling_effect, GLOBAL_PROC_REF(resolve_falling_effect))
+MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_type")
 
 /// MAP_RESOLVER for falling effects (mapped, or `new` at runtime): drops its falling_type.
 /proc/resolve_falling_effect(atom/loc, path, list/varedits)

@@ -563,6 +563,7 @@ DESTROY_EFFECTS(/obj/structure/grille/bay, new /datum/destroy_effects_data(neigh
 	icon = null
 
 MAP_RESOLVER(/obj/effect/low_wall_spawner, GLOBAL_PROC_REF(resolve_low_wall_spawner))
+MAP_RESOLVER_VARS(/obj/effect/low_wall_spawner, "grille_type;low_wall_type;window_type")
 
 /// MAP_RESOLVER for low wall spawners: the low wall, grille and window (once per tile).
 /proc/resolve_low_wall_spawner(atom/loc, path, list/varedits)

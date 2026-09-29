@@ -4,9 +4,9 @@
 	/// proc(atom/loc, path, list/varedits) that resolves this type at map time instead of making
 	/// it a live atom (MAP_RESOLVER), or null.
 	var/map_resolver
+	/// Extra vars its resolver reads (MAP_RESOLVER_VARS), ";"-separated.
+	var/map_resolver_vars
 
-/// Resolvable atoms handled so far this round, by type (debug / bench visibility).
-GLOBAL_LIST_EMPTY(map_resolved_counts)
 /// Per-load scratch state for resolvers (key -> value), cleared when the load's atoms finish.
 GLOBAL_LIST_EMPTY(map_resolve_scratch)
 
@@ -31,7 +31,6 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 		return FALSE
 	if(!call(resolver)(crds, path, varedits))
 		return FALSE
-	GLOB.map_resolved_counts[path]++
 	return TRUE
 
 /// SSatoms.InitAtom()'s hook for an atom that already exists (the compiled station map, or `new`
@@ -41,36 +40,34 @@ GLOBAL_LIST_EMPTY(map_resolve_scratch)
 	var/list/varedits = map_varedits_of(A)
 	if(!call(A.map_resolver)(A.loc, A.type, varedits))
 		return FALSE
-	GLOB.map_resolved_counts[A.type]++
 	A.tag = null
 	if(ismovable(A))
 		var/atom/movable/AM = A
 		AM.loc = null // ALLOW(containment): a resolved map atom was never live; detached so BYOND frees it
 	return TRUE
 
-/// The var edits an instance carries over its type's defaults: the map's edits for a compiled
-/// map atom (or the `new` caller's, for one made at runtime). Plain values (numbers, text, paths,
-/// icons) are compared with the type's default; list vars are included whenever set (a type's
-/// list default only exists on an instance, and initial() cannot read it). Datums are skipped.
+/// The var edits an instance carries over its type's defaults, over the vars its family's
+/// resolver reads (MAP_RESOLVER_COMMON_VARS + MAP_RESOLVER_VARS; the name list is built once per
+/// type). A named list var is included whenever set: a type's list default only exists on an
+/// instance, and initial() cannot read it.
 /proc/map_varedits_of(atom/A)
-	var/static/list/skip = list(
-		"vars" = TRUE, "contents" = TRUE, "overlays" = TRUE, "underlays" = TRUE, "verbs" = TRUE,
-		"loc" = TRUE, "locs" = TRUE, "x" = TRUE, "y" = TRUE, "z" = TRUE, "type" = TRUE,
-		"parent_type" = TRUE, "vis_contents" = TRUE, "vis_locs" = TRUE, "filters" = TRUE,
-		"appearance" = TRUE, "transform" = TRUE, "tag" = TRUE, "flags" = TRUE, "gc_destroyed" = TRUE,
-	)
+	var/static/list/names_by_type = list()
+	var/list/names = names_by_type[A.type]
+	if(!names)
+		names = splittext(MAP_RESOLVER_COMMON_VARS, ";")
+		if(A.map_resolver_vars)
+			names |= splittext(A.map_resolver_vars, ";")
+		for(var/name in names.Copy())
+			if(!(name in A.vars))
+				names -= name
+		names_by_type[A.type] = names
 	var/list/out
 	var/list/all_vars = A.vars
-	for(var/name in all_vars)
-		if(skip[name])
-			continue
+	for(var/name in names)
 		var/value = all_vars[name]
 		if(islist(value))
 			LAZYSET(out, name, value)
-			continue
-		if(isdatum(value))
-			continue
-		if(value != initial(A.vars[name]))
+		else if(value != initial(A.vars[name]))
 			LAZYSET(out, name, value)
 	return out
 

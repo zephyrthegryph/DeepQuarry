@@ -450,6 +450,8 @@ DECLARE_LOOT(/obj/random/multiple/random_size_crate/no_weapons/nofail, LOOT_CHAN
 	var/override_outdoors = FALSE	// Do we override our chosen turf's outdoors?
 	var/turf_outdoors = OUTDOORS_AREA	// Will our turf be outdoors?
 
+MAP_RESOLVER_VARS(/obj/random/turf, "drop_get_turf;override_outdoors;turf_outdoors")
+
 DECLARE_LOOT(/obj/random/turf, LOOT_HOOK(GLOBAL_PROC_REF(loot_hook_random_turf)), LOOT_TABLE( /turf/simulated/floor/outdoors/grass/sif, /turf/simulated/floor/outdoors/dirt, /turf/simulated/floor/outdoors/grass/sif/forest, /turf/simulated/floor/outdoors/rocks), LOOT_CHANCE(80))
 
 /// LOOT_HOOK for turf swappers: the rolled turf takes the spawner's outdoors override.
@@ -755,6 +757,7 @@ DECLARE_LOOT(/obj/random/forgotten_tram, LOOT_TABLE(\
 
 // Mapping helpers apply to their level or area once the load is in place (map_resolve_later()).
 MAP_RESOLVER(/obj/effect/map_helper, GLOBAL_PROC_REF(resolve_map_helper))
+MAP_RESOLVER_VARS(/obj/effect/map_helper, "baseturf")
 
 /proc/resolve_map_helper(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(map_helper_apply), get_turf(loc), path, varedits)

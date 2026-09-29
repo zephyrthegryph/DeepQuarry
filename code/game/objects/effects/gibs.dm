@@ -68,6 +68,7 @@
 	icon_state = "gibspawn"
 
 MAP_RESOLVER(/obj/effect/gibspawner, GLOBAL_PROC_REF(resolve_gibspawner))
+MAP_RESOLVER_VARS(/obj/effect/gibspawner, "bloodcolor;fleshcolor")
 
 /proc/resolve_gibspawner(atom/loc, path, list/varedits)
 	var/obj/effect/gibspawner/P = path

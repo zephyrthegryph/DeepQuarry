@@ -332,6 +332,7 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 // ---- /obj/random ----
 
 MAP_RESOLVER(/obj/random, GLOBAL_PROC_REF(resolve_loot))
+MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 
 /// MAP_RESOLVER for /obj/random: rolls its declaration where the spawner stands and applies the
 /// spawner's mapped offset and direction to what it made. Returns what it created (TRUE-ish for

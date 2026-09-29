@@ -23,6 +23,7 @@ Any frequency works, it's self-setting, but it seems like people have decided AU
 
 // Resolved at map time; the setup waits for the load so the device and controller exist.
 MAP_RESOLVER(/obj/effect/map_helper/airlock, GLOBAL_PROC_REF(resolve_airlock_helper))
+MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my_device_type;tag_addon")
 
 /proc/resolve_airlock_helper(atom/loc, path, list/varedits)
 	map_resolve_later(GLOBAL_PROC_REF(airlock_helper_setup), get_turf(loc), path, varedits)

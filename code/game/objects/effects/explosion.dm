@@ -63,6 +63,7 @@
 	flash = 0
 
 MAP_RESOLVER(/obj/effect/instantboom, GLOBAL_PROC_REF(resolve_instantboom))
+MAP_RESOLVER_VARS(/obj/effect/instantboom, "devastation;flash;heavyboom;lightboom")
 
 /// MAP_RESOLVER for instant explosions: the explosion, where it was placed.
 /proc/resolve_instantboom(atom/loc, path, list/varedits)

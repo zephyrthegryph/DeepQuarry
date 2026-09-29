@@ -39,6 +39,7 @@ GLOBAL_LIST_EMPTY(multi_point_spawns)
 	var/item_path  // Item type to spawn
 
 MAP_RESOLVER(/obj/random_multi, GLOBAL_PROC_REF(resolve_random_multi))
+MAP_RESOLVER_VARS(/obj/random_multi, "id;item_path;weight")
 
 /// MAP_RESOLVER for multi-point spawn points: a weighted row in the point's group.
 /proc/resolve_random_multi(atom/loc, path, list/varedits)

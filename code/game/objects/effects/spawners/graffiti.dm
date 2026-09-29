@@ -9,6 +9,7 @@
 	var/color_secondary	// The hexcode for the desired secondary color of your graffiti. If blank, it will inherit this effect's color.
 
 MAP_RESOLVER(/obj/effect/graffitispawner, GLOBAL_PROC_REF(resolve_graffitispawner))
+MAP_RESOLVER_VARS(/obj/effect/graffitispawner, "color_secondary;graffiti_type")
 
 /// MAP_RESOLVER for old scrawlings: a crayon drawing, random colour and shape unless set.
 /proc/resolve_graffitispawner(atom/loc, path, list/varedits)
