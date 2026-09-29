@@ -35,9 +35,9 @@
 
 		if("freedom")
 			var/obj/item/implanter/O = new /obj/item/implanter(src)
-			O.imp = new /obj/item/implant/freedom(O)
+			own_set(O, "imp", new /obj/item/implant/freedom(O))
 			var/obj/item/implanter/U = new /obj/item/implanter(src)
-			U.imp = new /obj/item/implant/uplink(U)
+			own_set(U, "imp", new /obj/item/implant/uplink(U))
 
 		if("hacker")
 			new /obj/item/encryptionkey/syndicate(src)
@@ -72,7 +72,7 @@
 
 /obj/item/storage/box/syndie_kit/imp_freedom/Initialize(mapload)
 	var/obj/item/implanter/O = new(src)
-	O.imp = new /obj/item/implant/freedom(O)
+	own_set(O, "imp", new /obj/item/implant/freedom(O))
 	O.update()
 	. = ..()
 
@@ -89,7 +89,7 @@
 
 /obj/item/storage/box/syndie_kit/imp_uplink/Initialize(mapload)
 	var/obj/item/implanter/O = new(src)
-	O.imp = new /obj/item/implant/uplink(O)
+	own_set(O, "imp", new /obj/item/implant/uplink(O))
 	O.update()
 	. = ..()
 

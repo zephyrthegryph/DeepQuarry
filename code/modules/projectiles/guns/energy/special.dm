@@ -71,7 +71,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		to_chat(user, span_notice("You remove the [emitter.name] from the [src]."))
 		emitter.forceMove(get_turf(src.loc))
 		playsound(src, tool.usesound, 50, 1)
-		emitter = null
+		own_take(src, "emitter")
 	else
 		to_chat(user, span_notice("There is no micro laser in this [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -83,7 +83,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 		if(!emitter)
 			user.drop_item()
 			W.forceMove(src)
-			emitter = W
+			own_set(src, "emitter", W)
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else
 			to_chat(user, span_notice("[src] already has a laser."))
@@ -597,9 +597,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
 
-DECLARE_REF(/obj/item/gun/energy/floragun, "emitter", HELD, null)
+OWN(/obj/item/gun/energy/floragun, emitter, OWN_CONTAINED)
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
 	return gene_static
-DECLARE_REF(/obj/item/gun/energy/floragun, "gene_static", STATIC, null)

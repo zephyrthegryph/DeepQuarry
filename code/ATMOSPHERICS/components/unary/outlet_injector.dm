@@ -117,7 +117,7 @@
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/broadcast_status()
 	if(!radio_connection)
@@ -125,7 +125,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"tag" = id,
@@ -218,7 +218,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable_handle = om_handle(src)
+			rel_set(tool, "connectable", src)
 			to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
 
 	return ITEM_INTERACT_SUCCESS
@@ -241,4 +241,3 @@
 	to_chat(user, span_notice("You have set \the [src] to [volume_rate]"))
 	update_icon()
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/outlet_injector, "radio_connection", STATIC, null)

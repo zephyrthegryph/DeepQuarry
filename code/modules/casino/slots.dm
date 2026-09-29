@@ -351,7 +351,7 @@
 		om_after(src, delaytime, PROC_REF(pay_out), winnings)
 
 	if(celebrate) // Happy celebrations!
-		src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		own_set(src, "confetti_spread", new /datum/effect/effect/system/confetti_spread())
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
@@ -422,7 +422,7 @@
 		om_after(src, delaytime, PROC_REF(pay_out), winnings)
 
 	if(celebrate) // Happy celebrations!
-		src.confetti_spread = new /datum/effect/effect/system/confetti_spread()
+		own_set(src, "confetti_spread", new /datum/effect/effect/system/confetti_spread())
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
@@ -439,6 +439,4 @@
 	ispowered = 0
 	update_icon()
 
-DECLARE_REF(/obj/machinery/slot_machine, "confetti_spread", OWNED, null)
 
-DECLARE_REF(/obj/machinery/station_slot_machine, "confetti_spread", OWNED, null)

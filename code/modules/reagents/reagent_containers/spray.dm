@@ -211,7 +211,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/plantbgone, null, list(REAGE
 
 	var/icon/hose_overlay
 
-DECLARE_REF(/obj/item/reagent_containers/spray/chemsprayer/hosed, "hose_overlay", OWNED, null)
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/Initialize(mapload)
 	. = ..()

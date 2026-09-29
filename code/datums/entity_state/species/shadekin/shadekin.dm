@@ -65,8 +65,8 @@
 	var/created_dark_tunnel = FALSE
 
 	//Dark Maw Vars (Unused on Virgo)
-	///Our current active dark maws
-	var/list/active_dark_maws
+	///Our current active dark maws: a relation list view (a maw that dies leaves it)
+	var/list/obj/effect/abstract/dark_maw/active_dark_maws
 
 	//Ability Vars
 	///Ability ids (code/datums/abilities/ability.dm) this variant grants while
@@ -100,8 +100,8 @@
 	if(!isliving(new_owner) || issilicon(new_owner))
 		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
 		return
-	owner = new_owner
-	owner.shadekin = src
+	rel_set(src, "owner", new_owner) // one-sided back view: the mob owns us in its shadekin var
+	own_set(owner, "shadekin", src)
 	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.
@@ -129,10 +129,7 @@
 	if(manual)
 		lateload_pref_data()
 
-DECLARE_REF(/datum/shadekin, "active_dark_maws", OWNED_LIST, null)
-DECLARE_REF(/datum/shadekin, "owner", BACK, "shadekin")
 /mob/living/var/datum/shadekin/shadekin
-DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 /// Gives this mob shadekin state of `path` (or returns the existing one, like LoadComponent did).
 /mob/living/proc/add_shadekin(path = /datum/shadekin, manual = FALSE)
@@ -147,7 +144,7 @@ DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 /// Removes this mob's shadekin state, if any.
 /mob/living/proc/remove_shadekin()
-	QDEL_NULL(shadekin)
+	own_clear(src, "shadekin", OWN_DELETE)
 
 // revokes its granted abilities, trait stage and verbs; hides the owner's energy hud.
 /datum/shadekin/lifecycle_prerelease()
@@ -362,3 +359,5 @@ DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 /datum/om/stage/life/trait/shadekin/perform(mob/living/self, datum/om/frame/life/ctx)
 	self.shadekin?.handle_comp()
+
+REL_LIST(/datum/shadekin, active_dark_maws)

@@ -53,11 +53,9 @@
 	/// Completing these experiments will have a refund.
 	var/list/skipped_experiment_types
 
-	///All RD consoles connected to this individual techweb.
-	/// The list side of a backlist: DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "stored_research", BACKLIST, "consoles_accessing").
+	///All RD consoles connected to this individual techweb (a relation list: a deleted console leaves it).
 	var/list/consoles_accessing
-	///All research servers connected to this individual techweb.
-	/// The list side of a backlist: DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers").
+	///All research servers connected to this individual techweb (a relation list: a deleted server leaves it).
 	var/list/techweb_servers
 
 	///Boolean on whether the techweb should generate research points overtime.
@@ -85,14 +83,13 @@
 	var/list/research_queue_nodes
 
 /datum/techweb/New()
-	GLOB.research_service.techwebs += src
 	for(var/i in GLOB.research_service.techweb_nodes_starting)
 		var/datum/techweb_node/DN = GLOB.research_service.techweb_node_by_id(i)
 		research_node(DN, TRUE, FALSE, FALSE)
 	hidden_nodes = GLOB.research_service.techweb_nodes_hidden.Copy()
 	return ..()
 
-/// Phase 2: leaves GLOB.research_service's techwebs.
+/// Phase 2: a registered web leaves GLOB.research_service's techwebs (scratch webs were never in it).
 /datum/techweb/lifecycle_dematerialize()
 	. = ..()
 	GLOB.research_service.techwebs -= src
@@ -292,7 +289,7 @@
 		var/datum/experiment/experiment = completed_experiment
 		if (experiment == experiment_type)
 			return FALSE
-	LAZYADD(available_experiments, new experiment_type(src))
+	own_add(src, "available_experiments", new experiment_type(src))
 
 /**
  * Adds a list of experiments to this techweb by their types, ensures that no duplicates are added.
@@ -312,8 +309,8 @@
  * * completed_experiment - the experiment which was completed
  */
 /datum/techweb/proc/complete_experiment(datum/experiment/completed_experiment)
-	LAZYREMOVE(available_experiments, completed_experiment)
-	LAZYSET(completed_experiments, completed_experiment.type, completed_experiment)
+	own_take_member(src, "available_experiments", completed_experiment)
+	own_put(src, "completed_experiments", completed_experiment.type, completed_experiment)
 
 	var/result_text = "[completed_experiment] has been completed"
 	var/refund = LAZYACCESS(skipped_experiment_types, completed_experiment.type) || 0
@@ -581,6 +578,5 @@
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
 
-
-DECLARE_REF(/datum/techweb, "available_experiments", OWNED_LIST, null)
-DECLARE_REF(/datum/techweb, "completed_experiments", OWNED_VALUES, null)
+REL_LIST(/datum/techweb, consoles_accessing)
+REL_LIST(/datum/techweb, techweb_servers)

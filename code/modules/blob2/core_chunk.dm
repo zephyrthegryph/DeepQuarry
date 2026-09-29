@@ -33,7 +33,7 @@ DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 		name = "inert [initial(name)]"
 
 	else
-		blob_type = new parentblob.type
+		own_set(src, "blob_type", new parentblob.type)
 		name = "[blob_type.name] [initial(name)]"
 
 	if(blob_type)
@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 		// The new overmind gets its own instance: this chunk keeps (and deletes) its own.
 		var/datum/blob_type/copy = new blob_type.type
 		copy.faction = blob_type.faction
-		NC.overmind.blob_type = copy
+		own_set(NC.overmind, "blob_type", copy)
 		NC.overmind.blob_core().update_icon()
 		return TRUE
 
@@ -155,5 +155,4 @@ DECLARE_INTERACTIONS(/obj/item/blobcore_chunk, \
 	else
 		chunk.visible_message(span_warning("[chunk] shifts strangely, but falls still."))
 
-// LC-refs: the chunk owns its own blob type instance (the overmind's is deleted with the overmind).
-DECLARE_REF(/obj/item/blobcore_chunk, "blob_type", OWNED, null)
+// The chunk owns its own blob type instance (the overmind's is deleted with the overmind).

@@ -19,7 +19,7 @@
 /obj/machinery/atmospherics/unary/Initialize(mapload)
 	. = ..()
 
-	air_contents = new
+	atmos_air_set(src, "air_contents", new /datum/gas_mixture)
 	air_contents.set_volume(200)
 
 /// Arms this device's own eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()):
@@ -32,7 +32,7 @@
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, gas_dependency_mask, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/atmospherics/unary/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -80,7 +80,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 	if(node)
 		MACHINE_WAKE(src) // connected: a device with DM work re-evaluates (others don't listen)
@@ -97,7 +97,7 @@
 /obj/machinery/atmospherics/unary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	invalidate_gas_dependencies()
 	if(network == old_network)
-		network = new_network
+		rel_set(src, "network", new_network)
 
 	return 1
 
@@ -111,17 +111,17 @@
 
 /obj/machinery/atmospherics/unary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		air_contents = network_air
+		atmos_air_set(src, "air_contents", network_air)
 
 /obj/machinery/atmospherics/unary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air_contents == network_air)
-		air_contents = detached_pipenet_air(network_air, 200, network_volume)
+		atmos_air_set(src, "air_contents", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/unary/disconnect(obj/machinery/atmospherics/reference)
 	invalidate_gas_dependencies()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		node = null
+		rel_clear(src, "node")
 
 	update_icon()
 	update_underlays()
@@ -169,6 +169,5 @@
 	..()
 	register_gas_dependencies()
 
-DECLARE_REF(/obj/machinery/atmospherics/unary, "air_contents", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/unary, "node", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/unary, "network", HELD, null)
+
+PROTO(/obj/machinery/atmospherics/unary, air_contents)

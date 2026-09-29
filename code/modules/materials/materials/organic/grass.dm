@@ -10,7 +10,7 @@
 	supply_conversion_value = 0.1
 
 /datum/material/grass/generate_recipes()
-	recipes = list(
+	var/list/recipes = list(
 		new /datum/stack_recipe_list("bushes and flowers",list(
 			new /datum/stack_recipe("bush", /obj/structure/flora/ausbushes, 3, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
 			new /datum/stack_recipe("reed bush", /obj/structure/flora/ausbushes/reedbush, 3, one_per_turf = 0, on_floor = 1, recycle_material = "[name]"),
@@ -29,3 +29,4 @@
 			new /datum/stack_recipe("full grass", /obj/structure/flora/ausbushes/fullgrass, 3, one_per_turf = 0, on_floor = 1, recycle_material = "[name]")
 			))
 	)
+	return recipes

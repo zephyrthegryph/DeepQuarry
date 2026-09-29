@@ -12,11 +12,11 @@
 	appearance_flags = TILE_BOUND|PIXEL_SCALE|NO_CLIENT_COLOR
 	layer = LAYER_HUD_BASE
 	plane = PLANE_PLAYER_HUD
-	/// A reference to the object in the slot. Grabs or items, generally, but any datum will do.
-	var/master_ref = null
+	/// The object in the slot (a relation view, written with rel_set). Grabs or items, generally, but any datum will do.
+	var/datum/master_ref = null
 	/// A reference to the owner HUD, if any.
 	//VAR_PRIVATE/datum/hud/hud = null //This SHOULD be converted to private eventually, but we're not there yet.
-	var/hud_handle	// A reference to the owner HUD, if any.
+	var/datum/hud/hud	// A reference to the owner HUD, if any.
 
 // L1 (doc/rewrite/lifecycle.md §2 phase 5, "release screens"): whichever
 // client(s) it's shown on -- almost always exactly one, but this doesn't
@@ -55,7 +55,7 @@
 	name = "close"
 
 /atom/movable/screen/close/Click()
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	if(master)
 		if(istype(master, /obj/item/storage))
 			var/obj/item/storage/S = master
@@ -63,7 +63,7 @@
 	return 1
 
 /atom/movable/screen/item_action
-	var/owner_handle
+	var/obj/item/owner
 
 /atom/movable/screen/item_action/Click()
 	if(!usr || !owner())
@@ -84,7 +84,7 @@
 	name = "grab"
 
 /atom/movable/screen/grab/Click()
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	var/obj/item/grab/G = master
 	G.s_click(src)
 	return 1
@@ -102,7 +102,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 		return 1
 	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
-	var/obj/master = om_resolve(master_ref)
+	var/obj/master = master_ref
 	if(master)
 		var/obj/item/I = usr.get_active_hand()
 		if(I)
@@ -155,7 +155,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!overlay_object)
 		overlay_object = new
 		overlay_object.icon_state = "[choice]"
-		hover_overlays_cache[choice] = overlay_object
+		own_put(src, "hover_overlays_cache", choice, overlay_object)
 	vis_contents += overlay_object
 
 /obj/effect/overlay/zone_sel
@@ -312,7 +312,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 				var/mob/living/carbon/C = usr
 				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
-						C.internal = null
+						rel_clear(C, "internal") // a relation: the tank stays in its inventory slot
 						to_chat(C, span_notice("No longer running on internals."))
 						if(C.internals)
 							C.internals.icon_state = "internal0"
@@ -418,7 +418,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 
 							if(best)
 								to_chat(C, span_notice("You are now running on internals from [tankcheck[best]] [from] your [nicename[best]]."))
-								C.internal = tankcheck[best]
+								rel_set(C, "internal", tankcheck[best])
 
 							if(C.internal)
 								if(C.internals)
@@ -710,11 +710,11 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 
 // PIP stuff
 /atom/movable/screen/component_button
-	var/parent_handle
+	var/atom/movable/screen/parent
 
 /atom/movable/screen/component_button/Initialize(mapload, atom/movable/screen/new_parent)
 	. = ..()
-	parent_handle = om_handle(new_parent)
+	rel_set(src, "parent", new_parent)
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
@@ -723,7 +723,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 // Character setup stuff
 /atom/movable/screen/setup_preview
 
-	var/pref_handle
+	var/datum/preferences/pref
 
 // Background 'floor'
 /atom/movable/screen/setup_preview/pm_helper
@@ -776,8 +776,8 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/atom/movable/screen/mapper/powbutton/powbutton
 	var/atom/movable/screen/mapper/mapbutton/mapbutton
 
-	var/owner_handle
-	var/extras_holder_handle
+	var/obj/item/mapping_unit/owner
+	var/atom/movable/screen/mapper/extras_holder/extras_holder
 
 DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_full", /atom/movable/screen/mapper/mask_full)
 DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mask_ping", /atom/movable/screen/mapper/mask_ping)
@@ -788,7 +788,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 
 /atom/movable/screen/movable/mapper_holder/Initialize(mapload, newowner)
 	. = ..()
-	owner_handle = om_handle(newowner)
+	rel_set(src, "owner", newowner)
 
 	frame.icon_state = initial(frame.icon_state)+owner().hud_frame_hint
 
@@ -802,13 +802,6 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	frame.vis_contents.Add(powbutton,mapbutton)
 	vis_contents.Add(frame)
 
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_full", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_ping", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "bg", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "frame", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "powbutton", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mapbutton", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HANDLE, "hud_item")
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
@@ -822,11 +815,11 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 	bg.vis_contents.Add(map)
 
 	if(extras && !extras_holder())
-		extras_holder_handle = om_handle(extras)
+		rel_set(src, "extras_holder", extras)
 		vis_contents += extras_holder()
 	if(!extras && extras_holder())
 		vis_contents -= extras_holder()
-		extras_holder_handle = null
+		rel_clear(src, "extras_holder")
 
 /atom/movable/screen/movable/mapper_holder/proc/powerClick()
 	if(running)
@@ -845,7 +838,7 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 	frame.cut_overlay("powlight")
 	bg.vis_contents.Cut()
 	vis_contents.Remove(mask_ping, mask_full, extras_holder())
-	extras_holder_handle = null
+	rel_clear(src, "extras_holder")
 	running = FALSE
 	if(inform)
 		owner().stop_updates()
@@ -859,11 +852,11 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 /atom/movable/screen/mapper
 	plane = PLANE_HOLOMAP
 	mouse_opacity = 0
-	var/parent_handle
+	var/atom/movable/screen/movable/mapper_holder/parent
 
 /atom/movable/screen/mapper/Initialize(mapload)
 	. = ..()
-	parent_handle = om_handle(loc)
+	rel_set(src, "parent", loc)
 
 // Holds the actual map image
 /atom/movable/screen/mapper/map
@@ -958,7 +951,8 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 	screen_loc = ui_ammo_hud1
 	var/warned = FALSE
 	var/static/list/ammo_screen_loc_list = list(ui_ammo_hud1, ui_ammo_hud2, ui_ammo_hud3 ,ui_ammo_hud4)
-	var/our_gun
+	/// The gun this hud reports (a relation view)
+	var/obj/item/gun/our_gun
 
 /atom/movable/screen/ammo/Click()
 	var/mob/user = usr
@@ -968,7 +962,7 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 		return TRUE
 	if(istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return TRUE
-	var/obj/item/gun/gun = om_resolve(our_gun)
+	var/obj/item/gun/gun = our_gun
 	if(!gun)
 		return TRUE
 	gun.switch_firemodes(user)
@@ -1079,34 +1073,31 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 	qdel(F)
 	overlays += empty
 
-/// LC-refs: the hud this screen object belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The hud this screen object belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/proc/owner_hud() as /datum/hud
-	return om_resolve(hud_handle)
+	return hud
 
-/// LC-refs: the item this button acts for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item this button acts for (a relation view: null once that is deleted).
 /atom/movable/screen/item_action/proc/owner() as /obj/item
-	return om_resolve(owner_handle)
+	return owner
 
-/// LC-refs: the screen object this button belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The screen object this button belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/component_button/proc/parent() as /atom/movable/screen
-	return om_resolve(parent_handle)
+	return parent
 
-/// LC-refs: the preferences this preview shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The preferences this preview shows (a relation view: null once that is deleted).
 /atom/movable/screen/setup_preview/proc/pref() as /datum/preferences
-	return om_resolve(pref_handle)
+	return pref
 
-/// LC-refs: the mapping unit this holder shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapping unit this holder shows (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/owner() as /obj/item/mapping_unit
-	return om_resolve(owner_handle)
+	return owner
 
-/// LC-refs: the extras overlay the mapping unit handed us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The extras overlay the mapping unit handed us (a relation view: null once that is deleted).
 /atom/movable/screen/movable/mapper_holder/proc/extras_holder() as /atom/movable/screen/mapper/extras_holder
-	return om_resolve(extras_holder_handle)
+	return extras_holder
 
-/// LC-refs: the mapper holder this element belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapper holder this element belongs to (a relation view: null once that is deleted).
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
-	return om_resolve(parent_handle)
+	return parent
 
-DECLARE_REF(/atom/movable/screen/zone_sel, "selecting_appearance", OWNED, null)
-
-DECLARE_REF(/atom/movable/screen/inventory/hand, "handcuff_overlay", OWNED, null)

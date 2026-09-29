@@ -31,7 +31,11 @@
 	var/timer_duration = 0
 
 	var/timing = FALSE		// boolean, true/1 timer is on, false/0 means it's not timing
-	var/list/obj/machinery/targets = list() // ALLOW(instance_list, object_keyed_lists): d: the timer's linked doors and flashers, filled at init
+	/// Brig closets sharing our id, found at LateInitialize (a relation view: they leave when they die).
+	var/list/obj/targets
+	/// Brig doors and flashers sharing our id (keyed: linked when either end materializes).
+	var/list/obj/machinery/door/window/brigdoor/brig_doors
+	var/list/obj/machinery/flasher/brig_flashers
 
 	maptext_height = 26
 	maptext_width = 32
@@ -40,28 +44,19 @@
 	..()
 	return INITIALIZE_HINT_LATELOAD
 
+REL_LIST(/obj/machinery/door_timer, targets)
+REL_KEYED_LIST(/obj/machinery/door_timer, brig_doors, id, /obj/machinery/door/window/brigdoor)
+REL_KEYED_LIST(/obj/machinery/door_timer, brig_flashers, id, /obj/machinery/flasher)
+
 /obj/machinery/door_timer/LateInitialize()
-	for(var/obj/machinery/door/window/brigdoor/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(M.id == id)
-			LAZYADD(targets,M)
-
-	for(var/obj/machinery/flasher/F in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		if(F.id == id)
-			LAZYADD(targets,F)
-
+	// Brig closets are objects without a keyed index (outside this scope): still found by scan.
 	for(var/obj/structure/closet/secure_closet/brig/C in REGISTRY_MEMBERS(REGISTRY_BRIG_CLOSETS))
 		if(C.id == id)
-			LAZYADD(targets,C)
-	for(var/atom/movable/target as anything in targets)
-		om_hook(target, /datum/om/event/qdeleting, src, PROC_REF(target_deleted))
+			rel_add(src, "targets", C)
 
-	if(!LAZYLEN(targets))
+	if(!LAZYLEN(targets) && !LAZYLEN(brig_doors) && !LAZYLEN(brig_flashers))
 		stat_add(BROKEN)
 	update_icon()
-
-/obj/machinery/door_timer/proc/target_deleted(datum/source, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	LAZYREMOVE(targets, source)
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer
@@ -96,7 +91,7 @@
 	timing = TRUE
 	MACHINE_WAKE(src)
 
-	for(var/obj/machinery/door/window/brigdoor/door in targets)
+	for(var/obj/machinery/door/window/brigdoor/door as anything in brig_doors)
 		if(door.density)
 			continue
 		door.close()
@@ -120,7 +115,7 @@
 	set_timer(0)
 	update_icon()
 
-	for(var/obj/machinery/door/window/brigdoor/door in targets)
+	for(var/obj/machinery/door/window/brigdoor/door as anything in brig_doors)
 		if(!door.density)
 			continue
 		door.open()
@@ -169,7 +164,7 @@
 	data["preset_short"] = PRESET_SHORT
 	data["preset_medium"] = PRESET_MEDIUM
 	data["preset_long"] = PRESET_LONG
-	for(var/obj/machinery/flasher/F in targets)
+	for(var/obj/machinery/flasher/F as anything in brig_flashers)
 		data["flash_found"] = TRUE
 		if(!COOLDOWN_FINISHED(F, flash_cooldown))
 			data["flash_charging"] = TRUE
@@ -202,7 +197,7 @@
 		if("stop")
 			timer_end(forced = TRUE)
 		if("flash")
-			for(var/obj/machinery/flasher/F in targets)
+			for(var/obj/machinery/flasher/F as anything in brig_flashers)
 				F.flash()
 		if("preset")
 			var/preset = params["preset"]
@@ -301,4 +296,3 @@
 #undef PRESET_MEDIUM
 #undef PRESET_LONG
 
-DECLARE_REF(/obj/machinery/door_timer, "targets", HELD, null)

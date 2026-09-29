@@ -8,7 +8,7 @@
 	/// Line forcesaid by the user on successful removal.
 	var/success_forcesay
 	/// Callback invoked with removal is done.
-	var/datum/callback/on_clear_callback
+	var/list/on_clear_callback // om_callable() spec
 	/// A typecache of all effects we can clear with our item.
 	var/list/effects_we_clear // typecache
 	/// If above 0, how long it takes while standing still to remove the effect.
@@ -23,7 +23,7 @@
 		stack_trace("[type] was instantiated without any valid removable effects!")
 		return
 
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	src.on_clear_callback = on_clear_callback
 	src.effects_we_clear = typecacheof(effects_we_clear)
 	src.time_to_remove = time_to_remove
@@ -42,10 +42,9 @@
 		return
 
 /datum/effect_remover/proc/do_remove_effects(obj/effect/target, mob/living/user)
-	on_clear_callback?.Invoke(target, user)
+	if(on_clear_callback)
+		om_run(on_clear_callback, target, user)
 
 	if(!QDELETED(target))
 		qdel(target)
 
-DECLARE_REF(/datum/effect_remover, "on_clear_callback", OWNED, null)
-DECLARE_REF(/datum/effect_remover, "owner", BACK, null)

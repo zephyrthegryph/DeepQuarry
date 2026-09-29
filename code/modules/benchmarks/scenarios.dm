@@ -202,42 +202,45 @@
 /datum/benchmark/major_events
 	id = "major_events"
 	description = "Tick cost of explosions, supermatter, mass fire and decompression"
-	var/tmp/event_center_handle
+	var/tmp/turf/open/event_center
+	/// The fixture floor: a turf relation list view (z release clears it).
 	var/list/turf/open/event_turfs
 
 /datum/benchmark/major_events/Run()
 	wait_for_assets()
 	var/list/events = splittext(param("events", "large_explosion,supermatter,mass_fire,decompression"), ",")
 	for(var/event_name in events)
-		event_turfs = build_floor_fixture(64)
+		rel_clear(src, "event_turfs")
+		for(var/turf/open/T as anything in build_floor_fixture(64))
+			rel_add(src, "event_turfs", T)
 		var/turf/corner = event_turfs[1]
-		event_center_handle = om_handle(locate(33, 33, corner.z))
+		rel_set(src, "event_center", locate(33, 33, corner.z))
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		switch(event_name)
 			if("large_explosion")
-				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_large_explosion)))
+				measure_event(event_name, om_callable(src, PROC_REF(trigger_large_explosion)))
 			if("supermatter")
-				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_supermatter)))
+				measure_event(event_name, om_callable(src, PROC_REF(trigger_supermatter)))
 			if("mass_fire")
 				for(var/turf/open/T as anything in event_turfs)
 					T.air.set_moles(/datum/gas/oxygen, 300)
 					T.air.set_moles(/datum/gas/plasma, 100)
 					T.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 100)
 					T.air_update_turf(FALSE, FALSE)
-				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_mass_fire)))
+				measure_event(event_name, om_callable(src, PROC_REF(trigger_mass_fire)))
 			if("decompression")
 				for(var/turf/open/T as anything in event_turfs)
 					T.air.set_moles(/datum/gas/oxygen, 500)
 					T.air.set_temperature(T20C)
 					T.air_update_turf(FALSE, FALSE)
-				measure_event(event_name, CALLBACK(src, PROC_REF(trigger_decompression)))
+				measure_event(event_name, om_callable(src, PROC_REF(trigger_decompression)))
 			else
 				fail("unknown event '[event_name]'")
 
-/datum/benchmark/major_events/proc/measure_event(event_name, datum/callback/trigger, atmos_cycles = 60)
+/datum/benchmark/major_events/proc/measure_event(event_name, list/trigger, atmos_cycles = 60)
 	begin_window()
 	var/start_cycle = SSair.times_fired
-	trigger.Invoke()
+	om_run(trigger)
 	wait_fires(SSair, atmos_cycles - (SSair.times_fired - start_cycle))
 	end_window(event_name)
 
@@ -266,12 +269,12 @@
 /datum/benchmark/generation
 	id = "generation"
 	description = "Expedition station generation and release (bench_cycles, default 1)"
-	var/tmp/generated_site_handle
+	var/tmp/datum/expedition_site/generated_site
 	var/generation_done = FALSE
 
 /datum/benchmark/generation/proc/generate(seed, list/diagnostics)
 	try
-		generated_site_handle = om_handle(GLOB.expedition_service.generate_debug_station(seed, diagnostics))
+		rel_set(src, "generated_site", GLOB.expedition_service.generate_debug_station(seed, diagnostics))
 	catch(var/exception/error) // ALLOW(silent_catch): the failure is recorded in the benchmark diagnostics
 		diagnostics["error"] = "[error]"
 	generation_done = TRUE
@@ -283,7 +286,7 @@
 	for(var/cycle in 1 to cycles)
 		mark("cycle[cycle]_begin")
 		var/list/diagnostics = list()
-		generated_site_handle = null
+		rel_clear(src, "generated_site")
 		generation_done = FALSE
 		begin_window()
 		INVOKE_ASYNC(src, PROC_REF(generate), seed, diagnostics) // ALLOW(scheduler): expedition generation yields; harness polls a deadline
@@ -298,7 +301,7 @@
 			fail("generation returned no site on cycle [cycle]: [diagnostics["error"] || "no error"]")
 		mark("cycle[cycle]_generated")
 		GLOB.expedition_service.release_site(generated_site(), "generation benchmark")
-		generated_site_handle = null
+		rel_clear(src, "generated_site")
 		var/waited = 0
 		while((length(GLOB.expedition_service.teardown_z) || !length(GLOB.expedition_service.free_z)) && waited++ < world.fps * 180)
 			stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -427,9 +430,9 @@
 	var/text = "The quick brown fox jumps over the lazy dog"
 	var/json = "{\"a\":\[1,2,3\],\"b\":\"c\"}"
 	var/log_file = "data/bench/rustg_dispatch.log"
-	var/static/hash_handle = load_ext(RUST_G, "hash_string")
-	var/static/json_handle = load_ext(RUST_G, "json_is_valid")
-	var/static/log_handle = load_ext(RUST_G, "log_write")
+	var/static/hash_fn = load_ext(RUST_G, "hash_string")
+	var/static/json_fn = load_ext(RUST_G, "json_is_valid")
+	var/static/log_fn = load_ext(RUST_G, "log_write")
 	var/list/best = list()
 	for(var/round in 1 to rounds)
 		stoplag() // start each round on a fresh tick // ALLOW(scheduler): benchmark harness measures across real MC ticks
@@ -440,7 +443,7 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(hash_handle)(RUSTG_HASH_XXH64, text)
+			call_ext(hash_fn)(RUSTG_HASH_XXH64, text)
 		best["hash_string_cached_us"] = min(best["hash_string_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
@@ -450,7 +453,7 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(json_handle)(json)
+			call_ext(json_fn)(json)
 		best["json_is_valid_cached_us"] = min(best["json_is_valid_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
@@ -460,12 +463,12 @@
 		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
 		rustg_time_reset("rustg_dispatch")
 		for(var/i in 1 to calls)
-			call_ext(log_handle)(log_file, text, "false")
+			call_ext(log_fn)(log_file, text, "false")
 		best["log_write_cached_us"] = min(best["log_write_cached_us"] || INFINITY, rustg_time_microseconds("rustg_dispatch") / calls)
 		fdel(log_file)
 	for(var/name in best)
 		metric(name, best[name], "us/call")
-	if(call_ext(hash_handle)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
+	if(call_ext(hash_fn)(RUSTG_HASH_XXH64, text) != RUSTG_CALL(RUST_G, "hash_string")(RUSTG_HASH_XXH64, text))
 		fail("cached and by-name hash_string disagree")
 
 /// Idle mob Life cost with parking off, then on (doc/rewrite/life_on_om.md §5).
@@ -755,14 +758,13 @@
 #include "../../../tools/bisect/extra_procs.dm"
 #endif
 
-/// LC-refs: the event_center this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The event_center (a relation view).
 /datum/benchmark/major_events/proc/event_center() as /turf/open
-	return om_resolve(event_center_handle)
+	return event_center
 
-/// LC-refs: the generated_site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The generated_site (a relation view).
 /datum/benchmark/generation/proc/generated_site() as /datum/expedition_site
-	return om_resolve(generated_site_handle)
+	return generated_site
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
-DECLARE_REF(/datum/benchmark/major_events, "event_turfs", STATIC, null)

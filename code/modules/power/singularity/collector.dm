@@ -7,7 +7,7 @@
 	anchored = FALSE
 	density = TRUE
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	var/tmp/P_handle
+	var/tmp/obj/item/tank/phoron/P
 	var/last_power = 0
 	var/last_power_new = 0
 	active = 0
@@ -80,8 +80,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
 /obj/machinery/power/rad_collector/proc/interaction_load_tank(mob/user, obj/item/tank/phoron/W, datum/interaction/interaction)
 	user.drop_item()
-	src.P_handle = om_handle(W)
 	W.forceMove(src)
+	own_set(src, "P", W)
 	update_icons()
 	return TRUE
 
@@ -144,7 +144,7 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 		return
 	Z.forceMove(get_turf(src))
 	Z.layer = initial(Z.layer)
-	src.P_handle = null
+	own_take(src, "P") // dropped on the floor
 	if(active)
 		toggle_power()
 	else
@@ -182,6 +182,8 @@ DAMAGE_REACTION(/obj/machinery/power/rad_collector, DAMAGE_EXPLOSION, PROC_REF(c
 	update_icons()
 	return
 
-/// LC-refs: the P this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The loaded phoron tank (owned, in its contents; dropped when the collector is destroyed).
 /obj/machinery/power/rad_collector/proc/P() as /obj/item/tank/phoron
-	return om_resolve(P_handle)
+	return P
+
+OWN(/obj/machinery/power/rad_collector, P, OWN_SPILL)

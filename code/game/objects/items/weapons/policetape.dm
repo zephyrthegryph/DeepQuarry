@@ -7,8 +7,8 @@
 
 	toolspeed = 3 //You can use it in surgery. It's stupid, but you can.
 
-	var/start_handle
-	var/end_handle
+	var/turf/start
+	var/turf/end
 	var/tape_type = /obj/item/tape
 	var/icon_base = "tape"
 
@@ -146,13 +146,13 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 /// Old attack_self.
 /obj/item/taperoll/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!get_start())
-		start_handle = om_handle(get_turf(src))
+		rel_set(src, "start", get_turf(src))
 		to_chat(user, span_notice("You place the first end of \the [src]."))
 		update_icon()
 	else
-		end_handle = om_handle(get_turf(src))
+		rel_set(src, "end", get_turf(src))
 		if(get_start().y != get_end().y && get_start().x != get_end().x || get_start().z != get_end().z)
-			start_handle = null
+			rel_clear(src, "start")
 			update_icon()
 			to_chat(user, span_notice("\The [src] can only be laid horizontally or vertically."))
 			return TRUE
@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				if(istype(window) && !window.is_fulltile())
 					possible_dirs |= window.dir
 			if(!possible_dirs)
-				start_handle = null
+				rel_clear(src, "start")
 				update_icon()
 				to_chat(user, span_notice("You can't place \the [src] here."))
 				return TRUE
@@ -189,7 +189,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 					if (possible_dirs & dir)
 						TP.tape_dir += dir
 				TP.update_icon()
-			start_handle = null
+			rel_clear(src, "start")
 			update_icon()
 			to_chat(user, span_notice("You finish placing \the [src]."))
 			return TRUE
@@ -238,7 +238,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 				break
 			cur = get_step_towards(cur,get_end())
 		if (!can_place)
-			start_handle = null
+			rel_clear(src, "start")
 			update_icon()
 			to_chat(user, span_warning("You can't run \the [src] through that!"))
 			return TRUE
@@ -282,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/taperoll, \
 			if(cur == get_end())
 				break
 			cur = get_step_towards(cur,get_end())
-		start_handle = null
+		rel_clear(src, "start")
 		update_icon()
 		to_chat(user, span_notice("You finish placing \the [src]."))
 		return TRUE
@@ -413,10 +413,10 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 	lifted = 0
 	reset_plane_and_layer()
 
-/// LC-refs: start -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: start (reads null once it is gone).
 /obj/item/taperoll/proc/get_start() as /turf
-	return om_resolve(start_handle)
+	return start
 
-/// LC-refs: end -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: end (reads null once it is gone).
 /obj/item/taperoll/proc/get_end() as /turf
-	return om_resolve(end_handle)
+	return end

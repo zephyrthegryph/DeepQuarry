@@ -25,6 +25,24 @@ GLOBAL_LIST(construction_frame_floor)
 	var/x_offset				// For wall frames: pixel_x
 	var/y_offset				// For wall frames: pixel_y
 
+/// A private copy of a frame type. A frame owns its frame_type, so a frame built from a shared
+/// entry (GLOB.construction_frame_*) or from a board's board_type (which the board owns) takes a copy.
+/// Some boards hold text ("other") instead of an instance: that passes through unchanged.
+/proc/frame_type_copy(value)
+	var/datum/frame/frame_types/source = value
+	if(!istype(source))
+		return value
+	var/datum/frame/frame_types/copy = new source.type
+	copy.icon_override = source.icon_override
+	copy.name = source.name
+	copy.frame_size = source.frame_size
+	copy.frame_class = source.frame_class
+	copy.circuit = source.circuit
+	copy.frame_style = source.frame_style
+	copy.x_offset = source.x_offset
+	copy.y_offset = source.y_offset
+	return copy
+
 // Get the icon state to use at a given state.  Default implementation is based on the frame's name
 /datum/frame/frame_types/proc/get_icon_state(state)
 	var/type = lowertext(name)
@@ -321,7 +339,7 @@ GLOBAL_LIST(construction_frame_floor)
 	icon_state = frame_type.get_icon_state(state)
 
 /obj/structure/frame/proc/check_components(mob/user as mob)
-	components = list()
+	own_take_all(src, "components")
 	req_components = circuit.req_components.Copy()
 	for(var/A in circuit.req_components)
 		req_components[A] = circuit.req_components[A]
@@ -333,7 +351,7 @@ GLOBAL_LIST(construction_frame_floor)
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)
-		frame_type = type
+		own_set(src, "frame_type", frame_type_copy(type))
 		state = FRAME_PLACED
 
 		if(dir)
@@ -347,7 +365,7 @@ GLOBAL_LIST(construction_frame_floor)
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			circuit = new frame_type.circuit(src)
+			own_set(src, "circuit", new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
 		set_density(TRUE)
@@ -380,13 +398,13 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
 					CC.update_icon()
 					CP.use(camt)
-					components += CC
+					own_add(src, "components", CC)
 					req_components[I] -= camt
 					update_desc()
 					break
 				user.drop_item()
 				P.forceMove(src)
-				components += P
+				own_move(P, src, "components")
 				req_components[I]--
 				update_desc()
 				break
@@ -417,7 +435,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				LAZYADD(components, NS)
+				own_add(src, "components", NS)
 				req_components[I] -= camt
 				break
 
@@ -427,7 +445,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 		else
 			user.drop_item()
 			P.forceMove(src)
-		LAZYADD(components, P)
+		own_move(P, src, "components")
 		req_components[I]--
 		break
 
@@ -454,7 +472,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	to_chat(user, desc)
 	return TRUE
 
-DECLARE_REF(/obj/structure/frame, "circuit", HELD, null)
+OWN(/obj/structure/frame, circuit, OWN_CONTAINED)
+// The frame owns its frame type (its own default instance, or a copy: frame_type_copy()).
+OWN(/obj/structure/frame, frame_type, OWN_DELETE)
 
-DECLARE_REF(/obj/structure/frame, "frame_type", STATIC, null)
-DECLARE_REF(/obj/structure/frame, "components", OWNED_LIST, null)

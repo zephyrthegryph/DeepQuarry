@@ -115,7 +115,7 @@
 /mob/living/simple_mob/ysbryd/proc/connect_target(mob/living/M)
 	if(!isliving(M))
 		return
-	chosen_target = M
+	rel_set(src, "chosen_target", M)
 	if(!(VIS_EVENT_INVIS in chosen_target.vis_enabled))
 		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,TRUE)
 		chosen_target.vis_enabled += VIS_EVENT_INVIS
@@ -126,7 +126,7 @@
 	if((VIS_EVENT_INVIS in chosen_target.vis_enabled))
 		chosen_target.plane_holder.set_vis(VIS_EVENT_INVIS,FALSE)
 		chosen_target.vis_enabled -= VIS_EVENT_INVIS
-	chosen_target = null
+	rel_clear(src, "chosen_target")
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/ysbryd/replace_death(gibbed)
@@ -170,4 +170,3 @@
 
 ///////////////////////////AI stuff
 
-DECLARE_REF(/mob/living/simple_mob/ysbryd, "chosen_target", HELD, null)

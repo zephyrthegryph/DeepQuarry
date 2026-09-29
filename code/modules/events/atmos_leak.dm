@@ -11,8 +11,8 @@
 
 /datum/event/atmos_leak
 	startWhen = 5			// Nobody will actually be in the room, but still give a bit of warning.
-	var/tmp/target_area_handle	// Chosen target area
-	var/tmp/target_turf_handle	// Chosen target turf in target_area
+	var/tmp/area/target_area	// Chosen target area
+	var/tmp/area/target_turf	// Chosen target turf in target_area
 	var/gas_type			// Chosen gas to release
 	// Exclude these types and sub-types from targeting eligibilty
 	var/static/list/area/excluded = list(
@@ -49,8 +49,8 @@
 		if(turfs.len == 0)
 			log_game("atmos_leak event: Rejected [A] because it has no clear turfs.")
 			continue
-		target_area_handle = om_handle(A)
-		target_turf_handle = om_handle(pick(turfs))
+		target_area = A
+		rel_set(src, "target_turf", pick(turfs))
 
 	// If we can't find a good target, give up
 	if(!target_area())
@@ -73,10 +73,10 @@
 	target_turf().assume_air(air_contents)
 	play_sfx(target_turf(), SFX_EFFECTS_SMOKE, extrarange = 0)
 
-/// LC-refs: Chosen target area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Chosen target area
 /datum/event/atmos_leak/proc/target_area() as /area
-	return om_resolve(target_area_handle)
+	return target_area
 
-/// LC-refs: Chosen target turf in target_area -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Chosen target turf in target_area
 /datum/event/atmos_leak/proc/target_turf() as /area
-	return om_resolve(target_turf_handle)
+	return target_turf

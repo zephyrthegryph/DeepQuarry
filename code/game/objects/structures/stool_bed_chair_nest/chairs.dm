@@ -25,9 +25,9 @@
 		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		E.set_dir(dir)
-		E.part = SK
 		SK.forceMove(E)
-		SK.master = E
+		own_move(SK, E, "part") // CONTAINED: moved in first
+		rel_set(SK, "master", E)
 		replace_with(src, E)
 	return TRUE
 

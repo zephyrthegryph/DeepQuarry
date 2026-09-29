@@ -18,9 +18,8 @@
 	if(A)
 		A.forceMove(src) // helo
 		podfall(auto_open)
-	air = new
+	own_set(src, "air", new /datum/gas_mixture/pod_air)
 
-DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
 	var/turf/T = get_turf(src)
@@ -103,7 +102,7 @@ DECLARE_REF(/obj/structure/drop_pod, "air", OWNED, null)
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
-	QDEL_NULL(air)
+	own_clear(src, "air", OWN_DELETE)
 	finished = TRUE
 
 /obj/structure/drop_pod/declare_interactions(list/into)

@@ -4,7 +4,7 @@
 	icon_state = "holster"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
-	var/obj/item/holstered = null // ALLOW(state_ref): owned: the holstered item, kept in the holster's contents
+	var/obj/item/holstered = null // owned: the holstered item, kept in the holster's contents
 	var/holster_in = SFX_ITEMS_HOLSTERIN
 	var/holster_out = SFX_ITEMS_HOLSTEROUT
 	w_class = ITEMSIZE_NORMAL
@@ -25,15 +25,15 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 	if(istype(user))
 		user.stop_aiming(no_message=1)
-	holstered = I
-	user.drop_from_inventory(holstered, target = src)
+	user.drop_from_inventory(I, target = src)
+	own_set(src, "holstered", I) // CONTAINED: in our contents first
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))
 	name = "occupied [initial(name)]"
 
 /obj/item/clothing/accessory/holster/proc/clear_holster()
-	holstered = null
+	own_take(src, "holstered")
 	name = initial(name)
 
 /// Draws the holstered item; `stance` I_HURT draws it ready to fire.
@@ -256,4 +256,4 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster/machete/rapier/swords, hold_spec
 
 TYPE_TABLE(/obj/item/clothing/accessory/holster/case, hold_spec, list(HOLD_ONLY(list(/obj/item/instrument))))
 
-DECLARE_REF(/obj/item/clothing/accessory/holster, "holstered", HELD, null)
+OWN(/obj/item/clothing/accessory/holster, holstered, OWN_CONTAINED)

@@ -20,9 +20,8 @@
 /obj/machinery/appliance/mixer/candy/Initialize(mapload)
 	. = ..()
 
-	candymaker_loop = new(list(src), FALSE)
+	own_set(src, "candymaker_loop", new /datum/looping_sound/candymaker(list(src), FALSE))
 
-DECLARE_REF(/obj/machinery/appliance/mixer/candy, "candymaker_loop", OWNED, null)
 
 /obj/machinery/appliance/mixer/candy/update_icon()
 	. = ..()

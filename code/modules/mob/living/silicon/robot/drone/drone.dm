@@ -137,12 +137,12 @@ TYPE_TABLE(/mob/living/silicon/robot/drone, ventcrawl_get_item_whitelist, list( 
 	..()
 	additional_law_channels -= "Binary"
 	additional_law_channels["Drone"] = ":d"
-	laws = new law_type
+	own_set(src, "laws", new law_type)
 
 /mob/living/silicon/robot/drone/setup_module()
 	..()
 	if(!module)
-		module = new module_type(src)
+		own_set(src, "module", new module_type(src))
 	flavor_text = "It's a tiny little repair drone. The casing is stamped with an corporate logo and the subscript: '[using_map.company_name] Recursive Repair Systems: Fixing Tomorrow's Problem, Today!'"
 	play_sfx(src, SFX_MACHINES_TWOBEEP, vary = FALSE)
 
@@ -340,7 +340,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	clear_supplied_laws(1)
 	clear_inherent_laws(1)
 	clear_ion_laws(1)
-	laws = new law_type
+	own_set(src, "laws", new law_type)
 
 //Reboot procs.
 
@@ -419,4 +419,3 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_INSERT_AS(I_HELP, 
 	..()
 	flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
 
-DECLARE_REF(/mob/living/silicon/robot/drone, "master_fabricator", HELD, null)

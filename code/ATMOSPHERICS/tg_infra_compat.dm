@@ -369,4 +369,3 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 // /atom/proc/process_atmos removed alongside SSair.atmos_machinery.
 // /atom/proc/process_exposure removed alongside SSair.atom_process.
 
-DECLARE_REF(/datum/looping_sound, "parent", BACK, null)

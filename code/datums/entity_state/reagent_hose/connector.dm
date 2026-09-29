@@ -14,7 +14,6 @@
 
 /// Carrier's hose sockets (/datum/hose_connector), owned: deleted with the carrier.
 /atom/movable/var/list/hose_connectors
-DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 
 /// Adds a hose connector of `connector_type` to src. Returns it, or null when src can't carry that type.
 /atom/movable/proc/add_hose_connector(connector_type, set_unique_name = null)
@@ -35,8 +34,8 @@ DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
-	carrier = new_carrier
-	reagents = new /datum/reagents(60, src)
+	rel_set(src, "carrier", new_carrier)
+	own_set(src, "reagents", new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
 		name = set_unique_name
@@ -49,7 +48,7 @@ DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 		if(other.type == type)
 			same++
 	connector_number = same + 1
-	LAZYADD(carrier.hose_connectors, src)
+	own_add(carrier, "hose_connectors", src)
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
@@ -60,11 +59,8 @@ DECLARE_REF(/atom/movable, "hose_connectors", OWNED_LIST, null)
 		om_task_periodic(src, PERIODIC_SLOW)
 	return TRUE
 
-DECLARE_REF(/datum/hose_connector, "reagents", OWNED, null)
 // A hose is shared by its two connectors, so neither owns it: it lives while both
 // ends do, and a dying connector deletes it (the hose disconnects both ends).
-DECLARE_REF(/datum/hose_connector, "carrier", BACK, null)
-DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 
 // the carrier loses its disconnect verb (before phase 4 nulls carrier).
 /datum/hose_connector/lifecycle_prerelease()
@@ -73,7 +69,7 @@ DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 		qdel(my_hose)
 	if(carrier)
 		carrier.verbs -= /atom/proc/disconnect_hose
-		LAZYREMOVE(carrier.hose_connectors, src)
+		// carrier.hose_connectors owns us: a dying connector leaves it in phase 2.
 
 /datum/hose_connector/proc/get_carrier()
 	RETURN_TYPE(/atom)
@@ -138,10 +134,10 @@ DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 	if(carrier.Adjacent(user))
 		act_message(user, carrier, others = "%U% disconnects \the hose from %T%.")
 		my_hose.disconnect(user)
-		QDEL_NULL(my_hose)
+		qdel(my_hose) // the hose is shared by both ends; its death clears both views
 
 /datum/hose_connector/proc/connect(datum/hose/H = null)
-	my_hose = H
+	rel_set(src, "my_hose", H)
 	if(my_hose)
 		om_task_periodic(src, PERIODIC_SLOW)
 
@@ -195,7 +191,7 @@ DECLARE_REF(/datum/hose_connector, "my_hose", BACK, null)
 	return null
 
 /datum/hose_connector/proc/remove_hose()
-	my_hose = null
+	rel_clear(src, "my_hose")
 	// Flush the connector immediately, then leave the object subsystem. There is
 	// no reason to wait up to one SSobj period merely to discover disconnection.
 	periodic_step()

@@ -12,6 +12,13 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored, list(
 	/datum/controller/subsystem/atoms,
 ))
 
+/// GLOB lists that are first-use caches, not registrations. The warm-up instance fills a
+/// type's cache entries, but a type that picks at random (exotic_feedstock/random picks a
+/// material) warms a different key on every instance.
+GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
+	"material_recipe_cache",
+))
+
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on
 /// every non-ignored subsystem, keyed by the same string dq_lifecycle_snapshot()
 /// used to use as a snapshot key. Building this means walking GLOB.vars and
@@ -41,6 +48,13 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		// membership itself is the "registry [id]" counts below. Counting it made
 		// the round trip fail depending on which tests ran first.
 		if(name == "registries_by_type")
+			continue
+		if(name in GLOB.dq_lifecycle_snapshot_ignored_globs)
+			continue
+		// Test-build audit indexes (own_audit_index, om_rec_audit_index) mirror every owned
+		// entity and OM record so the orphan audit can find leaks; a child adopted in
+		// Initialize() is ownership, not a world registration.
+		if(findtext(name, "_audit_index") && findtext(name, "_audit_index") == length(name) - length("_audit_index") + 1)
 			continue
 		if(islist(GLOB.vars[name]))
 			keys["GLOB.[name]"] = list(GLOB, name)

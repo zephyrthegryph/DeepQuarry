@@ -26,7 +26,7 @@
 	var/throw_amount = THROWER_MIN
 	var/lit = FALSE	//on or off
 	COOLDOWN_DECLARE(operating)
-	var/previousturf_handle
+	var/turf/previousturf
 	var/obj/item/weldingtool/weldtool = null
 	var/obj/item/assembly/igniter/igniter = null
 	var/obj/item/tank/phoron/ptank = null
@@ -44,10 +44,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly
 	igniter.secured = 0 // for disassembly
 	status = TRUE
 
-DECLARE_REF(/obj/item/flamethrower, "weldtool", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
-DECLARE_REF(/obj/item/flamethrower, "igniter", OWNED, null)
-DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 
 /obj/item/flamethrower/periodic_step()
 	if(!lit)
@@ -121,7 +118,7 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 		if(igniter)		return INTERACTION_HANDLED_PASS
 		user.drop_item()
 		I.forceMove(src)
-		igniter = I
+		own_set(src, "igniter", I)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
 
@@ -130,7 +127,7 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
 			return INTERACTION_HANDLED_PASS
 		user.drop_item()
-		ptank = W
+		own_set(src, "ptank", W)
 		W.forceMove(src)
 		update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -143,13 +140,13 @@ DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
-		weldtool = null
+		own_take(src, "weldtool")
 	if(igniter)
 		igniter.forceMove(T)
-		igniter = null
+		own_take(src, "igniter")
 	if(ptank)
 		ptank.forceMove(T)
-		ptank = null
+		own_take(src, "ptank")
 	new /obj/item/stack/rods(T)
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
@@ -218,7 +215,7 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 			if(!ptank)
 				return FALSE
 			usr.put_in_hands(ptank)
-			ptank = null
+			own_take(src, "ptank")
 			lit = 0
 			update_icon()
 			return TRUE
@@ -240,6 +237,6 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 #undef THROWER_MIN
 #undef THROWER_MAX
 
-/// LC-refs: previousturf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: previousturf (reads null once it is gone).
 /obj/item/flamethrower/proc/previousturf() as /turf
-	return om_resolve(previousturf_handle)
+	return previousturf

@@ -5,22 +5,19 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
-DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "cam_background", OWNED, null)
-DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "cam_foreground", OWNED, null)
-DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null)
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
-	cam_background = new()
+	own_set(src, "cam_background", new /atom/movable/screen/background())
 	cam_background.del_on_map_removal = FALSE
 	cam_background.assigned_map = assigned_map
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	cam_foreground = new
+	own_set(src, "cam_foreground", new /atom/movable/screen/background)
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
@@ -67,7 +64,7 @@ DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null
 	var/list/network = list() // ALLOW(instance_list): d: camera console network filter; many call sites
 	var/list/additional_networks
 
-	var/tmp/active_camera_handle
+	var/tmp/obj/machinery/camera/active_camera
 	var/list/concurrent_users
 
 	// Stuff needed to render the map
@@ -76,7 +73,7 @@ DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null
 	var/atom/movable/screen/map_view_tg/camera/cam_screen_tg
 
 	// Stuff for moving cameras
-	var/tmp/last_camera_turf_handle
+	var/tmp/turf/last_camera_turf
 
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()
@@ -87,10 +84,9 @@ DECLARE_REF(/atom/movable/screen/map_view_tg/camera, "local_skybox", OWNED, null
 	map_name = "camera_console_[REF(src)]_map"
 
 	// Initialize map objects
-	cam_screen_tg = new
+	own_set(src, "cam_screen_tg", new /atom/movable/screen/map_view_tg/camera)
 	cam_screen_tg.generate_view(map_name)
 
-DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 
 /datum/tgui_module/camera/tgui_interact(mob/user, datum/tgui/ui = null)
 	if(!user.client)
@@ -157,7 +153,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 		if(active_camera())
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
 		if(C)
-			active_camera_handle = om_handle(C)
+			rel_set(src, "active_camera", C)
 			dq_add_recursive_move(active_camera())
 			om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 		playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
@@ -185,7 +181,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 			if(target)
 				if(active_camera())
 					om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-				active_camera_handle = om_handle(target)
+				rel_set(src, "active_camera", target)
 				dq_add_recursive_move(active_camera())
 				om_hook(active_camera(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_active_camera_moved_event))
 				playsound(tgui_host(), get_sfx(SFX_TERMINAL_TYPE), 25, FALSE)
@@ -216,7 +212,7 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 		return
 
 	// Cameras that get here are moving, and are likely attached to some moving atom such as cyborgs.
-	last_camera_turf_handle = om_handle(newturf)
+	rel_set(src, "last_camera_turf", newturf)
 
 	var/list/visible_turfs = list()
 	for(var/turf/T in (active_camera().isXRay() \
@@ -286,8 +282,8 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 	if(length(concurrent_users) == 0 && is_living)
 		if(active_camera())
 			om_unhook(active_camera(), /datum/om/event/movable_attempted_move, src)
-		active_camera_handle = null
-		last_camera_turf_handle = null
+		rel_clear(src, "active_camera")
+		rel_clear(src, "last_camera_turf")
 		play_sfx(tgui_host(), SFX_MACHINES_TERMINAL_OFF, 0.5, vary = FALSE)
 
 // NTOS Version
@@ -317,10 +313,10 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 
 #undef DEFAULT_MAP_SIZE
 
-/// LC-refs: the active_camera this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The active_camera this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/proc/active_camera() as /obj/machinery/camera
-	return om_resolve(active_camera_handle)
+	return active_camera
 
-/// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_camera_turf this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/camera/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf

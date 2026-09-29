@@ -12,8 +12,8 @@
 /obj/machinery/atmospherics/binary/Initialize(mapload)
 	. = ..()
 
-	air1 = new
-	air2 = new
+	atmos_air_set(src, "air1", new /datum/gas_mixture)
+	atmos_air_set(src, "air2", new /datum/gas_mixture)
 
 	air1.set_volume(200)
 	air2.set_volume(200)
@@ -57,9 +57,9 @@
 
 /obj/machinery/atmospherics/binary/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network1 == old_network)
-		network1 = new_network
+		rel_set(src, "network1", new_network)
 	if(network2 == old_network)
-		network2 = new_network
+		rel_set(src, "network2", new_network)
 
 	return 1
 
@@ -75,38 +75,31 @@
 
 /obj/machinery/atmospherics/binary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		air1 = network_air
+		atmos_air_set(src, "air1", network_air)
 	if(network2 == reference)
-		air2 = network_air
+		atmos_air_set(src, "air2", network_air)
 
 /obj/machinery/atmospherics/binary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air1 == network_air)
-		air1 = detached_pipenet_air(network_air, 200, network_volume)
+		atmos_air_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air2 == network_air)
-		air2 = detached_pipenet_air(network_air, 200, network_volume)
+		atmos_air_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/binary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network1)
-		node1 = null
+		rel_clear(src, "node1")
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network2)
-		node2 = null
+		rel_clear(src, "node2")
 
 	update_icon()
 	update_underlays()
 
 	return null
 
-/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
-/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
-/obj/machinery/atmospherics/binary/lifecycle_unbind()
-	. = ..()
-	network1 = null
-	network2 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/binary, "air1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/binary, "air2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/binary, "network1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/binary, "network2", HELD, null)
+
+PROTO(/obj/machinery/atmospherics/binary, air1)
+PROTO(/obj/machinery/atmospherics/binary, air2)

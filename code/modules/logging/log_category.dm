@@ -55,9 +55,9 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 	entry_count += 1
 
 	if(entry_count <= CONFIG_MAX_CACHED_LOG_ENTRIES)
-		LAZYADD(log_ring, entry)
+		own_add(src, "log_ring", entry)
 	else
-		LAZYSET(log_ring, ring_write_index, entry)
+		own_put(src, "log_ring", ring_write_index, entry)
 	ring_write_index++
 	if(ring_write_index > CONFIG_MAX_CACHED_LOG_ENTRIES)
 		ring_write_index = 1
@@ -108,7 +108,6 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 
 	return entries
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/log_category/proc/master() as /datum/log_category
 	return master_static
-DECLARE_REF(/datum/log_category, "master_static", STATIC, null)

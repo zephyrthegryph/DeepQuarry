@@ -90,7 +90,7 @@
 			belly.nom_atom(M, user)
 			if(M.loc == H) // In case nom_atom failed somehow.
 				M.forceMove(get_turf(user))
-		H.held_mob = null
+		rel_clear(H, "held_mob")
 		qdel(H)
 	else
 		belly.nom_atom(prey, user)

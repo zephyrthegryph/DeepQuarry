@@ -203,7 +203,6 @@ DECLARE_REAGENTS(/obj/item/integrated_circuit/passive/power/chemical_cell, "volu
 
 DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/passive/power/powernet, "IO", /obj/machinery/power/circuit_io)
 
-DECLARE_REF(/obj/item/integrated_circuit/passive/power/powernet, "IO", OWNED, null)
 
 /obj/item/integrated_circuit/passive/power/powernet/on_anchored()
 	IO.connect_to_network()

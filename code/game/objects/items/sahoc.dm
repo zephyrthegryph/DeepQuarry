@@ -9,12 +9,12 @@
 	throw_range = 20
 	force = 0
 	var/colorindex = 0
-	var/capsuleowner_handle //taken from Capsule Code
+	var/mob/living/capsuleowner //taken from Capsule Code
 	var/sizetouse = 0.25
 
 /obj/item/buttonofnormal/pickup(mob/user)
 	if(!capsuleowner())
-		capsuleowner_handle = om_handle(user)
+		rel_set(src, "capsuleowner", user)
 
 DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 		icon_state = "mobcap[colorindex]"
 		update_icon()
 	if(istype(W, /obj/item/card/id))
-		capsuleowner_handle = null
+		rel_clear(src, "capsuleowner")
 	return FALSE
 
 /obj/item/buttonofnormal/proc/nonrandom() //Secret ball randmoizer rig code
@@ -171,6 +171,6 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 	else
 		return 1
 
-/// LC-refs: capsuleowner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: capsuleowner (reads null once it is gone).
 /obj/item/buttonofnormal/proc/capsuleowner() as /mob/living
-	return om_resolve(capsuleowner_handle)
+	return capsuleowner

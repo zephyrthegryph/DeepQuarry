@@ -77,8 +77,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		return
 	else
 		user.drop_item(new_headset)
-		my_headset = new_headset
 		new_headset.forceMove(src)
+		own_set(src, "my_headset", new_headset)
 		to_chat(user, span_warning("You place \a [new_headset] on \the [src]. You monster."))
 		to_chat(src, span_notice("\The [user] gives you \a [new_headset]. You should put it to good use immediately."))
 		return
@@ -88,11 +88,11 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		to_chat(user, span_warning("\The [src] doesn't have a headset to remove, thankfully."))
 	else
 		ISay("BAWWWWWK LEAVE THE HEADSET BAWKKKKK!")
-		my_headset.forceMove(get_turf(src))
-		user.put_in_hands(my_headset)
-		to_chat(user, span_notice("You take away \the [src]'s [my_headset.name]. Finally."))
-		to_chat(src, span_warning("\The [user] takes your [my_headset.name] away! How cruel!"))
-		my_headset = null
+		var/obj/item/radio/headset/old_headset = own_take(src, "my_headset")
+		old_headset.forceMove(get_turf(src))
+		user.put_in_hands(old_headset)
+		to_chat(user, span_notice("You take away \the [src]'s [old_headset.name]. Finally."))
+		to_chat(src, span_warning("\The [user] takes your [old_headset.name] away! How cruel!"))
 
 /mob/living/simple_mob/animal/passive/bird/parrot/examine(mob/user)
 	. = ..()
@@ -246,4 +246,4 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // AI
 
 // The worn headset sits in the parrot's contents.
-DECLARE_REF(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", HELD, null)
+OWN(/mob/living/simple_mob/animal/passive/bird/parrot, my_headset, OWN_CONTAINED)

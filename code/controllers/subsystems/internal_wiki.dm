@@ -932,10 +932,10 @@ SUBSYSTEM_DEF(internal_wiki)
 				data["grind_reagents"] = grind_list
 
 	data["recipies"] = null
-	M.get_recipes() // generate if not already
-	if(M.recipes != null && length(M.recipes) > 0)
+	var/list/mat_recipes = M.get_recipes()
+	if(length(mat_recipes))
 		var/list/recipie_list = list()
-		for(var/datum/stack_recipe/R in M.recipes)
+		for(var/datum/stack_recipe/R in mat_recipes)
 			recipie_list.Add(R.title)
 		data["recipies"] = recipie_list
 
@@ -1665,7 +1665,6 @@ SUBSYSTEM_DEF(internal_wiki)
 #undef WIKI_CATEGORY_LORE
 #undef WIKI_CATEGORY_GENE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (implicitly shared), never cleared.
 /datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
 	return catalog_record_static
-DECLARE_REF(/datum/internal_wiki/page/catalog, "catalog_record_static", STATIC, null)

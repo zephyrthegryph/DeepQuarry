@@ -81,8 +81,8 @@
 /datum/unit_test/dq_mind_dominate_prey_roundtrip/Run()
 	var/mob/living/carbon/human/pred = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human)
-	var/datum/mind/pred_mind = dq_test_give_mind(pred, "Dominating Pred")
-	var/datum/mind/prey_mind = dq_test_give_mind(prey, "Gathered Prey")
+	var/datum/mind/pred_mind = dq_test_give_mind(src, pred, "Dominating Pred")
+	var/datum/mind/prey_mind = dq_test_give_mind(src, prey, "Gathered Prey")
 	var/datum/character_identity/pred_identity = pred_mind.identity
 	var/datum/character_identity/prey_identity = prey_mind.identity
 	var/prey_name = prey_identity.real_name
@@ -113,8 +113,8 @@
 	var/mob/living/carbon/human/pred = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/prey = allocate(/mob/living/carbon/human)
 	var/obj/item/holder = allocate(/obj/item)
-	var/datum/mind/pred_mind = dq_test_give_mind(pred, "Dominated Pred")
-	var/datum/mind/prey_mind = dq_test_give_mind(prey, "Dominant Prey")
+	var/datum/mind/pred_mind = dq_test_give_mind(src, pred, "Dominated Pred")
+	var/datum/mind/prey_mind = dq_test_give_mind(src, prey, "Dominant Prey")
 	var/datum/character_identity/pred_identity = pred_mind.identity
 	var/datum/character_identity/prey_identity = prey_mind.identity
 	var/list/pred_languages = pred.languages
@@ -149,7 +149,7 @@
 
 /datum/unit_test/dq_mind_mob_transform_roundtrip/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(H, "Shapeshifter")
+	var/datum/mind/M = dq_test_give_mind(src, H, "Shapeshifter")
 	var/datum/character_identity/I = M.identity
 	var/name_before = I.real_name
 	var/list/languages_before = I.languages
@@ -184,11 +184,11 @@
 
 /datum/unit_test/dq_mind_sleeve_character_from_mind/Run()
 	var/mob/living/carbon/human/donor = allocate(/mob/living/carbon/human)
-	dq_test_give_mind(donor, "Body Donor")
+	dq_test_give_mind(src, donor, "Body Donor")
 	LAZYSET(donor.flavor_texts, "general", "donor flavour")
 
 	var/mob/living/carbon/human/traveller = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(traveller, "Traveller")
+	var/datum/mind/M = dq_test_give_mind(src, traveller, "Traveller")
 	var/datum/character_identity/I = M.identity
 	LAZYSET(I.flavor_texts, "general", "traveller flavour")
 	traveller.add_language(LANGUAGE_SIGN)

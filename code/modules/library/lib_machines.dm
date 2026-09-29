@@ -154,10 +154,12 @@
 	var/buffer_book
 	var/buffer_mob
 	var/upload_category = "Fiction"
+	/// Check-out records (owned /datum/borrowbook)
 	var/list/checkouts
+	/// Books in the general inventory (a relation list)
 	var/list/inventory
 	var/checkoutperiod = 5 // In minutes
-	var/tmp/scanner_handle	// Book scanner that will be used when uploading books to the Archive
+	var/tmp/obj/machinery/libraryscanner/scanner	// Book scanner that will be used when uploading books to the Archive
 
 	/// Printing a bible or a book: at most one per few seconds.
 	COOLDOWN_DECLARE(print_cooldown)
@@ -187,20 +189,31 @@
 			/obj/item/book/bundle/custom_library/religious
 			)
 
-	if(!all_books || !all_books.len)
+	if(!length(all_books))
+		// A static archive of plain data rows (name -> row), read from the type defaults: no book is
+		// instantiated and no library computer holds book instances.
 		all_books = list()
-
 		for(var/path in subtypesof(/obj/item/book/codex/lore))
-			var/obj/item/book/C = new path(null)
-			all_books[C.name] = C
+			var/obj/item/book/C = path
+			all_books[initial(C.name)] = library_archive_row(path)
 
 		for(var/path in subtypesof(/obj/item/book/custom_library) - base_genre_books)
-			var/obj/item/book/B = new path(null)
-			all_books[B.title] = B
+			var/obj/item/book/B = path
+			all_books[initial(B.title)] = library_archive_row(path)
 
 		for(var/path in subtypesof(/obj/item/book/bundle/custom_library) - base_genre_books)
-			var/obj/item/book/M = new path(null)
-			all_books[M.title] = M
+			var/obj/item/book/M = path
+			all_books[initial(M.title)] = library_archive_row(path)
+
+/// One internal-archive row for the UI: plain data from the book type's defaults.
+/obj/machinery/librarycomp/proc/library_archive_row(book_path)
+	var/obj/item/book/template = book_path
+	return list(
+		"path" = "[book_path]",
+		"name" = initial(template.name),
+		"author" = initial(template.author) || "",
+		"category" = initial(template.libcategory) || "",
+	)
 
 // TGUI migration. attack_hand and attack_ghost open
 // LibraryComp.tsx. The big browse-rendered switch and Topic dispatcher
@@ -225,7 +238,7 @@
 
 /obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/barcodescanner/scanner = held
-	scanner.computer_handle = om_handle(src)
+	rel_set(scanner, "computer", src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
@@ -294,7 +307,7 @@
 	// Ensure a connected scanner is auto-discovered like the legacy UI did.
 	if(!scanner())
 		for(var/obj/machinery/libraryscanner/S in range(9))
-			scanner_handle = om_handle(S)
+			rel_set(src, "scanner", S)
 			break
 	data["has_scanner"] = !!scanner()
 	if(scanner()?.cache())
@@ -323,15 +336,9 @@
 		))
 	data["checkouts"] = cos
 	var/list/internal = list()
-	if(screenstate == 4 && all_books?.len)
+	if(screenstate == 4 && length(all_books))
 		for(var/name in all_books)
-			var/obj/item/book/mb = all_books[name]
-			internal += list(list(
-				"path" = "[mb.type]",
-				"name" = mb.name,
-				"author" = mb.author || "",
-				"category" = mb.libcategory || "",
-			))
+			internal += list(all_books[name])
 	data["internal_archive"] = internal
 	var/list/external = list()
 	if(screenstate == 8 || is_admin_view)
@@ -400,17 +407,17 @@
 			b.mobname = sanitize(buffer_mob)
 			EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 			EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
-			LAZYADD(checkouts, b)
+			own_add(src, "checkouts", b)
 			return TRUE
 		if("checkin")
 			var/datum/borrowbook/b = locate(params["ref"])
 			if(b)
-				LAZYREMOVE(checkouts, b)
+				own_remove(src, "checkouts", b)
 			return TRUE
 		if("delbook")
 			var/obj/item/book/b = locate(params["ref"])
 			if(b)
-				LAZYREMOVE(inventory, b)
+				rel_remove(src, "inventory", b)
 			return TRUE
 		if("setauthor")
 			var/newauthor = act_ask(usr, action, params, ui, "k381", /datum/om/prompt/text, message = "Enter the author's name:")
@@ -556,7 +563,7 @@
 	icon_state = "bigscanner"
 	anchored = TRUE
 	density = TRUE
-	var/tmp/cache_handle	// Last scanned book
+	var/tmp/obj/item/book/cache	// Last scanned book
 
 /obj/machinery/libraryscanner/declare_interactions(list/into)
 	into += list(
@@ -614,12 +621,12 @@
 		if("scan")
 			latent_materialize_all() // a walk needs real things (C5)
 			for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
-				cache_handle = om_handle(B)
+				rel_set(src, "cache", B)
 				break
 			add_fingerprint(usr)
 			return TRUE
 		if("clear")
-			cache_handle = null
+			rel_clear(src, "cache")
 			return TRUE
 		if("eject")
 			latent_materialize_all() // a walk needs real things (C5)
@@ -690,10 +697,10 @@
 	b.icon_state = "book[rand(1,7)]"
 	qdel(source_bundle)
 
-/// LC-refs: Book scanner that will be used when uploading books to the Archive -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Book scanner that will be used when uploading books to the Archive (a relation view: null once that is deleted).
 /obj/machinery/librarycomp/proc/scanner() as /obj/machinery/libraryscanner
-	return om_resolve(scanner_handle)
+	return scanner
 
-/// LC-refs: Last scanned book -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Last scanned book (a relation view: null once that is deleted).
 /obj/machinery/libraryscanner/proc/cache() as /obj/item/book
-	return om_resolve(cache_handle)
+	return cache

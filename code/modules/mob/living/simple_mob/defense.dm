@@ -42,7 +42,7 @@
 			// new /obj/item/grab(L, src) already ran Initialize(mapload, src),
 			// which established the grabbing relation (grabbed_by/affecting).
 			G.synch()
-			LAssailant = L
+			rel_set(src, "LAssailant", L)
 
 			act_message(L, src, null, MSG_OTHERS(span_warning("%U% has grabbed %T% passively!")))
 			L.do_attack_animation(src)

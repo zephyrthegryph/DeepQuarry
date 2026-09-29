@@ -12,8 +12,7 @@
 	var/list/bank					//Anything accepted by "money" or "item" mode will be marked down here
 	var/coinbalance = 0					//only for use with coin mode - when you put a curious coin in, it adds the coins value to this number
 	var/list/start_products	//Type paths entered here will spawn inside the trader and add themselves to the products list.
-	// ALLOW(instance_list): d: the trader's live stock
-	var/list/products = list()			//Anything in this list will be listed for sale
+	var/list/products			//Anything in this list will be listed for sale
 	var/list/prices			//Enter a type path with an associated number, and if the trader tries to sell something of that type, it will expect the number as the cost for that product
 	var/list/multiple			//Enter a type path with an associated number, and the trader will have however many of that type to sell as the number you entered
 	var/trading = FALSE					//'Busy' - Only one person can trade at a time.
@@ -34,12 +33,12 @@
 			var/t = pickweight(start_products || list())
 			var/i = new t(src)
 			LAZYREMOVE(start_products, t)
-			products += i
+			own_add(src, "products", i)
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
-			products += p
+			own_add(src, "products", p)
 			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()
@@ -115,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 
 /datum/om/flow/trader_trade/proc/product_picked(datum/om/prompt/choice/ask)
 	var/obj/trader/trader = target
-	product = ask.choice
+	rel_set(src, "product", ask.choice)
 	if(!istype(product) || !(product in trader.products))
 		to_chat(actor, span_notice("You decided not to get anything."))
 		trader.trading = FALSE
@@ -151,9 +150,9 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					qdel(d)
 	input.forceMove(get_turf(user))
 	user.put_in_hands(input)
-	trader.products -= input
+	own_take_member(trader, "products", input) // no-op once it left our contents
 	trader.deduct_value(p)
-	product = null
+	rel_clear(src, "product")
 	stage = "change"
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(change_answered), buttons = TRUE, title = "[trader]", message = "Would you like your change back, or would you like it to remain banked for later use? (Anyone can use banked funds)", choices = list("Keep it banked","I want my change"), timeout = 10 SECONDS)
 
@@ -186,13 +185,13 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					return INTERACTION_HANDLED_PASS
 				user.drop_item()
 				w.forceMove(src.contents)
-				LAZYADD(bank, w)
+				rel_add(src, "bank", w)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [w]."))
 		if("item")
 			if(istype(O, /obj))
 				user.drop_item()
 				O.forceMove(src.contents)
-				LAZYADD(bank, O)
+				rel_add(src, "bank", O)
 				act_message(src, user, others = span_notice("%U% accepts %T%'s [O]."))
 	return INTERACTION_HANDLED_PASS
 
@@ -229,7 +228,7 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 					a.worth -= amount
 					a.update_icon()
 					if(a.worth <= 0)
-						LAZYREMOVE(bank, a)
+						rel_remove(src, "bank", a)
 						qdel(a)
 		if("item")
 			// Guard against a non-positive item worth, which would never decrement v
@@ -273,12 +272,12 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				LAZYREMOVE(bank, c)
+				rel_remove(src, "bank", c)
 		if("item")
 			for(var/obj/c in bank)
 				u_get_refund = TRUE
 				c.forceMove(get_turf(loc))
-				LAZYREMOVE(bank, c)
+				rel_remove(src, "bank", c)
 	if(u_get_refund)
 		visible_message(span_notice("\The [src] drops the banked [welcome_accepts_name]."))
 	else
@@ -423,4 +422,6 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		)
 
 // The stock the trader spawned into itself at Initialize().
-DECLARE_REF(/obj/trader, "products", OWNED_LIST, null)
+
+/// Stock items sit in the trader's contents; one leaving (sold) drops out of the list.
+OWN(/obj/trader, products, OWN_CONTAINED)

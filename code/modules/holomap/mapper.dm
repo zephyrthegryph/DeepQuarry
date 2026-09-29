@@ -86,31 +86,27 @@
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	extras_holder = new()
+	own_set(src, "extras_holder", new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
 	mark.icon_state = "mapper_none"
 	mark.layer = 10
-	LAZYSET(icon_image_cache, "bad", mark)
+	own_put(src, "icon_image_cache", "bad", mark)
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	LAZYSET(map_image_cache, "bad", tmp)
+	own_put(src, "map_image_cache", "bad", tmp)
 
 	if(uses_power && cell_type)
-		cell = new cell_type(src)
+		own_set(src, "cell", new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
-DECLARE_REF(/obj/item/mapping_unit, "extras_holder", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "hud_datum", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "hud_item", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "cell", OWNED, null)
 
 // its map display is torn down.
 /obj/item/mapping_unit/on_destroy(force)
@@ -159,7 +155,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		if(updating)
 			stop_updates()
 	else
@@ -169,16 +165,16 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 /// Old attackby.
 /obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !cell)
-		cell = W
+		user.unEquip(W)
+		W.forceMove(src)
+		own_set(src, "cell", W) // CONTAINED: in our contents first
 		cell.update_icon() //Why doesn't a cell do this already? :|
-		user.unEquip(cell)
-		cell.forceMove(src)
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
-	hud_datum = new(user.hud_used, src)
-	hud_item = hud_datum.screenobjs[1]
+	own_set(src, "hud_datum", new /datum/mini_hud/mapper(user.hud_used, src))
+	rel_set(src, "hud_item", hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)
 	if(!hud_datum)
@@ -206,10 +202,8 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 /obj/item/mapping_unit/proc/last_run()
 	stop_updates()
-	if(!QDELETED(hud_datum))
-		qdel(hud_datum)
-	hud_datum = null
-	hud_item = null
+	rel_clear(src, "hud_item")
+	own_clear(src, "hud_datum", OWN_DELETE) // its holder screen object goes with it
 
 /obj/item/mapping_unit/periodic_step()
 	if(!updating || (uses_power && !cell))
@@ -285,7 +279,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			LAZYSET(map_image_cache, map_cache_key, tmp)
+			own_put(src, "map_image_cache", map_cache_key, tmp)
 
 	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
@@ -341,7 +335,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
 				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				LAZYSET(icon_image_cache, marker_cache_key, mark)
+				own_put(src, "icon_image_cache", marker_cache_key, mark)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -369,7 +363,7 @@ REGISTRY_MEMBERSHIP(/obj/item/mapping_unit, REGISTRY_MAPPING_UNITS)
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.icon_state = "beacon"
 			mark.layer = 1
-			LAZYSET(icon_image_cache, marker_cache_key, mark)
+			own_put(src, "icon_image_cache", marker_cache_key, mark)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)

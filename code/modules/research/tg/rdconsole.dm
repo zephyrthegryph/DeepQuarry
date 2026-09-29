@@ -23,7 +23,7 @@ Nothing else in the console has ID requirements.
 	icon_keyboard = "rd_key"
 	circuit = /obj/item/circuitboard/rdconsole
 	req_access = list(ACCESS_RESEARCH) // Locking and unlocking the console requires research access
-	/// Reference to global science techweb
+	/// Reference to global science techweb (a registered, shared web)
 	var/datum/techweb/stored_research
 	/// The stored technology disk, if present
 	var/obj/item/disk/tech_disk/t_disk
@@ -43,11 +43,10 @@ Nothing else in the console has ID requirements.
 	if(!stored_research)
 		CONNECT_TO_RND_SERVER_ROUNDSTART(stored_research, src)
 	if(stored_research)
-		LAZYADD(stored_research.consoles_accessing, src)
+		rel_add(stored_research, "consoles_accessing", src)
 
-DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "stored_research", BACKLIST, "consoles_accessing")
-DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "t_disk", SPILL, null)
-DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
+OWN(/obj/machinery/computer/rdconsole_tg, t_disk, OWN_SPILL)
+OWN(/obj/machinery/computer/rdconsole_tg, d_disk, OWN_SPILL)
 
 /obj/machinery/computer/rdconsole_tg/declare_interactions(list/into)
 	into += list(
@@ -72,7 +71,7 @@ DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		t_disk = D
+		own_set(src, "t_disk", D)
 	else if (istype(D, /obj/item/disk/design_disk))
 		if(d_disk)
 			to_chat(user, span_warning("A design disk is already loaded!"))
@@ -80,7 +79,7 @@ DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 		if(!user.unEquip(D, target = src))
 			to_chat(user, span_warning("[D] is stuck to your hand!"))
 			return TRUE
-		d_disk = D
+		own_set(src, "d_disk", D)
 	else
 		to_chat(user, span_warning("Machine cannot accept disks in that format."))
 		return TRUE
@@ -396,10 +395,10 @@ DECLARE_REF(/obj/machinery/computer/rdconsole_tg, "d_disk", SPILL, null)
 /obj/machinery/computer/rdconsole_tg/proc/eject_disk(type)
 	if(type == RND_DESIGN_DISK && d_disk)
 		d_disk.forceMove(get_turf(src))
-		d_disk = null
+		own_take(src, "d_disk")
 	if(type == RND_TECH_DISK && t_disk)
 		t_disk.forceMove(get_turf(src))
-		t_disk = null
+		own_take(src, "t_disk")
 
 #undef RND_TECH_DISK
 #undef RND_DESIGN_DISK

@@ -29,8 +29,9 @@
  * moves into range (with a slow recheck timer).
  */
 /datum/looping_sound
-	/// OM handles of the atoms the sound plays from; add_output()/remove_output() change it, output_list() reads it.
-	var/list/output_atoms
+	/// The atoms the sound plays from; add_output()/remove_output() change it, output_list() reads it.
+	/// The atoms the sound plays from: a relation list view.
+	var/list/atom/output_atoms
 	var/mid_sounds
 	var/mid_length
 	var/start_sound
@@ -61,9 +62,8 @@
 		WARNING("A looping sound datum was created without sounds to play.")
 		return
 
-	output_atoms = list()
 	for(var/atom/thing as anything in _output_atoms)
-		output_atoms |= om_handle(thing)
+		add_output(thing)
 	if(disable_direct)
 		direct = FALSE
 
@@ -79,7 +79,7 @@
 	if(QDELETED(src))
 		return
 	if(add_thing)
-		output_atoms |= om_handle(add_thing)
+		add_output(add_thing)
 	if(running)
 		return
 	if(skip_start_sound && (!exclusive && !started)) // Skip start sounds optionally, check if we're exclusive AND started already
@@ -95,7 +95,7 @@
 
 /datum/looping_sound/proc/stop(atom/remove_thing, skip_stop_sound = FALSE)
 	if(remove_thing)
-		output_atoms -= om_handle_of(remove_thing)
+		remove_output(remove_thing)
 	if(!running)
 		return
 	if(leave_dormancy())
@@ -236,22 +236,19 @@
 
 #undef LOOPING_SOUND_DORMANT_RECHECK
 
-/// The atoms the sound plays from (its output handles, resolved; deleted ones are skipped).
+/// The atoms the sound plays from (a copy of the relation list view; deleted ones already left it).
 /datum/looping_sound/proc/output_list()
-	. = list()
-	for(var/h in output_atoms)
-		var/atom/thing = om_resolve(h)
-		if(thing)
-			. += thing
+	return output_atoms ? output_atoms.Copy() : list()
 
 /// Adds an atom the sound plays from.
 /datum/looping_sound/proc/add_output(atom/thing)
-	output_atoms |= om_handle(thing)
+	if(!QDELETED(thing))
+		rel_add(src, "output_atoms", thing)
 
 /// Removes an atom the sound plays from.
 /datum/looping_sound/proc/remove_output(atom/thing)
-	output_atoms -= om_handle_of(thing)
+	rel_remove(src, "output_atoms", thing)
 
-/datum/looping_sound/om_declared_timer_slots()
-	. = ..()
-	. += "loop_token"
+REL_LIST(/datum/looping_sound, output_atoms)
+
+OWN_TIMER(/datum/looping_sound, loop_token)

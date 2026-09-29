@@ -65,7 +65,7 @@
 	integrity_failure = 0.5
 
 	// ── area/cell wiring ────────────────────────────────────────────────────
-	var/tmp/area_handle
+	var/tmp/area/area
 	var/areastring = null
 	var/obj/item/cell/cell
 	/// Cap for how fast APC cells charge, as a percentage-per-tick.
@@ -178,7 +178,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 	. = ..()
 	set_wires(new /datum/wires/apc(src))
 
-	icon_renderer     = new /datum/apc_icon_renderer()
+	own_set(src, "icon_renderer", new /datum/apc_icon_renderer())
 
 	// Offset 24 pixels in dir so the APC is embedded in the wall but inside the area.
 	if(building)
@@ -188,8 +188,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		offset_apc()
 
 	if(building)
-		area_handle = om_handle(get_area(src))
-		area().apc = src
+		area = get_area(src)
+		rel_set(area(), "apc", src)
 		opened    = 1
 		operating = 0
 		name = "[area().name] APC"
@@ -203,10 +203,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /obj/machinery/power/apc/LateInitialize()
 	update()
 
-DECLARE_REF(/obj/machinery/power/apc, "terminal", OWNED, null)
-DECLARE_REF(/obj/machinery/power/apc, "icon_renderer", OWNED, null)
-DECLARE_REF(/obj/machinery/power/apc, "cell", SPILL, null)
-DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
+OWN(/obj/machinery/power/apc, cell, OWN_SPILL)
+REL_PAIR(/obj/machinery/power/apc, hacker, hacked_apcs)
+REL_PAIR_LIST(/mob/living/silicon/ai, hacked_apcs, hacker)
 
 /// Phase 1 (unbind): the APC's Rust power node goes.
 /obj/machinery/power/apc/lifecycle_unbind()
@@ -221,7 +220,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	om_changed(src, CHANGE_MACHINE_MODE)
 	apply_area_power()
 	if(area())
-		area().apc = null
+		rel_clear(area(), "apc")
 		area().power_light  = 0
 		area().power_equip  = 0
 		area().power_environ = 0
@@ -326,26 +325,26 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	adjust_charge(cell.charge - get_charge())
 
 /obj/machinery/power/apc/proc/make_terminal()
-	terminal = new /obj/machinery/power/terminal(loc)
+	own_set(src, "terminal", new /obj/machinery/power/terminal(loc))
 	terminal.set_dir(dir)
-	terminal.master_handle = om_handle(src)
+	rel_set(terminal, "master", src)
 
 /obj/machinery/power/apc/proc/init()
 	has_electronics = APC_HAS_ELECTRONICS_SECURED // installed and secured
 	if(cell_type)
-		cell = new cell_type(src)
+		own_set(src, "cell", new cell_type(src))
 		cell.charge = start_charge * cell.maxcharge / 100.0
 		sync_cell_charge()
 
 	var/area/A = loc.loc
 
 	if(isarea(A) && !areastring)
-		area_handle = om_handle(A)
+		area = A
 		name = "\improper [area().name] APC"
 	else
-		area_handle = om_handle(get_area_name(areastring))
+		area = get_area_name(areastring)
 		name = "\improper [area().name] APC"
-	area().apc = src
+	rel_set(area(), "apc", src)
 
 	if(istype(area(), /area/submap))
 		alarms_hidden = TRUE
@@ -621,7 +620,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			return TRUE
 		user.drop_item()
 		W.forceMove(src)
-		cell = W
+		own_set(src, "cell", W)
 		sync_cell_charge()
 		act_message(user, null, MSG_SELF(span_notice("You insert the power cell.")), \
 			MSG_OTHERS(span_warning("[user.name] has inserted a power cell into [name]!")))
@@ -774,7 +773,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_BLOB, PROC_REF(apc_blob_rip_wir
 			user.put_in_hands(cell)
 			cell.add_fingerprint(user)
 			cell.update_icon()
-			cell = null
+			own_take(src, "cell")
 			act_message(user, null, MSG_SELF(span_notice("You remove the power cell.")), \
 				MSG_OTHERS(span_warning("[user.name] removes the power cell from [name]!")))
 			charging = 0
@@ -1116,8 +1115,8 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 
 /obj/machinery/power/apc/disconnect_terminal(obj/machinery/power/terminal/term)
 	if(terminal)
-		terminal.master_handle = null
-		terminal = null
+		rel_clear(terminal, "master")
+		own_take(src, "terminal")
 	wake_for_power_dependency()
 
 /obj/machinery/power/apc/proc/overload_lighting(chance = 100)
@@ -1137,10 +1136,9 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 // ─────────────────────────────────────────────────────────────────────────────
 
 /obj/machinery/power/apc/proc/ai_hack(mob/living/silicon/ai/A = null)
-	if(!A || !A.hacked_apcs || hacker || aidisabled || A.stat == DEAD)
+	if(!A || !A.is_malf() || hacker || aidisabled || A.stat == DEAD)
 		return 0
-	hacker = A
-	A.hacked_apcs += src
+	rel_set(src, "hacker", A) // two-sided: lists us in A.hacked_apcs
 	set_locked(1)
 	update_icon()
 	return 1
@@ -1171,9 +1169,7 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 	GLOB.power_alarm.clearAlarm(loc, src)
 
 	// Clear malf AI ownership.
-	if(hacker && hacker.hacked_apcs && (src in hacker.hacked_apcs))
-		hacker.hacked_apcs -= src
-	hacker = null
+	rel_clear(src, "hacker") // two-sided: leaves the AI's hacked_apcs
 	set_emagged(initial(emagged))
 
 	// Force icon renderer to recompute from scratch.
@@ -1245,9 +1241,9 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 	var/area/NA = get_area(src)
 	if(NA != area())
 		if(area().apc == src)
-			area().apc = null
-		NA.apc = src
-		area_handle = om_handle(NA)
+			rel_clear(area(), "apc")
+		rel_set(NA, "apc", src)
+		area = NA
 		name = "[area().name] APC"
 	update()
 
@@ -1265,6 +1261,6 @@ DAMAGE_REACTION(/obj/machinery/power/apc, DAMAGE_EXPLOSION, PROC_REF(apc_blast_w
 /obj/machinery/power/apc/proc/channel_load_total()
 	return channel_load(0) + channel_load(1) + channel_load(2)
 
-/// LC-refs: the area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The area this APC powers (a plain area var).
 /obj/machinery/power/apc/proc/area() as /area
-	return om_resolve(area_handle)
+	return area

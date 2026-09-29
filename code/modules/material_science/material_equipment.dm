@@ -74,7 +74,6 @@
 	material_service.delivered_moles += actual_moles
 	material_service.last_delivery_pressure = destination.return_pressure()
 	material_service.last_delivery_temperature = destination.return_temperature()
-	material_service.last_delivery_mixture = om_handle(destination)
 
 /datum/material_service
 	var/delivered_moles = 0

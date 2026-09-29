@@ -32,7 +32,7 @@
 
 /datum/rule_binding/proc/keep_watch(datum/native_watch/W)
 	if(W)
-		LAZYADD(world_watches, W)
+		rel_add(src, "world_watches", W)
 	return W
 
 /proc/dq_rx_id()
@@ -53,14 +53,14 @@
 /// Every subscription is a watch: cancelling it is deleting it.
 /proc/dq_rx_cancel(datum/rule_binding/D, datum/native_watch/token)
 	if(istype(D))
-		LAZYREMOVE(D.world_watches, token)
+		rel_remove(D, "world_watches", token)
 	if(istype(token) && !QDELETED(token))
 		qdel(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
 		dq_rx_cancel(D, W)
-	D.world_watches = null
+	rel_clear(D, "world_watches")
 
 /proc/dq_rx_rate_linear(v0, per_second, lo, hi)
 	return om_rate_linear(v0, per_second, lo, hi)
@@ -83,32 +83,21 @@
 /// A rule's heat node: an atom's temperature, watched through native heat
 /// watches that follow its body (code/modules/heat/heat.dm).
 /datum/dq_rx_node
-	/// OM handle of the atom.
-	var/atom_ref
+	/// The atom whose temperature this is: a one-sided back view (the atom owns us in rx_node).
+	var/atom/node_atom
 	/// The node's watches (/datum/native_watch/heat).
 	var/list/watches
 
 /datum/dq_rx_node/New(atom/A)
 	..()
-	atom_ref = om_handle(A)
-
-DECLARE_REF(/datum/dq_rx_node, "watches", OWNED_LIST, null)
-
-/// Phase 1 (unbind): the node leaves its atom.
-/datum/dq_rx_node/lifecycle_unbind()
-	. = ..()
-	var/atom/A = atom_of()
-	if(A?.rx_node == src)
-		A.rx_node = null
+	rel_set(src, "node_atom", A)
 
 /datum/dq_rx_node/proc/atom_of()
-	var/atom/A = om_resolve(atom_ref)
-	return (A && !QDELETED(A)) ? A : null
+	return QDELETED(node_atom) ? null : node_atom
 
 /// The atom's heat node, if a rule made one.
 /atom/var/tmp/datum/dq_rx_node/rx_node
 
-DECLARE_REF(/atom, "rx_node", OWNED, null)
 
 /// A node watch fired: wake the rule binding.
 /datum/proc/on_rx_node_heat(datum/native_watch/heat/watch, reason, source)
@@ -146,8 +135,8 @@ DECLARE_REF(/atom, "rx_node", OWNED, null)
 	if(W)
 		for(var/datum/native_watch/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
-				LAZYREMOVE(node.watches, old)
-		LAZYADD(node.watches, W)
+				own_take_member(node, "watches", old)
+		own_add(node, "watches", W)
 	return W
 
 /proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)
@@ -162,7 +151,7 @@ DECLARE_REF(/atom, "rx_node", OWNED, null)
 /// A heat node for atom `A`.
 /proc/dq_rx_node_new(atom/A)
 	if(!A.rx_node)
-		A.rx_node = new /datum/dq_rx_node(A)
+		own_set(A, "rx_node", new /datum/dq_rx_node(A))
 	return A.rx_node
 
 /// Sets the node's temperature (tests and DM authority): the atom gets a body

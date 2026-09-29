@@ -19,7 +19,7 @@
 	var/electricity_level = 1 // intensity of the magnetic pull
 	var/magnetic_field = 1 // the range of magnetic attraction
 	var/code = 0 // frequency code, they should be different unless you have a group of magnets working together or something
-	var/center_handle // the center of magnetic attraction
+	var/turf/center // the center of magnetic attraction
 	on = 0
 	var/magnet_active = 0
 
@@ -32,7 +32,7 @@
 	. = ..()
 	var/turf/T = loc
 	hide(!T.is_plating())
-	center_handle = om_handle(T)
+	rel_set(src, "center", T)
 
 	if(GLOB.radio_service)
 		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
@@ -160,7 +160,7 @@
 
 	if(on)
 		magnet_active = 1
-		center_handle = om_handle(locate(x+center_x, y+center_y, z))
+		rel_set(src, "center", locate(x+center_x, y+center_y, z))
 		if(get_center())
 			for(var/obj/M in orange(magnetic_field, get_center()))
 				if(!M.anchored && !(M.flags & NOCONDUCT))
@@ -197,7 +197,7 @@
 	var/moving = 0 // 1 if scheduled to loop
 	var/looping = 0 // 1 if looping
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/magnetic_controller/Initialize(mapload)
 	. = ..()
@@ -205,10 +205,10 @@
 	if(autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				LAZYADD(magnets, M)
+				rel_add(src, "magnets", M)
 
 	if(GLOB.radio_service)
-		radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath
@@ -218,7 +218,7 @@
 	if(length(magnets) == 0 && autolink)
 		for(var/obj/machinery/magnetic_module/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(M.freq == frequency && M.code == code)
-				LAZYADD(magnets, M)
+				rel_add(src, "magnets", M)
 	return PROCESS_KILL
 
 /obj/machinery/magnetic_controller/declare_interactions(list/into)
@@ -248,7 +248,7 @@
 	// Prepare signal beforehand, because this is a radio operation
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.frequency = frequency
 	signal.data["code"] = code
 
@@ -330,7 +330,7 @@
 	// Prepare the radio signal
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO // radio transmission
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.frequency = frequency
 	signal.data["code"] = code
 	signal.data["command"] = nextmove
@@ -361,10 +361,10 @@
 /obj/machinery/magnetic_module/step_start_condition()
 	return TRUE // its power draw
 
-/// LC-refs: center -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// center (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_module/proc/get_center() as /turf
-	return om_resolve(center_handle)
+	return center
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/magnetic_controller/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

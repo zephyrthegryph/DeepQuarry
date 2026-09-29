@@ -8,8 +8,8 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 3
 	throw_range = 10
-	var/tmp/haspen_handle	//The stored pen.
-	var/tmp/toppaper_handle	//The topmost piece of paper.
+	var/tmp/obj/item/pen/haspen	//The stored pen.
+	var/tmp/obj/item/toppaper	//The topmost piece of paper.
 	slot_flags = SLOT_BELT
 
 /obj/item/clipboard/Initialize(mapload)
@@ -51,7 +51,7 @@
 		user.drop_item()
 		W.forceMove(src)
 		if(istype(W, /obj/item/paper))
-			toppaper_handle = om_handle(W)
+			rel_set(src, "toppaper", W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
 		update_icon()
 
@@ -64,7 +64,7 @@
 /obj/item/clipboard/afterattack(turf/T as turf, mob/user)
 	for(var/obj/item/paper/P in turf_contents_of_type(T, /obj/item/paper))
 		P.forceMove(src)
-		toppaper_handle = om_handle(P)
+		rel_set(src, "toppaper", P)
 		update_icon()
 		to_chat(user, span_notice("You clip the [P] onto \the [src]."))
 
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 			if(haspen() && haspen().loc == src)
 				haspen().forceMove(usr.loc)
 				usr.put_in_hands(haspen())
-				haspen_handle = null
+				rel_clear(src, "haspen")
 				update_icon()
 			return TRUE
 		if("add_pen")
@@ -140,7 +140,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 				if(istype(W, /obj/item/pen))
 					usr.drop_item()
 					W.forceMove(src)
-					haspen_handle = om_handle(W)
+					rel_set(src, "haspen", W)
 					to_chat(usr, span_notice("You slot the pen into \the [src]."))
 					update_icon()
 			return TRUE
@@ -159,7 +159,7 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 				O.forceMove(usr.loc)
 				usr.put_in_hands(O)
 				if(O == toppaper())
-					toppaper_handle = om_handle(locate_within(src, /obj/item/paper))
+					rel_set(src, "toppaper", locate_within(src, /obj/item/paper))
 				update_icon()
 			return TRUE
 		if("rename")
@@ -180,10 +180,10 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 					ph.show(usr)
 			return TRUE
 
-/// LC-refs: The stored pen. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The stored pen. (a relation view: null once that is deleted).
 /obj/item/clipboard/proc/haspen() as /obj/item/pen
-	return om_resolve(haspen_handle)
+	return haspen
 
-/// LC-refs: The topmost piece of paper. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The topmost piece of paper. (a relation view: null once that is deleted).
 /obj/item/clipboard/proc/toppaper() as /obj/item
-	return om_resolve(toppaper_handle)
+	return toppaper

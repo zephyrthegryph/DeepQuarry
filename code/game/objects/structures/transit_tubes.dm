@@ -241,7 +241,7 @@
 		if(tube.has_exit(dir))
 			current_tube = tube
 			break
-	om_task_start(/datum/om/task/transit_pod, src, null, tube_h = om_handle(current_tube))
+	om_task_start(/datum/om/task/transit_pod, src, null, tube_h = om_handle(current_tube)) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
 
 /// A pod travelling the tubes: wait each tube's exit delay, look for the next tube, wait its
 /// enter delay, hop in; out of the tubes, coast in a line until slowed to a halt.
@@ -263,7 +263,7 @@
 /obj/structure/transit_tube_pod/proc/travel_step(datum/om/task/transit_pod/T)
 	switch(T.phase)
 		if("exit")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h)
+			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
 			if(!tube)
 				return travel_coast(T)
 			var/next_dir = tube.get_exit(dir)
@@ -286,12 +286,12 @@
 				set_dir(next_dir)
 				Move(get_step(loc, dir)) // Allow collisions when leaving the tubes.
 				return travel_coast(T)
-			T.tube_h = om_handle(next_tube)
+			T.tube_h = om_handle(next_tube) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
 			T.last_delay = next_tube.enter_delay(src, next_dir)
 			T.phase = "enter"
 			return STEP_REPEAT(T.last_delay)
 		if("enter")
-			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h)
+			var/obj/structure/transit_tube/tube = om_resolve(T.tube_h) // ALLOW(ownership): task state holding an entity cancels the task when it dies; a gone tube is not a failure, so the pod task keeps a handle
 			if(!tube)
 				return travel_coast(T)
 			set_dir(T.next_dir)
@@ -554,5 +554,4 @@
 			return "SW"
 	return
 
-DECLARE_REF(/obj/structure/transit_tube_pod, "air_contents", OWNED, null)
 DECLARE_GAS(/obj/structure/transit_tube_pod, "air_contents", CELL_VOLUME, T20C, list(GAS_O2 = O2STANDARD * ONE_ATMOSPHERE * 2, GAS_N2 = N2STANDARD * ONE_ATMOSPHERE))

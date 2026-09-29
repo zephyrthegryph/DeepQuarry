@@ -3,19 +3,19 @@
 	if(gibbed)
 
 		if(recharging)
-			var/obj/item/recharging_atom = om_resolve(recharging)
-			if(istype(recharging_atom) && !QDELETED(recharging_atom) && recharging_atom.loc == src)
+			var/obj/item/recharging_atom = recharging
+			rel_clear(src, "recharging")
+			if(!QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				recharging_atom.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
-			recharging = null
 
 		if(length(stored_atoms))
-			for(var/stored_ref in stored_atoms)
-				var/atom/movable/dropping = om_resolve(stored_ref)
-				if(istype(dropping) && !QDELETED(dropping) && dropping.loc == src)
+			var/list/dropping_atoms = stored_atoms.Copy()
+			rel_clear(src, "stored_atoms")
+			for(var/atom/movable/dropping as anything in dropping_atoms)
+				if(!QDELETED(dropping) && dropping.loc == src)
 					dropping.dropInto(loc)
 					dropping.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
-			stored_atoms = null
 
 	. = ..()
 
@@ -67,17 +67,14 @@
 /mob/living/silicon/robot/platform/proc/store_atom(atom/movable/storing, mob/user)
 	if(istype(storing))
 		storing.forceMove(src)
-		LAZYDISTINCTADD(stored_atoms, om_handle(storing))
+		rel_add(src, "stored_atoms", storing)
 
 /mob/living/silicon/robot/platform/proc/drop_stored_atom(atom/movable/ejecting, mob/user)
 
 	if(!ejecting && length(stored_atoms))
-		var/stored_ref = stored_atoms[1]
-		ejecting = om_resolve(stored_ref)
-		if(!ejecting)
-			LAZYREMOVE(stored_atoms, stored_ref)
+		ejecting = stored_atoms[1]
 
-	LAZYREMOVE(stored_atoms, om_handle(ejecting))
+	rel_remove(src, "stored_atoms", ejecting)
 	if(istype(ejecting) && !QDELETED(ejecting) && ejecting.loc == src)
 		ejecting.dropInto(loc)
 		if(user == src)
@@ -95,10 +92,9 @@
 /mob/living/silicon/robot/platform/proc/try_remove_cargo(mob/user)
 	if(!length(stored_atoms) || !istype(user))
 		return FALSE
-	var/remove_ref = stored_atoms[length(stored_atoms)]
-	var/atom/movable/removing = om_resolve(remove_ref)
-	if(!istype(removing) || QDELETED(removing) || removing.loc != src)
-		LAZYREMOVE(stored_atoms, remove_ref)
+	var/atom/movable/removing = stored_atoms[length(stored_atoms)]
+	if(QDELETED(removing) || removing.loc != src)
+		rel_remove(src, "stored_atoms", removing)
 	else
 		act_message(user, removing, others = span_infoplain(span_bold("%U%") + " begins unloading %T% from \the [src]'s cargo compartment."))
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))

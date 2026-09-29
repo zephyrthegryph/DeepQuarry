@@ -44,7 +44,7 @@
 		if(user)
 			user.remove_from_mob(C)
 		C.forceMove(H)
-		H.stored_ammo += C
+		own_add(H, "stored_ammo", C)
 	H.update_icon()
 	return H
 
@@ -66,18 +66,18 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 			to_chat(user, span_warning("Those rounds aren't the same caliber."))
 			return
 		var/moved = 0
-		while(other.stored_ammo.len && stored_ammo.len < max_ammo)
-			var/obj/item/ammo_casing/C = other.stored_ammo[other.stored_ammo.len]
-			other.stored_ammo -= C
+		while(length(other.stored_ammo) && length(stored_ammo) < max_ammo)
+			var/obj/item/ammo_casing/C = other.stored_ammo[length(other.stored_ammo)]
+			own_take_member(other, "stored_ammo", C)
 			C.forceMove(src)
-			stored_ammo += C
+			own_add(src, "stored_ammo", C)
 			moved++
 		if(moved)
-			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [stored_ammo.len]."))
+			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [length(stored_ammo)]."))
 			play_sfx(src, SFX_WEAPONS_EMPTY, 0.5)
 		update_icon()
 		other.update_icon()
-		if(!other.stored_ammo.len)
+		if(!length(other.stored_ammo))
 			consume(other, user)
 		return
 	// Everything else (loose casing -> handful, etc.) is handled by the parent.
@@ -107,5 +107,5 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, INTERACT_HAND_DEFAULT("Pick
 	consume_if_empty(user)
 
 /obj/item/ammo_magazine/handful/proc/consume_if_empty(mob/user)
-	if(!QDELETED(src) && !stored_ammo.len && loc == user)
+	if(!QDELETED(src) && !length(stored_ammo) && loc == user)
 		consume(src, user)

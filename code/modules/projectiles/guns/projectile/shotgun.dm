@@ -56,14 +56,14 @@
 			qdel(chambered) // Delete casing
 		else
 			chambered.forceMove(get_turf(src)) // Eject casing
-		chambered = null
+		rel_clear(src, "chambered")
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	// Load next shell
-	if(loaded.len)
+	if(length(loaded))
 		var/obj/item/ammo_casing/AC = loaded[1] // Load next casing.
-		loaded -= AC // Remove casing from loaded list.
-		chambered = AC
+		own_take_member(src, "loaded", AC) // Remove casing from loaded list.
+		rel_set(src, "chambered", AC)
 		M.hud_used?.update_ammo_hud(M, src) // TGMC Ammo HUD Port
 
 	if(pump_animation) // This affects all bolt action and shotguns.
@@ -75,7 +75,7 @@
 	..()
 	if(!empty_sprite)//Just a dirty check
 		return
-	if((loaded.len) || (chambered))
+	if((length(loaded)) || (chambered))
 		icon_state = "[icon_state]"
 	else
 		icon_state = "[icon_state]-empty"
@@ -151,7 +151,7 @@
 			to_chat(user, span_warning("The [src] is already shortened!"))
 			return
 		to_chat(user, span_notice("You begin to shorten the barrel of \the [src]."))
-		if(loaded.len)
+		if(length(loaded))
 			var/burstsetting = burst
 			burst = 2
 			act_message(user, null, MSG_SELF(span_danger("The shotgun goes off in your face!")), MSG_OTHERS(span_danger("The shotgun goes off!")))

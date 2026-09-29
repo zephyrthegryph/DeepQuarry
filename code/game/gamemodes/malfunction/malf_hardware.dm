@@ -2,7 +2,7 @@
 	var/name = ""								// Hardware name
 	var/desc = ""
 	var/driver = null							// Driver - if not null this verb is given to the AI to control hardware
-	var/owner_handle		// AI which owns this.
+	var/mob/living/silicon/ai/owner		// AI which owns this.
 
 /datum/malf_hardware/proc/install()
 	if(owner_ref() && istype(owner_ref(), /mob/living/silicon/ai))
@@ -67,6 +67,6 @@
 		T.auto_repair = 1
 		T.update_active_power_usage(round(initial(T.active_power_usage) * 5))
 
-/// LC-refs: owner -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Owner (a relation view).
 /datum/malf_hardware/proc/owner_ref() as /mob/living/silicon/ai
-	return om_resolve(owner_handle)
+	return owner

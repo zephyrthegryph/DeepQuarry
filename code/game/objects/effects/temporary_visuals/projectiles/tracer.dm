@@ -1,7 +1,6 @@
 /datum/beam_components_cache
 	var/list/beam_components = list() // ALLOW(instance_list): d: beam cache state
 
-DECLARE_REF(/datum/beam_components_cache, "beam_components", OWNED_LIST, null)
 
 /proc/generate_tracer_between_points(datum/point/starting, datum/point/ending, datum/beam_components_cache/beam_components, beam_type, color, qdel_in = 5, light_range = 2, light_color_override, light_intensity = 1, instance_key)		//Do not pass z-crossing points as that will not be properly (and likely will never be properly until it's absolutely needed) supported!
 	if(!istype(starting) || !istype(ending) || !ispath(beam_type))
@@ -25,9 +24,9 @@ DECLARE_REF(/datum/beam_components_cache, "beam_components", OWNED_LIST, null)
 				for(var/obj/effect/projectile_lighting/PL in contents_of(T))
 					if(PL.owner == instance_key)
 						continue tracing_line
-				beam_components.beam_components += new /obj/effect/projectile_lighting(T, light_color_override, light_range, light_intensity, instance_key)
+				own_add(beam_components, "beam_components", new /obj/effect/projectile_lighting(T, light_color_override, light_range, light_intensity, instance_key))
 		line = null
-	beam_components.beam_components += PB
+	own_add(beam_components, "beam_components", PB)
 
 /obj/effect/projectile/tracer
 	name = "beam"

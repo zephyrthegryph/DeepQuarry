@@ -30,7 +30,7 @@
 	if(!tgui_panel || !istype(tgui_panel))
 		log_tgui(src, "tgui_panel datum is missing",
 			context = "verb/fix_tgui_panel")
-		tgui_panel = new(src)
+		tgui_panel = new /datum/tgui_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	tgui_panel.initialize(force = TRUE)
 	// Force show the panel to see if there are any errors
 	winset(src, "outputwindow.legacy_output_selector", "left=output_browser")
@@ -46,4 +46,3 @@
 		var/datum/tgui_window/window = tgui_windows[window_id]
 		window.reinitialize()
 
-DECLARE_REF(/client, "tgui_panel", OWNED, null)

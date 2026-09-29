@@ -7,7 +7,7 @@
 // may be used in PDAs or similar applications. Second proc, return_reading_data will return list containing needed data.
 // This is used in NanoUI, for example.
 
-OM_TIMER_SLOT(/obj/machinery/power/sensor, record_timer)
+OWN_TIMER(/obj/machinery/power/sensor, record_timer)
 
 /obj/machinery/power/sensor
 	name = "Powernet Sensor"
@@ -47,13 +47,12 @@ OM_TIMER_SLOT(/obj/machinery/power/sensor, record_timer)
 /obj/machinery/power/sensor/proc/auto_set_name()
 	name = "[name_tag] - Powernet Sensor"
 
-// power monitors refresh their sensor lists once it is gone.
+// A dying sensor leaves every monitor's grid_sensors view by itself (a relation view); the
+// monitors only need a wake to redraw without it.
 /obj/machinery/power/sensor/on_destroy(force)
 	..()
-	// TODO - Switch power_monitor to register deletion events instead of this.
 	for(var/obj/machinery/computer/power_monitor/PM in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(PM.power_monitor)
-			PM.power_monitor.refresh_sensors()
 			MACHINE_WAKE(PM)
 
 // Proc: check_grid_warning()

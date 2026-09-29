@@ -98,7 +98,6 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	get_light_and_color(parent)
 
 // leaves the implant list of the limb it was laid in.
-DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ/external = "implants"))
 
 /// Hatches (its growth timer).
 /obj/effect/spider/eggcluster/proc/hatch()
@@ -114,7 +113,7 @@ DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ
 		for(var/i=0, i<num, i++)
 			var/obj/effect/spider/spiderling/spiderling = new spider_type(src.loc, src)
 			if(O)
-				LAZYADD(O.implants, spiderling)
+				rel_add(O, "implants", spiderling)
 			spiderling.faction = faction
 		qdel(src)
 
@@ -139,7 +138,7 @@ DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ
 	max_integrity = 3
 	COOLDOWN_DECLARE(itch_cooldown)
 	var/amount_grown = 0
-	var/entry_vent_handle
+	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 	var/travelling_in_vent = 0
 	var/faction = FACTION_SPIDERS
 
@@ -185,7 +184,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	if(travelling_in_vent)
 		if(istype(src.loc, /turf))
 			travelling_in_vent = 0
-			entry_vent_handle = null
+			rel_clear(src, "entry_vent")
 	else if(entry_vent())
 		if(get_dist(src, entry_vent()) <= 1)
 			var/obj/machinery/atmospherics/unary/vent_pump/exit_vent = get_safe_ventcrawl_target(entry_vent())
@@ -200,7 +199,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		if(amount_grown < 0) amount_grown = 1
 		var/obj/item/organ/external/O = loc
 		if(!O.owner || O.owner.stat == DEAD || amount_grown > 80)
-			LAZYREMOVE(O.implants, src)
+			rel_remove(O, "implants", src)
 			src.forceMove(O.owner ? O.owner.loc : O.loc)
 			src.visible_message(span_warning("\A [src] makes its way out of [O.owner ? "[O.owner]'s [O.name]" : "\the [O]"]!"))
 			if(O.owner)
@@ -227,7 +226,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
 		forceMove(entry)
-		entry_vent_handle = null
+		rel_clear(src, "entry_vent")
 		return
 
 	if(prob(50))
@@ -238,10 +237,10 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
 		forceMove(entry)
-		entry_vent_handle = null
+		rel_clear(src, "entry_vent")
 		return
 	forceMove(exit_vent.loc)
-	entry_vent_handle = null
+	rel_clear(src, "entry_vent")
 	var/area/new_area = get_area(loc)
 	if(new_area)
 		new_area.Entered(src)
@@ -260,7 +259,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 				if(!v.welded)
-					entry_vent_handle = om_handle(v)
+					rel_set(src, "entry_vent", v)
 					walk_to(src, entry_vent(), 5)
 					break
 		if(amount_grown >= 100)
@@ -309,7 +308,7 @@ TYPE_TABLE(/obj/effect/spider/spiderling/princess, spiderling_grow_as, list(/mob
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
-DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever was wrapped falls out
+OWN(/obj/effect/spider/cocoon, contents, OWN_SPILL)
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"
@@ -380,6 +379,6 @@ TYPE_TABLE(/obj/effect/spider/spiderling/varied/space, spiderling_grow_as, list(
 		grown += rand(0, 2)
 		.++
 
-/// LC-refs: entry vent -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: entry vent (reads null once it is gone).
 /obj/effect/spider/spiderling/proc/entry_vent() as /obj/machinery/atmospherics/unary/vent_pump
-	return om_resolve(entry_vent_handle)
+	return entry_vent

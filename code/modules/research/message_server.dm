@@ -78,7 +78,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -93,7 +93,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
-DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 
 /obj/machinery/message_server/examine(mob/user, distance, infix, suffix)
 	. = ..()
@@ -125,11 +124,11 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	LAZYADD(pda_msgs, new/datum/data_pda_msg(recipient,sender,message))
+	own_add(src, "pda_msgs", new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	LAZYADD(rc_msgs, new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
+	own_add(src, "rc_msgs", new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -308,8 +307,8 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	GLOB.blackbox = src
 
 // ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
+// it owns (an owned list): the replacement takes the list over.
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
-// it owns (DECLARE_REF(..., OWNED_LIST)): the replacement takes the list over.
 	var/turf/T = locate(1,1,2)
 	if(T)
 		GLOB.blackbox = null
@@ -324,10 +323,12 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		BR.msg_syndicate = msg_syndicate
 		BR.msg_cargo = msg_cargo
 		BR.msg_service = msg_service
-		BR.feedback = feedback
+		// The feedback datums move over one by one (the replacement takes the list over).
+		own_clear(BR, "feedback", OWN_DELETE)
+		for(var/datum/entry as anything in own_take_all(src, "feedback"))
+			own_add(BR, "feedback", entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
-		feedback = null
 	return ..()
 
 /obj/machinery/blackbox_recorder/proc/find_feedback_datum(variable)
@@ -335,7 +336,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		if(FV.get_variable() == variable)
 			return FV
 	var/datum/feedback_variable/FV = new(variable)
-	feedback += FV
+	own_add(src, "feedback", FV)
 	return FV
 
 /obj/machinery/blackbox_recorder/proc/get_round_feedback()
@@ -478,7 +479,4 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 /obj/machinery/message_server/step_start_condition()
 	return active // its hum
 
-DECLARE_REF(/obj/machinery/message_server, "pda_msgs", OWNED_LIST, null)
-DECLARE_REF(/obj/machinery/message_server, "rc_msgs", OWNED_LIST, null)
 
-DECLARE_REF(/obj/machinery/blackbox_recorder, "feedback", OWNED_LIST, null)

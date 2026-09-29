@@ -4,7 +4,7 @@
 // turf graph so gases stay where vents push them and never render. Floors
 // get air via /turf/open/Initialize (because blocks_air defaults FALSE);
 // walls keep their existing blocks_air=1 and remain inert.
-OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
+OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 
 /turf/simulated
 	parent_type = /turf/open
@@ -151,7 +151,8 @@ OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
 		for(var/obj/effect/decal/cleanable/blood/B in contents)
 			var/fresh = B.init_forensic_data().add_blooddna(M.dna,M)
 			if(fresh && M.has_contagions())
-				B.viruses = contagion_copies(M.get_spreadable_contagions())
+				own_clear(B, "viruses", OWN_DELETE) // the decal owns its contagion copies
+				B.add_contagions(contagion_copies(M.get_spreadable_contagions()), copy = FALSE)
 			return TRUE //we bloodied the floor
 		blood_splatter(src,M.get_blood(M.vessel),1)
 		return TRUE //we bloodied the floor
@@ -191,4 +192,3 @@ OM_TIMER_SLOT(/turf/simulated, wet_cleanup_timer)
 		cut_overlay(wet_overlay)
 		wet_overlay = null
 
-DECLARE_REF(/turf/simulated, "wet_overlay", OWNED, null)

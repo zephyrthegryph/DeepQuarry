@@ -791,11 +791,10 @@
 		if(istype(user))
 			to_chat(user, span_filter_notice("You [harvest_sample ? "take a sample" : "harvest"] from the [display_name]."))
 
-		//This may be a new line. Update the global if it is.
+		//This may be a new line. Register a copy of it if it is (this private copy stays its holder's;
+		//it takes the line's name, so its products and packets find the registered line).
 		if(name == "new line" || !(name in GLOB.plant_service.seeds))
-			uid = GLOB.plant_service.seeds.len + 1
-			name = "[uid]"
-			GLOB.plant_service.seeds[name] = src
+			GLOB.plant_service.register_line(src)
 
 		if(harvest_sample)
 			var/obj/item/seeds/seeds = new(get_turf(user))
@@ -892,6 +891,47 @@
 	new_seed.traits = traits.Copy()
 	new_seed.update_growth_stages()
 	return new_seed
+
+/// An exact, unregistered copy of this seed (same name and traits): a private copy for a holder
+/// (proto_copy()), or the registered instance register_line() files.
+/datum/seed/proc/copy_line()
+	var/datum/seed/new_seed = new
+	new_seed.name =             name
+	new_seed.uid =              uid
+	new_seed.roundstart =       roundstart
+	new_seed.can_self_harvest = can_self_harvest
+	new_seed.kitchen_tag =      kitchen_tag
+	new_seed.trash_type =       trash_type
+	new_seed.has_mob_product =  has_mob_product
+	new_seed.has_item_product = has_item_product
+	if(mutants)        new_seed.mutants = mutants.Copy()
+	if(chems)          new_seed.chems = chems.Copy()
+	if(consume_gasses) new_seed.consume_gasses = consume_gasses.Copy()
+	if(exude_gasses)   new_seed.exude_gasses = exude_gasses.Copy()
+	new_seed.seed_name =    seed_name
+	new_seed.display_name = display_name
+	new_seed.seed_noun =    seed_noun
+	new_seed.traits = traits.Copy()
+	new_seed.update_growth_stages()
+	return new_seed
+
+/datum/seed/proto_copy()
+	return copy_line()
+
+/// A seed several holders may point at: the registered line itself, or (for a holder's private
+/// copy) the registered line filed for it. Spreading vines and spawned soil share it.
+/proc/seed_shareable(datum/seed/S)
+	if(!S || is_registered(S))
+		return S
+	return GLOB.plant_service.register_line(S)
+
+/// Points dest.dest_var (a PROTO seed var) at source.source_var's seed. A registered seed is shared; a
+/// private copy moves over (source is left empty), since a private copy has exactly one holder.
+/proc/seed_hand_over(datum/source, source_var, datum/dest, dest_var)
+	var/datum/seed/S = source.vars[source_var]
+	if(!S || is_registered(S))
+		return proto_set(dest, dest_var, S)
+	return proto_set(dest, dest_var, proto_replace(source, source_var, null))
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))

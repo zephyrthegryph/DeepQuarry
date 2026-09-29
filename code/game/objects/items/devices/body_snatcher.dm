@@ -76,10 +76,10 @@
 		var/datum/mind/prey_mind = M.mind
 		M.ghostize()
 		user.ghostize()
-		user.mind = null
-		M.mind = null
-		user_mind.current = null
-		prey_mind.current = null
+		rel_clear(user, "mind")
+		rel_clear(M, "mind")
+		rel_clear(user_mind, "current")
+		rel_clear(prey_mind, "current")
 		user_mind.active = TRUE //If they are 'active', their client is automatically pushed to the mob
 		transfer_mind(user_mind, M, "bodysnatcher swap") // The identity (OOC notes and all) follows each mind.
 		prey_mind.active = TRUE

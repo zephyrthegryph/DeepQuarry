@@ -55,7 +55,8 @@
 /client/proc/set_hover_tracking(enabled)
 	hover_tracking = !!enabled
 	if(!hover_tracking)
-		hovered_ref = null
+		if(mob)
+			rel_clear(mob, "hovered_atom_view")
 		clear_screentip()
 
 /// Lists the current bindings in chat. Replaces the old hand-written hotkey help.

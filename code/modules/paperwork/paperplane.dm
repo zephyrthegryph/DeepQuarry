@@ -16,7 +16,7 @@
 	pixel_y = rand(-8, 8)
 	pixel_x = rand(-9, 9)
 	if(newPaper)
-		internalPaper = newPaper
+		own_set(src, "internalPaper", newPaper)
 		flags = newPaper.flags
 		color = newPaper.color
 		if(isstorage(newPaper.loc))
@@ -25,10 +25,9 @@
 		else
 			newPaper.forceMove(src)
 	else
-		internalPaper = new /obj/item/paper(src)
+		own_set(src, "internalPaper", new /obj/item/paper(src))
 	update_icon()
 
-DECLARE_REF(/obj/item/paperplane, "internalPaper", OWNED, null)
 
 /obj/item/paperplane/update_icon()
 	cut_overlays()
@@ -50,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/paperplane, \
 	to_chat(user, span_notice("You unfold [src]."))
 	var/atom/movable/internal_paper_tmp = internalPaper
 	internal_paper_tmp.forceMove(loc)
-	internalPaper = null
+	own_take(src, "internalPaper")
 	consume(src, user)
 	user.put_in_hands(internal_paper_tmp)
 	return TRUE

@@ -25,7 +25,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		cell = new cell_type // ALLOW(decl): made in nullspace, not in src
+		own_set(src, "cell", new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))
@@ -78,7 +78,7 @@
 				user.drop_from_inventory(W)
 				W.forceMove(src)
 				to_chat(user, span_notice("You insert [W] into [src]."))
-				cell = W
+				own_set(src, "cell", W)
 				update_icon()
 				return INTERACTION_HANDLED_PASS
 			else
@@ -203,7 +203,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 		act_message(user, src, MSG_SELF(span_notice("You remove [cell].")), MSG_OTHERS(span_notice("%U% removes [cell] from %T%!")))
 		cell.update_icon()
 		user.put_in_hands(cell)
-		cell = null
+		own_take(src, "cell")
 		update_icon()
 	return TRUE
 
@@ -267,13 +267,13 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 	maxcharge = 100
 	item_flags = ABSTRACT
 
-	var/hume_handle
+	var/mob/living/carbon/human/hume
 
 /obj/item/cell/standin/Initialize(mapload, mob/living/carbon/human/H)
 	. = ..()
 	if(!istype(H))
 		return INITIALIZE_HINT_QDEL
-	hume_handle = om_handle(H)
+	rel_set(src, "hume", H)
 	charge = H.nutrition
 	maxcharge = initial(H.nutrition)
 
@@ -294,8 +294,8 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 /obj/vehicle/get_cell()
 	return cell
 
-DECLARE_REF(/obj/item/inducer, "cell", HELD, null)
+OWN(/obj/item/inducer, cell, OWN_CONTAINED)
 
-/// LC-refs: hume -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hume (reads null once it is gone).
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human
-	return om_resolve(hume_handle)
+	return hume

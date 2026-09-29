@@ -2,12 +2,12 @@
 //Types that use this should consider overriding emp_act() and hear_talk(), unless they shield their contents somehow.
 /obj/item/storage/internal
 	preserve_item = 1
-	var/master_item_handle
+	var/obj/item/master_item
 	item_flags = ABSTRACT
 
 /obj/item/storage/internal/Initialize(mapload)
 	. = ..()
-	master_item_handle = om_handle(loc)
+	rel_set(src, "master_item", loc)
 	if(!istype(master_item(), /obj/item))
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name
@@ -83,6 +83,6 @@ TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRE
 /obj/item/storage/internal/Adjacent(atom/neighbor)
 	return master_item().Adjacent(neighbor)
 
-/// LC-refs: master item -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: master item (reads null once it is gone).
 /obj/item/storage/internal/proc/master_item() as /obj/item
-	return om_resolve(master_item_handle)
+	return master_item

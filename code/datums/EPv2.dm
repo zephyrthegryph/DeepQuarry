@@ -32,10 +32,10 @@ It's suggested to start with an if or switch statement for the message, to deter
 
 /datum/exonet_protocol
 	var/address = "" //Resembles IPv6, but with only five 'groups', e.g. XXXX:XXXX:XXXX:XXXX:XXXX
-	var/holder_handle
+	var/atom/movable/holder
 
 /datum/exonet_protocol/New(atom/holder)
-	src.holder_handle = om_handle(holder)
+	rel_set(src, "holder", holder)
 	..()
 
 // Proc: make_address()
@@ -135,6 +135,6 @@ REGISTRY_MEMBERSHIP(/datum/exonet_protocol, REGISTRY_EXONET_CONNECTIONS)
 /atom/proc/receive_exonet_message(atom/origin_atom, origin_address, message, text)
 	return
 
-/// LC-refs: the atom this protocol speaks for -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this protocol speaks for (a relation view).
 /datum/exonet_protocol/proc/holder() as /atom/movable
-	return om_resolve(holder_handle)
+	return holder

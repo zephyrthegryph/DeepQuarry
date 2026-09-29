@@ -334,7 +334,7 @@
 			vore_fx(A)
 	if(owner.previewing_belly == src)
 		if(isbelly(owner.loc))
-			owner.previewing_belly = null
+			rel_clear(owner, "previewing_belly")
 			return
 		vore_fx(owner)
 

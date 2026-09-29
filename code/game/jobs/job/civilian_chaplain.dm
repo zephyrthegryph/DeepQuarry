@@ -140,7 +140,7 @@
 	if (length(new_title) != 0 && !faking_job)
 		I.assignment = new_title
 
-	H.mind.my_religion = new /datum/religion(new_religion, new_deity, B.name, "bible", "bible", new_title)
+	own_set(H.mind, "my_religion", new /datum/religion(new_religion, new_deity, B.name, "bible", "bible", new_title))
 
 	B.deity_name = H.mind.my_religion.deity
 	I.assignment = H.mind.my_religion.title

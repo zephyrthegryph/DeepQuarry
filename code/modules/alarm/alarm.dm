@@ -9,28 +9,26 @@
 	EXPIRY_DECLARE(end_time)		// Use to set when this trigger should clear, in case the source is lost.
 
 /datum/alarm_source/New(atom/source)
-	src.source = source
+	rel_set(src, "source", source) // a relation: the framework clears it when the source dies
 	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 	source_name = source.get_source_name()
 
 /datum/alarm
-	var/tmp/origin_handle	//Used to identify the alarm area.
+	var/tmp/atom/origin	//Used to identify the alarm area.
 	var/list/sources		//List of sources triggering the alarm. Used to determine when the alarm should be cleared.
-	var/list/sources_assoc	//Associative list of source triggers. Used to efficiently acquire the alarm source.
 	var/list/cameras				//List of cameras that can be switched to, if the player has that capability.
-	var/tmp/last_area_handle	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
+	var/tmp/area/last_area	//The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 	var/last_name	//The last acquired name, used should origin be lost
-	var/tmp/last_camera_area_handle	//The last area in which cameras where fetched, used to see if the camera list should be updated.
+	var/tmp/area/last_camera_area	//The last area in which cameras where fetched, used to see if the camera list should be updated.
 	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)
-	src.origin_handle = om_handle(origin)
+	rel_set(src, "origin", origin)
 
 	cameras()	// Sets up both cameras and last alarm area.
 	set_source_data(source, duration, severity, hidden)
 
-DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 
 /// Ages its sources (the handler calls it every 2 s while it is up).
 /datum/alarm/proc/alarm_tick()
@@ -40,7 +38,8 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 	for(var/datum/alarm_source/AS in sources)
 		// Has the alarm passed its best before date?
 		if((AS.end_time && ELAPSED_SINCE(src, AS.end_time, CLOCK_WORLD) > 0) || (AS.duration && ELAPSED_SINCE(src, (AS.start_time + AS.duration), CLOCK_WORLD) > 0))
-			LAZYREMOVE(sources, AS)
+			own_remove(src, "sources", AS)
+			continue
 		// Has the source gone missing?	Then reset the normal duration and set end_time
 		if(!AS.source && !AS.end_time)	// end_time is used instead of duration to ensure the reset doesn't remain in the future indefinetely.
 			AS.duration = 0
@@ -49,11 +48,10 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 #undef ALARM_RESET_DELAY
 
 /datum/alarm/proc/set_source_data(atom/source, duration, severity, hidden)
-	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
+	var/datum/alarm_source/AS = source_entry(source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
-		LAZYADD(sources, AS)
-		LAZYSET(sources_assoc, source, AS)
+		own_add(src, "sources", AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)
@@ -63,18 +61,24 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 	src.hidden = min(src.hidden, hidden)
 
 /datum/alarm/proc/clear(source)
-	var/datum/alarm_source/AS = LAZYACCESS(sources_assoc, source)
-	LAZYREMOVE(sources, AS)
-	LAZYREMOVE(sources_assoc, source)
+	var/datum/alarm_source/AS = source_entry(source)
 	if(AS)
-		AS.source = null
-		qdel(AS)
+		own_remove(src, "sources", AS) // disposes of it
+
+/// The alarm_source entry for `source`, or null. sources is small, so a scan replaces the old entity-keyed lookup list.
+/datum/alarm/proc/source_entry(atom/source)
+	if(!source)
+		return null
+	for(var/datum/alarm_source/AS as anything in sources)
+		if(AS.source == source)
+			return AS
+	return null
 
 /datum/alarm/proc/alarm_area()
 	if(!origin())
 		return last_area()
 
-	last_area_handle = om_handle(origin().get_alarm_area())
+	last_area = origin().get_alarm_area()
 	return last_area()
 
 /datum/alarm/proc/alarm_name()
@@ -92,7 +96,7 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 	if(!cameras)
 		cameras = origin() ? origin().get_alarm_cameras() : last_area()?.get_alarm_cameras()
 
-	last_camera_area_handle = om_handle(last_area())
+	last_camera_area = last_area()
 	return cameras
 
 /datum/alarm/proc/max_severity()
@@ -145,14 +149,14 @@ DECLARE_REF(/datum/alarm, "sources", OWNED_LIST, null)
 /mob/living/silicon/robot/syndicate/get_alarm_cameras()
 	return list()
 
-/// LC-refs: The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera). -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last acquired area, used should origin be lost (for example a destroyed borg containing an alarming camera).
 /datum/alarm/proc/last_area() as /area
-	return om_resolve(last_area_handle)
+	return last_area
 
-/// LC-refs: The last area in which cameras where fetched, used to see if the camera list should be updated. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last area in which cameras where fetched, used to see if the camera list should be updated.
 /datum/alarm/proc/last_camera_area() as /area
-	return om_resolve(last_camera_area_handle)
+	return last_camera_area
 
-/// LC-refs: Used to identify the alarm area. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The alarm's origin (an atom or an area): a relation view, null once the atom is deleted.
 /datum/alarm/proc/origin() as /atom
-	return om_resolve(origin_handle)
+	return origin

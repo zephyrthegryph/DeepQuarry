@@ -214,7 +214,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 	if(!target)
 		playsound(src, threat_found_sounds, 50)
 		GLOB.global_announcer.autosay("[src] was attacked by a hostile <b>[target_name(attacker)]</b> in <b>[get_area(src)]</b>.", "[src]", "Security")
-	target = attacker
+	rel_set(src, "target", attacker)
 	attacked = TRUE
 
 // Say "freeze!" and demand surrender
@@ -261,7 +261,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/secbot, INTERACT_HAND_UNGATED("Open controls
 		if(M.stat == DEAD)
 			continue
 		if(confirmTarget(M))
-			target = M
+			rel_set(src, "target", M)
 			awaiting_surrender = 0
 			say("Level [threat] infraction alert!")
 			automatic_custom_emote(VISIBLE_MESSAGE, "points at [M.name]!")

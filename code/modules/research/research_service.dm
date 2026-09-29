@@ -14,11 +14,14 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	var/list/techweb_designs = list() //associative id = node datum
 	var/list/list/datum/design_techweb/item_to_design = list() //typepath = list of design datums
 
-	///List of all techwebs, generating points or not.
-	///Autolathes, Mechfabs, and others all have shared techwebs, for example.
+	///The round's registered techwebs (science, admin, the autounlock webs), generating points or not.
+	///Autolathes, Mechfabs, and others all have shared techwebs, for example. Only register_techweb()
+	///adds to it: a disk's or a console's scratch web is owned by its holder and never registered.
 	var/list/datum/techweb/techwebs = list()
 
-	var/datum/techweb_node/error_node/error_node //These two are what you get if a node/design is deleted and somehow still stored in a console.
+	//These two are what you get if a node/design is deleted and somehow still stored in a console.
+	//Unregistered instances the service owns (PROTO below: a private copy held by the service).
+	var/datum/techweb_node/error_node/error_node
 	var/datum/design_techweb/error_design/error_design
 
 	//ERROR LOGGING
@@ -132,19 +135,17 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 
 	/// Lookup list for ordnance briefers.
 	var/list/ordnance_experiments = list()
-	/// Lookup list for scipaper partners.
-	var/list/datum/scientific_partner/scientific_partners = list()
 
 /datum/world_service/research/initialize()
 	initialized = TRUE
 	initialize_all_techweb_designs()
 	initialize_all_techweb_nodes()
-	new /datum/techweb/science
-	new /datum/techweb/admin
+	register_techweb(new /datum/techweb/science)
+	register_techweb(new /datum/techweb/admin)
 	// new /datum/techweb/oldstation
 	autosort_categories()
-	error_design = new
-	error_node = new
+	proto_set(src, "error_design", new /datum/design_techweb/error_design)
+	proto_set(src, "error_node", new /datum/techweb_node/error_node)
 	log_world("World service [name] initialized: [length(techweb_nodes)] nodes, [length(techweb_designs)] designs, [length(techwebs)] techwebs.")
 
 /datum/world_service/research/service_step(resumed)
@@ -182,6 +183,21 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 			techweb_categories[I.category][I.id] = TRUE
 		else
 			techweb_categories[I.category] = list(I.id = TRUE)
+
+/// Registers one of the round's techwebs (science, admin, an autounlock web): it becomes a shared
+/// registry instance (registry_techweb()). Scratch webs (disks) are never registered.
+/datum/world_service/research/proc/register_techweb(datum/techweb/web)
+	if(web && !(web in techwebs))
+		techwebs += web
+	return web
+
+/// The round's autounlock techweb of `path`, made and registered on first use.
+/datum/world_service/research/proc/autounlock_techweb(path)
+	var/datum/techweb/web = GLOB.autounlock_techwebs[path]
+	if(!web)
+		web = new path
+		GLOB.autounlock_techwebs[path] = web
+	return register_techweb(web)
 
 /datum/world_service/research/proc/techweb_node_by_id(id)
 	return techweb_nodes[id] || error_node
@@ -428,7 +444,6 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	return GLOB.research_service
 
 // Shared techwebs, scipaper partners and the two error placeholders live for the round.
-DECLARE_REF(/datum/world_service/research, "techwebs", STATIC, null)
-DECLARE_REF(/datum/world_service/research, "scientific_partners", STATIC, null)
-DECLARE_REF(/datum/world_service/research, "error_node", STATIC, null)
-DECLARE_REF(/datum/world_service/research, "error_design", STATIC, null)
+
+PROTO(/datum/world_service/research, error_design)
+PROTO(/datum/world_service/research, error_node)

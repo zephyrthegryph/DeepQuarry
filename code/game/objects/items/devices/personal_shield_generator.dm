@@ -45,16 +45,14 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			active_weapon = new active_weapon(src, src) // ALLOW(decl): constructor arguments
-			active_weapon.power_supply = bcell
+			own_set(src, "active_weapon", new active_weapon(src, src)) // ALLOW(decl): constructor arguments
+			rel_set(active_weapon, "power_supply", bcell)
 		else
-			active_weapon = new(src, src) // ALLOW(decl): constructor arguments
-			active_weapon.power_supply = bcell
+			own_set(src, "active_weapon", new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): constructor arguments
+			rel_set(active_weapon, "power_supply", bcell) // ALLOW(ownership): the generator owns the cell; this gun subtype only names it (REL decl below)
 	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
-DECLARE_REF(/obj/item/personal_shield_generator, "active_weapon", OWNED, null)
-DECLARE_REF(/obj/item/personal_shield_generator, "bcell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell
@@ -150,9 +148,9 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 			if(!user.unEquip(W))
 				return TRUE
 			W.forceMove(src)
-			bcell = W
+			own_set(src, "bcell", W)
 			if(active_weapon)
-				active_weapon.power_supply = bcell
+				rel_set(active_weapon, "power_supply", bcell)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 
@@ -171,10 +169,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		return ITEM_INTERACT_BLOCKING
 	bcell.update_icon()
 	bcell.forceMove(get_turf(src))
-	bcell = null
+	own_take(src, "bcell")
 	if(active_weapon)
 		reattach_gun()
-		active_weapon.power_supply = null
+		rel_clear(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src]."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -197,11 +195,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 /obj/item/personal_shield_generator/proc/destroy_cell_answered(datum/om/prompt/confirm/shield_cell_destroy/ask)
 	var/mob/user = ask.answerer
 	fx_sparks(src, 5)
-	qdel(bcell)
-	bcell = null
+	own_clear(src, "bcell", OWN_DELETE)
 	if(active_weapon)
 		reattach_gun()
-		active_weapon.power_supply = null
+		rel_clear(active_weapon, "power_supply")
 	to_chat(user, span_notice("You remove the cell from \the [src], destroying the battery."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -299,10 +296,10 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 
 			if(active_weapon) //Retract the gun. There's about to be no cell anymore.
 				reattach_gun()
-				active_weapon.power_supply = null
+				rel_clear(active_weapon, "power_supply")
 
 			bcell.use(generator_active_cost) //Causes it to go boom.
-			bcell = null
+			own_take(src, "bcell")
 			shield_active = 0
 			om_task_periodic_stop(src)
 			update_icon()
@@ -375,14 +372,15 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		list(mode_name="lethal", projectile_type=/obj/item/projectile/beam, modifystate="egunkill", fire_sound=SFX_WEAPONS_LASER, charge_cost = 480),
 		)
 
-	var/shield_generator_handle //The generator we are linked to!
+	/// Relation view: the generator we are linked to!
+	var/obj/item/personal_shield_generator/linked_generator
 	var/wielded = 0
 	var/cooldown = 0
 
 /obj/item/gun/energy/gun/generator/Initialize(mapload, obj/item/personal_shield_generator/shield_gen)
 	. = ..()
-	shield_generator_handle = om_handle(shield_gen)
-	power_supply = shield_generator().bcell
+	rel_set(src, "linked_generator", shield_gen)
+	rel_set(src, "power_supply", shield_generator()?.bcell) // ALLOW(ownership): the generator owns the cell and this gun subtype only names it (REL below); the base energy gun owns its power_supply
 
 /obj/item/gun/energy/gun/generator/proc/can_use(mob/user, mob/M)
 	if(!check_charge(charge_cost))
@@ -592,9 +590,12 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	charge_amount = 200 // 100 to 200.
 	charge_delay = 30 // Starts charging three seconds after it's discharged.
 
-/// LC-refs: shield generator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The relation view `linked_generator` (null once it is gone).
 /obj/item/gun/energy/gun/generator/proc/shield_generator() as /obj/item/personal_shield_generator
-	return om_resolve(shield_generator_handle)
+	return linked_generator
+
+// The generator gun runs off the generator's cell: a view, not an owned cell.
+REL(/obj/item/gun/energy/gun/generator, power_supply)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/personal_shield_generator, \

@@ -46,7 +46,7 @@
 			ae.one_access = 1
 	else
 		ae = electronics
-		electronics = null
+		own_take(src, "electronics")
 		ae.forceMove(src.loc)
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"
@@ -343,17 +343,18 @@
 	assembly.step = 2
 	assembly.update_state()
 	if(operating == -1)
-		assembly.electronics = new /obj/item/circuitboard/broken()
+		own_set(assembly, "electronics", new /obj/item/circuitboard/broken(assembly))
 	else if(!electronics)
-		assembly.electronics = new /obj/item/airlock_electronics()
+		own_set(assembly, "electronics", new /obj/item/airlock_electronics(assembly))
 		if(LAZYLEN(req_access))
 			assembly.electronics.conf_access = req_access
 		else if(LAZYLEN(req_one_access))
 			assembly.electronics.conf_access = req_one_access
 			assembly.electronics.one_access = TRUE
 	else
-		assembly.electronics = electronics
-		electronics = null
+		var/obj/item/airlock_electronics/door_electronics = electronics
+		door_electronics.forceMove(assembly)
+		own_move(door_electronics, assembly, "electronics") // from the door to the assembly
 	operating = 0
 	qdel(src)
 	return TRUE
@@ -435,4 +436,7 @@
 	icon_state = "rightsecure"
 	base_state = "rightsecure"
 
-DECLARE_REF(/obj/machinery/door/window, "electronics", HELD, null)
+OWN(/obj/machinery/door/window, electronics, OWN_CONTAINED)
+
+// Brig timers find their doors by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/door/window/brigdoor, id)

@@ -70,15 +70,14 @@
 	var/escaping = FALSE
 	var/escaping_attempts = 0
 	var/entering_vent = FALSE
-	/// om_handle() of the vent we're escaping into.
-	var/entry_vent_handle
+	/// The vent we're escaping into: a relation view, null once it is deleted.
+	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent
 
 /obj/item/organ/internal/intestine/horror/periodic_step()
 	..()
 	if(!owner && !escaping) return
 	if(is_bruised()) //They heal theirselves.
 		owner?.mend(TREAT_RESTORATION, 1, src)
-	var/obj/machinery/atmospherics/unary/vent_pump/entry_vent = om_resolve(entry_vent_handle)
 	if(escaping && entry_vent)
 		if(get_dist(src, entry_vent) <= 1 && !entering_vent)
 			audible_message("[src] slithers into the [entry_vent.name]!", "You hear a wet, squelching sound.")
@@ -89,7 +88,7 @@
 		else if(!entering_vent)
 			escaping_attempts += 1
 			if(escaping_attempts >= 5)
-				entry_vent_handle = null
+				rel_clear(src, "entry_vent")
 				escaping = FALSE //We tried and failed...
 				escaping_attempts = 0
 				audible_message("[src] stops squirming around.")
@@ -99,7 +98,7 @@
 	if(removed)
 		for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))
 			if(!v.welded)
-				entry_vent_handle = om_handle(v)
+				rel_set(src, "entry_vent", v)
 				audible_message("[src] tries to slither away!")
 				walk_to(src, v, 1, 5)
 				escaping = TRUE

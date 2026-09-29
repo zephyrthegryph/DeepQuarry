@@ -11,22 +11,22 @@
 	bubble_icon = "medical"
 	circuit = /obj/item/circuitboard/resleeving_control
 	req_access = list(ACCESS_HEADS) //Only used for record deletion right now.
-	var/list/pods = null //Linked grower pods.
-	var/list/spods = null
-	var/list/sleevers = null //Linked resleeving booths.
+	var/list/pods //Linked grower pods (REL_LIST).
+	var/list/spods //Linked synthfabs (REL_LIST).
+	var/list/sleevers //Linked resleeving booths (REL_LIST).
 	var/list/temp = null
 	var/menu = MENU_MAIN //Which menu screen to display
 	var/can_grow_active = FALSE
 	var/can_sleeve_active = FALSE
 	var/organic_capable = 1
 	var/synthetic_capable = 1
-	var/tmp/disk_handle
-	var/tmp/selected_pod_handle
-	var/tmp/selected_printer_handle
-	var/tmp/selected_sleever_handle
+	var/obj/item/disk/transcore/disk // inserted: owned, spilled with the console
+	var/tmp/obj/machinery/clonepod/transhuman/selected_pod
+	var/tmp/obj/machinery/transhuman/synthprinter/selected_printer
+	var/tmp/obj/machinery/transhuman/resleever/selected_sleever
 
-	var/current_br
-	var/current_mr
+	var/datum/transhuman/body_record/current_br
+	var/datum/transhuman/mind_record/current_mr
 
 	// Resleeving database this machine interacts with. Blank for default database
 	// Needs a matching /datum/transcore_db with key defined in code
@@ -36,9 +36,6 @@
 
 /obj/machinery/computer/transhuman/resleeving/Initialize(mapload)
 	. = ..()
-	pods = list()
-	spods = list()
-	sleevers = list()
 	updatemodules()
 
 // its pods are released.
@@ -52,35 +49,35 @@
 
 /obj/machinery/computer/transhuman/resleeving/proc/releasepods()
 	for(var/obj/machinery/clonepod/transhuman/P in pods)
-		P.connected_handle = null
+		rel_clear(P, "connected")
 		P.name = initial(P.name)
-	pods.Cut()
+	rel_clear(src, "pods")
 	for(var/obj/machinery/transhuman/synthprinter/P in spods)
-		P.connected = null
+		rel_clear(P, "connected")
 		P.name = initial(P.name)
-	spods.Cut()
+	rel_clear(src, "spods")
 	for(var/obj/machinery/transhuman/resleever/P in sleevers)
-		P.connected = null
+		rel_clear(P, "connected")
 		P.name = initial(P.name)
-	sleevers.Cut()
+	rel_clear(src, "sleevers")
 
 /obj/machinery/computer/transhuman/resleeving/proc/findpods()
 	var/num = 1
 	var/area/A = get_area(src)
 	for(var/obj/machinery/clonepod/transhuman/P in A.get_contents())
 		if(!P.connected())
-			pods += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-			P.connected_handle = om_handle(src)
+			rel_add(src, "pods", P)
+			rel_set(P, "connected", src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/synthprinter/P in A.get_contents())
 		if(!P.connected)
-			spods += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-			P.connected = src
+			rel_add(src, "spods", P)
+			rel_set(P, "connected", src)
 			P.name = "[initial(P.name)] #[num++]"
 	for(var/obj/machinery/transhuman/resleever/P in A.get_contents())
 		if(!P.connected)
-			sleevers += P // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-			P.connected = src
+			rel_add(src, "sleevers", P)
+			rel_set(P, "connected", src)
 			P.name = "[initial(P.name)] #[num++]"
 
 EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
@@ -92,8 +89,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
 		user.unEquip(W)
-		disk_handle = om_handle(W)
-		disk().forceMove(src)
+		W.forceMove(src)
+		own_set(src, "disk", W)
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	if(istype(W, /obj/item/disk/body_record))
 		var/obj/item/disk/body_record/brDisk = W
@@ -102,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 			return INTERACTION_HANDLED_PASS
 		user.unEquip(W)
 		W.forceMove(get_turf(src)) // Drop on top of us
-		current_br = om_handle(brDisk.stored)
+		rel_set(src, "current_br", brDisk.stored)
 		to_chat(user, span_notice("\The [src] loads the body record from \the [W] before ejecting it."))
 		attack_hand(user)
 		view_b_rec(REF(brDisk.stored))
@@ -114,9 +111,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	var/obj/machinery/clonepod/transhuman/pod = multitool.connecting()
 	if(!istype(pod) || (pod in pods))
 		return ITEM_INTERACT_BLOCKING
-	pods += pod // ALLOW(object_keyed_lists): link to an independent pod machine; the pod side (connected) is declared in its own file, releasepods() unlinks
-	pod.connected_handle = om_handle(src)
-	pod.name = "[initial(pod.name)] #[pods.len]"
+	rel_add(src, "pods", pod)
+	rel_set(pod, "connected", src)
+	pod.name = "[initial(pod.name)] #[LAZYLEN(pods)]"
 	to_chat(user, span_notice("You connect [pod] to [src]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -214,7 +211,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	data["mindrecords"] = mindrecords_list_ui
 
 	data["active_b_rec"] = null
-	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
+	var/datum/transhuman/body_record/active_br = current_br
 	if(active_br)
 		data["active_b_rec"] = list(
 			activerecord = REF(active_br),
@@ -228,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		)
 
 	data["active_m_rec"] = null
-	var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
+	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(active_mr)
 		data["active_m_rec"] = list(
 			activerecord = REF(active_mr),
@@ -244,9 +241,9 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	if(!disk())
 		return
 	visible_message(span_warning("\The [src] spits out \the [disk()]."))
-	current_br = null
+	rel_clear(src, "current_br")
 	disk().forceMove(get_turf(src))
-	disk_handle = null
+	own_take(src, "disk")
 
 /obj/machinery/computer/transhuman/resleeving/tgui_act(action, params, datum/tgui/ui)
 	. = ..()
@@ -258,13 +255,13 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 			view_b_rec(params["ref"])
 			. = TRUE
 		if("clear_b_rec")
-			current_br = null
+			rel_clear(src, "current_br")
 			. = TRUE
 		if("view_m_rec")
 			view_m_rec(params["ref"])
 			. = TRUE
 		if("clear_m_rec")
-			current_mr = null
+			rel_clear(src, "current_mr")
 			. = TRUE
 		if("coredump")
 			if(disk())
@@ -272,10 +269,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 				. = TRUE
 		if("ejectdisk")
-			current_br = null
+			rel_clear(src, "current_br")
 			if(disk())
 				disk().forceMove(get_turf(src))
-				disk_handle = null
+				own_take(src, "disk")
 			. = TRUE
 		if("create")
 			act_create_body()
@@ -289,7 +286,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/clonepod/selected = locate(ref)
 			if(istype(selected) && (selected in pods))
-				selected_pod_handle = om_handle(selected)
+				rel_set(src, "selected_pod", selected)
 			. = TRUE
 		if("selectprinter")
 			var/ref = params["ref"]
@@ -297,7 +294,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/transhuman/synthprinter/selected = locate(ref)
 			if(istype(selected) && (selected in spods))
-				selected_printer_handle = om_handle(selected)
+				rel_set(src, "selected_printer", selected)
 			. = TRUE
 		if("selectsleever")
 			var/ref = params["ref"]
@@ -305,7 +302,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				return
 			var/obj/machinery/transhuman/resleever/selected = locate(ref)
 			if(istype(selected) && (selected in sleevers))
-				selected_sleever_handle = om_handle(selected)
+				rel_set(src, "selected_sleever", selected)
 			. = TRUE
 		if("menu")
 			menu = clamp(text2num(params["num"]), MENU_MAIN, MENU_MIND)
@@ -319,18 +316,18 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 
 /// "create": grow or print the selected body record on the selected pod.
 /obj/machinery/computer/transhuman/resleeving/proc/act_create_body()
-	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
+	var/datum/transhuman/body_record/active_br = current_br
 	if(!istype(active_br))
 		set_temp("Error: Data corruption.", "danger")
-		current_br = null
+		rel_clear(src, "current_br")
 		return
 	if(active_br.synthetic)
-		if(!spods.len)
+		if(!LAZYLEN(spods))
 			set_temp("Error: No SynthFabs detected.", "danger")
 			return
 		print_synthetic_body(active_br)
 	else
-		if(!pods.len)
+		if(!LAZYLEN(pods))
 			set_temp("Error: No growpods detected.", "danger")
 			return
 		grow_organic_body(active_br)
@@ -354,12 +351,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	var/error = synthprinter_error(spod)
 	if(error)
 		set_temp(error, "danger")
-	else if(spod.print(current_br))
+	else if(spod.print(active_br))
 		set_temp("Initiating printing cycle...", "success")
 		menu = 1
 	else
 		set_temp("Initiating printing cycle... Error: Post-initialisation failed. Printing cycle aborted.", "danger")
-	current_br = null
+	rel_clear(src, "current_br")
 
 /// Why the selected growpod can't grow a body, or null when it can.
 /obj/machinery/computer/transhuman/resleeving/proc/growpod_error(obj/machinery/clonepod/transhuman/pod)
@@ -384,26 +381,26 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		set_temp("Initiating growing cycle...", "success")
 	else
 		set_temp("Initiating growing cycle... Error: Post-initialisation failed. Growing cycle aborted.", "danger")
-	current_br = null
+	rel_clear(src, "current_br")
 
 /// "sleeve": put the selected mind record into the selected resleever's body (mode 1) or a card (mode 2).
 /// Prompts rerun tgui_act with the same action and params.
 /obj/machinery/computer/transhuman/resleeving/proc/act_sleeve(action, list/params, datum/tgui/ui)
-	var/datum/transhuman/mind_record/active_mr = om_resolve(current_mr)
+	var/datum/transhuman/mind_record/active_mr = current_mr
 	if(!istype(active_mr))
 		set_temp("Error: Data corruption.", "danger")
-		current_mr = null
+		rel_clear(src, "current_mr")
 		return
-	if(!sleevers.len)
+	if(!LAZYLEN(sleevers))
 		set_temp("Error: No sleevers detected.", "danger")
-		current_mr = null
+		rel_clear(src, "current_mr")
 		return
 	var/mode = text2num(params["mode"])
 	var/override
 	var/obj/machinery/transhuman/resleever/sleever = selected_sleever()
 	if(!istype(sleever))
 		set_temp("Error: No resleeving pod selected.", "danger")
-		current_mr = null
+		rel_clear(src, "current_mr")
 		return
 
 	switch(mode)
@@ -411,7 +408,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 			var/error = sleeve_body_error(sleever, active_mr)
 			if(error)
 				set_temp(error, "danger")
-				current_mr = null
+				rel_clear(src, "current_mr")
 				return
 			var/list/subtargets = list()
 			for(var/mob/living/carbon/human/H in sleever.get_occupant())
@@ -426,13 +423,13 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 				override = _answer_k417
 				if(!override || oc_sanity != sleever.get_occupant() || !(override in sleever.get_occupant()))
 					set_temp("Error: Target selection aborted.", "danger")
-					current_mr = null
+					rel_clear(src, "current_mr")
 					return
 
 		if(2) //Card resleeving
 			if(sleever.sleevecards <= 0)
 				set_temp("Error: No available cards in resleever.", "danger")
-				current_mr = null
+				rel_clear(src, "current_mr")
 				return
 
 	//Body to sleeve into, but mind is in another living body.
@@ -443,13 +440,13 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		//They declined to be moved.
 		if(answer != "Yes")
 			set_temp("Initiating resleeving... Error: Post-initialisation failed. Resleeving cycle aborted.", "danger")
-			current_mr = null
+			rel_clear(src, "current_mr")
 			return
 
 	//They were dead, or otherwise available.
 	sleever.putmind(active_mr, mode, override, db_key = db_key)
 	set_temp("Initiating resleeving...")
-	current_mr = null
+	rel_clear(src, "current_mr")
 
 /// Why `active_mr` can't be sleeved into the resleever's occupant, or null when it can.
 /obj/machinery/computer/transhuman/resleeving/proc/sleeve_body_error(obj/machinery/transhuman/resleever/sleever, datum/transhuman/mind_record/active_mr)
@@ -464,7 +461,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 
 /// "genereset": synthesize a DNA injector that resets structural enzymes to the selected body record.
 /obj/machinery/computer/transhuman/resleeving/proc/act_gene_reset()
-	var/datum/transhuman/body_record/active_br = om_resolve(current_br)
+	var/datum/transhuman/body_record/active_br = current_br
 	if(gene_sequencing)
 		set_temp("Sequencing Record... Please wait.")
 		tgui_modal_clear(src)
@@ -476,12 +473,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		var/obj/item/dnainjector/I = new(src)
 		I.name += " ([active_br.mydna.name] - Resequencer)"
 		I.desc = "Resequences structural enzymes to match the body record this was created from."
-		I.buf = active_br.mydna.copy()
+		own_set(I, "buf", active_br.mydna.copy())
 		I.buf.types = DNA2_BUF_SE
 		I.has_radiation = FALSE // SAFE!
 		atom_say("Beginning injector synthesis.")
 		om_after(src, 10 SECONDS, PROC_REF(dispense_injector), I)
-	current_br = null
+	rel_clear(src, "current_br")
 
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)
 	I.forceMove(loc)
@@ -544,7 +541,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 		if(isnull(active_br.mydna))
 			if(!QDELETED(active_br))
 				qdel(active_br)
-				current_br = null
+				rel_clear(src, "current_br")
 			set_temp("Error: Record corrupt.", "danger")
 		else
 			can_grow_active = TRUE
@@ -561,7 +558,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 				can_grow_active = FALSE
 				set_temp("Error: Cannot grow [active_br.mydna.name] due to species complexity.", "danger")
 			// load it!
-			current_br = om_handle(active_br)
+			rel_set(src, "current_br", active_br)
 	else
 		set_temp("Error: Record missing.", "danger")
 
@@ -574,7 +571,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 		if(isnull(active_mr.ckey))
 			if(!QDELETED(active_mr))
 				qdel(active_mr)
-				current_mr = null
+				rel_clear(src, "current_mr")
 			set_temp("Error: Record corrupt.", "danger")
 		else
 			can_sleeve_active = TRUE
@@ -588,7 +585,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 				can_sleeve_active = FALSE
 				set_temp("Error: Cannot sleeve due to lack of sleever occupant.", "danger")
 			// load it!
-			current_mr = om_handle(active_mr)
+			rel_set(src, "current_mr", active_mr)
 	else
 		set_temp("Error: Record missing.", "danger")
 
@@ -600,18 +597,25 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 /obj/machinery/computer/transhuman/resleeving/proc/our_db() as /datum/transcore_db
 	return GLOB.transcore_service.db_by_key(db_key)
 
-/// LC-refs: the disk this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The inserted emergency disk (owned).
 /obj/machinery/computer/transhuman/resleeving/proc/disk() as /obj/item/disk/transcore
-	return om_resolve(disk_handle)
+	return disk
 
-/// LC-refs: the selected_pod this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected_pod (a relation view: null once it is deleted).
 /obj/machinery/computer/transhuman/resleeving/proc/selected_pod() as /obj/machinery/clonepod/transhuman
-	return om_resolve(selected_pod_handle)
+	return selected_pod
 
-/// LC-refs: the selected_printer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected_printer (a relation view: null once it is deleted).
 /obj/machinery/computer/transhuman/resleeving/proc/selected_printer() as /obj/machinery/transhuman/synthprinter
-	return om_resolve(selected_printer_handle)
+	return selected_printer
 
-/// LC-refs: the selected_sleever this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected_sleever (a relation view: null once it is deleted).
 /obj/machinery/computer/transhuman/resleeving/proc/selected_sleever() as /obj/machinery/transhuman/resleever
-	return om_resolve(selected_sleever_handle)
+	return selected_sleever
+
+// Linked machines are independent: one-sided relation lists, each machine's `connected` a plain
+// back relation. Either end dying drops the link.
+REL_LIST(/obj/machinery/computer/transhuman/resleeving, pods)
+REL_LIST(/obj/machinery/computer/transhuman/resleeving, spods)
+REL_LIST(/obj/machinery/computer/transhuman/resleeving, sleevers)
+OWN(/obj/machinery/computer/transhuman/resleeving, disk, OWN_SPILL)

@@ -52,7 +52,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 	if(corptag)
 		corptag.forceMove(get_turf(user))
 		to_chat(user, span_notice("You remove \the [corptag] from \the [src]."))
-		corptag = null
+		own_take(src, "corptag")
 		update_icon()
 		return TRUE
 	return FALSE
@@ -60,13 +60,12 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 // its corpse tag drops to the floor.
 // The tag is kept in nullspace, not in contents: owned, so phase 4 deletes it
 // unless on_destroy has already dropped it on the bag's turf.
-DECLARE_REF(/obj/structure/closet/body_bag/cryobag/robobag, "corptag", OWNED, null)
 
 /obj/structure/closet/body_bag/cryobag/robobag/on_destroy(force)
 	var/turf/T = get_turf(src)
 	if(corptag && T)
 		corptag.forceMove(T)
-		corptag = null
+		own_take(src, "corptag")
 	..()
 
 /obj/structure/closet/body_bag/cryobag/robobag/Entered(atom/movable/AM)
@@ -93,14 +92,15 @@ DECLARE_REF(/obj/structure/closet/body_bag/cryobag/robobag, "corptag", OWNED, nu
 			if(corptag)
 				var/old_tag = corptag
 				corptag.forceMove(get_turf(src))
-				corptag = W
-				user.unEquip(corptag)
-				corptag.moveToNullspace()
+				own_take(src, "corptag")
+				user.unEquip(W)
+				W.moveToNullspace()
+				own_set(src, "corptag", W)
 				to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 			else
-				corptag = W
-				user.unEquip(corptag)
-				corptag.moveToNullspace()
+				user.unEquip(W)
+				W.moveToNullspace()
+				own_set(src, "corptag", W)
 				to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 			update_icon()
 

@@ -10,7 +10,7 @@
 
 #ifndef UNIT_TESTS
 /datum/callback/verb_callback/Invoke(...)
-	var/mob/our_user = om_resolve(user)
+	var/mob/our_user = user
 	if(QDELETED(our_user) || isnull(our_user.client))
 		return
 	var/mob/temp = usr
@@ -18,7 +18,7 @@
 	usr = temp
 
 /datum/callback/verb_callback/InvokeAsync(...)
-	var/mob/our_user = om_resolve(user)
+	var/mob/our_user = user
 	if(QDELETED(our_user) || isnull(our_user.client))
 		return
 	var/mob/temp = usr

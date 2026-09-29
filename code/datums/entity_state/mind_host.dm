@@ -30,7 +30,7 @@
 	var/mob/living/carbon/brain/view
 	/// Brain organ whose state decides the view's status. Null for synthetic
 	/// hosts (posibrain, robot intelligence circuit).
-	var/tissue_handle
+	var/obj/item/organ/internal/brain/tissue
 	/// Type of view mob to create.
 	var/view_type = /mob/living/carbon/brain
 
@@ -39,51 +39,47 @@
 	if(!isitem(new_owner))
 		log_world("[type] was created for a non-item host ([new_owner]); it hosts nothing.")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	set_tissue(tissue)
 
 /// Makes `holder` a mind host (was AddComponent(/datum/mind_host, tissue)).
 /obj/item/proc/make_mind_host(obj/item/organ/internal/brain/tissue) as /datum/mind_host
 	if(mind_host)
-		QDEL_NULL(mind_host)
-	mind_host = new /datum/mind_host(src, tissue)
+		own_clear(src, "mind_host", OWN_DELETE)
+	own_set(src, "mind_host", new /datum/mind_host(src, tissue))
 	return mind_host
 
 /// Owned: this item's mind host, if it holds minds.
 /obj/item/var/datum/mind_host/mind_host
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "mind_host", OWNED, null)
 
-DECLARE_REF(/datum/mind_host, "owner", BACK, "mind_host")
 
 /// Phase 1: the view (owned) is detached before the tissue drops, so it isn't put through a
 /// death on the way out.
 /datum/mind_host/lifecycle_unbind()
 	if(view)
 		var/mob/living/carbon/brain/old_view = view
-		view = null
-		old_view.host = null
-		old_view.container = null
+		own_take(src, "view")
+		rel_clear(old_view, "host")
+		rel_clear(old_view, "container")
 		if(!QDELETED(old_view))
 			qdel(old_view)
 	set_tissue(null)
-	owner = null
+	rel_clear(src, "owner")
 
-DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 
 /// The brain organ backing the view's status.
 /datum/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)
-	// Compare handles, not tissue(): a tissue being deleted already resolves to
-	// null (QDELETED), so on_tissue_deleted()'s set_tissue(null) would look like
-	// a no-op and the view would never learn its brain is gone.
-	var/new_handle = om_handle(new_tissue)
-	if(tissue_handle == new_handle)
+	// Compare the view var, not tissue(): a tissue being deleted already reads null through
+	// tissue() (QDELETED), so on_tissue_deleted()'s set_tissue(null) would look like a no-op
+	// and the view would never learn its brain is gone.
+	if(tissue == new_tissue)
 		return
-	if(tissue())
-		om_unhook(tissue(), /datum/om/event/qdeleting, src)
-	tissue_handle = new_handle
-	if(tissue())
-		om_hook(tissue(), /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
+	if(tissue)
+		om_unhook(tissue, /datum/om/event/qdeleting, src)
+	rel_set(src, "tissue", QDELETED(new_tissue) ? null : new_tissue)
+	if(tissue)
+		om_hook(tissue, /datum/om/event/qdeleting, src, PROC_REF(on_tissue_deleted))
 	view?.refresh_host_status()
 
 /datum/mind_host/proc/on_tissue_deleted(datum/source, datum/om/event/qdeleting/event)
@@ -99,9 +95,9 @@ DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 	return view
 
 /datum/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
-	view = new_view
-	new_view.host = src
-	new_view.container = owner
+	own_set(src, "view", new_view)
+	rel_set(new_view, "host", src)
+	rel_set(new_view, "container", owner) // the item holding the view (it owns us, not the view)
 	if(new_view.loc != owner)
 		new_view.forceMove(owner)
 	new_view.refresh_host_status()
@@ -130,9 +126,9 @@ DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 	if(!view)
 		return
 	var/mob/living/carbon/brain/old_view = view
-	view = null
-	old_view.host = null
-	old_view.container = null
+	own_take(src, "view")
+	rel_clear(old_view, "host")
+	rel_clear(old_view, "container")
 	qdel(old_view)
 
 /// Move `other`'s view (and the mind in it) into this host. Returns TRUE if a
@@ -141,7 +137,7 @@ DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 	if(!other?.view || view)
 		return FALSE
 	var/mob/living/carbon/brain/moved_view = other.view
-	other.view = null
+	own_take(other, "view")
 	log_game("MIND: [moved_view.mind ? "[moved_view.mind.key] ([moved_view.mind.name])" : "empty view [moved_view]"] moved from host [other.owner] to [owner]: [reason]")
 	attach_view(moved_view)
 	return TRUE
@@ -159,6 +155,6 @@ DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 	var/datum/mind_host/host = get_mind_host(src)
 	return host?.view
 
-/// LC-refs: the brain organ backing the view -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The brain organ backing the view (a relation view).
 /datum/mind_host/proc/tissue() as /obj/item/organ/internal/brain
-	return om_resolve(tissue_handle)
+	return tissue

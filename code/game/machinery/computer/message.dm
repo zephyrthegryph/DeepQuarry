@@ -8,7 +8,7 @@
 	var/hack_icon = "error"
 	circuit = /obj/item/circuitboard/message_monitor
 	//Server linked to.
-	var/linkedServer_handle
+	var/obj/machinery/message_server/linkedServer
 	//Messages - Saves me time if I want to change something.
 	var/noserver = list("text" = "ALERT: No server detected.", "style" = "alert")
 	var/incorrectkey = list("text" = "ALERT: Incorrect decryption key!", "style" = "warning")
@@ -21,7 +21,7 @@
 	var/optioncount = 8
 	// Custom temp Properties
 	var/customsender = "System Administrator"
-	var/customrecepient_handle
+	var/obj/item/pda/customrecepient
 	var/customjob		= "Admin"
 	var/custommessage 	= "This is a test, please ignore."
 	var/list/temp = null
@@ -70,7 +70,7 @@
 	//Is the server isn't linked to a server, and there's a server available, default it to the first one in the list.
 	if(!linkedServer())
 		if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-			linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+			rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 
 /obj/machinery/computer/message_monitor/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -138,7 +138,7 @@
 				continue
 			sendPDAs["[P.name]"] = "\ref[P]"
 		data["possibleRecipients"] = sendPDAs
-	var/mob/living/original = om_resolve(user.mind.original_character)
+	var/mob/living/original = user.mind.original_character
 	data["isMalfAI"] = ((isAI(user) || isrobot(user)) && (user.mind.special_role && (original && original == user)))
 
 	return data
@@ -179,7 +179,7 @@
 
 /obj/machinery/computer/message_monitor/proc/ResetMessage()
 	customsender 	= "System Administrator"
-	customrecepient_handle = null
+	rel_clear(src, "customrecepient")
 	custommessage 	= "This is a test, please ignore."
 	customjob 		= "Admin"
 
@@ -208,13 +208,13 @@
 			if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 1)
 				om_ask(ui.user, /datum/om/prompt/choice, PROC_REF(server_selected), title = "Select a server.", message = "Please select a server.", choices = REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS), requires = PROMPT_USABLE, ui_refresh = src)
 			else if(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS) && REGISTRY_COUNT(REGISTRY_MESSAGE_SERVERS) > 0)
-				linkedServer_handle = om_handle(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
+				rel_set(src, "linkedServer", REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)[1])
 				set_temp("NOTICE: Only Single Server Detected - Server selected.", "average")
 			else
 				temp = noserver
 		//Hack the Console to get the password
 		if("hack")
-			var/mob/living/original = om_resolve(ui.user.mind.original_character)
+			var/mob/living/original = ui.user.mind.original_character
 			if((isAI(ui.user) || isrobot(ui.user)) && (ui.user.mind.special_role && (original && original == ui.user)))
 				hacking = 1
 				update_icon()
@@ -235,12 +235,12 @@
 			. = TRUE
 		//Clears the logs - KEY REQUIRED
 		if("del_pda")
-			linkedServer().pda_msgs = list()
+			own_clear(linkedServer(), "pda_msgs", OWN_DELETE)
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Clears the request console logs - KEY REQUIRED
 		if("del_rc")
-			linkedServer().rc_msgs = list()
+			own_clear(linkedServer(), "rc_msgs", OWN_DELETE)
 			set_temp("NOTICE: Logs cleared.", "average")
 			. = TRUE
 		//Change the password - KEY REQUIRED
@@ -250,9 +250,9 @@
 		//Delete the log.
 		if("delete")
 			if(params["type"] == "pda")
-				LAZYREMOVE(linkedServer().pda_msgs, locate(params["id"]))
+				own_remove(linkedServer(), "pda_msgs", locate_in_list(linkedServer().pda_msgs, params["id"]))
 			else
-				LAZYREMOVE(linkedServer().rc_msgs, locate(params["id"]))
+				own_remove(linkedServer(), "rc_msgs", locate_in_list(linkedServer().rc_msgs, params["id"]))
 			set_temp("NOTICE: Log Deleted!", "average")
 			. = TRUE
 		//Fake messaging selection - KEY REQUIRED
@@ -271,7 +271,7 @@
 			var/datum/data/pda/app/messenger/M = P.find_program(/datum/data/pda/app/messenger)
 			if(!M || M.toff)
 				return FALSE
-			customrecepient_handle = om_handle(P)
+			rel_set(src, "customrecepient", P)
 			. = TRUE
 		if("set_message")
 			custommessage = sanitize(params["val"])
@@ -324,7 +324,7 @@
 			. = TRUE
 
 /obj/machinery/computer/message_monitor/proc/server_selected(datum/om/prompt/choice/ask)
-	linkedServer_handle = om_handle(ask.choice)
+	rel_set(src, "linkedServer", ask.choice)
 	set_temp("NOTICE: Server selected.", "alert")
 
 /obj/machinery/computer/message_monitor/proc/current_key_entered(datum/om/prompt/text/ask)
@@ -378,10 +378,11 @@
 	if(linkedServer() && user)
 		BruteForce(user)
 
-/// LC-refs: linkedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
-/obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
-	return om_resolve(linkedServer_handle)
 
-/// LC-refs: customrecepient -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// linkedServer (a relation view: it reads null once the target is deleted).
+/obj/machinery/computer/message_monitor/proc/linkedServer() as /obj/machinery/message_server
+	return linkedServer
+
+/// The custom recipient PDA (a relation view).
 /obj/machinery/computer/message_monitor/proc/customrecepient() as /obj/item/pda
-	return om_resolve(customrecepient_handle)
+	return customrecepient

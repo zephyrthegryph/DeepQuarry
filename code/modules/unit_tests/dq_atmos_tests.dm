@@ -505,7 +505,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	TEST_ASSERT(turf_plasma > 100, "donor plasma didn't land on player turf: [turf_plasma]")
 
 	// Make sure player has no internals / mask filtering distorting the test.
-	H.internal = null
+	rel_clear(H, "internal")
 	H.drop_from_inventory(H.get_equipped_item(SLOT_ID_MASK))
 
 	var/initial_toxin = H.reagents.get_reagent_amount(REAGENT_ID_TOXIN)
@@ -2264,19 +2264,15 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_pipenet_reconcile_air_equalizes/Run()
 	var/datum/pipe_network/net = new
 	var/datum/pipeline/line_a = new
-	line_a.air = new(70)
+	atmos_air_set(line_a, "air", new /datum/gas_mixture(70))
 	line_a.volume = 70
-	line_a.members = list()
-	line_a.edges = list()
-	line_a.network = net
+	rel_set(line_a, "network", net)
 	line_a.air.adjust_gas(/datum/gas/oxygen, 100)
 	line_a.air.set_temperature(T20C)
 	var/datum/pipeline/line_b = new
-	line_b.air = new(70)
+	atmos_air_set(line_b, "air", new /datum/gas_mixture(70))
 	line_b.volume = 70
-	line_b.members = list()
-	line_b.edges = list()
-	line_b.network = net
+	rel_set(line_b, "network", net)
 	line_b.air.set_temperature(T0C + 80)
 	var/initial_total = line_a.air.total_moles() + line_b.air.total_moles()
 	var/initial_thermal = line_a.air.thermal_energy() + line_b.air.thermal_energy()
@@ -2437,7 +2433,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_PHORON)
 	S.rust_register_pipe_topology() // allocates ports, registers the device edge
-	S.node = S
+	rel_set(S, "node", S)
 	S.update_rust_device()
 
 	var/initial_turf_phoron = turf_air.get_moles(/datum/gas/plasma)
@@ -3471,7 +3467,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 
 	// Manually-built pipeline (sidesteps HE pipe two-node auto-connection).
 	var/datum/pipeline/P = new
-	P.air = new(70)
+	atmos_air_set(P, "air", new /datum/gas_mixture(70))
 	P.air.adjust_gas(/datum/gas/nitrogen, 50)
 	P.air.set_temperature(T0C + 500) // hot
 
@@ -3666,7 +3662,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
 	V.internal_pressure_bound = 0
 	V.rust_register_pipe_topology()
-	V.node = V
+	rel_set(V, "node", V)
 	V.air_contents.adjust_gas(/datum/gas/nitrogen, 500)
 	V.air_contents.set_temperature(T20C)
 	V.update_rust_device()
@@ -3679,7 +3675,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_CO2)
 	S.rust_register_pipe_topology()
-	S.node = S
+	rel_set(S, "node", S)
 	S.update_rust_device()
 
 	var/initial_co2 = turf_air.get_moles(/datum/gas/carbon_dioxide)
@@ -3875,7 +3871,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/obj/machinery/alarm/A = new(T)
 	A.update_area()
 	A.set_initial_TLV()
-	A.alarm_area_ref().main_air_alarm = om_handle(A)
+	rel_set(A.alarm_area_ref(), "main_air_alarm", A)
 	A.stat_remove(NOPOWER | BROKEN)
 	A.shorted = FALSE
 	A.scan_atmo()
@@ -4099,8 +4095,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(pair, "no adjacent floors for heat exchanger test")
 	var/obj/machinery/atmospherics/unary/heat_exchanger/first = new(pair[1])
 	var/obj/machinery/atmospherics/unary/heat_exchanger/second = new(pair[2])
-	first.partner = second
-	second.partner = first
+	rel_set(first, "partner", second)
+	rel_set(second, "partner", first)
 	first.air_contents.set_temperature(T20C)
 	second.air_contents.set_temperature(T20C)
 	first.air_contents.set_moles(/datum/gas/oxygen, 10)
@@ -4163,8 +4159,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/binary/circulator/second = new(test_turf)
 	var/obj/machinery/power/generator/G = new(test_turf)
 	G.set_anchored(TRUE)
-	G.circ1_handle = om_handle(first)
-	G.circ2_handle = om_handle(second)
+	rel_set(G, "circ1", first)
+	rel_set(G, "circ2", second)
 	G.set_stat(0)
 	TEST_ASSERT_EQUAL(G.machine_step(), PROCESS_KILL, "idle thermoelectric generator retained timed polling")
 	TEST_ASSERT(om_watch_armed(G), "idle thermoelectric generator did not subscribe to its circulator gases")
@@ -4270,7 +4266,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
-	M.target_handle = om_handle(P)
+	rel_set(M, "target", P)
 	M.machine_step()
 	TEST_ASSERT(om_watch_armed(M), "idle local meter did not subscribe and hibernate")
 	var/meter_wakes = M.machine_wake_count
@@ -4315,7 +4311,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/atmospherics/portables_connector/C = new(T)
 	C.set_on(FALSE)
 	TEST_ASSERT_EQUAL(C.machine_step(), PROCESS_KILL, "disconnected portable connector remained scheduled")
-	C.connected_device = P
+	rel_set(C, "connected_device", P)
 	C.set_on(TRUE)
 	C.hibernate_until_device_changes()
 	var/connector_wakes = C.machine_wake_count + C.gas_dependency_wake_count
@@ -4324,7 +4320,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
 	TEST_ASSERT_EQUAL(C.machine_wake_count + C.gas_dependency_wake_count, connector_wakes, "connected portable connector woke for a device gas change it can't act on")
 	C.clear_gas_dependency()
-	C.connected_device = null
+	rel_clear(C, "connected_device")
 	C.set_on(FALSE)
 	// Canister runs the OM machine pipeline (machine_pipeline.dm), not process(): a frame
 	// stands in for the old direct .process() call, and .parked stands in for
@@ -4552,7 +4548,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.machine_step(), PROCESS_KILL, "recharger holding a full cell remained scheduled")
 	qdel(R)
 
-/// A recharger's DECLARE_REF(..., SPILL) of "charging" drops the item on destroy and the spill
+/// A recharger's OWN_SPILL "charging" drops the item on destroy and the spill
 /// hook refreshes its icon, as the recharger's old Destroy() did.
 /obj/item/cell/dq_spill_probe
 	var/refreshed = FALSE
@@ -4587,8 +4583,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/power/sensor/S = new(T)
 	var/obj/machinery/computer/power_monitor/M = new(T)
 	power_test_join(P, S)
-	M.power_monitor.grid_sensors = null
-	WEAK_LIST_ADD(M.power_monitor.grid_sensors, S)
+	rel_clear(M.power_monitor, "grid_sensors")
+	rel_add(M.power_monitor, "grid_sensors", S)
 	MACHINE_WAKE(M)
 	M.machine_step()
 	TEST_ASSERT(!machine_stepping(M), "stable power monitor remained scheduled")
@@ -4652,7 +4648,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(shield_capacitor.machine_step(), PROCESS_KILL, "full shield capacitor remained scheduled")
 	var/obj/machinery/atmospherics/valve/shutoff/shutoff = new(T)
 	TEST_ASSERT(!isnull(shutoff.global_leak_token), "automatic shutoff valve did not subscribe to the global leak key")
-	var/shutoff_wake = om_wake_test(shutoff, CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
+	var/shutoff_wake = om_wake_test(shutoff, om_callable(null, GLOBAL_PROC_REF(wake_automatic_shutoff_valves)))
 	TEST_ASSERT(!shutoff_wake, shutoff_wake)
 	var/obj/machinery/sleeper/sleeper = new(T)
 	sleeper.set_stat(0)
@@ -4704,7 +4700,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/fusion_fuel_injector/injector = new(T)
 	TEST_ASSERT_EQUAL(injector.machine_step(), PROCESS_KILL, "inactive fusion fuel injector remained scheduled")
 	MACHINE_SLEEP(injector)
-	injector.cur_assembly = new(injector)
+	own_set(injector, "cur_assembly", new /obj/item/fuel_assembly(injector))
 	injector.BeginInjecting()
 	TEST_ASSERT(machine_stepping(injector), "starting a fusion fuel injector did not wake it")
 	var/obj/machinery/atmospherics/binary/algae_farm/algae_farm = new(T)
@@ -4761,7 +4757,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(regulator.machine_wake_count > regulator_wakes, "enabling a thermoregulator did not wake it")
 	var/obj/machinery/portable_atmospherics/canister/air/airlock/airlock_canister = new(T)
 	var/obj/machinery/atmospherics/portables_connector/test_port = new(T)
-	airlock_canister.connected_port_handle = om_handle(test_port)
+	rel_set(airlock_canister, "connected_port", test_port)
 	airlock_canister.update_flag = airlock_canister.desired_update_flag()
 	airlock_canister.hibernate_until_gas_changes()
 	TEST_ASSERT(om_watch_armed(airlock_canister), "connected closed canister did not arm a gauge-band watch")
@@ -4769,8 +4765,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	airlock_canister.air_contents.clear()
 	TEST_ASSERT(airlock_canister.current_update_flag() != airlock_canister.update_flag, "connected canister did not wake when its gauge band changed")
 	var/obj/machinery/computer/operating/operating_console = new(T)
-	operating_console.table = operating_table
-	operating_table.computer = operating_console
+	rel_set(operating_console, "table", operating_table)
+	rel_set(operating_table, "computer", operating_console)
 	TEST_ASSERT_EQUAL(operating_console.machine_step(), PROCESS_KILL, "empty operating console remained scheduled")
 	var/obj/machinery/pointdefense/point_defense = new(T)
 	point_defense.set_stat(0)
@@ -4933,7 +4929,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!(test_camera in REGISTRY_MEMBERS(REGISTRY_CAMERAS)), "deleted camera remained in the global camera registry")
 	for(var/chunk_key in GLOB.cameranet.chunks)
 		var/datum/chunk/camera/chunk = LAZYACCESS(GLOB.cameranet.chunks, chunk_key)
-		TEST_ASSERT(!WEAK_LIST_HAS(chunk.cameras, test_camera), "deleted camera remained retained by camera chunk [chunk_key]")
+		TEST_ASSERT(!(chunk.cameras && (test_camera in chunk.cameras)), "deleted camera remained retained by camera chunk [chunk_key]")
 
 
 // =====================================================================
@@ -5038,7 +5034,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /datum/unit_test/dq_pipenet_gas_reacts_in_pipeline/Run()
 	var/datum/pipeline/P = new
-	P.air = new(CELL_VOLUME)
+	atmos_air_set(P, "air", new /datum/gas_mixture(CELL_VOLUME))
 	P.air.adjust_gas(/datum/gas/plasma, 50)
 	P.air.adjust_gas(/datum/gas/oxygen, 200)
 	P.air.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE + 300)
@@ -5276,7 +5272,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	var/obj/machinery/meter/M = new(T)
 	TEST_ASSERT_NOTNULL(M, "meter construct failed")
-	M.target_handle = om_handle(P)  // direct assign so select_target search isn't required
+	rel_set(M, "target", P)  // direct assign so select_target search isn't required
 	M.set_use_power(USE_POWER_IDLE)
 	M.stat_remove(BROKEN | NOPOWER)
 	M.machine_step() // shouldn't crash; should set an icon_state based on pipe pressure
@@ -5403,7 +5399,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	V.external_pressure_bound = ONE_ATMOSPHERE * 1.5
 	V.internal_pressure_bound = 0
 	V.rust_register_pipe_topology()
-	V.node = V
+	rel_set(V, "node", V)
 
 	var/obj/machinery/atmospherics/unary/vent_scrubber/S = new(T)
 	S.set_use_power(USE_POWER_IDLE)
@@ -5412,7 +5408,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	S.scrubbing = 1
 	S.scrubbing_gas = list(GAS_CO2)
 	S.rust_register_pipe_topology()
-	S.node = S
+	rel_set(S, "node", S)
 
 	// M2 (simulation.md §5): the "shared pipenet" is one Rust region — a real
 	// pipe connection between the vent's and the scrubber's ports, not a
@@ -5481,7 +5477,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	C.set_use_power(USE_POWER_IDLE)
 	C.stat_remove(NOPOWER | BROKEN)
 	// node ref so process() doesn't early-return; self-ref is enough.
-	C.node = C
+	rel_set(C, "node", C)
 	// Cold supply — needs ≥10 moles or process_occupant short-circuits.
 	C.air_contents.set_temperature(80) // 80 K
 	C.air_contents.adjust_gas(/datum/gas/oxygen, 50)
@@ -5763,7 +5759,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_om_watch_derived_fires_on_band_crossing/Run()
 	var/obj/machinery/dq_om_watch_test_probe/M = new(locate(1, 1, 1))
 	var/list/datum/om_watch_band/bands = list(new /datum/om_watch_band("value", TRUE, 10, 2))
-	om_watch_arm_derived(M, "probe", bands, channel = null, getter = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = CALLBACK(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
+	om_watch_arm_derived(M, "probe", bands, channel = null, getter = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, read_probe)), wake_callback = om_callable(M, TYPE_PROC_REF(/obj/machinery/dq_om_watch_test_probe, count_wake)))
 	M.probe = 5
 	om_watch_recheck(M, "probe")
 	TEST_ASSERT_EQUAL(M.wakes, 0, "a non-crossing change fired a derived watch")
@@ -6169,7 +6165,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// Clear any preexisting hotspot from earlier tests.
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
-		T.active_hotspot = null
+		own_take(T, "active_hotspot")
 
 	// Expose at 300K — well below PLASMA_MINIMUM_BURN_TEMPERATURE (399.15K).
 	T.hotspot_expose(300, 500, FALSE)
@@ -6183,7 +6179,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 	if(T.active_hotspot)
 		qdel(T.active_hotspot)
-		T.active_hotspot = null
+		own_take(T, "active_hotspot")
 	for(var/datum/gas/g as anything in turf_air.get_gases())
 		turf_air.set_moles(g, 0)
 
@@ -6227,13 +6223,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/pipe_network/receiver = new
 	var/datum/pipe_network/donor = new
 	var/datum/pipeline/line = new
-	line.air = new(70)
-	line.members = list()
-	line.edges = list()
-	line.network = donor
+	atmos_air_set(line, "air", new /datum/gas_mixture(70))
+	rel_set(line, "network", donor)
 	donor.add_line_member(line)
-	donor.air = line.air
-	donor.gases = list(line.air)
+	own_set(donor, "air", new /datum/gas_mixture(line.air.return_volume()))
 	donor.volume = line.air.return_volume()
 
 	TEST_ASSERT(receiver.merge(donor), "pipenet merge rejected a valid donor")
@@ -6286,7 +6279,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no test floor for APC cell ownership test")
 	var/obj/machinery/power/apc/test_apc = new(T)
 	var/obj/item/cell/test_cell = new(test_apc)
-	test_apc.cell = test_cell
+	own_set(test_apc, "cell", test_cell)
 
 	qdel(test_cell)
 	TEST_ASSERT_NULL(test_apc.cell, "destroyed cell remained retained by its APC")
@@ -6304,11 +6297,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_thermal = 0
 	for(var/i = 1 to 3)
 		var/datum/pipeline/line = new
-		line.air = new(70)
+		atmos_air_set(line, "air", new /datum/gas_mixture(70))
 		line.volume = 70
-		line.members = list()
-		line.edges = list()
-		line.network = net
+		rel_set(line, "network", net)
 		line.air.adjust_gas(i == 1 ? /datum/gas/oxygen : /datum/gas/nitrogen, i * 25)
 		line.air.set_temperature(T20C + i * 20)
 		initial_total += line.air.total_moles()
@@ -6360,8 +6351,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(PB, "pipe B construct failed")
 
 	// Wire them together manually through their physical port neighbors.
-	PA.node1 = PB
-	PB.node1 = PA
+	rel_set(PA, "node1", PB)
+	rel_set(PB, "node1", PA)
 
 	dq_atmos_test_publish_rust_pipenets(list(PA, PB))
 	var/datum/pipeline/Line = PA.parent
@@ -6612,7 +6603,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(Tank, "tank construct failed")
 	TEST_ASSERT_NOTNULL(Tank.air_contents, "tank air_contents null")
 	TEST_ASSERT(Tank.loc == H, "tank not in human contents — setup invalid")
-	H.internal = Tank
+	rel_set(H, "internal", Tank)
 
 	var/initial_tank_moles = Tank.air_contents.total_moles()
 	TEST_ASSERT(initial_tank_moles > 0, "tank starts empty — setup invalid")
@@ -6786,7 +6777,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	S.scrubbing = 0  // SIPHON mode
 	S.scrubbing_gas = list() // siphon doesn't consult this
 	S.rust_register_pipe_topology()
-	S.node = S
+	rel_set(S, "node", S)
 	S.update_rust_device()
 
 	var/initial_n2 = turf_air.get_moles(/datum/gas/nitrogen)
@@ -7595,7 +7586,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/datum/gas_mixture/pipe_air = P.return_air()
 	pipe_air.adjust_moles(/datum/gas/oxygen, 10)
 	var/obj/machinery/meter/M = new(T)
-	M.target_handle = om_handle(P)
+	rel_set(M, "target", P)
 	M.stat_remove(BROKEN | NOPOWER)
 	TEST_ASSERT_EQUAL(M.machine_step(), PROCESS_KILL, "a meter kept running after drawing its reading")
 	TEST_ASSERT(om_watch_armed(M, "gas"), "meter did not arm its display watch")

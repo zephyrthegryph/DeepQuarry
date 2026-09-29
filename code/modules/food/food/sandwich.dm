@@ -32,7 +32,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
 		user.drop_item()
 		W.forceMove(src)
-		LAZYADD(ingredients, W)
+		own_add(src, "ingredients", W)
 		update()
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -68,7 +68,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 	if(length(name) > 80) name = "[pick(list("absurd","colossal","enormous","ridiculous"))] sandwich"
 	w_class = n_ceil(CLAMP((length(ingredients)/2),2,4))
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/csandwich, "ingredients", OWNED_LIST, null)
 
 /obj/item/reagent_containers/food/snacks/csandwich/examine(mob/user)
 	. = ..()

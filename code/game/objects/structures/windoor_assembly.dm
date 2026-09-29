@@ -141,7 +141,7 @@
 	W.forceMove(src)
 	to_chat(user,span_notice("You've installed the airlock electronics!"))
 	step = 2
-	src.electronics = W
+	own_set(src, "electronics", W)
 
 /obj/structure/windoor_assembly/proc/attackby_timed_failed2(datum/om/task/timed/windoor_assembly_attackby/task)
 	var/obj/item/W = task.W
@@ -214,7 +214,7 @@
 	to_chat(user,span_notice("You've removed the airlock electronics!"))
 	step = 1
 	var/obj/item/airlock_electronics/ae = electronics
-	electronics = null
+	own_take(src, "electronics")
 	ae.forceMove(src.loc)
 
 /obj/structure/windoor_assembly/crowbar_act(mob/user, obj/item/W)
@@ -257,8 +257,8 @@
 			windoor.req_one_access = src.electronics.conf_access
 		else
 			windoor.req_access = src.electronics.conf_access
-		windoor.electronics = src.electronics
 		src.electronics.forceMove(windoor)
+		own_transfer(src, "electronics", windoor, "electronics")
 	else
 		var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
 		if(src.facing == "l")
@@ -278,8 +278,8 @@
 			windoor.req_one_access = src.electronics.conf_access
 		else
 			windoor.req_access = src.electronics.conf_access
-		windoor.electronics = src.electronics
 		src.electronics.forceMove(windoor)
+		own_transfer(src, "electronics", windoor, "electronics")
 
 	qdel(src)
 
@@ -317,4 +317,4 @@
 	update_icon()
 	return
 
-DECLARE_REF(/obj/structure/windoor_assembly, "electronics", HELD, null)
+OWN(/obj/structure/windoor_assembly, electronics, OWN_CONTAINED)

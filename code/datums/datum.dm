@@ -20,6 +20,9 @@
 	  * a hard del by the GC subsystme, or to be autocollected (if it has no references)
 	  */
 	var/tmp/gc_destroyed
+	/// The LIFECYCLE_PHASE_* its destroy transaction has reached (0: alive). Read through
+	/// LIFECYCLE_DYING() / OWN_GUARD(); written only by destroy_transaction_phases().
+	var/tmp/destroy_phase = 0
 
 	/// Open uis owned by this datum
 	/// Lazy, since this case is semi rare
@@ -256,7 +259,6 @@
 
 /// Begin coordinated remote viewing, this will call look() when the view begins, and unlook() when it ends.
 /proc/start_coordinated_remoteview(datum/coordinator, mob/user, atom/target, list/viewer_managed_list, remote_view_config_path = null)
-	ASSERT(islist(viewer_managed_list))
 	user.begin_remote_view(/datum/remote_view/viewer_managed, target, null, remote_view_config_path, coordinator, viewer_managed_list)
 
 /// Called from /datum/remote_view/viewer_managed when the view begins.

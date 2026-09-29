@@ -49,7 +49,7 @@
 /datum/contract_requirement/qualified_material_delivery/New(list/checks, amount = 1, _source_department)
 	. = ..()
 	source_department = _source_department
-	assay_filter = new(source_department ? CONTRACT_EVIDENCE_SCOPE_ANY : CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	own_set(src, "assay_filter", new /datum/contract_event_filter(source_department ? CONTRACT_EVIDENCE_SCOPE_ANY : CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
 	if(source_department)
 		assay_filter.require_value("department", source_department)
 	minimum_amount = max(1, amount)
@@ -59,7 +59,6 @@
 	assay_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, minimum_amount)
 	event_types = list(CONTRACT_EVENT_MATERIAL_CERTIFIED, CONTRACT_EVENT_ITEM_EXPORTED)
 
-DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filter", OWNED, null)
 
 /datum/contract_requirement/qualified_material_delivery/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -126,7 +125,7 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 
 /datum/contract/social/alternative_fuel_trial
 	var/datum/contract_requirement/staged_sustained_event/output_requirement
-	var/tmp/thermal_requirement_handle
+	var/tmp/datum/contract_requirement/sustained_event/thermal_requirement
 
 /datum/contract/social/alternative_fuel_trial/on_negotiated_terms_changed()
 	..()
@@ -200,13 +199,13 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 		list("key" = "plasma_fraction", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_MOST, "expected" = 0.15),
 		list("key" = "integrity", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 85),
 	)
-	contract.output_requirement = new(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
+	rel_set(contract, "output_requirement", new /datum/contract_requirement/staged_sustained_event(CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "eer", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, list(list("label" = "Pilot output", "threshold" = 300, "unit" = "EER", "duration" = 45 SECONDS)), CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
 	contract.output_requirement.name = "Alternative-fuel output stages"
 	for(var/list/check as anything in output_checks)
 		contract.output_requirement.filter.require_number(check["key"], check["comparator"], check["expected"])
 	contract.output_requirement.filter.require_value("machine_kind", "supermatter")
 	contract.add_requirement(contract.output_requirement)
-	contract.thermal_requirement_handle = om_handle(add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300))))
+	rel_set(contract, "thermal_requirement", add_program_sustained(contract, CONTRACT_EVENT_MACHINE_RESULT, "machine_id", "temperature", CONTRACT_EVIDENCE_COMPARE_AT_MOST, 4500, 2 MINUTES, 1, "Thermal control", "Keep the qualifying engine below 4,500 K for the full demonstration.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, list("machine_kind" = "supermatter"), list(list("key" = "eer", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 300))))
 	add_program_sustained(contract, CONTRACT_EVENT_POWER_SERVICE_CHANGED, "service_id", "powered_channels", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 3, 3 MINUTES, 4, "Commissioned station service", "After the engine trial, hold four APC service zones at full power for three minutes.", CONTRACT_EVIDENCE_SCOPE_DEPARTMENT)
 	var/datum/contract_negotiation_clause/commissioning = new("commissioning_priority", "Commissioning priority", "Choose what the station must protect while pursuing the performance award.")
 	commissioning.add_option(make_contract_clause_option("reserve", "Protect reserve", "Keep the safer operating margin; Engineering receives more of the award.", -100, 250, -50, 1, 3, 0, 10 MINUTES, list("requirement_floors" = list("Alternative-fuel output stages" = 0.75))))
@@ -354,7 +353,7 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 // --------------------------------------------------------------------------
 
 /datum/contract/social/balanced_operations
-	var/tmp/cycle_requirement_handle
+	var/tmp/datum/contract_requirement/event_count/cycle_requirement
 
 /datum/contract/social/balanced_operations/on_negotiated_terms_changed()
 	..()
@@ -386,7 +385,7 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 	add_social_role(contract, "executive", "Executive budget sponsor", "Sets allocations and accepts accountability for the closed cycle.", list(DEPARTMENT_COMMAND), 1, 2)
 	add_social_role(contract, "delegate", "Department budget delegate", "Represents operating and workforce needs.", list(DEPARTMENT_ENGINEERING, DEPARTMENT_MEDICAL, DEPARTMENT_RESEARCH, DEPARTMENT_SECURITY, DEPARTMENT_CARGO, DEPARTMENT_CIVILIAN, DEPARTMENT_SYNTHETIC), 5, 9)
 	contract.personal_side_definitions = list("command_executive_reserve")
-	contract.cycle_requirement_handle = om_handle(add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 2, "Sustained operating agreement", "Close two distinct station budget cycles with payroll paid first, at least six funded departments, and at least 90% payroll coverage.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "accounting_period", list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9), list("key" = "station_balance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0))))
+	rel_set(contract, "cycle_requirement", add_program_count(contract, CONTRACT_EVENT_BUDGET_CYCLE_SETTLED, 2, "Sustained operating agreement", "Close two distinct station budget cycles with payroll paid first, at least six funded departments, and at least 90% payroll coverage.", null, CONTRACT_EVIDENCE_SCOPE_DEPARTMENT, "accounting_period", list("rollup" = "station"), list(list("key" = "funded_department_count", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 6), list("key" = "payroll_coverage", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0.9), list("key" = "station_balance", "comparator" = CONTRACT_EVIDENCE_COMPARE_AT_LEAST, "expected" = 0))))
 	var/datum/contract_negotiation_clause/operating_policy = new("operating_policy", "Operating policy", "Choose the station's priority for both covered budget cycles.")
 	operating_policy.add_option(make_contract_clause_option("staff", "Staffing first", "Requires 98% payroll coverage across both cycles.", -100, -100, 200, 2, 1, 3, 0, list("budget_profile" = "staff")), TRUE)
 	operating_policy.add_option(make_contract_clause_option("departments", "Operations first", "Requires all seven operating departments to receive funding.", -50, 250, -100, 1, 3, 0, 0, list("budget_profile" = "departments")))
@@ -413,12 +412,11 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 	projects.first_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 1000)
 	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)
 
-DECLARE_REF(/datum/contract/social/alternative_fuel_trial, "output_requirement", OWNED, null)
 
-/// LC-refs: the thermal_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the thermal_requirement this refers to (a relation view: null once it is deleted).
 /datum/contract/social/alternative_fuel_trial/proc/thermal_requirement() as /datum/contract_requirement/sustained_event
-	return om_resolve(thermal_requirement_handle)
+	return thermal_requirement
 
-/// LC-refs: the cycle_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the cycle_requirement this refers to (a relation view: null once it is deleted).
 /datum/contract/social/balanced_operations/proc/cycle_requirement() as /datum/contract_requirement/event_count
-	return om_resolve(cycle_requirement_handle)
+	return cycle_requirement

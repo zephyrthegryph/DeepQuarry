@@ -91,4 +91,3 @@ DECLARE_PERIODIC(/obj/singularity/narsie/large/exit, PERIODIC_SLOW)
 		if(riftimage)
 			qdel(riftimage)
 
-DECLARE_REF(/mob, "riftimage", OWNED, null)

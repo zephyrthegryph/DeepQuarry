@@ -92,7 +92,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		// The body is gone (the mob is mid-deletion): clear what we derived.
 		for(var/obj/item/organ/part as anything in dq_part_subtree(src))
 			dq_part_uncache(M, part)
-			part.owner = null
+			rel_clear(part, "owner")
 		return
 	M.body.release_subtree(src, dq_part_holder_destroying(holder) || QDELETED(M))
 
@@ -135,8 +135,8 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	var/obj/item/organ/external/parent_limb = holder
 	if(!istype(parent_limb))
 		return
-	parent = parent_limb
-	LAZYOR(parent_limb.children, src)
+	rel_set(src, "parent", parent_limb)
+	rel_add(parent_limb, "children", src)
 
 /// Left `holder`'s child or organ slot.
 /obj/item/organ/proc/unlink_from_holder(atom/holder)
@@ -145,9 +145,9 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /obj/item/organ/external/unlink_from_holder(atom/holder)
 	var/obj/item/organ/external/parent_limb = holder
 	if(istype(parent_limb))
-		LAZYREMOVE(parent_limb.children, src)
+		rel_remove(parent_limb, "children", src)
 	if(parent == holder)
-		parent = null
+		rel_clear(src, "parent")
 
 /// Changes this part's organ_tag, which is its key in its slot and in its
 /// owner's caches.
@@ -166,21 +166,19 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /// never nulled again: human code indexes them without a null check.
 /proc/dq_part_cache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
-		if(!M.organs)
-			M.organs = list()
 		if(!M.organs_by_name)
-			M.organs_by_name = list()
-		M.organs |= part
-		M.organs_by_name[part.organ_tag] = part
+			M.organs_by_name = list() // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+		rel_add(M, "organs", part)
+		M.organs_by_name[part.organ_tag] = part // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
 
 /// Removes `part` from `M`'s organ caches. A key another part now holds stays.
 /proc/dq_part_uncache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
-		M.organs?.Remove(part)
+		rel_remove(M, "organs", part)
 		if(M.organs_by_name?[part.organ_tag] == part)
-			M.organs_by_name -= part.organ_tag
-		M.bad_external_organs?.Remove(part)
+			M.organs_by_name -= part.organ_tag // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list
+		rel_remove(M, "bad_external_organs", part)
 
 /// `part` and every part below it, parents before children, read from the
 /// ledger's tree slots.
@@ -226,7 +224,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		// A move always detaches first, so this is a missed detach.
 		log_runtime("PARTS: [part] ([part.type]) joined [key_name(owner)] still owned by [key_name(part.owner)]")
 		dq_part_uncache(part.owner, part)
-	part.owner = owner
+	rel_set(part, "owner", owner)
 	dq_part_cache(owner, part)
 	attach_part(part)
 	part.joined_body(owner)
@@ -282,7 +280,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	dq_part_uncache(owner, part)
 	if(!quiet && !QDELETED(part))
 		part.left_body(owner)
-	part.owner = null
+	rel_clear(part, "owner")
 	part.recalc_integrity()
 	OM_EMIT(owner, /datum/om/event/body_part_detached, part)
 

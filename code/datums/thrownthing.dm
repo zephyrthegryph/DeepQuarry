@@ -16,15 +16,15 @@
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
 	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
 	if(target.throwing == source)
-		target.throwing = null
+		rel_clear(target, "throwing")
 
 /datum/thrownthing
-	///OM handle to the original intended target of the throw, to prevent hardDels
-	var/initial_target
-	///OM handle to the turf that the target was on, if it's not a turf itself.
-	var/target_turf
-	///OM handle to the turf that we were thrown from.
-	var/starting_turf
+	///The original intended target of the throw (a relation view).
+	var/atom/initial_target
+	///The turf that the target was on, if it's not a turf itself (a relation view).
+	var/turf/target_turf
+	///The turf that we were thrown from (a relation view).
+	var/turf/starting_turf
 	///If the target happens to be a carbon and that carbon has a body zone aimed at, this is carried on here.
 	var/target_zone
 	///The initial direction of the thrower of the thrownthing for building the trajectory of the throw.
@@ -33,8 +33,8 @@
 	var/maxrange
 	///Turfs to travel per tick
 	var/speed
-	///If a mob is the one who has thrown the object, then it's moved here. This can be null and must be null checked before trying to use it.
-	var/thrower
+	///If a mob is the one who has thrown the object, then it's moved here (a relation view). This can be null and must be null checked before trying to use it.
+	var/mob/thrower
 	///A variable that helps in describing objects thrown at an angle, if it should be moved diagonally first or last.
 	var/diagonals_first
 	///Set to TRUE if the throw is exclusively diagonal (45 Degree angle throws for example)
@@ -58,7 +58,7 @@
 	///How many tiles that need to be moved in order to travel to the target.
 	var/diagonal_error
 	///If a thrown thing has a callback, it can be invoked here within thrownthing. Owned: it goes with the throw.
-	var/datum/callback/callback
+	var/list/callback // om_callable() spec run when the throw lands
 	///Mainly exists for things that would freeze a thrown object in place, like a timestop'd tile. Or a Tractor Beam.
 	var/paused = FALSE
 	///How long an object has been paused for, to be added to the travel time.
@@ -72,16 +72,16 @@
 	. = ..()
 	om_link(src, thrownthing, /datum/om/relation/throw_of)
 	om_hook(thrownthing, /datum/om/event/before/living_turf_collision, src, PROC_REF(hit_atom))
-	src.starting_turf = om_handle(get_turf(thrownthing))
+	rel_set(src, "starting_turf", get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
-	src.target_turf = om_handle(target_turf)
+	rel_set(src, "target_turf", target_turf)
 	if(target_turf != target)
-		src.initial_target = om_handle(target)
+		rel_set(src, "initial_target", target)
 	src.init_dir = init_dir
 	src.maxrange = maxrange
 	src.speed = speed
 	if(thrower)
-		src.thrower = om_handle(thrower)
+		rel_set(src, "thrower", thrower)
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
@@ -110,7 +110,6 @@
 
 	EXPIRY_STAMP(src, start_time, CLOCK_WORLD)
 
-DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 
 /// Phase 2: the throw leaves the throwing lane (the throw_of unlink clears the movable's `throwing`).
 /datum/thrownthing/lifecycle_dematerialize()
@@ -127,9 +126,7 @@ DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 
 /// Returns the thrower, or null
 /datum/thrownthing/proc/get_thrower()
-	. = om_resolve(thrower)
-	if(isnull(.))
-		thrower = null
+	return QDELETED(thrower) ? null : thrower
 
 /datum/thrownthing/proc/tick()
 	var/atom/movable/AM = throw_subject()
@@ -151,7 +148,7 @@ DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 	var/atom/step
 
 	//calculate how many tiles to move, making up for any missed ticks.
-	var/turf/target_turf = om_resolve(src.target_turf)
+	var/turf/target_turf = src.target_turf
 	var/tilestomove = CEILING(min(((((world.time+world.tick_lag) - start_time + delayed_time) * speed) - (dist_travelled ? dist_travelled : -1)), speed*MAX_TICKS_TO_MAKE_UP) * world.tick_lag, 1) // one lane step per server tick (SSthrowing.wait was 1 tick)
 	while (tilestomove-- > 0)
 		if ((dist_travelled >= maxrange || AM.loc == target_turf) && (A && A.get_gravity()))
@@ -198,9 +195,9 @@ DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 	var/atom/movable/thrownthing = throw_subject()
 	if(QDELETED(thrownthing))
 		return
-	thrownthing.throwing = null
+	rel_clear(thrownthing, "throwing")
 	if (!hit)
-		var/atom/movable/actual_target = om_resolve(initial_target)
+		var/atom/movable/actual_target = initial_target
 		for (var/thing in get_turf(thrownthing)) //looking for our target on the turf we land on.
 			var/atom/A = thing
 			if (A == actual_target)
@@ -218,7 +215,7 @@ DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 		thrownthing.throw_impact(t_target, src)
 
 	if (callback)
-		callback.Invoke()
+		om_run(callback)
 
 	if (!QDELETED(thrownthing))
 		thrownthing.fall()
@@ -250,6 +247,6 @@ DECLARE_REF(/datum/thrownthing, "callback", OWNED, null)
 #undef MAX_THROWING_DIST
 #undef MAX_TICKS_TO_MAKE_UP
 
-/// LC-refs: throw source -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// Throw source (a relation view). A global helper keeps the proc off the base type.
 /proc/movable_throw_source(atom/movable/AM) as /turf
-	return om_resolve(AM?.throw_source_handle)
+	return AM?.throw_source

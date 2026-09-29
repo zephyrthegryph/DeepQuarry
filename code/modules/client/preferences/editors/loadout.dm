@@ -563,7 +563,7 @@ TYPE_TABLE_DECLARE(/datum/preference_editor/loadout, loadout_outfit_field_to_slo
 
 /datum/om/flow/ask_sequence/gear_tweak/loadout/New(datum/preferences/preferences, gear_name, tweak_idx, loadout_key)
 	..()
-	src.preferences = preferences
+	rel_set(src, "preferences", preferences)
 	src.gear_name = gear_name
 	src.tweak_idx = tweak_idx
 	src.loadout_key = loadout_key

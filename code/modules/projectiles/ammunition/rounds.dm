@@ -319,7 +319,8 @@ DAMAGE_REACTION(/obj/item/ammo_casing/a12g/stunshell, DAMAGE_EMP, PROC_REF(stuns
 
 /// A pulse can fry the shell's payload.
 /obj/item/ammo_casing/a12g/stunshell/proc/stunshell_emp_fry(datum/damage_packet/packet)
-	if(prob(100/packet.severity)) BB = null
+	if(prob(100/packet.severity))
+		own_clear(src, "BB", OWN_DELETE)
 	update_icon()
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))

@@ -24,9 +24,9 @@
 	for(var/A in allowed_weather_types)
 		var/datum/weather/W = LAZYACCESS(allowed_weather_types, A)
 		if(istype(W))
-			W.holder = src
-	visuals = new()
-	special_visuals = new()
+			rel_set(W, "holder", src)
+	own_set(src, "visuals", new /atom/movable/weather_visuals())
+	own_set(src, "special_visuals", new /atom/movable/weather_visuals/special())
 
 /datum/weather_holder/proc/apply_to_turf(turf/T)
 	if(visuals in T.vis_contents)
@@ -48,7 +48,7 @@
 	if(current_weather)
 		old_light_modifier = current_weather.light_modifier // We store the old one, so we can determine if recalculating the sun is needed.
 		old_weather = current_weather
-	current_weather = LAZYACCESS(allowed_weather_types, new_weather)
+	rel_set(src, "current_weather", LAZYACCESS(allowed_weather_types, new_weather))
 	EXPIRY_SET(src, next_weather_shift, rand(current_weather.timer_low_bound, current_weather.timer_high_bound) MINUTES, CLOCK_WORLD)
 	if(current_weather != old_weather)
 		if(istype(old_weather)) // At roundstart this is null.
@@ -211,9 +211,9 @@
 
 /datum/weather/New()
 	if(outdoor_sounds_type)
-		outdoor_sounds = new outdoor_sounds_type(list(), FALSE, TRUE)
+		own_set(src, "outdoor_sounds", new outdoor_sounds_type(list(), FALSE, TRUE))
 	if(indoor_sounds_type)
-		indoor_sounds = new indoor_sounds_type(list(), FALSE, TRUE)
+		own_set(src, "indoor_sounds", new indoor_sounds_type(list(), FALSE, TRUE))
 
 /datum/weather/proc/process_effects()
 	show_message = FALSE	// Need to reset the show_message var, just in case
@@ -325,11 +325,4 @@
 /atom/movable/weather_visuals/special
 	plane = PLANE_LIGHTING_ABOVE
 
-DECLARE_REF(/datum/weather_holder, "our_planet", BACK, "weather_holder")
 // current_weather is one of allowed_weather_types, not a separate child.
-DECLARE_REF(/datum/weather_holder, "current_weather", HELD, null)
-DECLARE_REF(/datum/weather_holder, "visuals", OWNED, null)
-DECLARE_REF(/datum/weather_holder, "special_visuals", OWNED, null)
-DECLARE_REF(/datum/weather, "holder", BACK, null)
-DECLARE_REF(/datum/weather, "outdoor_sounds", OWNED, null)
-DECLARE_REF(/datum/weather, "indoor_sounds", OWNED, null)

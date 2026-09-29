@@ -4,7 +4,6 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 	var/list/cache_data
 
 /datum/repository/crew/New()
-	cache_data = list()
 	..()
 
 /datum/repository/crew/proc/health_data(zLevel)
@@ -13,10 +12,10 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 		return crewmembers
 
 	var/z_level = "[zLevel]"
-	var/datum/cache_entry/cache_entry = cache_data[z_level]
+	var/datum/cache_entry/cache_entry = cache_data?[z_level]
 	if(!cache_entry)
 		cache_entry = new/datum/cache_entry
-		cache_data[z_level] = cache_entry
+		own_put(src, "cache_data", z_level, cache_entry)
 
 	if(EXPIRY_ACTIVE(cache_entry, timestamp, CLOCK_WORLD))
 		return cache_entry.data
@@ -83,4 +82,3 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 				tracked |= C
 	return tracked
 
-DECLARE_REF(/datum/repository/crew, "cache_data", OWNED_VALUES, null)

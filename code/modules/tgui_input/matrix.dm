@@ -65,7 +65,7 @@
 	/// The prompt's body, if any, of the TGUI window.
 	var/message
 	/// The target for our display
-	var/tmp/target_handle
+	var/tmp/atom/movable/target
 	/// The base color matrix
 	var/list/default
 	/// static mode users can't change
@@ -102,7 +102,7 @@
 /datum/tgui_input_colormatrix/New(mob/user, message, title, atom/movable/target, list/default, matrix_only, timeout, ui_state, was_path)
 	src.default = default
 	src.message = message
-	src.target_handle = om_handle(target)
+	rel_set(src, "target", target)
 	src.title = title
 	src.state_static = ui_state
 	src.was_path = was_path
@@ -336,11 +336,10 @@
 			return FALSE
 		return TRUE
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_input_colormatrix/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui_input_colormatrix, "state_static", STATIC, null)
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/tgui_input_colormatrix/proc/target() as /atom/movable
-	return om_resolve(target_handle)
+	return target

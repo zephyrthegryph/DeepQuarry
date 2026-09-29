@@ -2,14 +2,14 @@
 /datum/shuttle/autodock/ferry/emergency
 	category = /datum/shuttle/autodock/ferry/emergency
 	var/frequency = AUTODOCK_FREQ // Why this frequency? BECAUSE! Thats what someone decided once.
-	var/tmp/radio_connection_handle
+	var/tmp/datum/radio_frequency/radio_connection
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, null))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, null))
 	if(GLOB.emergency_shuttle_service.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
-	GLOB.emergency_shuttle_service.shuttle = src
+	rel_set(GLOB.emergency_shuttle_service, "shuttle", src)
 
 /datum/shuttle/autodock/ferry/emergency/arrived()
 	. = ..()
@@ -202,6 +202,6 @@
 	read_authorization(W)
 	return FALSE
 
-/// LC-refs: the radio_connection this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the radio_connection var.
 /datum/shuttle/autodock/ferry/emergency/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

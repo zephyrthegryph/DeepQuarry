@@ -11,7 +11,7 @@
 	throw_range = 1
 	w_class = ITEMSIZE_LARGE//So you can't hide it in your pocket or some such.
 	attack_verb = list("mopped", "bashed", "bludgeoned", "whacked")
-	var/creator_handle
+	var/mob/living/creator
 	var/mopping = 0
 	var/mopcount = 0
 
@@ -70,8 +70,8 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 				for(var/obj/item/organ/external/organ in host.organs)
 					for(var/obj/item/O in organ.implants)
 						if(O == src)
-							LAZYREMOVE(organ.implants, src)
-			LAZYREMOVE(host.pinned, src)
+							rel_remove(organ, "implants", src)
+			rel_remove(host, "pinned", src)
 			LAZYREMOVE(host.embedded, src)
 			host.drop_from_inventory(src)
 		expire(1)
@@ -84,6 +84,6 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-/// LC-refs: creator -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: creator (reads null once it is gone).
 /obj/item/mop_deploy/proc/creator() as /mob/living
-	return om_resolve(creator_handle)
+	return creator

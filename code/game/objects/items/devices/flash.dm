@@ -46,7 +46,6 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_REF(/obj/item/flash, "power_supply", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 
 /obj/item/flash/screwdriver_act(mob/user, obj/item/tool)
@@ -192,7 +191,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flash, "power_supply", "cell_type")
 		animation.layer = user.layer + 1
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
-		animation.master = user
+		rel_set(animation, "master", user)
 		flick("blspell", animation)
 		animation.expire(5)
 
@@ -283,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 		animation.layer = user.layer + 1
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
-		animation.master = user
+		rel_set(animation, "master", user)
 		flick("blspell", animation)
 		animation.expire(5)
 

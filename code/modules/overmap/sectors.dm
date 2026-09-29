@@ -29,7 +29,7 @@
 	var/list/initial_restricted_waypoints //For use with non-automatic landmarks (automatic ones add themselves).
 
 	var/list/generic_waypoints    //waypoints that any shuttle can use
-	var/list/restricted_waypoints //waypoints for specific shuttles
+	var/list/restricted_waypoints //waypoints for specific shuttles (relation list; each landmark's shuttle_restricted names its shuttle)
 	var/docking_codes
 
 	var/start_x			//Coordinates for self placing
@@ -189,16 +189,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 /obj/effect/overmap/visitable/proc/add_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	landmark.sector_set(src, shuttle_name)
 	if(shuttle_name)
-		LAZYINITLIST(restricted_waypoints); LAZYADD(restricted_waypoints[shuttle_name], landmark)
+		rel_add(src, "restricted_waypoints", landmark)
 	else
-		LAZYADD(generic_waypoints, landmark)
+		rel_add(src, "generic_waypoints", landmark)
 
 /obj/effect/overmap/visitable/proc/remove_landmark(obj/effect/shuttle_landmark/landmark, shuttle_name)
 	if(shuttle_name)
-		var/list/shuttles = LAZYACCESS(restricted_waypoints, shuttle_name)
-		LAZYREMOVE(shuttles, landmark)
+		rel_remove(src, "restricted_waypoints", landmark)
 	else
-		LAZYREMOVE(generic_waypoints, landmark)
+		rel_remove(src, "generic_waypoints", landmark)
 
 /obj/effect/overmap/visitable/proc/get_waypoints(shuttle_name)
 	. = list()
@@ -206,9 +205,10 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 		. += contained.get_waypoints(shuttle_name)
 	for(var/thing in generic_waypoints)
 		.[thing] = name
-	if(shuttle_name in restricted_waypoints)
-		for(var/thing in LAZYACCESS(restricted_waypoints, shuttle_name))
-			.[thing] = name
+	if(shuttle_name)
+		for(var/obj/effect/shuttle_landmark/thing as anything in restricted_waypoints)
+			if(thing.shuttle_restricted == shuttle_name)
+				.[thing] = name
 
 /obj/effect/overmap/visitable/proc/generate_skybox(zlevel)
 	return

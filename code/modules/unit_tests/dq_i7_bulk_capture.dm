@@ -671,13 +671,7 @@
 		"/obj/machinery/computer/aiupload|ghost|none => gen_observer_interaction_swallow|",
 		"/obj/machinery/computer/aiupload|human|/obj/item => aiupload_access_internals,aiupload_install,aiupload_select_ai,computer_use_item,gen_drag_interaction_drag_buckle|computer_gripper:needs a magnetic gripper",
 		"/obj/machinery/computer/aiupload|human|/obj/item/gripper => aiupload_access_internals,aiupload_install,aiupload_select_ai,computer_use_item,gen_drag_interaction_drag_buckle|computer_gripper:The magnetic gripper is not holding anything",
-		"/obj/machinery/computer/arcade|human|none => |arcade_ticket_redeem:needs an arcade tickets,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item",
-		"/obj/machinery/computer/arcade|robot|none => gen_robot_interaction_swallow|arcade_ticket_redeem:needs an arcade tickets,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item",
-		"/obj/machinery/computer/arcade|ai|none => |",
-		"/obj/machinery/computer/arcade|ghost|none => |",
-		"/obj/machinery/computer/arcade|human|/obj/item/stack/arcadeticket => |arcade_ticket_redeem:too far away,computer_gripper:needs a magnetic gripper,computer_use_item:too far away",
-		"/obj/machinery/computer/arcade|human|/obj/item/gripper => |arcade_ticket_redeem:needs an arcade tickets,computer_gripper:too far away,computer_use_item:too far away",
-		"/obj/machinery/computer/arcade|human|/obj/item => |arcade_ticket_redeem:needs an arcade tickets,computer_gripper:needs a magnetic gripper,computer_use_item:too far away",
+		"/obj/machinery/computer/arcade => deleted itself on creation",
 		"/obj/machinery/computer/arcade/clawmachine|human|none => machine_open_ui,clawmachine_pay,gen_drag_interaction_drag_buckle|arcade_ticket_redeem:needs an arcade tickets,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item",
 		"/obj/machinery/computer/arcade/clawmachine|robot|none => gen_robot_interaction_swallow,machine_open_ui,clawmachine_pay,gen_drag_interaction_drag_buckle|arcade_ticket_redeem:needs an arcade tickets,computer_gripper:needs a magnetic gripper,computer_use_item:needs an item",
 		"/obj/machinery/computer/arcade/clawmachine|ai|none => |",
@@ -1299,11 +1293,11 @@
 		"/obj/machinery/mineral/mint|ai|none => |",
 		"/obj/machinery/mineral/mint|ghost|none => |",
 		"/obj/machinery/mineral/mint|human|/obj/item/stack/material => mint_press|",
-		"/obj/machinery/mineral/processing_unit_console|human|none => |processing_console_insert_id:needs an identification card,processing_console_open_ui:too far away",
+		"/obj/machinery/mineral/processing_unit_console|human|none => processing_console_open_ui|processing_console_insert_id:needs an identification card",
 		"/obj/machinery/mineral/processing_unit_console|robot|none => gen_robot_interaction_swallow,processing_console_open_ui|processing_console_insert_id:needs an identification card",
 		"/obj/machinery/mineral/processing_unit_console|ai|none => |",
 		"/obj/machinery/mineral/processing_unit_console|ghost|none => |",
-		"/obj/machinery/mineral/processing_unit_console|human|/obj/item/card/id => |processing_console_insert_id:too far away,processing_console_open_ui:too far away",
+		"/obj/machinery/mineral/processing_unit_console|human|/obj/item/card/id => processing_console_insert_id,processing_console_open_ui|",
 		"/obj/machinery/mining/brace|human|none => gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,brace_attackby:needs an item",
 		"/obj/machinery/mining/brace|robot|none => gen_robot_interaction_swallow,gen_drag_interaction_drag_buckle|machine_panel:needs a screwdriver,machine_deconstruct:needs a crowbar,brace_attackby:needs an item",
 		"/obj/machinery/mining/brace|ai|none => |",
@@ -1792,7 +1786,7 @@
 		"/obj/machinery/shieldgen|human|/obj/item/stack/cable_coil => shieldgen_toggle,gen_drag_interaction_drag_buckle|shieldgen_repair:not possible right now,shieldgen_toggle_lock:needs an identification card or a PDA,shieldgen_insert_cell:needs a power cell",
 		"/obj/machinery/shieldgen|human|/obj/item/card/id => shieldgen_toggle_lock,shieldgen_toggle,gen_drag_interaction_drag_buckle|shieldgen_repair:needs a cable coil,shieldgen_insert_cell:needs a power cell",
 		"/obj/machinery/shieldgen|human|/obj/item/cell => shieldgen_insert_cell,shieldgen_toggle,gen_drag_interaction_drag_buckle|shieldgen_repair:needs a cable coil,shieldgen_toggle_lock:needs an identification card or a PDA",
-		"/obj/machinery/shieldwall|human|none => |shieldwall_touch_block:too far away",
+		"/obj/machinery/shieldwall|human|none => shieldwall_touch_block|",
 		"/obj/machinery/shieldwall|robot|none => gen_robot_interaction_swallow,shieldwall_touch_block|",
 		"/obj/machinery/shieldwall|ai|none => |",
 		"/obj/machinery/shieldwall|ghost|none => |",
@@ -1926,7 +1920,7 @@
 	)
 
 // Some snapshot targets deliberately leave things behind: the generic arcade replaces
-// itself with a random game, an APC spills its cell (DECLARE_REF(..., SPILL)). Those are the test's.
+// itself with a random game, an APC spills its cell (OWN_SPILL). Those are the test's.
 /datum/unit_test/dq_interaction_domain_snapshot/i7_bulk/Run()
 	..()
 	own_turf_contents(test_floor())

@@ -69,7 +69,6 @@
 	var/y
 	var/obj/effect/landmark/generated_station_service/landmark
 
-DECLARE_REF(/datum/generated_station_service_endpoint, "landmark", OWNED, null)
 
 /// A route between two service endpoints, stored in planner-local coordinates.
 /datum/generated_station_service_route
@@ -83,9 +82,8 @@ DECLARE_REF(/datum/generated_station_service_endpoint, "landmark", OWNED, null)
 /datum/generated_station_service_route/New()
 	..()
 	path = list()
-	physical_markers = list()
+	own_take_all(src, "physical_markers")
 
-DECLARE_REF(/datum/generated_station_service_route, "physical_markers", OWNED_LIST, null)
 
 /obj/effect/landmark/generated_station_department_core
 	name = "generated department control point"
@@ -198,7 +196,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			module.y1 = module.core_y1
 			module.x2 = module.core_x2
 			module.y2 = module.core_y2
-			result.modules += module
+			own_add(result, "modules", module)
 			department_modules += module
 		var/door_coordinate = split_vertical ? node.y + round(node.height / 2) : node.x + round(node.width / 2)
 		for(var/offset in 1 to (split_vertical ? node.height - 2 : node.width - 2))
@@ -220,7 +218,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			if((split_vertical ? local_y : local_x) == door_coordinate)
 				T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
 				var/obj/machinery/door/airlock/airlock = new(T)
-				result.doors += airlock
+				own_add(result, "doors", airlock)
 				result.door_count++
 			else
 				T.ChangeTurf(/turf/simulated/wall, tell_universe = FALSE)
@@ -232,7 +230,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
-			result.control_landmarks += core
+			own_add(result, "control_landmarks", core)
 	return TRUE
 
 /// Builds an expanded department as a compact cluster around a foyer and a
@@ -288,8 +286,10 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 		var/room_height = room_bounds[4] - room_bounds[2] + 1
 		if(!definition?.accepts_dimensions(room_width, room_height))
 			qdel(definition)
-			result.modules -= department_modules
-			QDEL_LIST(department_modules)
+			for(var/datum/generated_station_module/failed_module as anything in department_modules)
+				if(!own_remove(result, "modules", failed_module))
+					qdel(failed_module) // ALLOW(lifecycle): a planned module the failed result never adopted
+			department_modules.Cut()
 			return FALSE
 		var/has_authored_fragment = length(definition.fragment_options)
 		qdel(definition)
@@ -315,7 +315,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 					continue
 				module.add_footprint_tile(x, y)
 				carve_department_cluster_floor(node, x, y)
-		result.modules += module
+		own_add(result, "modules", module)
 		department_modules += module
 	var/list/door_points = list(
 		list(street_x - 1, round((bounds[1][2] + bounds[1][4]) / 2)),
@@ -329,7 +329,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			continue
 		door_turf.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
 		var/obj/machinery/door/airlock/airlock = new(door_turf)
-		result.doors += airlock
+		own_add(result, "doors", airlock)
 		result.door_count++
 	var/datum/generated_station_module/control_module = department_modules[length(department_modules)]
 	var/turf/control_turf = world_turf(round((control_module.x1 + control_module.x2) / 2), round((control_module.y1 + control_module.y2) / 2))
@@ -338,7 +338,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 		core.station_id = spec().id
 		core.department_node_id = node.id
 		core.module_role = control_module.role
-		result.control_landmarks += core
+		own_add(result, "control_landmarks", core)
 	return TRUE
 
 /// Converts one planner-local position into finished department circulation.
@@ -347,7 +347,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 	if(!T)
 		return
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	var/area/generated_station/department_area = result.department_areas[node.id]
+	var/area/generated_station/department_area = result.department_areas?[node.id]
 	if(department_area)
 		ChangeArea(T, department_area)
 	result.floor_count++
@@ -406,11 +406,11 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			if(T)
 				endpoint.x = T.x - min_x + 1
 				endpoint.y = T.y - min_y + 1
-				endpoint.landmark = new(T)
+				own_set(endpoint, "landmark", new /obj/effect/landmark/generated_station_service(T))
 				endpoint.landmark.station_id = spec().id
 				endpoint.landmark.department_node_id = node.id
 				endpoint.landmark.service_id = service_id
-			result.service_endpoints += endpoint
+			own_add(result, "service_endpoints", endpoint)
 		generation_checkpoint("Building service endpoints", 48)
 
 /datum/generated_station_materializer/proc/endpoint_for(node_id, service_id)
@@ -422,8 +422,8 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 /datum/generated_station_materializer/proc/service_for_utility_edge(datum/generated_station_layout_edge/edge)
 	if(edge.service_id)
 		return edge.service_id
-	var/datum/generated_station_layout_node/from_node = om_resolve(nodes_by_id[edge.from_node_id])
-	var/datum/generated_station_layout_node/to_node = om_resolve(nodes_by_id[edge.to_node_id])
+	var/datum/generated_station_layout_node/from_node = node_by_id(edge.from_node_id)
+	var/datum/generated_station_layout_node/to_node = node_by_id(edge.to_node_id)
 	var/datum/generated_station_department_instance/provider = department_for_node(from_node)
 	var/datum/generated_station_department_instance/consumer = department_for_node(to_node)
 	for(var/datum/generated_station_capability_provision/provision in provider?.definition()?.provisions)
@@ -456,9 +456,9 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
 			marker.station_id = spec().id
 			marker.service_id = service_id
-			route.physical_markers += marker
+			own_add(route, "physical_markers", marker)
 		generation_checkpoint("Building service routes", 49)
-	result.service_routes += route
+	own_add(result, "service_routes", route)
 
 /datum/generated_station_materializer/proc/build_services()
 	build_service_endpoints()
@@ -475,9 +475,9 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			var/obj/effect/landmark/generated_station_service_route/marker = new(T)
 			marker.station_id = spec().id
 			marker.service_id = GENERATED_STATION_SERVICE_MAINTENANCE
-			maintenance_route.physical_markers += marker
+			own_add(maintenance_route, "physical_markers", marker)
 		generation_checkpoint("Publishing maintenance routes", 49)
-	result.service_routes += maintenance_route
+	own_add(result, "service_routes", maintenance_route)
 	for(var/datum/generated_station_layout_edge/edge in spec().layout_edges)
 		if(edge.kind == GENERATED_STATION_EDGE_UTILITY)
 			var/service_id = service_for_utility_edge(edge)
@@ -494,7 +494,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-turf-mismatch", "Planned maintenance is not physical maintenance flooring.", key)
 			continue
 		maintenance_floors[T] = TRUE
-		if(spec.maintenance_doors[key] && !(locate_on(T, /obj/machinery/door/airlock/maintenance)))
+		if(spec.maintenance_doors?[key] && !(locate_on(T, /obj/machinery/door/airlock/maintenance)))
 			validation.add(GENERATED_STATION_ISSUE_ERROR, "maintenance-door-missing", "Planned maintenance access has no maintenance airlock.", key)
 		materializer?.generation_checkpoint("Validating maintenance services", 56)
 	if(length(maintenance_floors))

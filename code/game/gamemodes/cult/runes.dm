@@ -117,7 +117,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 
 	user.say("Mah[pick("'","`")]weyh pleggh at e'ntrath!")
 
-	LAZYOR(converting, target)
+	rel_add(src, "converting", target)
 	var/list/waiting_for_input = list(target = 0) //need to box this up in order to be able to reset it again from inside spawn, apparently
 	convert_tick(attacker, target, waiting_for_input, 0)
 	return 1
@@ -125,7 +125,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 /// One pass of a conversion (every 10 seconds while the target stays on the rune).
 /obj/effect/rune/proc/convert_tick(mob/attacker, mob/living/carbon/target, list/waiting_for_input, initial_message)
 	if(target.loc != src.loc || target.stat == DEAD)
-		LAZYREMOVE(converting, target)
+		rel_remove(src, "converting", target)
 		if(target.injury_load(INJURY_CATEGORY_THERMAL) < 100)
 			target.status_set(EFFECT_HALLUCINATING, min(target.status_units(EFFECT_HALLUCINATING), 500))
 		return 0
@@ -199,7 +199,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 	waiting_for_input[target] = 0
 	if(ask.yes) //choosing 'Resist' does nothing of course.
 		GLOB.cult.add_antagonist(target.mind)
-		LAZYREMOVE(converting, target)
+		rel_remove(src, "converting", target)
 		target.status_set(EFFECT_HALLUCINATING, 0) //sudden clarity
 
 /////////////////////////////////////////FOURTH RUNE

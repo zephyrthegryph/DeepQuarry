@@ -54,7 +54,15 @@
 				dq_lifecycle_resolve_slot_entry(src, def, thing, drop, successor)
 	dq_lifecycle_resolve_latent(L, drop, successor)
 
-/// Destroy()'s check that the contents phase did its job: TRUE when something still sits in a
+/// End of phase 3: the contents phase must have carried out every slot's policy. Checked here,
+/// while the ledger still exists: phase 4 disposes of it (an owned var once the type's first
+/// destroy ran own_clear(src, "ledger")), so a check in Destroy() read a missing ledger and
+/// reported holder-kept contents (a machine's radio, a sleeper's beaker) as unreleased.
+/atom/movable/proc/dq_lifecycle_check_released()
+	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())
+		stack_trace("[type] still holds contents/latent entries after the destroy transaction's contents phase -- it should have released them: [dq_unreleased_report()]")
+
+/// The contents phase's check that it did its job: TRUE when something still sits in a
 /// slot whose policy the transaction must carry out. SLOT_DROP_HOLDER slots (a mob's worn and
 /// held items) and mind slots keep their contents on purpose: the base Destroy() deletes them.
 /atom/movable/proc/dq_holds_unreleased()
@@ -73,6 +81,28 @@
 		if(length(L.slots[def.slot_id]) || length(L.latent_list(def.slot_id)))
 			return TRUE
 	return FALSE
+
+/// What dq_holds_unreleased() objected to, for Destroy()'s stack trace: each offending slot with
+/// its real things and latent entry count, plus contents no slot accounts for.
+/atom/movable/proc/dq_unreleased_report()
+	var/list/parts = list()
+	var/datum/ledger/L = ledger
+	if(!L)
+		parts += "no ledger (latent_contents=[latent_contents], latent_declared=[latent_declared], generator lines=[length(latent_generator())])"
+		for(var/atom/movable/thing as anything in contents)
+			parts += "[thing] ([thing.type])"
+		return jointext(parts, "; ")
+	for(var/datum/om/relation/slot/def as anything in L.defs)
+		if(def.drop_policy == SLOT_DROP_HOLDER || def.is_mind_slot)
+			continue
+		var/list/things = L.slots[def.slot_id]
+		var/list/names = list()
+		for(var/atom/movable/thing as anything in things)
+			names += "[thing] ([thing.type], loc=[thing.loc == src ? "holder" : thing.loc])"
+		var/latent_n = length(L.latent_list(def.slot_id))
+		if(length(names) || latent_n)
+			parts += "slot [def.slot_id] (policy [def.drop_policy]): [jointext(names, ", ")] latent entries=[latent_n]"
+	return jointext(parts, "; ")
 
 /// Applies `def`'s policy to the one `thing` already in its slot on `holder`.
 /proc/dq_lifecycle_resolve_slot_entry(atom/movable/holder, datum/om/relation/slot/def, atom/movable/thing, atom/drop, atom/movable/successor)
@@ -150,5 +180,5 @@
 /// slots move their contents here instead of spilling; read (and cleared)
 /// only by dq_lifecycle_resolve_contents()/dq_lifecycle_resolve_latent()
 /// during this one transaction.
-// ALLOW(scheduler, declared_refs): scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
+// ALLOW(scheduler): scoped to one destroy transaction; set and cleared by dq_lifecycle_resolve_contents()/_latent()
 /atom/movable/var/tmp/atom/movable/lifecycle_successor

@@ -1344,5 +1344,3 @@
 	name = "Teshari dual-color Alt (Taur)"
 	extra_overlay = "tesh_markings_alt"
 
-DECLARE_REF(/datum/sprite_accessory/tail/taur, "suit_sprites", STATIC, null)
-DECLARE_REF(/datum/sprite_accessory/tail/taur, "under_sprites", STATIC, null)

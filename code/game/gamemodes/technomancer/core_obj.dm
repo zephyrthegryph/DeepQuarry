@@ -40,7 +40,7 @@
 
 // Add the spell buttons to the HUD.
 /obj/item/technomancer_core/equipped(mob/user)
-	wearer = user
+	rel_set(src, "wearer", user)
 	om_task_periodic(src, PERIODIC_SLOW) // regenerates and keeps its wearer's upkeep while worn
 	for(var/obj/spellbutton/spell in spells)
 		wearer.ability_master.add_technomancer_ability(spell, spell.ability_icon_state)
@@ -50,7 +50,7 @@
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
 	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
 		wearer.ability_master.remove_ability(A)
-	wearer = null
+	rel_clear(src, "wearer")
 	..()
 
 // 'pay_energy' is too vague of a name for a proc at the mob level.
@@ -109,21 +109,19 @@
 		return
 	for(var/A in summoned_mobs)
 		// First, a null check.
+		// Owned members are unstamped/dropped by the ownership framework when they die, so nulls need no manual removal.
 		if(isnull(A))
-			LAZYREMOVE(summoned_mobs, A)
 			continue
 		// Now check for dead mobs who shouldn't be on the list.
 		if(isliving(A))
 			var/mob/living/L = A
 			if(L.stat == DEAD)
-				LAZYREMOVE(summoned_mobs, L)
+				own_take_member(src, "summoned_mobs", L) // detached; fade_away deletes it
 				om_after(L, 1, TYPE_PROC_REF(/mob/living, fade_away))
 
 // Deletes all the summons and wards from the core, so that Destroy() won't have issues.
 /obj/item/technomancer_core/proc/dismiss_all_summons()
-	for(var/mob/living/L in summoned_mobs)
-		LAZYREMOVE(summoned_mobs, L)
-		qdel(L)
+	own_clear(src, "summoned_mobs", OWN_DELETE)
 	for(var/mob/living/ward in wards_in_use)
 		LAZYREMOVE(wards_in_use, ward)
 		qdel(ward)
@@ -137,7 +135,7 @@
 
 /obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
 	. = ..()
-	src.core = loc
+	rel_set(src, "core", loc)
 	if(!path || !ispath(path) || !istype(core))
 		message_admins("ERROR: /obj/spellbutton/Initialize() was not given a proper path or not placed into the right location!")
 		return INITIALIZE_HINT_QDEL
@@ -178,13 +176,13 @@
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	LAZYADD(spells, spell)
+	own_add(src, "spells", spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 
 /obj/item/technomancer_core/proc/remove_spell(obj/spellbutton/spell_to_remove)
 	if(spell_to_remove in spells)
-		LAZYREMOVE(spells, spell_to_remove)
+		own_take_member(src, "spells", spell_to_remove)
 		if(wearer)
 			var/atom/movable/screen/ability/obj_based/technomancer/A = wearer.ability_master.get_ability_by_instance(spell_to_remove)
 			if(A)
@@ -193,7 +191,7 @@
 
 /obj/item/technomancer_core/proc/remove_all_spells()
 	for(var/obj/spellbutton/spell in spells)
-		LAZYREMOVE(spells, spell)
+		own_take_member(src, "spells", spell)
 		qdel(spell)
 
 /obj/item/technomancer_core/proc/has_spell(datum/technomancer/spell_to_check)
@@ -367,5 +365,3 @@ EXTEND_INTERACTIONS(/obj/item/technomancer_core, \
 	INTERACT_VERB("Toggle Core Lock", PROC_REF(technomancer_core_toggle_lock_effect), REQ_IN_INVENTORY), \
 )
 
-DECLARE_REF(/obj/item/technomancer_core, "wearer", HELD, null)
-DECLARE_REF(/obj/spellbutton, "core", BACK, null)

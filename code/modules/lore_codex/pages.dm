@@ -2,15 +2,15 @@
 /datum/lore/codex
 	var/name = null // Title displayed
 	var/data = null // The actual words.
-	var/tmp/parent_handle	// Category above us
+	var/tmp/datum/lore/codex/parent	// Category above us
 	// ALLOW(instance_list): d: codex page keywords, filled at init
 	var/list/keywords = list() // Used for searching.
-	var/tmp/holder_handle
+	var/tmp/datum/codex_tree/holder
 
 /datum/lore/codex/New(new_holder, new_parent)
 	..()
-	holder_handle = om_handle(new_holder)
-	parent_handle = om_handle(new_parent)
+	rel_set(src, "holder", new_holder)
+	rel_set(src, "parent", new_parent)
 	add_content()
 	if(name)
 		keywords.Add(name)
@@ -46,28 +46,29 @@
 
 // Organizes pages together.
 /datum/lore/codex/category
-	// ALLOW(instance_list): d: codex categories exist to hold children
-	var/list/children = list() // Pages or more categories relevant to this category.  Self initializes from types to refs in New()
+	/// The types of the pages or categories relevant to this category (New() builds child_pages from it).
+	// ALLOW(instance_list): d: a per-subtype type table, set in the type definitions
+	var/list/children = list()
+	/// Our pages and sub-categories (owned), built from `children` in New().
+	var/list/child_pages
 
 /datum/lore/codex/category/New()
 	..()
-	var/list/new_children_list = list()
 	for(var/type in children)
-		new_children_list.Add(new type(holder(), src))
-	children = new_children_list
+		own_add(src, "child_pages", new type(holder(), src))
 
 /datum/lore/codex/category/index_page()
 	// First, get our own keywords.
 	var/list/results = ..()
 	// Now get our children.  If a child is also a category, it will get their children too.
-	for(var/datum/lore/codex/child in children)
+	for(var/datum/lore/codex/child in child_pages)
 		results += child.index_page()
 	return results
 
-/// LC-refs: Category above us -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Category above us (a relation view: null once that is deleted).
 /datum/lore/codex/proc/parent() as /datum/lore/codex
-	return om_resolve(parent_handle)
+	return parent
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/lore/codex/proc/holder() as /datum/codex_tree
-	return om_resolve(holder_handle)
+	return holder

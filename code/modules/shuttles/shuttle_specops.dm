@@ -23,7 +23,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 
 /datum/shuttle/autodock/ferry/specops/New()
 	..()
-	announcer = new /obj/item/radio/intercom(null)//We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+	own_set(src, "announcer", new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 /datum/shuttle/autodock/ferry/specops/proc/radio_announce(message)
@@ -155,7 +155,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 			var/obj/effect/portal/P = new(L.loc)
 			P.invisibility = INVISIBILITY_ABSTRACT //So it is not seen by anyone.
 			P.failchance = 0//So it has no fail chance when teleporting.
-			P.target_handle = om_handle(pick(spawn_marauder))//Where the marauder will arrive.
+			rel_set(P, "target", pick(spawn_marauder))//Where the marauder will arrive.
 			spawn_marauder.Remove(P.target_ref())
 	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), special_ops)
 
@@ -200,4 +200,3 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 			var/obj/machinery/light/small/readylight/light = locate_within(T, /obj/machinery/light/small/readylight)
 			if(light) light.set_state(1)
 
-DECLARE_REF(/datum/shuttle/autodock/ferry/specops, "announcer", OWNED, null)

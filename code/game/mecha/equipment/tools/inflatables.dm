@@ -10,11 +10,11 @@
 	required_type = list(/obj/mecha/working/ripley)
 
 	tooltype = /obj/item/inflatable_dispenser/robot
-	var/my_deployer_handle
+	var/obj/item/inflatable_dispenser/my_deployer
 
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/Initialize(mapload)
 	. = ..()
-	my_deployer_handle = om_handle(my_tool)
+	rel_set(src, "my_deployer", my_tool)
 
 TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, "toggle_deployable_mode", PROC_REF(topic_toggle_deployable_mode))
 
@@ -45,6 +45,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables, "
 	do_after_cooldown()
 	return
 
-/// LC-refs: my deployer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// my deployer
 /obj/item/mecha_parts/mecha_equipment/tool/powertool/inflatables/proc/my_deployer() as /obj/item/inflatable_dispenser
-	return om_resolve(my_deployer_handle)
+	return my_deployer

@@ -1,6 +1,5 @@
 /obj/item/robot_module/drone/swarm
 	name = "swarm drone module"
-	var/obj/item/card/id/drone_id
 	idcard_type = /obj/item/card/id/syndicate
 
 /obj/item/robot_module/drone/swarm/create_equipment(mob/living/silicon/robot/robot)
@@ -8,14 +7,14 @@
 
 	var/obj/item/card/id/robot_id = robot.idcard
 	robot_id.forceMove(src)
-	src.modules += robot_id
+	modules |= robot_id // ALLOW(ownership): the robot owns its idcard (robot.idcard); the module only lists it as a usable item
 
-	src.modules += new /obj/item/rcd/electric/mounted/borg/swarm(src)
-	src.modules += new /obj/item/flash/robot(src)
-	src.modules += new /obj/item/handcuffs/cable/tape/cyborg(src)
-	src.modules += new /obj/item/melee/robotic/baton(src)
-	src.modules += new /obj/item/gun/energy/robotic/taser/swarm(src)
-	src.modules += new /obj/item/matter_decompiler/swarm(src)
+	own_add(src, "modules", new /obj/item/rcd/electric/mounted/borg/swarm(src))
+	own_add(src, "modules", new /obj/item/flash/robot(src))
+	own_add(src, "modules", new /obj/item/handcuffs/cable/tape/cyborg(src))
+	own_add(src, "modules", new /obj/item/melee/robotic/baton(src))
+	own_add(src, "modules", new /obj/item/gun/energy/robotic/taser/swarm(src))
+	own_add(src, "modules", new /obj/item/matter_decompiler/swarm(src))
 
 /obj/item/robot_module/drone/swarm/ranged
 	name = "swarm gunner module"
@@ -23,12 +22,12 @@
 /obj/item/robot_module/drone/swarm/ranged/create_equipment(mob/living/silicon/robot/robot)
 	..()
 
-	src.modules += new /obj/item/gun/energy/xray/swarm(src)
+	own_add(src, "modules", new /obj/item/gun/energy/xray/swarm(src))
 
 /obj/item/robot_module/drone/swarm/melee/create_equipment(mob/living/silicon/robot/robot)
 	..()
 
-	src.modules += new /obj/item/melee/robotic/blade/ionic/lance(src)
+	own_add(src, "modules", new /obj/item/melee/robotic/blade/ionic/lance(src))
 
 //Swarm Disabler Module
 /obj/item/gun/energy/taser/mounted/cyborg/swarm
@@ -39,4 +38,3 @@
 	charge_cost = 800
 	recharge_time = 0.5 SECONDS
 
-DECLARE_REF(/obj/item/robot_module/drone/swarm, "drone_id", HELD, null)

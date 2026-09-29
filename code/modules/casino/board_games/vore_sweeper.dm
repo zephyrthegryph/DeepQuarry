@@ -14,14 +14,14 @@
 	table_icon = "gamble_sweeper"
 	var/grid_size = 8
 	var/mine_count = 10
-	var/dealer
+	var/mob/dealer
 	var/list/placed_mines
 	var/list/revealed_fields
 	var/list/placed_flags
 
 /datum/board_game/vore_sweeper/New(atom/holder)
 	. = ..()
-	parent_handle = om_handle(holder)
+	rel_set(src, "parent", holder)
 
 /datum/board_game/vore_sweeper/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -30,7 +30,7 @@
 		ui.open()
 
 /datum/board_game/vore_sweeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/mob/dealer_mob = om_resolve(dealer)
+	var/mob/dealer_mob = dealer
 
 	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null
 	var/total_tiles = grid_size * grid_size
@@ -55,23 +55,23 @@
 		if("be_dealer")
 			if(game_state == GAME_PLAYING)
 				return FALSE
-			dealer = om_handle(ui.user)
+			rel_set(src, "dealer", ui.user)
 			return TRUE
 		if("clear_dealer")
-			var/mob/dealer_mob = om_resolve(dealer)
+			var/mob/dealer_mob = dealer
 			if(!dealer_mob)
 				return FALSE
 			if(dealer_mob == ui.user)
 				parent().atom_say("[ui.user] stopped dealing.")
-				dealer = null
+				rel_clear(src, "dealer")
 				return TRUE
 			if(get_dist(ui.user, dealer_mob) > 3)
 				parent().atom_say("Dealer has been cleared by [ui.user].")
-				dealer = null
+				rel_clear(src, "dealer")
 				return TRUE
 			return FALSE
 		if("restart_game")
-			var/mob/dealer_mob = om_resolve(dealer)
+			var/mob/dealer_mob = dealer
 			if(game_state < GAME_PLAYING)
 				return FALSE
 			LAZYCLEARLIST(placed_mines)
@@ -92,7 +92,7 @@
 			return FALSE
 
 /datum/board_game/vore_sweeper/proc/player_actions(action, list/params, mob/user)
-	if(user == om_resolve(dealer))
+	if(user == dealer)
 		return FALSE
 	if(game_state != GAME_PLAYING)
 		return FALSE
@@ -164,7 +164,7 @@
 	game_state = GAME_WON
 
 /datum/board_game/vore_sweeper/proc/dealer_actions(action, list/params, mob/user)
-	if(user != om_resolve(dealer))
+	if(user != dealer)
 		return FALSE
 	if(game_state != GAME_SETUP)
 		return FALSE
@@ -261,7 +261,7 @@
 			LAZYSET(placed_mines, key, TRUE)
 			placed++
 	if(play)
-		dealer = null
+		rel_clear(src, "dealer")
 		game_state = GAME_PLAYING
 	return TRUE
 

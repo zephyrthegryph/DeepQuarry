@@ -163,11 +163,10 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 /obj/effect/decal/cleanable/vomit/old/Initialize(mapload, list/datum/affliction/contagion/diseases)
 	. = ..()
 	icon_state += "-old"
-	if(length(diseases))
-		LAZYADD(viruses, diseases)
+	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
 	if(prob(65))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		LAZYADD(viruses, new_disease)
+		own_add(src, "viruses", new_disease)
 
 /obj/effect/decal/cleanable/vomit/old/Crossed(mob/living/carbon/human/perp)
 	return // Don't spread our viruses
@@ -180,11 +179,10 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 	. = ..()
 	basecolor = get_random_colour(rand(0, 1))
 	update_icon()
-	if(length(diseases))
-		LAZYADD(viruses, diseases)
+	// diseases: adopted by /obj/effect/decal/cleanable/Initialize (as _age)
 	if(prob(75))
 		var/datum/affliction/contagion/engineered/new_disease = new /datum/affliction/contagion/engineered/random(rand(2, 4), rand(7, 9), 4)
-		LAZYADD(viruses, new_disease)
+		own_add(src, "viruses", new_disease)
 	dry()
 
 /obj/effect/decal/cleanable/blood/old/Crossed(mob/living/carbon/human/perp)
@@ -248,4 +246,3 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
 	qdel(src)
 
-DECLARE_REF(/obj/effect/decal/cleanable/vomit, "viruses", OWNED_LIST, null)

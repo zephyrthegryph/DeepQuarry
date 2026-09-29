@@ -3,7 +3,7 @@
 // bgstate_options moved onto /datum/preference/text/human/bgstate as bgstate_choices.
 // markings_subwindow stays as runtime UI state.
 /datum/preferences
-	var/tmp/markings_subwindow_handle
+	var/tmp/datum/markings_subwindow
 
 // Sanitize ear/wing/tail styles
 /datum/preferences/proc/sanitize_body_styles()
@@ -73,6 +73,6 @@
 // tgui_act/tgui_constant_data/has_flag/reset_limbs helpers were the Bay-prefs Body tab.
 // Deleted; the new auto-renderer + accessories/markings apply_hooks own the equivalent.
 
-/// LC-refs: the markings_subwindow this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The markings_subwindow this refers to (a relation view: null once that is deleted).
 /datum/preferences/proc/markings_subwindow()
-	return om_resolve(markings_subwindow_handle)
+	return markings_subwindow

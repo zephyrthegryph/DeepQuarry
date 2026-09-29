@@ -2,7 +2,7 @@
 	name = "neural framework implant"
 	desc = "A small metal casing with numerous wires stemming off of it."
 	initialize_loc = BP_HEAD
-	var/my_brain_handle
+	var/obj/item/organ/internal/brain/my_brain
 	var/target_state = null
 	var/robotic_brain = FALSE
 
@@ -11,7 +11,7 @@
 		var/mob/living/carbon/human/H = source
 		if(H.species.has_organ[O_BRAIN])
 			var/obj/item/organ/internal/brain/possible_brain = H.organ_in(O_BRAIN)
-			my_brain_handle = om_handle(possible_brain) //Organs will take damage all the same.
+			rel_set(src, "my_brain", possible_brain) //Organs will take damage all the same.
 			if(istype(possible_brain) && my_brain().can_assist())		//If the brain is infact a brain, and not something special like an MMI.
 				my_brain().implant_assist(target_state)
 		if(HAS_SYNTHETIC_BIOLOGY(H) && H.get_FBP_type() != FBP_CYBORG)		//If this on an FBP, it's just an extra inefficient attachment to whatever their brain is.
@@ -100,9 +100,9 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 			H.status_at_least(EFFECT_CONFUSED, 30)
 			H.status_adjust(EFFECT_BLINDED, 5)
 		my_brain().owner?.injure(INJURY_NEURAL, 15, my_brain(), src)
-		my_brain_handle = null
+		rel_clear(src, "my_brain")
 	return
 
-/// LC-refs: my brain -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: my brain (reads null once it is gone).
 /obj/item/implant/neural/proc/my_brain() as /obj/item/organ/internal/brain
-	return om_resolve(my_brain_handle)
+	return my_brain

@@ -27,8 +27,8 @@
 
 /mob/living/simple_mob/animal/goat/Initialize(mapload)
 	. = ..()
-	udder = new(50) // ALLOW(decl): holder takes constructor args
-	udder.my_atom = src
+	own_set(src, "udder", new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
+	rel_set(udder, "my_atom", src)
 
 /datum/om/stage/life/type_post/simple_mob/animal/goat
 	of = /mob/living/simple_mob/animal/goat
@@ -85,4 +85,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/goat, INTERACT_ITEM(null, PROC
 	// say_got_target doesn't seem to handle emotes, but keeping this here in case someone wants to make it work
 //	say_got_target = list(span_warning("[src] gets an evil-looking gleam in their eye."))
 
-DECLARE_REF(/mob/living/simple_mob/animal/goat, "udder", OWNED, null)

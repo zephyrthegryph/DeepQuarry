@@ -23,7 +23,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voic
 
 /obj/item/rig_module/voice/installed()
 	..()
-	holder.speech = src
+	rel_set(holder, "speech", src)
 
 /obj/item/rig_module/voice/engage()
 
@@ -76,4 +76,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/voice, "voice_holder", /obj/item/voic
 	voice_holder.voice = ask.text
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
 
-DECLARE_REF(/obj/item/rig_module/voice, "voice_holder", OWNED, null)

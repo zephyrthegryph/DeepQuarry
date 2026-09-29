@@ -4,7 +4,7 @@
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pack"
 	w_class = ITEMSIZE_NORMAL
-	var/tmp/beacon_handle
+	var/tmp/obj/structure/extraction_point/beacon
 	var/static/list/beacon_networks = list("station")
 	var/uses_left = 3
 	var/can_use_indoors = TRUE // Can be used anywhere.
@@ -37,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 		if(!A)
 			return TRUE
-		beacon_handle = om_handle(A)
+		rel_set(src, "beacon", A)
 		to_chat(user, "You link the extraction pack to the beacon system.")
 	return TRUE
 
@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 /obj/effect/extraction_holder
 	name = "extraction holder"
 	desc = "you shouldn't see this"
-	var/tmp/stored_obj_handle
+	var/tmp/atom/movable/stored_obj
 
 /obj/item/extraction_pack/proc/check_for_living_mobs(atom/A)
 	if(isliving(A))
@@ -197,10 +197,10 @@ REGISTRY_MEMBERSHIP(/obj/structure/extraction_point, REGISTRY_EXTRACTION_BEACONS
 /obj/effect/extraction_holder/singularity_pull()
 	return
 
-/// LC-refs: the beacon this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the beacon var.
 /obj/item/extraction_pack/proc/beacon() as /obj/structure/extraction_point
-	return om_resolve(beacon_handle)
+	return beacon
 
-/// LC-refs: the stored_obj this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the stored_obj var.
 /obj/effect/extraction_holder/proc/stored_obj() as /atom/movable
-	return om_resolve(stored_obj_handle)
+	return stored_obj

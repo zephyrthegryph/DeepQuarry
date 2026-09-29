@@ -221,6 +221,3 @@
 	say_stand_down = list("Good.", "That's right run you lilly livers.")
 	say_escalate = list("Yarr! The booty is mine!", "Going to gut you landlubber.")
 
-DECLARE_REF(/mob/living, "deaf_loop", OWNED, null)
-DECLARE_REF(/mob/living, "firesoundloop", OWNED, null)
-DECLARE_REF(/mob/living, "say_list", OWNED, null)

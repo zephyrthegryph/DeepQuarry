@@ -11,8 +11,8 @@
 	mouse_opacity = 0
 
 	var/mob/living/aiming_at   // Who are we currently targeting, if anyone?
-	var/tmp/aiming_with_handle	// What are we targeting with?
-	var/tmp/owner_handle	// Who do we belong to?
+	var/tmp/obj/item/aiming_with	// What are we targeting with?
+	var/tmp/mob/owner	// Who do we belong to?
 	var/locked =    0          // Have we locked on?
 	EXPIRY_DECLARE(lock_time) // When -will- we lock on?
 	var/active =    0          // Is our owner intending to take hostages?
@@ -20,7 +20,7 @@
 
 /obj/aiming_overlay/Initialize(mapload)
 	. = ..()
-	owner_handle = om_handle(loc)
+	rel_set(src, "owner", loc)
 	if(!istype(owner(), /mob))
 		return INITIALIZE_HINT_QDEL
 	moveToNullspace()
@@ -85,7 +85,8 @@
 	..()
 	update_aiming()
 
-DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
+REL_PAIR(/obj/aiming_overlay, aiming_at, aimed)
+REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
 	om_after(src, 0, PROC_REF(update_aiming))
@@ -154,7 +155,7 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	if(aiming_at)
 		if(aiming_at == target)
 			return
-		aiming_at.aimed -= src
+		rel_remove(aiming_at, "aimed", src)
 		owner().visible_message(span_danger("\The [owner()] turns \the [thing] on \the [target]!"))
 	else
 		owner().visible_message(span_danger("\The [owner()] aims \the [thing] at \the [target]!"))
@@ -164,14 +165,14 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 		owner().client.add_gun_icons()
 	to_chat(target, span_danger("You now have a gun pointed at you. No sudden moves!"))
 	to_chat(target, span_critical("If you fail to comply with your assailant, you accept the consequences of your actions."))
-	aiming_with_handle = om_handle(thing)
-	aiming_at = target
+	rel_set(src, "aiming_with", thing)
+	rel_set(src, "aiming_at", target)
 	if(istype(aiming_with(), /obj/item/gun))
 		play_sfx(owner(), SFX_WEAPONS_TARGETON)
 	forceMove(get_turf(target))
 	om_task_periodic(src, PERIODIC_SLOW)
 
-	aiming_at.aimed |= src
+	rel_add(aiming_at, "aimed", src)
 	toggle_active(1)
 	locked = 0
 	update_icon()
@@ -211,16 +212,16 @@ DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
 	if(!no_message)
 		owner().visible_message(span_infoplain(span_bold("\The [owner()]") + " lowers \the [aiming_with()]."))
 
-	aiming_with_handle = null
-	aiming_at.aimed -= src
-	aiming_at = null
+	rel_clear(src, "aiming_with")
+	rel_remove(aiming_at, "aimed", src)
+	rel_clear(src, "aiming_at")
 	moveToNullspace()
 	om_task_periodic_stop(src)
 
-/// LC-refs: What are we targeting with? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What are we targeting with? (a relation view: null once it is deleted).
 /obj/aiming_overlay/proc/aiming_with() as /obj/item
-	return om_resolve(aiming_with_handle)
+	return aiming_with
 
-/// LC-refs: Who do we belong to? -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Who do we belong to? (a relation view: null once it is deleted).
 /obj/aiming_overlay/proc/owner() as /mob
-	return om_resolve(owner_handle)
+	return owner

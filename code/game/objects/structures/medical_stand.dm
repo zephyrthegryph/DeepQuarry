@@ -7,7 +7,7 @@
 
 	//gas stuff
 	var/obj/item/tank/tank
-	var/breather_handle
+	var/mob/living/carbon/human/breather
 	var/obj/item/clothing/mask/breath/contained
 
 	var/spawn_type = null
@@ -16,7 +16,7 @@
 	var/is_loosen = TRUE
 	var/valve_opened = FALSE
 	//blood stuff
-	var/attached_handle
+	var/mob/living/carbon/attached
 	var/mode = 1 // 1 is injecting, 0 is taking blood.
 	var/obj/item/reagent_containers/beaker
 	var/static/list/transfer_amounts = list(REM, 1, 2)
@@ -138,7 +138,7 @@
 	if(!attached())
 		return
 	visible_message("\The [attached()] is taken off \the [src]")
-	attached_handle = null
+	rel_clear(src, "attached")
 	update_icon()
 
 /obj/structure/medical_stand/proc/needle_slipped(datum/om/task/timed/medical_stand_needle_inserted/task)
@@ -161,7 +161,7 @@
 		return
 	act_message(user, target, MSG_SELF(span_notice("You hook %T% up to \the [src].")), \
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + "hooks %T% up to \the [src].")))
-	attached_handle = om_handle(target)
+	rel_set(src, "attached", target)
 	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
@@ -175,8 +175,8 @@
 		contained.forceMove(src)
 	else
 		qdel(contained)
-		contained = new mask_type(src)
-	breather_handle = null
+		own_set(src, "contained", new mask_type(src))
+	rel_clear(src, "breather")
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
 	return
@@ -226,7 +226,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				act_message(user, src, MSG_SELF(span_warning("You remove \the [tank] from %T%.")), \
 					MSG_OTHERS(span_warningplain(span_bold("%U%") + " removes \the [tank] from %T%.")))
 				user.put_in_hands(tank)
-				tank = null
+				own_take(src, "tank")
 				valve_opened = FALSE
 				om_task_periodic_stop(src)
 				update_icon()
@@ -258,7 +258,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if ("Remove vessel")
 			if(beaker)
 				beaker.forceMove(loc)
-				beaker = null
+				own_take(src, "beaker")
 				update_icon()
 
 /obj/structure/medical_stand/proc/medical_stand_toggle_mode_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -282,7 +282,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(C.equip_to_slot_if_possible(contained, SLOT_ID_MASK))
 			if(tank)
 				tank.forceMove(C)
-			breather_handle = om_handle(C)
+			rel_set(src, "breather", C)
 			return TRUE
 
 /obj/structure/medical_stand/proc/can_apply_to_target(mob/living/carbon/human/target, mob/user)
@@ -332,7 +332,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		else
 			user.drop_item()
 			W.forceMove(src)
-			tank = W
+			own_set(src, "tank", W)
 			act_message(user, src, MSG_SELF(span_notice("You attach %I% to %T%.")), MSG_OTHERS(span_bold("%U%") + " attaches %I% to %T%."), item = tank)
 			src.add_fingerprint(user)
 			update_icon()
@@ -344,7 +344,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 			return TRUE
 		user.drop_item()
 		W.forceMove(src)
-		beaker = W
+		own_set(src, "beaker", W)
 		to_chat(user, "You attach \the [W] to \the [src].")
 		update_icon()
 		return TRUE
@@ -399,9 +399,9 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				contained.forceMove(src)
 			else
 				qdel(contained)
-				contained = new mask_type (src)
+				own_set(src, "contained", new mask_type (src))
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
-			breather_handle = null
+			rel_clear(src, "breather")
 			update_icon()
 			return
 		if(valve_opened)
@@ -421,7 +421,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 		if(!Adjacent(attached()))
 			visible_message("The needle is ripped out of [src.attached()], doesn't that hurt?")
 			attached().injure(INJURY_PIERCE, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached_handle = null
+			rel_clear(src, "attached")
 			update_icon()
 
 	if(beaker)
@@ -469,19 +469,16 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 	mask_type = /obj/item/clothing/mask/breath/medical
 	is_loosen = FALSE
 
-DECLARE_REF(/obj/structure/medical_stand, "tank", OWNED, null)
-DECLARE_REF(/obj/structure/medical_stand, "contained", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "tank", "spawn_type")
 DECLARE_DEFAULT_CHILD(/obj/structure/medical_stand, "contained", "mask_type")
-DECLARE_REF(/obj/structure/medical_stand, "beaker", OWNED, null)
 
-/// LC-refs: breather -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: breather (reads null once it is gone).
 /obj/structure/medical_stand/proc/breather() as /mob/living/carbon/human
-	return om_resolve(breather_handle)
+	return breather
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: attached (reads null once it is gone).
 /obj/structure/medical_stand/proc/attached() as /mob/living/carbon
-	return om_resolve(attached_handle)
+	return attached
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/structure/medical_stand, \

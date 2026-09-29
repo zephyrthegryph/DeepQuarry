@@ -456,7 +456,7 @@
 		return
 
 	var/datum/signal/signal = new()
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	signal.encryption = code
 	signal.data["message"] = "ACTIVATE"
 	radio_connection.post_signal(src, signal)
@@ -469,7 +469,7 @@
 		return
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection = GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/integrated_circuit/input/signaler/receive_signal(datum/signal/signal)
 	var/new_code = get_pin_data(IC_INPUT, 2)
@@ -528,9 +528,8 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/EPv2, "exonet", /datum/
 	. = ..()
 	exonet.make_address("EPv2_circuit-\ref[src]")
 	desc += "<br>This circuit's EPv2 address is: [exonet.address]"
-	node = get_exonet_node()
+	rel_set(src, "node", get_exonet_node())
 
-DECLARE_REF(/obj/item/integrated_circuit/input/EPv2, "exonet", OWNED, null)
 
 /obj/item/integrated_circuit/input/EPv2/do_work()
 	var/target_address = get_pin_data(IC_INPUT, 1)

@@ -4,10 +4,10 @@
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
 /datum/exonet_log_panel
-	var/tmp/host_handle
+	var/tmp/mob/observer/dead/host
 
 /datum/exonet_log_panel/New(mob/observer/dead/host_mob)
-	host_handle = om_handle(host_mob)
+	rel_set(src, "host", host_mob)
 
 /// Phase 2: its host's panel cache lets go.
 /datum/exonet_log_panel/lifecycle_dematerialize()
@@ -37,11 +37,10 @@
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)
-		dq_exonet_log_panel_cache = new(src)
+		own_set(src, "dq_exonet_log_panel_cache", new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
-DECLARE_REF(/mob/observer/dead, "dq_exonet_log_panel_cache", OWNED, null)
 
-/// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The host this refers to (a relation view: null once that is deleted).
 /datum/exonet_log_panel/proc/host() as /mob/observer/dead
-	return om_resolve(host_handle)
+	return host

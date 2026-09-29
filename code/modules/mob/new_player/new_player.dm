@@ -21,10 +21,6 @@
 
 	var/created_for
 
-DECLARE_REF(/mob/new_player, "manifest_dialog", OWNED, null)
-DECLARE_REF(/mob/new_player, "late_choices_dialog", OWNED, null)
-DECLARE_REF(/mob/new_player, "privacy_poll_dialog", OWNED, null)
-DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 
 /mob/new_player/get_status_tab_items()
 	. = ..()
@@ -183,7 +179,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 			// We want to be a spawned mob instead of a person aaaaa
 			var/mob/living/carrier = join_props["carrier"]
 			var/vorgans = join_props["vorgans"]
-			cryst.bound_mob = new cryst.spawn_mob_type(cryst)
+			rel_set(cryst, "bound_mob", new cryst.spawn_mob_type(cryst))
 			cryst.spawn_mob_type = null
 			cryst.bound_mob.key = src.key
 			log_and_message_admins("[key_name_admin(src)] joined [cryst.bound_mob] inside a capture crystal [ADMIN_FLW(cryst.bound_mob)]")
@@ -276,7 +272,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 		for(var/obj/belly/B in character.vore_organs)
 			if(B.name == gut)
 				gut_to_enter = B
-				character.vore_selected = B
+				rel_set(character, "vore_selected", B) // a pointer at one of vore_organs
 		var/datum/effect/effect/system/teleport_greyscale/tele = new /datum/effect/effect/system/teleport_greyscale()
 		tele.set_up("#00FFFF", get_turf(prey))
 		tele.start()
@@ -303,7 +299,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 
 /mob/new_player/proc/LateChoices()
 	if(!late_choices_dialog)
-		late_choices_dialog = new(src)
+		own_set(src, "late_choices_dialog", new /datum/tgui_module/late_choices(src))
 	late_choices_dialog.tgui_interact(src)
 
 /mob/new_player/proc/create_character(turf/T)
@@ -339,7 +335,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 
 	if(mind)
 		mind.active = 0					//we wish to transfer the key manually
-		mind.original_character = om_handle(new_character)
+		rel_set(mind, "original_character", new_character)
 		mind.loaded_from_ckey = client.ckey
 		mind.loaded_from_slot = client.prefs.default_slot
 		mind.transfer_to(new_character)					//won't transfer key since the mind is not active
@@ -386,7 +382,7 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 
 /mob/new_player/proc/ViewManifest()
 	if(!manifest_dialog)
-		manifest_dialog = new(src)
+		own_set(src, "manifest_dialog", new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
 /mob/new_player/Move()
@@ -543,4 +539,3 @@ DECLARE_REF(/mob/new_player, "poll_browser_dialog", OWNED, null)
 	return pass
 
 // The window belongs to the client (tgui_window); the lobby only drives it.
-DECLARE_REF(/mob/new_player, "lobby_window", HELD, null)

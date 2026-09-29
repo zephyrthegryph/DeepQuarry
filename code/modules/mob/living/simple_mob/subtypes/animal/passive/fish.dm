@@ -398,6 +398,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
 	vore_capacity = 5
 	pixel_x = -50
 
-DECLARE_REF(/mob/living/simple_mob/animal/passive/fish/icebass, "dorsal_image", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/animal/passive/fish/icebass, "belly_image", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/animal/passive/fish/rockfish, "head_image", OWNED, null)

@@ -116,7 +116,7 @@
 
 /obj/item/entopic_debug/Initialize(mapload)
 	. = ..()
-	ent_debug = new(aholder = src, aicon = icon, aicon_state = "holo_Jin")
+	own_set(src, "ent_debug", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
 
 /proc/entopic_icon_helper(atom/A,holo = TRUE)
 	ASSERT(A)
@@ -126,6 +126,4 @@
 
 	usr << ftp(holo ? HI : CI,"[A.name].dmi")
 
-DECLARE_REF(/datum/entopic, "my_image", OWNED, null)
 
-DECLARE_REF(/obj/item/entopic_debug, "ent_debug", OWNED, null)

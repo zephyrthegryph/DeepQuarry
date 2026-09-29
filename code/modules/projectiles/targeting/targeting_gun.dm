@@ -13,7 +13,7 @@
 //Return 1 if a target was found, 0 otherwise.
 /obj/item/gun/proc/PreFire(atom/A, mob/living/user, params)
 	if(!user.aiming)
-		user.aiming = new(user)
+		own_set(user, "aiming", new /obj/aiming_overlay(user))
 	user.face_atom(A)
 	if(ismob(A) && user.aiming)
 		user.aiming.aim_at(A, src)

@@ -114,7 +114,7 @@
 	var/obj/item/pen/back = own(made[1])
 	TEST_ASSERT_EQUAL(back.name, "labelled pen", "with its state")
 	var/datum/dq_state_holder/holder = new
-	holder.held = back
+	rel_set(holder, "held", back)
 	TEST_ASSERT(!back.latent_collapse(), "a referenced pen stays real")
 	qdel(holder)
 	// Only latent holders take entries.

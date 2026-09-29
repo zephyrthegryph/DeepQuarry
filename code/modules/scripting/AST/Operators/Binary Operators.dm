@@ -173,4 +173,3 @@
 /datum/node/expression/op/binary/Modulo
 	precedence=OOP_MULTIPLY
 
-DECLARE_REF(/datum/node/expression/op/binary, "exp2", OWNED, null)

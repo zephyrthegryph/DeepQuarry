@@ -28,16 +28,16 @@
 
 /mob/living
 	var/tmp/autofire_on = FALSE
-	var/tmp/autofire_gun_handle
-	var/tmp/autofire_target_handle
+	var/tmp/obj/item/gun/autofire_gun
+	var/tmp/atom/autofire_target
 	var/tmp/autofire_params = null
 
 /// Begin (or retarget) a held-trigger autofire session with gun G at target.
 /mob/living/proc/start_autofire(obj/item/gun/G, atom/target, params)
 	if(QDELETED(G) || QDELETED(target))
 		return
-	autofire_gun_handle    = om_handle(G)
-	autofire_target_handle = om_handle(target)
+	rel_set(src, "autofire_gun", G)
+	rel_set(src, "autofire_target", target)
 	autofire_params = params
 	if(!autofire_on)
 		autofire_on = TRUE
@@ -47,14 +47,14 @@
 /// tile while the button is still held).  No-op if not autofiring.
 /mob/living/proc/update_autofire_target(atom/target, params)
 	if(autofire_on && !QDELETED(target))
-		autofire_target_handle = om_handle(target)
+		rel_set(src, "autofire_target", target)
 		autofire_params = params
 
 /// End any autofire session and clear all held state.  Safe to call when idle.
 /mob/living/proc/stop_autofire()
 	autofire_on     = FALSE
-	autofire_gun_handle    = null
-	autofire_target_handle = null
+	rel_clear(src, "autofire_gun")
+	rel_clear(src, "autofire_target")
 	autofire_params = null
 
 /// One iteration of the hold-to-fire loop.  Fires if the gun is ready, then
@@ -128,10 +128,10 @@
 	if(isatom(over_object) && !istype(over_object, /atom/movable/screen))
 		L.update_autofire_target(over_object, params)
 
-/// LC-refs: the autofire_gun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the autofire_gun this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_gun() as /obj/item/gun
-	return om_resolve(autofire_gun_handle)
+	return autofire_gun
 
-/// LC-refs: the autofire_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the autofire_target this refers to (a relation view: null once it is deleted).
 /mob/living/proc/autofire_target() as /atom
-	return om_resolve(autofire_target_handle)
+	return autofire_target

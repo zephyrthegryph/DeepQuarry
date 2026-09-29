@@ -28,7 +28,6 @@
 	EVENT_HANDLER
 	update_icon()
 
-DECLARE_REF(/obj/item/radio/intercom, "circuit", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 
 /obj/item/radio/intercom/custom
@@ -158,10 +157,11 @@ EXTEND_INTERACTIONS(/obj/item/radio/intercom, \
 	playsound(src, tool.usesound, 50, TRUE)
 	var/obj/structure/frame/frame = new(loc)
 	var/obj/item/circuitboard/board = circuit
-	frame.frame_type = board.board_type
+	own_set(frame, "frame_type", frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	frame.pixel_x = pixel_x
 	frame.pixel_y = pixel_y
-	frame.circuit = board
+	board.forceMove(frame)
+	own_move(board, frame, "circuit") // from the intercom to the frame (CONTAINED there)
 	frame.set_dir(dir)
 	frame.set_anchored(TRUE)
 	frame.state = 2

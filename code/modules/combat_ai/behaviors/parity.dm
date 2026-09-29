@@ -107,7 +107,7 @@
 	// Switching primary_threat will make the standard attack behaviors pick the
 	// attacker on the next tick.
 	var/mob/old = brain.primary_threat
-	brain.primary_threat = target
+	rel_set(brain, "primary_threat", target)
 	if(old != target)
 		OM_EMIT(brain.holder, /datum/om/event/dqai_target_changed, target, old)
 	brain.invalidate_selection()

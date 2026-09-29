@@ -189,7 +189,7 @@ GLOBAL_LIST(tgui_modals)
 	if(previous && !replace_previous)
 		return FALSE
 
-	modal.owning_source_handle = om_handle(source)
+	rel_set(modal, "owning_source", source)
 
 	// Previous one should get GC'd
 	LAZYSET(GLOB.tgui_modals, REF(source), modal)
@@ -236,7 +236,7 @@ GLOBAL_LIST(tgui_modals)
  * Modal datum (contains base information for a modal)
  */
 /datum/tgui_modal
-	var/tmp/owning_source_handle
+	var/tmp/datum/owning_source
 	var/id
 	var/text
 	var/delegate
@@ -380,6 +380,6 @@ GLOBAL_LIST(tgui_modals)
 	.["yes_text"] = yes_text
 	.["no_text"] = no_text
 
-/// LC-refs: the owning_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owning_source this refers to (a relation view: null once that is deleted).
 /datum/tgui_modal/proc/owning_source() as /datum
-	return om_resolve(owning_source_handle)
+	return owning_source

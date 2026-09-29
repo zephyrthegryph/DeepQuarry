@@ -26,23 +26,26 @@
 	var/mob/owner
 	var/atom/movable/screen/nif/screen_icon
 
-DECLARE_REF(/datum/nif_menu, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 
 /datum/nif_menu/New(mob/M)
 	..()
 	if(!ismob(M))
 		log_runtime("nif_menu created without a mob owner ([M]).")
 		return
-	owner = M
+	rel_set(src, "owner", M)
 	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
 	om_hook(owner, /datum/om/event/qdeleting, src, PROC_REF(on_owner_qdeleting))
 	if(owner.client)
 		create_mob_button(owner)
 
-// takes the NIF verb back from its owner. Hooks, the screen icon (owned; it
-// leaves client screens in its own teardown) and the owner ref are core work.
+// takes the NIF verb back from its owner and deletes its button from the hud that owns it.
+// Hooks and the owner ref are core work.
 /datum/nif_menu/on_destroy(force)
+	if(screen_icon)
+		owner?.client?.screen -= screen_icon
+		var/datum/hud/button_hud = owner_of(screen_icon)
+		if(istype(button_hud))
+			own_remove(button_hud, "other_important", screen_icon)
 	if(ishuman(owner))
 		remove_verb(owner, /mob/living/carbon/human/proc/nif_menu)
 	..()
@@ -57,13 +60,16 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 
 /datum/nif_menu/proc/create_mob_button(mob/user)
 	var/datum/hud/HUD = user.hud_used
+	// The hud owns the button (other_important); a new hud's button is made afresh
+	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
-		screen_icon = new()
+		var/atom/movable/screen/nif/button = new
+		own_add(HUD, "other_important", button)
+		rel_set(src, "screen_icon", button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style
 	screen_icon.color = HUD.ui_color
 	screen_icon.alpha = HUD.ui_alpha
-	LAZYADD(HUD.other_important, screen_icon)
 	user.client?.screen += screen_icon
 
 	add_verb(user, /mob/living/carbon/human/proc/nif_menu)
@@ -189,4 +195,3 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 /obj/item/nif/proc/menu() as /datum/nif_menu
 	return QDELETED(menu_ref) ? null : menu_ref
 
-DECLARE_REF(/obj/item/nif, "menu_ref", OWNED, null)

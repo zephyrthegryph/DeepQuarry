@@ -18,7 +18,7 @@
 
 	var/scrubbing = FALSE //Floor cleaning enabled
 	var/amount_per_transfer_from_this = 5 //shit I dunno, adding this so syringes stop runtime erroring. --NeoFite
-	var/tmp/mybag_handle
+	var/tmp/obj/item/storage/bag/trash/mybag
 	var/callme = "janitor cart" //how do people refer to it?
 
 	key_type = /obj/item/key/janicart
@@ -73,7 +73,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		to_chat(user, span_notice("You hook the trashbag onto the [callme]."))
 		user.drop_item()
 		W.forceMove(src)
-		mybag_handle = om_handle(W)
+		rel_set(src, "mybag", W)
 		return TRUE
 	return FALSE
 
@@ -83,7 +83,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 		return FALSE
 	mybag().forceMove(get_turf(user))
 	user.put_in_hands(mybag())
-	mybag_handle = null
+	rel_clear(src, "mybag")
 	return TRUE
 
 //-------------------------------------------
@@ -139,6 +139,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/engine/janicart, \
 				var/mob/living/carbon/human/D = load
 				to_chat(D, span_notice("The [callme]'s brushes turn off, as it runs out of cleaner."))
 
-/// LC-refs: the mybag this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the mybag var.
 /obj/vehicle/train/engine/janicart/proc/mybag() as /obj/item/storage/bag/trash
-	return om_resolve(mybag_handle)
+	return mybag

@@ -30,12 +30,12 @@
 
 /// Generates and fills new action groups with our mob's current actions
 /datum/hud/proc/build_action_groups()
-	listed_actions = new(src)
-	palette_actions = new(src)
-	floating_actions = list()
+	own_set(src, "listed_actions", new /datum/action_group/listed(src))
+	own_set(src, "palette_actions", new /datum/action_group/palette(src))
+	rel_clear(src, "floating_actions")
 	for(var/datum/action/action as anything in mymob().actions)
-		var/atom/movable/screen/movable/action_button/button = action.viewers[om_handle(src)]
+		var/atom/movable/screen/movable/action_button/button = action.button_for(src)
 		if(!button)
 			action.ShowTo(mymob())
-			button = action.viewers[om_handle(src)]
+			button = action.button_for(src)
 		position_action(button, button.location)

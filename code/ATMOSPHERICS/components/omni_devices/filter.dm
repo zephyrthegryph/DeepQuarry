@@ -12,7 +12,8 @@
 	icon_state = "map_filter"
 	pipe_state = "omni_filter"
 
-	var/list/atmos_filters = new() // ALLOW(instance_list): atmos area (M1a): omni filter pipe device; listed in memory_lists_audit.md, not edited here
+	/// Port role views, derived from the owned `ports` by rebuild_port_roles().
+	var/list/datum/omni_port/atmos_filters
 	var/datum/omni_port/input
 	var/datum/omni_port/output
 
@@ -38,29 +39,29 @@
 	for(var/datum/omni_port/P in ports)
 		if(P.update)
 			any_updated = TRUE
-			if(output == P)
-				output = null
-			if(input == P)
-				input = null
-			if(atmos_filters.Find(P))
-				atmos_filters -= P
-
 			P.air.set_volume(200)
-			switch(P.mode)
-				if(ATM_INPUT)
-					input = P
-				if(ATM_OUTPUT)
-					output = P
-				if(ATM_O2 to ATM_LASTGAS)
-					// ALLOW(object_keyed_lists): subset of the owned ports list (DECLARE_REF(..., OWNED_LIST) on /omni), rebuilt from it
-					atmos_filters += P
 	if(any_updated)
+		rebuild_port_roles()
 		rebuild_filtering_list()
+
+/// Derived view: input, output and the filter ports, recomputed from the owned ports' modes.
+/obj/machinery/atmospherics/omni/atmos_filter/proc/rebuild_port_roles()
+	rel_clear(src, "input")
+	rel_clear(src, "output")
+	rel_clear(src, "atmos_filters")
+	for(var/datum/omni_port/P as anything in ports)
+		switch(P.mode)
+			if(ATM_INPUT)
+				rel_set(src, "input", P)
+			if(ATM_OUTPUT)
+				rel_set(src, "output", P)
+			if(ATM_O2 to ATM_LASTGAS)
+				rel_add(src, "atmos_filters", P)
 
 /obj/machinery/atmospherics/omni/atmos_filter/error_check()
 	if(!input || !output || !atmos_filters)
 		return 1
-	if(atmos_filters.len < 1) //requires at least 1 atmos_filter ~otherwise why are you using a filter?
+	if(length(atmos_filters) < 1) //requires at least 1 atmos_filter ~otherwise why are you using a filter?
 		return 1
 
 	return 0
@@ -335,5 +336,6 @@
 			P.connect()
 	P.update = 1
 
-DECLARE_REF(/obj/machinery/atmospherics/omni/atmos_filter, "input", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/omni/atmos_filter, "output", HELD, null)
+REL(/obj/machinery/atmospherics/omni/atmos_filter, input)
+REL(/obj/machinery/atmospherics/omni/atmos_filter, output)
+REL_LIST(/obj/machinery/atmospherics/omni/atmos_filter, atmos_filters)

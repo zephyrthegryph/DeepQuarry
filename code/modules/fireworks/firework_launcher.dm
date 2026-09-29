@@ -9,7 +9,7 @@
 	maintenance_wrench_time = 2 SECONDS
 
 	circuit = /obj/item/circuitboard/firework_launcher
-	var/tmp/loaded_star_handle
+	var/tmp/obj/item/firework_star/loaded_star
 	EXPIRY_DECLARE(last_launch)
 	var/launch_cooldown = 5 MINUTES
 
@@ -56,7 +56,7 @@
 
 /obj/machinery/firework_launcher/proc/interaction_load_star(mob/user, obj/item/firework_star/O, datum/interaction/interaction)
 	if(user.unEquip(O, 0, src))
-		loaded_star_handle = om_handle(O)
+		rel_set(src, "loaded_star", O)
 		to_chat(user, span_notice("You insert the firework star into \the [src]."))
 		add_fingerprint(user)
 		update_icon()
@@ -86,7 +86,7 @@
 		return TRUE
 	else
 		loaded_star().forceMove(get_turf(src))
-		loaded_star_handle = null
+		rel_clear(src, "loaded_star")
 		add_fingerprint(user)
 		update_icon()
 	return TRUE
@@ -124,7 +124,7 @@
 	play_sfx(get_turf(src), SFX_WEAPONS_RPG)
 	loaded_star().trigger_firework(WH)
 	qdel(loaded_star())
-	loaded_star_handle = null
+	rel_clear(src, "loaded_star")
 	EXPIRY_STAMP(src, last_launch, CLOCK_WORLD)
 	add_fingerprint(user)
 	update_icon()
@@ -144,6 +144,6 @@
 		return
 	return P
 
-/// LC-refs: the loaded_star this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the loaded_star this refers to (a relation view: null once it is deleted).
 /obj/machinery/firework_launcher/proc/loaded_star() as /obj/item/firework_star
-	return om_resolve(loaded_star_handle)
+	return loaded_star

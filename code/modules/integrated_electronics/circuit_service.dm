@@ -31,7 +31,7 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 	for(var/obj/item/integrated_circuit/IC as anything in typesof(/obj/item/integrated_circuit))
 		var/path = IC
 		all_components[initial(IC.name)] = path // Populating the component lists
-		prototype_components[path] = new path
+		own_put(src, "prototype_components", path, new path)
 
 		if(!(initial(IC.spawn_flags) & (IC_SPAWN_DEFAULT | IC_SPAWN_RESEARCH)))
 			continue
@@ -45,7 +45,7 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 	for(var/obj/item/electronic_assembly/A as anything in typesof(/obj/item/electronic_assembly))
 		var/path = A
 		all_assemblies[initial(A.name)] = path
-		prototype_assemblies[path] = new path
+		own_put(src, "prototype_assemblies", path, new path)
 
 
 	circuit_fabricator_recipe_list["Assemblies"] = list(
@@ -100,5 +100,3 @@ GLOBAL_DATUM_INIT(circuit_service, /datum/world_service/circuit, new)
 		)
 
 // Prototype instances the service spawned once, keyed by path.
-DECLARE_REF(/datum/world_service/circuit, "prototype_components", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/circuit, "prototype_assemblies", OWNED_VALUES, null)

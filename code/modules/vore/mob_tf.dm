@@ -18,21 +18,17 @@
 /mob/living/proc/mob_belly_transfer(mob/living/M)
 	for(var/obj/belly/B as anything in M.vore_organs)
 		B.forceMove(src)
-		B.owner = src
-		M.vore_organs -= B
-		LAZYADD(src.vore_organs, B)
+		rel_set(B, "owner", src)
+		own_transfer(M, "vore_organs", src, "vore_organs", B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
-	for(var/obj/belly/B as anything in new_mob.vore_organs)
-		new_mob.vore_organs -= B
-		qdel(B)
-	new_mob.vore_organs = list()
+	own_clear(new_mob, "vore_organs", OWN_DELETE)
 	new_mob.name = src.name
 	new_mob.real_name = src.real_name
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)
-	new_mob.vore_selected = src.vore_selected
+	rel_set(new_mob, "vore_selected", src.vore_selected)
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
@@ -79,10 +75,10 @@
 				var/datum/mind/theirmind = ourmob.mind
 				ourmob.ghostize()
 				src.ghostize()
-				ourmob.mind = null
-				src.mind = null
-				ourmind.current = null
-				theirmind.current = null
+				rel_clear(ourmob, "mind")
+				rel_clear(src, "mind")
+				rel_clear(ourmind, "current")
+				rel_clear(theirmind, "current")
 				transfer_mind(ourmind, ourmob, "mob transform body swap with [src]", force = TRUE)
 				transfer_mind(theirmind, src, "mob transform body swap with [ourmob]", force = TRUE)
 				ourmob.set_tf_mob_holder(null)
@@ -102,8 +98,8 @@
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
 	if(!tf_form_mind)
-		ourmob.vore_selected = vore_selected
-		vore_selected = null
+		rel_set(ourmob, "vore_selected", vore_selected)
+		rel_clear(src, "vore_selected")
 		ourmob.mob_belly_transfer(src)
 
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)
@@ -117,8 +113,8 @@
 	if(tf_form == ourmob)
 		if(tf_form_mind)
 			transfer_mind(tf_form_mind, src, "returned to shapeshift form [src]", tf_form_holds_key)
-			tf_form_mind = null
-		ourmob.tf_form = src
+			rel_clear(src, "tf_form_mind")
+		rel_set(ourmob, "tf_form", src)
 		src.forceMove(ourmob)
 	else
 		qdel(src)
@@ -176,11 +172,11 @@
 		if(shapeshifting && src.tf_form)
 			new_mob = src.tf_form
 			add_verb(new_mob,/mob/living/proc/shapeshift_form)
-			new_mob.tf_form = src
+			rel_set(new_mob, "tf_form", src)
 			new_mob.forceMove(src.loc)
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
-				new_mob.tf_form_mind = new_mob.mind
+				rel_set(new_mob, "tf_form_mind", new_mob.mind)
 				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
 		else
 			if(isliving(new_form))

@@ -8,25 +8,23 @@
  * All this does is ensure that the mob releases the machine when they leave it.
  */
 /datum/using_machine_shim
-	var/linked_machine_handle
+	var/obj/machinery/linked_machine
 	/// The mob using the machine.
 	var/mob/owner
 
 /mob/var/datum/using_machine_shim/machine_shim
-DECLARE_REF(/mob, "machine_shim", OWNED, null)
-DECLARE_REF(/datum/using_machine_shim, "owner", BACK, "machine_shim")
 
 /datum/using_machine_shim/New(mob/new_owner, obj/machinery/machine)
 	..()
-	owner = new_owner
-	owner.machine_shim = src
+	rel_set(src, "owner", new_owner)
+	own_set(owner, "machine_shim", src)
 	// Mob
 	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
 	om_hook(host_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_mob_moved))
 	om_hook(host_mob(), /datum/om/event/mob_logout, src, PROC_REF(on_mob_logout))
 
 	// Machine
-	linked_machine_handle = om_handle(machine)
+	rel_set(src, "linked_machine", machine)
 	om_hook(linked_machine(), /datum/om/event/qdeleting, src, PROC_REF(on_machine_qdelete))
 	linked_machine().in_use = TRUE
 
@@ -151,6 +149,6 @@ DECLARE_REF(/datum/using_machine_shim, "owner", BACK, "machine_shim")
 /datum/using_machine_shim/proc/host_mob() as /mob
 	return owner
 
-/// LC-refs: the machine being used -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The machine being used (a relation view).
 /datum/using_machine_shim/proc/linked_machine() as /obj/machinery
-	return om_resolve(linked_machine_handle)
+	return linked_machine

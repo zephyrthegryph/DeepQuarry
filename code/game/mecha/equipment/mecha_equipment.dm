@@ -63,30 +63,30 @@
 	if(chassis)
 		if(equip_type)
 			if(equip_type == EQUIP_HULL)
-				LAZYREMOVE(chassis.hull_equipment, src)
+				rel_remove(chassis, "hull_equipment", src)
 				listclearnulls(chassis.hull_equipment)
 			if(equip_type == EQUIP_WEAPON)
-				LAZYREMOVE(chassis.weapon_equipment, src)
+				rel_remove(chassis, "weapon_equipment", src)
 				listclearnulls(chassis.weapon_equipment)
 			if(equip_type == EQUIP_UTILITY)
-				LAZYREMOVE(chassis.utility_equipment, src)
+				rel_remove(chassis, "utility_equipment", src)
 				listclearnulls(chassis.utility_equipment)
 			if(equip_type == EQUIP_SPECIAL)
-				LAZYREMOVE(chassis.special_equipment, src)
+				rel_remove(chassis, "special_equipment", src)
 				listclearnulls(chassis.special_equipment)
 			// ition begin: MICROMECHS
 			if(equip_type == EQUIP_MICRO_UTILITY)
-				LAZYREMOVE(chassis.micro_utility_equipment, src)
+				rel_remove(chassis, "micro_utility_equipment", src)
 				listclearnulls(chassis.micro_utility_equipment)
 			if(equip_type == EQUIP_MICRO_WEAPON)
-				LAZYREMOVE(chassis.micro_weapon_equipment, src)
+				rel_remove(chassis, "micro_weapon_equipment", src)
 				listclearnulls(chassis.micro_weapon_equipment)
 			// ition end: MICROMECHS
-		LAZYREMOVE(chassis.universal_equipment, src)
-		chassis.equipment -= src
+		rel_remove(chassis, "universal_equipment", src)
+		rel_remove(chassis, "equipment", src)
 		listclearnulls(chassis.equipment)
 		if(chassis.selected == src)
-			chassis.selected = null
+			rel_clear(chassis, "selected")
 		src.update_chassis_page()
 		chassis.occupant_message(span_red("The [src] is destroyed!"))
 		chassis.log_append_to_last("[src] is destroyed.",1)
@@ -177,29 +177,29 @@
 /obj/item/mecha_parts/mecha_equipment/proc/attach(obj/mecha/M as obj)
 	var/has_equipped = 0
 	if(equip_type == EQUIP_HULL && length(M.hull_equipment) < M.max_hull_equip && !has_equipped)
-		LAZYADD(M.hull_equipment, src)
+		rel_add(M, "hull_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_WEAPON && length(M.weapon_equipment) < M.max_weapon_equip && !has_equipped)
-		LAZYADD(M.weapon_equipment, src)
+		rel_add(M, "weapon_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_UTILITY && length(M.utility_equipment) < M.max_utility_equip && !has_equipped)
-		LAZYADD(M.utility_equipment, src)
+		rel_add(M, "utility_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_SPECIAL && length(M.special_equipment) < M.max_special_equip && !has_equipped)
-		LAZYADD(M.special_equipment, src)
+		rel_add(M, "special_equipment", src)
 		has_equipped = 1
 	// ition begin: MICROMECHS
 	if(equip_type == EQUIP_MICRO_UTILITY && length(M.micro_utility_equipment) < M.max_micro_utility_equip && !has_equipped)
-		LAZYADD(M.micro_utility_equipment, src)
+		rel_add(M, "micro_utility_equipment", src)
 		has_equipped = 1
 	if(equip_type == EQUIP_MICRO_WEAPON && length(M.micro_weapon_equipment) < M.max_micro_weapon_equip && !has_equipped)
-		LAZYADD(M.micro_weapon_equipment, src)
+		rel_add(M, "micro_weapon_equipment", src)
 		has_equipped = 1
 	// ition end: MICROMECHS
 	if(equip_type != EQUIP_SPECIAL && length(M.universal_equipment) < M.max_universal_equip && !has_equipped)
-		LAZYADD(M.universal_equipment, src)
-	M.equipment += src
-	chassis = M
+		rel_add(M, "universal_equipment", src)
+	rel_add(M, "equipment", src)
+	rel_set(src, "chassis", M)
 	if(!move_into(M, MECHA_SLOT_EQUIPMENT))
 		forceMove(M) // the equipment lists above already committed; guarantee the move
 
@@ -208,7 +208,7 @@
 
 	M.mecha_log_message("[src] initialized.")
 	if(!M.selected)
-		M.selected = src
+		rel_set(M, "selected", src)
 	src.update_chassis_page()
 	return
 
@@ -223,29 +223,29 @@
 	moveto = moveto || get_turf(chassis)
 	if(!chassis.slot_remove(src, moveto))
 		forceMove(moveto)
-	chassis.equipment -= src
-	LAZYREMOVE(chassis.universal_equipment, src)
+	rel_remove(chassis, "equipment", src)
+	rel_remove(chassis, "universal_equipment", src)
 	if(equip_type)
 		switch(equip_type)
 			if(EQUIP_HULL)
-				LAZYREMOVE(chassis.hull_equipment, src)
+				rel_remove(chassis, "hull_equipment", src)
 			if(EQUIP_WEAPON)
-				LAZYREMOVE(chassis.weapon_equipment, src)
+				rel_remove(chassis, "weapon_equipment", src)
 			if(EQUIP_UTILITY)
-				LAZYREMOVE(chassis.utility_equipment, src)
+				rel_remove(chassis, "utility_equipment", src)
 			if(EQUIP_SPECIAL)
-				LAZYREMOVE(chassis.special_equipment, src)
+				rel_remove(chassis, "special_equipment", src)
 			// ition begin: MICROMECHS
 			if(EQUIP_MICRO_UTILITY)//CHOMPstation edit - This was improperly named bugging detaching on my equipment fix.
-				LAZYREMOVE(chassis.micro_utility_equipment, src)
+				rel_remove(chassis, "micro_utility_equipment", src)
 			if(EQUIP_MICRO_WEAPON)
-				LAZYREMOVE(chassis.micro_weapon_equipment, src)
+				rel_remove(chassis, "micro_weapon_equipment", src)
 			// ition end: MICROMECHS
 	if(chassis.selected == src)
-		chassis.selected = null
+		rel_clear(chassis, "selected")
 	update_chassis_page()
 	chassis.mecha_log_message("[src] removed from equipment.")
-	chassis = null
+	rel_clear(src, "chassis")
 	set_ready_state(TRUE)
 	enable_special = FALSE
 	return
@@ -285,4 +285,3 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment, "detach", PROC_REF(topic_det
 	return step_delay
 
 // Read by detach() in Destroy().
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment, "chassis", HELD, null)

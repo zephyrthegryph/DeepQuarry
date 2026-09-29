@@ -41,7 +41,6 @@
 	input_level = max_transfer_rate
 	output_level = max_transfer_rate
 
-DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST, null)
 
 /obj/machinery/power/smes/batteryrack/check_terminals()
 	return TRUE // we don't necessarily need terminals
@@ -151,7 +150,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	LAZYADD(internal_cells, C)
+	own_add(src, "internal_cells", C)
 	if(user)
 		user.drop_from_inventory(C)
 	C.forceMove(src)
@@ -202,7 +201,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 /obj/machinery/power/smes/batteryrack/dismantle()
 	for(var/obj/item/cell/C in internal_cells)
 		C.forceMove(get_turf(src))
-		LAZYREMOVE(internal_cells, C)
+		own_take_member(src, "internal_cells", C)
 	return ..()
 
 /obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
@@ -312,7 +311,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 				return TRUE
 
 			C.forceMove(get_turf(src))
-			LAZYREMOVE(internal_cells, C)
+			own_take_member(src, "internal_cells", C)
 			update_icon()
 			RefreshParts()
 			update_maxcharge()

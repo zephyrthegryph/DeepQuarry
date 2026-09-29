@@ -20,10 +20,11 @@
 	var/autopilot_first_delay = null // If your want your shuttle to stay for a different amount of time for the first time, set this.
 	var/can_rename = TRUE // Lets the pilot rename the shuttle. Only available once.
 	category = /datum/shuttle/autodock/web_shuttle
-	var/list/helmets	// OM handles of the registered pilot helmets
+	/// Relation list: the registered pilot helmets.
+	var/list/obj/item/clothing/head/pilot/helmets
 
 /datum/shuttle/autodock/web_shuttle/New()
-	web_master = new web_master_type(src)
+	own_set(src, "web_master", new web_master_type(src))
 	build_destinations()
 	if(autopilot)
 		flags |= SHUTTLE_FLAGS_PROCESS
@@ -32,10 +33,8 @@
 			autopilot_delay = autopilot_first_delay
 	if(!visible_name)
 		visible_name = name
-	helmets = list()
 	..()
 
-DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!
@@ -114,16 +113,12 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 				web_master.process_autopath()
 
 /datum/shuttle/autodock/web_shuttle/proc/update_helmets()
-	for(var/h in helmets.Copy())
-		var/obj/item/clothing/head/pilot/H = om_resolve(h)
-		if(!H)
-			helmets -= h
-			continue
+	for(var/obj/item/clothing/head/pilot/H as anything in helmets?.Copy())
 		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
-			H.shuttle_comp_handle = null
+			rel_clear(H, "shuttle_comp")
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
-			helmets -= h
+			rel_remove(src, "helmets", H)
 		else
 			H.update_hud(moving_status)
 
@@ -173,8 +168,11 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 	icon_state = "flightcomp_center"
 	icon_keyboard = "flight_center_key"
 	icon_screen = "flight_center"
-	var/list/my_doors //Should be list("id_tag" = "Pretty Door Name", ...); after Initialize, "Pretty Door Name" = om_handle(door)
-	var/list/my_sensors //Should be list("id_tag" = "Pretty Sensor Name", ...); after Initialize, name = om_handle(sensor)
+	var/list/my_doors //Should be list("id_tag" = "Pretty Door Name", ...) (config; stays as mapped)
+	var/list/my_sensors //Should be list("id_tag" = "Pretty Sensor Name", ...) (config; stays as mapped)
+	/// Relation lists: the doors and sensors found for my_doors / my_sensors at Initialize().
+	var/list/obj/machinery/door/airlock/linked_doors
+	var/list/obj/machinery/shuttle_sensor/linked_sensors
 	tgui_subtemplate = "ShuttleControlConsoleWeb"
 	skip_act = TRUE
 
@@ -184,21 +182,19 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 	. = ..()
 	var/area/my_area = get_area(src)
 	if(my_doors)
-		var/list/find_doors = my_doors
-		my_doors = list()
+		var/list/find_doors = my_doors.Copy()
 		for(var/obj/machinery/door/airlock/A in area_contents_of_type(my_area, /obj/machinery/door/airlock))
 			if(A.id_tag in find_doors)
-				my_doors[find_doors[A.id_tag]] = om_handle(A)
+				rel_add(src, "linked_doors", A)
 				find_doors -= A.id_tag
 		for(var/lost in find_doors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] door!")
 
 	if(my_sensors)
-		var/list/find_sensors = my_sensors
-		my_sensors = list()
+		var/list/find_sensors = my_sensors.Copy()
 		for(var/obj/machinery/shuttle_sensor/S in area_contents_of_type(my_area, /obj/machinery/shuttle_sensor))
 			if(S.id_tag in find_sensors)
-				my_sensors[find_sensors[S.id_tag]] = om_handle(S)
+				rel_add(src, "linked_sensors", S)
 				find_sensors -= S.id_tag
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
@@ -221,8 +217,8 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	H.shuttle_comp_handle = om_handle(src)
-	shuttle.helmets |= om_handle(H)
+	rel_set(H, "shuttle_comp", src)
+	rel_add(shuttle, "helmets", H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
 	return TRUE
@@ -272,18 +268,12 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 		percent_finished = (elapsed_time / total_time) * 100
 
 	var/list/doors = list()
-	if(my_doors)
-		for(var/doorname in my_doors)
-			var/obj/machinery/door/airlock/A = om_resolve(my_doors[doorname])
-			if(A)
-				doors[doorname] = list("bolted" = A.locked, "open" = !A.density)
+	for(var/obj/machinery/door/airlock/A as anything in linked_doors)
+		doors[my_doors[A.id_tag]] = list("bolted" = A.locked, "open" = !A.density)
 
 	var/list/sensors = list()
-	if(my_sensors)
-		for(var/sensorname in my_sensors)
-			var/obj/machinery/shuttle_sensor/S = om_resolve(my_sensors[sensorname])
-			if(S)
-				sensors[sensorname] = S.air_list()
+	for(var/obj/machinery/shuttle_sensor/S as anything in linked_sensors)
+		sensors[my_sensors[S.id_tag]] = S.air_list()
 
 	data = list(
 		"shuttle_location" = shuttle_location,
@@ -374,11 +364,11 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 				message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 				return
 
-			WS.next_location_handle = om_handle(target_destination.my_landmark())
+			rel_set(WS, "next_location", target_destination.my_landmark())
 			if(!can_move(WS, ui.user))
 				return
 
-			WS.web_master.future_destination_handle = om_handle(target_destination)
+			rel_set(WS.web_master, "future_destination", target_destination)
 			to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
 			WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 
@@ -448,7 +438,7 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 		for(var/new_dest in destinations)
 			var/datum/shuttle_destination/D = new new_dest(WM)
-			WM.destinations += D
+			own_add(WM, "destinations", D)
 
 			for(var/type_to_link in D.routes_to_make)
 				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)
@@ -501,3 +491,7 @@ DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 	if(aircontents)
 		return aircontents
+
+REL_LIST(/datum/shuttle/autodock/web_shuttle, helmets)
+REL_LIST(/obj/machinery/computer/shuttle_control/web, linked_doors)
+REL_LIST(/obj/machinery/computer/shuttle_control/web, linked_sensors)

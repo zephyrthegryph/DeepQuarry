@@ -261,12 +261,12 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		to_chat(src, span_red("If the title screen is black, resources are still downloading. Please be patient until the title screen appears."))
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
-	GLOB.directory[ckey] = src
+	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
 
-	if(GLOB.persistent_clients_by_ckey[ckey])
-		persistent_client = GLOB.persistent_clients_by_ckey[ckey]
+	if(persistent_client_for(ckey))
+		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	else
-		persistent_client = new(ckey)
+		persistent_client = new /datum/persistent_client(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
 	persistent_client.set_client(src)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
@@ -274,25 +274,25 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 	winset(src, null, list("browser-options" = "find,refresh"))
 	// Instantiate stat panel
-	stat_panel = new(src, "statbrowser")
+	stat_panel = new /datum/tgui_window(src, "statbrowser") // ALLOW(ownership): /client is not a datum; it holds these directly
 	stat_panel.subscribe(src, PROC_REF(on_stat_panel_message))
 
 	// Instantiate tgui panel
-	tgui_say = new(src, "tgui_say")
-	tgui_shocker = new(src, "tgui_shock")
+	tgui_say = new /datum/tgui_say(src, "tgui_say") // ALLOW(ownership): /client is not a datum; it holds these directly
+	tgui_shocker = new /datum/tgui_shock(src, "tgui_shock") // ALLOW(ownership): /client is not a datum; it holds these directly
 	initialize_commandbar_spy()
-	tgui_panel = new(src, "browseroutput")
+	tgui_panel = new /datum/tgui_panel(src, "browseroutput") // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	GLOB.tickets.ClientLogin(src)
 
 	//preferences datum - also holds some persistant data for the client (because we may as well keep these datums to a minimum)
-	prefs = GLOB.preferences_datums[ckey]
+	prefs = GLOB.preferences_datums[ckey] // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(prefs)
-		prefs.client_handle = om_handle(src)
+		rel_set(prefs, "client", src)
 		prefs.load_savefile() // just to make sure we have the latest data
 		prefs.apply_all_client_preferences()
 	else
-		prefs = new /datum/preferences(src)
+		prefs = new /datum/preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 		GLOB.preferences_datums[ckey] = prefs
 	prefs.last_ip = address				//these are gonna be used for banning
 	prefs.last_id = computer_id			//these are gonna be used for banning
@@ -300,7 +300,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	var/full_version = "[byond_version].[byond_build ? byond_build : "xxx"]"
 	log_access("Login: [key_name(src)] from [address ? address : "localhost"]-[computer_id] || BYOND v[full_version]")
 
-	prefs_vr = new/datum/vore_preferences(src)
+	prefs_vr = new/datum/vore_preferences(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	. = ..()	//calls mob.Login()
 
@@ -359,7 +359,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	tgui_say.initialize()
 	tgui_shocker.initialize()
 
-	loot_panel = new(src)
+	loot_panel = new /datum/lootpanel(src) // ALLOW(ownership): /client is not a datum; it holds these directly
 
 	EXPIRY_STAMP(src, connection_time, CLOCK_WORLD)
 	connection_realtime = world.realtime
@@ -379,7 +379,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	send_resources()
 
 	if(!void)
-		void = new()
+		void = new /atom/movable/screen/click_catcher() // ALLOW(ownership): /client is not a datum; it holds these directly
 	screen += void
 
 	attempt_auto_fit_viewport()
@@ -405,6 +405,8 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 // ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
 /client/Destroy()
+	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
+	// so they are plain vars, deleted here by hand.
 	GLOB.directory -= ckey
 	GLOB.clients -= src
 	persistent_client?.set_client(null)
@@ -412,17 +414,22 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	log_access("Logout: [key_name(src)]")
 	GLOB.tickets.ClientLogout(src)
 	if(holder)
-		holder.owner_handle = null
+		rel_clear(holder, "owner")
 		GLOB.admins -= src
 	if(skybox)
-		QDEL_NULL(skybox)
+		qdel(skybox)
+		skybox = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	if(fakeConversations)
-		QDEL_NULL(fakeConversations)
-	QDEL_NULL(loot_panel)
+		qdel(fakeConversations)
+		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
+	qdel(loot_panel)
+	loot_panel = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Client-scoped persistent UIs: their /datum/tgui entries would otherwise
 	// linger in SStgui.all_uis for every reconnect.
-	QDEL_NULL(tooltips)
-	QDEL_NULL(media)
+	qdel(tooltips)
+	tooltips = null // ALLOW(ownership): /client is not a datum; it holds these directly
+	qdel(media)
+	media = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
 
@@ -954,19 +961,18 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/proc/open_filter_editor(atom/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		holder.filteriffic = new /datum/filter_editor(in_atom)
+		own_set(holder, "filteriffic", new /datum/filter_editor(in_atom))
 		holder.filteriffic.tgui_interact(mob)
 
 ///opens the particle editor UI for the in_atom object for this client
 /client/proc/open_particle_editor(atom/movable/in_atom)
 	if(check_rights_for(src, R_HOLDER))
-		holder.particle_test = new /datum/particle_editor(in_atom)
+		own_set(holder, "particle_test", new /datum/particle_editor(in_atom))
 		holder.particle_test.tgui_interact(mob)
 
 /client/proc/set_eye(new_eye)
 	if(new_eye == eye)
 		return
-	var/atom/old_eye = eye
 	eye = new_eye
 
 /mob/proc/is_remote_viewing()

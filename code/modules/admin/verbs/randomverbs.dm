@@ -1008,7 +1008,7 @@ ADMIN_VERB(cmd_admin_droppod_spawn, R_SPAWN, "Drop Pod Atom", "Spawn a new atom/
 	ask_podtype()
 
 /datum/om/flow/admin_drop_pod/proc/mob_picked(datum/om/prompt/choice/ask)
-	drop_mob = ask.choice
+	rel_set(src, "drop_mob", ask.choice)
 	ask_podtype()
 
 /datum/om/flow/admin_drop_pod/proc/ask_podtype()
@@ -1129,7 +1129,7 @@ ADMIN_VERB(spawn_character_mob, R_SPAWN, "Spawn Character As Mob", "Spawn a spec
 	if(organs)
 		new_mob.copy_from_prefs_vr()
 		if(LAZYLEN(new_mob.vore_organs))
-			new_mob.vore_selected = new_mob.vore_organs[1]
+			rel_set(new_mob, "vore_selected", new_mob.vore_organs[1])
 			if(isanimal(new_mob))
 				var/mob/living/simple_mob/new_simple_mob = new_mob
 				if(!new_simple_mob.voremob_loaded || !new_simple_mob.vore_active)

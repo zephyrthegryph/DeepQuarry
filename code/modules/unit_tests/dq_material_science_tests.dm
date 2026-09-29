@@ -232,7 +232,8 @@
 	var/datum/material_template/slots = material_template_for_application(MATERIAL_APPLICATION_CAPACITOR)
 	var/slots_total = SHEET_MATERIAL_AMOUNT
 	part.apply_material_construction(list(MATERIAL_ROLE_DIELECTRIC = MAT_DIAMOND), slots.type, slots_total)
-	machine.component_parts = list(part)
+	own_clear(machine, "component_parts", OWN_DELETE)
+	own_add(machine, "component_parts", part)
 	TEST_ASSERT(machine.finalize_material_assembly(), "A constructed machine must retain the material makeup of its installed parts")
 	TEST_ASSERT(length(machine.material_component_manifest), "Machine material composition must remain inspectable after the frame is consumed")
 	TEST_ASSERT(machine.material_emp_resistance > 0, "Installed dielectric parts must affect whole-machine EMP behavior")
@@ -672,7 +673,8 @@
 	var/obj/machinery/material_furnace/unpowered_test/furnace = allocate(/obj/machinery/material_furnace/unpowered_test, test_turf)
 	var/obj/item/stack/material/steel/stock = allocate(/obj/item/stack/material/steel, test_turf, 2)
 	stock.forceMove(furnace)
-	furnace.feedstock = list(stock)
+	own_clear(furnace, "feedstock", OWN_DELETE)
+	own_add(furnace, "feedstock", stock)
 	furnace.finish_firing()
 	own(furnace.output_stock())
 	var/datum/material_batch/output = furnace.output_stock() ? furnace.output_stock().physical_batch() : null
@@ -710,7 +712,8 @@
 	var/obj/machinery/material_furnace/furnace = new(test_turf)
 	var/obj/item/stack/material/steel/stock = new(test_turf, 4)
 	stock.forceMove(furnace)
-	furnace.feedstock = list(stock)
+	own_clear(furnace, "feedstock", OWN_DELETE)
+	own_add(furnace, "feedstock", stock)
 	furnace.finish_firing()
 	TEST_ASSERT(furnace.output_stock(), "raw stock firing did not produce recoverable processed stock")
 	var/datum/material_batch/output = furnace.output_stock().physical_batch()
@@ -755,7 +758,8 @@
 	TEST_ASSERT(stock, "failed to create physical processed stock for heat-treatment test")
 	var/obj/machinery/material_furnace/furnace = new(test_turf)
 	stock.forceMove(furnace)
-	furnace.feedstock = list(stock)
+	own_clear(furnace, "feedstock", OWN_DELETE)
+	own_add(furnace, "feedstock", stock)
 	furnace.finish_firing()
 	TEST_ASSERT(furnace.output_stock(), "furnace failed to return heat-treated stock")
 	var/datum/material/processed_alloy/output_material = furnace.output_stock().material
@@ -843,10 +847,10 @@
 	var/datum/material_power_graph/graph = net.material_graph
 	TEST_ASSERT_EQUAL(length(graph.vertices), 2, "A real straight cable run should reduce to its two attachment vertices")
 	TEST_ASSERT_EQUAL(length(graph.edges), 1, "Real cable connectivity should produce one reduced edge")
-	var/list/sources = list()
-	var/list/consumers = list()
-	sources[om_handle(start)] = 10000
-	consumers[om_handle(end)] = 10000
+	var/alist/sources = alist()
+	var/alist/consumers = alist()
+	sources[graph.vertex_for(start)] = 10000
+	consumers[graph.vertex_for(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	TEST_ASSERT(graph.loss_watts > 0, "A real loaded ordinary cable must have positive resistance loss")
 	graph.deposit_losses(12000)
@@ -855,6 +859,10 @@
 		cable.set_engineered_material(MAT_COPPER)
 	net.rebuild_material_cache()
 	graph = net.material_graph
+	sources = alist()
+	consumers = alist()
+	sources[graph.vertex_for(start)] = 10000
+	consumers[graph.vertex_for(end)] = 10000
 	graph.resolve_loads(sources, consumers)
 	var/before = 0
 	for(var/obj/structure/cable/cable as anything in net.cables)
@@ -866,7 +874,7 @@
 		after += cable.material_service.temperature * cable.material_service.thermal_mass() + cable.material_service.buffer_energy
 	TEST_ASSERT(abs(after - before - 12000) < 2, "Paid loss must become exactly that much heat across the real cable run")
 	TEST_ASSERT(!graph.resistance_dirty && length(graph.dirty_edges) == 1, "Heating a cable run must invalidate that run without requesting a full network resistance scan")
-	graph.resolve_loads(sources, list())
+	graph.resolve_loads(sources, alist())
 	graph.deposit_losses(0)
 	TEST_ASSERT_EQUAL(middle.material_current, 0, "Disconnecting the load must clear the cable's current")
 	qdel(start)

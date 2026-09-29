@@ -16,7 +16,7 @@
 	var/chairs = 0
 	var/tables = 0
 	var/access_doors = 0
-	for(var/atom/movable/furnishing in weak_list_live(owner.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(owner.furnishings))
 		if(istype(furnishing, /obj/structure/bed/chair))
 			chairs++
 		else if(istype(furnishing, /obj/structure/table))
@@ -87,7 +87,7 @@
 						break
 				if(!found_signature)
 					var/area/generated_station/module_area = materialized.module_areas[module?.id]
-					for(var/atom/movable/furnishing in weak_list_live(materialized.furnishings))
+					for(var/atom/movable/furnishing in LAZYCOPY(materialized.furnishings))
 						if(istype(furnishing, required_type) && get_area(furnishing) == module_area)
 							found_signature = TRUE
 							break

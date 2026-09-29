@@ -29,10 +29,7 @@
 		var/mob/living/ling_mob = comp.owner
 		ling_mob.remove_changeling_powers()
 		remove_verb(ling_mob, /mob/proc/EvolutionMenu)
-		ling_mob.changeling_state = null
-		if(ling_mob.mind)
-			ling_mob.mind.antag_holder.changeling_handle = null
-		qdel(comp)
+		own_clear(ling_mob, "changeling_state", OWN_DELETE) // the mind's antag_holder view clears with it
 
 /datum/antagonist/changeling/create_objectives(datum/mind/changeling)
 	if(!..())
@@ -44,31 +41,31 @@
 	//If it seems like they'd be able to do it in play, add a 10% chance to have to escape alone
 
 	var/datum/objective/absorb/absorb_objective = new
-	absorb_objective.owner = changeling
+	rel_set(absorb_objective, "owner", changeling)
 	absorb_objective.gen_amount_goal(2, 3)
-	changeling.objectives += absorb_objective
+	own_add(changeling, "objectives", absorb_objective)
 
 	var/datum/objective/assassinate/kill_objective = new
-	kill_objective.owner = changeling
+	rel_set(kill_objective, "owner", changeling)
 	kill_objective.find_target()
-	changeling.objectives += kill_objective
+	own_add(changeling, "objectives", kill_objective)
 
 	var/datum/objective/steal/steal_objective = new
-	steal_objective.owner = changeling
+	rel_set(steal_objective, "owner", changeling)
 	steal_objective.find_target()
-	changeling.objectives += steal_objective
+	own_add(changeling, "objectives", steal_objective)
 
 	switch(rand(1,100))
 		if(1 to 80)
 			if (!(locate_in_list(changeling.objectives, /datum/objective/escape)))
 				var/datum/objective/escape/escape_objective = new
-				escape_objective.owner = changeling
-				changeling.objectives += escape_objective
+				rel_set(escape_objective, "owner", changeling)
+				own_add(changeling, "objectives", escape_objective)
 		else
 			if (!(locate_in_list(changeling.objectives, /datum/objective/survive)))
 				var/datum/objective/survive/survive_objective = new
-				survive_objective.owner = changeling
-				changeling.objectives += survive_objective
+				rel_set(survive_objective, "owner", changeling)
+				own_add(changeling, "objectives", survive_objective)
 	return
 
 /datum/antagonist/changeling/can_become_antag(datum/mind/player, ignore_role)

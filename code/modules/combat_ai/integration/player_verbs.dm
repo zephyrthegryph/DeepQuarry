@@ -70,7 +70,7 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 			continue
 		if(!B.applicable_to(src))
 			continue
-		var/atom/source = om_resolve(ai_brain.effective_behaviors[btype])
+		var/atom/source = ai_brain.behavior_source(btype)
 		if(B.requires_held_source && !source)
 			continue
 		if(!B.is_off_cooldown(ai_brain, source))

@@ -388,18 +388,21 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 		return TRUE
 	return FALSE
 
-GLOBAL_LIST_EMPTY(cached_examine_icons) // ALLOW(cache): per-atom state with per-entry expiry
-/proc/set_cached_examine_icon(atom/A, icon/I, expiry = 12000)
-	GLOB.cached_examine_icons[om_handle(A)] = I
+/// The atom's cached examine icon (an /icon value, not an entity), cleared by its expiry timer.
+/atom/var/tmp/icon/examine_icon_snapshot
+
+/proc/set_cached_examine_icon(atom/A, icon/I, expiry = 20 MINUTES)
+	if(!A)
+		return
+	A.examine_icon_snapshot = I
 	if(expiry)
-		om_after_unique(null, expiry, GLOBAL_PROC_REF(uncache_examine_icon), om_handle(A))
+		om_after_unique(A, expiry, TYPE_PROC_REF(/atom, uncache_examine_icon))
 
 /proc/get_cached_examine_icon(atom/A)
-	var/WR = om_handle(A)
-	return GLOB.cached_examine_icons[WR]
+	return A?.examine_icon_snapshot
 
-/proc/uncache_examine_icon(WR)
-	GLOB.cached_examine_icons -= WR
+/atom/proc/uncache_examine_icon()
+	examine_icon_snapshot = null
 
 /proc/adjust_brightness(color, value)
 	if (!color) return "#FFFFFF"

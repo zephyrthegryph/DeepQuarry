@@ -6,7 +6,7 @@
 	show_messages = 1
 
 	var/slots = 5
-	var/obj/item/storage/internal/hold // ALLOW(state_ref): owned: the internal storage object that holds the webbing's contents
+	var/obj/item/storage/internal/hold // owned: the internal storage object that holds the webbing's contents
 	w_class = ITEMSIZE_NORMAL
 	on_rolled = list("down" = "none")
 	var/hide_on_roll = FALSE
@@ -20,7 +20,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/storage, "hold", /obj/item/st
 	if (!hide_on_roll)
 		on_rolled["down"] = icon_state
 
-DECLARE_REF(/obj/item/clothing/accessory/storage, "hold", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/storage, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(storage_accessory_hand)), \

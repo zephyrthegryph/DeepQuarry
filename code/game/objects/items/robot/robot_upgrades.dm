@@ -300,9 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		generic_error(user, R, type)
 		return FALSE
 
-	R.module.modules += new/obj/item/tank/jetpack/carbondioxide(R.module)
-	for(var/obj/item/tank/jetpack/carbondioxide in R.module.modules)
-		R.internals = src
+	own_add(R.module, "modules", new /obj/item/tank/jetpack/carbondioxide(R.module))
 	return TRUE
 
 /obj/item/borg/upgrade/advanced/advhealth

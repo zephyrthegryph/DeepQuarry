@@ -71,7 +71,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 		infomorph.emagged = TRUE
 
 	if(infomorph.client)
-		pai = infomorph
+		rel_set(src, "pai", infomorph)
 		setEmotion(1)
 		return 1
 

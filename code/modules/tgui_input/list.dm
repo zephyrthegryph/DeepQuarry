@@ -151,7 +151,6 @@
 /datum/tgui_list_input/proc/set_choice(choice)
 	src.choice = choice
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared (registered) definition/flyweight: never cleared.
 /datum/tgui_list_input/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui_list_input, "state_static", STATIC, null)

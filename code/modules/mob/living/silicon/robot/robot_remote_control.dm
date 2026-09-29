@@ -10,7 +10,7 @@
 // Premade AI shell, for roundstart shells.
 /mob/living/silicon/robot/ai_shell/Initialize(mapload)
 	add_verb(src,/mob/living/silicon/robot/proc/transfer_shell_act) // TGPanel // add sideloader
-	mmi = new /obj/item/mmi/inert/ai_remote(src) // ALLOW(decl): set up by post_mmi_setup() before parent init
+	own_set(src, "mmi", new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
 	post_mmi_setup()
 	return ..()
 
@@ -30,7 +30,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	shell = TRUE
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
-	rbPDA = new /obj/item/pda/ai/shell(src)
+	own_set(src, "rbPDA", new /obj/item/pda/ai/shell(src))
 	setup_PDA()
 	registry_join(REGISTRY_AI_SHELLS, src)
 	if(!QDELETED(camera))
@@ -108,8 +108,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		to_chat(src, span_notice("Transferring Shell"))
 		deployed = FALSE
 		update_icon()
-		mainframe.teleop = null
-		mainframe.deployed_shell = null
+		rel_clear(mainframe, "teleop")
+		rel_clear(mainframe, "deployed_shell")
 		SetName("[modtype] AI Shell [num2text(ident)]")
 		if(radio) //Return radio to normal
 			radio.recalculateChannels()
@@ -117,9 +117,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 			camera.c_tag = real_name	//update the camera name too
 		if(mainframe.laws)
 			mainframe.laws.show_laws(mainframe) //Always remind the AI when switching
-		mainframe = null
+		rel_clear(src, "mainframe")
 		soul_link(/datum/soul_link/shared_body, AI, target)
-		AI.deployed_shell = target
+		rel_set(AI, "deployed_shell", target)
 		target.deploy_init(AI)
 		if(src.client) // ITION: Resize shell based on our preffered size
 			target.resize(src.client.prefs.read_preference(/datum/preference/numeric/human/size_multiplier)) // ITION + size_multiplier migrated
@@ -128,9 +128,9 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 			target.first_transfer = FALSE
 			target.copy_from_prefs_vr()
 			if(LAZYLEN(target.vore_organs))
-				target.vore_selected = target.vore_organs[1]
+				rel_set(target, "vore_selected", target.vore_organs[1])
 		src.copy_vore_prefs_to_mob(target)
-		AI.teleop = target // So the AI 'hears' messages near its core.
+		rel_set(AI, "teleop", target) // So the AI 'hears' messages near its core.
 		target.post_deploy()
 // ITION END
 
@@ -155,7 +155,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		camera.c_tag = real_name
 
 	// Have the borg have eyes when active.
-	mainframe = AI
+	rel_set(src, "mainframe", AI)
 	deployed = TRUE
 	update_icon()
 
@@ -194,8 +194,8 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	src.copy_vore_prefs_to_mob(mainframe)
 	deployed = FALSE
 	update_icon()
-	mainframe.teleop = null
-	mainframe.deployed_shell = null
+	rel_clear(mainframe, "teleop")
+	rel_clear(mainframe, "deployed_shell")
 	SetName("[modtype] AI Shell [num2text(ident)]")
 	if(radio) //Return radio to normal
 		radio.recalculateChannels()
@@ -203,7 +203,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		camera.c_tag = real_name	//update the camera name too
 	if(mainframe.laws)
 		mainframe.laws.show_laws(mainframe) //Always remind the AI when switching
-	mainframe = null
+	rel_clear(src, "mainframe")
 
 /mob/living/silicon/robot/proc/undeploy_act()
 	set name = "Release Control"
@@ -235,4 +235,3 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 		new /mob/living/silicon/robot/ai_shell(get_turf(src))
 	return ..()
 
-DECLARE_REF(/mob/living/silicon/robot, "mainframe", HELD, null)

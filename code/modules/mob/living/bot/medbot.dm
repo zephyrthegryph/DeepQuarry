@@ -112,7 +112,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 
 	for(var/mob/living/carbon/human/H in view(7, src)) // Time to find a patient!
 		if(confirmTarget(H))
-			target = H
+			rel_set(src, "target", H)
 			if(COOLDOWN_FINISHED(src, newpatient_speak_cooldown))
 				if(vocal)
 					var/message_options = list(
@@ -151,7 +151,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	bot_work(3 SECONDS, H, PROC_REF(UnarmedAttack_medbot_done), list(H, t))
 
 	if(H.stat == DEAD) // This is down here because this proc won't be called again due to losing a target because of parent AI loop.
-		target = null
+		rel_clear(src, "target")
 		if(vocal)
 			var/death_messages = list(
 				"No! Stay with me!" = SFX_VOICE_MEDBOT_MNO,
@@ -166,7 +166,7 @@ TYPE_TABLE(/mob/living/bot/medbot/mysterious, synthesized_reagents, list(REAGENT
 	else
 		t = confirmTarget(H)
 		if(!t)
-			target = null
+			rel_clear(src, "target")
 			if(vocal)
 				var/possible_messages = list(
 					"All patched up!" = SFX_VOICE_MEDBOT_MPATCHEDUP,
@@ -274,7 +274,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 	user.drop_item()
 	O.forceMove(src)
-	reagent_glass = O
+	own_set(src, "reagent_glass", O)
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 
@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 		if("eject")
 			if(reagent_glass)
 				reagent_glass.forceMove(get_turf(src))
-				reagent_glass = null
+				own_take(src, "reagent_glass")
 			. = TRUE
 
 		if("togglevoice")
@@ -334,13 +334,13 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 			to_chat(user, span_warning("You short out [src]'s reagent synthesis circuits."))
 		act_message(src, null, others = span_warning("%U% buzzes oddly!"))
 		flick("medibot_spark", src)
-		target = null
+		rel_clear(src, "target")
 		om_release_busy(src, "emagged")
 		emagged = 1
 		on = 1
 		update_icons()
 		. = 1
-	ignore_list |= user
+	rel_add(src, "ignore_list", user)
 
 /mob/living/bot/medbot/explode()
 	on = 0
@@ -355,7 +355,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 
 	if(reagent_glass)
 		reagent_glass.forceMove(Tsec)
-		reagent_glass = null
+		own_take(src, "reagent_glass")
 
 	if(emagged && prob(25))
 		play_sfx(src, SFX_VOICE_MEDBOT_MINSULT)
@@ -562,4 +562,4 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_MIN_URGENCY
 #undef MEDBOT_MAX_URGENCY
 
-DECLARE_REF(/mob/living/bot/medbot, "reagent_glass", HELD, null)
+OWN(/mob/living/bot/medbot, reagent_glass, OWN_CONTAINED)

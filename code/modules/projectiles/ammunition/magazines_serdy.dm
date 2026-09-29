@@ -7,17 +7,17 @@
 		if(L.caliber != caliber)
 			to_chat(user, span_warning("The ammo in [L] does not fit into [src]."))
 			return FALSE
-		if(!L.stored_ammo.len)
+		if(!length(L.stored_ammo))
 			to_chat(user, span_warning("There's no more ammo [L]!"))
 			return FALSE
-		if(stored_ammo.len >= max_ammo)
+		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return FALSE
-		while(L.stored_ammo.len && stored_ammo.len < max_ammo)
+		while(length(L.stored_ammo) && length(stored_ammo) < max_ammo)
 			var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
-			L.stored_ammo -= AC //Remove this casing from loaded list of the clip.
 			AC.forceMove(src)
-			stored_ammo.Insert(1, AC) //add it to the head of our magazine's list
+			own_transfer(L, "stored_ammo", src, "stored_ammo", AC) //move this casing from the clip's loaded list to ours
+			moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
 		L.update_icon()
 	return TRUE
 

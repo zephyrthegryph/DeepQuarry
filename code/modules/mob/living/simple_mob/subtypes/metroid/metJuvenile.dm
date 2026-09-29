@@ -62,7 +62,7 @@
 
 	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()
-		prey_excludes.Cut()
+		rel_clear(src, "prey_excludes")
 		stop_consumption()
 
 	else
@@ -168,4 +168,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/metroid/juvenile, INTERACT_HAND_UNGAT
 	adjust_nutrition(-500)
 	status_set(EFFECT_PARALYZED, 0)
 
-DECLARE_REF(/mob/living/simple_mob/metroid/juvenile, "victim", HELD, null)

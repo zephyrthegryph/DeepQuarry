@@ -21,7 +21,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/Initialize(mapload)
 	. = ..()
 	flags |= NOREACT
-	syringes = new
+	own_take_all(src, "syringes")
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
 	processed_reagents = new
 
@@ -37,7 +37,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/get_equip_info()
 	var/output = ..()
 	if(output)
-		return "[output] \[<a href=\"?src=\ref[src];toggle_mode=1\">[mode? "Analyze" : "Launch"]</a>\]<br />\[Syringes: [syringes.len]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]\]<br /><a href='byond://?src=\ref[src];show_reagents=1'>Reagents list</a>"
+		return "[output] \[<a href=\"?src=\ref[src];toggle_mode=1\">[mode? "Analyze" : "Launch"]</a>\]<br />\[Syringes: [length(syringes)]/[max_syringes] | Reagents: [reagents.total_volume]/[reagents.maximum_volume]\]<br /><a href='byond://?src=\ref[src];show_reagents=1'>Reagents list</a>"
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/action(atom/movable/target)
@@ -52,7 +52,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 		return
 	if(mode)
 		return analyze_reagents(target)
-	if(!syringes.len)
+	if(!length(syringes))
 		occupant_message(span_warning("No syringes loaded."))
 		return
 	if(reagents.total_volume<=0)
@@ -64,7 +64,7 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 	var/obj/item/reagent_containers/syringe/S = syringes[1]
 	S.forceMove(get_turf(chassis))
 	reagents.trans_to_obj(S, min(S.volume, reagents.total_volume))
-	syringes -= S
+	own_take_member(src, "syringes", S)
 	S.icon = 'icons/obj/chemical.dmi'
 	S.icon_state = "syringeproj"
 	play_sfx(src, SFX_ITEMS_SYRINGEPROJ)
@@ -216,7 +216,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	return output || "None"
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/load_syringe(obj/item/reagent_containers/syringe/S)
-	if(syringes.len<max_syringes)
+	if(length(syringes) < max_syringes)
 		if(get_dist(src,S) >= 2)
 			occupant_message("The syringe is too far away.")
 			return 0
@@ -230,7 +230,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 				return 0
 		S.reagents.trans_to_obj(src, S.reagents.total_volume)
 		S.forceMove(src)
-		syringes += S
+		own_move(S, src, "syringes")
 		occupant_message("Syringe loaded.")
 		update_equip_info()
 		return 1
@@ -363,7 +363,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		var/target_urgency = 0
 
 		if(!valid_target(Target))
-			Target = null
+			rel_clear(src, "Target")
 
 		if(Target)
 			target_urgency = treatable_urgency(Target)
@@ -375,19 +375,19 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 			var/urgency = treatable_urgency(Potential)
 
 			if(urgency > target_urgency)
-				Target = Potential
+				rel_set(src, "Target", Potential)
 				target_urgency = urgency
 
 		if(MyBeam && !valid_target(MyBeam.target()))
-			QDEL_NULL(MyBeam)
+			own_clear(src, "MyBeam", OWN_DELETE)
 
 		if(Target)
 			if(MyBeam && MyBeam.target() != Target)
-				QDEL_NULL(MyBeam)
+				own_clear(src, "MyBeam", OWN_DELETE)
 
 			if(valid_target(Target))
 				if(!MyBeam)
-					MyBeam = chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2)
+					own_set(src, "MyBeam", chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 				heal_target(Target)
 
 	else
@@ -427,9 +427,9 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 		chassis.visible_message(span_notice("\The [chassis]'s [src] buzzes as its drone returns to port."))
 		toggle_drone()
 	if(!isnull(Target))
-		Target = null
+		rel_clear(src, "Target")
 	if(MyBeam)
-		QDEL_NULL(MyBeam)
+		own_clear(src, "MyBeam", OWN_DELETE)
 
 /obj/item/mecha_parts/mecha_equipment/crisis_drone/proc/unique_patient_checks(mob/living/L)	// Anything special for subtypes. Does it only work on Robots? Fleshies? A species?
 	. = TRUE
@@ -537,7 +537,3 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 		return
 	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "syringes", OWNED_LIST, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "drone_overlay", OWNED, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "MyBeam", OWNED, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "Target", HELD, null)

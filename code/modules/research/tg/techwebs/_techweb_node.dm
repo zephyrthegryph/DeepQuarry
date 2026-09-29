@@ -126,3 +126,11 @@
 ///Proc called when the Station (Science techweb specific) researches a node.
 /datum/techweb_node/proc/on_station_research(atom/research_source)
 	SHOULD_CALL_PARENT(TRUE)
+
+/// Nodes are round definitions in GLOB.research_service.techweb_nodes: shared.
+REGISTRY_TYPE(/datum/techweb_node, GLOBAL_PROC_REF(registry_techweb_node))
+
+/// The registered node D stands for (D itself when it is the table's entry for its id).
+/proc/registry_techweb_node(datum/techweb_node/D)
+	var/datum/techweb_node/entry = GLOB.research_service?.techweb_nodes[D.id]
+	return entry == D ? D : null

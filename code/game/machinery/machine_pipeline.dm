@@ -197,13 +197,14 @@
 	// every subsystem (machine_first_wakes_flush()), before the first air fire, instead of
 	// thousands of zero-delay timers draining for minutes after the round starts.
 	if(GLOB.machine_first_wakes_bulk)
-		GLOB.machine_first_wakes[om_handle(M)] = TRUE
+		rel_add(om_global_owner(), "machine_first_wakes", M)
 		return
 	om_after_slot(M, "first_wake", 0, /obj/machinery/proc/materialize_wakes)
 
-/// Machines waiting for the boot bulk first-wake pass, by OM handle (a deleted machine's handle no
-/// longer resolves, so nothing has to take it out): handle -> TRUE, in join order.
-GLOBAL_LIST_EMPTY(machine_first_wakes)
+/// Machines waiting for the boot bulk first-wake pass, in join order. A relation list on the global
+/// owner: a deleted machine drops out on its own (its relation teardown), nothing takes it out.
+/datum/om/global_owner/var/list/obj/machinery/machine_first_wakes
+REL_LIST(/datum/om/global_owner, machine_first_wakes)
 /// TRUE until the MC finishes initializing; while set, on_start() queues first wakes in bulk.
 GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
@@ -212,16 +213,17 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
 /proc/machine_first_wakes_flush()
 	GLOB.machine_first_wakes_bulk = FALSE
-	var/list/queued = GLOB.machine_first_wakes.Copy()
+	var/datum/om/global_owner/owner = om_global_owner()
+	var/list/queued = owner.machine_first_wakes?.Copy() || list()
+	// Emptied up front: each materialize_wakes() then leaves an empty queue in O(1).
+	rel_clear(owner, "machine_first_wakes")
 	var/start = REALTIMEOFDAY
 	var/ran = 0
-	for(var/handle in queued)
-		var/obj/machinery/M = om_resolve(handle)
-		if(!M || QDELETED(M) || !GLOB.machine_first_wakes[handle])
+	for(var/obj/machinery/M as anything in queued)
+		if(QDELETED(M))
 			continue
 		M.materialize_wakes()
 		ran++
-	GLOB.machine_first_wakes.Cut()
 	log_world("Machine first wakes: [ran] of [length(queued)] armed in bulk in [(REALTIMEOFDAY - start) / 10] s")
 
 /// A machine's first wake is materialize_wakes(), queued by on_start(): it arms the machine's
@@ -484,10 +486,10 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/power/alarm/perform(obj/machinery/alarm/M, datum/om/frame/machine/F)
 	if(!M.alarm_area_ref())
 		return STAGE_IDLE
-	var/obj/machinery/alarm/MA = om_resolve(M.alarm_area_ref().main_air_alarm)
+	var/obj/machinery/alarm/MA = M.alarm_area_ref().main_air_alarm
 	if(!MA)
 		M.alarm_area_ref().elect_main_air_alarm()
-		MA = om_resolve(M.alarm_area_ref().main_air_alarm) // try again
+		MA = M.alarm_area_ref().main_air_alarm // try again
 	if(!MA || (!M.operable()) || M.shorted || MA.shorted)
 		M.register_gas_dependencies()
 		return STAGE_IDLE
@@ -514,7 +516,7 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 	var/area/A = M.alarm_area_ref()
 	if(!A)
 		return TRUE
-	var/obj/machinery/alarm/MA = om_resolve(A.main_air_alarm)
+	var/obj/machinery/alarm/MA = A.main_air_alarm
 	return !MA || MA != M || MA.shorted
 
 // ---------------------------------------------------------------- canisters
@@ -696,10 +698,9 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// The item being recharged.
 OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-DECLARE_REF(/obj/machinery/recharger, "charging", SPILL, null)
+OWN(/obj/machinery/recharger, charging, OWN_SPILL)
 /// The cell being charged.
 OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
-DECLARE_REF(/obj/machinery/cell_charger, "charging", HELD, null)
 /// TRUE while the fire alarm's countdown runs.
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
 /// Heating/cooling mode of the air alarm's thermostat (0 off).

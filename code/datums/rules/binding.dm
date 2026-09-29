@@ -2,11 +2,10 @@
 // (rules.md §4). One binding per object holds its world watches and,
 // per rule, whether the condition held at the last look.
 
-/// This object's rule binding. The binding holds its owner by OM handle, so it
-/// is no outside reference to its object (collapse).
+/// This object's rule binding (owned: deleted with the object). The binding's
+/// `owner` is its one-sided back view.
 /datum/var/tmp/datum/rule_binding/rule_binding
 
-DECLARE_REF(/datum, "rule_binding", OWNED, null)
 
 /proc/dq_rule_binding_of(datum/thing)
 	var/datum/rule_binding/binding = thing?.rule_binding
@@ -23,7 +22,7 @@ DECLARE_REF(/datum, "rule_binding", OWNED, null)
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
-		qdel(binding)
+		own_clear(A, "rule_binding", OWN_DELETE)
 		return
 	return binding
 
@@ -43,9 +42,8 @@ DECLARE_REF(/datum, "rule_binding", OWNED, null)
 
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
-	var/datum/rule_binding/binding = dq_rule_binding_of(A)
-	if(binding)
-		qdel(binding)
+	if(dq_rule_binding_of(A))
+		own_clear(A, "rule_binding", OWN_DELETE)
 
 /// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
 /// to destroy the object (take_damage before atom_destruction), so every rule
@@ -117,17 +115,14 @@ DECLARE_REF(/datum, "rule_binding", OWNED, null)
 			if(trigger.kind == RULE_TRIGGER_KEY)
 				LAZYOR(key_kinds, trigger.key_kind)
 
-OM_STATIC_TYPE(/datum/rule_type_table)
-DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 
 /// Per-object rule state. The rule list and key kinds live in the shared
 /// /datum/rule_type_table; per-rule flags are bits of three numbers, and every
 /// rule's watch tokens share one flat list.
 /datum/rule_binding
-	var/owner_ref
-	/// The owner, resolved for this call. Not held between calls.
+	/// The object whose rules these are: a one-sided back view (it owns us in rule_binding).
 	var/tmp/atom/owner
-	/// Shared per-type table (rules, key kinds).
+	/// Shared per-type table (rules, key kinds): a registered rule_type_table (implicitly shared).
 	var/datum/rule_type_table/table
 	/// Bit per rule: its condition held at the last look.
 	var/holding = 0
@@ -152,10 +147,9 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
-	owner_ref = om_handle(owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	table = dq_rule_table_for(rules)
-	owner.rule_binding = src
+	own_set(owner, "rule_binding", src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))
@@ -164,7 +158,6 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 	for(var/i in 1 to count)
 		if((live & RULE_BIT(i)) && check(rules[i]))
 			holding |= RULE_BIT(i)
-	src.owner = null
 
 /// Phase 1 (unbind): drops its rules and frees its Rust reactor nodes.
 /datum/rule_binding/lifecycle_unbind()
@@ -176,9 +169,6 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 		dq_rx_node_free(nodes[property])
 	nodes = null
 	dq_rx_clear(src)
-	var/datum/owner_now = om_resolve(owner_ref)
-	if(owner_now?.rule_binding == src)
-		owner_now.rule_binding = null
 
 /// Shared rule list (tests and diagnostics).
 /datum/rule_binding/proc/rule_list()
@@ -268,11 +258,9 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 /datum/rule_binding/proc/check(datum/rule/rule)
 	return rule.predicate.check(null, owner, null) ? TRUE : FALSE
 
-/// Resolve the owner for this call; a binding whose owner is gone deletes itself.
+/// Whether the owner is still here; a binding whose owner is gone deletes itself.
 /datum/rule_binding/proc/resolve()
-	owner = om_resolve(owner_ref)
 	if(!owner || QDELETED(owner))
-		owner = null
 		qdel(src)
 		return FALSE
 	return TRUE
@@ -292,7 +280,6 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 	if(!resolve())
 		return
 	evaluate_rules()
-	owner = null
 
 /datum/rule_binding/proc/evaluate_rules()
 	var/list/rules = table.rules
@@ -335,7 +322,7 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 			return
 		model = dq_rx_rate_linear(0, 1, 0, null)
 		hold_models[i] = model
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
 		return
 	// Within a tick of the hold time counts: the model reads at step ticks.
 	if(now && dq_rx_rate_read(model) >= (rule.hold_for - world.tick_lag) / 10)
@@ -349,7 +336,7 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 		// Re-arm the crossing watch from the resumed rate.
 		if(!isnull(hold_tokens[i]))
 			dq_rx_cancel(src, hold_tokens[i])
-		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10)
+		hold_tokens[i] = dq_rx_on_rate(src, model, TRUE, rule.hold_for / 10) // ALLOW(ownership): positional slot aligned with table.rules (null gaps); the watch itself is linked through the world_watches relation, and this slot is cleared on cancel/spend
 
 /datum/rule_binding/proc/fire(i)
 	var/list/rules = table.rules
@@ -393,5 +380,3 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 			if(RULE_OP_REMOVE)
 				qdel(thing)
 
-DECLARE_REF(/datum/rule_binding, "owner", BACK, null)
-DECLARE_REF(/datum/rule_binding, "table", STATIC, null)

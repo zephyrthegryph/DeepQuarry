@@ -16,7 +16,7 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	var/mob/host
 
 /datum/languages_panel/New(mob/host_mob)
-	host = host_mob
+	rel_set(src, "host", host_mob)
 
 /// Phase 2: leaves the per-host panel index.
 /datum/languages_panel/lifecycle_dematerialize()
@@ -89,4 +89,3 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	set src = usr
 	dq_open_languages_panel(src, src)
 
-DECLARE_REF(/datum/languages_panel, "host", HELD, null)

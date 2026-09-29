@@ -75,7 +75,7 @@
 			else
 				changed = T.make_wall()
 			if(changed)
-				LAZYSET(turfs_changed, T, TRUE)
+				rel_add(src, "turfs_changed", T)
 
 		if(T.density && !T.ignore_oregen)
 			if(map[current_cell] == DOOR_CHAR)
@@ -88,7 +88,11 @@
 /datum/random_map/automata/cave_system/apply_finished()
 	. = ..()
 
+	// update_icon() wants a turf -> TRUE lookup: build it locally from the relation list.
+	var/list/changed_lookup = list()
 	for(var/turf/simulated/mineral/T as anything in turfs_changed)
-		T.update_icon(1, turfs_changed)
+		changed_lookup[T] = TRUE
+	for(var/turf/simulated/mineral/T as anything in turfs_changed)
+		T.update_icon(1, changed_lookup)
 
-	LAZYCLEARLIST(turfs_changed)
+	rel_clear(src, "turfs_changed")

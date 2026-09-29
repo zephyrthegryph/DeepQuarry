@@ -7,8 +7,12 @@
 	var/arrival_sound
 	var/delay_time
 
-	var/list/doors = list() // ALLOW(instance_list): d: every lift floor has doors
-	var/tmp/ext_panel_handle
+	/// The floor's exterior doors, airlocks and firedoors (a relation view: doors leave when they die).
+	var/list/doors
+	/// The floor's call panel (REL_PAIR with its `floor`).
+	var/tmp/obj/structure/lift/button/ext_panel
+
+REL_LIST(/datum/turbolift_floor, doors)
 
 /datum/turbolift_floor/proc/set_area_ref(ref)
 	var/area/turbolift/A = locate(ref)
@@ -25,16 +29,12 @@
 
 //called when a lift has queued this floor as a destination
 /datum/turbolift_floor/proc/pending_move(datum/turbolift/lift)
-	if(ext_panel())
-		ext_panel().light_up()
+	if(ext_panel)
+		ext_panel.light_up()
 
 //called when a lift arrives at this floor
 /datum/turbolift_floor/proc/arrived(datum/turbolift/lift)
 	if(!lift.fire_mode)
 		lift.open_doors(src)
-	if(ext_panel())
-		ext_panel().reset()
-
-/// LC-refs: the ext_panel this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
-/datum/turbolift_floor/proc/ext_panel() as /obj/structure/lift/button
-	return om_resolve(ext_panel_handle)
+	if(ext_panel)
+		ext_panel.reset()

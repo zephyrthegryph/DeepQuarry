@@ -170,13 +170,13 @@
 	return 0
 
 /obj/item/detective_scanner/proc/add_data(atom/A as mob|obj|turf|area)
-	var/datum/data/record/forensic/old = stored["\ref [A]"]
+	var/datum/data/record/forensic/old = stored?["\ref [A]"]
 	var/datum/data/record/forensic/fresh = new(A)
 
 	if(old)
 		fresh.merge(old)
 		. = 1
-	stored["\ref [A]"] = fresh
+	own_put(src, "stored", "\ref [A]", fresh)
 
 /obj/item/detective_scanner/proc/examine_data_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
@@ -236,7 +236,7 @@
 	if(isnull(_answer_k217))
 		return
 	if (_answer_k217 == "Yes")
-		stored = list()
+		own_clear(src, "stored", OWN_DELETE)
 		to_chat(user, span_notice("Forensic data erase complete."))
 
 /obj/item/detective_scanner/advanced
@@ -250,7 +250,6 @@
 	for(var/blood in blooddna)
 		to_chat(user, span_notice("Blood type: [blooddna[blood]]\nDNA: [blood]"))
 
-DECLARE_REF(/obj/item/detective_scanner, "stored", OWNED_VALUES, null)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/detective_scanner, \

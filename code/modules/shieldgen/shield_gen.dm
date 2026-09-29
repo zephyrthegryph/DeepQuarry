@@ -32,6 +32,9 @@
 	desc = "A machine that generates a field of energy optimized for blocking meteorites when activated.  This version comes with a more efficent shield matrix."
 	energy_conversion_rate = 0.0012
 
+// Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
+REL_PAIR_LIST(/obj/machinery/shield_gen, capacitors, owned_gen)
+
 /obj/machinery/shield_gen/Initialize(mapload)
 	if(anchored)
 		for(var/obj/machinery/shield_capacitor/cap in range(1, src))
@@ -40,14 +43,11 @@
 			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir)
-				LAZYOR(capacitors, cap)
-				cap.owned_gen_handle = om_handle(src)
-	shield_hum = new(list(src), FALSE)
+				rel_set(cap, "owned_gen", src)
+	own_set(src, "shield_hum", new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/shield_gen, "shield_hum", OWNED, null)
-DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 
 /obj/machinery/shield_gen/emag_act(remaining_charges, mob/user)
 	if(prob(75))
@@ -84,11 +84,9 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 			if(cap.owned_gen())
 				continue
 			if(get_dir(cap, src) == cap.dir && src.anchored)
-				LAZYOR(capacitors, cap)
-				cap.owned_gen_handle = om_handle(src)
+				rel_set(cap, "owned_gen", src)
 	else
-		for(var/obj/machinery/shield_capacitor/capacitor in capacitors)
-			capacitor.owned_gen_handle = null
+		rel_clear(src, "capacitors")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/shield_gen/declare_interactions(list/into)
@@ -257,8 +255,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		if(T in covered_turfs)
 			covered_turfs.Remove(T)
 		for(var/turf/O in covered_turfs)
-			var/obj/effect/energy_field/E = new(O, src)
-			LAZYADD(field, E)
+			own_add(src, "field", new /obj/effect/energy_field(O, src))
 		covered_turfs = null
 
 		for(var/mob/M in view(5,src))
@@ -267,9 +264,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 			E.update_icon()
 		shield_hum.start()
 	else
-		for(var/obj/effect/energy_field/D in field)
-			LAZYREMOVE(field, D)
-			qdel(D)
+		own_clear(src, "field", OWN_DELETE)
 
 		for(var/mob/M in view(5,src))
 			to_chat(M, "[icon2html(src, M.client)] You hear heavy droning fade out.")
@@ -284,7 +279,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		for(var/turf/O in covered_turfs)
 			if(locate(/obj/effect/energy_field, O) || locate(/obj/machinery/pointdefense, orange(2, O)))
 				continue
-			new /obj/effect/energy_field(O, src)
+			own_add(src, "field", new /obj/effect/energy_field(O, src))
 
 /obj/machinery/shield_gen/update_icon()
 	if(has_stat(BROKEN))
@@ -358,3 +353,6 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/shield_gen/step_start_condition()
 	return active
+
+// Remote shield buttons find generators by id (REL_KEYED sources).
+KEYED_TARGET(/obj/machinery/shield_gen, id)

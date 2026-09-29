@@ -6,11 +6,11 @@
  */
 /datum/cogbar
 	/// Who's doing the thing
-	var/user_handle
+	var/mob/user
 	/// The user client
-	var/user_client_handle
+	var/client/user_client
 	/// The visible element to other players
-	var/cog_handle
+	var/obj/effect/overlay/vis/cog
 	/// The blank image that overlaps the cog - hides it from the source user
 	var/image/blank
 	/// The offset of the icon
@@ -21,8 +21,8 @@
 	var/cogiconstate
 
 /datum/cogbar/New(mob/user, cogicon, cogiconstate)
-	src.user_handle = om_handle(user)
-	src.user_client_handle = om_handle(user.client)
+	rel_set(src, "user", user)
+	rel_set(src, "user_client", user.client)
 	src.cogicon = cogicon
 	src.cogiconstate = cogiconstate
 	var/list/icon_offsets = user.get_oversized_icon_offsets()
@@ -40,7 +40,6 @@
 
 	om_hook(user, /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
 
-DECLARE_REF(/datum/cogbar, "blank", OWNED, null)
 
 /// Phase 1: take the overlay off the user and the blank image (owned, dropped in phase 4) off the client.
 /datum/cogbar/lifecycle_unbind()
@@ -59,7 +58,7 @@ DECLARE_REF(/datum/cogbar, "blank", OWNED, null)
 		unique = TRUE,
 		alpha = 0,
 	)
-	cog_handle = om_handle(cog)
+	rel_set(src, "cog", cog)
 	cog.pixel_y = ICON_SIZE_Y + offset_y
 	animate(cog, alpha = user().alpha, time = COGBAR_ANIMATION_TIME)
 
@@ -91,14 +90,14 @@ DECLARE_REF(/datum/cogbar, "blank", OWNED, null)
 
 #undef COGBAR_ANIMATION_TIME
 
-/// LC-refs: the busy mob -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The busy mob (a relation view).
 /datum/cogbar/proc/user() as /mob
-	return om_resolve(user_handle)
+	return user
 
-/// LC-refs: the busy mob's client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The busy mob's client (a relation view).
 /datum/cogbar/proc/user_client() as /client
-	return om_resolve(user_client_handle)
+	return user_client
 
-/// LC-refs: the cog vis overlay (GLOB.vis_overlays_service owns it) -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The cog vis overlay (GLOB.vis_overlays_service owns it) (a relation view).
 /datum/cogbar/proc/cog() as /obj/effect/overlay/vis
-	return om_resolve(cog_handle)
+	return cog

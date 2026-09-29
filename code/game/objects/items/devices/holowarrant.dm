@@ -8,7 +8,7 @@
 	w_class = ITEMSIZE_SMALL
 	throw_speed = 4
 	throw_range = 10
-	var/active_handle
+	var/datum/data/record/warrant/active
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
@@ -29,7 +29,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 )
 
 /obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active_handle = null
+	rel_clear(src, "active")
 	var/list/warrants = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 /obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == ask.choice)
-			active_handle = om_handle(W)
+			rel_set(src, "active", W)
 	update_icon()
 
 /obj/item/holowarrant/proc/authorize_answered(datum/om/prompt/confirm/holowarrant_authorize/ask)
@@ -96,6 +96,6 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	for(var/i = 0 to 3)
 		new /obj/item/holowarrant(src) // addition ends
 
-/// LC-refs: active -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: active (reads null once it is gone).
 /obj/item/holowarrant/proc/active() as /datum/data/record/warrant
-	return om_resolve(active_handle)
+	return active

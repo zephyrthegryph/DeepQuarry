@@ -51,7 +51,7 @@
 	add_overlay(tank)
 	update_icon()
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "beaker", SPILL, null)
+OWN(/obj/machinery/atmospherics/unary/cryo_cell, beaker, OWN_SPILL)
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/cryo
@@ -168,7 +168,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 		if("ejectBeaker")
 			if(beaker)
 				beaker.forceMove(get_step(src.loc, SOUTH))
-				beaker = null
+				own_take(src, "beaker")
 				update_icon()
 		if("ejectOccupant")
 			if(!occupant || isslime(ui.user) || ispAI(ui.user))
@@ -187,9 +187,9 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		beaker =  G
 		user.drop_item()
 		G.forceMove(src)
+		own_set(src, "beaker", G)
 		act_message(user, src, MSG_SELF("You add \a [G] to %T%!"), MSG_OTHERS("%U% adds \a [G] to %T%!"))
 		SStgui.update_uis(src)
 		update_icon()
@@ -419,4 +419,3 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 #undef CRYO_BASE_RATE
 #undef CRYO_DEEP_COLD
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/cryo_cell, "fluid", OWNED, null)

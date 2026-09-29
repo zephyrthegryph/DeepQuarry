@@ -9,9 +9,11 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// Test helper: give `L` a fresh mind named `name` with some OOC notes.
-/proc/dq_test_give_mind(mob/living/L, name)
-	var/datum/mind/M = new /datum/mind("dq_mind_test_[name]")
+/// Test helper: give `L` a fresh mind named `name` with some OOC notes. The mind is `test`'s
+/// to delete when it ends: it owns the character identity, and a mind dropped without qdel()
+/// would leave that identity stamped with a dead owner (an own_audit orphan).
+/proc/dq_test_give_mind(datum/unit_test/test, mob/living/L, name)
+	var/datum/mind/M = test.own(new /datum/mind("dq_mind_test_[name]"))
 	M.name = name
 	M.transfer_to(L)
 	M.identity.ooc_notes = "notes of [name]"
@@ -61,7 +63,7 @@
 
 /datum/unit_test/dq_mind_identity_survives_brain_removal/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(H, "Brain Donor")
+	var/datum/mind/M = dq_test_give_mind(src, H, "Brain Donor")
 	var/datum/character_identity/I = M.identity
 	TEST_ASSERT_NOTNULL(I, "a mind entering a body should adopt an identity")
 	TEST_ASSERT_EQUAL(H.identity(), I, "the body reads the mind's identity")
@@ -74,7 +76,12 @@
 	var/fault = dq_test_mind_fault(M, view, I, H)
 	TEST_ASSERT_NULL(fault, "after brain removal: [fault]")
 	TEST_ASSERT_EQUAL(view.real_name, I.real_name, "the view shows the character's name")
-	TEST_ASSERT_EQUAL(view.dna, I.dna(), "the view reads the character's DNA datum, not a clone")
+	// One owner per DNA datum (ownership.md O1/O3): the body owns the character's DNA, so the
+	// view owns a copy of it rather than sharing the body's datum.
+	TEST_ASSERT_NOTNULL(view.dna, "the view carries the character's DNA")
+	TEST_ASSERT(view.dna != I.dna(), "the view owns its own DNA copy, not the body's datum")
+	TEST_ASSERT_EQUAL(view.dna.unique_enzymes, I.dna().unique_enzymes, "the view's DNA copy is the character's DNA")
+	TEST_ASSERT_EQUAL(view.dna.real_name, I.dna().real_name, "the view's DNA copy carries the character's name")
 	TEST_ASSERT_EQUAL(view.languages, I.languages, "the view reads the character's language list, not a copy")
 	TEST_ASSERT_EQUAL(view.identity().ooc_notes, "notes of Brain Donor", "OOC notes are read through the identity")
 	TEST_ASSERT_EQUAL(view.container, brain, "the view lives in its host organ")
@@ -94,7 +101,7 @@
 
 /datum/unit_test/dq_mind_identity_survives_mmi/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(H, "MMI Subject")
+	var/datum/mind/M = dq_test_give_mind(src, H, "MMI Subject")
 	var/datum/character_identity/I = M.identity
 	var/obj/item/organ/internal/brain/brain = own(dq_test_remove_brain(H))
 	var/mob/living/carbon/brain/view = brain.hosted_view()
@@ -125,7 +132,7 @@
 
 /datum/unit_test/dq_mind_identity_survives_posibrain/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(H, "Posi Subject")
+	var/datum/mind/M = dq_test_give_mind(src, H, "Posi Subject")
 	var/datum/character_identity/I = M.identity
 	var/obj/item/mmi/digital/posibrain/posi = allocate(/obj/item/mmi/digital/posibrain)
 	var/mob/living/carbon/brain/view = posi.get_occupant()
@@ -145,7 +152,7 @@
 
 /datum/unit_test/dq_mind_identity_survives_borging/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(H, "Borg Subject")
+	var/datum/mind/M = dq_test_give_mind(src, H, "Borg Subject")
 	var/datum/character_identity/I = M.identity
 	var/obj/item/organ/internal/brain/brain = dq_test_remove_brain(H)
 	var/obj/item/mmi/mmi = allocate(/obj/item/mmi)
@@ -173,7 +180,7 @@
 
 /datum/unit_test/dq_mind_identity_survives_resleeve/Run()
 	var/mob/living/carbon/human/original = allocate(/mob/living/carbon/human)
-	var/datum/mind/M = dq_test_give_mind(original, "Sleeve Subject")
+	var/datum/mind/M = dq_test_give_mind(src, original, "Sleeve Subject")
 	var/datum/character_identity/I = M.identity
 	var/list/langs = I.languages
 	var/datum/transhuman/body_record/BR = new(original)
@@ -198,7 +205,7 @@
 
 /datum/unit_test/dq_mind_mmi_brain_damage_continuity/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	dq_test_give_mind(H, "Damaged Brain")
+	dq_test_give_mind(src, H, "Damaged Brain")
 	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	dq_test_injure_organ(H, brain, 30, /datum/affliction/lesion/contusion)
 	var/datum/affliction/lesion/L = brain.find_lesion(/datum/affliction/lesion/contusion)
@@ -266,7 +273,7 @@
 
 /datum/unit_test/dq_mind_view_status_follows_tissue/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	dq_test_give_mind(H, "Fading Brain")
+	dq_test_give_mind(src, H, "Fading Brain")
 	var/obj/item/organ/internal/brain/brain = own(dq_test_remove_brain(H))
 	var/mob/living/carbon/brain/view = brain.hosted_view()
 	TEST_ASSERT(view.stat != DEAD, "a removed healthy brain's view is up")

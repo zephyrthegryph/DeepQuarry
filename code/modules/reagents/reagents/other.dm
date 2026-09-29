@@ -954,7 +954,7 @@
 		for(var/i=0, i<num, i++)
 			var/spiderling = new spider_type(M.loc, M)
 			if(O)
-				LAZYADD(O.implants, spiderling)
+				rel_add(O, "implants", spiderling)
 
 //New reagent definitions/overrides. If some of these get added upstream and cause a conflict later they might need deleting.
 /datum/reagent/toxin/plantbgone/touch_mob(mob/living/L, amount) //Plantbgone override to damage plant mobs. Part of pitcher plants, touch_mob doesn't exist for plantbgone at the time of writing.
@@ -1122,7 +1122,7 @@ DECLARE_REAGENTS_TINTED(/obj/item/reagent_containers/pill/phenethylamine, null, 
 				var/obj/item/organ/external/torso = H.get_organ(BP_TORSO)
 				for(var/obj/item/implant/backup/BI in backup_implants)
 					BI.forceMove(torso)
-					LAZYADD(torso.implants, BI)
+					rel_add(torso, "implants", BI)
 
 /datum/reagent/nif_repair_nanites
 	name = REAGENT_NIFREPAIRNANITES

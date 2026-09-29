@@ -2,9 +2,10 @@
 	announceWhen	= 21
 	endWhen			= 1000	//Ends when all vending machines are subverted anyway.
 
-	var/list/vendingMachines	// OM handles
-	var/list/infectedVendingMachines	// OM handles
-	var/tmp/originMachine_handle
+	/// Relation lists: the station vendors not yet infected, and those infected.
+	var/list/obj/machinery/vending/vendingMachines
+	var/list/obj/machinery/vending/infectedVendingMachines
+	var/tmp/obj/machinery/vending/originMachine
 
 	var/static/list/rampant_speeches = list("try our aggressive new marketing strategies!", \
 										"you should buy products to feed your lifestyle obession!", \
@@ -22,14 +23,14 @@
 /datum/event/brand_intelligence/start()
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(isNotStationLevel(V.z))	continue
-		LAZYADD(vendingMachines, om_handle(V))
+		rel_add(src, "vendingMachines", V)
 
 	if(!length(vendingMachines))
 		kill()
 		return
 
-	originMachine_handle = DEFAULTPICK(vendingMachines, null)
-	LAZYREMOVE(vendingMachines, originMachine_handle)
+	rel_set(src, "originMachine", DEFAULTPICK(vendingMachines, null))
+	rel_remove(src, "vendingMachines", originMachine)
 	originMachine().shut_up = 0
 	originMachine().shoot_inventory = 1
 
@@ -37,7 +38,7 @@
 /datum/event/brand_intelligence/tick()
 	if(!length(vendingMachines) || !originMachine() || originMachine().shut_up) //if every machine is infected, or if the original vending machine is missing or has it's voice switch flipped
 		// Effects when 'source' machine is destroyed/silenced
-		for(var/obj/machinery/vending/saved in om_resolve_all(infectedVendingMachines))
+		for(var/obj/machinery/vending/saved in infectedVendingMachines)
 			saved.shoot_inventory = 0
 		if(originMachine())
 			originMachine().speak("I am... vanquished. My people will remem...ber...meeee.")
@@ -48,11 +49,10 @@
 
 	if(ISMULTIPLE(activeFor, 5))
 		if(prob(15))
-			var/infected_handle = DEFAULTPICK(vendingMachines, null)
-			LAZYREMOVE(vendingMachines, infected_handle)
-			var/obj/machinery/vending/infectedMachine = om_resolve(infected_handle)
+			var/obj/machinery/vending/infectedMachine = DEFAULTPICK(vendingMachines, null)
 			if(infectedMachine)
-				LAZYADD(infectedVendingMachines, infected_handle)
+				rel_remove(src, "vendingMachines", infectedMachine)
+				rel_add(src, "infectedVendingMachines", infectedMachine)
 				infectedMachine.shut_up = 0
 				infectedMachine.shoot_inventory = 1
 
@@ -60,10 +60,13 @@
 				originMachine().balloon_alert_visible(pick(rampant_speeches))
 
 /datum/event/brand_intelligence/end()
-	for(var/obj/machinery/vending/infectedMachine in om_resolve_all(infectedVendingMachines))
+	for(var/obj/machinery/vending/infectedMachine in infectedVendingMachines)
 		infectedMachine.shut_up = 1
 		infectedMachine.shoot_inventory = 0
 
-/// LC-refs: the originMachine this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The original infected vendor (a relation view: null once it is destroyed).
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending
-	return om_resolve(originMachine_handle)
+	return originMachine
+
+REL_LIST(/datum/event/brand_intelligence, vendingMachines)
+REL_LIST(/datum/event/brand_intelligence, infectedVendingMachines)

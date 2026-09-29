@@ -8,12 +8,10 @@
 	glass = 1
 	icon = 'icons/obj/doors/doorlift.dmi'
 
-	var/tmp/lift_handle
-	var/tmp/floor_handle
+	var/tmp/datum/turbolift/lift
+	var/tmp/datum/turbolift_floor/floor
 
 // Leaves its lift's and floor's door lists.
-DECLARE_REF(/obj/machinery/door/airlock/lift, "lift_handle", BACKLIST_HANDLE, "doors")
-DECLARE_REF(/obj/machinery/door/airlock/lift, "floor_handle", BACKLIST_HANDLE, "doors")
 
 /obj/machinery/door/airlock/lift/bumpopen(mob/user)
 	return // No accidental sprinting into open elevator shafts.
@@ -49,10 +47,16 @@ DECLARE_REF(/obj/machinery/door/airlock/lift, "floor_handle", BACKLIST_HANDLE, "
 	to_chat(user, span_danger("This door is internally controlled."))
 	return 0 // Prevents the cryptographic sequencer from using a charge fruitlessly
 
-/// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the lift this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/lift/proc/lift() as /datum/turbolift
-	return om_resolve(lift_handle)
+	return lift
 
-/// LC-refs: the floor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the floor this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/airlock/lift/proc/lift_floor() as /datum/turbolift_floor
-	return om_resolve(floor_handle)
+	return floor
+
+// Interior doors: two-sided with the lift's doors list.
+REL_PAIR(/obj/machinery/door/airlock/lift, lift, doors)
+REL_PAIR_LIST(/datum/turbolift, doors, lift)
+// Exterior doors: a floor lists its doors (airlocks and firedoors) in a one-sided REL_LIST
+// (turbolift_floor.dm), and each door names its floor in a one-sided view.

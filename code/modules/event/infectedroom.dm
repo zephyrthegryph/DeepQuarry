@@ -1,6 +1,5 @@
 /datum/event/disease_outbreak/floor
-	var/tmp/target_area_handle
-	var/area/target_turfs = list()
+	var/tmp/area/target_area
 	var/infected_tiles
 
 	var/static/list/excluded = list(
@@ -26,9 +25,12 @@
 	GLOB.command_announcement.Announce("Confirmed outbreak of level 7 biohazard aboard \the [location_name()]. All personnel must contain the outbreak.", "Infectious Contaminant in [target_area().name]", new_sound = 'sound/AI/outbreak7.ogg')
 
 /datum/event/disease_outbreak/floor/start()
-	GLOB.current_pending_diseases += chosen_disease
+	// chosen_disease is the event's owned prototype: every victim (and the pending list) gets a
+	// private Copy(), never an alias of it.
+	GLOB.current_pending_diseases += chosen_disease.Copy()
 	var/list/area/affected_area = get_station_areas(excluded)
 	var/decal
+	var/list/turf/simulated/floor/target_turfs = list()
 
 	for(var/i in 1 to 10)
 		var/area/A = pick(affected_area)
@@ -43,7 +45,7 @@
 		if(turfs.len == 0)
 			log_game("infectedroom event: Rejected [A] because it has no clear turfs.")
 			continue
-		target_area_handle = om_handle(A)
+		target_area = A
 		target_turfs = turfs
 
 	if(!target_area())
@@ -68,18 +70,17 @@
 			C = new(pick_n_take(target_turfs))
 			C.basecolor = get_random_colour(rand(0, 1))
 			C.update_icon()
-			LAZYOR(C.viruses, chosen_disease)
+			C.add_contagions(list(chosen_disease)) // private copies (cleanable.dm)
 		else if(decal == 2)
 			var/obj/effect/decal/cleanable/vomit/V
 			V = new(pick_n_take(target_turfs))
-			LAZYOR(V.viruses, chosen_disease)
+			V.add_contagions(list(chosen_disease))
 		else
 			var/mob/living/simple_mob/vore/aggressive/macrophage/M
 			M = new(pick_n_take(target_turfs))
-			M.infections |= chosen_disease
+			own_add(M, "infections", chosen_disease.Copy())
 
-/// LC-refs: the target_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the target_area var.
 /datum/event/disease_outbreak/floor/proc/target_area() as /area
-	return om_resolve(target_area_handle)
+	return target_area
 
-DECLARE_REF(/datum/event/disease_outbreak/floor, "target_turfs", STATIC, null)

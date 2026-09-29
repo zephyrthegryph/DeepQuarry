@@ -30,7 +30,7 @@
 
 /obj/machinery/telepad/Initialize(mapload)
 	. = ..()
-	component_parts = null
+	own_take_all(src, "component_parts")
 	RefreshParts()
 	update_icon()
 
@@ -65,6 +65,6 @@
 	if(!panel_open)
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	multitool.connectable_handle = om_handle(src)
+	rel_set(multitool, "connectable", src)
 	to_chat(user, span_warning("You save the data in the [multitool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS

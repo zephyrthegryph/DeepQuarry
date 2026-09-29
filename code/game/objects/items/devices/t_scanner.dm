@@ -14,7 +14,7 @@
 
 	var/on = 0
 	var/list/active_scanned //assoc list of objects being scanned, mapped to their overlay
-	var/user_client_handle //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
+	var/client/user_client //since making sure overlays are properly added and removed is pretty important, so we track the current user explicitly
 	var/flicker = 0
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
@@ -130,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/t_scanner, INTERACT_USE(null, PROC_REF(interactio
 	else
 		LAZYCLEARLIST(active_scanned)
 
-	user_client_handle = om_handle(new_client)
+	rel_set(src, "user_client", new_client)
 
 /obj/item/t_scanner/dropped(mob/user, equipping, slot)
 	if(equipping)
@@ -153,6 +153,6 @@ MATERIAL_MIX(/obj/item/t_scanner/advanced, list(MAT_STEEL = 1500, PHORON = 200, 
 
 #undef overlay_cache_LEN
 
-/// LC-refs: user client -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: user client (reads null once it is gone).
 /obj/item/t_scanner/proc/user_client() as /client
-	return om_resolve(user_client_handle)
+	return user_client

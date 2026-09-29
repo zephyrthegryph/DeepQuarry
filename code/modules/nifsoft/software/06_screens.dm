@@ -9,9 +9,8 @@
 
 /datum/nifsoft/crewmonitor/New()
 	..()
-	arscreen = new(nif())
+	own_set(src, "arscreen", new /datum/tgui_module/crew_monitor/nif(nif()))
 
-DECLARE_REF(/datum/nifsoft/crewmonitor, "arscreen", OWNED, null)
 
 /datum/nifsoft/crewmonitor/activate()
 	if((. = ..()))
@@ -36,9 +35,8 @@ DECLARE_REF(/datum/nifsoft/crewmonitor, "arscreen", OWNED, null)
 
 /datum/nifsoft/alarmmonitor/New()
 	..()
-	tgarscreen = new(nif())
+	own_set(src, "tgarscreen", new /datum/tgui_module/alarm_monitor/engineering/nif(nif()))
 
-DECLARE_REF(/datum/nifsoft/alarmmonitor, "tgarscreen", OWNED, null)
 
 /datum/nifsoft/alarmmonitor/activate()
 	if((. = ..()))

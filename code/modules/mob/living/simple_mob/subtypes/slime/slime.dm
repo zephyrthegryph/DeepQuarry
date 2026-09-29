@@ -101,7 +101,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	update_icon()
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob/slime, "hat", SPILL, null)
+OWN(/mob/living/simple_mob/slime, hat, OWN_SPILL)
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
@@ -237,8 +237,8 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 		return
 	else
 		user.drop_item(new_hat)
-		hat = new_hat
 		new_hat.forceMove(src)
+		own_set(src, "hat", new_hat)
 		to_chat(user, span_notice("You place \a [new_hat] on \the [src].  How adorable!"))
 		update_icon()
 		return
@@ -247,17 +247,17 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		hat.forceMove(get_turf(src))
-		user.put_in_hands(hat)
-		to_chat(user, span_warning("You take away \the [src]'s [hat.name].  How mean."))
-		hat = null
+		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		old_hat.forceMove(get_turf(src))
+		user.put_in_hands(old_hat)
+		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
 		update_icon()
 
 /mob/living/simple_mob/slime/proc/drop_hat()
 	if(!hat)
 		return
-	hat.forceMove(get_turf(src))
-	hat = null
+	var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+	old_hat.forceMove(get_turf(src))
 	update_icon()
 
 /mob/living/simple_mob/slime/speech_bubble_appearance()

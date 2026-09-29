@@ -18,16 +18,13 @@
 /obj/machinery/vending/nifsoft_shop/Initialize(mapload)
 	. = ..()
 
-	if(wires)
-		qdel(wires)
-	wires = new /datum/wires/vending/no_contraband(src) //These wires can't be hacked for contraband.
-	entopic = new(aholder = src, aicon = icon, aicon_state = "beacon")
+	own_set(src, "wires", new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
+	own_set(src, "entopic", new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
 /obj/machinery/vending/nifsoft_shop/tgui_data(mob/user)
 	. = ..()
 	.["chargesMoney"] = TRUE
 
-DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 
 /obj/machinery/vending/nifsoft_shop/power_change()
 	. = ..()
@@ -88,7 +85,7 @@ DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
-			product_records.Add(product)
+			own_add(src, "product_records", product)
 
 /obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
 	. = ..()
@@ -133,12 +130,10 @@ DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 				to_chat(user, span_notice("You successfully pull the coin out before \the [src] could swallow it."))
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
-				qdel(coin)
-				coin = null
+				own_clear(src, "coin", OWN_DELETE)
 				categories &= ~CAT_COIN
 		else
-			qdel(coin)
-			coin = null
+			own_clear(src, "coin", OWN_DELETE)
 			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
@@ -180,5 +175,5 @@ DECLARE_REF(/obj/machinery/vending/nifsoft_shop, "entopic", OWNED, null)
 		do_logging(R, user, 1)
 
 	vend_ready = 1
-	currently_vending_handle = null
+	rel_clear(src, "currently_vending")
 	SStgui.update_uis(src)

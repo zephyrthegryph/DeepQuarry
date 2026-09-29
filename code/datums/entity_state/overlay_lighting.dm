@@ -59,9 +59,9 @@
 	///Lazy list to track the turfs being affected by our light, to determine their visibility.
 	var/list/turf/affected_turfs
 	///Movable atom currently holding the light. Parent might be a flashlight, for example, but that might be held by a mob or something else.
-	var/current_holder_handle
+	var/atom/movable/current_holder
 	///Movable atom the parent is attached to. For example, a flashlight into a helmet or gun. We'll need to track the thing the parent is attached to as if it were the parent itself.
-	var/parent_attached_to_handle
+	var/atom/movable/parent_attached_to
 	///Whether we're a directional light
 	var/directional
 	///Abstractional atom for directional light, we move this around to make the directional effect
@@ -88,20 +88,20 @@
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
 	var/datum/overlay_lighting/light = new(new_owner, _range, _power, _color, starts_on, is_directional)
-	new_owner.overlay_light = light
+	own_set(new_owner, "overlay_light", light)
 	light.attach()
 	return light
 
 /datum/overlay_lighting/New(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	var/atom/movable/movable_parent = owner
 
-	visible_mask = new()
+	own_set(src, "visible_mask", new /obj/effect/overlay/light_visible())
 	if(is_directional)
 		directional = TRUE
-		directional_atom = new()
-		cone = new()
+		own_set(src, "directional_atom", new /obj/effect/abstract/directional_lighting())
+		own_set(src, "cone", new /obj/effect/overlay/light_cone())
 		cone_hint_x = movable_parent.light_cone_x_offset
 		cone_hint_y = movable_parent.light_cone_y_offset
 		set_direction(movable_parent.dir)
@@ -157,7 +157,7 @@
 	if(overlay_lighting_flags & LIGHTING_ON)
 		turn_off()
 
-// Runs in destroy phase 1, before phase 4 nulls `owner` (DECLARE_REF(..., BACK)).
+// Runs in destroy phase 1, before phase 4 clears the `owner` relation view.
 /datum/overlay_lighting/lifecycle_unbind()
 	. = ..()
 	detach()
@@ -165,23 +165,23 @@
 	set_holder(null)
 	clean_old_turfs()
 	if(owner?.overlay_light == src)
-		owner.overlay_light = null
-	owner = null
+		own_take(owner, "overlay_light")
+	rel_clear(src, "owner")
 	// The mask, cone and directional atom refuse any delete that isn't
 	// forced (only we may delete them). Phase 4's owned-var sweep qdels
 	// without force, so release them here, forced, before it runs.
 	qdel(visible_mask, TRUE)
-	visible_mask = null
+	own_take(src, "visible_mask")
 	qdel(directional_atom, TRUE)
-	directional_atom = null
+	own_take(src, "directional_atom")
 	qdel(cone, TRUE)
-	cone = null
+	own_take(src, "cone")
 
 ///Clears the affected_turfs lazylist, removing from its contents the effects of being near the light.
 /datum/overlay_lighting/proc/clean_old_turfs()
 	for(var/turf/lit_turf as anything in affected_turfs)
 		lit_turf.dynamic_lumcount -= lum_power
-	affected_turfs = null
+	affected_turfs = null // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
 
 ///Populates the affected_turfs lazylist, adding to its contents the effects of being near the light.
 /datum/overlay_lighting/proc/get_new_turfs()
@@ -193,7 +193,7 @@
 		lit_turf.dynamic_lumcount += lum_power
 		. += lit_turf
 	if(length(.))
-		affected_turfs = .
+		affected_turfs = . // ALLOW(ownership): hot lighting cache rebuilt on every move; a turf relation index entry per lit turf per step would grow without bound
 
 ///Clears the old affected turfs and populates the new ones.
 /datum/overlay_lighting/proc/make_luminosity_update()
@@ -229,7 +229,7 @@
 		return
 
 	. = parent_attached_to()
-	parent_attached_to_handle = om_handle(new_parent_attached_to)
+	rel_set(src, "parent_attached_to", new_parent_attached_to)
 	if(.)
 		var/atom/movable/old_parent_attached_to = .
 		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
@@ -256,7 +256,7 @@
 				om_unhook(current_holder(), /datum/om/event/atom_dir_change, src)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
-	current_holder_handle = om_handle(new_holder)
+	rel_set(src, "current_holder", new_holder)
 	if(new_holder == null)
 		clean_old_turfs()
 		return
@@ -562,24 +562,18 @@
 #undef GET_LIGHT_SOURCE
 #undef SHORT_CAST
 
-/// LC-refs: the atom the light is currently drawn on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom the light is currently drawn on (a relation view).
 /datum/overlay_lighting/proc/current_holder() as /atom/movable
-	return om_resolve(current_holder_handle)
+	return current_holder
 
-/// LC-refs: the atom our parent is attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom our parent is attached to (a relation view).
 /datum/overlay_lighting/proc/parent_attached_to() as /atom/movable
-	return om_resolve(parent_attached_to_handle)
+	return parent_attached_to
 
-DECLARE_REF(/datum/overlay_lighting, "visible_mask", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "directional_atom", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "cone", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "owner", BACK, "overlay_light")
 
 /atom/movable
 	///The overlay light of MOVABLE_LIGHT / MOVABLE_LIGHT_DIRECTIONAL atoms (see add_overlay_lighting()).
 	var/tmp/datum/overlay_lighting/overlay_light
-DECLARE_REF(/atom/movable, "overlay_light", OWNED, null)
 
 /// Lit turfs: rebuilt by make_luminosity_update(), dropped by clean_old_turfs() (unbind).
 // turfs, never freed
-DECLARE_REF(/datum/overlay_lighting, "affected_turfs", STATIC, null)

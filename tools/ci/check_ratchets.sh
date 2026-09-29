@@ -11,7 +11,7 @@ failed=()
 for lint in \
 	allow_annotations.py \
 	scheduler_lints.py \
-	declared_refs_lint.py \
+	ownership_lint.py \
 	lifecycle_counts_lint.py \
 	lifecycle_lint.py \
 	containment_lint.py \
@@ -30,8 +30,6 @@ for lint in \
 	dcs_lints.py \
 	leftovers_lints.py \
 	silent_catch_lint.py \
-	ownership_cycle_lint.py \
-	handle_kinds_lint.py \
 	subsystem_fire_lint.py \
 	interactions_lint.py \
 	om_internal_lint.py \
@@ -40,7 +38,6 @@ for lint in \
 	organ_slots_lint.py \
 	cache_lint.py \
 	stance_examine_lint.py \
-	static_ref_new_lint.py \
 	sys_lint.py; do
 	echo "::group::$lint"
 	if ! "$PY" "tools/ci/$lint"; then

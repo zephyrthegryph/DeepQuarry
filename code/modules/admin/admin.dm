@@ -593,8 +593,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 	if(!chosen_path)
 		var/datum/spawn_menu/menu = user.holder.spawn_menu
 		if(!menu)
-			menu = new()
-			user.holder.spawn_menu = menu
+			menu = own_set(user.holder, "spawn_menu", new /datum/spawn_menu())
 		menu.init_value = object
 		menu.tgui_interact(user.mob)
 		feedback_add_details("admin_verb","SA")
@@ -831,16 +830,16 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
 		if(sendto.department == department)
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
-			user.holder.faxreply = P
+			own_set(user.holder, "faxreply", P) // a replaced reply is deleted
 
-			P.admindatum_handle = om_handle(user.holder)
+			rel_set(P, "admindatum", user.holder)
 			P.origin = replyorigin
-			P.destination_handle = om_handle(sendto)
+			rel_set(P, "destination", sendto)
 
 			P.adminbrowse()
 
 
-/datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in
+/datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in (owned)
 
 /datum/admins/proc/faxCallback(obj/item/paper/admin/P, obj/machinery/photocopier/faxmachine/destination)
 	om_ask(owner(), /datum/om/prompt/text/fax_title, PROC_REF(fax_titled), paper = P, destination = destination)
@@ -928,8 +927,10 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 		to_chat(src.owner(), span_warning("Message reply failed."))
 
 	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
-		qdel(P)
-		faxreply = null
+		if(faxreply == P)
+			own_clear(src, "faxreply", OWN_DELETE)
+		else
+			qdel(P)
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)
@@ -944,4 +945,3 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	traitor_human.mind.accept_tcrystals = 1
 	message_admins("[key_name(usr)] has given [traitor_human.ckey] an uplink.")
 
-DECLARE_REF(/datum/admins, "faxreply", OWNED, null)

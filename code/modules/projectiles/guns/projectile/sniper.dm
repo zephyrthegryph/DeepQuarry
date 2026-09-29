@@ -40,8 +40,8 @@
 		if(chambered)
 			to_chat(user, span_notice("You work the bolt open, ejecting [chambered]!"))
 			chambered.forceMove(get_turf(src))
-			loaded -= chambered
-			chambered = null
+			own_take_member(src, "loaded", chambered)
+			rel_clear(src, "chambered")
 		else
 			to_chat(user, span_notice("You work the bolt open."))
 	else

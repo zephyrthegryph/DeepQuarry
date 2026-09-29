@@ -44,7 +44,7 @@
 	var/vend_power_usage = 150 //actuators and stuff
 
 	// Vending-related
-	var/tmp/currently_vending_handle	// What we're requesting payment for right now
+	var/tmp/datum/data/casino_prize/currently_vending	// What we're requesting payment for right now
 	// ALLOW(instance_list): d: machine log (generic name, too many ambiguous call sites)
 	var/list/log = list() //Log only SS13 staff is allowed to look at, CKEYS are listed here for record keeping of prizes and players for events!
 
@@ -371,7 +371,7 @@
 				to_chat(ui.user, span_warning("Prize checkout error has occurred, purchase cancelled."))
 				return FALSE
 
-			currently_vending_handle = om_handle(bi)
+			rel_set(src, "currently_vending", bi)
 
 			if(istype(ui.user.get_active_hand(), /obj/item/spacecasinocash))
 				var/obj/item/spacecasinocash/cash = ui.user.get_active_hand()
@@ -395,7 +395,7 @@
 	if(ispath(bi.equipment_path, /obj/item/stack))
 		new bi.equipment_path(loc, bi.equipment_amt)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
-		currently_vending_handle = null
+		rel_clear(src, "currently_vending")
 		use_power(vend_power_usage)	//actuators and stuff
 		flick("[icon_state]-vend",src)
 		return TRUE
@@ -404,7 +404,7 @@
 		new bi.equipment_path(loc)
 		play_sfx(src, SFX_MACHINES_VENDING_VENDING_DROP)
 
-	currently_vending_handle = null
+	rel_clear(src, "currently_vending")
 	use_power(vend_power_usage)	//actuators and stuff
 	flick("[icon_state]-vend",src)
 
@@ -427,6 +427,6 @@
 
 #undef CASINO_PRIZE
 
-/// LC-refs: What we're requesting payment for right now -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// What we're requesting payment for right now (a relation view: null once it is deleted).
 /obj/machinery/casino_prize_dispenser/proc/currently_vending() as /datum/data/casino_prize
-	return om_resolve(currently_vending_handle)
+	return currently_vending

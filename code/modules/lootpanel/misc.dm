@@ -1,6 +1,6 @@
 /// Helper to open the panel
 /datum/lootpanel/proc/open(turf/tile)
-	source_turf_handle = om_handle(tile)
+	rel_set(src, "source_turf", tile)
 
 #if !defined(OPENDREAM) && !defined(UNIT_TESTS)
 	if(!notified)
@@ -36,7 +36,7 @@
  */
 /datum/lootpanel/proc/process_images()
 	for(var/datum/search_object/index as anything in to_image)
-		LAZYREMOVE(to_image, index)
+		rel_remove(src, "to_image", index)
 
 		if(QDELETED(index) || index.icon)
 			continue

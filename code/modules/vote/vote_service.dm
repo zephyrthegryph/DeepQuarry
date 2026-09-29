@@ -15,7 +15,7 @@ GLOBAL_DATUM_INIT(vote_service, /datum/world_service/vote, new)
 	return TRUE
 
 /datum/world_service/vote/proc/start_vote(datum/vote/V)
-	active_vote = V
+	own_set(src, "active_vote", V)
 	active_vote.start()
 	demand()
 
@@ -31,4 +31,3 @@ GLOBAL_DATUM_INIT(vote_service, /datum/world_service/vote, new)
 /datum/om/behaviour/world/vote/service()
 	return GLOB.vote_service
 
-DECLARE_REF(/datum/world_service/vote, "active_vote", OWNED, null)

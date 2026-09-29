@@ -190,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					play_sfx(src, SFX_MACHINES_DING)
 				target.status = LIGHT_EMPTY
-				target.installed_light = null //Remove the light!
+				own_clear(target, "installed_light", OWN_DELETE) //Remove the light! (its glass went into the shards)
 				target.latent_bulb = FALSE
 				target.update()
 

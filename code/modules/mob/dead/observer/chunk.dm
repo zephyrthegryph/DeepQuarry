@@ -11,9 +11,9 @@
 		var/client/client = ghost.client
 		if(client)
 			if(length(obscured)) client.images += obscured
-	ghost.visibleChunks += src
+	rel_add(ghost, "visibleChunks", src)
 	visible++
-	LAZYADD(seenby, ghost)
+	rel_add(src, "seenby", ghost)
 	if(changed && !updating)
 		update()
 
@@ -22,8 +22,8 @@
 		var/client/client = ghost.client
 		if(client)
 			client.images -= obscured
-	ghost.visibleChunks -= src
-	LAZYREMOVE(seenby, ghost)
+	rel_remove(ghost, "visibleChunks", src)
+	rel_remove(src, "seenby", ghost)
 	if(visible > 0)
 		visible--
 
@@ -104,7 +104,7 @@
 			LAZYADD(obscured, t.obfuscations[obfuscation.type])
 			for(var/mob/observer/dead/m as anything in seenby)
 				if(!m)
-					LAZYREMOVE(seenby, m)
+					rel_remove(src, "seenby", m)
 					continue
 				if(!m.checkStatic())
 					continue

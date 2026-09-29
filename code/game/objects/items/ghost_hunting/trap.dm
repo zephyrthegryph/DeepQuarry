@@ -15,14 +15,15 @@
 	w_class = ITEMSIZE_NORMAL
 	var/deployed = FALSE
 	///The entity we currently have captured.
-	var/captured_entity
+	/// Relation view: the entity held in the trap.
+	var/mob/captured_entity
 	var/obj/item/radio/intercom/science/ghost_reporter
 
 /obj/item/ghost_trap/Initialize(mapload)
 	. = ..()
 	if(deployed)
 		update_icon()
-	ghost_reporter = new(null) // ALLOW(decl): made in nullspace, not in src
+	own_set(src, "ghost_reporter", new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
 		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),
@@ -35,11 +36,10 @@
 		config_flags = EXPERIMENT_CONFIG_ALWAYS_ACTIVE, \
 		experiment_events = ghost_events)
 
-DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 
 // a captured entity is released onto the turf.
 /obj/item/ghost_trap/on_destroy(force)
-	var/mob/our_entity = om_resolve(captured_entity)
+	var/mob/our_entity = captured_entity
 	if(our_entity)
 		remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
 		our_entity.forceMove(get_turf(src))
@@ -57,10 +57,10 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = om_resolve(captured_entity)
+		var/mob/our_entity = captured_entity
 		if(our_entity && (our_entity.loc == src))
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			rel_clear(src, "captured_entity")
 			our_entity.forceMove(get_turf(src))
 			update_icon()
 			return
@@ -76,7 +76,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = om_resolve(captured_entity)
+		var/mob/our_entity = captured_entity
 		if(our_entity)
 			icon_state = "item_captured"
 			return
@@ -93,10 +93,10 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 	if(!captured_entity)
 		return PROCESS_KILL
 	if(captured_entity)
-		var/mob/our_entity = om_resolve(captured_entity)
+		var/mob/our_entity = captured_entity
 		if(our_entity && our_entity.loc != src)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			rel_clear(src, "captured_entity")
 			announce_escape(our_entity)
 			update_icon()
 
@@ -112,7 +112,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 /obj/item/ghost_trap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 
 	if(captured_entity)
-		var/mob/our_entity = om_resolve(captured_entity)
+		var/mob/our_entity = captured_entity
 		if(our_entity)
 			to_chat(user, "You are unable to use \the [src]! It beeps that it an entity contained inside!")
 			return TRUE
@@ -143,7 +143,7 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 
 /obj/item/ghost_trap/proc/container_resist_timed_done(mob/living/escapee)
 	remove_trait(escapee, TRAIT_NO_TRANSFORM, src)
-	captured_entity = null
+	rel_clear(src, "captured_entity")
 	escapee.forceMove(get_turf(src))
 	announce_escape(escapee)
 	visible_message(span_danger("A loud buzzer rings out as \the [src] suddenly opens, alerting that a containment breach has ocurred!"))
@@ -186,7 +186,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 /obj/item/ghost_trap/proc/catch_ghost(mob/passing_entity)
 	if(!ismob(passing_entity)) //wtf did you do
 		return
-	captured_entity = om_handle(passing_entity)
+	rel_set(src, "captured_entity", passing_entity)
 	om_task_periodic(src, PERIODIC_SLOW) // watches for an escape while it holds something
 
 	if(isliving(passing_entity))
@@ -247,10 +247,10 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 		return
 
 	if(captured_entity)
-		var/mob/our_entity = om_resolve(captured_entity)
+		var/mob/our_entity = captured_entity
 		if(our_entity && (our_entity.loc == src) && our_entity.devourable)
 			remove_trait(our_entity, TRAIT_NO_TRANSFORM, src)
-			captured_entity = null
+			rel_clear(src, "captured_entity")
 			user.begin_instant_nom(user, our_entity, user, user.vore_selected)
 			return
 

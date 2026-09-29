@@ -97,7 +97,7 @@
 	var/sec_record = ""
 	var/gen_record = ""
 	var/exploit_record = ""
-	var/exploit_addons = list()		//Assorted things that show up at the end of the exploit_record list
+	var/list/obj/item/exploit_addons		//Assorted things that show up at the end of the exploit_record list
 	var/blinded = null
 	var/bhunger = 0			//Carbon
 	var/ajourn = 0
@@ -202,7 +202,7 @@
 	var/tmp/mob/living/carbon/LAssailant = null
 
 //Wizard mode, but can be used in other modes thanks to the brand new "Give Spell" badmin button
-	// ALLOW(object_keyed_lists): spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm); the mob neither owns nor deletes them
+	// Spells migrate between mobs on mind/ghost swaps (spellbook.dm, mind_transfer.dm): a relation list.
 	var/list/datum/spell/spell_list = list() // ALLOW(instance_list): d: per-mob spell_list, filled at runtime; mobs are few
 
 //Changlings, but can be used in other modes
@@ -274,7 +274,7 @@
 	/// dict of custom stat tabs with data
 	var/list/list/misc_tabs = list() // ALLOW(instance_list): d: per-mob misc_tabs, filled at runtime; mobs are few
 
-	// ALLOW(object_keyed_lists): membership list maintained by /datum/action Grant()/Remove(); the action owns the relation
+	// Membership list maintained by /datum/action Grant()/Remove(): a relation list.
 	var/tmp/list/datum/action/actions
 
 
@@ -300,43 +300,8 @@
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-DECLARE_REF(/mob, "dna", OWNED, null)
-DECLARE_REF(/mob, "plane_holder", OWNED, null)
-DECLARE_REF(/mob, "hud_used", OWNED, null)
-DECLARE_REF(/mob, "ability_master", OWNED, null)
-DECLARE_REF(/mob, "spell_masters", OWNED_LIST, null)
-DECLARE_REF(/mob, "lastarea", STATIC, null)
-// Screen objects belong to hud_used; the mob only points at them (remove_screen_obj_references()).
-DECLARE_REF(/mob, "hands", HELD, null)
-DECLARE_REF(/mob, "pullin", HELD, null)
-DECLARE_REF(/mob, "purged", HELD, null)
-DECLARE_REF(/mob, "internals", HELD, null)
-DECLARE_REF(/mob, "i_select", HELD, null)
-DECLARE_REF(/mob, "m_select", HELD, null)
-DECLARE_REF(/mob, "healths", HELD, null)
-DECLARE_REF(/mob, "throw_icon", HELD, null)
-DECLARE_REF(/mob, "pain", HELD, null)
-DECLARE_REF(/mob, "item_use_icon", HELD, null)
-DECLARE_REF(/mob, "radio_use_icon", HELD, null)
-DECLARE_REF(/mob, "gun_move_icon", HELD, null)
-DECLARE_REF(/mob, "gun_run_icon", HELD, null)
-DECLARE_REF(/mob, "gun_setting_icon", HELD, null)
-DECLARE_REF(/mob, "ling_chem_display", HELD, null)
-DECLARE_REF(/mob, "borer_chem_display", HELD, null)
-DECLARE_REF(/mob, "wiz_energy_display", HELD, null)
-DECLARE_REF(/mob, "wiz_instability_display", HELD, null)
-DECLARE_REF(/mob, "autowhisper_display", HELD, null)
-DECLARE_REF(/mob, "zone_sel", HELD, null)
-DECLARE_REF(/mob, "shadekin_display", HELD, null)
-DECLARE_REF(/mob, "lleill_display", HELD, null)
-DECLARE_REF(/mob, "xenochimera_danger_display", HELD, null)
-DECLARE_REF(/mob, "persistent_client", HELD, null)
-DECLARE_REF(/mob, "mind", HELD, null)
-DECLARE_REF(/mob, "organStructure", HELD, null)
-DECLARE_REF(/mob, "LAssailant", HELD, null)
-DECLARE_REF(/mob, "control_object", HELD, null)
-DECLARE_REF(/mob, "teleop", HELD, null)
-DECLARE_REF(/mob, "click_intercept", HELD, null)
-DECLARE_REF(/mob, "focus", HELD, null)
-DECLARE_REF(/mob, "spell_list", HELD, null)
-DECLARE_REF(/mob, "actions", HELD, null)
+REL(/mob, control_object) // the object an admin possesses
+REL_LIST(/mob, spell_list)
+REL_LIST(/mob, actions)
+REL_PAIR_LIST(/mob, exploit_addons, exploit_for)
+REL_PAIR(/obj/item, exploit_for, exploit_addons)

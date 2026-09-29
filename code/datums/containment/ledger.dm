@@ -18,7 +18,7 @@
 // writes skip all of this, which is why tools/ci/containment_lint.py forbids
 // them outside its allowlist.
 
-// ALLOW(scheduler, declared_refs): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
+// ALLOW(scheduler): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
@@ -176,7 +176,6 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	accumulators = new /list(length(CACHED(ledger_measure_ids, "ids")) + dq_ledger_tag_words())
 
 // the ledger is the containment engine itself; it lets go of its holder.
-DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 
 /datum/ledger/lifecycle_dematerialize()
 	..()
@@ -246,9 +245,9 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 		if(thing.loc != holder)
 			note_exit(thing)
 	for(var/atom/movable/thing as anything in holder.contents)
-		// A thing being deleted left its slot in destroy phase 4 (it keeps its
-		// loc until phase 7): never re-adopt it.
-		if(!entries[thing] && !QDELETED(thing))
+		// A thing being deleted left its slot in destroy phase 4 (it keeps its loc until phase 7):
+		// note_enter()'s teardown guard never re-adopts it.
+		if(!entries[thing])
 			note_enter(thing)
 
 // ---- Bookkeeping (called from doMove) ----
@@ -266,6 +265,8 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
+	if(!own_guard(holder, thing, "contents adoption", LIFECYCLE_PHASE_LINKS)) // the one teardown guard (guard.dm)
+		return
 	var/datum/om/relation/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)
@@ -317,6 +318,10 @@ DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 	om_slot_left(holder, thing, def)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
+	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
+	// naming it lets it go.
+	if(thing.own_holder_ref && !QDELETED(holder))
+		own_contents_exit(holder, thing)
 
 /// Moves a thing already inside between two of the holder's slots.
 /datum/ledger/proc/reslot(atom/movable/thing, new_id, flags = 0)

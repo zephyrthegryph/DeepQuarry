@@ -22,7 +22,7 @@
 
 //auto-gibs anything that bumps into it
 /obj/machinery/gibber/autogibber
-	var/tmp/input_plate_handle
+	var/tmp/turf/input_plate
 
 /obj/machinery/gibber/autogibber/Initialize(mapload)
 	. = ..()
@@ -30,7 +30,7 @@
 		var/obj/machinery/mineral/input/input_obj = locate( /obj/machinery/mineral/input, get_step(src.loc, i) )
 		if(input_obj)
 			if(isturf(input_obj.loc))
-				input_plate_handle = om_handle(input_obj.loc)
+				rel_set(src, "input_plate", input_obj.loc)
 				gib_throw_dir = i
 				qdel(input_obj)
 				break
@@ -230,10 +230,11 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 	occupant.ghostize()
 
-	om_after(src, gib_time, PROC_REF(finish_gibbing), om_handle(occupant), byproducts)
+	om_after(src, gib_time, PROC_REF(finish_gibbing), byproducts)
 
-/obj/machinery/gibber/proc/finish_gibbing(occupant_handle, list/byproducts)
-	var/mob/living/occupant = om_resolve(occupant_handle)
+/obj/machinery/gibber/proc/finish_gibbing(list/byproducts)
+	// The occupant is whoever is still in the slot when the timer fires (a deleted one is simply gone).
+	var/mob/living/occupant = slot_item(OCCUPANT_SLOT_GIBBER)
 	occupant?.gib()
 	occupant = src?.slot_item(OCCUPANT_SLOT_GIBBER) // re-fetch: this runs after a delay, so the slot may have changed since capture
 	if(occupant) // gib() may not always hard-delete (e.g. a synthetic's remains): the
@@ -265,6 +266,6 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 	update_icon()
 
-/// LC-refs: the input_plate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the input_plate this refers to (a relation view: null once it is deleted).
 /obj/machinery/gibber/autogibber/proc/input_plate() as /turf
-	return om_resolve(input_plate_handle)
+	return input_plate

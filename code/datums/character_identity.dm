@@ -17,7 +17,7 @@
 	var/real_name
 	/// The DNA of the body the character last lived in. A reference, never a
 	/// clone: the embodying human's dna datum (see get_dna()).
-	var/dna_handle
+	var/datum/dna/dna
 	/// OOC notes (every field).
 	var/ooc_notes
 	var/ooc_notes_likes
@@ -38,7 +38,7 @@
 /datum/character_identity/proc/get_dna()
 	RETURN_TYPE(/datum/dna)
 	if(QDELETED(dna()))
-		dna_handle = null
+		rel_clear(src, "dna")
 	return dna()
 
 /// Does the character carry a persistent trait of `effect_type` (or a subtype)?
@@ -53,22 +53,21 @@
 /mob/living
 	/// The mob's own identity (owned): what it embodies until a mind brings its character.
 	var/datum/character_identity/own_identity = new
-	/// OM handle of the identity this mob embodies (its mind's, or its own). Read with identity().
-	var/identity_handle
+	/// The identity this mob embodies (its mind's, or its own): a relation view. Read with identity().
+	var/datum/character_identity/identity
 
-DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 
 /// The identity of the character this mob embodies: its mind's when one is (or was) bound, else
 /// its own. Always non-null so readers never need to check.
 /mob/living/proc/identity() as /datum/character_identity
-	return om_resolve(identity_handle) || own_identity
+	return identity || own_identity
 
 /// Point this mob at `I` and sync the engine-facing vars from it. The ONE place
 /// mob vars are synced from identity.
 /mob/living/proc/bind_identity(datum/character_identity/I)
 	if(!I)
 		return
-	identity_handle = om_handle(I)
+	rel_set(src, "identity", I)
 	on_identity_bound()
 
 /// Per-type sync hook for bind_identity(). By default a mob only records its
@@ -85,7 +84,7 @@ DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 /// printed from one gets it here, when its mind arrives.
 /mob/living/carbon/human/on_identity_bound()
 	..()
-	identity().dna_handle = om_handle(dna)
+	rel_set(identity(), "dna", dna)
 	if(identity().flavor_texts)
 		flavor_texts = identity().flavor_texts
 	else
@@ -106,16 +105,17 @@ DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 /mob/living/proc/share_identity(datum/character_identity/I)
 	if(!I)
 		return
-	identity_handle = om_handle(I)
+	rel_set(src, "identity", I)
 	if(mind)
-		mind.identity = I
+		own_set(mind, "identity", I)
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
+	var/datum/character_identity/I = identity()
 	if(present)
-		LAZYDISTINCTADD(identity().genetic_effects, effect_type)
+		LAZYDISTINCTADD(I.genetic_effects, effect_type)
 	else
-		LAZYREMOVE(identity().genetic_effects, effect_type)
+		LAZYREMOVE(I.genetic_effects, effect_type)
 
 // --- Mind side -----------------------------------------------------------------------
 
@@ -132,7 +132,7 @@ DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		identity = L.identity()
+		own_set(src, "identity", L.identity())
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------
@@ -175,8 +175,7 @@ DECLARE_REF(/mob/living, "own_identity", OWNED, null)
 		log_game("MIND: created a mind for [key] in [src] ([type]) to move it")
 	return mind
 
-/// LC-refs: the dna of the body the character last lived in -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The dna of the body the character last lived in (a relation view).
 /datum/character_identity/proc/dna() as /datum/dna
-	return om_resolve(dna_handle)
+	return dna
 
-DECLARE_REF(/datum/mind, "identity", OWNED, null)

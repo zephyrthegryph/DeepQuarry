@@ -65,6 +65,17 @@ REGISTRY_DECLARE(overminds, REGISTRY_OVERMINDS)
 REGISTRY_DECLARE(pai_cards, REGISTRY_PAI_CARDS)
 REGISTRY_DECLARE(pdas, REGISTRY_PDAS)
 REGISTRY_DECLARE(persistent_clients, REGISTRY_PERSISTENT_CLIENTS)
+/// Filed by ckey (/datum/persistent_client/registry_key()).
+/datum/registry/persistent_clients
+	keyed = TRUE
+REGISTRY_DECLARE(generated_station_runtimes, REGISTRY_GENERATED_STATION_RUNTIMES)
+/// Filed by station id (/datum/generated_station_simulation/registry_key()).
+/datum/registry/generated_station_runtimes
+	keyed = TRUE
+REGISTRY_DECLARE_CONDITIONAL(random_maps, REGISTRY_RANDOM_MAPS)
+/// Preserved and admin random maps, filed by name.
+/datum/registry/random_maps
+	keyed = TRUE
 REGISTRY_DECLARE(pointdefense_controllers, REGISTRY_POINTDEFENSE_CONTROLLERS)
 REGISTRY_DECLARE(pointdefense_turrets, REGISTRY_POINTDEFENSE_TURRETS)
 REGISTRY_DECLARE(portal_masters, REGISTRY_PORTAL_MASTERS)

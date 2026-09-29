@@ -117,9 +117,9 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 					if(!T)
 						continue
 					if(!candidate.bottom_left && locate_within(T, /obj/effect/landmark/unit_test_bottom_left))
-						candidate.bottom_left = T
+						rel_set(candidate, "bottom_left", T)
 					if(!candidate.top_right && locate_within(T, /obj/effect/landmark/unit_test_top_right))
-						candidate.top_right = T
+						rel_set(candidate, "top_right", T)
 			if(candidate.bottom_left && candidate.top_right)
 				block = candidate
 				break
@@ -262,17 +262,17 @@ GLOBAL_VAR_INIT(unit_test_block_pool_ready, FALSE)
 /// assumptions" flakiness pattern: a test that only passed because a shared
 /// turf happened to already be warm, or because the CI machine happened to be
 /// fast enough that round N finished within a guessed frame count). Returns
-/// TRUE the moment `condition.Invoke()` is truthy, FALSE if `max_attempts` is
+/// TRUE the moment `om_run(condition)` is truthy, FALSE if `max_attempts` is
 /// exhausted first. `advance` may be null to just poll `condition` on a sleep.
-/proc/wait_for_condition(datum/callback/condition, datum/callback/advance, max_attempts = 60)
+/proc/wait_for_condition(list/condition, list/advance, max_attempts = 60)
 	for(var/i in 1 to max_attempts)
-		if(condition.Invoke())
+		if(om_run(condition))
 			return TRUE
 		if(advance)
-			advance.Invoke()
+			om_run(advance)
 		else
 			sleep(world.tick_lag)
-	return condition.Invoke()
+	return om_run(condition)
 
 /// The focused test types: the file named by the test-focus world param
 /// (`dm-test --focus=`, tools/dq_focused_test.sh) when given, otherwise every
@@ -502,10 +502,9 @@ GLOBAL_VAR(dq_test_select_names)
 	if (isnull(uncreatables))
 		uncreatables = build_list_of_uncreatables()
 
-	allocated = new
-	test_block = acquire_unit_test_block()
-	run_loc_floor_bottom_left = test_block.bottom_left
-	run_loc_floor_top_right = test_block.top_right
+	rel_set(src, "test_block", acquire_unit_test_block())
+	rel_set(src, "run_loc_floor_bottom_left", test_block.bottom_left)
+	rel_set(src, "run_loc_floor_top_right", test_block.top_right)
 
 	// Deterministic per-test RNG: reseed from the test's own type name rather
 	// than leaving the shared world RNG wherever the previous test's rand()
@@ -523,8 +522,16 @@ GLOBAL_VAR(dq_test_select_names)
 	TEST_ASSERT(isfloorturf(run_loc_floor_bottom_left), "run_loc_floor_bottom_left was not a floor ([run_loc_floor_bottom_left])")
 	TEST_ASSERT(isfloorturf(run_loc_floor_top_right), "run_loc_floor_top_right was not a floor ([run_loc_floor_top_right])")
 
-/// Everything allocate() made is the test's to delete when it ends.
-DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
+/// Everything allocate() made is the test's to delete when it ends. `allocated` is a relation
+/// list, never ownership: production code adopts allocated things freely, and whatever is still
+/// alive here when the test is torn down is deleted (deleted entries have left the view).
+REL_LIST(/datum/unit_test, allocated)
+
+/datum/unit_test/on_destroy(force)
+	for(var/datum/thing as anything in allocated?.Copy())
+		if(!QDELETED(thing))
+			qdel(thing)
+	..()
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
@@ -551,13 +558,16 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 			arguments = list(run_loc_floor_bottom_left)
 		else if (arguments[1] == null)
 			arguments[1] = run_loc_floor_bottom_left
-	var/instance
+	var/datum/instance
 	// Byond will throw an index out of bounds if arguments is empty in that arglist call. Sigh
 	if(length(arguments))
 		instance = new type(arglist(arguments))
 	else
 		instance = new type()
-	allocated += instance
+	// A type that deletes itself in Initialize() (INITIALIZE_HINT_QDEL: a lattice off open space)
+	// is already gone: nothing to clean up, and a dying thing takes no new links.
+	if(!QDELETED(instance))
+		rel_add(src, "allocated", instance)
 	return instance
 
 /// Hands something the test didn't allocate() but did cause (a construction product, a
@@ -565,7 +575,7 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 /// Returns `thing`.
 /datum/unit_test/proc/own(datum/thing)
 	if(thing && !QDELETED(thing))
-		allocated |= thing
+		rel_add(src, "allocated", thing)
 	return thing
 
 /// own()s everything currently on `T` (landmarks excepted): for a test whose subject
@@ -1024,6 +1034,11 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 	var/current_test_index = 0
 	log_test("Unit-test suite starting: [total_tests] test types[LAZYLEN(focused_tests) ? " (focused run)" : ""].")
 
+	// Ownership framework checks (doc/rewrite/ownership.md): snapshot every frozen shared
+	// definition and start the periodic owner-stamp audit before the first test.
+	def_freeze_snapshot()
+	own_audit_periodic()
+
 	//Hell code, we're bound to end the round somehow so let's stop if from ending while we work
 	SSticker.delay_end = TRUE
 	for(var/unit_path in tests_to_run)
@@ -1042,6 +1057,21 @@ DECLARE_REF(/datum/unit_test, "allocated", OWNED_LIST, null)
 			log_test("HARNESS RUNTIME in [unit_path]: [e.name] at [e.file]:[e.line] -- [e.desc]")
 			test_results[unit_path] = list("status" = UNIT_TEST_FAILED, "message" = "harness runtime: [e.name] at [e.file]:[e.line]", "name" = unit_path, "duration_ds" = 0, "runtimes" = 1, "ticks" = null)
 	SSticker.delay_end = FALSE
+	// Ownership framework checks after the last test: a mutated shared definition or an
+	// orphaned/stale owner stamp fails the run like a failed test, one line per finding.
+	var/list/frozen = def_freeze_verify()
+	var/list/orphans = own_audit(quiet = TRUE)
+	var/list/framework_failures = list()
+	for(var/line in frozen)
+		framework_failures += "DEF FREEZE: [line]"
+	for(var/line in orphans)
+		framework_failures += "OWN AUDIT: [line]"
+	for(var/line in framework_failures)
+		GLOB.failed_any_test = TRUE
+		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [line]")
+		log_test(line)
+	if(length(framework_failures))
+		test_results["ownership_framework_checks"] = list("status" = UNIT_TEST_FAILED, "message" = jointext(framework_failures, "\n"), "name" = "ownership_framework_checks", "duration_ds" = 0, "runtimes" = 0, "ticks" = null)
 	if(length(GLOB.dq_refsearch_type_counts))
 		var/list/searched = list()
 		for(var/type in GLOB.dq_refsearch_type_counts)

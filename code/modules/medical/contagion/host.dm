@@ -226,7 +226,7 @@ ADMIN_VERB(ReleaseVirus, R_SPAWN|R_EVENT, "Release Virus", "Release a pre-set vi
 		log_admin("[key_name_admin(user)] infected [key_name_admin(H)] with [D.name]")
 
 		if(!GLOB.archive_diseases[D.GetDiseaseID()])
-			GLOB.archive_diseases[D.GetDiseaseID()] = D
+			GLOB.archive_diseases[D.GetDiseaseID()] = D.Copy() // the archive keeps its own copy; D belongs to the host
 			return TRUE
 
 /// Admin debug: every contagion on a mob, with stage, immunity and flags.

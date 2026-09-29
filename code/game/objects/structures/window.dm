@@ -646,7 +646,7 @@ DECLARE_SHARED_CACHE(window_overlay_sets, GLOBAL_PROC_REF(build_window_overlay_s
 /obj/machinery/button/windowtint/proc/store_in_multitool(mob/user, obj/item/multitool/multitool)
 	if(id && istype(multitool))
 		to_chat(user, span_notice("You store \the [src] ID ('[id]') in \the [multitool]'s buffer!"))
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 		multitool.update_icon()
 
 /obj/machinery/button/windowtint/wirecutter_act(mob/user, obj/item/tool)

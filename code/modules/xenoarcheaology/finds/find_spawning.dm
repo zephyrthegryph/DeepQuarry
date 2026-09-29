@@ -392,9 +392,9 @@
 
 			new_gun.max_shells = rand(1,12)
 			var/num_bullets = rand(1,new_gun.max_shells)
-			QDEL_LIST(new_gun.loaded) //Remove all the bullets we spawned with.
+			own_clear(new_gun, "loaded", OWN_DELETE) //Remove all the bullets we spawned with.
 			for(var/i = 1, i <= num_bullets, i++)//Load our gun with the special artifact ammo.
-				new_gun.loaded += new /obj/item/ammo_casing/artifact(new_gun)
+				own_add(new_gun, "loaded", new /obj/item/ammo_casing/artifact(new_gun))
 
 		if(ARCHAEO_UNKNOWN) //This previously spawned NOTHING...Are you kidding me?
 			var/new_sample = new /obj/item/research_sample/rare(src.loc) //So instead, you get a really good research sample. Eat your heart out, science.
@@ -848,7 +848,7 @@
 		new_item.desc = src.desc
 
 		if(talkative)
-			new_item.talking_atom = new(new_item)
+			own_set(new_item, "talking_atom", new /datum/talking_atom(new_item))
 
 		if(become_anomalous)
 			new_item.become_anomalous()
@@ -861,7 +861,7 @@
 			T.last_find_name = new_item.name
 		if(secondary_item) //Is this part of a set?
 			if(talkative)
-				secondary_item.talking_atom = new(secondary_item)
+				own_set(secondary_item, "talking_atom", new /datum/talking_atom(secondary_item))
 
 			if(become_anomalous)
 				secondary_item.become_anomalous()
@@ -869,7 +869,7 @@
 		return INITIALIZE_HINT_QDEL
 
 	else if(talkative)
-		src.talking_atom = new(src)
+		own_set(src, "talking_atom", new /datum/talking_atom(src))
 
 	if(become_anomalous)
 		become_anomalous()

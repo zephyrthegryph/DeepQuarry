@@ -83,4 +83,3 @@ TYPE_TABLE(/datum/event/prison_break/station, prison_break_area_names, list("Bri
 	for(var/area/A in shuffle(areas))
 		A.prison_break()
 
-DECLARE_REF(/datum/event/prison_break, "areas", STATIC, null)

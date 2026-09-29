@@ -46,7 +46,7 @@
 			active_program().computer_emagged = computer_emagged
 			active_program().process_tick()
 		else
-			active_program_handle = null
+			rel_clear(src, "active_program")
 
 	for(var/datum/computer_file/program/P in idle_threads)
 		if(P.program_state != PROGRAM_STATE_KILLED)
@@ -54,7 +54,7 @@
 			P.computer_emagged = computer_emagged
 			P.process_tick()
 		else
-			LAZYREMOVE(idle_threads, P)
+			rel_remove(src, "idle_threads", P)
 
 	handle_power() // Handles all computer power interaction
 	check_update_ui_need()
@@ -85,8 +85,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	for(var/obj/item/computer_hardware/CH in src.get_all_components())
 		uninstall_component(null, CH)
 		qdel(CH)
-	if(paired_uavs)
-		paired_uavs.Cut()
+	rel_clear(src, "paired_uavs")
 	..()
 
 /obj/item/modular_computer/emag_act(remaining_charges, mob/user)
@@ -160,7 +159,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 /obj/item/modular_computer/proc/kill_program(forced = 0)
 	if(active_program())
 		active_program().kill_program(forced)
-		active_program_handle = null
+		rel_clear(src, "active_program")
 	var/mob/user = usr
 	om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
 	update_icon()
@@ -190,7 +189,7 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	kill_program(1)
 	for(var/datum/computer_file/program/P in idle_threads)
 		P.kill_program(1)
-		LAZYREMOVE(idle_threads, P)
+		rel_remove(src, "idle_threads", P)
 	if(loud)
 		visible_message("\The [src] shuts down.")
 	enabled = 0
@@ -213,10 +212,10 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	if(!active_program() || !processor_unit)
 		return
 
-	LAZYADD(idle_threads, active_program())
+	rel_add(src, "idle_threads", active_program())
 	active_program().program_state = PROGRAM_STATE_BACKGROUND // Should close any existing UIs
 	SStgui.close_uis(active_program().TM ? active_program().TM : active_program())
-	active_program_handle = null
+	rel_clear(src, "active_program")
 	update_icon()
 	if(istype(user))
 		tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
@@ -231,14 +230,14 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 		to_chat(user, span_danger("\The [src]'s screen shows \"I/O ERROR - Unable to run [prog]\" warning."))
 		return
 
-	P.computer_handle = om_handle(src)
+	rel_set(P, "computer", src)
 
 	if(!P.is_supported_by_hardware(hardware_flag, 1, user))
 		return
 	if(P in idle_threads)
 		P.program_state = PROGRAM_STATE_ACTIVE
-		active_program_handle = om_handle(P)
-		LAZYREMOVE(idle_threads, P)
+		rel_set(src, "active_program", P)
+		rel_remove(src, "idle_threads", P)
 		update_icon()
 		return
 

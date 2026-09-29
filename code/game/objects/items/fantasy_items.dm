@@ -165,12 +165,12 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 				if(!GM.loc == get_turf(src))
 					to_chat(user, span_notice("[GM.name] needs to be on the toilet."))
 					return INTERACTION_HANDLED_PASS
-				var/mob/living/swirlie = om_resolve(swirlie_mob)
+				var/mob/living/swirlie = swirlie_mob
 				if(open && !swirlie)
 					act_message(user, null, MSG_SELF(span_notice("You start to give [GM.name] a swirlie!")), MSG_OTHERS(span_danger("%U% starts to give [GM.name] a swirlie!")))
-					swirlie_mob = om_handle(GM)
+					rel_set(src, "swirlie_mob", GM)
 					om_task_start(/datum/om/task/timed/wooden_wooden_swirlie, user, GM, receiver = src)
-					swirlie_mob = null
+					rel_clear(src, "swirlie_mob")
 				else
 					act_message(user, src, MSG_SELF(span_notice("You slam [GM.name] into %T%!")), MSG_OTHERS(span_danger("%U% slams [GM.name] into %T%!")))
 					GM.injure(INJURY_BLUNT, 5, source = src)
@@ -326,11 +326,7 @@ EXTEND_INTERACTIONS(/obj/structure/toilet/wooden, \
 	. = ..(user, held, interaction, radial_menu_anchor)
 	if(.)
 		return TRUE
-	if(loc_network)
-		for(var/obj/item/perfect_tele_beacon/stationary/nb in REGISTRY_MEMBERS(REGISTRY_TELE_BEACONS_PREMADE))
-			if(nb.tele_network == loc_network)
-				LAZYSET(beacons, nb.tele_name, nb)
-		loc_network = null //Consumed
+	claim_network_beacons()
 
 	if(!(user.ckey in warned_users))
 		LAZYOR(warned_users, user.ckey)
@@ -356,7 +352,7 @@ This device records all warnings given and teleport events for admin review in c
 		return
 
 	else
-		destination_handle = om_handle(LAZYACCESS(beacons, choice))
+		rel_set(src, "destination", find_beacon(choice))
 		rebuild_radial_images()
 
 /obj/item/perfect_tele/magic/proc/page_named(datum/om/prompt/text/ask)
@@ -371,15 +367,15 @@ This device records all warnings given and teleport events for admin review in c
 		to_chat(user, span_warning("Entered name length invalid (must be longer than 2, no more than than 20)."))
 		return
 
-	if(new_name in beacons)
+	if(find_beacon(new_name))
 		to_chat(user, span_warning("No duplicate names, please. '[new_name]' exists already."))
 		return
 
 	var/obj/item/perfect_tele_beacon/magic/nb = new(get_turf(src))
 	nb.tele_name = new_name
-	nb.tele_hand_handle = om_handle(src)
+	rel_set(nb, "tele_hand", src)
 	nb.creator = user.ckey
-	LAZYSET(beacons, new_name, nb)
+	rel_add(src, "beacons", nb)
 	beacons_left--
 	if(isliving(user))
 		var/mob/living/L = user

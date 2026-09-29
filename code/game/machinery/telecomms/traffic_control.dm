@@ -8,10 +8,10 @@
 
 	var/screen = 0				// the screen number:
 	var/list/servers	// the servers located by the computer
-	var/editingcode_handle
-	var/lasteditor_handle
+	var/mob/editingcode
+	var/mob/lasteditor
 	var/list/viewingcode
-	var/SelectedServer_handle
+	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_traffic
 	req_access = list(ACCESS_TCOMSAT)
 
@@ -35,7 +35,7 @@
 		update_ide_end()
 		return
 	if(!editingcode().client)
-		editingcode_handle = null
+		rel_clear(src, "editingcode")
 		update_ide_end()
 		return
 
@@ -49,7 +49,7 @@
 	if( (!(editingcode() in range(1, src)) && !issilicon(editingcode())) || (!editingcode().check_current_machine(src) && !issilicon(editingcode())))
 		if(editingcode())
 			winshow(editingcode(), "Telecomms IDE", 0) // hide the window!
-		editingcode_handle = null
+		rel_clear(src, "editingcode")
 		update_ide_end()
 		return
 
@@ -81,7 +81,7 @@
 	ide_ticking = FALSE
 
 	if(length(viewingcode) > 0)
-		editingcode_handle = om_handle(DEFAULTPICK(viewingcode, null))
+		rel_set(src, "editingcode", DEFAULTPICK(viewingcode, null))
 		LAZYREMOVE(viewingcode, editingcode())
 		update_ide()
 
@@ -104,7 +104,7 @@
 	screen = 1
 	for(var/obj/machinery/telecomms/T in servers)
 		if(T.id == id)
-			SelectedServer_handle = om_handle(T)
+			rel_set(src, "SelectedServer", T)
 			break
 	updateUsrDialog(user)
 
@@ -120,7 +120,7 @@
 	switch(op)
 
 		if("release")
-			servers = list()
+			rel_clear(src, "servers")
 			screen = 0
 
 		if("mainmenu")
@@ -133,7 +133,7 @@
 			else
 				for(var/obj/machinery/telecomms/server/T in range(25, src))
 					if(T.network == network)
-						LAZYADD(servers, T)
+						rel_add(src, "servers", T)
 
 				if(!length(servers))
 					temp = span_red("- FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\] -")
@@ -147,8 +147,8 @@
 			if(user in viewingcode) return
 
 			if(!editingcode())
-				lasteditor_handle = om_handle(user)
-				editingcode_handle = om_handle(user)
+				rel_set(src, "lasteditor", user)
+				rel_set(src, "editingcode", user)
 				winshow(editingcode(), "Telecomms IDE", 1) // show the IDE
 				winset(editingcode(), "tcscode", "is-disabled=false")
 				winset(editingcode(), "tcscode", "text=\"\"")
@@ -181,7 +181,7 @@
 
 			network = newnet
 			screen = 0
-			servers = list()
+			rel_clear(src, "servers")
 			temp = span_blue("- NEW NETWORK TAG SET IN ADDRESS \[[network]\] -")
 
 /obj/machinery/computer/telecomms/traffic/emag_act(remaining_charges, mob/user)
@@ -192,14 +192,14 @@
 		updateUsrDialog(user)
 		return 1
 
-/// LC-refs: editingcode -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// editingcode (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/editingcode() as /mob
-	return om_resolve(editingcode_handle)
+	return editingcode
 
-/// LC-refs: lasteditor -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// lasteditor (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/lasteditor() as /mob
-	return om_resolve(lasteditor_handle)
+	return lasteditor
 
-/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/traffic/proc/SelectedServer() as /obj/machinery/telecomms/server
-	return om_resolve(SelectedServer_handle)
+	return SelectedServer

@@ -88,7 +88,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		return
 	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
 	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
-		antag_templates -= antag
+		rel_remove(src, "antag_templates", antag)
 		GLOB.additional_antag_types -= antag.id
 		message_admins("Admin [key_name_admin(user)] removed [antag.role_text] template from game mode.")
 	refresh_game_mode_panel(user)
@@ -138,9 +138,8 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	var/mob/user = ask.answerer
 	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[ask.choice]
 	if(antag)
-		if(!islist(SSticker.mode.antag_templates))
-			SSticker.mode.antag_templates = list()
-		SSticker.mode.antag_templates |= antag
+		if(!(antag in SSticker.mode.antag_templates))
+			rel_add(SSticker.mode, "antag_templates", antag)
 		message_admins("Admin [key_name_admin(user)] added [antag.role_text] template to game mode.")
 
 /datum/game_mode/proc/announce() //to be called when round starts
@@ -235,7 +234,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 			antag.attempt_spawn() //select antags to be spawned
 		antag.finalize_spawn() //actually spawn antags
 		if(antag.is_latejoin_template())
-			LAZYOR(latejoin_templates, antag)
+			rel_add(src, "latejoin_templates", antag)
 
 	if(GLOB.emergency_shuttle_service && auto_recall_shuttle)
 		GLOB.emergency_shuttle_service.auto_recall = TRUE
@@ -480,19 +479,17 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		antag_scaling_coeff = 0
 
 	if(antag_tags && length(antag_tags))
-		antag_templates = list()
+		rel_clear(src, "antag_templates")
 		for(var/antag_tag in antag_tags)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_tag]
-			if(antag)
-				antag_templates |= antag
+			if(antag && !(antag in antag_templates))
+				rel_add(src, "antag_templates", antag)
 
 	if(GLOB.additional_antag_types && GLOB.additional_antag_types.len)
-		if(!antag_templates)
-			antag_templates = list()
 		for(var/antag_type in GLOB.additional_antag_types)
 			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
-			if(antag)
-				antag_templates |= antag
+			if(antag && !(antag in antag_templates))
+				rel_add(src, "antag_templates", antag)
 
 	newscaster_announcements = pick(GLOB.newscaster_standard_feeds)
 
@@ -534,7 +531,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 			continue //Happy connected client
 		for(var/mob/observer/dead/D in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 			if(D.mind)
-				var/mob/living/original = om_resolve(D.mind.original_character)
+				var/mob/living/original = D.mind.original_character
 				if((original && original == L) || D.mind.current == L)
 					if(L.stat == DEAD)
 						if(L.suiciding)	//Suicider
@@ -577,7 +574,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 	var/obj_count = 1
 	to_chat(player.current, span_notice("Your current objectives:"))
-	for(var/datum/objective/objective in player.objectives)
+	for(var/datum/objective/objective in player.all_objectives())
 		to_chat(player.current, span_bold("Objective #[obj_count]") + ": [objective.explanation_text]")
 		obj_count++
 
@@ -600,4 +597,3 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	return
 
 // Antagonist definitions are round-long singletons.
-DECLARE_REF(/datum/game_mode, "antag_templates", STATIC, null)

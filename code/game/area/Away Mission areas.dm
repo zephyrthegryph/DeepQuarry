@@ -17,9 +17,9 @@
 	//Adds turfs to the valid)turfs list, used for spawning.
 	if(mobcountmax || floracountmax || semirandom)
 		for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
-			LAZYOR(valid_spawn_turfs, F)
+			rel_add(src, "valid_spawn_turfs", F)
 		for(var/turf/unsimulated/floor/F in area_contents_of_type(src, /turf/unsimulated/floor))
-			LAZYOR(valid_spawn_turfs, F)
+			rel_add(src, "valid_spawn_turfs", F)
 
 /area/LateInitialize()
 	. = ..()
@@ -53,7 +53,7 @@
 					break
 				M = pickweight(ourgroup)
 				Turf = DEFAULTPICK(valid_spawn_turfs, null)
-				LAZYREMOVE(valid_spawn_turfs, Turf)
+				rel_remove(src, "valid_spawn_turfs", Turf)
 				var/mob/ourmob = new M(Turf)
 				adjust_mob(ourmob)
 	else
@@ -62,7 +62,7 @@
 				break
 			M = pickweight(valid_mobs || list())
 			Turf = DEFAULTPICK(valid_spawn_turfs, null)
-			LAZYREMOVE(valid_spawn_turfs, Turf)
+			rel_remove(src, "valid_spawn_turfs", Turf)
 			var/mob/ourmob = new M(Turf)
 			adjust_mob(ourmob)
 
@@ -97,5 +97,5 @@
 			break
 		F = DEFAULTPICK(valid_flora, null)
 		Turf = DEFAULTPICK(valid_spawn_turfs, null)
-		LAZYREMOVE(valid_spawn_turfs, Turf)
+		rel_remove(src, "valid_spawn_turfs", Turf)
 		new F(Turf)

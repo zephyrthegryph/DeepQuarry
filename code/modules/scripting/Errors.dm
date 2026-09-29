@@ -14,7 +14,7 @@
 	message="Unexpected token: "
 	var/tmp/datum/token/token_ref
 /datum/scriptError/BadToken/New(datum/token/t)
-	token_ref=t
+	rel_set(src, "token_ref", t)
 	if(t&&t.line) message="[t.line]: [message]"
 	if(istype(t))message+="[t.value]"
 	else message+="[t]"
@@ -35,7 +35,7 @@
 	var/tmp/datum/token/token_ref
 	message = "Unexpected return statement outside of a function."
 /datum/scriptError/BadReturn/New(datum/token/t)
-	src.token_ref=t
+	rel_set(src, "token_ref", t)
 
 /datum/scriptError/EndOfFile
 	message = "Unexpected end of file."
@@ -121,7 +121,6 @@
 	name="MaxComputationalUse"
 	message="Maximum amount of computational cycles reached (>= 1000)."
 
-DECLARE_REF(/datum/runtimeError, "stack", OWNED, null)
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scriptError/BadToken/proc/token() as /datum/token
@@ -131,5 +130,3 @@ DECLARE_REF(/datum/runtimeError, "stack", OWNED, null)
 /datum/scriptError/BadReturn/proc/token() as /datum/token
 	return token_ref
 
-DECLARE_REF(/datum/scriptError/BadToken, "token_ref", BACK, null)
-DECLARE_REF(/datum/scriptError/BadReturn, "token_ref", BACK, null)

@@ -10,10 +10,7 @@
 // implant scan and backup staleness pass run by /datum/om/behaviour/world/transcore (3 min).
 GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 
-DECLARE_REF(/datum/world_service/transcore, "databases", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/transcore, "default_db", OWNED, null)
 // The per-cadence work queue: record/implant -> its database, all round-long service data.
-DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 
 /datum/world_service/transcore
 	name = "Transcore"
@@ -33,7 +30,9 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 	var/list/datum/transcore_db/databases = list()	// Holds instances of each database
 	var/datum/transcore_db/default_db // The default if no specific one is used
 
-	var/list/current_run = list()
+	/// The resumable work queue of the current step: implants, then mind records (a relation list,
+	/// so an entry deleted mid-run drops out).
+	var/list/current_run
 
 /datum/world_service/transcore/initialize()
 	initialized = TRUE
@@ -70,29 +69,27 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 /datum/world_service/transcore/proc/process_implants(resumed = 0)
 	if (!resumed)
 		// Create a flat list of every implant in every db with a value of the db they're in
-		src.current_run.Cut()
+		rel_clear(src, "current_run")
 		for(var/key in databases)
 			var/datum/transcore_db/db = databases[key]
-			for(var/imp_handle in db.implants)
-				src.current_run[imp_handle] = db
+			for(var/obj/item/implant/backup/imp as anything in db.implants)
+				rel_add(src, "current_run", imp)
 
-	var/list/current_run = src.current_run
 	while(length(current_run))
-		var/imp_handle = current_run[length(current_run)]
-		var/datum/transcore_db/db = current_run[imp_handle]
-		current_run.len--
-		var/obj/item/implant/backup/imp = om_resolve(imp_handle)
+		var/obj/item/implant/backup/imp = current_run[length(current_run)]
+		rel_remove(src, "current_run", imp)
+		var/datum/transcore_db/db = imp.our_db()
 
-		//Remove if deleted, or not in a human anymore.
-		if(!imp || !isorgan(imp.loc))
-			db.implants -= imp_handle
+		//Remove if not in a human anymore (a deleted implant already left both lists).
+		if(!isorgan(imp.loc))
+			rel_remove(db, "implants", imp)
 			continue
 
 		//We're in an organ, at least.
 		var/obj/item/organ/external/EO = imp.loc
 		var/mob/living/carbon/human/H = EO.owner
 		if(!H)
-			db.implants -= imp_handle
+			rel_remove(db, "implants", imp)
 			continue
 
 		//In a human
@@ -111,17 +108,15 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 /datum/world_service/transcore/proc/process_backups(resumed = 0)
 	if (!resumed)
 		// Create a flat list of every implant in every db with a value of the db they're in
-		src.current_run.Cut()
+		rel_clear(src, "current_run")
 		for(var/key in databases)
 			var/datum/transcore_db/db = databases[key]
 			for(var/name in db.backed_up)
-				var/datum/transhuman/mind_record/mr = db.backed_up[name]
-				src.current_run[mr] = db
+				rel_add(src, "current_run", db.backed_up[name])
 
-	var/list/current_run = src.current_run
 	while(length(current_run))
 		var/datum/transhuman/mind_record/curr_MR = current_run[length(current_run)]
-		current_run.len--
+		rel_remove(src, "current_run", curr_MR)
 
 		//Invalid record
 		if(!curr_MR)
@@ -223,8 +218,8 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 	var/list/datum/transhuman/mind_record/has_left		// Why do we even have this?
 	// ALLOW(instance_list): d: one per transcore database (a handful); re-sorted on every write
 	var/list/datum/transhuman/body_record/body_scans = list()	// All known body records, indexed by BR.mydna.name
-	/// All OPERATING backup implants that are being ticked, as OM handles (a deleted one is dropped on its next tick).
-	var/list/implants = list() // ALLOW(instance_list): d: one per transcore database (a handful)
+	/// All OPERATING backup implants that are being ticked (a relation list: a deleted one drops out).
+	var/list/implants
 
 	var/core_dumped = FALSE
 	var/key // Key for this DB
@@ -267,7 +262,7 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 /datum/transcore_db/proc/notify(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
 	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(MR.mindname)
-	var/datum/transhuman/body_record/BR = db.body_scans[MR.mindname]
+	var/datum/transhuman/body_record/BR = LAZYACCESS(db.body_scans, MR.mindname)
 	if(!BR)
 		GLOB.global_announcer.autosay("[MR.mindname] is past-due for a mind backup, but lacks a corresponding body record.", "TransCore Oversight", "Medical")
 		return
@@ -276,28 +271,27 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 // Called from mind_record to add itself to the transcore.
 /datum/transcore_db/proc/add_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	backed_up[MR.mindname] = MR
-	backed_up = sortAssoc(backed_up)
+	own_put(src, "backed_up", MR.mindname, MR)
+	own_set(src, "backed_up", sortAssoc(backed_up))
 
 // Remove a mind_record from the backup-checking list.  Keeps track of it in has_left // Why do we do that? ~Leshana
 /datum/transcore_db/proc/stop_backup(datum/transhuman/mind_record/MR)
 	ASSERT(MR)
-	LAZYSET(has_left, MR.mindname, MR)
-	backed_up.Remove("[MR.mindname]")
+	own_transfer(src, "backed_up", src, "has_left", "[MR.mindname]", "[MR.mindname]")
 	EXPIRY_STAMP(MR, cryo_at, CLOCK_WORLD)
 
 // Called from body_record to add itself to the transcore.
 /datum/transcore_db/proc/add_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	if(body_scans[BR.mydna.name])
-		qdel(body_scans[BR.mydna.name])
-	body_scans[BR.mydna.name] = BR
-	body_scans = sortAssoc(body_scans)
+	own_put(src, "body_scans", BR.mydna.name, BR) // deletes a record it replaces
+	own_set(src, "body_scans", sortAssoc(body_scans))
 
 // Remove a body record from the database (Usually done when someone cryos)  // Why? ~Leshana
 /datum/transcore_db/proc/remove_body(datum/transhuman/body_record/BR)
 	ASSERT(BR)
-	body_scans.Remove("[BR.mydna.name]")
+	var/datum/transhuman/body_record/removed = own_take_member(src, "body_scans", "[BR.mydna.name]")
+	if(removed && !QDELETED(removed))
+		qdel(removed) // the database owned it; nothing else keeps a removed record
 
 // Moves all mind records from the databaes into the disk and shuts down all backup canary processing.
 /datum/transcore_db/proc/core_dump(obj/item/disk/transcore/disk)
@@ -305,8 +299,8 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 	GLOB.global_announcer.autosay("An emergency core dump has been initiated!", "TransCore Oversight", "Command")
 	GLOB.global_announcer.autosay("An emergency core dump has been initiated!", "TransCore Oversight", "Medical")
 
-	disk.stored += backed_up
-	backed_up.Cut()
+	for(var/name in backed_up.Copy())
+		own_transfer(src, "backed_up", disk, "stored", name, name) // the disk owns the dumped records
 	core_dumped = TRUE
 	return length(disk.stored)
 
@@ -315,9 +309,6 @@ DECLARE_REF(/datum/world_service/transcore, "current_run", STATIC, null)
 
 /// The database owns its records: mind records (backed_up, and has_left once they cryo) and
 /// body records, keyed by name. A core dump moves the mind records to the disk first.
-DECLARE_REF(/datum/transcore_db, "backed_up", OWNED_VALUES, null)
-DECLARE_REF(/datum/transcore_db, "has_left", OWNED_VALUES, null)
-DECLARE_REF(/datum/transcore_db, "body_scans", OWNED_VALUES, null)
 
 /// Resleeving implant scan and backup staleness (was SStranscore, 3 min, background).
 /datum/om/behaviour/world/transcore
@@ -328,3 +319,6 @@ DECLARE_REF(/datum/transcore_db, "body_scans", OWNED_VALUES, null)
 
 /datum/om/behaviour/world/transcore/service()
 	return GLOB.transcore_service
+
+REL_LIST(/datum/world_service/transcore, current_run)
+REL_LIST(/datum/transcore_db, implants)

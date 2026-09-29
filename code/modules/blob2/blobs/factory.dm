@@ -15,8 +15,7 @@
 	var/spore_delay = 0
 	var/spore_cooldown = 8 SECONDS
 
-// its spores lose their factory or nest.
-DECLARE_REF(/obj/structure/blob/factory, "spores", LIST_BACK, list("factory", "nest"))
+// its spores lose their factory or nest (spores is REL_PAIR_LIST with the mob's factory, blob.dm).
 
 /obj/structure/blob/factory/pulsed()
 	. = ..()
@@ -31,8 +30,8 @@ DECLARE_REF(/obj/structure/blob/factory, "spores", LIST_BACK, list("factory", "n
 		S = new overmind.blob_type.spore_type(src.loc, src)
 		S.faction = overmind.blob_type.faction
 		if(istype(S))
-			S.overmind = overmind
-			overmind.blob_mobs.Add(S)
+			rel_set(S, "overmind", overmind)
+			rel_add(overmind, "blob_mobs", S)
 			if(overmind.blob_type.ranged_spores)
 				S.projectiletype = overmind.blob_type.spore_projectile
 				S.projectilesound = overmind.blob_type.spore_firesound
@@ -40,7 +39,10 @@ DECLARE_REF(/obj/structure/blob/factory, "spores", LIST_BACK, list("factory", "n
 				S.projectile_dispersion = overmind.blob_type.spore_dispersion
 		else //Other mobs don't add themselves in New. Ew.
 			S.nest = src
-			LAZYADD(spores, S)
+			// spores is a pair list with /mob/living/simple_mob/blob.factory (blob.dm); a mob
+			// without that var is not counted.
+			if(istype(S, /mob/living/simple_mob/blob))
+				rel_set(S, "factory", src)
 		S.update_icons()
 
 /obj/structure/blob/factory/sluggish // Capable of producing MORE spores, but quite a bit slower than normal.

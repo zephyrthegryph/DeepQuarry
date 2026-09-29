@@ -85,10 +85,11 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				LAZYREMOVE(stack, track)
+				own_remove(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			LAZYADD(stack, track)
-			setdirs["[b]"]=LAZYFIND(stack, track)
+			own_add(src, "stack", track)
+			var/track_idx = LAZYFIND(stack, track)
+			setdirs["[b]"] = track_idx
 			updatedtracks |= b
 			updated=1
 
@@ -102,10 +103,11 @@
 				if(track.wet==t && track.basecolor==bloodcolor)
 					continue
 				// Remove existing stack entry
-				LAZYREMOVE(stack, track)
+				own_remove(src, "stack", track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			LAZYADD(stack, track)
-			setdirs["[b]"]=LAZYFIND(stack, track)
+			own_add(src, "stack", track)
+			var/track_idx = LAZYFIND(stack, track)
+			setdirs["[b]"] = track_idx
 			updatedtracks |= b
 			updated=1
 
@@ -135,7 +137,7 @@
 
 		track.fresh=0
 		track.overlay=I
-		LAZYSET(stack, stack_idx, track)
+		own_put(src, "stack", stack_idx, track)
 		add_overlay(I)
 	updatedtracks=0 // Clear our memory of updated tracks.
 	add_janitor_hud_overlay()
@@ -199,6 +201,4 @@
 
 #undef TRACKS_CRUSTIFY_TIME
 
-DECLARE_REF(/datum/fluidtrack, "overlay", OWNED, null)
 
-DECLARE_REF(/obj/effect/decal/cleanable/blood/tracks, "stack", OWNED_LIST, null)

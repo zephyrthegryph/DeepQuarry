@@ -1,16 +1,16 @@
 // Specific types
 /datum/mini_hud/mapper
-	var/owner_handle
+	var/obj/item/mapping_unit/owner
 
 /datum/mini_hud/mapper/New(datum/hud/other, owner)
-	src.owner_handle = om_handle(owner)
-	screenobjs = list(new /atom/movable/screen/movable/mapper_holder(null, owner))
+	rel_set(src, "owner", owner)
+	own_add(src, "screenobjs", new /atom/movable/screen/movable/mapper_holder(null, owner))
 	..()
 
-// The mapping unit points at its hud datum and at the holder screen object; each
-// going clears the var naming it (the holder declares its own).
-DECLARE_REF(/datum/mini_hud/mapper, "owner_handle", BACK_HANDLE, "hud_datum")
+// The mapping unit owns us as its hud_datum and views our holder screen object as hud_item;
+// owner is a plain relation back.
 
-/// LC-refs: the mapping unit this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mapping unit this hud shows (a relation view: null once that is deleted).
 /datum/mini_hud/mapper/proc/owner() as /obj/item/mapping_unit
-	return om_resolve(owner_handle)
+	return owner
+

@@ -39,7 +39,7 @@
 
 /obj/machinery/chemical_dispenser/examine(mob/user)
 	. = ..()
-	. += "It has [cartridges.len] cartridges installed, and has space for [max_catriges - cartridges.len] more."
+	. += "It has [length(cartridges)] cartridges installed, and has space for [max_catriges - length(cartridges)] more."
 
 /obj/machinery/chemical_dispenser/proc/add_cartridge(obj/item/reagent_containers/chem_disp_cartridge/C, mob/user)
 	if(!istype(C))
@@ -47,7 +47,7 @@
 			to_chat(user, span_warning("\The [C] will not fit in \the [src]!"))
 		return
 
-	if(cartridges.len >= max_catriges)
+	if(length(cartridges) >= max_catriges)
 		if(user)
 			to_chat(user, span_warning("\The [src] does not have any slots open for \the [C] to fit into!"))
 		return
@@ -57,7 +57,7 @@
 			to_chat(user, span_warning("\The [C] does not have a label!"))
 		return
 
-	if(cartridges[C.label])
+	if(LAZYACCESS(cartridges, C.label))
 		if(user)
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
@@ -67,13 +67,12 @@
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
 	C.forceMove(src)
-	cartridges[C.label] = C
-	cartridges = sortAssoc(cartridges)
+	own_put(src, "cartridges", C.label, C)
+	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
-	. = cartridges[label]
-	cartridges -= label
+	. = own_take_member(src, "cartridges", label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)
@@ -117,9 +116,9 @@
 	return TRUE
 
 /obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	container =  RC
 	user.drop_from_inventory(RC)
 	RC.forceMove(src)
+	own_set(src, "container", RC) // CONTAINED: in contents first
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return TRUE
 
@@ -165,7 +164,7 @@
 
 	var/chemicals[0]
 	for(var/label in cartridges)
-		var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
+		var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
@@ -191,8 +190,8 @@
 			var/label = params["reagent"]
 			if(recording_recipe)
 				recording_recipe += list(list("id" = label, "amount" = amount))
-			else if(cartridges[label] && container && container.is_open_container())
-				var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
+			else if(LAZYACCESS(cartridges, label) && container && container.is_open_container())
+				var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 				play_sfx(src, SFX_MACHINES_REAGENT_DISPENSE)
 				C.reagents.trans_to(container, amount)
 				MACHINE_WAKE(src)
@@ -215,7 +214,7 @@
 				container.forceMove(get_turf(src))
 				if(Adjacent(ui.user)) // So the AI doesn't get a beaker somehow.
 					ui.user.put_in_hands(container)
-				container = null
+				own_take(src, "container")
 			. = TRUE
 
 		if("import_config")
@@ -260,7 +259,7 @@
 				for(var/list/L in recording_recipe)
 					var/label = L["id"]
 					// Verify this dispenser can dispense every chemical
-					if(!cartridges[label])
+					if(!LAZYACCESS(cartridges, label))
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
 						play_sfx(src, SFX_MACHINES_BUZZ_TWO, vary = TRUE)
@@ -283,7 +282,7 @@
 					var/label = L["id"]
 					var/dispense_amount = L["amount"]
 
-					var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
+					var/obj/item/reagent_containers/chem_disp_cartridge/C = LAZYACCESS(cartridges, label)
 					if(!C)
 						visible_message(span_warning("[src] buzzes."), span_warning("You hear a faint buzz."))
 						to_chat(ui.user, span_warning("[src] cannot find <b>[label]</b>!"))
@@ -323,6 +322,5 @@
 	tgui_interact(user)
 	return TRUE
 
-DECLARE_REF(/obj/machinery/chemical_dispenser, "container", HELD, null)
+OWN(/obj/machinery/chemical_dispenser, container, OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.
-DECLARE_REF(/obj/machinery/chemical_dispenser, "cartridges", OWNED_VALUES, null)

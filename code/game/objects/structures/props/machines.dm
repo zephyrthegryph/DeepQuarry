@@ -603,9 +603,9 @@
 	mask.vis_flags = VIS_INHERIT_ID
 	vis_contents += mask
 
-	outside = add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
-	door = add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
-	fluid = add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE)
+	rel_set(src, "outside", add_vis_overlay(icon, "nt_pod_over", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
+	rel_set(src, "door", add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
+	rel_set(src, "fluid", add_vis_overlay(icon, "nothing", ABOVE_MOB_LAYER, MOB_PLANE, unique = TRUE))
 
 	// Gather up our friends
 	if(mapload)
@@ -842,6 +842,3 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "outside", OWNED, null)
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "door", OWNED, null)
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "fluid", OWNED, null)

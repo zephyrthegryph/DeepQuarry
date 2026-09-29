@@ -15,7 +15,7 @@
 		pinned_target.forceMove(loc)
 
 	else // Sanity check: if the pinned target can't be found in immediate view
-		pinned_target = null
+		rel_clear(src, "pinned_target")
 		set_density(TRUE)
 
 /obj/structure/target_stake/declare_interactions(list/into)
@@ -42,7 +42,7 @@
 		user.remove_from_mob(W)
 		W.forceMove(loc)
 		W.layer = ABOVE_JUNK_LAYER
-		pinned_target = W
+		rel_set(src, "pinned_target", W)
 		to_chat(user, "You slide the target into the stake.")
 	return TRUE
 
@@ -68,7 +68,7 @@
 			pinned_target.forceMove(get_turf(user))
 			to_chat(user, "You take the target out of the stake.")
 
-		pinned_target = null
+		rel_clear(src, "pinned_target")
 	return TRUE
 
-DECLARE_REF(/obj/structure/target_stake, "pinned_target", HELD, null)
+// pinned_target sits on the stake's turf (not in it): a one-sided REL view.

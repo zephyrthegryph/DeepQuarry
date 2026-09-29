@@ -164,7 +164,7 @@ BONUS
 	if(A.stage >= 5)
 		for(var/datum/viral_trait/S as anything in captives)
 			S.stopped = FALSE
-			LAZYREMOVE(captives, S)
+			rel_remove(src, "captives", S)
 		if(!LAZYLEN(captives))
 			stopped = TRUE
 	else if(!used)
@@ -174,5 +174,5 @@ BONUS
 			if(S == src)
 				continue
 			S.stopped = TRUE
-			LAZYADD(captives, S)
+			rel_add(src, "captives", S)
 		used = TRUE

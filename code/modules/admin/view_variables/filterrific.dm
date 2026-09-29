@@ -1,8 +1,8 @@
 /datum/filter_editor
-	var/tmp/target_handle
+	var/tmp/atom/target
 
 /datum/filter_editor/New(atom/target)
-	src.target_handle = om_handle(target)
+	rel_set(src, "target", target)
 
 /datum/filter_editor/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)
@@ -99,6 +99,6 @@
 			message_admins("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
 			log_admin("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/filter_editor/proc/target() as /atom
-	return om_resolve(target_handle)
+	return target

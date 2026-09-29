@@ -84,11 +84,11 @@
 
 	var/list/revisionData = cached_json["revision"]
 	if(revisionData)
-		cached_revision = new
+		own_set(src, "cached_revision", new /datum/tgs_revision_information)
 		cached_revision.commit = revisionData["commitSha"]
 		cached_revision.origin_commit = revisionData["originCommitSha"]
 
-	cached_test_merges = list()
+	own_take_all(src, "cached_test_merges")
 	var/list/json = cached_json["testMerges"]
 	for(var/entry in json)
 		var/datum/tgs_revision_information/test_merge/tm = new
@@ -107,7 +107,7 @@
 		tm.head_commit = entry["pullRequestRevision"]
 		tm.comment = entry["comment"]
 
-		cached_test_merges += tm
+		own_add(src, "cached_test_merges", tm)
 
 	return TRUE
 
@@ -269,11 +269,11 @@
 	if (!length(channels))
 		return
 
-	message = list("message" = message.text, "channelIds" = ids)
+	var/list/payload = list("message" = message.text, "channelIds" = ids)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatTargetedBroadcast(datum/tgs_message_content/message, admin_only)
 	var/list/channels = list()
@@ -287,19 +287,19 @@
 	if (!length(channels))
 		return
 
-	message = list("message" = message.text, "channelIds" = channels)
+	var/list/payload = list("message" = message.text, "channelIds" = channels)
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatPrivateMessage(datum/tgs_message_content/message, datum/tgs_chat_user/user)
 	message = UpgradeDeprecatedChatMessage(message)
-	message = list("message" = message.text, "channelIds" = list(user.channel.id))
+	var/list/payload = list("message" = message.text, "channelIds" = list(user.channel.id))
 	if(intercepted_message_queue)
-		intercepted_message_queue += list(message)
+		intercepted_message_queue += list(payload)
 	else
-		Export(TGS4_COMM_CHAT, message)
+		Export(TGS4_COMM_CHAT, payload)
 
 /datum/tgs_api/v4/ChatChannelInfo()
 	. = list()
@@ -321,6 +321,4 @@
 /datum/tgs_api/v4/SecurityLevel()
 	return security_level
 
-DECLARE_REF(/datum/tgs_api/v4, "cached_revision", OWNED, null)
 
-DECLARE_REF(/datum/tgs_api/v4, "cached_test_merges", OWNED_LIST, null)

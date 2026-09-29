@@ -91,4 +91,3 @@ DECLARE_INTERACTIONS(/obj/item/strangerock, INTERACT_ITEM(null, PROC_REF(strange
 	qdel(src)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_REF(/obj/item/strangerock, "geologic_data", OWNED, null)

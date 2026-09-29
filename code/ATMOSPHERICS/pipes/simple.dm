@@ -129,11 +129,11 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			node1 = target
+			rel_set(src, "node1", target)
 			break
 	for(var/obj/machinery/atmospherics/target in get_step(src,node2_dir))
 		if(can_be_node(target, 2))
-			node2 = target
+			rel_set(src, "node2", target)
 			break
 
 	if(!node1 && !node2)
@@ -149,12 +149,12 @@
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node1 = null
+		rel_clear(src, "node1")
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		node2 = null
+		rel_clear(src, "node2")
 
 	update_icon()
 	handle_leaking()

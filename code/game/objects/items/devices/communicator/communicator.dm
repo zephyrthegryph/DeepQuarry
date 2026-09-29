@@ -87,7 +87,7 @@ REGISTRY_MEMBERSHIP(/obj/item/communicator, REGISTRY_COMMUNICATORS)
 
 /obj/item/communicator/Initialize(mapload)
 	. = ..()
-	node = get_exonet_node()
+	rel_set(src, "node", get_exonet_node())
 	camera.name = "[src] #[rand(100,999)]"
 	camera.c_tag = camera.name
 
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
-		id = null
+		own_take(src, "id")
 
 // Proc: id_check(mob/user as mob, choice as num)
 // Parameters: mob/user - the user who is attempting to check for an ID
@@ -171,14 +171,14 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			var/obj/item/I = user.get_active_hand()
 			if (istype(I, /obj/item/card/id) && user.unEquip(I))
 				I.forceMove(src)
-				id = I
+				own_set(src, "id", I)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
 		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
-			var/obj/old_id = id
+			var/obj/old_id = own_take(src, "id")
 			I.forceMove(src)
-			id = I
+			own_set(src, "id", I)
 			user.put_in_hands(old_id)
 			return 1
 	return 0
@@ -206,11 +206,11 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	if(!user || !isliving(user))
 		return
 	if(!exonet)
-		exonet = new(src)
+		own_set(src, "exonet", new /datum/exonet_protocol(src))
 	if(!exonet.address)
 		exonet.make_address("communicator-[user.client]-[user.name]")
 	if(!node)
-		node = get_exonet_node()
+		rel_set(src, "node", get_exonet_node())
 	populate_known_devices()
 
 // Proc: examine()
@@ -259,18 +259,18 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Description: Searches all communicators and ghosts in the world, and adds them to the known_devices list if they are 'visible'.
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
-		exonet = new(src)
-	LAZYCLEARLIST(src.known_devices)
+		own_set(src, "exonet", new /datum/exonet_protocol(src))
+	rel_clear(src, "known_devices")
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return
 	for(var/obj/item/communicator/comm in REGISTRY_MEMBERS(REGISTRY_COMMUNICATORS))
 		if(!comm || !comm.exonet || !comm.exonet.address || comm.exonet.address == src.exonet.address) //Don't add addressless devices, and don't add ourselves.
 			continue
-		LAZYOR(src.known_devices, comm)
+		rel_add(src, "known_devices", comm)
 	for(var/mob/observer/dead/O in REGISTRY_MEMBERS(REGISTRY_DEAD_MOBS))
 		if(!O.client || !O.client.prefs.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated pref
 			continue
-		LAZYOR(src.known_devices, O)
+		rel_add(src, "known_devices", O)
 
 // Proc: get_connection_to_tcomms()
 // Parameters: None
@@ -292,7 +292,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 	// ticks. State-changing exonet paths update immediately.
 	if(!(update_ticks % 5))
 		if(!node)
-			node = get_exonet_node()
+			rel_set(src, "node", get_exonet_node())
 		if(!get_connection_to_tcomms())
 			close_connection(reason = "Connection timed out")
 
@@ -377,19 +377,14 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-DECLARE_REF(/obj/item/communicator, "camera", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
-DECLARE_REF(/obj/item/communicator, "exonet", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
-DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drops out
+OWN(/obj/item/communicator, id, OWN_SPILL)
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)
 	// Voice mobs are told the line dropped before they go; a policy can't send that.
 	for(var/mob/living/voice/voice in contents.Copy()) // ALLOW(decl): per-item message and deletion, not a drop
-		LAZYREMOVE(voice_mobs, voice)
+		own_take_member(src, "voice_mobs", voice)
 		to_chat(voice, span_danger("[icon2html(src, voice.client)] Connection timed out with remote host."))
 		qdel(voice)
 	close_connection(reason = "Connection timed out")
@@ -456,5 +451,4 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 #undef MANITAB
 #undef SETTTAB
 
-DECLARE_REF(/mob/observer/dead, "exonet", OWNED, null)
 DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

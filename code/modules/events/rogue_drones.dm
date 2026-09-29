@@ -19,7 +19,7 @@
 		return
 	for(var/i=0, i<num, i++)
 		var/mob/living/simple_mob/mechanical/combat_drone/event/D = new(get_turf(pick(possible_spawns)))
-		LAZYADD(drones_list, D)
+		own_add(src, "drones_list", D)
 
 /datum/event/rogue_drone/announce()
 	var/msg

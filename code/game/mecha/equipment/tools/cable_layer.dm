@@ -1,15 +1,15 @@
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer
 	name = "Cable Layer"
 	icon_state = "mecha_wire"
-	var/old_turf_handle
-	var/last_piece_handle
+	var/turf/old_turf
+	var/obj/structure/cable/last_piece
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 1000
 	required_type = list(/obj/mecha/working)
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Initialize(mapload)
 	. = ..()
-	cable = new(src, 0)
+	own_set(src, "cable", new /obj/item/stack/cable_coil(src, 0))
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/MoveAction()
 	layCable()
@@ -65,7 +65,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				cable = new(src, to_load)
+				own_set(src, "cable", new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)
@@ -88,7 +88,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 	return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/reset()
-	last_piece_handle = null
+	rel_clear(src, "last_piece")
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/dismantleFloor(turf/new_turf)
 	new_turf = get_turf(chassis)
@@ -120,15 +120,15 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 		last_piece().update_icon()
 		last_piece().power_register()
 	NC.power_register()
-	last_piece_handle = om_handle(NC)
+	rel_set(src, "last_piece", NC)
 	return 1
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cable", HELD, null)
+OWN(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, cable, OWN_CONTAINED)
 
-/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// old turf
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/old_turf() as /turf
-	return om_resolve(old_turf_handle)
+	return old_turf
 
-/// LC-refs: last piece -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// last piece
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/proc/last_piece() as /obj/structure/cable
-	return om_resolve(last_piece_handle)
+	return last_piece

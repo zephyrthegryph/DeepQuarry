@@ -102,7 +102,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 		return
 
 	var/obj/item/melee/energy/blade/blade = new(M)
-	blade.creator_handle = om_handle(M)
+	rel_set(blade, "creator", M)
 	M.put_in_hands(blade)
 
 /obj/item/rig_module/mounted/energy_blade/deactivate()
@@ -159,7 +159,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 		return
 
 	var/obj/item/mop_deploy/blade = new(M)
-	blade.creator_handle = om_handle(M)
+	rel_set(blade, "creator", M)
 	M.put_in_hands(blade)
 
 /obj/item/rig_module/mounted/mop/deactivate()
@@ -198,4 +198,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 	interface_desc = "A forearm-mounted suit-powered phase rifle."
 	gun_type = /obj/item/gun/energy/locked/phasegun/rifle/unlocked/mounted
 
-DECLARE_REF(/obj/item/rig_module/mounted, "gun", OWNED, null)

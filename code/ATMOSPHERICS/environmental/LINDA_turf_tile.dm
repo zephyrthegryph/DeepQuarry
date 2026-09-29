@@ -63,13 +63,15 @@
 			// cached immutable mixture instead of a mixture (and Rust arena slot)
 			// each. The arena drops writes to it; Destroy() must never qdel it.
 			// Type-table fact: one lookup by the gas string, not a "[string]-[type]" key built per turf.
+			// The cache holds it for the round; no turf owns it (lifecycle_unbind() only lets go).
 			var/static/list/immutable_air = list()
-			air = immutable_air[initial_gas_mix]
-			if(!air)
-				air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
-				immutable_air[initial_gas_mix] = air
+			var/datum/gas_mixture/shared_air = immutable_air[initial_gas_mix]
+			if(!shared_air)
+				shared_air = SSair.parse_gas_string(initial_gas_mix, /datum/gas_mixture/immutable/space)
+				immutable_air[initial_gas_mix] = shared_air
+			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
 		else
-			air = create_gas_mixture()
+			own_set(src, "air", create_gas_mixture())
 		if(planetary_atmos)
 			if(!SSair.planetary[initial_gas_mix])
 				var/datum/gas_mixture/immutable/planetary/mix = new
@@ -94,12 +96,12 @@
 /// Shared immutable air (vacuum, planetary mixes) is only let go.
 /turf/open/lifecycle_unbind()
 	. = ..()
-	QDEL_NULL(active_hotspot)
+	own_clear(src, "active_hotspot", OWN_DELETE)
 	SSair?.remove_from_active(src)
 	if(immutable_atmos)
-		air = null
+		own_take(src, "air")
 	else
-		QDEL_NULL(air)
+		own_clear(src, "air", OWN_DELETE)
 
 /////////////////GAS MIXTURE PROCS///////////////////
 
@@ -345,5 +347,3 @@
 // solid with get_temperature() / add_heat() / set_temperature(), never a raw var.
 // Space turfs are radiative reservoirs, so no turf asks whether it faces space.
 
-DECLARE_REF(/turf/open, "air", HELD, null)
-DECLARE_REF(/turf/open, "active_hotspot", HELD, null)

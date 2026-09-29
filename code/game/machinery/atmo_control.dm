@@ -35,7 +35,7 @@
 	// 16 for nitrogen concentration
 	// 32 for carbon dioxide concentration
 
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 
 /obj/machinery/air_sensor/update_icon()
 	icon_state = "gsensor[on]"
@@ -101,7 +101,7 @@
 /obj/machinery/air_sensor/proc/register_gas_dependencies()
 	var/datum/gas_mixture/environment = return_air()
 	// Wakes only when the rounded readings it broadcasts would change, not on every revision.
-	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), CALLBACK(src, PROC_REF(current_reading_signature)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_value(src, "gas", environment?.arena_id(), dependency_mask(), om_callable(src, PROC_REF(current_reading_signature)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/air_sensor/proc/unregister_gas_dependencies()
 	om_watch_disarm(src, "gas")
@@ -121,7 +121,7 @@
 	invalidate_gas_dependencies()
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
@@ -214,7 +214,7 @@
 	id_tag = ask.text
 	var/obj/item/multitool/M = ask.tool
 	if(istype(M) && M.loc == user)
-		M.connectable_handle = om_handle(src)
+		rel_set(M, "connectable", src)
 		to_chat(user, span_notice("You save [src] into [M]'s buffer."))
 #undef ONOFF_TOGGLE
 
@@ -227,7 +227,7 @@
 	var/frequency = PUMPS_FREQ
 	var/list/sensors
 	var/list/sensor_information
-	var/radio_connection_handle
+	var/datum/radio_frequency/radio_connection
 	circuit = /obj/item/circuitboard/air_management
 
 /obj/machinery/computer/general_air_control/declare_interactions(list/into)
@@ -271,7 +271,7 @@
 /obj/machinery/computer/general_air_control/proc/set_frequency(new_frequency)
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
-	radio_connection_handle = om_handle(GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/static/list/options = list("Sensors", "Frequency", "Cancel")
@@ -466,7 +466,7 @@
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -620,7 +620,7 @@
 		return FALSE
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 	switch(action)
 		if("in_refresh_status")
 			input_info = null
@@ -738,7 +738,7 @@
 
 		var/datum/signal/signal = new
 		signal.transmission_method = TRANSMISSION_RADIO //radio signal
-		signal.source_handle = om_handle(src)
+		rel_set(signal, "source", src)
 
 		signal.data = list(
 			"tag" = device_tag,
@@ -782,7 +782,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
+			rel_set(signal, "source", src)
 			signal.data = list(
 				"tag" = device_tag,
 				"status" = 1,
@@ -803,7 +803,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
+			rel_set(signal, "source", src)
 			signal.data = list(
 				"tag" = device_tag,
 				"power_toggle" = 1,
@@ -819,7 +819,7 @@
 
 			var/datum/signal/signal = new
 			signal.transmission_method = TRANSMISSION_RADIO //radio signal
-			signal.source_handle = om_handle(src)
+			rel_set(signal, "source", src)
 			signal.data = list(
 				"tag" = device_tag,
 				"inject" = 1,
@@ -846,10 +846,10 @@
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/air_sensor/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection
 
-/// LC-refs: radio connection -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// radio connection (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/general_air_control/proc/radio_connection() as /datum/radio_frequency
-	return om_resolve(radio_connection_handle)
+	return radio_connection

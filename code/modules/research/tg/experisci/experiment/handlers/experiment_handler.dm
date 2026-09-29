@@ -12,7 +12,7 @@
 	/// Holds the currently linked techweb to get experiments from
 	var/tmp/datum/techweb/linked_web_static
 	/// Holds the currently selected experiment
-	var/tmp/selected_experiment_handle
+	var/tmp/datum/experiment/selected_experiment
 	/// Holds the list of types of experiments that this experiment_handler can interact with
 	var/list/allowed_experiments
 	/// Holds the list of types of experiments that this experimennt_handler should NOT interact with
@@ -22,13 +22,11 @@
 	/// Additional configuration flags for how the experiment_handler operates
 	var/config_flags
 	/// Callback that, when supplied, can be called from the UI
-	var/datum/callback/start_experiment_callback
+	var/list/start_experiment_spec // an om_callable() spec, run with the selected experiment
 
 /// The experiment handler of this movable, if it has one. Owned: deleted with it.
 /// Not saved: the holder's Initialize() makes a fresh handler; the selected experiment is session state.
 /atom/movable/var/tmp/datum/experiment_handler/experiment_handler
-DECLARE_REF(/atom/movable, "experiment_handler", OWNED, null)
-DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
 
 /**
  * Creates the experiment handler of a movable
@@ -40,7 +38,7 @@ DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
  * * config_mode - The define that determines how the experiment_handler should display the configuration UI
  * * disallowed_traits - Flags that control what experiment traits are blacklisted by this experiment handler
  * * config_flags - Flags that control the operational behaviour of the experiment handler, see experiment defines
- * * start_experiment_callback - When provided adds a UI button to use this callback to the start the experiment
+ * * start_experiment_spec - When provided (an om_callable() spec) adds a UI button to use it to the start the experiment
  * * experiment_events - list(event path = handler proc ref) hooked on the owner
  */
 /datum/experiment_handler/New(atom/movable/new_owner,
@@ -49,7 +47,7 @@ DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
 	config_mode = EXPERIMENT_CONFIG_ATTACKSELF,
 	disallowed_traits = null,
 	config_flags = null,
-	datum/callback/start_experiment_callback = null,
+	list/start_experiment_spec = null,
 	list/experiment_events
 )
 	. = ..()
@@ -57,16 +55,15 @@ DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
 		log_runtime("experiment_handler: created for a non-movable ([new_owner]); discarded")
 		qdel(src)
 		return
-	if(new_owner.experiment_handler)
-		qdel(new_owner.experiment_handler)
-	owner = new_owner
-	new_owner.experiment_handler = src
+	// The owner adopts us; its previous handler is deleted by own_set().
+	rel_set(src, "owner", new_owner)
+	own_set(new_owner, "experiment_handler", src)
 
 	src.allowed_experiments = allowed_experiments
 	src.blacklisted_experiments = blacklisted_experiments
 	src.disallowed_traits = disallowed_traits
 	src.config_flags = config_flags
-	src.start_experiment_callback = start_experiment_callback
+	src.start_experiment_spec = start_experiment_spec
 
 	for(var/event_path in experiment_events)
 		om_hook(owner, event_path, src, experiment_events[event_path])
@@ -296,7 +293,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	if (new_web == linked_web())
 		return
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 	linked_web_static = new_web
 
 /**
@@ -304,7 +301,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_techweb()
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 	linked_web_static = null
 
 /**
@@ -316,7 +313,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/proc/link_experiment(datum/experiment/experiment)
 	if (can_select_experiment(experiment))
 		unlink_experiment()
-		selected_experiment_handle = om_handle(experiment)
+		rel_set(src, "selected_experiment", experiment)
 		selected_experiment().on_selected(src)
 
 /**
@@ -324,7 +321,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
  */
 /datum/experiment_handler/proc/unlink_experiment()
 	selected_experiment()?.on_unselected(src)
-	selected_experiment_handle = null
+	rel_clear(src, "selected_experiment")
 
 /**
  * Checks if an experiment is valid to be selected by this handler
@@ -369,7 +366,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 /datum/experiment_handler/tgui_data(mob/user)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
-		"has_start_callback" = !isnull(start_experiment_callback),
+		"has_start_callback" = !isnull(start_experiment_spec),
 	)
 	.["techwebs"] = list()
 	for (var/datum/techweb/techwebs as anything in GLOB.research_service.techwebs)
@@ -429,15 +426,13 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 			. = TRUE
 			unlink_experiment()
 		if("start_experiment_callback")
-			start_experiment_callback.Invoke(selected_experiment())
+			om_run(start_experiment_spec, selected_experiment())
 
-DECLARE_REF(/datum/experiment_handler, "start_experiment_callback", OWNED, null)
 
-/// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the selected_experiment this refers to (a relation view: null once it is deleted).
 /datum/experiment_handler/proc/selected_experiment() as /datum/experiment
-	return om_resolve(selected_experiment_handle)
+	return selected_experiment
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// A shared definition/flyweight (never cleared).
 /datum/experiment_handler/proc/linked_web() as /datum/techweb
 	return linked_web_static
-DECLARE_REF(/datum/experiment_handler, "linked_web_static", STATIC, null)

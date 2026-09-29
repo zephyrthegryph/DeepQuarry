@@ -10,9 +10,9 @@
 	use_power = USE_POWER_IDLE
 	var/harvesting = 0
 	var/harvesting_speed = 0
-	var/tmp/inserted_battery_handle
-	var/tmp/cur_artifact_handle
-	var/tmp/owned_scanner_handle
+	var/tmp/obj/item/anobattery/inserted_battery
+	var/tmp/obj/cur_artifact
+	var/tmp/obj/machinery/artifact_scanpad/owned_scanner
 	var/last_process = 0
 	bubble_icon = "science"
 	circuit = /obj/item/circuitboard/artifact_harvester
@@ -20,9 +20,9 @@
 /// If you want it to load smoothly, set it's dir to wherever the scanpad is!
 /obj/machinery/artifact_harvester/Initialize(mapload)
 	. = ..()
-	owned_scanner_handle = om_handle(locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
+	rel_set(src, "owned_scanner", locate_within(get_step(src, dir), /obj/machinery/artifact_scanpad))
 	if(!owned_scanner())
-		owned_scanner_handle = om_handle(locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
+		rel_set(src, "owned_scanner", locate_in_list(orange(1, src), /obj/machinery/artifact_scanpad))
 	default_apply_parts()
 	update_icon()
 
@@ -64,7 +64,7 @@
 			to_chat(user, span_blue("You insert [held] into [src]."))
 			user.drop_item()
 			held.forceMove(src)
-			src.inserted_battery_handle = om_handle(held)
+			rel_set(src, "inserted_battery", held)
 			SStgui.update_uis(src)
 		else
 			to_chat(user, span_red("There is already a battery in [src]."))
@@ -138,7 +138,7 @@
 				harvesting = 0
 				cur_artifact().anchored = FALSE
 				cur_artifact().in_use = 0
-				cur_artifact_handle = null
+				rel_clear(src, "cur_artifact")
 				atom_say("Energy harvesting interrupted.")
 				icon_state = "incubator"
 			return TRUE
@@ -146,7 +146,7 @@
 		if("ejectbattery")
 			if(inserted_battery())
 				inserted_battery().forceMove(loc)
-				inserted_battery_handle = null
+				rel_clear(src, "inserted_battery")
 			return TRUE
 
 		if("drainbattery")
@@ -178,7 +178,7 @@
 		return
 
 	//locate artifact on analysis pad
-	cur_artifact_handle = null
+	rel_clear(src, "cur_artifact")
 	var/articount = 0
 	var/obj/analysed
 	for(var/obj/A in get_turf(owned_scanner()))
@@ -199,7 +199,7 @@
 		return
 
 	if(analysed)
-		cur_artifact_handle = om_handle(analysed)
+		rel_set(src, "cur_artifact", analysed)
 
 		var/list/active_effects //This will be populated when we see if it has the artifact component or the artifact_master var
 
@@ -290,7 +290,7 @@
 			harvesting = 0
 			cur_artifact().anchored = FALSE
 			cur_artifact().in_use = 0
-			cur_artifact_handle = null
+			rel_clear(src, "cur_artifact")
 			src.visible_message(span_bold("[name]") + " states, \"Battery is full.\"")
 			icon_state = "incubator"
 
@@ -319,14 +319,14 @@
 			src.visible_message(span_bold("[name]") + " states, \"Battery dump completed.\"")
 			icon_state = "incubator"
 
-/// LC-refs: the inserted_battery this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the inserted_battery var.
 /obj/machinery/artifact_harvester/proc/inserted_battery() as /obj/item/anobattery
-	return om_resolve(inserted_battery_handle)
+	return inserted_battery
 
-/// LC-refs: the cur_artifact this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the cur_artifact var.
 /obj/machinery/artifact_harvester/proc/cur_artifact() as /obj
-	return om_resolve(cur_artifact_handle)
+	return cur_artifact
 
-/// LC-refs: the owned_scanner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the owned_scanner var.
 /obj/machinery/artifact_harvester/proc/owned_scanner() as /obj/machinery/artifact_scanpad
-	return om_resolve(owned_scanner_handle)
+	return owned_scanner

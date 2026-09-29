@@ -72,11 +72,11 @@
 /datum/generated_station_director/proc/register_defender(mob/living/defender)
 	if(!defender || QDELETED(defender))
 		return FALSE
-	LAZYOR(registered_defenders, defender)
+	rel_add(src, "registered_defenders", defender)
 	return TRUE
 
 /datum/generated_station_director/proc/unregister_defender(mob/living/defender)
-	LAZYREMOVE(registered_defenders, defender)
+	rel_remove(src, "registered_defenders", defender)
 
 /datum/generated_station_director/proc/medical_heal(mob/living/defender, amount)
 	if(!(defender in registered_defenders) || simulation().department_state("medical-1") == GENERATED_DEPARTMENT_OFFLINE)
@@ -94,9 +94,9 @@
 /datum/generated_station_director/proc/engineering_repair(department_id, amount)
 	if(amount <= 0 || simulation().department_state("engineering-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/target = simulation().departments[department_id]
-	var/datum/generated_station_department_runtime/engineering = simulation().departments["engineering-1"]
-	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
+	var/datum/generated_station_department_runtime/target = simulation().departments?[department_id]
+	var/datum/generated_station_department_runtime/engineering = simulation().departments?["engineering-1"]
+	var/datum/generated_station_department_runtime/logistics = simulation().departments?["logistics-1"]
 	var/cost = max(1, CEILING(amount / 10, 1))
 	if(!target || (engineering.stockpiles["fuel"] || 0) < cost || (logistics.stockpiles["supplies"] || 0) < cost)
 		return FALSE
@@ -109,8 +109,8 @@
 /datum/generated_station_director/proc/logistics_resupply(department_id, resource_id, amount)
 	if(amount <= 0 || simulation().department_state("logistics-1") == GENERATED_DEPARTMENT_OFFLINE)
 		return FALSE
-	var/datum/generated_station_department_runtime/logistics = simulation().departments["logistics-1"]
-	if(!simulation().departments[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
+	var/datum/generated_station_department_runtime/logistics = simulation().departments?["logistics-1"]
+	if(!simulation().departments?[department_id] || (logistics.stockpiles["supplies"] || 0) < amount)
 		return FALSE
 	simulation().consume_stockpile("logistics-1", "supplies", amount)
 	simulation().add_stockpile(department_id, resource_id, amount)
@@ -175,9 +175,9 @@
 /datum/expedition_site/proc/initialize_generated_station_runtime()
 	if(!station_spec || station_simulation)
 		return FALSE
-	station_simulation = new(station_spec)
-	station_director = new(station_simulation)
-	station_controls = list()
+	own_set(src, "station_simulation", new /datum/generated_station_simulation(station_spec))
+	own_set(src, "station_director", new /datum/generated_station_director(station_simulation))
+	own_take_all(src, "station_controls")
 	var/list/controlled_departments = list()
 	for(var/obj/effect/landmark/generated_station_department_core/core in station_materialization?.control_landmarks)
 		var/datum/generated_station_layout_node/node
@@ -201,7 +201,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		station_controls += control
+		own_add(src, "station_controls", control)
 		controlled_departments[department.id] = TRUE
 		qdel(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
@@ -235,7 +235,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		station_controls += control
+		own_add(src, "station_controls", control)
 		controlled_departments[department.id] = TRUE
 	return TRUE
 
@@ -248,11 +248,11 @@
 	if(!station_materialization)
 		return FALSE
 	var/datum/generated_station_materializer/repairer = new
-	repairer.result = station_materialization
+	own_set(repairer, "result", station_materialization)
 	repairer.min_x = station_materialization.origin_x
 	repairer.min_y = station_materialization.origin_y
 	var/succeeded = repairer.finalize_furnishing_access()
-	repairer.result = null
+	own_take(repairer, "result")
 	qdel(repairer)
 	return succeeded
 
@@ -265,6 +265,3 @@
 	var/profile = station_spec ? "[station_spec.faction_id] [station_spec.architecture_style], security [station_spec.security_tier], [station_spec.size_class]" : "unprofiled"
 	return "[power] · [atmosphere] · [coordination] · [profile]"
 
-DECLARE_REF(/datum/expedition_site, "station_simulation", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_director", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_controls", OWNED_LIST, null)

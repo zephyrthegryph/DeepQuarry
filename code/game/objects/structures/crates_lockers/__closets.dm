@@ -151,7 +151,6 @@
 /obj/effect/dummy/chameleon/slot_loose(mob/actor, atom/target, obj/item/held)
 	return TRUE
 
-DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 
 /obj/structure/closet/examine(mob/user)
 	. = ..()
@@ -563,7 +562,7 @@ DECLARE_REF(/obj/structure/closet, "door_obj", OWNED, null)
 		update_icon()
 		return
 	if(!door_obj)
-		door_obj = new
+		own_set(src, "door_obj", new /obj/effect/overlay/closet_door)
 	vis_contents |= door_obj
 	door_obj.icon = icon
 	door_obj.icon_state = "door_front"

@@ -55,7 +55,9 @@
 	TEST_ASSERT(body_identity.has_genetic_effect(/datum/body_effect/no_clone), "the body identity should carry no_clone")
 	var/datum/mind/probe = new /datum/mind("dq_p0_probe")
 	TEST_ASSERT_NULL(probe.identity, "a fresh mind has no identity until it enters a body")
+	qdel(probe)
 	H.mind_initialize()
+	own(H.mind) // the mind owns the identity: the test deletes it rather than dropping it
 	TEST_ASSERT_EQUAL(H.mind.get_identity(), body_identity, "the new mind should adopt the body's identity")
 	TEST_ASSERT_EQUAL(H.identity(), body_identity, "the body should keep its identity")
 	TEST_ASSERT(H.identity().has_genetic_effect(/datum/body_effect/no_clone), "no_clone must survive mind_initialize()")
@@ -68,10 +70,10 @@
 	var/mob/living/carbon/brain/B = allocate(/mob/living/carbon/brain)
 	TEST_ASSERT_NULL(B.mind, "a fresh brain mob has no mind")
 	TEST_ASSERT(!B.backup_ping_resolve(), "no mind: no notification")
-	B.mind = new /datum/mind("dq_p0_no_backup")
+	rel_set(B, "mind", new /datum/mind("dq_p0_no_backup"))
 	B.mind.name = "dq p0 nobody"
 	TEST_ASSERT(!B.backup_ping_resolve(), "no backup record: no notification")
-	B.mind = null
+	rel_clear(B, "mind")
 
 /// D13 / D14: rejuvenating or damaging a detached limb touches no owner.
 /datum/unit_test/dq_p0_detached_limb_no_owner_runtime
@@ -114,22 +116,26 @@
 	var/datum/surgical_step/step = surgical_step(/datum/surgical_step/treat/organ/suture)
 	var/obj/item/organ/external/arm = H.get_organ(BP_L_ARM)
 	LAZYADD(H.surgery_zones_in_progress, BP_L_ARM)
-	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
-	qdel(arm) // the work target is gone by the time the interruption lands
-	var/list/current = H.get_afflictions()
-	var/list/before = current.Copy()
 	// The continuation takes its om task (run_surgical_step() runs it through om_task_start()).
+	// It links its target while the step runs; the target dying mid-step clears those views
+	// (a link to a dying entity is refused, so the task is built before the arm goes).
 	var/datum/om/task/timed/surgical_step/task = new
-	task.actor = surgeon
-	task.target = H
-	task.receiver = H
-	task.tool = tool
-	task.surgery_step = step
+	rel_set(task, "actor", surgeon)
+	rel_set(task, "target", H)
+	rel_set(task, "receiver", H)
+	rel_set(task, "tool", tool)
+	rel_set(task, "surgery_step", step)
 	task.zone = BP_L_ARM
 	task.cleanliness = 100
-	task.part = arm
-	task.work_target = arm
+	rel_set(task, "part", arm)
+	rel_set(task, "work_target", arm)
 	task.chance = 0
+	arm.droplimb(clean = TRUE, disintegrate = DROPLIMB_EDGE)
+	qdel(arm) // the work target is gone by the time the interruption lands
+	TEST_ASSERT_NULL(task.part, "the task's view of the destroyed limb was cleared")
+	TEST_ASSERT_NULL(task.work_target, "the task's view of the destroyed work target was cleared")
+	var/list/current = H.get_afflictions()
+	var/list/before = current.Copy()
 	H.surgical_step_interrupted(task)
 	TEST_ASSERT(!(BP_L_ARM in H.surgery_zones_in_progress), "the zone lock is released on interruption")
 	for(var/datum/affliction/A as anything in H.get_afflictions())

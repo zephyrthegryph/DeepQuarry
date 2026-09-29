@@ -156,7 +156,7 @@ Thus, the two variables affect pump operation are set in New():
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/volume_pump/proc/broadcast_status()
 	if(!radio_connection)
@@ -164,7 +164,7 @@ Thus, the two variables affect pump operation are set in New():
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"tag" = id,
@@ -350,5 +350,3 @@ Thus, the two variables affect pump operation are set in New():
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/volume_pump, "radio_connection", STATIC, null)
-DECLARE_REF(/obj/machinery/atmospherics/binary/volume_pump, "overclock_overlay", OWNED, null)

@@ -64,7 +64,7 @@
 		else
 			to_chat(loc,span_warning("\The [src] is now firing [new_batt.type_name]."))
 
-	chambered = new_batt
+	rel_set(src, "chambered", new_batt)
 	update_charge()
 	update_icon()
 	var/mob/living/M = loc // TGMC Ammo HUD
@@ -81,25 +81,25 @@
 
 	var/list/stored_ammo = ammo_magazine.stored_ammo
 
-	if(stored_ammo.len == 1)
+	if(length(stored_ammo) == 1)
 		return //silly you.
 
 	//Find an ammotype that ISN'T the same, or exhaust the list and don't change.
 	var/our_slot = stored_ammo.Find(chambered)
 
-	for(var/index in 1 to stored_ammo.len)
-		var/true_index = ((our_slot + index - 1) % stored_ammo.len) + 1 // Stupid ONE BASED lists!
+	for(var/index in 1 to length(stored_ammo))
+		var/true_index = ((our_slot + index - 1) % length(stored_ammo)) + 1 // Stupid ONE BASED lists!
 		var/obj/item/ammo_casing/microbattery/next_batt = stored_ammo[true_index]
 		if(chambered != next_batt && !istype(next_batt, chambered.type))
 			switch_to(next_batt)
 			break
 /obj/item/gun/projectile/cell_loaded/load_ammo(obj/item/A, mob/user)
 	. = ..()
-	if(ammo_magazine && ammo_magazine.stored_ammo.len)
+	if(ammo_magazine && length(ammo_magazine.stored_ammo))
 		switch_to(ammo_magazine.stored_ammo[1])
 
 /obj/item/gun/projectile/cell_loaded/unload_ammo(mob/user, allow_dump=1)
-	chambered = null
+	rel_clear(src, "chambered")
 	return ..()
 
 /obj/item/gun/projectile/cell_loaded/update_icon()
@@ -159,12 +159,12 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(!istype(B, ammo_type))
 			to_chat(user, span_warning("[B] does not fit into [src]."))
 			return
-		if(stored_ammo.len >= max_ammo)
+		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		user.remove_from_mob(B)
 		B.forceMove(src)
-		stored_ammo.Add(B)
+		own_add(src, "stored_ammo", B)
 		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
@@ -176,7 +176,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 
 /obj/item/ammo_magazine/cell_mag/update_icon()
 	cut_overlays()
-	if(!stored_ammo.len)
+	if(!length(stored_ammo))
 		return //Why bother
 
 	var/current = 0

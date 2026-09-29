@@ -90,14 +90,14 @@
 /obj/item/clothing/shoes/orange
 	name = "orange shoes"
 	icon_state = "orange"
-	var/chained_handle
+	var/obj/item/handcuffs/chained
 
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
 	if (chained()) return
 
 	user.drop_item()
 	cuffs.forceMove(src)
-	chained_handle = om_handle(cuffs)
+	rel_set(src, "chained", cuffs)
 	slowdown = 15
 	icon_state = "orange1"
 
@@ -109,7 +109,7 @@
 
 	slowdown = initial(slowdown)
 	icon_state = "orange"
-	chained_handle = null
+	rel_clear(src, "chained")
 
 EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
 	INTERACT_USE("Remove cuffs", PROC_REF(orange_shoes_uncuff_self)), \
@@ -164,6 +164,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/orange, \
 	name = "yellow high-tops"
 	icon_state = "yellowhi"
 
-/// LC-refs: the chained this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the chained this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/shoes/orange/proc/chained() as /obj/item/handcuffs
-	return om_resolve(chained_handle)
+	return chained

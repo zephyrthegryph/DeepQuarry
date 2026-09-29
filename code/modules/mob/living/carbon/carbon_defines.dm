@@ -35,31 +35,8 @@
 
 // bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
 // left set, it and the holder's my_atom would keep each other alive.
-DECLARE_REF(/mob/living/carbon, "ingested", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "touching", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "bloodstr", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "pose_indicator", OWNED, null)
-// OWNED: a per-mob produceCopy() species belongs to this mob and is deleted with it or when it
-// adopts another species (adopt_species/release_species_copy). A shared GLOB.all_species
-// singleton refuses the delete (/datum/species/lifecycle_keep).
-DECLARE_REF(/mob/living/carbon, "species", OWNED, null)
 
-/// The one way to set `species`: returns the previous datum. Callers hand that to
-/// release_species_copy() once they are done reading it. In test builds a value that is
-/// neither a registered singleton nor a per-mob copy fails loudly here.
-/mob/living/carbon/proc/adopt_species(datum/species/new_species)
-	var/datum/species/old = species
-#ifdef UNIT_TESTS
-	if(new_species && !new_species.per_mob_copy && GLOB.all_species[new_species.name] != new_species)
-		stack_trace("adopt_species: [new_species.type] ([new_species.name]) is neither the registered singleton nor a per-mob copy")
-#endif
-	species = new_species
-	return old
-
-/// Deletes `old` when it was this mob's own per-mob copy and is no longer its species.
-/// Without this the copy was dropped without qdel(): BYOND freed it on refcount and every
-/// handle to it (organ data, trait timers) reported HANDLE TARGET COLLECTED WITHOUT QDEL.
-/mob/living/carbon/proc/release_species_copy(datum/species/old)
-	if(!old || old == species || !old.per_mob_copy || QDELETED(old))
-		return
-	qdel(old) // ALLOW(lifecycle): the owner deleting its replaced per-mob species copy; not an entity verb
+// A mob's species is copy-on-write (doc/rewrite/ownership.md sec 3): the registered
+// GLOB.all_species singleton until traits or a custom base make it a private copy, which the mob
+// owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
+PROTO(/mob/living/carbon, species)

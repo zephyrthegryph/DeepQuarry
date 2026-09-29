@@ -8,6 +8,7 @@
 	var/max_capacity = 128
 	var/used_capacity = 0
 	/// List of stored files on this drive. DO NOT MODIFY DIRECTLY!
+	/// Our files (owned). store_file() adopts or moves a file in; remove_file() detaches one.
 	var/list/stored_files
 	/// Whether drive is protected against changes
 	var/read_only = FALSE
@@ -82,8 +83,8 @@
 	if(F in stored_files)
 		return 0
 
-	F.holder_handle = om_handle(src)
-	LAZYADD(stored_files, F)
+	own_move(F, src, "stored_files")
+	rel_set(F, "holder", src)
 	recalculate_size()
 	return 1
 
@@ -94,6 +95,7 @@
 	store_file(new/datum/computer_file/program/filemanager(src))			// File manager, allows text editor functions and basic file manipulation.
 
 // Use this proc to remove file from the drive. Returns 1 on success and 0 on failure. Contains necessary sanity checks.
+// The file comes out unowned: the caller stores it again (store_file) or deletes it.
 /obj/item/computer_hardware/hard_drive/proc/remove_file(datum/computer_file/F)
 	if(!F || !istype(F))
 		return 0
@@ -105,7 +107,7 @@
 		return 0
 
 	if(F in stored_files)
-		LAZYREMOVE(stored_files, F)
+		own_take_member(src, "stored_files", F) // detached: the caller re-stores or deletes it
 		recalculate_size()
 		return 1
 	else

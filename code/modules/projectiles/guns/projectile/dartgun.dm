@@ -9,8 +9,8 @@
 
 /obj/item/projectile/bullet/chemdart/Initialize(mapload)
 	. = ..()
-	reagents = new/datum/reagents(reagent_amount)
-	reagents.my_atom = src
+	create_reagents(reagent_amount)
+	rel_set(reagents, "my_atom", src)
 
 /obj/item/ammo_casing/chemdart
 	name = "chemical dart"
@@ -64,13 +64,17 @@
 	var/list/starting_chems = null
 	special_weapon_handling = TRUE
 
+// Slotted beakers sit in the gun's contents; mixing is a subset of them.
+OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
+REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
+
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()
 	if(starting_chems)
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			LAZYADD(beakers, B)
+			own_add(src, "beakers", B)
 	update_icon()
 
 /obj/item/gun/projectile/dartgun/update_icon()
@@ -78,12 +82,12 @@
 		icon_state = "[base_state]-empty"
 		return 1
 	if(track_magazine)
-		if(!ammo_magazine.stored_ammo || ammo_magazine.stored_ammo.len == 0)
+		if(!ammo_magazine.stored_ammo || length(ammo_magazine.stored_ammo) == 0)
 			icon_state = "[base_state]-0"
-		else if(ammo_magazine.stored_ammo.len > default_magazine_casing_count)
+		else if(length(ammo_magazine.stored_ammo) > default_magazine_casing_count)
 			icon_state = "[base_state]-[default_magazine_casing_count]"
 		else
-			icon_state = "[base_state]-[ammo_magazine.stored_ammo.len]"
+			icon_state = "[base_state]-[length(ammo_magazine.stored_ammo)]"
 		return 1
 	else
 		icon_state = "[base_state]"
@@ -115,7 +119,7 @@
 		var/obj/item/reagent_containers/glass/beaker/B = I
 		user.drop_item()
 		B.forceMove(src)
-		LAZYADD(beakers, B)
+		own_add(src, "beakers", B)
 		to_chat(user, span_blue("You slot [B] into [src]."))
 		updateUsrDialog(user)
 		return 1
@@ -124,7 +128,7 @@
 //fills the given dart with reagents
 /obj/item/gun/projectile/dartgun/proc/fill_dart(obj/item/projectile/bullet/chemdart/dart)
 	if(length(mixing))
-		var/mix_amount = dart.reagent_amount/mixing.len
+		var/mix_amount = dart.reagent_amount/length(mixing)
 		for(var/obj/item/reagent_containers/glass/beaker/B in mixing)
 			B.reagents.trans_to_obj(dart, mix_amount)
 
@@ -226,9 +230,9 @@
 	if(!B)
 		return
 	if(mix)
-		LAZYOR(mixing, B)
+		rel_add(src, "mixing", B)
 	else
-		LAZYREMOVE(mixing, B)
+		rel_remove(src, "mixing", B)
 	updateUsrDialog(user)
 
 /// Ejects the beaker in slot `index` onto the floor.
@@ -240,7 +244,7 @@
 	if(!B)
 		return
 	to_chat(user, "You remove [B] from [src].")
-	LAZYREMOVE(mixing, B)
-	LAZYREMOVE(beakers, B)
+	rel_remove(src, "mixing", B)
+	own_take_member(src, "beakers", B)
 	B.forceMove(get_turf(src))
 	updateUsrDialog(user)

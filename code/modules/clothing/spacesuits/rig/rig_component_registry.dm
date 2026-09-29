@@ -16,10 +16,10 @@
 
 /datum/rig_component_registry
 	/// The rig this datum belongs to.  Nulled on Destroy().
-	var/tmp/holder_handle
+	var/tmp/obj/item/rig/holder
 
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
-	holder_handle = om_handle(new_holder)
+	rel_set(src, "holder", new_holder)
 
 /*
  * proc/initialize_pieces()
@@ -34,28 +34,28 @@
 	if(holder().initial_modules && holder().initial_modules.len)
 		for(var/path in holder().initial_modules)
 			var/obj/item/rig_module/module = new path(holder())
-			LAZYADD(holder().installed_modules, module)
+			own_add(holder(), "installed_modules", module)
 			module.installed(holder())
 
 	// Spawn the six physical components
 	if(holder().cell_type)
 		var/new_cell_type_path = holder().cell_type
-		holder().cell = new new_cell_type_path(holder())
+		own_set(holder(), "cell", new new_cell_type_path(holder()))
 	if(holder().air_type)
 		var/new_air_type_path = holder().air_type
-		holder().air_supply = new new_air_type_path(holder())
+		own_set(holder(), "air_supply", new new_air_type_path(holder()))
 	if(holder().glove_type)
 		var/new_glove_type_path = holder().glove_type
-		holder().gloves = new new_glove_type_path(holder())
+		own_set(holder(), "gloves", new new_glove_type_path(holder()))
 	if(holder().helm_type)
 		var/new_helm_type_path = holder().helm_type
-		holder().helmet = new new_helm_type_path(holder())
+		own_set(holder(), "helmet", new new_helm_type_path(holder()))
 	if(holder().boot_type)
 		var/new_boot_type_path = holder().boot_type
-		holder().boots = new new_boot_type_path(holder())
+		own_set(holder(), "boots", new new_boot_type_path(holder()))
 	if(holder().chest_type)
 		var/new_chest_type_path = holder().chest_type
-		holder().chest = new new_chest_type_path(holder())
+		own_set(holder(), "chest", new new_chest_type_path(holder()))
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
 
 	// Apply shared stats to equippable pieces
@@ -110,18 +110,18 @@
 		// safety net stays inert while we deliberately drop and delete it.
 		if(istype(piece, /obj/item/clothing))
 			var/obj/item/clothing/deployed = piece
-			deployed.master_rig_handle = null
+			rel_clear(deployed, "master_rig")
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
 		qdel(piece)
 
-	R.gloves    = null
-	R.boots     = null
-	R.helmet    = null
-	R.chest     = null
-	R.cell      = null
-	R.air_supply = null
+	own_take(R, "gloves")
+	own_take(R, "boots")
+	own_take(R, "helmet")
+	own_take(R, "chest")
+	own_take(R, "cell")
+	own_take(R, "air_supply")
 
 	for(var/obj/item/rig_module/module in R.installed_modules)
 		qdel(module)
@@ -162,6 +162,6 @@
 	if(holder().air_supply) pieces += holder().air_supply
 	return pieces
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the holder this refers to (a relation view: null once it is deleted).
 /datum/rig_component_registry/proc/holder() as /obj/item/rig
-	return om_resolve(holder_handle)
+	return holder

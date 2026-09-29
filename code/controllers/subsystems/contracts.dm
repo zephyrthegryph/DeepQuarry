@@ -565,10 +565,10 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 /datum/controller/subsystem/contracts/proc/negotiation_rows(datum/contract/contract)
 	var/list/rows = list()
 	for(var/clause_id in contract.negotiation_clauses)
-		var/datum/contract_negotiation_clause/clause = contract.negotiation_clauses[clause_id]
+		var/datum/contract_negotiation_clause/clause = contract.negotiation_clauses?[clause_id]
 		var/list/options = list()
 		for(var/option_id in clause.options)
-			var/datum/contract_clause_option/option = clause.options[option_id]
+			var/datum/contract_clause_option/option = clause.options?[option_id]
 			var/station_reputation = option.station_reputation_delta
 			var/list/raw_other_reputation = LAZYACCESS(option.effects, "other_faction_reputation")
 			var/list/distinct_other_reputation = raw_other_reputation?.Copy()

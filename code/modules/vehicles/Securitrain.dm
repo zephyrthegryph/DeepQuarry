@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	if(!key)
 		user.drop_item()
 		W.forceMove(src)
-		key = W
+		own_set(src, "key", W)
 	return TRUE
 
 
@@ -230,7 +230,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	key.forceMove(user.loc)
 	if(!user.get_active_hand())
 		user.put_in_hands(key)
-	key = null
+	own_take(src, "key")
 
 //-------------------------------------------
 // Loading/unloading procs
@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 		return 0
 
 	var/datum/vehicle_dummy_load/dummy_load = new()
-	load = dummy_load
+	rel_set(src, "load", dummy_load)
 
 	if(!load)
 		return
@@ -290,7 +290,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 /obj/vehicle/train/security/trolley/unload(mob/user, direction)
 	if(istype(load, /datum/vehicle_dummy_load))
 		var/datum/vehicle_dummy_load/dummy_load = load
-		load = dummy_load.actual_load
+		rel_set(src, "load", dummy_load.actual_load)
 		dummy_load.actual_load = null
 		qdel(dummy_load)
 		cut_overlays()
@@ -349,7 +349,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	else
 		set_anchored(TRUE)
 
-DECLARE_REF(/obj/vehicle/train/security/engine, "key", HELD, null)
+OWN(/obj/vehicle/train/security/engine, key, OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/security/engine/proc/pred_security_engine_running(mob/actor, atom/target, obj/item/held)

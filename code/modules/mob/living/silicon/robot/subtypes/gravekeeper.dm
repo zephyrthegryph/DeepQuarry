@@ -6,8 +6,8 @@
 
 /mob/living/silicon/robot/malf/gravekeeper/setup_laws()
 	..()
-	laws = new /datum/ai_laws/gravekeeper()
+	own_set(src, "laws", new /datum/ai_laws/gravekeeper())
 
 /mob/living/silicon/robot/malf/gravekeeper/setup_module()
 	..()
-	module = new /obj/item/robot_module/robot/malf/gravekeeper(src)
+	own_set(src, "module", new /obj/item/robot_module/robot/malf/gravekeeper(src))

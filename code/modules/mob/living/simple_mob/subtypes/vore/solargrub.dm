@@ -76,7 +76,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 	if(!self.ai_brain.primary_threat)
 			//first, check for potential cables nearby to powersink
 		var/turf/S = self.loc
-		self.attached = locate_on(S, /obj/structure/cable)
+		rel_set(self, "attached", locate_on(S, /obj/structure/cable))
 		if(self.attached)
 			if(self.ai_brain) self.ai_busy_begin()
 			if(prob(2))
@@ -103,7 +103,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
-				self.prey_excludes.Cut()
+				rel_clear(self, "prey_excludes")
 			GLOB.moth_amount = GLOB.moth_amount + 1
 			self.death_star()
 
@@ -197,4 +197,3 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 		"The solargrub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
 		"The deceptively severe heat trapped within the solargrub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
 
-DECLARE_REF(/mob/living/simple_mob/vore/solargrub, "attached", HELD, null)

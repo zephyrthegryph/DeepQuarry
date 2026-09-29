@@ -7,21 +7,20 @@
 	icon_state = "hpad"
 	density = 0
 	anchored = 1
-	var/tmp/primary_handle
+	var/tmp/obj/machinery/hyperpad/centre/primary
 
 /obj/machinery/hyperpad/centre
 	var/teleport_cooldown = 400 //30 seconds
 	var/teleport_speed = 60
 	COOLDOWN_DECLARE(teleport_cooldown_until) //to handle the cooldown
 	var/teleporting = 0 //if it's in the process of teleporting
-	var/tmp/linked_pad_handle
+	var/tmp/obj/machinery/hyperpad/centre/linked_pad
 	icon_state = "hpad_centre"
 	var/newcolor = "#00FFFF" //used for colouring the overlays
 
-	//mapping
-	var/static/list/mapped_hyper_pads = list()
-	var/map_pad_id = "" as text //what's my name
-	var/map_pad_link_id = "" as text //who's my friend
+	//mapping: map_pad_link_id names the partner centre's map_pad_id (REL_KEYED below)
+	var/map_pad_id = null as text //what's my name
+	var/map_pad_link_id = null as text //who's my friend
 	var/ready = 0
 	var/list/linked
 	var/max_item_teleport = 30
@@ -29,18 +28,14 @@
 /obj/machinery/hyperpad/centre/Initialize(mapload)
 	. = ..()
 	if(map_pad_id)
-		mapped_hyper_pads[map_pad_id] = src
 		detect()
 	set_light(3, 1, newcolor)
 
 // Its linked pads go with it.
-DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 
-// leaves the pad map.
-/obj/machinery/hyperpad/centre/lifecycle_dematerialize()
-	if(map_pad_id && mapped_hyper_pads[map_pad_id] == src)
-		mapped_hyper_pads -= map_pad_id
-	return ..()
+// Mapped links: linked_pad auto-links to the centre whose map_pad_id equals our map_pad_link_id.
+REL_KEYED(/obj/machinery/hyperpad/centre, linked_pad, map_pad_link_id, /obj/machinery/hyperpad/centre)
+KEYED_TARGET(/obj/machinery/hyperpad/centre, map_pad_id)
 
 /// Always usable, powered or not.
 /obj/machinery/hyperpad/operable(additional_flags = 0)
@@ -119,9 +114,8 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 
 /obj/machinery/hyperpad/centre/proc/initMappedLink()
 	. = FALSE
-	var/obj/machinery/hyperpad/centre/link = mapped_hyper_pads[map_pad_link_id]
-	if(link)
-		linked_pad_handle = om_handle(link)
+	// The keyed relation links mapped centres when they materialize; this only reports it.
+	if(linked_pad())
 		. = TRUE
 
 /obj/machinery/hyperpad/centre/proc/detect(mob/user)
@@ -131,8 +125,8 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			LAZYADD(linked, new_pad)
-			new_pad.primary_handle = om_handle(src)
+			own_add(src, "linked", new_pad) // the centre's pieces go with it
+			rel_set(new_pad, "primary", src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1
 		if(length(linked) == 8)
@@ -215,10 +209,10 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)
 	Pad.add_overlay(color)
 
-/// LC-refs: the primary this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the primary this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/proc/primary() as /obj/machinery/hyperpad/centre
-	return om_resolve(primary_handle)
+	return primary
 
-/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/hyperpad/centre/proc/linked_pad() as /obj/machinery/hyperpad/centre
-	return om_resolve(linked_pad_handle)
+	return linked_pad

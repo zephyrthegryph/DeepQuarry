@@ -17,8 +17,8 @@
 	var/climbable_delay = 3.5 SECONDS
 	/// Railings: climbing from the object's own turf goes over it to the facing turf.
 	var/climbable_vaulting = FALSE
-	/// om_handle()s of the mobs currently climbing this object (lazy).
-	var/list/climber_handles
+	/// The mobs currently climbing this object: a relation list view (lazy).
+	var/list/mob/living/climbers
 
 /// Makes this object climbable with behaviour `kind` (a /datum/om/behaviour/climbable type).
 /obj/proc/make_climbable(kind = /datum/om/behaviour/climbable, delay = 3.5 SECONDS, vaulting = FALSE)
@@ -35,7 +35,7 @@
 		return
 	om_detach(src, climbable_type)
 	climbable_type = null
-	climber_handles = null
+	rel_clear(src, "climbers")
 
 /datum/om/behaviour/climbable/on_start(obj/O)
 	O.verbs += /obj/proc/climb_on
@@ -44,7 +44,7 @@
 /datum/om/behaviour/climbable/on_stop(obj/O)
 	O.verbs -= /obj/proc/climb_on
 	remove_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
-	O.climber_handles = null
+	rel_clear(O, "climbers")
 
 /datum/om/behaviour/climbable/on_climb_start(obj/O, datum/om/event/climb_start/event)
 	var/mob/living/H = event.user
@@ -61,23 +61,16 @@
 /datum/om/behaviour/climbable/on_examine(obj/O, datum/om/event/examine/event)
 	event.texts += span_notice("It looks climbable.")
 
-/// The live climbers of `O` (handles that no longer resolve are skipped).
+/// The live climbers of `O` (a copy; dead climbers already left the view).
 /datum/om/behaviour/climbable/proc/climbers_of(obj/O)
-	. = list()
-	for(var/h in O.climber_handles)
-		var/mob/living/M = om_resolve(h)
-		if(M)
-			. += M
+	return O.climbers ? O.climbers.Copy() : list()
 
 /datum/om/behaviour/climbable/proc/add_climber(obj/O, mob/living/user)
-	var/h = om_handle(user)
-	if(h)
-		LAZYOR(O.climber_handles, h)
+	if(!QDELETED(user))
+		rel_add(O, "climbers", user)
 
 /datum/om/behaviour/climbable/proc/remove_climber(obj/O, mob/living/user)
-	var/h = om_handle(user)
-	if(h)
-		LAZYREMOVE(O.climber_handles, h)
+	rel_remove(O, "climbers", user)
 
 /// om_after() target: runs the climb on the object's current climbable behaviour.
 /obj/proc/climbable_do_climb(mob/living/user)
@@ -323,3 +316,5 @@
 
 /datum/om/behaviour/proc/on_climb_shake(datum/E, datum/om/event/climb_shake/event)
 	return
+
+REL_LIST(/obj, climbers)

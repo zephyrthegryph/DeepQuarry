@@ -5,7 +5,7 @@
 	if(istype(I, /obj/item/glass_extra))
 		var/obj/item/glass_extra/GE = I
 		if(can_add_extra(GE))
-			LAZYADD(extras, GE)
+			rel_add(src, "extras", GE)
 			user.remove_from_mob(GE)
 			GE.forceMove(src)
 			to_chat(user, span_notice("You add \the [GE] to \the [src]."))
@@ -17,7 +17,7 @@
 			to_chat(user, span_warning("There's no space to put \the [I] on \the [src]!"))
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/reagent_containers/food/snacks/fruit_slice/FS = I
-		LAZYADD(extras, FS)
+		rel_add(src, "extras", FS)
 		user.remove_from_mob(FS)
 		FS.pixel_x = 0 // Reset its pixel offsets so the icons work!
 		FS.pixel_y = 0
@@ -54,7 +54,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/glass2, \
 
 	if(user.put_in_active_hand(choice))
 		to_chat(user, span_notice("You remove \the [choice] from \the [src]."))
-		LAZYREMOVE(extras, choice)
+		rel_remove(src, "extras", choice)
 	else
 		to_chat(user, span_warning("Something went wrong, please try again."))
 

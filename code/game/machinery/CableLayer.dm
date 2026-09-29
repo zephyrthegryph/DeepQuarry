@@ -3,13 +3,13 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
 	density = TRUE
-	var/last_piece_handle
+	var/obj/structure/cable/last_piece
 	var/obj/item/stack/cable_coil/cable
 	var/max_cable = 100
 	on = 0
 
 /obj/machinery/cablelayer/Initialize(mapload)
-	cable = new(src, max_cable)
+	own_set(src, "cable", new /obj/item/stack/cable_coil(src, max_cable))
 	. = ..()
 
 /obj/machinery/cablelayer/Moved(atom/old_loc, direction, forced = FALSE)
@@ -99,7 +99,7 @@
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				cable = new(src, to_load)
+				own_set(src, "cable", new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)
@@ -114,11 +114,11 @@
 		return
 	cable.use(amount)
 	if(QDELETED(cable))
-		cable = null
+		own_take(src, "cable")
 	return 1
 
 /obj/machinery/cablelayer/proc/reset()
-	last_piece_handle = null
+	rel_clear(src, "last_piece")
 
 /obj/machinery/cablelayer/proc/dismantleFloor(turf/new_turf)
 	if(istype(new_turf, /turf/simulated/floor))
@@ -152,11 +152,11 @@
 		last_piece().update_icon()
 		last_piece().power_register()
 	NC.power_register()
-	last_piece_handle = om_handle(NC)
+	rel_set(src, "last_piece", NC)
 	return 1
 
-DECLARE_REF(/obj/machinery/cablelayer, "cable", HELD, null)
+OWN(/obj/machinery/cablelayer, cable, OWN_CONTAINED)
 
-/// LC-refs: last piece -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// last piece (a relation view: it reads null once the target is deleted).
 /obj/machinery/cablelayer/proc/last_piece() as /obj/structure/cable
-	return om_resolve(last_piece_handle)
+	return last_piece

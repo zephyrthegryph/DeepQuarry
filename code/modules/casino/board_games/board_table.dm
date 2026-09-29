@@ -16,7 +16,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
 
-DECLARE_REF(/obj/structure/casino_table/board_game, "game_ui", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
@@ -47,13 +46,13 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 		return
 	new_game = possible_games[new_game]
 	if(game_ui)
-		QDEL_NULL(game_ui)
-	game_ui = new new_game(src)
+		own_clear(src, "game_ui", OWN_DELETE)
+	own_set(src, "game_ui", new new_game(src))
 	icon_state = game_ui.table_icon
 
 /datum/board_game
 	var/name
-	var/tmp/parent_handle
+	var/tmp/atom/parent
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
@@ -62,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 
 /datum/board_game/New(atom/holder)
 	. = ..()
-	parent_handle = om_handle(holder)
+	rel_set(src, "parent", holder)
 
 /datum/board_game/tgui_host(mob/user)
 	return parent()
@@ -88,6 +87,6 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 			return TRUE
 	return FALSE
 
-/// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The table this game sits on (a relation view: null once it is deleted).
 /datum/board_game/proc/parent() as /atom
-	return om_resolve(parent_handle)
+	return parent

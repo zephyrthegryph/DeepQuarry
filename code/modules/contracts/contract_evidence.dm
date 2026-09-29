@@ -1,10 +1,12 @@
 /// A round-stable identity follows a mind through cloning and resleeving.
 /datum/contract_subject_identity
 	var/id
-	var/mind_ref
+	/// The subject's mind (a relation view: follows cloning and resleeving, null once it is deleted).
+	var/datum/mind/subject_mind
 	var/account_number
 	var/display_name
-	var/body_ref
+	/// The body last seen (a relation view).
+	var/mob/living/body
 
 /datum/contract_subject_identity/New(_id, mob/living/subject)
 	. = ..()
@@ -15,19 +17,17 @@
 	if(!subject)
 		return
 	if(subject.mind)
-		mind_ref = REF(subject.mind)
+		rel_set(src, "subject_mind", subject.mind)
 		account_number = subject.mind.initial_account()?.account_number
 	display_name = subject.real_name
-	body_ref = om_handle(subject)
+	rel_set(src, "body", subject)
 
 /datum/contract_subject_identity/proc/current_mob() as /mob/living
-	if(mind_ref)
-		var/datum/mind/mind = locate(mind_ref)
-		if(istype(mind?.current))
-			return mind.current
+	if(subject_mind)
+		if(istype(subject_mind.current))
+			return subject_mind.current
 	if(account_number)
 		return SScontracts?.find_mob_by_account(account_number)
-	var/mob/living/body = om_resolve(body_ref)
 	if(istype(body))
 		return body
 

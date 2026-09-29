@@ -6,7 +6,7 @@
 	density = FALSE
 
 
-/obj/machinery/iv_drip/var/attached_handle
+/obj/machinery/iv_drip/var/mob/living/carbon/human/attached
 /obj/machinery/iv_drip/mode = 1 // 1 is injecting, 0 is taking blood.
 /obj/machinery/iv_drip/var/obj/item/reagent_containers/beaker = null
 
@@ -43,14 +43,14 @@
 
 	if(attached())
 		visible_message("[attached()] is detached from \the [src]")
-		attached_handle = null
+		rel_clear(src, "attached")
 		MACHINE_SLEEP(src)
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
-		attached_handle = om_handle(over_object)
+		act_message(usr, src, others = "%U% attaches %T% to 	he [over_object].")
+		rel_set(src, "attached", over_object)
 		MACHINE_WAKE(src)
 		update_icon()
 
@@ -68,7 +68,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 	user.drop_item()
 	W.forceMove(src)
-	beaker = W
+	own_set(src, "beaker", W)
 	to_chat(user, "You attach \the [W] to \the [src].")
 	update_icon()
 	return TRUE
@@ -84,7 +84,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	new /obj/item/stack/rods(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		beaker = null
+		own_take(src, "beaker")
 	qdel(src)
 
 /obj/machinery/iv_drip/machine_step()
@@ -97,7 +97,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The needle is ripped out of [attached()], doesn't that hurt?")
 			attached().injure(INJURY_CUT, 3, pick(BP_R_ARM, BP_L_ARM), src)
-			attached_handle = null
+			rel_clear(src, "attached")
 			update_icon()
 			return PROCESS_KILL
 
@@ -161,7 +161,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	beaker = null
+	own_take(src, "beaker")
 	update_icon()
 	return TRUE
 
@@ -195,8 +195,8 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		return TRUE
 	return ..()
 
-DECLARE_REF(/obj/machinery/iv_drip, "beaker", HELD, null)
+OWN(/obj/machinery/iv_drip, beaker, OWN_CONTAINED)
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human
-	return om_resolve(attached_handle)
+	return attached

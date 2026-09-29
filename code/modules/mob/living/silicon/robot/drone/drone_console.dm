@@ -104,7 +104,7 @@
 				if(fab.has_stat(NOPOWER))
 					continue
 
-				dronefab = fab
+				rel_set(src, "dronefab", fab)
 				to_chat(ui.user, span_notice("Drone fabricator located."))
 				return
 
@@ -115,11 +115,10 @@
 				return
 
 			if(get_dist(src,dronefab) > 3)
-				dronefab = null
+				rel_clear(src, "dronefab")
 				to_chat(ui.user, span_danger("Unable to locate drone fabricator."))
 				return
 
 			dronefab.produce_drones = !dronefab.produce_drones
 			to_chat(ui.user, span_notice("You [dronefab.produce_drones ? "enable" : "disable"] drone production in the nearby fabricator."))
 
-DECLARE_REF(/obj/machinery/computer/drone_control, "dronefab", HELD, null)

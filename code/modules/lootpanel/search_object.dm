@@ -4,7 +4,7 @@
  */
 /datum/search_object
 	/// Item we're indexing
-	var/tmp/item_handle
+	var/tmp/atom/item
 	/// Url to the image of the object
 	var/icon
 	/// Icon state, for inexpensive icons
@@ -17,7 +17,7 @@
 /datum/search_object/New(client/owner, atom/item)
 	. = ..()
 
-	src.item_handle = om_handle(item)
+	rel_set(src, "item", item)
 	name = item.name
 	if(isobj(item))
 		path = item.type
@@ -76,8 +76,8 @@
 	EVENT_HANDLER
 	var/list/post_change_callbacks = event.post_change_callbacks
 
-	post_change_callbacks += CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(qdel), src)
+	post_change_callbacks += list(om_callable(null, GLOBAL_PROC_REF(qdel), src))
 
-/// LC-refs: the item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The item this refers to (a relation view: null once that is deleted).
 /datum/search_object/proc/item() as /atom
-	return om_resolve(item_handle)
+	return item

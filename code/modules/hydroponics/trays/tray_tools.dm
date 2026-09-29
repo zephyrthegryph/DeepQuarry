@@ -32,7 +32,6 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/analyzer/plant_analyzer, "last_seed", OWNED, null)
 
 // DECLARE replaces the gas analyzer's scan, which this type always skipped (special_handling).
 // ALLOW(interactions): its Use opens the plant UI instead of the gas scan
@@ -69,7 +68,7 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 			print_report(ui.user)
 			return TRUE
 		if("close")
-			last_seed = null
+			proto_set(src, "last_seed", null)
 			last_reagents = null
 			return TRUE
 
@@ -111,9 +110,8 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 		to_chat(user, span_danger("[src] can tell you nothing about \the [target]."))
 		return
 
-	last_seed = grown_seed.diverge()
-	if(!istype(last_seed))
-		last_seed = grown_seed // TRAIT_IMMUTABLE makes diverge() return null
+	// A private snapshot the analyzer owns: never the tray's (or a packet's) own seed datum.
+	proto_set(src, "last_seed", grown_seed.copy_line())
 
 	act_message(user, target, others = span_notice("%U% runs the scanner over %T%."))
 
@@ -309,3 +307,5 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 			data["trait_info"] += "It will consume [amount][GLOB.gas_data.name[gas]] from the environment."
 
 	return data
+
+PROTO(/obj/item/analyzer/plant_analyzer, last_seed)

@@ -35,8 +35,8 @@
 	..()
 	dir = direction
 	if(istype(M))
-		master = M
-	air = new
+		rel_set(src, "master", M)
+	atmos_air_set(src, "air", new /datum/gas_mixture)
 	air.set_volume(200)
 
 /datum/omni_port/proc/connect()
@@ -115,8 +115,7 @@
 		else
 			return null
 
-DECLARE_REF(/datum/omni_port, "master", BACKLIST, "ports")
+// The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
+REL(/datum/omni_port, master)
+PROTO(/datum/omni_port, air)
 
-DECLARE_REF(/datum/omni_port, "air", HELD, null)
-DECLARE_REF(/datum/omni_port, "node", HELD, null)
-DECLARE_REF(/datum/omni_port, "network", HELD, null)

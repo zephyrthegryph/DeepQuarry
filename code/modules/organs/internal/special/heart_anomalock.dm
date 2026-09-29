@@ -1,4 +1,4 @@
-OM_TIMER_SLOT(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
+OWN_TIMER(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
 
 /obj/item/organ/internal/heart/machine/anomalock
 	name = "voltaic combat cyberheart"
@@ -21,8 +21,6 @@ OM_TIMER_SLOT(/obj/item/organ/internal/heart/machine/anomalock, lightning_timer)
 	///If the core is removable once socketed.
 	var/core_removable = TRUE
 
-DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "core", OWNED, null)
-DECLARE_REF(/obj/item/organ/internal/heart/machine/anomalock, "lightning_overlay", OWNED, null)
 
 /obj/item/organ/internal/heart/machine/anomalock/handle_organ_mod_special(removed)
 	if(!core)
@@ -112,7 +110,7 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(core || W.loc != user)
 		return
 	user.unEquip(W, TRUE, src)
-	core = W
+	own_set(src, "core", W)
 	balloon_alert(user, "core_installed")
 	play_sfx(src, SFX_MACHINES_CLICK, volume = 0, vary = FALSE)
 	update_icon()
@@ -130,10 +128,10 @@ EXTEND_INTERACTIONS(/obj/item/organ/internal/heart/machine/anomalock, INTERACT_I
 	if(!core)
 		return
 	balloon_alert(user, "core removed")
-	core.forceMove(drop_location())
+	var/obj/item/removed_core = own_take(src, "core") // unowned before it goes to the hands
+	removed_core.forceMove(drop_location())
 	if(Adjacent(user) && !issilicon(user))
-		user.put_in_hands(core)
-	core = null
+		user.put_in_hands(removed_core)
 	update_icon()
 
 DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/heart/machine/anomalock/prebuilt, "core", /obj/item/assembly/signaler/anomaly/flux)

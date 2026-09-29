@@ -31,7 +31,7 @@
 
 	var/slime_count = 0
 	var/slime_max = 35 //With a slug which moves once every 10 seconds and a 5 minute delete timer, this should never exceed 30.
-	var/last_prey = null
+	var/mob/living/last_prey = null
 
 	can_be_drop_prey = FALSE
 
@@ -88,7 +88,7 @@
 	if(locate_within(get_turf(src), /obj/effect/slug_glue)) // Don't stack slime forever
 		return
 	var/obj/effect/slug_glue/G = new /obj/effect/slug_glue/(get_turf(src))
-	G.owner_slug = om_handle(src)
+	rel_set(G, "owner_slug", src)
 	slime_count++
 
 /mob/living/simple_mob/vore/slug/Moved()
@@ -118,7 +118,7 @@
 
 /mob/living/simple_mob/vore/slug/perform_the_nom(mob/living/user, mob/living/prey, mob/living/pred, obj/belly/belly, delay)
 	..()
-	last_prey = om_handle(prey)
+	rel_set(src, "last_prey", prey)
 
 /obj/effect/slug_glue
 	name = "liquid"
@@ -133,7 +133,7 @@
 	buckle_lying = TRUE
 
 	var/persist_time = 5 MINUTES //How long until we cease existing.
-	var/owner_slug = null
+	var/mob/living/simple_mob/vore/slug/owner_slug = null
 	var/turf/my_turf = null //The turf we spawn on.
 	var/base_escape_time = 1 MINUTE //How long does it take to struggle free? Affected by the victim's size_multiplier.
 
@@ -141,7 +141,7 @@
 	. = ..()
 	if(!persist_time)
 		return INITIALIZE_HINT_QDEL
-	my_turf = get_turf(src)
+	rel_set(src, "my_turf", get_turf(src))
 	if(istype(my_turf, /turf/simulated/floor/water)) //Aside from not making sense in water, this prevents drowning.
 		return INITIALIZE_HINT_QDEL
 	expire(persist_time)
@@ -154,10 +154,10 @@
 
 // its slug may lay more glue.
 /obj/effect/slug_glue/on_destroy(force)
-	..()
-	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
+	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug
 	if(my_slug)
 		my_slug.slime_count--
+	..()
 //This could probably be applied to spideweb code to make it work as intended again.
 /obj/effect/slug_glue/Uncross(atom/movable/AM, atom/newloc)
 	if(istype(AM, /mob/living/simple_mob/vore/slug))
@@ -194,16 +194,16 @@
 			alert_slug(L)
 
 /obj/effect/slug_glue/proc/alert_slug(mob/living/victim as mob)
-	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
+	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug
 	if(!my_slug || !has_buckled_mobs() || isbelly(my_slug.loc)) //Otherwise if you eat the slug it will infinitely attempt to eat you if you trip in glue.
 		return
-	if(om_resolve(my_slug.last_prey) == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
-		my_slug.last_prey = null
+	if(my_slug.last_prey == victim) //Getting eaten lets you get stuck once without alerting the slug. This is to prevent instantly getting eaten again if you struggle free with run intent on.
+		rel_clear(my_slug, "last_prey")
 		return
 	my_slug.ai_brain?.give_target(victim, TRUE)
 
 /obj/effect/slug_glue/proc/unalert_slug(mob/living/victim as mob)
-	var/mob/living/simple_mob/vore/slug/my_slug = om_resolve(owner_slug)
+	var/mob/living/simple_mob/vore/slug/my_slug = owner_slug
 	if(!my_slug)
 		return
 	if(my_slug.ai_brain?.primary_threat == victim)
@@ -238,4 +238,3 @@
 		return TRUE
 	return .
 
-DECLARE_REF(/obj/effect/slug_glue, "my_turf", STATIC, null)

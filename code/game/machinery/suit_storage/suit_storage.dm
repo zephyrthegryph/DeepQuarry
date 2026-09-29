@@ -199,7 +199,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		return //Do I even need this sanity check? Nyoro~n
 	else
 		HELMET.forceMove(get_turf(src))
-		HELMET = null
+		own_take(src, "HELMET")
 		return
 
 
@@ -208,7 +208,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		return
 	else
 		SUIT.forceMove(get_turf(src))
-		SUIT = null
+		own_take(src, "SUIT")
 		return
 
 
@@ -217,7 +217,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		return
 	else
 		MASK.forceMove(get_turf(src))
-		MASK = null
+		own_take(src, "MASK")
 		return
 
 
@@ -226,13 +226,13 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 	islocked = 0 //locks go free
 	if(SUIT)
 		SUIT.forceMove(get_turf(src))
-		SUIT = null
+		own_take(src, "SUIT")
 	if(HELMET)
 		HELMET.forceMove(get_turf(src))
-		HELMET = null
+		own_take(src, "HELMET")
 	if(MASK)
 		MASK.forceMove(get_turf(src))
-		MASK = null
+		own_take(src, "MASK")
 	if(OCCUPANT)
 		eject_occupant(OCCUPANT)
 	return
@@ -306,13 +306,13 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		else //It was supercycling, destroy everything
 			if(HELMET)
 				qdel(HELMET)
-				HELMET = null
+				own_take(src, "HELMET")
 			if(SUIT)
 				qdel(SUIT)
-				SUIT = null
+				own_take(src, "SUIT")
 			if(MASK)
 				qdel(MASK)
-				MASK = null
+				own_take(src, "MASK")
 			visible_message(span_danger("With a loud whining noise, the Suit Storage Unit's door grinds open. Puffs of ashen smoke come out of its chamber."), 3)
 			isbroken = 1
 			isopen = 1
@@ -440,7 +440,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
 		user.drop_item()
 		S.forceMove(src)
-		SUIT = S
+		own_set(src, "SUIT", S)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/head/helmet))
@@ -453,7 +453,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
 		user.drop_item()
 		H.forceMove(src)
-		HELMET = H
+		own_set(src, "HELMET", H)
 		update_icon()
 		return TRUE
 	if(istype(I,/obj/item/clothing/mask))
@@ -466,7 +466,7 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
 		user.drop_item()
 		M.forceMove(src)
-		MASK = M
+		own_set(src, "MASK", M)
 		update_icon()
 		return TRUE
 	update_icon()
@@ -504,6 +504,3 @@ DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(sui
 	dump_everything()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/suit_storage_unit, "SUIT", OWNED, null)
-DECLARE_REF(/obj/machinery/suit_storage_unit, "HELMET", OWNED, null)
-DECLARE_REF(/obj/machinery/suit_storage_unit, "MASK", OWNED, null)

@@ -44,15 +44,7 @@ DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 	default_apply_parts()
 
-DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
-
-/// Phase 2: fusion control consoles drop it.
-/obj/machinery/power/fusion_core/lifecycle_dematerialize()
-	. = ..()
-	for(var/obj/machinery/computer/fusion_core_control/FCC in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		LAZYREMOVE(FCC.connected_devices, src)
-		if(om_handle_is(FCC.cur_viewed_device_handle, src))
-			FCC.cur_viewed_device_handle = null
+OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(has_stat(BROKEN))
@@ -92,7 +84,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
 		return
-	owned_field = new(loc, src)
+	own_set(src, "owned_field", new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
 	MACHINE_WAKE(src)
 	icon_state = "core1"
@@ -106,8 +98,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 			owned_field.MRC()
 		else
 			owned_field.RadiateAll()
-		qdel(owned_field)
-		owned_field = null
+		own_clear(src, "owned_field", OWN_DELETE)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
@@ -155,7 +146,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 /obj/machinery/power/fusion_core/proc/interaction_material_insert(mob/user, obj/item/stack/material/processed_alloy/stock, datum/interaction/interaction)
 	user.drop_from_inventory(stock)
 	stock.forceMove(src)
-	material_sample = stock
+	own_set(src, "material_sample", stock)
 	act_message(user, src, others = span_notice("%U% secures [stock] in %T%'s shielded treatment cradle."))
 	return TRUE
 
@@ -198,7 +189,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		Shutdown()
 	else if(material_sample)
 		var/obj/item/stack/material/processed_alloy/finished_sample = material_sample
-		material_sample = null
+		own_take(src, "material_sample")
 		finished_sample.forceMove(user.drop_location())
 		user.put_in_hands(finished_sample)
 		act_message(user, src, others = span_notice("%U% releases [finished_sample] from %T%'s material cradle."))
@@ -247,7 +238,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		batch.add_dissolved_gas("fusion hydrogen", min(hydrogen / 50, field_work))
 		owned_field.dormant_reactant_quantities[hydrogen_key] = max(0, hydrogen - 5)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(material_sample, batch, src)
-	material_sample = replacement
+	own_set(src, "material_sample", replacement)
 	if(material_sample)
 		material_sample.forceMove(src)
 	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))
@@ -270,4 +261,3 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	temp_dump()
 	temp_color()
 
-DECLARE_REF(/obj/machinery/power/fusion_core, "owned_field", OWNED, null)

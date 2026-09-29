@@ -7,7 +7,7 @@
 	density = FALSE
 	plane = MOB_PLANE
 
-	var/tmp/lift_handle
+	var/tmp/datum/turbolift/lift
 
 /obj/structure/lift/set_dir(newdir)
 	. = ..()
@@ -32,7 +32,7 @@
 
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()
-	lift_handle = om_handle(_lift)
+	rel_set(src, "lift", _lift)
 
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
@@ -62,8 +62,8 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-DECLARE_REF(/obj/structure/lift/button, "floor", PAIR, "ext_panel")
-DECLARE_REF(/datum/turbolift_floor, "ext_panel", PAIR, "floor")
+REL_PAIR(/obj/structure/lift/button, floor, ext_panel)
+REL_PAIR(/datum/turbolift_floor, ext_panel, floor)
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE
@@ -216,6 +216,6 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 // End panel.
 
-/// LC-refs: the lift this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the lift this refers to (a relation view: it reads null once the target is deleted).
 /obj/structure/lift/proc/lift() as /datum/turbolift
-	return om_resolve(lift_handle)
+	return lift

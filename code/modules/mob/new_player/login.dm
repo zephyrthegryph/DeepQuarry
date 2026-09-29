@@ -9,9 +9,9 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 
 	update_Login_details(src)    //handles setting lastKnownIP and computer_id for use by the ban systems as well as checking for multikeying
 	if(!mind)
-		mind = new /datum/mind(key)
+		rel_set(src, "mind", new /datum/mind(key))
 		mind.active = 1
-		mind.current = src
+		rel_set(mind, "current", src)
 
 	moveToNullspace()
 	sight |= SEE_TURFS

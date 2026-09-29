@@ -30,7 +30,6 @@
 	/// The atom this container belongs to (holds it in one of its vars; deleted with it).
 	var/atom/owner
 
-DECLARE_REF(/datum/material_container, "owner", BACK, null)
 
 /**
  * Sets up the event hooks and fills the list of materials with the appropriate references.
@@ -50,7 +49,7 @@ DECLARE_REF(/datum/material_container, "owner", BACK, null)
 	if(!isatom(new_owner))
 		log_world("material_container: created without an atom owner ([new_owner])")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner) // one-sided back view: the atom owns its container
 
 	materials = list()
 	max_amount = max(0, max_amt)

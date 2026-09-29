@@ -9,8 +9,8 @@
 // per the project's list-allocation rules.
 
 /datum/world_model
-	/// OM handle of the mob we observe for, so we never block GC.
-	var/owner_ref = null
+	/// The mob we observe for (a relation view, so we never block GC).
+	var/mob/living/owner = null
 
 	/// Last fully-populated perception lists. Held mobs/objs only; never turfs.
 	/// Reused — Cut() instead of reallocating.
@@ -19,13 +19,15 @@
 	var/list/visible_neutrals = null   // everyone else in view (for awareness only)
 
 	/// Lazylists — usually empty, so we pay no list-allocation cost most of the time.
-	var/list/recent_damage_events = null // each entry: list(amount, type, attacker_ref, when)
+	var/list/recent_damage_events = null // each entry: list(amount, type, attacker name, when)
 	var/list/heard_sounds = null         // each entry: list(turf_ref, type, when)
-	var/list/known_hazards = null        // each entry: list(atom_ref, severity, expires)
+	var/list/known_hazards = null        // each entry: list(hazard ref text, severity, expires); the hazard itself is in hazard_atoms
+	/// The hazards known_hazards names (a relation list: a deleted hazard leaves it).
+	var/list/hazard_atoms = null
 
-	/// One-slot caches (refs).
-	var/last_attacker = null
-	var/tmp/last_known_threat_turf_handle
+	/// One-slot caches (relation views).
+	var/atom/last_attacker = null
+	var/tmp/atom/last_known_threat_turf
 
 	/// world.time of last perception refresh.
 	var/last_update = 0
@@ -36,13 +38,13 @@
 
 /datum/world_model/New(mob/living/owner)
 	if(owner)
-		owner_ref = om_handle(owner)
-	visible_hostiles = list()
-	visible_friendlies = list()
-	visible_neutrals = list()
+		rel_set(src, "owner", owner)
+	rel_clear(src, "visible_hostiles")
+	rel_clear(src, "visible_friendlies")
+	rel_clear(src, "visible_neutrals")
 
 /datum/world_model/proc/get_owner()
-	return om_resolve(owner_ref)
+	return owner
 
 /// Walks view() once and bucket-sorts everyone visible into hostile/friendly/neutral.
 /// Called from /datum/ai_brain/handle_strategicals at the slow tick.
@@ -52,11 +54,11 @@
 		return
 
 	visible_hostiles ||= list()
-	visible_hostiles.Cut()
+	rel_clear(src, "visible_hostiles")
 	visible_friendlies ||= list()
-	visible_friendlies.Cut()
+	rel_clear(src, "visible_friendlies")
 	visible_neutrals ||= list()
-	visible_neutrals.Cut()
+	rel_clear(src, "visible_neutrals")
 
 	var/range = brain.vision_range
 	for(var/mob/living/M in view(range, owner))
@@ -66,11 +68,11 @@
 			continue
 		var/disposition = brain.disposition_to(M)
 		if(disposition <= DQ_DISPOSITION_HOSTILE)
-			visible_hostiles += M
+			rel_add(src, "visible_hostiles", M)
 		else if(disposition >= DQ_DISPOSITION_FRIENDLY)
-			visible_friendlies += M
+			rel_add(src, "visible_friendlies", M)
 		else
-			visible_neutrals += M
+			rel_add(src, "visible_neutrals", M)
 
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 	trim_old_damage()
@@ -86,11 +88,11 @@
 		recent_damage_events.Cut(1, 2)
 		if(islist(dropped))
 			recent_damage_total = max(0, recent_damage_total - dropped[1])
-	recent_damage_events += list(list(amount, injury_kind, om_handle(attacker), world.time))
+	recent_damage_events += list(list(amount, injury_kind, attacker ? "[attacker]" : null, world.time))
 	recent_damage_total += amount
 	if(attacker)
-		last_attacker = om_handle(attacker)
-		last_known_threat_turf_handle = om_handle(get_turf(attacker))
+		rel_set(src, "last_attacker", attacker)
+		rel_set(src, "last_known_threat_turf", get_turf(attacker))
 
 /// Drop damage entries older than 10 seconds.
 /datum/world_model/proc/trim_old_damage()
@@ -121,23 +123,27 @@
 	if(!hazard)
 		return
 	LAZYINITLIST(known_hazards)
-	known_hazards += list(list(om_handle(hazard), severity, world.time + duration))
+	rel_add(src, "hazard_atoms", hazard)
+	known_hazards += list(list(ref(hazard), severity, world.time + duration))
 
 /datum/world_model/proc/trim_old_hazards()
 	if(!LAZYLEN(known_hazards))
 		return
 	for(var/i = length(known_hazards), i >= 1, i--)
 		var/list/entry = known_hazards[i]
-		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0)
+		var/atom/hazard = locate(entry[1])
+		if(ELAPSED_SINCE(src, entry[3], CLOCK_WORLD) > 0 || !(hazard in hazard_atoms))
 			known_hazards.Cut(i, i + 1)
+			if(hazard in hazard_atoms)
+				rel_remove(src, "hazard_atoms", hazard)
 	UNSETEMPTY(known_hazards)
 
 /datum/world_model/proc/get_last_attacker()
-	return om_resolve(last_attacker)
+	return last_attacker
 
-/// LC-refs: the last_known_threat_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_known_threat_turf this refers to (a relation view: null once it is deleted).
 /datum/world_model/proc/last_known_threat_turf() as /atom
-	return om_resolve(last_known_threat_turf_handle)
+	return last_known_threat_turf
 
 /// The perception lists are rebuilt from view() on every update_perception() call:
 /// caches of other mobs, not relationships.
@@ -148,3 +154,5 @@
 	L["visible_friendlies"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	L["visible_neutrals"] = CACHE_ON_CHANGE(CHANGE_EXPLICIT)
 	return L
+
+REL_LIST(/datum/world_model, hazard_atoms)

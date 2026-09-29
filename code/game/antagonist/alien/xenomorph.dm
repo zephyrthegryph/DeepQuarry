@@ -40,8 +40,8 @@ GLOBAL_DATUM(xenomorphs, /datum/antagonist/xenos)
 /datum/antagonist/xenos/create_objectives(datum/mind/player)
 	if(!..())
 		return
-	player.objectives += new /datum/objective/survive()
-	player.objectives += new /datum/objective/escape()
+	player.add_objective(new /datum/objective/survive())
+	player.add_objective(new /datum/objective/escape())
 
 /datum/antagonist/xenos/place_mob(mob/living/player)
 	player.forceMove(get_turf(pick(get_vents())))

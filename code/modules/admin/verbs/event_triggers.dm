@@ -80,7 +80,7 @@ ADMIN_VERB(manage_event_triggers, R_FUN, "Manage Event Triggers", "Open dialogue
 	if(ask.choice == "Delete All")
 		ask_delete("Delete all my event triggers", "ARE YOU SURE? THERE IS NO GOING BACK", PROC_REF(delete_all))
 		return
-	trigger = ask.choice
+	rel_set(src, "trigger", ask.choice)
 	if(!istype(trigger))
 		return
 	om_ask(actor, /datum/om/prompt/choice, PROC_REF(manage), buttons = TRUE, title = "Manage [trigger.name]", message = "Teleport to Landmark or Delete it?", choices = list("Teleport", "Delete"))

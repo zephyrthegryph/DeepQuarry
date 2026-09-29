@@ -102,7 +102,7 @@
 
 /turf/simulated/floor/water/underwater/indoors/handle_water_icons()
 	SHOULD_CALL_PARENT(FALSE)
-	visuals = new(null)
+	own_set(src, "visuals", new /atom/movable/weather_visuals(null))
 	visuals.icon = overlay_icon
 	visuals.icon_state = overlay_state
 	vis_contents += visuals
@@ -125,4 +125,3 @@
 /turf/simulated/floor/water/underwater/indoors/open/CanZPass(atom/A, direction, recursive)
 	return TRUE
 
-DECLARE_REF(/turf/simulated/floor/water/underwater/indoors, "visuals", OWNED, null)

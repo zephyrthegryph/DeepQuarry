@@ -17,9 +17,8 @@
 /obj/machinery/appliance/mixer/cereal/Initialize(mapload)
 	. = ..()
 
-	cerealmaker_loop = new(list(src), FALSE)
+	own_set(src, "cerealmaker_loop", new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
-DECLARE_REF(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop", OWNED, null)
 
 /obj/machinery/appliance/mixer/cereal/update_icon()
 	. = ..()

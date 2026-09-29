@@ -55,48 +55,48 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /datum/global_hud/New()
 	//420erryday psychedellic colours screen overlay for when you are high
-	druggy = new /atom/movable/screen/global_screen()
+	own_set(src, "druggy", new /atom/movable/screen/global_screen())
 	druggy.icon_state = "druggy"
 
 	//that white blurry effect you get when you eyes are damaged
-	blurry = new /atom/movable/screen/global_screen()
+	own_set(src, "blurry", new /atom/movable/screen/global_screen())
 	blurry.icon_state = "blurry"
 
 	//static overlay effect for cameras and the like
-	whitense = new /atom/movable/screen/global_screen()
+	own_set(src, "whitense", new /atom/movable/screen/global_screen())
 	whitense.icon = 'icons/effects/static.dmi'
 	whitense.icon_state = "1 light"
 
 	//static overlay effect for cameras and the like
-	heavy_whitense = new /atom/movable/screen/global_screen()
+	own_set(src, "heavy_whitense", new /atom/movable/screen/global_screen())
 	heavy_whitense.icon = 'icons/effects/static.dmi'
 	heavy_whitense.icon_state = "1 heavy"
 
 	//darksight 'hanger' for attached icons
-	darksight = new /atom/movable/screen()
+	own_set(src, "darksight", new /atom/movable/screen())
 	darksight.icon = null
 	darksight.screen_loc = "1,1"
 	darksight.plane = PLANE_LIGHTING
 
 	//Marks the center of the screen, for things like ventcrawl
-	centermarker = new /atom/movable/screen()
+	own_set(src, "centermarker", new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
 	//Marks the center of the screen, for things like ventcrawl
-	centermarker = new /atom/movable/screen()
+	own_set(src, "centermarker", new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
-	nvg = setup_overlay("nvg_hud")
-	thermal = setup_overlay("thermal_hud")
-	meson = setup_overlay("meson_hud")
-	science = setup_overlay("science_hud")
-	material = setup_overlay("material_hud")
+	own_set(src, "nvg", setup_overlay("nvg_hud"))
+	own_set(src, "thermal", setup_overlay("thermal_hud"))
+	own_set(src, "meson", setup_overlay("meson_hud"))
+	own_set(src, "science", setup_overlay("science_hud"))
+	own_set(src, "material", setup_overlay("material_hud"))
 
-	holomap = new /atom/movable/screen()
+	own_set(src, "holomap", new /atom/movable/screen())
 	holomap.name = "holomap"
 	holomap.icon = null
 	holomap.screen_loc = ui_holomap
@@ -162,7 +162,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 */
 
 /datum/hud
-	var/mymob_handle
+	var/mob/mymob
 
 	var/hud_shown = 1			//Used for the HUD toggle (F12)
 	var/inventory_shown = 1		//the inventory
@@ -204,41 +204,22 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/ui_alpha
 
 	// TGMC Ammo HUD Port
-	/// Gun OM handle -> its ammo hud (owned).
-	var/list/atom/movable/screen/ammo_hud_list
+	/// Our ammo huds (owned), in screen order; each names its gun (our_gun). See ammo_hud_for().
+	var/list/atom/movable/screen/ammo/ammo_hud_list
 
 	var/list/minihuds
 
 /datum/hud/New(mob/owner)
-	mymob_handle = om_handle(owner)
+	rel_set(src, "mymob", owner)
+	// The mob owns its hud (hud_used); a replaced hud is deleted.
+	if(owner)
+		own_set(owner, "hud_used", src)
 	instantiate()
 	..()
 
 // The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
-// are keyed by the gun's OM handle.
-DECLARE_REF(/datum/hud, "lingchemdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "wiz_instability_display", OWNED, null)
-DECLARE_REF(/datum/hud, "wiz_energy_display", OWNED, null)
-DECLARE_REF(/datum/hud, "blobpwrdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "blobhealthdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "r_hand_hud_object", OWNED, null)
-DECLARE_REF(/datum/hud, "l_hand_hud_object", OWNED, null)
-DECLARE_REF(/datum/hud, "combat_mode_button", OWNED, null)
-DECLARE_REF(/datum/hud, "move_intent", OWNED, null)
-DECLARE_REF(/datum/hud, "control_vtec", OWNED, null)
-DECLARE_REF(/datum/hud, "toggle_palette", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_down", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_up", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_actions", OWNED, null)
-DECLARE_REF(/datum/hud, "listed_actions", OWNED, null)
-DECLARE_REF(/datum/hud, "ui_style", OWNED, null)
-DECLARE_REF(/datum/hud, "minihuds", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "floating_actions", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "hotkeybuttons", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "ammo_hud_list", OWNED_VALUES, null)
-
-// the mob's hud_used points at us (our side is a handle); a hud going clears it.
-DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
+// are owned in a list; each names its gun through a relation view (our_gun).
+// The mob owns us as its hud_used; mymob is a plain relation back.
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob()) return
@@ -328,9 +309,9 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 	if(!ismob(mymob()))
 		return 0
 
-	toggle_palette = new()
-	palette_down = new()
-	palette_up = new()
+	own_set(src, "toggle_palette", new /atom/movable/screen/button_palette())
+	own_set(src, "palette_down", new /atom/movable/screen/palette_scroll/down())
+	own_set(src, "palette_up", new /atom/movable/screen/palette_scroll/up())
 	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
@@ -354,7 +335,7 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 	set_hud_used(HUD)
 
 /mob/proc/set_hud_used(datum/hud/new_hud)
-	hud_used = new_hud
+	own_set(src, "hud_used", new_hud)
 	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
@@ -395,7 +376,7 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 /datum/hud/proc/apply_minihud(datum/mini_hud/MH)
 	if(MH in minihuds)
 		return
-	LAZYADD(minihuds, MH)
+	rel_add(src, "minihuds", MH)
 	if(mymob().client)
 		mymob().client.screen -= miniobjs
 	miniobjs += MH.get_screen_objs()
@@ -405,7 +386,7 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 /datum/hud/proc/remove_minihud(datum/mini_hud/MH)
 	if(!(MH in minihuds))
 		return
-	LAZYREMOVE(minihuds, MH)
+	rel_remove(src, "minihuds", MH)
 	if(mymob().client)
 		mymob().client.screen -= miniobjs
 	miniobjs -= MH.get_screen_objs()
@@ -540,17 +521,17 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 	..()
 
 	var/list/hud_elements = list()
-	shadekin_display = new /atom/movable/screen/shadekin()
+	own_set(src, "shadekin_display", new /atom/movable/screen/shadekin())
 	shadekin_display.screen_loc = ui_shadekin_display
 	shadekin_display.icon_state = "shadekin"
 	hud_elements |= shadekin_display
 
-	xenochimera_danger_display = new /atom/movable/screen/xenochimera/danger_level()
+	own_set(src, "xenochimera_danger_display", new /atom/movable/screen/xenochimera/danger_level())
 	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
 	xenochimera_danger_display.icon_state = "danger00"
 	hud_elements |= xenochimera_danger_display
 
-	lleill_display = new /atom/movable/screen/lleill()
+	own_set(src, "lleill_display", new /atom/movable/screen/lleill())
 	lleill_display.screen_loc = ui_lleill_display
 	lleill_display.icon_state = "lleill"
 	hud_elements |= lleill_display
@@ -570,48 +551,43 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	LAZYSET(ammo_hud_list, om_handle(G), ammo_hud)
+	own_add(src, "ammo_hud_list", ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
-	ammo_hud.our_gun = om_handle(G)
+	rel_set(ammo_hud, "our_gun", G)
 	ammo_hud.add_hud(user, G)
 	ammo_hud.update_hud(user, G)
 
 ///Remove the ammo hud related to the gun G from the user
 /datum/hud/proc/remove_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/gun_handle = om_handle_of(G) // the gun may be on its way out
-	var/atom/movable/screen/ammo/ammo_hud = gun_handle && LAZYACCESS(ammo_hud_list, gun_handle)
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
 	if(isnull(ammo_hud))
 		return
-	ammo_hud.our_gun = null
+	rel_clear(ammo_hud, "our_gun")
 	ammo_hud.remove_hud(user, G)
-	qdel(ammo_hud)
-	LAZYREMOVE(ammo_hud_list, gun_handle)
+	own_remove(src, "ammo_hud_list", ammo_hud)
 	var/i = 1
-	for(var/key in ammo_hud_list)
-		ammo_hud = LAZYACCESS(ammo_hud_list, key)
+	for(var/atom/movable/screen/ammo/other as anything in ammo_hud_list)
+		ammo_hud = other
 		ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[i]
 		i++
 
 ///Update the ammo hud related to the gun G
 /datum/hud/proc/update_ammo_hud(mob/living/user, obj/item/gun/G)
-	var/atom/movable/screen/ammo/ammo_hud = LAZYACCESS(ammo_hud_list, om_handle(G))
+	var/atom/movable/screen/ammo/ammo_hud = ammo_hud_for(G)
 	ammo_hud?.update_hud(user, G)
+
+/// Our ammo hud for gun G, or null.
+/datum/hud/proc/ammo_hud_for(obj/item/gun/G)
+	if(!G)
+		return null
+	for(var/atom/movable/screen/ammo/ammo_hud as anything in ammo_hud_list)
+		if(ammo_hud.our_gun == G)
+			return ammo_hud
+	return null
 
 #undef MAX_AMMO_HUD_POSSIBLE
 
-/// LC-refs: the mob this hud belongs to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob this hud belongs to (a relation view; the mob owns us as hud_used).
 /datum/hud/proc/mymob() as /mob
-	return om_resolve(mymob_handle)
+	return mymob
 
-DECLARE_REF(/datum/global_hud, "druggy", OWNED, null)
-DECLARE_REF(/datum/global_hud, "blurry", OWNED, null)
-DECLARE_REF(/datum/global_hud, "whitense", OWNED, null)
-DECLARE_REF(/datum/global_hud, "heavy_whitense", OWNED, null)
-DECLARE_REF(/datum/global_hud, "centermarker", OWNED, null)
-DECLARE_REF(/datum/global_hud, "darksight", OWNED, null)
-DECLARE_REF(/datum/global_hud, "nvg", OWNED, null)
-DECLARE_REF(/datum/global_hud, "thermal", OWNED, null)
-DECLARE_REF(/datum/global_hud, "meson", OWNED, null)
-DECLARE_REF(/datum/global_hud, "science", OWNED, null)
-DECLARE_REF(/datum/global_hud, "material", OWNED, null)
-DECLARE_REF(/datum/global_hud, "holomap", OWNED, null)

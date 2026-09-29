@@ -13,12 +13,13 @@
 	var/hitstaken = 0
 	var/locked = 1
 	var/smashed = 0
-	var/starts_with_axe = TRUE
+	/// The axe it starts with (a declared default child), or null for an empty cabinet.
+	var/fireaxe_type = /obj/item/material/twohanded/fireaxe
+
+DECLARE_DEFAULT_CHILD(/obj/structure/fireaxecabinet, "fireaxe", "fireaxe_type")
 
 /obj/structure/fireaxecabinet/Initialize(mapload)
 	. = ..()
-	if(starts_with_axe)
-		fireaxe = new /obj/item/material/twohanded/fireaxe()
 	update_icon()
 
 /obj/structure/fireaxecabinet/declare_interactions(list/into)
@@ -76,9 +77,9 @@
 			if(O:wielded)
 				O:wielded = 0
 				O.update_icon()
-			fireaxe = O
 			user.remove_from_mob(O)
 			O.forceMove(src)
+			own_set(src, "fireaxe", O)
 			to_chat(user, span_notice("You place the fire axe back in the [name]."))
 			update_icon()
 		else
@@ -124,7 +125,7 @@
 	if(open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			fireaxe = null
+			own_take(src, "fireaxe")
 			to_chat (user, span_notice("You take the fire axe from the [name]."))
 			add_fingerprint(user)
 			update_icon()
@@ -143,7 +144,7 @@
 	if(open && fireaxe)
 		fireaxe.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove the fire axe."))
-		fireaxe = null
+		own_take(src, "fireaxe")
 		update_icon()
 		return TRUE
 	attack_hand(user)
@@ -178,7 +179,7 @@
 	if (open)
 		if(fireaxe)
 			user.put_in_hands(fireaxe)
-			fireaxe = null
+			own_take(src, "fireaxe")
 			to_chat(user, span_notice("You take the Fire axe from the [name]."))
 		else
 			to_chat(user, span_notice("The [name] is empty."))
@@ -205,6 +206,6 @@
 	icon_state = text("fireaxe[][][][]",hasaxe,open,hitstaken,smashed)
 
 /obj/structure/fireaxecabinet/empty
-	starts_with_axe = FALSE
+	fireaxe_type = null
 
-DECLARE_REF(/obj/structure/fireaxecabinet, "fireaxe", HELD, null)
+OWN(/obj/structure/fireaxecabinet, fireaxe, OWN_CONTAINED)

@@ -17,7 +17,7 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
-		has_extinguisher = new/obj/item/extinguisher(src)
+		own_set(src, "has_extinguisher", new/obj/item/extinguisher(src))
 		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 
 	update_icon()
@@ -43,7 +43,7 @@
 		if(!has_extinguisher && opened)
 			user.remove_from_mob(O)
 			O.forceMove(src)
-			has_extinguisher = O
+			own_set(src, "has_extinguisher", O)
 			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
@@ -88,7 +88,7 @@
 		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		user.put_in_hands(has_extinguisher)
 		to_chat(user, span_notice("You take [has_extinguisher] from [src]."))
-		has_extinguisher = null
+		own_take(src, "has_extinguisher")
 		opened = 1
 	else
 		opened = !opened
@@ -101,7 +101,7 @@
 		om_unhook(has_extinguisher, /datum/om/event/qdeleting, src)
 		has_extinguisher.forceMove(loc)
 		to_chat(user, span_notice("You telekinetically remove [has_extinguisher] from [src]."))
-		has_extinguisher = null
+		own_take(src, "has_extinguisher")
 		opened = 1
 	else
 		opened = !opened
@@ -112,7 +112,7 @@
 	EVENT_HANDLER
 	if(source != has_extinguisher)
 		return
-	has_extinguisher = null
+	own_take(src, "has_extinguisher")
 	opened = TRUE
 	update_icon()
 
@@ -134,4 +134,4 @@
 	icon = 'icons/obj/closet.dmi'
 	icon_state = "oldextinguisher" // map preview sprite
 
-DECLARE_REF(/obj/structure/extinguisher_cabinet, "has_extinguisher", HELD, null)
+OWN(/obj/structure/extinguisher_cabinet, has_extinguisher, OWN_CONTAINED)

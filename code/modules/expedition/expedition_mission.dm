@@ -20,7 +20,7 @@
 	/// EXP_MISSION_* state.
 	var/state = EXP_MISSION_ACTIVE
 	/// Back-reference to the site, set in populate().
-	var/tmp/site_handle
+	var/tmp/datum/expedition_site/site
 	/// Base survey points / Thalers paid on success.
 	var/reward_points = 100
 	var/reward_cash = 250
@@ -38,9 +38,7 @@
 	difficulty = _difficulty
 	reward_points = 80 + difficulty * 70
 	reward_cash = 150 + difficulty * 200
-	objectives = list()
 
-DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 
 // Override per mission: return the list of objectives.
 /datum/expedition_mission/proc/build_objectives()
@@ -57,8 +55,10 @@ DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 	return O
 
 /datum/expedition_mission/proc/populate(datum/expedition_site/S)
-	site_handle = om_handle(S)
-	objectives = build_objectives()
+	rel_set(src, "site", S)
+	own_clear(src, "objectives", OWN_DELETE)
+	for(var/datum/expedition_objective/built as anything in build_objectives())
+		own_add(src, "objectives", built)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)
@@ -300,6 +300,6 @@ DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 		bonus_obj(/datum/expedition_objective/eliminate_all, 80, 100),
 	)
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the site var.
 /datum/expedition_mission/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site

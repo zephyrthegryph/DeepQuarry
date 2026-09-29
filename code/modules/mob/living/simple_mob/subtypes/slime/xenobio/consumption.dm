@@ -49,7 +49,7 @@
 		if(LAZYLEN(friends) && prob(1))
 			var/mob/nofriend = pick(friends)
 			if(nofriend)
-				LAZYREMOVE(friends, nofriend)
+				rel_remove(src, "friends", nofriend)
 				say("[nofriend]... food now...")
 
 	if(nutrition <= 0)
@@ -92,7 +92,7 @@
 		return
 
 	if(L.buckle_mob(src, forced = TRUE))
-		victim = L
+		rel_set(src, "victim", L)
 		update_icon()
 		ai_busy_begin() // Don't want the AI to interfere with eatting.
 		victim.visible_message(
@@ -108,7 +108,7 @@
 		span_notice("\The [src] slides off of [victim]!"),
 		span_notice("\The [src] slides off of you!")
 		)
-	victim = null
+	rel_clear(src, "victim")
 	update_icon()
 	ai_busy_end() // Resume normal operations.
 

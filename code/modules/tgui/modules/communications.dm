@@ -41,7 +41,7 @@
 
 /datum/tgui_module/communications/New(host)
 	. = ..()
-	crew_announcement = new()
+	own_set(src, "crew_announcement", new /datum/announcement/priority())
 	crew_announcement.newscast = TRUE
 
 /datum/tgui_module/communications/tgui_interact(mob/user, datum/tgui/ui)
@@ -187,7 +187,7 @@
 		return
 
 	var/datum/signal/status_signal = new
-	status_signal.source_handle = om_handle(source)
+	rel_set(status_signal, "source", source)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 
@@ -516,4 +516,3 @@
 #undef COMM_MSGLEN_MINIMUM
 #undef COMM_CCMSGLEN_MINIMUM
 
-DECLARE_REF(/datum/tgui_module/communications, "crew_announcement", OWNED, null)

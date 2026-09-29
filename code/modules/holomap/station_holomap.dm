@@ -25,7 +25,7 @@
 	var/light_range_on = 2
 	light_color = "#64C864"
 
-	var/tmp/watching_mob_handle
+	var/tmp/mob/watching_mob
 	var/image/small_station_map = null
 	var/image/floor_markings = null
 	var/image/panel = null
@@ -130,7 +130,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			user.client.screen |= GLOB.global_hud.holomap // TODO - HACK! This should be there permenently really.
 			user.client.images |= holomap_datum.station_map
 
-			watching_mob_handle = om_handle(user)
+			rel_set(src, "watching_mob", user)
 			MACHINE_WAKE(src)
 			dq_add_recursive_move(watching_mob())
 			om_hook(watching_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(checkPosition))
@@ -159,7 +159,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 /obj/machinery/station_map/proc/on_watcher_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	// watching_mob() already reads null for a watcher mid-delete: hand it over.
-	if(om_handle_is(watching_mob_handle, source))
+	if((watching_mob == source))
 		stopWatching(source)
 
 /// `watcher` defaults to watching_mob(); pass it for a watcher that is being deleted.
@@ -173,7 +173,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 			else
 				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
-	watching_mob_handle = null
+	rel_clear(src, "watching_mob")
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/station_map/power_change()
@@ -258,11 +258,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
 
-DECLARE_REF(/obj/machinery/station_map, "small_station_map", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "floor_markings", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "panel", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "holomap_datum", OWNED, null)
 
-/// LC-refs: the watching_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The watching_mob this refers to (a relation view: null once that is deleted).
 /obj/machinery/station_map/proc/watching_mob() as /mob
-	return om_resolve(watching_mob_handle)
+	return watching_mob

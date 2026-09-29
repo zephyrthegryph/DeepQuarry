@@ -19,7 +19,7 @@
 	var/list/map_levels = using_map.get_map_levels(z)
 
 	// Build list of data from sensor readings.
-	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(grid_sensors))
 		if(!(S.z in map_levels))
 			continue
 		sensors.Add(list(list(
@@ -53,13 +53,13 @@
 			. = TRUE
 
 /datum/tgui_module/power_monitor/proc/has_alarm()
-	for(var/obj/machinery/power/sensor/S in weak_list_live(grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(grid_sensors))
 		if(S.check_grid_warning())
 			return TRUE
 	return FALSE
 
 /datum/tgui_module/power_monitor/proc/refresh_sensors()
-	grid_sensors = null
+	rel_clear(src, "grid_sensors")
 
 	// Handle ultranested programs
 	var/turf/T = get_turf(tgui_host())
@@ -70,11 +70,13 @@
 	if(T)
 		levels += using_map.get_map_levels(T.z, FALSE)
 	for(var/obj/machinery/power/sensor/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
+		if(QDELETED(S))
+			continue
 		if(T && (S.loc.z == T.z) || (S.loc.z in levels) || (S.long_range)) // Consoles have range on their Z-Level. Sensors with long_range var will work between Z levels.
 			if(S.name_tag == "#UNKN#") // Default name. Shouldn't happen!
 				WARNING("Powernet sensor with unset ID Tag! [S.x]X [S.y]Y [S.z]Z")
 			else
-				WEAK_LIST_ADD(grid_sensors, S)
+				rel_add(src, "grid_sensors", S)
 
 /datum/tgui_module/power_monitor/ntos
 	ntos = TRUE
@@ -85,4 +87,3 @@
 	return GLOB.tgui_self_state
 
 /// Sensors on the grid, rebuilt by refresh_sensors().
-DECLARE_REF(/datum/tgui_module/power_monitor, "grid_sensors", WEAK_LIST, null)

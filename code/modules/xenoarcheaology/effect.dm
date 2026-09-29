@@ -3,7 +3,7 @@
 	var/effect = EFFECT_TOUCH //This is simply if the effect occurs on touch, in an aura, or a pulse AOE. Horribly named variable.
 	var/effectrange = 4 //How far the effect will hit something.
 	var/trigger = TRIGGER_TOUCH //This decides how the artifact is actually activated. Ex: Splashing water on it.
-	var/tmp/master_handle	//This code is handled in effect_master.dm
+	var/tmp/datum/artifact_master/master	//This code is handled in effect_master.dm
 	var/activated = 0
 	var/chargelevel = 1
 	var/chargelevelmax = 10
@@ -23,7 +23,6 @@
 	// If we can start activated or not! Note: This is only really disabled on artifacts that can REALLY do some MAJOR DAMAGE to the server itself. See: Atmos & temperature artifacts destroying an entire Z-level's atmos.
 	var/can_start_activated = TRUE
 
-DECLARE_REF(/datum/artifact_effect, "active_effect", OWNED, null)
 
 /datum/artifact_effect/proc/get_master_holder()	// Return the effectmaster's holder, if it is set to an effectmaster. Otherwise, master is the target object.
 	if(istype(master(), /datum/artifact_master))
@@ -34,7 +33,7 @@ DECLARE_REF(/datum/artifact_effect, "active_effect", OWNED, null)
 /datum/artifact_effect/New(datum/artifact_master/newmaster)
 	..()
 
-	master_handle = om_handle(newmaster)
+	rel_set(src, "master", newmaster)
 	effect = rand(EFFECT_TOUCH, MAX_EFFECT) //This can be overwritten per artifact, in case you want one to only be touch, aura, or pulse!
 	trigger = rand(TRIGGER_TOUCH, MAX_TRIGGER) //Same for this! You can make artifacts that can ONLY be activated through XYZ!
 
@@ -236,6 +235,6 @@ DECLARE_REF(/datum/artifact_effect, "active_effect", OWNED, null)
 	susceptibility = CLAMP01(susceptibility - protected) //Clamp the susceptibility to be between 0 and 1. No negative numbers allowed.
 	return susceptibility
 
-/// LC-refs: This code is handled in effect_master.dm -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// This code is handled in effect_master.dm
 /datum/artifact_effect/proc/master() as /datum/artifact_master
-	return om_resolve(master_handle)
+	return master

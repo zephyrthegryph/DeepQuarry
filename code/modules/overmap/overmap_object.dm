@@ -41,29 +41,25 @@
 
 	if(render_map) // Initialize map objects
 		map_name = "overmap_[REF(src)]_map"
-		cam_screen = new
+		own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 		cam_screen.name = "screen"
 		cam_screen.assigned_map = map_name
 		cam_screen.del_on_map_removal = FALSE
 		cam_screen.screen_loc = "[map_name]:1,1"
 
-		cam_plane_masters = get_tgui_plane_masters()
+		for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
+			own_add(src, "cam_plane_masters", plane_master)
 
 		for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 			instance.assigned_map = map_name
 			instance.del_on_map_removal = FALSE
 			instance.screen_loc = "[map_name]:CENTER"
 
-		cam_background = new
+		own_set(src, "cam_background", new /atom/movable/screen/background)
 		cam_background.assigned_map = map_name
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
 
-DECLARE_REF(/obj/effect/overmap, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cam_background", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cached_skybox_image", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "real_appearance", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cam_plane_masters", OWNED_LIST, null)
 
 // ALLOW(lifecycle): its real appearance holder is detached before phase 4 drops it (DECLARE_REF(..., OWNED)).
 /obj/effect/overmap/lifecycle_dematerialize()

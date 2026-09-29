@@ -9,8 +9,8 @@
 	var/tmp/move_speed = 10
 	EXPIRY_TMP_DECLARE(l_move_time)
 	l_move_time = 1
-	var/datum/thrownthing/throwing // ALLOW(state_ref): running: set only mid-throw
-	var/tmp/throw_source_handle
+	var/datum/thrownthing/throwing // running: set only mid-throw
+	var/tmp/datum/throw_source
 	var/throw_speed = 2
 	var/throw_range = 7
 	// moved_recently lives in code/datums/sparse_vars/movable_misc.dm
@@ -22,7 +22,7 @@
 	var/icon_expected_width = 32
 	var/old_x = 0
 	var/old_y = 0
-	var/datum/riding/riding_datum = null // ALLOW(state_ref): relationship: riding setup while buckled
+	var/datum/riding/riding_datum = null
 	var/does_spin = TRUE // Does the atom spin when thrown (of course it does :P)
 	var/movement_type = NONE
 
@@ -58,7 +58,7 @@
 	if (blocks_emissive)
 		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
-			em_block = new(null, src)
+			own_set(src, "em_block", new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
 			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))
@@ -116,7 +116,7 @@
 			var/slot = ((vg_entity - 1) & VG_ENTITY_INDEX_MASK) + 1
 			if(slot <= length(SSvg.entities_by_index) && SSvg.entities_by_index[slot] == src)
 				SSvg.entities_by_index[slot] = null
-			batch.unbind_movers += src
+			rel_add(batch, "unbind_movers", src)
 			batch.unbind_entities += vg_entity
 		else
 			SSvg.unregister(src)
@@ -125,20 +125,19 @@
 	if(rad_insulation != RAD_NO_INSULATION)
 		RAD_SHIELDING_CHANGED(loc)
 	if(light_system == STATIC_LIGHT && light)
-		QDEL_NULL(light)
+		own_clear(src, "light", OWN_DELETE)
 	return ..()
 
 /atom/movable/Destroy()
 	// L1 (doc/rewrite/lifecycle.md §2): contents already went where each
 	// slot's declared policy said, in the destroy transaction's phase 3
 	// (destroy_transaction() -> dq_lifecycle_resolve_contents()), before
-	// Destroy() ever runs. Nothing decides that here any more.
-	if((ledger || dq_slot_defs_for(src)) && dq_holds_unreleased())
-		stack_trace("[type] still holds contents/latent entries entering Destroy() -- the destroy transaction's contents phase should have released them")
+	// Destroy() ever runs. Nothing decides that here any more; phase 3 itself
+	// checks that it released them (dq_lifecycle_check_released()).
 	if(em_block)
 		cut_overlay(em_block)
 		om_unhook(em_block, /datum/om/event/qdeleting, src)
-		QDEL_NULL(em_block)
+		own_clear(src, "em_block", OWN_DELETE)
 	// Leave the turf's opacity_sources while loc is still valid.
 	stop_blocking_light()
 	. = ..()
@@ -153,7 +152,7 @@
 	// never run Destroy() and keep a loc ref to this deleted container.
 	for(var/atom/movable/AM in contents.Copy())
 		qdel(AM)
-	QDEL_NULL(ledger)
+	own_clear(src, "ledger", OWN_DELETE)
 
 	moveToNullspace()
 
@@ -166,8 +165,8 @@
 		pulledby.stop_pulling()
 
 	stop_orbit()
-	throw_source_handle = null
-	QDEL_NULL(riding_datum)
+	rel_clear(src, "throw_source")
+	own_clear(src, "riding_datum", OWN_DELETE)
 	set_listening(NON_LISTENING_ATOM)
 
 ////////////////////////////////////////
@@ -475,7 +474,7 @@
 			// Call our thingy to inform everyone we moved
 			Moved(oldloc, NONE, TRUE)
 
-		// The pulling relation's break_if = in_range(1) (code/datums/om/library.dm)
+		// The pulling relation's holds_while = in_range(1) (code/datums/om/library.dm)
 		// unlinks pulling/pulledby on its own once the live scheduler re-checks
 		// it, replacing the hand-rolled distance/z check that used to live here.
 
@@ -555,7 +554,7 @@
 		var/turf/T = hit_atom
 		T.hitby(src, throwingdatum)
 
-/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback) //If this returns FALSE then callback will not be called.
+/atom/movable/proc/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, list/callback) //If this returns FALSE then callback will not be called.
 	. = TRUE
 	if (!target || speed <= 0 || QDELETED(src) || (target.z != src.z))
 		return FALSE
@@ -570,7 +569,7 @@
 		real_force = thrown_item.throwforce
 
 	var/datum/thrownthing/TT = new(src, target, dir, range, speed, thrower, FALSE, real_force, FALSE, callback)
-	throwing = TT
+	rel_set(src, "throwing", TT)
 
 	pixel_z = 0
 	if(spin && does_spin)
@@ -786,8 +785,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	EVENT_HANDLER
 	om_unhook(source, /datum/om/event/qdeleting, src)
 	cut_overlay(source)
-	if(em_block == source)
-		em_block = null
+	// A blocker deleted from outside leaves em_block in its destroy's phase 2.
 
 /atom/movable/proc/abstract_move(atom/new_loc)
 	var/atom/old_loc = loc
@@ -868,8 +866,5 @@ VV_TOPIC_ACTION(/atom/movable, VV_HK_EDIT_PARTICLES, PROC_REF(vv_topic_edit_part
 	user.client?.open_particle_editor(src)
 	return TRUE
 
-DECLARE_REF(/atom/movable, "riding_datum", OWNED, null)
 
 // The throw_of relation's view field: its on_unlink() clears it.
-DECLARE_REF(/atom/movable, "throwing", HELD, null)
-DECLARE_REF(/atom/movable/overlay, "master", BACK, null)

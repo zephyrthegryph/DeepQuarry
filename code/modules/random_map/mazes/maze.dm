@@ -20,17 +20,17 @@
 	if(start_y%2!=0) start_y++
 
 	// Create the origin cell to start us off.
-	LAZYADD(openlist, new /datum/maze_cell(start_x,start_y))
+	own_add(src, "openlist", new /datum/maze_cell(start_x,start_y))
 
 	while(length(openlist))
 		// Grab a maze point to use and remove it from the open list.
 		var/datum/maze_cell/next = DEFAULTPICK(openlist, null)
-		LAZYREMOVE(openlist, next)
+		own_take_member(src, "openlist", next)
 		if(!isnull(LAZYACCESS(closedlist, next.name)))
 			continue
 
 		// Preliminary marking-off...
-		LAZYSET(closedlist, next.name, next)
+		LAZYSET(closedlist, next.name, TRUE) // a visited-name set: plain data, the cell itself is dropped
 		map[get_map_cell(next.x,next.y)] = FLOOR_CHAR
 
 		// Apply the values required and fill gap between this cell and origin point.
@@ -53,7 +53,7 @@
 
 	// Cleanup. Map stays in memory for display proc.
 	LAZYCLEARLIST(checked_coord_cache)
-	LAZYCLEARLIST(openlist)
+	own_clear(src, "openlist", OWN_DELETE)
 	LAZYCLEARLIST(closedlist)
 
 /datum/random_map/maze/proc/add_to_openlist(tx, ty, nx, ny)
@@ -62,4 +62,4 @@
 	LAZYSET(checked_coord_cache, "[tx]-[ty]", 1)
 	map[get_map_cell(tx,ty)] = DOOR_CHAR
 	var/datum/maze_cell/new_cell = new(tx,ty,nx,ny)
-	LAZYOR(openlist, new_cell)
+	own_add(src, "openlist", new_cell)

@@ -2,7 +2,7 @@
 	name = "Picture-in-picture"
 	screen_loc = "CENTER"
 	plane = PLANE_WORLD
-	var/center_handle
+	var/atom/center
 	var/width = 0
 	var/height = 0
 	var/list/shown_to
@@ -18,7 +18,7 @@
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()
-	popup_screen = new
+	own_set(src, "popup_screen", new /atom/movable/screen/map_view_tg)
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
@@ -62,7 +62,7 @@
 	add_overlay(move_tab)
 
 	if(!button_x)
-		button_x = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_x", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "close"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -75,7 +75,7 @@
 	vis_contents += button_x
 
 	if(!button_expand)
-		button_expand = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_expand", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "expand"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -88,7 +88,7 @@
 	vis_contents += button_expand
 
 	if(!button_shrink)
-		button_shrink = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_shrink", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "shrink"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -101,7 +101,7 @@
 	vis_contents += button_shrink
 
 	if(!button_pop)
-		button_pop = new /atom/movable/screen/component_button(null, src)
+		own_set(src, "button_pop", new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "pop"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -136,7 +136,7 @@
 		refresh_view()
 
 /atom/movable/screen/movable/pic_in_pic/proc/set_view_center(atom/target, do_refresh = TRUE)
-	center_handle = om_handle(target)
+	rel_set(src, "center", target)
 	if(do_refresh)
 		refresh_view()
 
@@ -181,13 +181,7 @@
 		om_unhook(source, /datum/om/event/popup_cleared, src)
 		popup_screen.hide_from(source)
 
-/// LC-refs: the atom this view is centred on -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atom this view is centred on (a relation view: null once that is deleted).
 /atom/movable/screen/movable/pic_in_pic/proc/center() as /atom
-	return om_resolve(center_handle)
+	return center
 
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_x", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_expand", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_shrink", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "button_pop", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "popup_screen", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/pic_in_pic, "standard_background", OWNED, null)

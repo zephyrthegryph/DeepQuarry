@@ -7,7 +7,7 @@
 	icon_state = "evidenceobj"
 	item_state = null
 	w_class = ITEMSIZE_SMALL
-	var/tmp/stored_item_handle
+	var/tmp/obj/item/stored_item
 
 
 /obj/item/evidencebag/MouseDrop(obj/item/I)
@@ -68,7 +68,7 @@
 
 	desc = "An evidence bag containing [I]."
 	I.forceMove(src)
-	stored_item_handle = om_handle(I)
+	rel_set(src, "stored_item", I)
 	w_class = I.w_class
 	return
 
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 		cut_overlays()	//remove the overlays
 
 		user.put_in_hands(I)
-		stored_item_handle = null
+		rel_clear(src, "stored_item")
 
 		w_class = initial(w_class)
 		icon_state = "evidenceobj"
@@ -100,6 +100,6 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 	if(stored_item())
 		user.examinate(stored_item())
 
-/// LC-refs: the stored_item this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the stored_item this refers to (a relation view: null once it is deleted).
 /obj/item/evidencebag/proc/stored_item() as /obj/item
-	return om_resolve(stored_item_handle)
+	return stored_item

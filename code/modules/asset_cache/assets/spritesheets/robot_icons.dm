@@ -133,4 +133,4 @@ GLOBAL_LIST_EMPTY(robot_sprite_sheets)
 		insert_icon(imgid + "W", I_W)
 		insert_icon(imgid + "E", I_E)
 
-	GLOB.robot_sprite_sheets[module_type] = src
+	GLOB.robot_sprite_sheets[module_type] = src // ALLOW(registry): the robot sprite sheet singleton store, one registered instance per key

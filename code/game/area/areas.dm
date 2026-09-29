@@ -55,7 +55,7 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 
 /area/New()
 	// Used by the maploader, this must be done in New, not init
-	GLOB.areas_by_type[type] = src
+	GLOB.areas_by_type[type] = src // ALLOW(registry): areas are immortal plain refs (never relation targets); the maploader looks them up by type in New(), before any registry join
 	return ..()
 
 /area/lifecycle_dematerialize()
@@ -272,10 +272,10 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 /area/var/list/power_machines
 
 /area/proc/power_subscribe(obj/machinery/M)
-	LAZYADD(power_machines, M)
+	rel_add(src, "power_machines", M)
 
 /area/proc/power_unsubscribe(obj/machinery/M)
-	LAZYREMOVE(power_machines, M)
+	rel_remove(src, "power_machines", M)
 
 // Called once per area channel change (the APC's Rust power event). Lights and
 // other reactor subscribers hear the key; subscribed machines re-check their
@@ -674,4 +674,6 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	if(flag_check(AREA_NO_SPOILERS))
 		set_spoiler_obfuscation(TRUE)
 
-DECLARE_REF(/area, "apc", PAIR, "area")
+/// The area's APC: a one-sided relation view (the APC's own `area` var is a plain area ref, and
+/// areas are never relation targets). A dying APC leaves it.
+REL(/area, apc)

@@ -1,75 +1,56 @@
 
-OM_TIMER_SLOT(/datum/pipeline, engineered_exposure_timer)
+OWN_TIMER(/datum/pipeline, engineered_exposure_timer)
 
 /datum/pipeline
+	/// PROTO gas port: the pipe network's authoritative mixture (shared, the network owns it),
+	/// or a private detached share this line owns. Written only by atmos_air_set().
 	var/datum/gas_mixture/air
 	/// Physical volume contributed by this pipeline, retained while its air slot
 	/// is rebound to the larger authoritative network mixture.
 	var/volume
 
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
+	/// Pipes in this line (two-sided with each pipe's `parent`).
 	var/list/obj/machinery/atmospherics/pipe/members
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
-	var/list/obj/machinery/atmospherics/pipe/edges //Used for building networks
+	/// Pipes at this line's edges (two-sided with each pipe's `edge_pipelines`). Used for building networks.
+	var/list/obj/machinery/atmospherics/pipe/edges
 
 	// Nodes that are leaking. Used for A.S. Valves.
 	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
 
+
 	var/datum/pipe_network/network
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
+	/// Every network whose line_members lists this line (two-sided).
 	var/list/datum/pipe_network/network_memberships
 	var/alert_pressure = 0
-
-/datum/pipeline/proc/register_network_membership(datum/pipe_network/new_network)
-	LAZYOR(network_memberships, new_network)
-
-/datum/pipeline/proc/unregister_network_membership(datum/pipe_network/old_network)
-	LAZYREMOVE(network_memberships, old_network)
 
 /datum/pipeline/proc/add_edge(obj/machinery/atmospherics/pipe/edge)
 	if(!edge || QDELETED(edge))
 		return FALSE
-	LAZYOR(edges, edge)
-	edge.register_edge_pipeline(src)
+	rel_add(src, "edges", edge)
 	return TRUE
 
-/datum/pipeline/proc/remove_edge(obj/machinery/atmospherics/pipe/edge, clear_backlink = TRUE)
-	if(edges)
-		edges -= edge
-	if(clear_backlink && edge)
-		edge.unregister_edge_pipeline(src)
+/// Unlinks an edge pipe (both sides: `edges` is two-sided with the pipe's edge_pipelines).
+/datum/pipeline/proc/remove_edge(obj/machinery/atmospherics/pipe/edge)
+	rel_remove(src, "edges", edge)
 
 // Rust-owned wrappers refuse deletion.
 /datum/pipeline/lifecycle_keep(force)
 	return network?.rust_authoritative
 
-// A legacy line stores its gas back into its pipes and releases its network.
+// A legacy line stores its gas back into its pipes and releases its network. The rosters,
+// `network`, and the pipes' `parent`/`edge_pipelines` are relations (cleared in phase 4);
+// `air` is PROTO (a private share is deleted at teardown, the network's is left to it).
 /datum/pipeline/lifecycle_unbind()
 	..()
-	// Drop our backlink before invalidating the shared topology.  The network's
-	// Destroy() clears every other member and is deliberately re-entry safe.
-	var/list/old_memberships = network_memberships
-	network_memberships = null
-	for(var/datum/pipe_network/membership as anything in old_memberships)
-		if(membership?.line_members)
-			membership.line_members -= src
-	var/datum/pipe_network/old_network = network
-	network = null
-	qdel(old_network)
+	// Leave the network's roster before destroying it, so its unbind doesn't hand this
+	// line a share of the gas it is about to store back into its pipes.
+	for(var/datum/pipe_network/membership as anything in network_memberships?.Copy())
+		rel_remove(src, "network_memberships", membership)
+	qdel(network)
 
 	if(air && air.return_volume())
 		temporarily_store_air()
-	QDEL_NULL(air)
-	var/list/old_members = members
-	var/list/old_edges = edges
-	members = null
-	edges = null
-	leaks = null
-	for(var/obj/machinery/atmospherics/pipe/P in old_members)
-		if(P.parent == src)
-			P.parent = null
-	for(var/obj/machinery/atmospherics/pipe/edge in old_edges)
-		edge.unregister_edge_pipeline(src)
+	rel_clear(src, "leaks")
 
 /// Engineered pipes are evaluated whenever their authoritative network gas is
 /// mutated. Ordinary mapped pipes retain the old cheap path.
@@ -93,18 +74,25 @@ OM_TIMER_SLOT(/datum/pipeline, engineered_exposure_timer)
 	//Update individual gas_mixtures by volume ratio
 
 	for(var/obj/machinery/atmospherics/pipe/member in members)
-		member.air_temporary = new
-		member.air_temporary.copy_from(air)
-		member.air_temporary.set_volume(member.volume)
-		member.air_temporary.multiply(member.volume / air.return_volume())
+		var/datum/gas_mixture/share = new
+		share.copy_from(air)
+		share.set_volume(member.volume)
+		share.multiply(member.volume / air.return_volume())
+		if(QDELETED(member))
+			// A pipe being destroyed (its unbind destroys this line) can't adopt a new
+			// mixture: its share goes straight back to the room.
+			member.loc?.assume_air(share)
+			qdel(share)
+			continue
+		own_set(member, "air_temporary", share)
 
 /datum/pipeline/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
-		air = network_air
+		atmos_air_set(src, "air", network_air)
 
 /datum/pipeline/proc/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network == reference && air == network_air)
-		air = detached_pipenet_air(network_air, volume, network_volume)
+		atmos_air_set(src, "air", detached_pipenet_air(network_air, volume, network_volume))
 
 /datum/pipeline/proc/return_network(obj/machinery/atmospherics/reference)
 	// Rust materializes this read-only compatibility wrapper.
@@ -228,9 +216,8 @@ OM_TIMER_SLOT(/datum/pipeline, engineered_exposure_timer)
 	if(network)
 		network.mark_dirty()
 
-// Topology links and the (possibly network-shared) air slot: Destroy() hands the gas back and severs each side.
-DECLARE_REF(/datum/pipeline, "air", HELD, null)
-DECLARE_REF(/datum/pipeline, "members", HELD, null)
-DECLARE_REF(/datum/pipeline, "edges", HELD, null)
-DECLARE_REF(/datum/pipeline, "network", HELD, null)
-DECLARE_REF(/datum/pipeline, "network_memberships", HELD, null)
+REL(/datum/pipeline, network)
+REL_PAIR_LIST(/datum/pipeline, network_memberships, line_members)
+REL_PAIR_LIST(/datum/pipeline, members, parent)
+REL_PAIR_LIST(/datum/pipeline, edges, edge_pipelines)
+PROTO(/datum/pipeline, air)

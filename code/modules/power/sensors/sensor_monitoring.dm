@@ -26,7 +26,7 @@
 		alerting = alert
 		update_icon()
 	var/list/dependencies = list()
-	for(var/obj/machinery/power/sensor/S as anything in weak_list_live(power_monitor.grid_sensors))
+	for(var/obj/machinery/power/sensor/S as anything in LAZYCOPY(power_monitor.grid_sensors))
 		if(S.power_region)
 			dependencies[S] = TRUE
 	if(length(dependencies))
@@ -38,7 +38,6 @@
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /datum/tgui_module/power_monitor)
 
-DECLARE_REF(/obj/machinery/computer/power_monitor, "power_monitor", OWNED, null)
 
 // On user click opens the UI of this computer.
 /obj/machinery/computer/power_monitor/declare_interactions(list/into)
@@ -69,7 +68,7 @@ DECLARE_REF(/obj/machinery/computer/power_monitor, "power_monitor", OWNED, null)
 
 // Verifies if any warnings were registered by connected sensors.
 /obj/machinery/computer/power_monitor/proc/check_warnings()
-	for(var/obj/machinery/power/sensor/S in weak_list_live(power_monitor.grid_sensors))
+	for(var/obj/machinery/power/sensor/S in LAZYCOPY(power_monitor.grid_sensors))
 		if(S.check_grid_warning())
 			return 1
 	return 0

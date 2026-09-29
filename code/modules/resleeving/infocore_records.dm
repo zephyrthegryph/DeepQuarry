@@ -30,7 +30,6 @@
 
 	var/one_time = FALSE
 
-DECLARE_REF(/datum/transhuman/mind_record, "mind_ref", BACK, null)
 
 /datum/transhuman/mind_record/New(datum/mind/mind, mob/living/carbon/human/M, add_to_db = TRUE, one_time = FALSE, database_key)
 	ASSERT(mind)
@@ -38,7 +37,7 @@ DECLARE_REF(/datum/transhuman/mind_record, "mind_ref", BACK, null)
 	src.one_time = one_time
 
 	//The mind!
-	mind_ref = mind
+	rel_set(src, "mind_ref", mind)
 	mindname = mind.name
 	ckey = ckey(mind.key)
 
@@ -106,16 +105,13 @@ DECLARE_REF(/datum/transhuman/mind_record, "mind_ref", BACK, null)
 	else if(ishuman(copyfrom))
 		init_from_mob(copyfrom, add_to_db, ckeylock)
 
-DECLARE_REF(/datum/transhuman/body_record, "mydna", OWNED, null)
-DECLARE_REF(/datum/transhuman/body_record, "client_ref", BACK, null)
-DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 
 // Records ask for a hard delete: there is no easy way to clear references to this in REGISTRY_MEMBERS(REGISTRY_MACHINES) etc.
 /datum/transhuman/body_record
 	destroy_hint = QDEL_HINT_HARDDEL
 
+// mydna (and its dna) are owned: teardown deletes them.
 /datum/transhuman/body_record/on_destroy(force)
-	QDEL_NULL(mydna.dna)
 	limb_data.Cut()
 	organ_data.Cut()
 	..()
@@ -150,7 +146,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 	M.dna.check_integrity()
 
 	//The DNA2 stuff
-	mydna = new ()
+	own_set(src, "mydna", new /datum/dna2/record ())
 	QDEL_SWAP(mydna.dna, M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
@@ -160,7 +156,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 	//My stuff
 	client_ref = M.client
 	ckey = M.ckey
-	mind_ref = M.mind
+	rel_set(src, "mind_ref", M.mind)
 
 	//External organ status. 0:gone, 1:normal, "string":manufacturer
 	for(var/limb in limb_data)
@@ -219,7 +215,10 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 			if(BLACKLISTED_COPY_VARS)
 				continue
 			if("mydna")
-				mydna = orig.mydna.copy()
+				own_set(src, "mydna", orig.mydna.copy())
+				continue
+			if("mind_ref")
+				rel_set(src, "mind_ref", orig.mind_ref) // a relation view: never a raw copy
 				continue
 		if(islist(vars[A]))
 			var/list/L = orig.vars[A]
@@ -255,7 +254,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 	H.name = H.real_name
 	H.suiciding = 0
 	H.losebreath = 0
-	H.mind = null
+	rel_clear(H, "mind")
 
 	return H
 
@@ -318,7 +317,7 @@ DECLARE_REF(/datum/transhuman/body_record, "mind_ref", BACK, null)
 
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
-		mydna.dna = new /datum/dna()
+		own_set(mydna, "dna", new /datum/dna())
 	QDEL_SWAP(H.dna, mydna.dna.Clone())
 	H.original_player = ckey
 

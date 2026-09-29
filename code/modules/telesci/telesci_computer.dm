@@ -5,7 +5,7 @@
 	icon_keyboard = "teleport_key"
 	circuit = /obj/item/circuitboard/telesci_console
 	var/sending = 1
-	var/tmp/telepad_handle
+	var/tmp/obj/machinery/telepad/telepad
 	var/temp_msg = "Telescience control console initialized. Welcome."
 
 	// VARIABLES //
@@ -14,7 +14,7 @@
 	var/z_co = 1
 	var/distance_off
 	var/rotation_off
-	var/tmp/last_target_handle
+	var/tmp/turf/last_target
 
 	var/rotation = 0
 	var/distance = 5
@@ -30,7 +30,8 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
-DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
+OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
+OWN(/obj/machinery/computer/telescience, crystals, OWN_SPILL)
 
 // its crystals are ejected.
 /obj/machinery/computer/telescience/on_destroy(force)
@@ -46,7 +47,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		LAZYADD(crystals, new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
+		own_add(src, "crystals", new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /obj/machinery/computer/telescience/declare_interactions(list/into)
 	into += list(
@@ -72,8 +73,8 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 /obj/machinery/computer/telescience/proc/interaction_insert_crystal(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!user.unEquip(W))
 		return TRUE
-	LAZYADD(crystals, W)
 	W.forceMove(src)
+	own_move(W, src, "crystals")
 	act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s crystal slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s crystal slot."))
 	return TRUE
 
@@ -87,7 +88,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 
 /obj/machinery/computer/telescience/proc/interaction_insert_gps(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!inserted_gps)
-		inserted_gps = W
+		own_set(src, "inserted_gps", W)
 		user.unEquip(W)
 		W.forceMove(src)
 		act_message(user, src, MSG_SELF(span_notice("You insert [W] into %T%'s GPS device slot.")), MSG_OTHERS("%U% inserts [W] into %T%'s GPS device slot."))
@@ -97,8 +98,8 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	var/obj/item/multitool/multitool = tool
 	if(!istype(multitool.connectable(), /obj/machinery/telepad))
 		return ITEM_INTERACT_BLOCKING
-	telepad_handle = om_handle(multitool.connectable())
-	multitool.connectable_handle = null
+	rel_set(src, "telepad", multitool.connectable())
+	rel_clear(multitool, "connectable")
 	to_chat(user, span_warning("You upload the data from the [tool.name]'s buffer."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -168,7 +169,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 		if("ejectGPS")
 			if(inserted_gps)
 				inserted_gps.forceMove(loc)
-				inserted_gps = null
+				own_take(src, "inserted_gps")
 
 		if("setMemory")
 			if(last_target() && inserted_gps)
@@ -251,7 +252,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
-		last_tele_data = proj_data
+		own_set(src, "last_tele_data", proj_data)
 
 		var/trueX = proj_data.dest_x
 		var/trueY = proj_data.dest_y
@@ -263,7 +264,7 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 		var/spawn_time = round(proj_data.time) * 10
 
 		var/turf/target = locate(trueX, trueY, z_co)
-		last_target_handle = om_handle(target)
+		rel_set(src, "last_target", target)
 		flick("pad-beam", telepad())
 
 		if(spawn_time > 15) // 1.5 seconds
@@ -302,9 +303,8 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	return
 
 /obj/machinery/computer/telescience/proc/eject()
-	for(var/obj/item/I in crystals)
+	for(var/obj/item/I as anything in own_take_all(src, "crystals"))
 		I.forceMove(src.loc)
-		LAZYREMOVE(crystals, I)
 	distance = 0
 
 /obj/machinery/computer/telescience/proc/recalibrate()
@@ -405,12 +405,11 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
 	investigate_log(log_msg, "telesci")
 
-DECLARE_REF(/obj/machinery/computer/telescience, "last_tele_data", OWNED, null)
 
-/// LC-refs: the telepad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the telepad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telescience/proc/telepad() as /obj/machinery/telepad
-	return om_resolve(telepad_handle)
+	return telepad
 
-/// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the last_target this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telescience/proc/last_target() as /turf
-	return om_resolve(last_target_handle)
+	return last_target

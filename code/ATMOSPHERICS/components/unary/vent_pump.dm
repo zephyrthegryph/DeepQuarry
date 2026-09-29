@@ -280,7 +280,7 @@
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	signal.source_handle = om_handle(src)
+	rel_set(signal, "source", src)
 
 	signal.data = list(
 		"area" = src.area_uid,
@@ -321,7 +321,7 @@
 	//some vents work his own special way
 	radio_filter_in = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid) : null
 	radio_filter_out = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid) : null
-	radio_connection = register_radio(src, frequency, new_frequency, radio_filter_in)
+	rel_set(src, "radio_connection", register_radio(src, frequency, new_frequency, radio_filter_in))
 	frequency = new_frequency
 	broadcast_status()
 
@@ -477,7 +477,7 @@
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			tool.connectable_handle = om_handle(src)
+			rel_set(tool, "connectable", src)
 
 		if("Direction")
 			pump_direction = !pump_direction
@@ -495,5 +495,3 @@
 #undef PRESSURE_CHECK_EXTERNAL
 #undef PRESSURE_CHECK_INTERNAL
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/vent_pump, "initial_loc", STATIC, null)
-DECLARE_REF(/obj/machinery/atmospherics/unary/vent_pump, "radio_connection", STATIC, null)

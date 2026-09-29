@@ -27,7 +27,7 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-	var/tmp/my_computer_handle
+	var/tmp/obj/item/modular_computer/my_computer
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -54,7 +54,7 @@
 		generate_network_log("Began downloading file [PRG.filename].[PRG.filetype] from unspecified server.")
 		hacked_download = 0
 
-	downloaded_file = PRG.clone()
+	own_set(src, "downloaded_file", PRG.clone())
 
 /datum/computer_file/program/ntnetdownload/proc/check_file_download(filename)
 	//returns 1 if file can be downloaded, returns 0 if download prohibited
@@ -76,7 +76,7 @@
 	if(!downloaded_file)
 		return
 	generate_network_log("Aborted download of file [hacked_download ? "**ENCRYPTED**" : downloaded_file.filename].[downloaded_file.filetype].")
-	downloaded_file = null
+	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -87,7 +87,7 @@
 	if(!computer() || !computer().hard_drive || !computer().hard_drive.store_file(downloaded_file))
 		// The download failed
 		downloaderror = "I/O ERROR - Unable to save file. Check whether you have enough free space on your hard drive and whether your hard drive is properly connected. If the issue persists contact your system administrator for assistance."
-	downloaded_file = null
+	own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 	download_completion = 0
 	ui_header = "downloader_finished.gif"
 
@@ -129,13 +129,13 @@
 			if(downloaderror)
 				download_completion = 0
 				download_netspeed = 0
-				downloaded_file = null
+				own_clear(src, "downloaded_file", OWN_DELETE) // null already when store_file() took it
 				downloaderror = ""
 			return TRUE
 	return FALSE
 
 /datum/computer_file/program/ntnetdownload/tgui_data(mob/user)
-	my_computer_handle = om_handle(computer())
+	rel_set(src, "my_computer", computer())
 	if(!istype(my_computer(), /obj/item/modular_computer))
 		return
 
@@ -196,8 +196,7 @@
 		return "Compatible"
 	return "Incompatible!"
 
-DECLARE_REF(/datum/computer_file/program/ntnetdownload, "downloaded_file", OWNED, null)
 
-/// LC-refs: the my_computer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The my_computer this refers to (a relation view: null once that is deleted).
 /datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer
-	return om_resolve(my_computer_handle)
+	return my_computer

@@ -11,16 +11,15 @@
 
 /datum/edit_memory_panel
 	var/datum/mind/target_mind
-	var/tmp/admin_user_handle
+	var/tmp/mob/admin_user
 	var/list/shown_antag_blocks
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
 	..()
-	src.target_mind = target_mind
-	src.admin_user_handle = om_handle(admin_user)
+	rel_set(src, "target_mind", target_mind)
+	rel_set(src, "admin_user", admin_user)
 
-DECLARE_REF(/datum/edit_memory_panel, "target_mind", PAIR, "tgui_edit_memory_panel")
-DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
+// The mind owns this panel (tgui_edit_memory_panel); target_mind is a plain relation back.
 
 /datum/edit_memory_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT)
@@ -124,8 +123,7 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 		if("obj_delete")
 			var/datum/objective/O = locate_in_list(target_mind.objectives, params["ref"])
 			if(istype(O))
-				target_mind.objectives -= O
-				qdel(O)
+				qdel(O) // it leaves the mind's objectives as it goes
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_announce")
@@ -180,6 +178,6 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 /datum/mind
 	var/datum/edit_memory_panel/tgui_edit_memory_panel
 
-/// LC-refs: the admin_user this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The admin_user this refers to (a relation view: null once that is deleted).
 /datum/edit_memory_panel/proc/admin_user() as /mob
-	return om_resolve(admin_user_handle)
+	return admin_user

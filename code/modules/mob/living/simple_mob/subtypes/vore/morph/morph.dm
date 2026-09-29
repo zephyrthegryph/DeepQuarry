@@ -101,7 +101,7 @@
 		to_chat(src, span_warning("You must restore to your original form first!"))
 		return
 	morphed = TRUE
-	form = target
+	rel_set(src, "form", target)
 
 	act_message(src, target, null, MSG_OTHERS(span_warning("%U% suddenly twists and changes shape, becoming a copy of %T%!")))
 	color = null
@@ -146,7 +146,7 @@
 	if(!silent)
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly collapses in on itself, dissolving into a pile of flesh!")))
 
-	form = null
+	rel_clear(src, "form")
 	name = initial(name)
 	desc = initial(desc)
 
@@ -324,12 +324,12 @@
 	var/mob/living/L = seq.prey
 	log_admin("[key_name_admin(src)] offered [L] to swap bodies as a morph.")
 	var/datum/om/prompt/confirm/morph_takeover_consent/ask = new
-	ask.answerer = L
+	rel_set(ask, "answerer", L)
 	return ask
 
 /mob/living/simple_mob/vore/morph/proc/take_over_ask_consent_again(datum/om/flow/ask_sequence/morph_takeover/seq)
 	var/datum/om/prompt/confirm/morph_takeover_consent/again/ask = new
-	ask.answerer = seq.prey
+	rel_set(ask, "answerer", seq.prey)
 	return ask
 
 /mob/living/simple_mob/vore/morph/proc/take_over_agreed(datum/om/flow/ask_sequence/morph_takeover/seq)
@@ -355,7 +355,7 @@
 	if(L_puller)
 		L_puller.stop_pulling()
 	stop_pulling()
-	original_mind = ensure_mind()
+	rel_set(src, "original_mind", ensure_mind())
 	log_and_message_admins("has swapped bodies with [key_name_admin(L)] as a morph at [get_area(src)] - [COORD(src)].", src)
 	new /mob/living/simple_mob/vore/morph/dominated_prey(L.vore_selected, L.ensure_mind(), src, L)
 
@@ -375,9 +375,9 @@
 	. = ..()
 	if(!pmind)
 		return INITIALIZE_HINT_QDEL
-	prey_mind = pmind
-	parent_morph = parent
-	prey_body = prey
+	rel_set(src, "prey_mind", pmind)
+	rel_set(src, "parent_morph", parent)
+	rel_set(src, "prey_body", prey)
 	prey_body.forceMove(get_turf(parent_morph))
 	prey_body.muffled = FALSE
 	prey_body.absorbed = FALSE
@@ -430,12 +430,7 @@
 /mob/living/simple_mob/vore/morph/dominated_prey/proc/return_bodies()
 	move_player_mind(parent_morph.original_mind, parent_morph, "morph released [prey_body]")
 	move_player_mind(prey_mind, prey_body, "returned to own body from morph [parent_morph]")
-	parent_morph.original_mind = null
+	rel_clear(parent_morph, "original_mind")
 
 #undef MORPH_COOLDOWN
 
-DECLARE_REF(/mob/living/simple_mob/vore/morph, "form", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/vore/morph, "original_mind", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "parent_morph", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "prey_body", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/vore/morph/dominated_prey, "prey_mind", HELD, null)

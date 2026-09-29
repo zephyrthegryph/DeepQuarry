@@ -18,7 +18,7 @@
 	var/point_rate = 2
 	var/ai_controlled = TRUE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
-	var/tmp/controller_handle	//Whoever is set to be controlling the blob. Used when the blob is created.
+	var/tmp/client/controller	//Whoever is set to be controlling the blob. Used when the blob is created.
 
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
@@ -104,7 +104,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	. = ..()
 	update_icon() //so it atleast appears
 	point_rate = new_rate
-	controller_handle = om_handle(new_overmind)
+	rel_set(src, "controller", new_overmind)
 
 	if(!placed && !overmind)
 		return INITIALIZE_HINT_LATELOAD
@@ -157,8 +157,8 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		if(!desired_blob_type && !isnull(difficulty_threshold))
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
-		overmind = B
-		B.blob_core_handle = om_handle(src)
+		rel_set(src, "overmind", B)
+		rel_set(B, "blob_core", src)
 		B.ai_controlled = TRUE
 		update_icon()
 		return TRUE
@@ -170,14 +170,14 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 
 	var/client/C = null
 	if(!new_overmind)
-		Q = new /datum/ghost_query/blob()
+		own_set(src, "Q", new /datum/ghost_query/blob())
 		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 		Q.query()
 
 	else
 		C = new_overmind
 		overmind_creation(C)
-	controller_handle = null //Controller has been set. Let's null it now.
+	rel_clear(src, "controller") //Controller has been set. Let's null it now.
 
 /obj/structure/blob/core/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
 	EVENT_HANDLER
@@ -187,7 +187,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		C = D.client
 		overmind_creation(C)
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)
@@ -195,8 +195,8 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
 		B.key = new_overmind.key
-		B.blob_core_handle = om_handle(src)
-		src.overmind = B
+		rel_set(B, "blob_core", src)
+		rel_set(src, "overmind", B)
 		update_icon()
 		if(B.mind && !B.mind.special_role)
 			B.mind.special_role = "Blob Overmind"
@@ -215,8 +215,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		valid_types += BT
 	return pick(valid_types)
 
-DECLARE_REF(/obj/structure/blob/core, "Q", OWNED, null)
 
-/// LC-refs: Whoever is set to be controlling the blob. Used when the blob is created. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Whoever is set to be controlling the blob. Used when the blob is created.
 /obj/structure/blob/core/proc/controller() as /client
-	return om_resolve(controller_handle)
+	return controller

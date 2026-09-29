@@ -110,23 +110,40 @@
 #define STASIS_NO_SOURCE "none"
 
 /mob/living
-	/// Stasis by source: the source's OM handle (STASIS_NO_SOURCE without one) -> the
-	/// /datum/body_effect/stasis level it holds the mob in. Each holds EFFECT_CLOCK_BIO_INHIBIT
-	/// at its depth, keyed by the same key. Lazy.
+	/// Stasis by source: a per-hold key (STASIS_NO_SOURCE without a source) -> an owned
+	/// /datum/stasis_hold naming the source and the /datum/body_effect/stasis level it holds
+	/// the mob in. Each holds EFFECT_CLOCK_BIO_INHIBIT at its depth, keyed by the same key. Lazy.
 	var/list/stasis_sources
+
+/// One source's stasis on a mob, owned by the mob's stasis_sources.
+/datum/stasis_hold
+	/// The /datum/body_effect/stasis path.
+	var/stasis_type
+	/// What applies it: a relation view, null once the source is deleted (the hold is then
+	/// sourceless) or when applied without one.
+	var/datum/source
 
 /// The stasis_sources key for `source`: the source's own entry, or for a null source the
 /// sourceless entry or one whose source has since been deleted.
 /mob/living/proc/stasis_key_of(datum/source)
 	if(source)
-		var/key = om_handle_of(source)
-		return (key && stasis_sources?[key]) ? key : null
+		for(var/key in stasis_sources)
+			var/datum/stasis_hold/hold = stasis_sources[key]
+			if(hold.source == source)
+				return key
+		return null
 	if(stasis_sources?[STASIS_NO_SOURCE])
 		return STASIS_NO_SOURCE
 	for(var/key in stasis_sources)
-		if(key != STASIS_NO_SOURCE && !om_resolve(key))
+		var/datum/stasis_hold/hold = stasis_sources[key]
+		if(key != STASIS_NO_SOURCE && !hold.source)
 			return key // the source was deleted: it is sourceless now
 	return null
+
+/// The stasis type held under `key`, or null.
+/mob/living/proc/stasis_type_at(key)
+	var/datum/stasis_hold/hold = key ? stasis_sources?[key] : null
+	return hold?.stasis_type
 
 /// Put this mob in stasis `stasis_type` (a /datum/body_effect/stasis path) held by
 /// `source`, replacing whatever stasis that source applied before. A null type
@@ -137,17 +154,23 @@
 		stack_trace("set_stasis() given [stasis_type], not a /datum/body_effect/stasis")
 		return FALSE
 	var/key = stasis_key_of(source)
-	var/current = key ? stasis_sources[key] : null
+	var/current = stasis_type_at(key)
 	if(current == stasis_type)
 		return FALSE
 	if(key)
 		om_release(src, EFFECT_CLOCK_BIO_INHIBIT, src, key)
-		stasis_sources -= key
-		UNSETEMPTY(stasis_sources)
+		own_put(src, "stasis_sources", key, null)
+		if(!length(stasis_sources))
+			own_clear(src, "stasis_sources", OWN_DELETE)
 	if(stasis_type)
-		key = source ? om_handle(source) : STASIS_NO_SOURCE
+		var/static/hold_serial = 0
+		key = source ? "stasis_[++hold_serial]" : STASIS_NO_SOURCE
 		var/datum/body_effect/stasis/level = body_effect_def(stasis_type)
-		LAZYSET(stasis_sources, key, stasis_type)
+		var/datum/stasis_hold/hold = new
+		hold.stasis_type = stasis_type
+		if(source)
+			rel_set(hold, "source", source)
+		own_put(src, "stasis_sources", key, hold)
 		om_hold(src, EFFECT_CLOCK_BIO_INHIBIT, src, level.stasis_depth(), key)
 	invalidate_factors()
 	om_changed(src, CHANGE_MOB_CONDITIONS)
@@ -159,8 +182,7 @@
 /// The stasis level `source` holds this mob in, or null. A null source matches stasis applied
 /// without one (admin), or whose source has been deleted.
 /mob/living/proc/stasis_type_from(datum/source)
-	var/key = stasis_key_of(source)
-	return key ? stasis_sources[key] : null
+	return stasis_type_at(stasis_key_of(source))
 
 /mob/living/proc/has_stasis_from(datum/source)
 	return !!stasis_type_from(source)
@@ -168,7 +190,7 @@
 /// Accumulates the stasis levels held by sources (BF_STASIS, max rule) into `acc`.
 /mob/living/proc/accumulate_stasis_factors(list/acc)
 	for(var/key in stasis_sources)
-		acc = body_factor_accumulate(acc, body_effect_def(stasis_sources[key]).factors)
+		acc = body_factor_accumulate(acc, body_effect_def(stasis_type_at(key)).factors)
 	return acc
 
 #undef STASIS_NO_SOURCE

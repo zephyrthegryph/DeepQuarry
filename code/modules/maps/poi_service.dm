@@ -33,7 +33,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 
 /// Queues a POI loader; the lane places it (or the boot load does, before initialize()).
 /datum/world_service/pois/proc/enqueue(obj/effect/landmark/poi_loader/loader)
-	poi_queue += loader
+	rel_add(src, "poi_queue", loader)
 	demand()
 
 /datum/world_service/pois/stat_line()
@@ -64,7 +64,7 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 /// We select and fire the next PoI in the list.
 /datum/world_service/pois/proc/load_next_poi()
 	var/obj/effect/landmark/poi_loader/poi_to_load = poi_queue[1]
-	poi_queue -= poi_to_load
+	rel_remove(src, "poi_queue", poi_to_load)
 	//We then fire it!
 	load_poi(poi_to_load)
 

@@ -7,7 +7,8 @@
 	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 0
 	anchored = TRUE
-	var/obj/structure/portal_event/target
+	/// Relation view: the far end (another portal or a ghost-only portal_target).
+	var/obj/target
 
 /obj/structure/portal_event/Bumped(mob/M as mob|obj)
 	if(ismob(M) && !(isliving(M)))
@@ -45,8 +46,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 		if(isnull(response))
 			return TRUE
 		if(response == "Portal Here")
-			target = new type(get_turf(user), src)
-			target.target = src
+			rel_set(src, "target", new type(get_turf(user), src))
+			rel_set(target, "target", src)
 			target.icon_state = icon_state
 			var/letsportal = rerun_ask(user, "k41", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type for these portals?", title = "Change portal", choices = list("No","Yes"))
 			if(isnull(letsportal))
@@ -57,8 +58,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 				target.icon_state = portal_icon_selection
 		if(response == "Target Here")
 			var/obj/structure/portal_target/newtarg = new(get_turf(user))
-			target = newtarg
-			newtarg.target = src
+			rel_set(src, "target", newtarg)
+			rel_set(newtarg, "target", src)
 			var/letsportal = rerun_ask(user, "k50", PROC_REF(portal_event_ghost_use), args, /datum/om/prompt/choice/alert, message = "Would you like to select a different portal type?", title = "Change portal", choices = list("No","Yes"))
 			if(isnull(letsportal))
 				return TRUE
@@ -154,10 +155,8 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 	density = 0
 	alpha = 100
 	invisibility = INVISIBILITY_OBSERVER
-	var/target
-
-// its portal forgets it.
-DECLARE_REF(/obj/structure/portal_target, "target", BACK, "target")
+	/// Relation view: the portal that leads here.
+	var/obj/target
 
 /obj/structure/portal_gateway
 	name = "portal"
@@ -223,6 +222,10 @@ DECLARE_REF(/obj/structure/portal_target, "target", BACK, "target")
 	src << 'sound/effects/bamf.ogg'
 	to_chat(src, span_warning("You're starting to come to. You feel like you've been out for a few minutes, at least..."))
 
-/// LC-refs: a portal's other end goes with it (phase 4 deletes it; its own Destroy() then
-/// finds the link already gone).
-DECLARE_REF(/obj/structure/portal_event, "target", OWNED, null)
+/// A portal's other end goes with it: the two ends name each other through relation views (the
+/// framework clears them), and deleting one end deletes the other.
+/obj/structure/portal_event/on_destroy(force)
+	var/obj/other = target
+	..()
+	if(other && !QDELETED(other))
+		qdel(other)

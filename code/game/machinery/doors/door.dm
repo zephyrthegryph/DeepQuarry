@@ -1,4 +1,4 @@
-OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
+OWN_TIMER(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door
 	announce_damage_bands = TRUE
@@ -41,7 +41,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	var/width = 1
 
 	// turf animation
-	var/c_animation_handle
+	var/atom/movable/overlay/c_animation
 
 	var/reinforcing = 0
 	var/tintable = 0
@@ -140,7 +140,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/sleep_until_autoclose_blocker_moves(atom/movable/blocker)
 	if(!blocker)
 		return
-	LAZYADD(autoclose_blockers, blocker)
+	rel_add(src, "autoclose_blockers", blocker)
 	om_hook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(on_autoclose_blocker_changed))
 	close_door_at = 0
 	schedule_door_timer()
@@ -148,7 +148,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/clear_autoclose_blockers()
 	for(var/atom/movable/blocker as anything in autoclose_blockers)
 		om_unhook(blocker, list(/datum/om/event/moved, /datum/om/event/qdeleting), src)
-	LAZYCLEARLIST(autoclose_blockers)
+	rel_clear(src, "autoclose_blockers")
 
 /obj/machinery/door/proc/on_autoclose_blocker_changed(datum/source, datum/om/event/event)
 	EVENT_HANDLER
@@ -656,6 +656,6 @@ DAMAGE_REACTION(/obj/machinery/door, DAMAGE_EMP, PROC_REF(door_emp))
 		if(D.icon_tinted && (D.id_tint == src.id || !D.id_tint))
 			D.toggle()
 
-/// LC-refs: c animation -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// c animation (a relation view: it reads null once the target is deleted).
 /obj/machinery/door/proc/c_animation() as /atom/movable/overlay
-	return om_resolve(c_animation_handle)
+	return c_animation

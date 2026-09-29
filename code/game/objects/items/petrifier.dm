@@ -4,18 +4,18 @@
 	icon = 'icons/obj/machines/petrification.dmi'
 	icon_state = "petrifier"
 
-	var/target_handle
+	var/mob/living/carbon/human/target
 	var/identifier = "statue"
 	var/material = "stone"
 	var/adjective = "hardens"
 	var/tint = "#FFFFFF"
 	var/discard_clothes = TRUE
 	var/able_to_unpetrify = TRUE
-	var/linked_handle
+	var/obj/machinery/petrification/linked
 
 /obj/item/petrifier/Initialize(mapload, to_link)
 	. = ..()
-	linked_handle = om_handle(to_link)
+	rel_set(src, "linked", to_link)
 
 DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interaction_self), REQ_TARGET_STATE(/obj/item/petrifier/proc/can_fire)))
 
@@ -33,10 +33,10 @@ DECLARE_INTERACTIONS(/obj/item/petrifier, INTERACT_USE(null, PROC_REF(interactio
 		consume(src, user)
 	return TRUE
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: target (reads null once it is gone).
 /obj/item/petrifier/proc/target_ref() as /mob/living/carbon/human
-	return om_resolve(target_handle)
+	return target
 
-/// LC-refs: linked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: linked (reads null once it is gone).
 /obj/item/petrifier/proc/linked() as /obj/machinery/petrification
-	return om_resolve(linked_handle)
+	return linked

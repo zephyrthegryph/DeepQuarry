@@ -19,8 +19,8 @@
 	name = "Appearance Editor"
 	tgui_id = "AppearanceChanger"
 	var/flags = APPEARANCE_ALL_HAIR
-	var/tmp/owner_handle
-	/// A body the designer builds for itself (owned); owner_handle then names it.
+	var/tmp/mob/living/carbon/human/owner
+	/// A body the designer builds for itself (owned); the owner view then names it.
 	var/mob/living/carbon/human/mannequin
 	var/list/valid_species
 	var/list/valid_hairstyles
@@ -39,7 +39,7 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 	// Stuff for moving cameras
-	var/tmp/last_camera_turf_handle
+	var/tmp/turf/last_camera_turf
 
 	var/list/valid_earstyles
 	var/list/valid_tailstyles
@@ -58,28 +58,28 @@
 
 	map_name = "appearance_changer_[REF(src)]_map"
 	// Initialize map objects
-	cam_screen = new
+	own_set(src, "cam_screen", new /atom/movable/screen/map_view)
 
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48"
 
-	cam_plane_masters = get_tgui_plane_masters()
+	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
+		own_add(src, "cam_plane_masters", plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	local_skybox = new()
+	own_set(src, "local_skybox", new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
-	cam_plane_masters += local_skybox
 
-	owner_handle = om_handle(H)
-	cam_background = new
+	rel_set(src, "owner", H)
+	own_set(src, "cam_background", new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 	check_whitelist = check_species_whitelist
@@ -103,15 +103,10 @@
 		close_ui()
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		OM_EMIT(owner(), /datum/om/event/human_dna_finalized) // Update any components using our saved appearance
-		owner_handle = null
-		last_camera_turf_handle = null
+		rel_clear(src, "owner")
+		rel_clear(src, "last_camera_turf")
 		cut_data()
 
-DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_screen", OWNED, null)
-DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_background", OWNED, null)
-DECLARE_REF(/datum/tgui_module/appearance_changer, "local_skybox", OWNED, null)
-DECLARE_REF(/datum/tgui_module/appearance_changer, "mannequin", OWNED, null)
-DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LIST, null)
 
 /datum/tgui_module/appearance_changer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
@@ -126,7 +121,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		BD = src
-		DC = om_resolve(BD.linked_body_design_console)
+		DC = BD.linked_body_design_console
 
 	switch(action)
 		if("race")
@@ -388,10 +383,12 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 				if(isnull(new_species))
 					return
 				if(new_species)
-					owner().species.base_species = new_species
-					owner().species.icobase = owner().species.get_icobase()
-					owner().species.deform = owner().species.get_icobase(get_deform = TRUE)
-					owner().species.vanity_base_fit = new_species
+					// species is PROTO: mutate the mob's private copy, never the shared prototype
+					var/datum/species/own_species = proto_private(owner(), "species")
+					own_species.base_species = new_species
+					own_species.icobase = own_species.get_icobase()
+					own_species.deform = own_species.get_icobase(get_deform = TRUE)
+					own_species.vanity_base_fit = new_species
 					if(istype(owner().species, /datum/species/shapeshifter)) //TODO: See if this is still needed.
 						GLOB.wrapped_species_by_ref["\ref[owner()]"] = new_species
 					owner().regenerate_icons()
@@ -464,7 +461,8 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 			if(isnull(choice))
 				return
 			if(choice && can_change(owner(), APPEARANCE_MISC))
-				owner().species.species_sounds = choice
+				var/datum/species/own_species = proto_private(owner(), "species") // PROTO: private copy
+				own_species.species_sounds = choice
 				return TRUE
 		if("flavor_text")
 			var/select_key = params["target"]
@@ -479,7 +477,8 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 							if(can_change(owner(), APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								LAZYSET(owner().flavor_texts, select_key, msg)
+								var/mob/living/carbon/human/flavor_owner = owner()
+								LAZYSET(flavor_owner.flavor_texts, select_key, msg)
 								return TRUE
 						else
 							var/_answer_a13 = act_ask(ui.user, action, params, ui, "a13", /datum/om/prompt/text, message = "Set the flavor text for their [select_key]. Put in \"!clear\" to make blank.", title = "Flavor Text", default = html_decode(owner().flavor_texts[select_key]), multiline = TRUE, max_length = MAX_TGUI_INPUT)
@@ -489,7 +488,8 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 							if(can_change(owner(), APPEARANCE_MISC)) // allows empty to wipe flavor
 								if(msg == "!clear")
 									msg = ""
-								LAZYSET(owner().flavor_texts, select_key, msg)
+								var/mob/living/carbon/human/flavor_owner = owner()
+								LAZYSET(flavor_owner.flavor_texts, select_key, msg)
 								return TRUE
 		if("load_saveslot") //saveslot_load
 			if(can_change(owner(), APPEARANCE_ALL_COSMETIC))
@@ -519,9 +519,9 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 			var/datum/species/S = GLOB.all_species[params["view_stock_brec"]]
 			if(S && (S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) == SPECIES_CAN_JOIN)
 				// Generate body record from species!
-				QDEL_NULL(mannequin)
-				mannequin = new /mob/living/carbon/human(null, S.name)
-				owner_handle = om_handle(mannequin)
+				own_clear(src, "mannequin", OWN_DELETE)
+				own_set(src, "mannequin", new /mob/living/carbon/human(null, S.name))
+				rel_set(src, "owner", mannequin)
 				owner().real_name = "Stock [S.name] Body"
 				owner().name = owner().real_name
 				owner().dna.real_name = owner().real_name
@@ -558,13 +558,11 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 					owner().resleeve_lock = FALSE // unlock it, even though it's only temp, so you don't get the warning every time
 			if(!owner().changeling_locked && (!owner().resleeve_lock && can_change(owner(), APPEARANCE_RACE)))
 				// Create it from the mob
-				if(DC.disk.stored)
-					QDEL_NULL(DC.disk.stored)
 				to_chat(ui.user,span_notice("\The [owner()]'s bodyrecord was saved to the disk."))
 				owner().update_dna()
-				var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY!
+				var/datum/transhuman/body_record/record = new /datum/transhuman/body_record(owner(), FALSE, FALSE) // Saves a COPY! The old record is deleted
 				record.locked = FALSE // remove lock
-				DC.disk.stored = record
+				own_set(DC.disk, "stored", record)
 				DC.disk.name = "[initial(DC.disk.name)] ([owner().real_name])"
 			return TRUE
 		if("ejectdisk")
@@ -573,7 +571,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 			if(can_change(owner(), APPEARANCE_RACE))
 				to_chat(ui.user,span_notice("You eject the disk."))
 				DC.disk.forceMove(get_turf(DC))
-				DC.disk = null
+				own_take(DC, "disk")
 				return TRUE
 		if("back_to_library")
 			if(can_change(owner(), APPEARANCE_RACE))
@@ -586,7 +584,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 	if(customize_usr && !owner())
 		if(!ishuman(user))
 			return TRUE
-		owner_handle = om_handle(user)
+		rel_set(src, "owner", user)
 
 	if(!owner() || !owner().species)
 		return
@@ -601,6 +599,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 		user.client.register_map_obj(cam_screen)
 		for(var/plane in cam_plane_masters)
 			user.client.register_map_obj(plane)
+		user.client.register_map_obj(local_skybox) // owned via local_skybox, not the plane list
 		user.client.register_map_obj(cam_background)
 		// Open UI
 		ui = new(user, src, tgui_id, name)
@@ -672,7 +671,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	if(istype(src,/datum/tgui_module/appearance_changer/body_designer))
 		var/datum/tgui_module/appearance_changer/body_designer/BD = src
-		DC = om_resolve(BD.linked_body_design_console)
+		DC = BD.linked_body_design_console
 	if(DC)
 		data["is_design_console"] = TRUE
 		data["disk"] = !isnull(DC.disk)
@@ -722,16 +721,17 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 	data["species_sounds_female"] = owner().species.species_sounds_female
 	data["species_sounds_male"] = owner().species.species_sounds_male
 	// flavor
-	if(!LAZYLEN(owner().flavor_texts))
-		LAZYSET(owner().flavor_texts, "general", "")
-		LAZYSET(owner().flavor_texts, "head", "")
-		LAZYSET(owner().flavor_texts, "face", "")
-		LAZYSET(owner().flavor_texts, "eyes", "")
-		LAZYSET(owner().flavor_texts, "torso", "")
-		LAZYSET(owner().flavor_texts, "arms", "")
-		LAZYSET(owner().flavor_texts, "hands", "")
-		LAZYSET(owner().flavor_texts, "legs", "")
-		LAZYSET(owner().flavor_texts, "feet", "")
+	var/mob/living/carbon/human/flavor_owner = owner()
+	if(!LAZYLEN(flavor_owner.flavor_texts))
+		LAZYSET(flavor_owner.flavor_texts, "general", "")
+		LAZYSET(flavor_owner.flavor_texts, "head", "")
+		LAZYSET(flavor_owner.flavor_texts, "face", "")
+		LAZYSET(flavor_owner.flavor_texts, "eyes", "")
+		LAZYSET(flavor_owner.flavor_texts, "torso", "")
+		LAZYSET(flavor_owner.flavor_texts, "arms", "")
+		LAZYSET(flavor_owner.flavor_texts, "hands", "")
+		LAZYSET(flavor_owner.flavor_texts, "legs", "")
+		LAZYSET(flavor_owner.flavor_texts, "feet", "")
 	data["flavor_text"] = owner().flavor_texts.Copy()
 
 	data["name"] = owner().name
@@ -1043,30 +1043,29 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 /datum/tgui_module/appearance_changer/body_designer
 	name ="Appearance Editor (Body Designer)"
 	flags = APPEARANCE_ALL
-	var/linked_body_design_console = null
+	/// The design console that owns us (a relation view)
+	var/obj/machinery/computer/transhuman/designer/linked_body_design_console = null
 
 /datum/tgui_module/appearance_changer/body_designer/tgui_status(mob/user, datum/tgui_state/state)
 	if(!istype(host(),/obj/machinery/computer/transhuman/designer))
 		return STATUS_CLOSE
 	return ..()
 
-// its design console drops the record and gui.
+// its design console drops the record (we leave its designer_gui in phase 2).
 /datum/tgui_module/appearance_changer/body_designer/on_destroy(force)
-	var/obj/machinery/computer/transhuman/designer/DC = om_resolve(linked_body_design_console)
+	var/obj/machinery/computer/transhuman/designer/DC = linked_body_design_console
 	if(DC)
 		DC.selected_record = FALSE
-		DC.designer_gui = null // no hardrefs
-	linked_body_design_console = null
 	..()
 
 /datum/tgui_module/appearance_changer/body_designer/proc/make_fake_owner()
 	// checks for monkey to tell if on the menu
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		QDEL_NULL(mannequin)
-		owner_handle = null
-	mannequin = new /mob/living/carbon/human(src)
-	owner_handle = om_handle(mannequin)
+		own_clear(src, "mannequin", OWN_DELETE)
+		rel_clear(src, "owner")
+	own_set(src, "mannequin", new /mob/living/carbon/human(src))
+	rel_set(src, "owner", mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
 	owner().invisibility = INVISIBILITY_ABSTRACT
@@ -1077,10 +1076,10 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 /datum/tgui_module/appearance_changer/body_designer/proc/load_record_to_body(datum/transhuman/body_record/current_project)
 	if(owner())
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
-		QDEL_NULL(mannequin)
-		owner_handle = null
-	mannequin = current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]")
-	owner_handle = om_handle(mannequin)
+		own_clear(src, "mannequin", OWN_DELETE)
+		rel_clear(src, "owner")
+	own_set(src, "mannequin", current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
+	rel_set(src, "owner", mannequin)
 	// Update some specifics from the current record
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents
 	owner().dna.blood_color = current_project.mydna.dna.blood_color
@@ -1099,13 +1098,13 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 	if(!QDELETED(src))
 		qdel(src)
 
-/// LC-refs: the last_camera_turf this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The last_camera_turf this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/appearance_changer/proc/last_camera_turf() as /turf
-	return om_resolve(last_camera_turf_handle)
+	return last_camera_turf
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The owner this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/appearance_changer/proc/owner() as /mob/living/carbon/human
-	return om_resolve(owner_handle)
+	return owner
 
 /// A colour the appearance changer asks for; `field` is the tgui action it answers. Re-checked
 /// on the answer: the user can still work the changer.
@@ -1121,7 +1120,7 @@ DECLARE_REF(/datum/tgui_module/appearance_changer, "cam_plane_masters", OWNED_LI
 /// The changer's windows refresh when the answer proc reports a change.
 /datum/om/prompt/color/appearance/prepare()
 	. = ..()
-	ui_refresh = subject
+	rel_set(src, "ui_refresh", subject)
 
 /datum/om/prompt/color/appearance/valid()
 	var/datum/tgui_module/appearance_changer/changer = subject

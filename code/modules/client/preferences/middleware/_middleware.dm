@@ -1,7 +1,7 @@
 /// Preference middleware is code that helps to decentralize complicated preference features.
 /datum/preference_middleware
 	/// The preferences datum
-	var/tmp/preferences_handle
+	var/tmp/datum/preferences/preferences
 
 	/// The key that will be used for get_constant_data().
 	/// If null, will use the typepath minus /datum/preference_middleware.
@@ -13,7 +13,7 @@
 	var/list/action_delegations
 
 /datum/preference_middleware/New(datum/preferences)
-	src.preferences_handle = om_handle(preferences)
+	rel_set(src, "preferences", preferences)
 
 	if (isnull(key))
 		// + 2 coming from the off-by-one of copytext, and then another from the slash
@@ -47,6 +47,6 @@
 /datum/preference_middleware/proc/on_new_character(mob/user)
 	return
 
-/// LC-refs: the preferences this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The preferences this refers to (a relation view: null once that is deleted).
 /datum/preference_middleware/proc/preferences() as /datum/preferences
-	return om_resolve(preferences_handle)
+	return preferences

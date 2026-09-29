@@ -38,11 +38,11 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		LAZYDISTINCTADD(SM.friends, src.owner_ref())
+		rel_add(SM, "friends", src.owner_ref())
 
 	// Note, this should be refactored to drop priority overlays
 	L.add_overlay(control_overlay, TRUE)
-	LAZYOR(controlled_mobs, L)
+	rel_add(src, "controlled_mobs", L)
 
 /obj/item/spell/control/proc/deselect(mob/living/L)
 	if(!(L in controlled_mobs))
@@ -57,10 +57,10 @@
 
 	if(isanimal(L))
 		var/mob/living/simple_mob/SM = L
-		LAZYREMOVE(SM.friends, owner_ref())
+		rel_remove(SM, "friends", owner_ref())
 
 	L.cut_overlay(control_overlay, TRUE)
-	LAZYREMOVE(controlled_mobs, L)
+	rel_remove(src, "controlled_mobs", L)
 
 /obj/item/spell/control/proc/move_all(turf/T)
 	for(var/mob/living/L in controlled_mobs)
@@ -142,4 +142,3 @@
 			to_chat(user, span_notice("You command your [length(controlled_mobs) > 1 ? "entities" : "[LAZYACCESS(controlled_mobs, 1)]"] to move \
 			towards \the [T]."))
 
-DECLARE_REF(/obj/item/spell/control, "control_overlay", OWNED, null)

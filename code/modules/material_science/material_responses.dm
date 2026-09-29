@@ -36,9 +36,8 @@
 /// material_response component). Owned by the item; hooks its events with om_hook().
 /obj/item/var/datum/material_response/material_response
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
-OM_TIMER_SLOT(/datum/material_response, scintillation_timer)
+OWN_TIMER(/datum/material_response, scintillation_timer)
 
 /datum/material_response
 	/// The item this state belongs to.
@@ -56,7 +55,6 @@ OM_TIMER_SLOT(/datum/material_response, scintillation_timer)
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
-DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 
 /datum/material_response/New(obj/item/new_parent, datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()
@@ -64,8 +62,8 @@ DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 		log_runtime("material_response: cannot attach to [new_parent] ([material]); discarded")
 		qdel(src)
 		return
-	parent = new_parent
-	new_parent.material_response = src
+	rel_set(src, "parent", new_parent)
+	own_set(new_parent, "material_response", src)
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form

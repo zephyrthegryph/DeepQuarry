@@ -17,8 +17,9 @@
 	supply_conversion_value = 0.5
 
 /datum/material/stone/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += new /datum/stack_recipe("planting bed", /obj/machinery/portable_atmospherics/hydroponics/soil, 3, time = 10, one_per_turf = 1, on_floor = 1, recycle_material = "[name]")
+	return recipes
 
 /datum/material/stone/marble
 	name = MAT_MARBLE
@@ -30,11 +31,12 @@
 	supply_conversion_value = 2
 
 /datum/material/stone/marble/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("light marble floor tile", /obj/item/stack/tile/wmarble, 1, 4, 20, recycle_material = "[name]"),
 		new /datum/stack_recipe("dark marble floor tile", /obj/item/stack/tile/bmarble, 1, 4, 20, recycle_material = "[name]")
 	)
+	return recipes
 // ition Start
 /datum/material/stone/flint
 	name = MAT_FLINT
@@ -49,7 +51,7 @@
 	supply_conversion_value = 0.1
 
 /datum/material/stone/flint/generate_recipes()
-	return
+	return list()
 // ition End
 
 /datum/material/stone/concrete
@@ -66,7 +68,7 @@
 	supply_conversion_value = 0.1
 
 /datum/material/stone/concrete/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe_list("Concrete Pathing",list(
 			new /datum/stack_recipe("Concrete Flooring", /obj/item/stack/tile/floor/concrete, 1, 4, 20, recycle_material = "[name]"),
@@ -75,6 +77,7 @@
 			new /datum/stack_recipe("Concrete Sidewalk (Slab)", /obj/item/stack/tile/floor/sidewalk/slab, 1, 4, 20, recycle_material = "[name]")
 		)),
 		)
+	return recipes
 
 /datum/material/stone/concrete/New()
 	. = ..()
@@ -84,4 +87,3 @@
 /datum/material/stone/concrete/get_wall_texture()
 	return texture
 
-DECLARE_REF(/datum/material/stone/concrete, "texture", OWNED, null)

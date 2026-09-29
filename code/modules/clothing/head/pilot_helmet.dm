@@ -15,7 +15,7 @@
 	max_heat_protection_temperature = HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	w_class = ITEMSIZE_NORMAL
 
-	var/tmp/shuttle_comp_handle
+	var/tmp/obj/machinery/computer/shuttle_control/web/shuttle_comp
 	var/atom/movable/screen/pilot_hud
 	var/list/images
 	var/list/raw_images
@@ -166,7 +166,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot, \
 		var/image/I = images[img]
 		I.color = ask.picked_color
 
-DECLARE_REF(/obj/item/clothing/head/pilot, "pilot_hud", OWNED, null)
 
 // its HUD images are detached.
 /obj/item/clothing/head/pilot/on_destroy(force)
@@ -254,10 +253,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/pilot_vr, INTERACT_USE("Toggle visor
 	catalogue_data = list(/datum/category_item/catalogue/information/organization/major_bills)
 	actions_types = list(/datum/action/item_action/toggle_visor)
 
-/// LC-refs: the shuttle_comp this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the shuttle_comp this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/head/pilot/proc/shuttle_comp() as /obj/machinery/computer/shuttle_control/web
-	return om_resolve(shuttle_comp_handle)
+	return shuttle_comp
 
-DECLARE_REF(/obj/item/clothing/head/pilot, "raw_images", OWNED_LIST, null)
 
-DECLARE_REF(/obj/item/clothing/head/pilot, "images", OWNED_VALUES, null)

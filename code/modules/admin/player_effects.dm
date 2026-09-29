@@ -1,11 +1,11 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	spawner.target_handle = om_handle(target)
+	rel_set(spawner, "target", target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
-	var/tmp/target_handle	//The target of the effects
+	var/tmp/mob/target	//The target of the effects
 
 /datum/eventkit/player_effects/New()
 	. = ..()
@@ -550,7 +550,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(isnull(change_sight))
 				return
 			if(change_sight)
-				Tar.species.darksight = change_sight
+				var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+				own_species.darksight = change_sight
 
 		if("cocoon")
 			var/mob/living/carbon/human/Tar = target()
@@ -584,11 +585,13 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			var/energy_max = act_ask(ui.user, action, params, ui, "a23", /datum/om/prompt/number, message = "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", title = "Max energy")
 			if(isnull(energy_max))
 				return
-			Tar.species.lleill_energy_max = energy_max
+			var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+			own_species.lleill_energy_max = energy_max
 			var/energy_new = act_ask(ui.user, action, params, ui, "a24", /datum/om/prompt/number, message = "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", title = "Max energy")
 			if(isnull(energy_new))
 				return
-			Tar.species.lleill_energy = energy_new
+			own_species = proto_private(Tar, "species")
+			own_species.lleill_energy = energy_new
 
 		if("lleill_invisibility")
 			var/mob/living/carbon/human/Tar = target()
@@ -861,9 +864,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 			if(isnull(wake))
 				return
 			if(L.ai_brain)	//Cleaning up the original ai
-				var/datum/ai_brain/old_brain = L.ai_brain
-				L.ai_brain = null
-				qdel(old_brain)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+				own_clear(L, "ai_brain", OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 			L.initialize_ai_brain()
 			L.faction = faction
 			if(stance)
@@ -922,6 +923,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a p
 				return
 			Tar.revert_mob_tf()
 
-/// LC-refs: The target of the effects -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target of the effects (a relation view: null once that is deleted).
 /datum/eventkit/player_effects/proc/target() as /mob
-	return om_resolve(target_handle)
+	return target

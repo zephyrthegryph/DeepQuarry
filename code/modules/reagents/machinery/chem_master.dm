@@ -30,8 +30,8 @@
 	. = ..()
 	default_apply_parts()
 	var/datum/reagents/R = new/datum/reagents(900)	//Just a huge random number so the buffer should (probably) never dump your reagents.
-	reagents = R	//There should be a nano ui thingy to warn of this.
-	R.my_atom = src
+	own_set(src, "reagents", R)	//There should be a nano ui thingy to warn of this.
+	rel_set(R, "my_atom", src)
 
 /obj/machinery/chem_master/update_icon()
 	icon_state = "mixer[beaker ? "1" : "0"]"
@@ -56,9 +56,9 @@
 	return !beaker
 
 /obj/machinery/chem_master/proc/interaction_load_beaker(mob/user, obj/item/B, datum/interaction/interaction)
-	src.beaker = B
 	user.drop_item()
 	B.forceMove(src)
+	own_set(src, "beaker", B) // CONTAINED: in our contents first
 	to_chat(user, "You add 	he [B] to the machine.")
 	update_icon()
 	return TRUE
@@ -80,9 +80,9 @@
 	// straight off a turf or out of a latent holder still holds its
 	// pills as a declared generator until now.
 	PB.make_contents_real()
-	src.loaded_pill_bottle = PB
 	user.drop_item()
-	B.forceMove(src)
+	PB.forceMove(src)
+	own_set(src, "loaded_pill_bottle", PB) // CONTAINED: in our contents first
 	to_chat(user, "You add \the [loaded_pill_bottle] into the dispenser slot.")
 	return TRUE
 
@@ -440,7 +440,7 @@
 				loaded_pill_bottle.forceMove(get_turf(src))
 				if(Adjacent(ui.user) && !issilicon(ui.user))
 					ui.user.put_in_hands(loaded_pill_bottle)
-				loaded_pill_bottle = null
+				own_take(src, "loaded_pill_bottle")
 		if("print")
 			if(printing || condi)
 				return
@@ -498,7 +498,7 @@
 			beaker.forceMove(get_turf(src))
 			if(Adjacent(ui.user) && !issilicon(ui.user))
 				ui.user.put_in_hands(beaker)
-			beaker = null
+			own_take(src, "beaker")
 			reagents.clear_reagents()
 			update_icon()
 		if("create_condi_bottle")
@@ -526,5 +526,5 @@
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
 
-DECLARE_REF(/obj/machinery/chem_master, "beaker", HELD, null)
-DECLARE_REF(/obj/machinery/chem_master, "loaded_pill_bottle", HELD, null)
+OWN(/obj/machinery/chem_master, beaker, OWN_CONTAINED)
+OWN(/obj/machinery/chem_master, loaded_pill_bottle, OWN_CONTAINED)

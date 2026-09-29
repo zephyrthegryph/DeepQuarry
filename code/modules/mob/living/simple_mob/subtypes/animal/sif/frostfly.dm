@@ -69,7 +69,6 @@
 	add_verb(src, /mob/living/proc/hide)
 	add_trait(src, TRAIT_AMBIENT_PEST_MOB, ROUNDSTART_TRAIT)
 
-DECLARE_REF(/mob/living/simple_mob/animal/sif/frostfly, "smoke_special", OWNED, null)
 
 /datum/say_list/frostfly
 	speak = list("Zzzz.", "Kss.", "Zzt?")

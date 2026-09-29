@@ -55,7 +55,7 @@
 /obj/machinery/appliance/on_destroy(force)
 	for(var/datum/cooking_item/CI as anything in cooking_objs?.Copy())
 		qdel(CI.container())//Food is fragile, it probably doesnt survive the destruction of the machine
-		LAZYREMOVE(cooking_objs, CI)
+		own_take_member(src, "cooking_objs", CI)
 		qdel(CI)
 	..()
 
@@ -303,7 +303,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		LAZYADD(cooking_objs, CI)
+		own_add(src, "cooking_objs", CI)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
@@ -769,7 +769,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		thing.forceMove(get_turf(src))
 
 	if (delete)
-		LAZYREMOVE(cooking_objs, CI)
+		own_take_member(src, "cooking_objs", CI)
 		qdel(CI)
 	else
 		CI.reset()//reset instead of deleting if the container is left inside
@@ -854,7 +854,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	result.transform = M
 
 	// all done, now delete the old objects
-	H.held_mob = null
+	rel_clear(H, "held_mob")
 	qdel(victim)
 	victim = null
 	qdel(H)
@@ -867,7 +867,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	var/cookwork
 	var/overcook_mult = 6 // How long it takes to overcook. This is max_cookwork x overcook mult. If you're changing this, mind that at 3x, a max_cookwork of 30 becomes 90 ticks for the purpose of burning, and a max_cookwork of 4 only has 12 before burning! // doubled to 6
 	var/result_type = 0
-	var/tmp/container_handle
+	var/tmp/obj/item/reagent_containers/cooking_container/container
 	var/combine_target = null
 
 	//Result type is one of the following:
@@ -883,7 +883,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 	var/max_oil = 0//Used for fryers.
 
 /datum/cooking_item/New(obj/item/I)
-	container_handle = om_handle(I)
+	rel_set(src, "container", I)
 
 //This is called for containers whose contents are ejected without removing the container
 /datum/cooking_item/proc/reset()
@@ -915,6 +915,6 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 /obj/machinery/appliance/step_start_condition()
 	return cooking
 
-/// LC-refs: the container this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the container this refers to (a relation view: null once it is deleted).
 /datum/cooking_item/proc/container() as /obj/item/reagent_containers/cooking_container
-	return om_resolve(container_handle)
+	return container

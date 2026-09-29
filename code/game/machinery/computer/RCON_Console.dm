@@ -17,7 +17,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/rcon, "rcon", /datum/tgui_module/rcon)
 
-DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 
 /obj/machinery/computer/rcon/declare_interactions(list/into)
 	into += list(

@@ -26,14 +26,14 @@
 	if(allowed_directions & DOWN) //we only want to do the top one, as it will initialize the ones before it.
 		for(var/obj/structure/ladder/L in GetBelow(src))
 			if(L.allowed_directions & UP)
-				target_down = L
-				L.target_up = src
+				rel_set(src, "target_down", L)
+				rel_set(L, "target_up", src)
 				L.update_icon()
 				break
 	update_icon()
 
-DECLARE_REF(/obj/structure/ladder, "target_down", PAIR, "target_up")
-DECLARE_REF(/obj/structure/ladder, "target_up", PAIR, "target_down")
+REL_PAIR(/obj/structure/ladder, target_down, target_up)
+REL_PAIR(/obj/structure/ladder, target_up, target_down)
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

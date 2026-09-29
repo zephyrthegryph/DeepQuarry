@@ -5,7 +5,7 @@
 	equip_cooldown = 10
 	energy_drain = 100
 	range = MECH_MELEE|RANGED
-	var/locked_handle
+	var/atom/movable/locked
 	var/mode = 1 //1 - gravsling 2 - gravpush
 
 	COOLDOWN_DECLARE(catapult_fire_cooldown)  //Concept stolen from guns.
@@ -35,20 +35,20 @@
 				if(!istype(target) || target.anchored)
 					occupant_message("Unable to lock on [target]")
 					return
-				locked_handle = om_handle(target)
+				rel_set(src, "locked", target)
 				occupant_message("Locked on [target]")
 				send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 				return
 			else if(target!=locked())
 				if(locked() in view(chassis))
 					locked().throw_at(target, 14, 1.5, chassis)
-					locked_handle = null
+					rel_clear(src, "locked")
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 					set_ready_state(FALSE)
 					chassis.use_power(energy_drain)
 					do_after_cooldown()
 				else
-					locked_handle = null
+					rel_clear(src, "locked")
 					occupant_message("Lock on [locked()] disengaged.")
 					send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 		if(2)
@@ -77,6 +77,6 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/gravcatapult, "mode", PROC_RE
 		send_byjax(chassis?.slot_item(MECHA_SLOT_PILOT),"exosuit.browser","\ref[src]",src.get_equip_info())
 	return
 
-/// LC-refs: locked -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// locked
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/locked() as /atom/movable
-	return om_resolve(locked_handle)
+	return locked

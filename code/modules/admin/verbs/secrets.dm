@@ -4,17 +4,17 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	feedback_add_details("admin_verb","S") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /datum/secrets_menu
-	var/tmp/holder_handle	//client of whoever is using this datum
+	var/tmp/client/holder	//client of whoever is using this datum
 	var/is_debugger = FALSE
 	var/is_funmin = FALSE
 
 /datum/secrets_menu/New(user)//user can either be a client or a mob due to byondcode(tm)
 	if (istype(user, /client))
 		var/client/user_client = user
-		holder_handle = om_handle(user_client) //if its a client, assign it to holder
+		rel_set(src, "holder", user_client) //if its a client, assign it to holder
 	else
 		var/mob/user_mob = user
-		holder_handle = om_handle(user_mob.client) //if its a mob, assign the mob's client to holder
+		rel_set(src, "holder", user_mob.client) //if its a mob, assign the mob's client to holder
 
 	is_debugger = check_rights(R_DEBUG)
 	is_funmin = check_rights(R_FUN)
@@ -450,6 +450,6 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	for(var/mob/M in affected_mobs)
 		M.show_message(span_notice("The chilling wind suddenly stops..."), 1)
 
-/// LC-refs: client of whoever is using this datum -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client of whoever is using this datum (a relation view: null once that is deleted).
 /datum/secrets_menu/proc/holder() as /client
-	return om_resolve(holder_handle)
+	return holder

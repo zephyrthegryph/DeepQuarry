@@ -43,11 +43,13 @@
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "pod_0"
 	req_access = list(ACCESS_GENETICS) // For premature unlocking.
-	VAR_PRIVATE/occupant_handle = null
+	VAR_PRIVATE/mob/living/occupant_mob = null
 	var/heal_level = 20				// Growth quality: the clone is released once its genetic damage falls to clone_release_load().
 	var/heal_rate = 1
 	locked = 0
-	var/connected_handle //So we remember the connected clone machine.
+	var/obj/machinery/computer/cloning/connected //So we remember the connected clone machine.
+	/// The body record being grown: handed over by the console in growclone(), deleted once the body is made.
+	var/datum/transhuman/body_record/growing_record
 	var/mess = 0					// Need to clean out it if it's full of exploded clone.
 	var/attempting = 0				// One clone attempt at a time thanks
 	var/eject_wait = 0				// Don't eject them as soon as they are created fuckkk
@@ -64,7 +66,9 @@
 	update_icon()
 
 // its containers drop out and the growing clone is ejected.
-DECLARE_REF(/obj/machinery/clonepod, "containers", SPILL_LIST, null)
+OWN(/obj/machinery/clonepod, containers, OWN_SPILL)
+// Linked console: the pod is one of its pods (two-sided; clears when either dies).
+REL_PAIR(/obj/machinery/clonepod, connected, pods)
 
 // The occupant slot already spilled the clone in phase 3; go_out() is kept for its mess
 // branch (a failed clone leaves gibs).
@@ -94,16 +98,16 @@ DECLARE_REF(/obj/machinery/clonepod, "containers", SPILL_LIST, null)
 /obj/machinery/clonepod/proc/set_occupant(mob/living/L)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!L)
-		occupant_handle = null
+		rel_clear(src, "occupant_mob")
 		MACHINE_SLEEP(src)
 		return
-	occupant_handle = om_handle(L)
+	rel_set(src, "occupant_mob", L)
 	MACHINE_WAKE(src)
 
 /obj/machinery/clonepod/proc/get_occupant()
 	RETURN_TYPE(/mob/living)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	return om_resolve(occupant_handle)
+	return occupant_mob
 
 EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(clonepod_interaction_hand)), \
@@ -158,7 +162,8 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	eject_wait = 0
 
 	//Get the clone body ready, let's calculate their health so the pod doesn't immediately eject them!!!
-	var/mob/living/carbon/human/H = BR.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
+	var/mob/living/carbon/human/H = BR?.produce_human_mob(src,FALSE, FALSE, "clone ([rand(0,999)])")
+	own_clear(src, "growing_record", OWN_DELETE)
 	OM_EMIT(H, /datum/om/event/human_dna_finalized)
 
 	//Get the clone body ready: a fresh clone is saturated with genetic damage and
@@ -303,9 +308,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		return ITEM_INTERACT_BLOCKING
 	if(anchored)
 		set_anchored(FALSE)
-		if(connected())
-			connected().pods -= src
-			connected_handle = null
+		rel_clear(src, "connected")
 	else
 		set_anchored(TRUE)
 	playsound(src, tool.usesound, 100, TRUE)
@@ -317,7 +320,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(!istype(tool, /obj/item/multitool))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
-	multitool.connecting_handle = om_handle(src)
+	rel_set(multitool, "connecting", src)
 	to_chat(user, span_notice("You load connection data from [src] to [multitool]."))
 	multitool.update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -450,9 +453,8 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		var/turf/T = get_turf(src)
 		if(T)
 			for(var/obj/item/reagent_containers/glass/G in containers)
-				om_unhook(G, /datum/om/event/qdeleting, src)
 				G.forceMove(T)
-				LAZYREMOVE(containers, G)
+				own_take_member(src, "containers", G)
 		return	1
 	return 0
 
@@ -496,12 +498,7 @@ DAMAGE_REACTION(/obj/machinery/clonepod, DAMAGE_EMP, PROC_REF(clonepod_emp))
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	LAZYADD(containers, container)
-	om_hook(container, /datum/om/event/qdeleting, src, PROC_REF(on_biomass_container_qdel))
-
-/obj/machinery/clonepod/proc/on_biomass_container_qdel(obj/item/reagent_containers/glass/container, datum/om/event/qdeleting/event)
-	EVENT_HANDLER
-	LAZYREMOVE(containers, container)
+	own_add(src, "containers", container)
 
 //Health Tracker Implant
 
@@ -574,6 +571,6 @@ DAMAGE_REACTION(/obj/machinery/clonepod, DAMAGE_EMP, PROC_REF(clonepod_emp))
 			A:malfunction()
 */
 
-/// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// connected (a relation view: it reads null once the target is deleted).
 /obj/machinery/clonepod/proc/connected() as /obj/machinery/computer/cloning
-	return om_resolve(connected_handle)
+	return connected

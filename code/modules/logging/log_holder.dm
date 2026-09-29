@@ -338,4 +338,3 @@ GLOBAL_TABLE(log_category_tree, GLOBAL_PROC_REF(build_log_category_tree))
 
 	return jsonified_list
 
-DECLARE_REF(/datum/log_holder, "log_categories", OWNED_VALUES, null)

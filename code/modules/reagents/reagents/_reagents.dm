@@ -369,9 +369,39 @@
 /datum/reagent/proc/mix_data(newdata, newamount) // You have a reagent with data, and new reagent with its own data get added, how do you deal with that?
 	return
 
+/// The declared codec for `data` (doc/rewrite/ownership.md §6): the keys whose values are datums the
+/// data owns (one, or a list of them). A copy of the data duplicates those instead of aliasing them,
+/// so two holders never share a contagion; the serializer's reagent codec reads the same keys.
+/// Every other value is plain data, or a relation (blood's "donor").
+/datum/reagent/proc/reagent_data_codec()
+	return TYPE_TABLE_GET(src, reagent_data_codec_keys)
+
+TYPE_TABLE_DECLARE(/datum/reagent, reagent_data_codec_keys, null)
+
+/// A copy of the data list `source` that shares no owned datum with it (reagent_data_codec() keys
+/// get fresh copies through copy_data_value()).
+/datum/reagent/proc/copy_data(list/source)
+	if(!islist(source))
+		return source
+	var/list/copy = source.Copy()
+	for(var/key in reagent_data_codec())
+		var/value = copy[key]
+		if(islist(value))
+			var/list/fresh = list()
+			for(var/datum/D in value)
+				fresh += copy_data_value(key, D)
+			copy[key] = fresh
+		else if(isdatum(value))
+			copy[key] = copy_data_value(key, value)
+	return copy
+
+/// The copy of one owned datum in `data[key]`.
+/datum/reagent/proc/copy_data_value(key, datum/D)
+	return D
+
 /datum/reagent/proc/get_data() // Just in case you have a reagent that handles data differently.
 	if(data && istype(data, /list))
-		return data.Copy()
+		return copy_data(data)
 	else if(data)
 		return data
 	return null
@@ -415,11 +445,9 @@ TYPE_TABLE_DECLARE(/datum/reagent, get_data_schema, null)
 	species_injuries_touch = shared[8]
 	return ..()
 
-DECLARE_REF(/datum/reagent, "holder", BACK, null)
 
-// The holder link is a DECLARE_REF(..., BACK); `data` can hold live refs (blood's donor).
-// drops `data`.
-DECLARE_REF(/datum/reagent, "data", DROP, null)
+// `data` is plain data plus the owned datums reagent_data_codec() names (copied, never aliased);
+// a live mob in it (blood's donor) is a reference the serializer saves as a relation.
 
 /// Called by [/datum/reagents/proc/conditional_update]
 /datum/reagent/proc/on_update(atom/A)

@@ -26,8 +26,8 @@
 /mob/living/simple_mob/animal/passive/cow/Initialize(mapload)
 	. = ..()
 
-	udder = new(50) // ALLOW(decl): holder takes constructor args
-	udder.my_atom = src
+	own_set(src, "udder", new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
+	rel_set(udder, "my_atom", src)
 
 	add_hose_connector(/datum/hose_connector/output/cow) // Moo?
 
@@ -86,4 +86,3 @@ TYPE_TABLE(/datum/decl/mob_organ_names/cow, mob_organ_hit_zones, list("head", "t
 									"[src] seems resigned to its fate.")
 		to_chat(M, pick(responses))
 
-DECLARE_REF(/mob/living/simple_mob/animal/passive/cow, "udder", OWNED, null)

@@ -7,7 +7,7 @@
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_ID
 
-	var/front_id_handle
+	var/obj/item/card/id/front_id
 
 	drop_sound = SFX_ITEMS_DROP_LEATHER
 	pickup_sound = SFX_ITEMS_PICKUP_LEATHER
@@ -54,7 +54,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	if(.)
 		if(W == front_id())
-			front_id_handle = null
+			rel_clear(src, "front_id")
 			name = original_name || initial(name)
 			update_icon()
 
@@ -62,7 +62,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 	. = ..()
 	if(.)
 		if(!front_id() && istype(W, /obj/item/card/id))
-			front_id_handle = om_handle(W)
+			rel_set(src, "front_id", W)
 			if(!original_name)
 				original_name = name
 			name = "[original_name] ([front_id()])"
@@ -147,6 +147,6 @@ DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_
 		icon_state = original_state
 		update_icon()
 
-/// LC-refs: front id -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: front id (reads null once it is gone).
 /obj/item/storage/wallet/proc/front_id() as /obj/item/card/id
-	return om_resolve(front_id_handle)
+	return front_id

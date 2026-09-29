@@ -181,7 +181,7 @@ TYPE_TABLE(/mob/living/simple_mob/animal/solargrub_larva, get_ai_target_selector
 	// so we spread out instead of re-nesting it. Mirrors post_melee_attack's
 	// ignored_targets ring (cap 4).
 	LV.attack_target(M)
-	LAZYADD(LV.dq_ignored_machines, M)
+	rel_add(LV, "dq_ignored_machines", M)
 	if(LAZYLEN(LV.dq_ignored_machines) > 3)
-		LV.dq_ignored_machines.Cut(1, 2)
+		rel_remove(LV, "dq_ignored_machines", LV.dq_ignored_machines[1])
 	return DQ_BEHAVIOR_DONE

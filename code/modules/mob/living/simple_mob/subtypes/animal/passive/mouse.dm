@@ -86,8 +86,7 @@
 		holder_type = /obj/item/holder/mouse/black
 
 	if(prob(40))
-		LAZYINITLIST(rat_diseases)
-		rat_diseases += new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src)
+		own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(rand(1, 5), 9, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -229,7 +228,7 @@
 	. = ..()
 	name = initial(name)
 	desc = initial(desc)
-	rat_diseases += new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src)
+	own_add(src, "rat_diseases", new /datum/affliction/contagion/engineered/random(2, 2, 1, infected = src))
 
 /mob/living/simple_mob/animal/passive/mouse/white/virology/Crossed(atom/movable/AM)
 	. = ..()
@@ -346,6 +345,5 @@ EXTEND_INTERACTIONS(/obj/item/holder/mouse, INTERACT_USE(null, PROC_REF(interact
 	remove_verb(src,/mob/living/proc/ventcrawl) //No ventcrawl for hanner
 
 // The rat's own disease strains; exposure passes on copies (expose_contagion()).
-DECLARE_REF(/mob/living/simple_mob/animal/passive/mouse, "rat_diseases", OWNED_LIST, null)
 
 DECLARE_REGISTRY(/mob/living/simple_mob/animal/passive/mouse, REGISTRY_GHOST_PODS)

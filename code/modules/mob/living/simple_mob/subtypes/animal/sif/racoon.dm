@@ -63,8 +63,8 @@
 
 /mob/living/simple_mob/animal/sif/sakimm/proc/drop_hat(mob/user)
 	if(hat)
-		hat.forceMove(get_turf(user))
-		hat = null
+		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		old_hat.forceMove(get_turf(user))
 		update_icon()
 		if(user == src)
 			to_chat(user, span_notice("You removed your hat."))
@@ -93,9 +93,10 @@
 	else
 		if(user == src)
 			if(istype(get_active_hand(), /obj/item/clothing/head))
-				hat = get_active_hand()
-				drop_from_inventory(hat, src)
-				hat.forceMove(src)
+				var/obj/item/clothing/head/new_hat = get_active_hand()
+				drop_from_inventory(new_hat, src)
+				new_hat.forceMove(src)
+				own_set(src, "hat", new_hat)
 				to_chat(user, span_notice("You put on the hat."))
 				update_icon()
 			return
@@ -119,7 +120,7 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-DECLARE_REF(/mob/living/simple_mob/animal/sif/sakimm, "hat", SPILL, null)
+OWN(/mob/living/simple_mob/animal/sif/sakimm, hat, OWN_SPILL)
 
 /mob/living/simple_mob/animal/sif/sakimm/update_icon()
 	cut_overlays()

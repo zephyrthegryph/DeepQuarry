@@ -1,7 +1,7 @@
 /// Runtime state for one department instance. Stockpiles are finite quantities
 /// consumed transactionally by concrete work such as healing and repairs.
 /datum/generated_station_department_runtime
-	var/tmp/department_handle
+	var/tmp/datum/generated_station_department_instance/department
 	var/state = GENERATED_DEPARTMENT_OFFLINE
 	var/integrity = 100
 	var/list/stockpiles
@@ -9,7 +9,7 @@
 
 /datum/generated_station_department_runtime/New(datum/generated_station_department_instance/new_department)
 	..()
-	department_handle = om_handle(new_department)
+	rel_set(src, "department", new_department)
 	stockpiles = list()
 	minimum_stockpiles = list()
 
@@ -19,14 +19,19 @@
 			return FALSE
 	return TRUE
 
-GLOBAL_LIST_EMPTY(generated_station_runtimes)
-
+/// The runtime simulation of generated station `station_id` (REGISTRY_GENERATED_STATION_RUNTIMES, keyed by id).
 /proc/generated_station_runtime(station_id)
-	return GLOB.generated_station_runtimes[station_id]
+	var/list/filed = REGISTRY_KEYED(REGISTRY_GENERATED_STATION_RUNTIMES, station_id)
+	return length(filed) ? filed[length(filed)] : null
+
+REGISTRY_MEMBERSHIP(/datum/generated_station_simulation, REGISTRY_GENERATED_STATION_RUNTIMES)
+
+/datum/generated_station_simulation/registry_key(registry_id)
+	return registry_id == REGISTRY_GENERATED_STATION_RUNTIMES ? spec()?.id : null
 
 /// Authoritative dependency simulation for one generated station.
 /datum/generated_station_simulation
-	var/tmp/spec_handle
+	var/tmp/datum/generated_station_spec/spec
 	var/list/departments
 	var/list/capabilities
 	var/list/power_areas
@@ -35,27 +40,20 @@ GLOBAL_LIST_EMPTY(generated_station_runtimes)
 
 /datum/generated_station_simulation/New(datum/generated_station_spec/new_spec)
 	..()
-	spec_handle = om_handle(new_spec)
-	departments = list()
+	rel_set(src, "spec", new_spec)
+	own_take_all(src, "departments")
 	capabilities = list()
 	power_areas = list()
 	for(var/datum/generated_station_department_instance/department in spec()?.departments)
-		departments[department.id] = new /datum/generated_station_department_runtime(department)
+		own_put(src, "departments", department.id, new /datum/generated_station_department_runtime(department))
 	configure_default_resources()
-	if(spec()?.id)
-		GLOB.generated_station_runtimes[spec().id] = src
-
-DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, null)
-
-/// Phase 2: leaves the station runtime index.
-/datum/generated_station_simulation/lifecycle_dematerialize()
-	. = ..()
-	if(spec()?.id && GLOB.generated_station_runtimes[spec().id] == src)
-		GLOB.generated_station_runtimes -= spec().id
+	// Joins the runtime registry (filed by station id) now that the spec is set; the destroy
+	// transaction leaves it in phase 2.
+	join_registries()
 
 /datum/generated_station_simulation/proc/configure_default_resources()
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		switch(runtime.department().definition().id)
 			if("engineering")
 				runtime.stockpiles["fuel"] = 100
@@ -82,7 +80,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 	A.power_change()
 
 /datum/generated_station_simulation/proc/set_integrity(department_id, value)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime)
 		return FALSE
 	runtime.integrity = clamp(value, 0, 100)
@@ -90,7 +88,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 	return TRUE
 
 /datum/generated_station_simulation/proc/set_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || !resource_id)
 		return FALSE
 	runtime.stockpiles[resource_id] = max(0, amount)
@@ -98,13 +96,13 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 	return TRUE
 
 /datum/generated_station_simulation/proc/add_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || !resource_id)
 		return FALSE
 	return set_stockpile(department_id, resource_id, (runtime.stockpiles[resource_id] || 0) + amount)
 
 /datum/generated_station_simulation/proc/consume_stockpile(department_id, resource_id, amount)
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	if(!runtime || amount < 0 || (runtime.stockpiles[resource_id] || 0) < amount)
 		return FALSE
 	runtime.stockpiles[resource_id] -= amount
@@ -116,7 +114,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 		return
 	var/list/candidates = list()
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		if(runtime.integrity > 0 && runtime.has_resources())
 			candidates[id] = TRUE
 	var/changed = TRUE
@@ -124,7 +122,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 		changed = FALSE
 		var/list/available = aggregate_capabilities(candidates)
 		for(var/id in candidates.Copy())
-			var/datum/generated_station_department_runtime/runtime = departments[id]
+			var/datum/generated_station_department_runtime/runtime = departments?[id]
 			for(var/datum/generated_station_capability_requirement/requirement in runtime.department().definition().requirements)
 				if(requirement.optional)
 					continue
@@ -134,7 +132,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 					break
 	capabilities = aggregate_capabilities(candidates)
 	for(var/id in departments)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		if(!candidates[id])
 			runtime.state = GENERATED_DEPARTMENT_OFFLINE
 		else if(runtime.integrity < 50)
@@ -146,7 +144,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 /datum/generated_station_simulation/proc/aggregate_capabilities(list/candidates)
 	var/list/available = list()
 	for(var/id in candidates)
-		var/datum/generated_station_department_runtime/runtime = departments[id]
+		var/datum/generated_station_department_runtime/runtime = departments?[id]
 		var/output_scale = runtime.integrity < 50 ? 0.5 : 1
 		for(var/datum/generated_station_capability_provision/provision in runtime.department().definition().provisions)
 			available[provision.capability_id] = (available[provision.capability_id] || 0) + provision.amount * output_scale
@@ -154,7 +152,7 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 
 /datum/generated_station_simulation/proc/department_state(department_id)
 	recompute()
-	var/datum/generated_station_department_runtime/runtime = departments[department_id]
+	var/datum/generated_station_department_runtime/runtime = departments?[department_id]
 	return runtime?.state || GENERATED_DEPARTMENT_OFFLINE
 
 /datum/generated_station_simulation/proc/capability_available(capability_id, amount = 1)
@@ -166,13 +164,12 @@ DECLARE_REF(/datum/generated_station_simulation, "departments", OWNED_VALUES, nu
 	recompute()
 	return (capabilities[capability_id] || 0) >= amount
 
-/// LC-refs: the department this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the department var.
 /datum/generated_station_department_runtime/proc/department() as /datum/generated_station_department_instance
-	return om_resolve(department_handle)
+	return department
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_simulation/proc/spec() as /datum/generated_station_spec
-	return om_resolve(spec_handle)
+	return spec
 
 // areas the station materialization owns; the simulation is its child
-DECLARE_REF(/datum/generated_station_simulation, "power_areas", STATIC, null)

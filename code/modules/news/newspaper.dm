@@ -12,9 +12,9 @@
 	var/screen = 0
 	var/pages = 0
 	var/curr_page = 0
-	// ALLOW(scheduler, declared_refs, object_keyed_lists): the news network's own channels at print time; the network owns them, the paper only reads them
+	/// The news network's channels at print time (relation list: the network owns them, the paper only reads them).
 	var/list/datum/feed_channel/news_content
-	var/tmp/important_message_handle
+	var/tmp/datum/feed_message/important_message
 	var/scribble=""
 	var/scribble_page = null
 	drop_sound = SFX_ITEMS_DROP_WRAPPER
@@ -121,6 +121,6 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
-/// LC-refs: the important_message this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The important_message this refers to (a relation view: null once that is deleted).
 /obj/item/newspaper/proc/important_message() as /datum/feed_message
-	return om_resolve(important_message_handle)
+	return important_message

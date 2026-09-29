@@ -99,7 +99,7 @@
 		om_cancel_timer_slot(src, "dash:[om_handle(brain)]")
 	return ..()
 
-OM_TIMER_SLOT(/datum/ai_behavior/charge_slam, dash)
+OWN_TIMER(/datum/ai_behavior/charge_slam, dash)
 
 /datum/ai_behavior/charge_slam/proc/execute_dash(datum/ai_brain/brain, atom/target)
 	// The 1.2s windup means the brain/holder/target can be gone by the time

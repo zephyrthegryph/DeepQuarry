@@ -14,7 +14,6 @@
 	var/list/payload
 	var/evidence_id
 
-DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 
 /datum/contract_document/New(obj/item/paper/new_holder, _contract_id, _document_kind, _destination, list/_payload)
 	. = ..()
@@ -26,8 +25,8 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 		// Unique: the existing document state is kept.
 		qdel(src)
 		return
-	holder = new_holder
-	new_holder.contract_document = src
+	rel_set(src, "holder", new_holder)
+	own_set(new_holder, "contract_document", src)
 	contract_id = _contract_id
 	document_kind = _document_kind
 	destination = _destination
@@ -72,7 +71,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	department_share = 0
 	contributor_share = 1
 	deadline_duration = 25 MINUTES
-	action_requirement = new(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT)
+	rel_set(src, "action_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_CONTRACT_ACTION_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	action_requirement.name = "Linked study objective"
 	action_requirement.description = "Remittance is contingent upon verified receipt through the station fax or outbound freight network."
 	add_requirement(action_requirement)
@@ -281,7 +280,7 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 /proc/reconcile_medical_trial_side_contracts()
 	for(var/datum/contract/medical_trial/trial in SScontracts.active_contracts)
 		for(var/subject_id in trial.participants)
-			var/datum/medical_trial_participant/participant = trial.participants[subject_id]
+			var/datum/medical_trial_participant/participant = trial.participants?[subject_id]
 			var/mob/living/carbon/human/subject = participant.current_subject()
 			if(participant.corpse_contract_offered || subject?.stat != DEAD)
 				continue
@@ -347,10 +346,10 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 	payload["subject_name"] = subject.real_name
 	payload["signature"] = signature
 	payload["signature_time"] = EXPIRY_AT(null, CLOCK_WORLD, 0)
-	var/datum/medical_trial_participant/signed_participant = trial.participants[identity.id]
+	var/datum/medical_trial_participant/signed_participant = trial.participants?[identity.id]
 	EXPIRY_STAMP(signed_participant, consent_time, CLOCK_WORLD)
 	signed_participant.consent_evidence_id = evidence_id
-	signed_participant.consent_record = paper
+	rel_set(signed_participant, "consent_record", paper)
 	paper.name = "signed VeyMed observation record - [subject.real_name]"
 	paper.info += "<br><b>Registered subject:</b> [subject.real_name]<br><b>Status:</b> Consent registered.<br><b>Filing instruction:</b> Bundle this signed form with genuine body-scanner reports from before exposure and at least one minute after exposure, then fax the packet to [CONTRACT_FAX_VEYMED]."
 	paper.updateinfolinks()
@@ -578,4 +577,3 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 #undef MEDICAL_SIDE_AUTOPSY
 #undef MEDICAL_SIDE_SAMPLE_AMOUNT
 
-DECLARE_REF(/datum/contract/medical_trial_personal, "action_requirement", OWNED, null)

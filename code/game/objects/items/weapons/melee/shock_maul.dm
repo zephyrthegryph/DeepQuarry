@@ -168,7 +168,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/melee/shock_maul/loaded, "bcell", /obj/item/cell
 			if(!bcell)
 				user.drop_item()
 				W.forceMove(src)
-				bcell = W
+				own_set(src, "bcell", W)
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				update_held_icon()
 			else
@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			bcell = null
+			own_take(src, "bcell")
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()
@@ -305,4 +305,4 @@ DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp)
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-DECLARE_REF(/obj/item/melee/shock_maul, "bcell", HELD, null)
+OWN(/obj/item/melee/shock_maul, bcell, OWN_CONTAINED)

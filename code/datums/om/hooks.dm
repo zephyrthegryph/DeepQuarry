@@ -19,6 +19,8 @@
 		for(var/path in event_path)
 			om_hook(source, path, listener, proc_ref)
 		return TRUE
+	if(!own_guard(listener, source, "a hook ([event_path])")) // the one teardown guard (guard.dm)
+		return FALSE
 	var/datum/om/rec/srec = source && om_rec_of(source)
 	var/datum/om/rec/lrec = listener && om_rec_of(listener)
 	if(!srec || !lrec)

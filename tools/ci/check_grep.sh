@@ -233,7 +233,7 @@ part "stored timer handles"
 # for one proc) is fine; storing the id anywhere else, or returning it from a helper, is not.
 if $grep -nE '([]A-Za-z0-9_.)][[:space:]]*[-+]?=|(^|[^[:alnum:]_])return|LAZYSET\(|LAZYADD\(|list\()[[:space:]]*om_after(_replace|_unique)?\(' "${code_files[@]}" | grep -vE '^code/datums/om/|var/[[:alnum:]_]+[[:space:]]*=[[:space:]]*om_after'; then
 	echo
-	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use a timer slot: OM_TIMER_SLOT(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
+	echo -e "${RED}ERROR: a timer id from om_after() is stored or returned. Use an owned timer: OWN_TIMER(type, name) + om_after_slot(E, \"name\", ...), om_cancel_timer_slot(), om_timer_slot_pending().${NC}"
 	FAILED=1
 fi;
 

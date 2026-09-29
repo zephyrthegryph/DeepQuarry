@@ -9,10 +9,9 @@
 
 /datum/game_mode_panel/New(datum/game_mode/target_mode)
 	..()
-	src.target_mode = target_mode
+	rel_set(src, "target_mode", target_mode)
 
-DECLARE_REF(/datum/game_mode_panel, "target_mode", PAIR, "tgui_game_mode_panel")
-DECLARE_REF(/datum/game_mode, "tgui_game_mode_panel", PAIR, "target_mode")
+// The game mode owns this panel (tgui_game_mode_panel); target_mode is a plain relation back.
 
 /datum/game_mode_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)
@@ -112,5 +111,5 @@ DECLARE_REF(/datum/game_mode, "tgui_game_mode_panel", PAIR, "target_mode")
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
 	if(!SSticker.mode.tgui_game_mode_panel)
-		SSticker.mode.tgui_game_mode_panel = new(SSticker.mode)
+		own_set(SSticker.mode, "tgui_game_mode_panel", new /datum/game_mode_panel(SSticker.mode))
 	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)

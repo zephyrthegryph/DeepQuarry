@@ -72,7 +72,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
 
 /datum/world_service/supply/proc/reset_shift_economy_tracking()
-	QDEL_LIST(service_invoices)
+	own_clear(src, "service_invoices", OWN_DELETE)
 	service_invoice_counter = 0
 	service_accounting_period = 1
 	currency_created = 0
@@ -566,7 +566,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 				if(MA.export_sale(EC, FALSE))
 					things_sold_successfully += MA
 
-			exported_crates += EC
+			own_add(src, "exported_crates", EC)
 			distribute_export_revenue(EC)
 			EC.value += base_value
 
@@ -587,7 +587,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 			adm.sales_destination = EC.sales_destination
 			adm.sales_eligible_value = EC.sales_eligible_value
 			adm.sales_producer_percentages = EC.sales_producer_percentages?.Copy()
-			adm_export_history += adm
+			own_add(src, "adm_export_history", adm)
 
 			qdel(MA)
 
@@ -862,7 +862,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	refund_order(O, "Refund deleted order #[O.ordernum]: [O.supply_pack_of().name]")
 	release_market_order_reservation(O)
 	log_admin("[key_name(user)] has deleted supply order [REF(O)] [O] from the user-side order history.")
-	order_history -= O
+	own_take_member(src, "order_history", O)
 
 // Will generate a new, requested order, for the given supply pack type
 /datum/world_service/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
@@ -933,8 +933,8 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	adm_order.ordered_at = new_order.ordered_at
 	adm_order.status = new_order.status
 
-	order_history += new_order
-	adm_order_history += adm_order
+	own_add(src, "order_history", new_order)
+	own_add(src, "adm_order_history", adm_order)
 	return new_order
 
 // Will delete the specified export receipt from the user-side list
@@ -951,7 +951,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	if(!(E in exported_crates))
 		return
 	log_admin("[key_name(user)] has deleted export receipt [REF(E)] [E] from the user-side export history.")
-	exported_crates -= E
+	own_take_member(src, "exported_crates", E)
 
 // Will add an item entry to the specified export receipt on the user-side list
 /datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
@@ -1031,10 +1031,9 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 #undef ALLOCATION_POLICY_PAYROLL
 #undef DEPARTMENT_BASE_OPERATING_ALLOCATION
 
-/// DECLARE_REF(..., STATIC): the supply pack this order is for (a shared definition, held strongly).
+/// the supply pack this order is for (a shared definition, held strongly).
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
-DECLARE_REF(/datum/supply_order, "supply_pack_static", STATIC, null)
 
 /// Cargo market and department payroll (was SSsupply, 20 s).
 /datum/om/behaviour/world/supply
@@ -1045,9 +1044,10 @@ DECLARE_REF(/datum/supply_order, "supply_pack_static", STATIC, null)
 /datum/om/behaviour/world/supply/service()
 	return GLOB.supply_service
 
-DECLARE_REF(/datum/world_service/supply, "supply_pack", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "exported_crates", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "order_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "adm_order_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "adm_export_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "shuttle", STATIC, null)
+
+/// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
+/// clears by itself when that shuttle is deleted).
+REL(/datum/world_service/supply, shuttle)
+
+/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
+SHARED(/datum/world_service/supply, supply_pack)

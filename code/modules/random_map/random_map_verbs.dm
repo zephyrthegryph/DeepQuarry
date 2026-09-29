@@ -1,21 +1,23 @@
 ADMIN_VERB(print_random_map, R_DEBUG, "Display Random Map", "Show the contents of a random map.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/choice = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose a map to display.", title = "Map Choice", choices = GLOB.random_maps)
+	var/choice = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose a map to display.", title = "Map Choice", choices = random_maps_by_name())
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
-	var/datum/random_map/selected_map = GLOB.random_maps[choice]
+	var/list/maps_by_name = random_maps_by_name()
+	var/datum/random_map/selected_map = maps_by_name[choice]
 	if(istype(selected_map))
 		selected_map.display_map(user)
 
 ADMIN_VERB(delete_random_map, R_DEBUG, "Delete Random Map", "Delete a random map.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/choice = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Choose a map to delete.", title = "Map Choice", choices = GLOB.random_maps)
+	var/choice = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Choose a map to delete.", title = "Map Choice", choices = random_maps_by_name())
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
-	var/datum/random_map/selected_map = GLOB.random_maps[choice]
-	GLOB.random_maps[choice] = null
+	var/list/maps_by_name = random_maps_by_name()
+	var/datum/random_map/selected_map = maps_by_name[choice]
+	registry_leave(REGISTRY_RANDOM_MAPS, selected_map)
 	if(istype(selected_map))
 		log_and_message_admins("has deleted [selected_map.name].", user)
 		qdel(selected_map)
@@ -49,12 +51,13 @@ ADMIN_VERB(create_random_map, R_DEBUG, "Create Random Map", "Create a random map
 		log_and_message_admins("has created [selected_map.name]", user)
 
 ADMIN_VERB(apply_random_map, R_DEBUG, "Apply Random Map", "Apply a map to the game world.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/choice = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "Choose a map to apply.", title = "Map Choice", choices = GLOB.random_maps)
+	var/choice = verb_ask(user, "a8", args, /datum/om/prompt/choice, message = "Choose a map to apply.", title = "Map Choice", choices = random_maps_by_name())
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
-	var/datum/random_map/selected_map = GLOB.random_maps[choice]
+	var/list/maps_by_name = random_maps_by_name()
+	var/datum/random_map/selected_map = maps_by_name[choice]
 	if(istype(selected_map))
 		var/tx = verb_ask(user, "a9", args, /datum/om/prompt/number, message = "X? (default to current turf)")
 		if(isnull(tx))
@@ -75,21 +78,23 @@ ADMIN_VERB(apply_random_map, R_DEBUG, "Apply Random Map", "Apply a map to the ga
 		selected_map.apply_to_map()
 
 ADMIN_VERB(overlay_random_map, R_DEBUG, "Overlay Random Map", "Apply a map to another map.", ADMIN_CATEGORY_DEBUG_EVENTS)
-	var/choice = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Choose a map as base.", title = "Map Choice", choices = GLOB.random_maps)
+	var/choice = verb_ask(user, "a12", args, /datum/om/prompt/choice, message = "Choose a map as base.", title = "Map Choice", choices = random_maps_by_name())
 	if(isnull(choice))
 		return
 	if(!choice)
 		return
-	var/datum/random_map/base_map = GLOB.random_maps[choice]
+	var/list/maps_by_name = random_maps_by_name()
+	var/datum/random_map/base_map = maps_by_name[choice]
 
-	var/_answer_a13 = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Choose a map to overlay.", title = "Map Choice", choices = GLOB.random_maps)
+	var/_answer_a13 = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Choose a map to overlay.", title = "Map Choice", choices = random_maps_by_name())
 	if(isnull(_answer_a13))
 		return
 	choice = _answer_a13
 	if(!choice)
 		return
 
-	var/datum/random_map/overlay_map = GLOB.random_maps[choice]
+	maps_by_name = random_maps_by_name()
+	var/datum/random_map/overlay_map = maps_by_name[choice]
 
 	if(istype(base_map) && istype(overlay_map))
 		var/tx = verb_ask(user, "a14", args, /datum/om/prompt/number, message = "X? (default to 1)")

@@ -136,7 +136,7 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 		return
 	// Moving off a burning tile ends the fire coupling.
 	var/atom/movable/self = src
-	if(istype(self) && !isnull(om_resolve(self.heat_fire_turf_handle)) && om_resolve(self.heat_fire_turf_handle) != loc)
+	if(istype(self) && !isnull(self.heat_fire_turf) && self.heat_fire_turf != loc)
 		self.decouple_from_fire()
 
 /// Releases this atom's heat body: its excess heat goes to its surroundings
@@ -253,21 +253,20 @@ GLOBAL_LIST_INIT(heat_coupling_none, list(HEAT_TARGET_NONE, 0))
 	var/list/entries
 
 /datum/native_watch/heat/proc/start(atom/target, kind, level, both_edges, lane, keep_body)
-	src.target = target
+	rel_set(src, "target", target)
 	src.kind = kind
 	src.level = level
 	src.both_edges = both_edges
 	src.lane = lane
 	src.keep_body = keep_body
-	if(!isturf(target))
-		LAZYADD(target.heat_watches, src)
 	if(!register() && keep_body)
 		qdel(src)
 		return null
 	return src
 
-/// `target` points back at the atom whose heat_watches list holds this watch.
-DECLARE_REF(/datum/native_watch/heat, "target", BACKLIST, "heat_watches")
+/// `target` and the atom's heat_watches name each other (setting `target` lists the watch there).
+REL_PAIR(/datum/native_watch/heat, target, heat_watches)
+REL_PAIR_LIST(/atom, heat_watches, target)
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))
@@ -298,9 +297,7 @@ DECLARE_REF(/datum/native_watch/heat, "target", BACKLIST, "heat_watches")
 		vg_heat_unwatch(!isturf(target), live_index, live_generation)
 	live = FALSE
 	body = null
-	if(!isturf(target))
-		LAZYREMOVE(target?.heat_watches, src)
-	target = null
+	rel_clear(src, "target") // two-sided: the target's heat_watches lets go too
 
 /// The target's body changed (created, or released at rest): follow it.
 /datum/native_watch/heat/proc/relink()

@@ -33,7 +33,8 @@
 	/// Loot context, set by the caller so furnished crates roll appropriate tiers.
 	var/loot_difficulty = EXP_DIFF_LOW
 	var/loot_size = EXP_SIZE_SMALL
-	var/tmp/datum/expedition_biome/loot_biome_static
+	/// Relation view: the site biome that themes decoration (the site owns it).
+	var/tmp/datum/expedition_biome/loot_biome
 
 // Draw a building centred on `center`, roughly w x h tiles. Returns TRUE if a
 // usable structure (at least one room) was produced.
@@ -278,7 +279,6 @@ GLOBAL_LIST_INIT(expedition_room_furniture, list(
 	if(prob(60))
 		expedition_decorate(locate(cx, cy, z), 2, loot_biome(), rand(1, 3))
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The biome theming this building (a relation view).
 /datum/expedition_building/proc/loot_biome() as /datum/expedition_biome
-	return loot_biome_static
-DECLARE_REF(/datum/expedition_building, "loot_biome_static", STATIC, null)
+	return loot_biome

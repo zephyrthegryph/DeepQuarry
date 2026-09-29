@@ -1,5 +1,5 @@
 //Helper object for picking dionaea (and other creatures) up.
-OM_TIMER_SLOT(/obj/item/holder, cleanup_timer)
+OWN_TIMER(/obj/item/holder, cleanup_timer)
 
 /obj/item/holder
 	name = "holder"
@@ -76,7 +76,7 @@ OM_TIMER_SLOT(/obj/item/holder, cleanup_timer)
 		return
 	ASSERT(ismob(held))
 	. = ..()
-	held_mob = held
+	rel_set(src, "held_mob", held)
 	original_vis_flags = held.vis_flags
 	held.vis_flags = VIS_INHERIT_ID|VIS_INHERIT_LAYER|VIS_INHERIT_PLANE
 	vis_contents += held
@@ -90,7 +90,7 @@ OM_TIMER_SLOT(/obj/item/holder, cleanup_timer)
 		held_mob.transform = original_transform
 		held_mob.update_transform()
 		held_mob.vis_flags = original_vis_flags
-		held_mob = null
+		rel_clear(src, "held_mob")
 		invisibility = INVISIBILITY_ABSTRACT
 		schedule_cleanup_check() // once the move is over
 	..()
@@ -417,5 +417,3 @@ DECLARE_INTERACTIONS(/obj/item/holder, INTERACT_ITEM_AS(I_HURT, "Squeeze", PROC_
 
 TYPE_TABLE(/obj/item/holder/protoblob, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, POCKET_ALL_TANKS, POCKET_SUIT_REGULATORS, POCKET_EXPLO, /obj/item/storage/backpack))))
 
-DECLARE_REF(/obj/item/holder, "held_mob", HELD, null)
-DECLARE_REF(/obj/item/holder, "original_transform", OWNED, null)

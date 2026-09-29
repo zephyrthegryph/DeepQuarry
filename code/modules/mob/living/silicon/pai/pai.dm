@@ -20,6 +20,7 @@
 	var/obj/machinery/camera/current = null
 
 	var/ram = 100	// Used as currency to purchase different abilities
+	/// Installed software: id -> TRUE. The definitions are GLOB.pai_software_by_key[id].
 	var/list/software = list() // ALLOW(instance_list): d: per-mob software, sized at creation and filled in place; mobs are few
 	var/userDNA		// The DNA string of our assigned user
 
@@ -111,15 +112,17 @@
 	. = ..()
 	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
 
-	card = loc
-	if(!istype(card))
-		card = new default_pai_card_path(src) // ALLOW(decl): only when not spawned in a card
-		card.pai = src
+	if(istype(loc, /obj/item/paicard))
+		rel_set(src, "card", loc)
+	else
+		var/obj/item/paicard/new_card = new default_pai_card_path(src) // only when not spawned in a card
+		rel_set(src, "card", new_card)
+		rel_set(card, "pai", src)
 
 	if(card)
 		if(!card.radio)
-			card.radio = new /obj/item/radio/borg/pai(src.card)
-		radio = card.radio
+			own_set(card, "radio", new /obj/item/radio/borg/pai(src.card))
+		rel_set(src, "radio", card.radio)
 
 	//Default languages without universal translator software
 	add_language(LANGUAGE_SOL_COMMON, 1)
@@ -186,26 +189,8 @@
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/mob/living/silicon/pai, "card", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pai_ui_chassis", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "sradio", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "communicator", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pda", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pai_fold_display", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "eye_layer", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_south", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_north", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_east", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_west", OWNED, null)
-// `radio` is the card's radio; the cable is retracted by check_retract_cable(); records belong to the datacore.
-DECLARE_REF(/mob/living/silicon/pai, "current", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "radio", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "cable", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "medicalActive1", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "medicalActive2", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "securityActive1", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "securityActive2", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "hackdoor", HELD, null)
+// `card` is the card we live in and `radio` is the card's radio: both relations (the card owns
+// the radio). The cable is ours (implicit OWN, deleted with us); records belong to the datacore.
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)
@@ -569,7 +554,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 	cableturf.visible_message("The data cable rapidly retracts back into its spool.", "You hear a click and the sound of wire spooling rapidly.")
 	play_sfx(src, SFX_MACHINES_CLICK)
-	QDEL_NULL(cable)
+	own_clear(src, "cable", OWN_DELETE)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Update icons

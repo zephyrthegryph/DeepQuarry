@@ -13,7 +13,7 @@
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
-		laws = new using_map.default_law_type
+		own_set(src, "laws", new using_map.default_law_type)
 
 DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -26,9 +26,9 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 				to_chat(user, span_notice("You place the circuit board inside the frame."))
 				icon_state = "1"
-				circuit = P
 				user.drop_item()
 				P.forceMove(src)
+				own_set(src, "circuit", P) // CONTAINED: in our contents first
 		if(2)
 			if(istype(P, /obj/item/stack/cable_coil))
 				var/obj/item/stack/cable_coil/C = P
@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 
 				user.drop_item()
 				P.forceMove(src)
-				brain = P
+				own_set(src, "brain", P)
 				to_chat(user, "Added [P].")
 				icon_state = "3b"
 	return INTERACTION_HANDLED_PASS
@@ -162,7 +162,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				var/obj/structure/AIcore/deactivated/D = new(loc)
 				om_ask(user, /datum/om/prompt/confirm, TYPE_PROC_REF(/obj/structure/AIcore/deactivated, latejoin_answered), receiver = D, subject = D, title = "Latejoin", message = "Would you like this core to be open for latejoining AIs?")
 			else
-				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, laws, brain)
+				var/datum/ai_laws/handed_laws = own_take(src, "laws") // the new AI adopts them
+				var/mob/living/silicon/ai/A = new /mob/living/silicon/ai(loc, FALSE, handed_laws, brain)
 				if(A) //if there's no brain, the mob is deleted and a structure/AIcore is created
 					A.rename_self("ai", 1)
 					for(var/datum/language/L in A.identity().languages)
@@ -184,14 +185,14 @@ REGISTRY_MEMBERSHIP(/obj/structure/AIcore, REGISTRY_EMPTY_AI_CORES)
 				state = 1
 				icon_state = "0"
 				circuit.forceMove(loc)
-				circuit = null
+				own_take(src, "circuit")
 				return ITEM_INTERACT_SUCCESS
 		if(3)
 			if(brain)
 				playsound(src, tool.usesound, 50, 1)
 				to_chat(user, span_notice("You remove the brain."))
 				brain.forceMove(loc)
-				brain = null
+				own_take(src, "brain")
 				icon_state = "3"
 				return ITEM_INTERACT_SUCCESS
 		if(4)
@@ -320,7 +321,6 @@ ADMIN_VERB(empty_ai_core_toggle_latejoin, R_ADMIN|R_SERVER|R_EVENT, "Toggle AI C
 /obj/structure/AIcore/deactivated/proc/unbolt_abandoned(mob/user)
 	act_message(user, src, others = span_bold("%U%") + " decides not to unbolt %T%.")
 
-// laws are handed to the AI built from this core, so they aren't owned here.
-DECLARE_REF(/obj/structure/AIcore, "laws", HELD, null)
-DECLARE_REF(/obj/structure/AIcore, "circuit", HELD, null)
-DECLARE_REF(/obj/structure/AIcore, "brain", HELD, null)
+// The core owns its laws until it builds an AI, which adopts them (own_take() in the build step).
+OWN(/obj/structure/AIcore, circuit, OWN_CONTAINED)
+OWN(/obj/structure/AIcore, brain, OWN_CONTAINED)

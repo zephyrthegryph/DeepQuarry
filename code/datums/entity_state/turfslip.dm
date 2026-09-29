@@ -9,26 +9,24 @@
 
 /// Owned: the slide in progress, if any.
 /mob/living/var/datum/turfslip/turfslip
-DECLARE_REF(/mob/living, "turfslip", OWNED, null)
 
-DECLARE_REF(/datum/turfslip, "owner", BACK, "turfslip")
 
 /datum/turfslip/New(mob/living/new_owner)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	slipping_dir = owner.dir
 	om_hook(owner, /datum/om/event/moved, src, PROC_REF(move_react))
 
 /// The mob's slide, starting one if it has none (was LoadComponent).
 /mob/living/proc/get_or_start_turfslip() as /datum/turfslip
 	if(!turfslip)
-		turfslip = new /datum/turfslip(src)
+		own_set(src, "turfslip", new /datum/turfslip(src))
 	return turfslip
 
 /// Ends the slide: detaches from the mob and deletes this datum (was qdel(src) on the component).
 /datum/turfslip/proc/end_slip()
 	if(owner?.turfslip == src)
-		owner.turfslip = null
+		own_take(owner, "turfslip")
 	qdel(src)
 
 /datum/turfslip/proc/start_slip(turf/simulated/start, is_dirt)

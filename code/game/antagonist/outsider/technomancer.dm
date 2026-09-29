@@ -93,7 +93,7 @@ GLOBAL_DATUM(technomancers, /datum/antagonist/technomancer)
 	var/text = print_player_lite(player)
 
 	var/obj/item/technomancer_core/core
-	var/mob/living/original = om_resolve(player.original_character)
+	var/mob/living/original = player.original_character
 	if(original)
 		core = locate_within(original, /obj/item/technomancer_core)
 		if(core)

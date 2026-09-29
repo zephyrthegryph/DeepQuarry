@@ -8,14 +8,13 @@
  * to implement interesting matrix transformations without the hassle if needing to know... algebra? Damn, i'm stupid.
  */
 /datum/nobody_wants_to_learn_matrix_math
-	var/tmp/target_handle
+	var/tmp/atom/target
 	var/matrix/testing_matrix
 
 /datum/nobody_wants_to_learn_matrix_math/New(atom/target)
-	src.target_handle = om_handle(target)
+	rel_set(src, "target", target)
 	testing_matrix = matrix(target.transform)
 
-DECLARE_REF(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix", OWNED, null)
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)
@@ -77,6 +76,6 @@ DECLARE_REF(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix", OWNED, n
 		var/datum/nobody_wants_to_learn_matrix_math/matrix_tester = new(in_atom)
 		matrix_tester.tgui_interact(mob)
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/nobody_wants_to_learn_matrix_math/proc/target() as /atom
-	return om_resolve(target_handle)
+	return target

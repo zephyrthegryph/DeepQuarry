@@ -11,8 +11,10 @@
 /atom/proc/init_forensic_data()
 	RETURN_TYPE(/datum/forensics_crime)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!forensic_data)
-		forensic_data = new()
+	if(!forensic_data && !own_set(src, "forensic_data", new /datum/forensics_crime()))
+		// Refused by the teardown guard (we are being destroyed, ownership/guard.dm): callers get a
+		// detached record, so their writes land nowhere instead of on a null.
+		return new /datum/forensics_crime()
 	return forensic_data
 
 /// Forensics: Handles most forensic investigation actions while touching an object. Including fingerprints, stray fibers from clothing, and bloody hands smearing objects. Returns true if a fingerprint was made.

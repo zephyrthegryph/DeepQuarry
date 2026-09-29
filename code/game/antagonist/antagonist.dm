@@ -57,14 +57,14 @@
 	var/static/list/valid_species =       list(SPECIES_UNATHI,SPECIES_TAJARAN,SPECIES_SKRELL,SPECIES_HUMAN,SPECIES_DIONA,SPECIES_TESHARI)
 
 	// Runtime vars.
-	var/leader_handle                   // Current leader, if any.
+	var/datum/mind/leader                   // Current leader, if any.
 	var/cur_max = 0                         // Autotraitor current effective maximum.
 	var/spawned_nuke                        // Has a bomb been spawned?
 	var/nuke_spawn_loc                      // If so, where should it be placed?
 	var/list/current_antagonists   // All marked antagonists for this type.
 	var/list/pending_antagonists   // Candidates that are awaiting finalized antag status.
 	var/list/starting_locations   // Spawn points.
-	var/list/global_objectives   // Universal objectives if any.
+	var/list/datum/objective/global_objectives   // Universal objectives if any (owned; members share them through mind.shared_objectives).
 	// ALLOW(instance_list): d: antagonist template state; filled every roundstart selection
 	var/list/candidates =          list()   // Potential candidates.
 	var/list/faction_members   // Semi-antags (in-round revs, borer thralls)
@@ -189,7 +189,7 @@
 		log_game("[player.key] was selected for [role_text] by lottery, but they have not joined the game.")
 		return 0
 
-	LAZYOR(pending_antagonists, player)
+	rel_add(src, "pending_antagonists", player)
 	log_game("[player.key] has been selected for [role_text] by lottery.")
 
 	//Ensure that antags with ANTAG_OVERRIDE_JOB do not occupy job slots.
@@ -207,7 +207,7 @@
 		return
 
 	for(var/datum/mind/player in pending_antagonists)
-		LAZYREMOVE(pending_antagonists, player)
+		rel_remove(src, "pending_antagonists", player)
 		add_antagonist(player,0,0,1)
 
 //Resets all pending_antagonists, clearing their special_role (and assigned_role if ANTAG_OVERRIDE_JOB is set)
@@ -216,8 +216,8 @@
 		if(flags & ANTAG_OVERRIDE_JOB)
 			player.assigned_role = null
 		player.special_role = null
-	LAZYCLEARLIST(pending_antagonists)
+	rel_clear(src, "pending_antagonists")
 
-/// LC-refs: leader -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Leader (a relation view).
 /datum/antagonist/proc/leader() as /datum/mind
-	return om_resolve(leader_handle)
+	return leader

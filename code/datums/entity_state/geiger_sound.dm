@@ -8,25 +8,22 @@
 
 /// The geiger loop, owned: deleted with this datum.
 /datum/geiger_sound/var/datum/looping_sound/geiger/sound
-DECLARE_REF(/datum/geiger_sound, "sound", OWNED, null)
 
-DECLARE_REF(/datum/geiger_sound, "owner", BACK, "geiger_sound")
 
 /// Owned: the active geiger sound loop while the counter is scanning.
 /obj/item/geiger/var/datum/geiger_sound/geiger_sound
-DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 
 /datum/geiger_sound/New(atom/new_owner)
 	..()
 	if(!isatom(new_owner))
 		log_world("[type] was created for a non-atom ([new_owner]); it does nothing.")
 		return
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	attach()
 
 /datum/geiger_sound/proc/attach()
 	if(!wall_mounted)
-		sound = new(list(owner), TRUE)
+		own_set(src, "sound", new /datum/looping_sound/geiger(list(owner), TRUE))
 
 	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
@@ -58,7 +55,7 @@ DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 
 	sound.last_insulation_to_target = event.insulation_to_target
-	sound.last_radiation_pulse_ref = pulse_information
+	rel_set(sound, "last_radiation_pulse_ref", pulse_information)
 	sound.start(source)
 
 	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
@@ -113,13 +110,13 @@ DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 /datum/looping_sound/geiger/stop(null_parent = FALSE)
 	. = ..()
 
-	last_radiation_pulse_ref = null
+	rel_clear(src, "last_radiation_pulse_ref")
 
 /datum/geiger_sound/wall
 	wall_mounted = TRUE
 
 /datum/geiger_sound/wall/attach()
-	sound = new /datum/looping_sound/geiger/wall(list(owner), TRUE)
+	own_set(src, "sound", new /datum/looping_sound/geiger/wall(list(owner), TRUE))
 	..()
 
 //Subtype for wall mounted geiger counters, which should be quieter and not have the chance to play when radiation is low.
@@ -145,4 +142,3 @@ DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
 
-DECLARE_REF(/datum/looping_sound/geiger, "last_radiation_pulse_ref", HELD, null)

@@ -12,13 +12,13 @@
 
 /datum/effect/system/expl_particles
 	var/number = 10
-	var/location_handle
+	var/turf/location
 	var/total_particles = 0
 
 /datum/effect/system/expl_particles/proc/set_up(n = 10, loca)
 	number = n
-	if(istype(loca, /turf/)) location_handle = om_handle(loca)
-	else location_handle = om_handle(get_turf(loca))
+	if(istype(loca, /turf/)) rel_set(src, "location", loca)
+	else rel_set(src, "location", get_turf(loca))
 
 /datum/effect/system/expl_particles/proc/emit_one_particle()
 	var/obj/effect/expl_particles/expl = new /obj/effect/expl_particles(src.get_location())
@@ -45,11 +45,11 @@
 	expire(1 SECOND)
 
 /datum/effect/system/explosion
-	var/location_handle
+	var/turf/location
 
 /datum/effect/system/explosion/proc/set_up(loca)
-	if(istype(loca, /turf/)) location_handle = om_handle(loca)
-	else location_handle = om_handle(get_turf(loca))
+	if(istype(loca, /turf/)) rel_set(src, "location", loca)
+	else rel_set(src, "location", get_turf(loca))
 
 /datum/effect/system/explosion/proc/start()
 	new/obj/effect/explosion( get_location() )
@@ -71,10 +71,10 @@
 	P.set_up(10,get_location())
 	P.start()
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: location (reads null once it is gone).
 /datum/effect/system/expl_particles/proc/get_location() as /turf
-	return om_resolve(location_handle)
+	return location
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: location (reads null once it is gone).
 /datum/effect/system/explosion/proc/get_location() as /turf
-	return om_resolve(location_handle)
+	return location

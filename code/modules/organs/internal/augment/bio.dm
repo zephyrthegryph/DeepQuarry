@@ -114,9 +114,8 @@
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/Initialize(mapload)
 	. = ..()
-	med_analyzer = new /obj/item/healthanalyzer/advanced
+	own_set(src, "med_analyzer", new /obj/item/healthanalyzer/advanced)
 
-DECLARE_REF(/obj/item/organ/internal/augment/bioaugment/health_scan, "med_analyzer", OWNED, null)
 
 /obj/item/organ/internal/augment/bioaugment/health_scan/augment_action()
 	if(!owner)

@@ -33,7 +33,7 @@
 	log_and_message_admins("## FUSION CORE SETUP - Setup initiated by [usr].")
 
 	for(var/obj/machinery/fusion_fuel_injector/mapped/injector in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-		injector.cur_assembly = new /obj/item/fuel_assembly/deuterium(injector)
+		own_set(injector, "cur_assembly", new /obj/item/fuel_assembly/deuterium(injector))
 		injector.BeginInjecting()
 
 	var/obj/machinery/power/fusion_core/mapped/core = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MACHINES), /obj/machinery/power/fusion_core/mapped)

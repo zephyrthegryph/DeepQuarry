@@ -49,7 +49,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 /mob/living/simple_mob/mechanical/ward/monitor/crew/proc/monitor_ward_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	. = TRUE
 	if(istype(O, /obj/item/card/id) && !owner)
-		owner = user
+		rel_set(src, "owner", user)
 		return
 	return FALSE
 
@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 
 		// Warn the owner when it sees a new mob.
 		if(!(L in seen_mobs))
-			seen_mobs += L
+			rel_add(src, "seen_mobs", L)
 			newly_seen_mobs += L
 
 	if(newly_seen_mobs.len && owner) // Yell at our owner if someone new shows up.
@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/ward/monitor/crew, INTERAC
 	// Now get rid of old mobs that left vision.
 	for(var/thing in seen_mobs)
 		if(!(thing in mobs_nearby))
-			seen_mobs -= thing
+			rel_remove(src, "seen_mobs", thing)
 
 	// Check if we need to update icon.
 	if(seen_mobs.len != last_seen_mobs_len)

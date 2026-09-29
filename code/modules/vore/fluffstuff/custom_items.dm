@@ -121,7 +121,7 @@
 			var/obj/item/gun/projectile/NN = N
 			var/obj/item/gun/projectile/OO = O
 			NN.magazine_type = OO.magazine_type
-			NN.ammo_magazine = OO.ammo_magazine
+			own_transfer(OO, "ammo_magazine", NN, "ammo_magazine")
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NE = N
 			var/obj/item/gun/energy/OE = O
@@ -131,7 +131,7 @@
 			var/obj/item/gun/projectile/NM = N
 			NM.contents = list()
 			NM.magazine_type = null
-			NM.ammo_magazine = null
+			own_take(NM, "ammo_magazine")
 		if(istype(N,/obj/item/gun/energy/))
 			var/obj/item/gun/energy/NO = N
 			NO.contents = list()
@@ -577,7 +577,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 		to_chat(user, span_notice("The [name] doesn't do anything."))
 		return
 
-	owner = user	//We're paired to this guy
+	rel_set(src, "owner", user)	//We are paired to this guy
 	owner_c = user.client	//This is his client
 	update_state(1)
 	to_chat(user, span_notice("The [name] glows pleasantly blue."))
@@ -727,7 +727,6 @@ TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/
 	soundloop = new(list(src), FALSE)
 	return ..()
 
-DECLARE_REF(/obj/item/storage/backpack/saddlebag/tempest, "soundloop", OWNED, null)
 
 /obj/item/storage/backpack/saddlebag/tempest/ui_action_click(mob/user, actiontype)
 	ambulance = !(ambulance)
@@ -931,7 +930,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //Give them numbing bites.
 			var/mob/living/carbon/human/H = user
-			H.species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
+			var/datum/species/own_species = proto_private(H, "species")
+			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
 			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
@@ -1483,12 +1483,12 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie/install_default_hardware()
 	..()
-	processor_unit = new/obj/item/computer_hardware/processor_unit/small(src)
-	tesla_link = new/obj/item/computer_hardware/tesla_link(src)
-	hard_drive = new/obj/item/computer_hardware/hard_drive/(src)
-	network_card = new/obj/item/computer_hardware/network_card/advanced(src)
-	nano_printer = new/obj/item/computer_hardware/nano_printer(src)
-	battery_module = new/obj/item/computer_hardware/battery_module(src)
+	own_set(src, "processor_unit", new/obj/item/computer_hardware/processor_unit/small(src))
+	own_set(src, "tesla_link", new/obj/item/computer_hardware/tesla_link(src))
+	own_set(src, "hard_drive", new/obj/item/computer_hardware/hard_drive/(src))
+	own_set(src, "network_card", new/obj/item/computer_hardware/network_card/advanced(src))
+	own_set(src, "nano_printer", new/obj/item/computer_hardware/nano_printer(src))
+	own_set(src, "battery_module", new/obj/item/computer_hardware/battery_module(src))
 	battery_module.charge_to_full()
 
 //Stobarico - Kyu Comet
@@ -1514,7 +1514,7 @@ TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(li
 		return
 	to_chat(user, "You find [icon2html(stored_item, user.client)] [stored_item] in [src]!")
 	stored_item.forceMove(get_turf(src))
-	stored_item = null
+	own_take(src, "stored_item")
 
 // special_handling: the inherited plushie "Squeeze" steps aside, and this runs ahead of it.
 EXTEND_INTERACTIONS(/obj/item/toy/plushie/fluff/seona_mofuorb, INTERACT_SELF_AS(I_HELP, "Hug", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_DISARM, "Poke", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_GRAB, "Strangle", PROC_REF(mofuorb_squeeze_self)), INTERACT_SELF_AS(I_HURT, "Punch", PROC_REF(mofuorb_squeeze_self)))

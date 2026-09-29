@@ -15,24 +15,21 @@
 	var/teleporting = 0 //if it's in the process of teleporting
 	var/power_efficiency = 1
 	var/boosted = 0 // do we teleport mecha?
-	var/tmp/linked_pad_handle
+	var/tmp/obj/machinery/power/quantumpad/linked_pad
 
-	//mapping
-	var/static/list/mapped_quantum_pads = list()
-	var/map_pad_id = "" as text //what's my name
-	var/map_pad_link_id = "" as text //who's my friend
+	//mapping: a pad whose map_pad_link_id names another pad's map_pad_id links to it (REL_KEYED below)
+	var/map_pad_id = null as text //what's my name
+	var/map_pad_link_id = null as text //who's my friend
 
 /obj/machinery/power/quantumpad/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	if(map_pad_id)
-		mapped_quantum_pads[map_pad_id] = src
 	update_icon()
 
-/// Phase 2: leaves the quantum pad map.
-/obj/machinery/power/quantumpad/lifecycle_dematerialize()
-	. = ..()
-	mapped_quantum_pads -= map_pad_id
+// Mapped links: linked_pad auto-links to the pad whose map_pad_id equals our map_pad_link_id,
+// whichever of the two materializes first (replaces the static id map).
+REL_KEYED(/obj/machinery/power/quantumpad, linked_pad, map_pad_link_id, /obj/machinery/power/quantumpad)
+KEYED_TARGET(/obj/machinery/power/quantumpad, map_pad_id)
 
 /obj/machinery/power/quantumpad/examine(mob/user)
 	. = ..()
@@ -92,12 +89,12 @@
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/multitool/multitool = tool
 	if(panel_open)
-		multitool.connectable_handle = om_handle(src)
+		rel_set(multitool, "connectable", src)
 		to_chat(user, span_notice("You save the data in [tool]'s buffer."))
 		return ITEM_INTERACT_SUCCESS
 	if(!istype(multitool.connectable(), /obj/machinery/power/quantumpad))
 		return ITEM_INTERACT_BLOCKING
-	linked_pad_handle = om_handle(multitool.connectable())
+	rel_set(src, "linked_pad", multitool.connectable())
 	to_chat(user, span_notice("You link [src] to the one in [tool]'s buffer."))
 	update_icon()
 	return ITEM_INTERACT_SUCCESS
@@ -140,7 +137,7 @@
 		to_chat(user, span_warning("This is too unstable a platform for \the [src] to operate on!"))
 		// ition Start
 		if(linked_pad())
-			linked_pad().linked_pad_handle = null
+			rel_clear(linked_pad(), "linked_pad")
 		// ition End
 		return TRUE
 
@@ -198,9 +195,8 @@
 
 /obj/machinery/power/quantumpad/proc/initMappedLink()
 	. = FALSE
-	var/obj/machinery/power/quantumpad/link = mapped_quantum_pads[map_pad_link_id]
-	if(link)
-		linked_pad_handle = om_handle(link)
+	// The keyed relation links mapped pads when they materialize; this only reports it.
+	if(linked_pad())
 		update_icon()
 		. = TRUE
 
@@ -294,6 +290,6 @@
 
 	transport_objects(get_turf(linked_pad()))
 
-/// LC-refs: the linked_pad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the linked_pad this refers to (a relation view: it reads null once the target is deleted).
 /obj/machinery/power/quantumpad/proc/linked_pad() as /obj/machinery/power/quantumpad
-	return om_resolve(linked_pad_handle)
+	return linked_pad

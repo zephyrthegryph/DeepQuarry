@@ -41,10 +41,6 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	var/delete_on_depletion = FALSE
 	var/repeat_search = FALSE
 
-DECLARE_REF(/datum/loot_decl, "main_table", OWNED, null)
-DECLARE_REF(/datum/loot_decl, "unlucky", OWNED, null)
-DECLARE_REF(/datum/loot_decl, "uncommon", OWNED, null)
-DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 
 /// The merged spec list (DECLARE_LOOT overrides this, merging over ..()).
 /datum/loot_decl/proc/specs()
@@ -56,7 +52,7 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 	if(!length(S))
 		return FALSE
 	if(S["table"])
-		main_table = new /datum/loot_entry/sub(1, S["table"])
+		own_set(src, "main_table", new /datum/loot_entry/sub(1, S["table"]))
 	if(!isnull(S["count"]))
 		count = S["count"]
 	if(!isnull(S["chance"]))
@@ -65,11 +61,11 @@ DECLARE_REF(/datum/loot_decl, "rare", OWNED, null)
 	hook = S["hook"]
 	per_round = !!S["per_round"]
 	if(S["unlucky"])
-		unlucky = new /datum/loot_entry/sub(1, S["unlucky"])
+		own_set(src, "unlucky", new /datum/loot_entry/sub(1, S["unlucky"]))
 	if(S["uncommon"])
-		uncommon = new /datum/loot_entry/sub(1, S["uncommon"])
+		own_set(src, "uncommon", new /datum/loot_entry/sub(1, S["uncommon"]))
 	if(S["rare"])
-		rare = new /datum/loot_entry/sub(1, S["rare"])
+		own_set(src, "rare", new /datum/loot_entry/sub(1, S["rare"]))
 	uncommon_chance = S["uncommon_chance"] || 0
 	rare_chance = S["rare_chance"] || 0
 	gamma_chance = S["gamma_chance"] || 0
@@ -454,14 +450,15 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 	var/path = pick_n_take(GLOB.unique_gamma_loot)
 	if(!path)
 		for(var/P in GLOB.allocated_gamma_loot)
-			var/obj/item/I = om_resolve(GLOB.allocated_gamma_loot[P])
+			var/obj/item/I = allocated_gamma_item(P)
 			if(QDELETED(I) || istype(I.loc, /obj/machinery/computer/cryopod))
 				restore_gamma_loot(P)
 				path = P
 				break
 	if(path)
 		var/obj/item/I = new path(source)
-		GLOB.allocated_gamma_loot[path] = om_handle(I)
+		GLOB.allocated_gamma_loot |= path
+		rel_add(GLOB.poi_service, "allocated_gamma_items", I)
 		return I
 	if(decl.rare)
 		var/list/made = list()
@@ -472,4 +469,18 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 /// Restores a removed gamma loot item back to the pool.
 /proc/restore_gamma_loot(w_type)
 	GLOB.allocated_gamma_loot -= w_type
+	var/obj/item/I = allocated_gamma_item(w_type)
+	if(I)
+		rel_remove(GLOB.poi_service, "allocated_gamma_items", I)
 	GLOB.unique_gamma_loot += w_type
+
+/// The live item spawned for gamma loot path `w_type`, or null (it was deleted, or never spawned).
+/proc/allocated_gamma_item(w_type)
+	for(var/obj/item/I as anything in GLOB.poi_service.allocated_gamma_items)
+		if(I.type == w_type)
+			return I
+	return null
+
+/// The items spawned for allocated gamma loot (a relation list: a deleted item leaves it).
+/datum/world_service/pois/var/list/obj/item/allocated_gamma_items
+REL_LIST(/datum/world_service/pois, allocated_gamma_items)

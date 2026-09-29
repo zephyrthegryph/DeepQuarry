@@ -24,7 +24,7 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	cell = default_use_hicell()
+	rel_set(src, "cell", default_use_hicell()) // component_parts owns the cell; this is a view onto it
 
 	add_hose_connector(/datum/hose_connector/output)
 
@@ -33,7 +33,6 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades
@@ -45,10 +44,9 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	qdel(src.reagents)
-	src.reagents = R
+	own_set(src, "reagents", R)
 
-	cell = locate_within(src, /obj/item/cell)
+	rel_set(src, "cell", locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
 /obj/machinery/pump/update_icon()
 	..()
@@ -156,7 +154,9 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
 	user.drop_from_inventory(W, src)
-	cell = W // Link the cell to us
+	materialize_parts()
+	W.move_into(src, CONTAINER_SLOT_INTERNALS)
+	own_move(W, src, "component_parts") // the cell is a part; `cell` views it (RefreshParts())
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()
@@ -170,10 +170,12 @@ DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 /obj/machinery/pump/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(open && istype(cell))
-		user.put_in_hands(cell)
-		cell.add_fingerprint(user)
-		cell.update_icon()
-		cell = null
+		var/obj/item/cell/removed = cell
+		own_take_member(src, "component_parts", removed)
+		rel_clear(src, "cell")
+		user.put_in_hands(removed)
+		removed.add_fingerprint(user)
+		removed.update_icon()
 		set_pump_on(FALSE)
 		to_chat(user, span_notice("You remove the power cell."))
 		return TRUE

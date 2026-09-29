@@ -7,13 +7,11 @@
 	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
-DECLARE_REF(/atom/movable/ref_holder, "test", HELD, null)
-DECLARE_REF(/atom/movable/ref_holder, "test_list", WEAK_LIST, null)
-DECLARE_REF(/atom/movable/ref_holder, "test_assoc_list", WEAK_LIST, null)
+REL(/atom/movable/ref_holder, test)
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
-	static_test = null
+	rel_clear(src, "static_test")
 	..()
 
 /atom/movable/ref_test
@@ -21,7 +19,7 @@ DECLARE_REF(/atom/movable/ref_holder, "test_assoc_list", WEAK_LIST, null)
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
+REL(/atom/movable/ref_test, self_ref)
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)
@@ -44,9 +42,9 @@ DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
 	SSgarbage.should_save_refs = TRUE
 
 	//Set up for the first round of tests
-	testbed.test = victim
-	testbed.test_list += victim
-	testbed.test_assoc_list["baseline"] = victim
+	rel_set(testbed, "test", victim)
+	rel_add(testbed, "test_list", victim)
+	testbed.test_assoc_list["baseline"] = victim // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 
 	var/refcount = refcount(victim)
 	TEST_ASSERT_EQUAL(refcount, 6, "Should be: test references: 3 + baseline references: 3 (victim var, the allocated list and loc)")
@@ -65,7 +63,7 @@ DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
 	//Second round, bit harder this time
 	testbed.overlays += victim
 	testbed.vis_contents += victim
-	testbed.test_assoc_list[victim] = TRUE
+	testbed.test_assoc_list[victim] = TRUE // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 
 	var/refcount = refcount(victim)
 	TEST_ASSERT_EQUAL(refcount, 6, "Should be: test references: 3 + baseline references: 3 (victim var, the allocated list and loc)")
@@ -83,9 +81,9 @@ DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
 	SSgarbage.should_save_refs = TRUE
 
 	//Let's get a bit esoteric
-	victim.self_ref = victim
+	rel_set(victim, "self_ref", victim)
 	var/list/to_find = list(victim)
-	testbed.test_list += list(to_find)
+	testbed.test_list += list(to_find) // ALLOW(ownership): ref-tracking fixture; the test plants raw references for the reference finder to discover
 	var/list/to_find_assoc = list(victim)
 	testbed.test_assoc_list["Nesting"] = to_find_assoc
 
@@ -138,7 +136,7 @@ DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
 	SSgarbage.should_save_refs = TRUE
 
 	//Lets check static vars now, since those can be a real headache
-	testbed.static_test = victim
+	rel_set(testbed, "static_test", victim)
 
 	//Yes we do actually need to do this. The searcher refuses to read weird lists
 	//And global.vars is a really weird list

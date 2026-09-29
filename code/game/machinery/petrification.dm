@@ -16,7 +16,7 @@
 	var/tint = "#ffffff"
 	var/able_to_unpetrify = TRUE
 	var/discard_clothes = TRUE
-	var/target_handle
+	var/mob/living/carbon/human/target
 	var/list/remotes
 
 /obj/machinery/petrification/Initialize(mapload)
@@ -238,7 +238,7 @@
 	if(!machine.is_valid_target(target))
 		machine.popup_msg(actor, "They declined the request.", FALSE)
 		return
-	machine.target_handle = om_handle(target)
+	rel_set(machine, "target", target)
 	SStgui.update_uis(machine)
 
 /datum/om/flow/petrify_consent/ended(reason)
@@ -275,8 +275,8 @@
 				P.tint = tint
 				P.able_to_unpetrify = able_to_unpetrify
 				P.discard_clothes = discard_clothes
-				P.target_handle = om_handle(target_ref())
-				LAZYSET(remotes, target_ref(), P)
+				rel_set(P, "target", target_ref())
+				own_put(src, "remotes", target_ref(), P)
 				ui.user.put_in_hands(P)
 			return TRUE
 	return TRUE
@@ -285,6 +285,6 @@
 	name = "written notes"
 	info = "<font face=\"Times New Roman\">" + span_italics("Found this buried in the machine over there after digging through it a bit- I hooked it up to one of our displays so it was a bit more usable- seems to be a spare part, it was right next to another one that actually " + span_bold("was") + " hooked up. Turns things into other materials, probably one of the components that makes that machine work.") + "</font>"
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// target (a relation view: it reads null once the target is deleted).
 /obj/machinery/petrification/proc/target_ref() as /mob/living/carbon/human
-	return om_resolve(target_handle)
+	return target

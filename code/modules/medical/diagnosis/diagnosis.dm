@@ -42,8 +42,6 @@
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints
 
-DECLARE_REF(/datum/diagnosis, "findings", OWNED_LIST, null)
-DECLARE_REF(/datum/diagnosis, "profile", STATIC, null)
 
 /datum/diagnosis/proc/add_finding(datum/diagnosis_finding/F)
 	for(var/datum/diagnosis_finding/existing as anything in findings)
@@ -52,7 +50,7 @@ DECLARE_REF(/datum/diagnosis, "profile", STATIC, null)
 				existing.band = F.band
 			qdel(F)
 			return existing
-	LAZYADD(findings, F)
+	own_add(src, "findings", F)
 	return F
 
 /// Findings of `kind` (DIAG_FINDING_*), or every finding.
@@ -80,12 +78,12 @@ DECLARE_REF(/datum/diagnosis, "profile", STATIC, null)
 /datum/diagnosis/proc/sort_findings()
 	if(LAZYLEN(findings) < 2)
 		return
-	var/list/sorted = list()
-	for(var/rank in list(DIAG_BAND_CRITICAL, DIAG_BAND_SEVERE, DIAG_BAND_MODERATE, DIAG_BAND_MINOR, DIAG_BAND_NONE))
-		for(var/datum/diagnosis_finding/F as anything in findings)
-			if(F.band == rank)
-				sorted += F
-	findings = sorted
+	// In place (timsort is stable): the owned list keeps its members.
+	sortTim(findings, GLOBAL_PROC_REF(cmp_diagnosis_finding_severity))
+
+/// Most severe band first.
+/proc/cmp_diagnosis_finding_severity(datum/diagnosis_finding/a, datum/diagnosis_finding/b)
+	return _dq_band_rank(b.band) - _dq_band_rank(a.band)
 
 /// One finding: a condition, a lesion, a wound or a sign (a presenting
 /// symptom whose cause the instrument may not see).

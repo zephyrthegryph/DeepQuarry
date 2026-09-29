@@ -1,6 +1,8 @@
 /datum/reagents
 	/// Empty holders share GLOB.reagents_empty_list here and in reagent_by_id; own_reagent_lists() before writing.
-	var/list/datum/reagent/reagent_list
+	/// Owned per-holder reagent instances (untyped: the lint reads a registry-typed list as SHARED;
+	/// these instances are private copies, not the registered definitions).
+	var/list/reagent_list
 	/// Associative lookup: reagent id → /datum/reagent datum. Kept in sync with reagent_list.
 	/// Provides O(1) access for has_reagent, get_reagent_amount, get_reagent, get_data, add_reagent (existing check), del_reagent, remove_reagent.
 	var/tmp/list/datum/reagent/reagent_by_id
@@ -15,17 +17,13 @@
 
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
-	reagent_list = GLOB.reagents_empty_list
+	reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 	reagent_by_id = reagent_list
 	maximum_volume = max
-	my_atom = A
+	rel_set(src, "my_atom", A)
 
-DECLARE_REF(/datum/reagents, "reagent_list", OWNED_LIST, null)
-// The id index holds the same reagents: declared, so phase 4 empties it
-// (its members are already deleted through reagent_list by then) and the
-// holder <-> reagent.holder cycle can't survive the destroy.
-DECLARE_REF(/datum/reagents, "reagent_by_id", OWNED_VALUES, null)
-DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
+// The id index is a plain lookup over the reagents reagent_list owns (never owned itself:
+// a reagent has one owner). Its members die through reagent_list; del_reagent() keeps it in sync.
 
 /* Internal procs */
 
@@ -170,13 +168,13 @@ DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
 	if(D)
 		var/datum/reagent/R = new D.type()
 		own_reagent_lists()
-		reagent_list += R
+		own_add(src, "reagent_list", R)
 		// Only update reagent_by_id if no entry exists yet for this id.
 		// Blood incompatibility may create multiple datums with the same id; the first one
 		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.
 		if(!reagent_by_id[id])
 			reagent_by_id[id] = R
-		R.holder = src
+		rel_set(R, "holder", src)
 		R.volume = amount
 		R.initialize_data(data)
 		SetViruses(R,data)
@@ -236,7 +234,7 @@ DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
 /datum/reagents/proc/del_reagent(id)
 	var/datum/reagent/current = reagent_by_id[id]
 	if(current)
-		reagent_list -= current
+		own_take_member(src, "reagent_list", current) // qdel'd below, after the index is fixed up
 		// If another datum with the same id remains (e.g. second blood species entry),
 		// promote it into reagent_by_id so O(1) lookups still work for that id.
 		var/datum/reagent/replacement = null
@@ -249,7 +247,7 @@ DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
 		else
 			reagent_by_id -= id
 		if(!length(reagent_list))
-			reagent_list = GLOB.reagents_empty_list
+			reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
 			reagent_by_id = reagent_list
 		qdel(current)
 		update_total()
@@ -527,7 +525,7 @@ DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
 /atom/proc/create_reagents(max_vol, reagents_type = /datum/reagents)
 	if(!ispath(reagents_type))
 		reagents_type = /datum/reagents
-	reagents = new reagents_type(max_vol, src)
+	own_set(src, "reagents", new reagents_type(max_vol, src))
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID
@@ -607,7 +605,7 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 /datum/reagents/proc/own_reagent_lists()
 	var/list/empty = GLOB.reagents_empty_list
 	if(reagent_list == empty || !reagent_list)
-		reagent_list = list()
+		reagent_list = list() // ALLOW(ownership): a private empty list before own_add() (never the shared sentinel)
 	if(reagent_by_id == empty || !reagent_by_id)
 		reagent_by_id = list()
 
@@ -615,6 +613,6 @@ GLOBAL_LIST_EMPTY(reagents_empty_list)
 /// The caller still calls update_total() and friends.
 /datum/reagents/proc/adopt_reagent(datum/reagent/R)
 	own_reagent_lists()
-	reagent_list |= R
+	own_move(R, src, "reagent_list")
 	if(!reagent_by_id[R.id])
 		reagent_by_id[R.id] = R

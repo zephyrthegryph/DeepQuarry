@@ -25,7 +25,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/fusion_fuel_injector, REGISTRY_FUEL_INJECTORS
 	default_apply_parts()
 	make_rotatable()
 
-DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
+OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 
 /obj/machinery/fusion_fuel_injector/mapped
 	anchored = TRUE
@@ -84,10 +84,11 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	if(cur_assembly)
-		cur_assembly.forceMove(get_turf(src))
-		user.put_in_hands(cur_assembly)
-	cur_assembly = held
+	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
+	if(old_assembly)
+		old_assembly.forceMove(get_turf(src))
+		user.put_in_hands(old_assembly)
+	own_set(src, "cur_assembly", held)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
 		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))
@@ -136,10 +137,10 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_take(mob/user, obj/item/held, datum/interaction/interaction)
 	if(cur_assembly)
-		cur_assembly.forceMove(get_turf(src))
-		user.put_in_hands(cur_assembly)
-		act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes \the [cur_assembly] from %T%."))
-		cur_assembly = null
+		var/obj/item/fuel_assembly/removed = own_take(src, "cur_assembly")
+		removed.forceMove(get_turf(src))
+		user.put_in_hands(removed)
+		act_message(user, src, others = span_infoplain(span_bold("%U%") + " removes \the [removed] from %T%."))
 		return TRUE
 	else
 		to_chat(user, span_warning("There is no fuel rod in \the [src]."))

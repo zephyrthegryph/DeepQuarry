@@ -7,8 +7,8 @@
 	lifespan = ANOMALY_COUNTDOWN_TIMER * 2
 	danger_mult = 1.1
 
-	/// Who are we moving towards?
-	var/pursuit_target
+	/// Relation view: who are we moving towards?
+	var/mob/living/pursuit_target
 	/// Cooldown for every anomaly pulse
 	COOLDOWN_DECLARE(pulse_cooldown)
 	/// How many seconds between each anomaly pulse
@@ -18,7 +18,7 @@
 
 /obj/effect/anomaly/bioscrambler/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
-	pursuit_target = om_handle(find_nearest_target())
+	rel_set(src, "pursuit_target", find_nearest_target())
 
 /obj/effect/anomaly/bioscrambler/anomalyEffect(seconds_per_tick)
 	. = ..()
@@ -41,25 +41,25 @@
 	update_target()
 	if(isnull(pursuit_target))
 		return ..()
-	var/turf/step_turf = get_step(src, get_dir(src, om_resolve(pursuit_target)))
+	var/turf/step_turf = get_step(src, get_dir(src, pursuit_target))
 	step_to(src, step_turf)
 
 /obj/effect/anomaly/bioscrambler/proc/update_target()
-	var/mob/living/current_target = om_resolve(pursuit_target)
+	var/mob/living/current_target = pursuit_target
 	if(QDELETED(current_target))
-		pursuit_target = null
+		rel_clear(src, "pursuit_target")
 	if(!isnull(pursuit_target) && prob(80))
 		return
 	var/mob/living/new_target = find_nearest_target()
 	if(isnull(new_target))
-		pursuit_target = null
+		rel_clear(src, "pursuit_target")
 		return
 	if(new_target == current_target)
 		return
 	if(isbelly(new_target.loc) || istype(new_target.loc, /area/crew_quarters))
 		return
 	current_target = new_target
-	pursuit_target = om_handle(new_target)
+	rel_set(src, "pursuit_target", new_target)
 
 /obj/effect/anomaly/bioscrambler/proc/find_nearest_target()
 	var/closest_distance = INFINITY

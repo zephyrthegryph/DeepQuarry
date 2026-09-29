@@ -7,7 +7,7 @@
 	danger_mult = 0.8
 	/// Range of effect, if left alone anomaly will convert a 2(range)+1 squared area.
 	var/range = 3
-	/// List of turfs this anomaly will try to transform before relocating
+	/// Relation list view: turfs this anomaly will try to transform before relocating
 	var/list/turf/target_turfs
 	/// Current anomaly 'theme', dictates what tiles to create.
 	var/datum/dimension_theme/theme
@@ -48,20 +48,20 @@
 
 	var/turf/affected_turf = LAZYACCESS(target_turfs, 1)
 	theme.apply_theme(affected_turf, show_effect = TRUE)
-	LAZYREMOVE(target_turfs, affected_turf)
+	rel_remove(src, "target_turfs", affected_turf)
 
 /obj/effect/anomaly/dimensional/proc/prepare_area(new_theme_path)
 	if(!new_theme_path)
 		new_theme_path = pick(subtypesof(/datum/dimension_theme))
 
-	theme = new new_theme_path
+	own_set(src, "theme", new new_theme_path)
 
 	apply_theme_icon()
 
-	target_turfs = list()
+	rel_clear(src, "target_turfs")
 	for(var/turf/turf in spiral_range_turfs(range, src))
 		if(theme.can_convert(turf))
-			LAZYADD(target_turfs, turf)
+			rel_add(src, "target_turfs", turf)
 
 /obj/effect/anomaly/dimensional/proc/apply_theme_icon()
 	overlays -= theme_icon
@@ -111,7 +111,4 @@
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)
 
-DECLARE_REF(/obj/effect/anomaly/dimensional, "theme", OWNED, null)
-DECLARE_REF(/obj/effect/anomaly/dimensional, "theme_icon", OWNED, null)
 
-DECLARE_REF(/obj/effect/anomaly/dimensional, "target_turfs", STATIC, null)

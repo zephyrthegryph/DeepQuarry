@@ -19,7 +19,7 @@
 	var/list/prize_list //Generated during Initialize
 	var/dirty_items = FALSE // Used to refresh the static/redundant data in case the machine gets VV'd
 
-DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
+OWN(/obj/machinery/mineral/equipment_vendor, inserted_id, OWN_SPILL)
 
 // prize entries are nested per category.
 /obj/machinery/mineral/equipment_vendor/on_destroy(force)
@@ -40,6 +40,8 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 
 /obj/machinery/mineral/equipment_vendor/Initialize(mapload)
 	. = ..()
+	// Plain nested data: category -> entry name -> /datum/data/mining_equipment (a name/path/cost
+	// record, freed in on_destroy()). Rebuilt per vendor type here.
 	prize_list = list()
 	prize_list["Gear"] = list(
 		EQUIPMENT("Brown Webbing",								/obj/item/clothing/accessory/storage/brown_vest,			500),
@@ -166,7 +168,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 	if(inserted_id && !powered())
 		visible_message(span_notice("The ID slot indicator light flickers on \the [src] as it spits out a card before powering down."))
 		inserted_id.forceMove(get_turf(src))
-		inserted_id = null
+		own_take(src, "inserted_id")
 
 /obj/machinery/mineral/equipment_vendor/update_icon()
 	if(panel_open)
@@ -257,7 +259,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 			if(!inserted_id)
 				return
 			ui.user.put_in_hands(inserted_id)
-			inserted_id = null
+			own_take(src, "inserted_id")
 		if("purchase")
 			if(!inserted_id)
 				flick(icon_deny, src)
@@ -311,7 +313,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 		return TRUE
 	else if(!inserted_id && (user.unEquip(I) || isrobot(user)))
 		I.forceMove(src)
-		inserted_id = I
+		own_set(src, "inserted_id", I)
 		tgui_interact(user)
 	return TRUE
 
@@ -324,7 +326,7 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 /obj/machinery/mineral/equipment_vendor/dismantle()
 	if(inserted_id)
 		inserted_id.forceMove(loc) //Prevents deconstructing the ORM from deleting whatever ID was inside it.
-		inserted_id = null
+		own_take(src, "inserted_id")
 	. = ..()
 
 /**
@@ -415,7 +417,18 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 		path = /obj/item/stack/marker_beacon
 	if(!name)
 		name = "Generic Entry"
-	prize_list += new /datum/data/mining_equipment(name, path, cost)
+	// Entries live in the "Extra" category (prize_list is category -> name -> entry).
+	if(!prize_list)
+		prize_list = list()
+	var/list/extra = prize_list["Extra"]
+	if(!islist(extra))
+		extra = list()
+		prize_list["Extra"] = extra
+	var/datum/data/mining_equipment/old_entry = extra[name]
+	if(old_entry)
+		qdel(old_entry) // ALLOW(lifecycle): the vendor's own catalogue entry, replaced by the new one below
+	extra[name] = new /datum/data/mining_equipment(name, path, cost)
+	dirty_items = TRUE
 
 DAMAGE_REACTION(/obj/machinery/mineral/equipment_vendor, DAMAGE_EXPLOSION, PROC_REF(vendor_blast_sparks))
 
@@ -423,4 +436,3 @@ DAMAGE_REACTION(/obj/machinery/mineral/equipment_vendor, DAMAGE_EXPLOSION, PROC_
 /obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/damage_packet/packet)
 	fx_sparks(src, 5)
 
-DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "prize_list", OWNED_LIST, null)

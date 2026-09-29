@@ -46,6 +46,9 @@ GLOBAL_VAR(latent_last_refusal)
 	var/slot
 	/// Unique per holder, like a real thing's entry serial.
 	var/serial
+	/// Parked OM handle slots of collapsed things in this entry (om_handle_park()): each one
+	/// re-materializes into its old slot, so handles and relation views to it survive the round trip.
+	var/list/handles
 	/// Bumped on every change, so a stale id is refused (invariant 1).
 	var/generation = 0
 	/// Merge key: slot, type and state hash.
@@ -277,6 +280,10 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 /// Sets an entry's count, keeping capacity and aggregates current. At zero
 /// the entry is removed.
 /datum/ledger/proc/latent_set_count(datum/latent_entry/entry, n)
+	// Fewer things than parked identities: the surplus things are gone for good.
+	while(LAZYLEN(entry.handles) > max(0, n))
+		om_handle_release_parked(entry.handles[length(entry.handles)])
+		entry.handles.len--
 	remove_snapshot(entry.snapshot)
 	used[entry.slot] -= entry.unit_cost * entry.count
 	latent_total -= entry.count
@@ -344,14 +351,27 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/slot = entry.slot
 	var/list/audit_blob = entry.audit_blob
 	entry.audit_blob = null // only the first materialize after a collapse is checked
+	// Identities to re-materialize into, taken before the count drops (a count drop releases
+	// the entry's surplus parked handles).
+	var/list/reuse = null
+	for(var/i in 1 to min(n, LAZYLEN(entry.handles)))
+		LAZYADD(reuse, entry.handles[length(entry.handles)])
+		entry.handles.len--
 	// The ledger move: the entry gives them up before they exist.
 	latent_set_count(entry, entry.count - n)
 	for(var/i in 1 to n)
 		pending_new_slot = slot
 		var/atom/movable/thing = dq_latent_create(path, blob, holder)
 		pending_new_slot = null
+		var/hid = LAZYLEN(reuse) ? reuse[length(reuse)] : 0
+		if(hid)
+			reuse.len--
 		if(!thing || QDELETED(thing))
+			if(hid)
+				om_handle_release_parked(hid)
 			continue
+		if(hid)
+			om_handle_unpark(thing, hid)
 		var/list/record = entries[thing]
 		if(record && record[LEDGER_E_SLOT] != slot)
 			reslot(thing, slot)
@@ -458,8 +478,16 @@ DECLARE_SHARED_CACHE(latent_type_snapshot, GLOBAL_PROC_REF(build_latent_type_sna
 	var/slot = record[LEDGER_E_SLOT]
 	var/path = type
 	var/holder_type = loc.type
+	// Keep the identity (ownership.md sec 4.1): the handle slot is parked and relation views naming
+	// this thing go dormant, to re-link when the entry re-materializes into the same slot.
+	var/hid = om_handle_park(src)
 	qdel(src)
 	var/datum/latent_entry/entry = L.latent_add(path, 1, blob, slot)
+	if(hid)
+		if(entry)
+			LAZYADD(entry.handles, hid)
+		else
+			om_handle_release_parked(hid)
 	if(entry && dq_latency_audit_enabled())
 		entry.audit_blob = blob
 	dq_latency_log("collapsed", path, holder_type)

@@ -28,7 +28,6 @@
 /datum/dq_state_holder
 	var/atom/held
 
-DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 
 /datum/dq_state_holder/proc/on_signal(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
@@ -151,7 +150,7 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 	owned.text = "owned"
 	probe.path_value = /obj/item/paper
 	probe.values = list("plain", 3, /obj/item/pen, "#hash" = "escaped", "#path" = "not a wrapper")
-	probe.ref_value = owned
+	own_set(probe, "ref_value", owned) // the owned codec: the probe owns it
 	var/list/blob = state_serialize(probe)
 	TEST_ASSERT_NOTNULL(blob, "the probe should serialize")
 	var/datum/dq_state_probe/copy = state_materialize(json_decode(json_encode(blob)), null)
@@ -234,11 +233,19 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "a box of paper with no outside references should collapse: [jointext(blockers, "; ")]")
 
+	// A relation view naming the box is accounted for: collapse parks it under the box's handle
+	// slot and it re-links on materialize (ownership.md 4.4), so it does not block.
 	var/datum/dq_state_holder/holder = new
-	holder.held = box
+	rel_set(holder, "held", box)
 	blockers = box.state_collapse_blockers(1)
-	TEST_ASSERT(length(blockers) == 1 && findtext(blockers[1], "outside"), "an outside var holding the box should block collapse: [jointext(blockers, "; ")]")
+	TEST_ASSERT_EQUAL(length(blockers), 0, "a relation view naming the box should not block collapse: [jointext(blockers, "; ")]")
 	qdel(holder)
+
+	// A reference the framework doesn't know about (a list the box was put in by hand) does.
+	var/list/outside = list(box)
+	blockers = box.state_collapse_blockers(1)
+	TEST_ASSERT(length(blockers) == 1 && findtext(blockers[1], "outside"), "an outside reference holding the box should block collapse: [jointext(blockers, "; ")]")
+	outside.Cut()
 	blockers = box.state_collapse_blockers(1)
 	TEST_ASSERT_EQUAL(length(blockers), 0, "releasing the outside reference should unblock: [jointext(blockers, "; ")]")
 
@@ -368,24 +375,24 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 	// The soulgem saves its linked belly by name and relinks it on load.
 	var/obj/soulgem/gem = new(pred)
 	gem.inside_flavor = "a test room"
-	gem.linked_belly_handle = om_handle(copy)
+	rel_set(gem, "linked_belly", copy)
 	var/list/gem_blob = state_serialize(gem, NONE, errors)
 	TEST_ASSERT_NOTNULL(gem_blob, "the soulgem should serialize: [jointext(errors, "; ")]")
 	var/list/gem_vars = gem_blob[STATE_KEY_VARS]
-	TEST_ASSERT_EQUAL(gem_vars["linked_belly_handle"], "Tummy", "the linked belly should be saved by name")
-	gem.linked_belly_handle = null
+	TEST_ASSERT_EQUAL(gem_vars["linked_belly"], "Tummy", "the linked belly should be saved by name")
+	rel_clear(gem, "linked_belly")
 	var/obj/soulgem/gem_copy = state_materialize(json_decode(json_encode(gem_blob)), pred, NONE, errors)
 	TEST_ASSERT_EQUAL(gem_copy?.inside_flavor, "a test room", "soulgem text should round trip")
 	TEST_ASSERT(gem_copy?.linked_belly()?.name == "Tummy", "the soulgem should relink the belly by name")
 	qdel(gem_copy)
-	// A v1 save names the var "linked_belly": state_migrate() carries it over.
+	// A v2 save names the var "linked_belly_handle": state_migrate() carries it over.
 	var/list/old_gem_blob = json_decode(json_encode(gem_blob))
-	old_gem_blob[STATE_KEY_VERSION] = 1
+	old_gem_blob[STATE_KEY_VERSION] = 2
 	var/list/old_gem_vars = old_gem_blob[STATE_KEY_VARS]
-	old_gem_vars["linked_belly"] = old_gem_vars["linked_belly_handle"]
-	old_gem_vars -= "linked_belly_handle"
+	old_gem_vars["linked_belly_handle"] = old_gem_vars["linked_belly"]
+	old_gem_vars -= "linked_belly"
 	var/obj/soulgem/old_gem = state_materialize(old_gem_blob, pred, NONE, errors)
-	TEST_ASSERT(old_gem?.linked_belly()?.name == "Tummy", "a v1 soulgem save should relink its belly: [jointext(errors, "; ")]")
+	TEST_ASSERT(old_gem?.linked_belly()?.name == "Tummy", "a v2 soulgem save should relink its belly: [jointext(errors, "; ")]")
 	qdel(old_gem)
 	qdel(gem)
 
@@ -401,6 +408,6 @@ DECLARE_REF(/datum/dq_state_holder, "held", HELD, null)
 	var/list/errors = list()
 	TEST_ASSERT_NULL(state_serialize(paper, NONE, errors), "a paper with a pinned contract document should refuse serialization")
 	TEST_ASSERT(length(errors), "the pinned refusal should say why")
-	paper.contract_document = null
+	own_take(paper, "contract_document")
 	qdel(document)
 	TEST_ASSERT_NOTNULL(state_serialize(paper), "the paper should serialize again once the document is gone")

@@ -16,8 +16,8 @@
 	var/authenticated = null
 	var/rank = null
 	var/screen = null
-	var/active1_handle
-	var/active2_handle
+	var/datum/data/record/active1
+	var/datum/data/record/active2
 	var/list/temp = null
 	var/printing = null
 	// The below are used to make modal generation more convenient
@@ -72,7 +72,7 @@
 		scan.forceMove(get_turf(src))
 		if(!user.get_active_hand() && ishuman(user))
 			user.put_in_hands(scan)
-		scan = null
+		own_take(src, "scan")
 	else
 		to_chat(user, "There is nothing to remove from the console.")
 	return TRUE
@@ -92,7 +92,7 @@
 	if(!user.unEquip(held))
 		return FALSE
 	held.forceMove(src)
-	scan = held
+	own_set(src, "scan", held)
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
 	return TRUE
@@ -152,7 +152,7 @@
 			if(SEC_DATA_RECORD)
 				var/list/general = list()
 				data["general"] = general
-				if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+				if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 					var/list/fields = list()
 					general["fields"] = fields
 					fields[++fields.len] = FIELD("Name", active1().fields["name"], "name")
@@ -176,7 +176,7 @@
 
 				var/list/security = list()
 				data["security"] = security
-				if(istype(active2(), /datum/data/record) && GLOB.data_core.security.Find(active2()))
+				if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.security))
 					var/list/fields = list()
 					security["fields"] = fields
 					fields[++fields.len] = FIELD("Criminal Status", active2().fields["criminal"], "criminal")
@@ -199,10 +199,10 @@
 	if(..())
 		return TRUE
 
-	if(!GLOB.data_core.general.Find(active1()))
-		active1_handle = null
-	if(!GLOB.data_core.security.Find(active2()))
-		active2_handle = null
+	if(!(active1() in GLOB.data_core.general))
+		rel_clear(src, "active1")
+	if(!(active2() in GLOB.data_core.security))
+		rel_clear(src, "active2")
 
 	. = TRUE
 	if(tgui_act_modal(action, params, ui.user))
@@ -216,13 +216,13 @@
 				scan.forceMove(loc)
 				if(ishuman(ui.user) && !ui.user.get_active_hand())
 					ui.user.put_in_hands(scan)
-				scan = null
+				own_take(src, "scan")
 			else
 				var/obj/item/I = ui.user.get_active_hand()
 				if(istype(I, /obj/item/card/id))
 					ui.user.drop_item()
 					I.forceMove(src)
-					scan = I
+					own_set(src, "scan", I)
 		if("login")
 			var/login_type = text2num(params["login_type"])
 			if(login_type == LOGIN_TYPE_NORMAL && istype(scan))
@@ -237,8 +237,8 @@
 				var/mob/living/silicon/robot/R = ui.user
 				rank = "[R.modtype] [R.braintype]"
 			if(authenticated)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				screen = SEC_DATA_R_LIST
 		else
 			. = FALSE
@@ -254,15 +254,15 @@
 					scan.forceMove(loc)
 					if(ishuman(ui.user) && !ui.user.get_active_hand())
 						ui.user.put_in_hands(scan)
-					scan = null
+					own_take(src, "scan")
 				authenticated = null
 				screen = null
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("screen")
 				screen = clamp(text2num(params["screen"]) || 0, SEC_DATA_R_LIST, SEC_DATA_RECORD)
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 			if("del_all")
 				for(var/datum/data/record/R in GLOB.data_core.security)
 					qdel(R)
@@ -288,7 +288,7 @@
 				om_ask(ui.user, /datum/om/prompt/text/record_notes, PROC_REF(record_notes_entered), default = html_decode(active2().fields["notes"]), record = active2())
 			if("d_rec")
 				var/datum/data/record/general_record = locate(params["d_rec"] || "")
-				if(!GLOB.data_core.general.Find(general_record))
+				if(!(general_record in GLOB.data_core.general))
 					set_temp("Record not found.", "danger")
 					return
 
@@ -298,8 +298,8 @@
 						security_record = M
 						break
 
-				active1_handle = om_handle(general_record)
-				active2_handle = om_handle(security_record)
+				rel_set(src, "active1", general_record)
+				rel_set(src, "active2", security_record)
 				screen = SEC_DATA_RECORD
 			if("new")
 				if(istype(active1(), /datum/data/record) && !istype(active2(), /datum/data/record))
@@ -315,8 +315,8 @@
 					R.fields["ma_crim_d"]	= "No major crime convictions."
 					R.fields["notes"]		= "No notes."
 					R.fields["notes"]		= "No notes."
-					GLOB.data_core.security += R
-					active2_handle = om_handle(R)
+					own_add(GLOB.data_core, "security", R)
+					rel_set(src, "active2", R)
 					screen = SEC_DATA_RECORD
 					set_temp("Security record created.", "success")
 			if("del_c")
@@ -329,22 +329,22 @@
 				if(comments[index])
 					comments.Cut(index, index + 1)
 			if("search")
-				active1_handle = null
-				active2_handle = null
+				rel_clear(src, "active1")
+				rel_clear(src, "active2")
 				var/t1 = lowertext(params["t1"] || "")
 				if(!length(t1))
 					return
 
 				for(var/datum/data/record/R in GLOB.data_core.general)
 					if(t1 == lowertext(R.fields["name"]) || t1 == lowertext(R.fields["id"]) || t1 == lowertext(R.fields["fingerprint"]))
-						active1_handle = om_handle(R)
+						rel_set(src, "active1", R)
 						break
 				if(!active1())
 					set_temp("Security record not found. You must enter the person's exact name, ID, or fingerprint.", "danger")
 					return
 				for(var/datum/data/record/E in GLOB.data_core.security)
 					if(E.fields["name"] == active1().fields["name"] && E.fields["id"] == active1().fields["id"])
-						active2_handle = om_handle(E)
+						rel_set(src, "active2", E)
 						break
 				screen = SEC_DATA_RECORD
 			if("print_p")
@@ -462,8 +462,9 @@
 		event_tags += "custody_resolution"
 	else if(new_status == "None" && old_status == "Incarcerated" && custody["verified"])
 		event_tags += "record_cleared"
-	LAZYINITLIST(active2().disposition_history)
-	active2().disposition_history.Add(list(list(
+	var/datum/data/record/disposition_record = active2()
+	LAZYINITLIST(disposition_record.disposition_history)
+	disposition_record.disposition_history.Add(list(list(
 		"occurred_at" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 		"actor_account" = contract_account_for_mob(user)?.account_number,
 		"actor_name" = user?.real_name,
@@ -501,7 +502,7 @@
 /obj/machinery/computer/secure_data/proc/print_finish()
 	var/obj/item/paper/P = new(loc)
 	P.info = "<center>" + span_bold("Security Record") + "</center><br>"
-	if(istype(active1(), /datum/data/record) && GLOB.data_core.general.Find(active1()))
+	if(istype(active1(), /datum/data/record) && (active1() in GLOB.data_core.general))
 		P.info += {"Name: [active1().fields["name"]] ID: [active1().fields["id"]]
 		<br>\nSex: [active1().fields["sex"]]
 		<br>\nSpecies: [active1().fields["species"]]
@@ -511,7 +512,7 @@
 		<br>\nMental Status: [active1().fields["m_stat"]]<br>"}
 	else
 		P.info += span_bold("General Record Lost!") + "<br>"
-	if(istype(active2(), /datum/data/record) && GLOB.data_core.security.Find(active2()))
+	if(istype(active2(), /datum/data/record) && (active2() in GLOB.data_core.security))
 		P.info += {"<br>\n<center><b>Security Data</b></center>
 		<br>\nCriminal Status: [active2().fields["criminal"]]<br>\n
 		<br>\nMinor Crimes: [active2().fields["mi_crim"]]
@@ -594,12 +595,12 @@ DAMAGE_REACTION(/obj/machinery/computer/secure_data, DAMAGE_EMP, PROC_REF(secure
 
 #undef FIELD
 
-DECLARE_REF(/obj/machinery/computer/secure_data, "scan", HELD, null)
+OWN(/obj/machinery/computer/secure_data, scan, OWN_CONTAINED)
 
-/// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active1() as /datum/data/record
-	return om_resolve(active1_handle)
+	return active1
 
-/// LC-refs: active2 -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The selected record (a relation view).
 /obj/machinery/computer/secure_data/proc/active2() as /datum/data/record
-	return om_resolve(active2_handle)
+	return active2

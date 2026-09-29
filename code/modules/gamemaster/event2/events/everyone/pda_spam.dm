@@ -14,13 +14,13 @@
 	EXPIRY_DECLARE(last_spam_time) // world.time of most recent spam.
 	var/next_spam_attempt_time = 0 // world.time of next attempt to try to spam.
 	var/give_up_after = 5 MINUTES
-	var/tmp/MS_handle
-	var/tmp/node_handle
+	var/tmp/obj/machinery/message_server/MS
+	var/tmp/obj/machinery/exonet_node/node
 
 /datum/event2/event/pda_spam/set_up()
 	EXPIRY_STAMP(src, last_spam_time, CLOCK_WORLD)// So it won't immediately give up.
-	MS_handle = om_handle(pick_message_server())
-	node_handle = om_handle(get_exonet_node())
+	rel_set(src, "MS", pick_message_server())
+	rel_set(src, "node", get_exonet_node())
 
 /datum/event2/event/pda_spam/event_tick()
 	if(!can_spam())
@@ -65,11 +65,11 @@
 
 /datum/event2/event/pda_spam/proc/can_spam()
 	if(!node() || !node().on || !node().allow_external_PDAs)
-		node_handle = om_handle(get_exonet_node())
+		rel_set(src, "node", get_exonet_node())
 		return FALSE
 
 	if(!MS() || !MS().active)
-		MS_handle = om_handle(pick_message_server())
+		rel_set(src, "MS", pick_message_server())
 		return FALSE
 
 	return TRUE
@@ -141,10 +141,10 @@
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS)))
 		return pick(REGISTRY_MEMBERS(REGISTRY_MESSAGE_SERVERS))
 
-/// LC-refs: the MS this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the MS var.
 /datum/event2/event/pda_spam/proc/MS() as /obj/machinery/message_server
-	return om_resolve(MS_handle)
+	return MS
 
-/// LC-refs: the node this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the node var.
 /datum/event2/event/pda_spam/proc/node() as /obj/machinery/exonet_node
-	return om_resolve(node_handle)
+	return node

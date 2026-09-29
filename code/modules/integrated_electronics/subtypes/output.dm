@@ -374,7 +374,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
 
 // its hologram goes with it.
-DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram", OWNED, null)
 
 /obj/item/integrated_circuit/output/holographic_projector/do_work()
 	var/toggled = get_pin_data(IC_INPUT, 1)
@@ -436,7 +435,7 @@ DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram
 
 	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
-			hologram = new(src)
+			own_set(src, "hologram", new /obj/effect/overlay/holographic(src))
 			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
 		//	holo_icon.GrayScale() // So it looks better colored.
 			if(holo_color) // The color pin should ensure that it is a valid hex.
@@ -451,7 +450,7 @@ DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram
 	return FALSE
 
 /obj/item/integrated_circuit/output/holographic_projector/proc/destroy_hologram()
-	QDEL_NULL(hologram)
+	own_clear(src, "hologram", OWN_DELETE)
 
 
 	power_draw_idle = 0
@@ -470,4 +469,3 @@ DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram
 		destroy_hologram()
 		set_pin_data(IC_INPUT, 1, FALSE)
 
-DECLARE_REF(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice", OWNED, null)

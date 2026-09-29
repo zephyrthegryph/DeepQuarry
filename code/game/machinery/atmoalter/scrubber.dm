@@ -22,7 +22,7 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
-		cell = new/obj/item/cell/apc(src)
+		own_set(src, "cell", new/obj/item/cell/apc(src))
 	make_climbable()
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))
@@ -147,7 +147,7 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EM
 		if("eject")
 			if(holding)
 				holding.forceMove(loc)
-				holding = null
+				own_take(src, "holding")
 			. = TRUE
 		if("volume_adj")
 			volume_rate = CLAMP(text2num(params["vol"]), minrate, maxrate)

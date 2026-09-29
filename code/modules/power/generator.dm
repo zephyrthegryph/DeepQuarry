@@ -18,8 +18,8 @@
 	var/max_power = 500000
 	var/thermal_efficiency = 0.65
 
-	var/tmp/circ1_handle
-	var/tmp/circ2_handle
+	var/tmp/obj/machinery/atmospherics/binary/circulator/circ1
+	var/tmp/obj/machinery/atmospherics/binary/circulator/circ2
 
 	var/last_circ1_gen = 0
 	var/last_circ2_gen = 0
@@ -34,7 +34,7 @@
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/Initialize(mapload)
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
 	make_rotatable()
 	..() //Not returned, because...
@@ -43,7 +43,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 /obj/machinery/power/generator/LateInitialize()
 	reconnect()
 
-DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 
 //generators connect in dir and GLOB.reverse_dir(dir) directions
 //mnemonic to determine circulator/generator directions: the cirulators orbit clockwise around the generator
@@ -52,25 +51,25 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 //note that the circulator's outlet dir is it's always facing dir, and it's inlet is always the reverse
 /obj/machinery/power/generator/proc/reconnect()
 	clear_gas_dependencies()
-	circ1_handle = null
-	circ2_handle = null
+	rel_clear(src, "circ1")
+	rel_clear(src, "circ2")
 	if(src.loc && anchored)
 		if(src.dir & (EAST|WEST))
-			circ1_handle = om_handle(locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
-			circ2_handle = om_handle(locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ1", locate_within(get_step(src,WEST), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ2", locate_within(get_step(src,EAST), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2())
 				if(circ1().dir != NORTH || circ2().dir != SOUTH)
-					circ1_handle = null
-					circ2_handle = null
+					rel_clear(src, "circ1")
+					rel_clear(src, "circ2")
 
 		else if(src.dir & (NORTH|SOUTH))
-			circ1_handle = om_handle(locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
-			circ2_handle = om_handle(locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ1", locate_within(get_step(src,NORTH), /obj/machinery/atmospherics/binary/circulator))
+			rel_set(src, "circ2", locate_within(get_step(src,SOUTH), /obj/machinery/atmospherics/binary/circulator))
 
 			if(circ1() && circ2() && (circ1().dir != EAST || circ2().dir != WEST))
-				circ1_handle = null
-				circ2_handle = null
+				rel_clear(src, "circ1")
+				rel_clear(src, "circ2")
 
 /// Wakes only once either circulator loop has a pressure head worth turning -- the test the old
 /// dependency filter made.
@@ -83,7 +82,7 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 		var/id = air?.arena_id()
 		if(!isnull(id))
 			mixture_ids |= id
-	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, CALLBACK(src, PROC_REF(gas_wake_condition)), wake_callback = CALLBACK(src, PROC_REF(wake_from_gas)))
+	om_watch_arm_condition(src, "gas", mixture_ids, GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
 /obj/machinery/power/generator/proc/gas_wake_condition()
 	if(!circ1() || !circ2())
@@ -327,10 +326,10 @@ DECLARE_REF(/obj/machinery/power/generator, "soundloop", OWNED, null)
 	..()
 	register_gas_dependencies()
 
-/// LC-refs: the circ1 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the circ1 this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/generator/proc/circ1() as /obj/machinery/atmospherics/binary/circulator
-	return om_resolve(circ1_handle)
+	return circ1
 
-/// LC-refs: the circ2 this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the circ2 this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/generator/proc/circ2() as /obj/machinery/atmospherics/binary/circulator
-	return om_resolve(circ2_handle)
+	return circ2

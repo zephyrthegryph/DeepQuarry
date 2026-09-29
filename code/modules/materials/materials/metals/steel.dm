@@ -12,7 +12,7 @@
 	supply_conversion_value = 0.15
 
 /datum/material/steel/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe_list("office chairs",list(
 			new /datum/stack_recipe("dark office chair", /obj/structure/bed/chair/office/dark, 5, one_per_turf = 1, on_floor = 1, recycle_material = "[name]"),
@@ -239,3 +239,4 @@
 			new /datum/stack_recipe("orange sofa corner", /obj/structure/bed/chair/sofa/corner/orange, 1, one_per_turf = 1, on_floor = 1), \
 			)),
 	)
+	return recipes

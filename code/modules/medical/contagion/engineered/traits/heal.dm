@@ -93,7 +93,7 @@
 	var/tetsuo = FALSE
 	var/bruteheal = FALSE
 
-	var/tmp/ownermind_handle
+	var/tmp/datum/mind/ownermind
 
 	threshold_descs = list(
 		"Stage Speed 6" = "The disease heals brute damage at a fast rate, but causes expulsion of benign tumors.",
@@ -113,7 +113,7 @@
 			power = 3
 
 	var/mob/living/carbon/human/H = A.host
-	ownermind_handle = om_handle(H.mind)
+	rel_set(src, "ownermind", H.mind)
 
 /datum/viral_trait/growth/Activate(datum/affliction/contagion/engineered/A)
 	if(!..())
@@ -141,7 +141,7 @@
 									if(isliving(ownermind().current))
 										var/mob/living/owner = ownermind().current
 										if(owner.stat != DEAD)
-											ownermind_handle = null
+											rel_clear(src, "ownermind")
 											break
 									ownermind().transfer_to(H)
 									H.grab_ghost()
@@ -317,6 +317,6 @@ Bonus
 	return TRUE
 */
 
-/// LC-refs: the mind to put back in its body -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mind to put back in its body: a relation view, null once it is deleted.
 /datum/viral_trait/growth/proc/ownermind() as /datum/mind
-	return om_resolve(ownermind_handle)
+	return ownermind

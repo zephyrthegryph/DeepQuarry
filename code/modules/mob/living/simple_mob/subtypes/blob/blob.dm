@@ -44,13 +44,14 @@
 		color = null
 	..()
 
-DECLARE_REF(/mob/living/simple_mob/blob, "overmind", BACKLIST, "blob_mobs")
-DECLARE_REF(/mob/living/simple_mob/blob, "factory", BACKLIST, "spores")
-DECLARE_REF(/mob/living/simple_mob/blob, "blob_type", STATIC, null)
+REL_PAIR(/mob/living/simple_mob/blob, overmind, blob_mobs)
+REL_PAIR_LIST(/mob/observer/blob, blob_mobs, overmind)
+REL_PAIR(/mob/living/simple_mob/blob, factory, spores)
+REL_PAIR_LIST(/obj/structure/blob/factory, spores, factory)
 
 /mob/living/simple_mob/blob/blob_act(obj/structure/blob/B)
 	if(!overmind && B.overmind)
-		overmind = B.overmind
+		rel_set(src, "overmind", B.overmind)
 		faction = B.overmind.blob_type.faction
 		update_icon()
 

@@ -18,7 +18,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 	var/datum/view_variables_panel/dq_vv_panel
 
 /datum/view_variables_panel
-	var/tmp/owner_handle
+	var/tmp/client/owner
 	/// The datum or list currently being viewed.
 	var/thing
 	/// Saved ref string so refresh actions land on the same target.
@@ -26,10 +26,9 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 
 /datum/view_variables_panel/New(client/owner_client)
 	..()
-	owner_handle = om_handle(owner_client)
+	owner = owner_client // a client, not a datum: the client owns us by design (dq_vv_panel)
 
 // clears the client's cached panel (clients aren't datums).
-DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_panel")
 
 /datum/view_variables_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_HOLDER)
@@ -197,7 +196,7 @@ DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_pan
 	if(!islist && !isdatum(thing))
 		return
 	if(!dq_vv_panel)
-		dq_vv_panel = new(src)
+		dq_vv_panel = new /datum/view_variables_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
 	dq_vv_panel.tgui_interact(usr)
@@ -212,8 +211,8 @@ DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_pan
 	if(dq_vv_panel && dq_vv_panel.thing == thing)
 		SStgui.update_uis(dq_vv_panel)
 
-DECLARE_REF(/client, "dq_vv_panel", OWNED, null)
 
-/// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The client this panel belongs to.
 /datum/view_variables_panel/proc/owner() as /client
-	return om_resolve(owner_handle)
+	return owner
+

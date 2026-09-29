@@ -291,6 +291,7 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 	add_overlay(turret_opened_overlay)
 	return ..()
 
+
 /obj/machinery/porta_turret/update_icon()
 	if(has_stat(BROKEN)) // Turret is dead.
 		icon_state = "destroyed_target_prism_[turret_type]"
@@ -976,7 +977,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 		def_zone = pick(BP_TORSO, BP_GROIN)
 
 	//Shooting Code:
-	A.firer = src
+	rel_set(A, "firer", src)
 	A.old_style_target(target)
 	A.launch_projectile_from_turf(target, def_zone, src)
 

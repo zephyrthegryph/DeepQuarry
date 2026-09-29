@@ -5,7 +5,6 @@
 	var/searching = FALSE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 
-DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
 
@@ -19,7 +18,7 @@ DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 		return // Already searching.
 	searching = TRUE
 
-	Q = new ghost_query_type()
+	own_set(src, "Q", new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 
@@ -31,7 +30,7 @@ DECLARE_REF(/obj/item/antag_spawner, "Q", OWNED, null)
 	else
 		reset_search()
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	QDEL_NULL(Q) //get rid of the query
+	own_clear(src, "Q", OWN_DELETE) //get rid of the query
 	return
 
 /obj/item/antag_spawner/proc/reset_search()

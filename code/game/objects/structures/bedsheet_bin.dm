@@ -228,7 +228,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 	anchored = TRUE
 	var/amount = 20
 	var/list/sheets = list() // ALLOW(instance_list): d: the bin's live stock
-	var/hidden_handle
+	var/obj/item/hidden
 
 
 /obj/structure/bedsheetbin/examine(mob/user)
@@ -268,13 +268,13 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 	if(istype(I, /obj/item/bedsheet))
 		user.drop_item()
 		I.forceMove(src)
-		sheets.Add(I)
+		rel_add(src, "sheets", I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
 		user.drop_item()
 		I.forceMove(src)
-		hidden_handle = om_handle(I)
+		rel_set(src, "hidden", I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE
 
@@ -291,7 +291,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			sheets.Remove(B)
+			rel_remove(src, "sheets", B)
 
 		else
 			B = new /obj/item/bedsheet(loc)
@@ -303,7 +303,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 		if(hidden())
 			hidden().forceMove(user.loc)
 			to_chat(user, span_notice("[hidden()] falls out of [B]!"))
-			hidden_handle = null
+			rel_clear(src, "hidden")
 
 
 	add_fingerprint(user)
@@ -317,7 +317,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 		var/obj/item/bedsheet/B
 		if(sheets.len > 0)
 			B = sheets[sheets.len]
-			sheets.Remove(B)
+			rel_remove(src, "sheets", B)
 
 		else
 			B = new /obj/item/bedsheet(loc)
@@ -328,7 +328,7 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 
 		if(hidden())
 			hidden().forceMove(loc)
-			hidden_handle = null
+			rel_clear(src, "hidden")
 
 
 	add_fingerprint(user)
@@ -350,6 +350,6 @@ TYPE_TABLE(/obj/item/bedsheet/ian, bedsheet_dream_messages, list("a dog", "a cor
 	icon = 'icons/obj/items.dmi'
 	icon_state = "doublesheetpirate"
 
-/// LC-refs: hidden -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: hidden (reads null once it is gone).
 /obj/structure/bedsheetbin/proc/hidden() as /obj/item
-	return om_resolve(hidden_handle)
+	return hidden

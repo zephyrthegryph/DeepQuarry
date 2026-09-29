@@ -9,7 +9,7 @@
 	throw_range = 20
 	MATERIAL_BULK(MAT_STEEL, 500)
 	preserve_item = 1
-	var/the_disk_handle
+	var/obj/item/disk/nuclear/the_disk
 	var/active = 0
 
 	///TODO: Clear up click code entirely. This is used exclusively for attack_self
@@ -40,7 +40,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		return PROCESS_KILL
 
 	if(!the_disk())
-		the_disk_handle = om_handle(locate(/obj/item/disk/nuclear))
+		rel_set(src, "the_disk", locate(/obj/item/disk/nuclear))
 		if(!the_disk())
 			icon_state = "pinonnull"
 			return
@@ -68,8 +68,8 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	icon = 'icons/obj/device.dmi'
 	desc = "A larger version of the normal pinpointer, this unit features a helpful quantum entanglement detection system to locate various objects that do not broadcast a locator signal."
 	var/mode = 0  // Mode 0 locates disk, mode 1 locates coordinates.
-	var/location_handle
-	var/target_handle
+	var/turf/location
+	var/obj/target
 
 /obj/item/pinpointer/advpinpointer/periodic_step()
 	if(!active)
@@ -119,8 +119,8 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 	active = 0
 	icon_state = "pinoff"
-	target_handle = null
-	location_handle = null
+	rel_clear(src, "target")
+	rel_clear(src, "location")
 
 	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(pinpointer_mode_chosen), title = "Pinpointer Mode Select", message = "Please select the mode you want to put the pinpointer in.", choices = list("Location", "Disk Recovery", "Other Signature"), buttons = TRUE)
 
@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	if(!locationx || !locationy)
 		return
 	var/turf/Z = get_turf(src)
-	location_handle = om_handle(locate(locationx,locationy,Z.z))
+	rel_set(src, "location", locate(locationx,locationy,Z.z))
 	to_chat(user, "You set the pinpointer to locate [locationx],[locationy]")
 	attack_self(user)
 
@@ -171,7 +171,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/mob/user = ask.answerer
 	var/targetitem = ask.choice
 	var/datum/objective/steal/itemlist = new
-	target_handle = om_handle(locate(itemlist.possible_items[targetitem]))
+	rel_set(src, "target", locate(itemlist.possible_items[targetitem]))
 	qdel(itemlist)
 	if(!target_ref())
 		to_chat(user, "Failed to locate [targetitem]!")
@@ -188,7 +188,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		if(!M.dna)
 			continue
 		if(M.dna.unique_enzymes == DNAstring)
-			target_handle = om_handle(M)
+			rel_set(src, "target", M)
 			break
 	attack_self(user)
 
@@ -198,7 +198,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 
 /obj/item/pinpointer/nukeop
 	var/mode = 0	//Mode 0 locates disk, mode 1 locates the shuttle
-	var/home_handle
+	var/obj/machinery/computer/shuttle_control/multi/syndicate/home
 
 // ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
 DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_REF(nukeop_interaction_self)))
@@ -239,7 +239,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 		return		//Get outta here
 
 	if(!the_disk())
-		the_disk_handle = om_handle(locate(/obj/item/disk/nuclear))
+		rel_set(src, "the_disk", locate(/obj/item/disk/nuclear))
 		if(!the_disk())
 			icon_state = "pinonnull"
 			return
@@ -264,7 +264,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 		return
 
 	if(!home())
-		home_handle = om_handle(locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
+		rel_set(src, "home", locate(/obj/machinery/computer/shuttle_control/multi/syndicate))
 		if(!home())
 			icon_state = "pinonnull"
 			return
@@ -288,7 +288,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 // This one only points to the ship.  Useful if there is no nuking to occur today.
 /obj/item/pinpointer/shuttle
 	var/shuttle_comp_id = null
-	var/our_shuttle_handle
+	var/obj/machinery/computer/shuttle_control/our_shuttle
 
 // ALLOW(interactions): its Toggle replaces the base pinpointer's (it runs the parent's body itself)
 DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_REF(shuttle_interaction_self)))
@@ -313,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.
-				our_shuttle_handle = om_handle(S)
+				rel_set(src, "our_shuttle", S)
 				break
 
 		if(!our_shuttle())
@@ -342,25 +342,25 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 /obj/item/pinpointer/shuttle/heist
 	shuttle_comp_id = "Skipjack"
 
-/// LC-refs: the disk -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The disk (a relation view).
 /obj/item/pinpointer/proc/the_disk() as /obj/item/disk/nuclear
-	return om_resolve(the_disk_handle)
+	return the_disk
 
-/// LC-refs: location -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Location (a relation view).
 /obj/item/pinpointer/advpinpointer/proc/get_location() as /turf
-	return om_resolve(location_handle)
+	return location
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Target (a relation view).
 /obj/item/pinpointer/advpinpointer/proc/target_ref() as /obj
-	return om_resolve(target_handle)
+	return target
 
-/// LC-refs: home -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Home (a relation view).
 /obj/item/pinpointer/nukeop/proc/home() as /obj/machinery/computer/shuttle_control/multi/syndicate
-	return om_resolve(home_handle)
+	return home
 
-/// LC-refs: our shuttle -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Our shuttle (a relation view).
 /obj/item/pinpointer/shuttle/proc/our_shuttle() as /obj/machinery/computer/shuttle_control
-	return om_resolve(our_shuttle_handle)
+	return our_shuttle
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/pinpointer/advpinpointer, \

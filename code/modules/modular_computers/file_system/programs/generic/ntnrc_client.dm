@@ -73,7 +73,7 @@
 				return
 			var/datum/ntnet_conversation/C = new /datum/ntnet_conversation()
 			C.add_client(src)
-			C.operator_handle = om_handle(src)
+			rel_set(C, "operator", src)
 			C.title = channel_title
 			active_channel = C.id
 			return TRUE

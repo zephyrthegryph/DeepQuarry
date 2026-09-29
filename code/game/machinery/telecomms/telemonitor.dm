@@ -13,7 +13,7 @@
 
 	var/screen = 0				// the screen number:
 	var/list/machinelist	// the machines located by the computer
-	var/SelectedMachine_handle
+	var/obj/machinery/telecomms/SelectedMachine
 	circuit = /obj/item/circuitboard/comm_monitor
 
 	var/network = "NULL"		// the network to probe
@@ -83,17 +83,17 @@
 		if("view")
 			for(var/obj/machinery/telecomms/T in machinelist)
 				if(T.id == params["id"])
-					SelectedMachine_handle = om_handle(T)
+					rel_set(src, "SelectedMachine", T)
 					break
 			. = TRUE
 
 		if("mainmenu")
-			SelectedMachine_handle = null
+			rel_clear(src, "SelectedMachine")
 			. = TRUE
 
 		if("release")
-			machinelist = list()
-			SelectedMachine_handle = null
+			rel_clear(src, "machinelist")
+			rel_clear(src, "SelectedMachine")
 			. = TRUE
 
 		if("scan")
@@ -103,7 +103,7 @@
 
 			for(var/obj/machinery/telecomms/T in range(25, src))
 				if(T.network == network)
-					LAZYADD(machinelist, T)
+					rel_add(src, "machinelist", T)
 
 			if(!length(machinelist))
 				set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
@@ -128,7 +128,7 @@
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		machinelist = list()
+		rel_clear(src, "machinelist")
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE
@@ -144,6 +144,6 @@
 /obj/machinery/computer/telecomms/monitor/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
 
-/// LC-refs: SelectedMachine -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedMachine (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/monitor/proc/SelectedMachine() as /obj/machinery/telecomms
-	return om_resolve(SelectedMachine_handle)
+	return SelectedMachine

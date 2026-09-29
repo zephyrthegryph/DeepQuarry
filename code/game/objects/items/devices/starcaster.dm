@@ -67,16 +67,15 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 
 			for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 				if(N.uid == text2num(params["uid"]))
-					loaded_article_owned = N.clone()
+					own_set(src, "loaded_article_owned", N.clone())
 					break
 		if("PRG_reset")
 			. = TRUE
-			loaded_article_owned = null
+			own_clear(src, "loaded_article_owned", OWN_DELETE) // our private clone
 		if("PRG_toggle_archived")
 			. = TRUE
 			show_archived = !show_archived
 
-/// DECLARE_REF(..., OWNED): created for and owned by this holder; deleted with it.
+/// Created for and owned by this holder; deleted with it.
 /obj/item/starcaster_news/proc/loaded_article() as /datum/computer_file/data/news_article
 	return loaded_article_owned
-DECLARE_REF(/obj/item/starcaster_news, "loaded_article_owned", OWNED, null)

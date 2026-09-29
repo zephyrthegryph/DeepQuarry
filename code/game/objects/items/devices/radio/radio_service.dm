@@ -71,7 +71,6 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/list/datum/radio_frequency/frequencies = list()
 
 /// The service owns its frequencies (keyed by frequency text).
-DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 
 /datum/world_service/radio/initialize()
 	if(initialized)
@@ -87,7 +86,7 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		frequencies[f_text] = frequency
+		own_put(src, "frequencies", f_text, frequency)
 
 	frequency.add_listener(device, radio_filter)
 	return frequency
@@ -100,8 +99,7 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 		frequency.remove_listener(device)
 
 		if(!length(frequency.devices))
-			qdel(frequency)
-			frequencies -= f_text
+			own_put(src, "frequencies", f_text, null) // disposes of (deletes) the emptied frequency
 
 	return 1
 
@@ -112,7 +110,7 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 	if(!frequency)
 		frequency = new
 		frequency.frequency = new_frequency
-		frequencies[f_text] = frequency
+		own_put(src, "frequencies", f_text, frequency)
 
 	return frequency
 
@@ -181,7 +179,7 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 			devices -= devices_filter
 
 /datum/signal
-	var/source_handle
+	var/obj/source
 
 	var/transmission_method = 0 //unused at the moment
 	//0 = wire
@@ -194,7 +192,7 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 	var/frequency = ZERO_FREQ
 
 /datum/signal/proc/copy_from(datum/signal/model)
-	source_handle = model.source_handle
+	rel_set(src, "source", model.source)
 	transmission_method = model.transmission_method
 	data = model.data
 	encryption = model.encryption
@@ -217,6 +215,6 @@ DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 /obj/proc/receive_signal(datum/signal/signal, receive_method, receive_param)
 	return null
 
-/// LC-refs: the device that sent this signal -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: the device that sent this signal (reads null once it is gone).
 /datum/signal/proc/source() as /obj
-	return om_resolve(source_handle)
+	return source

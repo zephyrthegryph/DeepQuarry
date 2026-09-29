@@ -16,21 +16,19 @@
 	var/list/active_ore_bags
 
 /mob/living/silicon/robot/var/datum/robot_belly/robot_belly
-DECLARE_REF(/mob/living/silicon/robot, "robot_belly", OWNED, null)
-DECLARE_REF(/datum/robot_belly, "owner", BACK, "robot_belly")
 
 /datum/robot_belly/New(mob/living/silicon/robot/R)
 	..()
 	if(!isrobot(R))
 		log_runtime("robot_belly created for a non-robot ([R]).")
 		return
-	owner = R
+	rel_set(src, "owner", R)
 	R.can_buckle = TRUE
 	R.buckle_movable = TRUE
 	R.buckle_lying = FALSE
 	R.max_buckled_mobs = 1
 	if(!R.riding_datum)
-		R.riding_datum = new /datum/riding/dogborg(R)
+		own_set(R, "riding_datum", new /datum/riding/dogborg(R))
 	om_hook(R, /datum/om/event/mob_death, src, PROC_REF(on_death))
 	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
 	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
@@ -43,14 +41,14 @@ DECLARE_REF(/datum/robot_belly, "owner", BACK, "robot_belly")
 			bag.dropped(R)
 		for(var/rider in R.buckled_mob_list())
 			R.riding_datum?.force_dismount(rider)
-		QDEL_NULL(R.riding_datum)
+		own_clear(R, "riding_datum", OWN_DELETE)
 		R.can_buckle = initial(R.can_buckle)
 	..()
 
 /// Gives `R` a robot belly if it has none.
 /mob/living/silicon/robot/proc/add_robot_belly()
 	if(!robot_belly)
-		robot_belly = new /datum/robot_belly(src)
+		own_set(src, "robot_belly", new /datum/robot_belly(src))
 	return robot_belly
 
 /// The sleeper sets this; the sprite only redraws when it actually changes.

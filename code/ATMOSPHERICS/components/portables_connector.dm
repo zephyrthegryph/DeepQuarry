@@ -92,7 +92,7 @@
 	var/datum/gas_mixture/device_air = connected_device?.air_contents
 	if(!device_air)
 		return
-	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, CALLBACK(src, PROC_REF(on_device_gas_changed)))
+	om_watch_arm_raw(src, "device", device_air.arena_id(), GAS_DEPENDENCY_ALL, om_callable(src, PROC_REF(on_device_gas_changed)))
 
 /obj/machinery/atmospherics/portables_connector/proc/clear_gas_dependency()
 	om_watch_disarm(src, "device")
@@ -122,7 +122,7 @@
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node_connect))
 		if(can_be_node(target, 1))
-			node = target
+			rel_set(src, "node", target)
 			break
 
 	update_icon()
@@ -139,7 +139,7 @@
 
 /obj/machinery/atmospherics/portables_connector/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network == old_network)
-		network = new_network
+		rel_set(src, "network", new_network)
 
 	return 1
 
@@ -190,7 +190,7 @@
 	clear_gas_dependency()
 	if(reference==node)
 		rust_release_network_wrapper(network)
-		node = null
+		rel_clear(src, "node")
 	if(reference == connected_device || !connected_device)
 		set_on(0)
 		MACHINE_SLEEP(src)
@@ -222,6 +222,3 @@
 		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "connected_device", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "node", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "network", HELD, null)

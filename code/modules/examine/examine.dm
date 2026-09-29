@@ -55,7 +55,7 @@
 /client/var/description_holders[0]
 
 /client/proc/update_description_holders(atom/A, update_antag_info=0)
-	examine_icon_handle = null
+	examine_icon = null
 	var/list/info = list()
 	var/mechanics = A.get_mechanics_info()
 	if(mechanics)

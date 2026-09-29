@@ -11,7 +11,6 @@
 	..()
 	reserved_frontage = list()
 
-DECLARE_REF(/datum/generated_room_placement, "feature", OWNED, null)
 
 /// Complete, inspectable result of resolving one room definition.
 /datum/generated_room_solution
@@ -37,15 +36,12 @@ DECLARE_REF(/datum/generated_room_placement, "feature", OWNED, null)
 
 /datum/generated_room_solution/New()
 	..()
-	placements = list()
-	fragments = list()
+	own_take_all(src, "placements")
 	circulation = list()
 	door_circulation = list()
 	occupied = list()
 	issues = list()
 
-DECLARE_REF(/datum/generated_room_solution, "placements", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_room_solution, "fragments", OWNED_LIST, null)
 
 /datum/generated_room_solution/proc/tile_key(x, y)
 	return "[x],[y]"
@@ -63,7 +59,6 @@ DECLARE_REF(/datum/generated_room_solution, "fragments", OWNED_LIST, null)
 	var/rotation = 0
 	var/mirrored = FALSE
 
-DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 
 /// Area types owned by a materialized station. Separate instances are created
 /// for every department so APC and alarm state cannot bleed between rooms.
@@ -159,9 +154,10 @@ DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 	var/door_count = 0
 	var/styled_floor_count = 0
 	var/accent_decal_count = 0
-	var/tmp/entry_handle
-	var/transit_area_handle
-	var/tmp/maintenance_area_handle
+	/// The arrival landmark, created and owned by the materialization.
+	var/tmp/obj/effect/landmark/generated_station_entry/entry
+	var/area/generated_station/transit/transit_area
+	var/tmp/area/generated_station/maintenance/maintenance_area
 	var/list/department_areas
 	var/list/module_areas
 	var/list/modules
@@ -179,17 +175,9 @@ DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 
 /datum/generated_station_materialization/New()
 	..()
-	department_areas = list()
-	module_areas = list()
-	modules = list()
-	room_solutions = list()
-	control_landmarks = list()
-	service_endpoints = list()
-	service_routes = list()
-	furnishings = list()
-	owned_furnishing_atoms = list()
-	doors = list()
-	infrastructure = list()
+	own_take_all(src, "owned_furnishing_atoms")
+	own_take_all(src, "doors")
+	own_take_all(src, "infrastructure")
 	degradation_events = list()
 
 /datum/generated_station_materialization/proc/world_turf(local_x, local_y)
@@ -197,33 +185,37 @@ DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 
 /// Registers a furnishing and every movable it created inside itself for teardown.
 /datum/generated_station_materialization/proc/register_furnishing(atom/movable/furnishing)
-	if(!furnishing || WEAK_LIST_HAS(furnishings, furnishing))
+	if(!furnishing || (furnishings && (furnishing in furnishings)))
 		return
-	WEAK_LIST_ADD(furnishings, furnishing)
+	rel_add(src, "furnishings", furnishing)
 	register_owned_furnishing_atom(furnishing)
 
 /datum/generated_station_materialization/proc/register_owned_furnishing_atom(atom/movable/furnishing)
 	if(!furnishing || (furnishing in owned_furnishing_atoms))
 		return
-	owned_furnishing_atoms += furnishing
+	own_add(src, "owned_furnishing_atoms", furnishing)
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
-/// The areas are owned values (deleted in phase 4); their turfs revert to space first,
-/// as do the transit/maintenance areas' (named by handle, deleted here).
+/// The department/module areas are owned values (deleted in phase 4); their turfs revert to
+/// space first, as do the transit/maintenance areas' (plain area vars, deleted here). The entry
+/// landmark is owned and goes by policy.
 /datum/generated_station_materialization/lifecycle_prerelease()
-	qdel_handle(entry_handle)
 	var/area/space/space_area = generated_station_space_area()
 	if(transit_area())
 		var/list/owned_transit_turfs = transit_area().contents.Copy()
 		for(var/turf/T in owned_transit_turfs)
 			ChangeArea(T, space_area)
-	qdel_handle(transit_area_handle)
+	if(transit_area && !QDELETED(transit_area))
+		qdel(transit_area)
+	transit_area = null
 	if(maintenance_area())
 		var/list/owned_maintenance_turfs = maintenance_area().contents.Copy()
 		for(var/turf/T in owned_maintenance_turfs)
 			ChangeArea(T, space_area)
-	qdel_handle(maintenance_area_handle)
+	if(maintenance_area && !QDELETED(maintenance_area))
+		qdel(maintenance_area)
+	maintenance_area = null
 	for(var/list/by_id in list(department_areas, module_areas))
 		for(var/id in by_id)
 			var/area/generated_station/A = by_id[id]
@@ -237,16 +229,16 @@ DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 /// Converts planner-local coordinates into station turfs. This pass deliberately
 /// creates no machinery: utility and room-content passes can safely follow it.
 /datum/generated_station_materializer
-	var/tmp/spec_handle
+	var/tmp/datum/generated_station_spec/spec
 	var/z_level
 	var/min_x
 	var/min_y
 	var/max_x
 	var/max_y
-	/// Layout node handles by id (the spec owns the nodes).
-	var/list/nodes_by_id
-	var/transit_area_handle
-	var/tmp/maintenance_area_handle
+	/// Layout node id -> its index in spec().layout_nodes (plain data; the spec owns the nodes). Read with node_by_id().
+	var/list/node_index_by_id
+	var/area/generated_station/transit/transit_area
+	var/tmp/area/generated_station/maintenance/maintenance_area
 	var/datum/generated_station_materialization/result
 	var/datum/generated_station_validation_result/last_architecture_validation
 	var/datum/generated_station_tile_plan/tile_plan
@@ -264,10 +256,6 @@ DECLARE_REF(/datum/generated_room_fragment_placement, "fragment", OWNED, null)
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
-DECLARE_REF(/datum/generated_station_materializer, "last_architecture_validation", OWNED, null)
-DECLARE_REF(/datum/generated_station_materializer, "tile_plan", OWNED, null)
-DECLARE_REF(/datum/generated_station_materializer, "result", OWNED, null)
-DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -279,7 +267,7 @@ DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 /// materialize() as lane work (object_model_core.md §4.11): its phases run a budgeted slice at
 /// a time and resume by cursor, so the live game keeps its ticks and nothing sleeps. `on_done`
 /// is invoked with the materialization, or null when it failed.
-/datum/generated_station_materializer/proc/materialize_async(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE, datum/callback/on_done)
+/datum/generated_station_materializer/proc/materialize_async(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE, list/on_done)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
 	job.execute_async(new_spec, new_z, origin_x, origin_y, on_done)
 
@@ -296,6 +284,14 @@ DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 	return active_job ? active_job.checkpoint(phase, progress, force_yield) : FALSE
 
 /// Everything before the phases: the target, the areas and the result. FALSE if it can't start.
+/// The layout node with `node_id`, or null.
+/datum/generated_station_materializer/proc/node_by_id(node_id)
+	var/index = node_index_by_id?[node_id]
+	var/list/nodes = spec()?.layout_nodes
+	if(!index || index > length(nodes))
+		return null
+	return nodes[index]
+
 /datum/generated_station_materializer/proc/prepare_materialization(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/generated_station_materialization_job/job)
 	last_failure_details = null
 	if(!istype(new_spec) || !isnum(new_z) || new_z < 1 || new_z > world.maxz)
@@ -303,36 +299,40 @@ DECLARE_REF(/datum/generated_station_materializer, "active_job", OWNED, null)
 	if(origin_x < 1 || origin_y < 1 || origin_x + new_spec.grid_width - 1 > world.maxx || origin_y + new_spec.grid_height - 1 > world.maxy)
 		return FALSE
 
-	spec_handle = om_handle(new_spec)
-	active_job = job
+	rel_set(src, "spec", new_spec)
+	own_set(src, "active_job", job)
 	z_level = new_z
 	min_x = origin_x
 	min_y = origin_y
 	max_x = origin_x + spec().grid_width - 1
 	max_y = origin_y + spec().grid_height - 1
-	nodes_by_id = list()
-	transit_area_handle = om_handle(generated_station_create_area(/area/generated_station/transit))
+	node_index_by_id = list()
+	transit_area = generated_station_create_area(/area/generated_station/transit)
 	transit_area().station_id = spec().id
 	transit_area().name = "[spec().name] Transit"
-	maintenance_area_handle = om_handle(generated_station_create_area(/area/generated_station/maintenance))
+	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
-	result = new
+	own_set(src, "result", new /datum/generated_station_materialization)
 	result.station_id = spec().id
 	result.z_level = z_level
 	result.origin_x = min_x
 	result.origin_y = min_y
-	result.transit_area_handle = om_handle(transit_area())
-	result.maintenance_area_handle = om_handle(maintenance_area())
-	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		nodes_by_id[node.id] = om_handle(node)
+	result.transit_area = transit_area()
+	result.maintenance_area = maintenance_area()
+	var/list/layout_nodes = spec().layout_nodes
+	for(var/node_index in 1 to length(layout_nodes))
+		var/datum/generated_station_layout_node/node = layout_nodes?[node_index]
+		if(!istype(node))
+			continue
+		node_index_by_id[node.id] = node_index
 		var/datum/generated_station_department_instance/department = department_for_node(node)
 		if(department)
 			var/area/generated_station/department_area = make_department_area(department.definition().id)
 			department_area.station_id = spec().id
 			department_area.department_id = department.id
 			department_area.name = "[spec().name] [department.definition().name]"
-			result.department_areas[node.id] = department_area
+			own_put(result, "department_areas", node.id, department_area)
 		generation_checkpoint("Allocating station areas", 25)
 	return TRUE
 
@@ -364,10 +364,9 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/abort_materialization(stage, details)
 	last_failure_details = details || last_failure_details || stage
 	log_world("Generated station [spec()?.id] materialization failed during [stage].")
-	qdel(result)
-	result = null
-	QDEL_NULL(tile_plan)
-	active_job = null
+	own_clear(src, "result", OWN_DELETE)
+	own_clear(src, "tile_plan", OWN_DELETE)
+	own_take(src, "active_job")
 	return GENERATED_STATION_PHASE_FAILED
 
 /// A structural stage failed: its tile plan errors are the details.
@@ -388,8 +387,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/phase_tile_grid(cursor)
 	generation_checkpoint("Compiling structural ownership", 27)
 	if(!cursor)
-		QDEL_NULL(tile_plan)
-		tile_plan = new(spec().grid_width, spec().grid_height, src, TRUE)
+		own_clear(src, "tile_plan", OWN_DELETE)
+		own_set(src, "tile_plan", new /datum/generated_station_tile_plan(spec().grid_width, spec().grid_height, src, TRUE))
 		cursor = 1
 	for(var/x in cursor to tile_plan.grid_width)
 		tile_plan.fill_column(x)
@@ -401,7 +400,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/phase_tile_nodes(cursor)
 	var/floor_type = tile_plan_floor_type()
 	for(var/i in (cursor || 1) to length(spec().layout_nodes))
-		var/datum/generated_station_layout_node/node = spec().layout_nodes[i]
+		var/datum/generated_station_layout_node/node = spec().layout_nodes?[i]
 		var/datum/generated_station_department_instance/node_department = department_for_node(node)
 		var/department_id = node_department?.definition()?.id
 		for(var/key in node.territory)
@@ -462,9 +461,9 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/list/parts = splittext(key, ",")
 		var/x = text2num(parts[1])
 		var/y = text2num(parts[2])
-		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors[key])
-			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors[key]
-			var/datum/generated_station_layout_node/door_node = om_resolve(nodes_by_id[maintenance_door.owner_node_id])
+		if(tile_plan.claim(x, y, "maintenance", "maintenance", GENERATED_STATION_TILE_FLOOR, /turf/simulated/floor/tiled/eris/steel/techfloor, null) && spec().maintenance_doors?[key])
+			var/datum/generated_station_maintenance_door/maintenance_door = spec().maintenance_doors?[key]
+			var/datum/generated_station_layout_node/door_node = node_by_id(maintenance_door.owner_node_id)
 			var/access_id
 			if(maintenance_door.to_zone_id != "maintenance" && maintenance_door.to_zone_id != "public-circulation")
 				access_id = department_for_node(door_node)?.definition()?.id
@@ -491,8 +490,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		return
 	if(length(tile_plan.errors))
 		return abort_structural("tile-plan")
-	result.tile_plan = tile_plan
-	tile_plan = null
+	own_set(result, "tile_plan", tile_plan)
+	own_take(src, "tile_plan")
 	return null
 
 /datum/generated_station_materializer/proc/phase_modules(cursor)
@@ -519,7 +518,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	var/wall_type = spec().architecture_style == "fortified" ? /turf/simulated/wall/r_wall : /turf/simulated/wall
 	var/list/tiles = plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		var/turf/T = world_turf(intent.local_x, intent.local_y)
 		if(!T)
 			return abort_structural("tile-application")
@@ -536,7 +535,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 					ChangeArea(T, maintenance_area())
 					result.corridor_count++
 				else
-					var/area/generated_station/owner_area = result.module_areas[intent.zone_id] || result.department_areas[intent.owner_id]
+					var/area/generated_station/owner_area = result.module_areas?[intent.zone_id] || result.department_areas?[intent.owner_id]
 					if(!owner_area)
 						// ChangeArea() crashes on a null area. A floor whose planned
 						// owner never received an area still needs a pressurised,
@@ -560,16 +559,16 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/phase_apply_doors(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.door_type)
 			var/turf/T = world_turf(intent.local_x, intent.local_y)
 			var/obj/machinery/door/airlock/airlock = new intent.door_type(T)
 			airlock.set_dir(intent.door_direction || NORTH)
 			if(intent.owner_id != "transit" && intent.owner_id != "maintenance")
-				configure_department_airlock(airlock, department_for_node(om_resolve(nodes_by_id[intent.owner_id])))
+				configure_department_airlock(airlock, department_for_node(node_by_id(intent.owner_id)))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
-			result.doors += airlock
+			own_add(result, "doors", airlock)
 			result.door_count++
 		if(i < length(tiles) && generation_checkpoint("Installing planned doors", 45))
 			return i + 1
@@ -619,14 +618,14 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		// interior access door; retain the playable result and let the independent
 		// architecture audit report any concrete remaining defect.
 		log_world("Generated station [spec().id] retained its best-effort furnishing layout after access repair was exhausted.")
-	result.service_validation = result.validate_services(spec(), src)
+	own_set(result, "service_validation", result.validate_services(spec(), src))
 	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	return null
 
 /datum/generated_station_materializer/proc/phase_walls(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.structure_kind == GENERATED_STATION_TILE_HULL)
 			var/turf/simulated/wall/wall = result.world_turf(intent.local_x, intent.local_y)
 			if(istype(wall))
@@ -641,7 +640,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /datum/generated_station_materializer/proc/phase_air(cursor)
 	var/list/tiles = result.tile_plan.tiles
 	for(var/i in (cursor || 1) to length(tiles))
-		var/datum/generated_station_tile_intent/intent = tiles[tiles[i]]
+		var/datum/generated_station_tile_intent/intent = tiles?[tiles?[i]]
 		if(intent.structure_kind == GENERATED_STATION_TILE_FLOOR)
 			generated_station_seed_air(world_turf(intent.local_x, intent.local_y))
 		if(i < length(tiles) && generation_checkpoint("Seeding station atmosphere", 60))
@@ -650,7 +649,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 
 /datum/generated_station_materializer/proc/phase_finalize(cursor)
 	finalize()
-	active_job = null
+	own_take(src, "active_job")
 	return null
 
 /// Applies the Rust room floor contract after structural turfs exist. Room
@@ -672,7 +671,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				for(var/direction in GLOB.cardinal)
 					var/neighbor_x = local_x + (direction == EAST) - (direction == WEST)
 					var/neighbor_y = local_y + (direction == NORTH) - (direction == SOUTH)
-					if(room.tiles["[neighbor_x],[neighbor_y]"])
+					if(room.tiles?["[neighbor_x],[neighbor_y]"])
 						continue
 					// `borderfloor` is a pre-shaded dark stripe and cannot be
 					// recolored correctly. `bordercolor` is the tintable mask
@@ -701,7 +700,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /// Resolves cross-room access constraints after every authored fragment and
 /// generated furnishing exists, while the station can still be rejected safely.
 /datum/generated_station_materializer/proc/finalize_furnishing_access()
-	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(result.furnishings))
 		var/turf/current = get_turf(furnishing)
 		if(!current)
 			continue
@@ -723,8 +722,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 						break
 				if(!destination)
 					if(generated_station_is_removable_decor(furnishing))
-						WEAK_LIST_REMOVE(result.furnishings, furnishing)
-						result.owned_furnishing_atoms -= furnishing
+						rel_remove(result, "furnishings", furnishing)
+						own_take_member(result, "owned_furnishing_atoms", furnishing)
 						qdel(furnishing)
 						continue
 					// Some functional wall-side machinery is legitimately adjacent
@@ -748,10 +747,10 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	// after an individual room was solved. Remove only non-functional decor,
 	// newest first, until every room again has one component connected to a door.
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/A = result.module_areas[module_id]
+		var/area/generated_station/A = result.module_areas?[module_id]
 		while(!generated_station_room_area_is_accessible(A))
 			var/atom/movable/removable
-			var/list/live_furnishings = weak_list_live(result.furnishings)
+			var/list/live_furnishings = LAZYCOPY(result.furnishings)
 			for(var/i in length(live_furnishings) to 1 step -1)
 				var/atom/movable/candidate = live_furnishings[i]
 				if(get_area(candidate) == A && generated_station_is_removable_decor(candidate))
@@ -764,7 +763,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				// authored fixture still partitions the room after relocation, drop
 				// that fixture and publish a degraded but fully traversable room.
 				var/atom/movable/required_blocker
-				var/list/live_blockers = weak_list_live(result.furnishings)
+				var/list/live_blockers = LAZYCOPY(result.furnishings)
 				for(var/i in length(live_blockers) to 1 step -1)
 					var/atom/movable/candidate = live_blockers[i]
 					if(get_area(candidate) == A && candidate.density && !istype(candidate, /obj/machinery/door))
@@ -772,8 +771,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 						break
 				if(required_blocker)
 					result.degradation_events += "removed [required_blocker.type] from [A.name] to preserve room access"
-					WEAK_LIST_REMOVE(result.furnishings, required_blocker)
-					result.owned_furnishing_atoms -= required_blocker
+					rel_remove(result, "furnishings", required_blocker)
+					own_take_member(result, "owned_furnishing_atoms", required_blocker)
 					qdel(required_blocker)
 					continue
 				if(install_emergency_room_access(A))
@@ -785,8 +784,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 							blockers += "[blocker.type]@[blocked_floor.x],[blocked_floor.y]"
 				log_world("Generated station could not repair furnishing access for [A.name]: [jointext(blockers, ", ")]")
 				return FALSE
-			WEAK_LIST_REMOVE(result.furnishings, removable)
-			result.owned_furnishing_atoms -= removable
+			rel_remove(result, "furnishings", removable)
+			own_take_member(result, "owned_furnishing_atoms", removable)
 			qdel(removable)
 			generation_checkpoint("Opening final room circulation", 55)
 	return TRUE
@@ -794,7 +793,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /// Moves a required dense furnishing to another valid socket when the complete
 /// room graph proves its authored position is an articulation point.
 /datum/generated_station_materializer/proc/relocate_blocking_room_furnishing(area/generated_station/A)
-	for(var/atom/movable/furnishing in weak_list_live(result.furnishings))
+	for(var/atom/movable/furnishing in LAZYCOPY(result.furnishings))
 		if(get_area(furnishing) != A || !furnishing.density || istype(furnishing, /obj/machinery/door))
 			continue
 		var/turf/original = get_turf(furnishing)
@@ -832,7 +831,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			ChangeArea(door_turf, A)
 			var/obj/machinery/door/airlock/airlock = new(door_turf)
 			airlock.set_dir(direction)
-			result.doors += airlock
+			own_add(result, "doors", airlock)
 			result.door_count++
 			return TRUE
 	return FALSE
@@ -886,7 +885,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			module.footprint_y1 = module.y1
 			module.footprint_x2 = module.x2
 			module.footprint_y2 = module.y2
-			result.modules += module
+			own_add(result, "modules", module)
 	return TRUE
 
 /// Gives every planned room an independent area and therefore its own APC,
@@ -908,11 +907,11 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/datum/generated_station_room_allocation/allocation = room_allocation_for_module(module)
 		var/base_name = allocation?.area_name || "[spec().name] [department_name] [role_name]"
 		A.name = designation_number > 1 ? "[base_name] [designation_number]" : base_name
-		result.module_areas[module.id] = A
+		own_put(result, "module_areas", module.id, A)
 	return TRUE
 
 /datum/generated_station_materializer/proc/room_allocation_for_module(datum/generated_station_module/module)
-	var/datum/generated_station_layout_node/node = om_resolve(nodes_by_id[module?.department_node_id])
+	var/datum/generated_station_layout_node/node = node_by_id(module?.department_node_id)
 	for(var/datum/generated_station_room_allocation/room in node?.room_program)
 		if(room.id == module.id)
 			return room
@@ -946,7 +945,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				var/list/parts = splittext(key, ",")
 				solution.reserve_circulation(text2num(parts[1]), text2num(parts[2]))
 			solutions_by_native_id["[room.rust_room_id]"] = solution
-			result.room_solutions += solution
+			own_add(result, "room_solutions", solution)
 	return synthesize_fixtures(1)
 
 /// The Rust fixtures, one at a time from `cursor`: the next cursor, null when done, FALSE on a
@@ -966,7 +965,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			return FALSE
 		var/turf/target = world_turf(fixture.x, fixture.y)
 		var/datum/generated_station_room_allocation/room = rooms_by_native_id["[fixture.room_numeric_id]"]
-		if(!target || (room && !room.tiles["[fixture.x],[fixture.y]"]))
+		if(!target || (room && !room.tiles?["[fixture.x],[fixture.y]"]))
 			last_failure_details = "Rust fixture [fixture.id] lies outside room [fixture.room_numeric_id]"
 			return FALSE
 		var/atom/movable/created = new atom_type(target)
@@ -986,13 +985,13 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/datum/generated_room_solution/solution = solutions_by_native_id["[fixture.room_numeric_id]"]
 		if(solution)
 			var/datum/generated_room_placement/placement = new
-			placement.feature = new /datum/generated_room_feature
+			own_set(placement, "feature", new /datum/generated_room_feature)
 			placement.feature.id = fixture.fixture_id
 			placement.feature.atom_type = atom_type
 			placement.x = fixture.x
 			placement.y = fixture.y
 			placement.dir = fixture.direction
-			solution.placements += placement
+			own_add(solution, "placements", placement)
 	synthesis_rooms = null
 	synthesis_solutions = null
 	return null
@@ -1089,7 +1088,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
-			result.control_landmarks += core
+			own_add(result, "control_landmarks", core)
 
 /// Transit cannot overwrite a department reservation; department frontages are opened later as doors.
 /datum/generated_station_materializer/proc/claim_transit_tile(local_x, local_y, floor_type)
@@ -1101,7 +1100,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 /// Installs baseline fire detection and emergency supplies independently of room decoration.
 /datum/generated_station_materializer/proc/place_emergency_equipment()
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/A = result.module_areas[module_id]
+		var/area/generated_station/A = result.module_areas?[module_id]
 		var/turf/alarm_turf
 		for(var/datum/generated_station_tile_intent/intent in result.tile_plan.utility_floors(null, module_id))
 			if(intent.zone_id == module_id && (GENERATED_STATION_UTILITY_FIRE_ALARM in intent.utility_intents))
@@ -1266,7 +1265,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 
 /datum/generated_station_materializer/proc/carve_departments()
 	for(var/datum/generated_station_layout_node/node in spec().layout_nodes)
-		var/area/generated_station/department_area = result.department_areas[node.id]
+		var/area/generated_station/department_area = result.department_areas?[node.id]
 		for(var/x in node.x to node.x + node.width - 1)
 			for(var/y in node.y to node.y + node.height - 1)
 				var/turf/T = world_turf(x, y)
@@ -1362,11 +1361,11 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	var/list/point = run[CEILING(length(run) / 2, 1)]
 	var/turf/T = world_turf(point[1], point[2])
 	T.ChangeTurf(/turf/simulated/floor/tiled, tell_universe = FALSE)
-	ChangeArea(T, result.department_areas[node.id])
+	ChangeArea(T, result.department_areas?[node.id])
 	var/obj/machinery/door/airlock/airlock = new(T)
 	airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 	configure_department_airlock(airlock, department)
-	result.doors += airlock
+	own_add(result, "doors", airlock)
 	result.door_count++
 
 /// Applies the generated station's department access policy to an entrance.
@@ -1453,7 +1452,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				break
 		if(!hull_turf)
 			continue
-		var/area/generated_station/A = result.department_areas[node.id]
+		var/area/generated_station/A = result.department_areas?[node.id]
 		if(!A)
 			continue
 		var/turf/chamber = get_step(hull_turf, outward)
@@ -1517,7 +1516,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/obj/machinery/door/airlock/generated_station_exterior/exterior = new(outer)
 		exterior.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 		exterior.req_access = list(ACCESS_MAINT_TUNNELS)
-		result.doors += list(inner, exterior)
+		own_add(result, "doors", inner)
+		own_add(result, "doors", exterior)
 		result.door_count += 2
 
 /datum/generated_station_materializer/proc/place_entry()
@@ -1538,13 +1538,13 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			T = candidate
 			break
 	if(!T)
-		var/area/generated_station/docking/docking_area = result.department_areas[docking.id]
+		var/area/generated_station/docking/docking_area = result.department_areas?[docking.id]
 		for(var/turf/simulated/floor/candidate in area_contents_of_type(docking_area, /turf/simulated/floor))
 			if(!candidate.density && !(locate_on(candidate, /obj/machinery/door)))
 				T = candidate
 				break
 	if(T)
-		result.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(T))
+		own_set(result, "entry", new /obj/effect/landmark/generated_station_entry(T))
 		result.entry().station_id = spec().id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
 
@@ -1554,49 +1554,38 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	if(SSair)
 		SSair.update_dynamic_multiz_atmos_level(result.z_level)
 	for(var/node_id in result.department_areas)
-		var/area/generated_station/A = result.department_areas[node_id]
+		var/area/generated_station/A = result.department_areas?[node_id]
 		A.power_change()
 	for(var/module_id in result.module_areas)
-		var/area/generated_station/room_area = result.module_areas[module_id]
+		var/area/generated_station/room_area = result.module_areas?[module_id]
 		room_area.power_change()
 	transit_area()?.power_change()
 	maintenance_area()?.power_change()
 
-DECLARE_REF(/datum/generated_station_materialization, "tile_plan", OWNED, null)
-DECLARE_REF(/datum/generated_station_materialization, "service_validation", OWNED, null)
-DECLARE_REF(/datum/generated_station_materialization, "owned_furnishing_atoms", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "modules", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "room_solutions", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "control_landmarks", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "service_endpoints", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "service_routes", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "doors", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "infrastructure", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_materialization, "department_areas", OWNED_VALUES, null)
-DECLARE_REF(/datum/generated_station_materialization, "module_areas", OWNED_VALUES, null)
-DECLARE_REF(/datum/generated_station_materialization, "furnishings", WEAK_LIST, null)
 
-/// LC-refs: the spec this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the spec var.
 /datum/generated_station_materializer/proc/spec() as /datum/generated_station_spec
-	return om_resolve(spec_handle)
+	return spec
 
-/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the maintenance_area var.
 /datum/generated_station_materializer/proc/maintenance_area() as /area/generated_station/maintenance
-	return om_resolve(maintenance_area_handle)
+	return maintenance_area
 
-/// LC-refs: the maintenance_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the maintenance_area var.
 /datum/generated_station_materialization/proc/maintenance_area() as /area/generated_station/maintenance
-	return om_resolve(maintenance_area_handle)
+	return maintenance_area
 
-/// LC-refs: the entry this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the entry var.
 /datum/generated_station_materialization/proc/entry() as /obj/effect/landmark/generated_station_entry
-	return om_resolve(entry_handle)
+	return entry
 
-/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the transit_area var.
 /datum/generated_station_materialization/proc/transit_area() as /area/generated_station/transit
-	return om_resolve(transit_area_handle)
+	return transit_area
 
-/// LC-refs: the transit_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the transit_area var.
 /datum/generated_station_materializer/proc/transit_area() as /area/generated_station/transit
-	return om_resolve(transit_area_handle)
+	return transit_area
 
+
+REL_LIST(/datum/generated_station_materialization, furnishings)

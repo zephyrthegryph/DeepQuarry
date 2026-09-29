@@ -48,7 +48,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		dq_perms_log_operation = op
 		dq_perms_log_page = text2num(log_page) || 0
 	if(!dq_permissions_panel)
-		dq_permissions_panel = new(src)
+		own_set(src, "dq_permissions_panel", new /datum/permissions_panel(src))
 	if(QDELETED(usr) || usr.client != owner())
 		dq_permissions_panel.tgui_interact(owner().mob)
 	else
@@ -57,7 +57,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 	dq_permissions_panel.refresh_db()
 
 /datum/permissions_panel
-	var/tmp/holder_handle
+	var/tmp/datum/admins/holder
 	/// The database rows the pages show, by query key (om_sql_view); a missing key is loading.
 	var/list/db_rows
 
@@ -111,10 +111,9 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/permissions_panel/New(datum/admins/owner_holder)
 	..()
-	holder_handle = om_handle(owner_holder)
+	rel_set(src, "holder", owner_holder)
 
 // clears its holder's cached panel.
-DECLARE_REF(/datum/permissions_panel, "holder_handle", BACK_HANDLE, "dq_permissions_panel")
 
 /datum/permissions_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_PERMISSIONS)
@@ -409,8 +408,9 @@ DECLARE_REF(/datum/permissions_panel, "holder_handle", BACK_HANDLE, "dq_permissi
 			forward_topic("editrightsbrowserhousekeep=1;editrightsremoverank=[name]")
 			return TRUE
 
-DECLARE_REF(/datum/admins, "dq_permissions_panel", OWNED, null)
 
-/// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The holder this refers to (a relation view: null once that is deleted).
 /datum/permissions_panel/proc/holder() as /datum/admins
-	return om_resolve(holder_handle)
+	return holder
+
+// The admin holder owns this panel (dq_permissions_panel); holder is a plain relation back.

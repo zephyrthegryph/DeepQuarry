@@ -24,14 +24,14 @@
 	var/hacked = 0 // Whether to show the hidden songs or not
 	var/freq = 0 // Currently no effect, will return in phase II of mediamanager.
 	var/loop_mode = JUKEMODE_PLAY_ONCE			// Behavior when finished playing a song
-	// ALLOW(object_keyed_lists): paired remotes add and remove themselves (juke_remote pair/unpair)
+	// Paired remotes: REL_PAIR_LIST with each remote's paired_juke (declared in modules/media/juke_remote.dm, w7).
 	var/list/obj/item/juke_remote/remotes
-	var/current_track_handle
+	var/datum/track/current_track
 
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	wires = new/datum/wires/jukebox(src)
+	own_set(src, "wires", new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		stat_add(BROKEN)
@@ -56,16 +56,16 @@
 		if(JUKEMODE_NEXT)
 			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			current_track_handle = om_handle(tracks[newTrackIndex])
+			rel_set(src, "current_track", tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
 			var/previous_track = current_track()
 			do
-				current_track_handle = om_handle(pick(tracks))
+				rel_set(src, "current_track", pick(tracks))
 			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			current_track_handle = om_handle(current_track())
+			rel_set(src, "current_track", current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			current_track_handle = null
+			rel_clear(src, "current_track")
 			playing = 0
 			update_icon()
 	start_stop_song()
@@ -207,7 +207,7 @@
 		if("change_track")
 			var/datum/track/T = locate_in_list(getTracksList(), params["change_track"])
 			if(istype(T))
-				current_track_handle = om_handle(T)
+				rel_set(src, "current_track", T)
 				StartPlaying()
 			return TRUE
 		if("loopmode")
@@ -301,7 +301,7 @@
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -311,7 +311,7 @@
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	current_track_handle = om_handle(tracks[newTrackIndex])
+	rel_set(src, "current_track", tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -420,7 +420,7 @@
 	var/obj/machinery/media/jukebox/ghost/jukebox = target
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-	LAZYADD(jukebox.custom_tracks, new /datum/track(url, title, duration, ask.text, genre))
+	own_add(jukebox, "custom_tracks", new /datum/track(url, title, duration, ask.text, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	if(!check_rights(R_FUN|R_ADMIN))
@@ -437,7 +437,7 @@
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			LAZYREMOVE(custom_tracks, T)
+			own_take_member(src, "custom_tracks", T)
 			qdel(T)
 			return
 
@@ -478,8 +478,7 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_
 /obj/machinery/media/jukebox/step_start_condition()
 	return playing
 
-/// LC-refs: current track -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// current track (a relation view: it reads null once the target is deleted).
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
-	return om_resolve(current_track_handle)
+	return current_track
 
-DECLARE_REF(/obj/machinery/media/jukebox, "remotes", HELD, null)

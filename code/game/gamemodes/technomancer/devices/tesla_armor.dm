@@ -7,7 +7,7 @@
 	cost = 150
 	obj_path = /obj/item/clothing/suit/armor/tesla
 
-OM_TIMER_SLOT(/obj/item/clothing/suit/armor/tesla, recharge_timer)
+OWN_TIMER(/obj/item/clothing/suit/armor/tesla, recharge_timer)
 
 /obj/item/clothing/suit/armor/tesla
 	name = "tesla armor"

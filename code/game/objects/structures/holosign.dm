@@ -9,14 +9,14 @@
 /obj/structure/holosign/Initialize(mapload, source_projector)
 	. = ..()
 	if(source_projector)
-		projector = source_projector
-		LAZYADD(projector.signs, src)
+		rel_set(src, "projector", source_projector) // the pair adds us to its signs
 /*	if(overlays) // Fucking god damnit why do we have to have an entire different subsystem for this shit from other codebases.
 		overlays.add_overlay(src, icon, icon_state, ABOVE_MOB_LAYER, plane, dir, alpha, RESET_ALPHA) //you see mobs under it, but you hit them like they are above it
 		alpha = 0
 */
 
-DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
+REL_PAIR(/obj/structure/holosign, projector, signs)
+REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 
 /obj/structure/holosign/declare_interactions(list/into)
 	into += list(

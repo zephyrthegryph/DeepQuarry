@@ -181,10 +181,9 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		cell = new /obj/item/cell/high(src) // ALLOW(decl): only when make_cell
+		own_set(src, "cell", new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
 	return ..()
 
-DECLARE_REF(/obj/item/rcd/electric, "cell", OWNED, null)
 
 /obj/item/rcd/electric/get_cell()
 	RETURN_TYPE(/obj/item/cell)
@@ -359,12 +358,11 @@ MATERIAL_MIX(/obj/item/rcd_ammo/large, list(DEFAULT_WALL_MATERIAL = 45000,MAT_GL
 	add_overlay("[initial(icon_state)]_charge[nearest_ten]")
 
 /obj/item/rcd/proc/perform_effect(atom/A, time_taken)
-	LAZYSET(effects, A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
+	own_put(src, "effects", A, new /obj/effect/constructing_effect(get_turf(A), time_taken, TYPE_TABLE_GET(src, rcd_modes)[mode_index]))
 
 /obj/item/rcd/proc/cleanup_effect(atom/A)
 	if(A in effects)
-		qdel(LAZYACCESS(effects, A))
-		LAZYREMOVE(effects, A)
+		own_put(src, "effects", A, null) // drops the key and disposes of (deletes) the owned effect
 
 /obj/item/rcd/proc/check_menu(mob/living/user)
 	if(!istype(user))

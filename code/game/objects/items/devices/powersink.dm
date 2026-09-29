@@ -21,7 +21,7 @@
 	var/drained_this_tick = 0		// One drain per step, however many callers ask.
 
 	var/PN = 0			// The power region we drain
-	var/attached_handle		// the attached cable
+	var/obj/structure/cable/attached		// the attached cable
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
@@ -32,7 +32,7 @@
 		if(!isturf(T) || !T.is_plating())
 			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
 			return ITEM_INTERACT_BLOCKING
-		attached_handle = om_handle(locate_within(T, /obj/structure/cable))
+		rel_set(src, "attached", locate_within(T, /obj/structure/cable))
 		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING
@@ -119,6 +119,6 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 		return
 	PN = attached()?.get_power_region() || 0
 
-/// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: attached (reads null once it is gone).
 /obj/item/powersink/proc/attached() as /obj/structure/cable
-	return om_resolve(attached_handle)
+	return attached

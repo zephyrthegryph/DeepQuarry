@@ -100,7 +100,6 @@
 	var/tmp/mob/living/carbon/human/host
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
-DECLARE_REF(/datum/affliction/contagion, "host", BACK, null)
 
 /// Contagions are systemic: whatever arguments a subtype's constructor takes,
 /// the affliction location is null.
@@ -134,7 +133,7 @@ DECLARE_REF(/datum/affliction/contagion, "host", BACK, null)
 
 /datum/affliction/contagion/on_added()
 	..()
-	host = owner
+	rel_set(src, "host", owner)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)
 	update_spread_lane()
@@ -146,7 +145,7 @@ DECLARE_REF(/datum/affliction/contagion, "host", BACK, null)
 		End()
 	..()
 	registry_leave(REGISTRY_ACTIVE_DISEASES, src)
-	host = null
+	rel_clear(src, "host")
 
 /datum/affliction/contagion/proc/try_infect(mob/living/infectee, make_copy = TRUE)
 	return infect(infectee, make_copy)

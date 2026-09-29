@@ -54,8 +54,6 @@
 	var/list/type_tables
 	/// Canonical text -> the shared table with those values.
 	var/list/interned
-	/// "[type]|[id]" -> the base provider for that type, or FALSE.
-	var/list/resolved_base
 
 /datum/property_registry/New(list/def_list, list/provider_list)
 	..()
@@ -167,8 +165,13 @@
 
 /// The base provider answering `id` for `path`: the deepest applies_to.
 /datum/property_registry/proc/base_provider(path, id)
-	var/key = "[path]|[id]"
-	. = LAZYACCESS(resolved_base, key)
+	// A memo of references to our own providers, kept off the (registered, frozen-after-boot)
+	// registry instance: "[registry key]|[type]|[id]" -> the base provider, or FALSE. The registry
+	// is named by its cached own_key(), not ref(src): this runs per property read (~365k times at
+	// boot), and building a ref string each time was most of its cost.
+	var/static/list/resolved_base = list()
+	var/key = "[own_key(src)]|[path]|[id]"
+	. = resolved_base[key]
 	if(!isnull(.))
 		return . || null
 	var/datum/property_provider/best
@@ -177,7 +180,7 @@
 			continue
 		if(!best || ispath(provider.applies_to, best.applies_to))
 			best = provider
-	LAZYSET(resolved_base, key, best || FALSE)
+	resolved_base[key] = best || FALSE
 	return best
 
 /// The interned per-type table for `path` and `variant`: measure id -> value,

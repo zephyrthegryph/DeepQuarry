@@ -31,12 +31,8 @@
 /obj/machinery/lapvend/proc/reset_order()
 	set_state(0)
 	devtype = 0
-	if(fabricated_laptop)
-		qdel(fabricated_laptop)
-		fabricated_laptop = null
-	if(fabricated_tablet)
-		qdel(fabricated_tablet)
-		fabricated_tablet = null
+	own_clear(src, "fabricated_laptop", OWN_DELETE)
+	own_clear(src, "fabricated_tablet", OWN_DELETE)
 	dev_cpu = 1
 	dev_battery = 1
 	dev_disk = 1
@@ -50,113 +46,113 @@
 	total_price = 0
 	if(devtype == 1) 		// Laptop, generally cheaper to make it accessible for most station roles
 		if(fabricate)
-			fabricated_laptop = new(src)
+			own_set(src, "fabricated_laptop", new /obj/item/modular_computer/laptop(src))
 		total_price = 99
 		switch(dev_cpu)
 			if(1)
 				if(fabricate)
-					fabricated_laptop.processor_unit = new/obj/item/computer_hardware/processor_unit/small(fabricated_laptop)
+					own_set(fabricated_laptop, "processor_unit", new/obj/item/computer_hardware/processor_unit/small(fabricated_laptop))
 			if(2)
 				if(fabricate)
-					fabricated_laptop.processor_unit = new/obj/item/computer_hardware/processor_unit(fabricated_laptop)
+					own_set(fabricated_laptop, "processor_unit", new/obj/item/computer_hardware/processor_unit(fabricated_laptop))
 				total_price += 299
 		switch(dev_battery)
 			if(1) // Basic(750C)
 				if(fabricate)
-					fabricated_laptop.battery_module = new/obj/item/computer_hardware/battery_module(fabricated_laptop)
+					own_set(fabricated_laptop, "battery_module", new/obj/item/computer_hardware/battery_module(fabricated_laptop))
 			if(2) // Upgraded(1100C)
 				if(fabricate)
-					fabricated_laptop.battery_module = new/obj/item/computer_hardware/battery_module/advanced(fabricated_laptop)
+					own_set(fabricated_laptop, "battery_module", new/obj/item/computer_hardware/battery_module/advanced(fabricated_laptop))
 				total_price += 199
 			if(3) // Advanced(1500C)
 				if(fabricate)
-					fabricated_laptop.battery_module = new/obj/item/computer_hardware/battery_module/super(fabricated_laptop)
+					own_set(fabricated_laptop, "battery_module", new/obj/item/computer_hardware/battery_module/super(fabricated_laptop))
 				total_price += 499
 		switch(dev_disk)
 			if(1) // Basic(128GQ)
 				if(fabricate)
-					fabricated_laptop.hard_drive = new/obj/item/computer_hardware/hard_drive(fabricated_laptop)
+					own_set(fabricated_laptop, "hard_drive", new/obj/item/computer_hardware/hard_drive(fabricated_laptop))
 			if(2) // Upgraded(256GQ)
 				if(fabricate)
-					fabricated_laptop.hard_drive = new/obj/item/computer_hardware/hard_drive/advanced(fabricated_laptop)
+					own_set(fabricated_laptop, "hard_drive", new/obj/item/computer_hardware/hard_drive/advanced(fabricated_laptop))
 				total_price += 99
 			if(3) // Advanced(512GQ)
 				if(fabricate)
-					fabricated_laptop.hard_drive = new/obj/item/computer_hardware/hard_drive/super(fabricated_laptop)
+					own_set(fabricated_laptop, "hard_drive", new/obj/item/computer_hardware/hard_drive/super(fabricated_laptop))
 				total_price += 299
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
-					fabricated_laptop.network_card = new/obj/item/computer_hardware/network_card(fabricated_laptop)
+					own_set(fabricated_laptop, "network_card", new/obj/item/computer_hardware/network_card(fabricated_laptop))
 				total_price += 99
 			if(2) // Advanced (Long Range)
 				if(fabricate)
-					fabricated_laptop.network_card = new/obj/item/computer_hardware/network_card/advanced(fabricated_laptop)
+					own_set(fabricated_laptop, "network_card", new/obj/item/computer_hardware/network_card/advanced(fabricated_laptop))
 				total_price += 299
 		if(dev_tesla)
 			total_price += 399
 			if(fabricate)
-				fabricated_laptop.tesla_link = new/obj/item/computer_hardware/tesla_link(fabricated_laptop)
+				own_set(fabricated_laptop, "tesla_link", new/obj/item/computer_hardware/tesla_link(fabricated_laptop))
 		if(dev_nanoprint)
 			total_price += 99
 			if(fabricate)
-				fabricated_laptop.nano_printer = new/obj/item/computer_hardware/nano_printer(fabricated_laptop)
+				own_set(fabricated_laptop, "nano_printer", new/obj/item/computer_hardware/nano_printer(fabricated_laptop))
 		if(dev_card)
 			total_price += 199
 			if(fabricate)
-				fabricated_laptop.card_slot = new/obj/item/computer_hardware/card_slot(fabricated_laptop)
+				own_set(fabricated_laptop, "card_slot", new/obj/item/computer_hardware/card_slot(fabricated_laptop))
 
 		return total_price
 	else if(devtype == 2) 	// Tablet, more expensive, not everyone could probably afford this.
 		if(fabricate)
-			fabricated_tablet = new(src)
-			fabricated_tablet.processor_unit = new/obj/item/computer_hardware/processor_unit/small(fabricated_tablet)
+			own_set(src, "fabricated_tablet", new /obj/item/modular_computer/tablet(src))
+			own_set(fabricated_tablet, "processor_unit", new/obj/item/computer_hardware/processor_unit/small(fabricated_tablet))
 		total_price = 199
 		switch(dev_battery)
 			if(1) // Basic(300C)
 				if(fabricate)
-					fabricated_tablet.battery_module = new/obj/item/computer_hardware/battery_module/nano(fabricated_tablet)
+					own_set(fabricated_tablet, "battery_module", new/obj/item/computer_hardware/battery_module/nano(fabricated_tablet))
 			if(2) // Upgraded(500C)
 				if(fabricate)
-					fabricated_tablet.battery_module = new/obj/item/computer_hardware/battery_module/micro(fabricated_tablet)
+					own_set(fabricated_tablet, "battery_module", new/obj/item/computer_hardware/battery_module/micro(fabricated_tablet))
 				total_price += 199
 			if(3) // Advanced(750C)
 				if(fabricate)
-					fabricated_tablet.battery_module = new/obj/item/computer_hardware/battery_module(fabricated_tablet)
+					own_set(fabricated_tablet, "battery_module", new/obj/item/computer_hardware/battery_module(fabricated_tablet))
 				total_price += 499
 		switch(dev_disk)
 			if(1) // Basic(32GQ)
 				if(fabricate)
-					fabricated_tablet.hard_drive = new/obj/item/computer_hardware/hard_drive/micro(fabricated_tablet)
+					own_set(fabricated_tablet, "hard_drive", new/obj/item/computer_hardware/hard_drive/micro(fabricated_tablet))
 			if(2) // Upgraded(64GQ)
 				if(fabricate)
-					fabricated_tablet.hard_drive = new/obj/item/computer_hardware/hard_drive/small(fabricated_tablet)
+					own_set(fabricated_tablet, "hard_drive", new/obj/item/computer_hardware/hard_drive/small(fabricated_tablet))
 				total_price += 99
 			if(3) // Advanced(128GQ)
 				if(fabricate)
-					fabricated_tablet.hard_drive = new/obj/item/computer_hardware/hard_drive(fabricated_tablet)
+					own_set(fabricated_tablet, "hard_drive", new/obj/item/computer_hardware/hard_drive(fabricated_tablet))
 				total_price += 299
 		switch(dev_netcard)
 			if(1) // Basic(Short-Range)
 				if(fabricate)
-					fabricated_tablet.network_card = new/obj/item/computer_hardware/network_card(fabricated_tablet)
+					own_set(fabricated_tablet, "network_card", new/obj/item/computer_hardware/network_card(fabricated_tablet))
 				total_price += 99
 			if(2) // Advanced (Long Range)
 				if(fabricate)
-					fabricated_tablet.network_card = new/obj/item/computer_hardware/network_card/advanced(fabricated_tablet)
+					own_set(fabricated_tablet, "network_card", new/obj/item/computer_hardware/network_card/advanced(fabricated_tablet))
 				total_price += 299
 		if(dev_nanoprint)
 			total_price += 99
 			if(fabricate)
-				fabricated_tablet.nano_printer = new/obj/item/computer_hardware/nano_printer(fabricated_tablet)
+				own_set(fabricated_tablet, "nano_printer", new/obj/item/computer_hardware/nano_printer(fabricated_tablet))
 		if(dev_card)
 			total_price += 199
 			if(fabricate)
-				fabricated_tablet.card_slot = new/obj/item/computer_hardware/card_slot(fabricated_tablet)
+				own_set(fabricated_tablet, "card_slot", new/obj/item/computer_hardware/card_slot(fabricated_tablet))
 		if(dev_tesla)
 			total_price += 399
 			if(fabricate)
-				fabricated_tablet.tesla_link = new/obj/item/computer_hardware/tesla_link(fabricated_tablet)
+				own_set(fabricated_tablet, "tesla_link", new/obj/item/computer_hardware/tesla_link(fabricated_tablet))
 		return total_price
 	return 0
 
@@ -271,13 +267,13 @@
 				fabricated_laptop.set_anchored(FALSE)
 				fabricated_laptop.update_icon()
 				fabricated_laptop.update_verbs()
-				fabricated_laptop = null
+				own_take(src, "fabricated_laptop")
 			else if((devtype == 2) && fabricated_tablet)
 				if(fabricated_tablet.battery_module)
 					fabricated_tablet.battery_module.charge_to_full()
 				fabricated_tablet.forceMove(src.loc)
 				fabricated_tablet.update_verbs()
-				fabricated_tablet = null
+				own_take(src, "fabricated_tablet")
 			ping("Enjoy your new product!")
 			set_state(3)
 			return TRUE
@@ -311,5 +307,3 @@
 	else
 		return customer_account.debit(total_price, "Computer Manufacturer", "Purchase of [(devtype == 1) ? "laptop computer" : "tablet microcomputer"]", name)
 
-DECLARE_REF(/obj/machinery/lapvend, "fabricated_laptop", OWNED, null)
-DECLARE_REF(/obj/machinery/lapvend, "fabricated_tablet", OWNED, null)

@@ -23,12 +23,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 	. = ..()
 	randpixel_xy()
 
-DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
 	. = BB
-	BB = null
+	own_take(src, "BB")
 	set_dir(pick(GLOB.cardinal)) //spin spent casings
 	update_icon()
 
@@ -42,7 +41,7 @@ DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 
 /// The next shell on `floor` that fits `box`, or null (the box is full, or there is none).
 /obj/item/ammo_casing/proc/next_shell(obj/item/ammo_magazine/box, turf/floor)
-	if(box.stored_ammo.len >= box.max_ammo)
+	if(length(box.stored_ammo) >= box.max_ammo)
 		return null
 	for(var/obj/item/ammo_casing/bullet in floor)
 		if(box.caliber == bullet.caliber && bullet.BB)
@@ -63,7 +62,7 @@ DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 	if(!bullet)
 		return STEP_DONE
 	bullet.forceMove(box)
-	box.stored_ammo.Add(bullet)
+	own_add(box, "stored_ammo", bullet)
 	box.update_icon()
 	task.collected++
 	return next_shell(box, task.floor) ? STEP_REPEAT(0.5 SECONDS) : STEP_DONE
@@ -75,7 +74,7 @@ DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 	if(!box)
 		return
 	if(boolets > 0)
-		to_chat(user, span_notice("You collect [boolets] shell\s. [box] now contains [box.stored_ammo.len] shell\s."))
+		to_chat(user, span_notice("You collect [boolets] shell\s. [box] now contains [length(box.stored_ammo)] shell\s."))
 	else
 		to_chat(user, span_warning("You fail to collect anything!"))
 	box.reloading = FALSE
@@ -185,7 +184,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_casing, INTERACT_ITEM(null, PROC_REF(interac
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
-				stored_ammo += new ammo_type(src)
+				own_add(src, "stored_ammo", new ammo_type(src))
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
@@ -213,28 +212,28 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		if(C.caliber != caliber)
 			to_chat(user, span_warning("[C] does not fit into [src]."))
 			return
-		if(stored_ammo.len >= max_ammo)
+		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		user.remove_from_mob(C)
 		C.forceMove(src)
-		stored_ammo.Add(C)
+		own_add(src, "stored_ammo", C)
 		update_icon()
 	if(istype(W, /obj/item/ammo_magazine/clip))
 		var/obj/item/ammo_magazine/clip/L = W
 		if(L.caliber != caliber)
 			to_chat(user, span_warning("The ammo in [L] does not fit into [src]."))
 			return
-		if(!L.stored_ammo.len)
+		if(!length(L.stored_ammo))
 			to_chat(user, span_warning("There's no more ammo [L]!"))
 			return
-		if(stored_ammo.len >= max_ammo)
+		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
 		var/obj/item/ammo_casing/AC = L.stored_ammo[1] //select the next casing.
-		L.stored_ammo -= AC //Remove this casing from loaded list of the clip.
 		AC.forceMove(src)
-		stored_ammo.Insert(1, AC) //add it to the head of our magazine's list
+		own_transfer(L, "stored_ammo", src, "stored_ammo", AC) //move this casing from the clip's loaded list to ours
+		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of our magazine's list
 		L.update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()
@@ -243,7 +242,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 /obj/item/ammo_magazine/proc/magazine_interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	make_rounds_real()
 	if(can_remove_ammo)
-		if(!stored_ammo.len)
+		if(!length(stored_ammo))
 			to_chat(user, span_notice("[src] is already empty!"))
 			return
 		to_chat(user, span_notice("You empty [src]."))
@@ -253,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 		for(var/obj/item/ammo_casing/C in stored_ammo)
 			C.forceMove(user.loc)
 			C.set_dir(pick(GLOB.cardinal))
-		stored_ammo.Cut()
+		own_take_all(src, "stored_ammo")
 		update_icon()
 	else
 		to_chat(user, span_notice("\The [src] is not designed to be unloaded."))
@@ -264,9 +263,9 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	make_rounds_real()
 	if(can_remove_ammo)	// For Smart Magazines
 		if(user.get_inactive_hand() == src)
-			if(stored_ammo.len)
-				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
-				stored_ammo-=C
+			if(length(stored_ammo))
+				var/obj/item/ammo_casing/C = stored_ammo[length(stored_ammo)]
+				own_take_member(src, "stored_ammo", C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
@@ -285,7 +284,11 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	for(var/i in 1 to latent_rounds)
 		rounds += new ammo_type(src)
 	latent_rounds = 0
-	stored_ammo.Insert(1, rounds)
+	// The new rounds go to the head of the list, in order.
+	var/head = 1
+	for(var/obj/item/ammo_casing/new_round as anything in rounds)
+		if(own_add(src, "stored_ammo", new_round))
+			moveElement(stored_ammo, length(stored_ammo), head++)
 
 /obj/item/ammo_magazine/pickup(mob/user)
 	make_rounds_real()
@@ -303,7 +306,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 
 /obj/item/ammo_magazine/update_icon()
 	if(multiple_sprites)
-		//find the lowest key greater than or equal to stored_ammo.len
+		//find the lowest key greater than or equal to length(stored_ammo)
 		var/new_state = null
 		for(var/idx in 1 to length(icon_keys))
 			var/threshold = LAZYACCESS(icon_keys, idx)
@@ -370,9 +373,9 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 	make_rounds_real()
 	if(can_remove_ammo)
 		if(isliving(user) && Adjacent(user))
-			if(stored_ammo.len)
-				var/obj/item/ammo_casing/C = stored_ammo[stored_ammo.len]
-				stored_ammo-=C
+			if(length(stored_ammo))
+				var/obj/item/ammo_casing/C = stored_ammo[length(stored_ammo)]
+				own_take_member(src, "stored_ammo", C)
 				user.put_in_hands(C)
 				act_message(user, src, MSG_SELF(span_notice("You remove \a [C] from %T%.")), MSG_OTHERS("%U% removes \a [C] from %T%."))
 				update_icon()
@@ -384,4 +387,3 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 
 	. += span_notice("Alt-click to extract contents.")
 
-DECLARE_REF(/obj/item/ammo_magazine, "stored_ammo", OWNED_LIST, null)

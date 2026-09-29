@@ -20,17 +20,17 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 			else
 				stack_trace("Disease Outbreak: Invalid Event Level [severity]. Expected: 1-2")
 				virus = /datum/affliction/contagion/cold
-		chosen_disease = new virus
+		own_set(src, "chosen_disease", new virus)
 	else
 		if(severity == EVENT_LEVEL_MAJOR)
-			chosen_disease = create_virus(severity * pick(2,3))	//50% chance for a major disease instead of a moderate one
+			own_set(src, "chosen_disease", create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
 		else
-			chosen_disease = create_virus(severity * 2)
+			own_set(src, "chosen_disease", create_virus(severity * 2))
 
 	chosen_disease.virus_modifiers |= CARRIER
 
 /datum/event/disease_outbreak/start()
-	GLOB.current_pending_diseases += chosen_disease
+	GLOB.current_pending_diseases += chosen_disease.Copy()
 
 	var/list/candidates = list()
 	for(var/mob/living/carbon/human/G in REGISTRY_MEMBERS(REGISTRY_HUMANS))
@@ -58,12 +58,16 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		chosen_infect--
 
 	if(!GLOB.archive_diseases[chosen_disease.GetDiseaseID()])
-		GLOB.archive_diseases[chosen_disease.GetDiseaseID()] = chosen_disease
+		// The event owns chosen_disease (deleted with it); the archive keeps its own copy.
+		GLOB.archive_diseases[chosen_disease.GetDiseaseID()] = chosen_disease.Copy()
 
 //Creates a virus with a harmful effect, guaranteed to be spreadable by contact or airborne
 /datum/event/disease_outbreak/proc/create_virus(max_severity = 6)
 	var/datum/affliction/contagion/engineered/A = new /datum/affliction/contagion/engineered
-	A.symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
+	var/list/payload_symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
+	own_clear(A, "symptoms", OWN_DELETE)
+	for(var/datum/viral_trait/payload_symptom as anything in payload_symptoms)
+		own_add(A, "symptoms", payload_symptom)
 	A.AssignProperties(A.GenerateProperties())
 	var/list/symptoms_to_try = transmissable_symptoms.Copy()
 	while(length(symptoms_to_try))
@@ -97,4 +101,3 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		if(initial(CS.transmission) > 1)
 			transmissable_symptoms += candidate
 
-DECLARE_REF(/datum/event/disease_outbreak, "chosen_disease", OWNED, null)

@@ -77,15 +77,14 @@
 /obj/machinery/microwave/Initialize(mapload)
 	. = ..()
 
-	reagents = new/datum/reagents(100)
-	reagents.my_atom = src
+	create_reagents(100)
+	rel_set(reagents, "my_atom", src)
 
 	default_apply_parts()
 
-	soundloop = new(list(src), FALSE)
+	own_set(src, "soundloop", new /datum/looping_sound/microwave(list(src), FALSE))
 	update_icon()
 
-DECLARE_REF(/obj/machinery/microwave, "soundloop", OWNED, null)
 
 // its contents are disposed and a pAI inside is ejected.
 /obj/machinery/microwave/on_destroy(force)
@@ -598,7 +597,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		if(H.held_mob)
 			to_chat(H.held_mob, span_danger("You hear an earsplitting humming and your head aches!"))
 			qdel(H.held_mob)
-			H.held_mob = null
+			rel_clear(H, "held_mob")
 			qdel(H)
 
 	. = ..()

@@ -34,7 +34,7 @@
 	supply_conversion_value = 0.05
 
 /datum/material/cardboard/generate_recipes()
-	..()
+	var/list/recipes = ..()
 	recipes += list(
 		new /datum/stack_recipe("box", /obj/item/storage/box, pass_stack_color = TRUE, recycle_material = "[name]"),
 		new /datum/stack_recipe("donut box", /obj/item/storage/box/donut/empty, pass_stack_color = TRUE, recycle_material = "[name]"),
@@ -53,6 +53,7 @@
 			new /datum/stack_recipe("yellow folder", /obj/item/folder/yellow, recycle_material = "[name]")
 		))
 	)
+	return recipes
 
 /datum/material/toy_foam
 	name = MAT_FOAM
@@ -71,7 +72,7 @@
 
 
 /datum/material/plastic/generate_recipes()
-	. = ..()
+	var/list/recipes = ..()
 
 	recipes += list(
 		new /datum/stack_recipe("plastic crate", /obj/structure/closet/crate/plastic, 10, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE, recycle_material = "[name]"),
@@ -120,3 +121,4 @@
 		new /datum/stack_recipe("sofa right", /obj/structure/bed/chair/sofa/right, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
 		new /datum/stack_recipe("sofa corner", /obj/structure/bed/chair/sofa/corner, 1, one_per_turf = 1, on_floor = 1, supplied_material = "[name]"), \
 	))
+	return recipes

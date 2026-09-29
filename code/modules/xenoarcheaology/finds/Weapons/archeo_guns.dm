@@ -39,13 +39,13 @@
 
 /obj/item/ammo_casing/artifact/Initialize(mapload) //These should ONLY ever be in artifact weapons. If you spawn outside of artifact weapons, it'll have a riot foam dart inside of it as the bullet.
 	. = ..()
-	BB = null
+	// The casing owns BB: replace the default bullet (own_set deletes it).
 	if(istype(loc, /obj/item/gun/projectile/artifact)) //If we are IN an artifact gun
 		var/obj/item/gun/projectile/artifact/our_gun = loc
 		if(ispath(our_gun.projectile_type))
-			BB = new our_gun.projectile_type(src) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
+			own_set(src, "BB", new our_gun.projectile_type(src)) //Then we create the bullet inside of us that is the projectile_type that the gun shoots!
 		else
-			BB = new /obj/item/ammo_casing/afoam_dart/riot(src) //Something went wrong. Should never happen.
+			own_set(src, "BB", new /obj/item/ammo_casing/afoam_dart/riot(src)) //Something went wrong. Should never happen.
 	else //The bullet was adminspawned in outside of an artifact gun.
-		BB = new /obj/item/ammo_casing/afoam_dart/riot(src)
+		own_set(src, "BB", new /obj/item/ammo_casing/afoam_dart/riot(src))
 	randpixel_xy()

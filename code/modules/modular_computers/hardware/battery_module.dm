@@ -62,14 +62,13 @@
 
 /obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
 	if(ispath(cell_type))
-		battery = new cell_type(src)
+		own_set(src, "battery", new cell_type(src))
 	else
-		battery = new/obj/item/cell(src)
+		own_set(src, "battery", new/obj/item/cell(src))
 	battery.maxcharge = battery_rating
 	battery.charge = 0
 	. = ..()
 
-DECLARE_REF(/obj/item/computer_hardware/battery_module, "battery", OWNED, null)
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()
 	if(battery)

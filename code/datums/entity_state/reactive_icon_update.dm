@@ -12,13 +12,15 @@
 	///The object whose icon we update.
 	var/obj/owner
 	///Turfs we are hooked on (atom_entered), and the containers we are nested in (moved).
+	/// Turfs hooked for atom_entered: a plain cache of hook targets rebuilt on every move (the
+	/// hooks themselves are OM-managed and die with either end; not a relation, since a turf
+	/// index entry per watched turf per move would grow without bound).
 	var/list/watched_turfs
-	var/list/watched_containers
+	/// The owner and the containers it is nested in, hooked for moved: a relation list view.
+	var/list/atom/movable/watched_containers
 
-DECLARE_REF(/datum/reactive_icon_update, "owner", BACK, "reactive_icon")
 /// Not saved: rebuilt by Initialize() (or the toggle that adds it) on the materialised object.
 /obj/var/tmp/datum/reactive_icon_update/reactive_icon
-DECLARE_REF(/obj, "reactive_icon", OWNED, null)
 
 /// Gives this object a reactive icon (was AddComponent(/datum/reactive_icon_update...)).
 /// Replaces any existing one. Returns null when the arguments are invalid.
@@ -28,25 +30,18 @@ DECLARE_REF(/obj, "reactive_icon", OWNED, null)
 		return null
 	if(reactive_icon)
 		qdel(reactive_icon)
-	reactive_icon = new type(src, icon_prefix, directions, range, triggering_mobs)
+	own_set(src, "reactive_icon", new type(src, icon_prefix, directions, range, triggering_mobs))
 	return reactive_icon
 
 /datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)
 	..()
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	src.icon_prefix = icon_prefix
 	src.directions = directions
 	src.range = range
 	if(triggering_mobs)
 		src.triggering_mobs = triggering_mobs
 	update_watch()
-
-// Drops its turf/container lists and the lists it was handed (dropped, not cut:
-// the caller may share them). Its hooks go with the OM teardown.
-DECLARE_REF(/datum/reactive_icon_update, "watched_turfs", DROP, null)
-DECLARE_REF(/datum/reactive_icon_update, "watched_containers", DROP, null)
-DECLARE_REF(/datum/reactive_icon_update, "directions", DROP, null)
-DECLARE_REF(/datum/reactive_icon_update, "triggering_mobs", DROP, null)
 
 /// Re-hooks atom_entered on every turf in range of the owner, and Moved on the owner and every
 /// container it is nested in (what connect_range did for us).
@@ -59,7 +54,9 @@ DECLARE_REF(/datum/reactive_icon_update, "triggering_mobs", DROP, null)
 			om_unhook(C, /datum/om/event/moved, src)
 	for(var/atom/movable/C as anything in new_containers)
 		om_hook(C, /datum/om/event/moved, src, PROC_REF(on_moved))
-	watched_containers = new_containers
+	rel_clear(src, "watched_containers")
+	for(var/atom/movable/C as anything in new_containers)
+		rel_add(src, "watched_containers", C)
 	var/turf/T = get_turf(owner)
 	var/list/new_turfs = T ? RANGE_TURFS(range, T) : list()
 	for(var/turf/old as anything in watched_turfs)
@@ -202,3 +199,5 @@ DECLARE_REF(/datum/reactive_icon_update, "triggering_mobs", DROP, null)
 	if(is_type_in_list(triggering_mob, triggering_mobs))
 		return TRUE
 	return FALSE
+
+REL_LIST(/datum/reactive_icon_update, watched_containers)

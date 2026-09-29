@@ -8,7 +8,7 @@
 	var/who
 	var/mob/living/original
 	if(mind)
-		original = om_resolve(mind.original_character)
+		original = mind.original_character
 
 	if (everyone)
 		who = world

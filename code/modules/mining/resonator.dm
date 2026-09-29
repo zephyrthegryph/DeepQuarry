@@ -40,7 +40,7 @@
 		var/fields = 0
 		if(depth == 0)
 			play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
-			new /obj/effect/resonance(T, om_handle(creator), burst_time)
+			new /obj/effect/resonance(T, creator, burst_time)
 			fields++
 			depth++
 		var/origin_dir = get_cardinal_dir(creator, T)
@@ -62,13 +62,13 @@
 					var/turf/oldT = newT
 					newT = get_step(oldT, dir)
 					if(step == depth)
-						new /obj/effect/resonance(newT, om_handle(creator), burst_time)
+						new /obj/effect/resonance(newT, creator, burst_time)
 						fields++
 						if(depth > 1 && fields < fieldlimit) //Works until 15 fieldlimit.
 							oldT = newT
 							dir = turn(dir, (i == 2 ? 135 : -135))
 							newT = get_step(oldT, dir)
-							new /obj/effect/resonance(newT, om_handle(creator), burst_time)
+							new /obj/effect/resonance(newT, creator, burst_time)
 							fields++
 			depth++
 
@@ -76,7 +76,7 @@
 
 	else
 		play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
-		new /obj/effect/resonance(T, om_handle(creator), burst_time)
+		new /obj/effect/resonance(T, creator, burst_time)
 		fieldsactive++
 		om_after(src, burst_time, PROC_REF(field_burst))
 
@@ -115,16 +115,19 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	layer = ABOVE_MOB_LAYER
 	mouse_opacity = 0
 	var/resonance_damage = 20
+	/// Relation view: who made the field (for attack logs); null once they are gone.
+	var/tmp/mob/creator
 
-/obj/effect/resonance/Initialize(mapload, creator = null, timetoburst)
+/obj/effect/resonance/Initialize(mapload, mob/new_creator = null, timetoburst)
 	. = ..()
 	// Start small and grow to big size as we are about to burst
 	transform = matrix()*0.75
 	animate(src, transform = matrix()*1.5, time = timetoburst)
 	// Queue the actual bursting
-	om_after(src, timetoburst, PROC_REF(burst), creator)
+	rel_set(src, "creator", new_creator)
+	om_after(src, timetoburst, PROC_REF(burst))
 
-/obj/effect/resonance/proc/burst(creator = null)
+/obj/effect/resonance/proc/burst()
 	var/turf/T = get_turf(src)
 	if(!T)
 		return

@@ -1,7 +1,8 @@
 /datum/tgui_module/atmos_control
 	name = "Atmospherics Control"
 	tgui_id = "AtmosControl"
-	var/obj/access = new()
+	/// A private access-check object (owned: built in New).
+	var/obj/access
 	var/emagged = 0
 	var/ui_ref
 	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
@@ -9,6 +10,7 @@
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
+	own_set(src, "access", new /obj())
 	access.req_access = req_access
 	access.req_one_access = req_one_access
 
@@ -19,7 +21,7 @@
 				found += alarm
 		// machines may not yet be ordered at this point
 		for(var/obj/machinery/alarm/alarm as anything in dd_sortedObjectList(found))
-			WEAK_LIST_ADD(monitored_alarms, alarm)
+			rel_add(src, "monitored_alarms", alarm)
 
 /datum/tgui_module/atmos_control/tgui_act(action, params, datum/tgui/ui)
 	if(..())
@@ -28,7 +30,7 @@
 	switch(action)
 		if("alarm")
 			if(ui_ref)
-				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
+				var/obj/machinery/alarm/alarm = locate_in_list((LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)), params["alarm"])
 				if(alarm)
 					var/datum/tgui_state/TS = generate_state(alarm)
 					alarm.tgui_interact(ui.user, parent_ui = ui_ref, state = TS)
@@ -57,7 +59,7 @@
 
 	// TODO: Move these to a cache, similar to cameras
 	var/alarms[0]
-	for(var/obj/machinery/alarm/alarm in (LAZYLEN(monitored_alarms) ? weak_list_live(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
+	for(var/obj/machinery/alarm/alarm in (LAZYLEN(monitored_alarms) ? LAZYCOPY(monitored_alarms) : REGISTRY_MEMBERS(REGISTRY_MACHINES)))
 		if(!LAZYLEN(monitored_alarms) && alarm.alarms_hidden)
 			continue
 		if(!(alarm.z in map_levels))
@@ -86,13 +88,13 @@
 
 /datum/tgui_module/atmos_control/proc/generate_state(air_alarm)
 	var/datum/tgui_state/air_alarm_remote/state = new()
-	state.atmos_control_handle = om_handle(src)
-	state.air_alarm_handle = om_handle(air_alarm)
+	rel_set(state, "atmos_control", src)
+	rel_set(state, "air_alarm", air_alarm)
 	return state
 
 /datum/tgui_state/air_alarm_remote
-	var/tmp/atmos_control_handle
-	var/tmp/air_alarm_handle
+	var/tmp/datum/tgui_module/atmos_control/atmos_control
+	var/tmp/obj/machinery/alarm/air_alarm
 
 /datum/tgui_state/air_alarm_remote/can_use_topic(src_object, mob/user)
 	if(!atmos_control().ui_ref)
@@ -112,15 +114,13 @@
 /datum/tgui_module/atmos_control/robot/tgui_state(mob/user)
 	return GLOB.tgui_self_state
 
-DECLARE_REF(/datum/tgui_module/atmos_control, "access", OWNED, null)
 
-/// LC-refs: the atmos_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The atmos_control this refers to (a relation view: null once that is deleted).
 /datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control
-	return om_resolve(atmos_control_handle)
+	return atmos_control
 
-/// LC-refs: the air_alarm this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The air_alarm this refers to (a relation view: null once that is deleted).
 /datum/tgui_state/air_alarm_remote/proc/air_alarm() as /obj/machinery/alarm
-	return om_resolve(air_alarm_handle)
+	return air_alarm
 
 /// Alarms shown by this UI, rebuilt when it opens.
-DECLARE_REF(/datum/tgui_module/atmos_control, "monitored_alarms", WEAK_LIST, null)

@@ -5,7 +5,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 	// CreateFeedChannel("Vir News Network", "Oculum Broadcast", 1, 1, "Updates from the Vir News Network!") // Removal
 
 /datum/lore/news
-	var/tmp/station_newspaper_handle
+	var/tmp/datum/feed_channel/station_newspaper
 	var/datum/lore/codex/category/main_news/news_codex = new()
 	var/newsindex
 
@@ -28,7 +28,7 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 		return
 
 	//Feed the Lore Codex into the News Machine
-	for(var/datum/lore/codex/child in news_codex.children)
+	for(var/datum/lore/codex/child in news_codex.child_pages)
 		GLOB.news_network.SubmitArticle("[child.data]", "Oculum", "Vir News Network", null, 1, "", "[child.name]")
 
 	return 1
@@ -36,11 +36,10 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 /datum/lore/news/proc/find_station_newspaper()
 	for(var/datum/feed_channel/F in GLOB.news_network.network_channels)
 		if(F.channel_name == "Vir News Network")
-			station_newspaper_handle = om_handle(F)
+			rel_set(src, "station_newspaper", F)
 			break
 
-DECLARE_REF(/datum/lore/news, "news_codex", OWNED, null)
 
-/// LC-refs: the station_newspaper this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The station_newspaper this refers to (a relation view: null once that is deleted).
 /datum/lore/news/proc/station_newspaper() as /datum/feed_channel
-	return om_resolve(station_newspaper_handle)
+	return station_newspaper

@@ -10,8 +10,8 @@
 
 	screen_loc = ui_spell_master
 
-	/// OM handle of the mob whose spells these are; read with spell_holder().
-	var/spell_holder_handle
+	/// The mob whose spells these are (a relation view; the mob owns us in spell_masters).
+	var/mob/spell_holder
 
 /// A spell button -> the spell master it is listed on. The master reads its buttons with
 /// spell_buttons(), a button its master with spell_master_of(). Either end going drops the edge;
@@ -20,13 +20,12 @@
 	name = "spell button"
 	source_single = TRUE
 
-// the master leaves its holder's spell_masters list (a handle, so the mob side can't be declared).
+// the mob owns us in its spell_masters list; we leave it in phase 2.
 // (Screen objects leave every client's screen in phase 5.)
-DECLARE_REF(/atom/movable/screen/movable/spell_master, "spell_holder_handle", BACK_VIA, "spell_masters")
 
-/// LC-refs: the mob whose spells these are -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The mob whose spells these are (a relation view: null once that is deleted).
 /atom/movable/screen/movable/spell_master/proc/spell_holder() as /mob
-	return om_resolve(spell_holder_handle)
+	return spell_holder
 
 /atom/movable/screen/movable/spell_master/MouseDrop()
 	if(showing)
@@ -99,9 +98,9 @@ DECLARE_REF(/atom/movable/screen/movable/spell_master, "spell_holder_handle", BA
 		return
 
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
-	newscreen.spell_handle = om_handle(spell)
+	rel_set(newscreen, "spell", spell)
 
-	spell.connected_button = newscreen
+	own_set(spell, "connected_button", newscreen)
 
 	if(!spell.override_base) //if it's not set, we do basic checks
 		if(spell.spell_flags & CONSTRUCT_CHECK)
@@ -117,9 +116,7 @@ DECLARE_REF(/atom/movable/screen/movable/spell_master, "spell_holder_handle", BA
 		toggle_open(2) //forces the icons to refresh on screen
 
 /atom/movable/screen/movable/spell_master/proc/remove_spell(datum/spell/spell)
-	qdel(spell.connected_button)
-
-	spell.connected_button = null
+	own_clear(spell, "connected_button", OWN_DELETE)
 
 	if(length(spell_buttons()))
 		toggle_open(showing + 1)
@@ -166,17 +163,16 @@ DECLARE_REF(/atom/movable/screen/movable/spell_master, "spell_holder_handle", BA
 	var/last_charge = 0 //not a time, but the last remembered charge value
 
 	/// OM handle of the spell this button casts; read with spell().
-	var/spell_handle
+	var/datum/spell/spell
 	var/handle_icon_updates = 0
 	// The master we are listed on is the spell_button_on relation: spell_master_of().
 
 	var/icon/last_charged_icon
 
-DECLARE_REF(/atom/movable/screen/spell, "last_charged_icon", OWNED, null)
 
-/// LC-refs: the spell this button casts -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The spell this button casts (a relation view: null once that is deleted).
 /atom/movable/screen/spell/proc/spell() as /datum/spell
-	return om_resolve(spell_handle)
+	return spell
 
 /atom/movable/screen/spell/proc/update_charge(forced_update = 0)
 	var/datum/spell/spell = spell()

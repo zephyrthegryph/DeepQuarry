@@ -9,11 +9,35 @@
 	var/list/variables
 
 /datum/scope/New(datum/node/BlockDefinition/B, datum/scope/parent)
-	src.block_ref = B
-	src.parent_ref = parent
-	src.variables = LAZYCOPY(B.initial_variables)
-	src.functions = B.functions.Copy()
+	rel_set(src, "block_ref", B)
+	rel_set(src, "parent_ref", parent)
+	// The scope owns its variable value nodes: wrap the block's raw initial values.
+	for(var/name in B.initial_variables)
+		own_put(src, "variables", name, script_value_node(B.initial_variables[name]))
+	// Functions are not copied: find_function() reads the block's own table, and `functions`
+	// holds only what the interpreter binds into this scope at runtime (SetProc()).
 	.=..()
+
+/// The function (a FunctionDefinition node, or a bound proc path) named `name`, or null.
+/datum/scope/proc/find_function(name)
+	if(!isnull(LAZYACCESS(functions, name)))
+		return functions[name]
+	var/datum/node/BlockDefinition/B = block_ref
+	return LAZYACCESS(B?.functions, name)
+
+/// Whether a function named `name` is visible in this scope.
+/datum/scope/proc/has_function(name)
+	if(name in functions)
+		return TRUE
+	var/datum/node/BlockDefinition/B = block_ref
+	return B && (name in B.functions)
+
+/// Wraps a raw script value in an expression node (a literal, or a reference to an object)
+/// so an owned variable table holds nodes it made, never the objects themselves.
+/proc/script_value_node(value)
+	if(istype(value, /datum))
+		return new /datum/node/expression/value/reference(value)
+	return new /datum/node/expression/value/literal(value)
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scope/proc/parent() as /datum/scope
@@ -23,5 +47,3 @@
 /datum/scope/proc/block_node() as /datum/node/BlockDefinition
 	return block_ref
 
-DECLARE_REF(/datum/scope, "parent_ref", BACK, null)
-DECLARE_REF(/datum/scope, "block_ref", BACK, null)

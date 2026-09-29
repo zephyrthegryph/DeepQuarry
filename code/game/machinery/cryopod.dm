@@ -222,7 +222,7 @@
 	EXPIRY_DECLARE(time_entered) // Used to keep track of the safe period.
 	var/obj/item/radio/intercom/announce //
 
-	var/control_computer_handle
+	var/obj/machinery/computer/cryopod/control_computer
 	COOLDOWN_DECLARE(no_computer_message_cooldown)
 	var/applies_stasis = 0 // allow people to change their mind
 
@@ -314,12 +314,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	find_control_computer()
 
 /obj/machinery/cryopod/proc/find_control_computer(urgent=0)
-	control_computer_handle = null
+	rel_clear(src, "control_computer")
 
 	var/area/my_area = get_area(src)
-	control_computer_handle = om_handle(locate_in_area(my_area, /obj/machinery/computer/cryopod))
+	rel_set(src, "control_computer", locate_in_area(my_area, /obj/machinery/computer/cryopod))
 	if(!control_computer()) //Fallback to old method.
-		control_computer_handle = om_handle(locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
+		rel_set(src, "control_computer", locate_in_list(range(6,src), /obj/machinery/computer/cryopod))
 
 	// Don't send messages unless we *need* the computer, and less than five minutes have passed since last time we messaged
 	if(!control_computer() && urgent && COOLDOWN_FINISHED(src, no_computer_message_cooldown))
@@ -535,8 +535,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 		//TODO: Check objectives/mode, update new targets if this mob is the target, spawn new antags?
 
 		//Make an announcement and log the person entering storage.
-		LAZYADD(control_computer().frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]")
-		LAZYADD(control_computer()._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
+		var/obj/machinery/computer/cryopod/log_console = control_computer()
+		LAZYADD(log_console.frozen_crew, "[to_despawn.real_name], [to_despawn.mind.role_alt_title] - [stationtime2text()]") // strings
+		LAZYADD(log_console._admin_logs, "[key_name(to_despawn)] ([to_despawn.mind.role_alt_title]) at [stationtime2text()]")
 		log_and_message_admins("([to_despawn.mind.role_alt_title]) entered cryostorage.", to_despawn)
 
 		var/depart_announce = TRUE
@@ -872,7 +873,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	qdel(item)
 
 	if(control_computer() && control_computer().allow_items)
-		LAZYADD(control_computer().frozen_items, "[item_name] ([char_name])")
+		var/obj/machinery/computer/cryopod/log_console = control_computer()
+		LAZYADD(log_console.frozen_items, "[item_name] ([char_name])") // strings
 
 /obj/machinery/cryopod/robot/door/gateway/quiet
 	name = "departure teleporter"
@@ -884,8 +886,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-DECLARE_REF(/obj/machinery/cryopod, "announce", HELD, null)
+OWN(/obj/machinery/cryopod, announce, OWN_CONTAINED)
 
-/// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// control computer (a relation view: it reads null once the target is deleted).
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod
-	return om_resolve(control_computer_handle)
+	return control_computer

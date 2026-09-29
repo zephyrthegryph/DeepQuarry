@@ -887,7 +887,7 @@
 				return FALSE
 
 			if(host().soulgem?.linked_belly() == host().vore_selected)
-				host().soulgem.linked_belly_handle = null
+				host().soulgem.linked_belly = null
 
 			qdel(host().vore_selected)
 			host().vore_selected = host().vore_organs[1]

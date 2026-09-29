@@ -12,7 +12,7 @@
 /datum/ai_brain/proc/give_target(mob/M, urgent = FALSE)
 	if(!M)
 		return
-	primary_threat = M
+	rel_set(src, "primary_threat", M)
 	add_personal(M, DQ_DISPOSITION_HOSTILE, 60 SECONDS, "given_target")
 	invalidate_selection()
 
@@ -20,7 +20,7 @@
 	lose_threat_at = 0
 	if(primary_threat)
 		var/old = primary_threat
-		primary_threat = null
+		rel_clear(src, "primary_threat")
 		OM_EMIT(holder, /datum/om/event/dqai_target_lost, old)
 		if(active_behavior_type)
 			stop_active(DQ_BEHAVIOR_STOP_INTERRUPTED)
@@ -33,8 +33,9 @@
 /datum/ai_brain/proc/forget_everything()
 	lose_target()
 	personal = null
+	rel_clear(src, "personal_mobs")
 	clear_path()
-	leader_ref = null
+	rel_clear(src, "leader")
 
 // ---------------------------------------------------------------------------
 // Following / leader
@@ -45,7 +46,7 @@
 	invalidate_selection()
 
 /datum/ai_brain/proc/lose_follow()
-	leader_ref = null
+	rel_clear(src, "leader")
 	invalidate_selection()
 
 // ---------------------------------------------------------------------------
@@ -109,7 +110,7 @@
 		model.record_damage(0, INJURY_BLUNT, attacker)
 	if(!primary_threat)
 		var/mob/old = primary_threat
-		primary_threat = attacker
+		rel_set(src, "primary_threat", attacker)
 		OM_EMIT(holder, /datum/om/event/dqai_target_changed, attacker, old)
 	invalidate_selection()
 
@@ -140,7 +141,7 @@
 	var/max_home_distance = 7
 	/// Destination turf for a one-shot walk. Set via give_destination, read by
 	/// /datum/ai_behavior/walk_to_destination.
-	var/tmp/destination_handle
+	var/tmp/turf/destination
 
 /// Legacy stubs for procs that mob subtypes still try to call. Each returns
 /// a safe default — the real behavior moved to /datum/ai_behavior selection.
@@ -155,9 +156,7 @@
 	return
 
 /datum/ai_brain/proc/check_attacker(mob/M)
-	if(!personal || !M)
-		return FALSE
-	var/list/entry = personal[om_handle(M)]
+	var/list/entry = personal_entry(M)
 	return entry && entry["disp"] <= DQ_DISPOSITION_HOSTILE
 
 /datum/ai_brain/proc/on_hear_say(mob/living/speaker, message)
@@ -171,6 +170,6 @@
 		if("returns_home", "mauling")
 			invalidate_selection()
 
-/// LC-refs: the destination this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the destination this refers to (a relation view: null once it is deleted).
 /datum/ai_brain/proc/destination() as /turf
-	return om_resolve(destination_handle)
+	return destination

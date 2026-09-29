@@ -23,9 +23,9 @@ MATERIAL_MIX(/obj/item/multitool, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	var/toolmode = MULTITOOL_MODE_STANDARD
 	var/static/list/modes = list(MULTITOOL_MODE_STANDARD, MULTITOOL_MODE_INTCIRCUITS)
 
-	var/buffer_handle // simple machine buffer for device linkage
-	var/connecting_handle //same for cryopod linkage
-	var/connectable_handle	//Used to connect machinery.
+	var/obj/machinery/telecomms/buffer // simple machine buffer for device linkage
+	var/obj/machinery/clonepod/connecting //same for cryopod linkage
+	var/obj/machinery/connectable	//Used to connect machinery.
 	var/ref_wiring //An IC ref (ic_ref()) for integrated circuitry. This is now the Omnitool.
 	toolspeed = 1
 	tool_qualities = list(TOOL_MULTITOOL)
@@ -39,7 +39,7 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 		return
 
 	if(selected_io())
-		selected_io_handle = null
+		rel_clear(src, "selected_io")
 		to_chat(user, span_notice("You clear the wired connection from the multitool."))
 		update_icon()
 		return
@@ -52,9 +52,9 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 	switch(ask.choice)
 		if("Clear Buffers")
 			to_chat(user,span_notice("You clear \the [src]'s memory."))
-			buffer_handle = null
-			connecting_handle = null
-			connectable_handle = null
+			rel_clear(src, "buffer")
+			rel_clear(src, "connecting")
+			rel_clear(src, "connectable")
 			ref_wiring = null
 			accepting_refs = 0
 			if(toolmode == MULTITOOL_MODE_INTCIRCUITS)
@@ -141,14 +141,14 @@ DECLARE_INTERACTIONS(/obj/item/multitool, INTERACT_USE(null, PROC_REF(interactio
 /obj/item/multitool/get_multitool()
 	return src
 
-/// LC-refs: buffer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: buffer (reads null once it is gone).
 /obj/item/multitool/proc/buffer() as /obj/machinery/telecomms
-	return om_resolve(buffer_handle)
+	return buffer
 
-/// LC-refs: connecting -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: connecting (reads null once it is gone).
 /obj/item/multitool/proc/connecting() as /obj/machinery/clonepod
-	return om_resolve(connecting_handle)
+	return connecting
 
-/// LC-refs: connectable -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: connectable (reads null once it is gone).
 /obj/item/multitool/proc/connectable() as /obj/machinery
-	return om_resolve(connectable_handle)
+	return connectable

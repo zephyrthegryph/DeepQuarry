@@ -17,4 +17,4 @@
 	energy_cost = 500
 
 /obj/item/spell/summon/summon_ward/on_summon(mob/living/simple_mob/mechanical/ward/monitor/my_ward)
-	my_ward.owner = owner_ref()
+	rel_set(my_ward, "owner", owner_ref())

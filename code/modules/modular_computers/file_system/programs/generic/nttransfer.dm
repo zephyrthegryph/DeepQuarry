@@ -17,10 +17,10 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 
 	var/error = ""										// Error screen
 	var/server_password = ""							// Optional password to download the file.
-	var/tmp/provided_file_handle	// File which is provided to clients.
+	var/tmp/datum/computer_file/provided_file	// File which is provided to clients.
 	var/datum/computer_file/downloaded_file = null		// File which is being downloaded
 	var/list/connected_clients					// List of connected clients.
-	var/tmp/remote_handle	// Client var, specifies who are we downloading from.
+	var/tmp/datum/computer_file/program/nttransfer/remote	// Client var, specifies who are we downloading from.
 	var/download_completion = 0							// Download progress in GQ
 	var/actual_netspeed = 0								// Displayed in the UI, this is the actual transfer speed.
 	var/unique_token 									// UID of this program
@@ -54,9 +54,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	if(provided_file()) // Server mode, disconnect all clients
 		for(var/datum/computer_file/program/nttransfer/P in connected_clients)
 			P.crash_download("Connection terminated by remote server")
-		downloaded_file = null
+		own_clear(src, "downloaded_file", OWN_DELETE)
 		if(GLOB.ntnet_global)
-			LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
+			rel_remove(GLOB.ntnet_global, "fileservers", src)
 	..(forced)
 
 // Finishes download and attempts to store the file on HDD
@@ -73,9 +73,9 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 // Cleans up variables for next use
 /datum/computer_file/program/nttransfer/proc/finalize_download()
 	if(remote())
-		LAZYREMOVE(remote().connected_clients, src)
-	downloaded_file = null
-	remote_handle = null
+		rel_remove(remote(), "connected_clients", src)
+	own_clear(src, "downloaded_file", OWN_DELETE) // null when finish_download() stored it
+	rel_clear(src, "remote")
 	download_completion = 0
 
 /datum/computer_file/program/nttransfer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
@@ -131,7 +131,7 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 		if("PRG_downloadfile")
 			for(var/datum/computer_file/program/nttransfer/P in GLOB.ntnet_global.fileservers)
 				if(P.unique_token == text2num(params["uid"]))
-					remote_handle = om_handle(P)
+					rel_set(src, "remote", P)
 					break
 			if(!remote() || !remote().provided_file())
 				return
@@ -142,18 +142,18 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 				if(pass != remote().server_password)
 					error = "Incorrect Password"
 					return
-			downloaded_file = remote().provided_file().clone()
-			LAZYADD(remote().connected_clients, src)
+			own_set(src, "downloaded_file", remote().provided_file().clone())
+			rel_add(remote(), "connected_clients", src)
 			return TRUE
 		if("PRG_reset")
 			error = ""
 			upload_menu = 0
 			finalize_download()
 			if(src in GLOB.ntnet_global.fileservers)
-				LAZYREMOVE(GLOB.ntnet_global.fileservers, src)
+				rel_remove(GLOB.ntnet_global, "fileservers", src)
 			for(var/datum/computer_file/program/nttransfer/T in connected_clients)
 				T.crash_download("Remote server has forcibly closed the connection")
-			provided_file_handle = null
+			rel_clear(src, "provided_file")
 			return TRUE
 		if("PRG_setpassword")
 			var/pass = act_ask(ui.user, action, params, ui, "k157", /datum/om/prompt/text, message = "Enter new server password. Leave blank to cancel, input 'none' to disable password.", title = "Server security", default = "none")
@@ -172,8 +172,8 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 					if(F.unsendable)
 						error = "I/O Error: File locked."
 						return
-					provided_file_handle = om_handle(F)
-					LAZYOR(GLOB.ntnet_global.fileservers, src)
+					rel_set(src, "provided_file", F)
+					rel_add(GLOB.ntnet_global, "fileservers", src)
 					return
 			error = "I/O Error: Unable to locate file on hard drive."
 			return TRUE
@@ -181,12 +181,11 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			upload_menu = 1
 			return TRUE
 
-DECLARE_REF(/datum/computer_file/program/nttransfer, "downloaded_file", OWNED, null)
 
-/// LC-refs: File which is provided to clients. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// File which is provided to clients. (a relation view: null once that is deleted).
 /datum/computer_file/program/nttransfer/proc/provided_file() as /datum/computer_file
-	return om_resolve(provided_file_handle)
+	return provided_file
 
-/// LC-refs: Client var, specifies who are we downloading from. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Client var, specifies who are we downloading from. (a relation view: null once that is deleted).
 /datum/computer_file/program/nttransfer/proc/remote() as /datum/computer_file/program/nttransfer
-	return om_resolve(remote_handle)
+	return remote

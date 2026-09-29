@@ -93,7 +93,3 @@ EXTEND_INTERACTIONS(/obj/mecha/working/hoverpod/shuttlecraft, INTERACT_ITEM("Pai
 				base_paint = ask.picked_color
 	update_icon()
 
-DECLARE_REF(/obj/mecha/working/hoverpod/shuttlecraft, "base_paint_mask", OWNED, null)
-DECLARE_REF(/obj/mecha/working/hoverpod/shuttlecraft, "engine_paint_mask", OWNED, null)
-DECLARE_REF(/obj/mecha/working/hoverpod/shuttlecraft, "central_paint_mask", OWNED, null)
-DECLARE_REF(/obj/mecha/working/hoverpod/shuttlecraft, "front_paint_mask", OWNED, null)

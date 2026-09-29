@@ -15,8 +15,8 @@
 // next generate_site() to reuse.
 
 /datum/expedition_teardown_job
-	var/tmp/datum/world_service/expedition/controller_static
-	var/tmp/site_handle
+	/// The released site, owned by the job (taken from the service's sites) until the wipe ends.
+	var/tmp/datum/expedition_site/site
 	var/z_level
 	var/reason
 	var/yield_count = 0
@@ -24,10 +24,9 @@
 	/// The z's turfs, in wipe order, while the job runs.
 	var/tmp/list/turfs
 
-/datum/expedition_teardown_job/New(datum/world_service/expedition/new_controller, datum/expedition_site/new_site, new_reason)
+/datum/expedition_teardown_job/New(datum/expedition_site/new_site, new_reason)
 	..()
-	controller_static = new_controller
-	site_handle = om_handle(new_site)
+	own_move(new_site, src, "site")
 	z_level = new_site?.z_level
 	reason = new_reason
 
@@ -62,10 +61,13 @@
 		return
 	var/site_name = site().name
 	if(z_level >= 1 && z_level <= world.maxz)
+		// Nothing may keep naming a turf of a pooled z: drop the views made during the wipe too.
+		var/dropped = om_drop_z(z_level)
+		log_world("Expedition: om_drop_z(z[z_level]) cleared [dropped] relation view(s) before pooling.")
 		controller().free_z |= z_level
 	controller().teardown_z -= "[z_level]"
 	log_world("Expedition: released [site_name], z[z_level] recycled after [yield_count] budget yields (reason: [reason]).")
-	qdel(site())
+	own_clear(src, "site", OWN_DELETE)
 	qdel(src)
 
 // The expedition world service (was GLOB.expedition_service). On demand: the lifecycle poll lane is parked
@@ -80,11 +82,12 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	// preallocates a z-level through load_new_z(), which needs the map system up and should
 	// follow the station mapload, so boot right after SSmapping.
 	boot_after = /datum/controller/subsystem/mapping
-	/// "[z]" -> /datum/expedition_site for every live site.
+	/// "[z]" -> /datum/expedition_site for every live site (a lookup of live sites, like a keyed
+	/// registry; a released site is owned by its teardown job).
 	var/list/sites = list()
 	/// Surveyed site descriptors not yet materialized (z_level 0). Flight
-	/// destinations and vessels name a descriptor only by handle, so this list
-	/// is what owns it until it is materialized, abandoned or deleted.
+	/// destinations and vessels name a descriptor only through relation views, so this
+	/// owned list holds it until it is materialized, abandoned or deleted.
 	var/list/descriptors
 	/// Wiped z-levels available for reuse.
 	var/list/free_z = list()
@@ -142,9 +145,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		qdel(mission)
 		to_chat(user, span_warning("Flight Operations could not survey a viable destination."))
 		return null
-	site.assigned_flight_vessel_handle = om_handle(vessel)
-	site.payout_turf_handle = om_handle(get_turf(payout_source))
-	vessel.active_expedition_handle = om_handle(site)
+	rel_set(site, "assigned_flight_vessel", vessel)
+	rel_set(site, "payout_turf", get_turf(payout_source))
+	rel_set(vessel, "active_expedition", site)
 	to_chat(user, span_notice("[site.name] has been surveyed. Select it in Flight Operations to begin the jump and generate its landing zone."))
 	return site
 
@@ -159,8 +162,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.z_level > 0 && players_on_z(site.z_level))
 		to_chat(user, span_warning("The assignment cannot be abandoned while crew remain at the site."))
 		return FALSE
-	vessel.active_expedition_handle = null
-	if(site.z_level > 0 && sites["[site.z_level]"] == site)
+	rel_clear(vessel, "active_expedition")
+	if(site.z_level > 0 && sites?["[site.z_level]"] == site)
 		release_site(site, "assignment abandoned")
 	else
 		if(site.flight_destination_id)
@@ -176,17 +179,17 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	site.name = "Site [pick("Theta", "Sigma", "Kappa", "Vega", "Orion", "Lyra", "Cygnus", "Draco")]-[rand(1, 99)]"
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.name += " — [expedition_faction_name(site.faction)]"
-	site.mission = mission
-	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
-	site.origin_console_handle = om_handle(origin_console)
+	own_set(site, "mission", mission)
+	rel_set(site, "assigned_shuttle", assigned_shuttle)
+	rel_set(site, "origin_console", origin_console)
 	site.parent_destination_id = parent_destination_id
-	site.payout_turf_handle = om_handle(get_turf(origin_console))
+	rel_set(site, "payout_turf", get_turf(origin_console))
 	var/datum/flight_vessel/assigned_vessel = GLOB.flight_service?.vessel_for_ship(assigned_shuttle?.myship())
-	site.assigned_flight_vessel_handle = om_handle(assigned_vessel)
+	rel_set(site, "assigned_flight_vessel", assigned_vessel)
 	if(assigned_vessel)
-		assigned_vessel.active_expedition_handle = om_handle(site)
+		rel_set(assigned_vessel, "active_expedition", site)
 	site.status = EXP_STATUS_GENERATING
-	LAZYADD(descriptors, site)
+	own_add(src, "descriptors", site)
 	GLOB.flight_service?.register_expedition(site)
 	return site
 
@@ -206,16 +209,17 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /datum/world_service/expedition/proc/materialize_site_async(datum/expedition_site/descriptor, datum/flight_plan/plan)
 	if(!descriptor || QDELETED(descriptor) || !plan || QDELETED(plan))
 		return
+	// The descriptor keeps owning its mission while the site generates (the deferred om_callable
+	// steps capture it as a handle, and the generation list is copied into each step);
+	// publish_generated_site() moves it to the generated site with own_move().
 	var/datum/expedition_mission/mission = descriptor.mission
-	descriptor.mission = null
 	plan.generation_progress = 15
 	plan.generation_stage = "Generating terrain"
-	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, CALLBACK(src, PROC_REF(site_materialized), descriptor, plan, mission))
+	generate_site_async(mission, descriptor.difficulty, descriptor.assigned_shuttle(), descriptor.origin_console(), plan, om_callable(src, PROC_REF(site_materialized), descriptor, plan, mission))
 
 /// The generated site replaces its descriptor (the destination the crew planned against).
 /datum/world_service/expedition/proc/site_materialized(datum/expedition_site/descriptor, datum/flight_plan/plan, datum/expedition_mission/mission, datum/expedition_site/site)
 	if(!site)
-		descriptor.mission = mission
 		if(plan && !QDELETED(plan))
 			plan.generation_state = FLIGHT_GENERATION_FAILED
 			plan.generation_stage = "Terrain generation failed"
@@ -228,26 +232,26 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(site.landing_waypoint)
 		site.landing_waypoint.name = "[descriptor_name] - Expedition Landing Zone"
 	if(descriptor.origin_console()?.active_expedition() == descriptor)
-		descriptor.origin_console().active_expedition_handle = om_handle(site)
+		rel_set(descriptor.origin_console(), "active_expedition", site)
 	if(descriptor.assigned_flight_vessel()?.active_expedition() == descriptor)
-		descriptor.assigned_flight_vessel().active_expedition_handle = om_handle(site)
-	site.assigned_flight_vessel_handle = om_handle(descriptor.assigned_flight_vessel())
-	site.payout_turf_handle = om_handle(descriptor.payout_turf())
+		rel_set(descriptor.assigned_flight_vessel(), "active_expedition", site)
+	rel_set(site, "assigned_flight_vessel", descriptor.assigned_flight_vessel())
+	rel_set(site, "payout_turf", descriptor.payout_turf())
 	var/datum/flight_destination/destination = GLOB.flight_service?.destinations[old_destination_id]
 	if(destination)
 		var/generated_destination_id = site.flight_destination_id
 		if(generated_destination_id && generated_destination_id != old_destination_id)
 			GLOB.flight_service.unregister_destination(generated_destination_id)
 		destination.name = descriptor_name
-		destination.expedition_handle = om_handle(site)
-		destination.target_handle = om_handle(site.overmap_sector())
+		rel_set(destination, "expedition", site)
+		rel_set(destination, "target", site.overmap_sector())
 		if(site.overmap_sector())
 			GLOB.flight_service.destination_by_target[REF(site.overmap_sector())] = destination.id
 		site.flight_destination_id = destination.id
-	descriptor.origin_console_handle = null
-	descriptor.assigned_shuttle_handle = null
-	descriptor.assigned_flight_vessel_handle = null
-	descriptor.payout_turf_handle = null
+	rel_clear(descriptor, "origin_console")
+	rel_clear(descriptor, "assigned_shuttle")
+	rel_clear(descriptor, "assigned_flight_vessel")
+	rel_clear(descriptor, "payout_turf")
 	qdel(descriptor)
 	if(!plan || QDELETED(plan))
 		return
@@ -257,9 +261,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 /datum/world_service/expedition/service_step(resumed)
 	for(var/key in sites.Copy())
-		var/datum/expedition_site/site = sites[key]
+		var/datum/expedition_site/site = sites?[key]
 		if(!istype(site))
-			sites -= key
+			own_take_member(src, "sites", key)
 			continue
 
 		// Poll mission completion (cheap per-mission check).
@@ -275,7 +279,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		if(players > 0)
 			for(var/mob/living/L in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 				if(L.z == site.z_level)
-					site.participants |= L
+					rel_add(site, "participants", L)
 			EXPIRY_STAMP(site, last_occupied, CLOCK_WORLD)
 			continue
 		if(site.status >= EXP_STATUS_ACTIVE)
@@ -320,7 +324,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	emergency_area.station_id = spec.id
 	emergency_area.department_id = "emergency"
 	emergency_area.name = "[spec.name] Habitable Annex"
-	materialization.transit_area_handle = om_handle(emergency_area)
+	materialization.transit_area = emergency_area
 	for(var/local_x in 1 to spec.grid_width)
 		for(var/local_y in 1 to spec.grid_height)
 			var/turf/T = materialization.world_turf(local_x, local_y)
@@ -333,7 +337,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 				materialization.floor_count++
 			ChangeArea(T, emergency_area)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
-	materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(arrival))
+	own_set(materialization, "entry", new /obj/effect/landmark/generated_station_entry(arrival))
 	materialization.entry().station_id = spec.id
 	generated_station_emergency_utilities(spec, materialization, emergency_area)
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
@@ -349,10 +353,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(istype(apc_turf, /turf/simulated/floor))
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		APC.set_dir(WEST)
-		emergency_area.apc = APC
-		materialization.infrastructure += APC
-		if(APC.terminal)
-			materialization.infrastructure += APC.terminal
+		rel_set(emergency_area, "apc", APC)
+		own_add(materialization, "infrastructure", APC)
+		// The APC owns its terminal (deleted with it); it is not adopted separately.
 	var/list/light_sockets = list(
 		list(materialization.world_turf(mid_x, spec.grid_height - 1), NORTH, 0, 26),
 		list(materialization.world_turf(mid_x, 2), SOUTH, 0, -26),
@@ -367,7 +370,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		light.set_dir(socket[2])
 		light.pixel_x = socket[3]
 		light.pixel_y = socket[4]
-		materialization.infrastructure += light
+		own_add(materialization, "infrastructure", light)
 	emergency_area.power_change()
 
 // Generate a site, optionally bound to a mission. Returns the site (or null).
@@ -429,7 +432,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// generate_site() for the live game: the same attempts, but planning and materializing run as
 /// lane work and timers (object_model_core.md §4.11), so nothing sleeps. `on_done` is invoked
 /// with the site, or null.
-/datum/world_service/expedition/proc/generate_site_async(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null, datum/callback/on_done)
+/datum/world_service/expedition/proc/generate_site_async(datum/expedition_mission/mission = null, difficulty = EXP_DIFF_LOW, datum/shuttle/autodock/overmap/assigned_shuttle = null, obj/machinery/computer/shuttle_control/explore/origin_console = null, datum/flight_plan/flight_plan = null, list/on_done)
 	if(mission)
 		difficulty = mission.difficulty
 	var/gen_started = REALTIMEOFDAY
@@ -437,7 +440,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	var/z = acquire_z(needs_wipe)
 	if(!isnum(z) || z < 1)
 		log_world("Expedition: failed to acquire a z-level for a new site.")
-		on_done?.Invoke(null)
+		om_run(on_done, null)
 		return
 	var/list/generation = list(
 		"mission" = mission,
@@ -461,7 +464,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	if(length(needs_wipe))
 		// Pooled levels must expose vacuum beyond the generated hull even if a failed or
 		// interrupted teardown left another substrate behind.
-		wipe_z_async(z, CALLBACK(src, PROC_REF(generation_attempt), generation))
+		wipe_z_async(z, om_callable(src, PROC_REF(generation_attempt), generation))
 		return
 	generation_attempt(generation)
 
@@ -475,7 +478,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	var/attempt_seed = ((generation["seed"] + (generation["attempt"] - 1) * 104729 - 1) % 16000000) + 1
 	generation["attempt_seed"] = attempt_seed
 	var/datum/generated_station_planner/planner = new
-	planner.plan_async(attempt_seed, 160, 160, CALLBACK(src, PROC_REF(generation_planned), generation, planner))
+	planner.plan_async(attempt_seed, 160, 160, om_callable(src, PROC_REF(generation_planned), generation, planner))
 
 /datum/world_service/expedition/proc/generation_planned(list/generation, datum/generated_station_planner/planner, datum/generated_station_spec/station_spec)
 	var/planner_error = planner.error_message
@@ -488,7 +491,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 	materializer.strict_room_contracts = FALSE
 	var/origin_x = max(1, round((world.maxx - station_spec.grid_width) / 2))
 	var/origin_y = max(1, round((world.maxy - station_spec.grid_height) / 2))
-	materializer.materialize_async(station_spec, generation["z"], origin_x, origin_y, generation["plan"], FALSE, CALLBACK(src, PROC_REF(generation_materialized), generation, materializer, station_spec))
+	materializer.materialize_async(station_spec, generation["z"], origin_x, origin_y, generation["plan"], FALSE, om_callable(src, PROC_REF(generation_materialized), generation, materializer, station_spec))
 
 /datum/world_service/expedition/proc/generation_materialized(list/generation, datum/generated_station_materializer/materializer, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
 	generation["yields"] += materializer.last_yield_count
@@ -501,16 +504,18 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	log_world("Expedition: generated-station materialization attempt [generation["attempt"]] failed on z[generation["z"]] (seed [generation["attempt_seed"]]): [materialization_error || "no result"].")
 	qdel(station_spec)
-	wipe_z_async(generation["z"], CALLBACK(src, PROC_REF(generation_attempt), generation))
+	wipe_z_async(generation["z"], om_callable(src, PROC_REF(generation_attempt), generation))
 
 /datum/world_service/expedition/proc/generation_publish(list/generation, datum/generated_station_spec/station_spec, datum/generated_station_materialization/station_materialization)
 	var/datum/expedition_site/site = publish_generated_site(generation["mission"], generation["difficulty"], generation["shuttle"], generation["console"], generation["plan"], generation["z"], generation["started"], generation["zalloc"], generation["seed"], station_spec, station_materialization, generation["yields"], generation["elapsed"])
-	var/datum/callback/on_done = generation["done"]
-	on_done?.Invoke(site)
+	var/list/on_done = generation["done"]
+	om_run(on_done, site)
 
 /// wipe_z() as lane work: a turf at a time within the scheduler's budget, then `on_done`.
-/datum/world_service/expedition/proc/wipe_z_async(z, datum/callback/on_done)
+/datum/world_service/expedition/proc/wipe_z_async(z, list/on_done)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	om_task_slices(src, PROC_REF(wipe_z_slice), list(block(locate(1, 1, z), locate(world.maxx, world.maxy, z)), 1), on_done)
 
 /datum/world_service/expedition/proc/wipe_z_slice(list/cursor)
@@ -551,8 +556,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 	var/datum/expedition_site/site = new(z, difficulty)
 	site.generation_seed = generation_seed
-	site.station_spec = station_spec
-	site.station_materialization = station_materialization
+	own_set(site, "station_spec", station_spec)
+	own_set(site, "station_materialization", station_materialization)
 	if(!site.initialize_generated_station_utilities())
 		station_materialization.degradation_events += "utility initialization failed; station published with local emergency services"
 	if(!site.initialize_generated_station_runtime())
@@ -578,26 +583,25 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		generated_station_seed_air(fallback_floor)
 		site.floors += fallback_floor
 		station_materialization.degradation_events += "no planned floor survived; installed an emergency landing floor"
-	site.landing_handle = om_handle(get_turf(station_materialization.entry()))
+	rel_set(site, "landing", get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
-		site.landing_handle = om_handle(site.floors[1])
-		qdel_handle(station_materialization.entry_handle); station_materialization.entry_handle = null
-		station_materialization.entry_handle = om_handle(new /obj/effect/landmark/generated_station_entry(site.landing()))
+		rel_set(site, "landing", site.floors[1])
+		own_set(station_materialization, "entry", new /obj/effect/landmark/generated_station_entry(site.landing()))
 		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
 	site.name += " — [expedition_faction_name(site.faction)]"
-	site.assigned_shuttle_handle = om_handle(assigned_shuttle)
-	site.origin_console_handle = om_handle(origin_console)
-	site.payout_turf_handle = om_handle(get_turf(origin_console))
+	rel_set(site, "assigned_shuttle", assigned_shuttle)
+	rel_set(site, "origin_console", origin_console)
+	rel_set(site, "payout_turf", get_turf(origin_console))
 
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing())
-	waypoint.site_handle = om_handle(site)
-	site.landing_waypoint = waypoint
+	rel_set(waypoint, "site", site)
+	own_set(site, "landing_waypoint", waypoint)
 
 	// Let the mission lay down its objective content.
 	if(mission)
-		site.mission = mission
+		own_move(mission, site, "mission") // from the planned descriptor, which owned it until now
 		mission.populate(site)
 		if(!mission.has_viable_objectives())
 			station_materialization.degradation_events += "mission objective population was incomplete"
@@ -607,7 +611,7 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		flight_plan.generation_stage = "Validating objectives and approach"
 
 	site.status = EXP_STATUS_READY
-	sites["[z]"] = site
+	own_put(src, "sites", "[z]", site)
 	demand()
 	GLOB.flight_service?.register_expedition(site)
 	log_world("Expedition: generated [site.name] on z[z] (seed [generation_seed], difficulty [difficulty][mission ? ", mission '[mission.name]'" : ""]).")
@@ -693,17 +697,22 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		return
 	var/z = site.z_level
 	site.status = EXP_STATUS_EXPIRED
-	sites -= "[z]"
+	// The teardown job owns the site (own_move in its New()) until the wipe finishes.
+	own_take_member(src, "sites", "[z]")
 	if(site.flight_destination_id)
 		GLOB.flight_service?.unregister_destination(site.flight_destination_id)
 	if(site.origin_console() && site.origin_console().active_expedition() == site)
-		site.origin_console().active_expedition_handle = null
+		rel_clear(site.origin_console(), "active_expedition")
 	if(site.assigned_flight_vessel()?.active_expedition() == site)
-		site.assigned_flight_vessel().active_expedition_handle = null
-	QDEL_NULL(site.landing_waypoint)
-	qdel_handle(site.overmap_sector_handle); site.overmap_sector_handle = null
+		rel_clear(site.assigned_flight_vessel(), "active_expedition")
+	own_clear(site, "landing_waypoint", OWN_DELETE)
+	own_clear(site, "overmap_sector", OWN_DELETE)
+	// Every relation view naming a turf on this z (payout turfs, landing turfs, rich edges) is
+	// cleared now, and again when the wiped z goes back into free_z (finish()).
+	var/dropped = om_drop_z(z)
+	log_world("Expedition: om_drop_z(z[z]) cleared [dropped] relation view(s) before teardown.")
 	teardown_z["[z]"] = TRUE
-	var/datum/expedition_teardown_job/job = new(src, site, reason)
+	var/datum/expedition_teardown_job/job = new(site, reason)
 	job.execute()
 
 // Every mob still on a z that is about to be wiped is either a player (connected
@@ -743,6 +752,8 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 // first by evacuate_mobs_from_z(), and anything still left is skipped (defensive).
 /datum/world_service/expedition/proc/wipe_z(z)
 	evacuate_mobs_from_z(z)
+	// The z is about to be reused: views naming its turfs are cleared first.
+	om_drop_z(z)
 	var/area/space/space_area = generated_station_space_area()
 	var/list/turfs = block(locate(1, 1, z), locate(world.maxx, world.maxy, z))
 	for(var/i = 1, i <= length(turfs), i += WIPE_Z_CHUNK)
@@ -787,14 +798,13 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 			count++
 	return count
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The expedition service (a world-service singleton; not held in a var).
 /datum/expedition_teardown_job/proc/controller() as /datum/world_service/expedition
-	return controller_static
-DECLARE_REF(/datum/expedition_teardown_job, "controller_static", STATIC, null)
+	return GLOB.expedition_service
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site being torn down (owned by the job).
 /datum/expedition_teardown_job/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site
 
 /// Work while any site is live.
 /datum/world_service/expedition/has_work()
@@ -812,4 +822,3 @@ DECLARE_REF(/datum/expedition_teardown_job, "controller_static", STATIC, null)
 /datum/om/behaviour/world/expedition/service()
 	return GLOB.expedition_service
 
-DECLARE_REF(/datum/world_service/expedition, "sites", OWNED_VALUES, null)

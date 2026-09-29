@@ -68,7 +68,7 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 //
 
 /obj/machinery/gravity_generator/part
-	var/tmp/main_part_handle
+	var/tmp/obj/machinery/gravity_generator/main/main_part
 
 /obj/machinery/gravity_generator/part/declare_interactions(list/into)
 	into += list(
@@ -138,8 +138,9 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 
 	on = TRUE
 	var/breaker = TRUE
-	var/list/parts
-	var/tmp/middle_handle
+	/// The eight part objects around it (owned: created here, destroyed with it).
+	var/list/obj/machinery/gravity_generator/part/parts
+	var/tmp/obj/middle
 	var/charging_state = POWER_IDLE
 	var/charge_count = 100
 	var/current_overlay = null
@@ -155,17 +156,14 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 	update_list()
 	update_areas()
 
-// gravity goes off on its levels and its parts go with it.
-/obj/machinery/gravity_generator/main/on_destroy(force) // If we somehow get deleted, remove all of our other parts.
+// gravity goes off on its levels; its owned parts go with it.
+/obj/machinery/gravity_generator/main/on_destroy(force)
 	investigate_log("was destroyed!", "gravity")
 	set_on(FALSE)
 	update_list()
 	if(!gravity_in_level())
 		update_gravity(FALSE)
-	for(var/obj/machinery/gravity_generator/part/O in parts)
-		if(!QDESTROYING(O))
-			qdel(O)
-	..()
+	..() // its parts (owned) are destroyed with it
 
 /obj/machinery/gravity_generator/main/proc/setup_parts()
 	var/turf/our_turf = get_turf(src)
@@ -178,14 +176,14 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 			continue
 		var/obj/machinery/gravity_generator/part/part = new(T)
 		if(count == 5) // Middle
-			middle_handle = om_handle(part)
+			rel_set(src, "middle", part)
 		if(count <= 3) // Their sprite is the top part of the generator
 			part.set_density(FALSE)
 			part.plane = MOB_PLANE
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
-		part.main_part_handle = om_handle(src)
-		LAZYADD(parts, part)
+		rel_set(part, "main_part", src)
+		own_add(src, "parts", part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()
@@ -509,10 +507,10 @@ DAMAGE_REACTION(/obj/machinery/gravity_generator, DAMAGE_BLOB, PROC_REF(gravgen_
 /obj/machinery/gravity_generator/main/step_start_condition()
 	return charging_state != 0 // POWER_IDLE (undefined past this file end)
 
-/// LC-refs: the main_part this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the main_part this refers to: a relation view, null once that is deleted.
 /obj/machinery/gravity_generator/part/proc/main_part() as /obj/machinery/gravity_generator/main
-	return om_resolve(main_part_handle)
+	return main_part
 
-/// LC-refs: the middle this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the middle this refers to: a relation view, null once that is deleted.
 /obj/machinery/gravity_generator/main/proc/middle() as /obj
-	return om_resolve(middle_handle)
+	return middle

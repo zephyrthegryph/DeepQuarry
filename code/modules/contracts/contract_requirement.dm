@@ -198,8 +198,8 @@
 	join_field = _join_field
 	second_join_field = _second_join_field || _join_field
 	target = max(1, _target)
-	first_filter = new(_scope_mode)
-	second_filter = new(_scope_mode)
+	own_set(src, "first_filter", new /datum/contract_event_filter(_scope_mode))
+	own_set(src, "second_filter", new /datum/contract_event_filter(_scope_mode))
 	first_facts = list()
 	second_facts = list()
 	credited_facts = list()
@@ -207,12 +207,9 @@
 	second_fact_times = list()
 	event_types = list(first_event_type, second_event_type)
 
-// Contracts hold their requirements in `requirements` and again in typed vars (observation_requirement, ...);
-// `contract` must be let go or the two outlive each other.
-DECLARE_REF(/datum/contract_requirement, "contract", BACKLIST, "requirements")
+// A contract owns its requirements (`requirements`, own_add); the typed vars (observation_requirement, ...)
+// are relation views onto them, and `contract` is the requirement's one-sided view back.
 
-DECLARE_REF(/datum/contract_requirement/paired_facts, "first_filter", OWNED, null)
-DECLARE_REF(/datum/contract_requirement/paired_facts, "second_filter", OWNED, null)
 
 /datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -268,14 +265,13 @@ DECLARE_REF(/datum/contract_requirement/paired_facts, "second_filter", OWNED, nu
 	event_type = _event_type
 	target = max(1, _target)
 	value_field = _value_field
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	accepted_unique_values = list()
 	for(var/key in _required_context)
 		filter.require_value(key, _required_context[key])
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 
 /datum/contract_requirement/event_count/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -336,7 +332,7 @@ DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 	var/list/pending_tokens
 	var/list/completed_entities
 
-OM_TIMER_SLOT(/datum/contract_requirement/sustained_event, pending)
+OWN_TIMER(/datum/contract_requirement/sustained_event, pending)
 
 /datum/contract_requirement/sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, _threshold, _duration, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -347,13 +343,12 @@ OM_TIMER_SLOT(/datum/contract_requirement/sustained_event, pending)
 	threshold = _threshold
 	duration = max(1, _duration)
 	target = max(1, _target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	completed_entities = list()
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 
 /datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
 	return filter.require_any_value(key, allowed)
@@ -414,7 +409,7 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	var/list/pending_stage_indices
 	var/list/completed_stages
 
-OM_TIMER_SLOT(/datum/contract_requirement/staged_sustained_event, pending)
+OWN_TIMER(/datum/contract_requirement/staged_sustained_event, pending)
 
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
@@ -422,7 +417,7 @@ OM_TIMER_SLOT(/datum/contract_requirement/staged_sustained_event, pending)
 	entity_field = _entity_field
 	numeric_field = _numeric_field
 	comparator = _comparator
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	pending_stage_indices = list()
 	completed_stages = list()
@@ -430,7 +425,6 @@ OM_TIMER_SLOT(/datum/contract_requirement/staged_sustained_event, pending)
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED, null)
 
 /datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
 	if((contract && contract.state != CONTRACT_OFFERED) || !length(new_stages))
@@ -553,12 +547,11 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	entity_field = _entity_field
 	value_field = _value_field
 	target = max(1, _target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	entity_values = list()
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/snapshot_total, "filter", OWNED, null)
 
 /datum/contract_requirement/snapshot_total/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -617,13 +610,12 @@ DECLARE_REF(/datum/contract_requirement/snapshot_total, "filter", OWNED, null)
 	category_field = _category_field
 	value_field = _value_field
 	distinct_category_target = max(0, _distinct_category_target)
-	filter = new(_scope_mode)
+	own_set(src, "filter", new /datum/contract_event_filter(_scope_mode))
 	facts = list()
 	fact_revisions = list()
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/fact_portfolio, "filter", OWNED, null)
 
 /datum/contract_requirement/fact_portfolio/proc/require_value(key, expected)
 	return filter.require_value(key, expected)

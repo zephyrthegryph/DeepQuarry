@@ -5,14 +5,13 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 
 /datum/repository/unique/New()
 	..()
-	generators = list()
 
 /datum/repository/unique/proc/Generate()
 	var/generator_type = args[1]
-	var/datum/uniqueness_generator/generator = generators[generator_type]
+	var/datum/uniqueness_generator/generator = generators?[generator_type]
 	if(!generator)
 		generator = new generator_type()
-		generators[generator_type] = generator
+		own_put(src, "generators", generator_type, generator)
 	var/list/generator_args = args.Copy() // Cannot cut args directly, BYOND complains about it being readonly.
 	generator_args -= generator_type
 	return generator.Generate(arglist(generator_args))
@@ -69,4 +68,3 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 		while(. in ids)
 		ids += .
 
-DECLARE_REF(/datum/repository/unique, "generators", OWNED_VALUES, null)

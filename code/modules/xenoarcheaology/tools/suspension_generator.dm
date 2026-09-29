@@ -7,7 +7,7 @@
 	density = 1
 	req_access = list(ACCESS_RESEARCH)
 	var/obj/item/cell/cell
-	var/tmp/auth_card_handle
+	var/tmp/obj/item/card/id/auth_card
 	locked = 1
 	var/power_use = 15
 	var/obj/effect/suspension_field/suspension_field
@@ -63,7 +63,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		cell.update_icon()
 
 		icon_state = "suspension"
-		cell = null
+		own_take(src, "cell")
 		to_chat(user, span_info("You remove the power cell"))
 	return TRUE
 
@@ -142,7 +142,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		else
 			user.drop_item()
 			W.forceMove(src)
-			cell = W
+			own_set(src, "cell", W)
 			to_chat(user, span_info("You insert the power cell."))
 			icon_state = "suspension"
 	return TRUE
@@ -191,9 +191,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
-			anom.stats = new /datum/anomaly_stats(anom)
+			own_set(anom, "stats", new /datum/anomaly_stats(anom))
 
-	suspension_field = new(T)
+	own_set(src, "suspension_field", new /obj/effect/suspension_field(T))
 	MACHINE_WAKE(src)
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
@@ -232,8 +232,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 			anom.move_chance = initial(anom.move_chance)
 
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] deactivates with a gentle shudder."))
-	qdel(suspension_field)
-	suspension_field = null
+	own_clear(src, "suspension_field", OWN_DELETE)
 	icon_state = "suspension_wrenched"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)
 	update_icon()
@@ -257,12 +256,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	anchored = 1
 	density = 1
 
-DECLARE_REF(/obj/effect/suspension_field, "contents", SPILL_LIST, null)
+OWN(/obj/effect/suspension_field, contents, OWN_SPILL)
 
-DECLARE_REF(/obj/machinery/suspension_gen, "suspension_field", OWNED, null)
 
-DECLARE_REF(/obj/machinery/suspension_gen, "cell", HELD, null)
+OWN(/obj/machinery/suspension_gen, cell, OWN_CONTAINED)
 
-/// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the auth_card var.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id
-	return om_resolve(auth_card_handle)
+	return auth_card

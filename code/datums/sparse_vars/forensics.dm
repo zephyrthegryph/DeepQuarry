@@ -45,7 +45,7 @@ GLOBAL_LIST_EMPTY(_dq_blood_color_resolved)
 	return a.forensic_data
 
 /proc/dq_set_forensic_data(atom/a, datum/forensics_crime/fd)
-	a.forensic_data = fd
+	rel_set(a, "forensic_data", fd)
 
 /proc/dq_get_fluorescent(atom/a)
 	return a.forensic_fluorescent

@@ -35,10 +35,12 @@
 	/// Force delta (melee damage).
 	var/force_delta = 0
 	/// The clothing item this modifier was applied to.
-	var/tmp/target_handle
+	var/tmp/obj/item/clothing/target
+	/// The registry key ("[accessory ref]:[clothing ref]") this modifier was registered under.
+	var/registry_key
 
 /datum/accessory_stat_modifier/New(obj/item/clothing/new_target, label_str)
-	target_handle = om_handle(new_target)
+	rel_set(src, "target", new_target)
 	if(label_str)
 		label = label_str
 
@@ -71,8 +73,8 @@
 /datum/accessory_slot_registry
 	/// Assoc list of slot_flag (number) → display name (string).
 	var/list/slot_names = list() // ALLOW(instance_list): d: singleton registry, filled at init
-	/// Assoc list of accessory OM handle key → list of /datum/accessory_stat_modifier.
-	/// Key format: "[accessory]:[clothing]" (uses ref strings for stable keys).
+	/// Owned flat list of every applied /datum/accessory_stat_modifier. Each one carries its
+	/// registry_key ("[accessory]:[clothing]" ref strings) so remove_modifiers() can find its set.
 	var/list/active_modifiers
 
 /*
@@ -139,12 +141,11 @@
 	if(!istype(accessory) || !istype(clothing) || !istype(modifier))
 		return
 
-	modifier.target_handle = om_handle(clothing)
+	rel_set(modifier, "target", clothing)
 	modifier.apply(clothing)
 
-	var/key = "[REF(accessory)]:[REF(clothing)]"
-	LAZYINITLIST(active_modifiers)
-	LAZYADD(active_modifiers[key], modifier)
+	modifier.registry_key = "[REF(accessory)]:[REF(clothing)]"
+	own_move(modifier, src, "active_modifiers")
 
 /*
  * proc/remove_modifiers(obj/item/clothing/accessory/accessory,
@@ -154,31 +155,22 @@
  * Called from /obj/item/clothing/accessory/on_removed().
  */
 /datum/accessory_slot_registry/proc/remove_modifiers(obj/item/clothing/accessory/accessory, obj/item/clothing/clothing)
-	if(!LAZYLEN(active_modifiers))
+	if(!length(active_modifiers))
 		return
 
 	var/key = "[REF(accessory)]:[REF(clothing)]"
-	var/list/mods = LAZYACCESS(active_modifiers, key)
-	if(!LAZYLEN(mods))
-		return
-
-	for(var/datum/accessory_stat_modifier/mod in mods)
+	for(var/datum/accessory_stat_modifier/mod as anything in active_modifiers.Copy())
+		if(mod.registry_key != key)
+			continue
 		mod.revert(clothing)
-		qdel(mod)
-
-	active_modifiers -= key
-	if(!LAZYLEN(active_modifiers))
-		active_modifiers = null
+		own_remove(src, "active_modifiers", mod)
 
 // remaining stat modifiers are reverted.
 /datum/accessory_slot_registry/on_destroy(force)
 	// Revert all remaining modifiers to leave the world consistent.
-	if(LAZYLEN(active_modifiers))
-		for(var/key in active_modifiers)
-			var/list/mods = active_modifiers[key]
-			for(var/datum/accessory_stat_modifier/mod in mods)
-				mod.revert(mod.target())
-				qdel(mod)
+	// The modifiers themselves are owned and disposed of by the framework in phase 4.
+	for(var/datum/accessory_stat_modifier/mod as anything in active_modifiers)
+		mod.revert(mod.target())
 	..()
 
 /// Global singleton.  Self-initializes with built-in slot names on New().
@@ -206,6 +198,6 @@ GLOBAL_DATUM_INIT(accessory_slot_registry, /datum/accessory_slot_registry, new)
 	register_slot(ACCESSORY_SLOT_RING,     "Ring")
 	register_slot(ACCESSORY_SLOT_WRIST,    "Wrist")
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the target this refers to (a relation view: null once it is deleted).
 /datum/accessory_stat_modifier/proc/target() as /obj/item/clothing
-	return om_resolve(target_handle)
+	return target

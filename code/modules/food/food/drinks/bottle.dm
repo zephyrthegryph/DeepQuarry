@@ -24,14 +24,14 @@
 		drop_sound = SFX_ITEMS_DROP_BOTTLE
 		pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
-DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
+OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)
 	. = ..()
 	if(istype(thrower) && thrower.combat_mode)
 		violent_throw = TRUE
-		throw_source_handle = om_handle(get_turf(thrower))
+		rel_set(src, "throw_source", get_turf(thrower))
 
 /obj/item/reagent_containers/food/drinks/bottle/throw_impact(atom/hit_atom)
 	..()
@@ -45,7 +45,7 @@ DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
 			src.smash(loc, hit_atom)
 
 	violent_throw = FALSE
-	throw_source_handle = null
+	rel_clear(src, "throw_source")
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/smash_check(distance)
 	if(!isGlass || !smash_duration)
@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(!isGlass || rag) return
 	if(user.unEquip(R))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
-		rag = R
+		own_set(src, "rag", R)
 		rag.forceMove(src)
 		flags &= ~OPENCONTAINER
 		update_icon()
@@ -149,7 +149,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
-	rag = null
+	own_take(src, "rag")
 	flags |= (initial(flags) & OPENCONTAINER)
 	update_icon()
 
@@ -731,4 +731,3 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/snaps, null, li
 	icon_rotation = spin_rotation
 	update_transform()
 
-DECLARE_REF(/obj/item/broken_bottle, "broken_outline", OWNED, null)

@@ -54,9 +54,8 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 /datum/protean_power/New()
 	..()
 	if(in_stat_panel)
-		button = new(null, src)
+		own_set(src, "button", new /obj/effect/protean_power_button(null, src))
 
-DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
 	if(!istype(H))
@@ -102,7 +101,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 
 /obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
 	. = ..()
-	power = new_power
+	rel_set(src, "power", new_power)
 	name = power.name
 	desc = power.desc
 	icon = power.icon
@@ -198,6 +197,7 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 /mob/living/carbon/human/proc/nano_fitting_chosen(datum/om/prompt/choice/ask)
 	if(!species)
 		return
+	proto_private(src, "species") // per-mob change: never mutate the shared species
 	species.base_species = ask.choice
 	regenerate_icons()
 
@@ -673,4 +673,3 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 #undef PER_LIMB_STEEL_COST
 #undef TOTAL_REBUILD_STEEL_COST
 
-DECLARE_REF(/obj/effect/protean_power_button, "power", BACK, "button")

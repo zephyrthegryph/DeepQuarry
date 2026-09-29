@@ -110,9 +110,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// The id tables hold every atom the call touched as keys. A qdel'd context
 /// waits in the GC queue, so drop them now or those atoms carry a hidden
 /// reference (collapse's refcount check would see an outside holder).
-DECLARE_REF(/datum/state_context, "ids", DROP, null)
-DECLARE_REF(/datum/state_context, "by_id", DROP, null)
-DECLARE_REF(/datum/state_context, "pending", DROP, null)
 
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
@@ -156,13 +153,20 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 	var/list/blob = list()
 	blob[STATE_KEY_TYPE] = "[D.type]"
 	blob[STATE_KEY_VERSION] = D.state_version
+	// A declared latent generator (starts_with) resolves into entries before the delta is taken:
+	// resolving clears the generator, and a delta read first saved the generator as a var, so the
+	// copy came back with the generator restored but not declared (neither latent nor real, and
+	// Destroy() reported it as unreleased contents).
+	var/datum/ledger/L
+	if((flags & STATE_CONTENTS) && isatom(D))
+		var/atom/resolving = D
+		L = resolving.ledger || (resolving.has_latent() ? dq_ledger(resolving) : null)
 	var/list/delta = encode_delta(D, schema)
 	if(length(delta))
 		blob[STATE_KEY_VARS] = delta
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
-		var/datum/ledger/L = A.ledger || (A.has_latent() ? dq_ledger(A) : null)
 		for(var/atom/movable/child as anything in state_children(A))
 			var/list/child_blob = serialize_datum(child, flags)
 			if(!child_blob)
@@ -196,6 +200,8 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 		var/codec_path = schema.codecs[name]
 		if(!codec_path && !islist(value) && value == initial(D.vars[name]))
 			continue
+		if(!codec_path && (isdatum(value) || islist(value)))
+			codec_path = state_ownership_codec(D, name, value)
 		var/encoded
 		if(codec_path)
 			var/default = initial(D.vars[name])
@@ -479,6 +485,23 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 		var/datum/D = entry[1]
 		D.state_post_apply(entry[2], flags)
 
+/// Resets D.name to `default` through the ownership accessors when the var has an ownership kind.
+/// FALSE when it has none (a plain scalar the caller resets itself).
+/proc/state_reset_owned_var(datum/D, name, default)
+	var/list/entry = own_table_of(D).entries[name]
+	switch(entry?[OWNE_KIND])
+		if(OWNK_OWN)
+			own_clear(D, name)
+		if(OWNK_REL)
+			rel_clear(D, name)
+		if(OWNK_PROTO)
+			proto_set(D, name, default)
+		if(OWNK_SHARED)
+			shared_set(D, name, default)
+		else
+			return FALSE
+	return TRUE
+
 /datum/state_context/proc/apply_vars(datum/D, list/blob)
 	var/list/vars = blob[STATE_KEY_VARS] || list()
 	var/from_version = blob[STATE_KEY_VERSION]
@@ -499,15 +522,20 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 		if(islist(value))
 			continue
 		var/default = initial(D.vars[name])
-		if(value != default && !islist(default))
-			D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
+		if(value == default || islist(default))
+			continue
+		// A var with an ownership kind goes back through its accessor: a raw reset would leave
+		// an owned child stamped to D (an orphan) or a relation's reverse index behind.
+		if(state_reset_owned_var(D, name, default))
+			continue
+		D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
 	for(var/name in vars)
 		if(!(name in schema.saved_vars))
 			// The pre-L1 loader ignored keys it did not save; keep doing that for legacy blobs.
 			if(from_version != STATE_VERSION_LEGACY)
 				refuse("[D.type] has no saved var [name]; add a state_migrate() step")
 			continue
-		var/codec_path = schema.codecs[name]
+		var/codec_path = schema.codecs[name] || state_ownership_decode_codec(D, name, vars[name])
 		if(codec_path)
 			var/datum/state_codec/codec = state_codec(codec_path)
 			codec.decode(D, name, vars[name], src)
@@ -537,6 +565,35 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 				codec.decode(D, target, vars[name], src)
 			else
 				D.vars[target] = decode_value(vars[name]) // ALLOW(api): state serializer: restores legacy component vars
+
+/// The ownership codec for a saved value with no codec of its own: from the var's declaration,
+/// or from the shape the ownership codecs write (state_ownership_codec()).
+/proc/state_ownership_decode_codec(datum/D, var_name, encoded)
+	var/list/entry = own_table_of(D).entries[var_name]
+	switch(entry?[OWNE_KIND])
+		if(OWNK_OWN)
+			return /datum/state_codec/owned
+		if(OWNK_PROTO)
+			return /datum/state_codec/proto
+		if(OWNK_REL)
+			return /datum/state_codec/relation
+	if(!islist(encoded))
+		return null
+	var/list/L = encoded
+	if(!isnull(L[STATE_WRAP_OWNED]))
+		return /datum/state_codec/owned
+	if(!isnull(L["#private"]))
+		return /datum/state_codec/proto
+	if(!isnull(L["#views"]))
+		return /datum/state_codec/relation
+	return null
+
+/// Applies a nested blob onto an existing datum (the owned codec reusing a child).
+/datum/state_context/proc/apply_datum(datum/D, list/blob)
+	if(!migrate_blob(blob))
+		return
+	apply_vars(D, blob)
+	D.state_post_apply(blob, NONE)
 
 /// A datum from a nested blob (the owned codec): new, then its vars.
 /datum/state_context/proc/materialize_datum(list/blob)

@@ -3,7 +3,7 @@
 //
 
 /datum/ticket_chat
-	var/tmp/T_handle
+	var/tmp/datum/ticket/T
 
 /datum/ticket_chat/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -43,14 +43,14 @@
 			var/sane_message = sanitize(params["msg"])
 			switch(T().level)
 				if (0)
-					ui.user.client.cmd_mentor_pm(om_resolve(T().handler_ref), sane_message, T())
+					ui.user.client.cmd_mentor_pm(T().handler_client(), sane_message, T())
 					return TRUE
 				if (1)
-					ui.user.client.cmd_admin_pm(om_resolve(T().handler_ref), sane_message, T())
+					ui.user.client.cmd_admin_pm(T().handler_client(), sane_message, T())
 					return TRUE
 
 			. = TRUE
 
-/// LC-refs: the T this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The T this refers to (a relation view: null once that is deleted).
 /datum/ticket_chat/proc/T() as /datum/ticket
-	return om_resolve(T_handle)
+	return T

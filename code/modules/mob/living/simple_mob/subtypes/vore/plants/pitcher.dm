@@ -205,9 +205,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		return
 	if(prob(15))
 		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
-		LAZYSET(prey_excludes, H, world.time)
+		rel_add(src, "prey_excludes", H)
 		vore_selected.release_specific_contents(H)
-		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), om_handle(H))
+		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), H)
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 
@@ -307,21 +307,24 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
 	bitesize = 1
-	pit = new /obj/item/seeds/pitcherseed(src.contents) // ALLOW(decl): not placed in contents (list loc)
+	own_set(src, "pit", new /obj/item/seeds/pitcherseed(src))
 	seed = pit.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)
 	if(istype(O,/obj/machinery/microwave))
 		return ..()
 	if(istype (O, /obj/machinery/seed_extractor))
-		pit.forceMove(O.loc) //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
+		var/obj/item/seeds/extracted = own_take(src, "pit")
+		extracted?.forceMove(O.loc) //1 seed, perhaps balanced because you can get the reagents and the seed. Can be increased if desirable.
 		consume(src, user)
+		return
 	if(!(proximity && O.is_open_container()))
 		return
 	to_chat(user, span_notice("You squeeze \the [src], juicing it into \the [O]."))
 	reagents.trans_to(O, reagents.total_volume)
 	user.drop_from_inventory(src)
-	pit.forceMove(user.loc)
+	var/obj/item/seeds/dropped_pit = own_take(src, "pit")
+	dropped_pit?.forceMove(user.loc)
 	consume(src, user)
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTERACT_USE("Plant", PROC_REF(pitcher_fruit_self)))
@@ -340,5 +343,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTE
 #undef PITCHER_SATED
 #undef PITCHER_HUNGRY
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "seed", STATIC, null)
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "pit", HELD, null)
+OWN(/obj/item/reagent_containers/food/snacks/pitcher_fruit, pit, OWN_CONTAINED)

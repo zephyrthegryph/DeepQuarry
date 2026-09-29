@@ -20,8 +20,8 @@
 	announce_delay_upper_bound = 20 SECONDS
 	length_lower_bound = 8 MINUTES
 	length_upper_bound = 12 MINUTES
-	var/tmp/chosen_turf_with_windows_handle
-	var/tmp/chosen_window_handle
+	var/tmp/turf/chosen_turf_with_windows
+	var/tmp/obj/structure/window/chosen_window
 	var/list/collateral_windows
 
 /datum/event2/event/window_break/set_up()
@@ -38,7 +38,7 @@
 		for(var/obj/structure/window/W in contents_of(area))
 			if(!is_window_to_space(W))
 				continue
-			chosen_turf_with_windows_handle = om_handle(get_turf(W))
+			rel_set(src, "chosen_turf_with_windows", get_turf(W))
 			collateral_windows = gather_collateral_windows(W)
 			break // Break out of the inner loop.
 
@@ -62,7 +62,7 @@
 
 	for(var/obj/structure/window/W in chosen_turf_with_windows().contents)
 		if(W.is_fulltile()) // Full tile windows are simple and can always be used.
-			chosen_window_handle = om_handle(W)
+			rel_set(src, "chosen_window", W)
 			break
 		else // Otherwise we only want the window that is on the inside side of the station.
 			var/turf/T = get_step(W, W.dir)
@@ -70,7 +70,7 @@
 				continue
 			if(T.check_density())
 				continue
-			chosen_window_handle = om_handle(W)
+			rel_set(src, "chosen_window", W)
 			break
 
 	if(!chosen_window())
@@ -147,10 +147,10 @@
 				frontier_set += neighbor
 	return result_set
 
-/// LC-refs: the chosen_turf_with_windows this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_turf_with_windows var.
 /datum/event2/event/window_break/proc/chosen_turf_with_windows() as /turf
-	return om_resolve(chosen_turf_with_windows_handle)
+	return chosen_turf_with_windows
 
-/// LC-refs: the chosen_window this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the chosen_window var.
 /datum/event2/event/window_break/proc/chosen_window() as /obj/structure/window
-	return om_resolve(chosen_window_handle)
+	return chosen_window

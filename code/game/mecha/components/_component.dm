@@ -113,7 +113,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 			if(user)
 				to_chat(user, span_notice("\The [target] already has a [component_type] installed!"))
 			return FALSE
-		chassis = target
+		rel_set(src, "chassis", target)
 		if(user)
 			user.drop_from_inventory(src)
 		forceMove(target)
@@ -126,7 +126,7 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 			else
 				mech_body_plan().roll_affliction(chassis, list(internal_damage_flag))
 
-		chassis.internal_components[component_type] = src
+		own_move(src, chassis, "internal_components", component_type) // the chassis owns its installed components; `chassis` is the one-sided relation back
 
 		if(user)
 			act_message(user, chassis, others = span_notice("%U% installs \the [src] in %T%."))
@@ -135,13 +135,13 @@ DAMAGE_REACTION(/obj/item/mecha_parts/component, DAMAGE_EMP, PROC_REF(component_
 
 /obj/item/mecha_parts/component/proc/detach()
 	if(chassis)
-		chassis.internal_components[component_type] = null
+		chassis.release_component(component_type)
 
 		if(internal_damage_flag && mech_body_plan().has_affliction(chassis, internal_damage_flag))	// If the module has been removed, it's kind of unfair to keep it causing problems by being damaged. It's nonfunctional either way.
 			mech_body_plan().cure(chassis, internal_damage_flag)
 
 		forceMove(get_turf(chassis))
-	chassis = null
+	rel_clear(src, "chassis")
 	return TRUE
 
 /// One nanopaste repair a second (a timed action on `site`) until whole or out of paste.
@@ -194,4 +194,3 @@ DECLARE_INTERACTIONS(/obj/item/mecha_parts/component, INTERACT_ITEM(null, PROC_R
 	return
 
 // Read by detach() in Destroy().
-DECLARE_REF(/obj/item/mecha_parts/component, "chassis", HELD, null)

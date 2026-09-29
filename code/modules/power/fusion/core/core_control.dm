@@ -8,8 +8,7 @@
 
 	var/id_tag = ""
 	var/scan_range = 25
-	var/list/connected_devices
-	var/tmp/cur_viewed_device_handle
+	var/tmp/obj/machinery/power/fusion_core/cur_viewed_device
 	var/datum/tgui_module/rustcore_monitor/monitor
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /datum/tgui_module/rustcore_monitor)
@@ -18,7 +17,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /d
 	. = ..()
 	monitor.core_tag = id_tag
 
-DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)
 
 /obj/machinery/computer/fusion_core_control/declare_interactions(list/into)
 	into += list(
@@ -64,6 +62,8 @@ DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)
 /obj/machinery/computer/fusion_core_control/proc/check_core_status(obj/machinery/power/fusion_core/C)
 	return istype(C) ? C.check_core_status() : FALSE
 
-/// LC-refs: the cur_viewed_device this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The core this console is viewing: a relation view, null once that core is deleted.
 /obj/machinery/computer/fusion_core_control/proc/cur_viewed_device() as /obj/machinery/power/fusion_core
-	return om_resolve(cur_viewed_device_handle)
+	return cur_viewed_device
+
+REL(/obj/machinery/computer/fusion_core_control, cur_viewed_device)

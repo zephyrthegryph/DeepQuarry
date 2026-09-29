@@ -23,15 +23,12 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 	icon_state = "sector"
 	known = TRUE
 	in_space = FALSE
-	var/tmp/site_handle
-
-// its site forgets its sector.
-DECLARE_REF(/obj/effect/overmap/visitable/sector/expedition, "site_handle", BACK_HANDLE, "overmap_sector_handle")
+	var/tmp/datum/expedition_site/site
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition
 	name = "Expedition Landing Zone"
 	radius = 18
-	var/tmp/site_handle
+	var/tmp/datum/expedition_site/site
 
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/shuttle_arrived(datum/shuttle/shuttle)
 	. = ..()
@@ -44,18 +41,11 @@ DECLARE_REF(/obj/effect/overmap/visitable/sector/expedition, "site_handle", BACK
 		for(var/mob/living/L in contents_of(A))
 			site().participants |= L
 
-// its site forgets its landing waypoint.
-DECLARE_REF(/obj/effect/shuttle_landmark/automatic/clearing/expedition, "site_handle", BACK_HANDLE, "landing_waypoint")
-
 /obj/machinery/computer/shuttle_control/explore
 	/// Site currently assigned to this craft.
-	var/tmp/active_expedition_handle
+	var/tmp/datum/expedition_site/active_expedition
 	EXPIRY_DECLARE(next_expedition_plot)
 
-DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "flight_operations_ui", OWNED, null)
-
-// its expedition forgets its origin console.
-DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "active_expedition_handle", BACK_HANDLE, "origin_console_handle")
 
 /obj/machinery/computer/shuttle_control/explore/proc/expedition_data()
 	if(!active_expedition() || QDELETED(active_expedition()))
@@ -75,17 +65,24 @@ DECLARE_REF(/obj/machinery/computer/shuttle_control/explore, "active_expedition_
 	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(shuttle.myship())
 	var/datum/expedition_site/site = GLOB.expedition_service.plot_for_vessel(user, vessel, src)
 	if(site)
-		active_expedition_handle = om_handle(site)
+		rel_set(src, "active_expedition", site)
 		EXPIRY_SET(src, next_expedition_plot, EXP_LAUNCH_COOLDOWN, CLOCK_WORLD)
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site this landing zone belongs to (a relation view).
 /obj/effect/shuttle_landmark/automatic/clearing/expedition/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site
 
-/// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site this sector belongs to (a relation view).
 /obj/effect/overmap/visitable/sector/expedition/proc/site() as /datum/expedition_site
-	return om_resolve(site_handle)
+	return site
 
-/// LC-refs: the active_expedition this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The site assigned to this craft (pairs with the site's origin_console).
 /obj/machinery/computer/shuttle_control/explore/proc/active_expedition() as /datum/expedition_site
-	return om_resolve(active_expedition_handle)
+	return active_expedition
+
+// The site owns its landing waypoint and overmap sector (implicit OWN); their site vars are plain
+// one-sided views. The console and the site name each other (a true two-sided pair).
+REL(/obj/effect/overmap/visitable/sector/expedition, site)
+REL(/obj/effect/shuttle_landmark/automatic/clearing/expedition, site)
+REL_PAIR(/datum/expedition_site, origin_console, active_expedition)
+REL_PAIR(/obj/machinery/computer/shuttle_control/explore, active_expedition, origin_console)

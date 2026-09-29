@@ -2,23 +2,23 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink
 	var/list/items_assoc
-	var/list/datum/uplink_item/items
+	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/uplink_category/categories
 
-DECLARE_REF(/datum/uplink, "items", DEF, null)
-DECLARE_REF(/datum/uplink, "categories", DEF, null)
 
 /datum/uplink/New(type)
 	items_assoc = list()
-	items = init_subtypes(/datum/uplink_item)
-	categories = init_subtypes(/datum/uplink_category)
-	categories = dd_sortedObjectList(categories)
+	// The uplink owns its categories (a sorted list) and its items (built at boot); items_assoc and
+	// each category's items are plain indexes into uplink.items.
+	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
+		own_add(src, "categories", category)
 
-	for(var/datum/uplink_item/item in items)
+	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
-			items -= item
+			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
 			continue
 
+		own_add(src, "items", item)
 		items_assoc[item.type] = item
 
 		for(var/datum/uplink_category/category in categories)
@@ -36,7 +36,6 @@ DECLARE_REF(/datum/uplink, "categories", DEF, null)
 	var/list/antag_roles	// Antag roles this item is displayed to. If empty, display to all.
 	var/blacklisted = FALSE
 
-DECLARE_REF(/datum/uplink_item, "category", DEF, null)
 
 /datum/uplink_item/item
 	var/path = null
@@ -208,7 +207,6 @@ DECLARE_REF(/datum/uplink_item, "category", DEF, null)
 
 	return bought_items
 
-DECLARE_REF(/datum/uplink, "items", OWNED_LIST, null)
-DECLARE_REF(/datum/uplink, "categories", OWNED_LIST, null)
 
-DECLARE_REF(/datum/uplink, "items_assoc", OWNED_VALUES, null)
+/// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
+SHARED(/datum/uplink, items_assoc)

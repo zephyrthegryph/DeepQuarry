@@ -26,10 +26,9 @@
 	// A human builds its body in set_species(), before this, so its organs
 	// have part slots to attach into.
 	if(!body)
-		body = new body_type(src)
+		own_set(src, "body", new body_type(src))
 	return ..()
 
-DECLARE_REF(/mob/living, "body", OWNED, null)
 
 /// Systemic biology (BIOLOGY_* flags). Non-living mobs have no body: organic.
 /mob/proc/biology()
@@ -91,14 +90,12 @@ DECLARE_REF(/mob/living, "body", OWNED, null)
 
 /datum/body/New(mob/living/new_owner)
 	..()
-	owner = new_owner
+	rel_set(src, "owner", new_owner)
 	if(physiology_type)
-		physiology = new physiology_type(src)
+		own_set(src, "physiology", new physiology_type(src))
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.
-DECLARE_REF(/datum/body, "owner", BACK, "body")
-DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 
 // each affliction is removed (symptoms end) before it is deleted. When the owner itself is being
 // deleted there is nobody to resolve symptoms on, wake or signal (audit C24): the afflictions are
@@ -132,10 +129,15 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 /datum/body/proc/add_affliction(datum/affliction/A, location = null)
 	if(!A || A.body == src)
 		return FALSE
-	A.body = src
-	A.owner = owner
-	A.location = location
-	LAZYADD(afflictions, A)
+	rel_set(A, "body", src)
+	rel_set(A, "owner", owner)
+	rel_set(A, "location", location)
+	// The body owns its afflictions. One carried in from elsewhere (an organ's
+	// detached_afflictions) is detached from that holder first.
+	var/datum/previous_holder = owner_of(A)
+	if(previous_holder && previous_holder != src)
+		own_take_member(previous_holder, A.own_slot, A)
+	own_add(src, "afflictions", A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)
@@ -149,14 +151,15 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 /datum/body/proc/remove_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	LAZYREMOVE(afflictions, A)
+	// Detached, not deleted: the caller deletes it or hands it on (detach_part()).
+	own_take_member(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	invalidate(BODY_DIRTY_VITALS | BODY_DIRTY_TREATMENT | BODY_DIRTY_FACTORS)
 	A.on_removed()
-	A.body = null
-	A.owner = null
+	rel_clear(A, "body")
+	rel_clear(A, "owner")
 	OM_EMIT(owner, /datum/om/event/body_afflictions_changed, A, FALSE)
 	return TRUE
 
@@ -165,13 +168,13 @@ DECLARE_REF(/datum/body, "supports", OWNED_LIST, null)
 /datum/body/proc/unlink_affliction(datum/affliction/A)
 	if(!A || A.body != src)
 		return FALSE
-	LAZYREMOVE(afflictions, A)
+	own_take_member(src, "afflictions", A)
 	LAZYREMOVEASSOC(afflictions_by_type, A.type, A)
 	if(A.location)
 		LAZYREMOVEASSOC(afflictions_by_location, A.location, A)
 	A.active_symptoms = null
-	A.body = null
-	A.owner = null
+	rel_clear(A, "body")
+	rel_clear(A, "owner")
 	return TRUE
 
 /// First affliction of exactly `affliction_type` (optionally at `location`).

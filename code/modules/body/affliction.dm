@@ -147,13 +147,10 @@
 	/// Active stage id (see the affliction_stages table).
 	var/stage
 
-DECLARE_REF(/datum/affliction, "body", BACK, null)
-DECLARE_REF(/datum/affliction, "owner", BACK, null)
-DECLARE_REF(/datum/affliction, "location", BACK, null)
 
 /datum/affliction/New(location)
 	..()
-	src.location = location
+	rel_set(src, "location", location)
 	configure(location)
 
 // an affliction leaves its body (symptoms end, factors recompute).

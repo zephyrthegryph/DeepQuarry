@@ -8,7 +8,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/portal, REGISTRY_PORTALS)
 	density = TRUE
 	unacidable = TRUE//Can't destroy energy portals.
 	var/failchance = 5
-	var/target_handle
+	var/obj/item/target
 	var/creator = null
 	anchored = TRUE
 	var/event = FALSE
@@ -82,6 +82,6 @@ EXTEND_INTERACTIONS(/obj/effect/portal, \
 		else
 			do_teleport(M, target_ref(), 1) ///You will appear adjacent to the beacon
 
-/// LC-refs: target -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Relation view: target (reads null once it is gone).
 /obj/effect/portal/proc/target_ref() as /obj/item
-	return om_resolve(target_handle)
+	return target

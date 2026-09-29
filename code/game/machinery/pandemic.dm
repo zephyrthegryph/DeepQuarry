@@ -133,7 +133,7 @@
 	if(!beaker)
 		return
 	beaker.forceMove(loc)
-	beaker = null
+	own_take(src, "beaker")
 	icon_state = "pandemic0"
 
 /obj/machinery/computer/pandemic/proc/print_form(datum/affliction/contagion/engineered/D, mob/living/user)
@@ -233,8 +233,8 @@
 	if(!operable())
 		return TRUE
 	user.drop_item()
-	beaker = I
-	beaker.forceMove(src)
+	I.forceMove(src)
+	own_set(src, "beaker", I) // CONTAINED: in contents first
 	to_chat(user, span_notice("You add \the [I] to the machine."))
 	update_tgui_static_data(user)
 	icon_state = "pandemic1"
@@ -390,4 +390,4 @@
 	play_sfx(src, SFX_MACHINES_PING, 0.6, vary = TRUE)
 	return TRUE
 
-DECLARE_REF(/obj/machinery/computer/pandemic, "beaker", HELD, null)
+OWN(/obj/machinery/computer/pandemic, beaker, OWN_CONTAINED)

@@ -5,8 +5,9 @@
 	var/engineering_evidence_id
 
 /datum/material_service
-	var/monitor_tool
-	var/monitor_user
+	/// The multitool observing the assembly, and who holds it (relation views).
+	var/obj/item/multitool/monitor_tool
+	var/mob/living/monitor_user
 	var/monitor_last_input = 0
 	var/monitor_last_output = 0
 	var/monitor_last_moles = 0
@@ -52,8 +53,8 @@
 
 /datum/material_service/proc/unregister_diagnostics()
 	om_unhook(owner(), list(/datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby, /datum/om/event/examine), src)
-	monitor_tool = null
-	monitor_user = null
+	rel_clear(src, "monitor_tool")
+	rel_clear(src, "monitor_user")
 	last_reading = null
 
 /datum/material_service/proc/examine_service(datum/source, datum/om/event/examine/event)
@@ -80,8 +81,8 @@
 	SHOULD_NOT_SLEEP(TRUE)
 	if(!user.Adjacent(owner()) || !tool?.has_tool_quality(TOOL_MULTITOOL))
 		return ITEM_INTERACT_BLOCKING
-	monitor_tool = om_handle(tool)
-	monitor_user = om_handle(user)
+	rel_set(src, "monitor_tool", tool)
+	rel_set(src, "monitor_user", user)
 	monitor_last_input = input_joules
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
@@ -244,20 +245,21 @@
 /// Only physical observation records an interval. Opening/refreshing a UI does
 /// not advance a test, and changing parts invalidates the in-progress interval.
 /datum/material_service/proc/sample_observation()
-	var/obj/item/multitool/tool = om_resolve(monitor_tool)
-	var/mob/living/user = om_resolve(monitor_user)
+	var/obj/item/multitool/tool = monitor_tool
+	var/mob/living/user = monitor_user
 	if(!tool || !istype(user) || user.incapacitated() || !user.Adjacent(owner()) || !user.item_is_in_hands(tool))
-		monitor_tool = null
-		monitor_user = null
+		rel_clear(src, "monitor_tool")
+		rel_clear(src, "monitor_user")
 		return FALSE
 	if(monitor_configuration != owner().material_configuration_revision)
 		monitor_configuration = owner().material_configuration_revision
 		reset_observation()
 	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature)
-	var/datum/gas_mixture/destination = om_resolve(last_delivery_mixture)
-	if(destination)
-		monitor_minimum_pressure = min(monitor_minimum_pressure, destination.return_pressure())
-		monitor_maximum_temperature = max(monitor_maximum_temperature, destination.return_temperature())
+	// The last delivery's destination, as recorded when the pump delivered (the mixture itself is
+	// owned by its turf or network; the service keeps only the readings).
+	if(last_delivery_pressure)
+		monitor_minimum_pressure = min(monitor_minimum_pressure, last_delivery_pressure)
+		monitor_maximum_temperature = max(monitor_maximum_temperature, last_delivery_temperature)
 	var/interval = (world.time - monitor_last_time) / 10
 	if(interval < 10)
 		return TRUE

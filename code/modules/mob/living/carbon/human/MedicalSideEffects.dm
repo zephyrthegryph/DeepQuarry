@@ -63,7 +63,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 	var/datum/medical_effect/new_effect = new prototype.type
 	new_effect.strength = strength
 	new_effect.start = life_tick
-	LAZYADD(side_effects, new_effect)
+	own_add(src, "side_effects", new_effect)
 
 /// Reconcile once per Life cycle, and only when the reagent holder changed
 /// (BODY_DIRTY_CHEMS, consumed by dq_process_dirty_medical_conditions). The old architecture
@@ -71,8 +71,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 /mob/living/carbon/human/proc/reconcile_medical_side_effects()
 	for(var/datum/medical_effect/active in side_effects)
 		if(active.cure(src))
-			LAZYREMOVE(side_effects, active)
-			qdel(active)
+			own_remove(src, "side_effects", active)
 	var/list/registry = GLOBAL_TABLE_GET(dq_medical_effect_registry)
 	for(var/effect_name in registry)
 		var/datum/medical_effect/prototype = registry[effect_name]
@@ -99,8 +98,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 		// Only do anything if the effect is currently strong enough
 		if(strength_percent >= 0.4)
 			if (M.cure(self) || M.strength > 50)
-				LAZYREMOVE(self.side_effects, M)
-				qdel(M)
+				own_remove(self, "side_effects", M)
 			else
 				if(self.life_tick % 45 == 0)
 					M.on_life(self, strength_percent*M.strength)
@@ -177,4 +175,3 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 			H.automatic_custom_emote(VISIBLE_MESSAGE, "shivers slightly.", check_stat = TRUE)
 			H.custom_pain("This itch makes it really hard to concentrate.",1)
 
-DECLARE_REF(/mob/living/carbon/human, "side_effects", OWNED_LIST, null)

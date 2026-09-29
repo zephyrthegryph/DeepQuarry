@@ -23,7 +23,7 @@
 			// which established the grabbing relation (grabbed_by/affecting).
 			G.synch()
 
-			LAssailant = M
+			rel_set(src, "LAssailant", M)
 
 			play_sfx(src, SFX_WEAPONS_THUDSWOOSH)
 			for(var/mob/O in viewers(src, null))

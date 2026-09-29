@@ -31,7 +31,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	smoke_type = /obj/effect/effect/smoke/chem
 	var/obj/chemholder
 	var/range
+	/// Relation list view: turfs the cloud reaches.
 	var/list/targetTurfs
+	/// Relation list view: walls bordering the cloud (wall-affecting reagents touch them).
 	var/list/wallList
 	var/density
 	var/show_log = 1
@@ -52,10 +54,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /datum/effect/effect/system/smoke_spread/chem/New()
 	..()
-	chemholder = new/obj()
+	own_set(src, "chemholder", new/obj())
 	chemholder.create_reagents(500)
 
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, null)
 
 //Sets up the chem smoke effect
 // Calculates the max range smoke can travel, then gets all turfs in that view range.
@@ -67,26 +68,26 @@ DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, 
 	carry.trans_to_obj(chemholder, carry.total_volume, copy = 1)
 
 	if(istype(loca, /turf/))
-		location_handle = om_handle(loca)
+		rel_set(src, "location", loca)
 	else
-		location_handle = om_handle(get_turf(loca))
+		rel_set(src, "location", get_turf(loca))
 	if(!get_location())
 		return
 
-	targetTurfs = new()
+	rel_clear(src, "targetTurfs")
 
 	//build affected area list
 	for(var/turf/T in view(range, get_location()))
 		//cull turfs to circle
 		if(sqrt((T.x - get_location().x)**2 + (T.y - get_location().y)**2) <= range)
-			targetTurfs += T
+			rel_add(src, "targetTurfs", T)
 
-	wallList = new()
+	rel_clear(src, "wallList")
 
 	smokeFlow() //pathing check
 
 	//set the density of the cloud - for diluting reagents
-	density = max(1, targetTurfs.len / 4) //clamp the cloud density minimum to 1 so it cant multiply the reagents
+	density = max(1, length(targetTurfs) / 4) //clamp the cloud density minimum to 1 so it cant multiply the reagents
 
 	//Admin messaging
 	var/contained = carry.get_reagents()
@@ -212,11 +213,9 @@ DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, 
 		for(var/turf/current in pending)
 			for(var/D in GLOB.cardinal)
 				var/turf/target = get_step(current, D)
-				if(wallList)
-					if(istype(target, /turf/simulated/wall))
-						if(!(target in wallList))
-							wallList += target
-						continue
+				if(istype(target, /turf/simulated/wall))
+					rel_add(src, "wallList", target)
+					continue
 
 				if(target in pending)
 					continue
@@ -233,14 +232,13 @@ DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, 
 			pending -= current
 			complete += current
 
-	targetTurfs = complete
+	rel_clear(src, "targetTurfs")
+	for(var/turf/T as anything in complete)
+		rel_add(src, "targetTurfs", T)
 
 	return
 
-/// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
+/// The seed (a registered /datum/seed: shared, never cleared).
 /datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
 	return seed_static
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem/spores, "seed_static", STATIC, null)
 
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "targetTurfs", STATIC, null)
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "wallList", STATIC, null)

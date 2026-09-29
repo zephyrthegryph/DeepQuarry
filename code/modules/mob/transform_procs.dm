@@ -16,7 +16,7 @@
 	var/atom/movable/overlay/animation = new /atom/movable/overlay( loc )
 	animation.icon_state = "blank"
 	animation.icon = 'icons/mob/mob.dmi'
-	animation.master = src
+	rel_set(animation, "master", src)
 	flick("h2monkey", animation)
 	om_after(src, 48, PROC_REF(monkeyize_1), animation)
 
@@ -104,7 +104,7 @@
 
 	if(isliving(src))
 		if(move_player(src, O, "AIized"))
-			O.mind.original_character = om_handle(O)
+			rel_set(O.mind, "original_character", O)
 	else
 		O.key = key // admin-made AI from an observer: first assignment
 
@@ -165,7 +165,7 @@
 
 	if(move_player(src, O, "robotized"))
 		if(O.mind.assigned_role == JOB_CYBORG)
-			O.mind.original_character = om_handle(O)
+			rel_set(O.mind, "original_character", O)
 		else if(O.mind.special_role)
 			O.mind.store_memory("In case you look at this after being borged, the objectives are only here until I find a way to make them not show up for you, as I can't simply delete them without screwing up round-end reporting. --NeoFite")
 
@@ -173,11 +173,11 @@
 	O.job = JOB_CYBORG
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
-			O.mmi = new /obj/item/mmi/digital/posibrain(O)
+			own_set(O, "mmi", new /obj/item/mmi/digital/posibrain(O))
 		else if(O.mind.role_alt_title == JOB_ALT_DRONE)
-			O.mmi = new /obj/item/mmi/digital/robot(O)
+			own_set(O, "mmi", new /obj/item/mmi/digital/robot(O))
 		else
-			O.mmi = new /obj/item/mmi(O)
+			own_set(O, "mmi", new /obj/item/mmi(O))
 
 		O.mmi.take_identity(src) // the MMI holds the character by reference; the mind is in the borg
 

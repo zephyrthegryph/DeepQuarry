@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
-		dna = new /datum/dna(null) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
+		own_set(src, "dna", new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
 
 	if(!species)
@@ -1283,10 +1283,11 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		holder_type = null
 		hunger_rate = initial(hunger_rate)
 
-	adopt_species(GLOB.all_species[new_species])
+	var/datum/species/replaced = proto_replace(src, "species", GLOB.all_species[new_species])
 	om_changed(src, CHANGE_MOB_CONDITIONS) // species vision and senses
 	old_species?.remove_components(src, species)
-	release_species_copy(old_species)
+	if(replaced)
+		qdel(replaced) // the private copy proto_replace() handed back, done with now
 	invalidate_factors()
 
 	if(species.language)
@@ -1320,11 +1321,11 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(!keep_organs)
 		body_type = species.body_plan
 	if(!body)
-		body = new body_type(src)
+		own_set(src, "body", new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
-		QDEL_NULL(body)
-		body = new body_type(src)
+		own_clear(src, "body", OWN_DELETE)
+		own_set(src, "body", new body_type(src))
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).
@@ -1372,7 +1373,10 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		vessel.remove_reagent(REAGENT_ID_BLOOD,vessel.total_volume - species.blood_volume) //This one should stay remove_reagent to work even lack of a O_heart
 		vessel.maximum_volume = species.blood_volume
 	fixblood()
-	species.update_attack_types() //Required for any trait that updates unarmed_types in setup.
+	// Traits (only ever on the mob's private copy) may change unarmed_types; a registered species
+	// built its attacks in New() and is never written here.
+	if(proto_is_private(src, "species"))
+		species.update_attack_types()
 	species.update_vore_belly_def_variant()
 
 /mob/living/carbon/human/proc/bloody_doodle()
@@ -2059,8 +2063,7 @@ VV_TOPIC_ACTION(/mob/living/carbon/human, VK_HK_TURN_ROBOT, PROC_REF(vv_topic_tu
 	create_new_area(usr)
 	return
 
-DECLARE_REF(/mob/living/carbon/human, "wearing_rig", HELD, null)
+OWN(/mob/living/carbon/human, wearing_rig, OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
-DECLARE_REF(/mob/living/carbon/human, "genetic_side_effects", OWNED_LIST, null)
 
 DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)

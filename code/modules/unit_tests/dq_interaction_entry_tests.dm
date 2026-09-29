@@ -224,11 +224,38 @@
 	for(var/path in held_types)
 		combinations += list(list("human", path))
 	for(var/list/combination as anything in combinations)
-		var/atom/held = combination[2] ? allocate(combination[2], T) : null
+		var/atom/held = combination[2] ? dq_snapshot_allocate(combination[2], T) : null
+		// Some held tools only exist inside a cyborg (a gripper deletes itself anywhere else,
+		// and a link to a dying entity is refused): sample those inside the snapshot's robot.
+		if(held && QDELETED(held) && actors["robot"])
+			held = allocate(combination[2], actors["robot"])
+		if(held && QDELETED(held))
+			. += "[target.type]|[combination[1]]|[combination[2]] => deleted itself on creation"
+			continue
 		var/datum/interaction_resolution/resolution = interactions_for(actors[combination[1]], target, held)
 		. += "[target.type]|[combination[1]]|[combination[2] || "none"] => [dq_resolution_text(resolution)]"
 		if(held)
 			qdel(held)
+
+/**
+ * Allocates a snapshot subject with what it needs to exist: some types delete themselves while
+ * initializing when a partner is missing, and nothing may link to a dying entity (ownership.md
+ * 4.1), so the snapshot builds the partner first rather than sampling a deleted object.
+ */
+/datum/unit_test/proc/dq_snapshot_allocate(type, turf/T)
+	if(ispath(type, /obj/machinery/mineral/processing_unit_console))
+		allocate(/obj/machinery/mineral/processing_unit, T) // the console finds its machine in range
+		return allocate(type, T)
+	if(ispath(type, /obj/machinery/shieldwall))
+		var/obj/machinery/shieldwallgen/A = allocate(/obj/machinery/shieldwallgen, T)
+		var/obj/machinery/shieldwallgen/B = allocate(/obj/machinery/shieldwallgen, T)
+		A.set_active(1) // a wall stands only between two running generators
+		B.set_active(1)
+		return allocate(type, T, A, B)
+	if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))
+		var/list/seeds = GLOB.plant_service.seeds
+		return allocate(type, T, length(seeds) ? seeds[1] : null) // produce needs a plant name
+	return allocate(type, T)
 
 /// Abstract: one domain's recorded snapshot. Subtypes list `snapshot_types` and `expected`.
 /datum/unit_test/dq_interaction_domain_snapshot
@@ -246,7 +273,13 @@
 	)
 	var/list/actual = list()
 	for(var/type in snapshot_types)
-		var/atom/target = allocate(type, T)
+		var/atom/target = dq_snapshot_allocate(type, T)
+		// A type that replaces itself while initializing (the arcade base picks a random
+		// cabinet), or deletes itself (a lattice off open space), is gone before anyone can interact
+		// with it; nothing may link to it.
+		if(QDELETED(target))
+			actual += "[type] => deleted itself on creation"
+			continue
 		actual += dq_snapshot_lines(target, T, actors)
 		qdel(target)
 	// On a mismatch, write the actual lines out so the snapshot can be reviewed

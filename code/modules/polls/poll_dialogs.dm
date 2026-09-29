@@ -26,10 +26,9 @@
 	var/answered = FALSE
 
 /datum/privacy_poll_dialog/New(mob/new_player/owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 
-DECLARE_REF(/datum/privacy_poll_dialog, "owner", PAIR, "privacy_poll_dialog")
-DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
+// The new player owns this dialog (privacy_poll_dialog); owner is a plain relation back.
 
 /datum/privacy_poll_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state
@@ -120,13 +119,12 @@ DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
 	var/list/selected_detail
 
 /datum/poll_browser_dialog/New(mob/new_player/owner)
-	src.owner = owner
+	rel_set(src, "owner", owner)
 	poll_ids = list()
 	poll_meta = list()
 	refresh_poll_list()
 
-DECLARE_REF(/datum/poll_browser_dialog, "owner", PAIR, "poll_browser_dialog")
-DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
+// The new player owns this dialog (poll_browser_dialog); owner is a plain relation back.
 
 /datum/poll_browser_dialog/tgui_state(mob/user)
 	return GLOB.tgui_always_state

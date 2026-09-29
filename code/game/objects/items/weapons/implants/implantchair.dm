@@ -127,7 +127,7 @@
 			if(imp.handle_implant(M, BP_TORSO))
 				imp.post_implant(M)
 
-			LAZYREMOVE(implant_list, imp)
+			own_take_member(src, "implant_list", imp)
 			break
 	return
 
@@ -135,7 +135,7 @@
 /obj/machinery/implantchair/proc/add_implants()
 	for(var/i=0, i<src.max_implants, i++)
 		var/obj/item/implant/loyalty/I = new /obj/item/implant/loyalty(src)
-		LAZYADD(implant_list, I)
+		own_add(src, "implant_list", I)
 	return
 
 /datum/interaction/machine_verb/implantchair_get_out
@@ -168,4 +168,3 @@
 /obj/machinery/implantchair/proc/set_ready()
 	ready = 1
 
-DECLARE_REF(/obj/machinery/implantchair, "implant_list", OWNED_LIST, null)

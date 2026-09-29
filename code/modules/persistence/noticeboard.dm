@@ -15,15 +15,15 @@
 	. = ..()
 
 	// Grab any mapped notices.
-	notices = list()
+	own_take_all(src, "notices")
 	for(var/obj/item/paper/note in get_turf(src))
 		note.forceMove(src)
-		LAZYADD(notices, note)
+		own_add(src, "notices", note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 	// notices in contents
 	for(var/obj/item/paper/note in contents)
-		LAZYADD(notices, note)
+		own_add(src, "notices", note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 
@@ -31,15 +31,15 @@
 
 /obj/structure/noticeboard/proc/add_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper))
-		LAZYDISTINCTADD(notices, paper)
 		paper.forceMove(src)
+		own_move(paper, src, "notices") // it may come from another holder (a bundle, a clipboard)
 		if(!skip_icon_update)
 			update_icon()
 
 /obj/structure/noticeboard/proc/remove_paper(atom/movable/paper, skip_icon_update)
 	if(istype(paper) && paper.loc == src)
 		paper.dropInto(loc)
-		LAZYREMOVE(notices, paper)
+		own_take_member(src, "notices", paper)
 		SSpersistence.forget_value(paper, /datum/persistent/paper)
 		if(!skip_icon_update)
 			update_icon()
@@ -49,7 +49,6 @@
 		remove_paper(thing, skip_icon_update = TRUE)
 	replace_with(src, /obj/item/stack/material/wood)
 
-DECLARE_REF(/obj/structure/noticeboard, "notices", OWNED_LIST, null)
 
 DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboard_blast_dismantle))
 

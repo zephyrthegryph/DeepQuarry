@@ -5,7 +5,7 @@
 	var/paused = FALSE
 	EXPIRY_DECLARE(cooldown)
 
-	var/statue_handle	//another easy ref
+	var/obj/structure/gargoyle/statue	//another easy ref
 
 	//Adjustable mod
 	var/identifier = "statue"
@@ -117,6 +117,6 @@
 /datum/trait_state/gargoyle/proc/gargoyle() as /mob/living/carbon/human
 	return owner
 
-/// LC-refs: the statue the gargoyle is standing as -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The statue the gargoyle is standing as (a relation view).
 /datum/trait_state/gargoyle/proc/statue() as /obj/structure/gargoyle
-	return om_resolve(statue_handle)
+	return statue

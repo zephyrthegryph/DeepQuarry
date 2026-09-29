@@ -76,11 +76,11 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 	var/obj/machinery/photocopier/faxmachine/fax = args["originfax"]
 
 	var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
-	faxreply = P
+	own_set(src, "faxreply", P)
 
-	P.admindatum_handle = om_handle(src)
+	rel_set(P, "admindatum", src)
 	P.origin = args["replyorigin"]
-	P.destination_handle = om_handle(fax)
-	P.sender_handle = om_handle(sender)
+	rel_set(P, "destination", fax)
+	rel_set(P, "sender", sender)
 
 	P.adminbrowse()

@@ -171,7 +171,7 @@
 
 	if(Chest.robotic >= 2)
 		act_message(src, null, others = span_warning("%U% shudders slightly, then ejects a cluster of nymphs with a wet slithering noise."))
-		species = GLOB.all_species[SPECIES_HUMAN] // This is hard-set to default the body to a normal FBP, without changing anything.
+		proto_set(src, "species", GLOB.all_species[SPECIES_HUMAN]) // This is hard-set to default the body to a normal FBP, without changing anything.
 
 		// Bust it
 		src.death()
@@ -323,7 +323,8 @@
 			var/list/organ_data = src.species.has_limbs[limb_type]
 			var/limb_path = organ_data["path"]
 			var/obj/item/organ/O = new limb_path(src)
-			organ_data["descriptor"] = O.name
+			if(!is_registered(src.species))
+				organ_data["descriptor"] = O.name
 			to_chat(src, span_notice("You feel a slithering sensation as your [O.name] reform."))
 
 			var/agony_to_apply = round(0.66 * O.max_damage) // 66% of the limb's health is converted into pain.

@@ -24,7 +24,6 @@
 	TEST_ASSERT(length(capture) == 1 && findtext(capture[1], "HANDLE TARGET COLLECTED WITHOUT QDEL"), "the collected target was reported: [json_encode(capture)]")
 	var/datum/E = new
 	TEST_ASSERT_NULL(om_resolve(h), "a new datum never answers an old handle")
-	// ALLOW(handle_kinds): the test is about a handle to an otherwise unreferenced datum
 	TEST_ASSERT(om_handle(E) != h, "and gets a handle of its own")
 
 /// A handle to a datum nothing else references: it resolves while the datum

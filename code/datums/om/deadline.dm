@@ -108,7 +108,7 @@
 /// Nothing ticks it. Thresholds publish `channel` on the owner when crossed,
 /// found by the deadline wheel.
 /datum/om/rate
-	var/owner_handle
+	var/datum/owner
 	var/name
 	var/value = 0
 	var/per_second = 0
@@ -128,7 +128,7 @@
 	if(!rec)
 		return null
 	var/datum/om/rate/R = new
-	R.owner_handle = om_handle(owner)
+	rel_set(R, "owner", owner)
 	R.name = name
 	R.value = clamp(value, min_value, max_value)
 	R.per_second = per_second
@@ -233,4 +233,4 @@
 
 /// LC-refs: the entity whose rate this is -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/om/rate/proc/owner() as /datum
-	return om_resolve(owner_handle)
+	return owner

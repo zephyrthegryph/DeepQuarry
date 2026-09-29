@@ -28,7 +28,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagent_refinery/furnace, "beaker", /obj/it
 	update_icon()
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()
 	if(!anchored)

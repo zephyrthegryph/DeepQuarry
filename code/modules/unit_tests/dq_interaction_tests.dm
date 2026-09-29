@@ -109,6 +109,7 @@
 	/// Ids with a dedicated test below. Add yours when you add a definition.
 	var/static/list/tested_ids = list(
 		"machine_panel", "machine_deconstruct", "machine_anchor", "machine_repair",
+		"lattice_item", // dq_interaction_lattice_item: a lattice only exists over open space
 		"dq_test_high", "dq_test_tie_a", "dq_test_tie_b", "dq_test_low", "dq_test_blocked", "dq_test_ghostly",
 		"dq_actor_observe", "dq_actor_handless", "dq_actor_tool", // dq_actor_adapter_tests.dm
 		// Combat mode (dq_combat_mode_tests.dm): the Disarm and Grab interactions and its fixtures.
@@ -163,6 +164,30 @@
 		TEST_ASSERT_EQUAL(INTERACTION_BY_ID(interaction.id), interaction, "[interaction.id] is found by id")
 	// Listed together so one run names every uncovered id.
 	TEST_ASSERT(!length(untested), "[length(untested)] interaction(s) have no test (add each to tested_ids with one, or record a converted domain's snapshot): [jointext(untested, ", ")]")
+
+/// A lattice deletes itself off open space, so the structures snapshot can't hold it: build one
+/// over space next to the test floor, offer it rods, and let the rods make it a catwalk.
+/datum/unit_test/dq_interaction_lattice_item
+
+/datum/unit_test/dq_interaction_lattice_item/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/turf/neighbor = get_step(T, EAST)
+	TEST_ASSERT_NOTNULL(neighbor, "no turf beside the test floor")
+	var/old_type = neighbor.type
+	var/turf/space/gap = neighbor.ChangeTurf(/turf/space)
+	var/obj/structure/lattice/lattice = allocate(/obj/structure/lattice, gap)
+	TEST_ASSERT(!QDELETED(lattice), "a lattice over space should stay")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/stack/rods/rods = allocate(/obj/item/stack/rods, T, 5)
+	var/datum/interaction_resolution/resolution = interactions_for(H, lattice, rods)
+	var/list/sides = splittext(dq_resolution_text(resolution), "|")
+	TEST_ASSERT("lattice_item" in splittext(sides[1], ","), "rods should be offered to a lattice: [dq_resolution_text(resolution)]")
+	lattice.interaction_item(H, rods, INTERACTION_BY_ID("lattice_item"))
+	var/obj/structure/catwalk/catwalk = locate_within(gap, /obj/structure/catwalk)
+	TEST_ASSERT_NOTNULL(own(catwalk), "rods should turn the lattice into a catwalk")
+	TEST_ASSERT_EQUAL(rods.get_amount(), 4, "the upgrade should use one rod")
+	qdel(catwalk)
+	gap.ChangeTurf(old_type)
 
 /// Open and close the maintenance panel.
 /datum/unit_test/dq_interaction_machine_panel

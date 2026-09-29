@@ -64,7 +64,7 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	icon_state = "none"
 	anchored = FALSE
 	density = TRUE
-	var/tmp/master_handle
+	var/tmp/obj/machinery/particle_accelerator/control_box/master
 	var/construction_state = 0
 	var/reference = null
 	var/powered = 0
@@ -156,7 +156,7 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 /obj/structure/particle_accelerator/proc/connect_master(obj/O)
 	if(O && istype(O,/obj/machinery/particle_accelerator/control_box))
 		if(O.dir == src.dir)
-			master_handle = om_handle(O)
+			rel_set(src, "master", O)
 			return 1
 	return 0
 
@@ -328,6 +328,6 @@ DECLARE_INTERACTIONS(/obj/structure/particle_accelerator, INTERACT_INSERT(/obj/i
 	update_state()
 	update_icon()
 
-/// LC-refs: the master this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// the master this refers to: a relation view, null once that is deleted.
 /obj/structure/particle_accelerator/proc/master() as /obj/machinery/particle_accelerator/control_box
-	return om_resolve(master_handle)
+	return master

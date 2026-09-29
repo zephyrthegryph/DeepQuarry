@@ -26,7 +26,7 @@
 	empulse(hit_atom, 1, 1, 1, 1, log=1)
 
 // Does something every so often. Deletes itself when pulses_remaining hits zero.
-OM_TIMER_SLOT(/obj/effect/temporary_effect/pulse, pulsetimer)
+OWN_TIMER(/obj/effect/temporary_effect/pulse, pulsetimer)
 
 /obj/effect/temporary_effect/pulse
 	var/pulses_remaining = 3

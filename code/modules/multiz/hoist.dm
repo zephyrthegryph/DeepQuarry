@@ -26,7 +26,7 @@ DECLARE_INTERACTIONS(/obj/item/hoist_kit, INTERACT_USE(null, PROC_REF(interactio
 	desc = "A clamp used to lift people or things."
 	icon = 'icons/obj/hoists.dmi'
 	icon_state = "hoist_hook"
-	var/tmp/source_hoist_handle
+	var/tmp/obj/structure/hoist/source_hoist
 	can_buckle = TRUE
 	anchored = TRUE
 	plane = ABOVE_MOB_PLANE
@@ -58,7 +58,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
 		AM.forceMove(get_turf(source_hook))
-	hoistee_handle = om_handle(AM)
+	rel_set(src, "hoistee", AM)
 	if(ismob(AM))
 		source_hook.buckle_mob(AM)
 	AM.set_anchored(TRUE) // why isn't this being set by buckle_mob for silicons?
@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	if (. && !QDELETED(source_hoist()))
 		var/mob/M = .
-		source_hoist().hoistee_handle = null
+		rel_clear(source_hoist(), "hoistee")
 		M.fall()
 
 /obj/structure/hoist
@@ -111,7 +111,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	anchored = TRUE
 	name = "hoist"
 	desc = "A manual hoist, uses a clamp and pulley to hoist things."
-	var/tmp/hoistee_handle
+	var/tmp/atom/movable/hoistee
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 
@@ -119,10 +119,9 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
-	source_hook = new(newloc)
-	source_hook.source_hoist_handle = om_handle(src)
+	own_set(src, "source_hook", new /obj/effect/hoist_hook(newloc))
+	rel_set(source_hook, "source_hoist", src)
 
-DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 
 // whatever hangs from the hoist is released.
 /obj/structure/hoist/on_destroy(force)
@@ -142,7 +141,7 @@ DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 		source_hook.unbuckle_mob(hoistee())
 	else
 		hoistee().anchored = FALSE
-	hoistee_handle = null
+	rel_clear(src, "hoistee")
 	layer = NORMAL_LAYER
 
 /obj/structure/hoist/proc/break_hoist()
@@ -152,7 +151,7 @@ DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
 	if(hoistee())
 		release_hoistee()
-	QDEL_NULL(source_hook)
+	own_clear(src, "source_hook", OWN_DELETE)
 
 DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
 DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))
@@ -277,10 +276,10 @@ DECLARE_INTERACTIONS(/obj/structure/hoist, \
 
 #undef NORMAL_LAYER
 
-/// LC-refs: the hoistee this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the hoistee var.
 /obj/structure/hoist/proc/hoistee() as /atom/movable
-	return om_resolve(hoistee_handle)
+	return hoistee
 
-/// LC-refs: the source_hoist this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Accessor for the source_hoist var.
 /obj/effect/hoist_hook/proc/source_hoist() as /obj/structure/hoist
-	return om_resolve(source_hoist_handle)
+	return source_hoist

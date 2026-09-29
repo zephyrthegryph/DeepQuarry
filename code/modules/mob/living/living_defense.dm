@@ -252,7 +252,7 @@
 					act_message(src, null, MSG_SELF(span_warning("You are pinned to the wall by [O]!")), \
 						MSG_OTHERS(span_warning("%U% is pinned to the wall by [O]!")))
 					set_anchored(TRUE)
-					LAZYADD(src.pinned, O)
+					rel_add(src, "pinned", O)
 
 /mob/living/proc/on_throw_vore_special(pred = TRUE, mob/living/target)
 	return

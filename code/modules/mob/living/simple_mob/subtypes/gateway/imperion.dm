@@ -496,4 +496,3 @@ TYPE_TABLE(/obj/item/grenade/shooter/laserpellet, shooter_grenade_projectiles, l
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/despair, null, src)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields", OWNED, null)

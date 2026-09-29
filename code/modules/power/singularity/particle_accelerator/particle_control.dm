@@ -16,14 +16,14 @@
 	dir = 1
 	var/strength_upper_limit = 2
 	var/interface_control = 1
-	var/list/connected_parts	// OM handles of the connected parts (om_resolve_all())
+	/// The accelerator parts found by part_scan() (relation list).
+	var/list/obj/structure/particle_accelerator/connected_parts
 	var/assembled = 0
 	var/parts = null
 
 /obj/machinery/particle_accelerator/control_box/Initialize(mapload)
 	. = ..()
 	set_wires(new /datum/wires/particle_acc/control_box(src))
-	connected_parts = list()
 	update_active_power_usage(initial(active_power_usage) * (strength + 1))
 
 // a running accelerator powers down.
@@ -56,16 +56,16 @@
 		set_use_power(USE_POWER_OFF)
 		assembled = 0
 		set_active(0)
-		for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
+		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = null
 			part.powered = 0
 			part.update_icon()
-		connected_parts = list()
+		rel_clear(src, "connected_parts")
 		return
 	if(!part_scan())
 		set_use_power(USE_POWER_IDLE)
 		set_active(0)
-		connected_parts = list()
+		rel_clear(src, "connected_parts")
 
 /obj/machinery/particle_accelerator/control_box/update_icon()
 	if(active)
@@ -88,7 +88,7 @@
 					icon_state = "[reference]c"
 
 /obj/machinery/particle_accelerator/control_box/proc/strength_change()
-	for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
+	for(var/obj/structure/particle_accelerator/part in connected_parts)
 		part.strength = strength
 		part.update_icon()
 
@@ -128,13 +128,13 @@
 		return PROCESS_KILL
 	if(src.active)
 		//a part is missing!
-		if( length(om_resolve_all(connected_parts)) < 6 )
+		if( length(connected_parts) < 6 )
 			log_game("PACCEL([x],[y],[z]) Failed due to missing parts.")
 			investigate_log("lost a connected part; It " + span_red("powered down") + ".","singulo")
 			toggle_power()
 			return
 		//emit some particles
-		for(var/obj/structure/particle_accelerator/particle_emitter/PE in om_resolve_all(connected_parts))
+		for(var/obj/structure/particle_accelerator/particle_emitter/PE in connected_parts)
 			if(PE)
 				PE.emit_particle(src.strength)
 
@@ -143,7 +143,7 @@
 		src.set_dir(F.dir)
 		break
 
-	connected_parts = list()
+	rel_clear(src, "connected_parts")
 	assembled = 0
 	var/ldir = turn(dir,90)
 	var/rdir = turn(dir,-90)
@@ -185,7 +185,7 @@
 
 	var/obj/structure/particle_accelerator/PA = locate_on(T, /obj/structure/particle_accelerator)
 	if(istype(PA, type) && PA.connect_master(src) && PA.report_ready(src))
-		src.connected_parts.Add(om_handle(PA))
+		rel_add(src, "connected_parts", PA)
 		return 1
 	return 0
 
@@ -198,13 +198,13 @@
 	if(active)
 		set_use_power(USE_POWER_ACTIVE)
 		MACHINE_WAKE(src)
-		for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
+		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = src.strength
 			part.powered = 1
 			part.update_icon()
 	else
 		set_use_power(USE_POWER_IDLE)
-		for(var/obj/structure/particle_accelerator/part in om_resolve_all(connected_parts))
+		for(var/obj/structure/particle_accelerator/part in connected_parts)
 			part.strength = null
 			part.powered = 0
 			part.update_icon()
@@ -270,3 +270,4 @@
 	. = ..()
 	update_icon()
 
+REL_LIST(/obj/machinery/particle_accelerator/control_box, connected_parts)

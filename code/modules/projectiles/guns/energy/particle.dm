@@ -128,9 +128,8 @@
 	if(!attached_safety)
 		return
 	to_chat(user, span_notice("You remove \the [attached_safety] from \the [src]."))
-	user.put_in_hands(attached_safety)
+	user.put_in_hands(own_take(src, "attached_safety"))
 	safetycatch = 0
-	attached_safety = null
 
 /// Old attackby.
 /obj/item/gun/energy/particle/gun_item(mob/user, obj/item/A, datum/interaction/interaction)
@@ -141,7 +140,7 @@
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
 		user.drop_item()
 		A.forceMove(src)
-		attached_safety = A
+		own_set(src, "attached_safety", A)
 		safetycatch = 1
 		return INTERACTION_HANDLED_PASS
 

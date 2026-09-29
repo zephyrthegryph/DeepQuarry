@@ -3,7 +3,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "pipe_d"
 	density = TRUE
-	var/old_turf_handle
+	var/turf/old_turf
 	on = 0
 	var/obj/item/stack/tile/T
 	var/list/work_modes = list("dismantle"=0,"laying"=0,"collect"=0) // ALLOW(instance_list): d: edited in place per instance (3 writers)
@@ -24,7 +24,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 			CollectTiles(old_turf())
 
 
-	old_turf_handle = om_handle(loc)
+	rel_set(src, "old_turf", loc)
 
 /obj/machinery/floorlayer/declare_interactions(list/into)
 	into += list(
@@ -86,7 +86,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	if(selected)
 		to_chat(user, span_notice("You remove [selected] from \the [src]."))
 		selected.forceMove(loc)
-		T = null
+		own_take(src, "T")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/floorlayer/screwdriver_act(mob/user, obj/item/tool)
@@ -96,7 +96,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
 	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc == src)
-		T = selected
+		own_set(src, "T", selected)
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
@@ -119,7 +119,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): materialized above
-		T = tile
+		own_set(src, "T", tile)
 		return 1
 	return 0
 
@@ -137,8 +137,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	return 1
 
 /obj/machinery/floorlayer/proc/TakeTile(obj/item/stack/tile/tile)
-	if(!T)	T = tile
 	tile.forceMove(src)
+	if(!T)
+		own_set(src, "T", tile)
 
 	SortStacks()
 
@@ -146,8 +147,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	for(var/obj/item/stack/tile/tile in turf_contents_of_type(w_turf, /obj/item/stack/tile))
 		TakeTile(tile)
 
-DECLARE_REF(/obj/machinery/floorlayer, "T", HELD, null)
+OWN(/obj/machinery/floorlayer, T, OWN_CONTAINED)
 
-/// LC-refs: old turf -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// old turf (a relation view: it reads null once the target is deleted).
 /obj/machinery/floorlayer/proc/old_turf() as /turf
-	return om_resolve(old_turf_handle)
+	return old_turf

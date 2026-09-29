@@ -66,9 +66,9 @@
 
 /obj/machinery/appliance/cooker/Initialize(mapload)
 	. = ..()
-	cooking_objs = list()
+	own_take_all(src, "cooking_objs")
 	for (var/i = 0, i < max_contents, i++)
-		LAZYADD(cooking_objs, new /datum/cooking_item/(new container_type(src)))
+		own_add(src, "cooking_objs", new /datum/cooking_item/(new container_type(src)))
 	cooking = FALSE
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead
@@ -172,15 +172,14 @@
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	thermostat_watch = heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat))
+	own_set(src, "thermostat_watch", heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.
 /obj/machinery/appliance/cooker/proc/on_thermostat(datum/native_watch/heat/watch, reason, source)
-	QDEL_NULL(thermostat_watch)
+	own_clear(src, "thermostat_watch", OWN_DELETE)
 	MACHINE_WAKE(src)
 
-DECLARE_REF(/obj/machinery/appliance/cooker, "thermostat_watch", OWNED, null)
 
 /// Heat capacity from `resistance` (the old per-process heating step is
 /// heating_power / resistance), and the casing's loss to the room.
@@ -243,4 +242,3 @@ DECLARE_REF(/obj/machinery/appliance/cooker, "thermostat_watch", OWNED, null)
 		to_chat(user, span_filter_notice("\The [I] will be used to make a [selected_option]. Output selection is returned to default for future items."))
 		selected_option = null
 
-DECLARE_REF(/obj/machinery/appliance/cooker, "thermostat_watch", OWNED, null)

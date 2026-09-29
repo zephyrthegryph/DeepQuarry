@@ -9,7 +9,7 @@
 	icon_screen = "comm_logs"
 
 	var/list/servers	// the servers located by the computer
-	var/SelectedServer_handle
+	var/obj/machinery/telecomms/server/SelectedServer
 	circuit = /obj/item/circuitboard/comm_server
 
 	var/network = "NULL"		// the network to probe
@@ -98,17 +98,17 @@
 		if("view")
 			for(var/obj/machinery/telecomms/T in servers)
 				if(T.id == params["id"])
-					SelectedServer_handle = om_handle(T)
+					rel_set(src, "SelectedServer", T)
 					break
 			. = TRUE
 
 		if("mainmenu")
-			SelectedServer_handle = null
+			rel_clear(src, "SelectedServer")
 			. = TRUE
 
 		if("release")
-			servers = list()
-			SelectedServer_handle = null
+			rel_clear(src, "servers")
+			rel_clear(src, "SelectedServer")
 			. = TRUE
 
 		if("scan")
@@ -118,7 +118,7 @@
 
 			for(var/obj/machinery/telecomms/server/T in range(25, src))
 				if(T.network == network)
-					LAZYADD(servers, T)
+					rel_add(src, "servers", T)
 
 			if(!length(servers))
 				set_temp("FAILED: UNABLE TO LOCATE SERVERS IN \[[network]\]", "bad")
@@ -137,8 +137,7 @@
 					return
 				var/datum/comm_log_entry/D = LAZYACCESS(SelectedServer().log_entries, idx)
 				set_temp("DELETED ENTRY: [D.name]", "bad")
-				LAZYREMOVE(SelectedServer().log_entries, D)
-				qdel(D)
+				own_remove(SelectedServer(), "log_entries", D)
 			else
 				set_temp("FAILED: NO SELECTED MACHINE", "bad")
 			. = TRUE
@@ -160,7 +159,7 @@
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		servers = list()
+		rel_clear(src, "servers")
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE
@@ -175,6 +174,6 @@
 /obj/machinery/computer/telecomms/server/proc/set_temp(text, color = "average")
 	temp = list("color" = color, "text" = text)
 
-/// LC-refs: SelectedServer -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// SelectedServer (a relation view: it reads null once the target is deleted).
 /obj/machinery/computer/telecomms/server/proc/SelectedServer() as /obj/machinery/telecomms/server
-	return om_resolve(SelectedServer_handle)
+	return SelectedServer

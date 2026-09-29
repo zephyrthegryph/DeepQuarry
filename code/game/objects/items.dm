@@ -1,4 +1,4 @@
-OM_TIMER_SLOT(/obj/item, tip_timer)
+OWN_TIMER(/obj/item, tip_timer)
 
 /obj/item
 	name = "item"
@@ -21,7 +21,7 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 	pass_flags = PASSTABLE
 	pressure_resistance = 5
 //	causeerrorheresoifixthis
-	var/obj/item/master = null // ALLOW(state_ref): relationship: the item this one is attached to
+	var/obj/item/master = null // the item this one is attached to
 	var/list/attack_verb //Used in attackby() to say how something was attacked "[x] has been [z.attack_verb] by [y] with [z]"
 	var/force = 0
 	var/throwforce = 0
@@ -59,7 +59,8 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 	var/slowdown = 0 // How much clothing is slowing you down. Negative values speeds you up
 	var/canremove = TRUE //Mostly for Ninja code at this point but basically will not allow the item to be removed if set to 0. /N
 
-	var/hidden_uplink_handle // All items can have an uplink hidden inside, just remember to add the triggers.
+	/// All items can have an uplink hidden inside, just remember to add the triggers.
+	var/obj/item/uplink/hidden/hidden_uplink // owned, sits in our contents
 	var/zoomdevicename = null //name used for message when binoculars/scope is used
 	var/tmp/zoom = 0 //1 if item is actively being used to zoom. For scoped guns and binoculars.
 
@@ -126,8 +127,9 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 	var/tmp/list/warned_of_possession //Checks to see who has been informed this item is possessed.
 	var/tmp/cleaving = FALSE // Used to avoid infinite cleaving.
 	var/list/tool_qualities
-	var/my_augment_handle	// Used to reference the object's host organ.
-	var/datum/identification/identity = null // ALLOW(state_ref): owned: identification datum, refers back to its holder
+	/// Used to reference the object's host organ.
+	var/tmp/obj/item/organ/internal/augment/my_augment
+	var/datum/identification/identity = null // owned: identification datum, refers back to its holder
 	var/identity_type = /datum/identification
 	var/init_hide_identity = FALSE // Set to true to automatically obscure the object on initialization.
 
@@ -163,7 +165,6 @@ OM_TIMER_SLOT(/obj/item, tip_timer)
 // Machine components are normally located inside their owner: a component
 // destroyed on its own (upgrade, explosion, bulk teardown) leaves the owner's
 // component_parts, or that list would keep it as a hard delete.
-DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts"))
 
 /obj/item/on_destroy(force)
 	if(ismob(loc))
@@ -201,7 +202,7 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
 
-	LAZYREMOVE(actions, source)
+	rel_remove(src, "actions", source)
 
 /// Adds an item action to our list of item actions.
 /// Item actions are actions linked to our item, that are granted to mobs who equip us.
@@ -216,7 +217,7 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 	else
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
-	LAZYADD(actions, action)
+	rel_add(src, "actions", action)
 	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
@@ -232,7 +233,7 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 		return
 
 	om_unhook(action, /datum/om/event/qdeleting, src)
-	LAZYREMOVE(actions, action)
+	rel_remove(src, "actions", action)
 	qdel(action)
 
 // Check if target is reasonable for us to operate on.
@@ -1089,22 +1090,20 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 	//This makes it so that any object in the game can have something put in it like the cursed sword!
 	//This means the proc can also be manually called by admin commands.
 	//Handle moving the person into the object.
-	if(!possessed_voice) //Create the list for possessed_voice if it doesn't already have one.
-		possessed_voice = list()
 	if(!warned_of_possession) //Creates a list of warned users.
 		warned_of_possession = list()
 	var/mob/living/voice/new_voice = new /mob/living/voice(src) 	//Make the voice mob the person is going to be.
 	new_voice.transfer_identity(candidate) 			//Now make the voice mob load from the ghost's active character in preferences.
-	new_voice.mind = candidate.mind					//Transfer the mind, if any.
+	rel_set(new_voice, "mind", candidate.mind) //Transfer the mind, if any.
 	new_voice.ckey = candidate.ckey					//Finally, bring the client over.
-	candidate.mind = null // Remove the mind from the mob to avoid issues with multi TF interactions
+	rel_clear(candidate, "mind") // Remove the mind from the mob to avoid issues with multi TF interactions
 	new_voice.set_tf_mob_holder(candidate_original_form) //Save what mob they are! We'll need this for OOC escape and transformation back to their normal form.
 	if(candidate_name) 								//Were we given a candidate_name? Great! Name them that.
 		new_voice.name = "[candidate_name]"
 	else
 		new_voice.name = "[name]" 					//No name given? Give them the name of the object they're inhabiting.
 	new_voice.real_name = "[new_voice.real_name]" 	//We still know their real name though!
-	possessed_voice.Add(new_voice)
+	own_add(src, "possessed_voice", new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 	remove_verb(new_voice, /mob/living/voice/verb/change_name) //No changing your name! Bad!
 	remove_verb(new_voice, /mob/living/voice/verb/hang_up) //Also you can't hang up. You are the item!
@@ -1125,16 +1124,15 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_LISTENING_OBJECTS)
 			return TRUE
 	return FALSE
 
-DECLARE_REF(/obj/item, "blood_overlay", OWNED, null)
-DECLARE_REF(/obj/item, "d_stage_overlay", OWNED, null)
-DECLARE_REF(/obj/item, "identity", OWNED, null)
 
-/// LC-refs: hidden uplink -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+/// The hidden uplink (owned, in the item's contents); a global helper keeps the proc off the base type.
 /proc/item_hidden_uplink(obj/item/I) as /obj/item/uplink/hidden
-	return om_resolve(I?.hidden_uplink_handle)
+	return I?.hidden_uplink
 
-/// LC-refs: my augment -- an OM handle (om_handle()); a global helper keeps the proc off the base type.
+OWN(/obj/item, hidden_uplink, OWN_CONTAINED)
+
+/// The host organ (the item side of the augment relation view); a global helper keeps the proc off the base type.
 /proc/item_my_augment(obj/item/I) as /obj/item/organ
-	return om_resolve(I?.my_augment_handle)
+	return I?.my_augment
 
-DECLARE_REF(/obj/item, "master", HELD, null)
+// An item's master is the thing holding it (an assembly's valve, a chair's kit): a one-sided REL view.

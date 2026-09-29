@@ -2,12 +2,12 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	if(!target)
 		return
 	var/datum/eventkit/modify_robot/modify_robot = new()
-	modify_robot.target_handle = om_handle(target)
+	rel_set(modify_robot, "target", target)
 	modify_robot.selected_ai = target.is_slaved()
 	modify_robot.tgui_interact(user.mob)
 
 /datum/eventkit/modify_robot
-	var/tmp/target_handle
+	var/tmp/mob/living/silicon/robot/target
 	var/mob/living/silicon/robot/source
 	var/selected_ai
 	var/ion_law	= "IonLaw"
@@ -16,17 +16,18 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/supplied_law = "SuppliedLaw"
 	var/supplied_law_position = MIN_SUPPLIED_LAW_NUMBER
 	var/list/datum/ai_laws/law_list
-	var/tmp/multibelt_holder_handle	//Currently selected multibelt.
+	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
 
 /datum/eventkit/modify_robot/New()
 	. = ..()
 	log_and_message_admins("has used modify robot and is modifying [target()]")
-	law_list = new()
-	init_subtypes(/datum/ai_laws, law_list)
-	law_list = dd_sortedObjectList(law_list)
+	var/list/laws = list()
+	init_subtypes(/datum/ai_laws, laws)
+	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
+		own_add(src, "law_list", laws_entry)
 
 /datum/eventkit/modify_robot/tgui_close()
-	target_handle = null
+	rel_clear(src, "target")
 	if(source)
 		qdel(source)
 
@@ -36,7 +37,6 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 		ui = new(user, src, "ModifyRobot", "Modify Robot")
 		ui.open()
 
-DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 
 /datum/eventkit/modify_robot/ui_assets(mob/user)
 	if(!target())
@@ -169,7 +169,7 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 		if("select_target")
 			var/new_target = locate(params["new_target"])
 			if(new_target != target())
-				target_handle = om_handle(locate(params["new_target"]))
+				rel_set(src, "target", locate(params["new_target"]))
 				log_and_message_admins("changed robot modifictation target to [target()]")
 			return TRUE
 		if("toggle_crisis")
@@ -179,31 +179,33 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 			var/new_restriction = params["new_restriction"]
 			if(!(new_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYOR(target().restrict_modules_to, new_restriction)
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYOR(robot_target.restrict_modules_to, new_restriction)
 			return TRUE
 		if("remove_restriction")
 			var/rem_restriction = params["rem_restriction"]
 			if(!(rem_restriction in GLOB.robot_modules))
 				return FALSE
-			LAZYREMOVE(target().restrict_modules_to, rem_restriction)
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYREMOVE(robot_target.restrict_modules_to, rem_restriction)
 			return TRUE
 		if("select_source")
 			if(source)
 				qdel(source)
 			var/module_type = GLOB.robot_modules[params["new_source"]]
 			if(ispath(module_type, /obj/item/robot_module/robot/syndicate))
-				source = new /mob/living/silicon/robot/syndicate(null)
+				own_set(src, "source", new /mob/living/silicon/robot/syndicate(null))
 			else if(ispath(module_type, /obj/item/robot_module/robot/malf))
-				source = new /mob/living/silicon/robot/malf(null)
+				own_set(src, "source", new /mob/living/silicon/robot/malf(null))
 			else
-				source = new /mob/living/silicon/robot(null)
+				own_set(src, "source", new /mob/living/silicon/robot(null))
 			source.modtype = params["new_source"]
 			var/obj/item/robot_module/robot/robot_type = new module_type(source)
-			source.sprite_datum = pick(SSrobot_sprites.get_module_sprites(source.modtype, source))
+			proto_set(source, "sprite_datum", pick(SSrobot_sprites.get_module_sprites(source.modtype, source)))
 			source.update_icon()
 			source.emag_items = TRUE
 			if(!istype(robot_type, /obj/item/robot_module/robot))
-				QDEL_NULL(source)
+				own_clear(src, "source", OWN_DELETE)
 				return TRUE
 			return TRUE
 		if("reset_module")
@@ -214,7 +216,7 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 			if(!selected_item)
 				return TRUE
 			if(istype(selected_item, /obj/item/card/id))
-				source.idcard = null
+				own_take(source, "idcard")
 			source.module.emag -= selected_item
 			source.module.modules -= selected_item
 			target().module.add_item(selected_item, target())
@@ -239,7 +241,9 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 			var/module_type = GLOB.robot_modules[target().modtype]
 			source.modtype = target().modtype
 			new module_type(source)
-			source.sprite_datum = target().sprite_datum
+			// The target's sprite is shared (a registered sprite) or its private copy: copy a private one.
+			var/datum/robot_sprite/target_sprite = target().sprite_datum
+			proto_set(source, "sprite_datum", (!target_sprite || is_registered(target_sprite)) ? target_sprite : target_sprite.proto_copy())
 			source.update_icon()
 			source.emag_items = TRUE
 			// Target
@@ -258,10 +262,12 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 			target().module_reset(FALSE)
 			return TRUE
 		if("add_compatibility")
-			LAZYOR(target().module.supported_upgrades, text2path(params["upgrade"]))
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYOR(robot_target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("rem_compatibility")
-			LAZYREMOVE(target().module.supported_upgrades, text2path(params["upgrade"]))
+			var/mob/living/silicon/robot/robot_target = target()
+			LAZYREMOVE(robot_target.module.supported_upgrades, text2path(params["upgrade"]))
 			return TRUE
 		if("add_upgrade")
 			var/new_upgrade = text2path(params["upgrade"])
@@ -284,7 +290,8 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 					UN.heldname = new_name
 				U = UN
 			if(istype(U, /obj/item/borg/upgrade/restricted))
-				LAZYOR(target().module.supported_upgrades, new_upgrade)
+				var/mob/living/silicon/robot/robot_target = target()
+				LAZYOR(robot_target.module.supported_upgrades, new_upgrade)
 			if(!U.action(ui.user, target()))
 				return FALSE
 			U.forceMove(target())
@@ -299,11 +306,11 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 		if("remove_modkit")
 			var/obj/item/gun/energy/kinetic_accelerator/kin = locate_in_list(target().module.modules, /obj/item/gun/energy/kinetic_accelerator)
 			var/obj/item/rem_kit = locate(params["modkit"])
-			LAZYREMOVE(kin.modkits, rem_kit)
+			rel_remove(kin, "modkits", rem_kit)
 			qdel(rem_kit)
 			return TRUE
 		if("select_multibelt")
-			multibelt_holder_handle = om_handle(locate(params["multibelt"]))
+			rel_set(src, "multibelt_holder", locate(params["multibelt"]))
 			return TRUE
 		if("install_tool")
 			if(!istype(multibelt_holder(), /obj/item/robotic_multibelt))
@@ -792,12 +799,11 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 /datum/eventkit/modify_robot/proc/is_special_role(mob/user)
 	return user.mind?.special_role ? TRUE : FALSE
 
-/// LC-refs: Currently selected multibelt. -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// Currently selected multibelt. (a relation view: null once that is deleted).
 /datum/eventkit/modify_robot/proc/multibelt_holder() as /obj/item/robotic_multibelt
-	return om_resolve(multibelt_holder_handle)
+	return multibelt_holder
 
-/// LC-refs: the target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
+/// The target this refers to (a relation view: null once that is deleted).
 /datum/eventkit/modify_robot/proc/target() as /mob/living/silicon/robot
-	return om_resolve(target_handle)
+	return target
 
-DECLARE_REF(/datum/eventkit/modify_robot, "law_list", OWNED_LIST, null)
