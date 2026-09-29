@@ -17,7 +17,27 @@
 /// The cached capability list of A's type. Shared: never write into it.
 /proc/caps_of(atom/A)
 	RETURN_TYPE(/list)
-	return type_list(A, TYPE_PROC_REF(/atom, capabilities))
+	return type_list(A, TYPE_PROC_REF(/atom, capabilities), GLOBAL_PROC_REF(caps_intern_list))
+
+/// Interns every capability of a freshly built list: identical constructor calls anywhere in the tree
+/// (a type and each subtype that calls ..(), or two types with the same settings) share ONE datum, so
+/// its built entries and their compiled predicates are shared too (the flyweight, review 2 H2).
+/proc/caps_intern_list(list/built)
+	. = list()
+	for(var/entry in built)
+		. += istype(entry, /datum/capability) ? cap_intern(entry) : entry
+
+/// The shared capability equal to C (same type, same saved settings), registering C if it's new.
+/proc/cap_intern(datum/capability/C)
+	var/signature = datum_signature(C)
+	var/datum/capability/known = GLOB.caps_interned[signature]
+	if(known)
+		return known
+	GLOB.caps_interned[signature] = C
+	return C
+
+/// signature -> the one shared capability with those settings.
+GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
 /proc/cap_of(atom/A, key)
@@ -92,6 +112,20 @@
 		return (A.cap_state & W.behind) == W.behind
 	return !!(A.cap_state & CAP_WIRES_EXPOSED)
 
+/**
+ * Verbs this type has by what it is, beyond the /type/verb/ procs it inherits: a per-type list
+ * (built once, no per-instance entry), read by the verb store. For a difference between types that
+ * never changes per instance (an advanced scanner has the toggle, a basic one doesn't); state that
+ * changes uses hidden_verbs(). Pure: read only initial() values here.
+ *	/obj/item/healthanalyzer/type_verbs()
+ *		. = ..()
+ *		if(initial(profile_type) != /datum/diagnostic_profile/health_analyzer)
+ *			. += /obj/item/healthanalyzer/proc/toggle_adv
+ */
+/atom/proc/type_verbs()
+	RETURN_TYPE(/list)
+	return list()
+
 /// Whether A has power for its entries. Machines answer through their power state; anything else
 /// is always powered. The powered capability overrides nothing: it reads this.
 /atom/proc/cap_powered()
@@ -102,16 +136,14 @@
 
 // ---- lifecycle hooks ----
 
-#define TYPE_DERIVES_CAPS (1<<0)
-#define TYPE_DERIVES_LOOK (1<<1)
-#define TYPE_DERIVES_VERBS (1<<2)
-
-/// Runs every capability's on_init, then queues the first refresh when the type has anything derived
-/// (capabilities, a draw() that sets something, hidden verbs, periodic work). Called from
-/// /atom/Initialize() and table_initialize() after the declarations. Runs for every atom: the
-/// per-type answer is cached, so an atom with nothing derived costs one list lookup.
+/// Runs every capability's on_init, then queues the first refresh when the type may derive something.
+/// Called from /atom/Initialize() and table_initialize() after the declarations. Nothing derived is
+/// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
+/// the first instance of each type is always queued, and its refresh records what the type derives.
 /atom/proc/caps_init(mapload)
 	var/flags = type_derive_flags(src)
+	if(flags & TYPE_DERIVES_TYPE_VERBS)
+		verb_store_refresh(src, type_list(src, TYPE_PROC_REF(/atom, type_verbs)))
 	if(flags & TYPE_DERIVES_CAPS)
 		for(var/datum/capability/C as anything in caps_of(src))
 			C.on_holder_init(src, mapload)
@@ -119,27 +151,35 @@
 	if(flags || periodic_cadence)
 		changed(src)
 
-/// TYPE_DERIVES_* for A's type: it has capabilities, its draw() sets something, its hidden_verbs()
-/// hides something. Worked out on the type's first instance and remembered.
+/// TYPE_DERIVES_* known so far for A's type. A type seen for the first time is TYPE_DERIVES_PENDING
+/// (plus CAPS when it has capabilities) until its first refresh fills in LOOK and VERBS.
 /proc/type_derive_flags(atom/A)
 	var/known = GLOB.type_derives_cache[A.type]
 	if(!isnull(known))
 		return known
-	. = 0
+	. = TYPE_DERIVES_PENDING
 	if(length(caps_of(A)))
 		. |= TYPE_DERIVES_CAPS
-	var/datum/look/L = GLOB.look_builder
-	L.reset()
-	A.draw(L)
-	if(L.touched)
-		. |= TYPE_DERIVES_LOOK
-	if(length(A.hidden_verbs()))
-		. |= TYPE_DERIVES_VERBS
+	if(length(type_list(A, TYPE_PROC_REF(/atom, type_verbs))))
+		. |= TYPE_DERIVES_TYPE_VERBS
 	GLOB.type_derives_cache[A.type] = .
 
-/// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs).
+/// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
+/proc/type_derive_record(atom/A, drew, hid)
+	var/flags = GLOB.type_derives_cache[A.type]
+	if(isnull(flags) || !(flags & TYPE_DERIVES_PENDING))
+		return
+	flags &= ~TYPE_DERIVES_PENDING
+	if(drew)
+		flags |= TYPE_DERIVES_LOOK
+	if(hid)
+		flags |= TYPE_DERIVES_VERBS
+	GLOB.type_derives_cache[A.type] = flags
+
+/// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs; unknown yet
+/// counts as yes).
 /proc/type_derives(atom/A)
-	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS))
+	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
 
 GLOBAL_LIST_EMPTY(type_derives_cache)
 
@@ -159,9 +199,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			qdel(D)
 	cap_data = null
 
-#undef TYPE_DERIVES_CAPS
-#undef TYPE_DERIVES_LOOK
-#undef TYPE_DERIVES_VERBS
 
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
 /atom/proc/caps_examine(mob/user)
@@ -190,7 +227,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	for(var/datum/capability/C as anything in caps_of(A))
 		. += cap_built_entries(C, A)
 
-/// C's entries, built on first use and registered by id (the Menu runs a chosen entry by id).
+/// C's entries, built on first use. Ids are unique per target (run_chosen_interaction() resolves a
+/// Menu choice among the target's own interactions), so entries of different types may share one.
 /proc/cap_built_entries(datum/capability/C, atom/A)
 	if(isnull(C.built_entries))
 		C.built_entries = C.interactions(A) || list()
@@ -198,10 +236,6 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			if(!E.cap)
 				E.cap = C
 			cap_apply_gating(C, E)
-			var/datum/interaction/clash = GLOB.cap_entries_by_id[E.id]
-			if(clash && clash != E)
-				E.id = "[E.id]#[C.key]"
-			GLOB.cap_entries_by_id[E.id] = E
 	return C.built_entries
 
 // ---- gating ----
@@ -249,7 +283,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /// An interaction offered by a capability. Shared per (type, capability); per-instance state lives
 /// on the holder. The handler is a proc on the holder, (mob/user, obj/item/held, ...named form answers).
 /datum/interaction/capability
-	var/datum/capability/cap
+	/// The capability that built this entry (tmp: a back reference, not part of its settings).
+	var/tmp/datum/capability/cap
 	/// PROC_REF on the holder.
 	var/handler
 	var/behind = NONE
