@@ -207,13 +207,29 @@ fn world_step(now: ByondValue, budget: ByondValue) -> Result<ByondValue> {
     #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
     let now = now as Tick;
     let budget = whole(&budget, "budget")? as usize;
+    // Phase timings (last step, microseconds) for PERF_PROFILE's rust_metrics.
+    let t0 = std::time::Instant::now();
     with_world(|w| {
         w.evaluate_main_watches();
         Ok(())
     })?;
+    let t1 = std::time::Instant::now();
     let mut watch_wakes: Vec<Wake> = Vec::new();
     registry::for_each(|_, d| d.take_wakes(&mut watch_wakes));
+    let t2 = std::time::Instant::now();
     let wakes = with_world(|w| Ok(w.sched_step(now, budget, &watch_wakes)))?;
+    {
+        let metrics = crate::metrics::registry();
+        metrics
+            .gauge("world_step.evaluate_main_us")
+            .set((t1 - t0).as_secs_f64() * 1e6);
+        metrics
+            .gauge("world_step.domain_wakes_us")
+            .set((t2 - t1).as_secs_f64() * 1e6);
+        metrics
+            .gauge("world_step.sched_us")
+            .set(t2.elapsed().as_secs_f64() * 1e6);
+    }
     let mut flat = Vec::with_capacity(wakes.len() * WAKE_STRIDE as usize);
     for (w, e) in wakes {
         #[allow(clippy::cast_precision_loss)]

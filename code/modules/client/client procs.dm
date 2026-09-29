@@ -333,7 +333,13 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 				qdel(src)
 				return
 
-	prefs.sanitize_preferences()
+	// A runtime in preference sanitizing (preview icon rebuilds, trait re-application) must never
+	// abort login: the stat panel and tgui below would never initialize and the client sits on a
+	// white screen.
+	try
+		prefs.sanitize_preferences()
+	catch(var/exception/prefs_error)
+		stack_trace("client/New: sanitize_preferences runtimed for [key]: [prefs_error.name] at [prefs_error.file]:[prefs_error.line]; continuing login")
 	if(prefs)
 		prefs.selecting_slots = FALSE
 
