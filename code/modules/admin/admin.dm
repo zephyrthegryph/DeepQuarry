@@ -91,10 +91,7 @@ ADMIN_VERB(access_news_network, R_ADMIN|R_EVENT, "Access Newscaster Network", "A
 	user.holder?.dq_open_newscaster_panel()
 
 
-/datum/admins/proc/Jobbans()
-	if(!check_rights(R_BAN))
-		return
-
+/datum/admins/proc/Jobbans() // rights (R_BAN) are declared by the jobbans ADMIN_VERB
 	var/dat = span_bold("Job Bans!") + "<HR><table>"
 	for(var/t in GLOB.jobban_keylist)
 		var/r = t

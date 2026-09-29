@@ -106,7 +106,8 @@ SUBSYSTEM_DEF(admin_verbs)
 	if(isnull(verb_singleton))
 		CRASH("Attempted to dynamically invoke admin verb '[verb_type]' that doesn't exist.")
 
-	if(!admin.holder.check_for_rights(verb_singleton.permissions))
+	if(!admin_can(admin, verb_singleton.permissions))
+		admin_log_denial(admin, "verb:[verb_type]", verb_singleton.permissions)
 		to_chat(admin, span_adminnotice("You lack the permissions to do this."))
 		return
 

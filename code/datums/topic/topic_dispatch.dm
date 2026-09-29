@@ -86,9 +86,10 @@ GLOBAL_LIST_EMPTY(topic_tables)
 	for(var/list/spec as anything in row[3])
 		switch(spec[1])
 			if(TOPIC_SPEC_RIGHTS)
-				if(!check_rights_for(user?.client, spec[2]))
+				if(!admin_can(user?.client, spec[2]))
 					// A rights failure on an href is how exploit attempts show up: always tell admins.
 					var/attempt = "[key_name(user)] tried href action '[row[1]]' on [topic_target_type(target)] without [rights2text(spec[2], " ")]"
+					admin_log_denial(user?.client, "topic:[row[1]]", spec[2])
 					log_admin(attempt)
 					log_href("TOPIC_RIGHTS rejected: [attempt]")
 					message_admins("[key_name_admin(user)] tried href action '[row[1]]' on [topic_target_type(target)] without sufficient rights.")

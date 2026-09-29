@@ -25,8 +25,10 @@
 
 // The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
+// The union of every action's rights below: call/recall need R_ADMIN|R_EVENT, the timer and delay actions R_SERVER.
+// Each action narrows with admin_require(); the state must be at least as wide as the widest action.
 /datum/round_status_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+	return ADMIN_STATE(R_ADMIN|R_EVENT|R_SERVER)
 
 /datum/round_status_panel/tgui_interact(mob/user, datum/tgui/ui)
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -93,7 +95,7 @@
 			SStgui.update_uis(src)
 			return TRUE
 		if("call_shuttle")
-			if(!check_rights(R_ADMIN|R_EVENT))
+			if(!admin_require(ui.user.client, R_ADMIN|R_EVENT, "round_status_panel:[action]"))
 				return
 			if(SSticker?.mode?.name == "blob")
 				tgui_alert_async(ui.user, "You can't call the shuttle during blob!")
@@ -108,7 +110,7 @@
 			return TRUE
 
 		if("recall_shuttle")
-			if(!check_rights(R_ADMIN|R_EVENT))
+			if(!admin_require(ui.user.client, R_ADMIN|R_EVENT, "round_status_panel:[action]"))
 				return
 			if(!SSticker || !GLOB.emergency_shuttle_service.location())
 				return
@@ -120,7 +122,7 @@
 			return TRUE
 
 		if("edit_shuttle_time")
-			if(!check_rights(R_SERVER))
+			if(!admin_require(ui.user.client, R_SERVER, "round_status_panel:[action]"))
 				return
 			if(GLOB.emergency_shuttle_service.wait_for_launch)
 				var/new_time_left = act_ask(ui.user, action, params, ui, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = GLOB.emergency_shuttle_service.estimate_launch_time())
@@ -144,7 +146,7 @@
 			return TRUE
 
 		if("toggle_delay_end")
-			if(!check_rights(R_SERVER))
+			if(!admin_require(ui.user.client, R_SERVER, "round_status_panel:[action]"))
 				return
 			SSticker.delay_end = !SSticker.delay_end
 			log_admin("[key_name(ui.user)] [SSticker.delay_end ? "delayed the round end" : "has made the round end normally"].")

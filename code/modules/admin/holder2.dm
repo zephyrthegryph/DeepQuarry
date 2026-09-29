@@ -228,27 +228,41 @@ GLOBAL_PROTECT(href_token)
 /datum/admins/vv_edit_var(var_name, var_value)
 	return FALSE //nice try trialmin
 
-/*
-checks if usr is an admin with at least ONE of the flags in rights_required. (Note, they don't need all the flags)
-if rights_required == 0, then it simply checks if they are an admin.
-if it doesn't return 1 and show_msg=1 it will prints a message explaining why the check has failed
-generally it would be used like so:
+/**
+ * The one admin rights primitive: does `subject` hold at least ONE of `rights`? (rights 0 = "is an admin").
+ * It never reads usr and never logs, so it is safe in polling (tgui state), callbacks and prompt flows.
+ * Declare rights once at the entry point (ADMIN_VERB, ADMIN_STATE, TOPIC_RIGHTS) instead of re-checking inside.
+ */
+/proc/admin_can(client/subject, rights)
+	if(subject?.holder)
+		return subject.holder.check_for_rights(rights)
+	return FALSE
 
-/proc/admin_proc()
-	if(!check_rights(R_ADMIN))
-		return
-	to_chat(world, "you have enough rights!", confidential = TRUE)
+/**
+ * admin_can() that audits a denial: one log line with the key, the entry point and the rights required.
+ * Use it where an entry point cannot declare the rights itself (per-action rights inside one UI).
+ * `show_msg` also tells the client why.
+ */
+/proc/admin_require(client/subject, rights, entry, show_msg = TRUE)
+	if(admin_can(subject, rights))
+		return TRUE
+	admin_log_denial(subject, entry, rights, show_msg)
+	return FALSE
 
-NOTE: it checks usr! not src! So if you're checking somebody's rank in a proc which they did not call
-you will have to do something like if(client.rights & R_ADMIN) yourself.
-*/
+/// The single denial audit line: "ADMIN DENIED: key entry=<entry> requires=<flags>".
+/proc/admin_log_denial(client/subject, entry, rights, show_msg = FALSE)
+	log_admin_private("ADMIN DENIED: [subject ? key_name(subject) : "(no client)"] entry=[entry] requires=[rights2text(rights, " ")]")
+	if(show_msg && subject)
+		to_chat(subject, span_red("Error: You do not have sufficient rights to do that. You require one of the following flags:[rights2text(rights," ")]."), confidential = TRUE)
+
+/**
+ * DEPRECATED: reads usr, so it is wrong in a callback or proc chain. Use admin_can(client, rights), or declare
+ * the rights on the entry point. Kept as a thin usr wrapper; a shrink-only lint baseline tracks the remaining calls.
+ */
 /proc/check_rights(rights_required, show_msg=1)
-	if(usr?.client)
-		if (check_rights_for(usr.client, rights_required))
-			return TRUE
-		else
-			if(show_msg)
-				to_chat(usr, span_red("Error: You do not have sufficient rights to do that. You require one of the following flags:[rights2text(rights_required," ")]."), confidential = TRUE)
+	if(usr?.client && admin_can(usr.client, rights_required))
+		return TRUE
+	admin_log_denial(usr?.client, "check_rights in [caller?.proc]", rights_required, show_msg)
 	return FALSE
 
 //probably a bit iffy - will hopefully figure out a better solution
@@ -260,11 +274,9 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 			return usr.client.holder.check_if_greater_rights_than_holder(other.holder)
 	return FALSE
 
-//This proc checks whether subject has at least ONE of the rights specified in rights_required.
+/// Alias of admin_can(): whether subject has at least ONE of the rights specified in rights_required.
 /proc/check_rights_for(client/subject, rights_required)
-	if(subject?.holder)
-		return subject.holder.check_for_rights(rights_required)
-	return FALSE
+	return admin_can(subject, rights_required)
 
 /proc/GenerateToken()
 	. = ""
