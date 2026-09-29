@@ -416,7 +416,7 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		if(panel_open)
 			panel_open = FALSE
-			user.visible_message(span_notice("\The [user] secured \the [src]'s maintenance panel."))
+			act_message(user, src, others = span_notice("%U% secured %T%'s maintenance panel."))
 			playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 		else if(pai)
 			om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user))
@@ -603,34 +603,34 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
 	panel_open = TRUE
-	user.visible_message(span_warning("\The [user] opened \the [src]'s maintenance panel."))
+	act_message(user, src, others = span_warning("%U% opened %T%'s maintenance panel."))
 	playsound(src, 'sound/items/Screwdriver.ogg', 50, 1)
 /obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	cell = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done3(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	processor = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done4(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	board = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done5(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	capacitor = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done6(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	projector = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done7(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	emitter = PP_FUNCTIONAL
 	consume(I, user)
 /obj/item/paicard/proc/attackby_timed_done8(obj/item/I, mob/user)
-	user.visible_message(span_notice("\The [user] installs \the [I] into \the [src]."),span_notice("You install \the [I] into \the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You install \the [I] into %T%.")), MSG_OTHERS(span_notice("%U% installs \the [I] into %T%.")))
 	speech_synthesizer = PP_FUNCTIONAL
 	consume(I, user)
 
@@ -706,14 +706,14 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 				new /obj/item/paiparts/cell(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			cell = PP_MISSING
 		if("processor")
 			if(processor == PP_FUNCTIONAL)
 				new /obj/item/paiparts/processor(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			processor = PP_MISSING
 		if("board")
 			if(board == PP_FUNCTIONAL)
@@ -721,35 +721,35 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 			else
 				new /obj/item/paiparts(get_turf(user))
 			board = PP_MISSING
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 
 		if("capacitor")
 			if(capacitor == PP_FUNCTIONAL)
 				new /obj/item/paiparts/capacitor(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			capacitor = PP_MISSING
 		if("projector")
 			if(projector == PP_FUNCTIONAL)
 				new /obj/item/paiparts/projector(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			projector = PP_MISSING
 		if("emitter")
 			if(emitter == PP_FUNCTIONAL)
 				new /obj/item/paiparts/emitter(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			emitter = PP_MISSING
 		if("speech synthesizer")
 			if(speech_synthesizer == PP_FUNCTIONAL)
 				new /obj/item/paiparts/speech_synthesizer(get_turf(user))
 			else
 				new /obj/item/paiparts(get_turf(user))
-			user.visible_message(span_warning("\The [user] removes \the [choice] from \the [src]."),span_warning("You remove \the [choice] from \the [src]."))
+			act_message(user, src, MSG_SELF(span_warning("You remove \the [choice] from %T%.")), MSG_OTHERS(span_warning("%U% removes \the [choice] from %T%.")))
 			speech_synthesizer = PP_MISSING
 
 /obj/item/paicard/proc/death_damage()

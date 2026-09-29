@@ -149,12 +149,12 @@ DECLARE_INTERACTIONS(/obj/item/material/snow/snowball, \
 			if(prob(min(90, force * 3)) && ishuman(target) && (user.zone_sel in list(BP_L_LEG, BP_R_LEG, BP_L_FOOT, BP_R_FOOT, BP_L_ARM, BP_R_ARM, BP_L_HAND, BP_R_HAND)))
 				ranged_disarm(target)
 			else
-				target.visible_message(span_danger("\The [src] sends \the [target] stumbling away."))
+				act_message(target, src, others = span_danger("%T% sends %U% stumbling away."))
 				target.Move(get_step(target,get_dir(user,target)))
 		if(I_GRAB)
 			var/turf/STurf = get_turf(target)
 			om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 60, 1)
-			target.visible_message(span_critical("\The [src] yanks \the [target] towards \the [user]!"))
+			act_message(user, target, others = span_critical("\The [src] yanks %T% towards %U%!"))
 			target.throw_at(get_turf(get_step(user,get_dir(user,target))), 2, 1, src)
 
 	..()
@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/item/material/whip, INTERACT_USE(null, PROC_REF(intera
 
 /// Old attack_self.
 /obj/item/material/whip/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.visible_message(span_warning("\The [user] cracks \the [src]!"))
+	act_message(user, src, others = span_warning("%U% cracks %T%!"))
 	playsound(src, 'sound/effects/snap.ogg', 50, 1)
 	return TRUE
 

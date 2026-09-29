@@ -219,7 +219,7 @@
 		to_chat(user, "You can't customize a mech while someone is piloting it - that would be unsafe!")
 		return
 
-	user.visible_message("[user] opens [src] and spends some quality time customising [M].")
+	act_message(user, src, others = "%U% opens %T% and spends some quality time customising [M].")
 	M.name = new_name
 	M.desc = new_desc
 	M.initial_icon = new_icon

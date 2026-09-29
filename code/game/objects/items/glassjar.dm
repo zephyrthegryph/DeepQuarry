@@ -48,14 +48,14 @@
 			to_chat(user, "[A] doesn't fit into \the [src].")
 			return
 		var/mob/L = A
-		user.visible_message(span_notice("[user] scoops [L] into \the [src]."), span_notice("You scoop [L] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You scoop [L] into %T%.")), MSG_OTHERS(span_notice("%U% scoops [L] into %T%.")))
 		L.forceMove(src)
 		contains = JAR_ANIMAL
 		update_icon()
 		return
 	else if(istype(A, /obj/effect/spider/spiderling))
 		var/obj/effect/spider/spiderling/S = A
-		user.visible_message(span_notice("[user] scoops [S] into \the [src]."), span_notice("You scoop [S] into \the [src]."))
+		act_message(user, src, MSG_SELF(span_notice("You scoop [S] into %T%.")), MSG_OTHERS(span_notice("%U% scoops [S] into %T%.")))
 		S.forceMove(src)
 		om_task_periodic_stop(S) // No growing inside jars
 		contains = JAR_SPIDER
@@ -82,12 +82,12 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 
 			else
 				filled = FALSE
-				user.visible_message(span_warning("[user] dumps out \the [src]'s water!"))
+				act_message(user, src, others = span_warning("%U% dumps out %T%'s water!"))
 				update_icon()
 				return TRUE
 
 		else
-			user.visible_message(span_notice("[user] dumps \the [src]'s water."))
+			act_message(user, src, others = span_notice("%U% dumps %T%'s water."))
 			filled = FALSE
 			update_icon()
 			return TRUE
@@ -103,14 +103,14 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 		if(JAR_ANIMAL)
 			for(var/mob/M in contents_of(src))
 				M.forceMove(user.loc)
-				user.visible_message(span_notice("[user] releases [M] from \the [src]."), span_notice("You release [M] from \the [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You release [M] from %T%.")), MSG_OTHERS(span_notice("%U% releases [M] from %T%.")))
 			contains = JAR_NOTHING
 			update_icon()
 			return TRUE
 		if(JAR_SPIDER)
 			for(var/obj/effect/spider/spiderling/S in contents_of(src))
 				S.forceMove(user.loc)
-				user.visible_message(span_notice("[user] releases [S] from \the [src]."), span_notice("You release [S] from \the [src]."))
+				act_message(user, src, MSG_SELF(span_notice("You release [S] from %T%.")), MSG_OTHERS(span_notice("%U% releases [S] from %T%.")))
 				om_task_periodic(S, PERIODIC_SLOW) // They can grow after being let out though
 			contains = JAR_NOTHING
 			update_icon()
@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 		if(contains != JAR_MONEY)
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/spacecash/S = W
-		user.visible_message(span_notice("[user] puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into \the [src]."))
+		act_message(user, src, others = span_notice("%U% puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into %T%."))
 		user.drop_from_inventory(S)
 		S.forceMove(src)
 		update_icon()

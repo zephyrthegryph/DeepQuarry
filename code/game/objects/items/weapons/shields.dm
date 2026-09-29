@@ -49,7 +49,7 @@
 	var/bad_arc = reverse_direction(user.dir) //arc of directions from which we cannot block
 	if(check_shield_arc(user, bad_arc, damage_source, attacker))
 		if(prob(get_block_chance(user, damage, damage_source, attacker)))
-			user.visible_message(span_danger("\The [user] blocks [attack_text] with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% blocks [attack_text] with %T%!"))
 			return 1
 	return 0
 
@@ -87,12 +87,12 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 					//If we're at this point, the bullet/beam is going to go through the shield, however it will hit for less damage.
 					//Bullets get slowed down, while beams are diffused as they hit the shield, so these shields are not /completely/
 					//useless.  Extremely penetrating projectiles will go through the shield without less damage.
-					user.visible_message(span_danger("\The [user]'s [src.name] is pierced by [attack_text]!"))
+					act_message(user, src, others = span_danger("%U%'s [src.name] is pierced by [attack_text]!"))
 					if(P.armor_penetration < 30) //PTR bullets and x-rays will bypass this entirely.
 						P.damage = P.damage / 2
 					return 0
 			//Otherwise, if we're here, we're gonna stop the attack entirely.
-			user.visible_message(span_danger("\The [user] blocks [attack_text] with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% blocks [attack_text] with %T%!"))
 			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			return 1
 	return 0
@@ -103,7 +103,7 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 /obj/item/shield/riot/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/melee/baton))
 		if(COOLDOWN_FINISHED(src, cooldown))
-			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
+			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
 			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
 	else
@@ -371,7 +371,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 /obj/item/shield/riot/explorer/proc/explorer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/material/knife/machete))
 		if(COOLDOWN_FINISHED(src, cooldown))
-			user.visible_message(span_warning("[user] bashes [src] with [W]!"))
+			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
 			playsound(src, 'sound/effects/shieldbash.ogg', 50, 1)
 			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
 	else

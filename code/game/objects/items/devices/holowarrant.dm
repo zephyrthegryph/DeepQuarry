@@ -59,8 +59,8 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 	var/obj/item/card/id/I = ask.card
 	if(ask.yes && active() == ask.warrant)
 		active().fields["auth"] = "[I.registered_name] - [I.assignment ? I.assignment : "(Unknown)"]"
-	user.visible_message(span_notice("You swipe \the [I] through the [src]."), \
-			span_notice("[user] swipes \the [I] through the [src]."))
+	act_message(user, src, MSG_SELF(span_notice("You swipe \the [I] through %T%.")), \
+		MSG_OTHERS(span_notice("%U% swipes \the [I] through %T%.")))
 
 /obj/item/holowarrant/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(active())
@@ -74,8 +74,8 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 
 //hit other people with it
 /obj/item/holowarrant/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	user.visible_message(span_notice("You show the warrant to [M]."), \
-			span_notice("[user] holds up a warrant projector and shows the contents to [M]."))
+	act_message(user, M, MSG_SELF(span_notice("You show the warrant to %T%.")), \
+		MSG_OTHERS(span_notice("%U% holds up a warrant projector and shows the contents to %T%.")))
 	M.examinate(src)
 	return ITEM_INTERACT_SUCCESS
 

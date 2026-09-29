@@ -22,7 +22,7 @@
 /obj/item/chainsaw/proc/turnOn(mob/user as mob)
 	if(on) return
 
-	visible_message("You start pulling the string on \the [src].", "[user] starts pulling the string on the [src].")
+	act_message(user, src, MSG_SELF("You start pulling the string on %T%."), MSG_OTHERS("%U% starts pulling the string on %T%."))
 
 	if(max_fuel <= 0)
 		om_task_timed(user, 15, target = src, receiver = src, on_done = PROC_REF(turnOn_timed_done), done_args = list(user), on_fail = PROC_REF(turnOn_timed_failed), fail_args = list(user))
@@ -35,7 +35,7 @@
 /obj/item/chainsaw/proc/turnOn_timed_failed(mob/user)
 	to_chat(user, "You fumble with the string.")
 /obj/item/chainsaw/proc/turnOn_timed_done2(mob/user)
-	visible_message("You start \the [src] up with a loud grinding!", "[user] starts \the [src] up with a loud grinding!")
+	act_message(user, src, MSG_SELF("You start %T% up with a loud grinding!"), MSG_OTHERS("%U% starts %T% up with a loud grinding!"))
 	attack_verb = list("shredded", "ripped", "torn")
 	playsound(src, 'sound/weapons/chainsaw_startup.ogg',40,1)
 	force = active_force

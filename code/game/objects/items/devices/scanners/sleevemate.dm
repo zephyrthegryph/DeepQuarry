@@ -218,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 			nif = H.nif
 			persist_nif_data(H)
 
-		usr.visible_message("[usr] begins scanning [target]'s mind.",span_notice("You begin scanning [target]'s mind."))
+		act_message(usr, null, MSG_SELF(span_notice("You begin scanning [target]'s mind.")), MSG_OTHERS("%U% begins scanning [target]'s mind."))
 		om_task_start(/datum/om/task/timed/sleevemate_topic, usr, target, receiver = src, nif = nif)
 
 		return
@@ -230,7 +230,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 
 		var/mob/living/carbon/human/H = target
 
-		usr.visible_message("[usr] begins scanning [target]'s body.",span_notice("You begin scanning [target]'s body."))
+		act_message(usr, null, MSG_SELF(span_notice("You begin scanning [target]'s body.")), MSG_OTHERS("%U% begins scanning [target]'s body."))
 		om_task_start(/datum/om/task/timed/sleevemate_topic2, usr, target, receiver = src, H = H)
 
 		return
@@ -294,7 +294,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 				to_chat(usr,span_warning("\The [H] is too complex to put this mind into!"))
 				return
 
-		usr.visible_message(span_warning("[usr] begins uploading someone's mind into [target]!"),span_notice("You begin uploading a mind into [target]!"))
+		act_message(usr, null, MSG_SELF(span_notice("You begin uploading a mind into [target]!")), MSG_OTHERS(span_warning("%U% begins uploading someone's mind into [target]!")))
 		om_task_timed(usr, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done4), done_args = list(target, usr))
 
 	if(href_list["mindrelease"])
@@ -384,7 +384,7 @@ DECLARE_INTERACTIONS(/obj/item/sleevemate, INTERACT_USE(null, PROC_REF(interacti
 /obj/item/sleevemate/proc/mindsteal_confirmed(datum/om/prompt/confirm/sleevemate_mindsteal/ask)
 	var/mob/living/user = ask.answerer
 	var/mob/living/target = ask.victim
-	user.visible_message(span_warning("[user] begins downloading [target]'s mind!"),span_notice("You begin downloading [target]'s mind!"))
+	act_message(user, null, MSG_SELF(span_notice("You begin downloading [target]'s mind!")), MSG_OTHERS(span_warning("%U% begins downloading [target]'s mind!")))
 	om_task_timed(user, 35 SECONDS, target = target, receiver = src, on_done = PROC_REF(Topic_timed_done3), done_args = list(target, user))
 
 /obj/item/sleevemate/emag_act(remaining_charges, mob/user)

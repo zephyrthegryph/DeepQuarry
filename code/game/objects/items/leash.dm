@@ -100,10 +100,8 @@
 		clear_leash()
 		return
 	if(!is_wearing_collar(leash_pet) && istype(leash_pet, /mob/living/carbon/human)) //The pet has slipped their collar and is not the pet anymore.
-		leash_pet.visible_message(
-			span_warning("[leash_pet] has slipped out of [leash_pet.p_their()] collar!"),
-			span_warning("You have slipped out of your collar!")
-		)
+		act_message(leash_pet, null, MSG_SELF(span_warning("You have slipped out of your collar!")), \
+			MSG_OTHERS(span_warning("%U% has slipped out of %THEIR% collar!")))
 		clear_leash()
 		return
 
@@ -152,7 +150,7 @@
 	var/mob/living/pet = target
 	var/mob/living/carbon/human/human_pet = pet
 	var/leashtime = (istype(human_pet) && human_pet.get_equipped_item(SLOT_ID_HANDCUFFED)) ? 0.5 SECONDS : 3.5 SECONDS
-	pet.visible_message(span_danger("\The [actor] is attempting to put the leash on \the [pet]!"), span_danger("\The [actor] tries to put a leash on you"))
+	act_message(pet, null, MSG_SELF(span_danger("\The [actor] tries to put a leash on you")), MSG_OTHERS(span_danger("\The [actor] is attempting to put the leash on %U%!")))
 	add_attack_logs(actor, pet, "Leashed (attempt)")
 	wait(leashtime, PROC_REF(offer))
 
@@ -178,7 +176,7 @@
 	if(!istype(om_link(pet, src, /datum/om/relation/leashed_to), /datum/om/edge))
 		return FALSE
 	om_link(src, holder, /datum/om/relation/leash_held_by)
-	pet.visible_message(span_danger("\The [holder] puts a leash on \the [pet]!"), span_danger("The leash clicks onto your collar!"))
+	act_message(pet, holder, MSG_SELF(span_danger("The leash clicks onto your collar!")), MSG_OTHERS(span_danger("%T% puts a leash on %U%!")))
 	to_chat(pet, span_userdanger("You have been leashed!"))
 	to_chat(pet, span_danger("(You can use OOC escape to detach the leash)"))
 	return TRUE
@@ -230,10 +228,8 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		clear_leash()
 		return
 	if(get_dist(leash_pet, leash_master) > 3 && !leash_pet.has_status(EFFECT_STUNNED))
-		leash_pet.visible_message(
-			span_warning("[leash_pet] is pulled to the ground by [leash_pet.p_their()] leash!"),
-			span_warning("You are pulled to the ground by your leash!")
-		)
+		act_message(leash_pet, null, MSG_SELF(span_warning("You are pulled to the ground by your leash!")), \
+			MSG_OTHERS(span_warning("%U% is pulled to the ground by %THEIR% leash!")))
 		leash_pet.apply_effect(5, STUN, 0)
 
 	//This code is to check if the pet has gotten too far away, and then break the leash.
@@ -246,10 +242,8 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		clear_leash()
 		return
 	if(get_dist(leash_pet, leash_master) > 5)
-		leash_pet.visible_message(
-			span_warning("The leash snaps free from [leash_pet]'s collar!"),
-			span_warning("Your leash pops from your collar!")
-		)
+		act_message(leash_pet, null, MSG_SELF(span_warning("Your leash pops from your collar!")), \
+			MSG_OTHERS(span_warning("The leash snaps free from %U%'s collar!")))
 		leash_pet.apply_effect(5, STUN, 0)
 		leash_pet.body?.add_restriction(src, BF_AIRWAY, 0.2, 5 SECONDS) // the collar yanks the throat shut
 		clear_leash()
@@ -287,7 +281,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	if(leash_master && (leash_master.item_is_in_hands(src) || leash_master.isEquipped(src)))
 		return  //Dom still has the leash as it turns out. Cancel the proc.
 	if(leash_master)
-		leash_master.visible_message(span_notice("\The [leash_master] drops \the [src]."), span_notice("You drop \the [src]."))
+		act_message(leash_master, src, MSG_SELF(span_notice("You drop %T%.")), MSG_OTHERS(span_notice("%U% drops %T%.")))
 	//DOM HAS DROPPED LEASH. PET IS FREE. SCP HAS BREACHED CONTAINMENT.
 	clear_leash()
 
@@ -308,7 +302,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	if(leash_pet.absorbed)
 		clear_leash()
 		return
-	leash_pet.visible_message(span_danger("\The [leash_pet] is attempting to unhook [leash_pet.p_their()] leash!"), span_danger("You attempt to unhook your leash"))
+	act_message(leash_pet, null, MSG_SELF(span_danger("You attempt to unhook your leash")), MSG_OTHERS(span_danger("%U% is attempting to unhook %THEIR% leash!")))
 	add_attack_logs(leash_master,leash_pet,"Self-unleash (attempt)")
 
 	om_task_timed(leash_pet, 3.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))
@@ -319,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	var/mob/living/leash_master = src?.leash_master()
 	if(!leash_pet || !leash_master)
 		return
-	leash_pet.visible_message(span_danger("\The [leash_master] is attempting to remove the leash on \the [leash_pet]!"), span_danger("\The [leash_master] tries to remove leash from you"))
+	act_message(leash_pet, null, MSG_SELF(span_danger("\The [leash_master] tries to remove leash from you")), MSG_OTHERS(span_danger("\The [leash_master] is attempting to remove the leash on %U%!")))
 	add_attack_logs(leash_master,leash_pet,"Unleashed (attempt)")
 
 	om_task_timed(leash_master, 1.5 SECONDS, target = leash_pet, receiver = src, on_done = PROC_REF(released))

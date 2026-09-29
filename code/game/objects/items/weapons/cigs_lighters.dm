@@ -335,11 +335,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/cigarette, \
 /obj/item/clothing/mask/smokable/cigarette/proc/cigarette_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
-			user.visible_message(span_notice("[user] drops and treads on the lit [src], putting it out instantly."))
+			act_message(user, src, others = span_notice("%U% drops and treads on the lit [src], putting it out instantly."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
 		else
-			user.visible_message(span_notice("[user] puts out \the [src]."))
+			act_message(user, src, others = span_notice("%U% puts out %T%."))
 			quench()
 	return FALSE
 
@@ -455,11 +455,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 /obj/item/clothing/mask/smokable/pipe/proc/pipe_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(lit == 1)
 		if(interaction.stance == I_HURT)
-			user.visible_message(span_notice("[user] empties the lit [src] on the floor!."))
+			act_message(user, src, others = span_notice("%U% empties the lit [src] on the floor!."))
 			playsound(src, 'sound/items/cigs_lighters/cig_snuff.ogg', 50, 1)
 			die(1)
 		else
-			user.visible_message(span_notice("[user] puts out \the [src]."))
+			act_message(user, src, others = span_notice("%U% puts out %T%."))
 			quench()
 	return FALSE
 
@@ -668,7 +668,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 		lit = TRUE
 		icon_state = "lighteron"
 		playsound(src, activation_sound, 75, 1)
-		user.visible_message(span_notice("After a few attempts, [user] manages to light the [src]."))
+		act_message(user, src, others = span_notice("After a few attempts, %U% manages to light %T%."))
 
 		set_light(2, 0.5, "#FF9933")
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -677,7 +677,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter, INTERACT_SELF(null, PROC_REF(lighte
 		lit = FALSE
 		icon_state = "lighter"
 		playsound(src, deactivation_sound, 75, 1)
-		user.visible_message(span_notice("[user] quietly shuts off the [src]."))
+		act_message(user, src, others = span_notice("%U% quietly shuts off %T%."))
 
 		set_light(0)
 		om_task_periodic_stop(src)
@@ -735,7 +735,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 		icon_state = "[base_state]on"
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
-		user.visible_message(span_notice(span_rose("Without even breaking stride, [user] flips open and lights [src] in one smooth movement.")))
+		act_message(user, src, others = span_notice(span_rose("Without even breaking stride, %U% flips open and lights %T% in one smooth movement.")))
 
 		set_light(2, 0.5, "#FF9933")
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -744,7 +744,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo, INTERACT_SELF(null, PROC_REF(
 		icon_state = "[base_state]"
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
-		user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] shuts off [src] without even looking at what they're doing.")))
+		act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts off %T% without even looking at what they're doing.")))
 
 		set_light(0)
 		om_task_periodic_stop(src)
@@ -860,10 +860,10 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
-			user.visible_message(span_notice(span_rose("[user] safely activates the [src] with a push of a button!")))
+			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
 		else
 			if(prob(95))
-				user.visible_message(span_notice("After a few attempts, [user] manages to excite the supermatter within the [src]."))
+				act_message(user, src, others = span_notice("After a few attempts, %U% manages to excite the supermatter within %T%."))
 			else			// Just like the cheap lighter, this time you can shock/burn yourself a little on the hardlight shield
 				to_chat(user, span_warning("You hurt yourself on the shielding!"))
 				if (user.get_left_hand() == src)
@@ -878,7 +878,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 					user.injure(INJURY_ELECTRIC, 2, BP_R_HAND, src)
 					user.injure(INJURY_CELLULAR, 3, BP_R_HAND, src)
 					user.emp_act(EMP_HARMLESS)
-				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however sting themselves on the shielding!"))
+				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however sting themselves on the shielding!"))
 
 		set_light(2)
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -888,9 +888,9 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter, INTERACT_SELF(null, PRO
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter) )
-			user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] shuts the [src] without even looking at what they're doing.")))
+			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
 		else
-			user.visible_message(span_notice("[user] quietly shuts the [src]."))
+			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
 		om_task_periodic_stop(src)
@@ -935,10 +935,10 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 		item_state = "[base_state]on"
 		playsound(src, activation_sound, 75, 1)
 		if(prob(50))
-			user.visible_message(span_notice(span_rose("[user] safely activates the [src] with a push of a button!")))
+			act_message(user, src, others = span_notice(span_rose("%U% safely activates %T% with a push of a button!")))
 		else
 			if(prob(95))
-				user.visible_message(span_notice("After a few attempts, [user] manages to excite the supermatter within the [src]."))
+				act_message(user, src, others = span_notice("After a few attempts, %U% manages to excite the supermatter within %T%."))
 			else			// Just like with the cheap lighter, but this time you can hurt yourself on the heated phoron field
 				to_chat(user, span_warning("You singe yourself on the phoron shielding the excited supermatter!"))
 				if (user.get_left_hand() == src)
@@ -951,7 +951,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 					user.apply_effect(20,IRRADIATE)
 					user.injure(INJURY_BURN, 5, BP_R_HAND, src)
 					user.injure(INJURY_ELECTRIC, 5, BP_R_HAND, src)
-				user.visible_message(span_notice("After a few attempts, [user] manages to activate the [src], they however burn themselves with the heated phoron field!"))
+				act_message(user, src, others = span_notice("After a few attempts, %U% manages to activate %T%, they however burn themselves with the heated phoron field!"))
 
 		set_light(2)
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -961,9 +961,9 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/syndismzippo, INTERACT_S
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
 		if(istype(src, /obj/item/flame/lighter/supermatter/syndismzippo) )
-			user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] shuts the [src] without even looking at what they're doing.")))
+			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% shuts %T% without even looking at what they're doing.")))
 		else
-			user.visible_message(span_notice("[user] quietly shuts the [src]."))
+			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
 		om_task_periodic_stop(src)
@@ -1011,15 +1011,13 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 		var/i = rand(1, 100)
 		switch(i)
 			if(1 to 22)
-				to_chat(user, span_notice(span_rose("[user] safely reveals the supermatter shard within the [src]!")))
-				user.visible_message(span_notice(span_rose("You safely revealed the supermatter shard within the [src]!")))
+				act_message(user, src, MSG_SELF(span_notice(span_rose("You safely revealed the supermatter shard within %T%!"))), MSG_OTHERS(span_notice(span_rose("%U% safely reveals the supermatter shard within %T%!"))))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_RADIATION, 1, BP_L_HAND, src)
 				else			// Even using this safely will irradiate you a tiny tiny bit.
 					user.injure(INJURY_RADIATION, 1, BP_R_HAND, src)
 			if(23 to 33)
-				to_chat(user, span_warning("[user]'s hand slipped and they brush against the supermatter within [src]!"))
-				user.visible_message(span_notice("You accidentally grazed your hand across the supermatter!"))
+				act_message(user, null, MSG_SELF(span_notice("You accidentally grazed your hand across the supermatter!")), MSG_OTHERS(span_warning("%U%'s hand slipped and they brush against the supermatter within [src]!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_RADIATION, 10, BP_L_HAND, src)
 					user.injure(INJURY_BURN, 20, BP_L_HAND, src)
@@ -1031,8 +1029,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.injure(INJURY_ELECTRIC, 20, BP_R_HAND, src)
 					user.injure(INJURY_PAIN, 50, BP_R_HAND, src)
 			if(34 to 44)
-				to_chat(user, span_warning("[user] burned themselves on the [src]!"))
-				user.visible_message(span_notice("You accidentally burn yourself on the [src]!"))
+				act_message(user, src, MSG_SELF(span_notice("You accidentally burn yourself on %T%!")), MSG_OTHERS(span_warning("%U% burned themselves on %T%!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_RADIATION, 30, BP_L_HAND, src)
 					user.injure(INJURY_BURN, 20 / 3, BP_L_HAND, src)
@@ -1044,8 +1041,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.injure(INJURY_BLUNT, 40 / 3, BP_R_HAND, src)
 					user.injure(INJURY_BURN, 15, BP_R_HAND, src)
 			if(45 to 55)
-				to_chat(user, span_warning("[user] fumbled the [src] and the supermatter let out sparks!"))
-				user.visible_message(span_notice("You fumble the [src], letting the supermatter spark as the case opens!"))
+				act_message(user, src, MSG_SELF(span_notice("You fumble %T%, letting the supermatter spark as the case opens!")), MSG_OTHERS(span_warning("%U% fumbled %T% and the supermatter let out sparks!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_ELECTRIC, 1, BP_L_HAND, src)
 					user.emp_act(EMP_HEAVY)
@@ -1053,8 +1049,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.injure(INJURY_ELECTRIC, 1, BP_R_HAND, src)
 					user.emp_act(EMP_HEAVY)
 			if(56 to 66)
-				to_chat(user, span_warning("[user] struggles to open their [src], but when they do they get burned by the extreme heat within!"))
-				user.visible_message(span_notice("You struggle to get the case to open, and when it does the heat that pours out of the [src] burns!"))
+				act_message(user, src, MSG_SELF(span_notice("You struggle to get the case to open, and when it does the heat that pours out of %T% burns!")), MSG_OTHERS(span_warning("%U% struggles to open their [src], but when they do they get burned by the extreme heat within!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_RADIATION, 1, BP_L_HAND, src)
 					user.injure(INJURY_BLUNT, 1, BP_L_HAND, src)
@@ -1066,8 +1061,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.injure(INJURY_BURN, 200, BP_R_HAND, src)
 					user.drop_r_hand()
 			if(67 to 77)
-				to_chat(user, span_warning("Ouch! While pushing on the release to open the [src], [user]'s finger slipped right as the case opened, pressing their finger firm against the supermatter!"))
-				user.visible_message(span_notice("You accidentally pushed your finger against the supermatter!"))
+				act_message(user, null, MSG_SELF(span_notice("You accidentally pushed your finger against the supermatter!")), MSG_OTHERS(span_warning("Ouch! While pushing on the release to open the [src], %U%'s finger slipped right as the case opened, pressing their finger firm against the supermatter!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_PAIN, 50, BP_L_HAND, src)
 					user.injure(INJURY_RADIATION, 40, BP_L_HAND, src)
@@ -1087,8 +1081,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.apply_effect(15, SLUR)
 					user.apply_effect(5, STUN)
 			if(78 to 88)
-				to_chat(user, span_notice("[user] managed to pinch themselves on the case of their [src]... it could have been worse."))
-				user.visible_message(span_notice("You manage to pinch yourself on the case!"))
+				act_message(user, null, MSG_SELF(span_notice("You manage to pinch yourself on the case!")), MSG_OTHERS(span_notice("%U% managed to pinch themselves on the case of their [src]... it could have been worse.")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_CELLULAR, 1, BP_L_HAND, src)
 					user.injure(INJURY_PAIN, 1, BP_L_HAND, src)
@@ -1096,8 +1089,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.injure(INJURY_CELLULAR, 1, BP_R_HAND, src)
 					user.injure(INJURY_PAIN, 1, BP_R_HAND, src)
 			if(89 to 99)
-				to_chat(user, span_notice("[user] opened the [src] but forgot that you aren't supposed to look at supermatter!"))
-				user.visible_message(span_notice("You find yourself looking at the supermatter for longer than you should..."))
+				act_message(user, null, MSG_SELF(span_notice("You find yourself looking at the supermatter for longer than you should...")), MSG_OTHERS(span_notice("%U% opened the [src] but forgot that you aren't supposed to look at supermatter!")))
 				if (user.get_left_hand() == src)
 					user.injure(INJURY_PAIN, 15, BP_L_HAND, src)
 					user.apply_effect(5, WEAKEN)
@@ -1115,8 +1107,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 					user.add_oxygen_debt(15, src)
 					user.status_set(EFFECT_BLURRY, 10)
 			if(100)				// This is the part that makes it admin only for the moment, it spawns 500 rads from the carbon's position, and dusts the carbon instantly. It does also drop everything unlike the supermatter crystal though, so hopefully you won't lose any items if you fumble this badly!
-				to_chat(user, span_warning("OH NO! [user] almost dropped their live [src]! Thank goodness they caught it... by the glowing yellow crystal... oh."))
-				user.visible_message(span_danger("You almost dropped your [src], thank goodness you caught it! By the glowing crystal within. You find your ears filled with unearthly ringing and your last thought is \"Oh, fuck.\""))
+				act_message(user, src, MSG_SELF(span_danger("You almost dropped your [src], thank goodness you caught it! By the glowing crystal within. You find your ears filled with unearthly ringing and your last thought is \"Oh, fuck.\"")), MSG_OTHERS(span_warning("OH NO! %U% almost dropped their live %T%! Thank goodness they caught it... by the glowing yellow crystal... oh.")))
 				user.drop_r_hand() // To ensure the lighter is dropped <3
 				user.drop_l_hand() // To ensure the lighter is dropped <3
 				for(var/obj/item/e in user)
@@ -1138,9 +1129,9 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/supermatter/expsmzippo, INTERACT_SEL
 		item_state = "[base_state]"
 		playsound(src, deactivation_sound, 75, 1)
 		if (istype(src, /obj/item/flame/lighter/supermatter/expsmzippo))
-			user.visible_message(span_notice(span_rose("You hear a quiet click, as [user] closes the [src].")))
+			act_message(user, src, others = span_notice(span_rose("You hear a quiet click, as %U% closes %T%.")))
 		else
-			user.visible_message(span_notice("[user] quietly shuts the [src]."))
+			act_message(user, src, others = span_notice("%U% quietly shuts %T%."))
 
 		set_light(0)
 		om_task_periodic_stop(src)

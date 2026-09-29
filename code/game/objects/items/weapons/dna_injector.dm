@@ -120,7 +120,7 @@
 	if (om_busy(src))
 		return ITEM_INTERACT_FAILURE
 
-	user.visible_message(span_danger("\The [user] is trying to inject \the [M] with \the [src]!"))
+	act_message(user, src, others = span_danger("%U% is trying to inject \the [M] with %T%!"))
 
 
 	om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_timed_done), done_args = list(M, user), claims = TRUE)
@@ -132,7 +132,7 @@
 	user.setClickCooldown(DEFAULT_QUICK_COOLDOWN)
 	user.do_attack_animation(M)
 
-	M.visible_message(span_danger("\The [M] has been injected with \the [src] by \the [user]."))
+	act_message(user, M, others = span_danger("%T% has been injected with \the [src] by %U%."))
 
 	var/mob/living/carbon/human/H = M
 	if(!istype(H))

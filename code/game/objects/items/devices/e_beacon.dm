@@ -60,7 +60,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 /obj/item/emergency_beacon/proc/activate_done(mob/user)
 	if(beacon_active)
 		return
-	user.visible_message(span_warning("[user] activates \the [src]!"),span_warning("You activate \the [src], spiking it into the ground!"))
+	act_message(user, src, MSG_SELF(span_warning("You activate %T%, spiking it into the ground!")), MSG_OTHERS(span_warning("%U% activates %T%!")))
 	beacon_active = TRUE
 	icon_state = "e_beacon_active"
 	user.drop_item()
@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/emergency_beacon, \
 /obj/item/emergency_beacon/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(W.has_tool_quality(TOOL_WRENCH) && beacon_active)
 		gps.tracking = FALSE
-		user.visible_message("[user] disassembles \the [src].")
+		act_message(user, src, others = "%U% disassembles %T%.")
 		consume(src, user)
 		return TRUE
 	return FALSE

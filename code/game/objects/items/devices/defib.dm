@@ -357,12 +357,12 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		ghost.notify_revive("Someone is trying to resuscitate you. Re-enter your body if you want to be revived!", 'sound/effects/genetics.ogg', source = src)
 
 	//beginning to place the paddles on patient's chest to allow some time for people to move away to stop the process
-	user.visible_message(span_warning("\The [user] begins to place [src] on [H]'s chest."), span_warning("You begin to place [src] on [H]'s chest..."))
+	act_message(user, src, MSG_SELF(span_warning("You begin to place %T% on [H]'s chest...")), MSG_OTHERS(span_warning("%U% begins to place %T% on [H]'s chest.")))
 	om_task_timed(user, 3 SECONDS, target = H, receiver = src, on_done = PROC_REF(do_revive_timed_done), done_args = list(H, user), busy = src)
 	return TRUE
 
 /obj/item/shockpaddles/proc/do_revive_timed_done(mob/living/carbon/human/H, mob/user)
-	user.visible_message(span_infoplain(span_bold("\The [user]") + " places [src] on [H]'s chest."), span_warning("You place [src] on [H]'s chest."))
+	act_message(user, src, MSG_SELF(span_warning("You place %T% on [H]'s chest.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " places %T% on [H]'s chest.")))
 	playsound(src, 'sound/machines/defib_charge.ogg', 50, 0)
 
 	var/error = can_defib(H)
@@ -392,7 +392,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
 
-	H.visible_message(span_warning("\The [H]'s body convulses a bit."))
+	act_message(H, null, others = span_warning("%U%'s body convulses a bit."))
 	playsound(src, "bodyfall", 50, 1)
 	playsound(src, 'sound/machines/defib_zap.ogg', 50, 1, -1)
 	set_cooldown(cooldowntime)
@@ -449,7 +449,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		return
 
 	//no need to spend time carefully placing the paddles, we're just trying to shock them
-	user.visible_message(span_danger("\The [user] slaps [src] onto [H]'s [affecting.name]."), span_danger("You overcharge [src] and slap them onto [H]'s [affecting.name]."))
+	act_message(user, src, MSG_SELF(span_danger("You overcharge %T% and slap them onto [H]'s [affecting.name].")), MSG_OTHERS(span_danger("%U% slaps %T% onto [H]'s [affecting.name].")))
 
 	//Just stop at awkwardly slapping electrodes on people if the safety is enabled
 	if(safety)
@@ -480,7 +480,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		playsound(src, 'sound/machines/defib_failed.ogg', 50, 0)
 		return
 
-	user.visible_message(span_danger(span_italics("\The [user] shocks [H] with \the [src]!")), span_warning("You shock [H] with \the [src]!"))
+	act_message(user, src, MSG_SELF(span_warning("You shock [H] with %T%!")), MSG_OTHERS(span_danger(span_italics("%U% shocks [H] with %T%!"))))
 	playsound(src, 'sound/machines/defib_zap.ogg', 100, 1, -1)
 	playsound(src, 'sound/weapons/egloves.ogg', 100, 1, -1)
 	set_cooldown(cooldowntime)

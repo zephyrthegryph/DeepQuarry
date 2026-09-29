@@ -118,19 +118,15 @@ DECLARE_REF(/obj/item/ghost_trap, "ghost_reporter", OWNED, null)
 			return TRUE
 
 	if(!deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deploy \the [src]."),
-			span_danger("You begin deploying \the [src]!")
-			)
+		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")))
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_self_timed_done(mob/user)
-	user.visible_message(
-		span_danger("[user] has deployed \the [src]."),
-		span_danger("You have deployed \the [src]!")
-		)
+	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deployed %T%.")))
 	playsound(src, 'sound/machines/click.ogg', 70, 1)
 
 	deployed = TRUE
@@ -161,16 +157,12 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 /// Old attack_hand.
 /obj/item/ghost_trap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
-		user.visible_message(
-			span_notice("[user] begins freeing something from \the [src]."),
-			span_notice("You carefully begin to free something from \the [src]."),
-			)
+		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free something from %T%.")), \
+			MSG_OTHERS(span_notice("%U% begins freeing something from %T%.")))
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 	else if(deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deactivate \the [src]."),
-			span_notice("You begin deactivate \the [src]!")
-			)
+		act_message(user, src, MSG_SELF(span_notice("You begin deactivate %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deactivate %T%.")))
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
@@ -179,16 +171,14 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 	return TRUE
 
 /obj/item/ghost_trap/proc/attack_hand_timed_done(mob/user)
-	user.visible_message(span_notice("Something has been freed from \the [src] by [user]."))
+	act_message(user, src, others = span_notice("Something has been freed from %T% by %U%."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	anchored = FALSE
 	deployed = FALSE
 /obj/item/ghost_trap/proc/attack_hand_timed_done2(mob/user)
-	user.visible_message(
-		span_danger("[user] has deactivated \the [src]."),
-		span_notice("You have deactivated \the [src]!")
-		)
+	act_message(user, src, MSG_SELF(span_notice("You have deactivated %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deactivated %T%.")))
 	deployed = FALSE
 	anchored = FALSE
 	update_icon()

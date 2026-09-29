@@ -62,7 +62,7 @@
 //Allow a small chance of parrying melee attacks when wielded - maybe generalize this to other weapons someday
 /obj/item/material/twohanded/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(wielded && default_parry_check(user, attacker, damage_source) && prob(15))
-		user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 		playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
 		return 1
 	return 0
@@ -331,7 +331,7 @@
 /obj/item/material/twohanded/saber/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if (src.wielded == 1)
 		if(unique_parry_check(user, attacker, damage_source) && prob(50))
-			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
 		return 1
 	return 0
@@ -370,7 +370,7 @@
 		else
 			parry_chance = base_parry_chance
 		if(unique_parry_check(user, attacker, damage_source) && prob(parry_chance))
-			user.visible_message(span_danger("\The [user] parries [attack_text] with \the [src]!"))
+			act_message(user, src, others = span_danger("%U% parries [attack_text] with %T%!"))
 			playsound(src, 'sound/weapons/punchmiss.ogg', 50, 1)
 			return 1
 	return 0
@@ -379,7 +379,7 @@
 	. = ..()
 	if(src.wielded == 1 && stance == I_DISARM && prob(stun_chance))
 		target.status_at_least(EFFECT_WEAKENED, stun_duration)
-		user.visible_message(span_danger("\The [user] trips [target] with \the [src]!"))
+		act_message(user, src, others = span_danger("%U% trips [target] with %T%!"))
 
 /obj/item/material/twohanded/fireaxe/get_mechanics_info(list/additional_information)
 	return ..(list("This weapon can cleave, striking nearby lesser, hostile enemies close to the primary target. It must be held in both hands to do this.") + additional_information)

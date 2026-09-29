@@ -36,21 +36,17 @@
 /// Old attack_self.
 /obj/item/beartrap/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deploy \the [src]."),
-			span_danger("You begin deploying \the [src]!"),
-			"You hear the slow creaking of a spring."
-			)
+		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
+			MSG_BLIND("You hear the slow creaking of a spring."))
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user))
 	return TRUE
 
 /obj/item/beartrap/proc/attack_self_timed_done(mob/user)
-	user.visible_message(
-		span_danger("[user] has deployed \the [src]."),
-		span_danger("You have deployed \the [src]!"),
-		"You hear a latch click loudly."
-		)
+	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
+		MSG_BLIND("You hear a latch click loudly."))
 	playsound(src, 'sound/machines/click.ogg',70, 1)
 
 	deployed = 1
@@ -68,17 +64,13 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 /obj/item/beartrap/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(has_buckled_mobs() && can_use(user))
 		var/victim = english_list(src?.buckled_mob_list())
-		user.visible_message(
-			span_notice("[user] begins freeing [victim] from \the [src]."),
-			span_notice("You carefully begin to free [victim] from \the [src]."),
-			)
+		act_message(user, src, MSG_SELF(span_notice("You carefully begin to free [victim] from %T%.")), \
+			MSG_OTHERS(span_notice("%U% begins freeing [victim] from %T%.")))
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user, victim))
 	else if(deployed && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to disarm \the [src]."),
-			span_notice("You begin disarming \the [src]!"),
-			"You hear a latch click followed by the slow creaking of a spring."
-			)
+		act_message(user, src, MSG_SELF(span_notice("You begin disarming %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to disarm %T%.")), \
+			MSG_BLIND("You hear a latch click followed by the slow creaking of a spring."))
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done2), done_args = list(user))
@@ -87,15 +79,13 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	return TRUE
 
 /obj/item/beartrap/proc/attack_hand_timed_done(mob/user, victim)
-	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
+	act_message(user, src, others = span_notice("[victim] has been freed from %T% by %U%."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
 	anchored = FALSE
 /obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
-	user.visible_message(
-		span_danger("[user] has disarmed \the [src]."),
-		span_notice("You have disarmed \the [src]!")
-		)
+	act_message(user, src, MSG_SELF(span_notice("You have disarmed %T%!")), \
+		MSG_OTHERS(span_danger("%U% has disarmed %T%.")))
 	deployed = 0
 	anchored = FALSE
 	update_icon()
@@ -143,11 +133,9 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	if(deployed && isliving(AM))
 		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps on \the [src]."),
-				span_danger("You step on \the [src]!"),
-				span_infoplain(span_bold("You hear a loud metallic snap!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step on %T%!")), \
+				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
+				MSG_BLIND(span_infoplain(span_bold("You hear a loud metallic snap!"))))
 			GLOB.motiontracker_service.ping(src,100) // Clunk!
 			attack_mob(L)
 			if(!has_buckled_mobs())
@@ -221,11 +209,9 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 /// Old attack_hand.
 /obj/item/material/barbedwire/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if(anchored && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to collect \the [src]."),
-			span_notice("You begin collecting \the [src]!"),
-			"You hear the sound of rustling [material.name]."
-			)
+		act_message(user, src, MSG_SELF(span_notice("You begin collecting %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to collect %T%.")), \
+			MSG_BLIND("You hear the sound of rustling [material.name]."))
 		playsound(src, 'sound/machines/click.ogg', 50, 1)
 
 		om_task_timed(user, get_integrity() / MATERIAL_WEAR_UNIT, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done3), done_args = list(user))
@@ -234,31 +220,25 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_hand_timed_done3(mob/user)
-	user.visible_message(
-		span_danger("[user] has collected \the [src]."),
-		span_notice("You have collected \the [src]!")
-		)
+	act_message(user, src, MSG_SELF(span_notice("You have collected %T%!")), \
+		MSG_OTHERS(span_danger("%U% has collected %T%.")))
 	anchored = FALSE
 	update_icon()
 
 /// Old attack_self.
 /obj/item/material/barbedwire/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!anchored && can_use(user))
-		user.visible_message(
-			span_danger("[user] starts to deploy \the [src]."),
-			span_danger("You begin deploying \the [src]!"),
-			"You hear the rustling of [material.name]."
-			)
+		act_message(user, src, MSG_SELF(span_danger("You begin deploying %T%!")), \
+			MSG_OTHERS(span_danger("%U% starts to deploy %T%.")), \
+			MSG_BLIND("You hear the rustling of [material.name]."))
 
 		om_task_timed(user, 6 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done2), done_args = list(user))
 	return TRUE
 
 /obj/item/material/barbedwire/proc/attack_self_timed_done2(mob/user)
-	user.visible_message(
-		span_danger("[user] has deployed \the [src]."),
-		span_danger("You have deployed \the [src]!"),
-		"You hear the rustling of [material.name]."
-		)
+	act_message(user, src, MSG_SELF(span_danger("You have deployed %T%!")), \
+		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
+		MSG_BLIND("You hear the rustling of [material.name]."))
 	playsound(src, 'sound/items/Wirecutter.ogg',70, 1)
 	om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
 	user.drop_from_inventory(src)
@@ -321,11 +301,9 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	if(anchored && isliving(AM))
 		var/mob/living/L = AM
 		if(L.m_intent == I_RUN)
-			L.visible_message(
-				span_danger("[L] steps in \the [src]."),
-				span_danger("You step in \the [src]!"),
-				span_infoplain(span_bold("You hear a sharp rustling!"))
-				)
+			act_message(L, src, MSG_SELF(span_danger("You step in %T%!")), \
+				MSG_OTHERS(span_danger("%U% steps in %T%.")), \
+				MSG_BLIND(span_infoplain(span_bold("You hear a sharp rustling!"))))
 			attack_mob(L)
 			update_icon()
 	..()

@@ -628,10 +628,8 @@ DECLARE_REF(/obj/item, "loc", BACK_VIA, list(/obj/machinery = "component_parts")
 			to_chat(M, span_danger("[user] stabs you in the eye with [src]!"))
 			to_chat(user, span_danger("You stab [M] in the eye with [src]!"))
 		else
-			user.visible_message( \
-				span_danger("[user] has stabbed themself with [src]!"), \
-				span_danger("You stab yourself in the eyes with [src]!") \
-			)
+			act_message(user, src, MSG_SELF(span_danger("You stab yourself in the eyes with %T%!")), \
+				MSG_OTHERS(span_danger("%U% has stabbed themself with %T%!")))
 
 		H.injure(INJURY_CUT, rand(3, 4), eyes, src, flags = INJURE_SILENT)
 		if(eyes.damage >= eyes.min_bruised_damage)

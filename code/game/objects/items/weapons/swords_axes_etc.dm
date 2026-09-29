@@ -61,18 +61,18 @@ DECLARE_INTERACTIONS(/obj/item/melee/telebaton, INTERACT_USE(null, PROC_REF(inte
 /obj/item/melee/telebaton/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	on = !on
 	if(on)
-		user.visible_message(span_warning("With a flick of their wrist, [user] extends their telescopic baton."),\
-		span_warning("You extend the baton."),\
-		"You hear an ominous click.")
+		act_message(user, null, MSG_SELF(span_warning("You extend the baton.")), \
+			MSG_OTHERS(span_warning("With a flick of their wrist, %U% extends their telescopic baton.")), \
+			MSG_BLIND("You hear an ominous click."))
 		icon_state = "telebaton1"
 		item_state = icon_state
 		w_class = ITEMSIZE_NORMAL
 		force = 15//quite robust
 		attack_verb = list("smacked", "struck", "slapped")
 	else
-		user.visible_message(span_infoplain(span_bold("\The [user]") + " collapses their telescopic baton."),\
-		span_notice("You collapse the baton."),\
-		"You hear a click.")
+		act_message(user, null, MSG_SELF(span_notice("You collapse the baton.")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " collapses their telescopic baton.")), \
+			MSG_BLIND("You hear a click."))
 		icon_state = "telebaton0"
 		item_state = icon_state
 		w_class = ITEMSIZE_SMALL

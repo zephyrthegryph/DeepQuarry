@@ -38,14 +38,14 @@
 			return ITEM_INTERACT_BLOCKING
 		anchored = TRUE
 		mode = 1
-		visible_message(span_notice("[user] attaches [src] to the cable!"))
+		act_message(user, src, others = span_notice("%U% attaches %T% to the cable!"))
 		playsound(src, tool.usesound, 50, 1)
 		return ITEM_INTERACT_SUCCESS
 	if(mode == 2)
 		om_task_periodic_stop(src)
 		anchored = FALSE
 	mode = 0
-	visible_message(span_notice("[user] detaches [src] from the cable!"))
+	act_message(user, src, others = span_notice("%U% detaches %T% from the cable!"))
 	set_light(0)
 	playsound(src, tool.usesound, 50, 1)
 	icon_state = "powersink0"
@@ -59,12 +59,12 @@ DECLARE_INTERACTIONS(/obj/item/powersink, INTERACT_HAND(null, PROC_REF(interacti
 		if(0)
 			return FALSE
 		if(1)
-			src.visible_message(span_notice("[user] activates [src]!"))
+			act_message(user, src, others = span_notice("%U% activates %T%!"))
 			mode = 2
 			icon_state = "powersink1"
 			om_task_periodic(src, PERIODIC_SLOW)
 		if(2)  //This switch option wasn't originally included. It exists now. --NeoFite
-			src.visible_message(span_notice("[user] deactivates [src]!"))
+			act_message(user, src, others = span_notice("%U% deactivates %T%!"))
 			mode = 1
 			set_light(0)
 			icon_state = "powersink0"

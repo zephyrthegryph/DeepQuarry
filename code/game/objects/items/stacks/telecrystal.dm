@@ -12,7 +12,7 @@
 
 /obj/item/stack/telecrystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
 	if(amount >= 5)
-		target.visible_message(span_warning("\The [target] has been transported with \the [src] by \the [user]."))
+		act_message(user, target, others = span_warning("%T% has been transported with \the [src] by %U%."))
 		safe_blink(target, 14)
 		use(5)
 	else

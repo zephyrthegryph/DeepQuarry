@@ -107,7 +107,7 @@
 		return TRUE
 
 	if(material.spatial_instability && prob(material.spatial_instability))
-		user.visible_message(span_danger("\The [src] flashes [user] clear of [attack_text]!"))
+		act_message(user, src, others = span_danger("%T% flashes %U% clear of [attack_text]!"))
 		var/list/turfs = new/list()
 		for(var/turf/T in orange(round(material.spatial_instability / 10) + 1, user))
 			if(istype(T,/turf/space)) continue
@@ -139,7 +139,7 @@
 			if(!(def_zone in list(BP_TORSO, BP_GROIN)))
 				reflectchance /= 2
 			if(P.starting && prob(reflectchance))
-				visible_message(span_danger("\The [user]'s [src.name] reflects [attack_text]!"))
+				act_message(user, src, others = span_danger("%U%'s [src.name] reflects [attack_text]!"))
 
 				// Find a turf near or on the original location to bounce to
 				var/new_x = P.starting.x + pick(0, 0, 0, 0, 0, -1, 1, -2, 2)

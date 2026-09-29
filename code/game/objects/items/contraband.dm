@@ -88,7 +88,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PR
 	if(!istype(W, /obj/item/glass_extra/straw) && !istype(W, /obj/item/reagent_containers/rollingpaper))
 		return FALSE
 
-	user.visible_message(span_warning("[user] snorts [src] with [W]!"))
+	act_message(user, src, others = span_warning("%U% snorts %T% with [W]!"))
 	playsound(loc, 'sound/effects/snort.ogg', 50, 1)
 
 	if(reagents)

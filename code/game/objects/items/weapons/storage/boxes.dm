@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	//try to crush it
 	if(ispath(trash))
 		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) && interaction.stance == I_HURT)  // only crush with things inside in combat mode.
-			user.visible_message(span_danger("[user] crushes \the [src], spilling its contents everywhere!"), span_danger("You crush \the [src], spilling its contents everywhere!"))
+			act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
 			spill()
 		else
 			to_chat(user, span_notice("You crumple up \the [src].")) //make trash
@@ -463,7 +463,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	if(istype(W) && !W.lit && !W.burnt)
 		if(prob(25))
 			W.light(user)
-			user.visible_message(span_notice("[user] manages to light the match on the matchbox."))
+			act_message(user, null, others = span_notice("%U% manages to light the match on the matchbox."))
 		else
 			playsound(src, 'sound/items/cigs_lighters/matchstick_hit.ogg', 25, 0, -1)
 	W.update_icon()

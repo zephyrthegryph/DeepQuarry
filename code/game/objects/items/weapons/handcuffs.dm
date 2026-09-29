@@ -78,7 +78,7 @@
 		to_chat(user, span_danger("\The [src] won't fit around \the [human_victim.get_equipped_item(SLOT_ID_GLOVES)]!"))
 		return 0
 
-	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [victim]!"))
+	act_message(user, victim, others = span_danger("%U% is attempting to put [cuff_type] on %T%!"))
 
 	om_task_timed(user, use_time, target = src, receiver = src, on_done = PROC_REF(attempt_to_cuff_timed_done), done_args = list(victim, user))
 	return TRUE
@@ -94,7 +94,7 @@
 	user.setClickCooldown(user.get_attack_speed(src))
 	user.do_attack_animation(victim)
 
-	user.visible_message(span_danger("\The [user] has put [cuff_type] on \the [victim]!"))
+	act_message(user, victim, others = span_danger("%U% has put [cuff_type] on %T%!"))
 
 	// Apply cuffs.
 	var/obj/item/handcuffs/cuffs = src
@@ -134,7 +134,7 @@
 	if (!O) return
 
 	var/s = span_warning("[H.name] chews on [H.p_their()] [O.name]!")
-	H.visible_message(s, span_warning("You chew on your [O.name]!"))
+	act_message(H, null, MSG_SELF(span_warning("You chew on your [O.name]!")), MSG_OTHERS(s))
 	add_attack_logs(H,H,"chewed own [O.name]")
 
 	H.injure(INJURY_CUT, 3, O, src)
@@ -254,7 +254,7 @@
 		to_chat(user, span_danger("\The [src] won't fit around \the [H.get_equipped_item(SLOT_ID_SHOES)]!"))
 		return 0
 
-	user.visible_message(span_danger("\The [user] is attempting to put [cuff_type] on \the [H]!"))
+	act_message(user, null, others = span_danger("%U% is attempting to put [cuff_type] on \the [H]!"))
 
 	om_task_start(/datum/om/task/timed/legcuffs_place_legcuffs, user, src, receiver = src, duration = use_time, target_arg = target, H = H)
 	return TRUE
@@ -278,7 +278,7 @@
 	user.setClickCooldown(user.get_attack_speed(src))
 	user.do_attack_animation(H)
 
-	user.visible_message(span_danger("\The [user] has put [cuff_type] on \the [H]!"))
+	act_message(user, null, others = span_danger("%U% has put [cuff_type] on \the [H]!"))
 
 	// Apply cuffs.
 	var/obj/item/handcuffs/legcuffs/lcuffs = src
@@ -330,11 +330,11 @@
 		return 0
 
 	if(!H.body_slot_usable(SLOT_ID_LEGCUFFED))
-		H.visible_message(span_infoplain(span_bold("\The [src]") + " slams into [H], but slides off!"))
+		act_message(H, src, others = span_infoplain(span_bold("%T%") + " slams into %U%, but slides off!"))
 		src.dropped(user)
 		return 0
 
-	H.visible_message(span_danger("\The [H] has been snared by \the [src]!"))
+	act_message(H, src, others = span_danger("%U% has been snared by %T%!"))
 
 	// Apply cuffs.
 	var/obj/item/handcuffs/legcuffs/lcuffs = src

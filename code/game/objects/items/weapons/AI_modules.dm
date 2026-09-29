@@ -101,7 +101,7 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 			to_chat(user, span_warning("Law Upload Error: Unit is slaved to an AI."))
 			return
 
-		R.visible_message(span_danger("\The [user] slides a law module into \the [R]."))
+		act_message(user, R, others = span_danger("%U% slides a law module into %T%."))
 		to_chat(R, span_danger("Local law upload in progress."))
 		to_chat(user, span_notice("Uploading laws from board.  This will take a moment..."))
 		om_task_start(/datum/om/task/timed/aimodule_install, user, src, receiver = src, R = R)

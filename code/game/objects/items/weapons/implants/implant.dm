@@ -457,7 +457,7 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		return
 	var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
-		H.visible_message("[H] seems to resist the implant!", "You feel the corporate tendrils of [using_map.company_name] try to invade your mind!")
+		act_message(H, null, MSG_SELF("You feel the corporate tendrils of [using_map.company_name] try to invade your mind!"), MSG_OTHERS("%U% seems to resist the implant!"))
 		. = FALSE
 
 /obj/item/implant/loyalty/post_implant(mob/M)

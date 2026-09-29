@@ -24,7 +24,7 @@
 		return
 	if(!H.organs_by_name[BP_HEAD] || !H.has_eyes() || H.get_equipped_item(SLOT_ID_EYES) || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
-	user.visible_message(span_danger("\The [user] has taped up \the [H]'s eyes!"))
+	act_message(user, H, others = span_danger("%U% has taped up %T%'s eyes!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/glasses/sunglasses/blindfold/tape(H), SLOT_ID_EYES, ignore_obstructions = FALSE)
 	H.update_inv_glasses()
 	playsound(src, 'sound/effects/tape.ogg',25)
@@ -34,7 +34,7 @@
 		return
 	if(!H.organs_by_name[BP_HEAD] || !H.check_has_mouth() || (H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE)))
 		return
-	user.visible_message(span_danger("\The [user] has taped up \the [H]'s mouth!"))
+	act_message(user, H, others = span_danger("%U% has taped up %T%'s mouth!"))
 	H.equip_to_slot_or_del(new /obj/item/clothing/mask/muzzle/tape(H), SLOT_ID_MASK, ignore_obstructions = FALSE)
 	H.update_inv_wear_mask()
 	playsound(src, 'sound/effects/tape.ogg',25)
@@ -62,7 +62,7 @@
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
 					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
-				user.visible_message(span_danger("\The [user] begins taping over \the [H]'s eyes!"))
+				act_message(user, null, others = span_danger("%U% begins taping over \the [H]'s eyes!"))
 
 				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_eyes_done), done_args = list(H, user))
 
@@ -79,7 +79,7 @@
 				if(H.get_equipped_item(SLOT_ID_HEAD) && (H.get_equipped_item(SLOT_ID_HEAD).body_parts_covered & FACE))
 					to_chat(user, span_warning("Remove their [H.get_equipped_item(SLOT_ID_HEAD)] first."))
 					return ITEM_INTERACT_FAILURE
-				user.visible_message(span_danger("\The [user] begins taping up \the [H]'s mouth!"))
+				act_message(user, null, others = span_danger("%U% begins taping up \the [H]'s mouth!"))
 
 				om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(tape_mouth_done), done_args = list(H, user))
 

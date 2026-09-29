@@ -204,14 +204,14 @@ DECLARE_INTERACTIONS(/obj/item/melee/baton, \
 		stun *= 0.5
 	else if(!status)
 		if(affecting)
-			target.visible_message(span_warning("[target] has been prodded in the [affecting.name] with [src] by [user]. Luckily it was off."))
+			act_message(user, target, others = span_warning("%T% has been prodded in the [affecting.name] with [src] by %U%. Luckily it was off."))
 		else
-			target.visible_message(span_warning("[target] has been prodded with [src] by [user]. Luckily it was off."))
+			act_message(user, target, others = span_warning("%T% has been prodded with [src] by %U%. Luckily it was off."))
 	else
 		if(affecting)
-			target.visible_message(span_danger("[target] has been prodded in the [affecting.name] with [src] by [user]!"))
+			act_message(user, target, others = span_danger("%T% has been prodded in the [affecting.name] with [src] by %U%!"))
 		else
-			target.visible_message(span_danger("[target] has been prodded with [src] by [user]!"))
+			act_message(user, target, others = span_danger("%T% has been prodded with [src] by %U%!"))
 		playsound(src, 'sound/weapons/egloves.ogg', 50, 1, -1)
 
 	//stun effects

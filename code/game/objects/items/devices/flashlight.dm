@@ -136,14 +136,14 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 			if(H.species.vision_organ)
 				vision = H.organ_in(H.species.vision_organ)
 			if(!vision)
-				user.visible_message(span_infoplain(span_bold("\The [user]") + " directs [src] at [M]'s face."), \
-										span_notice("You direct [src] at [M]'s face."))
+				act_message(user, src, MSG_SELF(span_notice("You direct %T% at [M]'s face.")), \
+					MSG_OTHERS(span_infoplain(span_bold("%U%") + " directs %T% at [M]'s face.")))
 				to_chat(user, span_warning("You can't find any [H.species.vision_organ ? H.species.vision_organ : "eyes"] on [H]!"))
 				user.setClickCooldown(user.get_attack_speed(src))
 				return ITEM_INTERACT_FAILURE
 
-			user.visible_message(span_infoplain(span_bold("\The [user]") + " directs [src] to [M]'s eyes."), \
-									span_notice("You direct [src] to [M]'s eyes."))
+			act_message(user, src, MSG_SELF(span_notice("You direct %T% to [M]'s eyes.")), \
+				MSG_OTHERS(span_infoplain(span_bold("%U%") + " directs %T% to [M]'s eyes.")))
 			if(H != user)	//can't look into your own eyes buster
 				if(M.stat == DEAD || M.blinded)	//mob is dead or fully blind
 					to_chat(user, span_warning("\The [M]'s pupils do not react to the light!"))
@@ -442,7 +442,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		return
 	// All good, turn it on.
 	if(. == CAN_USE)
-		user.visible_message(span_notice("[user] activates the flare."), span_notice("You pull the cord on the flare, activating it!"))
+		act_message(user, null, MSG_SELF(span_notice("You pull the cord on the flare, activating it!")), MSG_OTHERS(span_notice("%U% activates the flare.")))
 		force = on_damage
 		injury_kind = INJURY_BURN
 		om_task_periodic(src, PERIODIC_SLOW)
@@ -499,7 +499,7 @@ MATERIAL_MIX(/obj/item/flashlight/maglight, list(MAT_STEEL = 200,MAT_GLASS = 50)
 		return
 
 	if(. == CAN_USE)
-		user.visible_message(span_notice("[user] cracks and shakes \the [name]."), span_notice("You crack and shake \the [src], turning it on!"))
+		act_message(user, src, MSG_SELF(span_notice("You crack and shake %T%, turning it on!")), MSG_OTHERS(span_notice("%U% cracks and shakes \the [name].")))
 		om_task_periodic(src, PERIODIC_SLOW)
 
 /obj/item/flashlight/glowstick/red

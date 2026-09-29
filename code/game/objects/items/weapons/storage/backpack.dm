@@ -516,36 +516,36 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 		return
 
 	if(!dq_get_parachute(src))	//This packs the dq_get_parachute(src)
-		H.visible_message(span_infoplain(span_bold("\The [H]") + " starts to pack \the [src]!"), \
-					span_notice("You start to pack \the [src]!"), \
-					span_infoplain("You hear the shuffling of cloth."))
+		act_message(H, src, MSG_SELF(span_notice("You start to pack %T%!")), \
+			MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to pack %T%!")), \
+			MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
 		om_task_timed(H, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed), fail_args = list(H))
 	else			//This unpacks the dq_get_parachute(src)
-		H.visible_message(span_infoplain(span_bold("\The [src]") + " starts to unpack \the [src]!"), \
-					span_notice("You start to unpack \the [src]!"), \
-					span_infoplain("You hear the shuffling of cloth."))
+		act_message(H, src, MSG_SELF(span_notice("You start to unpack %T%!")), \
+			MSG_OTHERS(span_infoplain(span_bold("%T%") + " starts to unpack %T%!")), \
+			MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
 		om_task_timed(H, 25, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done2), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed2), fail_args = list(H))
 	return
 
 /obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done(mob/living/carbon/human/H)
-	H.visible_message(span_infoplain(span_bold("\The [H]") + " finishes packing \the [src]!"), \
-			span_notice("You finish packing \the [src]!"), \
-			span_infoplain("You hear the shuffling of cloth."))
+	act_message(H, src, MSG_SELF(span_notice("You finish packing %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%U%") + " finishes packing %T%!")), \
+		MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
 	dq_set_parachute(src, TRUE)
 
 /obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed(mob/living/carbon/human/H)
-	H.visible_message(span_infoplain(span_bold("\The [src]") + " gives up on packing \the [src]!"), \
-			span_notice("You give up on packing \the [src]!"))
+	act_message(H, src, MSG_SELF(span_notice("You give up on packing %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%T%") + " gives up on packing %T%!")))
 	return
 /obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done2(mob/living/carbon/human/H)
-	H.visible_message(span_infoplain(span_bold("\The [src]") + " finishes unpacking \the [src]!"), \
-			span_notice("You finish unpacking \the [src]!"), \
-			span_infoplain("You hear the shuffling of cloth."))
+	act_message(H, src, MSG_SELF(span_notice("You finish unpacking %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%T%") + " finishes unpacking %T%!")), \
+		MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
 	dq_set_parachute(src, FALSE)
 
 /obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed2(mob/living/carbon/human/H)
-	H.visible_message(span_infoplain(span_bold("\The [src]") + " decides not to unpack \the [src]!"), \
-			span_notice("You decide not to unpack \the [src]!"))
+	act_message(H, src, MSG_SELF(span_notice("You decide not to unpack %T%!")), \
+		MSG_OTHERS(span_infoplain(span_bold("%T%") + " decides not to unpack %T%!")))
 
 /obj/item/storage/backpack/satchel/ranger
 	name = "ranger satchel"

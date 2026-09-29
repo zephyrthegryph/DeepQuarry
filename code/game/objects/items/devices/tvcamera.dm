@@ -112,7 +112,7 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 		return
 	if(camera.status && !isturf(target))
 		show_tvs(target)
-		user.visible_message(span_infoplain(span_bold("[user]") + " aims [src] at [target]."), span_info("You aim [src] at [target]."))
+		act_message(user, src, MSG_SELF(span_info("You aim %T% at [target].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " aims %T% at [target].")))
 		if(user.check_current_machine(src))
 			show_ui(user) // refresh the UI
 
@@ -218,12 +218,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PRO
 		if(bcamera.status)
 			to_chat(usr,span_notice("Video streaming activated. Broadcasting on channel '[channel]'"))
 			if(here)
-				here.visible_message(span_notice("[usr] turns on their body camera."))
+				act_message(usr, here, others = span_notice("%U% turns on their body camera."))
 			show_bodycamera_tvs(loc)
 		else
 			to_chat(usr,span_notice("Video streaming deactivated."))
 			if(here)
-				here.visible_message(span_warning("[usr] turns off their body camera!"))
+				act_message(usr, here, others = span_warning("%U% turns off their body camera!"))
 			hide_bodycamera_tvs()
 			for(var/obj/machinery/computer/security/telescreen/bodycamera/ES as anything in REGISTRY_MEMBERS(REGISTRY_BODYCAMERA_SCREENS))
 				ES.stop_showing()

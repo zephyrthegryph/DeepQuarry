@@ -262,7 +262,7 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 	symptom_chosen(ask.answerer, ask.choice, ask.target)
 
 /obj/item/extrapolator/proc/symptom_chosen(mob/living/user, datum/viral_trait/chosen, atom/target)
-	user.visible_message(span_notice("[user] slots [target] into [src], which begins to whir and beep!"), span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]..."),)
+	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[chosen.name]") + " from [target]...")), MSG_OTHERS(span_notice("%U% slots [target] into %T%, which begins to whir and beep!")))
 	var/datum/affliction/contagion/engineered/symptom_holder = new
 	symptom_holder.name = chosen.name
 	symptom_holder.symptoms += chosen
@@ -284,8 +284,8 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 
 /obj/item/extrapolator/proc/isolate_disease(mob/living/user, atom/target, datum/affliction/contagion/engineered/target_disease, timer = 10 SECONDS)
 	. = FALSE
-	user.visible_message(span_notice("[user] begins to thoroughly scan [target] with [src]..."), \
-		span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]..."))
+	act_message(user, src, MSG_SELF(span_notice("[icon2html(src, user)] You begin isolating " + span_bold("[target_disease.name]") + " from [target]...")), \
+		MSG_OTHERS(span_notice("%U% begins to thoroughly scan [target] with %T%...")))
 	om_task_start(/datum/om/task/timed/extrapolator_isolate_disease, user, target, receiver = src, duration = isolate_time, target_disease = target_disease)
 	return TRUE
 
