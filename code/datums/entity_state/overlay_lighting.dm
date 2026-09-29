@@ -279,7 +279,9 @@
 		set_holder(movable_parent)
 		return
 	var/atom/inside = movable_parent.loc //Parent's loc
-	if(isnull(inside))
+	// A container being destroyed can't hold the light: its qdeleting hook (parent_attached_to)
+	// re-checks the holder while the parent still sits inside it.
+	if(isnull(inside) || QDELETED(inside))
 		set_holder(null)
 		return
 	if(isturf(inside.loc))
