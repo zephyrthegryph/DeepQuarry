@@ -257,8 +257,7 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
 	if(isnull(E))
 		E = om_global_owner()
-	if(E.datum_flags & DF_DESTROYING)
-		OWN_REPORT("refused a timer ([proc_ref]) on [E.type], which is being destroyed")
+	if(!own_guard(E, null, "a timer ([proc_ref])")) // the one teardown guard (guard.dm)
 		return 0
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec || rec.torn_down)

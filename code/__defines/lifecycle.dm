@@ -18,6 +18,38 @@
 /// A human label for a LIFECYCLE_PHASE_* id, for logs and test output.
 #define LIFECYCLE_PHASE_NAME(id) (list("guard", "mind", "unbind", "dematerialize", "contents", "links", "teardown", "effects", "destroy", "scrub")[id])
 
+/// From this phase on an entity refuses new ownership, relations, timers, hooks, tasks and
+/// contents adoption (ownership.md sec 1.1 O5): the one predicate every accessor checks
+/// through OWN_GUARD() (code/datums/ownership/guard.dm).
+#define LIFECYCLE_REFUSE_PHASE LIFECYCLE_PHASE_GUARD
+/// TRUE while D is in its destroy transaction at or past LIFECYCLE_REFUSE_PHASE, done, or
+/// already marked for deletion (gc_destroyed: queued, or doomed by a destroy batch).
+#define LIFECYCLE_DYING(D) ((D).destroy_phase >= LIFECYCLE_REFUSE_PHASE || (D).gc_destroyed)
+
+// ---- The destroy transaction's steps: the one declared sequence ----
+// destroy_transaction_phases() runs GLOB.destroy_step_sequence in order and nothing else, so a
+// step (the contents release check, say) cannot drift to the wrong phase: its place is here.
+// Each step is timed onto, and sets the datum's destroy_phase to, its LIFECYCLE_PHASE_*.
+#define DESTROY_STEP_GUARD 1
+#define DESTROY_STEP_LEAVE_REGISTRIES 2
+#define DESTROY_STEP_MIND 3
+#define DESTROY_STEP_UNBIND 4
+#define DESTROY_STEP_DEMATERIALIZE 5
+#define DESTROY_STEP_CONTENTS_RESOLVE 6
+#define DESTROY_STEP_CONTENTS_SPILL 7
+#define DESTROY_STEP_CONTENTS_CHECK_RELEASED 8
+#define DESTROY_STEP_LINKS 9
+#define DESTROY_STEP_TEARDOWN 10
+#define DESTROY_STEP_EFFECTS 11
+#define DESTROY_STEP_DESTROY 12
+#define DESTROY_STEP_EFFECTS_AFTER 13
+#define DESTROY_STEP_SCRUB 14
+#define DESTROY_STEP_POSTCONDITION 15
+#define DESTROY_STEP_COUNT 15
+/// The LIFECYCLE_PHASE_* each step belongs to (timing and destroy_phase).
+#define DESTROY_STEP_PHASE(step) (list(LIFECYCLE_PHASE_GUARD, LIFECYCLE_PHASE_GUARD, LIFECYCLE_PHASE_MIND, LIFECYCLE_PHASE_UNBIND, LIFECYCLE_PHASE_DEMATERIALIZE, LIFECYCLE_PHASE_CONTENTS, LIFECYCLE_PHASE_CONTENTS, LIFECYCLE_PHASE_CONTENTS, LIFECYCLE_PHASE_LINKS, LIFECYCLE_PHASE_TEARDOWN, LIFECYCLE_PHASE_EFFECTS, LIFECYCLE_PHASE_DESTROY, LIFECYCLE_PHASE_EFFECTS, LIFECYCLE_PHASE_SCRUB, LIFECYCLE_PHASE_SCRUB)[step])
+#define DESTROY_STEP_NAME(step) (list("guard", "leave registries", "mind", "unbind", "dematerialize", "contents: resolve slots", "contents: spill owned", "contents: check released", "links", "teardown", "effects", "destroy", "effects after", "scrub", "postcondition")[step])
+
 // ---- Declared references ----
 // Ownership kinds and their declarations live in code/__defines/ownership.dm
 // (doc/rewrite/ownership.md).

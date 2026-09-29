@@ -7,8 +7,8 @@
 	var/datum/om/relation/R = om_registry().relation(rel_path)
 	if(!source || !target || source == target)
 		return "invalid ends"
-	if((source.datum_flags | target.datum_flags) & DF_DESTROYING)
-		return "deleted" // links to a dying entity are refused (lifecycle phase 0 on)
+	if(!own_guard(source, target, "a [rel_path] link")) // the one teardown guard (guard.dm)
+		return "deleted"
 	var/datum/om/rec/srec = om_rec_of(source)
 	var/datum/om/rec/trec = om_rec_of(target)
 	if(!srec || !trec)

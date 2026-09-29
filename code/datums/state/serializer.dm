@@ -485,6 +485,23 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		var/datum/D = entry[1]
 		D.state_post_apply(entry[2], flags)
 
+/// Resets D.name to `default` through the ownership accessors when the var has an ownership kind.
+/// FALSE when it has none (a plain scalar the caller resets itself).
+/proc/state_reset_owned_var(datum/D, name, default)
+	var/list/entry = own_table_of(D).entries[name]
+	switch(entry?[OWNE_KIND])
+		if(OWNK_OWN)
+			own_clear(D, name)
+		if(OWNK_REL)
+			rel_clear(D, name)
+		if(OWNK_PROTO)
+			proto_set(D, name, default)
+		if(OWNK_SHARED)
+			shared_set(D, name, default)
+		else
+			return FALSE
+	return TRUE
+
 /datum/state_context/proc/apply_vars(datum/D, list/blob)
 	var/list/vars = blob[STATE_KEY_VARS] || list()
 	var/from_version = blob[STATE_KEY_VERSION]
@@ -505,8 +522,13 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 		if(islist(value))
 			continue
 		var/default = initial(D.vars[name])
-		if(value != default && !islist(default))
-			D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
+		if(value == default || islist(default))
+			continue
+		// A var with an ownership kind goes back through its accessor: a raw reset would leave
+		// an owned child stamped to D (an orphan) or a relation's reverse index behind.
+		if(state_reset_owned_var(D, name, default))
+			continue
+		D.vars[name] = default // ALLOW(api): state serializer: restores saved vars
 	for(var/name in vars)
 		if(!(name in schema.saved_vars))
 			// The pre-L1 loader ignored keys it did not save; keep doing that for legacy blobs.

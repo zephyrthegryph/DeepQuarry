@@ -199,11 +199,7 @@
 	var/datum/om/task/spec = ispath(task) ? reg.task_by_type[task] : reg.task_by_name[task]
 	if(!spec)
 		CRASH("om: unknown task [task]")
-	if(!actor || QDELETED(actor))
-		if(actor && (actor.datum_flags & DF_DESTROYING))
-			OWN_REPORT("refused task [task] on [actor.type], which is being destroyed")
-		return "gone"
-	if(target && QDELETED(target))
+	if(!actor || !own_guard(actor, target, "task [task]")) // the one teardown guard (guard.dm)
 		return "gone"
 	var/datum/om/task/T = new spec.type
 	T.spec = spec

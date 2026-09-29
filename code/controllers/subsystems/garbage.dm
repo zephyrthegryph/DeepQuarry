@@ -489,6 +489,8 @@ SUBSYSTEM_DEF(garbage)
 		if (QDEL_HINT_LETMELIVE) //qdel should let the object live after calling destory.
 			if(!force)
 				to_delete.gc_destroyed = null //clear the gc variable (important!)
+				to_delete.destroy_phase = 0 // alive again: the teardown guard lets it acquire
+				to_delete.datum_flags &= ~DF_DESTROYING
 				return
 			// Returning LETMELIVE after being told to force destroy
 			// indicates the objects Destroy() does not respect force

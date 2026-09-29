@@ -61,8 +61,6 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		if(current)
 			OWN_REPORT("[D.type] is already owned by [current.type].[D.own_slot]; adopting it into [holder.type].[var_name] needs own_transfer()")
 			return FALSE
-	if(QDELETED(holder))
-		OWN_REPORT("[holder.type].[var_name] adopting [D.type] while being destroyed")
 	D.own_holder_ref = holder_ref
 	D.own_slot = var_name
 	#ifdef UNIT_TESTS
@@ -141,6 +139,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/old = holder.vars[var_name]
 	if(old == value)
 		return value
+	if(!isnull(value) && !own_guard(holder, value, "own_set([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	if(entry && isdatum(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
@@ -171,6 +171,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
 	if(isnull(value))
 		return null
+	if(!own_guard(holder, value, "own_add([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	if(entry && !own_stamp(value, holder, var_name))
 		return null
 	var/list/L = holder.vars[var_name]
@@ -198,6 +200,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 /// Values shape: holder.var_name[key] = value, disposing of the value it replaces.
 /proc/own_put(datum/holder, var_name, key, datum/value)
 	var/list/entry = own_entry_of_kind(holder, var_name, OWNK_OWN, TRUE)
+	if(!isnull(value) && !own_guard(holder, value, "own_put([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	var/list/L = holder.vars[var_name]
 	if(!islist(L))
 		if(isnull(value))
@@ -242,6 +246,10 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 /// way. `member` picks one member of a list/values var (the value, or its key); null moves a
 /// one-shape var's value. A list/values destination adds (or puts under `dest_key`).
 /proc/own_transfer(datum/from, from_var, datum/dest, dest_var, member = null, dest_key = null)
+	// The one teardown guard (guard.dm), before anything is taken from `from`.
+	var/datum/moving = isnull(member) ? from.vars[from_var] : member
+	if(!own_guard(dest, isdatum(moving) ? moving : null, "own_transfer([from_var] -> [dest_var])"))
+		return null
 	var/datum/value = isnull(member) ? own_take(from, from_var) : own_take_member(from, from_var, member)
 	if(isnull(value))
 		return null
@@ -262,6 +270,8 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 /// name (an expedition mission passed through a generation job, a gift's contents).
 /proc/own_move(datum/value, datum/dest, dest_var, dest_key = null)
 	if(!isdatum(value))
+		return null
+	if(!own_guard(dest, value, "own_move([dest_var])")) // the one teardown guard (guard.dm)
 		return null
 	var/datum/current = owner_of(value)
 	if(current)

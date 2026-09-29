@@ -17,6 +17,8 @@
 	var/datum/value = holder.vars[var_name]
 	if(!isdatum(value) || proto_is_private(holder, var_name))
 		return value
+	if(!own_guard(holder, null, "proto_private([var_name])")) // the one teardown guard (guard.dm)
+		return value
 	var/datum/copy = value.proto_copy()
 	if(!isdatum(copy))
 		OWN_REPORT("[value.type]/proto_copy() returned [copy]")
@@ -32,6 +34,8 @@
 	var/datum/old = holder.vars[var_name]
 	if(old == value)
 		return value
+	if(!isnull(value) && !own_guard(holder, value, "proto_set([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	var/old_private = proto_is_private(holder, var_name)
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))

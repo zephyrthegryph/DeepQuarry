@@ -115,8 +115,6 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 /// If the mob leaves the holder, or the holder lands on a turf or in a belly, clean us up: checked
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
-	if(QDELETED(src)) // already going (the mob left during our own destroy): nothing to check
-		return
 	if(!om_timer_slot_pending(src, "cleanup_timer"))
 		om_after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
 

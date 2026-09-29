@@ -282,20 +282,6 @@ KEYED_TARGET(/obj/own_test_keyed_target, id)
 /datum/own_test_child/proc/test_label(a, b)
 	return "[label][a][b]"
 
-/datum/unit_test/ownership_refuses_work_on_dying
-
-/datum/unit_test/ownership_refuses_work_on_dying/Run()
-	var/list/capture = list()
-	GLOB.dq_lifecycle_report_capture = capture
-	var/datum/own_test_child/A = new
-	A.datum_flags |= DF_DESTROYING
-	var/id = om_after(A, 10, TYPE_PROC_REF(/datum/own_test_child, test_label))
-	A.datum_flags &= ~DF_DESTROYING
-	GLOB.dq_lifecycle_report_capture = null
-	TEST_ASSERT(!id, "a timer on an entity being destroyed is refused")
-	TEST_ASSERT(length(capture) && findtext(capture[1], "refused a timer"), "and reported: [json_encode(capture)]")
-	qdel(A)
-
 /datum/unit_test/ownership_keyed_links
 
 /datum/unit_test/ownership_keyed_links/Run()

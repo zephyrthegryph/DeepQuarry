@@ -551,8 +551,6 @@ DECLARE_INTERACTIONS(/obj/item/stack, \
 		return FALSE
 	if(src == S)
 		return FALSE
-	if(QDELETED(S) || QDELETED(src)) // a stack spilled by a dying holder, or dying itself, merges nowhere
-		return FALSE
 	if(ismob(S.loc) || ismob(loc))
 		return FALSE
 	if(S.throwing || throwing)

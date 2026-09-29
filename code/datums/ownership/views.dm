@@ -132,6 +132,8 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
 		return target
+	if(target && !own_guard(source, target, "rel_set([var_name])")) // the one teardown guard (guard.dm)
+		return null
 	var/list/entry = _rel_entry(source, var_name)
 	if(!entry)
 		source.vars[var_name] = target // ALLOW(api, ownership): undeclared view, reported above
@@ -143,9 +145,6 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	var/datum/old = source.vars[var_name]
 	if(old == target)
 		return target
-	if(target && QDELETED(target))
-		OWN_REPORT("[source.type].[var_name]: refusing a link to [target.type], which is being destroyed")
-		target = null
 	if(old)
 		_rel_detach(source, var_name, old, entry)
 	if(target)
@@ -160,8 +159,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	if(!entry[OWNE_LIST])
 		OWN_REPORT("rel_add on single view [source.type].[var_name]: use rel_set")
 		return null
-	if(QDELETED(target))
-		OWN_REPORT("[source.type].[var_name]: refusing a link to [target.type], which is being destroyed")
+	if(!own_guard(source, target, "rel_add([var_name])")) // the one teardown guard (guard.dm)
 		return null
 	var/list/L = source.vars[var_name]
 	if(islist(L) && (target in L))

@@ -509,15 +509,12 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	var/datum/point/end_point
 	if(trajectory && beam_index())
 		end_point = trajectory.copy_to()
-		// A dying projectile (lifecycle_prerelease) adopts nothing: the end point stays a local.
-		if(!QDELETED(src))
-			own_add(src, "beam_segments", end_point)
-			end_point = null
+		own_add(src, "beam_segments", end_point) // refused while we are being destroyed (guard.dm)
 	generate_hitscan_tracers(null, null, impacting, end_point)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE, datum/point/end_point)
 	var/list/points = beam_segments ? beam_segments.Copy() : list()
-	if(end_point)
+	if(end_point && !(end_point in points)) // not recorded when the projectile is being destroyed
 		points += end_point
 	if(!length(points))
 		return

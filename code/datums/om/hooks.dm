@@ -19,8 +19,7 @@
 		for(var/path in event_path)
 			om_hook(source, path, listener, proc_ref)
 		return TRUE
-	if((source?.datum_flags | listener?.datum_flags) & DF_DESTROYING)
-		OWN_REPORT("refused a hook ([event_path]) between [source?.type] and [listener?.type]: one is being destroyed")
+	if(!own_guard(listener, source, "a hook ([event_path])")) // the one teardown guard (guard.dm)
 		return FALSE
 	var/datum/om/rec/srec = source && om_rec_of(source)
 	var/datum/om/rec/lrec = listener && om_rec_of(listener)

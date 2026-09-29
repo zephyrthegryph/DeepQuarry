@@ -245,9 +245,9 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		if(thing.loc != holder)
 			note_exit(thing)
 	for(var/atom/movable/thing as anything in holder.contents)
-		// A thing being deleted left its slot in destroy phase 4 (it keeps its
-		// loc until phase 7): never re-adopt it.
-		if(!entries[thing] && !QDELETED(thing))
+		// A thing being deleted left its slot in destroy phase 4 (it keeps its loc until phase 7):
+		// note_enter()'s teardown guard never re-adopts it.
+		if(!entries[thing])
 			note_enter(thing)
 
 // ---- Bookkeeping (called from doMove) ----
@@ -265,6 +265,8 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 		pending_new_slot = null
 	var/flags = pending_flags
 	pending_flags = null
+	if(!own_guard(holder, thing, "contents adoption")) // the one teardown guard (guard.dm)
+		return
 	var/datum/om/relation/slot/def = def_by_id(id)
 	var/cost = def.cost(holder, thing)
 	var/list/snapshot = dq_ledger_contribution(thing)

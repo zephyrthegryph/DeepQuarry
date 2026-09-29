@@ -160,13 +160,8 @@ DECLARE_PERIODIC(/obj/item/modular_computer, PERIODIC_SLOW)
 	if(active_program())
 		active_program().kill_program(forced)
 		rel_clear(src, "active_program")
-	// A computer being destroyed (on_destroy() kills its program) has no UI to reopen, and
-	// refuses new timers from phase 0.
-	if(QDELETED(src))
-		return
 	var/mob/user = usr
-	if(!QDELETED(src)) // killed on the way out (on_destroy): no UI to reopen
-		om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
+	om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
 	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)
