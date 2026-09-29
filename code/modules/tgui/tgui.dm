@@ -28,7 +28,7 @@
 	/// If the UI has been initialized yet.
 	var/initialized = FALSE
 	/// Time of opening the window.
-	var/opened_at
+	EXPIRY_DECLARE(opened_at)
 	/// Stops further updates when close() was called.
 	var/closing = FALSE
 	/// The status/visibility of the UI.
@@ -429,7 +429,7 @@
 		close(can_be_suspended = FALSE)
 		return
 	// Validate ping
-	if(!initialized && world.time - opened_at > TGUI_PING_TIMEOUT)
+	if(!initialized && ELAPSED(src, opened_at, CLOCK_WORLD) > TGUI_PING_TIMEOUT)
 		log_tgui(user, \
 			"Error: Zombie window detected, killing it with fire.\n" \
 			+ "window_id: [window().id]\n" \

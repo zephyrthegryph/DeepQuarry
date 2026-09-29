@@ -15,7 +15,7 @@
 	//0: Normal, 1: Might be dead, 2: Definitely dead, show on console
 	var/dead_state = 0
 	var/last_update = 0
-	var/last_notification
+	EXPIRY_DECLARE(last_notification)
 	var/do_notify = TRUE
 
 	//Backend

@@ -182,7 +182,7 @@
 	illegal = TRUE
 	vended = FALSE
 	tick_flags = NIF_ALWAYSTICK
-	var/last_ads
+	EXPIRY_DECLARE(last_ads)
 	can_uninstall = FALSE
 
 /datum/nifsoft/malware/activate()
@@ -195,7 +195,7 @@
 
 /datum/nifsoft/malware/life()
 	if((. = ..()))
-		if(nif().human.client && world.time - last_ads > rand(10 MINUTES, 15 MINUTES) && prob(1))
+		if(nif().human.client && ELAPSED(src, last_ads, CLOCK_WORLD) > rand(10 MINUTES, 15 MINUTES) && prob(1))
 			last_ads = world.time
 			nif().human.client.create_fake_ad_popup_multiple(/atom/movable/screen/popup/default, 5)
 

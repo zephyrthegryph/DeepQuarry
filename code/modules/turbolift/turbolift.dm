@@ -104,7 +104,7 @@
 #define LIFT_WAITING_B 3	// Waiting floor_wait_delay after announcement before potentially moving again.
 
 /datum/turbolift/periodic_step()
-	if(world.time < next_process)
+	if(EXPIRY_ACTIVE(src, next_process, CLOCK_WORLD))
 		return
 	switch(busy_state)
 		if(LIFT_MOVING)

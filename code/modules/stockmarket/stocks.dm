@@ -2,14 +2,14 @@
 	var/broker = ""
 	var/borrower = ""
 	var/tmp/stock_handle
-	var/lease_expires = 0
+	EXPIRY_DECLARE(lease_expires)
 	var/lease_time = 0
 	var/grace_time = 0
-	var/grace_expires = 0
+	EXPIRY_DECLARE(grace_expires)
 	var/share_amount = 0
 	var/share_debt = 0
 	var/deposit = 0
-	var/offer_expires = 0
+	EXPIRY_DECLARE(offer_expires)
 
 /datum/stock
 	var/name = "Stock"
@@ -183,7 +183,7 @@
 /datum/stock/proc/stock_tick(elapsed_steps = 1)
 	for (var/B in borrows)
 		var/datum/borrow/borrow = B
-		if (world.time > borrow.grace_expires)
+		if (ELAPSED(borrow, grace_expires, CLOCK_WORLD) > 0)
 			modifyAccount(borrow.borrower, -max(current_value * borrow.share_debt, 0), 1)
 			LAZYREMOVE(borrows, borrow)
 			if (borrow.borrower in GLOB.FrozenAccounts)
@@ -191,7 +191,7 @@
 				if (length(GLOB.FrozenAccounts[borrow.borrower]) == 0)
 					GLOB.FrozenAccounts -= borrow.borrower
 			qdel(borrow)
-		else if (world.time > borrow.lease_expires)
+		else if (ELAPSED(borrow, lease_expires, CLOCK_WORLD) > 0)
 			if (borrow.borrower in shareholders)
 				var/amt = LAZYACCESS(shareholders, borrow.borrower)
 				if (amt > borrow.share_debt)
@@ -209,7 +209,7 @@
 		return
 	for (var/B in borrow_brokers)
 		var/datum/borrow/borrow = B
-		if (borrow.offer_expires < world.time)
+		if (ELAPSED(borrow, offer_expires, CLOCK_WORLD) > 0)
 			LAZYREMOVE(borrow_brokers, borrow)
 			qdel(borrow)
 	if (prob(100 * (1 - (0.95 ** elapsed_steps))))

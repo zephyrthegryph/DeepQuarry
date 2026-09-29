@@ -215,7 +215,7 @@
 /// In transit: every half second until arrival time, the travel sound every four seconds
 /// (the sound file is five) and the landing warning five seconds out.
 /datum/shuttle/proc/long_jump_transit(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, made_warning)
-	if(world.time >= arrive_time)
+	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)

@@ -3,7 +3,7 @@
 #define ROBO_HARM 2
 /datum/artifact_effect/robohealth
 	name = "Robotic Healing"
-	var/last_message
+	EXPIRY_DECLARE(last_message)
 	effect_type = EFFECT_ROBOT_HEALTH
 	effect_color = "#3879ad"
 	var/health_type = ROBO_HEAL
@@ -36,13 +36,13 @@
 		var/turf/T = get_turf(holder)
 		for (var/mob/living/silicon/robot/M in range(src.effectrange,T))
 			if(health_type == ROBO_HEAL)
-				if(world.time - last_message > 200)
+				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_blue("SYSTEM ALERT: Beneficial energy field detected!"))
 					last_message = world.time
 				M.mend(TREAT_PLATING_REPAIR, 1)
 				M.mend(TREAT_WIRING_REPAIR, 1)
 			else
-				if(world.time - last_message > 200)
+				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_red("SYSTEM ALERT: Harmful energy field detected!"))
 					last_message = world.time
 				M.injure(INJURY_BLUNT, 1, null, null, 0, null, INJURE_SILENT)
@@ -55,13 +55,13 @@
 		var/turf/T = get_turf(holder)
 		for (var/mob/living/silicon/robot/M in range(src.effectrange,T))
 			if(health_type == ROBO_HEAL)
-				if(world.time - last_message > 200)
+				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_blue("SYSTEM ALERT: Structural damage has been repaired by energy pulse!"))
 					last_message = world.time
 				M.mend(TREAT_PLATING_REPAIR, 10)
 				M.mend(TREAT_WIRING_REPAIR, 10)
 			else
-				if(world.time - last_message > 200)
+				if(ELAPSED(src, last_message, CLOCK_WORLD) > 20 SECONDS)
 					to_chat(M, span_red("SYSTEM ALERT: Structural damage inflicted by energy pulse!"))
 					last_message = world.time
 				M.injure(INJURY_BLUNT, 10, null, null, 0, null, INJURE_SILENT)

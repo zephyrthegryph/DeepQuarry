@@ -53,7 +53,7 @@
 	var/duration = 0
 	var/interval = 0
 	EXPIRY_DECLARE(time_end)
-	var/last_activation = 0
+	EXPIRY_DECLARE(last_activation)
 	var/last_process = 0
 	var/tmp/inserted_battery_handle
 	var/tmp/archived_loc_handle
@@ -177,7 +177,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 				holder = src.loc
 
 			//handle charge
-			if(world.time - last_activation > interval)
+			if(ELAPSED(src, last_activation, CLOCK_WORLD) > interval)
 				if(inserted_battery().battery_effect.effect == EFFECT_TOUCH)
 					if(interval > 0)
 						//apply the touch effect to the holder
@@ -213,7 +213,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			if(inserted_battery().stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 				shutdown_emission()
-			else if(world.time > time_end)
+			else if(ELAPSED(src, time_end, CLOCK_WORLD) > 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
 				shutdown_emission()
 		else

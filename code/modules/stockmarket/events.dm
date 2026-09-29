@@ -14,7 +14,7 @@
 /datum/stockEvent/proc/event_tick()
 	if (finished)
 		return
-	if (world.time > next_phase)
+	if (ELAPSED(src, next_phase, CLOCK_WORLD) > 0)
 		transition()
 
 /datum/stockEvent/proc/transition()

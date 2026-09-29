@@ -102,7 +102,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 		return
 	if(L.stat || L.restrained())
 		return
-	if(GLOB.last_fax_role_request && (world.time - GLOB.last_fax_role_request < 5 MINUTES))
+	if(GLOB.last_fax_role_request && (ELAPSED(GLOB, last_fax_role_request, CLOCK_WORLD) < 5 MINUTES))
 		to_chat(L, span_warning("The global automated relays are still recalibrating. Try again later or relay your request in written form for processing."))
 		return
 

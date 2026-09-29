@@ -128,10 +128,10 @@
 /obj/machinery/artifact_analyser/machine_step()
 	if(!scan_in_progress)
 		return PROCESS_KILL
-	if(world.time <= scan_completion_time)
+	if(ELAPSED(src, scan_completion_time, CLOCK_WORLD) <= 0)
 		om_after(src, scan_completion_time + 1 - world.time, PROC_REF(scan_timer_fired))
 		return PROCESS_KILL
-	if(scan_in_progress && world.time > scan_completion_time)
+	if(scan_in_progress && ELAPSED(src, scan_completion_time, CLOCK_WORLD) > 0)
 		scan_in_progress = 0
 
 		var/results = ""

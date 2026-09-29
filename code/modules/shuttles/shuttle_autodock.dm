@@ -144,7 +144,7 @@ DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 				set_process_state(WAIT_FINISH)
 
 		if (WAIT_FINISH)
-			if (world.time > last_dock_attempt_time + DOCK_ATTEMPT_TIMEOUT || check_docked())
+			if (ELAPSED(src, last_dock_attempt_time, CLOCK_WORLD) > DOCK_ATTEMPT_TIMEOUT || check_docked())
 				//*** all done here
 				set_process_state(IDLE_STATE)
 				arrived()

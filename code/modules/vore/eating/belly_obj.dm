@@ -260,7 +260,7 @@
 	var/tmp/list/belly_surrounding		// Lazy. A list of living mobs surrounded by this belly, including inside containers, food, on mobs, etc. Exclusing inside other bellies.
 	var/bellytemperature = T20C				// Temperature applied to humans in the belly.
 	var/temperature_damage = FALSE			// Does temperature damage prey?
-	var/tmp/last_transfer_log = 0				// Prevent server message spam!
+	EXPIRY_TMP_DECLARE(last_transfer_log)				// Prevent server message spam!
 	var/tmp/next_transfer_log = 0				// Prevent server message spam!
 	var/tmp/entrance_log_count = 0				// Entrance count before spawm
 	flags = NOREACT							// We dont want bellies to start bubling nonstop due to people mixing when transfering and making different reagents
@@ -337,7 +337,7 @@ DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
 	//Generic entered message
 	if(!owner.mute_entry && entrance_logs)
 		if(!istype(thing, /mob/observer))	//Don't have ghosts announce they're reentering the belly on death
-			if(world.time - last_transfer_log > ENTRY_MESSAGE_INTERVAL)
+			if(ELAPSED(src, last_transfer_log, CLOCK_WORLD) > ENTRY_MESSAGE_INTERVAL)
 				last_transfer_log = world.time
 				entrance_log_count = 0
 			if(COOLDOWN_FINISHED(src, next_transfer_log))

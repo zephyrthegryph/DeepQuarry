@@ -42,7 +42,7 @@
 		return
 
 	if(high_messages == TRUE)
-		if(world.time > data + 90 SECONDS && volume > 0.5) /// Spam prevention.
+		if(ELAPSED_SINCE(src, data, CLOCK_WORLD) > 90 SECONDS && volume > 0.5) /// Spam prevention.
 			data = world.time
 			var/msg = pick(high_message_list)
 			to_chat(M, span_warning("[msg]"))

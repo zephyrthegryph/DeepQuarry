@@ -67,7 +67,7 @@
 	data["difficulty"] = GLOB.rm_controller.diffstep_strs[GLOB.rm_controller.diffstep]
 	data["occupied"] = curZoneOccupied
 	data["scanning"] = scanning
-	data["updated"] = world.time - GLOB.rm_controller.last_scan < 200 //Very recently scanned (20 seconds)
+	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS //Very recently scanned (20 seconds)
 	data["debug"] = debug
 
 	if(!shuttle_control())

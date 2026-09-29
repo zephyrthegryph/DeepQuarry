@@ -41,12 +41,12 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 		return
 	if(user.mind)
 		if(user.mind.vore_death)
-			if(vore_respawn <= world.time - user.timeofdeath)
+			if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= vore_respawn)
 				autoresleeve(user)
 			else
 				to_chat(user, span_warning("You must wait [((vore_respawn - (world.time - user.timeofdeath)) * 0.1) / 60] minutes to use \the [src]."))
 				return
-		else if(respawn <= world.time - user.timeofdeath)
+		else if(ELAPSED(user, timeofdeath, CLOCK_WORLD) >= respawn)
 			autoresleeve(user)
 		else
 			to_chat(user, span_warning("You must wait [((respawn - (world.time - user.timeofdeath)) * 0.1) /60] minutes to use \the [src]."))
@@ -134,7 +134,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(isnull(_answer_k153))
 		return
 	if(_answer_k153 != "Yes")
-		if(respawn >= world.time - ghost.timeofdeath) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
+		if(ELAPSED(ghost, timeofdeath, CLOCK_WORLD) <= respawn) //We were given the option to resleeve due to an outside event, but closed the input box (be it by typing or otherwise) so we allow clicking the autosleever to revive.
 			ghost.timeofdeath = world.time - respawn
 		return
 	//This keeps people from dying in round, clicking the autoresleever, then swapping savefiles and clicking 'yes'
@@ -268,7 +268,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(new_character.mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
-		if((world.time - record.last_notification) < 30 MINUTES)
+		if(ELAPSED(record, last_notification, CLOCK_WORLD) < 30 MINUTES)
 			GLOB.global_announcer.autosay("[new_character.name] has been resleeved by the automatic resleeving system.", "TransCore Oversight", HAS_SYNTHETIC_BIOLOGY(new_character) ? "Science" : "Medical")
 		if(record.nif_path)
 			om_after(new_character, 0, /proc/resleeve_restore_nif, new_character, record) //Wait a moment for nif to do its thing if there is one

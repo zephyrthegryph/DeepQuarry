@@ -68,9 +68,9 @@
 
 /// The planet's weather step (its planet calls it every 2 s).
 /datum/weather_holder/proc/weather_tick()
-	if(imminent_weather && world.time >= imminent_weather_shift)
+	if(imminent_weather && EXPIRY_EXPIRED(src, imminent_weather_shift, CLOCK_WORLD))
 		proceed_to_imminent_weather()
-	else if(!imminent_weather && world.time >= next_weather_shift)
+	else if(!imminent_weather && EXPIRY_EXPIRED(src, next_weather_shift, CLOCK_WORLD))
 		if(!current_weather) // Roundstart (hopefully).
 			initialize_weather()
 		else

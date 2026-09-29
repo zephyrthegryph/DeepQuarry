@@ -287,7 +287,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
-	if(being_built() && (build_finish < world.time))
+	if(being_built() && (ELAPSED(src, build_finish, CLOCK_WORLD) > 0))
 		// Then attempt to dispense it and if appropriate build the next item.
 		dispense_built_part(being_built())
 		if(process_queue)

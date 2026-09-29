@@ -260,8 +260,8 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 
 	var/obj/item/cell/emergency_light/cell
 	/// Emergency cell deadlines (world.time; 0 for none) and when discharge accounting last ran.
-	var/tmp/emergency_recharge_at = 0
-	var/tmp/emergency_discharge_at = 0
+	EXPIRY_TMP_DECLARE(emergency_recharge_at)
+	EXPIRY_TMP_DECLARE(emergency_discharge_at)
 	var/emergency_discharge_started
 	/// Wake state: the area whose power it watches, the one om_after() timer on
 	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
@@ -269,7 +269,7 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	var/tmp/last_area_power = null
 	var/tmp/light_timer_token
 	var/tmp/light_timer_at = 0
-	var/tmp/flicker_check_at = 0
+	EXPIRY_TMP_DECLARE(flicker_check_at)
 	var/tmp/list/flicker_chunk_tokens
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 
@@ -1077,11 +1077,11 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	light_timer_at = 0
 	if(QDELETED(src))
 		return
-	if(emergency_discharge_at && world.time >= emergency_discharge_at)
+	if(emergency_discharge_at && EXPIRY_EXPIRED(src, emergency_discharge_at, CLOCK_WORLD))
 		continue_emergency_discharge()
-	if(emergency_recharge_at && world.time >= emergency_recharge_at)
+	if(emergency_recharge_at && EXPIRY_EXPIRED(src, emergency_recharge_at, CLOCK_WORLD))
 		finish_emergency_recharge()
-	if(flicker_check_at && world.time >= flicker_check_at)
+	if(flicker_check_at && EXPIRY_EXPIRED(src, flicker_check_at, CLOCK_WORLD))
 		flicker_check_at = 0
 		auto_flicker_check()
 	schedule_light_timer()
