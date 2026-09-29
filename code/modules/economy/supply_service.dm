@@ -1037,3 +1037,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 /datum/om/behaviour/world/supply/service()
 	return GLOB.supply_service
 
+
+/// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
+/// clears by itself when that shuttle is deleted).
+REL(/datum/world_service/supply, shuttle)
