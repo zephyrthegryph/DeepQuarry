@@ -368,6 +368,21 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 			"ticker_state" = SSticker?.current_state, "ticker_next_fire" = SSticker?.next_fire, "profiler_next_fire" = SSprofiler?.next_fire,
 		)
 		return json_encode(d)
+	// Opt-in proc profiler for the same triage (localhost only): mcprof_start, then mcprof_dump
+	// returns the top procs by real time as JSON.
+	if ((T == "mcprof_start" || T == "mcprof_dump") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+		if(T == "mcprof_start")
+			world.Profile(PROFILE_CLEAR)
+			world.Profile(PROFILE_START)
+			return "started"
+		var/list/rows = json_decode(world.Profile(PROFILE_REFRESH, null, "json"))
+		var/list/top = list()
+		for(var/list/row as anything in rows)
+			top += list(list("n" = row["name"], "self" = row["self"], "total" = row["total"], "real" = row["real"], "calls" = row["calls"]))
+		sortTim(top, GLOBAL_PROC_REF(cmp_mcprof_real))
+		if(length(top) > 40)
+			top.Cut(41)
+		return json_encode(top)
 
 	if (T == "ping")
 		var/x = 1
@@ -795,3 +810,6 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 #undef OVERRIDE_LOG_DIRECTORY_PARAMETER
 #undef USE_TRACY_PARAMETER
 #undef RESTART_COUNTER_PATH
+
+/proc/cmp_mcprof_real(list/a, list/b)
+	return b["real"] - a["real"]
