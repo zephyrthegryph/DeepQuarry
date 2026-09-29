@@ -13,13 +13,16 @@
 // ---- EXPIRY_ON_LAPSE: run a proc when an expiry lapses (code/__defines/sys_expiry.dm) ----
 //
 // Declarative: EXPIRY_ON_LAPSE(PATH, var, clock, PROC_REF(x)) stores the hook in the type's
-// lifecycle declaration table. It is armed (one om_after on the holder, owned and cancelled with
-// it, on the var's clock) whenever EXPIRY_SET/EXPIRY_EXTEND writes the var, and again at
+// lifecycle declaration table. It is armed (one timer in the holder's "expiry_lapse:<var>" timer
+// slot, owned and cancelled with it, on the var's clock) whenever EXPIRY_SET/EXPIRY_EXTEND writes the var, and again at
 // materialize for a value that is still running, so it fires however the holder was created or
-// restored (a holder that materializes with the expiry not running lapses at once). When a timer
-// fires the hook runs only if the var has really lapsed; EXPIRY_CLEAR also counts as lapsed. An earlier timer
-// left behind by a later EXPIRY_SET finds the var still active and does nothing. Hooks must
-// be idempotent, because shortening an expiry can leave two timers that both see it lapsed.
+// restored (a holder that materializes with the expiry not running lapses at once). The slot is
+// keyed per var, so re-arming replaces the pending timer: there is never more than one lapse
+// timer per var. When it fires the hook runs only if the var has really lapsed; EXPIRY_CLEAR also
+// counts as lapsed. Hooks should still be idempotent (a materialize re-arm can re-run one).
+
+/// The lapse timers live in keyed slots "expiry_lapse:<var>" on whatever holder declares a hook.
+OM_TIMER_SLOT(/datum, expiry_lapse)
 
 /// Called by EXPIRY_SET / EXPIRY_EXTEND with the value being written; returns it unchanged.
 /proc/expiry_written(datum/D, var_name, value)
@@ -39,7 +42,7 @@
 	var/left = value - EXPIRY_NOW(D, hook[1])
 	if(left < 0)
 		left = 0
-	om_after(D, left, GLOBAL_PROC_REF(expiry_lapse_fire), D, var_name)
+	om_after_slot(D, "expiry_lapse:[var_name]", left, GLOBAL_PROC_REF(expiry_lapse_fire), D, var_name)
 
 /proc/expiry_lapse_fire(datum/D, var_name)
 	if(QDELETED(D))
