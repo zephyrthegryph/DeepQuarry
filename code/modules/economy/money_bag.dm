@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 	var/coin_path = coin_types[coin_type]
 	if(!coin_path)
 		return
-	var/obj/item/coin/COIN = locate(coin_path) in src.contents
+	var/obj/item/coin/COIN = locate_within(src, coin_path)
 	if(!COIN)
 		return
 	COIN.forceMove(src.loc)

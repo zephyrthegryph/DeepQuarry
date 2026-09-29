@@ -116,13 +116,13 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_toggle_complete")
-			var/datum/objective/O = locate(params["ref"]) in target_mind.objectives
+			var/datum/objective/O = locate_in_list(target_mind.objectives, params["ref"])
 			if(istype(O))
 				O.completed = !O.completed
 			SStgui.update_uis(src)
 			return TRUE
 		if("obj_delete")
-			var/datum/objective/O = locate(params["ref"]) in target_mind.objectives
+			var/datum/objective/O = locate_in_list(target_mind.objectives, params["ref"])
 			if(istype(O))
 				target_mind.objectives -= O
 				qdel(O)

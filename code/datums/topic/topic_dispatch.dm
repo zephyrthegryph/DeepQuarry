@@ -127,21 +127,22 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		if(TOPIC_ANY)
 			found = locate(raw)
 		if(TOPIC_IN_WORLD)
+			// ALLOW(spatial): a TOPIC_IN_WORLD ref is any atom on the map; world is not a list to hand locate_in_list().
 			found = locate(raw) in world
 		if(TOPIC_IN_CLIENTS)
-			found = locate(raw) in GLOB.clients
+			found = locate_in_list(GLOB.clients, raw)
 		if(TOPIC_IN_MOBS)
 			found = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), raw)
 		if(TOPIC_IN_CONTENTS)
 			var/atom/A = target
 			if(!istype(A))
 				return null
-			found = locate(raw) in A.contents
+			found = locate_in_list(contents_of(A), raw)
 		else
 			var/list/pool = call(target, source)()
 			if(!islist(pool))
 				return null
-			found = locate(raw) in pool
+			found = locate_in_list(pool, raw)
 	if(isnull(found))
 		return null
 	if(islist(wanted)) // any of several types

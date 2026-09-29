@@ -103,7 +103,7 @@
 
 /// The event container `ref` names (one of the service's severity containers), or null.
 /datum/event_manager_panel/proc/container_from(ref)
-	return locate(ref) in GLOB.event_service.event_containers
+	return locate_in_list(GLOB.event_service.event_containers, ref)
 
 /// The event meta `ref` names: one of the selected container's events, or the draft new event.
 /datum/event_manager_panel/proc/meta_from(ref)
@@ -113,7 +113,7 @@
 	var/datum/event_container/EC = GLOB.event_service.selected_event_container()
 	if(!EC)
 		return null
-	return locate(ref) in EC.available_events
+	return locate_in_list(EC.available_events, ref)
 
 /datum/event_manager_panel/tgui_act(action, list/params, datum/tgui/ui)
 	. = ..()
@@ -187,7 +187,7 @@
 			service.selected_event_container_handle = null
 			return TRUE
 		if("stop_event")
-			var/datum/event/E = locate(params["ref"]) in service.active_events()
+			var/datum/event/E = locate_in_list(service.active_events(), params["ref"])
 			if(!E)
 				return
 			var/answer = act_ask(user, action, params, ui, "stop", /datum/om/prompt/choice/alert, message = "Stopping an event may have unintended side-effects. Continue?", title = "Stopping Event!", choices = list("Yes","No"))
@@ -245,7 +245,7 @@
 			var/datum/event_container/EC = container_from(params["container_ref"])
 			if(!EC)
 				return
-			var/datum/event_meta/EM = locate(params["ref"]) in EC.available_events
+			var/datum/event_meta/EM = locate_in_list(EC.available_events, params["ref"])
 			if(!EM)
 				return
 			var/answer = act_ask(user, action, params, ui, "remove", /datum/om/prompt/choice/alert, message = "This will remove the event from rotation. Continue?", title = "Removing Event!", choices = list("Yes","No"))
