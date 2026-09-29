@@ -8,9 +8,8 @@
 	var/volume = 0
 	var/leaking = FALSE // Do not set directly, use set_leaking(TRUE/FALSE)
 	var/damaged_leak = FALSE
-	/// Pipelines which cache this pipe as a boundary edge. A pipe can be an edge
-	/// of several foreign pipelines, so `parent` alone is not sufficient ownership.
-	// ALLOW(object_keyed_lists): many-to-many atmos topology roster, cleared symmetrically by lifecycle_unbind()/Destroy()
+	/// Pipelines which cache this pipe as a boundary edge (two-sided with their `edges`).
+	/// A pipe can be an edge of several foreign pipelines.
 	var/list/datum/pipeline/edge_pipelines
 
 	layer = PIPES_LAYER
@@ -135,10 +134,7 @@
 	clear_leak_gas_dependencies()
 	wake_automatic_shutoff_valves(old_parent?.network)
 	release_sorbed_material_gas()
-	var/list/old_edge_pipelines = edge_pipelines
-	rel_clear(src, "edge_pipelines")
-	for(var/datum/pipeline/edge_owner as anything in old_edge_pipelines)
-		edge_owner.remove_edge(src, FALSE)
+	// `parent` and `edge_pipelines` are two-sided relations: the framework clears both ends.
 	if(rust_owned_parent)
 		// Rust already captured this port's exact volume share in the queued
 		// remove-to-mixture transaction. The persistent-region commit retires the
@@ -146,21 +142,13 @@
 		// to qdel that shared wrapper from every exploded pipe was deliberately
 		// rejected by QDEL_HINT_LETMELIVE and dominated large explosion cost.
 		if(!QDELETED(old_parent))
-			rel_remove(old_parent, "members", src)
 			old_parent.leaks -= src
-		rel_clear(src, "parent")
 	else
-		// Legacy wrappers still own their own gas and teardown semantics.
-		QDEL_NULL(parent)
+		// Legacy wrappers still own their own gas and teardown semantics: destroy the line.
+		qdel(old_parent)
 	if(air_temporary)
 		loc.assume_air(air_temporary)
 		own_clear(src, "air_temporary", OWN_DELETE)
-
-/obj/machinery/atmospherics/pipe/proc/register_edge_pipeline(datum/pipeline/edge_owner)
-	rel_add(src, "edge_pipelines", edge_owner)
-
-/obj/machinery/atmospherics/pipe/proc/unregister_edge_pipeline(datum/pipeline/edge_owner)
-	rel_remove(src, "edge_pipelines", edge_owner)
 
 /// Arms its eligibility rule (code/datums/om/watch.dm om_watch_arm_condition()) over both
 /// mixtures either side of the leak: it wakes only once they no longer match, which is when the
@@ -334,3 +322,5 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
+REL_PAIR(/obj/machinery/atmospherics/pipe, parent, members)
+REL_PAIR_LIST(/obj/machinery/atmospherics/pipe, edge_pipelines, edges)

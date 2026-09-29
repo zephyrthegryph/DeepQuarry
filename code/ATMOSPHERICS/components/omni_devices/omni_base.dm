@@ -22,15 +22,14 @@
 	var/overlays_error[2]
 	var/underlays_current[4]
 
-	var/list/ports = new() // ALLOW(instance_list): atmos area (M1a): omni pipe device ports; listed in memory_lists_audit.md, not edited here
+	/// The device's four ports, in GLOB.cardinal order (owned: own_add in Initialize()).
+	var/list/datum/omni_port/ports
 
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
 	. = ..()
 
-
-	ports = new()
 	for(var/d in GLOB.cardinal)
 		var/datum/omni_port/new_port = new(src, d)
 		switch(d)
@@ -287,12 +286,12 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 /obj/machinery/atmospherics/omni/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference)
-			own_set(P, "air", network_air)
+			atmos_air_set(P, "air", network_air)
 
 /obj/machinery/atmospherics/omni/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	for(var/datum/omni_port/P in ports)
 		if(P.network == reference && P.air == network_air)
-			own_set(P, "air", detached_pipenet_air(network_air, 200, network_volume))
+			atmos_air_set(P, "air", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/omni/disconnect(obj/machinery/atmospherics/reference)
 	wake_for_state_change()

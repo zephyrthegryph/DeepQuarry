@@ -86,9 +86,10 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 
 	user.drop_from_inventory(held)
 	held.forceMove(src)
-	if(cur_assembly)
-		cur_assembly.forceMove(get_turf(src))
-		user.put_in_hands(cur_assembly)
+	var/obj/item/fuel_assembly/old_assembly = own_take(src, "cur_assembly") // swapped out to the user
+	if(old_assembly)
+		old_assembly.forceMove(get_turf(src))
+		user.put_in_hands(old_assembly)
 	own_set(src, "cur_assembly", held)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
@@ -143,10 +144,10 @@ OWN(/obj/machinery/fusion_fuel_injector, cur_assembly, OWN_SPILL)
 		return TRUE
 
 	if(cur_assembly)
-		cur_assembly.forceMove(get_turf(src))
-		user.put_in_hands(cur_assembly)
-		visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [cur_assembly] from \the [src]."))
-		own_take(src, "cur_assembly")
+		var/obj/item/fuel_assembly/removed = own_take(src, "cur_assembly")
+		removed.forceMove(get_turf(src))
+		user.put_in_hands(removed)
+		visible_message(span_infoplain(span_bold("\The [user]") + " removes \the [removed] from \the [src]."))
 		return TRUE
 	else
 		to_chat(user, span_warning("There is no fuel rod in \the [src]."))

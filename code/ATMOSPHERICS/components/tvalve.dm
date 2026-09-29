@@ -221,7 +221,7 @@
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		radio_connection = GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA)
+		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/tvalve/digital/Initialize(mapload)
 	. = ..()
@@ -278,12 +278,4 @@
 	icon_state = "map_tvalvem1"
 	state = 1
 
-/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
-/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
-/obj/machinery/atmospherics/tvalve/lifecycle_unbind()
-	. = ..()
-	rel_clear(src, "node3")
-	rel_clear(src, "network_node1")
-	rel_clear(src, "network_node2")
-	rel_clear(src, "network_node3")
 

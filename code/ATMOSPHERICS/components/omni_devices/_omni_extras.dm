@@ -36,7 +36,7 @@
 	dir = direction
 	if(istype(M))
 		rel_set(src, "master", M)
-	own_set(src, "air", new /datum/gas_mixture)
+	atmos_air_set(src, "air", new /datum/gas_mixture)
 	air.set_volume(200)
 
 /datum/omni_port/proc/connect()
@@ -115,6 +115,7 @@
 		else
 			return null
 
-REL_PAIR(/datum/omni_port, master, ports)
-REL_PAIR_LIST(/obj/machinery/atmospherics/omni, ports, master)
+// The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
+REL(/datum/omni_port, master)
+PROTO(/datum/omni_port, air)
 
