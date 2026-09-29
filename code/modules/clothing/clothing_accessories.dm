@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 /obj/item/clothing/proc/removetie_verb()
 	set name = "Remove Accessory"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in usr
 
 	removetie_proc(usr)

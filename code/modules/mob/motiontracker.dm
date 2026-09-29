@@ -44,7 +44,7 @@
 /mob/proc/toggle_motion_echo_vis()
 	set name = "Toggle Vibration Senses"
 	set desc = "Toggle the visibility of pings revealed by vibration senses or motion trackers."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	wants_to_see_motion_echos = !wants_to_see_motion_echos
 	to_chat(src,"You will [wants_to_see_motion_echos ? "now" : "no longer"] see echos")

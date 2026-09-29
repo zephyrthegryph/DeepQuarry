@@ -1,5 +1,5 @@
 /client/proc/aooc(msg as text)
-	set category = "OOC.Chat"
+	set category = VERB_CAT_OOC_CHAT
 	set name = "AOOC"
 	set desc = "Antagonist OOC"
 

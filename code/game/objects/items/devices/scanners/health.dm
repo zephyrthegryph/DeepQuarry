@@ -150,7 +150,7 @@
 
 /obj/item/healthanalyzer/proc/toggle_adv()
 	set name = "Toggle Advanced Scan"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	showadvscan = !showadvscan
 	to_chat(usr, "The scanner will now perform [showadvscan ? "an advanced" : "a basic"] analysis.")

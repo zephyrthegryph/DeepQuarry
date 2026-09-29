@@ -42,7 +42,7 @@ TYPE_TABLE(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie, get_ai_t
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/change_settings()
 	set name = "Change Settings"
 	set desc = "Change the swoopie's settings"
-	set category = "IC"
+	set category = VERB_CAT_IC
 	set src in oview(1)
 	if(!ai_brain || !IIsAlly(usr))
 		to_chat(usr, span_warning("\The [src] does not respond to your input."))

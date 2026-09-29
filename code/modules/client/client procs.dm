@@ -757,7 +757,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/verb/character_setup()
 	set name = "Character Setup"
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 
 	prefs.current_window = PREFERENCE_TAB_CHARACTER_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -765,7 +765,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/verb/game_options()
 	set name = "Game Options"
-	set category = "Preferences.Game"
+	set category = VERB_CAT_PREFERENCES_GAME
 
 	prefs.current_window = PREFERENCE_TAB_GAME_PREFERENCES
 	prefs.update_tgui_static_data(mob)
@@ -807,7 +807,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/verb/toggle_fullscreen()
 	set name = "Toggle Fullscreen"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 
 	fullscreen = !fullscreen
 
@@ -829,7 +829,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 /*we use TGPanel
 /client/verb/toggle_verb_panel()
 	set name = "Toggle Verbs"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 
 	show_verb_panel = !show_verb_panel
 
@@ -839,7 +839,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 /*
 /client/verb/toggle_status_bar()
 	set name = "Toggle Status Bar"
-	set category = "OOC.Client Settings"
+	set category = VERB_CAT_OOC_CLIENT_SETTINGS
 
 	show_status_bar = !show_status_bar
 
@@ -851,7 +851,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 /client/verb/show_active_playtime()
 	set name = "Active Playtime"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 
 	if(!play_hours.len)
 		to_chat(src, span_warning("Persistent playtime disabled!"))

@@ -740,7 +740,7 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /mob/living/carbon/human/proc/set_nif_examine()
 	set name = "NIF Appearance"
 	set desc = "If your NIF alters your appearance in some way, describe it here."
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 
 	if(!nif)
 		remove_verb(src, /mob/living/carbon/human/proc/set_nif_examine)

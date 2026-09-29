@@ -580,7 +580,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /mob/verb/check_round_info()
 	set name = "Check Round Info"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 
 	if(!SSticker|| !SSticker.mode)
 		to_chat(usr, span_warning("Something is terribly wrong; there is no gametype."))

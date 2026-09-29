@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/proc/vr_transform_into_mob()
 	set name = "Transform Into Creature"
-	set category = "Abilities.VR"
+	set category = VERB_CAT_ABILITIES_VR
 	set desc = "Become a different creature"
 
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(vr_creature_chosen), choices = GLOB.vr_mob_tf_options, ask_flags = ASK_CONSCIOUS, title = "Mob list", message = "Please select a creature:")
@@ -53,14 +53,14 @@
 
 /mob/living/proc/vr_revert_mob_tf()
 	set name = "Revert Transformation"
-	set category = "Abilities.VR"
+	set category = VERB_CAT_ABILITIES_VR
 
 	revert_mob_tf()
 
 // Exiting VR but for ghosts
 /mob/living/carbon/human/proc/fake_exit_vr()
 	set name = "Log Out Of Virtual Reality"
-	set category = "Abilities.VR"
+	set category = VERB_CAT_ABILITIES_VR
 
 	om_ask(src, /datum/om/prompt/confirm, PROC_REF(fake_exit_vr_answered), title = "Log out?", message = "Would you like to log out of virtual reality?")
 

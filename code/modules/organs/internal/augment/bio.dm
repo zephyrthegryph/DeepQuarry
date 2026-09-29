@@ -41,7 +41,7 @@
 /mob/living/carbon/human/proc/toggle_shades()
 	set name = "Toggle Integrated Thermoshades"
 	set desc = "Toggle your flash-proof, thermal-integrated sunglasses."
-	set category = "Augments"
+	set category = VERB_CAT_AUGMENTS
 
 	var/obj/item/organ/internal/augment/aug = organ_in(O_AUG_EYES)
 

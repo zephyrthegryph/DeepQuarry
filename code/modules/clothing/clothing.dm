@@ -180,7 +180,7 @@
 // start
 /obj/item/clothing/proc/change_color()
 	set name = "Change Color"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set desc = "Change the color of the clothing."
 	set src in usr
 

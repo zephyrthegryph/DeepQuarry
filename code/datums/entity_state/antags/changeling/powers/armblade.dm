@@ -10,7 +10,7 @@
 
 //Grows a scary, and powerful arm blade.
 /mob/proc/changeling_arm_blade()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Arm Blade (20)"
 
 	var/datum/changeling/comp = is_changeling(src)
@@ -38,7 +38,7 @@
 
 //Grows a scary, and powerful claw.
 /mob/proc/changeling_claw()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Claw (15)"
 	var/datum/changeling/comp = is_changeling(src)
 	if(!comp)

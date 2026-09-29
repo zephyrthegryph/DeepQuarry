@@ -61,7 +61,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 // Check Attacks verb now opens a structured TGUI panel.
 /mob/living/carbon/human/verb/check_attacks()
 	set name = "Check Attacks"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set src = usr
 	var/key = "[REF(src)]"
 	var/datum/attacks_panel/panel = LAZYACCESS(GLOB.dq_attacks_panels, key)

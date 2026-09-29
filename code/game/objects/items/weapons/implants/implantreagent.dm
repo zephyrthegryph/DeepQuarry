@@ -24,7 +24,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 /mob/living/carbon/human/proc/use_reagent_implant_egg()
 	set name = "Force Someone Adjacent To Lay An Egg, If Applicable!"
 	set desc = "Force someone adjacent to lay an egg by squeezing into their lower body! Whilst their reaction may vary, this is certainly going to overwhelm them for a moment!"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 	if(!isliving(usr) || !usr.checkClickCooldown())
 		return
@@ -102,7 +102,7 @@ TYPE_TABLE(/obj/item/implant/reagent_generator/egg, reagent_implant_self_emotes,
 
 	set name = "Toggle cascading"
 	set desc = "Toggle whether or not being forced to lay an egg will cause you to lay all others as well, in rapid succession"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 
 	var/obj/item/implant/reagent_generator/egg/rimplant
 	for(var/obj/item/organ/external/E in organs)
@@ -216,7 +216,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_typ
 /mob/living/carbon/human/proc/use_reagent_implant()
 	set name = "Transfer From Reagent Implant"
 	set desc = "Remove reagents from am internal reagent into a container."
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
 	do_reagent_implant(usr)

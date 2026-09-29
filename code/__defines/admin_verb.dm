@@ -39,6 +39,26 @@
 #define ADMIN_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_category, verb_args...) \
 _ADMIN_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_category, FALSE, ##verb_args)
 
+/**
+ * A debug verb: an ADMIN_VERB that exists only in debug builds (test builds and local debugging).
+ *   DEBUG_VERB(name_of_verb, R_DEBUG, "Verb Name", "Verb Desc", VERB_CAT_DEBUG_MISC, args...)
+ * In debug builds (DEBUG, or CITESTING: BYOND ignores -DDEBUG on the command line) it is an ADMIN_VERB (rights checked by dispatch) flagged debug_only, and
+ * SSadmin_verbs logs every invocation. In release it defines only the body, on a stub datum
+ * nothing registers or grants, so no client ever sees it but DreamChecker still type-checks it.
+ * The permission must not be R_NONE. Do not check_rights inside the body.
+ */
+#if defined(DEBUG) || defined(CITESTING)
+#define DQ_DEBUG_VERBS
+#define DEBUG_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_category, verb_args...) /datum/admin_verb/##verb_path_name/debug_only = TRUE; _ADMIN_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_category, FALSE, ##verb_args)
+#else
+#define DEBUG_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_category, verb_args...) /datum/debug_verb_body/##verb_path_name/proc/debug_verb_body(client/user, ##verb_args)
+#endif
+
+#ifndef DQ_DEBUG_VERBS
+/// Release-build home of DEBUG_VERB bodies (never instantiated).
+/datum/debug_verb_body
+#endif
+
 #define ADMIN_VERB_ONLY_CONTEXT_MENU(verb_path_name, verb_permissions, verb_name, verb_args...) \
 _ADMIN_VERB(verb_path_name, verb_permissions, verb_name, ADMIN_VERB_NO_DESCRIPTION, ADMIN_CATEGORY_HIDDEN, TRUE, ##verb_args)
 
@@ -76,51 +96,51 @@ _ADMIN_VERB(verb_path_name, verb_permissions, verb_name, verb_desc, verb_categor
 #define ADMIN_CATEGORY_HIDDEN null
 
 // Admin verb categories
-#define ADMIN_CATEGORY_MAIN "Admin"
-#define ADMIN_CATEGORY_CHAT "Admin.Chat"
-#define ADMIN_CATEGORY_EVENTS "Admin.Events"
-#define ADMIN_CATEGORY_FUN "Admin.Fun"
-#define ADMIN_CATEGORY_GAME "Admin.Game"
-#define ADMIN_CATEGORY_SHUTTLE "Admin.Shuttle"
-#define ADMIN_CATEGORY_LOGS "Admin.Logs"
-#define ADMIN_CATEGORY_MISC "Admin.Misc"
-#define ADMIN_CATEGORY_SECRETS "Admin.Secrets"
-#define ADMIN_CATEGORY_SILICON "Admin.Silicon"
-#define ADMIN_CATEGORY_INVESTIGATE "Admin.Investigate"
-#define ADMIN_CATEGORY_IPINTEL "Admin.IPIntel"
+#define ADMIN_CATEGORY_MAIN VERB_CAT_ADMIN
+#define ADMIN_CATEGORY_CHAT VERB_CAT_ADMIN_CHAT
+#define ADMIN_CATEGORY_EVENTS VERB_CAT_ADMIN_EVENTS
+#define ADMIN_CATEGORY_FUN VERB_CAT_ADMIN_FUN
+#define ADMIN_CATEGORY_GAME VERB_CAT_ADMIN_GAME
+#define ADMIN_CATEGORY_SHUTTLE VERB_CAT_ADMIN_SHUTTLE
+#define ADMIN_CATEGORY_LOGS VERB_CAT_ADMIN_LOGS
+#define ADMIN_CATEGORY_MISC VERB_CAT_ADMIN_MISC
+#define ADMIN_CATEGORY_SECRETS VERB_CAT_ADMIN_SECRETS
+#define ADMIN_CATEGORY_SILICON VERB_CAT_ADMIN_SILICON
+#define ADMIN_CATEGORY_INVESTIGATE VERB_CAT_ADMIN_INVESTIGATE
+#define ADMIN_CATEGORY_IPINTEL VERB_CAT_ADMIN_IPINTEL
 
 // Special categories that are separated
-#define ADMIN_CATEGORY_DEBUG "Debug"
-#define ADMIN_CATEGORY_DEBUG_ASSETS "Debug.Assets"
-#define ADMIN_CATEGORY_DEBUG_INVESTIGATE "Debug.Investigate"
-#define ADMIN_CATEGORY_DEBUG_DANGEROUS "Debug.Dangerous"
-#define ADMIN_CATEGORY_DEBUG_EVENTS "Debug.Events"
-#define ADMIN_CATEGORY_DEBUG_GAME "Debug.Game"
-#define ADMIN_CATEGORY_DEBUG_SERVER "Debug.Server"
-#define ADMIN_CATEGORY_DEBUG_SPRITES "Debug.Sprites"
-#define ADMIN_CATEGORY_DEBUG_MISC "Debug.Misc"
+#define ADMIN_CATEGORY_DEBUG VERB_CAT_DEBUG
+#define ADMIN_CATEGORY_DEBUG_ASSETS VERB_CAT_DEBUG_ASSETS
+#define ADMIN_CATEGORY_DEBUG_INVESTIGATE VERB_CAT_DEBUG_INVESTIGATE
+#define ADMIN_CATEGORY_DEBUG_DANGEROUS VERB_CAT_DEBUG_DANGEROUS
+#define ADMIN_CATEGORY_DEBUG_EVENTS VERB_CAT_DEBUG_EVENTS
+#define ADMIN_CATEGORY_DEBUG_GAME VERB_CAT_DEBUG_GAME
+#define ADMIN_CATEGORY_DEBUG_SERVER VERB_CAT_DEBUG_SERVER
+#define ADMIN_CATEGORY_DEBUG_SPRITES VERB_CAT_DEBUG_SPRITES
+#define ADMIN_CATEGORY_DEBUG_MISC VERB_CAT_DEBUG_MISC
 
-#define ADMIN_CATEGORY_OBJECT "Object"
-#define ADMIN_CATEGORY_MAPPING "Mapping"
-#define ADMIN_CATEGORY_MAPPING_TESTS "Mapping.Testserver Only"
-#define ADMIN_CATEGORY_MAPPING_ATMOS "Mapping.Atmos"
-#define ADMIN_CATEGORY_PROFILE "Profile"
+#define ADMIN_CATEGORY_OBJECT VERB_CAT_OBJECT
+#define ADMIN_CATEGORY_MAPPING VERB_CAT_MAPPING
+#define ADMIN_CATEGORY_MAPPING_TESTS VERB_CAT_MAPPING_TESTSERVER_ONLY
+#define ADMIN_CATEGORY_MAPPING_ATMOS VERB_CAT_MAPPING_ATMOS
+#define ADMIN_CATEGORY_PROFILE VERB_CAT_PROFILE
 
 // Server Categories
-#define ADMIN_CATEGORY_SERVER "Server"
-#define ADMIN_CATEGORY_SERVER_CHAT "Server.Chat"
-#define ADMIN_CATEGORY_SERVER_GAME "Server.Game"
-#define ADMIN_CATEGORY_SERVER_ADMIN "Server.Admin"
-#define ADMIN_CATEGORY_SERVER_CONFIG "Server.Config"
+#define ADMIN_CATEGORY_SERVER VERB_CAT_SERVER
+#define ADMIN_CATEGORY_SERVER_CHAT VERB_CAT_SERVER_CHAT
+#define ADMIN_CATEGORY_SERVER_GAME VERB_CAT_SERVER_GAME
+#define ADMIN_CATEGORY_SERVER_ADMIN VERB_CAT_SERVER_ADMIN
+#define ADMIN_CATEGORY_SERVER_CONFIG VERB_CAT_SERVER_CONFIG
 
 // Fun categories
-#define ADMIN_CATEGORY_FUN_ADD_NIF "Fun.Add Nif"
-#define ADMIN_CATEGORY_FUN_EVENT_KIT "Fun.Event Kit"
-#define ADMIN_CATEGORY_FUN_DROP_POD "Fun.Drop Pod"
-#define ADMIN_CATEGORY_FUN_DO_NOT "Fun.Do Not"
-#define ADMIN_CATEGORY_FUN_SILICON "Fun.Silicon"
-#define ADMIN_CATEGORY_FUN_SOUNDS "Fun.Sounds"
-#define ADMIN_CATEGORY_FUN_NARRATE "Fun.Narrate"
+#define ADMIN_CATEGORY_FUN_ADD_NIF VERB_CAT_FUN_ADD_NIF
+#define ADMIN_CATEGORY_FUN_EVENT_KIT VERB_CAT_FUN_EVENT_KIT
+#define ADMIN_CATEGORY_FUN_DROP_POD VERB_CAT_FUN_DROP_POD
+#define ADMIN_CATEGORY_FUN_DO_NOT VERB_CAT_FUN_DO_NOT
+#define ADMIN_CATEGORY_FUN_SILICON VERB_CAT_FUN_SILICON
+#define ADMIN_CATEGORY_FUN_SOUNDS VERB_CAT_FUN_SOUNDS
+#define ADMIN_CATEGORY_FUN_NARRATE VERB_CAT_FUN_NARRATE
 
 // Visibility flags
 #define ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG "Map-Debug"

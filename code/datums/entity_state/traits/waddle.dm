@@ -36,7 +36,7 @@
 /mob/living/verb/toggle_waddle()
 	set name = "Toggle or Enable Waddling"
 	set desc = "Allows you to toggle if you want to walk with a waddle or not!"
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 	var/datum/trait_state/waddle_trait/comp = add_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		comp.waddling = !comp.waddling
@@ -45,7 +45,7 @@
 /mob/living/proc/waddle_debug() //Debug tool to debug waddling.
 	set name = "WADDLE DEBUG"
 	set desc = "Allows you to debug waddling!!"
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 	var/datum/trait_state/waddle_trait/comp = get_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		var/Z = rerun_ask(src, "a1", PROC_REF(waddle_debug), args, /datum/om/prompt/number, message = "Desired Z.", title = "Set Z", default = 0.5, min = -INFINITY, round_entry = FALSE)
@@ -69,7 +69,7 @@
 /mob/living/proc/waddle_adjust()
 	set name = "Waddle Adjust"
 	set desc = "Allows you to adjust your waddling."
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 	var/datum/trait_state/waddle_trait/comp = get_trait_state(/datum/trait_state/waddle_trait)
 	if(comp)
 		var/Z_height = rerun_ask(src, "a5", PROC_REF(waddle_adjust), args, /datum/om/prompt/number, message = "Put the desired waddle height. (5 is default. 0 min 40 max)", title = "Set Height", default = 5, max = 40)

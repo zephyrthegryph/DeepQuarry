@@ -74,7 +74,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 /mob/living/carbon/human/proc/prommie_blobform()
 	set name = "Toggle Blobform"
 	set desc = "Switch between amorphous and humanoid forms."
-	set category = "Abilities.Promethean"
+	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/forms/F = get_forms()
 	if(!F)
@@ -93,7 +93,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 /mob/living/carbon/human/proc/prommie_toggle_expand()
 	set name = "Toggle Width"
 	set desc = "Switch between smole and lorge."
-	set category = "Abilities.Promethean"
+	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
 	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
@@ -109,7 +109,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 /mob/living/carbon/human/proc/prommie_toggle_shine()
 	set name = "Toggle Shine"
 	set desc = "Shine on you crazy diamond."
-	set category = "Abilities.Promethean"
+	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	var/datum/form/promethean_blob/B = current_form()
 	if(!istype(B) || stat || !COOLDOWN_FINISHED(src, last_special))
@@ -124,7 +124,7 @@ TYPE_TABLE(/datum/form/promethean_blob, get_form_verbs, list( \
 
 /mob/living/carbon/human/proc/prommie_select_colour()
 	set name = "Select Body Colour"
-	set category = "Abilities.Promethean"
+	set category = VERB_CAT_ABILITIES_PROMETHEAN
 
 	if(!istype(current_form(), /datum/form/promethean_blob) || stat || !COOLDOWN_FINISHED(src, last_special))
 		return

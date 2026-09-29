@@ -9,7 +9,7 @@
 
 //Prevents AIs tracking you but makes you easily detectable to the human-eye.
 /mob/proc/changeling_digitalcamo()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Toggle Digital Camoflague"
 	set desc = "The AI can no longer track us, but we will look different if examined.  Has a constant cost while active."
 

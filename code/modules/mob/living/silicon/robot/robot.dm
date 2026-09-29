@@ -676,7 +676,7 @@ OWN_TIMER(/mob/living/silicon/robot, weapon_lock)
 ///Essentially, a Activate Held Object mode for borgs that acts just like pressing Z in hotkey mode but also works well with multibelts.
 /mob/living/silicon/robot/verb/alt_mode()
 	set name = "Robot Activate Held Object"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src = usr
 
 	if(!checkClickCooldown())
@@ -1480,7 +1480,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 		src.camera.clear_all_networks()
 
 /mob/living/silicon/robot/proc/ResetSecurityCodes()
-	set category = "Abilities.Silicon"
+	set category = VERB_CAT_ABILITIES_SILICON
 	set name = "Reset Identity Codes"
 	set desc = "Scrambles your security and identification codes and resets your current buffers. Unlocks you and permenantly severs you from your AI and the robotics console and will deactivate your camera system."
 
@@ -1737,7 +1737,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 /mob/living/silicon/robot/verb/rest_style()
 	set name = "Switch Rest Style"
 	set desc = "Select your resting pose."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	if(!sprite_datum || !sprite_datum.has_rest_sprites || sprite_datum.rest_sprite_options.len < 1)
 		to_chat(src, span_notice("Your current appearance doesn't have any resting styles!"))

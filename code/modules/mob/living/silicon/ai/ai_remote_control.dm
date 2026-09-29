@@ -81,7 +81,7 @@
 	deploy_to_shell(ask.choice, TRUE)
 
 /mob/living/silicon/ai/proc/deploy_to_shell_act()
-	set category = "AI.Commands"
+	set category = VERB_CAT_AI_COMMANDS
 	set name = "Deploy to Shell"
 	deploy_to_shell() // This is so the AI is not prompted with a list of all mobs when using the 'real' proc.
 

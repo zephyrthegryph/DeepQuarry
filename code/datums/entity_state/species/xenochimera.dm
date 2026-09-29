@@ -281,7 +281,7 @@
 
 /mob/living/carbon/human/proc/reconstitute_form() //Scree's race ability.in exchange for: No cloning.
 	set name = "Reconstitute Form"
-	set category = "Abilities.Xenochimera"
+	set category = VERB_CAT_ABILITIES_XENOCHIMERA
 	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return
@@ -387,7 +387,7 @@
 
 /mob/living/carbon/human/proc/hatch()
 	set name = "Hatch"
-	set category = "Abilities.Xenochimera"
+	set category = VERB_CAT_ABILITIES_XENOCHIMERA
 	var/datum/xenochimera/xc = get_xenochimera_state()
 	if(!xc)
 		return

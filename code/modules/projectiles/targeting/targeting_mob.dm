@@ -4,7 +4,7 @@
 /mob/verb/toggle_gun_mode()
 	set name = "Toggle Gun Mode"
 	set desc = "Begin or stop aiming."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(isliving(src))
 		var/mob/living/M = src

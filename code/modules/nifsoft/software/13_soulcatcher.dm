@@ -417,7 +417,7 @@
 
 /mob/living/carbon/brain/caught_soul/resist()
 	set name = "Resist"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	to_chat(src,span_warning("There's no way out! You're stuck in VR."))
 
@@ -528,7 +528,7 @@
 /mob/proc/nsay(message as text)
 	set name = "NSay"
 	set desc = "Speak into your NIF's Soulcatcher."
-	set category = "IC.NIF"
+	set category = VERB_CAT_IC_NIF
 
 	src.nsay_act(message)
 
@@ -561,7 +561,7 @@
 /mob/proc/nme(message as message)
 	set name = "NMe"
 	set desc = "Emote into your NIF's Soulcatcher."
-	set category = "IC.NIF"
+	set category = VERB_CAT_IC_NIF
 
 	src.nme_act(message)
 
@@ -598,7 +598,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "AR/SR Project"
 	set desc = "Project your form into Augmented Reality for those around your predator with the appearance of your loaded character."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(eyeobj)
 		to_chat(src,span_warning("You're already projecting in AR!"))
@@ -618,7 +618,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Jump to Owner"
 	set desc = "Jump your projection back to the owner of the soulcatcher you're inside."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src,span_warning("You're not projecting into AR!"))
@@ -630,7 +630,7 @@
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 	set name = "Re-enter Soulcatcher"
 	set desc = "Leave AR projection and drop back into the soulcatcher."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!eyeobj)
 		to_chat(src,span_warning("You're not projecting into AR!"))
@@ -642,7 +642,7 @@
 /mob/living/carbon/brain/caught_soul/verb/nsay_brain(message as text)
 	set name = "NSay"
 	set desc = "Speak into the NIF's Soulcatcher (circumventing AR speaking)."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!message)
 		var/_answer_k649 = rerun_ask(src, "k649", VERB_REF(nsay_brain), args, /datum/om/prompt/text, message = "Type a message to say.", title = "Speak into Soulcatcher", encode = FALSE)
@@ -656,7 +656,7 @@
 /mob/living/carbon/brain/caught_soul/verb/nme_brain(message as message)
 	set name = "NMe"
 	set desc = "Emote into the NIF's Soulcatcher (circumventing AR speaking)."
-	set category = "Soulcatcher"
+	set category = VERB_CAT_SOULCATCHER
 
 	if(!message)
 		var/_answer_k660 = rerun_ask(src, "k660", VERB_REF(nme_brain), args, /datum/om/prompt/text, message = "Type an action to perform.", title = "Emote into Soulcatcher", encode = FALSE)

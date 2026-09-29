@@ -344,7 +344,7 @@
 /mob/living/proc/shadekin_control_panel()
 	set name = "Shadekin Control Panel"
 	set desc = "Allows you to adjust the settings of various shadekin settings!"
-	set category = "Abilities.Shadekin"
+	set category = VERB_CAT_ABILITIES_SHADEKIN
 
 	var/datum/shadekin/SK = get_shadekin_state()
 	if(!SK)

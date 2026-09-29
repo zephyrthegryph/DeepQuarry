@@ -13,7 +13,7 @@
 
 /proc/togglebuildmode(mob/M as mob in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 	set name = "Toggle Build Mode"
-	set category = "Special Verbs"
+	set category = VERB_CAT_SPECIAL_VERBS
 	if(M.client)
 		if(M.client.buildmode)
 			log_admin("[key_name(M)] exited build mode.")

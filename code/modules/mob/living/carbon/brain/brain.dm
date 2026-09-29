@@ -106,7 +106,7 @@
 // start
 
 /mob/living/carbon/brain/verb/backup_ping()
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set name = "Notify Transcore"
 	set desc = "Your body is gone. Notify robotics to be resleeved!"
 	backup_ping_resolve()

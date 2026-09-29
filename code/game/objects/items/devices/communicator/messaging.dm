@@ -131,7 +131,7 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 // Parameters: None
 // Description: Allows a ghost to send a text message to a communicator.
 /mob/observer/dead/verb/text_communicator()
-	set category = "Ghost.Message"
+	set category = VERB_CAT_GHOST_MESSAGE
 	set name = "Text Communicator"
 	set desc = "If there is a communicator available, send a text message to it."
 

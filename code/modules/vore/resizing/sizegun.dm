@@ -36,7 +36,7 @@
 
 /obj/item/gun/energy/sizegun/proc/spin_dial()
 	set name = "Spin Size Dial"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
 	size_set_to = (rand(25,200)) /100
@@ -51,7 +51,7 @@
 
 /obj/item/gun/energy/sizegun/proc/select_size(mob/user = usr)
 	set name = "Select Size"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
 	var/size_select = rerun_ask(user, "a1", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), (1-600%) in dormitory areas.", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)
@@ -129,7 +129,7 @@
 
 /obj/item/gun/energy/sizegun/admin/select_size(mob/user = usr)
 	set name = "Select Size"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 
 	var/size_select = rerun_ask(user, "a2", PROC_REF(select_size), args, /datum/om/prompt/number, message = "Put the desired size (1-600%)", title = "Set Size", default = size_set_to * 100, max = RESIZE_MAXIMUM_DORMS * 100, min = RESIZE_MINIMUM_DORMS * 100)

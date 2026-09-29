@@ -118,7 +118,7 @@
 /mob/living/simple_mob/vore/blaidd/proc/blaidd_invis()
 	set name = "Invisibility"
 	set desc = "Change your appearance to match your surroundings, becoming somewhat invisible to the naked eye."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	if(blaidd_invisibility)
 		blaidd_invisibility = 0

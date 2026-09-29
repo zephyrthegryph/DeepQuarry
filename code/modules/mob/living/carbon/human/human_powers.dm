@@ -4,7 +4,7 @@
 /mob/living/carbon/human/proc/tie_hair()
 	set name = "Tie Hair"
 	set desc = "Style your hair."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(incapacitated())
 		to_chat(src, span_warning("You can't mess with your hair right now!"))
@@ -32,7 +32,7 @@
 		to_chat(src, span_notice("You're already using that style."))
 
 /mob/living/carbon/human/proc/tackle()
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Tackle"
 	set desc = "Tackle someone down."
 
@@ -86,7 +86,7 @@
 			O.show_message(span_warning(span_red(span_bold("[src] [failed ? "tried to tackle" : "has tackled"] down [T]!"))), 1)
 
 /mob/living/carbon/human/proc/commune()
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 	set name = "Commune with creature"
 	set desc = "Send a telepathic message to an unlucky recipient."
 
@@ -119,7 +119,7 @@
 /mob/living/carbon/human/proc/psychic_whisper(mob/M as mob in oview())
 	set name = "Psychic Whisper"
 	set desc = "Whisper silently to someone over a distance."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(psychic_whisper_entered), title = "Psychic Whisper", target = M)
 
@@ -133,7 +133,7 @@
 /mob/living/carbon/human/proc/diona_split_nymph()
 	set name = "Split"
 	set desc = "Split your humanoid form into its constituent nymphs."
-	set category = "Abilities.Diona"
+	set category = VERB_CAT_ABILITIES_DIONA
 	diona_split_into_nymphs(5)	// Separate proc to void argments being supplied when used as a verb
 
 /mob/living/carbon/human/proc/diona_split_into_nymphs(number_of_resulting_nymphs)
@@ -193,7 +193,7 @@
 /mob/living/carbon/human/proc/self_diagnostics()
 	set name = "Self-Diagnostics"
 	set desc = "Run an internal self-diagnostic to check for damage."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat == DEAD) return
 
@@ -238,7 +238,7 @@
 /mob/living/carbon/human/proc/sonar_ping()
 	set name = "Listen In"
 	set desc = "Allows you to listen in to movement and noises around you."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(incapacitated())
 		to_chat(src, span_warning("You need to recover before you can use this ability."))
@@ -282,7 +282,7 @@
 /mob/living/carbon/human/proc/regenerate()
 	set name = "Regenerate"
 	set desc = "Allows you to regrow limbs and heal organs after a period of rest."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(nutrition < 250)
 		to_chat(src, span_warning("You lack the biomass to begin regeneration!"))
@@ -350,7 +350,7 @@
 /mob/living/carbon/human/proc/setmonitor_state()
 	set name = "Set monitor display"
 	set desc = "Set your monitor display"
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	if(stat)
 		to_chat(src,span_warning("You must be awake and standing to perform this action!"))
 		return
@@ -394,7 +394,7 @@
 /mob/living/carbon/human/proc/reagent_purge()
 	set name = "Purge Reagents"
 	set desc = "Empty yourself of any reagents you may have consumed or come into contact with."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat == DEAD) return
 
@@ -411,7 +411,7 @@
 /mob/living/carbon/human/verb/toggle_eyes_layer()
 	set name = "Switch Eyes/Monitor Layer"
 	set desc = "Toggle rendering of eyes/monitor above markings."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
@@ -436,7 +436,7 @@
 /mob/living/carbon/human/verb/hand_games()
 	set name = "Play Hand Games"
 	set desc = "Choose from a variety of hand games to play with someone next to you or across a small table."
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	if(stat)
 		return
@@ -694,7 +694,7 @@
 /mob/living/carbon/human/proc/play_dead()
 	set name = "Play Dead"
 	set desc = "Literally just die on the spot. It's okay, you can get better."
-	set category = "Abilities.Sparkledog"
+	set category = VERB_CAT_ABILITIES_SPARKLEDOG
 
 	if(stat)
 		to_chat(src, span_warning("You're too messed up right now to act all messed up, it's, like, for real."))

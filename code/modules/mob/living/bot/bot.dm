@@ -583,7 +583,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /mob/living/bot/verb/bot_nom(mob/living/T in oview(1))
 	set name = "Bot Nom"
-	set category = "Bot Commands"
+	set category = VERB_CAT_BOT_COMMANDS
 	set desc = "Allows you to eat someone. Yum."
 
 	if (stat != CONSCIOUS)
@@ -592,7 +592,7 @@ EXTEND_INTERACTIONS(/mob/living/bot, INTERACT_ITEM(null, PROC_REF(bot_interactio
 
 /mob/living/bot/verb/ejectself()
 	set name = "Eject pAI"
-	set category = "Bot Commands"
+	set category = VERB_CAT_BOT_COMMANDS
 	set desc = "Eject your card, return to smole."
 
 	return ejectpai()

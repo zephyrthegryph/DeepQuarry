@@ -2,7 +2,7 @@ GLOBAL_LIST_EMPTY(prevent_respawns)
 
 /mob/observer/dead/verb/cleanup()
 	set name = "Quit This Round"
-	set category = "OOC.Game"
+	set category = VERB_CAT_OOC_GAME
 	set desc = "Free your job slot, remove yourself from the manifest, and prevent respawning as this character for this round."
 
 	om_ask(src, /datum/om/prompt/confirm, PROC_REF(quit_round_confirmed), title = "Quit This Round", message = "This will free up your job slot, remove you from the manifest, and allow you to respawn as this character. You can rejoin as another character if you like. Do this now?", yes_text = "Quit Round", no_text = "Cancel")

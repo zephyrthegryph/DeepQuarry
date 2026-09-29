@@ -215,7 +215,7 @@
 
 /// Verb used to select a chassis from the list of available chassis
 /mob/living/silicon/pai/proc/choose_chassis()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Chassis"
 
 	pai_ui_chassis.tgui_interact(src)
@@ -527,7 +527,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 
 /mob/living/silicon/pai/lay_down()
 	set name = "Rest"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	// Pass lying down or getting up to our pet human, if we're in a rig.
 	if(istype(src.loc,/obj/item/paicard))

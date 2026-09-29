@@ -31,7 +31,7 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 
 /client/verb/JoinTraders()
 	set name = "Join Trader Visit"
-	set category = "IC.Event"
+	set category = VERB_CAT_IC_EVENT
 
 	if(!MayRespawn(TRUE))
 		to_chat(src, span_warning("You cannot join the traders."))

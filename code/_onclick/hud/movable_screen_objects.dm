@@ -117,7 +117,7 @@
 
 //Debug procs
 /client/proc/test_movable_UI()
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 	set name = "Spawn Movable UI Object"
 
 	var/screen_l = client_ask("where", PROC_REF(test_movable_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Movable UI Object")
@@ -136,7 +136,7 @@
 
 
 /client/proc/test_snap_UI()
-	set category = "Debug"
+	set category = VERB_CAT_DEBUG
 	set name = "Spawn Snap UI Object"
 
 	var/screen_l = client_ask("where", PROC_REF(test_snap_UI), args, 0, /datum/om/prompt/text, message = "Where on the screen? (Formatted as 'X,Y' e.g: '1,1' for bottom left)", title = "Spawn Snap UI Object")

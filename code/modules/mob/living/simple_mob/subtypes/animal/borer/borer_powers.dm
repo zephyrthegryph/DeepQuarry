@@ -3,7 +3,7 @@
  */
 /mob/living/simple_mob/animal/borer/verb/knockout_victim()
 	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Knockout Victim"
 	set desc = "Use your psychic influence to put a target into a temporary catatonic state."
 
@@ -59,7 +59,7 @@
  */
 /mob/living/simple_mob/animal/borer/verb/infest()
 	var/mob/living/carbon/human/host = src?.borer_host()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Infest"
 	set desc = "Infest a suitable humanoid host."
 
@@ -175,7 +175,7 @@
  * Releases chemicals from the borer into their host. Can be used as a standalone chemist in your head for an antag cooperating with their borer.
  */
 /mob/living/simple_mob/animal/borer/verb/secrete_chemicals()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Secrete Chemicals"
 	set desc = "Drain some chemicals into your host's bloodstream."
 
@@ -249,7 +249,7 @@
 
 /// Does some basic regeneration on a host
 /mob/living/carbon/human/proc/jumpstart()
-	set category = "Abilities.Borer"
+	set category = VERB_CAT_ABILITIES_BORER
 	set name = "Revive Host"
 	set desc = "Send a jolt of electricity through your host, reviving them."
 

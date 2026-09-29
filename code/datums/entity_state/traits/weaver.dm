@@ -85,7 +85,7 @@
 /mob/living/proc/weaver_control_panel()
 	set name = "Weaver Control Panel"
 	set desc = "Allows you to adjust the settings of various weaver settings!"
-	set category = "Abilities.Weaver"
+	set category = VERB_CAT_ABILITIES_WEAVER
 
 	var/datum/trait_state/weaver/weave = get_weaver_state()
 	if(!weave)

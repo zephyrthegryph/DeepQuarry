@@ -384,7 +384,7 @@
 	var/incorporeal_speed = 0.5
 
 /client/verb/set_incorporeal_speed()
-	set category = "OOC.Game Settings"
+	set category = VERB_CAT_OOC_GAME_SETTINGS
 	set name = "Set Incorporeal Speed"
 
 	om_ask(usr, /datum/om/prompt/number, PROC_REF(incorporeal_speed_entered), title = "Incorporeal movement speed", message = "Set an incorporeal movement delay between 0 (fastest) and 5 (slowest)", default = (0.5/world.tick_lag), max = 5, min = 0)

@@ -349,7 +349,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 /mob/proc/EvolutionMenu()
 	set name = "-Evolution Menu-"
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set desc = "Adapt yourself carefully."
 
 	var/datum/changeling/comp = is_changeling(src)

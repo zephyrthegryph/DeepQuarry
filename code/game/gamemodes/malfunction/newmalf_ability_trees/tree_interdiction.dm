@@ -41,7 +41,7 @@
 /datum/game_mode/malfunction/verb/recall_shuttle()
 	set name = "Recall Shuttle"
 	set desc = "25 CPU - Sends termination signal to quantum relay aborting current shuttle call."
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	var/price = 25
 	var/mob/living/silicon/ai/user = usr
 	if(!ability_prechecks(user, price))
@@ -61,7 +61,7 @@
 /datum/game_mode/malfunction/verb/unlock_cyborg(mob/living/silicon/robot/target = null as mob in get_linked_cyborgs(usr))
 	set name = "Unlock Cyborg"
 	set desc = "125 CPU - Bypasses firewalls on Cyborg lock mechanism, allowing you to override lock command from robotics control console."
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	var/price = 125
 	var/mob/living/silicon/ai/user = usr
 
@@ -142,7 +142,7 @@
 /datum/game_mode/malfunction/verb/hack_cyborg(mob/living/silicon/robot/target as mob in get_unlinked_cyborgs(usr))
 	set name = "Hack Cyborg"
 	set desc = "350 CPU - Allows you to hack cyborgs which are not slaved to you, bringing them under your control."
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	var/price = 350
 	var/mob/living/silicon/ai/user = usr
 
@@ -187,7 +187,7 @@
 /datum/game_mode/malfunction/verb/hack_ai(mob/living/silicon/ai/target as mob in get_other_ais(usr))
 	set name = "Hack AI"
 	set desc = "600 CPU - Allows you to hack other AIs, slaving them under you."
-	set category = "Software"
+	set category = VERB_CAT_SOFTWARE
 	var/price = 600
 	var/mob/living/silicon/ai/user = usr
 

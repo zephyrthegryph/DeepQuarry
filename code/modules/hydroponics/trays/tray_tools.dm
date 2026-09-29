@@ -127,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 
 /obj/item/analyzer/plant_analyzer/proc/print_report_verb()
 	set name = "Print Plant Report"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src = usr
 
 	if(usr.stat || usr.restrained() || usr.lying)

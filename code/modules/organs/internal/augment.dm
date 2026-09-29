@@ -89,7 +89,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/organ/internal/augment, "integrated_object", "in
 /mob/living/carbon/human/proc/augment_menu()
 	set name = "Open Augment Menu"
 	set desc = "Toggle your augment menu."
-	set category = "Augments"
+	set category = VERB_CAT_AUGMENTS
 
 	enable_augments(src)
 

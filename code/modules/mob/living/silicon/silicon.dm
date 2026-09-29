@@ -249,7 +249,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/verb/pose()
 	set name = "Set Pose"
 	set desc = "Sets a description which will be shown when someone examines you."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	// A cancel answers "": the pose is cleared.
 	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_pose_entered), title = "Pose", message = "This is [src]. It is...", cancel_answer = "")
@@ -260,7 +260,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 /mob/living/silicon/verb/set_flavor()
 	set name = "Set Flavour Text"
 	set desc = "Sets an extended description of your character's features."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 
 	om_ask(src, /datum/om/prompt/text, PROC_REF(silicon_flavor_entered), title = "Flavour text", message = "Please enter your new flavour text.", default = flavor_text, multiline = TRUE)
 

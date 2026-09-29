@@ -1000,7 +1000,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 //This gives a strongly worded warning the first time you push the button, and has similar restrictons to AI controlled Teppi for use which will prevent spamming.
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/produce_offspring()
 	set name = "Produce Offspring"
-	set category = "Abilities.Teppi"
+	set category = VERB_CAT_ABILITIES_TEPPI
 	set desc = "You can have babies if the conditions are right."
 	if(prevent_breeding)
 		to_chat(src, span_notice("You have elected to not participate in breeding mechanics, and so cannot complete that action."))
@@ -1042,7 +1042,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/teppi, \
 
 /mob/living/simple_mob/vore/alienanimals/teppi/proc/toggle_producing_offspring()
 	set name = "Toggle Producing Offspring"
-	set category = "Abilities.Teppi"
+	set category = VERB_CAT_ABILITIES_TEPPI
 	set desc = "You can toggle whether or not you can produce offspring."
 	if(!prevent_breeding)
 		to_chat(src, span_notice("You disable breeding."))

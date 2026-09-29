@@ -532,7 +532,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 /client/verb/toggle_capture_crystal()
 	set name = "Toggle Catchable"
-	set category = "Preferences.Character"
+	set category = VERB_CAT_PREFERENCES_CHARACTER
 	set desc = "Toggles being catchable with capture crystals."
 
 	var/mob/living/L = mob

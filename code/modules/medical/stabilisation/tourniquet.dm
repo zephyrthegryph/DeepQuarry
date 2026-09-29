@@ -176,7 +176,7 @@ OWN(/obj/item/organ/external, tourniquet, OWN_DELETE)
 /// Loosen a tourniquet on someone within reach.
 /mob/living/carbon/human/verb/loosen_tourniquet()
 	set name = "Loosen Tourniquet"
-	set category = "IC"
+	set category = VERB_CAT_IC
 	set src in view(1)
 
 	var/mob/living/user = usr

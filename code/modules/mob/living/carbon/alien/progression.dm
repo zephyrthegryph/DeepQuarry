@@ -2,7 +2,7 @@
 
 	set name = "Evolve"
 	set desc = "Evolve into your adult form."
-	set category = "Abilities.General"
+	set category = VERB_CAT_ABILITIES_GENERAL
 
 	if(stat != CONSCIOUS)
 		return

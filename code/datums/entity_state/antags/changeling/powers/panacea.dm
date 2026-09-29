@@ -9,7 +9,7 @@
 
 //Heals the things that the other regenerative abilities don't.
 /mob/proc/changeling_panacea()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Anatomic Panacea (20)"
 	set desc = "Clense ourselves of impurities."
 

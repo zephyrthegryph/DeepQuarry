@@ -38,7 +38,7 @@
 		. += "It appears to have been pacified."
 
 /mob/living/simple_mob/metroid/juvenile/verb/evolve()
-	set category = "metroid"
+	set category = VERB_CAT_SLIME
 	set desc = "This will let you advance to next form."
 
 	if(stat)

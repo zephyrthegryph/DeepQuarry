@@ -43,20 +43,20 @@
 /atom/movable/proc/rotate_clockwise()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set name = "Rotate Clockwise"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 	return handle_rotation_verbs(270, usr)
 
 /atom/movable/proc/rotate_counterclockwise()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set name = "Rotate Counter Clockwise"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 	return handle_rotation_verbs(90, usr)
 
 /atom/movable/proc/turn_around()
 	SHOULD_NOT_OVERRIDE(TRUE)
 	set name = "Turn Around"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in view(1)
 	return handle_rotation_verbs(180, usr)

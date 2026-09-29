@@ -63,7 +63,7 @@
 //verbs or action buttons...?
 /mob/living/carbon/human/proc/gargoyle_transformation()
 	set name = "Gargoyle - Petrification"
-	set category = "Abilities.Gargoyle"
+	set category = VERB_CAT_ABILITIES_GARGOYLE
 	set desc = "Turn yourself into (or back from) being a gargoyle."
 	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
 	G?.gargoyle_transformation()
@@ -84,7 +84,7 @@
 
 /mob/living/carbon/human/proc/gargoyle_pause()
 	set name = "Gargoyle - Pause"
-	set category = "Abilities.Gargoyle"
+	set category = VERB_CAT_ABILITIES_GARGOYLE
 	set desc = "Pause your energy while standing still, so you don't use up any more, though you will lose a small amount upon moving again."
 	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
 	G?.gargoyle_pause()
@@ -100,7 +100,7 @@
 
 /mob/living/carbon/human/proc/gargoyle_checkenergy()
 	set name = "Gargoyle - Check Energy"
-	set category = "Abilities.Gargoyle"
+	set category = VERB_CAT_ABILITIES_GARGOYLE
 	set desc = "Check how much energy you have remaining as a gargoyle."
 	var/datum/trait_state/gargoyle/G = get_trait_state(/datum/trait_state/gargoyle)
 	G?.gargoyle_checkenergy()

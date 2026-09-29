@@ -76,7 +76,7 @@
 /mob/living/simple_mob/animal/sif/savik/verb/berserk()
 	set name = "Berserk"
 	set desc = "Enrage and become vastly stronger for a period of time, however you will be weaker afterwards."
-	set category = "Abilities.Savik"
+	set category = VERB_CAT_ABILITIES_SAVIK
 
 	apply_body_effect(/datum/body_effect/berserk, 30 SECONDS)
 

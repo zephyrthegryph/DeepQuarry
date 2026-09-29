@@ -363,7 +363,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		set_use_power(USE_POWER_ACTIVE)
 
 /mob/living/silicon/ai/proc/pick_icon()
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set name = "Set AI Core Display"
 	if(stat || aiRestorePowerRoutine)
 		return
@@ -388,7 +388,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 
 /mob/living/silicon/ai/var/announcement_cooldown = 0
 /mob/living/silicon/ai/proc/ai_announcement()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Make Station Announcement"
 	if(check_unable(AI_CHECK_WIRELESS | AI_CHECK_RADIO))
 		return
@@ -414,7 +414,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	COOLDOWN_START(src, announcement_cooldown, 1 MINUTE)
 
 /mob/living/silicon/ai/proc/ai_call_shuttle()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Call Emergency Shuttle"
 	if(check_unable(AI_CHECK_WIRELESS))
 		return
@@ -437,7 +437,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Recall Emergency Shuttle"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -451,7 +451,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 /mob/living/silicon/ai/var/emergency_message_cooldown = 0
 
 /mob/living/silicon/ai/proc/ai_emergency_message()
-	set category = "AI.Station Commands"
+	set category = VERB_CAT_AI_STATION_COMMANDS
 	set name = "Send Emergency Message"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -598,7 +598,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 	return 1
 
 /mob/living/silicon/ai/cancel_camera()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Cancel Camera View"
 	view_core()
 
@@ -622,7 +622,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 
 /mob/living/silicon/ai/proc/ai_network_change(network in get_camera_network_list())
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Jump To Network"
 	unset_machine()
 
@@ -645,7 +645,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 //End of code by Mord_Sith
 
 /mob/living/silicon/ai/proc/ai_statuschange()
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set name = "AI Status"
 
 	if(check_unable(AI_CHECK_WIRELESS))
@@ -665,7 +665,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/ai_hologram_change()
 	set name = "Change Hologram"
 	set desc = "Change the default hologram available to AI to something else."
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable())
 		return
@@ -803,7 +803,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 /mob/living/silicon/ai/proc/toggle_camera_light()
 	set name = "Toggle Camera Light"
 	set desc = "Toggles the light on the camera the AI is looking through."
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	if(check_unable())
 		return
 
@@ -867,7 +867,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 /mob/living/silicon/ai/proc/control_integrated_radio()
 	set name = "Radio Settings"
 	set desc = "Allows you to change settings of your radio."
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 
 	if(check_unable(AI_CHECK_RADIO))
 		return
@@ -878,7 +878,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 
 /mob/living/silicon/ai/proc/sensor_mode()
 	set name = "Toggle Sensor Augmentation"
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set desc = "Augment visual feed with internal sensor overlays"
 	sensor_type = !sensor_type
 	to_chat(src, "You [sensor_type ? "enable" : "disable"] your sensors.")
@@ -886,7 +886,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 
 /mob/living/silicon/ai/proc/toggle_hologram_movement()
 	set name = "Toggle Hologram Movement"
-	set category = "AI.Settings"
+	set category = VERB_CAT_AI_SETTINGS
 	set desc = "Toggles hologram movement based on moving with your virtual eye."
 
 	hologram_follow = !hologram_follow
@@ -994,7 +994,7 @@ DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
 // Pass lying down or getting up to our pet human, if we're in a rig.
 /mob/living/silicon/ai/lay_down()
 	set name = "Rest"
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 
 	resting = 0
 	var/obj/item/rig/rig = src.get_rig()
@@ -1076,12 +1076,12 @@ DAMAGE_REACTION(/mob/living/silicon/ai, DAMAGE_EXPLOSION, PROC_REF(core_blast))
 
 /mob/living/silicon/ai/proc/toggle_multicam_verb()
 	set name = "Toggle Multicam"
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	toggle_multicam()
 
 /mob/living/silicon/ai/proc/add_multicam_verb()
 	set name = "Add Multicam Viewport"
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	drop_new_multicam()
 
 //Special subtype kept around for global announcements

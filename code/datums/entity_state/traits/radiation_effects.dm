@@ -272,7 +272,7 @@
 /mob/living/proc/radiation_control_panel()
 	set name = "Radiation Control Panel"
 	set desc = "Allows you to adjust the settings of various radioactive settings!"
-	set category = "Abilities.Radiation"
+	set category = VERB_CAT_ABILITIES_RADIATION
 
 	var/datum/trait_state/radiation_effects/rad = get_radiation_state()
 	if(!rad)

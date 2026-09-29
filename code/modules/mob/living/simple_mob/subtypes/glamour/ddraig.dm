@@ -281,7 +281,7 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 /mob/living/proc/polymorph()
 	set name = "Polymorph"
 	set desc = "Take the form of a non-humanoid creature."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	var/static/list/beast_options = list("Rabbit" = /mob/living/simple_mob/vore/rabbit,
 									"Red Panda" = /mob/living/simple_mob/vore/redpanda,
@@ -369,7 +369,7 @@ OWN_TIMER(/mob/living/simple_mob/vore/ddraig, firebreathtimer)
 /mob/living/proc/glamour_invisibility()
 	set name = "Invisibility"
 	set desc = "Change your appearance to match your surroundings, becoming completely invisible to the naked eye."
-	set category = "Abilities"
+	set category = VERB_CAT_ABILITIES
 
 	if(stat)
 		to_chat(src, span_warning("You can't go invisible when weakened like this."))

@@ -1,0 +1,2 @@
+# Raw verb category strings (tools/ci/verb_category_lint.py). rule<TAB>file<TAB>normalized line.
+# Shrink-only: after a sweep, `python tools/ci/verb_category_lint.py --update`.

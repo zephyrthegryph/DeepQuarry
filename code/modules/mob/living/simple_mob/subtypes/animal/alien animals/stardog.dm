@@ -192,14 +192,14 @@ REL_PAIR(/mob/living/simple_mob/vore/overmap/stardog, control_node, host)
 /mob/living/simple_mob/vore/overmap/stardog/verb/eject()
 	set name = "Eject"
 	set desc = "Stop controlling the dog and return to your own body."
-	set category = "Abilities.Stardog"
+	set category = VERB_CAT_ABILITIES_STARDOG
 
 	control_node.eject()
 
 /mob/living/simple_mob/vore/overmap/stardog/verb/eat_space_weather()
 	set name = "Eat Space Weather"
 	set desc = "Eat carp or rocks!"
-	set category = "Abilities.Stardog"
+	set category = VERB_CAT_ABILITIES_STARDOG
 
 	var/obj/effect/overmap/event/E
 	var/nut = 0
@@ -331,7 +331,7 @@ REL_PAIR(/mob/living/simple_mob/vore/overmap/stardog, control_node, host)
 /mob/living/simple_mob/vore/overmap/stardog/verb/transition()	//Don't ask how it works. I don't know. I didn't think about it. I just thought it would be cool.
 	set name = "Transition"
 	set desc = "Attempt to go to the location you have arrived at, or return to space!"
-	set category = "Abilities.Stardog"
+	set category = VERB_CAT_ABILITIES_STARDOG
 	if(nutrition <= 500)
 		to_chat(src, span_warning("You're too hungry..."))
 		return

@@ -7,7 +7,7 @@
 
 //Change our DNA to that of somebody we've absorbed.
 /mob/proc/changeling_transform()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Transform (5)"
 
 	var/datum/changeling/changeling = changeling_power(5,1,0)

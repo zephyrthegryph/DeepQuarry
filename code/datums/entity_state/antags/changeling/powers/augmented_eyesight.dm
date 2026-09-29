@@ -9,7 +9,7 @@
 	verbpath = /mob/proc/changeling_augmented_eyesight
 
 /mob/proc/changeling_augmented_eyesight()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Augmented Eyesight (5)"
 	set desc = "We evolve our eyes to sense the infrared."
 	var/datum/changeling/comp = changeling_power(5,0,100,CONSCIOUS)

@@ -27,7 +27,7 @@
 
 /mob/living/silicon/ai/proc/ai_camera_list(camera in get_camera_list())
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Show Camera List"
 
 	if(check_unable())
@@ -43,7 +43,7 @@
 
 /mob/living/silicon/ai/proc/ai_store_location(location_name as text)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Store Camera Location"
 	set desc = "Stores your current camera location by the given name"
 
@@ -73,7 +73,7 @@
 
 /mob/living/silicon/ai/proc/ai_goto_location(loc in sorted_stored_locations())
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Goto Camera Location"
 	set desc = "Returns to the selected camera location"
 
@@ -85,7 +85,7 @@
 	eyeobj.setLoc(L)
 
 /mob/living/silicon/ai/proc/ai_remove_location(loc in sorted_stored_locations())
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Delete Camera Location"
 	set desc = "Deletes the selected camera location"
 
@@ -135,7 +135,7 @@
 	return targets
 
 /mob/living/silicon/ai/proc/ai_camera_track(target_name in trackable_mobs())
-	set category = "AI.Camera Control"
+	set category = VERB_CAT_AI_CAMERA_CONTROL
 	set name = "Follow With Camera"
 	set desc = "Select who you would like to track."
 

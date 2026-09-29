@@ -1,5 +1,5 @@
 /mob/verb/pray()
-	set category = "IC.Game"
+	set category = VERB_CAT_IC_GAME
 	set name = "Pray"
 
 	om_ask(src, /datum/om/prompt/text, PROC_REF(prayer_entered), title = "Pray", message = "Prayers are sent to staff but do not open tickets or go to Discord. If you have a technical difficulty or an event/spice idea/hook - please ahelp instead. Thank you!", max_length = MAX_MESSAGE_LEN)

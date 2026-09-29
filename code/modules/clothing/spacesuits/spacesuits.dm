@@ -44,7 +44,7 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYP
 /obj/item/clothing/head/helmet/space/proc/toggle_camera()
 	set name = "Toggle Helmet Camera"
 	set desc = "Turn your helmet's camera on or off."
-	set category = "Hardsuit"
+	set category = VERB_CAT_HARDSUIT
 	set src in usr
 	if(usr.stat || usr.restrained() || usr.incapacitated())
 		return

@@ -19,7 +19,7 @@
 
 //Recover from stuns.
 /mob/proc/changeling_epinephrine_overdose()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Epinephrine Overdose (30)"
 	set desc = "Removes all stuns instantly, and reduces future stuns."
 

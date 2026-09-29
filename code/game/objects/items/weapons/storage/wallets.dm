@@ -114,7 +114,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 
 /obj/item/storage/wallet/poly/proc/change_color()
 	set name = "Change Wallet Color"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set desc = "Change the color of the wallet."
 	set src in usr
 

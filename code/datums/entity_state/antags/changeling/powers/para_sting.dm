@@ -6,7 +6,7 @@
 	verbpath = /mob/proc/changeling_paralysis_sting
 
 /mob/proc/changeling_paralysis_sting()
-	set category = "Changeling"
+	set category = VERB_CAT_CHANGELING
 	set name = "Paralysis sting (30)"
 	set desc="Sting target"
 

@@ -11,7 +11,7 @@
 	return 1
 
 /mob/living/silicon/pai/cancel_camera()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Cancel Camera View"
 	reset_perspective()
 
@@ -20,7 +20,7 @@
 	rel_clear(src, "current")
 
 /mob/living/silicon/pai/verb/reset_record_view()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Reset Records Software"
 
 	rel_clear(src, "securityActive1")
@@ -33,7 +33,7 @@
 	to_chat(src, span_notice("You reset your record-viewing software."))
 
 /mob/living/silicon/pai/proc/choose_verbs()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Choose Speech Verbs"
 
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(speech_verbs_chosen), title = "Theme Choice", message = "What theme would you like to use for your speech verbs?", choices = GLOB.possible_say_verbs)
@@ -46,7 +46,7 @@
 
 /mob/living/silicon/pai/verb/allowmodification()
 	set name = "Change Access Modifcation Permission"
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Allows people to modify your access or block people from modifying your access."
 
 	if(idaccessible == 0)
@@ -59,7 +59,7 @@
 /mob/living/silicon/pai/verb/toggle_gender_identity_vr()
 	set name = "Set Gender Identity"
 	set desc = "Sets the pronouns when examined and performing an emote."
-	set category = "IC.Settings"
+	set category = VERB_CAT_IC_SETTINGS
 	om_ask(src, /datum/om/prompt/choice, PROC_REF(pai_gender_chosen), title = "Set Gender Identity", message = "Please select a gender Identity:", choices = list(FEMALE, MALE, NEUTER, PLURAL, HERM))
 	return 1
 
@@ -69,7 +69,7 @@
 /mob/living/silicon/pai/verb/pai_hide()
 	set name = "Hide"
 	set desc = "Allows to hide beneath tables or certain items. Toggled on or off."
-	set category = "Abilities.pAI"
+	set category = VERB_CAT_ABILITIES_PAI
 
 	hide()
 	if(status_flags & HIDING)
@@ -79,7 +79,7 @@
 	update_icon()
 
 /mob/living/silicon/pai/verb/screen_message(message as text|null)
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Screen Message"
 	set desc = "Allows you to display a message on your screen. This will show up in the chat of anyone who is holding your card."
 
@@ -143,7 +143,7 @@
 
 /mob/living/silicon/pai/proc/pai_nom(mob/living/T in oview(1))
 	set name = "pAI Nom"
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set desc = "Allows you to eat someone while unfolded. Can't be used while in card form."
 
 	if (stat != CONSCIOUS)
@@ -151,7 +151,7 @@
 	return feed_grabbed_to_self(src,T)
 
 /mob/living/silicon/pai/verb/toggle_eyeglow()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Toggle Eye Glow"
 
 	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)
@@ -166,7 +166,7 @@
 	update_icon()
 
 /mob/living/silicon/pai/verb/pick_eye_color()
-	set category = "Abilities.pAI Commands"
+	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Pick Eye Color"
 
 	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)

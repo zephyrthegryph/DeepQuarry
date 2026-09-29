@@ -140,7 +140,7 @@
 
 /mob/living/mode()
 	set name = "Activate Held Object"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src = usr
 
 	if(ismecha(loc))

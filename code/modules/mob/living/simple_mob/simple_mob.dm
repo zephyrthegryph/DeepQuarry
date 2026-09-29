@@ -239,7 +239,7 @@
 
 /mob/living/simple_mob/proc/pick_size()
 	set name = "Pick Size"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 
 	if(picked_size)
 		to_chat(src, span_notice("You have already picked a size! If you picked the wrong size, ask an admin to change your picked_size variable to 0."))
@@ -259,7 +259,7 @@
 
 /mob/living/simple_mob/proc/pick_color()
 	set name = "Pick Color"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "You can set your color!"
 	if(picked_color)
 		to_chat(src, span_notice("You have already picked a color! If you picked the wrong color, ask an admin to change your picked_color variable to 0."))
@@ -406,7 +406,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 /mob/living/simple_mob/proc/ColorMate()
 	set name = "Recolour"
-	set category = "Abilities.Settings"
+	set category = VERB_CAT_ABILITIES_SETTINGS
 	set desc = "Allows to recolour once."
 
 	if(has_recoloured)
@@ -420,7 +420,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 /mob/living/simple_mob/proc/hunting_vision()
 	set name = "Track Prey Through Walls"
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Uses you natural predatory instincts to seek out prey even through walls, or your natural survival instincts to spot predators from a distance."
 
 	if(COOLDOWN_FINISHED(src, hunting_cooldown))
@@ -433,7 +433,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 /mob/living/simple_mob/proc/hunting_vision_plus()
 	set name = "Thermal vision toggle"
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Uses you natural predatory instincts to seek out prey even through walls, or your natural survival instincts to spot predators from a distance."
 
 	if(!isthermal)
@@ -450,7 +450,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 	set name = "Toggle Vore Sprite"
 	set desc = "Toggle visibility of changed mob sprite when you have eaten other things."
-	set category = "Abilities.Vore"
+	set category = VERB_CAT_ABILITIES_VORE
 
 	if(!vore_icons && !vore_icons_cache)
 		to_chat(src,span_warning("This simplemob has no vore sprite."))
@@ -843,7 +843,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 /mob/living/simple_mob/proc/animal_mount(mob/living/M in living_mobs(1))
 	set name = "Animal Mount/Dismount"
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Let people ride on you."
 
 	if(LAZYLEN(src?.buckled_mob_list()))
@@ -877,7 +877,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 
 /mob/living/simple_mob/proc/leap()
 	set name = "Pounce Target"
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Select a target to pounce at."
 
 	if(!COOLDOWN_FINISHED(src, last_special))
@@ -958,7 +958,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/verb/toggle_speech_sounds()
 	set name = "Toggle Species Speech Sounds"
 	set desc = "Toggle if your species defined speech sound has a chance of playing on a Say"
-	set category = "IC.Mob"
+	set category = VERB_CAT_IC_MOB
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
@@ -1021,7 +1021,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/use_headset()
 	set name = "Use Headset"
 	set desc = "Opens your headset's GUI, if you have one."
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 
 	if(istype(mob_radio, /obj/item/radio/headset))
 		mob_radio.tgui_interact(src)
@@ -1031,7 +1031,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 /mob/living/simple_mob/proc/use_pda()
 	set name = "Use PDA"
 	set desc = "Opens your PDA's GUI, if you have one."
-	set category = "Abilities.Mob"
+	set category = VERB_CAT_ABILITIES_MOB
 
 	if(istype(myid, /obj/item/pda))
 		myid.tgui_interact(src)

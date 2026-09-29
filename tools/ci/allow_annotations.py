@@ -48,6 +48,7 @@ LINTS = {
     "scheduler": "tools/ci/scheduler_lints.py",
     "silent_catch": "tools/ci/silent_catch_lint.py (catches that swallow an exception)",
     "spatial": "tools/ci/spatial_lint.py",
+    "verb_category": "tools/ci/verb_category_lint.py (a raw verb category string)",
     "subsystem_fire": "tools/ci/subsystem_fire_lint.py (fire() outside the core allowlist)",
 }
 

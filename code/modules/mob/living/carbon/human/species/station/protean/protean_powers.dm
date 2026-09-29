@@ -187,7 +187,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 /mob/living/carbon/human/proc/nano_change_fitting()
 	set name = "Change Species Fit"
 	set desc = "Tweak your shape to change what suits you fit into (and their sprites!)."
-	set category = "Abilities.Protean"
+	set category = VERB_CAT_ABILITIES_PROTEAN
 
 	if(stat)
 		to_chat(src, span_warning("You must be awake and standing to perform this action!"))
@@ -234,7 +234,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 /mob/living/carbon/human/proc/prot_hide()
 	set name = "Hide Self"
 	set desc = "Disperses your mass into a thin veil, making a trap to snatch prey with, or simply hide."
-	set category = "Abilities.Protean"
+	set category = VERB_CAT_ABILITIES_PROTEAN
 	activate_protean_power(/datum/protean_power/hide_self)
 
 // --- Refactory ------------------------------------------------------------------------
@@ -601,7 +601,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 
 /mob/living/carbon/human/proc/chest_transparency_toggle()
 	set name = "transparency toggle (chest only)"
-	set category = "Abilities.Protean"
+	set category = VERB_CAT_ABILITIES_PROTEAN
 	activate_protean_power(/datum/protean_power/chest_transparency)
 
 /datum/protean_power/transparency
@@ -617,7 +617,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 
 /mob/living/carbon/human/proc/transparency_toggle()
 	set name = "Toggle Transparency"
-	set category = "Abilities.Protean"
+	set category = VERB_CAT_ABILITIES_PROTEAN
 	activate_protean_power(/datum/protean_power/transparency)
 
 /mob/living/carbon/human/proc/toggle_limb_transparency(include_head)
@@ -667,7 +667,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 
 /mob/living/carbon/human/proc/absorb_implant()
 	set name = "Absorb Implant"
-	set category = "Abilities.Protean"
+	set category = VERB_CAT_ABILITIES_PROTEAN
 	activate_protean_power(/datum/protean_power/absorb_implant)
 
 #undef PER_LIMB_STEEL_COST

@@ -283,7 +283,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/corrupthound/swoopie,
 /mob/living/simple_mob/vore/aggressive/corrupthound/swoopie/verb/borrow_vac()
 	set name = "Borrow Vac-Pack"
 	set desc = "Allows adjacent user to borrow Swoopie's Vac-Pack"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 	if(istype(Vac))
 		if(usr != src)

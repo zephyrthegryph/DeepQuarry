@@ -395,7 +395,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 /obj/proc/micro_interact()
 	set name = "Micro Interact"
 	set desc = "Micros can enter, or move between objects with this! Non-micros can reach into objects to search for micros!"
-	set category = "Object"
+	set category = VERB_CAT_OBJECT
 	set src in oview(1)
 
 	if(!isliving(usr))

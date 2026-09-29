@@ -298,7 +298,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/verb/eject()
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)
 	set name = "Sleeper Eject"
-	set category = "Exosuit Interface"
+	set category = VERB_CAT_EXOSUIT_INTERFACE
 	set src = usr.loc
 	set popup_menu = 0
 	if(usr!=src?.slot_item(MECHA_SLOT_PILOT) || usr.stat == 2)
