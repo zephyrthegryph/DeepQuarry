@@ -37,7 +37,7 @@
 	. += tool("Tighten", TOOL_WRENCH, PROC_REF(fx_held), log = LOG_GAME)
 	. += use_on("Write", /obj/item/pen, PROC_REF(fx_held))
 	. += insert("Insert", /obj/item/paper, PROC_REF(fx_held))
-	. += hand("Form", PROC_REF(fx_form), form = list(dx_canned_field(/datum/form_field/choice/dx_canned, "pack", "medical"), dx_canned_field(/datum/form_field/text/dx_canned, "reason", "because"), dx_canned_field(/datum/form_field/number/dx_canned, "qty", 3)))
+	. += hand("Form", PROC_REF(fx_form), form = list(dx_entries_canned_field(/datum/form_field/choice/dx_canned, "pack", "medical"), dx_entries_canned_field(/datum/form_field/text/dx_canned, "reason", "because"), dx_entries_canned_field(/datum/form_field/number/dx_canned, "qty", 3)))
 
 /obj/cap_fixture/entries/proc/fx_poke(mob/user, obj/item/held)
 	LAZYADD(calls, "poke")
@@ -71,7 +71,7 @@
 /datum/form_field/number/dx_canned/ask(datum/dispatch_context/ctx)
 	return canned
 
-/proc/dx_canned_field(path, name, canned)
+/proc/dx_entries_canned_field(path, name, canned)
 	var/datum/form_field/F = new path
 	F.name = name
 	if(istype(F, /datum/form_field/choice/dx_canned))
