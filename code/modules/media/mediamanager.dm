@@ -212,9 +212,7 @@
 #undef MP_DEBUG
 #endif
 
-DECLARE_REF(/client, "media", OWNED, null)
 
-DECLARE_REF(/datum/media_manager, "media_window", OWNED, null)
 
 /// LC-refs: the media_source this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /area/proc/media_source() as /obj/machinery/media

@@ -184,7 +184,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/vrlanguage, "imp", /obj/item/implant/v
 /obj/item/implanter/vrlanguage
 	icon_state = "implanter1_1" // loaded: what update() would show
 
-DECLARE_REF(/obj/item/implanter, "imp", HELD, null)
+OWN(/obj/item/implanter, imp, OWN_CONTAINED)
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/implanter, \

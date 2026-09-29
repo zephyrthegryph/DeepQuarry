@@ -390,4 +390,4 @@
 	playsound(src, 'sound/machines/ping.ogg', 30, TRUE)
 	return TRUE
 
-DECLARE_REF(/obj/machinery/computer/pandemic, "beaker", HELD, null)
+OWN(/obj/machinery/computer/pandemic, beaker, OWN_CONTAINED)

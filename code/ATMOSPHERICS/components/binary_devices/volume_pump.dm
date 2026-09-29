@@ -352,5 +352,3 @@ Thus, the two variables affect pump operation are set in New():
 // globals from __defines/atmospherics_linda/atmos_piping.dm now; undef'ing them
 // from a component file would break any later include that uses them.)
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/volume_pump, "radio_connection", STATIC, null)
-DECLARE_REF(/obj/machinery/atmospherics/binary/volume_pump, "overclock_overlay", OWNED, null)

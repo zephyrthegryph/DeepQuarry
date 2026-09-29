@@ -287,12 +287,12 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		sabotaged = 1
 		return 1
 
-DECLARE_REF(/obj/item/robot_parts/chest, "cell", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/head, "flash1", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/head, "flash2", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "l_arm", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "r_arm", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "l_leg", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "r_leg", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "chest", HELD, null)
-DECLARE_REF(/obj/item/robot_parts/robot_suit, "head", HELD, null)
+OWN(/obj/item/robot_parts/chest, cell, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/head, flash1, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/head, flash2, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, l_arm, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, r_arm, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, l_leg, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, r_leg, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, chest, OWN_CONTAINED)
+OWN(/obj/item/robot_parts/robot_suit, head, OWN_CONTAINED)

@@ -60,7 +60,6 @@
 	if(ask.text && illusion)
 		illusion.emote(ask.text)
 
-DECLARE_REF(/obj/item/spell/illusion, "illusion", OWNED, null)
 
 // Makes a tiny overlay of the thing the player has copied, so they can easily tell what they currently have.
 /obj/item/spell/illusion/update_icon()

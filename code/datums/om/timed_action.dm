@@ -70,8 +70,6 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
 	var/datum/progressbar/progbar
 	var/datum/cogbar/cog
 
-DECLARE_REF(/datum/om/task/timed, "progbar", OWNED, null)
-DECLARE_REF(/datum/om/task/timed, "cog", OWNED, null)
 
 /datum/om/task/timed/on_starting()
 	var/mob/user = actor

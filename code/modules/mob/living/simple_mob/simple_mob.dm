@@ -218,8 +218,6 @@
 
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob, "myid", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 
 // eye glow comes off and belly contents are released.
 /mob/living/simple_mob/on_destroy(force)
@@ -1044,6 +1042,4 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 	to_chat(src, "Your concentration wears off.")
 	sight -= SEE_MOBS
 
-DECLARE_REF(/mob/living/simple_mob, "modifier_overlay", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob, "eye_layer", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob, "movement_target", HELD, null)
+OWN(/mob/living/simple_mob, movement_target, OWN_CONTAINED)

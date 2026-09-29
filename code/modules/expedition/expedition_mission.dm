@@ -40,7 +40,6 @@
 	reward_cash = 150 + difficulty * 200
 	objectives = list()
 
-DECLARE_REF(/datum/expedition_mission, "objectives", OWNED_LIST, null)
 
 // Override per mission: return the list of objectives.
 /datum/expedition_mission/proc/build_objectives()

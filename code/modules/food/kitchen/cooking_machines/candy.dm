@@ -22,7 +22,6 @@
 
 	candymaker_loop = new(list(src), FALSE)
 
-DECLARE_REF(/obj/machinery/appliance/mixer/candy, "candymaker_loop", OWNED, null)
 
 /obj/machinery/appliance/mixer/candy/update_icon()
 	. = ..()

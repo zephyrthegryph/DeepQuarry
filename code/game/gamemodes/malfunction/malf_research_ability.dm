@@ -12,4 +12,3 @@
 	if(invested >= price)
 		unlocked = 1
 
-DECLARE_REF(/datum/malf_research_ability, "next", OWNED, null)

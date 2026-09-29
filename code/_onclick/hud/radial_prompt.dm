@@ -94,7 +94,7 @@
 	var/datum/om/prompt/om_prompt
 	var/menu_id
 
-DECLARE_REF(/datum/radial_menu/om, "om_prompt", PAIR, "ui")
+REL_PAIR(/datum/radial_menu/om, om_prompt, ui)
 
 /datum/radial_menu/om/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)

@@ -491,7 +491,6 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	return ..()
 
 // its casing forgets it.
-DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 
 /obj/item/projectile/proc/cleanup_beam_segments()
 	QDEL_LIST_ASSOC(beam_segments)
@@ -949,10 +948,7 @@ DECLARE_REF(/obj/item/projectile, "my_case_handle", BACK_HANDLE, "BB")
 /obj/item/projectile
 	speed = 1.5 // Movespeed is in Deciseconds per movement. Lower is faster. default was 0.8, but we had it at 3.0 for a while.
 
-DECLARE_REF(/obj/item/projectile, "trajectory", OWNED, null)
-DECLARE_REF(/obj/item/projectile, "beam_components", OWNED, null)
 // Tracer points (point -> next point); cleanup_beam_segments() deletes keys and values in lifecycle_prerelease().
-DECLARE_REF(/obj/item/projectile, "beam_segments", OWNED_LIST, null)
 
 /// LC-refs: the beam_index this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/projectile/proc/beam_index() as /datum/point
@@ -974,5 +970,3 @@ DECLARE_REF(/obj/item/projectile, "beam_segments", OWNED_LIST, null)
 /obj/item/projectile/proc/original() as /atom
 	return om_resolve(original_handle)
 
-DECLARE_REF(/obj/item/projectile, "starting", BACK, null)
-DECLARE_REF(/obj/item/projectile, "firer", BACK, null)

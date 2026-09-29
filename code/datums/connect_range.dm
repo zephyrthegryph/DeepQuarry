@@ -22,7 +22,6 @@
 	/// Whether this works when the movable isn't directly located on a turf.
 	var/works_in_containers
 
-DECLARE_REF(/datum/connect_range, "listener", BACK, null)
 
 /datum/connect_range/New(datum/listener, atom/tracked, list/connections, range, works_in_containers = TRUE)
 	..()

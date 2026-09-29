@@ -335,4 +335,3 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 
 // Ports are ours; each points back as `master`, and the filter/mixer subtypes hold them again
 // (input, output, atmos_filters, inputs), so the port lets go of its master when deleted.
-DECLARE_REF(/obj/machinery/atmospherics/omni, "ports", OWNED_LIST, null)

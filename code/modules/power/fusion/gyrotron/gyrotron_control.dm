@@ -18,7 +18,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/gyrotron_control, "monitor", /datu
 	monitor.gyro_tag = id_tag
 	monitor.scan_range = scan_range
 
-DECLARE_REF(/obj/machinery/computer/gyrotron_control, "monitor", OWNED, null)
 
 /obj/machinery/computer/gyrotron_control/declare_interactions(list/into)
 	into += list(

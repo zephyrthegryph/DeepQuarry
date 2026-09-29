@@ -76,5 +76,3 @@ TGS_PROTECT_DATUM(/datum/tgs_api)
 /datum/tgs_api/proc/TriggerDeployment()
 	return TGS_UNIMPLEMENTED
 
-DECLARE_REF(/datum/tgs_api, "version", OWNED, null)
-DECLARE_REF(/datum/tgs_api, "event_handler", OWNED, null)

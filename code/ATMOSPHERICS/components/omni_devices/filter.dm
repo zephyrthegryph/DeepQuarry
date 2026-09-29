@@ -335,5 +335,3 @@
 			P.connect()
 	P.update = 1
 
-DECLARE_REF(/obj/machinery/atmospherics/omni/atmos_filter, "input", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/omni/atmos_filter, "output", HELD, null)

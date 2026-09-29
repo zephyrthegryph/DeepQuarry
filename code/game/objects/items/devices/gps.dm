@@ -90,7 +90,6 @@ REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
 	if(holder_ref())
 		update_compass(src, TRUE)
 
-DECLARE_REF(/obj/item/gps, "compass", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 
 // the GPS leaves its holder's tracking.

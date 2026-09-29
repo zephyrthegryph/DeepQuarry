@@ -16,7 +16,6 @@
 	var/proj_trail_icon_state = "trail"
 	var/list/trails
 
-DECLARE_REF(/obj/item/projectile/spell_projectile, "trails", OWNED_LIST, null)
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails

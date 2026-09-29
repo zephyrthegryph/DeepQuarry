@@ -196,7 +196,6 @@
 		return "Compatible"
 	return "Incompatible!"
 
-DECLARE_REF(/datum/computer_file/program/ntnetdownload, "downloaded_file", OWNED, null)
 
 /// LC-refs: the my_computer this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/ntnetdownload/proc/my_computer() as /obj/item/modular_computer

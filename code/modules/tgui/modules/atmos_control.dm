@@ -112,7 +112,6 @@
 /datum/tgui_module/atmos_control/robot/tgui_state(mob/user)
 	return GLOB.tgui_self_state
 
-DECLARE_REF(/datum/tgui_module/atmos_control, "access", OWNED, null)
 
 /// LC-refs: the atmos_control this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_state/air_alarm_remote/proc/atmos_control() as /datum/tgui_module/atmos_control
@@ -123,4 +122,3 @@ DECLARE_REF(/datum/tgui_module/atmos_control, "access", OWNED, null)
 	return om_resolve(air_alarm_handle)
 
 /// Alarms shown by this UI, rebuilt when it opens.
-DECLARE_REF(/datum/tgui_module/atmos_control, "monitored_alarms", WEAK_LIST, null)

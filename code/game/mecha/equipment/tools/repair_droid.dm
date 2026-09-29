@@ -100,4 +100,3 @@
 		set_ready_state(TRUE)
 	return
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/repair_droid, "droid_overlay", OWNED, null)

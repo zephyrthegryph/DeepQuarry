@@ -120,4 +120,4 @@
 		"You hear a ratchet.")
 	atom_deconstruct()
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/heat_exchanger, "partner", PAIR, "partner")
+REL_PAIR(/obj/machinery/atmospherics/unary/heat_exchanger, partner, partner)

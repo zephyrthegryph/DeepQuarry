@@ -13,7 +13,6 @@
 		program = new program(src)
 	return ..()
 
-DECLARE_REF(/obj/machinery/embedded_controller, "program", OWNED, null)
 
 /obj/machinery/embedded_controller/examine(mob/user, infix, suffix)
 	. = ..()

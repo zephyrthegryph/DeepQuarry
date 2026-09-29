@@ -163,5 +163,3 @@
 	vore_selected = B
 
 // The macrophage's own strain; victims get copies. base_disease is also in infections.
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/macrophage, "base_disease", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/macrophage, "infections", OWNED_LIST, null)

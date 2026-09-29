@@ -44,7 +44,7 @@ DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 	default_apply_parts()
 
-DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
+OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
 
 /// Phase 2: fusion control consoles drop it.
 /obj/machinery/power/fusion_core/lifecycle_dematerialize()
@@ -270,4 +270,3 @@ DECLARE_REF(/obj/machinery/power/fusion_core, "material_sample", SPILL, null)
 	temp_dump()
 	temp_color()
 
-DECLARE_REF(/obj/machinery/power/fusion_core, "owned_field", OWNED, null)

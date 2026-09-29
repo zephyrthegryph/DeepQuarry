@@ -63,4 +63,3 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	return GLOB.character_setup_service
 
 /// Pending saves: drained by service_step(); deleted prefs are skipped there.
-DECLARE_REF(/datum/world_service/character_setup, "save_queue", WEAK_LIST, null)

@@ -479,8 +479,8 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	else
 		return INITIALIZE_HINT_QDEL
 
-DECLARE_REF(/obj/item/weldingtool/tubefed, "mounted_pack", PAIR, "nozzle")
-DECLARE_REF(/obj/item/weldpack, "nozzle", PAIR, "mounted_pack")
+REL_PAIR(/obj/item/weldingtool/tubefed, mounted_pack, nozzle)
+REL_PAIR(/obj/item/weldpack, nozzle, mounted_pack)
 
 /obj/item/weldingtool/tubefed/periodic_step()
 	if(!mounted_pack)
@@ -695,7 +695,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 #undef WELDER_FUEL_BURN_INTERVAL
 
-DECLARE_REF(/obj/item/weldingtool/electric, "power_supply", HELD, null)
+OWN(/obj/item/weldingtool/electric, power_supply, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
 
 /// LC-refs: equip mount -- an OM handle (om_handle()), so it reads null once that is deleted.

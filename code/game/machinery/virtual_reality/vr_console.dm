@@ -418,7 +418,6 @@
 			M.revert_mob_tf()
 	occupant.enter_vr(avatar())
 
-DECLARE_REF(/obj/machinery/vr_sleeper, "smoke", OWNED, null)
 
 /// LC-refs: avatar -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/vr_sleeper/proc/avatar() as /mob/living/carbon/human

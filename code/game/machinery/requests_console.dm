@@ -444,4 +444,3 @@ REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 	departmentType = RC_ASSIST|RC_INFO
 	announcementConsole = 1
 
-DECLARE_REF(/obj/machinery/requests_console, "announcement", OWNED, null)

@@ -147,6 +147,4 @@
 
 #undef UPDATE_BUFFER
 
-DECLARE_REF(/datum/chunk, "obfuscation", OWNED, null)
 // Turfs are never deleted (a changed turf keeps its object), so the chunk's turf index holds them strongly.
-DECLARE_REF(/datum/chunk, "turfs", STATIC, null)

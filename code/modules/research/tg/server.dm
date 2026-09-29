@@ -28,7 +28,8 @@
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.
 	refresh_working()
 
-DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers")
+REL_PAIR(/obj/machinery/rnd/server, stored_research, techweb_servers)
+REL_PAIR_LIST(/datum/techweb, techweb_servers, stored_research)
 
 /obj/machinery/rnd/server/update_icon()
 	if(stat & NOPOWER)

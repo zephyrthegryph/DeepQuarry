@@ -57,12 +57,8 @@
 	/// Direction the produced items will drop (0 means on top of us)
 	var/drop_direction = SOUTH
 
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "queue", DEF, null)
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "cached_designs", DEF, null)
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "illegal_local_designs", DEF, null)
 /// The current design datum that the machine is building.
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "being_built", DEF, null)
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
@@ -85,8 +81,6 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "being_built", DEF, null)
 	if(stored_research())
 		on_connected_techweb()
 
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "print_sound", OWNED, null)
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
@@ -583,10 +577,9 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/mecha_part_fabricator_tg/proc/stored_research() as /datum/techweb
 	return stored_research_static
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "stored_research_static", STATIC, null)
 
 /// LC-refs: the being_built this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/mecha_part_fabricator_tg/proc/being_built() as /datum/design_techweb
 	return being_built
 
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "stored_part", HELD, null)
+OWN(/obj/machinery/mecha_part_fabricator_tg, stored_part, OWN_CONTAINED)

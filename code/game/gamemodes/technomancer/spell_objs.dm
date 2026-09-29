@@ -297,4 +297,4 @@ DECLARE_INTERACTIONS(/obj/item/spell, \
 /obj/item/spell/proc/owner_ref() as /mob/living
 	return om_resolve(owner_handle)
 
-DECLARE_REF(/obj/item/spell, "core", HELD, null)
+OWN(/obj/item/spell, core, OWN_CONTAINED)

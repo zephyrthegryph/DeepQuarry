@@ -67,7 +67,6 @@ GLOBAL_LIST_INIT(RMS_random_malfunction, list(/obj/item/fbp_backup_cell,
 	spark_system.attach(src)
 	update_icon()
 
-DECLARE_REF(/obj/item/rms, "spark_system", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/rms, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rms/update_icon()

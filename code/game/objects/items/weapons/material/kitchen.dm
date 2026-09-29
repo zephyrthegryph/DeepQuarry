@@ -224,4 +224,4 @@ DECLARE_REAGENTS(/obj/item/material/kitchen/utensil, "scoop_volume", null)
 		return ITEM_INTERACT_SUCCESS
 	return ..()
 
-DECLARE_REF(/obj/item/material/kitchen/utensil, "food_inserted_micros", SPILL_LIST, null)
+OWN(/obj/item/material/kitchen/utensil, food_inserted_micros, OWN_SPILL)

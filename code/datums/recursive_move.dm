@@ -17,8 +17,6 @@
 	/// The recursive move relay (dq_add_recursive_move()), or null.
 	var/tmp/datum/recursive_move/recursive_move
 
-DECLARE_REF(/atom/movable, "recursive_move", OWNED, null)
-DECLARE_REF(/datum/recursive_move, "holder", BACK, "recursive_move")
 
 /// Gives `AM` a recursive move relay, or rebuilds the container chain of the one it has.
 /proc/dq_add_recursive_move(atom/movable/AM)

@@ -11,8 +11,8 @@
 	..()
 	src.target_mode = target_mode
 
-DECLARE_REF(/datum/game_mode_panel, "target_mode", PAIR, "tgui_game_mode_panel")
-DECLARE_REF(/datum/game_mode, "tgui_game_mode_panel", PAIR, "target_mode")
+REL_PAIR(/datum/game_mode_panel, target_mode, tgui_game_mode_panel)
+REL_PAIR(/datum/game_mode, tgui_game_mode_panel, target_mode)
 
 /datum/game_mode_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)

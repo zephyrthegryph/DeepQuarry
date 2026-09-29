@@ -23,8 +23,8 @@
 	..()
 	src.owner_admin = owner_admin
 
-DECLARE_REF(/datum/round_status_panel, "owner_admin", PAIR, "round_status_panel")
-DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
+REL_PAIR(/datum/round_status_panel, owner_admin, round_status_panel)
+REL_PAIR(/datum/admins, round_status_panel, owner_admin)
 
 /datum/round_status_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN)

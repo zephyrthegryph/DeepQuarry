@@ -35,4 +35,3 @@ DECLARE_REAGENTS_TYPED(/obj/distilling_tester, 5000, null, /datum/reagents/disti
 	current_temp = LERP( D.temp_range[1], D.temp_range[2], temp_prog)
 	reagents.handle_reactions()
 
-DECLARE_REF(/obj/distilling_tester, "GM", OWNED, null)

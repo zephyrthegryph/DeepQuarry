@@ -265,6 +265,3 @@
 	var/profile = station_spec ? "[station_spec.faction_id] [station_spec.architecture_style], security [station_spec.security_tier], [station_spec.size_class]" : "unprofiled"
 	return "[power] · [atmosphere] · [coordination] · [profile]"
 
-DECLARE_REF(/datum/expedition_site, "station_simulation", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_director", OWNED, null)
-DECLARE_REF(/datum/expedition_site, "station_controls", OWNED_LIST, null)

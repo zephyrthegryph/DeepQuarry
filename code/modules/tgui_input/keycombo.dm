@@ -125,4 +125,3 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_input_keycombo/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui_input_keycombo, "state_static", STATIC, null)

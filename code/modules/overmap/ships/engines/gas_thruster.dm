@@ -90,7 +90,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atmospherics/unary/engine, "controller", /d
 				atom_break()
 			break
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/engine, "controller", OWNED, null)
 
 /obj/machinery/atmospherics/unary/engine/proc/get_status()
 	. = list()

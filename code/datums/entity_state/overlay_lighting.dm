@@ -570,16 +570,10 @@
 /datum/overlay_lighting/proc/parent_attached_to() as /atom/movable
 	return om_resolve(parent_attached_to_handle)
 
-DECLARE_REF(/datum/overlay_lighting, "visible_mask", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "directional_atom", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "cone", OWNED, null)
-DECLARE_REF(/datum/overlay_lighting, "owner", BACK, "overlay_light")
 
 /atom/movable
 	///The overlay light of MOVABLE_LIGHT / MOVABLE_LIGHT_DIRECTIONAL atoms (see add_overlay_lighting()).
 	var/tmp/datum/overlay_lighting/overlay_light
-DECLARE_REF(/atom/movable, "overlay_light", OWNED, null)
 
 /// Lit turfs: rebuilt by make_luminosity_update(), dropped by clean_old_turfs() (unbind).
 // turfs, never freed
-DECLARE_REF(/datum/overlay_lighting, "affected_turfs", STATIC, null)

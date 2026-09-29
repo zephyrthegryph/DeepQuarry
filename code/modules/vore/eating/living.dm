@@ -1422,9 +1422,6 @@
 	var/atom/movable/screen/vore_panel/screen_icon
 
 /mob/living/var/datum/vore_panel_button/vore_panel_button
-DECLARE_REF(/mob/living, "vore_panel_button", OWNED, null)
-DECLARE_REF(/datum/vore_panel_button, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/vore_panel_button, "owner", BACK, "vore_panel_button")
 
 /datum/vore_panel_button/New(mob/living/M)
 	..()

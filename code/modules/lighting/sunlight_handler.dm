@@ -391,8 +391,8 @@
 
 // LC-refs: a simulated turf and its sunlight handler point at each other (the handler moves
 // with the turf through ChangeTurf, turf_changing.dm).
-DECLARE_REF(/turf/simulated, "shandler", PAIR, "holder")
-DECLARE_REF(/datum/sunlight_handler, "holder", PAIR, "shandler")
+REL_PAIR(/turf/simulated, shandler, holder)
+REL_PAIR(/datum/sunlight_handler, holder, shandler)
 
 /// LC-refs: the sun this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/sunlight_handler/proc/sun() as /datum/simple_sun

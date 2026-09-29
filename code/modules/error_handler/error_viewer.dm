@@ -175,7 +175,6 @@ GLOBAL_DATUM(error_cache, /datum/error_viewer/error_cache)
 /datum/error_viewer/error_entry/make_link(linktext, datum/error_viewer/back_to, linear)
 	return is_skip_count ? name : ..()
 
-DECLARE_REF(/datum/error_viewer/error_entry, "exc", OWNED, null)
 
 /// LC-refs: the usr_loc this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/error_viewer/error_entry/proc/usr_loc() as /turf
@@ -185,4 +184,3 @@ DECLARE_REF(/datum/error_viewer/error_entry, "exc", OWNED, null)
 /datum/error_viewer/error_entry/proc/error_source() as /datum/error_viewer/error_source
 	return om_resolve(error_source_handle)
 
-DECLARE_REF(/datum/error_viewer/error_source, "errors", OWNED_LIST, null)

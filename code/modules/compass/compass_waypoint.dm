@@ -26,4 +26,3 @@
 	M.Turn(ATAN2(cy-y, cx-x)+180)
 	compass_overlay.transform = M
 
-DECLARE_REF(/datum/compass_waypoint, "compass_overlay", OWNED, null)

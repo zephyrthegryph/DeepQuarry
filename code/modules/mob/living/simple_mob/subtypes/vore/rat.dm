@@ -325,4 +325,3 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/aggressive/rat/tame, INTERACT_IN
 	can_be_drop_prey = FALSE
 	allow_mind_transfer = FALSE
 
-DECLARE_REF(/mob/living/simple_mob/vore/aggressive/rat/tame, "food", HELD, null)

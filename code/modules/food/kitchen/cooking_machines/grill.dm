@@ -32,7 +32,6 @@
 	. = ..()
 	grill_loop = new(list(src), FALSE)
 
-DECLARE_REF(/obj/machinery/appliance/cooker/grill, "grill_loop", OWNED, null)
 
 /obj/machinery/appliance/cooker/grill/update_icon() // TODO: Cooking icon
 	if(!stat)

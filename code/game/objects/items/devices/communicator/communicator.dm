@@ -378,13 +378,8 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 // Parameters: None
 // Description: Deletes all the voice mobs, disconnects all linked communicators, and cuts lists to allow successful qdel()
 // ITION: Remvovess any slotted in IDs before deleting
-DECLARE_REF(/obj/item/communicator, "camera", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/communicator, "camera", /obj/machinery/camera/communicator)
-DECLARE_REF(/obj/item/communicator, "exonet", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
-DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drops out
+OWN(/obj/item/communicator, id, OWN_SPILL)
 
 // its ID drops out, connected voices time out and its calls close.
 /obj/item/communicator/on_destroy(force)
@@ -457,5 +452,4 @@ DECLARE_REF(/obj/item/communicator, "id", SPILL, null)	// a slotted ID card drop
 #undef MANITAB
 #undef SETTTAB
 
-DECLARE_REF(/mob/observer/dead, "exonet", OWNED, null)
 DECLARE_DEFAULT_CHILD(/mob/observer/dead, "exonet", /datum/exonet_protocol)

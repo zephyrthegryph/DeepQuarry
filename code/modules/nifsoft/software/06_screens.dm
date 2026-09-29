@@ -11,7 +11,6 @@
 	..()
 	arscreen = new(nif())
 
-DECLARE_REF(/datum/nifsoft/crewmonitor, "arscreen", OWNED, null)
 
 /datum/nifsoft/crewmonitor/activate()
 	if((. = ..()))
@@ -38,7 +37,6 @@ DECLARE_REF(/datum/nifsoft/crewmonitor, "arscreen", OWNED, null)
 	..()
 	tgarscreen = new(nif())
 
-DECLARE_REF(/datum/nifsoft/alarmmonitor, "tgarscreen", OWNED, null)
 
 /datum/nifsoft/alarmmonitor/activate()
 	if((. = ..()))

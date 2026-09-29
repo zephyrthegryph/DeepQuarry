@@ -526,5 +526,5 @@
 /obj/machinery/chem_master/proc/printing_done()
 	printing = FALSE
 
-DECLARE_REF(/obj/machinery/chem_master, "beaker", HELD, null)
-DECLARE_REF(/obj/machinery/chem_master, "loaded_pill_bottle", HELD, null)
+OWN(/obj/machinery/chem_master, beaker, OWN_CONTAINED)
+OWN(/obj/machinery/chem_master, loaded_pill_bottle, OWN_CONTAINED)

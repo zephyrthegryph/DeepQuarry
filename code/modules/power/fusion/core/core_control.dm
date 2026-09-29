@@ -18,7 +18,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /d
 	. = ..()
 	monitor.core_tag = id_tag
 
-DECLARE_REF(/obj/machinery/computer/fusion_core_control, "monitor", OWNED, null)
 
 /obj/machinery/computer/fusion_core_control/declare_interactions(list/into)
 	into += list(

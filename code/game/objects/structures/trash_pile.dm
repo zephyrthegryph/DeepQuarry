@@ -28,7 +28,6 @@
 	loot_table_type = /datum/loot_table/trash_pile
 	make_climbable()
 
-DECLARE_REF(/obj/structure/trash_pile, "mouse_nest", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mob_spawner/mouse_nest)
 
 /obj/structure/trash_pile/declare_interactions(list/into)

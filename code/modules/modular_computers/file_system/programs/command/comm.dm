@@ -18,7 +18,6 @@
 	..()
 	message_core = new
 
-DECLARE_REF(/datum/computer_file/program/comm, "message_core", OWNED, null)
 
 /datum/computer_file/program/comm/clone()
 	var/datum/computer_file/program/comm/temp = ..()

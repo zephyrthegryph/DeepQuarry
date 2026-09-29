@@ -14,8 +14,6 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-DECLARE_REF(/obj/item/tvcamera, "camera", OWNED, null)
-DECLARE_REF(/obj/item/tvcamera, "radio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "camera", /obj/machinery/camera/network/thunder)
 DECLARE_DEFAULT_CHILD(/obj/item/tvcamera, "radio", /obj/item/radio)
 DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
@@ -165,8 +163,6 @@ DECLARE_INTERACTIONS(/obj/item/tvcamera, INTERACT_USE(null, PROC_REF(interaction
 	var/showing_name
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bcamera", OWNED, null)
-DECLARE_REF(/obj/item/clothing/accessory/bodycam, "bradio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bcamera", /obj/machinery/camera/network/bodycamera)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/bodycam, "bradio", /obj/item/radio)
 DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECTS)

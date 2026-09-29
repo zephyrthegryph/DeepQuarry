@@ -360,4 +360,3 @@ DECLARE_APPEARANCE(/obj/structure/reflector, null, list(APPEARANCE_ANY = list(AP
 	. = ..()
 	src.air_contents.set_temperature(2.72)
 
-DECLARE_REF(/obj/structure/reflector, "deflector_overlay", OWNED, null)

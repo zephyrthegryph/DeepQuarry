@@ -61,4 +61,3 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	add_overlay(hud)
 
 // Contagion datums are shared (copied lists, one disease spread across many decals), never owned here.
-DECLARE_REF(/obj/effect/decal/cleanable, "viruses", STATIC, null)

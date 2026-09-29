@@ -13,7 +13,6 @@
 	src.owner_handle = om_handle(owner)
 
 // clears the client's back-reference (clients aren't datums).
-DECLARE_REF(/datum/interaction_menu, "owner_handle", BACK_HANDLE, "interaction_menu")
 
 /client/var/tmp/datum/interaction_menu/interaction_menu
 
@@ -152,4 +151,3 @@ DECLARE_REF(/datum/interaction_menu, "owner_handle", BACK_HANDLE, "interaction_m
 /datum/interaction_menu/proc/owner() as /client
 	return om_resolve(owner_handle)
 
-DECLARE_REF(/client, "interaction_menu", OWNED, null)

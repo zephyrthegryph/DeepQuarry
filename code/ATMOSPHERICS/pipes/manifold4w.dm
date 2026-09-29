@@ -260,5 +260,3 @@
 	node3 = null
 	node4 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/pipe/manifold4w, "node3", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipe/manifold4w, "node4", HELD, null)

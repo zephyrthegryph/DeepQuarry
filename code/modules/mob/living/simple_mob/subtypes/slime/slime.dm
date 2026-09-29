@@ -101,7 +101,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 	update_icon()
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob/slime, "hat", SPILL, null)
+OWN(/mob/living/simple_mob/slime, hat, OWN_SPILL)
 
 /mob/living/simple_mob/slime/ventcrawl_get_item_whitelist()
 	return list(

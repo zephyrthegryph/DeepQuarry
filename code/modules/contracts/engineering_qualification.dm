@@ -46,7 +46,6 @@
 	unit = _unit
 	event_types += CONTRACT_EVENT_FAX_ACCEPTED
 
-DECLARE_REF(/datum/contract_requirement/recorded_stages, "filter", OWNED, null)
 
 /datum/contract_requirement/recorded_stages/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING || !filter.matches(event, contract))

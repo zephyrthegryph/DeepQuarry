@@ -2004,8 +2004,7 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 	create_new_area(usr)
 	return
 
-DECLARE_REF(/mob/living/carbon/human, "wearing_rig", HELD, null)
+OWN(/mob/living/carbon/human, wearing_rig, OWN_CONTAINED)
 // Each side effect is created for this human and kept only here and by its finish() timer.
-DECLARE_REF(/mob/living/carbon/human, "genetic_side_effects", OWNED_LIST, null)
 
 DECLARE_DEFAULT_CHILD(/mob/living/carbon/human, "crafting", /datum/personal_crafting)

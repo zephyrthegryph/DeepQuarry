@@ -130,7 +130,6 @@
 		stationcrystal = TRUE // Looping Alarms
 	return ..()
 
-DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 
 // an undelaminated deletion is reported; contract telemetry ends.
 /obj/machinery/power/supermatter/on_destroy(force)

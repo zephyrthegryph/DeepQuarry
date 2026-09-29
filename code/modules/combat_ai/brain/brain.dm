@@ -86,9 +86,6 @@
 	rebuild_behaviors()
 	return ..()
 
-DECLARE_REF(/datum/ai_brain, "model", OWNED, null)
-DECLARE_REF(/datum/ai_brain, "primary_threat", BACK, null)
-DECLARE_REF(/datum/ai_brain, "holder", BACK, "ai_brain")
 
 // effective_behaviors maps behaviour type -> om_handle() of its source atom (or null): the brain owns no source.
 

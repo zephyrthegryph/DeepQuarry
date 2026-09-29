@@ -283,4 +283,3 @@
 		msg += "[amount < 0 ? "-" : "+"][val] [M.name]"
 	return msg.Join()
 
-DECLARE_REF(/obj/machinery/ore_silo, "materials", OWNED, null)

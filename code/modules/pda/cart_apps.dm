@@ -111,7 +111,6 @@
 	power_monitor = new(src)
 	. = ..()
 
-DECLARE_REF(/datum/data/pda/app/power, "power_monitor", OWNED, null)
 
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))

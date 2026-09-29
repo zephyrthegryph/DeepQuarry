@@ -19,8 +19,6 @@ GLOBAL_DATUM_INIT(chemistry_service, /datum/world_service/chemistry, new)
 	var/list/chemical_reagents = list()
 
 // Reaction decls and reagent definitions: round-long registry singletons.
-DECLARE_REF(/datum/world_service/chemistry, "chemical_reactions", STATIC, null)
-DECLARE_REF(/datum/world_service/chemistry, "chemical_reagents", STATIC, null)
 
 /datum/world_service/chemistry/initialize()
 	initialized = TRUE

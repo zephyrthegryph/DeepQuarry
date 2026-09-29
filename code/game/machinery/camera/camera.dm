@@ -80,7 +80,6 @@
 		interned[key] = shared
 	return shared
 
-DECLARE_REF(/obj/machinery/camera, "assembly", OWNED, null)
 
 // alarm handlers release it, motion sensing stops and viewers are kicked out.
 /obj/machinery/camera/on_destroy(force)

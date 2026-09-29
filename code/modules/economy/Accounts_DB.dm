@@ -308,7 +308,7 @@
 	P.info = text
 	state("The terminal prints out a report.")
 
-DECLARE_REF(/obj/machinery/account_database, "held_card", HELD, null)
+OWN(/obj/machinery/account_database, held_card, OWN_CONTAINED)
 
 /// LC-refs: the detailed_account_view this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/account_database/proc/detailed_account_view() as /datum/money_account

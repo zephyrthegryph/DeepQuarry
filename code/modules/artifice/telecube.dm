@@ -274,8 +274,6 @@ DECLARE_INTERACTIONS(/obj/item/telecube, INTERACT_ALT(null, PROC_REF(interaction
 /obj/item/telecube/precursor/mated/mirrorcolor
 	mirror_colors = TRUE
 
-DECLARE_REF(/obj/item/telecube, "glow", OWNED, null)
-DECLARE_REF(/obj/item/telecube, "charge", OWNED, null)
 
 /// LC-refs: the mate this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/telecube/proc/mate() as /obj/item/telecube

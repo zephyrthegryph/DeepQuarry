@@ -116,12 +116,8 @@
 /datum/node/expression/value/reference/ToString()
 	return "ref: [src.value()] ([src.value().type])"
 
-DECLARE_REF(/datum/node/expression/FunctionCall, "object", OWNED, null)
 
-DECLARE_REF(/datum/node/expression/value/variable, "id", OWNED, null)
-DECLARE_REF(/datum/node/expression/value/variable, "object", OWNED, null)
 
-DECLARE_REF(/datum/node/expression/op, "exp", OWNED, null)
 
 /// LC-refs: the value this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/node/expression/value/reference/proc/value() as /datum

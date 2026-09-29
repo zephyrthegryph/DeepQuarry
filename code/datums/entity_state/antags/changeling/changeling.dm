@@ -493,10 +493,6 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 	return changeling_state
 
 /mob/living/var/datum/changeling/changeling_state
-DECLARE_REF(/mob/living, "changeling_state", OWNED, null)
 
-DECLARE_REF(/datum/changeling, "owner", BACK, "changeling_state")
 
-DECLARE_REF(/datum/changeling, "absorbed_dna", OWNED_LIST, null)
 
-DECLARE_REF(/datum/changeling, "power_panel", OWNED, null)

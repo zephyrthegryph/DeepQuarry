@@ -50,4 +50,3 @@
 		if (hud_used.move_intent)
 			hud_used.move_intent.icon_state = intent == I_WALK ? "walking" : "running"
 
-DECLARE_REF(/mob/living, "aiming", OWNED, null)

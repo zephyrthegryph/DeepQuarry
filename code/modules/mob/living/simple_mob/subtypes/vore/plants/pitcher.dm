@@ -340,5 +340,4 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, INTE
 #undef PITCHER_SATED
 #undef PITCHER_HUNGRY
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "seed", STATIC, null)
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/pitcher_fruit, "pit", HELD, null)
+OWN(/obj/item/reagent_containers/food/snacks/pitcher_fruit, pit, OWN_CONTAINED)

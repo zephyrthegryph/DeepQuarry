@@ -676,4 +676,3 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		if(3)
 			return "[pick(bodies)][pick(suffixes)]"
 
-DECLARE_REF(/datum/affliction/contagion/engineered, "symptoms", OWNED_LIST, null)

@@ -31,7 +31,6 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/working/hoverpod, "ion_trail", /datum/effect/ef
 	. = ..()
 	ion_trail.set_up(src)
 
-DECLARE_REF(/obj/mecha/working/hoverpod, "ion_trail", OWNED, null)
 
 /obj/mecha/working/hoverpod/moved_inside(mob/living/carbon/human/H as mob)
 	. = ..(H)

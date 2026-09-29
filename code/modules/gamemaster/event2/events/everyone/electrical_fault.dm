@@ -95,4 +95,3 @@
 		playsound(A, 'sound/machines/chime.ogg', 50, 1)
 		apcs_emagged++
 
-DECLARE_REF(/datum/event2/event/electrical_fault, "valid_apcs", WEAK_LIST, null)

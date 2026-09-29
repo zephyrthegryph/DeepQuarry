@@ -490,4 +490,3 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/humanoid/pirate/captain, "shields",
 	pilot_type = /mob/living/simple_mob/humanoid/possessed/merc/feral	//Possessed rig suit piloting a mech. Tremble in fear
 	movement_shake_radius = 5
 
-DECLARE_REF(/mob/living/simple_mob/humanoid/pirate/captain, "shields", OWNED, null)

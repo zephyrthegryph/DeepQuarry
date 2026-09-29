@@ -21,7 +21,6 @@
 	nozzle = new nozzle_type(src)
 	nozzle_attached = 1
 
-DECLARE_REF(/obj/item/weldpack, "nozzle", OWNED, null)
 
 /obj/item/weldpack/dropped(mob/user, equipping, slot)
 	..()

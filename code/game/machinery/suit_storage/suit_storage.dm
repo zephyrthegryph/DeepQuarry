@@ -501,6 +501,3 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	dump_everything()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/suit_storage_unit, "SUIT", OWNED, null)
-DECLARE_REF(/obj/machinery/suit_storage_unit, "HELMET", OWNED, null)
-DECLARE_REF(/obj/machinery/suit_storage_unit, "MASK", OWNED, null)

@@ -22,7 +22,6 @@
 	max_known_targets = 5 + rand(1,3)
 	supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 
-DECLARE_REF(/obj/item/multitool/hacktool, "hack_state", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_state/default/must_hack)
 
 // stops observing its known targets' destruction.

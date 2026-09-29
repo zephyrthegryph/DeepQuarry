@@ -40,4 +40,3 @@
 /// empty proc to avoid warnings about unused variables. Call this proc on your canary in the stack it's watching.
 /datum/stack_canary/proc/use_variable()
 
-DECLARE_REF(/datum/stack_end_detector, "_canary", OWNED, null)

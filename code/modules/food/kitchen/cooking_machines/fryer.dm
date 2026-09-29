@@ -55,8 +55,6 @@
 	oil.add_reagent(REAGENT_ID_COOKINGOIL, optimal_oil*(1 - variance))
 	add_hose_connector(/datum/hose_connector/input/fryer)
 
-DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "fry_loop", OWNED, null)
-DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 
 /obj/machinery/appliance/cooker/fryer/examine(mob/user)
 	. = ..()

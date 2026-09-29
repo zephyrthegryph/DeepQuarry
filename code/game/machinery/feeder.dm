@@ -158,7 +158,7 @@
 		return 1
 	return ..()
 
-DECLARE_REF(/obj/machinery/feeder, "beaker", HELD, null)
+OWN(/obj/machinery/feeder, beaker, OWN_CONTAINED)
 
 /// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human

@@ -65,4 +65,3 @@ DECLARE_INTERACTIONS(/obj/item/nifrepairer, INTERACT_ITEM("Load", PROC_REF(inter
 		else
 			. += span_notice("\The [src] is empty and ready to accept nanopaste.")
 
-DECLARE_REF(/obj/item/nifrepairer, "supply", OWNED, null)

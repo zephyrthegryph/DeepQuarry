@@ -84,4 +84,3 @@
 /datum/material/stone/concrete/get_wall_texture()
 	return texture
 
-DECLARE_REF(/datum/material/stone/concrete, "texture", OWNED, null)

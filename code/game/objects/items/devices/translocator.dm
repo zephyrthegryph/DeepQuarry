@@ -47,13 +47,11 @@
 
 	rebuild_radial_images()
 
-DECLARE_REF(/obj/item/perfect_tele, "power_source", OWNED, null)
-DECLARE_REF(/obj/item/perfect_tele, "spk", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "spk", /datum/effect/effect/system/spark_spread)
 
 // its beacons forget it.
-DECLARE_REF(/obj/item/perfect_tele, "beacons", LIST_BACK, "tele_hand_handle")
+REL_PAIR_LIST(/obj/item/perfect_tele, beacons, tele_hand_handle)
 
 /obj/item/perfect_tele/update_icon()
 	if(!power_source)

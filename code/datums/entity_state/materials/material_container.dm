@@ -30,7 +30,6 @@
 	/// The atom this container belongs to (holds it in one of its vars; deleted with it).
 	var/atom/owner
 
-DECLARE_REF(/datum/material_container, "owner", BACK, null)
 
 /**
  * Sets up the event hooks and fills the list of materials with the appropriate references.

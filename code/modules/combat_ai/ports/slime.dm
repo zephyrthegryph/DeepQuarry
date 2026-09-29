@@ -12,7 +12,6 @@
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/slime/xenobio, "slime_state", /datum/slime_state)
 
-DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "slime_state", OWNED, null)
 
 /mob/living/simple_mob/slime/hear_say(list/message_pieces, verb = "says", italics = 0, mob/speaker = null, sound/speech_sound, sound_vol)
 	. = ..()

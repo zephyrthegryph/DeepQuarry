@@ -353,7 +353,6 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 			L.apply_body_effect(/datum/body_effect/crusher_mark, 30 SECONDS, hammer_synced(), TRUE)
 	..()
 
-DECLARE_REF(/obj/item/kinetic_crusher/machete/gauntlets, "offhand", OWNED, null)
 
 /// LC-refs: the linked this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/offhand/crushergauntlets/proc/linked() as /obj/item/kinetic_crusher/machete/gauntlets

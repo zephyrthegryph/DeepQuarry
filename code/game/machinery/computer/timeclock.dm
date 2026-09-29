@@ -24,7 +24,7 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/radio/intercom)
 
-DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
+OWN(/obj/machinery/computer/timeclock, card, OWN_SPILL)
 
 /obj/machinery/computer/timeclock/update_icon()
 	if(inoperable())
@@ -295,4 +295,4 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 	dir = 4
 	pixel_x = -26
 
-DECLARE_REF(/obj/machinery/computer/timeclock, "announce", HELD, null)
+OWN(/obj/machinery/computer/timeclock, announce, OWN_CONTAINED)

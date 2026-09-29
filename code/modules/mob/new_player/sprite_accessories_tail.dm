@@ -1870,5 +1870,3 @@
 	extra_overlay = "chu_markings"
 	extra_overlay2 = "chu_tipmarkings"
 
-DECLARE_REF(/datum/sprite_accessory/tail, "clip_mask_icon", STATIC, null)
-DECLARE_REF(/datum/sprite_accessory/tail, "clip_mask", OWNED, null)

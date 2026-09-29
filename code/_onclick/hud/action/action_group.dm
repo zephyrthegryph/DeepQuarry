@@ -26,8 +26,6 @@
 	actions = list()
 	src.owner_handle = om_handle(owner)
 
-DECLARE_REF(/datum/action_group, "landing", OWNED, null)
-DECLARE_REF(/datum/action_group, "actions", OWNED_LIST, null)
 
 /datum/action_group/proc/insert_action(atom/movable/screen/action, index)
 	if(action in actions)

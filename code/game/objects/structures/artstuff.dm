@@ -778,7 +778,5 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 		loaded = FALSE
 		log_and_message_admins(span_notice("[key_name_admin(user)] has deleted persistent painting made by [author]."))
 
-DECLARE_REF(/obj/structure/easel, "painting", HELD, null)
-DECLARE_REF(/obj/item/canvas, "generated_icon", OWNED, null)
-DECLARE_REF(/obj/item/paint_brush, "color_drop", OWNED, null)
-DECLARE_REF(/obj/structure/sign/painting, "current_canvas", HELD, null)
+OWN(/obj/structure/easel, painting, OWN_CONTAINED)
+OWN(/obj/structure/sign/painting, current_canvas, OWN_CONTAINED)

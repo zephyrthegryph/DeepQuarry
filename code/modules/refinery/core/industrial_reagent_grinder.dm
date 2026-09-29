@@ -18,7 +18,7 @@
 	update_neighbours()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/reagent_refinery/grinder, "holdingitems", SPILL_LIST, null)
+OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
 
 /obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
 	// Old attackby tried the parent's attackby FIRST, only falling to its own

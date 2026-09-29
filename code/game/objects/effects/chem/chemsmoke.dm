@@ -55,7 +55,6 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	chemholder = new/obj()
 	chemholder.create_reagents(500)
 
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, null)
 
 //Sets up the chem smoke effect
 // Calculates the max range smoke can travel, then gets all turfs in that view range.
@@ -240,7 +239,4 @@ DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "chemholder", OWNED, 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/effect/effect/system/smoke_spread/chem/spores/proc/seed() as /datum/seed
 	return seed_static
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem/spores, "seed_static", STATIC, null)
 
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "targetTurfs", STATIC, null)
-DECLARE_REF(/datum/effect/effect/system/smoke_spread/chem, "wallList", STATIC, null)

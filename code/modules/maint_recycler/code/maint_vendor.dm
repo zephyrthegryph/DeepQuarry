@@ -62,8 +62,6 @@
 	else
 		log_and_message_admins("[src] tried to move itself, but there was nowhere for it to go! (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", null)
 
-DECLARE_REF(/obj/machinery/maint_vendor, "monitor_screen", OWNED, null)
-DECLARE_REF(/obj/machinery/maint_vendor, "product_datums", OWNED_LIST, null)
 
 /obj/machinery/maint_vendor/declare_interactions(list/into)
 	into += list(

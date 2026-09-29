@@ -16,7 +16,6 @@
 	var/spore_cooldown = 8 SECONDS
 
 // its spores lose their factory or nest.
-DECLARE_REF(/obj/structure/blob/factory, "spores", LIST_BACK, list("factory", "nest"))
 
 /obj/structure/blob/factory/pulsed()
 	. = ..()

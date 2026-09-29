@@ -23,8 +23,6 @@
 	var/datum/asset/simple/live_shell_assets
 	var/datum/asset/simple/namespaced/live_chunk_assets
 
-DECLARE_REF(/datum/tgui_asset_generation, "live_shell_assets", OWNED, null)
-DECLARE_REF(/datum/tgui_asset_generation, "live_chunk_assets", OWNED, null)
 
 /datum/tgui_asset_generation/proc/get_default_geometry(interface_name)
 	var/list/geometry = LAZYACCESS(window_geometry_manifest, interface_name)

@@ -12,7 +12,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/crew, "crew_monitor", /datum/tgui_module/crew_monitor)
 
-DECLARE_REF(/obj/machinery/computer/crew, "crew_monitor", OWNED, null)
 
 /obj/machinery/computer/crew/declare_interactions(list/into)
 	into += list(

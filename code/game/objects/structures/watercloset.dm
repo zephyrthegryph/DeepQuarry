@@ -505,8 +505,6 @@
 
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 
-DECLARE_REF(/obj/machinery/shower, "soundloop", OWNED, null)
-DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 
 /obj/structure/toilet/crowbar_act(mob/user, obj/item/I)
 	to_chat(user, span_notice("You start to [cistern ? "replace the lid on the cistern" : "lift the lid off the cistern"]."))
@@ -1347,9 +1345,8 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 	B.special_entrance_sound = 'sound/machines/blender.ogg'
 	B.recycling = TRUE
 
-DECLARE_REF(/obj/structure/toilet, "teleplumb_crystal", HELD, null)
+OWN(/obj/structure/toilet, teleplumb_crystal, OWN_CONTAINED)
 
-DECLARE_REF(/obj/structure/toilet, "bin", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/structure/toilet, "bin", null)
 
 /// LC-refs: muffinmonster -- an OM handle (om_handle()), so it reads null once that is deleted.

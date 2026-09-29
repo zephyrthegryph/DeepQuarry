@@ -1189,6 +1189,3 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 /mob/observer
 	low_priority = TRUE
 
-DECLARE_REF(/mob/observer, "body_backup", OWNED, null)
-DECLARE_REF(/mob/observer/dead, "visualnet", STATIC, null)
-DECLARE_REF(/mob/observer/dead, "hud", HELD, null)

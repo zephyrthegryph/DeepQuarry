@@ -204,6 +204,9 @@ GLOBAL_LIST_EMPTY(om_handle_free)
 	var/list/call_args = length(args) > 3 ? args.Copy(4) : null
 	if(isnull(E))
 		E = om_global_owner()
+	if(E.datum_flags & DF_DESTROYING)
+		OWN_REPORT("refused a timer ([proc_ref]) on [E.type], which is being destroyed")
+		return 0
 	var/datum/om/rec/rec = om_rec_of(E)
 	if(!rec || rec.torn_down)
 		return 0
@@ -428,75 +431,103 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 // at record time, om_resolve_captured() at fire time; a deleted argument drops
 // the call with a log_qdel() line. Synchronous paths never capture.
 //
-// Captured: each datum argument, and each datum inside a list argument one
-// level deep (a member, or the value under a text key). The list is copied
-// only when it holds a datum. A datum used as an assoc *key* stays a plain
-// reference (rare; re-keying would lose its value).
+// Captured deeply: every datum anywhere in the arguments -- an argument, a list member, an assoc
+// value, at any depth -- becomes a handle marker, list(OM_CAPTURED_MARK, handle), in a copy of the
+// list that held it. A datum used as an assoc *key* can't be re-keyed without losing its value,
+// so capture refuses it (reported): pass the pair as a value instead. A list holding no datum is
+// kept as is (not copied).
 
-/// Captures `call_args`' datums as handles. Returns list(captured, positions),
-/// or null when an argument is already deleted. A position is an argument
-/// index, or list(index, list(member indexes / text keys)) for a list argument.
+#define OM_CAPTURED_MARK "\[om-handle]"
+#define OM_CAPTURE_MAX_DEPTH 8
+
+/// Captures `call_args`' datums as handles, deeply. Returns list(captured, positions): positions
+/// are the argument indexes holding a handle or a list with handles in it. Null when an argument
+/// is already deleted or can't be captured (a datum assoc key).
 /proc/om_capture_args(list/call_args)
 	var/list/captured = call_args ? call_args.Copy() : null
 	var/list/positions = null
 	for(var/i in 1 to length(captured))
-		var/value = captured[i]
-		if(isdatum(value))
-			var/h = om_handle(value)
-			if(isnull(h))
-				return null
-			captured[i] = h
+		var/list/result = om_capture_value(captured[i], 0)
+		if(!result)
+			return null
+		if(result[2])
+			captured[i] = result[1]
 			LAZYADD(positions, i)
-		else if(islist(value))
-			var/list/inner = value
-			var/list/copy = null
-			var/list/inner_positions = null
-			for(var/j in 1 to length(inner))
-				var/member = inner[j]
-				var/datum/target = null
-				var/where = null
-				if(istext(member))
-					var/keyed = inner[member]
-					if(isdatum(keyed))
-						target = keyed
-						where = member
-				else if(isdatum(member) && isnull(inner[member]))
-					target = member
-					where = j
-				if(!target)
-					continue
-				var/h = om_handle(target)
-				if(isnull(h))
-					return null
-				copy ||= inner.Copy()
-				copy[where] = h
-				LAZYADD(inner_positions, where)
-			if(copy)
-				captured[i] = copy
-				LAZYADD(positions, list(list(i, inner_positions)))
 	return list(captured, positions)
 
-/// Resolves captured handles in place. FALSE if any is gone (or, with
-/// `nulls_for_gone`, passes null for it instead: cleanup that must still run).
+/// list(captured value, changed) for one value, or null when it can't be captured.
+/proc/om_capture_value(value, depth)
+	if(isdatum(value))
+		var/h = om_handle(value)
+		if(isnull(h))
+			return null
+		return list(list(OM_CAPTURED_MARK, h), TRUE)
+	if(!islist(value))
+		return list(value, FALSE)
+	if(depth >= OM_CAPTURE_MAX_DEPTH)
+		OWN_REPORT("om_capture_args: an argument nests lists deeper than [OM_CAPTURE_MAX_DEPTH]")
+		return null
+	var/list/L = value
+	var/list/copy = null
+	for(var/j in 1 to length(L))
+		var/key = L[j]
+		if(isdatum(key) && !isnull(L[key]))
+			var/datum/K = key
+			OWN_REPORT("om_capture_args: a deferred call's argument uses [K.type] as an assoc key; pass it as a value")
+			return null
+		var/list/key_result = om_capture_value(key, depth + 1)
+		if(!key_result)
+			return null
+		var/assoc = (istext(key) || isdatum(key)) ? L[key] : null
+		var/list/value_result = isnull(assoc) ? null : om_capture_value(assoc, depth + 1)
+		if(!isnull(assoc) && !value_result)
+			return null
+		if(key_result[2] || value_result?[2])
+			if(!copy)
+				copy = L.Copy()
+			if(key_result[2])
+				copy[j] = key_result[1]
+			else if(value_result?[2])
+				copy[key] = value_result[1]
+	if(copy)
+		return list(copy, TRUE)
+	return list(L, FALSE)
+
+/// Resolves captured handles in place. FALSE if any is gone (or, with `nulls_for_gone`, passes
+/// null for it instead: cleanup that must still run). The record keeps its own copy.
 /proc/om_resolve_captured(list/captured, list/positions, nulls_for_gone = FALSE)
-	for(var/p in positions)
-		if(isnum(p))
-			var/datum/D = om_resolve(captured[p])
-			if(!D && !nulls_for_gone)
-				return FALSE
-			captured[p] = D
-			continue
-		var/list/entry = p
-		var/i = entry[1]
-		var/list/inner = captured[i]
-		inner = inner.Copy() // the record keeps its handles
-		for(var/where in entry[2])
-			var/datum/D = om_resolve(inner[where])
-			if(!D && !nulls_for_gone)
-				return FALSE
-			inner[where] = D
-		captured[i] = inner
+	for(var/i in positions)
+		var/list/result = om_resolve_value(captured[i], nulls_for_gone)
+		if(!result)
+			return FALSE
+		captured[i] = result[1]
 	return TRUE
+
+/// list(resolved value) for one captured value, or null when a handle no longer resolves.
+/proc/om_resolve_value(value, nulls_for_gone)
+	if(!islist(value))
+		return list(value)
+	var/list/L = value
+	if(length(L) == 2 && L[1] == OM_CAPTURED_MARK)
+		var/datum/D = om_resolve(L[2])
+		if(!D && !nulls_for_gone)
+			return null
+		return list(D)
+	var/list/out = L.Copy()
+	for(var/j in 1 to length(out))
+		var/key = out[j]
+		var/assoc = istext(key) ? out[key] : null
+		if(islist(key))
+			var/list/key_result = om_resolve_value(key, nulls_for_gone)
+			if(!key_result)
+				return null
+			out[j] = key_result[1]
+		else if(islist(assoc))
+			var/list/value_result = om_resolve_value(assoc, nulls_for_gone)
+			if(!value_result)
+				return null
+			out[key] = value_result[1]
+	return list(out)
 
 /datum/om/behaviour/internal/timers
 	name = "om: timers"
@@ -553,30 +584,22 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 		var/same = TRUE
 		for(var/j in 1 to length(call_args))
 			var/arg = call_args[j]
-			if(captured[j] != arg && (!isdatum(arg) || captured[j] != om_handle(arg)) && !om_captured_list_matches(captured[j], arg))
+			if(captured[j] != arg && !om_captured_matches(captured[j], arg))
 				same = FALSE
 				break
 		if(same)
 			return i
 	return 0
 
-/// A captured list argument (datums as handles) against the caller's list.
-/proc/om_captured_list_matches(captured_value, arg)
-	if(!islist(captured_value) || !islist(arg))
+/// TRUE when a captured argument is what capturing `arg` now would give (datums as handles).
+/proc/om_captured_matches(captured_value, arg)
+	var/list/result = om_capture_value(arg, 0)
+	if(!result)
 		return FALSE
-	var/list/C = captured_value
-	var/list/A = arg
-	if(length(C) != length(A))
-		return FALSE
-	for(var/j in 1 to length(A))
-		var/member = A[j]
-		if(C[j] != member && (!isdatum(member) || C[j] != om_handle(member)))
-			return FALSE
-		if(istext(member))
-			var/value = A[member]
-			if(C[member] != value && (!isdatum(value) || C[member] != om_handle(value)))
-				return FALSE
-	return TRUE
+	var/now = result[1]
+	if(!islist(now) || !islist(captured_value))
+		return now == captured_value
+	return json_encode(now) == json_encode(captured_value)
 
 /// om_after(), unless the same call (owner, proc, arguments) is already pending: then
 /// nothing, and the pending timer's id is returned. (Was TIMER_UNIQUE.)

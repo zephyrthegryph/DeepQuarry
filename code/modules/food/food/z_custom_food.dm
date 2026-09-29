@@ -117,7 +117,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTER
 		name = new_name
 	return new_name
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/customizable, "ingredients", OWNED_LIST, null)
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/drawTopping()
 	var/image/I = topping
@@ -287,5 +286,3 @@ DECLARE_INTERACTIONS(/obj/item/trash/bowl, INTERACT_ITEM(null, PROC_REF(interact
 
 #undef INGREDIENT_LIMIT
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/customizable, "topping", OWNED, null)
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/customizable, "filling", OWNED, null)

@@ -141,7 +141,3 @@
 	return
 
 // The synths are the robot module's (DECLARE_REF(..., OWNED_LIST) "synths").
-DECLARE_REF(/obj/item/matter_decompiler, "metal", HELD, null)
-DECLARE_REF(/obj/item/matter_decompiler, "glass", HELD, null)
-DECLARE_REF(/obj/item/matter_decompiler, "wood", HELD, null)
-DECLARE_REF(/obj/item/matter_decompiler, "plastic", HELD, null)

@@ -389,5 +389,4 @@ DECLARE_INTERACTIONS(/mob/living/bot/mulebot, \
 /mob/living/bot/mulebot/handle_micro_bump_other() // Can't drive over micros or macros regardless of intent.
 	return 0
 
-DECLARE_REF(/mob/living/bot/mulebot, "load", HELD, null)
-DECLARE_REF(/mob/living/bot/mulebot, "home", STATIC, null)
+OWN(/mob/living/bot/mulebot, load, OWN_CONTAINED)

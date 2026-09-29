@@ -87,8 +87,6 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	if (finish_callback)
 		GLOB.runechat_service.message_queue -= finish_callback
 
-DECLARE_REF(/datum/chatmessage, "message", OWNED, null)
-DECLARE_REF(/datum/chatmessage, "finish_callback", OWNED, null)
 
 /**
  * Generates a chat message image representation

@@ -192,9 +192,7 @@
 	icon_state = newstate
 	dir = newdir
 
-DECLARE_REF(/datum/sun_holder, "sun", OWNED, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/sun_holder/proc/our_planet() as /datum/planet
 	return our_planet_static
-DECLARE_REF(/datum/sun_holder, "our_planet_static", STATIC, null)

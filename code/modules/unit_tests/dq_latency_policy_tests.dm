@@ -295,4 +295,3 @@
 		return FALSE
 	return TRUE
 
-DECLARE_REF(/datum/unit_test/dq_latency_fuzz, "made", OWNED_LIST, null)

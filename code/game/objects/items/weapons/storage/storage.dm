@@ -142,7 +142,6 @@
 
 	calibrate_size()
 
-DECLARE_REF(/obj/item/storage, "hud", OWNED, null)
 
 // closes on everyone looking into it and leaves its wearer.
 /obj/item/storage/on_destroy(force)
@@ -721,9 +720,6 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	GLOB.storage_hud_count++
 	layout()
 
-DECLARE_REF(/datum/storage_hud, "closer", OWNED, null)
-DECLARE_REF(/datum/storage_hud, "catchers", OWNED_LIST, null)
-DECLARE_REF(/datum/storage_hud, "backdrop", OWNED_LIST, null)
 
 // shown items lose their count text; the global hud count drops.
 /datum/storage_hud/on_destroy(force)
@@ -1066,5 +1062,3 @@ EXTEND_INTERACTIONS(/obj/item/storage, \
 	INTERACT_VERB("Empty Contents", PROC_REF(quick_empty_effect), REQ_ON(PRED_TARGET, /obj/item/storage/proc/pred_can_quick_empty, "it can't be emptied that way")), \
 )
 
-DECLARE_REF(/datum/storage_hud, "storage", BACK, "hud")
-DECLARE_REF(/datum/storage_hud, "shown", HELD, null)

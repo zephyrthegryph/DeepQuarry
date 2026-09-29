@@ -117,5 +117,3 @@ GLOBAL_DATUM_INIT(all_uplink_selection, /datum/uplink_random_selection/all, new)
 		to_chat(world, "[key] - [GLOB.uplink.items_assoc[key]]")
 #endif
 
-DECLARE_REF(/datum/uplink_random_selection, "items", OWNED_LIST, null)
-DECLARE_REF(/datum/uplink_random_selection, "all_items", OWNED_LIST, null)

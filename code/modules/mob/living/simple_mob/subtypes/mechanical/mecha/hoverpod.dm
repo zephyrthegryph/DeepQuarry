@@ -41,7 +41,6 @@
 	ion_trail.start()
 	return ..()
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/hoverpod, "ion_trail", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/Process_Spacemove(check_drift = 0)
 	return TRUE

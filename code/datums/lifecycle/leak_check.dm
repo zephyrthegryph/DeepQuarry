@@ -12,7 +12,7 @@
 // which still reaches D back through one of its own vars: a cycle among
 // deleted objects. In strict mode it also lists any non-tmp var still holding
 // any datum, deleted or live (noisy on legacy types; a debugging aid). Exempt: BYOND's built-in vars, the lifecycle bookkeeping vars below,
-// vars equal to their initial value, and DECLARE_REF(..., KEEP) vars. Text (handles), numbers
+// vars equal to their initial value, and KEEP_AFTER_DESTROY vars. Text (handles), numbers
 // and type paths never match.
 //
 // Test builds run it on every destroy and report each line as
@@ -45,7 +45,7 @@ GLOBAL_VAR_INIT(dq_lifecycle_leak_check, 0)
 	return names
 
 /// Per type: the names of D's vars worth looking at (not ignored, not
-/// DECLARE_REF(..., KEEP)), and which of them are tmp (issaved() is FALSE for tmp, const,
+/// KEEP_AFTER_DESTROY), and which of them are tmp (issaved() is FALSE for tmp, const,
 /// static and global vars). Cached once per type.
 /proc/dq_lifecycle_leak_candidates(datum/D)
 	return CACHED_KEY(lifecycle_leak_candidates, D.type, D)
@@ -54,13 +54,13 @@ DECLARE_SHARED_CACHE(lifecycle_leak_candidates, GLOBAL_PROC_REF(build_lifecycle_
 
 /proc/build_lifecycle_leak_candidates(datum/D)
 	var/list/ignored = dq_lifecycle_leak_ignored_names()
-	var/list/links = dq_lifecycle_link_table(D)
-	var/list/keep = links[REFKIND_KEEP]
-	var/list/static_names = links[REFKIND_STATIC]
+	// KEEP_AFTER_DESTROY vars are skipped. Shared vars are not skipped by name: a held value is
+	// skipped only when it is proven a registered instance (dq_lifecycle_leak_datum()).
+	var/list/keep = own_table_of(D).keep_vars
 	var/list/names = list()
 	var/list/tmp_names = list()
 	for(var/name in D.vars)
-		if(ignored[name] || (keep && (name in keep)) || (static_names && (name in static_names)))
+		if(ignored[name] || (keep && (name in keep)))
 			continue
 		names += name
 		if(!issaved(D.vars[name]))
@@ -85,6 +85,8 @@ DECLARE_SHARED_CACHE(lifecycle_leak_candidates, GLOBAL_PROC_REF(build_lifecycle_
 /// datum that still reaches D back is a cycle between deleted objects (never
 /// freed, invisible to a reference search); strict also reports any held datum.
 /proc/dq_lifecycle_leak_datum(datum/D, datum/thing, strict)
+	if(registry_has(thing))
+		return null
 	if(QDELETED(thing))
 		var/back = dq_lifecycle_leak_backref(thing, D)
 		if(back)

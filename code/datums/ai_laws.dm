@@ -299,12 +299,7 @@
 	if(index)
 		state[index] = do_state
 
-DECLARE_REF(/datum/ai_laws, "zeroth_law", OWNED, null)
-DECLARE_REF(/datum/ai_laws, "zeroth_law_borg", OWNED, null)
 
-DECLARE_REF(/datum/ai_laws, "inherent_laws", OWNED_LIST, null)
-DECLARE_REF(/datum/ai_laws, "supplied_laws", OWNED_LIST, null)
-DECLARE_REF(/datum/ai_laws, "ion_laws", OWNED_LIST, null)
 
 /datum/ai_laws/declared_cache_vars()
 	var/list/L = ..()

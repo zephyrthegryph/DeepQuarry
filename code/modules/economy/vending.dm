@@ -189,8 +189,6 @@ GLOBAL_LIST_EMPTY(vending_products)
 		for(var/datum/stored_item/R as anything in product_records)
 			R.forget(thing)
 
-DECLARE_REF(/obj/machinery/vending, "coin", OWNED, null)
-DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
 /obj/machinery/vending/ex_act(severity)
 	if(severity == 3 && prob(25))

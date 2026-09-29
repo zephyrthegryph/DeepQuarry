@@ -893,9 +893,8 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 
 /////////////////////////// DNA MACHINES
 
-DECLARE_REF(/datum/dna2/record, "dna", OWNED, null)
-DECLARE_REF(/obj/machinery/dna_scannernew, "beaker", HELD, null)
-DECLARE_REF(/obj/machinery/computer/scan_consolenew, "disk", HELD, null)
+OWN(/obj/machinery/dna_scannernew, beaker, OWN_CONTAINED)
+OWN(/obj/machinery/computer/scan_consolenew, disk, OWN_CONTAINED)
 
 /// LC-refs: connected -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/scan_consolenew/proc/connected() as /obj/machinery/dna_scannernew

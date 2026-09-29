@@ -790,7 +790,6 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/expedition_teardown_job/proc/controller() as /datum/world_service/expedition
 	return controller_static
-DECLARE_REF(/datum/expedition_teardown_job, "controller_static", STATIC, null)
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_teardown_job/proc/site() as /datum/expedition_site
@@ -812,4 +811,3 @@ DECLARE_REF(/datum/expedition_teardown_job, "controller_static", STATIC, null)
 /datum/om/behaviour/world/expedition/service()
 	return GLOB.expedition_service
 
-DECLARE_REF(/datum/world_service/expedition, "sites", OWNED_VALUES, null)

@@ -501,9 +501,8 @@
 		for(var/reactant in react_pool)
 			AddParticles(reactant, react_pool[reactant])
 
-DECLARE_REF(/obj/effect/fusion_em_field, "particle_catchers", OWNED_LIST, null)
-DECLARE_REF(/obj/effect/fusion_em_field, "owned_core", PAIR, "owned_field")
-DECLARE_REF(/obj/machinery/power/fusion_core, "owned_field", PAIR, "owned_core")
+REL_PAIR(/obj/effect/fusion_em_field, owned_core, owned_field)
+REL_PAIR(/obj/machinery/power/fusion_core, owned_field, owned_core)
 
 // a collapsing field radiates everything it held.
 /obj/effect/fusion_em_field/on_destroy(force)

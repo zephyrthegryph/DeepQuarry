@@ -181,8 +181,6 @@
 		stmt.parameters+=P
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
-DECLARE_REF(/datum/n_Parser, "blocks", OWNED, null)
-DECLARE_REF(/datum/n_Parser, "global_block", OWNED, null)
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/n_Parser/proc/curToken() as /datum/token
@@ -196,9 +194,5 @@ DECLARE_REF(/datum/n_Parser, "global_block", OWNED, null)
 /datum/n_Parser/nS_Parser/proc/options() as /datum/n_scriptOptions/nS_Options
 	return options_ref
 
-DECLARE_REF(/datum/n_Parser, "errors", OWNED_LIST, null)
 
 // Cursors into the token stream and the tree being built; options are the caller's.
-DECLARE_REF(/datum/n_Parser, "curToken_ref", BACK, null)
-DECLARE_REF(/datum/n_Parser, "curBlock_ref", BACK, null)
-DECLARE_REF(/datum/n_Parser/nS_Parser, "options_ref", BACK, null)

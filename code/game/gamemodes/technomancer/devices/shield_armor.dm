@@ -30,7 +30,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/clothing/suit/armor/shield, "spark_system", /dat
 	. = ..()
 	spark_system.set_up(5, 0, src)
 
-DECLARE_REF(/obj/item/clothing/suit/armor/shield, "spark_system", OWNED, null)
 
 /obj/item/clothing/suit/armor/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//Since this is a pierce of armor that is passive, we do not need to check if the user is incapacitated.

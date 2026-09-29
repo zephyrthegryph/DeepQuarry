@@ -33,7 +33,6 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/pump, "cell", OWNED, null)
 
 /obj/machinery/pump/RefreshParts()
 	var/pump_power = get_part_rating(/obj/item/stock_parts/manipulator) // scaling off the manipulator and not motor because motors have no upgrades

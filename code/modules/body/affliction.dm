@@ -147,9 +147,6 @@
 	/// Active stage id (see get_stages()).
 	var/stage
 
-DECLARE_REF(/datum/affliction, "body", BACK, null)
-DECLARE_REF(/datum/affliction, "owner", BACK, null)
-DECLARE_REF(/datum/affliction, "location", BACK, null)
 
 /datum/affliction/New(location)
 	..()

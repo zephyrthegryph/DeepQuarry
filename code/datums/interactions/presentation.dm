@@ -110,4 +110,3 @@
 		screen -= screentip
 		screentip.maptext = null
 
-DECLARE_REF(/client, "screentip", OWNED, null)

@@ -53,7 +53,6 @@
 	filter = new
 	diversity_targets = list()
 
-DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 
 /datum/contract_opportunity_signal/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -233,7 +232,6 @@ DECLARE_REF(/datum/contract_opportunity_signal, "filter", OWNED, null)
 	context_fields = list()
 	configure()
 
-DECLARE_REF(/datum/contract_opportunity_rule, "signals", OWNED_LIST, null)
 
 /datum/contract_opportunity_rule/proc/configure()
 	return

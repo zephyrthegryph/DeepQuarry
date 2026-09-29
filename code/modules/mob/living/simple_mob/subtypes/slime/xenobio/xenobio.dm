@@ -263,4 +263,3 @@
 		lines += additional_information
 	return lines.Join("\n")
 
-DECLARE_REF(/mob/living/simple_mob/slime/xenobio, "victim", HELD, null)

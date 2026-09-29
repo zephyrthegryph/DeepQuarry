@@ -129,4 +129,4 @@
 	operating = FALSE
 	cut_overlay("fab-active")
 
-DECLARE_REF(/obj/machinery/robotic_fabricator, "being_built", HELD, null)
+OWN(/obj/machinery/robotic_fabricator, being_built, OWN_CONTAINED)

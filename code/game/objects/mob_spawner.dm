@@ -29,7 +29,7 @@
 DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 
 // its spawned mobs lose their nest.
-DECLARE_REF(/obj/structure/mob_spawner, "spawned_mobs", LIST_BACK, "nest")
+REL_PAIR_LIST(/obj/structure/mob_spawner, spawned_mobs, nest)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()
@@ -331,4 +331,3 @@ DECLARE_APPEARANCE(/obj/structure/mob_spawner/mouse_nest/mousehole, null, list(A
 	spawn_delay = 300
 	spawn_types = list(/mob/living/simple_mob/mechanical/hivebot/swarm = 200, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/basic = 50, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/laser = 25, /mob/living/simple_mob/mechanical/hivebot/ranged_damage/ion = 10, /mob/living/simple_mob/mechanical/hivebot/tank/meatshield = 10)
 
-DECLARE_REF(/obj/structure/mob_spawner/scanner, "prox", OWNED, null)

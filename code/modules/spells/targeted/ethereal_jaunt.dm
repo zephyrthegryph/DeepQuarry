@@ -93,7 +93,7 @@
 	. = ..()
 	last_valid_turf_handle = om_handle(get_turf(loc))
 
-DECLARE_REF(/obj/effect/dummy/spell_jaunt, "contents", SPILL_LIST, null)
+OWN(/obj/effect/dummy/spell_jaunt, contents, OWN_SPILL)
 
 /obj/effect/dummy/spell_jaunt/relaymove(mob/user, direction)
 	if (!src.canmove || reappearing) return

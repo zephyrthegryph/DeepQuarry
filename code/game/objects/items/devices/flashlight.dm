@@ -46,7 +46,6 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	. = ..()
 	update_brightness()
 
-DECLARE_REF(/obj/item/flashlight, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flashlight, "cell", "cell_type") // unpowered subtypes clear cell_type
 
 /obj/item/flashlight/get_cell()

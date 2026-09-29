@@ -183,7 +183,6 @@
 	..(user, message, title, buttons, timeout, autofocus, ui_state)
 	src.callback = callback
 
-DECLARE_REF(/datum/tgui_alert/async, "callback", OWNED, null)
 
 /datum/tgui_alert/async/set_choice(choice)
 	. = ..()
@@ -196,4 +195,3 @@ DECLARE_REF(/datum/tgui_alert/async, "callback", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui_alert/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui_alert, "state_static", STATIC, null)

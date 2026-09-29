@@ -138,5 +138,4 @@ EXTEND_INTERACTIONS(/obj/machinery/optable, \
 		return 0
 	return 1
 
-DECLARE_REF(/obj/machinery/optable, "victim", HELD, null)
-DECLARE_REF(/obj/machinery/optable, "computer", PAIR, "table")
+REL_PAIR(/obj/machinery/optable, computer, table)

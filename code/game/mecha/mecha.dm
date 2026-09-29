@@ -314,8 +314,7 @@ DECLARE_PERIODIC(/obj/mecha, PERIODIC_SLOW)
 /datum/om/relation/slot/mecha_cargo/drop_resolver(atom/holder, atom/movable/thing, atom/drop)
 	return get_turf(holder)
 
-DECLARE_REF(/obj/mecha, "minihud", OWNED, null)
-DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
+REL_PAIR(/obj/mecha, minihud, owner_mech)
 
 // the mech leaves wreckage with salvage, or drops its equipment; pilot slot is holder-resolved.
 /obj/mecha/atom_destruction(damage_flag)
@@ -2705,29 +2704,10 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 			return "halloss"
 	return "brute"
 
-DECLARE_REF(/obj/mecha, "spark_system", OWNED, null)
-DECLARE_REF(/obj/mecha, "smoke_system", OWNED, null)
-DECLARE_REF(/obj/mecha, "radio", OWNED, null)
-DECLARE_REF(/obj/mecha, "active_jetpack", HELD, null)
-DECLARE_REF(/obj/mecha, "energy_relay", HELD, null)
-DECLARE_REF(/obj/mecha, "eject_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "internals_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "lights_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "stats_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "strafing_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "defence_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "overload_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "smoke_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "zoom_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "thrusters_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "cycle_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "switch_damtype_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "phasing_action", OWNED, null)
-DECLARE_REF(/obj/mecha, "cloak_action", OWNED, null)
+OWN(/obj/mecha, active_jetpack, OWN_CONTAINED)
+OWN(/obj/mecha, energy_relay, OWN_CONTAINED)
 // cell and internal_tank become wreckage salvage in Destroy(); selected is one of the mounted equipment;
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()).
-DECLARE_REF(/obj/mecha, "cell", HELD, null)
-DECLARE_REF(/obj/mecha, "internal_tank", HELD, null)
-DECLARE_REF(/obj/mecha, "connected_port", HELD, null)
-DECLARE_REF(/obj/mecha, "selected", HELD, null)
-DECLARE_REF(/obj/mecha, "cabin_air", HELD, null)
+OWN(/obj/mecha, cell, OWN_CONTAINED)
+OWN(/obj/mecha, internal_tank, OWN_CONTAINED)
+OWN(/obj/mecha, selected, OWN_CONTAINED)

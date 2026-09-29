@@ -35,7 +35,6 @@
 	helmets = list()
 	..()
 
-DECLARE_REF(/datum/shuttle/autodock/web_shuttle, "web_master", OWNED, null)
 
 /datum/shuttle/autodock/web_shuttle/current_dock_target()
 	// TODO - Probably don't even need to override this right?  Debug testing code below will check!

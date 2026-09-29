@@ -23,7 +23,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 	. = ..()
 	randpixel_xy()
 
-DECLARE_REF(/obj/item/ammo_casing, "BB", OWNED, null)
 
 //removes the projectile from the ammo casing
 /obj/item/ammo_casing/proc/expend()
@@ -384,4 +383,3 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/ammo_box, INTERACT_ALT(null, PROC_RE
 
 	. += span_notice("Alt-click to extract contents.")
 
-DECLARE_REF(/obj/item/ammo_magazine, "stored_ammo", OWNED_LIST, null)

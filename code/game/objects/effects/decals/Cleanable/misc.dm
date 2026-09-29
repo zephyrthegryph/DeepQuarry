@@ -248,4 +248,3 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
 	qdel(src)
 
-DECLARE_REF(/obj/effect/decal/cleanable/vomit, "viruses", OWNED_LIST, null)

@@ -40,7 +40,6 @@
 		om_hook(get_parent(), /datum/om/event/moved, src, PROC_REF(on_parent_moved))
 	on_move(get_parent(), null, NORTH)
 
-DECLARE_REF(/obj/effect/abstract/particle_holder, "particles", OWNED, null)
 
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)

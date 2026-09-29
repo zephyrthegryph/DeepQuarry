@@ -27,8 +27,6 @@
 /// The experiment handler of this movable, if it has one. Owned: deleted with it.
 /// Not saved: the holder's Initialize() makes a fresh handler; the selected experiment is session state.
 /atom/movable/var/tmp/datum/experiment_handler/experiment_handler
-DECLARE_REF(/atom/movable, "experiment_handler", OWNED, null)
-DECLARE_REF(/datum/experiment_handler, "owner", BACK, "experiment_handler")
 
 /**
  * Creates the experiment handler of a movable
@@ -431,7 +429,6 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 		if("start_experiment_callback")
 			start_experiment_callback.Invoke(selected_experiment())
 
-DECLARE_REF(/datum/experiment_handler, "start_experiment_callback", OWNED, null)
 
 /// LC-refs: the selected_experiment this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/experiment_handler/proc/selected_experiment() as /datum/experiment
@@ -440,4 +437,3 @@ DECLARE_REF(/datum/experiment_handler, "start_experiment_callback", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/experiment_handler/proc/linked_web() as /datum/techweb
 	return linked_web_static
-DECLARE_REF(/datum/experiment_handler, "linked_web_static", STATIC, null)

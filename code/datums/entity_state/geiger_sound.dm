@@ -8,13 +8,10 @@
 
 /// The geiger loop, owned: deleted with this datum.
 /datum/geiger_sound/var/datum/looping_sound/geiger/sound
-DECLARE_REF(/datum/geiger_sound, "sound", OWNED, null)
 
-DECLARE_REF(/datum/geiger_sound, "owner", BACK, "geiger_sound")
 
 /// Owned: the active geiger sound loop while the counter is scanning.
 /obj/item/geiger/var/datum/geiger_sound/geiger_sound
-DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 
 /datum/geiger_sound/New(atom/new_owner)
 	..()
@@ -145,4 +142,3 @@ DECLARE_REF(/obj/item/geiger, "geiger_sound", OWNED, null)
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
 
-DECLARE_REF(/datum/looping_sound/geiger, "last_radiation_pulse_ref", HELD, null)

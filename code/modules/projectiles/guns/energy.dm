@@ -280,7 +280,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/energy, INTERACT_HAND(null, PROC_REF(interact
 	else
 		return FLOOR(power_supply.charge / max(charge_cost, 1), 1)
 
-DECLARE_REF(/obj/item/gun/energy, "power_supply", HELD, null)
+OWN(/obj/item/gun/energy, power_supply, OWN_CONTAINED)
 
 /obj/item/gun/energy/note_shot()
 	..()

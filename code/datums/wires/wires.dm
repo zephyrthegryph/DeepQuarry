@@ -523,4 +523,3 @@
 
 #undef MAXIMUM_EMP_WIRES
 
-DECLARE_REF(/datum/wires, "holder", BACK, "wires")

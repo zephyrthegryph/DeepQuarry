@@ -353,4 +353,3 @@
 		if(P.dir == port)
 			P.con_lock = !P.con_lock
 
-DECLARE_REF(/obj/machinery/atmospherics/omni/mixer, "output", HELD, null)

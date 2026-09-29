@@ -30,7 +30,7 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
-DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
+OWN(/obj/machinery/computer/telescience, inserted_gps, OWN_SPILL)
 
 // its crystals are ejected.
 /obj/machinery/computer/telescience/on_destroy(force)
@@ -409,7 +409,6 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 	log_msg += " [sending ? "to" : "from"] [trueX], [trueY], [z_co] ([A ? A.name : "null area"])"
 	investigate_log(log_msg, "telesci")
 
-DECLARE_REF(/obj/machinery/computer/telescience, "last_tele_data", OWNED, null)
 
 /// LC-refs: the telepad this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/telescience/proc/telepad() as /obj/machinery/telepad

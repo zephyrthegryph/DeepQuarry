@@ -316,4 +316,4 @@
 	update_icon()
 	return
 
-DECLARE_REF(/obj/structure/windoor_assembly, "electronics", HELD, null)
+OWN(/obj/structure/windoor_assembly, electronics, OWN_CONTAINED)

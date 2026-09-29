@@ -84,9 +84,4 @@
 /datum/planet/proc/get_sun_solar_position()
 	return 220 - (sun_position * 80) // this base version doesn't know how long a planet's day is, so just goes back and forth facing south-eastish based on midnight to noon intensity
 
-DECLARE_REF(/datum/planet, "weather_holder", OWNED, null)
-DECLARE_REF(/datum/planet, "sun_holder", OWNED, null)
-DECLARE_REF(/datum/planet, "current_time", OWNED, null)
 // Turfs are never deleted.
-DECLARE_REF(/datum/planet, "planet_floors", STATIC, null)
-DECLARE_REF(/datum/planet, "planet_walls", STATIC, null)

@@ -107,10 +107,6 @@
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
 
-DECLARE_REF(/obj/item/mapping_unit, "extras_holder", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "hud_datum", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "hud_item", OWNED, null)
-DECLARE_REF(/obj/item/mapping_unit, "cell", OWNED, null)
 
 // its map display is torn down.
 /obj/item/mapping_unit/on_destroy(force)

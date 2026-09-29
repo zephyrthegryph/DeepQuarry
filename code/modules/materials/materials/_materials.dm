@@ -511,4 +511,3 @@ GLOBAL_LIST_INIT(name_to_material, populate_material_list())
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-DECLARE_REF(/datum/material, "recipes", OWNED_LIST, null)

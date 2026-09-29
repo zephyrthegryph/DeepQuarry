@@ -487,8 +487,6 @@
 			msg_attachment = null
 			return 1
 
-DECLARE_REF(/datum/tgui_module/email_client, "msg_attachment", OWNED, null)
-DECLARE_REF(/datum/tgui_module/email_client, "downloading", OWNED, null)
 
 /// LC-refs: the current_account this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account

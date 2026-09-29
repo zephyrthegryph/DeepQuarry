@@ -838,4 +838,3 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 /obj/machinery/disposal/step_start_condition()
 	return mode == 1 || flush || contents_count(src) || has_latent() // ALLOW(latent): latent entries checked
 
-DECLARE_REF(/obj/machinery/disposal, "air_contents", OWNED, null)

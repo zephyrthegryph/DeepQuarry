@@ -209,10 +209,9 @@
 
 // Contracts hold their requirements in `requirements` and again in typed vars (observation_requirement, ...);
 // `contract` must be let go or the two outlive each other.
-DECLARE_REF(/datum/contract_requirement, "contract", BACKLIST, "requirements")
+REL_PAIR(/datum/contract_requirement, contract, requirements)
+REL_PAIR_LIST(/datum/contract, requirements, contract)
 
-DECLARE_REF(/datum/contract_requirement/paired_facts, "first_filter", OWNED, null)
-DECLARE_REF(/datum/contract_requirement/paired_facts, "second_filter", OWNED, null)
 
 /datum/contract_requirement/paired_facts/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -275,7 +274,6 @@ DECLARE_REF(/datum/contract_requirement/paired_facts, "second_filter", OWNED, nu
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 
 /datum/contract_requirement/event_count/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -353,7 +351,6 @@ DECLARE_REF(/datum/contract_requirement/event_count, "filter", OWNED, null)
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 
 /datum/contract_requirement/sustained_event/proc/require_any_value(key, list/allowed)
 	return filter.require_any_value(key, allowed)
@@ -438,7 +435,6 @@ DECLARE_REF(/datum/contract_requirement/sustained_event, "filter", OWNED, null)
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED, null)
 
 /datum/contract_requirement/staged_sustained_event/proc/set_stages(list/new_stages)
 	if((contract && contract.state != CONTRACT_OFFERED) || !length(new_stages))
@@ -578,7 +574,6 @@ DECLARE_REF(/datum/contract_requirement/staged_sustained_event, "filter", OWNED,
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/snapshot_total, "filter", OWNED, null)
 
 /datum/contract_requirement/snapshot_total/proc/require_value(key, expected)
 	return filter.require_value(key, expected)
@@ -643,7 +638,6 @@ DECLARE_REF(/datum/contract_requirement/snapshot_total, "filter", OWNED, null)
 	if(event_type)
 		event_types += event_type
 
-DECLARE_REF(/datum/contract_requirement/fact_portfolio, "filter", OWNED, null)
 
 /datum/contract_requirement/fact_portfolio/proc/require_value(key, expected)
 	return filter.require_value(key, expected)

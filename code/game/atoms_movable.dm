@@ -474,7 +474,7 @@
 			// Call our thingy to inform everyone we moved
 			Moved(oldloc, NONE, TRUE)
 
-		// The pulling relation's break_if = in_range(1) (code/datums/om/library.dm)
+		// The pulling relation's holds_while = in_range(1) (code/datums/om/library.dm)
 		// unlinks pulling/pulledby on its own once the live scheduler re-checks
 		// it, replacing the hand-rolled distance/z check that used to live here.
 
@@ -873,8 +873,5 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 		var/client/C = usr.client
 		C?.open_particle_editor(src)
 
-DECLARE_REF(/atom/movable, "riding_datum", OWNED, null)
 
 // The throw_of relation's view field: its on_unlink() clears it.
-DECLARE_REF(/atom/movable, "throwing", HELD, null)
-DECLARE_REF(/atom/movable/overlay, "master", BACK, null)

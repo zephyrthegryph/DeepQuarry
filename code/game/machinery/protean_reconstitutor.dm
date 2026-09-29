@@ -381,6 +381,6 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	processing_revive = FALSE
 	update_icon()
 
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_brain", HELD, null)
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_orchestrator", HELD, null)
-DECLARE_REF(/obj/machinery/protean_reconstitutor, "protean_refactory", HELD, null)
+OWN(/obj/machinery/protean_reconstitutor, protean_brain, OWN_CONTAINED)
+OWN(/obj/machinery/protean_reconstitutor, protean_orchestrator, OWN_CONTAINED)
+OWN(/obj/machinery/protean_reconstitutor, protean_refactory, OWN_CONTAINED)

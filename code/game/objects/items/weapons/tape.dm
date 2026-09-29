@@ -201,4 +201,4 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
 
-DECLARE_REF(/obj/item/ducttape, "stuck", HELD, null)
+OWN(/obj/item/ducttape, stuck, OWN_CONTAINED)

@@ -72,4 +72,3 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/watch/survival, INTERACT_ALT("T
 		to_chat(user,span_notice("You turn the micro beacon [gps.tracking ? "on" : "off"]."))
 	return FALSE
 
-DECLARE_REF(/obj/item/clothing/accessory/watch/survival, "gps", OWNED, null)

@@ -75,12 +75,17 @@
 	// (code/datums/lifecycle/declarations.dm), after the core joins above.
 	if(table & TYPE_TABLE_HAS_DECLS)
 		lifecycle_decls_materialize(src, lifecycle_decls_of(src))
+	// Keyed relation views (REL_KEYED / KEYED_TARGET, doc/rewrite/ownership.md §4.1).
+	if(own_table_of(src).materialize_work)
+		rel_keyed_materialize(src)
 
 /// The exact inverse of on_materialize(). See the top of this file.
 /atom/proc/on_dematerialize()
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/table = atom_type_table(src)
+	if(own_table_of(src).materialize_work)
+		rel_keyed_dematerialize(src)
 	if(table & TYPE_TABLE_HAS_DECLS)
 		lifecycle_decls_dematerialize(src, lifecycle_decls_of(src))
 	if(table & TYPE_TABLE_HAS_REGISTRIES)

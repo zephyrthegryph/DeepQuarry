@@ -166,7 +166,6 @@
 		return
 	display(usr)
 
-DECLARE_REF(/datum/codex_tree, "home", OWNED, null)
 
 /// LC-refs: the holder this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/codex_tree/proc/holder() as /atom/movable

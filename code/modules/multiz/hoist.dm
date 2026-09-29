@@ -114,7 +114,6 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	source_hook = new(newloc)
 	source_hook.source_hoist_handle = om_handle(src)
 
-DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 
 // whatever hangs from the hoist is released.
 /obj/structure/hoist/on_destroy(force)

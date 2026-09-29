@@ -44,7 +44,6 @@ DECLARE_DEFAULT_CHILD(/obj/vehicle/train/engine/quadbike, "key", "key_type")
 	paint_color = rgb(rand(1,255),rand(1,255),rand(1,255))
 	. = ..()
 
-DECLARE_REF(/obj/vehicle/train/engine/quadbike, "soundloop", OWNED, null)
 
 /obj/item/key/quadbike
 	name = "key"

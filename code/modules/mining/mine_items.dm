@@ -409,4 +409,3 @@ DECLARE_INTERACTIONS(/obj/structure/trailblazer, INTERACT_HAND_UNGATED(null, PRO
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/shovel/wood/proc/material() as /datum/material
 	return material_static
-DECLARE_REF(/obj/item/shovel/wood, "material_static", STATIC, null)

@@ -384,4 +384,3 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/projectile/energy/floramut/gene/proc/gene() as /datum/decl/plantgene
 	return gene_static
-DECLARE_REF(/obj/item/projectile/energy/floramut/gene, "gene_static", STATIC, null)

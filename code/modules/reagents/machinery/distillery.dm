@@ -87,16 +87,6 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 	overlay_dumping = image(icon = src.icon, icon_state = "[base_state]-dump")
 	overlay_connected = image(icon = src.icon, icon_state = "[base_state]-connector")
 
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "InputBeaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "OutputBeaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_output_beaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_input_beaker", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_off", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_ready", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_cooling", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_heating", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_dumping", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered/reagent_distillery, "overlay_connected", OWNED, null)
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/examine(mob/user)
 	. = ..()

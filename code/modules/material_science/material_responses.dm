@@ -36,7 +36,6 @@
 /// material_response component). Owned by the item; hooks its events with om_hook().
 /obj/item/var/datum/material_response/material_response
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
 /datum/material_response
 	/// The item this state belongs to.
@@ -55,7 +54,6 @@ DECLARE_REF(/obj/item, "material_response", OWNED, null)
 
 REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 
-DECLARE_REF(/datum/material_response, "parent", BACK, "material_response")
 
 /datum/material_response/New(obj/item/new_parent, datum/material/material, _electrical_form, _medical_form, _armor_form, _tool_form)
 	. = ..()

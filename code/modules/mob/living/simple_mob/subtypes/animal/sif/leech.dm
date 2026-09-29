@@ -485,5 +485,4 @@
 
 #undef LEECH_TREAT_URGENCY
 
-DECLARE_REF(/mob/living/simple_mob/animal/sif/leech, "host_bodypart", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/animal/sif/leech, "host", HELD, null)
+OWN(/mob/living/simple_mob/animal/sif/leech, host_bodypart, OWN_CONTAINED)

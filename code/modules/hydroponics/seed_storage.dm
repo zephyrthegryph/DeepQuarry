@@ -7,7 +7,7 @@
 	var/ID
 
 // The seed objects sit in the storage machine's contents; the pile only indexes them.
-DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
+OWN(/datum/seed_pile, seeds, OWN_SPILL)
 
 /datum/seed_pile/New(obj/item/seeds/O, ID)
 	name = O.name
@@ -642,7 +642,4 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/seed_pile/proc/seed_type() as /datum/seed
 	return seed_type_static
-DECLARE_REF(/datum/seed_pile, "seed_type_static", STATIC, null)
 
-DECLARE_REF(/obj/machinery/seed_storage, "piles", OWNED_LIST, null)
-DECLARE_REF(/obj/machinery/seed_storage, "piles_contra", OWNED_LIST, null)

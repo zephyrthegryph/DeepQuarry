@@ -56,7 +56,6 @@
 
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/technomancer_golem, "core", /obj/item/technomancer_core/golem)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED, null)
 
 /mob/living/simple_mob/mechanical/technomancer_golem/unref_spell()
 	active_spell = null
@@ -165,5 +164,4 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "core", OWNED,
 	no traces of paint visible and any 'writing' visible is uncomprehendable, short term scan unable to translate."
 	value = CATALOGUER_REWARD_MEDIUM
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "active_spell", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/technomancer_golem, "master", HELD, null)
+OWN(/mob/living/simple_mob/mechanical/technomancer_golem, active_spell, OWN_CONTAINED)

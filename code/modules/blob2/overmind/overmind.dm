@@ -162,7 +162,6 @@ REGISTRY_MEMBERSHIP(/mob/observer/blob, REGISTRY_OVERMINDS)
 	log_talk(message, LOG_SAY)
 	return 1
 
-DECLARE_REF(/mob/observer/blob, "blob_type", OWNED, null)
 
 /// LC-refs: The blob overmind's core -- an OM handle (om_handle()), so it reads null once that is deleted.
 /mob/observer/blob/proc/blob_core() as /obj/structure/blob/core
@@ -171,4 +170,3 @@ DECLARE_REF(/mob/observer/blob, "blob_type", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /mob/observer/blob/proc/default_language() as /datum/language
 	return default_language_static
-DECLARE_REF(/mob/observer/blob, "default_language_static", STATIC, null)

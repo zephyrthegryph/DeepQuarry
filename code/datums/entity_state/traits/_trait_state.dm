@@ -19,7 +19,8 @@
 	var/unique_type
 
 /datum/trait_state/var/mob/living/owner
-DECLARE_REF(/datum/trait_state, "owner", BACKLIST, "trait_states")
+REL_PAIR(/datum/trait_state, owner, trait_states)
+REL_PAIR_LIST(/mob/living, trait_states, owner)
 
 /datum/trait_state/New(mob/living/owner)
 	..()
@@ -56,7 +57,6 @@ DECLARE_REF(/datum/trait_state, "owner", BACKLIST, "trait_states")
 // --- Mob API ------------------------------------------------------------------------------------
 
 /mob/living/var/list/trait_states
-DECLARE_REF(/mob/living, "trait_states", OWNED_LIST, null)
 
 /// First trait state of `state_type` (or a subtype) this mob holds, or null.
 /mob/living/proc/get_trait_state(state_type)

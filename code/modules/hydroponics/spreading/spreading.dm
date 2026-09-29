@@ -347,7 +347,6 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		return
 	message_admins(span_notice("Event: Spacevines failed to find a viable turf."))
 
-DECLARE_REF(/obj/effect/plant, "plant", OWNED, null)
 
 /// LC-refs: the parent this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/effect/plant/proc/parent() as /obj/effect/plant
@@ -356,4 +355,3 @@ DECLARE_REF(/obj/effect/plant, "plant", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
-DECLARE_REF(/obj/effect/plant, "seed_static", STATIC, null)

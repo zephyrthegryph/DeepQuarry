@@ -421,4 +421,3 @@ DECLARE_INTERACTIONS(/obj/trader, 	INTERACT_HAND("Trade", PROC_REF(interaction_t
 		)
 
 // The stock the trader spawned into itself at Initialize().
-DECLARE_REF(/obj/trader, "products", OWNED_LIST, null)

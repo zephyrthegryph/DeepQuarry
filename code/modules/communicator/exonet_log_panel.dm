@@ -40,7 +40,6 @@
 		dq_exonet_log_panel_cache = new(src)
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
-DECLARE_REF(/mob/observer/dead, "dq_exonet_log_panel_cache", OWNED, null)
 
 /// LC-refs: the host this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/exonet_log_panel/proc/host() as /mob/observer/dead

@@ -21,7 +21,6 @@
 		if(!(AM in before_contents) && !ismob(AM) && !istype(AM, /obj/effect/landmark))
 			qdel(AM)
 
-DECLARE_REF(/datum/unit_test/dq_integrity_pool, "before_contents", WEAK_LIST, null)
 
 
 /// Walls: the material cap is max integrity, damage and repair move integrity,

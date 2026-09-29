@@ -54,7 +54,7 @@
 	else
 		icon_state = "colormate"
 
-DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
+OWN(/obj/machinery/gear_painter, inserted, OWN_SPILL)
 
 /obj/machinery/gear_painter/declare_interactions(list/into)
 	into += list(

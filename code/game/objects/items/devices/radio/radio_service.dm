@@ -71,7 +71,6 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/list/datum/radio_frequency/frequencies = list()
 
 /// The service owns its frequencies (keyed by frequency text).
-DECLARE_REF(/datum/world_service/radio, "frequencies", OWNED_VALUES, null)
 
 /datum/world_service/radio/initialize()
 	if(initialized)

@@ -20,12 +20,9 @@
 	maximum_volume = max
 	my_atom = A
 
-DECLARE_REF(/datum/reagents, "reagent_list", OWNED_LIST, null)
 // The id index holds the same reagents: declared, so phase 4 empties it
 // (its members are already deleted through reagent_list by then) and the
 // holder <-> reagent.holder cycle can't survive the destroy.
-DECLARE_REF(/datum/reagents, "reagent_by_id", OWNED_VALUES, null)
-DECLARE_REF(/datum/reagents, "my_atom", BACK, "reagents")
 
 /* Internal procs */
 

@@ -49,4 +49,3 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/hivebot/precusor, "shiel
 	high_color = "#A020F0"
 	low_color = "#A020F0"
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/hivebot/precusor, "shields", OWNED, null)

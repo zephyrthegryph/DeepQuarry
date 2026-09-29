@@ -278,6 +278,4 @@ Reads a comment and outputs the type of comment
 /datum/n_Scanner/nS_Scanner/proc/options() as /datum/n_scriptOptions/nS_Options
 	return options_ref
 
-DECLARE_REF(/datum/n_Scanner, "errors", OWNED_LIST, null)
 
-DECLARE_REF(/datum/n_Scanner/nS_Scanner, "options_ref", BACK, null)

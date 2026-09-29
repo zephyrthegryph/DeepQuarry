@@ -111,4 +111,3 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/log_category/proc/master() as /datum/log_category
 	return master_static
-DECLARE_REF(/datum/log_category, "master_static", STATIC, null)

@@ -281,7 +281,6 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	name = "DV-136ZB #[rand(1000,9999)]"
 	c_tag = name
 
-DECLARE_REF(/obj/item/camerabug, "camera", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/camerabug, "camera", "camtype")
 
 /// LC-refs: linkedmonitor -- an OM handle (om_handle()), so it reads null once that is deleted.

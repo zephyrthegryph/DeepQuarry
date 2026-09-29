@@ -118,4 +118,3 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/computer_file/program/access_decrypter/proc/target_access() as /datum/access
 	return target_access_static
-DECLARE_REF(/datum/computer_file/program/access_decrypter, "target_access_static", STATIC, null)

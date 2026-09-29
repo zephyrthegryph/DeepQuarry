@@ -378,4 +378,4 @@
 				if(new_name)
 					P.name = new_name
 
-DECLARE_REF(/obj/machinery/injector_maker, "beaker", HELD, null)
+OWN(/obj/machinery/injector_maker, beaker, OWN_CONTAINED)

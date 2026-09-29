@@ -69,7 +69,6 @@
 	battery.charge = 0
 	. = ..()
 
-DECLARE_REF(/obj/item/computer_hardware/battery_module, "battery", OWNED, null)
 
 /obj/item/computer_hardware/battery_module/proc/charge_to_full()
 	if(battery)

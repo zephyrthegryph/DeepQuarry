@@ -36,7 +36,6 @@
 	. = ..()
 	update_icon() // So it starts with the full overlay.
 
-DECLARE_REF(/obj/item/radio_jammer, "power_source", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/radio_jammer, "power_source", /obj/item/cell/device/weapon)
 
 // a running jammer stops jamming.

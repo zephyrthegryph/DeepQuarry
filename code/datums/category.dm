@@ -18,7 +18,6 @@
 			categories_by_name[category.name] = category
 	categories = dd_sortedObjectList(categories)
 
-DECLARE_REF(/datum/category_collection, "categories", OWNED_LIST, null)
 
 /******************
 * Category Groups *
@@ -47,7 +46,6 @@ DECLARE_REF(/datum/category_collection, "categories", OWNED_LIST, null)
 	// If you change this, confirm that character setup doesn't become completely unordered.
 	items = dd_sortedObjectList(items)
 
-DECLARE_REF(/datum/category_group, "items", OWNED_LIST, null)
 
 /datum/category_group/dd_SortValue()
 	return name
@@ -69,13 +67,9 @@ DECLARE_REF(/datum/category_group, "items", OWNED_LIST, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/category_group/proc/collection() as /datum/category_collection
 	return collection_static
-DECLARE_REF(/datum/category_group, "collection_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/category_item/proc/category() as /datum/category_group
 	return category_static
-DECLARE_REF(/datum/category_item, "category_static", STATIC, null)
 
-DECLARE_REF(/datum/category_collection, "categories_by_name", OWNED_VALUES, null)
 
-DECLARE_REF(/datum/category_group, "items_by_name", OWNED_VALUES, null)

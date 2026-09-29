@@ -39,8 +39,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 	bradio.canhear_range = world.view // Same as default sight range.
 	power_change()
 
-DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bpinboard", OWNED, null)
-DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OWNED, null)
 
 // stops showing its feed.
 /obj/machinery/computer/security/telescreen/bodycamera/on_destroy(force)

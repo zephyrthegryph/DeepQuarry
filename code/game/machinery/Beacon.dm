@@ -20,7 +20,6 @@
 
 	hide(!T.is_plating())
 
-DECLARE_REF(/obj/machinery/bluespace_beacon, "Beacon", OWNED, null)
 
 // update the invisibility and icon
 /obj/machinery/bluespace_beacon/hide(intact)

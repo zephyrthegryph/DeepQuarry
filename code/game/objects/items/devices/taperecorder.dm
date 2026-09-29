@@ -29,7 +29,6 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 /obj/item/taperecorder/empty
 	mytape = null
 
-DECLARE_REF(/obj/item/taperecorder, "mytape", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/taperecorder, "mytape", null)
 DECLARE_REGISTRY(/obj/item/taperecorder, REGISTRY_LISTENING_OBJECTS)
 

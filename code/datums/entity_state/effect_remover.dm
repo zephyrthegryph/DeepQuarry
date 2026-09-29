@@ -47,5 +47,3 @@
 	if(!QDELETED(target))
 		qdel(target)
 
-DECLARE_REF(/datum/effect_remover, "on_clear_callback", OWNED, null)
-DECLARE_REF(/datum/effect_remover, "owner", BACK, null)

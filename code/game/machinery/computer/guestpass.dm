@@ -303,4 +303,4 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 	else
 		to_chat(user, span_warning("Invalid duration."))
 
-DECLARE_REF(/obj/machinery/computer/guestpass, "giver", HELD, null)
+OWN(/obj/machinery/computer/guestpass, giver, OWN_CONTAINED)

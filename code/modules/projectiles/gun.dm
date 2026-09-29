@@ -150,7 +150,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 
 	// Initialise the firemode selector.
 
-DECLARE_REF(/obj/item/gun, "firemode_selector", OWNED, null)
 
 /obj/item/gun/update_twohanding()
 	if(one_handed_penalty)
@@ -858,7 +857,7 @@ EXTEND_INTERACTIONS(/obj/item/gun, \
 
 	..()
 
-DECLARE_REF(/obj/item/gun, "attached_lock", HELD, null)
+OWN(/obj/item/gun, attached_lock, OWN_CONTAINED)
 
 /// LC-refs: the auto_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/gun/proc/auto_target()

@@ -318,5 +318,5 @@
 		for(var/A in modify.access)
 			P.info += "  [SSaccess.get_access_desc(A)]"
 
-DECLARE_REF(/obj/machinery/computer/card, "scan", HELD, null)
-DECLARE_REF(/obj/machinery/computer/card, "modify", HELD, null)
+OWN(/obj/machinery/computer/card, scan, OWN_CONTAINED)
+OWN(/obj/machinery/computer/card, modify, OWN_CONTAINED)

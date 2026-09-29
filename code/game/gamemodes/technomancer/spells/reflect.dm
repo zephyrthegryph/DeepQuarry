@@ -93,4 +93,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/reflect, "spark_system", /datum/effect/eff
 	to_chat(owner_ref(), span_danger("Your shield fades due being used up!"))
 	qdel(src)
 
-DECLARE_REF(/obj/item/spell/reflect, "spark_system", OWNED, null)

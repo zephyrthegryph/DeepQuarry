@@ -100,4 +100,3 @@
 	loaded_item = null
 	. = ..()
 
-DECLARE_REF(/obj/machinery/rnd, "stored_research", STATIC, null)

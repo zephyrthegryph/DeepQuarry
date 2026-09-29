@@ -108,10 +108,10 @@
 
 	var/max_voreoverlay_alpha = 255
 
-DECLARE_REF(/mob, "soulgem", HELD, null)
-DECLARE_REF(/mob, "vore_selected", HELD, null)
-DECLARE_REF(/mob, "spont_belly_front", HELD, null)
-DECLARE_REF(/mob, "spont_belly_rear", HELD, null)
-DECLARE_REF(/mob, "spont_belly_left", HELD, null)
-DECLARE_REF(/mob, "spont_belly_right", HELD, null)
-DECLARE_REF(/mob, "previewing_belly", HELD, null)
+OWN(/mob, soulgem, OWN_CONTAINED)
+OWN(/mob, vore_selected, OWN_CONTAINED)
+OWN(/mob, spont_belly_front, OWN_CONTAINED)
+OWN(/mob, spont_belly_rear, OWN_CONTAINED)
+OWN(/mob, spont_belly_left, OWN_CONTAINED)
+OWN(/mob, spont_belly_right, OWN_CONTAINED)
+OWN(/mob, previewing_belly, OWN_CONTAINED)

@@ -45,9 +45,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 
 	update_icon()
 
-DECLARE_REF(/obj/item/gun/magnetic, "cell", OWNED, null)
-DECLARE_REF(/obj/item/gun/magnetic, "loaded", OWNED, null)
-DECLARE_REF(/obj/item/gun/magnetic, "capacitor", OWNED, null)
 
 /obj/item/gun/magnetic/get_cell()
 	return cell

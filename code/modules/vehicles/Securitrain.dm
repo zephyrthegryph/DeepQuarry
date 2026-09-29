@@ -359,7 +359,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	else
 		anchored = TRUE
 
-DECLARE_REF(/obj/vehicle/train/security/engine, "key", HELD, null)
+OWN(/obj/vehicle/train/security/engine, key, OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/security/engine/proc/pred_security_engine_running(mob/actor, atom/target, obj/item/held)

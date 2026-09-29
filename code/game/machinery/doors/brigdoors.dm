@@ -301,4 +301,3 @@
 #undef PRESET_MEDIUM
 #undef PRESET_LONG
 
-DECLARE_REF(/obj/machinery/door_timer, "targets", HELD, null)

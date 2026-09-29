@@ -211,6 +211,3 @@
 		T.visible_message(span_danger("A [cat_or_dog.name] falls from within the strange clouds!"))
 */
 
-DECLARE_REF(/datum/anomalous_weather, "reagent_holder", OWNED, null)
-DECLARE_REF(/datum/anomalous_weather, "visuals", OWNED, null)
-DECLARE_REF(/datum/anomalous_weather, "loop_sounds", OWNED, null)

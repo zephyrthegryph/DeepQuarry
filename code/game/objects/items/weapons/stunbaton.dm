@@ -284,4 +284,3 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/cattleprod, INTERACT_ITEM(null, PROC_R
 	if(status && (target.ai_brain != null))
 		target.taunt(user)
 
-DECLARE_REF(/obj/item/melee/baton, "bcell", OWNED, null)

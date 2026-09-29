@@ -60,7 +60,6 @@
 // the marker's `parent` is only the way back, nulled on both sides when the
 // marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
 // the other twice (a CRASH the OM trampoline's catch hid).
-DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_marker")
 
 /obj/effect/overmap/visitable/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -143,7 +142,6 @@ DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent", BACK, "child_om_m
 		if(!QDELETED(C))
 			om_link(src, C, /datum/om/relation/overmap_mob_marker)
 
-DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 
 /// Overmap mob -> the marker that shows it. A marker destroyed on its own (not
 /// by its mob, which owns it) takes the mob with it: the mob is invisible and
@@ -198,7 +196,6 @@ DECLARE_REF(/mob/living/simple_mob/vore/overmap, "child_om_marker", OWNED, null)
 // the marker's `parent` is only the way back, nulled on both sides when the
 // marker goes. Both used to DECLARE_REF(..., OWNED) each other, and destroying either qdel'd
 // the other twice (a CRASH the OM trampoline's catch hid).
-DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent", BACK, "child_om_marker")
 
 /obj/effect/overmap/visitable/ship/simplemob/get_scan_data(mob/user)
 	if(!known)
@@ -219,5 +216,3 @@ DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent", BACK, "child
 	set_dir(parent.dir)
 
 // Type paths, never instances.
-DECLARE_REF(/obj/effect/overmap/visitable/simplemob, "parent_mob_type", STATIC, null)
-DECLARE_REF(/obj/effect/overmap/visitable/ship/simplemob, "parent_mob_type", STATIC, null)

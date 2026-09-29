@@ -555,4 +555,4 @@ DECLARE_REAGENTS(/obj/structure/reagent_dispensers/cookingoil, null, list(REAGEN
 
 DECLARE_REAGENTS(/obj/structure/reagent_dispensers/space_cleaner, null, list(REAGENT_ID_CLEANER = 1000))
 
-DECLARE_REF(/obj/structure/reagent_dispensers/fueltank, "rig", HELD, null)
+OWN(/obj/structure/reagent_dispensers/fueltank, rig, OWN_CONTAINED)

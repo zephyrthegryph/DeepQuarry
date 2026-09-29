@@ -117,9 +117,6 @@
 	robot.module = null
 	consume(src, robot)
 
-DECLARE_REF(/obj/item/robot_module, "modules", OWNED_LIST, null)
-DECLARE_REF(/obj/item/robot_module, "emag", OWNED_LIST, null)
-DECLARE_REF(/obj/item/robot_module, "synths", OWNED_LIST, null)
 
 /// Module items are pulsed once by content recursion: stowed ones inside the
 /// module, equipped ones inside the robot. Only the matter synths (datums)

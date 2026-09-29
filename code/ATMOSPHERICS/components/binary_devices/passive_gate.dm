@@ -277,4 +277,3 @@
 	unlocked = 1
 	icon_state = "on"
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/passive_gate, "radio_connection", STATIC, null)

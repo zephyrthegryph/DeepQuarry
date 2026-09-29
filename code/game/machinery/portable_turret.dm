@@ -293,7 +293,6 @@
 	add_overlay(turret_opened_overlay)
 	return ..()
 
-DECLARE_REF(/obj/machinery/porta_turret, "spark_system", OWNED, null)
 
 /obj/machinery/porta_turret/update_icon()
 	if(stat & BROKEN) // Turret is dead.

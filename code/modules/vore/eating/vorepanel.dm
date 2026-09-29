@@ -1488,7 +1488,6 @@
 #undef PREFERENCE_TAB
 #undef GENERAL_TAB
 
-DECLARE_REF(/mob, "vorePanel", OWNED, null)
 
 /// LC-refs: Note, we do this in case we ever want to allow people to view others vore panels -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/vore_look/proc/host() as /mob

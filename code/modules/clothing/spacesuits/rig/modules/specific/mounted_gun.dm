@@ -198,4 +198,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 	interface_desc = "A forearm-mounted suit-powered phase rifle."
 	gun_type = /obj/item/gun/energy/locked/phasegun/rifle/unlocked/mounted
 
-DECLARE_REF(/obj/item/rig_module/mounted, "gun", OWNED, null)

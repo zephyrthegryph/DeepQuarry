@@ -272,4 +272,3 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 
 	..()
 
-DECLARE_REF(/obj/vehicle/bike, "ion", OWNED, null)

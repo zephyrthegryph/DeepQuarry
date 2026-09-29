@@ -178,4 +178,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 /obj/machinery/floodlight/step_start_condition()
 	return on
 
-DECLARE_REF(/obj/machinery/floodlight, "cell", HELD, null)
+OWN(/obj/machinery/floodlight, cell, OWN_CONTAINED)

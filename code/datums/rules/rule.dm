@@ -432,13 +432,9 @@ GLOBAL_VAR_INIT(dq_rule_recording, FALSE)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/rule() as /datum/rule
 	return rule_static
-DECLARE_REF(/datum/rule_compiler, "rule_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/rule_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-DECLARE_REF(/datum/rule_compiler, "registry_static", STATIC, null)
 
-DECLARE_REF(/datum/rule, "predicate", OWNED, null)
 
-DECLARE_REF(/datum/rule, "triggers", OWNED_LIST, null)

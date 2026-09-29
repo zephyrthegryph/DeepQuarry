@@ -454,7 +454,5 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 	to_chat(user, desc)
 	return TRUE
 
-DECLARE_REF(/obj/structure/frame, "circuit", HELD, null)
+OWN(/obj/structure/frame, circuit, OWN_CONTAINED)
 
-DECLARE_REF(/obj/structure/frame, "frame_type", STATIC, null)
-DECLARE_REF(/obj/structure/frame, "components", OWNED_LIST, null)

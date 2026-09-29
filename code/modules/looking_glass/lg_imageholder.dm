@@ -65,4 +65,3 @@
 
 #undef LG_IMAGE_SIZE
 
-DECLARE_REF(/obj/effect/landmark/looking_glass, "holding", OWNED, null)

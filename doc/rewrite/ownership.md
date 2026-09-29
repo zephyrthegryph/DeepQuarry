@@ -13,7 +13,7 @@ four things:
 | **Own** | the one owner's child | the owner's teardown, by policy | `OWN(PATH, var, POLICY)` |
 | **Shared** | an immortal registered singleton or DEF | nobody, since it never dies | `SHARED(PATH, var)`, or implicit via `REGISTRY_TYPE` |
 | **Proto** | a shared prototype, or an owner-stamped private copy of one | teardown deletes private copies only | `PROTO(PATH, var)` |
-| **Relation** | a non-owning reference to an entity | the framework, when either end dies | `REF(PATH, var)`, `REF_PAIR(...)`, `/datum/om/relation/*` |
+| **Relation** | a non-owning reference to an entity | the framework, when either end dies | `REL(PATH, var)`, `REL_PAIR(...)`, `/datum/om/relation/*` |
 
 Locals inside a running proc are the only unowned references.
 
@@ -187,9 +187,9 @@ weights.
 ```dm
 REF(/mob/living/bot, target)                      // 1:1 view var
 REF(/obj/machinery/camera, viewers)               // list view (1:N)
-REF_PAIR(/obj/machinery/sleeper, console, /obj/machinery/sleeper_console, sleeper)
-REF_MEMBER(/obj/item/organ, owner, /mob/living/carbon/human, internal_organs)
-REF_KEYED(/obj/machinery/door/blast, id_tag, /obj/machinery/button/remote/blast_door, id)
+REL_PAIR(/obj/machinery/sleeper, console, /obj/machinery/sleeper_console, sleeper)
+REL_MEMBER(/obj/item/organ, owner, /mob/living/carbon/human, internal_organs)
+REL_KEYED(/obj/machinery/door/blast, id_tag, /obj/machinery/button/remote/blast_door, id)
 ```
 
 - The view var holds a direct reference, so reads are free. The target keeps
@@ -198,21 +198,21 @@ REF_KEYED(/obj/machinery/door/blast, id_tag, /obj/machinery/button/remote/blast_
   - the target's death nulls every source view, or removes it from list views;
   - the source's death drops its entries from each target's index.
 - There is no manual bookkeeping.
-- **Writes:** `ref_set(src, "var", target)`, `ref_add`, `ref_remove`,
-  `ref_clear`. `REF_PAIR` / `REF_MEMBER` writes set both sides (`ref_set` on
+- **Writes:** `rel_set(src, "var", target)`, `rel_add`, `rel_remove`,
+  `rel_clear`. `REL_PAIR` / `REL_MEMBER` writes set both sides (`rel_set` on
   either side sets the partner's view too). Exclusivity is implied for 1:1
   views, so linking a new partner unlinks the old one.
 - `ownership_lint.py` bans raw writes to a view var (framework write only).
-- **Keyed auto-linking.** `REF_KEYED(PATH, var, TARGET_PATH, key_var)` links
+- **Keyed auto-linking.** `REL_KEYED(PATH, var, TARGET_PATH, key_var)` links
   by matching id when either end materializes, through the registry id index.
   It replaces init-time machine scans and id matching.
-- **Symmetric membership:** `REF_SET(PATH, var)`, a many-to-many where both
+- **Symmetric membership:** `REL_SET(PATH, var)`, a many-to-many where both
   ends list each other (atmos node topology).
 - **Identity across collapse.** An edge to an entity that collapses to latent
   (`containment.md` §4) goes dormant, keyed by the target's handle id. When
   the entry re-materializes into the same handle slot, dormant edges
   re-link. When the owner of a dormant edge dies, it drops its entries.
-- **z-level release.** `ref_drop_z(z)` bulk-unlinks every edge whose end is on
+- **z-level release.** `rel_drop_z(z)` bulk-unlinks every edge whose end is on
   the z-level (turf handles carry the z generation, `loc_gen`).
 
 ### 4.2 Rich edges: `/datum/om/relation`

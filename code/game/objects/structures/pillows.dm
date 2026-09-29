@@ -71,9 +71,8 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 
 // The front piece is the pile's other half: it goes when the pile does, and taking the
 // front apart on its own lets go of the link from both sides.
-DECLARE_REF(/obj/structure/bed/pillowpile, "front", OWNED, null)
-DECLARE_REF(/obj/structure/bed/pillowpile, "front", PAIR, "pile")
-DECLARE_REF(/obj/structure/bed/pillowpilefront, "pile", PAIR, "front")
+REL_PAIR(/obj/structure/bed/pillowpile, front, pile)
+REL_PAIR(/obj/structure/bed/pillowpilefront, pile, front)
 
 /obj/structure/bed/pillowpilefront/update_icon()
 	return

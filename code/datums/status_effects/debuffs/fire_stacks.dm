@@ -367,4 +367,3 @@
 /// BUBBER EDIT END
 
 
-DECLARE_REF(/datum/status_effect/fire_handler/fire_stacks, "moblight", OWNED, null)

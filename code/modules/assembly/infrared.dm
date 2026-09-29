@@ -181,4 +181,3 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 /obj/effect/beam/i_beam/proc/master() as /obj/item/assembly/infra
 	return om_resolve(master_handle)
 
-DECLARE_REF(/obj/item/assembly/infra, "i_beams", OWNED_LIST, null)

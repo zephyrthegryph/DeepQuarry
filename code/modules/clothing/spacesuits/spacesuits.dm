@@ -146,4 +146,3 @@
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
 		supporting_limbs |= E // ALLOW(object_keyed_lists): wearer's limbs being splinted; non-null is the feature flag, cut on removal
 
-DECLARE_REF(/obj/item/clothing/head/helmet/space, "camera", OWNED, null)

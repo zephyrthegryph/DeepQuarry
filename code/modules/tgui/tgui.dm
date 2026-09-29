@@ -542,10 +542,10 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/tgui/proc/state() as /datum/tgui_state
 	return state_static
-DECLARE_REF(/datum/tgui, "state_static", STATIC, null)
 
 /// LC-refs: the parent_ui this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui/proc/parent_ui() as /datum/tgui
 	return om_resolve(parent_ui_handle)
 
-DECLARE_REF(/datum/tgui, "user", BACKLIST, "tgui_open_uis")
+REL_PAIR(/datum/tgui, user, tgui_open_uis)
+REL_PAIR_LIST(/mob, tgui_open_uis, user)

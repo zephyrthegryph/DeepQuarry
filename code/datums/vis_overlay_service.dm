@@ -95,4 +95,3 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 /datum/om/behaviour/world/vis_overlays/service()
 	return GLOB.vis_overlays_service
 
-DECLARE_REF(/datum/world_service/vis_overlays, "vis_overlay_cache", OWNED_VALUES, null)

@@ -302,7 +302,6 @@ DECLARE_PERIODIC(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW)
 	. = ..()
 	update_state(current_film.state)
 
-DECLARE_REF(/obj/item/clothing/accessory/dosimeter, "current_film", OWNED, null)
 
 /obj/item/clothing/accessory/dosimeter/periodic_step()
 	check_holder()

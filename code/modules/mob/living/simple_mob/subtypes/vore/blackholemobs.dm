@@ -693,7 +693,6 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	exclusive = TRUE
 	volume_chan = VOLUME_CHANNEL_MACHINERY
 
-DECLARE_REF(/mob/living/simple_mob/vore/blackhole_obelisk, "loopy", OWNED, null)
 
 /// Was attack_hand with ..() first: the obelisk's reactions follow the normal touch.
 /mob/living/simple_mob/vore/blackhole_obelisk/unarmed_touch(mob/living/L, stance = I_HELP)

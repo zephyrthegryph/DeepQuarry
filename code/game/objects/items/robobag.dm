@@ -60,7 +60,6 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag/robobag, \
 // its corpse tag drops to the floor.
 // The tag is kept in nullspace, not in contents: owned, so phase 4 deletes it
 // unless on_destroy has already dropped it on the bag's turf.
-DECLARE_REF(/obj/structure/closet/body_bag/cryobag/robobag, "corptag", OWNED, null)
 
 /obj/structure/closet/body_bag/cryobag/robobag/on_destroy(force)
 	var/turf/T = get_turf(src)

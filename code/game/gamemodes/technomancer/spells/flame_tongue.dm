@@ -22,7 +22,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/flame_tongue, "welder", /obj/item/weldingt
 	visible_message(span_warning("\The [loc]'s hand begins to emit a flame."))
 	welder.setWelding(1)
 
-DECLARE_REF(/obj/item/spell/flame_tongue, "welder", OWNED, null)
 
 /obj/item/weldingtool/spell
 	name = "flame"

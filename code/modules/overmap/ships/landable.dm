@@ -91,7 +91,6 @@
 	base_turf = world.turf
 
 // Its ship forgets its landmark.
-DECLARE_REF(/obj/effect/shuttle_landmark/ship, "ship_handle", BACK_HANDLE, "landmark")
 
 /obj/effect/shuttle_landmark/ship/is_valid(datum/shuttle/shuttle)
 	return (isnull(loc) || ..()) // If it doesn't exist yet, its clear
@@ -120,7 +119,8 @@ DECLARE_REF(/obj/effect/shuttle_landmark/ship, "ship_handle", BACK_HANDLE, "land
 	om_hook(master, /datum/om/event/qdeleting, src, TYPE_PROC_REF(/datum, qdel_self))
 	. = ..()
 
-DECLARE_REF(/obj/effect/shuttle_landmark/visiting_shuttle, "core_landmark", BACKLIST, "visitors")
+REL_PAIR(/obj/effect/shuttle_landmark/visiting_shuttle, core_landmark, visitors)
+REL_PAIR_LIST(/obj/effect/shuttle_landmark/ship, visitors, core_landmark)
 
 /obj/effect/shuttle_landmark/visiting_shuttle/is_valid(datum/shuttle/shuttle)
 	. = ..()
@@ -221,4 +221,3 @@ DECLARE_REF(/obj/effect/shuttle_landmark/visiting_shuttle, "core_landmark", BACK
 			var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
 			return "In orbit of [orbit?.name || "an unregistered body"]."
 
-DECLARE_REF(/obj/effect/overmap/visitable/ship/landable, "landmark", OWNED, null)

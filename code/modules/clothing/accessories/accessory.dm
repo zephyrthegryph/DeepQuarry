@@ -1503,8 +1503,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/poncho/roles/neo_ranger, INTERA
 	icon_override = 'icons/mob/ties_yw.dmi' //Moved to archive
 
 
-DECLARE_REF(/obj/item/clothing/accessory, "inv_overlay", OWNED, null)
-DECLARE_REF(/obj/item/clothing/accessory, "mob_overlay", OWNED, null)
 
 /// LC-refs: The suit the tie may be attached to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/accessory/proc/has_suit() as /obj/item/clothing

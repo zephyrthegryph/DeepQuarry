@@ -246,4 +246,4 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 // AI
 
 // The worn headset sits in the parrot's contents.
-DECLARE_REF(/mob/living/simple_mob/animal/passive/bird/parrot, "my_headset", HELD, null)
+OWN(/mob/living/simple_mob/animal/passive/bird/parrot, my_headset, OWN_CONTAINED)

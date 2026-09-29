@@ -279,4 +279,3 @@
 	return step_delay
 
 // Read by detach() in Destroy().
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment, "chassis", HELD, null)

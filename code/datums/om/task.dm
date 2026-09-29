@@ -200,6 +200,8 @@
 	if(!spec)
 		CRASH("om: unknown task [task]")
 	if(!actor || QDELETED(actor))
+		if(actor && (actor.datum_flags & DF_DESTROYING))
+			OWN_REPORT("refused task [task] on [actor.type], which is being destroyed")
 		return "gone"
 	if(target && QDELETED(target))
 		return "gone"
@@ -555,10 +557,10 @@
 /// The running task that claims `D`, or null. This is what "busy" means: a bot, a tool or a
 /// machine is busy while a task claims it.
 /proc/om_claiming_task(datum/D)
-	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim/busy)
+	var/datum/om/task/T = link_source_of(D, /datum/om/relation/claim/busy)
 	if(istype(T) && T.state == OM_TASK_RUNNING)
 		return T
-	T = om_source_of(D, /datum/om/relation/claim)
+	T = link_source_of(D, /datum/om/relation/claim)
 	return (istype(T) && T.state == OM_TASK_RUNNING) ? T : null
 
 /// TRUE while a running task claims `D`: as the thing doing the work (its actor, tool or
@@ -569,7 +571,7 @@
 /// TRUE while a running task claims `D` as its exclusive target (someone is working on it),
 /// whatever `D` itself is doing.
 /proc/om_in_use(datum/D)
-	var/datum/om/task/T = om_source_of(D, /datum/om/relation/claim)
+	var/datum/om/task/T = link_source_of(D, /datum/om/relation/claim)
 	return istype(T) && T.state == OM_TASK_RUNNING
 
 /// Cancels the task that claims `D`, if any (it stopped early). TRUE if one was cancelled.

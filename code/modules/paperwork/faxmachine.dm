@@ -657,4 +657,4 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 /obj/machinery/photocopier/faxmachine/proc/cooldown_over()
 	sendcooldown = 0
 
-DECLARE_REF(/obj/machinery/photocopier/faxmachine, "scan", HELD, null)
+OWN(/obj/machinery/photocopier/faxmachine, scan, OWN_CONTAINED)

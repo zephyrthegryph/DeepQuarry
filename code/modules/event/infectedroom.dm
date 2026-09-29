@@ -82,4 +82,3 @@
 /datum/event/disease_outbreak/floor/proc/target_area() as /area
 	return om_resolve(target_area_handle)
 
-DECLARE_REF(/datum/event/disease_outbreak/floor, "target_turfs", STATIC, null)

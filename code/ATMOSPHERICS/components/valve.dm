@@ -276,6 +276,3 @@
 	network_node1 = null
 	network_node2 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/valve, "network_node1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/valve, "network_node2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/valve/digital, "radio_connection", STATIC, null)

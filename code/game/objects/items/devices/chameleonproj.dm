@@ -158,5 +158,4 @@ EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	..()
 	master?.disrupt(0)
 
-DECLARE_REF(/obj/item/chameleon, "active_dummy", OWNED, null)
-DECLARE_REF(/obj/effect/dummy/chameleon, "master", PAIR, "active_dummy")
+REL_PAIR(/obj/effect/dummy/chameleon, master, active_dummy)

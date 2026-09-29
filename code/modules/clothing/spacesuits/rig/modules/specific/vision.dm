@@ -207,8 +207,8 @@
 	..()
 	holder.visor = src
 
-DECLARE_REF(/obj/item/rig_module/vision, "holder", PAIR, "visor")
-DECLARE_REF(/obj/item/rig, "visor", PAIR, "holder")
+REL_PAIR(/obj/item/rig_module/vision, holder, visor)
+REL_PAIR(/obj/item/rig, visor, holder)
 
 /obj/item/rig_module/vision/engage()
 
@@ -255,8 +255,5 @@ DECLARE_REF(/obj/item/rig, "visor", PAIR, "holder")
 
 	vision_modes = processed_vision
 
-DECLARE_REF(/datum/rig_vision, "glasses", OWNED, null)
 
 // vision_modes holds the module's own /datum/rig_vision instances once processed; vision points at one of them.
-DECLARE_REF(/obj/item/rig_module/vision, "vision_modes", OWNED_LIST, null)
-DECLARE_REF(/obj/item/rig_module/vision, "vision", BACK, null)

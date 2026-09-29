@@ -169,4 +169,3 @@
 /obj/machinery/implantchair/proc/set_ready()
 	ready = 1
 
-DECLARE_REF(/obj/machinery/implantchair, "implant_list", OWNED_LIST, null)

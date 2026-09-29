@@ -37,7 +37,6 @@
 	owner = R
 	slot = new_slot
 
-DECLARE_REF(/datum/robot_component, "wrapped", OWNED, null)
 
 /// Put `part` into this slot. Afflictions the part carried rejoin the body here.
 /datum/robot_component/proc/install(obj/item/part)
@@ -372,9 +371,6 @@ DECLARE_REF(/datum/robot_component, "wrapped", OWNED, null)
 
 /obj/item/var/datum/carried_afflictions/carried_afflictions
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "carried_afflictions", OWNED, null)
-DECLARE_REF(/datum/carried_afflictions, "afflictions", OWNED_LIST, null)
-DECLARE_REF(/datum/carried_afflictions, "holder", BACK, "carried_afflictions")
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
@@ -520,4 +516,3 @@ DECLARE_REF(/datum/carried_afflictions, "holder", BACK, "carried_afflictions")
 	color = COLOR_OFF_WHITE
 
 // owner is the robot whose components list holds this component.
-DECLARE_REF(/datum/robot_component, "owner", BACK, null)

@@ -305,4 +305,3 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 /obj/item/organ/internal/fruitgland/life_step_idle()
 	return FALSE
 
-DECLARE_REF(/obj/item/organ/internal/fruitgland, "organ_owner", BACK, null)

@@ -95,6 +95,9 @@
 		return null
 	rec = new /datum/om/rec(E, om_scheduler())
 	E.om_rec = rec
+	#ifdef UNIT_TESTS
+	GLOB.om_rec_audit_index[ref(rec)] = TRUE
+	#endif
 	rec.table = om_registry().type_table(E.type)
 	if(!rec.table.cache_scanned)
 		om_cache_scan(rec.table, E)

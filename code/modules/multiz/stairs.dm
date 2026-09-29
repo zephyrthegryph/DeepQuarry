@@ -77,8 +77,8 @@
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-DECLARE_REF(/obj/structure/stairs/bottom, "top", PAIR, "bottom")
-DECLARE_REF(/obj/structure/stairs/bottom, "middle", PAIR, "bottom")
+REL_PAIR(/obj/structure/stairs/bottom, top, bottom)
+REL_PAIR(/obj/structure/stairs/bottom, middle, bottom)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/bottom/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -248,8 +248,8 @@ DECLARE_REF(/obj/structure/stairs/bottom, "middle", PAIR, "bottom")
 		return INITIALIZE_HINT_QDEL
 	make_climbable()
 
-DECLARE_REF(/obj/structure/stairs/middle, "top", PAIR, "middle")
-DECLARE_REF(/obj/structure/stairs/middle, "bottom", PAIR, "middle")
+REL_PAIR(/obj/structure/stairs/middle, top, middle)
+REL_PAIR(/obj/structure/stairs/middle, bottom, middle)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/middle/check_integrity(obj/structure/stairs/bottom/B = null,
@@ -329,8 +329,8 @@ DECLARE_INTERACTIONS(/obj/structure/stairs/middle, INTERACT_DRAG(null, PROC_REF(
 		WARNING("Stair created without level below: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
 
-DECLARE_REF(/obj/structure/stairs/top, "middle", PAIR, "top")
-DECLARE_REF(/obj/structure/stairs/top, "bottom", PAIR, "top")
+REL_PAIR(/obj/structure/stairs/top, middle, top)
+REL_PAIR(/obj/structure/stairs/top, bottom, top)
 
 // These are necessarily fairly similar, but because the positional relations are different, we have to copy-pasta a fair bit
 /obj/structure/stairs/top/check_integrity(obj/structure/stairs/bottom/B = null,

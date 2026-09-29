@@ -275,4 +275,3 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/vistor/vistororang
 	desc = "The ruins of some unfortunate forgoten mecha type. Perhaps something is salvageable."
 	icon_state = "mime-broken"
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/vistor/vistororange, "shields", OWNED, null)

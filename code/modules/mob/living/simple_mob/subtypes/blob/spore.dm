@@ -53,7 +53,6 @@
 	return ..()
 
 // Destroy() drops the body out before letting go.
-DECLARE_REF(/mob/living/simple_mob/blob/spore, "infested", HELD, null)
 
 // the infested body falls out as the spore bursts.
 /mob/living/simple_mob/blob/spore/on_destroy(force)

@@ -62,8 +62,8 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-DECLARE_REF(/obj/structure/lift/button, "floor", PAIR, "ext_panel")
-DECLARE_REF(/datum/turbolift_floor, "ext_panel", PAIR, "floor")
+REL_PAIR(/obj/structure/lift/button, floor, ext_panel)
+REL_PAIR(/datum/turbolift_floor, ext_panel, floor)
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE

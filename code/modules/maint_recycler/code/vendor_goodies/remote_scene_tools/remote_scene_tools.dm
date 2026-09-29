@@ -213,4 +213,3 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 /// LC-refs: the worn_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return om_resolve(worn_mob_handle)
-DECLARE_REF(/obj/item/remote_scene_tool, "linked_handle", BACK_HANDLE, "linked_handle")

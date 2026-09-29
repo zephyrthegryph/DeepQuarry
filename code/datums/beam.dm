@@ -59,7 +59,6 @@
 		qdel(B)
 	LAZYCLEARLIST(elements)
 
-DECLARE_REF(/datum/beam, "elements", OWNED_LIST, null)
 
 /datum/beam/proc/Draw()
 	if(QDELETED(target()) || QDELETED(origin()))
@@ -198,4 +197,3 @@ DECLARE_PERIODIC(/obj/effect/ebeam/reactive, PERIODIC_SLOW)
 /obj/effect/ebeam/proc/owner() as /datum/beam
 	return om_resolve(owner_handle)
 
-DECLARE_REF(/datum/beam, "base_icon", OWNED, null)

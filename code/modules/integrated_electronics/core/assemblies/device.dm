@@ -14,7 +14,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/assembly/electronic_assembly, "EA", /obj/item/el
 	. = ..()
 	EA.holder_handle = om_handle(src)
 
-DECLARE_REF(/obj/item/assembly/electronic_assembly, "EA", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	INTERACT_ITEM(null, PROC_REF(electronic_assembly_interaction_item)), \
@@ -91,7 +90,6 @@ EXTEND_INTERACTIONS(/obj/item/assembly/electronic_assembly, \
 	output.assembly_handle = om_handle(src)
 
 // its holder device forgets the assembly.
-DECLARE_REF(/obj/item/electronic_assembly/device, "holder_handle", BACK_HANDLE, "EA")
 
 /obj/item/electronic_assembly/device/check_interactivity(mob/user)
 	if(!CanInteract(user, state = GLOB.tgui_deep_inventory_state))

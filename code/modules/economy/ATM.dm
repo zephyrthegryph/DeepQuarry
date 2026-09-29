@@ -44,7 +44,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 
-DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 /obj/machinery/atm/machine_step()
 	if(stat & NOPOWER)

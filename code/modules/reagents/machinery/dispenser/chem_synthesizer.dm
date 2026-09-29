@@ -817,6 +817,5 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 #undef RECIPE_MAX_STRING
 #undef RECIPE_MAX_STEPS
 
-DECLARE_REF(/obj/machinery/chemical_synthesizer, "catalyst", HELD, null)
+OWN(/obj/machinery/chemical_synthesizer, catalyst, OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.
-DECLARE_REF(/obj/machinery/chemical_synthesizer, "cartridges", OWNED_VALUES, null)

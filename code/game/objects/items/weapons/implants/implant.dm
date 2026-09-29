@@ -116,7 +116,6 @@ REGISTRY_MEMBERSHIP(/obj/item/implant/tracking, REGISTRY_TRACKING_IMPLANTS)
 	om_task_periodic(src, PERIODIC_SLOW)
 
 // leaves its limb's implant list.
-DECLARE_REF(/obj/item/implant/tracking, "part", BACK_VIA, "implants")
 
 /obj/item/implant/tracking/periodic_step()
 	var/mob/living/implant_mob // Get implant's mob from our host organ
@@ -881,4 +880,4 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 /obj/item/implant/compressed/proc/scanned() as /obj/item
 	return om_resolve(scanned_handle)
 
-DECLARE_REF(/obj/item/implant, "part", HELD, null)
+OWN(/obj/item/implant, part, OWN_CONTAINED)

@@ -404,4 +404,3 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/reagent_containers/food/snacks/grown/proc/seed() as /datum/seed
 	return seed_static
-DECLARE_REF(/obj/item/reagent_containers/food/snacks/grown, "seed_static", STATIC, null)

@@ -481,4 +481,3 @@
 /obj/machinery/media/jukebox/proc/current_track() as /datum/track
 	return om_resolve(current_track_handle)
 
-DECLARE_REF(/obj/machinery/media/jukebox, "remotes", HELD, null)

@@ -9,11 +9,7 @@
 // its form instances, never on the species datum.
 
 /mob/living/carbon/human/var/datum/forms/character_forms
-DECLARE_REF(/mob/living/carbon/human, "character_forms", OWNED, null)
-DECLARE_REF(/datum/forms, "owner", BACK, "character_forms")
 // Form type -> this character's form instance; `current` is one of them.
-DECLARE_REF(/datum/forms, "forms", OWNED_VALUES, null)
-DECLARE_REF(/datum/forms, "current", HELD, null)
 
 /mob/living/carbon/human/proc/get_forms()
 	RETURN_TYPE(/datum/forms)

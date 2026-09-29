@@ -427,4 +427,3 @@
 		src.occupant_message(span_red("Disabled weapons only cycling."))
 	return
 
-DECLARE_REF(/datum/action/innate/mecha, "chassis", HELD, null)

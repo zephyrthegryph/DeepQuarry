@@ -9,7 +9,6 @@
 
 // The mapping unit points at its hud datum and at the holder screen object; each
 // going clears the var naming it (the holder declares its own).
-DECLARE_REF(/datum/mini_hud/mapper, "owner_handle", BACK_HANDLE, "hud_datum")
 
 /// LC-refs: the mapping unit this hud shows -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/mini_hud/mapper/proc/owner() as /obj/item/mapping_unit

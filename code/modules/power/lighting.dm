@@ -351,8 +351,6 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
-DECLARE_REF(/obj/machinery/light, "cell", OWNED, null)
-DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 
 /// Phase 2: stops watching player chunks for flicker.
 /obj/machinery/light/lifecycle_dematerialize()
@@ -1756,7 +1754,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	on = 1
 	broken()
 
-DECLARE_REF(/obj/machinery/light, "installed_light", HELD, null)
+OWN(/obj/machinery/light, installed_light, OWN_CONTAINED)
 
 /// LC-refs: the newlight this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/light_construct/proc/newlight() as /obj/machinery/light

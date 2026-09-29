@@ -114,4 +114,3 @@ REGISTRY_MEMBERSHIP(/datum/persistent_client, REGISTRY_PERSISTENT_CLIENTS)
 	return om_resolve(client_handle)
 
 /// LC-refs: the actions granted to this player on each login are theirs.
-DECLARE_REF(/datum/persistent_client, "player_actions", OWNED_LIST, null)

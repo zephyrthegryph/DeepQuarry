@@ -14,7 +14,6 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 	VAR_PRIVATE/list/antag_names_to_ids = list()
 
 /// The service owns its antagonist templates (keyed by id).
-DECLARE_REF(/datum/world_service/antag, "all_antag_types", OWNED_VALUES, null)
 
 /datum/world_service/antag/initialize()
 	if(initialized)

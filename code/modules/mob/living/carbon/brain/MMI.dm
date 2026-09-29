@@ -391,10 +391,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 	icon_state = "mainboard"
 	w_class = ITEMSIZE_NORMAL
 
-DECLARE_REF(/obj/item/mmi, "radio", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/mmi, "radio", /obj/item/radio/headset/mmi_radio)
-DECLARE_REF(/obj/item/mmi, "body_backup", OWNED, null)
 // The brain stays until Destroy(): the occupant's view is discarded before its tissue goes.
-DECLARE_REF(/obj/item/mmi, "brainobj", HELD, null)
-DECLARE_REF(/obj/item/mmi, "mecha", HELD, null)
-DECLARE_REF(/obj/item/mmi/digital, "Q", OWNED, null)
+OWN(/obj/item/mmi, brainobj, OWN_CONTAINED)
+OWN(/obj/item/mmi, mecha, OWN_CONTAINED)

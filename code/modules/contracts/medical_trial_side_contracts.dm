@@ -14,7 +14,6 @@
 	var/list/payload
 	var/evidence_id
 
-DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 
 /datum/contract_document/New(obj/item/paper/new_holder, _contract_id, _document_kind, _destination, list/_payload)
 	. = ..()
@@ -578,4 +577,3 @@ DECLARE_REF(/datum/contract_document, "holder", BACK, "contract_document")
 #undef MEDICAL_SIDE_AUTOPSY
 #undef MEDICAL_SIDE_SAMPLE_AMOUNT
 
-DECLARE_REF(/datum/contract/medical_trial_personal, "action_requirement", OWNED, null)

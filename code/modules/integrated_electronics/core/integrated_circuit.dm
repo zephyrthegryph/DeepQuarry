@@ -43,9 +43,6 @@ a creative player the means to solve many problems.  Circuits are held inside an
 /obj/item/integrated_circuit/proc/on_data_written() //Override this for special behaviour when new data gets pushed to the circuit.
 	return
 
-DECLARE_REF(/obj/item/integrated_circuit, "inputs", OWNED_LIST, null)
-DECLARE_REF(/obj/item/integrated_circuit, "outputs", OWNED_LIST, null)
-DECLARE_REF(/obj/item/integrated_circuit, "activators", OWNED_LIST, null)
 
 /obj/item/integrated_circuit/emp_act(severity, recursive)
 	. = ..()

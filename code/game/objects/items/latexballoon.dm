@@ -47,4 +47,3 @@ DECLARE_INTERACTIONS(/obj/item/latexballon, INTERACT_ITEM(null, PROC_REF(interac
 		burst()
 	return INTERACTION_HANDLED_PASS
 
-DECLARE_REF(/obj/item/latexballon, "air_contents", OWNED, null)

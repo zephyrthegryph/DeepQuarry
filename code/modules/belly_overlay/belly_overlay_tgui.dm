@@ -186,9 +186,7 @@
 	var/tmp/datum/belly_overlay_tgui/belly_overlay_tgui
 // /mob/Destroy() cleanup of belly_overlay_tgui folded into the canonical /mob/Destroy() in mob.dm
 
-DECLARE_REF(/datum/belly_overlay_tgui, "active_ui", OWNED, null)
 
-DECLARE_REF(/mob, "belly_overlay_tgui", OWNED, null)
 
 /// LC-refs: the owner this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/belly_overlay_tgui/proc/owner() as /mob

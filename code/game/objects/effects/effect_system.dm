@@ -703,4 +703,3 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 /datum/effect/effect/system/steam_trail_follow/proc/oldposition() as /turf
 	return om_resolve(oldposition_handle)
 
-DECLARE_REF(/datum/effect/effect/system, "holder", HELD, null)

@@ -15,7 +15,6 @@
 	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."
 	return ..()
 
-DECLARE_REF(/obj/structure/prop/transmitter, "soundloop", OWNED, null)
 
 /obj/structure/prop/transmitter/vv_edit_var(var_name, var_value)
 	if(var_name == "message_to_play")

@@ -210,4 +210,4 @@
 /obj/structure/fireaxecabinet/empty
 	starts_with_axe = FALSE
 
-DECLARE_REF(/obj/structure/fireaxecabinet, "fireaxe", HELD, null)
+OWN(/obj/structure/fireaxecabinet, fireaxe, OWN_CONTAINED)

@@ -324,10 +324,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
-DECLARE_REF(/obj/item/clothing/gloves, "ring", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "gloves", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "special_attack", OWNED, null)
-DECLARE_REF(/obj/item/clothing/gloves, "contents", SPILL_LIST, null)
+OWN(/obj/item/clothing/gloves, contents, OWN_SPILL)
 
 /obj/item/clothing/proc/set_clothing_index()
 	return
@@ -646,8 +643,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head, \
 		span_red("More motion while \the [name] move, feet pressing down against you.")
 	)
 
-DECLARE_REF(/obj/item/clothing/shoes, "shoes", OWNED, null)
-DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 
 /// Old verb "Draw Boot Knife" (offered while a knife is held).
 /obj/item/clothing/shoes/proc/shoes_draw_knife_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -940,7 +935,6 @@ DECLARE_REF(/obj/item/clothing/shoes, "holding", OWNED, null)
 	toggleicon = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing/suit, "hood", OWNED, null)
 
 /obj/item/clothing/suit/update_icon()
 	. = ..()
@@ -1357,10 +1351,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under, \
 	sensor_mode = pick(0,1,2,3)
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing, "contents", SPILL_LIST, null)
+OWN(/obj/item/clothing, contents, OWN_SPILL)
 // Attached accessories are part of the garment: deleted with it, not spilled
 // (dq_lifecycle_spill_declared skips owned children held in contents).
-DECLARE_REF(/obj/item/clothing, "accessories", OWNED_LIST, null)
 
 /obj/item/clothing/proc/handle_digitigrade(mob/user)
 	if(ishuman(user))
@@ -1564,12 +1557,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		SPECIES_VOX = 'icons/inventory/head/mob_vox.dmi',
 		SPECIES_WEREBEAST = 'icons/inventory/head/mob_werebeast.dmi')
 
-DECLARE_REF(/obj/item/clothing/head, "helmet_light", OWNED, null)
 
-DECLARE_REF(/obj/item/clothing/under, "rolled_down_icon", OWNED, null)
-DECLARE_REF(/obj/item/clothing/under, "rolled_down_sleeves_icon", OWNED, null)
 
-DECLARE_REF(/obj/item/clothing/gloves, "cell", HELD, null)
+OWN(/obj/item/clothing/gloves, cell, OWN_CONTAINED)
 
 /// LC-refs: the master_rig this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/clothing/proc/master_rig() as /obj/item/rig

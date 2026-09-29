@@ -44,10 +44,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/flamethrower/full, "igniter", /obj/item/assembly
 	igniter.secured = 0 // for disassembly
 	status = TRUE
 
-DECLARE_REF(/obj/item/flamethrower, "weldtool", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/flamethrower, "weldtool", /obj/item/weldingtool)
-DECLARE_REF(/obj/item/flamethrower, "igniter", OWNED, null)
-DECLARE_REF(/obj/item/flamethrower, "ptank", OWNED, null)
 
 /obj/item/flamethrower/periodic_step()
 	if(!lit)

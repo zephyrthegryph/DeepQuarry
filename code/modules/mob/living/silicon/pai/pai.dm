@@ -186,26 +186,9 @@
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/mob/living/silicon/pai, "card", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pai_ui_chassis", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "sradio", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "communicator", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pda", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "pai_fold_display", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "eye_layer", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_south", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_north", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_east", OWNED, null)
-DECLARE_REF(/mob/living/silicon/pai, "holo_icon_west", OWNED, null)
 // `radio` is the card's radio; the cable is retracted by check_retract_cable(); records belong to the datacore.
-DECLARE_REF(/mob/living/silicon/pai, "current", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "radio", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "cable", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "medicalActive1", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "medicalActive2", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "securityActive1", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "securityActive2", HELD, null)
-DECLARE_REF(/mob/living/silicon/pai, "hackdoor", HELD, null)
+OWN(/mob/living/silicon/pai, radio, OWN_CONTAINED)
+OWN(/mob/living/silicon/pai, cable, OWN_CONTAINED)
 
 // releases its prey and retracts its cable.
 /mob/living/silicon/pai/on_destroy(force)

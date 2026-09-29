@@ -287,4 +287,3 @@
 	. = ..()
 	node3 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/pipe/manifold, "node3", HELD, null)

@@ -279,7 +279,3 @@
 	return
 
 // Rosters and the authoritative mixture: Destroy() splits the gas across members, then severs every side.
-DECLARE_REF(/datum/pipe_network, "gases", HELD, null)
-DECLARE_REF(/datum/pipe_network, "air", HELD, null)
-DECLARE_REF(/datum/pipe_network, "normal_members", HELD, null)
-DECLARE_REF(/datum/pipe_network, "line_members", HELD, null)

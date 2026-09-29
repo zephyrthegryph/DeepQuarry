@@ -1668,4 +1668,3 @@ SUBSYSTEM_DEF(internal_wiki)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/internal_wiki/page/catalog/proc/catalog_record() as /datum/category_item/catalogue
 	return catalog_record_static
-DECLARE_REF(/datum/internal_wiki/page/catalog, "catalog_record_static", STATIC, null)

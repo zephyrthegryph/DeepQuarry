@@ -44,7 +44,6 @@
 	utility_requirements = build_utility_requirements()
 	variant_options = build_variant_options()
 
-DECLARE_REF(/datum/generated_room_feature, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_feature/proc/build_constraints()
 	return list()
@@ -277,7 +276,6 @@ DECLARE_REF(/datum/generated_room_feature, "constraints", OWNED_LIST, null)
 	feature_types = build_feature_types()
 	constraints = build_constraints()
 
-DECLARE_REF(/datum/generated_room_feature_group, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_feature_group/proc/build_feature_types()
 	return list()
@@ -471,8 +469,6 @@ DECLARE_REF(/datum/generated_room_feature_group, "constraints", OWNED_LIST, null
 	constraints = build_constraints()
 	occupied_offsets = build_occupied_offsets()
 
-DECLARE_REF(/datum/generated_room_fragment, "sockets", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_room_fragment, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_fragment/proc/build_sockets()
 	return list()
@@ -831,8 +827,6 @@ DECLARE_REF(/datum/generated_room_fragment, "constraints", OWNED_LIST, null)
 	variant_options = build_variant_options()
 	room_style = build_room_style()
 
-DECLARE_REF(/datum/generated_room_definition, "room_style", OWNED, null)
-DECLARE_REF(/datum/generated_room_definition, "constraints", OWNED_LIST, null)
 
 /datum/generated_room_definition/proc/build_required_features()
 	return list()

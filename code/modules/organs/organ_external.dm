@@ -96,11 +96,7 @@
 
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/organ/external, "mob_icon", OWNED, null)
-DECLARE_REF(/obj/item/organ/external, "hud_damage_image", OWNED, null)
-DECLARE_REF(/obj/item/organ/external, "splinted", HELD, null)
-DECLARE_REF(/obj/item/organ/external, "parent", BACK, null)
-DECLARE_REF(/obj/item/organ/external, "applied_pressure", BACK, null)
+OWN(/obj/item/organ/external, splinted, OWN_CONTAINED)
 
 // child limbs and internal organs go with it; it leaves its owner's organ tables.
 /obj/item/organ/external/on_destroy(force)

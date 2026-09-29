@@ -598,9 +598,8 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 		slot_r_hand_str = 'icons/obj/guns/supercannon/righthand_guns.dmi',
 		)
 
-DECLARE_REF(/obj/item/gun/energy/floragun, "emitter", HELD, null)
+OWN(/obj/item/gun/energy/floragun, emitter, OWN_CONTAINED)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/gun/energy/floragun/proc/gene() as /datum/decl/plantgene
 	return gene_static
-DECLARE_REF(/obj/item/gun/energy/floragun, "gene_static", STATIC, null)

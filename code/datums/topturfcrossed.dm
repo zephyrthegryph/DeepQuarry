@@ -56,7 +56,6 @@
 /datum/topturfcrossed/proc/our_old_turf() as /turf
 	return om_resolve(our_old_turf_handle)
 
-DECLARE_REF(/datum/topturfcrossed, "owner", BACK, "topturfcrossed")
 
 //the bikehorn of testing
 /obj/item/bikehorn/topturf_testing
@@ -64,7 +63,6 @@ DECLARE_REF(/datum/topturfcrossed, "owner", BACK, "topturfcrossed")
 	desc = "honk if you're working correctly"
 	var/tmp/datum/topturfcrossed/topturfcrossed
 
-DECLARE_REF(/obj/item/bikehorn/topturf_testing, "topturfcrossed", OWNED, null)
 
 DECLARE_DEFAULT_CHILD(/obj/item/bikehorn/topturf_testing, "topturfcrossed", /datum/topturfcrossed)
 

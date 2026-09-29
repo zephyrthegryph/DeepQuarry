@@ -36,14 +36,14 @@
 	var/armor_flag
 
 POOL_DECLARE(/datum/damage_packet)
-DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "attacker", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "weapon", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "zone", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "penetration", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "direction", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "flags", TRANSIENT, null)
-DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
+POOL_RESET(/datum/damage_packet, source)
+POOL_RESET(/datum/damage_packet, attacker)
+POOL_RESET(/datum/damage_packet, weapon)
+POOL_RESET(/datum/damage_packet, zone)
+POOL_RESET(/datum/damage_packet, penetration)
+POOL_RESET(/datum/damage_packet, direction)
+POOL_RESET(/datum/damage_packet, flags)
+POOL_RESET(/datum/damage_packet, armor_flag)
 
 /datum/damage_packet/New()
 	amounts = new /list(DAMAGE_KIND_COUNT)

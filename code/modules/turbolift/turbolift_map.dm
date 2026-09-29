@@ -191,9 +191,9 @@ REGISTRY_MEMBERSHIP(/obj/turbolift_map_holder, REGISTRY_TURBOLIFT_HOLDERS)
 		// Place exterior control panel.
 		var/turf/placing = locate(ext_panel_x, ext_panel_y, cz)
 		var/obj/structure/lift/button/panel_ext = new(placing, lift)
-		panel_ext.floor = cfloor
+		rel_set(panel_ext, "floor", cfloor) // REL_PAIR: sets cfloor.ext_panel too
 		panel_ext.set_dir(udir)
-		cfloor.ext_panel_handle = om_handle(panel_ext)
+
 
 		// Place lights
 		var/turf/placing1 = locate(light_x1, light_y1, cz)

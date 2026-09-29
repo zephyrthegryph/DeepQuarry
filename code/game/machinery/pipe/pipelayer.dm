@@ -29,7 +29,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 	default_apply_parts()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 
 /obj/machinery/pipelayer/RefreshParts()
 	var/mb_rating = get_part_rating(/obj/item/stock_parts/matter_bin)

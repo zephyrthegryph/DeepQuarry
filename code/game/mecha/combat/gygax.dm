@@ -138,4 +138,4 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothin
 	update_integrity(25)
 	cell.charge = rand(0, (cell.charge/2))
 
-DECLARE_REF(/obj/mecha/combat/gygax/serenity, "hud", HELD, null)
+OWN(/obj/mecha/combat/gygax/serenity, hud, OWN_CONTAINED)

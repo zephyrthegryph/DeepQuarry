@@ -81,9 +81,8 @@
 	update_particles()
 	return TRUE
 
-DECLARE_REF(/datum/status_effect, "particle_effect", OWNED, null)
 /// The mob it is on; phase 4 takes it out of the mob's status_effects.
-DECLARE_REF(/datum/status_effect, "owner", BACKLIST, "status_effects")
+REL_PAIR(/datum/status_effect, owner, status_effects)
 
 // the effect leaves its mob: alert cleared, on_remove() run.
 /datum/status_effect/on_destroy(force)

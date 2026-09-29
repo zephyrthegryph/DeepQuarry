@@ -595,7 +595,3 @@
 	log_admin("[prey_body] ([prey_body.ckey]) has returned to their body from [pred_body].")
 	qdel(src)
 
-DECLARE_REF(/mob/living/dominated_brain, "prey_body", HELD, null)
-DECLARE_REF(/mob/living/dominated_brain, "prey_mind", HELD, null)
-DECLARE_REF(/mob/living/dominated_brain, "pred_body", HELD, null)
-DECLARE_REF(/mob/living/dominated_brain, "pred_mind", HELD, null)

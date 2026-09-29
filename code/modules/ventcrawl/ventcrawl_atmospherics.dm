@@ -101,4 +101,3 @@
 /obj/machinery/atmospherics/unary/isConnectable(obj/machinery/atmospherics/target)
 	return (target == node || ..())
 
-DECLARE_REF(/obj/machinery/atmospherics, "pipe_image", OWNED, null)

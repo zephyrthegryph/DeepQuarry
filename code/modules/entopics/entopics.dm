@@ -126,6 +126,4 @@
 
 	usr << ftp(holo ? HI : CI,"[A.name].dmi")
 
-DECLARE_REF(/datum/entopic, "my_image", OWNED, null)
 
-DECLARE_REF(/obj/item/entopic_debug, "ent_debug", OWNED, null)

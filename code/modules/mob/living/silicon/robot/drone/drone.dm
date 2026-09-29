@@ -428,4 +428,3 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/drone, INTERACT_ITEM_AS(I_HELP, "P
 	..()
 	flavor_text = "It's a bulky mining drone stamped with a Grayson logo."
 
-DECLARE_REF(/mob/living/silicon/robot/drone, "master_fabricator", HELD, null)

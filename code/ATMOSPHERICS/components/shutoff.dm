@@ -224,5 +224,3 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 	// The leaks therefore must be on the other side of another shutoff valve
 	return
 
-DECLARE_REF(/obj/machinery/atmospherics/valve/shutoff, "network1_token", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/valve/shutoff, "network2_token", HELD, null)

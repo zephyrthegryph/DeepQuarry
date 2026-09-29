@@ -281,4 +281,3 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/expedition_building/proc/loot_biome() as /datum/expedition_biome
 	return loot_biome_static
-DECLARE_REF(/datum/expedition_building, "loot_biome_static", STATIC, null)

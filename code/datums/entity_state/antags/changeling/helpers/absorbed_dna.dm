@@ -7,7 +7,6 @@
 	var/list/genMods
 
 /datum/absorbed_dna/var/datum/dna/dna
-DECLARE_REF(/datum/absorbed_dna, "dna", OWNED, null)
 
 /datum/absorbed_dna/New(newName, newDNA, newSpecies, newLanguages, newIdentifying_Gender, list/newFlavour, list/newGenMods)
 	..()

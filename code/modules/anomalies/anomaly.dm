@@ -9,7 +9,6 @@
 
 /// Owned: lets us delete anomalies we hit (was the effect_remover component).
 /obj/item/anomaly_neutralizer/var/datum/effect_remover/effect_remover
-DECLARE_REF(/obj/item/anomaly_neutralizer, "effect_remover", OWNED, null)
 
 /obj/item/anomaly_neutralizer/Initialize(mapload)
 	. = ..()

@@ -67,4 +67,3 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 		GLOB.dq_attacks_panels[key] = panel
 	panel.tgui_interact(src)
 
-DECLARE_REF(/datum/attacks_panel, "host", HELD, null)

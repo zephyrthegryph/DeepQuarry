@@ -242,4 +242,4 @@ DECLARE_INTERACTIONS(/obj/item/bluespace_harpoon, \
 				icon_state = "harpoon-2"
 		transforming = 0
 
-DECLARE_REF(/obj/item/bluespace_harpoon, "scanmod", HELD, null)
+OWN(/obj/item/bluespace_harpoon, scanmod, OWN_CONTAINED)

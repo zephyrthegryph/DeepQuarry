@@ -270,8 +270,3 @@
 	network1 = null
 	network2 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "air_in", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "air_out", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "network1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipeturbine, "network2", HELD, null)
-DECLARE_REF(/obj/machinery/power/turbinemotor, "turbine", HELD, null)

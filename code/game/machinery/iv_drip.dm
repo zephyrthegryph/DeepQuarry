@@ -202,7 +202,7 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 		return TRUE
 	return ..()
 
-DECLARE_REF(/obj/machinery/iv_drip, "beaker", HELD, null)
+OWN(/obj/machinery/iv_drip, beaker, OWN_CONTAINED)
 
 /// LC-refs: attached -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/iv_drip/proc/attached() as /mob/living/carbon/human

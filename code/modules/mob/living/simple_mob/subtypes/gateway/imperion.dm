@@ -503,4 +503,3 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 			continue
 		L.apply_body_effect(/datum/body_effect/aura/despair, null, src)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "shields", OWNED, null)

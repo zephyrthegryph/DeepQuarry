@@ -478,4 +478,3 @@
 		by_var[name] += len + 1
 
 // Keyed by subsystems (singletons).
-DECLARE_REF(/datum/benchmark, "window_subsystem_fires", STATIC, null)

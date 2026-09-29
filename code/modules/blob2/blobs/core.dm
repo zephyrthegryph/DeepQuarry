@@ -215,7 +215,6 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 		valid_types += BT
 	return pick(valid_types)
 
-DECLARE_REF(/obj/structure/blob/core, "Q", OWNED, null)
 
 /// LC-refs: Whoever is set to be controlling the blob. Used when the blob is created. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/blob/core/proc/controller() as /client

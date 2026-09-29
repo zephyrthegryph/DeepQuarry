@@ -504,7 +504,3 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 // CHOMPEnable End
 
 // Matter synths belong to the robot module (DECLARE_REF(..., OWNED_LIST) "synths"); tools draw on them.
-DECLARE_REF(/obj/item/reagent_containers/borghypo/hound, "water", HELD, null)
-DECLARE_REF(/obj/item/robot_tongue, "water", HELD, null)
-DECLARE_REF(/obj/item/lightreplacer/dogborg, "glass", HELD, null)
-DECLARE_REF(/obj/item/reagent_containers/glass/beaker/large/borg, "R", HELD, null)

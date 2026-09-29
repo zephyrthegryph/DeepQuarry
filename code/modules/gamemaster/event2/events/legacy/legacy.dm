@@ -51,4 +51,3 @@
 
 // Proof of concept.
 
-DECLARE_REF(/datum/event2/event/legacy, "legacy_event", OWNED, null)

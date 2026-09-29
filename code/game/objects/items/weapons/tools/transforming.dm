@@ -12,7 +12,6 @@
 		welder = new weldertype(src) // ALLOW(decl): only when a welder mode is possible
 	on_tool_switch()
 
-DECLARE_REF(/obj/item/tool/transforming, "welder", OWNED, null)
 
 /obj/item/tool/transforming/get_welder()
 	return welder

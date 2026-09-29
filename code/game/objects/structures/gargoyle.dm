@@ -311,4 +311,3 @@
 			return
 	return ..()
 
-DECLARE_REF(/obj/structure/gargoyle, "tail_image", OWNED, null)

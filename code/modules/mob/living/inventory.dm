@@ -369,5 +369,4 @@
 
 	return data
 
-DECLARE_REF(/mob/living, "internal", HELD, null)
-DECLARE_REF(/datum/inventory_panel, "host", BACK, "inventory_panel")
+OWN(/mob/living, internal, OWN_CONTAINED)

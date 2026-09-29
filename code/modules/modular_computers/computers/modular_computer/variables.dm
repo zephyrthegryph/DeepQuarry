@@ -64,14 +64,6 @@
 	var/interact_sounds
 	var/interact_sound_volume = 40
 
-DECLARE_REF(/obj/item/modular_computer, "processor_unit", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "network_card", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "hard_drive", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "battery_module", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "card_slot", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "nano_printer", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "portable_drive", OWNED, null)
-DECLARE_REF(/obj/item/modular_computer, "tesla_link", OWNED, null)
 
 /// LC-refs: A currently active program running on the computer. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/modular_computer/proc/active_program() as /datum/computer_file/program

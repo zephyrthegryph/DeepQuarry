@@ -356,4 +356,3 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 /datum/om/behaviour/world/statpanels/service()
 	return GLOB.statpanels_service
 
-DECLARE_REF(/client, "stat_panel", OWNED, null)

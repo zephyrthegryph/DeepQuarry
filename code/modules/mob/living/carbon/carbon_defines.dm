@@ -35,8 +35,3 @@
 
 // bloodstr is the same holder as /atom's owned `reagents` (deleted first, so this only lets go of it):
 // left set, it and the holder's my_atom would keep each other alive.
-DECLARE_REF(/mob/living/carbon, "ingested", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "touching", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "bloodstr", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "pose_indicator", OWNED, null)
-DECLARE_REF(/mob/living/carbon, "species", STATIC, null)

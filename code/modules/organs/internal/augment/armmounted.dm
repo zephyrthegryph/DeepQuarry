@@ -175,9 +175,6 @@
 	var/list/synths
 
 // integrated_tools_by_name indexes the same tools by name.
-DECLARE_REF(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, "integrated_tools", OWNED_VALUES, null)
-DECLARE_REF(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, "integrated_tools_by_name", OWNED_VALUES, null)
-DECLARE_REF(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, "synths", OWNED_LIST, null)
 
 /// The tools this augment carries (constant per type).
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/tool_types()

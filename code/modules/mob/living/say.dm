@@ -516,4 +516,3 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 				C.images -= I
 		qdel(I)
 
-DECLARE_REF(/obj/effect/speech_bubble, "parent", HELD, null)

@@ -71,7 +71,6 @@ REGISTRY_MEMBERSHIP(/obj/effect/rune, REGISTRY_RUNES)
 		if(our_ai.client)
 			our_ai.client.images += blood_image
 
-DECLARE_REF(/obj/effect/rune, "blood_image", OWNED, null)
 
 // the rune's blood image comes off every AI client that was shown it.
 /obj/effect/rune/lifecycle_prerelease()

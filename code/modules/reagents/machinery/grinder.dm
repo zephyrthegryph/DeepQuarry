@@ -244,4 +244,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/obj/machinery/reagentgrinder, "beaker", HELD, null)
+OWN(/obj/machinery/reagentgrinder, beaker, OWN_CONTAINED)

@@ -480,10 +480,5 @@ GLOBAL_VAR_INIT(dq_construction_instant, FALSE)
 		lines += span_notice("Next: [edge.step_text][needs ? " ([needs])" : ""]")
 	return length(lines) ? lines : null
 
-DECLARE_REF(/datum/construction_graph, "edges", OWNED_LIST, null)
-DECLARE_REF(/datum/construction_graph, "wildcard_edges", OWNED_LIST, null)
 
-DECLARE_REF(/datum/construction_graph, "edges_by_id", OWNED_VALUES, null)
 
-DECLARE_REF(/datum/interaction/construction, "graph", STATIC, null)
-DECLARE_REF(/datum/interaction/construction, "compiled_alt", STATIC, null)

@@ -117,8 +117,6 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		persist_nif_data(source)
 
 //Destructor cleans up references
-DECLARE_REF(/obj/item/nif, "comm", OWNED, null)
-DECLARE_REF(/obj/item/nif, "nifsofts", OWNED_LIST, null)
 
 // the NIF unregisters from its human.
 /obj/item/nif/on_destroy(force)
@@ -762,4 +760,3 @@ DECLARE_INTERACTIONS(/obj/item/nif, INTERACT_ITEM(null, PROC_REF(interaction_ite
 		nif.save_data["examine_msg"] = new_flavor
 	// No mid-round save: NIF data persists on death, round end and leaving the round.
 
-DECLARE_REF(/mob/living/carbon/human, "nif", OWNED, null)

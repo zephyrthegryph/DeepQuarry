@@ -37,4 +37,3 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/voice, \
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/gas/voice, "changer", /obj/item/voice_changer)
 
-DECLARE_REF(/obj/item/clothing/mask/gas/voice, "changer", OWNED, null)

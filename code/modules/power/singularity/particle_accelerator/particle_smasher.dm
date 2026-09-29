@@ -33,7 +33,6 @@
 	update_icon()
 	prepare_recipes()
 
-DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 
 /obj/machinery/particle_smasher/examine(mob/user)
 	. = ..()
@@ -702,15 +701,12 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 #undef PS_RESULT_STACK
 #undef PS_RESULT_ITEM
 
-DECLARE_REF(/obj/machinery/particle_smasher, "material_layer", OWNED, null)
-DECLARE_REF(/obj/machinery/particle_smasher, "material_glow", OWNED, null)
-DECLARE_REF(/obj/machinery/particle_smasher, "reagent_layer", OWNED, null)
 
-DECLARE_REF(/obj/machinery/particle_smasher, "target", HELD, null)
+OWN(/obj/machinery/particle_smasher, target, OWN_CONTAINED)
 
 /// LC-refs: Holds the beaker. The process will consume ALL reagents inside it. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/particle_smasher/proc/reagent_container() as /obj/item/reagent_containers
 	return om_resolve(reagent_container_handle)
 
 // Items jammed in for the fabrication phase go back to the floor if the smasher is destroyed.
-DECLARE_REF(/obj/machinery/particle_smasher, "storage", SPILL_LIST, null)
+OWN(/obj/machinery/particle_smasher, storage, OWN_SPILL)

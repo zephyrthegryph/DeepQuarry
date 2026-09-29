@@ -201,4 +201,3 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/vore/solargrub, REGISTRY_SOLARGRUBS)
 		"The solargrub chitters in irritation at your continued solidity, followed by a string of crushingly tight stomach clenches that grind its caustic stomach ooze into your body!",
 		"The deceptively severe heat trapped within the solargrub works in tandem with its inner muscles and your tingling, prickling stomach juice bath to weaken you!")
 
-DECLARE_REF(/mob/living/simple_mob/vore/solargrub, "attached", HELD, null)

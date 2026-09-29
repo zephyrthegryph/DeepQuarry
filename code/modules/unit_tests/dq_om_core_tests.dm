@@ -825,8 +825,8 @@
 	var/datum/om_test_entity/box2 = entity(made)
 	om_link(item, box1, /datum/om/relation/test_member)
 	om_link(item, box2, /datum/om/relation/test_member)
-	TEST_ASSERT_EQUAL(om_relation_of(item, /datum/om/relation/test_member), box2, "source_single replaces")
-	TEST_ASSERT_EQUAL(length(om_related_to(box1, /datum/om/relation/test_member)), 0, "old edge gone from both ends")
+	TEST_ASSERT_EQUAL(link_of(item, /datum/om/relation/test_member), box2, "source_single replaces")
+	TEST_ASSERT_EQUAL(length(linked_to(box1, /datum/om/relation/test_member)), 0, "old edge gone from both ends")
 	var/datum/om_test_entity/seat = entity(made)
 	var/datum/om_test_entity/first = entity(made)
 	var/datum/om_test_entity/second = entity(made)
@@ -846,7 +846,7 @@
 	TEST_ASSERT_EQUAL(A.log[1], "unlink:1:1:1", "both ends non-null, deleting end QDELETED")
 	TEST_ASSERT_EQUAL(A.edges_at_destroy, 1, "on_destroy() still sees its edges (it runs at the start of phase 4, before the links clear)")
 	TEST_ASSERT_EQUAL(length(A.om_rec?.edges), 0, "the deleted end has no edges left")
-	TEST_ASSERT_EQUAL(length(om_related(B, /datum/om/relation/test_hooked)), 0, "other end cleaned")
+	TEST_ASSERT_EQUAL(length(linked(B, /datum/om/relation/test_hooked)), 0, "other end cleaned")
 
 /datum/unit_test/om/relation_contributions_active_if
 

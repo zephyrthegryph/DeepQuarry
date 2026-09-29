@@ -93,7 +93,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 	decryptkey = GenerateKey()
 	send_pda_message("System Administrator", "system", "This is an automated message. The messaging system is functioning correctly.")
 
-DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 
 /obj/machinery/message_server/examine(mob/user, distance, infix, suffix)
 	. = ..()
@@ -478,7 +477,4 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 /obj/machinery/message_server/step_start_condition()
 	return active // its hum
 
-DECLARE_REF(/obj/machinery/message_server, "pda_msgs", OWNED_LIST, null)
-DECLARE_REF(/obj/machinery/message_server, "rc_msgs", OWNED_LIST, null)
 
-DECLARE_REF(/obj/machinery/blackbox_recorder, "feedback", OWNED_LIST, null)

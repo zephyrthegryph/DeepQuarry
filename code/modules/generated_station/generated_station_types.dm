@@ -13,8 +13,6 @@
 	requirements = list()
 	provisions = list()
 
-DECLARE_REF(/datum/generated_station_department_definition, "requirements", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_department_definition, "provisions", OWNED_LIST, null)
 
 /// A capability consumed by a department. Providers may be implemented later
 /// by rooms, machinery, networks, or another department.
@@ -86,9 +84,6 @@ DECLARE_REF(/datum/generated_station_department_definition, "provisions", OWNED_
 	eva_vestibules = list()
 	room_program = list()
 
-DECLARE_REF(/datum/generated_station_layout_node, "frontage_sockets", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_layout_node, "eva_vestibules", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_layout_node, "room_program", OWNED_LIST, null)
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
 	return territory["[x],[y]"]
@@ -128,7 +123,6 @@ DECLARE_REF(/datum/generated_station_layout_node, "room_program", OWNED_LIST, nu
 	content_circulation = list()
 	fixture_ids = list()
 
-DECLARE_REF(/datum/generated_station_room_allocation, "door_sockets", OWNED_LIST, null)
 
 /datum/generated_station_room_allocation/proc/add_tile(x, y)
 	tiles["[x],[y]"] = TRUE
@@ -208,7 +202,6 @@ DECLARE_REF(/datum/generated_station_room_allocation, "door_sockets", OWNED_LIST
 	tiles = list()
 	door_sockets = list()
 
-DECLARE_REF(/datum/generated_station_eva_vestibule, "door_sockets", OWNED_LIST, null)
 
 /// Abstract relationship between two layout vertices.
 /datum/generated_station_layout_edge
@@ -249,7 +242,6 @@ DECLARE_REF(/datum/generated_station_eva_vestibule, "door_sockets", OWNED_LIST, 
 	..()
 	issues = list()
 
-DECLARE_REF(/datum/generated_station_validation_result, "issues", OWNED_LIST, null)
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
 	issues += new /datum/generated_station_validation_issue(severity, code, message, subject_id)
@@ -320,13 +312,6 @@ DECLARE_REF(/datum/generated_station_validation_result, "issues", OWNED_LIST, nu
 	content_quality = list()
 	fixture_type_registry = list()
 
-DECLARE_REF(/datum/generated_station_spec, "departments", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "department_definitions", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "layout_nodes", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "layout_edges", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "fixture_blueprint", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "network_blueprint", OWNED_LIST, null)
-DECLARE_REF(/datum/generated_station_spec, "maintenance_doors", OWNED_VALUES, null)
 
 /datum/generated_station_spec/proc/validate()
 	var/datum/generated_station_validation_result/result = new
@@ -456,4 +441,3 @@ DECLARE_REF(/datum/generated_station_spec, "maintenance_doors", OWNED_VALUES, nu
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/generated_station_department_instance/proc/definition() as /datum/generated_station_department_definition
 	return definition_static
-DECLARE_REF(/datum/generated_station_department_instance, "definition_static", STATIC, null)

@@ -19,7 +19,6 @@
 
 	cerealmaker_loop = new(list(src), FALSE)
 
-DECLARE_REF(/obj/machinery/appliance/mixer/cereal, "cerealmaker_loop", OWNED, null)
 
 /obj/machinery/appliance/mixer/cereal/update_icon()
 	. = ..()

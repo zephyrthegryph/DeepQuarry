@@ -402,4 +402,4 @@
 /obj/machinery/recharge_station/step_start_condition()
 	return TRUE // tops up its buffer
 
-DECLARE_REF(/obj/machinery/recharge_station, "cell", HELD, null)
+OWN(/obj/machinery/recharge_station, cell, OWN_CONTAINED)

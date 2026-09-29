@@ -569,6 +569,3 @@ DECLARE_INTERACTIONS(/obj/item/hand, \
 	return TRUE
 
 // A deck, pack or hand owns the card datums it holds.
-DECLARE_REF(/obj/item/deck, "cards", OWNED_LIST, null)
-DECLARE_REF(/obj/item/pack, "cards", OWNED_LIST, null)
-DECLARE_REF(/obj/item/hand, "cards", OWNED_LIST, null)

@@ -28,8 +28,8 @@
 	..()
 	holder = owner_holder
 
-DECLARE_REF(/datum/newscaster_panel, "holder", PAIR, "dq_newscaster_panel")
-DECLARE_REF(/datum/admins, "dq_newscaster_panel", PAIR, "holder")
+REL_PAIR(/datum/newscaster_panel, holder, dq_newscaster_panel)
+REL_PAIR(/datum/admins, dq_newscaster_panel, holder)
 
 /datum/newscaster_panel/tgui_state(mob/user)
 	return ADMIN_STATE(R_ADMIN|R_EVENT)

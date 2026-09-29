@@ -881,7 +881,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 	desc = "A secured airlock you might've come in from. You could leave easily using this."
 	quiet = TRUE
 
-DECLARE_REF(/obj/machinery/cryopod, "announce", HELD, null)
+OWN(/obj/machinery/cryopod, announce, OWN_CONTAINED)
 
 /// LC-refs: control computer -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/cryopod/proc/control_computer() as /obj/machinery/computer/cryopod

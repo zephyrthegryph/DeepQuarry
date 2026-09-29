@@ -55,9 +55,7 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/ammo_casing/proc/forged_material() as /datum/material
 	return forged_material_static
-DECLARE_REF(/obj/item/ammo_casing, "forged_material_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/ammo_magazine/proc/forged_material() as /datum/material
 	return forged_material_static
-DECLARE_REF(/obj/item/ammo_magazine, "forged_material_static", STATIC, null)

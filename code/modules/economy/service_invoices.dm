@@ -309,7 +309,6 @@
 /// contracts.
 /obj/item/var/datum/economic_adoption/economic_adoption
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 
 /datum/economic_adoption
 	/// The purchased item.
@@ -321,7 +320,6 @@ DECLARE_REF(/obj/item, "economic_adoption", OWNED, null)
 	var/value
 	var/adopted = FALSE
 
-DECLARE_REF(/datum/economic_adoption, "parent", BACK, "economic_adoption")
 
 /datum/economic_adoption/New(obj/item/new_parent, _invoice_id, _customer_account, _customer_department, _provider_department, _value)
 	. = ..()

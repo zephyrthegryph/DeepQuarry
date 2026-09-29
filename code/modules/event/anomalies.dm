@@ -133,7 +133,6 @@
 		impact_area_handle = om_handle(placer.find_valid_area())
 	GLOB.command_announcement.Announce("Anomalous dust particles detected on [ANOMALY_ANNOUNCE_MEDIUM_TEXT] [impact_area().name].", "Anomaly Alert")
 
-DECLARE_REF(/datum/event/anomaly, "placer", OWNED, null)
 
 /// LC-refs: the impact_area this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/event/anomaly/proc/impact_area() as /area

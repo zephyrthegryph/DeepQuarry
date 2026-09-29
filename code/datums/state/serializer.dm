@@ -110,9 +110,6 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 /// The id tables hold every atom the call touched as keys. A qdel'd context
 /// waits in the GC queue, so drop them now or those atoms carry a hidden
 /// reference (collapse's refcount check would see an outside holder).
-DECLARE_REF(/datum/state_context, "ids", DROP, null)
-DECLARE_REF(/datum/state_context, "by_id", DROP, null)
-DECLARE_REF(/datum/state_context, "pending", DROP, null)
 
 /datum/state_context/proc/refuse(reason)
 	LAZYADD(errors, reason)
@@ -196,6 +193,8 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 		var/codec_path = schema.codecs[name]
 		if(!codec_path && !islist(value) && value == initial(D.vars[name]))
 			continue
+		if(!codec_path && (isdatum(value) || islist(value)))
+			codec_path = state_ownership_codec(D, name, value)
 		var/encoded
 		if(codec_path)
 			var/default = initial(D.vars[name])
@@ -507,7 +506,7 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 			if(from_version != STATE_VERSION_LEGACY)
 				refuse("[D.type] has no saved var [name]; add a state_migrate() step")
 			continue
-		var/codec_path = schema.codecs[name]
+		var/codec_path = schema.codecs[name] || state_ownership_decode_codec(D, name, vars[name])
 		if(codec_path)
 			var/datum/state_codec/codec = state_codec(codec_path)
 			codec.decode(D, name, vars[name], src)
@@ -537,6 +536,35 @@ DECLARE_REF(/datum/state_context, "pending", DROP, null)
 				codec.decode(D, target, vars[name], src)
 			else
 				D.vars[target] = decode_value(vars[name]) // ALLOW(api): state serializer: restores legacy component vars
+
+/// The ownership codec for a saved value with no codec of its own: from the var's declaration,
+/// or from the shape the ownership codecs write (state_ownership_codec()).
+/proc/state_ownership_decode_codec(datum/D, var_name, encoded)
+	var/list/entry = own_table_of(D).entries[var_name]
+	switch(entry?[OWNE_KIND])
+		if(OWNK_OWN)
+			return /datum/state_codec/owned
+		if(OWNK_PROTO)
+			return /datum/state_codec/proto
+		if(OWNK_REL)
+			return /datum/state_codec/relation
+	if(!islist(encoded))
+		return null
+	var/list/L = encoded
+	if(!isnull(L[STATE_WRAP_OWNED]))
+		return /datum/state_codec/owned
+	if(!isnull(L["#private"]))
+		return /datum/state_codec/proto
+	if(!isnull(L["#views"]))
+		return /datum/state_codec/relation
+	return null
+
+/// Applies a nested blob onto an existing datum (the owned codec reusing a child).
+/datum/state_context/proc/apply_datum(datum/D, list/blob)
+	if(!migrate_blob(blob))
+		return
+	apply_vars(D, blob)
+	D.state_post_apply(blob, NONE)
 
 /// A datum from a nested blob (the owned codec): new, then its vars.
 /datum/state_context/proc/materialize_datum(list/blob)

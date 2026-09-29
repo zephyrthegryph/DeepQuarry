@@ -14,7 +14,8 @@
 		overmind.resource_blobs += src
 	return ..()
 
-DECLARE_REF(/obj/structure/blob/resource, "overmind", BACKLIST, "resource_blobs")
+REL_PAIR(/obj/structure/blob/resource, overmind, resource_blobs)
+REL_PAIR_LIST(/mob/observer/blob, resource_blobs, overmind)
 
 /obj/structure/blob/resource/pulsed()
 	. = ..()

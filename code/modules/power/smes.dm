@@ -141,7 +141,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/proc/apply_mapped_settings()
 	return
 
-DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 
 /obj/machinery/power/smes/proc/add_nearby_terminals()
 	for(var/d in GLOB.cardinal)

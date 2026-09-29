@@ -314,4 +314,3 @@
 	..()
 	hibernate_until_gas_changes()
 
-DECLARE_REF(/obj/machinery/atmospherics/binary/dp_vent_pump, "radio_connection", STATIC, null)

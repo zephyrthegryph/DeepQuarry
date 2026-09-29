@@ -299,8 +299,7 @@ DECLARE_INTERACTIONS(/obj/item/inducer, \
 /obj/vehicle/get_cell()
 	return cell
 
-DECLARE_REF(/obj/item/inducer, "spark_system", OWNED, null)
-DECLARE_REF(/obj/item/inducer, "cell", HELD, null)
+OWN(/obj/item/inducer, cell, OWN_CONTAINED)
 
 /// LC-refs: hume -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/cell/standin/proc/hume() as /mob/living/carbon/human

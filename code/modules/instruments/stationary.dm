@@ -13,7 +13,6 @@
 	song = new(src, allowed_instrument_ids)
 	allowed_instrument_ids = null
 
-DECLARE_REF(/obj/structure/musician, "song", OWNED, null)
 
 /obj/structure/musician/proc/can_play(atom/music_player)
 	if(!anchored && !can_play_unanchored)

@@ -28,7 +28,6 @@
 		internalPaper = new /obj/item/paper(src)
 	update_icon()
 
-DECLARE_REF(/obj/item/paperplane, "internalPaper", OWNED, null)
 
 /obj/item/paperplane/update_icon()
 	cut_overlays()

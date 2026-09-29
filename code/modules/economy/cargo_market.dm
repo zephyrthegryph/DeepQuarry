@@ -342,7 +342,6 @@
 	var/reservation_key
 	var/reserved_account = 0
 
-DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 
 /datum/cargo_market_bid/proc/remaining_units()
 	return max(0, target_units - fulfilled_units)
@@ -1085,10 +1084,5 @@ DECLARE_REF(/datum/cargo_market_bid, "profile", OWNED, null)
 		"is_auditor" = is_auditor,
 	)
 
-DECLARE_REF(/datum/world_service/supply, "market_transactions", OWNED_LIST, null)
 
-DECLARE_REF(/datum/world_service/supply, "market_counterparties", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "market_listings", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "market_bids", OWNED_VALUES, null)
 
-DECLARE_REF(/datum/cargo_market_listing, "pack", STATIC, null)

@@ -596,5 +596,3 @@
 
 	#undef PROCESS_OVERLAYS_OR_UNDERLAYS
 
-DECLARE_REF(/datum/universal_icon, "icon_file", OWNED, null)
-DECLARE_REF(/datum/universal_icon, "transform", OWNED, null)

@@ -247,6 +247,4 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	return (protected_limbs/limb_count)
 
 // Queued pulses belong to the queue until processed.
-DECLARE_REF(/datum/world_service/radiation, "processing", OWNED_LIST, null)
 // Turfs are round-long; the dirty set is flushed and cut every tick.
-DECLARE_REF(/datum/world_service/radiation, "dirty_turfs", STATIC, null)

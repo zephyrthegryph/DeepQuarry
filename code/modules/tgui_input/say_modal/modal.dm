@@ -146,9 +146,7 @@
 		to_chat(client(), span_warning(span_bold("Warning") + ": Message with [mlen] exceeded the maximum length of [maxlen]."))
 	return FALSE
 
-DECLARE_REF(/client, "tgui_say", OWNED, null)
 
-DECLARE_REF(/datum/tgui_say, "window", OWNED, null)
 
 /// LC-refs: the client this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tgui_say/proc/client() as /client

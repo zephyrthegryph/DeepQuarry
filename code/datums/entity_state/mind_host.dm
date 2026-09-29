@@ -52,9 +52,7 @@
 /// Owned: this item's mind host, if it holds minds.
 /obj/item/var/datum/mind_host/mind_host
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/obj/item, "mind_host", OWNED, null)
 
-DECLARE_REF(/datum/mind_host, "owner", BACK, "mind_host")
 
 /// Phase 1: the view (owned) is detached before the tissue drops, so it isn't put through a
 /// death on the way out.
@@ -69,7 +67,6 @@ DECLARE_REF(/datum/mind_host, "owner", BACK, "mind_host")
 	set_tissue(null)
 	owner = null
 
-DECLARE_REF(/datum/mind_host, "view", OWNED, null)
 
 /// The brain organ backing the view's status.
 /datum/mind_host/proc/set_tissue(obj/item/organ/internal/brain/new_tissue)

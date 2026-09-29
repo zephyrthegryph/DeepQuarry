@@ -345,5 +345,3 @@
 // solid with get_temperature() / add_heat() / set_temperature(), never a raw var.
 // Space turfs are radiative reservoirs, so no turf asks whether it faces space.
 
-DECLARE_REF(/turf/open, "air", HELD, null)
-DECLARE_REF(/turf/open, "active_hotspot", HELD, null)

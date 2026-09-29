@@ -50,7 +50,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/ion_engine, "controller", /datum/ship_engin
 	. = ..()
 	add_glow()
 
-DECLARE_REF(/obj/machinery/ion_engine, "controller", OWNED, null)
 
 /obj/machinery/ion_engine/proc/add_glow()
 	var/image/i = image('icons/turf/shuttle_parts_vr.dmi', "ion_overlay")

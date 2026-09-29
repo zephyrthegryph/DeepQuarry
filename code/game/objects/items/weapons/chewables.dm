@@ -373,4 +373,4 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGEN
 			to_chat(loc, span_notice("There's no more of \the [name] left!"))
 		spitout(0)
 
-DECLARE_REF(/obj/item/clothing/mask/chewable/candy/lolli, "victims", SPILL_LIST, null)
+OWN(/obj/item/clothing/mask/chewable/candy/lolli, victims, OWN_SPILL)

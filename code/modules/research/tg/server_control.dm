@@ -106,4 +106,3 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/computer/rdservercontrol/proc/stored_research() as /datum/techweb
 	return stored_research_static
-DECLARE_REF(/obj/machinery/computer/rdservercontrol, "stored_research_static", STATIC, null)

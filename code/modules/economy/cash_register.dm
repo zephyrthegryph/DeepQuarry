@@ -646,5 +646,3 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 /obj/machinery/cash_register/civilian
 	account_to_connect = "Civilian"
 
-DECLARE_REF(/obj/machinery/cash_register, "confirm_item", BACK, null)
-DECLARE_REF(/obj/machinery/cash_register, "linked_account", BACK, null)

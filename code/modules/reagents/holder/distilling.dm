@@ -25,7 +25,6 @@
 	/// Levels in the set (payload = index).
 	var/tmp/list/heat_set_levels
 
-DECLARE_REF(/datum/reagents/distilling, "heat_set_watch", OWNED, null)
 
 /datum/reagents/distilling/update_total()
 	. = ..()

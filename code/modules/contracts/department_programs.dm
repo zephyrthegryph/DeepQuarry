@@ -59,7 +59,6 @@
 	assay_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, minimum_amount)
 	event_types = list(CONTRACT_EVENT_MATERIAL_CERTIFIED, CONTRACT_EVENT_ITEM_EXPORTED)
 
-DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filter", OWNED, null)
 
 /datum/contract_requirement/qualified_material_delivery/handle_event(datum/contract_event/event)
 	if(state != CONTRACT_REQUIREMENT_PENDING)
@@ -413,7 +412,6 @@ DECLARE_REF(/datum/contract_requirement/qualified_material_delivery, "assay_filt
 	projects.first_filter.require_number("amount", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 1000)
 	projects.second_filter.require_number("value", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 100)
 
-DECLARE_REF(/datum/contract/social/alternative_fuel_trial, "output_requirement", OWNED, null)
 
 /// LC-refs: the thermal_requirement this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/contract/social/alternative_fuel_trial/proc/thermal_requirement() as /datum/contract_requirement/sustained_event

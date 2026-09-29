@@ -202,4 +202,3 @@
 	log_test("BALANCE: wrote [BALANCE_RESULTS_FILE]")
 	return document
 
-DECLARE_REF(/datum/balance_scenario, "site", BACK, null)

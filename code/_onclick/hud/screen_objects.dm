@@ -802,13 +802,6 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 	frame.vis_contents.Add(powbutton,mapbutton)
 	vis_contents.Add(frame)
 
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_full", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mask_ping", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "bg", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "frame", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "powbutton", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "mapbutton", OWNED, null)
-DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HANDLE, "hud_item")
 
 /atom/movable/screen/movable/mapper_holder/proc/update(atom/movable/screen/mapper/map, atom/movable/screen/mapper/extras_holder/extras, ping = FALSE)
 	if(!running)
@@ -1107,6 +1100,4 @@ DECLARE_REF(/atom/movable/screen/movable/mapper_holder, "owner_handle", BACK_HAN
 /atom/movable/screen/mapper/proc/parent() as /atom/movable/screen/movable/mapper_holder
 	return om_resolve(parent_handle)
 
-DECLARE_REF(/atom/movable/screen/zone_sel, "selecting_appearance", OWNED, null)
 
-DECLARE_REF(/atom/movable/screen/inventory/hand, "handcuff_overlay", OWNED, null)

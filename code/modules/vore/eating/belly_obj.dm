@@ -290,7 +290,8 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 		LAZYADD(owner.vore_organs, src)
 		belly_reschedule()
 
-DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
+REL_PAIR(/obj/belly, owner, vore_organs)
+REL_PAIR_LIST(/mob/living, vore_organs, owner)
 
 // ghosts inside are let out.
 /obj/belly/on_destroy(force)
@@ -1256,7 +1257,6 @@ DECLARE_REF(/obj/belly, "owner", BACKLIST, "vore_organs")
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/belly/proc/tail_to_change_to() as /datum/sprite_accessory/tail
 	return tail_to_change_to_static
-DECLARE_REF(/obj/belly, "tail_to_change_to_static", STATIC, null)
 
 /// LC-refs: Is this belly creating an egg? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/belly/proc/ownegg() as /obj/item/storage/vore_egg

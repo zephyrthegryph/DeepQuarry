@@ -203,4 +203,3 @@
 	beam_state = "n_beam"
 	damage = 3
 
-DECLARE_REF(/obj/item/projectile/energy/hook, "chain", OWNED, null)

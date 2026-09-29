@@ -32,6 +32,4 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/decl/hierarchy/proc/parent() as /datum/decl/hierarchy
 	return parent_static
-DECLARE_REF(/datum/decl/hierarchy, "parent_static", STATIC, null)
 
-DECLARE_REF(/datum/decl/hierarchy, "children", OWNED_LIST, null)

@@ -225,4 +225,3 @@
 							// CHOMPEnd
 	return pick(laws)
 
-DECLARE_REF(/mob/living/silicon, "laws", OWNED, null)

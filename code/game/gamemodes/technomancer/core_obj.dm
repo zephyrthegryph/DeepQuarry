@@ -367,5 +367,3 @@ EXTEND_INTERACTIONS(/obj/item/technomancer_core, \
 	INTERACT_VERB("Toggle Core Lock", PROC_REF(technomancer_core_toggle_lock_effect), REQ_IN_INVENTORY), \
 )
 
-DECLARE_REF(/obj/item/technomancer_core, "wearer", HELD, null)
-DECLARE_REF(/obj/spellbutton, "core", BACK, null)

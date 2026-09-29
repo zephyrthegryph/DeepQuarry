@@ -11,7 +11,6 @@
 		B.forceMove(master)
 	return ..()
 
-DECLARE_REF(/obj/effect/overlay/aiholo, "master", BACK, null)
 
 // stops its walk loop.
 /mob/living/silicon/ai/verb/holo_nom()

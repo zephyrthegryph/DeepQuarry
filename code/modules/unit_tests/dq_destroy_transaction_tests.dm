@@ -45,7 +45,6 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	. = ..()
 	dq_destroy_transaction_log("dematerialize")
 
-DECLARE_REF(/obj/item/dq_destroy_transaction_phase_probe, "child", OWNED, null)
 
 /obj/item/dq_destroy_transaction_phase_probe/destroy_effects()
 	var/static/datum/destroy_effects_data/dq_destroy_transaction_logging_effects/data = new
@@ -95,7 +94,7 @@ DECLARE_REF(/obj/item/dq_destroy_transaction_phase_probe, "child", OWNED, null)
 /datum/dq_destroy_transaction_pair_fixture
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 
-DECLARE_REF(/datum/dq_destroy_transaction_pair_fixture, "partner", PAIR, "partner")
+REL_PAIR(/datum/dq_destroy_transaction_pair_fixture, partner, partner)
 
 // ---- Tests: phase ordering ----
 
@@ -295,7 +294,7 @@ DECLARE_REF(/datum/dq_destroy_transaction_pair_fixture, "partner", PAIR, "partne
 	var/datum/dq_destroy_transaction_reentrant_pair/partner
 	var/qdel_partner_on_signal = FALSE
 
-DECLARE_REF(/datum/dq_destroy_transaction_reentrant_pair, "partner", PAIR, "partner")
+REL_PAIR(/datum/dq_destroy_transaction_reentrant_pair, partner, partner)
 
 /datum/dq_destroy_transaction_reentrant_pair/proc/watch()
 	om_hook(src, /datum/om/event/qdeleting, src, PROC_REF(on_qdeleting))
@@ -326,7 +325,7 @@ DECLARE_REF(/datum/dq_destroy_transaction_reentrant_pair, "partner", PAIR, "part
 	var/datum/dq_destroy_transaction_pair_fixture/partner
 	var/reset_after_links = FALSE
 
-DECLARE_REF(/datum/dq_destroy_transaction_scrub_fixture, "partner", PAIR, "partner")
+REL_PAIR(/datum/dq_destroy_transaction_scrub_fixture, partner, partner)
 
 /// Re-sets the fixture's declared pair var from phase 6 (effects), after phase 4
 /// cleared it: only phase 8's scrub can null it again.

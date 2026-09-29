@@ -729,7 +729,6 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 #undef BOLT_CASING_EJECTED
 #undef BOLT_CASING_CHAMBERED
 
-DECLARE_REF(/obj/item/gun/projectile, "ammo_magazine", HELD, null)
-DECLARE_REF(/obj/item/gun/projectile, "chambered", HELD, null)
+OWN(/obj/item/gun/projectile, ammo_magazine, OWN_CONTAINED)
+OWN(/obj/item/gun/projectile, chambered, OWN_CONTAINED)
 
-DECLARE_REF(/obj/item/gun/projectile, "loaded", OWNED_LIST, null)

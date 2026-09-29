@@ -61,8 +61,6 @@
 	default_apply_parts()
 	RefreshParts()
 
-DECLARE_REF(/obj/machinery/autolathe, "print_sound", OWNED, null)
-DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 
 /obj/machinery/autolathe/examine(mob/user)
 	. = ..()
@@ -574,4 +572,3 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/machinery/autolathe/proc/stored_research() as /datum/techweb/autounlocking
 	return stored_research_static
-DECLARE_REF(/obj/machinery/autolathe, "stored_research_static", STATIC, null)

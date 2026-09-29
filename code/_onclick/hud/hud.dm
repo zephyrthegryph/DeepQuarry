@@ -216,29 +216,8 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 // The hud's own elements, deleted with it (their screens are released in phase 5). The ammo huds
 // are keyed by the gun's OM handle.
-DECLARE_REF(/datum/hud, "lingchemdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "wiz_instability_display", OWNED, null)
-DECLARE_REF(/datum/hud, "wiz_energy_display", OWNED, null)
-DECLARE_REF(/datum/hud, "blobpwrdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "blobhealthdisplay", OWNED, null)
-DECLARE_REF(/datum/hud, "r_hand_hud_object", OWNED, null)
-DECLARE_REF(/datum/hud, "l_hand_hud_object", OWNED, null)
-DECLARE_REF(/datum/hud, "combat_mode_button", OWNED, null)
-DECLARE_REF(/datum/hud, "move_intent", OWNED, null)
-DECLARE_REF(/datum/hud, "control_vtec", OWNED, null)
-DECLARE_REF(/datum/hud, "toggle_palette", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_down", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_up", OWNED, null)
-DECLARE_REF(/datum/hud, "palette_actions", OWNED, null)
-DECLARE_REF(/datum/hud, "listed_actions", OWNED, null)
-DECLARE_REF(/datum/hud, "ui_style", OWNED, null)
-DECLARE_REF(/datum/hud, "minihuds", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "floating_actions", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "hotkeybuttons", OWNED_LIST, null)
-DECLARE_REF(/datum/hud, "ammo_hud_list", OWNED_VALUES, null)
 
 // the mob's hud_used points at us (our side is a handle); a hud going clears it.
-DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 
 /datum/hud/proc/hidden_inventory_update()
 	if(!mymob()) return
@@ -603,15 +582,3 @@ DECLARE_REF(/datum/hud, "mymob_handle", BACK_HANDLE, "hud_used")
 /datum/hud/proc/mymob() as /mob
 	return om_resolve(mymob_handle)
 
-DECLARE_REF(/datum/global_hud, "druggy", OWNED, null)
-DECLARE_REF(/datum/global_hud, "blurry", OWNED, null)
-DECLARE_REF(/datum/global_hud, "whitense", OWNED, null)
-DECLARE_REF(/datum/global_hud, "heavy_whitense", OWNED, null)
-DECLARE_REF(/datum/global_hud, "centermarker", OWNED, null)
-DECLARE_REF(/datum/global_hud, "darksight", OWNED, null)
-DECLARE_REF(/datum/global_hud, "nvg", OWNED, null)
-DECLARE_REF(/datum/global_hud, "thermal", OWNED, null)
-DECLARE_REF(/datum/global_hud, "meson", OWNED, null)
-DECLARE_REF(/datum/global_hud, "science", OWNED, null)
-DECLARE_REF(/datum/global_hud, "material", OWNED, null)
-DECLARE_REF(/datum/global_hud, "holomap", OWNED, null)

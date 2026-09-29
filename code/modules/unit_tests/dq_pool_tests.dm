@@ -8,8 +8,8 @@
 	var/keep = "kept"
 
 POOL_DECLARE(/datum/pool_test_item)
-DECLARE_REF(/datum/pool_test_item, "held", TRANSIENT, null)
-DECLARE_REF(/datum/pool_test_item, "count", TRANSIENT, null)
+POOL_RESET(/datum/pool_test_item, held)
+POOL_RESET(/datum/pool_test_item, count)
 
 /datum/pool_test_item/proc/touch()
 	POOL_ASSERT_LIVE(src)

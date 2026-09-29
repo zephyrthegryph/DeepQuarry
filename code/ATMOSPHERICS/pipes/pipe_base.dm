@@ -334,6 +334,3 @@
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
 
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "air_temporary", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "parent", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/pipe, "edge_pipelines", HELD, null)

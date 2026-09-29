@@ -1050,9 +1050,6 @@
 	var/atom/movable/screen/character_setup/screen_icon
 
 /mob/living/var/datum/character_setup_button/character_setup_button
-DECLARE_REF(/mob/living, "character_setup_button", OWNED, null)
-DECLARE_REF(/datum/character_setup_button, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/character_setup_button, "owner", BACK, "character_setup_button")
 
 /datum/character_setup_button/New(mob/living/M)
 	..()

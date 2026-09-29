@@ -28,7 +28,6 @@
 	/// Personal account credited for the current print run's production bonus.
 	var/current_producer_account = 0
 
-DECLARE_REF(/obj/machinery/rnd/production, "cached_designs", DEF, null)
 
 /obj/machinery/rnd/production/Initialize(mapload)
 	print_sound = new(list(src), FALSE)
@@ -48,8 +47,6 @@ DECLARE_REF(/obj/machinery/rnd/production, "cached_designs", DEF, null)
 	RefreshParts()
 	update_icon()
 
-DECLARE_REF(/obj/machinery/rnd/production, "print_sound", OWNED, null)
-DECLARE_REF(/obj/machinery/rnd/production, "materials", OWNED, null)
 
 /obj/machinery/rnd/production/update_icon()
 	cut_overlays()

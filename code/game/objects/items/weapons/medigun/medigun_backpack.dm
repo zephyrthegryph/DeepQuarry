@@ -297,11 +297,6 @@
 		om_task_periodic(src, PERIODIC_SLOW) // ALLOW(decl): only with a scanning module fitted
 	update_icon()
 
-DECLARE_REF(/obj/item/medigun_backpack, "bcell", OWNED, null)
-DECLARE_REF(/obj/item/medigun_backpack, "smodule", OWNED, null)
-DECLARE_REF(/obj/item/medigun_backpack, "smanipulator", OWNED, null)
-DECLARE_REF(/obj/item/medigun_backpack, "scapacitor", OWNED, null)
-DECLARE_REF(/obj/item/medigun_backpack, "slaser", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "bcell", null)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smodule", null)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "smanipulator", null)
@@ -587,6 +582,6 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 /obj/item/medigun_backpack/proc/checked_use(charge_amt)
 	return (bcell && bcell.checked_use(charge_amt))
 
-DECLARE_REF(/obj/item/medigun_backpack, "ccell", HELD, null)
-DECLARE_REF(/obj/item/medigun_backpack, "sbin", HELD, null)
+OWN(/obj/item/medigun_backpack, ccell, OWN_CONTAINED)
+OWN(/obj/item/medigun_backpack, sbin, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "sbin", null)

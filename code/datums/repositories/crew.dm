@@ -83,4 +83,3 @@ GLOBAL_DATUM_INIT(crew_repository, /datum/repository/crew, new)
 				tracked |= C
 	return tracked
 
-DECLARE_REF(/datum/repository/crew, "cache_data", OWNED_VALUES, null)

@@ -232,10 +232,3 @@
 	network2 = null
 	network3 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "air1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "air2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "air3", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "node3", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "network1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "network2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/trinary, "network3", HELD, null)

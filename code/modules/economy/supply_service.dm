@@ -1027,7 +1027,6 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 /// DECLARE_REF(..., STATIC): the supply pack this order is for (a shared definition, held strongly).
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
-DECLARE_REF(/datum/supply_order, "supply_pack_static", STATIC, null)
 
 /// Cargo market and department payroll (was SSsupply, 20 s).
 /datum/om/behaviour/world/supply
@@ -1038,9 +1037,3 @@ DECLARE_REF(/datum/supply_order, "supply_pack_static", STATIC, null)
 /datum/om/behaviour/world/supply/service()
 	return GLOB.supply_service
 
-DECLARE_REF(/datum/world_service/supply, "supply_pack", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/supply, "exported_crates", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "order_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "adm_order_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "adm_export_history", OWNED_LIST, null)
-DECLARE_REF(/datum/world_service/supply, "shuttle", STATIC, null)

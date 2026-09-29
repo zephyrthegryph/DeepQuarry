@@ -240,4 +240,3 @@
 	to_chat(user, span_notice("You have set \the [src] to [volume_rate]"))
 	update_icon()
 
-DECLARE_REF(/obj/machinery/atmospherics/unary/outlet_injector, "radio_connection", STATIC, null)

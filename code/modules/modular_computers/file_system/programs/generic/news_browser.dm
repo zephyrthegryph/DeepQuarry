@@ -121,4 +121,3 @@
 			. = TRUE
 			show_archived = !show_archived
 
-DECLARE_REF(/datum/computer_file/program/newsbrowser, "loaded_article", OWNED, null)

@@ -28,7 +28,6 @@
 	. = ..()
 	ion_trail.set_up(src)
 
-DECLARE_REF(/obj/item/tank/jetpack, "ion_trail", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/tank/jetpack/examine(mob/user)

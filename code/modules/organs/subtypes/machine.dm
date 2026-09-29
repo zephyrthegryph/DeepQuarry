@@ -38,7 +38,6 @@
 	robotic = ORGAN_ASSISTED
 	butcherable = FALSE
 
-DECLARE_REF(/obj/item/organ/internal/mmi_holder, "stored_mmi", OWNED, null)
 
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)

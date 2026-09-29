@@ -16,7 +16,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
 
-DECLARE_REF(/obj/structure/casino_table/board_game, "game_ui", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \

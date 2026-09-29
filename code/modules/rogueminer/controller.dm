@@ -208,6 +208,3 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 /datum/controller/rogue/proc/previous_zone() as /datum/rogue/zonemaster
 	return om_resolve(previous_zone_handle)
 
-DECLARE_REF(/datum/controller/rogue, "all_zones", OWNED_LIST, null)
-DECLARE_REF(/datum/controller/rogue, "clean_zones", OWNED_LIST, null)
-DECLARE_REF(/datum/controller/rogue, "ready_zones", OWNED_LIST, null)

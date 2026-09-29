@@ -533,5 +533,3 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 /obj/item/retail_scanner/civilian
 	account_to_connect = "Civilian"
 
-DECLARE_REF(/obj/item/retail_scanner, "confirm_item", BACK, null)
-DECLARE_REF(/obj/item/retail_scanner, "linked_account", BACK, null)

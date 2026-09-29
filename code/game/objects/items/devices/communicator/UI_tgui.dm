@@ -9,10 +9,6 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
-DECLARE_REF(/obj/item/communicator, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_background", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "local_skybox", OWNED, null)
-DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 
 // Proc: setup_tgui_camera()
 // Parameters: None

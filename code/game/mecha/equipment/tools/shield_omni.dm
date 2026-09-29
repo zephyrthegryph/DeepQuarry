@@ -19,7 +19,6 @@
 	..()
 	shields.adjust_health(-200)
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/omni_shield, "shields", OWNED, null)
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/attach(obj/mecha/M as obj)
 	. = ..()

@@ -44,7 +44,6 @@
 	. = ..()
 	default_apply_parts()
 
-DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 
 /obj/machinery/pda_multicaster/update_icon()
 	if(on)

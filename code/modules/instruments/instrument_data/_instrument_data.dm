@@ -110,4 +110,3 @@
 	for(var/key in last_key to HIGHEST_KEY)
 		samples[num2text(key)] = new /datum/instrument_key(last_sample, key, key - last_key)
 
-DECLARE_REF(/datum/instrument, "samples", OWNED_VALUES, null)

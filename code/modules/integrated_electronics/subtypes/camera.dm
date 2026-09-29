@@ -33,7 +33,6 @@
 	camera = new(src, camera_network_id, see_dark)
 	update_camera_name()
 
-DECLARE_REF(/obj/item/integrated_circuit/output/video_camera, "camera", OWNED, null)
 
 /obj/item/integrated_circuit/output/video_camera/on_data_written()
 	update_camera_name()
@@ -164,7 +163,6 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 
 DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", /datum/tgui_module/camera/intcircuit)
 
-DECLARE_REF(/obj/item/integrated_circuit/input/video_camera_input, "camera_module", OWNED, null)
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)
 	if(!length(paired_cameras))

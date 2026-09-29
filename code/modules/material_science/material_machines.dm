@@ -70,7 +70,6 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	if(environment)
 		chamber_air.copy_from(environment)
 
-DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 
 /obj/machinery/material_furnace/examine(mob/user)
 	. = ..()

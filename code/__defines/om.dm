@@ -184,6 +184,24 @@
 // ---- Relations (section D). ----
 #define OM_REL_REPLACE 1
 #define OM_REL_REFUSE 2
+
+// Relation shapes (/datum/om/relation/var/shape, doc/rewrite/ownership.md §4.2).
+/// A source has one target and a target one source.
+#define REL_ONE_TO_ONE 1
+/// A source has many targets; a target has one source.
+#define REL_ONE_TO_MANY 2
+/// Any number either way.
+#define REL_MANY_TO_MANY 3
+/// Membership with no direction (atmos node topology): either end may be the source.
+#define REL_SYMMETRIC 4
+
+// Unlink reasons (/datum/om/edge/var/unlink_reason, read in on_unlink()).
+#define RELATION_UNLINKED "unlinked"
+#define RELATION_DESTROYING "destroying"
+#define RELATION_BROKEN "broken"
+#define RELATION_REPLACED "replaced"
+#define RELATION_LEFT "left"
+#define RELATION_Z_RELEASED "z released"
 #define OM_END_UNLINK 1
 #define OM_END_DELETE_OTHER 2
 
@@ -336,18 +354,6 @@
 // slots), so there is nothing for a lint to catch and nothing to keep in
 // sync: deleting the old mirrored var is what makes every remaining direct
 // read a compile error.
-
-/// The single target of `E`'s edge of relation `REL` (E is the source), or null.
-#define OM_REL_TARGET(E, REL) om_relation_of(E, REL)
-/// The single source of an edge of relation `REL` targeting `E` (E is the
-/// target), or null. Pair with a target_single relation.
-#define OM_REL_SOURCE(E, REL) om_source_of(E, REL)
-/// Every source of an edge of relation `REL` targeting `E` (E is the target).
-#define OM_REL_SOURCES(E, REL) om_related_to(E, REL)
-/// Every target of `E`'s edges of relation `REL` (E is the source).
-#define OM_REL_TARGETS(E, REL) om_related(E, REL)
-
-
 
 // Named relation reads are typed procs on /datum (code/datums/om/relation.dm):
 // M.buckled_to(), A.buckled_mob_list(), M.pulling_target(), ... E.slot_item(slot).

@@ -285,4 +285,3 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 /obj/structure/ghost_pod/ghost_activated/LateInitialize()
 	ghostpod_startup(spawn_active)
 
-DECLARE_REF(/obj/structure/ghost_pod, "Q", OWNED, null)

@@ -106,9 +106,7 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/boulder/proc/geological_data() as /datum/geosample
 	return geological_data_static
-DECLARE_REF(/obj/structure/boulder, "geological_data_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/boulder/proc/artifact_find() as /datum/artifact_find
 	return artifact_find_static
-DECLARE_REF(/obj/structure/boulder, "artifact_find_static", STATIC, null)

@@ -502,9 +502,7 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/table/proc/material() as /datum/material
 	return material_static
-DECLARE_REF(/obj/structure/table, "material_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/structure/table/proc/reinforced() as /datum/material
 	return reinforced_static
-DECLARE_REF(/obj/structure/table, "reinforced_static", STATIC, null)

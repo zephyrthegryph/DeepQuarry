@@ -117,11 +117,3 @@
 	..()
 	decal_control = new(src)
 
-DECLARE_REF(/mob/living/silicon, "alarm_monitor", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "atmos_control", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "crew_manifest", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "crew_monitor", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "law_manager", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "power_monitor", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "rcon", OWNED, null)
-DECLARE_REF(/mob/living/silicon/robot, "decal_control", OWNED, null)

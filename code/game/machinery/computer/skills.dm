@@ -804,7 +804,7 @@
 
 #undef FIELD
 
-DECLARE_REF(/obj/machinery/computer/skills, "scan", HELD, null)
+OWN(/obj/machinery/computer/skills, scan, OWN_CONTAINED)
 
 /// LC-refs: active1 -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/skills/proc/active1() as /datum/data/record

@@ -223,6 +223,3 @@
 		"You hear a ratchet.")
 	atom_deconstruct()
 
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "connected_device", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "node", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/portables_connector, "network", HELD, null)

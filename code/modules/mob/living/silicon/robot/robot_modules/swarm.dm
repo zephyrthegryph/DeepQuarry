@@ -39,4 +39,4 @@
 	charge_cost = 800
 	recharge_time = 0.5 SECONDS
 
-DECLARE_REF(/obj/item/robot_module/drone/swarm, "drone_id", HELD, null)
+OWN(/obj/item/robot_module/drone/swarm, drone_id, OWN_CONTAINED)

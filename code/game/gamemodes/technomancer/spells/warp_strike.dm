@@ -81,4 +81,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/warp_strike, "sparks", /datum/effect/effec
 			chosen_target.attack_hand(user)
 		add_attack_logs(user,chosen_target,"Warp striked")
 
-DECLARE_REF(/obj/item/spell/warp_strike, "sparks", OWNED, null)

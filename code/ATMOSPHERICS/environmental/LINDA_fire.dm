@@ -408,7 +408,6 @@
 	var/drop_off_dist
 	COOLDOWN_DECLARE(update_sound_center)
 
-DECLARE_REF(/datum/hot_group, "sound", OWNED, null)
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	spot_list -= target
@@ -515,6 +514,3 @@ DECLARE_REF(/datum/hot_group, "sound", OWNED, null)
 /datum/om/stage/hotspot/idle(obj/effect/hotspot/H)
 	return FALSE
 
-DECLARE_REF(/obj/effect/hotspot, "our_hot_group", HELD, null)
-DECLARE_REF(/datum/hot_group, "spot_list", HELD, null)
-DECLARE_REF(/datum/hot_group, "current_sound_loc", STATIC, null)

@@ -59,7 +59,6 @@
 	if(in_stat_panel)
 		button = new(null, src)
 
-DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
 	if(!istype(H))
@@ -676,4 +675,3 @@ DECLARE_REF(/datum/protean_power, "button", OWNED, null)
 #undef PER_LIMB_STEEL_COST
 #undef TOTAL_REBUILD_STEEL_COST
 
-DECLARE_REF(/obj/effect/protean_power_button, "power", BACK, "button")

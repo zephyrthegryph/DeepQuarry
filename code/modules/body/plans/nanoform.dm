@@ -224,7 +224,6 @@
 	/// The reboot timer, once the core is jump-started.
 	var/reboot_timer
 
-DECLARE_REF(/datum/affliction/core_dormancy, "held_mob", BACK, null)
 
 /datum/affliction/core_dormancy/on_added()
 	..()

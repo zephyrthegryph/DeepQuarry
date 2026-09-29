@@ -67,11 +67,8 @@
 	anomalyEffect(delta / (1 SECONDS)) // the periodic lane passes deciseconds
 	anomalyPulse()
 
-DECLARE_REF(/obj/effect/anomaly, "countdown", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/effect/anomaly, "countdown", /obj/effect/countdown/anomaly)
 DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
-DECLARE_REF(/obj/effect/anomaly, "anomaly_core", OWNED, null)
-DECLARE_REF(/obj/effect/anomaly, "stats", OWNED, null)
 
 /obj/effect/anomaly/proc/anomalyEffect(seconds_per_tick)
 	if(prob(move_chance) && !locate_within(get_turf(src), /obj/effect/suspension_field))

@@ -85,7 +85,8 @@
 	..()
 	update_aiming()
 
-DECLARE_REF(/obj/aiming_overlay, "aiming_at", BACKLIST, "aimed")
+REL_PAIR(/obj/aiming_overlay, aiming_at, aimed)
+REL_PAIR_LIST(/mob/living, aimed, aiming_at)
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
 	om_after(src, 0, PROC_REF(update_aiming))

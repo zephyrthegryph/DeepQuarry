@@ -1,0 +1,429 @@
+// Light relation edges: REF views (doc/rewrite/ownership.md §4.1).
+//
+// A REF var holds a direct reference (reads are free). The target keeps a lazy reverse index,
+// `om_refs_in`: the source's ref text -> the var name (or a list of var names) naming it. The
+// index is weak (ref text), so source and target never form a reference cycle. When either end
+// dies the framework clears its side; nothing is kept by hand.
+//
+// Targets that never die need no index: registry singletons (REGISTRY_TYPE) and areas. Turfs
+// are indexed per z-level (ChangeTurf resets a turf's vars), and rel_drop_z() clears them when
+// the z-level is released.
+
+/// Reverse index: source ref text -> var name, or a list of var names.
+/datum/var/tmp/list/om_refs_in
+
+/// z (text) -> flat list, stride 3: source ref text, var name, turf ref text.
+GLOBAL_LIST_EMPTY(rel_turf_index)
+/// Handle id (text) -> flat list, stride 2: source ref text, var name. Edges to an entity that
+/// collapsed into latent data, re-linked when it re-materializes into the same handle slot.
+GLOBAL_LIST_EMPTY(rel_dormant)
+
+/// TRUE when references to `target` need tracking.
+/proc/rel_tracked(datum/target)
+	if(!isdatum(target) || isarea(target))
+		return FALSE
+	return !registry_has(target)
+
+/proc/_rel_index(datum/target, datum/source, var_name)
+	if(isturf(target))
+		var/turf/where = target
+		var/key = "[where.z]"
+		var/list/L = GLOB.rel_turf_index[key]
+		if(!L)
+			L = list()
+			GLOB.rel_turf_index[key] = L
+		L += list(ref(source), var_name, ref(target))
+		return
+	if(!rel_tracked(target))
+		return
+	var/source_ref = ref(source)
+	var/list/index = target.om_refs_in
+	if(!index)
+		index = list()
+		target.om_refs_in = index
+	var/current = index[source_ref]
+	if(isnull(current))
+		index[source_ref] = var_name
+	else if(islist(current))
+		var/list/names = current
+		names |= var_name
+	else if(current != var_name)
+		index[source_ref] = list(current, var_name)
+
+/proc/_rel_unindex(datum/target, datum/source, var_name)
+	if(!isdatum(target) || isturf(target))
+		return // turf entries are validated lazily (rel_drop_z)
+	var/list/index = target.om_refs_in
+	if(!index)
+		return
+	var/source_ref = ref(source)
+	var/current = index[source_ref]
+	if(isnull(current))
+		return
+	// Still named by the same var (a list view holding it twice is not possible: lists use |=).
+	if(islist(current))
+		var/list/names = current
+		names -= var_name
+		if(length(names) == 1)
+			index[source_ref] = names[1]
+		else if(!length(names))
+			index -= source_ref
+	else if(current == var_name)
+		index -= source_ref
+	if(!length(index))
+		target.om_refs_in = null
+
+/// The REF entry for source.var_name (learned as an implicit REF when undeclared; reported when
+/// the var is another kind).
+/proc/_rel_entry(datum/source, var_name, is_list = FALSE)
+	return own_entry_of_kind(source, var_name, OWNK_REL, is_list)
+
+// ---------------------------------------------------------------- writes
+
+/// Points source.var_name (a single REF view) at `target`, or clears it with null. A pair view
+/// sets the partner's side too; the old partner stops naming source. Returns the target.
+/proc/rel_set(datum/source, var_name, datum/target)
+	var/list/entry = _rel_entry(source, var_name)
+	if(!entry)
+		source.vars[var_name] = target // ALLOW(ownership): undeclared view, reported above
+		return target
+	if(entry[OWNE_LIST])
+		OWN_REPORT("rel_set on list view [source.type].[var_name]: use rel_add/rel_remove")
+		return null
+	var/datum/old = source.vars[var_name]
+	if(old == target)
+		return target
+	if(target && QDELETED(target))
+		OWN_REPORT("[source.type].[var_name]: refusing a link to [target.type], which is being destroyed")
+		target = null
+	if(old)
+		_rel_detach(source, var_name, old, entry)
+	if(target)
+		_rel_attach(source, var_name, target, entry)
+	return target
+
+/// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
+/proc/rel_add(datum/source, var_name, datum/target)
+	var/list/entry = _rel_entry(source, var_name, TRUE)
+	if(!entry || !target)
+		return null
+	if(!entry[OWNE_LIST])
+		OWN_REPORT("rel_add on single view [source.type].[var_name]: use rel_set")
+		return null
+	if(QDELETED(target))
+		OWN_REPORT("[source.type].[var_name]: refusing a link to [target.type], which is being destroyed")
+		return null
+	var/list/L = source.vars[var_name]
+	if(islist(L) && (target in L))
+		return target
+	_rel_attach(source, var_name, target, entry)
+	return target
+
+/// Removes `target` from source.var_name (list view), or clears a single view naming it.
+/proc/rel_remove(datum/source, var_name, datum/target)
+	var/list/entry = _rel_entry(source, var_name)
+	if(!entry || !target)
+		return FALSE
+	var/value = source.vars[var_name]
+	if(islist(value) ? !(target in value) : value != target)
+		return FALSE
+	_rel_detach(source, var_name, target, entry)
+	return TRUE
+
+/// Empties source.var_name: every target unlinked (partners too).
+/proc/rel_clear(datum/source, var_name)
+	var/list/entry = own_table_of(source).entries[var_name]
+	var/value = source.vars[var_name]
+	if(isnull(value))
+		return
+	if(!entry)
+		source.vars[var_name] = null // ALLOW(ownership): undeclared view
+		return
+	if(islist(value))
+		var/list/L = value
+		for(var/datum/target as anything in L.Copy())
+			_rel_detach(source, var_name, target, entry)
+		if(!length(source.vars[var_name]))
+			source.vars[var_name] = null // ALLOW(ownership): the accessor
+	else
+		_rel_detach(source, var_name, value, entry)
+
+/// Links source.var_name -> target: writes the view, indexes it, and sets the partner side.
+/proc/_rel_attach(datum/source, var_name, datum/target, list/entry)
+	if(entry[OWNE_LIST])
+		var/list/L = source.vars[var_name]
+		if(!islist(L))
+			L = list()
+			source.vars[var_name] = L // ALLOW(ownership): the accessor
+		L |= target
+	else
+		source.vars[var_name] = target // ALLOW(ownership): the accessor
+	_rel_index(target, source, var_name)
+	var/partner_var = entry[OWNE_PARTNER]
+	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target))
+		return
+	if(!(partner_var in target.vars))
+		OWN_REPORT("[source.type].[var_name]: partner [target.type] has no var '[partner_var]'")
+		return
+	var/list/pentry = own_table_of(target).entries[partner_var]
+	if(!pentry || pentry[OWNE_KIND] != OWNK_REL)
+		OWN_REPORT("[source.type].[var_name]: partner var [target.type].[partner_var] is not declared REL_PAIR/REL_SET")
+		return
+	var/theirs = target.vars[partner_var]
+	if(pentry[OWNE_LIST])
+		if(islist(theirs) && (source in theirs))
+			return
+		var/list/TL = theirs
+		if(!islist(TL))
+			TL = list()
+			target.vars[partner_var] = TL // ALLOW(ownership): the accessor
+		TL |= source
+		_rel_index(source, target, partner_var)
+		return
+	if(theirs == source)
+		return
+	if(theirs) // exclusive: the partner's old partner loses it
+		_rel_detach(target, partner_var, theirs, pentry)
+	target.vars[partner_var] = source // ALLOW(ownership): the accessor
+	_rel_index(source, target, partner_var)
+
+/// Unlinks source.var_name -> target, and the partner side when it names source.
+/proc/_rel_detach(datum/source, var_name, datum/target, list/entry)
+	var/value = source.vars[var_name]
+	if(islist(value))
+		var/list/L = value
+		L -= target
+	else if(value == target)
+		source.vars[var_name] = null // ALLOW(ownership): the accessor
+	_rel_unindex(target, source, var_name)
+	var/partner_var = entry?[OWNE_PARTNER]
+	if(!partner_var || entry[OWNE_ARG] == RELS_PLAIN || !isdatum(target) || !(partner_var in target.vars))
+		return
+	var/theirs = target.vars[partner_var]
+	if(islist(theirs))
+		var/list/TL = theirs
+		if(source in TL)
+			TL -= source
+			_rel_unindex(source, target, partner_var)
+	else if(theirs == source)
+		target.vars[partner_var] = null // ALLOW(ownership): the accessor
+		_rel_unindex(source, target, partner_var)
+
+// ---------------------------------------------------------------- reads
+
+/// Every live target of source.var_name as a list (a shared empty list when none; never write it).
+/proc/rel_targets(datum/source, var_name)
+	var/static/list/empty = list()
+	var/value = source.vars[var_name]
+	if(islist(value))
+		return value
+	return isnull(value) ? empty : list(value)
+
+/// Every source whose REF var names `target`, as a list of list(source, var name).
+/proc/rel_sources(datum/target)
+	. = list()
+	for(var/source_ref in target?.om_refs_in)
+		var/datum/S = locate(source_ref)
+		if(!isdatum(S))
+			continue
+		var/names = target.om_refs_in[source_ref]
+		for(var/name in (islist(names) ? names : list(names)))
+			. += list(list(S, name))
+
+// ---------------------------------------------------------------- lifecycle
+
+/// Phase 4: `D` is dying. Every view naming it is cleared (sources), then every view it holds
+/// stops being indexed on its targets, and its partners stop naming it.
+/proc/rel_teardown(datum/D)
+	var/list/index = D.om_refs_in
+	if(index)
+		D.om_refs_in = null
+		for(var/source_ref in index)
+			var/datum/S = locate(source_ref)
+			if(!isdatum(S) || S == D)
+				continue
+			var/names = index[source_ref]
+			for(var/name in (islist(names) ? names : list(names)))
+				if(!(name in S.vars))
+					continue
+				var/value = S.vars[name]
+				if(value == D)
+					S.vars[name] = null // ALLOW(ownership): relation teardown
+				else if(islist(value))
+					var/list/L = value
+					L -= D
+	var/datum/own_table/T = own_table_of(D)
+	for(var/var_name in T.ref_vars)
+		var/value = D.vars[var_name]
+		if(isnull(value))
+			continue
+		var/list/entry = T.entries[var_name]
+		if(islist(value))
+			var/list/L = value
+			for(var/datum/target as anything in L.Copy())
+				_rel_detach(D, var_name, target, entry)
+			D.vars[var_name] = null // ALLOW(ownership): relation teardown
+		else
+			_rel_detach(D, var_name, value, entry)
+
+/// z-level release: every REF view naming a turf on `z` is cleared.
+/proc/rel_drop_z(z)
+	var/key = "[z]"
+	var/list/L = GLOB.rel_turf_index[key]
+	if(!L)
+		return 0
+	GLOB.rel_turf_index -= key
+	. = 0
+	for(var/i in 1 to length(L) step 3)
+		var/datum/S = locate(L[i])
+		var/name = L[i + 1]
+		var/turf/T = locate(L[i + 2])
+		if(!isdatum(S) || !isturf(T) || !(name in S.vars))
+			continue
+		var/value = S.vars[name]
+		if(value == T)
+			S.vars[name] = null // ALLOW(ownership): z-level release
+			.++
+		else if(islist(value))
+			var/list/views = value
+			if(T in views)
+				views -= T
+				.++
+
+// ---------------------------------------------------------------- latent identity
+
+/// `D` is collapsing into latent data but keeps its handle slot: every view naming it goes
+/// dormant under that handle instead of being lost, and re-links in rel_wake().
+/proc/rel_go_dormant(datum/D)
+	var/list/index = D.om_refs_in
+	var/h = D.om_hid
+	if(!index || !h)
+		return
+	var/list/dormant = GLOB.rel_dormant["[h]"]
+	if(!dormant)
+		dormant = list()
+		GLOB.rel_dormant["[h]"] = dormant
+	for(var/source_ref in index)
+		var/names = index[source_ref]
+		for(var/name in (islist(names) ? names : list(names)))
+			dormant += list(source_ref, name)
+
+/// `D` re-materialized into handle slot `h`: the dormant views re-link to it.
+/proc/rel_wake(datum/D, h)
+	var/list/dormant = GLOB.rel_dormant["[h]"]
+	if(!dormant)
+		return
+	GLOB.rel_dormant -= "[h]"
+	for(var/i in 1 to length(dormant) step 2)
+		var/datum/S = locate(dormant[i])
+		var/name = dormant[i + 1]
+		if(!isdatum(S) || QDELETED(S) || !(name in S.vars))
+			continue
+		var/list/entry = own_table_of(S).entries[name]
+		if(!entry)
+			continue
+		if(entry[OWNE_LIST])
+			rel_add(S, name, D)
+		else if(isnull(S.vars[name]))
+			rel_set(S, name, D)
+
+// ---------------------------------------------------------------- keyed auto-linking
+
+/// Target type path (text) -> key value (text) -> list of target ref texts.
+GLOBAL_LIST_EMPTY(rel_key_targets)
+/// Target type path (text) -> key value (text) -> flat list (source ref text, var name).
+GLOBAL_LIST_EMPTY(rel_key_waiters)
+
+/// KEYED_TARGET(PATH, KEY_VAR): the var REL_KEYED sources match against, or null.
+/datum/proc/keyed_target_var()
+	return null
+
+/// On materialize: index src as a keyed target, and link src's keyed views.
+/proc/rel_keyed_materialize(datum/D)
+	var/key_var = D.keyed_target_var()
+	if(key_var && !isnull(D.vars[key_var]))
+		var/key = "[D.vars[key_var]]"
+		for(var/path in rel_keyed_type_chain(D.type))
+			var/list/by_key = GLOB.rel_key_targets[path]
+			if(!by_key)
+				by_key = list()
+				GLOB.rel_key_targets[path] = by_key
+			var/list/refs = by_key[key]
+			if(!refs)
+				refs = list()
+				by_key[key] = refs
+			refs |= ref(D)
+			var/list/waiting = GLOB.rel_key_waiters[path]?[key]
+			for(var/i in 1 to length(waiting) step 2)
+				var/datum/S = locate(waiting[i])
+				if(isdatum(S) && !QDELETED(S))
+					rel_keyed_link(S, waiting[i + 1], D)
+	var/datum/own_table/T = own_table_of(D)
+	for(var/var_name in T.keyed_vars)
+		var/list/entry = T.entries[var_name]
+		var/list/spec = entry[OWNE_EXTRA]
+		var/our_key = D.vars[spec[2]]
+		if(isnull(our_key))
+			continue
+		var/key = "[our_key]"
+		var/path = "[spec[1]]"
+		var/list/waiters_by_key = GLOB.rel_key_waiters[path]
+		if(!waiters_by_key)
+			waiters_by_key = list()
+			GLOB.rel_key_waiters[path] = waiters_by_key
+		var/list/waiting = waiters_by_key[key]
+		if(!waiting)
+			waiting = list()
+			waiters_by_key[key] = waiting
+		waiting += list(ref(D), var_name)
+		for(var/target_ref in GLOB.rel_key_targets[path]?[key])
+			var/datum/target = locate(target_ref)
+			if(isdatum(target) && !QDELETED(target))
+				rel_keyed_link(D, var_name, target)
+
+/proc/rel_keyed_link(datum/S, var_name, datum/target)
+	var/list/entry = own_table_of(S).entries[var_name]
+	if(!entry)
+		return
+	if(entry[OWNE_LIST])
+		rel_add(S, var_name, target)
+	else if(isnull(S.vars[var_name]))
+		rel_set(S, var_name, target)
+
+/// On dematerialize: leave the keyed indexes (views naming D clear when it dies; a view to a
+/// dematerialized target is cleared here too, since it left the world).
+/proc/rel_keyed_dematerialize(datum/D)
+	var/key_var = D.keyed_target_var()
+	if(key_var && !isnull(D.vars[key_var]))
+		var/key = "[D.vars[key_var]]"
+		for(var/path in rel_keyed_type_chain(D.type))
+			var/list/refs = GLOB.rel_key_targets[path]?[key]
+			refs?.Remove(ref(D))
+	var/datum/own_table/T = own_table_of(D)
+	for(var/var_name in T.keyed_vars)
+		var/list/entry = T.entries[var_name]
+		var/list/spec = entry[OWNE_EXTRA]
+		var/our_key = D.vars[spec[2]]
+		if(isnull(our_key))
+			continue
+		var/list/waiting = GLOB.rel_key_waiters["[spec[1]]"]?["[our_key]"]
+		if(!waiting)
+			continue
+		var/self_ref = ref(D)
+		for(var/i = length(waiting) - 1, i >= 1, i -= 2)
+			if(waiting[i] == self_ref && waiting[i + 1] == var_name)
+				waiting.Cut(i, i + 2)
+
+/// "/obj/machinery/door/blast" -> its path and every ancestor path, as text (cached per type).
+/proc/rel_keyed_type_chain(path)
+	var/static/list/chains = list()
+	var/list/chain = chains[path]
+	if(chain)
+		return chain
+	chain = list()
+	var/current = path
+	while(current && current != /datum)
+		chain += "[current]"
+		current = type2parent(current)
+	chains[path] = chain
+	return chain

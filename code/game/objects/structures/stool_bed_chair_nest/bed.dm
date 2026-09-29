@@ -450,5 +450,4 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	anchored = !anchored
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
-DECLARE_REF(/obj/item/roller_holder, "held", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/roller_holder, "held", /obj/item/roller)

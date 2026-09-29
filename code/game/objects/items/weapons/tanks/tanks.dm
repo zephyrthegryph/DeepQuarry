@@ -63,9 +63,7 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	src.init_proxy()
 	update_gauge()
 
-DECLARE_REF(/obj/item/tank, "air_contents", OWNED, null)
 DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
-DECLARE_REF(/obj/item/tank, "proxyassembly", OWNED, null)
 
 // a tank in a transfer valve leaves the valve.
 /obj/item/tank/on_destroy(force)
@@ -712,5 +710,5 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 
 #undef TANK_IDEAL_PRESSURE
 
-DECLARE_REF(/obj/item/tankassemblyproxy, "tank", PAIR, "proxyassembly")
-DECLARE_REF(/obj/item/tankassemblyproxy, "assembly", HELD, null)
+REL_PAIR(/obj/item/tankassemblyproxy, tank, proxyassembly)
+OWN(/obj/item/tankassemblyproxy, assembly, OWN_CONTAINED)

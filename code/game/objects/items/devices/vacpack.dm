@@ -413,4 +413,3 @@ EXTEND_INTERACTIONS(/obj/item/vac_attachment, \
 )
 
 // The swoopie owns its built-in attachment through Vac; vac_owner points back.
-DECLARE_REF(/obj/item/vac_attachment/swoopie, "vac_owner", BACK, "Vac")

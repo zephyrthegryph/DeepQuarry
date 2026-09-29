@@ -70,6 +70,4 @@
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/malf_research/proc/get_focus() as /datum/malf_research_ability
 	return focus_static
-DECLARE_REF(/datum/malf_research, "focus_static", STATIC, null)
 
-DECLARE_REF(/datum/malf_research, "available_abilities", OWNED_LIST, null)

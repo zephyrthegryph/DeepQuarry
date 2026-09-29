@@ -769,5 +769,3 @@ EXTEND_INTERACTIONS(/obj/item/rig/protean, \
 		src.add_fingerprint(usr)
 
 // Destroy() reads both before letting go (the core spills out, soaking stops).
-DECLARE_REF(/obj/item/rig/protean, "myprotean", HELD, null)
-DECLARE_REF(/obj/item/rig/protean, "soaking_wearer", HELD, null)

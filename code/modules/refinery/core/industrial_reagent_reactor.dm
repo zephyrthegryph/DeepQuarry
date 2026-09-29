@@ -32,7 +32,6 @@
 	update_icon()
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, null)
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()
 	if(!anchored)

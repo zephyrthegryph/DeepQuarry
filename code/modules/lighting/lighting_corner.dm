@@ -182,7 +182,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_corner)
 /proc/lifecycle_lighting_corners_queue()
 	return SSlighting?.corners_queue
 
-DECLARE_REF(/datum/lighting_corner, "needs_update", QUEUE, /proc/lifecycle_lighting_corners_queue)
 
 // Corners leave their sources and turfs.
 /datum/lighting_corner/on_destroy(force)
@@ -310,9 +309,5 @@ DECLARE_REF(/datum/lighting_corner, "needs_update", QUEUE, /proc/lifecycle_light
 		master_NW_sim.shandler.sunlight_update()
 
 // Corners are immortal (Destroy refuses unless forced): turfs are never deleted, so the masters are never cleared.
-DECLARE_REF(/datum/lighting_corner, "master_NE", STATIC, null)
-DECLARE_REF(/datum/lighting_corner, "master_SE", STATIC, null)
-DECLARE_REF(/datum/lighting_corner, "master_SW", STATIC, null)
-DECLARE_REF(/datum/lighting_corner, "master_NW", STATIC, null)
 
 

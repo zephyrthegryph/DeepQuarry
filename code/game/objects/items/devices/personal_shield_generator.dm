@@ -53,8 +53,6 @@
 	om_task_periodic_stop(src) //We do this so it doesn't start processing until it's first used.
 	update_icon()
 
-DECLARE_REF(/obj/item/personal_shield_generator, "active_weapon", OWNED, null)
-DECLARE_REF(/obj/item/personal_shield_generator, "bcell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/personal_shield_generator, "bcell", null)
 
 /obj/item/personal_shield_generator/loaded //starts with a cell

@@ -56,8 +56,6 @@
 //	..()
 // //spawn the cell you want in each vehicle // Commented out in favour of initialize.
 
-DECLARE_REF(/obj/vehicle, "riding_datum", OWNED, null)
-DECLARE_REF(/obj/vehicle, "soundloop", OWNED, null)
 
 //BUCKLE HOOKS
 
@@ -434,5 +432,4 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 	if(was_on)
 		turn_on()
 
-DECLARE_REF(/obj/vehicle, "cell", HELD, null)
-DECLARE_REF(/obj/vehicle, "load", BACK, null)
+OWN(/obj/vehicle, cell, OWN_CONTAINED)

@@ -16,7 +16,8 @@
 		alpha = 0
 */
 
-DECLARE_REF(/obj/structure/holosign, "projector", BACKLIST, "signs")
+REL_PAIR(/obj/structure/holosign, projector, signs)
+REL_PAIR_LIST(/obj/item/holosign_creator, signs, projector)
 
 /obj/structure/holosign/declare_interactions(list/into)
 	into += list(

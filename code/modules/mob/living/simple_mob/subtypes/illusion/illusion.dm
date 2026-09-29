@@ -125,4 +125,4 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	if(copying)
 		return copying.get_catalogue_delay()
 
-DECLARE_REF(/mob/living/simple_mob/illusion, "copying", HELD, null)
+OWN(/mob/living/simple_mob/illusion, copying, OWN_CONTAINED)

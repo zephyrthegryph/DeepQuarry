@@ -71,8 +71,6 @@
 	stakeholder_roles = list()
 	stakeholder_proposals = list()
 
-DECLARE_REF(/datum/contract/social, "stakeholder_roles", OWNED_VALUES, null)
-DECLARE_REF(/datum/contract/social, "stakeholder_proposals", OWNED_VALUES, null)
 
 /datum/contract/social/on_negotiated_terms_changed()
 	..()

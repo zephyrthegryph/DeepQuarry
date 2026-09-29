@@ -1185,11 +1185,8 @@ ADMIN_VERB(cmd_controller_view_ui, R_SERVER|R_DEBUG, "Controller Overview", "Vie
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/master/proc/queue_head() as /datum/controller/subsystem
 	return queue_head_static
-DECLARE_REF(/datum/controller/master, "queue_head_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/controller/master/proc/queue_tail() as /datum/controller/subsystem
 	return queue_tail_static
-DECLARE_REF(/datum/controller/master, "queue_tail_static", STATIC, null)
 
-DECLARE_REF(/datum/controller/master, "stack_end_detector", OWNED, null)

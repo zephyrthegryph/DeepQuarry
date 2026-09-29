@@ -15,9 +15,7 @@
 	var/datum/dq_diag_owner_a/a
 
 // ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-DECLARE_REF(/datum/dq_diag_owner_a, "b", OWNED, null)
 // ALLOW(ownership_cycle): deliberate fixture for the runtime cycle check
-DECLARE_REF(/datum/dq_diag_owner_b, "a", OWNED, null)
 
 /// A holder that deletes its members in Destroy() but keeps its list of them,
 /// while each member keeps a reference back: after both are deleted, neither

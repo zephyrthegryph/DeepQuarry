@@ -119,7 +119,8 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 		dark_tile.unlinked()
 	..()
 
-DECLARE_REF(/obj/effect/dark, "linked_node", BACKLIST, "children_effects")
+REL_PAIR(/obj/effect/dark, linked_node, children_effects)
+REL_PAIR_LIST(/obj/structure/prop/dark_node, children_effects, linked_node)
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1

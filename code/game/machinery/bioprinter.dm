@@ -356,4 +356,4 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer/flesh, INTERACT_ITEM(null, PROC
 	return FALSE
 // END FLESH ORGAN PRINTER
 
-DECLARE_REF(/obj/machinery/organ_printer, "container", HELD, null)
+OWN(/obj/machinery/organ_printer, container, OWN_CONTAINED)

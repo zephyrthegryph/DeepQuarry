@@ -1142,5 +1142,3 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 #undef SDQL2_STAGE_SWITCH_CHECK
 
-DECLARE_REF(/datum/SDQL2_query, "delete_click", OWNED, null)
-DECLARE_REF(/datum/SDQL2_query, "action_click", OWNED, null)

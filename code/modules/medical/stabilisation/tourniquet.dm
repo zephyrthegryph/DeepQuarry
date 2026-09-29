@@ -92,7 +92,7 @@
 	/// Tourniquet cinched on this limb, or null. Stops flow to it and every limb below it.
 	var/obj/item/tourniquet/tourniquet
 
-DECLARE_REF(/obj/item/organ/external, "tourniquet", HELD, null)
+OWN(/obj/item/organ/external, tourniquet, OWN_CONTAINED)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).

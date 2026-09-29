@@ -181,7 +181,6 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 			upload_menu = 1
 			return TRUE
 
-DECLARE_REF(/datum/computer_file/program/nttransfer, "downloaded_file", OWNED, null)
 
 /// LC-refs: File which is provided to clients. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/nttransfer/proc/provided_file() as /datum/computer_file

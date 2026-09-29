@@ -326,5 +326,3 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/vomit, \
 
 #undef DRYING_TIME
 
-DECLARE_REF(/obj/effect/decal/cleanable/blood, "viruses", OWNED_LIST, null)
-DECLARE_REF(/obj/effect/decal/cleanable/mucus, "viruses", OWNED_LIST, null)

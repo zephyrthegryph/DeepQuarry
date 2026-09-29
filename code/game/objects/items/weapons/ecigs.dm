@@ -20,7 +20,6 @@
 /obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
 	. = ..()
 
-DECLARE_REF(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
 
 /obj/item/clothing/mask/smokable/ecig/examine(mob/user)

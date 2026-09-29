@@ -33,7 +33,6 @@
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 */
-DECLARE_REF(/obj/item/rcd, "spark_system", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system/spark_spread)
 
 /obj/item/rcd/examine(mob/user)
@@ -192,7 +191,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rcd, "spark_system", /datum/effect/effect/system
 		cell = new /obj/item/cell/high(src) // ALLOW(decl): only when make_cell
 	return ..()
 
-DECLARE_REF(/obj/item/rcd/electric, "cell", OWNED, null)
 
 /obj/item/rcd/electric/get_cell()
 	RETURN_TYPE(/obj/item/cell)

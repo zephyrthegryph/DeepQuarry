@@ -842,6 +842,3 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 	update_icon()
 	return TRUE
 
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "outside", OWNED, null)
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "door", OWNED, null)
-DECLARE_REF(/obj/structure/prop/machine/nt_pod, "fluid", OWNED, null)

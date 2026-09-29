@@ -129,10 +129,7 @@
 	if(manual)
 		lateload_pref_data()
 
-DECLARE_REF(/datum/shadekin, "active_dark_maws", OWNED_LIST, null)
-DECLARE_REF(/datum/shadekin, "owner", BACK, "shadekin")
 /mob/living/var/datum/shadekin/shadekin
-DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 /// Gives this mob shadekin state of `path` (or returns the existing one, like LoadComponent did).
 /mob/living/proc/add_shadekin(path = /datum/shadekin, manual = FALSE)

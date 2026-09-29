@@ -26,8 +26,6 @@
 	var/mob/owner
 	var/atom/movable/screen/nif/screen_icon
 
-DECLARE_REF(/datum/nif_menu, "screen_icon", OWNED, null)
-DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 
 /datum/nif_menu/New(mob/M)
 	..()
@@ -189,4 +187,3 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 /obj/item/nif/proc/menu() as /datum/nif_menu
 	return QDELETED(menu_ref) ? null : menu_ref
 
-DECLARE_REF(/obj/item/nif, "menu_ref", OWNED, null)

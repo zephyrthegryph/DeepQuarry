@@ -2,7 +2,6 @@
 	var/name = ""
 	var/list/datum/uplink_item/items
 
-DECLARE_REF(/datum/uplink_category, "items", DEF, null)
 
 /datum/uplink_category/New()
 	..()
@@ -50,4 +49,3 @@ DECLARE_REF(/datum/uplink_category, "items", DEF, null)
 /datum/uplink_category/backup
 	name = "Backup"
 
-DECLARE_REF(/datum/uplink_category, "items", OWNED_LIST, null)

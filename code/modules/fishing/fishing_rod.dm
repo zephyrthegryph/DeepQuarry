@@ -145,4 +145,4 @@ EXTEND_INTERACTIONS(/obj/item/material/fishing_rod, INTERACT_ITEM(null, PROC_REF
 	toolspeed = 0.5
 
 // The bait sits in the rod's contents.
-DECLARE_REF(/obj/item/material/fishing_rod, "Bait", HELD, null)
+OWN(/obj/item/material/fishing_rod, Bait, OWN_CONTAINED)

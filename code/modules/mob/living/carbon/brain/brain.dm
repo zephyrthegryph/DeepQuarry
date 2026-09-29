@@ -135,5 +135,4 @@
 		record.last_notification = world.time
 		to_chat(src, span_notice("New notification has been sent."))
 
-DECLARE_REF(/mob/living/carbon/brain, "host", BACK, "view")
-DECLARE_REF(/mob/living/carbon/brain, "container", HELD, null)
+OWN(/mob/living/carbon/brain, container, OWN_CONTAINED)

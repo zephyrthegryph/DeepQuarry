@@ -15,7 +15,6 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
-DECLARE_REF(/atom/movable/screen/map_view_tg, "popup_plane_masters", OWNED_LIST, null)
 
 // hides itself from every client still viewing it (client refs are handles).
 /atom/movable/screen/map_view_tg/on_destroy(force)

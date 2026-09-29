@@ -1189,4 +1189,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 /obj/machinery/power/port_gen/step_start_condition()
 	return active
 
-DECLARE_REF(/obj/machinery/power/rtg/abductor, "cell", HELD, null)
+OWN(/obj/machinery/power/rtg/abductor, cell, OWN_CONTAINED)

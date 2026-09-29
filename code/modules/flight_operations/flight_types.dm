@@ -75,7 +75,6 @@
 	/// Reserved port occupied by the vessel, if physically docked.
 	var/docked_port_id
 
-DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 
 /datum/flight_vessel/proc/has_capabilities(required)
 	return (capabilities & required) == required
@@ -264,4 +263,3 @@ DECLARE_REF(/datum/flight_vessel, "active_plan", OWNED, null)
 /datum/flight_vessel/proc/active_expedition() as /datum/expedition_site
 	return om_resolve(active_expedition_handle)
 
-DECLARE_REF(/datum/flight_plan, "vessel", BACK, "active_plan")

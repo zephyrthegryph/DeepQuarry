@@ -75,4 +75,3 @@
 	for(var/area/A in shuffle(areas))
 		A.prison_break()
 
-DECLARE_REF(/datum/event/prison_break, "areas", STATIC, null)

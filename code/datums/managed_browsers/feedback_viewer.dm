@@ -28,7 +28,6 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 	..()
 
 // clears the client's back-reference (clients aren't datums).
-DECLARE_REF(/datum/managed_browser/feedback_viewer, "my_client_handle", BACK_HANDLE, "feedback_viewer")
 
 /datum/managed_browser/feedback_viewer/proc/feedback_filter(row_name, thing_to_find, exact = FALSE)
 	var/database/query/query = null
@@ -161,6 +160,4 @@ DECLARE_REF(/datum/managed_browser/feedback_viewer, "my_client_handle", BACK_HAN
 	// Refresh.
 	display()
 
-DECLARE_REF(/client, "feedback_viewer", OWNED, null)
 
-DECLARE_REF(/datum/managed_browser/feedback_viewer, "last_query", OWNED, null)

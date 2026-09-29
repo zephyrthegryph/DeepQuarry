@@ -465,9 +465,7 @@
 /datum/expedition_objective/survive/objective_text()
 	return "Hold the site for [round(hold_time / 10)] seconds"
 
-DECLARE_REF(/datum/expedition_objective/reach, "marker", OWNED, null)
 
-DECLARE_REF(/datum/expedition_objective/destroy, "target_obj", OWNED, null)
 
 /// LC-refs: the site this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/expedition_objective/proc/site() as /datum/expedition_site

@@ -407,6 +407,3 @@
 	return 0
 
 // Neighbouring segments: Destroy() severs the back half and unlinks the front.
-DECLARE_REF(/mob/living/simple_mob/animal/space/space_worm, "previous", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/animal/space/space_worm, "next", HELD, null)
-DECLARE_REF(/mob/living/simple_mob/animal/space/space_worm, "currentlyEating", HELD, null)

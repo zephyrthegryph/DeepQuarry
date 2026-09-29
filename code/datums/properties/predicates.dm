@@ -833,28 +833,21 @@ DECLARE_SHARED_CACHE(inline_predicate, GLOBAL_PROC_REF(build_inline_predicate), 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/predicate_compiler/proc/registry() as /datum/property_registry
 	return registry_static
-DECLARE_REF(/datum/predicate_compiler, "registry_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/tag/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/tag, "def_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/cmp/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/cmp, "def_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/band/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/band, "def_static", STATIC, null)
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /datum/pred_node/rel/proc/def() as /datum/property_def
 	return def_static
-DECLARE_REF(/datum/pred_node/rel, "def_static", STATIC, null)
 
-DECLARE_REF(/datum/predicate, "root", OWNED, null)
 
-DECLARE_REF(/datum/predicate, "watchable", OWNED_LIST, null)

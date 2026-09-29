@@ -175,7 +175,6 @@
 	accumulators = new /list(length(dq_ledger_measure_ids()) + dq_ledger_tag_words())
 
 // the ledger is the containment engine itself; it lets go of its holder.
-DECLARE_REF(/datum/ledger, "holder", BACK, "ledger")
 
 /datum/ledger/lifecycle_dematerialize()
 	..()

@@ -256,11 +256,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 	anchored = 1
 	density = 1
 
-DECLARE_REF(/obj/effect/suspension_field, "contents", SPILL_LIST, null)
+OWN(/obj/effect/suspension_field, contents, OWN_SPILL)
 
-DECLARE_REF(/obj/machinery/suspension_gen, "suspension_field", OWNED, null)
 
-DECLARE_REF(/obj/machinery/suspension_gen, "cell", HELD, null)
+OWN(/obj/machinery/suspension_gen, cell, OWN_CONTAINED)
 
 /// LC-refs: the auth_card this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/suspension_gen/proc/auth_card() as /obj/item/card/id

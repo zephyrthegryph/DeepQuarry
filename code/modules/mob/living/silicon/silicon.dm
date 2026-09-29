@@ -44,13 +44,9 @@
 
 REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 
-DECLARE_REF(/mob/living/silicon, "aiCamera", OWNED, null)
-DECLARE_REF(/mob/living/silicon, "idcard", OWNED, null)
 // The radio it speaks on belongs to the chassis (a borg's radio, an AI's aiRadio).
-DECLARE_REF(/mob/living/silicon, "common_radio", HELD, null)
+OWN(/mob/living/silicon, common_radio, OWN_CONTAINED)
 // Languages are shared definitions; alarm handlers are round-long singletons (the queue's keys).
-DECLARE_REF(/mob/living/silicon, "speech_synthesizer_langs", STATIC, null)
-DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 
 // leaves every alarm handler and its subsystems.
 /mob/living/silicon/on_destroy(force)

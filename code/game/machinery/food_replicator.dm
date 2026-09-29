@@ -259,4 +259,4 @@
 	update_icon()
 	explosion(src, 0, 0, 2)
 
-DECLARE_REF(/obj/machinery/food_replicator, "container", HELD, null)
+OWN(/obj/machinery/food_replicator, container, OWN_CONTAINED)

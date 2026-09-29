@@ -59,11 +59,6 @@
 		cam_background.del_on_map_removal = FALSE
 		update_screen()
 
-DECLARE_REF(/obj/effect/overmap, "cam_screen", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cam_background", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cached_skybox_image", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "real_appearance", OWNED, null)
-DECLARE_REF(/obj/effect/overmap, "cam_plane_masters", OWNED_LIST, null)
 
 // ALLOW(lifecycle): its real appearance holder is detached before phase 4 drops it (DECLARE_REF(..., OWNED)).
 /obj/effect/overmap/lifecycle_dematerialize()

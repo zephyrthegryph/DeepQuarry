@@ -576,4 +576,4 @@ DECLARE_INTERACTIONS(/obj/item/firstaid_arm_assembly, INTERACT_ITEM(null, PROC_R
 #undef MEDBOT_MIN_URGENCY
 #undef MEDBOT_MAX_URGENCY
 
-DECLARE_REF(/mob/living/bot/medbot, "reagent_glass", HELD, null)
+OWN(/mob/living/bot/medbot, reagent_glass, OWN_CONTAINED)

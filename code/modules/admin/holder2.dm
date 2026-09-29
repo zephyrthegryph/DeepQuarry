@@ -285,15 +285,6 @@ you will have to do something like if(client.rights & R_ADMIN) yourself.
 	return "<input type='hidden' name='admin_token' value='[RawHrefToken(forceGlobal)]'>"
 
 // Shared admin_rank registry entries.
-DECLARE_REF(/datum/admins, "ranks", STATIC, null)
-DECLARE_REF(/datum/admins, "admincaster_feed_message", OWNED, null)
-DECLARE_REF(/datum/admins, "filteriffic", OWNED, null)
-DECLARE_REF(/datum/admins, "particle_test", OWNED, null)
-DECLARE_REF(/datum/admins, "whitelist_editor", OWNED, null)
-DECLARE_REF(/datum/admins, "spawn_menu", OWNED, null)
-DECLARE_REF(/datum/admins, "spawn_panel", OWNED, null)
-DECLARE_REF(/datum/admins, "access_view_menu", OWNED, null)
-DECLARE_REF(/datum/admins, "admincaster_scratch_channel", OWNED, null)
 
 /// LC-refs: the marked_datum this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/admins/proc/marked_datum() as /datum

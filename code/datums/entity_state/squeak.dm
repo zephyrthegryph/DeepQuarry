@@ -29,10 +29,8 @@
 	/// The squeaky shoes.
 	var/obj/item/clothing/shoes/owner
 
-DECLARE_REF(/datum/squeak, "owner", BACK, "squeak")
 /// Not saved: make_squeaky() in Initialize() rebuilds it.
 /obj/item/clothing/shoes/var/tmp/datum/squeak/squeak
-DECLARE_REF(/obj/item/clothing/shoes, "squeak", OWNED, null)
 
 /// Gives these shoes a squeak (was LoadComponent(/datum/component/squeak, ...)): returns the
 /// existing one when they already squeak.

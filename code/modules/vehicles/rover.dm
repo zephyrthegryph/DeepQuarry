@@ -382,7 +382,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/rover/engine, \
 	else
 		anchored = TRUE
 
-DECLARE_REF(/obj/vehicle/train/rover/engine, "key", HELD, null)
+OWN(/obj/vehicle/train/rover/engine, key, OWN_CONTAINED)
 
 /// Engine Menu requirements (old start/stop/remove_key verb toggling in turn_on/turn_off/key insert).
 /obj/vehicle/train/rover/engine/proc/pred_rover_engine_running(mob/actor, atom/target, obj/item/held)

@@ -7,9 +7,7 @@
 	var/list/test_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 	var/list/test_assoc_list = list() // ALLOW(instance_list): d: unit-test fixture; the ref-tracking test needs a real list to find
 
-DECLARE_REF(/atom/movable/ref_holder, "test", HELD, null)
-DECLARE_REF(/atom/movable/ref_holder, "test_list", WEAK_LIST, null)
-DECLARE_REF(/atom/movable/ref_holder, "test_assoc_list", WEAK_LIST, null)
+OWN(/atom/movable/ref_holder, test, OWN_CONTAINED)
 
 /atom/movable/ref_holder/on_destroy(force)
 	// A static var outlives the instance: clear it by hand.
@@ -21,7 +19,7 @@ DECLARE_REF(/atom/movable/ref_holder, "test_assoc_list", WEAK_LIST, null)
 	references_to_clear = INFINITY
 	var/atom/movable/ref_test/self_ref
 
-DECLARE_REF(/atom/movable/ref_test, "self_ref", HELD, null)
+OWN(/atom/movable/ref_test, self_ref, OWN_CONTAINED)
 
 /datum/unit_test/find_reference_sanity/Run()
 	var/atom/movable/ref_test/victim = allocate(/atom/movable/ref_test)

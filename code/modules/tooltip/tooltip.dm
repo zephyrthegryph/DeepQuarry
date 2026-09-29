@@ -197,7 +197,6 @@
 		return
 	user.client.tooltips.hide(tip_src)
 
-DECLARE_REF(/datum/tooltip, "tooltip_window", OWNED, null)
 
 /// LC-refs: the last_target this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/tooltip/proc/last_target() as /atom

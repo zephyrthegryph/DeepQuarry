@@ -32,7 +32,6 @@
 	drop_sound = 'sound/items/drop/device.ogg'
 	special_handling = TRUE
 
-DECLARE_REF(/obj/item/analyzer/plant_analyzer, "last_seed", OWNED, null)
 
 // DECLARE replaces the gas analyzer's scan, which this type always skipped (special_handling).
 // ALLOW(interactions): its Use opens the plant UI instead of the gas scan

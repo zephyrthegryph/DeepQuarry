@@ -202,4 +202,4 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/bunsen_burner, 1, null, /datum/reagents/di
 	if(held_container?.reagents)
 		.[THERMAL_CAPACITY] += held_container.reagents.heat_capacity()
 
-DECLARE_REF(/obj/machinery/bunsen_burner, "held_container", HELD, null)
+OWN(/obj/machinery/bunsen_burner, held_container, OWN_CONTAINED)

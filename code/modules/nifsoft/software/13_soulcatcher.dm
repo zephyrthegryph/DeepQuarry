@@ -16,7 +16,6 @@
 	..()
 	load_settings()
 
-DECLARE_REF(/datum/nifsoft/soulcatcher, "brainmobs", OWNED_LIST, null)
 
 /datum/nifsoft/soulcatcher/activate()
 	if((. = ..()))

@@ -170,4 +170,3 @@
 
 ///////////////////////////AI stuff
 
-DECLARE_REF(/mob/living/simple_mob/ysbryd, "chosen_target", HELD, null)

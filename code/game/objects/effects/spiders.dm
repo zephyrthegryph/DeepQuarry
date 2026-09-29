@@ -98,7 +98,6 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	get_light_and_color(parent)
 
 // leaves the implant list of the limb it was laid in.
-DECLARE_REF(/obj/effect/spider/eggcluster, "loc", BACK_VIA, list(/obj/item/organ/external = "implants"))
 
 /// Hatches (its growth timer).
 /obj/effect/spider/eggcluster/proc/hatch()
@@ -304,7 +303,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 // the cocoon splits open and drops its contents.
 DESTROY_EFFECTS(/obj/effect/spider/cocoon, new /datum/destroy_effects_data(message = "%SRC% splits open."))
 
-DECLARE_REF(/obj/effect/spider/cocoon, "contents", SPILL_LIST, null)	// whatever was wrapped falls out
+OWN(/obj/effect/spider/cocoon, contents, OWN_SPILL)
 
 /obj/effect/spider/spiderling/non_growing/horror
 	icon_state = "tendrils"

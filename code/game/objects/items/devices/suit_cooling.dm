@@ -31,7 +31,6 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 	toggle(user)
 
 
-DECLARE_REF(/obj/item/suit_cooling_unit, "cell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/suit_cooling_unit, "cell", null)
 
 /obj/item/suit_cooling_unit/periodic_step()

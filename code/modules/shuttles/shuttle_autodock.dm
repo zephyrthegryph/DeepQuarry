@@ -45,7 +45,6 @@
 
 // Its docking controllers are released: shuttle_docking_controller is DECLARE_REF(..., HELD) and its
 // qdeleting hook goes with the OM teardown; the active controller is a handle.
-DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 
 /datum/shuttle/autodock/proc/set_docking_codes(code)
 	docking_codes = code
@@ -249,4 +248,3 @@ DECLARE_REF(/datum/shuttle/autodock, "in_use", DROP, null)
 	return om_resolve(landmark_transition_handle)
 
 // Owned by its docking console elsewhere; set_shuttle_docking_controller() tracks its deletion.
-DECLARE_REF(/datum/shuttle/autodock, "shuttle_docking_controller", HELD, null)

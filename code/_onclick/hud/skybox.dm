@@ -67,4 +67,3 @@
 #undef SKYBOX_PIXELS
 #undef SKYBOX_TURFS
 
-DECLARE_REF(/client, "skybox", OWNED, null)

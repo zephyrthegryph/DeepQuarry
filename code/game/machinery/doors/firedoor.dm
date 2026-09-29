@@ -73,7 +73,8 @@
 			LAZYADD(A.all_doors, src)
 			areas_added += A
 
-DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
+REL_PAIR(/obj/machinery/door/firedoor, turbolift_floor, doors)
+REL_PAIR_LIST(/datum/turbolift_floor, doors, turbolift_floor)
 
 /// Phase 2: leaves the door lists of every area it guards.
 /obj/machinery/door/firedoor/lifecycle_dematerialize()
@@ -670,4 +671,3 @@ DECLARE_REF(/obj/machinery/door/firedoor, "turbolift_floor", BACKLIST, "doors")
 	..()
 	hibernate_until_air_changes()
 
-DECLARE_REF(/obj/machinery/door/firedoor, "areas_added", STATIC, null)

@@ -27,7 +27,6 @@
 	. = ..()
 	update_icon()
 
-DECLARE_REF(/obj/item/defib_kit, "bcell", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/defib_kit, "bcell", null)
 
 /obj/item/defib_kit/loaded //starts with a cell

@@ -516,4 +516,3 @@
 #undef COMM_MSGLEN_MINIMUM
 #undef COMM_CCMSGLEN_MINIMUM
 
-DECLARE_REF(/datum/tgui_module/communications, "crew_announcement", OWNED, null)

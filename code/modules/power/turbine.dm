@@ -445,7 +445,6 @@
 #undef TURBGENQ
 #undef TURBGENG
 
-DECLARE_REF(/obj/machinery/compressor, "gas_contained", OWNED, null)
 
 /// LC-refs: the compressor this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/turbine_computer/proc/compressor() as /obj/machinery/compressor

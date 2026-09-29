@@ -271,4 +271,4 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/holster, \
 	var/list/holds = list(/obj/item/instrument)
 	return list(HOLD_ONLY(holds))
 
-DECLARE_REF(/obj/item/clothing/accessory/holster, "holstered", HELD, null)
+OWN(/obj/item/clothing/accessory/holster, holstered, OWN_CONTAINED)

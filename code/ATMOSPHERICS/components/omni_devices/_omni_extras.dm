@@ -115,8 +115,6 @@
 		else
 			return null
 
-DECLARE_REF(/datum/omni_port, "master", BACKLIST, "ports")
+REL_PAIR(/datum/omni_port, master, ports)
+REL_PAIR_LIST(/obj/machinery/atmospherics/omni, ports, master)
 
-DECLARE_REF(/datum/omni_port, "air", HELD, null)
-DECLARE_REF(/datum/omni_port, "node", HELD, null)
-DECLARE_REF(/datum/omni_port, "network", HELD, null)

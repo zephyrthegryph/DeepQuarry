@@ -12,8 +12,6 @@
 	var/tmp/floor_handle
 
 // Leaves its lift's and floor's door lists.
-DECLARE_REF(/obj/machinery/door/airlock/lift, "lift_handle", BACKLIST_HANDLE, "doors")
-DECLARE_REF(/obj/machinery/door/airlock/lift, "floor_handle", BACKLIST_HANDLE, "doors")
 
 /obj/machinery/door/airlock/lift/bumpopen(mob/user)
 	return // No accidental sprinting into open elevator shafts.

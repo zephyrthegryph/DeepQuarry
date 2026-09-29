@@ -376,5 +376,3 @@ DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_c
 	return
 
 // Compiled predicates are shared from the dq_predicate_for() registry.
-DECLARE_REF(/datum/interaction, "compiled", STATIC, null)
-DECLARE_REF(/datum/interaction, "compiled_selector", STATIC, null)

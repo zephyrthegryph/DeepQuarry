@@ -565,4 +565,3 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/syndicate, INTERACT_USE(null, PROC_REF(i
 	desc = "A Consuming Eradicator Core AI Module: 'Reconfigures the AI's core laws.'"
 	laws = new/datum/ai_laws/consuming_eradicator()
 
-DECLARE_REF(/obj/item/aiModule, "laws", OWNED, null)

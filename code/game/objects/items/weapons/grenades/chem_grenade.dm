@@ -21,8 +21,6 @@
 
 DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
-DECLARE_REF(/obj/item/grenade/chem_grenade, "detonator", OWNED, null)
-DECLARE_REF(/obj/item/grenade/chem_grenade, "beakers", OWNED_LIST, null)
 
 /// Old attack_self.
 /obj/item/grenade/chem_grenade/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)

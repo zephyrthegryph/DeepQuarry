@@ -513,6 +513,3 @@ GLOBAL_DATUM_INIT(flight_service, /datum/world_service/flight, new)
 /datum/om/behaviour/world/flight/service()
 	return GLOB.flight_service
 
-DECLARE_REF(/datum/world_service/flight, "destinations", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/flight, "vessels", OWNED_VALUES, null)
-DECLARE_REF(/datum/world_service/flight, "plans", OWNED_VALUES, null)

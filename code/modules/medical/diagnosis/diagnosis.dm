@@ -42,8 +42,6 @@
 	/// TREAT_* -> DIAG_BAND_* urgency, when the profile gives hints. Lazy.
 	var/list/hints
 
-DECLARE_REF(/datum/diagnosis, "findings", OWNED_LIST, null)
-DECLARE_REF(/datum/diagnosis, "profile", STATIC, null)
 
 /datum/diagnosis/proc/add_finding(datum/diagnosis_finding/F)
 	for(var/datum/diagnosis_finding/existing as anything in findings)

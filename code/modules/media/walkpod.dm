@@ -277,7 +277,6 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	w_class = ITEMSIZE_SMALL
 	slot_flags = SLOT_HEAD
 
-DECLARE_REF(/obj/item/walkpod, "deployed_headpods", OWNED, null)
 
 /// LC-refs: Current track playing -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/walkpod/proc/current_track() as /datum/track

@@ -188,16 +188,9 @@
 	/// Loot panel for the client
 	var/datum/lootpanel/loot_panel
 
-DECLARE_REF(/client, "fakeConversations", OWNED, null)
-DECLARE_REF(/client, "tooltips", OWNED, null)
-DECLARE_REF(/client, "volume_panel", OWNED, null)
-DECLARE_REF(/client, "loot_panel", OWNED, null)
 
 // prefs, persistent_client and the admin holder outlive the connection (GLOB.preferences_datums,
 // GLOB.persistent_clients_by_ckey, GLOB.admin_datums).
-DECLARE_REF(/client, "prefs", HELD, null)
-DECLARE_REF(/client, "persistent_client", HELD, null)
-DECLARE_REF(/client, "holder", HELD, null)
 
 /// LC-refs: the click_intercept this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /client/proc/click_intercept() as /datum

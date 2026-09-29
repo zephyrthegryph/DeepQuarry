@@ -1592,7 +1592,7 @@ EXTEND_INTERACTIONS(/obj/machinery/door/airlock, INTERACT_ROBOT("Use", PROC_REF(
 		return TRUE
 	return FALSE
 
-DECLARE_REF(/obj/machinery/door/airlock, "electronics", HELD, null)
+OWN(/obj/machinery/door/airlock, electronics, OWN_CONTAINED)
 
 /// LC-refs: closeOther -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/door/airlock/proc/closeOther() as /obj/machinery/door/airlock

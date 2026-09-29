@@ -15,7 +15,6 @@ GLOBAL_LIST_EMPTY(dq_decl_test_log)
 /datum/dq_decl_owned_child/New(datum/owner)
 	owner_ref = owner
 
-DECLARE_REF(/datum/dq_decl_owned_child, "owner_ref", BACK, null)
 
 /obj/item/dq_decl_part
 	name = "declared part"
@@ -58,11 +57,8 @@ DECLARE_REF(/datum/dq_decl_owned_child, "owner_ref", BACK, null)
 	var/saw_reagents_in_initialize = 0
 	var/saw_part_in_initialize = FALSE
 
-DECLARE_REF(/obj/item/dq_decl_probe, "helper", OWNED, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "part", HELD, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "mapped_part", HELD, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "spares", OWNED_LIST, null)
-DECLARE_REF(/obj/item/dq_decl_probe, "air_contents", OWNED, null)
+OWN(/obj/item/dq_decl_probe, part, OWN_CONTAINED)
+OWN(/obj/item/dq_decl_probe, mapped_part, OWN_CONTAINED)
 
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "helper", /datum/dq_decl_owned_child)
 DECLARE_DEFAULT_CHILD(/obj/item/dq_decl_probe, "part", /obj/item/dq_decl_part)

@@ -28,8 +28,6 @@
 		connect(port)
 		update_icon()
 
-DECLARE_REF(/obj/machinery/portable_atmospherics, "air_contents", OWNED, null)
-DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 
 // Shared by the portable devices' own steps (distillery process(), canister's OM pipeline stage
 // (code/game/machinery/machine_pipeline.dm, "canisters" section).
@@ -262,7 +260,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	log_admin("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 	message_admins("[usr] ([usr.ckey]) opened '[src.name]' containing [gases].")
 
-DECLARE_REF(/obj/machinery/portable_atmospherics/powered, "cell", HELD, null)
+OWN(/obj/machinery/portable_atmospherics/powered, cell, OWN_CONTAINED)
 
 /// LC-refs: connected port -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/portable_atmospherics/proc/connected_port() as /obj/machinery/atmospherics/portables_connector

@@ -31,7 +31,6 @@
 /// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
 /atom/var/datum/artifact_master/artifact_master
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
-DECLARE_REF(/atom, "artifact_master", OWNED, null)
 
 /datum/artifact_master
 	var/tmp/holder_handle
@@ -486,4 +485,3 @@ DECLARE_REF(/atom, "artifact_master", OWNED, null)
 /datum/artifact_master/proc/holder() as /atom
 	return om_resolve(holder_handle)
 
-DECLARE_REF(/datum/artifact_master, "my_effects", OWNED_LIST, null)

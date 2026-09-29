@@ -265,7 +265,8 @@
 	return src
 
 /// `target` points back at the atom whose heat_watches list holds this watch.
-DECLARE_REF(/datum/native_watch/heat, "target", BACKLIST, "heat_watches")
+REL_PAIR(/datum/native_watch/heat, target, heat_watches)
+REL_PAIR_LIST(/atom, heat_watches, target)
 
 /datum/native_watch/heat/register()
 	if(!isturf(target))

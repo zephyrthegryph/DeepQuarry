@@ -38,7 +38,6 @@
 // On creation automatically connects to active sensors. This is delayed to ensure sensors already exist.
 DECLARE_DEFAULT_CHILD(/obj/machinery/computer/power_monitor, "power_monitor", /datum/tgui_module/power_monitor)
 
-DECLARE_REF(/obj/machinery/computer/power_monitor, "power_monitor", OWNED, null)
 
 // On user click opens the UI of this computer.
 /obj/machinery/computer/power_monitor/declare_interactions(list/into)

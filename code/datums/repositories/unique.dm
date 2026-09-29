@@ -69,4 +69,3 @@ GLOBAL_DATUM_INIT(uniqueness_repository, /datum/repository/unique, new)
 		while(. in ids)
 		ids += .
 
-DECLARE_REF(/datum/repository/unique, "generators", OWNED_VALUES, null)

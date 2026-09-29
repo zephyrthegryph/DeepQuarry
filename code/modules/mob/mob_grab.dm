@@ -403,7 +403,6 @@ DECLARE_INTERACTIONS(/obj/item/grab, INTERACT_USE("Tighten grip", PROC_REF(inter
 /obj/item/grab/proc/size_difference(mob/A, mob/B)
 	return mob_size_difference(A.mob_size, B.mob_size)
 
-DECLARE_REF(/obj/item/grab, "hud", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/grab, "hud", /atom/movable/screen/grab)
 
 #undef UPGRADE_KILL_TIMER

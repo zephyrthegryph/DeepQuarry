@@ -76,9 +76,6 @@
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", /obj/item/ore_bag)
 DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mining_drone, "shields", /obj/item/shield_projector/rectangle/automatic/drone)
 
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "ion_trail", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "shields", OWNED, null)
-DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED, null)
 
 /mob/living/simple_mob/mechanical/mining_drone
 	delete_on_death = TRUE

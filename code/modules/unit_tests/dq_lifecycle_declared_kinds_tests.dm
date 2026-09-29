@@ -13,11 +13,6 @@ GLOBAL_LIST_EMPTY(dq_decl_kinds_queue)
 	var/hub_handle
 	var/queued = FALSE
 
-DECLARE_REF(/datum/dq_decl_kinds_owner, "members", LIST_BACK, list("back", "back_handle", "names"))
-DECLARE_REF(/datum/dq_decl_kinds_owner, "scratch", DROP, null)
-DECLARE_REF(/datum/dq_decl_kinds_owner, "hub_handle", BACK_VIA, "slot")
-DECLARE_REF(/datum/dq_decl_kinds_owner, "hub_handle.inner_handle", BACK_VIA, "owners")
-DECLARE_REF(/datum/dq_decl_kinds_owner, "queued", QUEUE, /proc/dq_decl_kinds_queue)
 
 /// A member of the owner's list, naming it back three ways.
 /datum/dq_decl_kinds_member

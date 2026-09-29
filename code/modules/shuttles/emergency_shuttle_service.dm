@@ -279,4 +279,3 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 	return GLOB.emergency_shuttle_service
 
 // The emergency shuttle datum is a round-long SSshuttles registration.
-DECLARE_REF(/datum/world_service/emergency_shuttle, "shuttle", STATIC, null)

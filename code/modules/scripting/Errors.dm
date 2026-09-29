@@ -121,7 +121,6 @@
 	name="MaxComputationalUse"
 	message="Maximum amount of computational cycles reached (>= 1000)."
 
-DECLARE_REF(/datum/runtimeError, "stack", OWNED, null)
 
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/scriptError/BadToken/proc/token() as /datum/token
@@ -131,5 +130,3 @@ DECLARE_REF(/datum/runtimeError, "stack", OWNED, null)
 /datum/scriptError/BadReturn/proc/token() as /datum/token
 	return token_ref
 
-DECLARE_REF(/datum/scriptError/BadToken, "token_ref", BACK, null)
-DECLARE_REF(/datum/scriptError/BadReturn, "token_ref", BACK, null)

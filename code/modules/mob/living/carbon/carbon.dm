@@ -48,7 +48,6 @@
 /datum/om/stage/life/germs/rewake_delay(mob/living/carbon/self)
 	return self.germ_level < GERM_LEVEL_AMBIENT ? GERM_RESAMPLE : 0
 
-DECLARE_REF(/mob/living/carbon, "cozyloop", OWNED, null)
 
 /mob/living/carbon/rejuvenate()
 	bloodstr.clear_reagents()

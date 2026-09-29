@@ -13,7 +13,6 @@
 	configure_effects()
 	return ..()
 
-DECLARE_REF(/obj/effect/map_effect/interval/effect_emitter, "effect_system", OWNED, null)
 
 /obj/effect/map_effect/interval/effect_emitter/proc/configure_effects()
 	effect_system.set_up(effect_amount, effect_cardinals_only, src.loc, effect_forced_dir)

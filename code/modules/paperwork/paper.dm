@@ -916,4 +916,3 @@ DECLARE_INTERACTIONS(/obj/item/paper, \
 		SScontracts?.release_evidence(carried_evidence_id)
 		carried_evidence_id = null
 
-DECLARE_REF(/obj/item/paper, "contract_document", OWNED, null)

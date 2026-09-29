@@ -158,4 +158,3 @@
 
 
 
-DECLARE_REF(/datum/generated_station_materialization_job, "on_done", HELD, null)

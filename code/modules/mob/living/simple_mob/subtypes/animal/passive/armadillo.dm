@@ -48,7 +48,7 @@
 	var/obj/item/clothing/head/hat = null // The hat the armadillo may be wearing.
 
 //Hat simulator stolen from slime code.
-DECLARE_REF(/mob/living/simple_mob/animal/passive/armadillo, "hat", SPILL, null)
+OWN(/mob/living/simple_mob/animal/passive/armadillo, hat, OWN_SPILL)
 
 /mob/living/simple_mob/animal/passive/armadillo/update_icon()
 	..() // Do the regular stuff first.

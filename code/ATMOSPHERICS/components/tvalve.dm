@@ -287,8 +287,3 @@
 	network_node2 = null
 	network_node3 = null
 
-DECLARE_REF(/obj/machinery/atmospherics/tvalve, "node3", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/tvalve, "network_node1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/tvalve, "network_node2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/tvalve, "network_node3", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics/tvalve/digital, "radio_connection", STATIC, null)

@@ -559,7 +559,3 @@ DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_vo
 		return
 	om_after(src, 1, PROC_REF(mech_syringe_flight), trg, steps_left - 1)
 
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "syringes", OWNED_LIST, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "drone_overlay", OWNED, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "MyBeam", OWNED, null)
-DECLARE_REF(/obj/item/mecha_parts/mecha_equipment/crisis_drone, "Target", HELD, null)

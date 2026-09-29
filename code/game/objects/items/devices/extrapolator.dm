@@ -321,4 +321,4 @@ DECLARE_INTERACTIONS(/obj/item/extrapolator, \
 /obj/item/extrapolator/tier5
 	default_scanning_module = /obj/item/stock_parts/scanning_module
 
-DECLARE_REF(/obj/item/extrapolator, "scanner", HELD, null)
+OWN(/obj/item/extrapolator, scanner, OWN_CONTAINED)

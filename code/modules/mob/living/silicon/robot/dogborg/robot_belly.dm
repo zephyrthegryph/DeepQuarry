@@ -16,8 +16,6 @@
 	var/list/active_ore_bags
 
 /mob/living/silicon/robot/var/datum/robot_belly/robot_belly
-DECLARE_REF(/mob/living/silicon/robot, "robot_belly", OWNED, null)
-DECLARE_REF(/datum/robot_belly, "owner", BACK, "robot_belly")
 
 /datum/robot_belly/New(mob/living/silicon/robot/R)
 	..()

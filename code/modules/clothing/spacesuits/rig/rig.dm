@@ -139,15 +139,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_
 
 	update_icon(1)
 
-DECLARE_REF(/obj/item/rig, "power_system", OWNED, null)
-DECLARE_REF(/obj/item/rig, "spark_system", OWNED, null)
-DECLARE_REF(/obj/item/rig, "boots", OWNED, null)
-DECLARE_REF(/obj/item/rig, "chest", OWNED, null)
-DECLARE_REF(/obj/item/rig, "helmet", OWNED, null)
-DECLARE_REF(/obj/item/rig, "gloves", OWNED, null)
-DECLARE_REF(/obj/item/rig, "mob_icon", OWNED, null)
-DECLARE_REF(/obj/item/rig, "minihud", OWNED, null)
-DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 
 // the suit pieces are torn down by its (owned) component registry.
 /obj/item/rig/on_destroy(force)
@@ -1037,12 +1028,12 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 	M.client?.screen -= booting_R
 	qdel(booting_R)
 
-DECLARE_REF(/obj/item/rig, "air_supply", HELD, null)
-DECLARE_REF(/obj/item/rig, "cell", HELD, null)
-DECLARE_REF(/obj/item/rig, "selected_module", HELD, null)
-DECLARE_REF(/obj/item/rig, "visor", HELD, null)
-DECLARE_REF(/obj/item/rig, "speech", HELD, null)
-DECLARE_REF(/obj/item/rig, "rig_storage", HELD, null)
+OWN(/obj/item/rig, air_supply, OWN_CONTAINED)
+OWN(/obj/item/rig, cell, OWN_CONTAINED)
+OWN(/obj/item/rig, selected_module, OWN_CONTAINED)
+OWN(/obj/item/rig, visor, OWN_CONTAINED)
+OWN(/obj/item/rig, speech, OWN_CONTAINED)
+OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
 
 /// LC-refs: The person currently wearing the rig. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human

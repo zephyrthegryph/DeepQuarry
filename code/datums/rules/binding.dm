@@ -6,7 +6,6 @@
 /// is no outside reference to its object (collapse).
 /datum/var/tmp/datum/rule_binding/rule_binding
 
-DECLARE_REF(/datum, "rule_binding", OWNED, null)
 
 /proc/dq_rule_binding_of(datum/thing)
 	var/datum/rule_binding/binding = thing?.rule_binding
@@ -118,7 +117,6 @@ DECLARE_REF(/datum, "rule_binding", OWNED, null)
 				LAZYOR(key_kinds, trigger.key_kind)
 
 OM_STATIC_TYPE(/datum/rule_type_table)
-DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 
 /// Per-object rule state. The rule list and key kinds live in the shared
 /// /datum/rule_type_table; per-rule flags are bits of three numbers, and every
@@ -393,5 +391,3 @@ DECLARE_REF(/datum/rule_type_table, "rules", STATIC, null)
 			if(RULE_OP_REMOVE)
 				qdel(thing)
 
-DECLARE_REF(/datum/rule_binding, "owner", BACK, null)
-DECLARE_REF(/datum/rule_binding, "table", STATIC, null)

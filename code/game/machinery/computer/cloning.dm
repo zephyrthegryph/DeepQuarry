@@ -34,7 +34,6 @@
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
-DECLARE_REF(/obj/machinery/computer/cloning, "records", OWNED_LIST, null)
 
 // its linked cloners are released.
 /obj/machinery/computer/cloning/on_destroy(force)
@@ -500,7 +499,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/cloning, \
 /obj/machinery/computer/cloning/step_start_condition()
 	return autoprocess
 
-DECLARE_REF(/obj/machinery/computer/cloning, "diskette", HELD, null)
+OWN(/obj/machinery/computer/cloning, diskette, OWN_CONTAINED)
 
 /// LC-refs: scanner -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/computer/cloning/proc/scanner() as /obj/machinery/dna_scannernew
@@ -514,4 +513,3 @@ DECLARE_REF(/obj/machinery/computer/cloning, "diskette", HELD, null)
 /obj/machinery/computer/cloning/proc/selected_pod() as /obj/machinery/clonepod
 	return om_resolve(selected_pod_handle)
 
-DECLARE_REF(/obj/machinery/computer/cloning, "loaded_BR", OWNED, null)

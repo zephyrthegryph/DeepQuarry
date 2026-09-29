@@ -267,4 +267,3 @@
 		enabled = TRUE
 		updateTurrets()
 
-DECLARE_REF(/obj/machinery/turretid, "control_area", STATIC, null)

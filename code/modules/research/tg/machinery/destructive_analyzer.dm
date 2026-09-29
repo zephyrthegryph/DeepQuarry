@@ -345,4 +345,3 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 #undef DESTRUCTIVE_ANALYZER_DESTROY_POINTS
 
-DECLARE_REF(/obj/machinery/rnd/destructive_analyzer, "rmat", OWNED, null)

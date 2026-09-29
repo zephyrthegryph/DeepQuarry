@@ -544,8 +544,4 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 				if(W.evaluate_gas(observation, observation_index))
 					om_watch_fire(W, entity)
 
-DECLARE_REF(/datum/om_watch, "wake_callback", OWNED, null)
-DECLARE_REF(/datum/om_watch, "value_getter", OWNED, null)
-DECLARE_REF(/datum/om_watch, "raw_observer", OWNED, null)
 
-DECLARE_REF(/datum/om_watch, "bands", OWNED_LIST, null)

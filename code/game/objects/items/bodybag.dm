@@ -187,8 +187,6 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 	tank = new tank_type(null) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
 	..()
 
-DECLARE_REF(/obj/structure/closet/body_bag/cryobag, "syringe", OWNED, null)
-DECLARE_REF(/obj/structure/closet/body_bag/cryobag, "tank", OWNED, null)
 
 EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	INTERACT_HAND(null, PROC_REF(cryobag_interaction_hand)), \
@@ -328,4 +326,4 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	icon_state = "bodybag_used"
 	icon = 'icons/obj/closets/cryobag.dmi'
 
-DECLARE_REF(/obj/item/bodybag, "syringe", HELD, null)
+OWN(/obj/item/bodybag, syringe, OWN_CONTAINED)

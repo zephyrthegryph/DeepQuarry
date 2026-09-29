@@ -335,4 +335,4 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 #undef BIOGEN_ITEM
 #undef BIOGEN_REAGENT
 
-DECLARE_REF(/obj/machinery/biogenerator, "beaker", HELD, null)
+OWN(/obj/machinery/biogenerator, beaker, OWN_CONTAINED)

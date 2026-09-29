@@ -461,4 +461,5 @@ DECLARE_INTERACTIONS(/obj/structure/blob, \
 
 // Every blob names its overmind; only resource blobs sit in its resource_blobs list, and
 // removing a non-member is a no-op, so the base declaration is the resource one.
-DECLARE_REF(/obj/structure/blob, "overmind", BACKLIST, "resource_blobs")
+REL_PAIR(/obj/structure/blob, overmind, resource_blobs)
+REL_PAIR_LIST(/mob/observer/blob, resource_blobs, overmind)

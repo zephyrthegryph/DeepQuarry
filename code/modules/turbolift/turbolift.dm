@@ -67,15 +67,15 @@
 // Cancel all pending calls
 /datum/turbolift/proc/cancel_pending_floors()
 	for(var/datum/turbolift_floor/floor in queued_floors)
-		if(floor.ext_panel())
-			floor.ext_panel().reset()
+		if(floor.ext_panel)
+			floor.ext_panel.reset()
 	LAZYCLEARLIST(queued_floors)
 
 // Update the icons of all exterior panels (after we change modes etc)
 /datum/turbolift/proc/update_ext_panel_icons()
 	for(var/datum/turbolift_floor/floor in floors)
-		if(floor.ext_panel())
-			floor.ext_panel().update_icon()
+		if(floor.ext_panel)
+			floor.ext_panel.update_icon()
 
 /datum/turbolift/proc/doors_are_open(datum/turbolift_floor/use_floor)
 	if(!use_floor)
@@ -111,7 +111,7 @@
 			if(!do_move())
 				if(target_floor())
 					// TODO - This logic copied from old processor.  Would be better to have error states.
-					target_floor().ext_panel().reset()
+					target_floor().ext_panel.reset()
 					target_floor_handle = null
 				return PROCESS_KILL
 			else if(!next_process)
@@ -158,7 +158,7 @@
 			doors_closing = 0
 			if(!fire_mode)
 				open_doors()
-			control_panel_interior.audible_message("\The [current_floor().ext_panel()] buzzes loudly.", runemessage = "BUZZ")
+			control_panel_interior.audible_message("\The [current_floor().ext_panel] buzzes loudly.", runemessage = "BUZZ")
 			playsound(control_panel_interior, "sound/machines/buzz-two.ogg", 50, 1)
 			return 0
 
@@ -229,7 +229,6 @@
 	priority_mode = FALSE
 	update_ext_panel_icons()
 
-DECLARE_REF(/datum/turbolift, "control_panel_interior", OWNED, null)
 
 /// LC-refs: Where are we going? -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/turbolift/proc/target_floor() as /datum/turbolift_floor

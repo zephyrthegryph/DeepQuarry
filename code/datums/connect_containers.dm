@@ -13,7 +13,6 @@
 	 */
 	var/tracked_handle
 
-DECLARE_REF(/datum/connect_containers, "listener", BACK, null)
 
 /datum/connect_containers/New(datum/listener, atom/movable/tracked, list/connections)
 	..()

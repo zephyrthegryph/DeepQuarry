@@ -407,4 +407,4 @@
 	pickup_sound = 'sound/items/pickup/device.ogg'
 	drop_sound = 'sound/items/drop/device.ogg'
 
-DECLARE_REF(/obj/machinery/photocopier, "copyitem", HELD, null)
+OWN(/obj/machinery/photocopier, copyitem, OWN_CONTAINED)

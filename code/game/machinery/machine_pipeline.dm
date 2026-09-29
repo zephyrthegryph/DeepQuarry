@@ -648,10 +648,9 @@ OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
 /// The item being recharged.
 OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-DECLARE_REF(/obj/machinery/recharger, "charging", SPILL, null)
+OWN(/obj/machinery/recharger, charging, OWN_SPILL)
 /// The cell being charged.
 OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
-DECLARE_REF(/obj/machinery/cell_charger, "charging", HELD, null)
 /// TRUE while the fire alarm's countdown runs.
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
 /// Heating/cooling mode of the air alarm's thermostat (0 off).

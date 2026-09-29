@@ -113,7 +113,7 @@
 	add_verb(src, /mob/living/proc/hide)
 	add_verb(src, /mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
 
-DECLARE_REF(/mob/living/simple_mob/vore/alienanimals/catslug, "hat", SPILL, null)
+OWN(/mob/living/simple_mob/vore/alienanimals/catslug, hat, OWN_SPILL)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \

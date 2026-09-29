@@ -487,7 +487,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	return (slices_num && slice_path && slices_num > 0)
 
 // things stuffed inside drop out.
-DECLARE_REF(/obj/item/reagent_containers/food/snacks, "contents", SPILL_LIST, null)
+OWN(/obj/item/reagent_containers/food/snacks, contents, OWN_SPILL)
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
 	package = FALSE
@@ -8528,9 +8528,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 	if(!om_resolve(food_handle) && !user.client)
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
-DECLARE_REF(/obj/item/reagent_containers/food/snacks, "flat_icon", OWNED, null)
 
-DECLARE_REF(/obj/item/pizzabox, "pizza", HELD, null)
+OWN(/obj/item/pizzabox, pizza, OWN_CONTAINED)
 
 /// LC-refs: the coating this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating

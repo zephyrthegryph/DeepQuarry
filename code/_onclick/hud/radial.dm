@@ -338,10 +338,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	..()
 
 /// The menu's slices, centre button, holder image and check callback are its own.
-DECLARE_REF(/datum/radial_menu, "close_button", OWNED, null)
-DECLARE_REF(/datum/radial_menu, "menu_holder", OWNED, null)
 
-DECLARE_REF(/datum/radial_menu, "elements", OWNED_LIST, null)
 
 /// Can be provided to choices in radial menus if you want to provide more information
 /datum/radial_menu_choice
@@ -354,7 +351,6 @@ DECLARE_REF(/datum/radial_menu, "elements", OWNED_LIST, null)
 	/// If provided, will display an info button that will put this text in your chat
 	var/info
 
-DECLARE_REF(/datum/radial_menu_choice, "image", OWNED, null)
 
 #undef NEXT_PAGE_ID
 

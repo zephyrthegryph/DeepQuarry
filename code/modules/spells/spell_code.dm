@@ -358,7 +358,6 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 
 
 
-DECLARE_REF(/datum/spell, "connected_button", OWNED, null)
 
 /// LC-refs: where the spell is. Normally the user, can be an item -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/spell/proc/holder() as /atom/movable

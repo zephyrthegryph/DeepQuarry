@@ -28,7 +28,6 @@
 	EVENT_HANDLER
 	update_icon()
 
-DECLARE_REF(/obj/item/radio/intercom, "circuit", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/item/radio/intercom, "circuit", null)
 
 /obj/item/radio/intercom/custom

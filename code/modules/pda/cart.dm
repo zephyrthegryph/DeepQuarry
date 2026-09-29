@@ -62,9 +62,6 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 	var/list/programs
 	var/list/messenger_plugins
 
-DECLARE_REF(/obj/item/cartridge, "radio", OWNED, null)
-DECLARE_REF(/obj/item/cartridge, "programs", OWNED_LIST, null)
-DECLARE_REF(/obj/item/cartridge, "messenger_plugins", OWNED_LIST, null)
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)
 	for(var/datum/data/pda/P as anything in programs)
@@ -335,7 +332,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/storage, "hold", /obj/item/storage/int
 	. = ..()
 	hold.max_storage_space = slots * 2
 
-DECLARE_REF(/obj/item/cartridge/storage, "hold", OWNED, null)
 
 DECLARE_INTERACTIONS(/obj/item/cartridge/storage, \
 	INTERACT_ITEM("Store", PROC_REF(interaction_store)), \

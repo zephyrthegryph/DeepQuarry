@@ -291,4 +291,4 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 /obj/machinery/space_heater/step_start_condition()
 	return state
 
-DECLARE_REF(/obj/machinery/space_heater, "cell", HELD, null)
+OWN(/obj/machinery/space_heater, cell, OWN_CONTAINED)

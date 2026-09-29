@@ -593,8 +593,7 @@ EXTEND_INTERACTIONS(/obj/item/melee/energy/blade, INTERACT_USE("Dismiss", PROC_R
 	. = ..()
 	om_after(src, 0, PROC_REF(check_held))
 
-DECLARE_REF(/obj/item/melee/energy, "bcell", HELD, null)
-DECLARE_REF(/obj/item/melee/energy/blade, "spark_system", OWNED, null)
+OWN(/obj/item/melee/energy, bcell, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/melee/energy/blade, "spark_system", /datum/effect/effect/system/spark_spread)
 DECLARE_START_TIMER(/obj/item/melee/energy/blade, 0, PROC_REF(check_held))
 

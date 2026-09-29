@@ -82,4 +82,3 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 			host.Topic("flavor_change=done", list("flavor_change" = "done"))
 			return TRUE
 
-DECLARE_REF(/datum/flavor_panel, "host", HELD, null)

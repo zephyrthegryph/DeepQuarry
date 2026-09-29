@@ -779,6 +779,4 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	if(ask.text)
 		vars[ask.var_name] = ask.text
 
-DECLARE_REF(/obj/machinery, "circuit", OWNED, null)
 
-DECLARE_REF(/obj/machinery, "component_parts", OWNED_LIST, null)

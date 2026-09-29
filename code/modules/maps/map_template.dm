@@ -423,4 +423,3 @@ GLOBAL_LIST_EMPTY(map_templates_loaded)
 
 	return
 
-DECLARE_REF(/datum/map_template, "cached_map", OWNED, null)

@@ -24,7 +24,7 @@
 		drop_sound = 'sound/items/drop/bottle.ogg'
 		pickup_sound = 'sound/items/pickup/bottle.ogg'
 
-DECLARE_REF(/obj/item/reagent_containers/food/drinks/bottle, "rag", SPILL, null)
+OWN(/obj/item/reagent_containers/food/drinks/bottle, rag, OWN_SPILL)
 
 //when thrown on impact, bottles smash and spill their contents
 /obj/item/reagent_containers/food/drinks/bottle/throw_at(atom/target, range, speed, mob/thrower, spin = TRUE, datum/callback/callback)
@@ -727,4 +727,3 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/snaps, null, li
 	icon_rotation = spin_rotation
 	update_transform()
 
-DECLARE_REF(/obj/item/broken_bottle, "broken_outline", OWNED, null)

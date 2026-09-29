@@ -450,4 +450,3 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/emotions, INTERACT_USE("Change emoti
 	item_flags = FLEXIBLEMATERIAL
 	flags_inv = HIDEFACE|BLOCKHAIR
 
-DECLARE_REF(/obj/item/clothing/mask/ai, "eye", OWNED, null)

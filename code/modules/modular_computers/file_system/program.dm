@@ -222,7 +222,6 @@
 				if(istype(user))
 					computer().tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
 
-DECLARE_REF(/datum/computer_file/program, "TM", OWNED, null)
 
 /// LC-refs: Device that runs this program. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /datum/computer_file/program/proc/computer() as /obj/item/modular_computer

@@ -22,8 +22,6 @@
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "tank", "spawn_type")
 DECLARE_DEFAULT_CHILD(/obj/machinery/oxygen_pump, "contained", "mask_type")
 
-DECLARE_REF(/obj/machinery/oxygen_pump, "tank", OWNED, null)
-DECLARE_REF(/obj/machinery/oxygen_pump, "contained", OWNED, null)
 
 // the mask retracts from its breather.
 /obj/machinery/oxygen_pump/lifecycle_prerelease()

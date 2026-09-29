@@ -366,4 +366,4 @@
 		return PROJECTILE_CONTINUE
 	return ..()
 
-DECLARE_REF(/obj/structure/door_assembly, "electronics", HELD, null)
+OWN(/obj/structure/door_assembly, electronics, OWN_CONTAINED)

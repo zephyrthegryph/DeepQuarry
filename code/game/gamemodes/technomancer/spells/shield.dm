@@ -57,4 +57,3 @@ DECLARE_DEFAULT_CHILD(/obj/item/spell/shield, "spark_system", /datum/effect/effe
 		return 1
 	return 0
 
-DECLARE_REF(/obj/item/spell/shield, "spark_system", OWNED, null)

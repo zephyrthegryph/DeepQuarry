@@ -24,8 +24,6 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE
 
 /mob/living/carbon/var/datum/hallucinations/hallucinations
-DECLARE_REF(/mob/living/carbon, "hallucinations", OWNED, null)
-DECLARE_REF(/datum/hallucinations, "our_human", BACK, "hallucinations")
 
 /datum/hallucinations/New(mob/living/carbon/human/H)
 	..()

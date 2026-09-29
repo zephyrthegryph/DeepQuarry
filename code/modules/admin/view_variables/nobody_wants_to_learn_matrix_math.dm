@@ -15,7 +15,6 @@
 	src.target_handle = om_handle(target)
 	testing_matrix = matrix(target.transform)
 
-DECLARE_REF(/datum/nobody_wants_to_learn_matrix_math, "testing_matrix", OWNED, null)
 
 /datum/nobody_wants_to_learn_matrix_math/tgui_state(mob/user)
 	return ADMIN_STATE(R_VAREDIT)

@@ -127,5 +127,5 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 	add_fingerprint(user)
 	return TRUE
 
-DECLARE_REF(/obj/item/cane/concealed, "concealed_blade", HELD, null)
+OWN(/obj/item/cane/concealed, concealed_blade, OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/cane/concealed, "concealed_blade", /obj/item/material/sword/katana/caneblade)

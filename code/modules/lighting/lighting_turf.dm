@@ -153,10 +153,5 @@
 		L.area_power_changed()
 
 // Held: corners are shared by four turfs and freed by the lighting subsystem; turfs are never destroyed.
-DECLARE_REF(/turf, "lighting_object", HELD, null)
-DECLARE_REF(/turf, "lighting_corner_NE", HELD, null)
-DECLARE_REF(/turf, "lighting_corner_SE", HELD, null)
-DECLARE_REF(/turf, "lighting_corner_SW", HELD, null)
-DECLARE_REF(/turf, "lighting_corner_NW", HELD, null)
 
 

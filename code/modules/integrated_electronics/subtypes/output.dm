@@ -374,7 +374,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
 
 // its hologram goes with it.
-DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram", OWNED, null)
 
 /obj/item/integrated_circuit/output/holographic_projector/do_work()
 	var/toggled = get_pin_data(IC_INPUT, 1)
@@ -470,4 +469,3 @@ DECLARE_REF(/obj/item/integrated_circuit/output/holographic_projector, "hologram
 		destroy_hologram()
 		set_pin_data(IC_INPUT, 1, FALSE)
 
-DECLARE_REF(/obj/item/integrated_circuit/output/text_to_speech/advanced, "my_voice", OWNED, null)

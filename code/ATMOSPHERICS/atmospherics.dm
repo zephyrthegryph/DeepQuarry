@@ -384,6 +384,3 @@ Pipelines + Other Objects -> Pipe network
 		playsound(our_turf, 'sound/machines/hiss.ogg', 50, 0, 0)
 
 // Topology links: strong, cleared by lifecycle_unbind() (phase 1), which does the real disconnection.
-DECLARE_REF(/obj/machinery/atmospherics, "node1", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics, "node2", HELD, null)
-DECLARE_REF(/obj/machinery/atmospherics, "network_memberships", HELD, null)

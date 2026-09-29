@@ -3,7 +3,7 @@
 // doc/rewrite/object_model_core.md "relations"). One file per relation
 // family; each relation gets: establishing the link, the link breaking with
 // no dangling refs when either end is hard-deleted, and (where the relation
-// declares a range/break_if check) the link breaking when the sides move
+// declares a range/holds_while check) the link breaking when the sides move
 // apart, again with no dangling refs left over.
 
 /// White-box helper: the edge of relation `rel_path` directly between `source`
@@ -30,7 +30,7 @@
 	TEST_ASSERT(C.buckle_mob(H, forced = TRUE), "buckle_mob should succeed on a fresh chair")
 	TEST_ASSERT_EQUAL(H?.buckled_to(), C, "H?.buckled_to() should be the chair")
 	TEST_ASSERT(H in C?.buckled_mob_list(), "H should be in the chair's BUCKLED_MOBS")
-	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with ()?.buckled_to()")
+	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/buckled_to), C, "om_relation_of should agree with ()?.buckled_to()")
 	TEST_ASSERT(om_has(H, EFFECT_BUCKLED), "buckling should raise EFFECT_BUCKLED on the mob")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, C, /datum/om/relation/buckled_to), "an edge should exist between H and C")
 
@@ -45,7 +45,7 @@
 	qdel(C)
 	TEST_ASSERT(QDELETED(C), "setup: the chair should be deleted")
 	TEST_ASSERT_NULL(H?.buckled_to(), "H?.buckled_to() should be cleared once the chair is deleted")
-	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
+	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
 	TEST_ASSERT(!om_has(H, EFFECT_BUCKLED), "EFFECT_BUCKLED should be gone once unbuckled")
 
 /// Hard-deleting a buckled mob removes it from the object's buckled_mobs, with
@@ -61,7 +61,7 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(C?.buckled_mob_list()), 0, "the chair should have no buckled mobs left")
 	TEST_ASSERT(!(H in C?.buckled_mob_list()), "the deleted mob should not still be listed")
 
-/// break_if = in_range(0) (library.dm) unlinks the edge outright -- not just
+/// holds_while = in_range(0) (library.dm) unlinks the edge outright -- not just
 /// its contribution -- the instant the mob ends up off the chair's tile, e.g.
 /// a forceMove() that bypassed handle_buckled_mob_movement().
 /datum/unit_test/dq_om_relation_buckling_breaks_on_range
@@ -87,7 +87,7 @@
 	TEST_ASSERT_EQUAL(LAZYLEN(C?.buckled_mob_list()), 0, "the chair should have no buckled mobs left")
 	TEST_ASSERT_NULL(edge.source, "the edge itself should be torn down (no dangling source)")
 	TEST_ASSERT_NULL(edge.target, "the edge itself should be torn down (no dangling target)")
-	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
+	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/buckled_to), "the relation lookup should agree")
 
 // ---------------------------------------------------------------- grabbing
 
@@ -104,7 +104,7 @@
 	TEST_ASSERT(!QDELETED(G), "the grab should not immediately self-delete")
 	TEST_ASSERT_EQUAL(G?.grab_target(), victim, "G?.grab_target() should be the victim")
 	TEST_ASSERT(G in victim?.grabbed_by_list(), "G should be in the victim's GRABBED_BY")
-	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with GRAB_TARGET")
+	TEST_ASSERT_EQUAL(link_of(G, /datum/om/relation/grabbing), victim, "om_relation_of should agree with GRAB_TARGET")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(G, victim, /datum/om/relation/grabbing), "an edge should exist between G and the victim")
 
 /// Hard-deleting a grab removes it from the victim's GRABBED_BY, with no
@@ -150,7 +150,7 @@
 	puller.start_pulling(pulled)
 	TEST_ASSERT_EQUAL(puller?.pulling_target(), pulled, "puller?.pulling_target() should be the pulled mob")
 	TEST_ASSERT_EQUAL(pulled?.pulled_by_mob(), puller, "pulled?.pulled_by_mob() should be the puller")
-	TEST_ASSERT_EQUAL(om_relation_of(puller, /datum/om/relation/pulling), pulled, "om_relation_of should agree with ()?.pulling_target()")
+	TEST_ASSERT_EQUAL(link_of(puller, /datum/om/relation/pulling), pulled, "om_relation_of should agree with ()?.pulling_target()")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(puller, pulled, /datum/om/relation/pulling), "an edge should exist between puller and pulled")
 
 /// Hard-deleting the puller clears the pulled mob's pulledby, with no
@@ -179,7 +179,7 @@
 	TEST_ASSERT(QDELETED(pulled), "setup: the pulled mob should be deleted")
 	TEST_ASSERT_NULL(puller?.pulling_target(), "puller?.pulling_target() should be cleared once the pulled mob is deleted")
 
-/// break_if = in_range(1) unlinks the edge outright once puller and pulled
+/// holds_while = in_range(1) unlinks the edge outright once puller and pulled
 /// end up more than one tile apart, replacing the hand-rolled distance check
 /// that used to live in /atom/movable/Move() (atoms_movable.dm).
 /datum/unit_test/dq_om_relation_pulling_breaks_on_range
@@ -217,7 +217,7 @@
 	var/obj/machinery/sleeper/S = allocate(/obj/machinery/sleeper, get_turf(H))
 	TEST_ASSERT(H.move_into(S, OCCUPANT_SLOT_SLEEPER), "setup: move_into should succeed")
 	TEST_ASSERT_EQUAL(S?.slot_item(OCCUPANT_SLOT_SLEEPER), H, "the sleeper's occupant slot should hold H")
-	TEST_ASSERT_EQUAL(om_relation_of(H, /datum/om/relation/slot/occupant/sleeper), S, "om_relation_of should agree with the slot")
+	TEST_ASSERT_EQUAL(link_of(H, /datum/om/relation/slot/occupant/sleeper), S, "om_relation_of should agree with the slot")
 	TEST_ASSERT_NOTNULL(dq_test_find_edge(H, S, /datum/om/relation/slot/occupant/sleeper), "an edge should exist between H and S")
 	S.slot_remove(H, get_turf(S))
 
@@ -231,7 +231,7 @@
 	TEST_ASSERT(H.move_into(S, OCCUPANT_SLOT_SLEEPER), "setup: move_into should succeed")
 	qdel(S)
 	TEST_ASSERT(QDELETED(S), "setup: the sleeper should be deleted")
-	TEST_ASSERT_NULL(om_relation_of(H, /datum/om/relation/slot/occupant/sleeper), "the relation lookup should agree")
+	TEST_ASSERT_NULL(link_of(H, /datum/om/relation/slot/occupant/sleeper), "the relation lookup should agree")
 
 /// Hard-deleting the occupant mob clears the slot, with no dangling reference
 /// left behind -- closing the same class of dangling-reference bug the
@@ -263,7 +263,7 @@
 	TEST_ASSERT_EQUAL(I.part, torso, "I.part should be the torso")
 	TEST_ASSERT_EQUAL(I.imp_in(), H, "I.imp_in should be H")
 	TEST_ASSERT(I in torso.implants, "I should be in the torso's implants list")
-	TEST_ASSERT_EQUAL(om_relation_of(I, /datum/om/relation/slot/implant_site), torso, "om_relation_of should agree with the part var")
+	TEST_ASSERT_EQUAL(link_of(I, /datum/om/relation/slot/implant_site), torso, "om_relation_of should agree with the part var")
 
 /// Hard-deleting the organ clears the implant's part/imp_in, with no
 /// dangling reference left behind.
@@ -396,7 +396,7 @@
 	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
 	TEST_ASSERT_EQUAL(B?.borer_host(), H, "B?.borer_host() should be H")
 	TEST_ASSERT(B in head.implants, "B should be listed in the host's head implants")
-	TEST_ASSERT_EQUAL(om_relation_of(B, /datum/om/relation/host_of), H, "om_relation_of should agree with the host var")
+	TEST_ASSERT_EQUAL(link_of(B, /datum/om/relation/host_of), H, "om_relation_of should agree with the host var")
 	om_unlink(B, H, /datum/om/relation/host_of)
 	TEST_ASSERT_NULL(B?.borer_host(), "B?.borer_host() should be cleared after unlink")
 	TEST_ASSERT(!(B in head.implants), "B should no longer be listed in the host's head implants")
@@ -428,7 +428,7 @@
 	TEST_ASSERT(istype(link_result, /datum/om/edge), "om_link should return an edge, got: [link_result]")
 	TEST_ASSERT_EQUAL(G?.following_target(), H, "G?.following_target() should be H")
 	TEST_ASSERT(G in H?.follower_list(), "G should be listed in H?.follower_list()")
-	TEST_ASSERT_EQUAL(om_relation_of(G, /datum/om/relation/following), H, "om_relation_of should agree with ()?.following_target()")
+	TEST_ASSERT_EQUAL(link_of(G, /datum/om/relation/following), H, "om_relation_of should agree with ()?.following_target()")
 	G.stop_following()
 	TEST_ASSERT_NULL(G?.following_target(), "G?.following_target() should be cleared after stop_following()")
 	TEST_ASSERT(!(G in H?.follower_list()), "G should no longer be listed in H?.follower_list()")

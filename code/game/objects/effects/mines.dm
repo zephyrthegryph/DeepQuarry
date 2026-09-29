@@ -21,7 +21,6 @@
 	if(camo_net)
 		alpha = 50
 
-DECLARE_REF(/obj/effect/mine, "trap", OWNED, null)
 DECLARE_DEFAULT_CHILD(/obj/effect/mine, "trap", null)
 DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "landmine_armed")))
 
@@ -528,4 +527,4 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-DECLARE_REF(/obj/item/mine, "trap", HELD, null)
+OWN(/obj/item/mine, trap, OWN_CONTAINED)

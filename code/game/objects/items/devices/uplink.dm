@@ -255,4 +255,3 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.
 /obj/item/uplink/proc/discount_item() as /datum/uplink_item
 	return discount_item_static
-DECLARE_REF(/obj/item/uplink, "discount_item_static", STATIC, null)

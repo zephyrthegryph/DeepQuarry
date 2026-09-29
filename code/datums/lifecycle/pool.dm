@@ -47,7 +47,6 @@ GLOBAL_VAR_INIT(pool_poison, FALSE)
 	var/use_after_release = 0
 	var/refused_qdels = 0
 
-DECLARE_REF(/datum/object_pool, "free", OWNED_LIST, null)
 
 /datum/object_pool/New(pool_type)
 	src.pool_type = pool_type
@@ -81,7 +80,7 @@ DECLARE_REF(/datum/object_pool, "free", OWNED_LIST, null)
 			CRASH("pool_take: [type] is not declared with POOL_DECLARE.")
 		pool.created++
 		if(isnull(pool.transient))
-			pool.transient = dq_lifecycle_link_table(D)[REFKIND_TRANSIENT] || list()
+			pool.transient = own_table_of(D).pool_reset_vars || list()
 	D.pool_state = POOL_STATE_TAKEN
 	pool.taken++
 	pool.out++

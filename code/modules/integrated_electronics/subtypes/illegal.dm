@@ -34,7 +34,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/illegal/EPv2_Discoverer, "exo
 	node = get_exonet_node()
 	message_admins("A EPv2 Discovery circuit has been created. \ref[src]")
 
-DECLARE_REF(/obj/item/integrated_circuit/illegal/EPv2_Discoverer, "exonet", OWNED, null)
 
 /obj/item/integrated_circuit/illegal/EPv2_Discoverer/do_work()
 	if(!get_connection_to_tcomms())

@@ -228,9 +228,9 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/proc/c_state()
 	return
 
-DECLARE_REF(/obj/item/transfer_valve, "tank_one", HELD, null)
-DECLARE_REF(/obj/item/transfer_valve, "tank_two", HELD, null)
-DECLARE_REF(/obj/item/transfer_valve, "attached_device", HELD, null)
+OWN(/obj/item/transfer_valve, tank_one, OWN_CONTAINED)
+OWN(/obj/item/transfer_valve, tank_two, OWN_CONTAINED)
+OWN(/obj/item/transfer_valve, attached_device, OWN_CONTAINED)
 
 /// LC-refs: attacher -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/item/transfer_valve/proc/attacher() as /mob

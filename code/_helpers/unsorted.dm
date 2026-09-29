@@ -816,25 +816,6 @@ Turf and target are seperate in case you want to teleport some distance from a t
 					refined_trg -= B
 					continue moving
 
-/proc/DuplicateObject(obj/original, perfectcopy = 0 , sameloc = 0)
-	if(!original)
-		return null
-
-	var/obj/O = null
-
-	if(sameloc)
-		O=new original.type(original.loc)
-	else
-		O=new original.type(locate(0,0,0))
-
-	var/static/list/blacklisted_var_names = list(BLACKLISTED_COPY_VARS)
-	if(perfectcopy)
-		if((O) && (original))
-			for(var/V in original.vars)
-				if(!(V in blacklisted_var_names))
-					O.vars[V] = original.vars[V] // ALLOW(api): DuplicateObject() and the generic var setter helper
-	return O
-
 /area/proc/copy_contents_to(area/A , platingRequired = 0 )
 	//Takes: Area. Optional: If it should copy to areas that don't have plating
 	//Returns: Nothing.
@@ -919,10 +900,9 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						objs += O
 
 					for(var/obj/O in objs)
-						newobjs += DuplicateObject(O , 1)
-
-					for(var/obj/O in newobjs)
-						O.forceMove(X)
+						var/obj/copy = entity_clone(O, loc = X)
+						if(copy)
+							newobjs += copy
 
 					for(var/mob/M in contents_of(T))
 
@@ -930,10 +910,9 @@ Turf and target are seperate in case you want to teleport some distance from a t
 						mobs += M
 
 					for(var/mob/M in mobs)
-						newmobs += DuplicateObject(M , 1)
-
-					for(var/mob/M in newmobs)
-						M.forceMove(X)
+						var/mob/copy = entity_clone(M, loc = X)
+						if(copy)
+							newmobs += copy
 
 					copiedobjs += newobjs
 					copiedobjs += newmobs

@@ -47,4 +47,3 @@
 		atmos_control = new(src, req_access, req_one_access, monitored_alarm_ids)
 	atmos_control.tgui_interact(user)
 
-DECLARE_REF(/obj/machinery/computer/atmoscontrol, "atmos_control", OWNED, null)

@@ -439,6 +439,4 @@
 	ispowered = 0
 	update_icon()
 
-DECLARE_REF(/obj/machinery/slot_machine, "confetti_spread", OWNED, null)
 
-DECLARE_REF(/obj/machinery/station_slot_machine, "confetti_spread", OWNED, null)

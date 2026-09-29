@@ -28,10 +28,7 @@
 		handle_record()
 	add_verb(owner, /mob/living/carbon/human/proc/reconstitute_form)
 
-DECLARE_REF(/datum/xenochimera, "revival_record", OWNED, null)
-DECLARE_REF(/datum/xenochimera, "owner", BACK, "xenochimera")
 /mob/living/carbon/human/var/datum/xenochimera/xenochimera
-DECLARE_REF(/mob/living/carbon/human, "xenochimera", OWNED, null)
 
 // the owner loses the reconstitute verb and its pointer to us.
 /datum/xenochimera/lifecycle_prerelease()

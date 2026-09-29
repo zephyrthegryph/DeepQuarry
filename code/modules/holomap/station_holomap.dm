@@ -255,10 +255,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/station_map, "holomap_datum", /datum/statio
 	var/icon = 'icons/holomap_markers.dmi'
 	var/color //used by path rune markers
 
-DECLARE_REF(/obj/machinery/station_map, "small_station_map", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "floor_markings", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "panel", OWNED, null)
-DECLARE_REF(/obj/machinery/station_map, "holomap_datum", OWNED, null)
 
 /// LC-refs: the watching_mob this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/station_map/proc/watching_mob() as /mob

@@ -21,7 +21,6 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -28 : 28)
 		pixel_y = (dir & 3)? (dir == 1 ? -30 : 30) : 0
 
-DECLARE_REF(/obj/structure/mirror, "M", OWNED, null)
 
 /obj/structure/mirror/declare_interactions(list/into)
 	into += list(

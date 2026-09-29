@@ -44,7 +44,6 @@ LIFECYCLE_KEEP_UNLESS_FORCED(/datum/lighting_object)
 /proc/lifecycle_lighting_objects_queue()
 	return SSlighting?.objects_queue
 
-DECLARE_REF(/datum/lighting_object, "needs_update", QUEUE, /proc/lifecycle_lighting_objects_queue)
 
 // The turf's overlay resets.
 /datum/lighting_object/on_destroy(force)
@@ -144,7 +143,5 @@ DECLARE_REF(/datum/lighting_object, "needs_update", QUEUE, /proc/lifecycle_light
 			affected_turf.underlays |= current_underlay
 
 // Held, not owned: Destroy() takes the underlay back off the turf (and may refuse deletion).
-DECLARE_REF(/datum/lighting_object, "current_underlay", HELD, null)
 
 // Turfs are never deleted; Destroy() (forced only) resets the turf itself.
-DECLARE_REF(/datum/lighting_object, "affected_turf", STATIC, null)

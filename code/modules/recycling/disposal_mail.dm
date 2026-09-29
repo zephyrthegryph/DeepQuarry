@@ -276,7 +276,7 @@ DECLARE_INTERACTIONS(/obj/item/smallDelivery, \
 		if(examtext)
 			. += span_notice("It has a note attached which reads, \"[examtext]\"")
 
-DECLARE_REF(/obj/item/smallDelivery, "wrapped", HELD, null)
+OWN(/obj/item/smallDelivery, wrapped, OWN_CONTAINED)
 
 /// LC-refs: the wrapped this refers to -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/structure/bigDelivery/proc/wrapped() as /obj

@@ -78,7 +78,6 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/glasses/omnihud, "tgarscreen", "tgarscreen_path")
 
-DECLARE_REF(/obj/item/clothing/glasses/omnihud, "tgarscreen", OWNED, null)
 
 /obj/item/clothing/glasses/omnihud/dropped(mob/user, equipping, slot)
 	if(tgarscreen)

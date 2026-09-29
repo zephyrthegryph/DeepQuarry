@@ -118,8 +118,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	faultreporter = new /obj/item/radio/intercom{channels=list("Supply")}(null)
 	make_climbable()
 
-DECLARE_REF(/obj/machinery/mining/drill, "faultreporter", OWNED, null)
-DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 
 /obj/machinery/mining/drill/dismantle()
 	if(cell)

@@ -181,4 +181,3 @@ DECLARE_INTERACTIONS(/obj/item/target, INTERACT_HAND(null, PROC_REF(interaction_
 
 	LAZYADD(Target.bulletholes, src)
 
-DECLARE_REF(/obj/item/target, "virtualIcon", OWNED, null)

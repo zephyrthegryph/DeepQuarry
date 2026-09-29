@@ -26,7 +26,6 @@
 	drop_policy = SLOT_DROP_SPILL
 	exposure = SLOT_EXPOSURE_SEALED
 
-DECLARE_REF(/obj/structure/disposalholder, "gas", OWNED, null)
 /obj/structure/disposalholder/proc/init(list/flush_list, datum/gas_mixture/flush_gas)
 	gas = flush_gas// transfer gas resv. into holder object -- let's be explicit about the data this proc consumes, please.
 

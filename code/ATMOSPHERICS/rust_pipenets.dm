@@ -827,6 +827,4 @@
 		network2 = new_network
 	return TRUE
 
-DECLARE_REF(/obj/machinery/atmospherics, "rust_unbound_port_air", OWNED_LIST, null)
 
-DECLARE_REF(/datum/pipe_port, "machine", BACK, null)

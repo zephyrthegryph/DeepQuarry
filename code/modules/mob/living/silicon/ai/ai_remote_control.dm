@@ -90,4 +90,3 @@
 		message = span_danger(message)
 		deployed_shell.undeploy(message)
 
-DECLARE_REF(/mob/living/silicon/ai, "deployed_shell", HELD, null)

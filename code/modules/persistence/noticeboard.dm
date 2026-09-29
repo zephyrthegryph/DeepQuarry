@@ -49,7 +49,6 @@
 		remove_paper(thing, skip_icon_update = TRUE)
 	replace_with(src, /obj/item/stack/material/wood)
 
-DECLARE_REF(/obj/structure/noticeboard, "notices", OWNED_LIST, null)
 
 /obj/structure/noticeboard/ex_act(severity)
 	dismantle()

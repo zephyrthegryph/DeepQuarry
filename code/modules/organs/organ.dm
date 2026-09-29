@@ -47,10 +47,6 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_REF(/obj/item/organ, "data", OWNED, null)
-DECLARE_REF(/obj/item/organ, "detached_afflictions", OWNED_LIST, null)
-DECLARE_REF(/obj/item/organ, "owner", BACK, null)
-DECLARE_REF(/obj/item/organ, "assists_languages", STATIC, null)
 
 // afflictions on the organ are cured; organ mods removed.
 /obj/item/organ/on_destroy(force)

@@ -837,6 +837,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 		return 0
 	return rval
 
-DECLARE_REF(/datum/objective, "owner", BACKLIST, "objectives")
+REL_PAIR(/datum/objective, owner, objectives)
+REL_PAIR_LIST(/datum/mind, objectives, owner)
 // Minds live for the round; the objective only reads its target.
-DECLARE_REF(/datum/objective, "target", HELD, null)

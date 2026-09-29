@@ -208,4 +208,4 @@
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-DECLARE_REF(/datum/trait, "linked_gene", PAIR, "linked_trait")
+REL_PAIR(/datum/trait, linked_gene, linked_trait)

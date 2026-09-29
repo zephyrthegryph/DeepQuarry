@@ -349,4 +349,3 @@
 	disabling = TRUE
 // CHOMPEnable End
 
-DECLARE_REF(/obj/item/dnainjector, "buf", OWNED, null)

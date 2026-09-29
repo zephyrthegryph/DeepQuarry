@@ -9,9 +9,7 @@
 
 /// Owned: the slide in progress, if any.
 /mob/living/var/datum/turfslip/turfslip
-DECLARE_REF(/mob/living, "turfslip", OWNED, null)
 
-DECLARE_REF(/datum/turfslip, "owner", BACK, "turfslip")
 
 /datum/turfslip/New(mob/living/new_owner)
 	..()

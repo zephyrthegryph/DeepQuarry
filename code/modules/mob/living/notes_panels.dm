@@ -157,5 +157,3 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 		GLOB.dq_ooc_notes_panels[key] = panel
 	panel.tgui_interact(user)
 
-DECLARE_REF(/datum/private_notes_panel, "host", HELD, null)
-DECLARE_REF(/datum/ooc_notes_panel, "host", HELD, null)

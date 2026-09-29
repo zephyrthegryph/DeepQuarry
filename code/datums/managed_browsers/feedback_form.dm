@@ -27,7 +27,6 @@ GENERAL_PROTECT_DATUM(/datum/managed_browser/feedback_form)
 	display()
 
 // clears the client's back-reference (clients aren't datums).
-DECLARE_REF(/datum/managed_browser/feedback_form, "my_client_handle", BACK_HANDLE, "feedback_form")
 
 // Privacy option is allowed if both the config allows it, and the pepper file exists and isn't blank.
 /datum/managed_browser/feedback_form/proc/can_be_private()
@@ -126,4 +125,3 @@ DECLARE_REF(/datum/managed_browser/feedback_form, "my_client_handle", BACK_HANDL
 			qdel(src)
 			return TRUE
 
-DECLARE_REF(/client, "feedback_form", OWNED, null)

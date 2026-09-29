@@ -582,5 +582,3 @@
 // 			continue
 
 
-DECLARE_REF(/datum/techweb, "available_experiments", OWNED_LIST, null)
-DECLARE_REF(/datum/techweb, "completed_experiments", OWNED_VALUES, null)

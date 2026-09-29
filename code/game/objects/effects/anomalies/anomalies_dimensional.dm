@@ -113,7 +113,4 @@
 		if(theme.can_convert(turf))
 			theme.apply_theme(turf, show_effect = TRUE)
 
-DECLARE_REF(/obj/effect/anomaly/dimensional, "theme", OWNED, null)
-DECLARE_REF(/obj/effect/anomaly/dimensional, "theme_icon", OWNED, null)
 
-DECLARE_REF(/obj/effect/anomaly/dimensional, "target_turfs", STATIC, null)

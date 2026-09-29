@@ -376,4 +376,3 @@ EXTEND_INTERACTIONS(/obj/item/cataloguer/compact, \
 )
 
 // The shown entry is a round-long catalogue definition.
-DECLARE_REF(/obj/item/cataloguer, "displayed_data", DEF, null)

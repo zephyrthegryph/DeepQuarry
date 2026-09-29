@@ -434,4 +434,4 @@
 	icon_state = "rightsecure"
 	base_state = "rightsecure"
 
-DECLARE_REF(/obj/machinery/door/window, "electronics", HELD, null)
+OWN(/obj/machinery/door/window, electronics, OWN_CONTAINED)
