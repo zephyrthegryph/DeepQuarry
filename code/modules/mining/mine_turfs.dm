@@ -335,15 +335,10 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	update_icon()
 
 //Not even going to touch this pile of spaghetti
-EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(mineral_item)))
+EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(mineral_item), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "you don't have the dexterity to do this")))
 
 /// Old attackby: digging, excavation, sampling and scanning; anything else touches the rock.
 /turf/simulated/mineral/proc/mineral_item(mob/user, obj/item/W, datum/interaction/interaction)
-
-	if (!user.IsAdvancedToolUser())
-		to_chat(user, span_warning("You don't have the dexterity to do this!"))
-		return INTERACTION_HANDLED_PASS
-
 	if(!density)
 		var/valid_tool = 0
 		var/digspeed = 40

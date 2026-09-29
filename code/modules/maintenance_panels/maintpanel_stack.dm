@@ -13,17 +13,13 @@
 	no_variants = FALSE
 	custom_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self)))
+EXTEND_INTERACTIONS(/obj/item/stack/tile/maintenance_panel, INTERACT_SELF("Build panel", PROC_REF(maintenance_panel_self), REQ_ON(PRED_ACTOR, /mob/proc/IsAdvancedToolUser, "this task is too complex for your clumsy hands")))
 
 /// Old attack_self: build a panel.
 /obj/item/stack/tile/maintenance_panel/proc/maintenance_panel_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = user.loc
 	if(!user || (loc != user && !isrobot(user)) || user.stat || user.loc != T)
 		return FALSE
-
-	if(!user.IsAdvancedToolUser())
-		to_chat(user, span_warning("This task is too complex for your clumsy hands."))
-		return TRUE
 
 	// Get data for building windows here.
 	var/list/possible_directions = GLOB.cardinal.Copy()

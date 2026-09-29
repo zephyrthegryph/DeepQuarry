@@ -101,14 +101,17 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/stack/material
 	effect = /obj/machinery/material_furnace/proc/interaction_load_stock
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_load_stock))
+
+/// Requirement: TRUE, or why this stack can't be loaded now.
+/obj/machinery/material_furnace/proc/can_load_stock(mob/user, atom/target, obj/item/stack/material/held)
+	if(firing || output_stock())
+		return "the furnace must be idle and its output removed first"
+	if(istype(held) && held.uses_charge)
+		return "[held] is drawn from a matter synthesiser and can't be charged into the furnace as physical stock"
+	return TRUE
 
 /obj/machinery/material_furnace/proc/interaction_load_stock(mob/user, obj/item/stack/material/stock, datum/interaction/interaction)
-	if(firing || output_stock())
-		to_chat(user, span_warning("The furnace must be idle and its output removed first."))
-		return TRUE
-	if(stock.uses_charge)
-		to_chat(user, span_warning("[stock] is drawn from a matter synthesiser and cannot be charged into the furnace as physical stock."))
-		return TRUE
 	if(!user.drop_from_inventory(stock))
 		to_chat(user, span_warning("You cannot let go of [stock]."))
 		return TRUE
@@ -177,6 +180,19 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	id = "material_furnace_use"
 	name = "Use"
 	effect = /obj/machinery/material_furnace/proc/interaction_use
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_use_furnace))
+
+/// Requirement: TRUE when there is output to take or a charge that can be fired, else why not.
+/obj/machinery/material_furnace/proc/can_use_furnace(mob/user, atom/target, obj/item/held)
+	if(output_stock() && !firing)
+		return TRUE
+	if(firing)
+		return "the furnace is still firing"
+	if(!LAZYLEN(feedstock))
+		return "the furnace is empty; load material sheets before firing it"
+	if(!operable())
+		return "the furnace has no power or requires repairs"
+	return TRUE
 
 /obj/machinery/material_furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(output_stock() && !firing)
@@ -185,15 +201,6 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		visible_message(span_notice("[user] removes [finished] from [src]'s output tray."))
-		return TRUE
-	if(firing)
-		to_chat(user, span_warning("The furnace is still firing."))
-		return TRUE
-	if(!LAZYLEN(feedstock))
-		to_chat(user, span_notice("The furnace is empty. Load material sheets before firing it."))
-		return TRUE
-	if(!operable())
-		to_chat(user, span_warning("The furnace has no power or requires repairs."))
 		return TRUE
 	firing = TRUE
 	icon_state = "nt_cruciforge_work"
@@ -213,14 +220,18 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	category = INTERACTION_CAT_EJECT
 	requires = list(REQ_INTERACTION_REACH)
 	effect = /obj/machinery/material_furnace/proc/interaction_eject_contents
+	also_requires = list(
+		REQ_FIELD_NOT("firing", "the sealed furnace can't be opened while firing"),
+		REQ_TARGET_STATE(/obj/machinery/material_furnace/proc/can_eject_contents),
+	)
+
+/// Requirement: TRUE, or why there is nothing to eject.
+/obj/machinery/material_furnace/proc/can_eject_contents(mob/user, atom/target, obj/item/held)
+	if(!output_stock() && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
+		return "the furnace is empty"
+	return TRUE
 
 /obj/machinery/material_furnace/proc/interaction_eject_contents(mob/user, obj/item/held, datum/interaction/interaction)
-	if(firing)
-		to_chat(user, span_warning("The sealed furnace cannot be opened while firing."))
-		return TRUE
-	if(!output_stock() && !LAZYLEN(feedstock) && !LAZYLEN(carbon_feed))
-		to_chat(user, span_notice("The furnace is empty."))
-		return TRUE
 	user.visible_message(
 		span_notice("[user] begins opening [src]."),
 		span_notice("You begin opening [src].")
@@ -418,15 +429,14 @@ DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
 	. = ..()
 	create_reagents(200)
 
-EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_ITEM(null, PROC_REF(material_treatment_interaction_item)))
+EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(/obj/item/stack/material/processed_alloy, PROC_REF(material_treatment_interaction_item), "Treat alloy", REQ_BECAUSE(REQ_TARGET_STATE(/obj/structure/bed/bath/material_treatment/proc/has_medium), "the bath contains no treatment medium")))
+
+/// Requirement: the bath holds some treatment medium.
+/obj/structure/bed/bath/material_treatment/proc/has_medium(mob/user, atom/target, obj/item/held)
+	return reagents?.total_volume ? TRUE : FALSE
 
 /// Old attackby.
 /obj/structure/bed/bath/material_treatment/proc/material_treatment_interaction_item(mob/user, obj/item/item, datum/interaction/interaction)
-	if(!istype(item, /obj/item/stack/material/processed_alloy))
-		return FALSE
-	if(!reagents?.total_volume)
-		to_chat(user, span_warning("The bath contains no treatment medium."))
-		return INTERACTION_HANDLED_PASS
 	var/obj/item/stack/material/processed_alloy/stock = item
 	var/datum/material_batch/batch = stock.physical_batch().copy_batch()
 	var/required_medium = max(2, stock.get_amount() * 2)

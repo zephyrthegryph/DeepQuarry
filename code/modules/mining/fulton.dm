@@ -152,14 +152,10 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	icon = 'icons/obj/fulton.dmi'
 	icon_state = "extraction_pointoff"
 
-DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interaction_self)))
+DECLARE_INTERACTIONS(/obj/item/fulton_core, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_ON_TURF, "you must be standing on solid ground to deploy an extraction beacon")))
 
 /// Old attack_self.
 /obj/item/fulton_core/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/turf/T = get_turf(user)
-	if(!T)
-		to_chat(user, span_warning("You must be standing on solid ground to deploy an extraction beacon!"))
-		return TRUE
 	om_task_timed(user, 1.5 SECONDS, user, src, PROC_REF(deploy_done), list(user))
 	return TRUE
 

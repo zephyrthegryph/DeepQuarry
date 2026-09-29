@@ -247,7 +247,7 @@ DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_a
 EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	INTERACT_ITEM(null, PROC_REF(flag_interaction_item)), \
 	INTERACT_HAND_UNGATED("Knock down", PROC_REF(flag_hand)), \
-	INTERACT_USE("Plant", PROC_REF(flag_self)), \
+	INTERACT_USE("Plant", PROC_REF(flag_self), REQ_TARGET_STATE(/obj/item/stack/flag/proc/can_plant)), \
 )
 
 /// Old attackby.
@@ -268,19 +268,19 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
 	return TRUE
 
-/// Old attack_self: plant a flag.
-/obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/stack/flag/F = locate_within(get_turf(src), /obj/item/stack/flag)
-
+/// Requirement: TRUE, or why the flag can't be planted here.
+/obj/item/stack/flag/proc/can_plant(mob/user, atom/target, obj/item/held)
 	var/turf/T = get_turf(src)
 	if(!T || !ismineralturf(T))
-		to_chat(user, "The flag won't stand up in this terrain.")
-		return
-
+		return "the flag won't stand up in this terrain"
+	var/obj/item/stack/flag/F = locate_within(T, /obj/item/stack/flag)
 	if(F && F.upright)
-		to_chat(user, "There is already a flag here.")
-		return
+		return "there is already a flag here"
+	return TRUE
 
+/// Old attack_self: plant a flag.
+/obj/item/stack/flag/proc/flag_self(mob/user, obj/item/held, datum/interaction/interaction)
+	var/turf/T = get_turf(src)
 	var/obj/item/stack/flag/newflag = new src.type(T)
 	newflag.amount = 1
 	newflag.upright = 1
@@ -320,18 +320,20 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	icon_state = "yellowtrail_light"
 	blazer_type = /obj/structure/trailblazer/yellow
 
-EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(lightpole_self)))
+EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(lightpole_self), REQ_TARGET_STATE(/obj/item/stack/lightpole/proc/can_plant)))
+
+/// Requirement: TRUE, or why the light can't be planted where the user stands.
+/obj/item/stack/lightpole/proc/can_plant(mob/user, atom/target, obj/item/held)
+	var/turf/T = get_turf(user)
+	if(!T || (!istype(T,/turf/simulated/mineral) && !istype(T,/turf/simulated/floor/outdoors) && !istype(T,/turf/simulated/floor/snow) && !istype(T,/turf/snow)))
+		return "the light won't stand up in this terrain"
+	if(locate_within(get_turf(src), /obj/structure/trailblazer))
+		return "there is already a light here"
+	return TRUE
 
 /// Old attack_self: plant a trail light.
 /obj/item/stack/lightpole/proc/lightpole_self(mob/user, obj/item/held, datum/interaction/interaction)
 	var/turf/T = get_turf(user)
-	if(!T || (!istype(T,/turf/simulated/mineral) && !istype(T,/turf/simulated/floor/outdoors) && !istype(T,/turf/simulated/floor/snow) && !istype(T,/turf/snow)))
-		to_chat(user, span_warning("The light won't stand up in this terrain."))
-		return TRUE
-	var/obj/structure/trailblazer/F = locate_within(get_turf(src), /obj/structure/trailblazer)
-	if(F)
-		to_chat(user, span_warning("There is already a light here."))
-		return TRUE
 	om_task_timed(user, 8 SECONDS, src, src, PROC_REF(plant_done), list(user, T))
 	return TRUE
 

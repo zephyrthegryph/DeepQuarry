@@ -189,17 +189,10 @@ DECLARE_REF(/obj/machinery/maint_recycler, "item_overlay", OWNED, null)
 	id = "maint_recycler_insert"
 	name = "Insert"
 	held_type = /obj/item
+	also_requires = list(REQ_FIELD("door_open", "its door isn't open"), REQ_FIELD_NOT("inserted_item"))
 	effect = /obj/machinery/maint_recycler/proc/interaction_attackby
 
 /obj/machinery/maint_recycler/proc/interaction_attackby(mob/user, obj/item/O, datum/interaction/interaction)
-	if(!door_open)
-		to_chat(user, span_warning("\The [src] doesn't have its door open!"))
-		return TRUE
-
-	if(inserted_item)
-		to_chat(user, span_warning("\The [src] already has [inserted_item] in its recycling compartment!"))
-		return TRUE
-
 	switch(get_item_whitelist(O))
 		if(RECYCLER_FORBIDDEN) //the usual stuff.
 			deny_act(O,user)

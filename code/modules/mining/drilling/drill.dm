@@ -507,12 +507,15 @@ DECLARE_REF(/obj/machinery/mining/drill, "cell", OWNED, null)
 	name = "Use"
 	held_type = /obj/item
 	effect = /obj/machinery/mining/brace/proc/interaction_attackby
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/mining/brace/proc/can_work_on))
+
+/// Requirement: the brace of a running drill can't be worked on.
+/obj/machinery/mining/brace/proc/can_work_on(mob/user, atom/target, obj/item/held)
+	if(connected() && connected().active)
+		return "you can't work with the brace of a running drill"
+	return TRUE
 
 /obj/machinery/mining/brace/proc/interaction_attackby(mob/user, obj/item/W, datum/interaction/interaction)
-	if(connected() && connected().active)
-		balloon_alert(user, "you can't work with the brace of a running drill.")
-		return TRUE
-
 	if(default_part_replacement(user,W))
 		return TRUE
 	return FALSE

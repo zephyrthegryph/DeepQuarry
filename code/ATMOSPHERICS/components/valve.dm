@@ -192,13 +192,11 @@
 	id = "valve_digital_toggle"
 	name = "Toggle"
 	category = INTERACTION_CAT_TOGGLE
+	also_requires = list(REQ_ACCESS)
 	effect = /obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle
 
 /obj/machinery/atmospherics/valve/digital/proc/interaction_digital_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!powered())
-		return TRUE
-	if(!allowed(user))
-		to_chat(user, span_warning("Access denied."))
 		return TRUE
 	return interaction_toggle(user, held, interaction)
 
