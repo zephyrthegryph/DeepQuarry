@@ -466,8 +466,19 @@
 		M.register_gas_dependencies()
 	return STAGE_IDLE
 
+/// Settled unless it is the area's working controller with regulation running: a follower,
+/// an unpowered/broken/shorted alarm or one with no area parks even if it was mid-regulation
+/// when it lost control (an election, a short or a power cut wakes it back up).
 /datum/om/stage/machine/power/alarm/idle(obj/machinery/alarm/M)
-	return !M.regulating_temperature
+	if(!M.regulating_temperature)
+		return TRUE
+	if((M.stat & (NOPOWER|BROKEN)) || M.shorted || !get_turf(M))
+		return TRUE
+	var/area/A = M.alarm_area_ref()
+	if(!A)
+		return TRUE
+	var/obj/machinery/alarm/MA = om_resolve(A.main_air_alarm)
+	return !MA || MA != M || MA.shorted
 
 // ---------------------------------------------------------------- canisters
 

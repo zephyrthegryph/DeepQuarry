@@ -101,19 +101,22 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		policy = own_policy(holder, var_name, entry)
 	switch(policy)
 		if(OWN_CONTAINED)
-			var/atom/movable/AM = value
-			if(!ismovable(AM) || AM.loc != holder)
-				OWN_REPORT("[holder.type].[var_name] is CONTAINED but [value.type] is not in its contents (loc [ismovable(AM) ? AM.loc?.type : "n/a"])")
+			// A contained thing belongs to the holder's ledger slot: in the holder's teardown the
+			// slot has already resolved it (phase 3), and one that left the contents is no longer
+			// the holder's. Either way it is only let go here.
 			return
 		if(OWN_SPILL)
 			var/atom/movable/AM = value
 			var/atom/movable/H = holder
-			if(ismovable(AM) && ismovable(H) && AM.loc == H)
-				var/atom/drop = H.drop_location()
-				if(drop && !QDELETED(drop))
-					AM.forceMove(drop)
-					AM.update_icon()
-					return
+			if(ismovable(AM))
+				if(ismovable(H) && AM.loc == H)
+					var/atom/drop = H.drop_location()
+					if(drop && !QDELETED(drop))
+						AM.forceMove(drop)
+						AM.update_icon()
+						return
+				else if(AM.loc != H)
+					return // it already left the holder: not the holder's to drop or delete
 	qdel(value)
 
 /// Owned-child release hook: `child` is leaving holder.var_name (disposed, taken or moved out),
@@ -339,6 +342,23 @@ GLOBAL_LIST_EMPTY(own_audit_index)
 		for(var/key in L.Copy())
 			if(!isnum(key) && L[key] == D)
 				L -= key
+
+/// A contained or spilled owned movable left its owner's contents (the ledger's note_exit()): the
+/// contents slot was its ownership, so the owner's var lets it go (no dispose: it is intact and
+/// somewhere else now). A DELETE-policy movable child keeps its owner wherever it goes.
+/proc/own_contents_exit(atom/holder, atom/movable/thing)
+	if(thing.own_holder_ref != ref(holder) || QDELETED(thing))
+		return
+	var/var_name = thing.own_slot
+	var/list/entry = own_table_of(holder).entries[var_name]
+	if(!entry)
+		return
+	var/policy = own_policy(holder, var_name, entry)
+	if(policy != OWN_CONTAINED && policy != OWN_SPILL)
+		return
+	holder.on_owned_release(var_name, thing)
+	own_release_member(holder, var_name, thing)
+	own_unstamp(thing)
 
 /// Phase 3, for a movable: SPILL-policy owned movables still inside go to the drop location.
 /proc/own_spill_phase(atom/movable/AM)

@@ -18,17 +18,9 @@ outside the justified keeps of sec 4.11 ("What stays").
     weakref          weakref (any case)            -> relations, or OM handles (0: deleted)
     del              del(                          -> qdel and the lifecycle verbs
     blocking_builtins  winget( winexists( .MeasureText( shell(   -> DX-exec (dx_exec.dm) callbacks
-    lc_refs          undeclared object-typed instance vars and lists
 
-LC-refs: a var whose declared type is an object reference (tmp
-included; static/global/const are not instance state) must be named by its
-type's DECLARE_REF(PATH, "var", KIND, OPT) lines (TRANSIENT only on pooled types)
-or declared_cache_vars() in the same file. A var whose type is in DEF_TYPES
-(state_schema_lint.py) is an implicit DEF. Relations
-and slots have no view field, and an OM handle is a text var, so neither is
-an object-typed var at all. Vars of task types (/datum/om/task/...) are task
-state, held by the task_holds relation, and don't count. Medical, body, organs, surgery and Life are
-included (lifecycle.md sec 7).
+Object-typed vars are checked by tools/ci/ownership_lint.py (doc/rewrite/ownership.md): the
+kind of each var is inferred from how it is written, so there is no per-var declaration count here.
 
 Justified keeps (MC, GC, failsafe, world and client procs, savefiles, vendored
 TGS, blocking external I/O, prompts that must block) carry
@@ -67,112 +59,10 @@ PATTERNS = [
     # (dx_winget(), dx_winexists(), dx_measure_text(), dx_shell(), dx_shelleo()) instead.
     ("blocking_builtins", re.compile(r"(?<![\w./])(?:winget|winexists|shell)\s*\(|\.MeasureText\s*\(")),
 ]
-NAMES = [name for name, _ in PATTERNS] + ["lc_refs"]
+NAMES = [name for name, _ in PATTERNS]
 # Counts whose ratchet reached 0 and became an outright ban: no baseline line, ceiling 0.
-BANNED = {"lc_refs"}
+BANNED = set()
 LINT = "scheduler"
-
-UNSAVED_MODS = {"static", "global", "const"}
-STRUCTURAL_TYPES = ("/datum/om/task", "/datum/om/edge", "/datum/om/rec", "/datum/om/frame", "/datum/om/event",
-                    "/datum/om/scheduler", "/datum/ledger", "/datum/registry")
-ALL_MODS = {"tmp", "static", "global", "const", "final"}
-# DECLARE_REF lines, pooled types and implicit DEF types (ref_kinds.py).
-from ref_kinds import DECLARED_PROCS, is_def_type, is_pooled, ref_decl  # noqa: E402
-TYPE_HEADER = re.compile(r"^(/[A-Za-z_][\w/]*)\s*$")
-PROC_HEADER = re.compile(r"^(/[\w/]*?)/(proc/)?(" + "|".join(DECLARED_PROCS) + r")\s*\(")
-VAR_LINE = re.compile(r"^var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
-STRING_LIT = re.compile(r'"([^"]*)"')
-# `/type/var/tmp/datum/x` one-line declarations.
-INLINE_VAR = re.compile(r"^(/[A-Za-z_][\w/]*?)/var((?:/[A-Za-z_]\w*)+)\s*(?:=|$)")
-
-
-def split_var(segs):
-    segs = list(segs)
-    mods = set()
-    while segs and segs[0] in ALL_MODS:
-        mods.add(segs.pop(0))
-    if not segs:
-        return None
-    name = segs[-1]
-    tsegs = segs[:-1]
-    if tsegs and tsegs[0] == "list":
-        tsegs = tsegs[1:]
-    return mods, ("/" + "/".join(tsegs) if tsegs else ""), name
-
-
-def lc_ref_sites(rel, raw_text, code_text, raw_lines):
-    # Declared names come from string literals, so read them from the raw text.
-    declared = {}
-    sites = []
-    owner, body = None, []
-    for raw in raw_text.split("\n"):
-        if not raw.strip():
-            continue
-        stripped = raw.lstrip("\t ")
-        if len(raw) == len(stripped):
-            if owner is not None:
-                for line in body:
-                    declared.setdefault(owner, set()).update(STRING_LIT.findall(line))
-                owner, body = None, []
-            decl = ref_decl(stripped.rstrip())
-            if decl:
-                # TRANSIENT counts only on pooled types (POOL_DECLARE).
-                if decl[2] != "TRANSIENT" or is_pooled(decl[0]):
-                    declared.setdefault(decl[0], set()).add(decl[1])
-                continue
-            m = PROC_HEADER.match(stripped.rstrip())
-            if m:
-                owner = m.group(1)
-        elif owner is not None:
-            body.append(stripped)
-    if owner is not None:
-        for line in body:
-            declared.setdefault(owner, set()).update(STRING_LIT.findall(line))
-
-    cur_type = None
-    for no, raw in enumerate(code_text.split("\n"), 1):
-        if not raw.strip():
-            continue
-        stripped = raw.lstrip("\t ")
-        indent = len(raw) - len(stripped)
-        text = stripped.rstrip()
-        owner_type, segs = None, None
-        if indent == 0:
-            m = TYPE_HEADER.match(text)
-            cur_type = m.group(1) if m else None
-            m = INLINE_VAR.match(text)
-            if m:
-                owner_type, segs = m.group(1), m.group(2)
-        elif indent == 1 and cur_type is not None:
-            m = VAR_LINE.match(text)
-            if m:
-                owner_type, segs = cur_type, m.group(1)
-        if not segs:
-            continue
-        parsed = split_var(segs.strip("/").split("/"))
-        if not parsed:
-            continue
-        mods, vtype, name = parsed
-        if mods & UNSAVED_MODS or not under(vtype, REF_ROOTS):
-            continue
-        if name in declared.get(owner_type, ()):
-            continue
-        # A frozen definition or registry object (DEF_TYPES): an implicit DEF.
-        if is_def_type(vtype):
-            continue
-        # Tasks, edges, records, ledgers and registries hold references by construction
-        # (declared_refs_lint.STRUCTURAL_TYPES says why each).
-        if any(owner_type == t or owner_type.startswith(t + "/") for t in STRUCTURAL_TYPES):
-            continue
-        # Typed prompts and flows (ask.dm, flow.dm) hold their state vars as handles while they
-        # wait (park_state()), and a prompt's `flow` is the one strong ref keeping its flow alive.
-        if owner_type in ("/datum/om/prompt", "/datum/om/flow") or owner_type.startswith(("/datum/om/prompt/", "/datum/om/flow/")):
-            continue
-        if allowed(raw_lines, no, LINT):
-            continue
-        sites.append((rel, no, "%s var/%s %s" % (owner_type, vtype.strip("/"), name)))
-    return sites
-
 
 def scan():
     sites = {name: [] for name in NAMES}
@@ -193,7 +83,6 @@ def scan():
                     if allowed(raw_lines, no, LINT):
                         continue
                     sites[name].append((rel, no, name))
-        sites["lc_refs"].extend(lc_ref_sites(rel, raw_text, text, raw_lines))
     return sites
 
 

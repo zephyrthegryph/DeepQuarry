@@ -503,86 +503,19 @@ A task step is a proc that returns: `STEP_NEXT`, `STEP_REPEAT(d)`, `STEP_DONE` o
 
 **Weak capture.** Object arguments to `om_after` and to tasks are held as OM handles, never as references. When the timer fires, or a task step runs, each handle is resolved first: if any argument has been deleted, the call is dropped (a timer) or fails with the reason `"gone"` (a task). A deferred call can't keep a deleted object alive or run against one.
 
-One mechanism does this for every deferred record: `om_capture_args()` at record time and `om_resolve_captured()` at fire time (`timer.dm`). Its users are `om_after` and everything built on it (`om_after_unique`/`_replace`, `om_after_realtime`, `om_qdel_after`), `om_io` callbacks and the simple timed action's done/fail/check calls. It captures each datum argument, and each datum one level inside a list argument (a member, or the value under a text key; a datum used as an assoc *key* stays a plain reference). A list is copied only when it holds a datum. A call dropped because an argument was deleted is counted (`timers_dropped`, the I/O `dropped` stat) and logged with `log_qdel()`, never silently. Task parameters that are datums are held by the `task_holds` relation instead, which cancels the task through its cancel path when one is deleted. The receiver is unchanged: a record is torn down with its owner. Synchronous paths (`om_emit`'s same-stack queue, a guarded call) capture nothing and cost nothing.
+One mechanism does this for every deferred record: `om_capture_args()` at record time and `om_resolve_captured()` at fire time (`timer.dm`). Its users are `om_after` and everything built on it (`om_after_unique`/`_replace`, `om_after_realtime`, `om_qdel_after`), `om_io` callbacks, the simple timed action's done/fail/check calls, and stored call specs (`om_callable()` / `om_run()`, which replaced `CALLBACK` and `/datum/callback` in content). It captures every datum anywhere in the arguments, at any depth (members and assoc values of nested lists), as a handle marker in a copy of the list that held it; a datum used as an assoc *key* is refused (reported). A call dropped because an argument was deleted is counted (`timers_dropped`, the I/O `dropped` stat) and logged with `log_qdel()`, never silently. Task parameters that are datums are held by the `task_holds` relation instead, which cancels the task through its cancel path when one is deleted. The receiver is unchanged: a record is torn down with its owner. Synchronous paths (`om_emit`'s same-stack queue, a guarded call) capture nothing and cost nothing.
 
-**OM handles.** `om_handle(E)` returns an entity id plus a generation (`"id:gen"`); `om_resolve(h)` returns the object, or null once it has been deleted. The same model as the Rust core's handles: a slot table with a generation per slot and no per-target datum. Deleting an object frees its slot and bumps the generation, so a stale handle never resolves to whatever reuses the id.
+**OM handles** (core-internal). `om_handle(E)` returns an entity id plus a generation (`"id:gen"`; a turf's handle is its ref plus its z-level's generation); `om_resolve(h)` returns the object, or null once it has been deleted. The same model as the Rust core's handles: a slot table with a generation per slot and no per-target datum. Deleting an object frees its slot and bumps the generation, so a stale handle never resolves to whatever reuses the id. A latent collapse parks the slot and re-materializing unparks it; `replace_with()` forwards it ([ownership.md](ownership.md) §4.4). Content never holds handles: a var naming an entity is a relation view.
 
-**Weakrefs are replaced.** `/datum/weakref` (386 references) goes away. What it holds today splits two ways:
-- *live links* (this object is attached to, controls or watches that one) become relations or slots (§7);
-- *"remember who it was"* references (last attacker, forensics, logs, UI selections, refs held by tgui or clients, saved IDs) become OM handles, stored as the handle and resolved with `om_resolve(h)` when read.
+**References: own, shared, proto, relation.** `/datum/weakref` is gone. Every object-typed var is
+exactly one of four kinds ([ownership.md](ownership.md)): an **owned** child (written through
+`own_*`, disposed of with its owner by policy), a **shared** registered singleton (`REGISTRY_TYPE`),
+a **proto** (copy-on-write) var, or a **relation** view (written through `rel_*`, cleared by the
+framework when either end dies; rich edges are `/datum/om/relation` kinds). Declared caches with an
+invalidation rule (`declared_cache_vars()`) are unchanged. `tools/ci/ownership_lint.py` enforces it.
+Global lists of objects are OM registries, which drop deleted members themselves.
 
-**Ownership: every datum has exactly one owner.** A datum is owned by exactly one thing: its
-location (an atom in the world or in contents), a holder that created it (`DECLARE_REF(..., OWNED)`), a
-registry or subsystem (singletons, flyweights, definitions), or a relation. Everything else that
-names it is a *non-owning* reference, and the kind of that reference follows from who the owner is:
-
-- the target is a **singleton, service or flyweight** (a subsystem, a `/datum/material`, a seed, a
-  `tgui_state`, a techweb, a decl): hold it strongly with `DECLARE_REF(..., STATIC)`, or better keep no var at all
-  and read it from its registry or service accessor at the use site;
-- the target was **created by the holder** and nothing else keeps it: the holder owns it
-  (`DECLARE_REF(..., OWNED)`), or holds it (`DECLARE_REF(..., HELD)`, or a `tmp` strong var for an internal cursor);
-- the target is **another live entity whose lifetime something else manages** (a mob, a machine,
-  a ticket, an expedition site): only then an OM handle.
-
-A handle is not a reference. When a handle was the only thing naming its target, BYOND collected
-the target at once (the shuttle `landed_holder` bug; a draft warrant, a newscaster wanted issue, a
-cloned starcaster article, the script interpreter's scopes, a diverged seed). The LC-refs sweep
-turned ~860 vars into `X_handle` + `X()` accessors without asking who owns the target; the handle
-audit (`rewrite/g-handles`) re-classified them. Singleton and flyweight types are marked with
-`OM_STATIC_TYPE(path)` (`code/datums/lifecycle/static_types.dm`, or next to the type), which also
-answers `om_static_type()` at runtime. `tools/ci/handle_kinds_lint.py` (in `check_ratchets.sh`)
-refuses (a) a handle var whose typed accessor targets an `OM_STATIC_TYPE`/`DEF_TYPES` type, or
-`om_handle(SSfoo)`, and (b) a handle that is a new datum's only owner: `om_handle(new /datum/...)`,
-`om_handle(x.clone())`, or a `new` local handed to `om_handle()` with no other use that keeps it.
-Escape: `// ALLOW(handle_kinds): <reason>`.
-
-Every kind is declared the same way, `DECLARE_REF(PATH, "var", KIND, OPT)` (`code/__defines/lifecycle.dm`); `DECLARE_REF(..., KIND)` below is short for that.
-
-| Kind | Declared with | Holds | On the holder's destruction | Leak check | Use for |
-|---|---|---|---|---|---|
-| STATIC | `DECLARE_REF(type, "var", STATIC, null)` | strong | untouched | never reported | round-long singletons, services, flyweights, definitions |
-| OWNED | `DECLARE_REF(..., OWNED)` / `OWNED_LIST` / `OWNED_VALUES` | strong | target deleted (phase 4) | reported if left | a child the holder created and nothing else owns |
-| HELD | `DECLARE_REF(..., HELD)` | strong | var nulled if the target is destroyed inside the holder | reported if left | a thing in the holder's contents with no policy of its own |
-| PAIR | `DECLARE_REF(..., PAIR)` | strong, both sides | both sides nulled | reported if left | a two-sided link kept in sync by `link_set()` / `link_clear()` |
-| BACK | `DECLARE_REF(..., BACK)` | strong | ours nulled, theirs too if it points at us | reported if left | a child naming its owner (never `DECLARE_REF(..., OWNED)`: ownership is a tree) |
-| BACKLIST | `DECLARE_REF(..., BACKLIST)` | strong | removed from the owner's list | reported if left | membership in another object's list |
-| KEEP | `DECLARE_REF(..., KEEP)` | strong | deliberately left set | never reported | a value read after destruction (an id the GC report reads) |
-| DEF | `DECLARE_REF(..., DEF)` (implicit for `DEF_TYPES`) | strong | untouched | reported only if deleted | frozen definitions and registry objects |
-| WEAK_LIST | `DECLARE_REF(..., WEAK_LIST)` | weak (OM handles) | list cut, members untouched | text, never reported | a list of other live entities the holder doesn't own (monitored alarms, grid sensors, hearers, queued items). Only through `WEAK_LIST_ADD` / `WEAK_LIST_REMOVE` / `WEAK_LIST_HAS` / `weak_list_live()`, which resolves and prunes dead members |
-| handle | a text var, `om_handle()` / `om_resolve()` | weak | nothing to clear | text, never reported | another live entity whose lifetime something else manages |
-
-Teardown that must still read declared vars (a holder ending its busy state, a hologram handing
-bellies back to its master, a projectile drawing tracers from its owned segments) goes in
-`lifecycle_prerelease()`, which the destroy transaction runs just before phase 4 clears the links.
-What is left, a real domain consequence, is the type's `on_destroy(force)`, run right after
-`lifecycle_prerelease()` (declared vars and handles still live), then each behaviour's
-`on_entity_destroy(E)`; the core `Destroy()` chain runs later, in phase 7. A partner that holds us in a
-list and that we name by handle is `DECLARE_REF(type, "gen_handle", BACKLIST_HANDLE, "fields")` (the value may be keyed by partner type); a partner we name by handle whose var names us back is `DECLARE_REF(..., BACK_HANDLE)(type, list("owner_handle" = "panel"))`. `Destroy()` itself is overridden only by the core chain (`/datum`, `/atom`,
-`/atom/movable`, `/client`, `/datum/controller`); `lifecycle_counts_lint.py` bans every other
-override. The GC hint is the `destroy_hint` type var; refusing deletion is `lifecycle_keep(force)`
-or `LIFECYCLE_KEEP_UNLESS_FORCED(type)`, checked before the transaction starts.
-
-**Comparing a handle to a dying object.** A handle accessor reads null once its target is
-`QDELETED`, which is true from phase 0. `thing.owner() == src` inside src's teardown is therefore
-always FALSE: use `om_handle_is(thing.owner_handle, src)`, which compares the handle text and
-matches until phase 5 frees the slot.
-A declared cache (`CACHE_ON_*`) is only for data that is purely derivable and rebuilt on read: the
-core nulls it whenever its rule fires (a `CHANGE_EXPLICIT` cache on every `MACHINE_WAKE`), so a list
-that must survive is a `DECLARE_REF(..., WEAK_LIST)`, an owned list, or (turfs, never freed) `DECLARE_REF(..., STATIC)`.
-
-`DECLARE_REF(..., STATIC)` and `DECLARE_REF(..., DEF)` differ only in the leak check (a static var is exempt from it
-outright, like `DECLARE_REF(..., KEEP)`); new code uses `DECLARE_REF(..., STATIC)` for singletons and flyweights.
-
-**LC-refs: every object-typed var is declared.** Every datum-typed instance var or list is exactly one of:
-1. a **relation or slot** (no view field: the relation's accessor is the reader);
-2. an **owned child** (`DECLARE_REF(..., OWNED)`/`DECLARE_REF(..., OWNED_LIST)`), deleted with its owner;
-3. an **OM handle** (a text var, not an object reference), only for another live entity whose lifetime something else manages (see Ownership above);
-3a. a **static reference** (`DECLARE_REF(..., STATIC)`) to a singleton or flyweight;
-4. a **declared cache** with an invalidation rule (`declared_cache_vars()`, naming the channel or event that clears it).
-
-A lint (`tools/ci/scheduler_lints.py`, LC-refs) counts the undeclared ones; with `declared_refs_lint.py` it is an outright ban (both reached 0). Global lists of objects (`GLOB.*` holding instances) become OM registries, which drop deleted members themselves.
-
-**Lints, ratcheted to zero outside the justified keeps (`// ALLOW(scheduler): <reason>`, §16):** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref`, raw `del(`, and undeclared object-typed vars (LC-refs). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
+**Lints, ratcheted to zero outside the justified keeps (`// ALLOW(scheduler): <reason>`, §16):** `spawn(`, `addtimer(`, `INVOKE_ASYNC`, `do_after(`, `sleep(`, `stoplag(`, raw `input(`/`alert(`/`tgui_input_*`, `set waitfor`, `weakref` and raw `del(` (object-typed vars are ownership_lint.py's). `tools/ci/scheduler_lints.py` checks each count against `tools/ci/scheduler_lints_baseline.txt`: today's counts are the ceiling, and a sweep lowers them.
 
 ### 4.12 I/O jobs
 
@@ -923,7 +856,7 @@ deadline wheel; nothing polls. `om_ui_rate(R)` returns
   `trait_gained` / `trait_lost`.
 - **No DCS.** Signals, components, elements and SSdcs are deleted; `tools/ci/dcs_lints.py`
   bans their API outright. A component became a behaviour with state on the entity, or a
-  plain datum the entity owns in a declared var (`DECLARE_REF(type, "var", OWNED, null)`).
+  plain datum the entity owns (written with `own_set()`, doc/rewrite/ownership.md).
 - **Checks:** `/datum/om/check/x/why_not(actor, target)` returns null or a
   reason; `depends_on` lists the channels that can flip it; `arg` is the
   parameter. `om_why_not(spec, actor, target)`, `om_can(...)`,
@@ -1290,9 +1223,9 @@ qdel(M)
 | Name a DM-owned key | a number from `om_world_key_id()` | a string key | `api_lints.py` (`string_keys`), `check_grep.sh` |
 | Run periodic work | a periodic lane (`om_task_periodic(E, lane)`) or the machine pipeline, parked when idle (§4.10) | `process()`, `START_PROCESSING` | `pollers_lint.py` |
 | Wait for a deadline | `om_after()` / `om_deadline()` | comparing `world.time` with a stored deadline in periodic work | `check_deadline_polling.py` |
-| Remember an object | an OM handle, `om_handle(E)` / `om_resolve(h)` (§4.11), for another live entity only | `weakref`; a handle to a singleton/flyweight; a handle as a new datum's only owner | `scheduler_lints.py` (`weakref`), `handle_kinds_lint.py` |
-| Hold an object reference | a relation or slot, an owned child, an OM handle, a declared cache (§4.11), `DECLARE_REF(..., DEF)` for a frozen definition or registry object (implicit for `DEF_TYPES`), or `DECLARE_REF(..., TRANSIENT)` on a pooled type; declared with `DECLARE_REF(PATH, "var", KIND, OPT)` ([lifecycle.md §4](lifecycle.md#4-declared-references)) | an undeclared object-typed var; `DECLARE_REF(..., TRANSIENT)` on a type that isn't pooled | `scheduler_lints.py` (`lc_refs`), `declared_refs_lint.py` |
-| Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `DECLARE_REF(..., TRANSIENT)` ([lifecycle.md §4.1](lifecycle.md#41-one-place-declarations-and-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
+| Remember an object | a relation view (`rel_set`), or `om_callable()` for a deferred call | `weakref`; a handle in content | `ownership_lint.py` (`handle`) |
+| Hold an object reference | own / shared / proto / relation ([ownership.md](ownership.md)), or a declared cache | a raw write to an owned or relation var; two kinds on one var | `ownership_lint.py` |
+| Reuse a scratch object on a hot path | `POOL_DECLARE(type)`, `pool_take(type)` / `obj.release()`, with its per-use fields declared `POOL_RESET(type, var)` ([lifecycle.md §4.1](lifecycle.md#41-pools)) | a hand-written `GLOB` free list and release proc that clears fields by hand | review |
 | Delete something | a lifecycle verb (`code/datums/lifecycle/verbs.dm`): `consume()`, `replace_with()`, `expire()` or a lifetime, `slot_clear()`, `delete_on_death`; plain `qdel()` only when no verb fits | `del()`; a new `qdel()` where a verb fits | `scheduler_lints.py` (`del`), `lifecycle_counts_lint.py` (`qdel(` sites per file) |
 | Keep a set of live instances | an OM registry (`REGISTRY_MEMBERS()`) | a `GLOB` list of instances; a list allocated per instance | `registry_lint.py`, `instance_list_lint.py` |
 | React to something happening now | an OM event, `OM_EMIT(E, /datum/om/event/x, args...)`; a `/datum/om/event/before/x` to refuse it or return a result; `om_hook()` to react to another entity's event (§10). Deferred or state-driven reactions use a channel, a watch or `om_after()` (§4.4, §4.11) | `RegisterSignal()`/`SEND_SIGNAL()`, `AddComponent()`, `AddElement()`, `COMSIG_*`: deleted, banned outright | `dcs_lints.py` (no ceiling) |
@@ -1303,10 +1236,10 @@ Destroying an object is the lifecycle transaction (`code/datums/lifecycle/transa
 
 **Caught exceptions are reported.** Every `try`/`catch` either rethrows, calls `dq_report_caught(e, "context")` (or the scheduler's `report_caught(e, msg)`), `stack_trace`/`CRASH`, or (outside the core directories) logs. `dq_report_caught()` writes a context line and hands the exception to `world/Error`, so its file, line and stack reach the runtime log and it counts as a runtime: a test run with one fails. The OM sleep-guard trampoline reports a runtime its callee raises after sleeping (nobody is left to rethrow it to). `tools/ci/silent_catch_lint.py` (in `check_ratchets.sh`) rejects a silent catch; in `code/datums/om/`, `code/datums/lifecycle/`, `code/controllers/` and the error handler a plain log is not enough. A catch of an *expected* failure (malformed user JSON) says so: `// ALLOW(silent_catch): reason`.
 
-**Ownership is a tree.** `DECLARE_REF(..., OWNED)`/`DECLARE_REF(..., OWNED_LIST)`/`DECLARE_REF(..., OWNED_VALUES)` mean "deleting me deletes this". A child names its owner with `DECLARE_REF(..., BACK)(type, list("our_var" = "their_var"))`: phase 4 nulls our var and, if it still points at us, theirs; it never deletes. Two types that own each other each qdel the other (the overmap mob and its marker did: a double-qdel `CRASH` that the trampoline's catch then hid). Phase 4 still only releases an owned child that is already being destroyed, but `dq_lifecycle_check_owner_cycle()` reports the cycle (`LIFECYCLE OWNERSHIP CYCLE: ...`, a runtime). `tools/ci/ownership_cycle_lint.py` finds type-level cycles statically from the `DECLARE_REF(..., OWNED*)` lines and the vars' declared types (`// ALLOW(ownership_cycle): reason` for a fixture).
+**Ownership is a tree.** An owned entity has exactly one owner, stamped on it; adopting a value another holder owns is refused, and a child names its owner with a one-sided relation view, never a second ownership ([ownership.md](ownership.md) §1). The orphan audit (`own_audit()`) reports owned values their owner no longer names and entities kept alive only by their own OM record.
 
-**The destroy postcondition.** After links, `Destroy()` and scrub, `dq_lifecycle_postcondition()` (`leak_check.dm`) looks at every var of the object (tmp included) for a deleted datum, directly or in a list as a member or a value, that still reaches the object back through one of its own vars. BYOND frees by reference count, so such a cycle between deleted objects is never freed, and a reference search from live roots can't find it (the `reagent_by_id` bug: a holder's id index kept its reagents, each reagent's `holder` kept the holder). Each is reported as `LIFECYCLE LEAK: [type].[var] still holds [what] after Destroy`, a runtime, so a test run fails. Exempt: BYOND built-ins, the qdel bookkeeping vars, vars equal to their initial value, text (handles), numbers, type paths, and `DECLARE_REF(..., KEEP)(type, names)` vars. The per-type var list is cached; a back-reference scan runs only for a deleted object that is held. It is on in `UNIT_TESTS` builds and off on servers; the admin verb "Toggle Lifecycle Leak Check" cycles off / deleted cycles / strict (strict also reports any non-tmp var still holding any datum: noisy on legacy types, a debugging aid).
+**The destroy postcondition.** After links, `Destroy()` and scrub, `dq_lifecycle_postcondition()` (`leak_check.dm`) looks at every var of the object (tmp included) for a deleted datum, directly or in a list as a member or a value, that still reaches the object back through one of its own vars. BYOND frees by reference count, so such a cycle between deleted objects is never freed, and a reference search from live roots can't find it (the `reagent_by_id` bug: a holder's id index kept its reagents, each reagent's `holder` kept the holder). Each is reported as `LIFECYCLE LEAK: [type].[var] still holds [what] after Destroy`, a runtime, so a test run fails. Exempt: BYOND built-ins, the qdel bookkeeping vars, vars equal to their initial value, text (handles), numbers, type paths, and `KEEP_AFTER_DESTROY` vars; a registered singleton is skipped only when proven registered. The per-type var list is cached; a back-reference scan runs only for a deleted object that is held. It is on in `UNIT_TESTS` builds and off on servers; the admin verb "Toggle Lifecycle Leak Check" cycles off / deleted cycles / strict (strict also reports any non-tmp var still holding any datum: noisy on legacy types, a debugging aid).
 
 **The GC report names the cycle.** When SSgarbage fails to collect an object it logs that object's `LIFECYCLE LEAK` lines under its "unable to be GC'd" line.
 
-**Declared index lists.** `tools/ci/declared_refs_lint.py` counts a list var declared with an object element type (`var/list/datum/reagent/reagent_by_id`, tmp or not) as an object-holding list even when no write is recognisable. It must be declared (`DECLARE_REF(..., OWNED_LIST)`, `DECLARE_REF(..., OWNED_VALUES)`, a backlist, a cache); undeclared ones are banned outright. `/datum/reagents` declares `reagent_by_id` with `DECLARE_REF(..., OWNED_VALUES)`, so phase 4 empties it.
+**Index lists.** A list var that collects entities (an id -> datum index, a roster) is an owned list (`own_put` / `own_add`) or a relation list (`rel_add`), so teardown empties it; `ownership_lint.py` (`raw_write`) rejects raw writes to one.
