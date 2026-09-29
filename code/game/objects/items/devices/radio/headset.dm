@@ -14,8 +14,8 @@
 
 	var/translate_binary = FALSE
 	var/translate_hive = FALSE
-	var/obj/item/encryptionkey/keyslot1 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/obj/item/encryptionkey/keyslot2 = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/encryptionkey/keyslot1 = null // ALLOW(state_ref): owned: installed encryption key, kept in the headset's contents
+	var/obj/item/encryptionkey/keyslot2 = null // ALLOW(state_ref): owned: installed encryption key, kept in the headset's contents
 	var/ks1type = null
 	var/ks2type = null
 
@@ -710,8 +710,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/wearer_handle
 	var/effect_icon = 'icons/effects/effects.dmi'	//Cosmetic Effect that will be applied to the mob as an overlay
 	var/effect_icon_state = "arrow2"
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
-	var/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
+	var/tmp/image/effect_overlay = null	//Reference to an overlay so we can remove it on unequip
 	var/overlay_offset_y = 32
 	//Spells that will be added on equip
 	var/static/list/spells = list(/datum/spell/targeted/unrestricted/mend, /datum/spell/targeted/unrestricted/plasmastun)

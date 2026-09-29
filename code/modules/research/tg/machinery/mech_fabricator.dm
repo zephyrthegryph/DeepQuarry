@@ -46,7 +46,7 @@
 	var/datum/remote_materials/rmat
 
 	/// All designs in the techweb that can be fabricated by this machine, since the last update.
-	var/list/datum/design_techweb/cached_designs
+	var/list/datum/design_techweb/available_designs
 
 	/// Looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
@@ -58,7 +58,7 @@
 	var/drop_direction = SOUTH
 
 DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "queue", DEF, null)
-DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "cached_designs", DEF, null)
+DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "available_designs", DEF, null)
 DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "illegal_local_designs", DEF, null)
 /// The current design datum that the machine is building.
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
@@ -72,7 +72,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "being_built", DEF, null)
 		mat_container_events = list( \
 			(/datum/om/event/matcontainer_item_consumed) = TYPE_PROC_REF(/obj/machinery/mecha_part_fabricator_tg, on_material_insert) \
 		))
-	cached_designs = list()
+	available_designs = list()
 	illegal_local_designs = list()
 	. = ..()
 	default_apply_parts()
@@ -156,19 +156,19 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
  * Updates the `final_sets` and `buildable_parts` for the current mecha fabricator.
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/update_menu_tech()
-	var/previous_design_count = cached_designs.len
+	var/previous_design_count = available_designs.len
 
-	cached_designs.Cut()
+	available_designs.Cut()
 	for(var/v in stored_research().researched_designs)
 		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(v)
 
 		if(design.build_type & fab_type)
-			cached_designs |= design
+			available_designs |= design
 
 	for(var/datum/design_techweb/illegal_disign in illegal_local_designs)
-		cached_designs |= illegal_disign
+		available_designs |= illegal_disign
 
-	var/design_delta = cached_designs.len - previous_design_count
+	var/design_delta = available_designs.len - previous_design_count
 
 	if(design_delta > 0)
 		atom_say("Received [design_delta] new design[design_delta == 1 ? "" : "s"].")
@@ -287,6 +287,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 		on_start_printing()
 
 	// If there's an item being built, check if it is complete.
+	// ALLOW(sys_deadline_poll): queue state machine: the step also retries an obstructed exit every tick, and part upgrades rescale build_finish mid-build
 	if(being_built() && (build_finish < world.time))
 		// Then attempt to dispense it and if appropriate build the next item.
 		dispense_built_part(being_built())
@@ -398,7 +399,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
 	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	var/size32x32 = "[spritesheet.name]32x32"
 
-	for(var/datum/design_techweb/design in cached_designs)
+	for(var/datum/design_techweb/design in available_designs)
 		var/cost = list()
 		var/list/materials = design.materials
 		for(var/mat_id in materials)

@@ -28,11 +28,11 @@
 	var/active_regen = FALSE //Used for the regenerate proc in human_powers.dm
 	var/active_regen_delay = 300
 	COOLDOWN_DECLARE(breath_sound_cooldown)				//Allows us to store the value across proc calls per-mob.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob teleporters, filled at runtime; mobs are few
 	var/list/teleporters = list() //Used for lleill abilities
 
 	var/rest_dir = 0					//To lay down in a specific direction
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob genetic_side_effects, filled at runtime; mobs are few
 	var/list/datum/genetics/side_effect/genetic_side_effects = list()	//For any genetic side effects we currently have.
 	COOLDOWN_DECLARE(chew_cooldown)
 

@@ -9,7 +9,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	name = "ProcCall Handler"
 	desc = "If you are seeing this, tell a coder."
 
-	var/list/callers = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/callers = list() // ALLOW(instance_list): one instance (GLOB.AdminProcCallHandler), so one list
 
 	invisibility = INVISIBILITY_ABSTRACT
 	density = FALSE

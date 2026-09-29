@@ -487,6 +487,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 			connected_tracker().unset_control()
 
 	if(track==1 && trackrate) //manual tracking and set a rotation speed
+		// ALLOW(sys_deadline_poll): tracking rate inside the continuous solar control step (1 degree per interval)
 		if(nexttime <= world.time) //every time we need to increase/decrease the angle by 1°...
 			targetdir = (targetdir + trackrate/abs(trackrate) + 360) % 360 	//... do it
 			nexttime += 36000/abs(trackrate) //reset the counter for the next 1°

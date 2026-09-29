@@ -17,7 +17,7 @@
 	var/wet_floors = 0
 	var/spray_blood = 0
 	var/blood = 1
-	var/list/target_types = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/target_types = list() // ALLOW(instance_list): d: per-mob target_types, sized at creation and filled in place; mobs are few
 
 /mob/living/bot/cleanbot/Initialize(mapload)
 	. = ..()

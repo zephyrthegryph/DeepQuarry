@@ -4,12 +4,12 @@
 	var/syndicate = 0
 	var/const/MAIN_CHANNEL = "Main Frequency"
 	var/lawchannel = MAIN_CHANNEL // Default channel on which to state laws
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob stating_laws, sized at creation and filled in place; mobs are few
 	var/list/stating_laws = list()// Channels laws are currently being stated on
 	var/obj/item/radio/common_radio
 
 	has_huds = TRUE
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob speech_synthesizer_langs, filled at runtime; mobs are few
 	var/list/speech_synthesizer_langs = list()	//which languages can be vocalized by the speech synthesizer
 
 	//Used in say.dm.
@@ -21,7 +21,7 @@
 	var/local_transmit //If set, can only speak to others of the same type within a short range.
 
 	var/next_alarm_notice
-	var/list/datum/alarm/queued_alarms = new() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/datum/alarm/queued_alarms = new() // ALLOW(instance_list): d: per-mob queued_alarms, sized at creation and filled in place; mobs are few
 
 	var/list/access_rights
 	var/obj/item/card/id/idcard

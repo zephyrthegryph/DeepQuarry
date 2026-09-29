@@ -6,7 +6,6 @@
 	var/hostpda_handle
 
 	var/list/botlist = null		// list of bots
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
 	var/tmp/active_handle	// the active bot; if null, show bot list
 	var/list/botstatus			// the status signal sent by the bot
 

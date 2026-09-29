@@ -54,7 +54,7 @@
 	supernatural = TRUE
 
 	var/construct_type = "shade"
-	var/list/construct_spells = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/construct_spells = list() // ALLOW(instance_list): d: per-mob construct_spells, sized at creation and filled in place; mobs are few
 
 	can_be_drop_prey = FALSE
 	can_pain_emote = FALSE

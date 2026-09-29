@@ -4,7 +4,7 @@
 	icon_state = "holster"
 	slot = ACCESSORY_SLOT_WEAPON
 	concealed_holster = 1
-	var/obj/item/holstered = null // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/holstered = null // ALLOW(state_ref): owned: the holstered item, kept in the holster's contents
 	var/holster_in = 'sound/items/holsterin.ogg'
 	var/holster_out = 'sound/items/holsterout.ogg'
 	w_class = ITEMSIZE_NORMAL

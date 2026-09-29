@@ -42,7 +42,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/list/internal_channels
 
 	var/radio_connection_handle
-	var/list/datum/radio_frequency/secure_radio_connections // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/tmp/list/datum/radio_frequency/secure_radio_connections
 
 	///If we're a syndicate beacon or not.
 	var/beacon = FALSE
@@ -627,7 +627,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/borg
 	var/myborg_handle // Cyborg which owns this radio. Used for power checks
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	// ALLOW(state_ref): owned: installed encryption key, kept in the radio's contents
 	var/obj/item/encryptionkey/keyslot = null//Borg radios can handle a single encryption key
 	icon = 'icons/obj/robot_component.dmi' // Cyborgs radio icons should look like the component.
 	icon_state = "radio"

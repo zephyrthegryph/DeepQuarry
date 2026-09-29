@@ -1,6 +1,6 @@
 /mob/living/silicon
 	var/datum/ai_laws/laws = null
-	var/list/additional_law_channels = list("State" = "") // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/additional_law_channels = list("State" = "") // ALLOW(instance_list): d: per-mob additional_law_channels with starting entries, edited at runtime; mobs are few
 	COOLDOWN_DECLARE(law_notification_cooldown) // Avoids receiving 5+ of them at once.
 
 /mob/living/silicon/proc/laws_sanity_check()

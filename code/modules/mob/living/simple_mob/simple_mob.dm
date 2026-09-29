@@ -101,9 +101,9 @@
 	//Mob melee settings
 	var/melee_damage_lower = 2		// Lower bound of randomized melee damage
 	var/melee_damage_upper = 6		// Upper bound of randomized melee damage
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob attacktext with starting entries, edited at runtime; mobs are few
 	var/list/attacktext = list("attacked") // "You are [attacktext] by the mob!"
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob friendly with starting entries, edited at runtime; mobs are few
 	var/list/friendly = list("nuzzles") // "The mob [friendly] the person."
 	var/attack_sound = null				// Sound to play when I attack
 	var/melee_miss_chance = 0			// percent chance to miss a melee attack.
@@ -941,7 +941,7 @@ DECLARE_REF(/mob/living/simple_mob, "mob_radio", OWNED, null)
 // sets, so every override stays after its base definition (resolution preserved). ===
 /mob/living/simple_mob
 	//speech sounds
-	var/list/speech_sounds = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/speech_sounds = list() // ALLOW(instance_list): d: per-mob speech_sounds, sized at creation and filled in place; mobs are few
 	var/speech_chance = 75 //mobs can be a bit more emotive than carbon/humans
 	var/speech_sound_enabled = TRUE
 

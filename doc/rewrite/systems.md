@@ -310,6 +310,34 @@ TOPIC_ACTION(/datum/admins, "adminplayeropts", PROC_REF(topic_player_opts), TOPI
   deadline checks; construction graphs replace the hand-rolled light, AI core, camera, door
   assembly, emitter, field generator and PA state machines.
 
+As built (rewrite/sys-hygiene; lint `tools/ci/sys_rules/hygiene.py`, all three rules at 0):
+
+- `annotation_boilerplate` flags an `ALLOW(...)` whose reason is placeholder text ("baseline when
+  CI was wired", "convert or give a real reason", "15 mobs at boot", "see audit") or names a kind
+  (`mob:`, `obj:`, `item:`, `machine:`, `turf:`, `area:`) the site's type is not. The 71 pasted
+  mob-count reasons now say what each list is (`d: per-mob X, filled at runtime`, `c: read-only
+  per-subtype table`, or the proccall handler's one instance). Of the 36 placeholder
+  `ALLOW(state_ref)`: runtime-only vars became `tmp` (overlay images, radio connections, the agent
+  card's tgui module, glove special attacks), three stale annotations on already-`tmp` vars were
+  dropped, and the rest got real reasons (mostly `owned: ... kept in contents`).
+- `cached_var` flags a `cached_*` instance var, its writes and its manual invalidations, unless it
+  is a declared cache (`declared_cache_vars()` with a `CACHE_ON_*` rule); a `= null` on a declared
+  cache is still flagged (raise the channel with `om_changed()`). Converted: asset URL mappings and
+  the overmap skybox image are declared caches cleared by `om_changed(src, CHANGE_EXPLICIT)`;
+  preference choices are a shared cache (`preference_choices`); song legacy paths, samples and
+  sustain dropoff are read from the instrument / computed (`linear_dropoff_rate()`). Vars that were
+  never caches were named for what they hold (panel snapshots, `planned_path`,
+  `available_designs`, `parsed_map`, `prototype_components`, `applied_particle_type`, SSair's
+  `phase_cost`, `fetched_feedback_link`). `code/modules/tgs/` (vendored DMAPI) is exempt.
+- `deadline_poll` reuses `tools/ci/check_deadline_polling.py`, which now scans every periodic body
+  (`process()`, `periodic_step()`, `machine_step()`, `service_step()`, OM behaviour `tick()`), and
+  also flags the writes that store a polled deadline. Converted to `om_after()` timers: bomb tester
+  simulation, escape pod eject, supply beacon drop, anomaly device run, supermatter grenade
+  implosion, meteor waves, supply payroll cycle, mob profile dump, artifact analyser completion.
+  The rest carry `ALLOW(sys_deadline_poll)` with the reason (rate gates inside continuous work,
+  sliding deadlines, state-machine pacing, admin-editable countdowns, and the status-effect /
+  guest-pass expiry left to the EXPIRY_* work).
+
 ## Rollout
 
 1. Primitives in order (2, 1, 5, 3, then 4, 6, 7, 10, 15, 16, 17, 18, 13, 12, 8, 9, 19, 20, 14),

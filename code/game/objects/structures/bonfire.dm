@@ -259,6 +259,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
+	// ALLOW(sys_deadline_poll): fuel burn rate inside the continuous burning step (oxygen and heat run every tick)
 	if(world.time >= next_fuel_consumption)
 		if(!consume_fuel(pop(contents)))
 			extinguish()
@@ -464,6 +465,7 @@
 	if(!check_oxygen())
 		extinguish()
 		return
+	// ALLOW(sys_deadline_poll): fuel burn rate inside the continuous burning step (oxygen and heat run every tick)
 	if(world.time >= next_fuel_consumption)
 		if(!consume_fuel(pop(contents)))
 			extinguish()

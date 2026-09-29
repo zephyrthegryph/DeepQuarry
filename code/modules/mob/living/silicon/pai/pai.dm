@@ -20,7 +20,7 @@
 	var/obj/machinery/camera/current = null
 
 	var/ram = 100	// Used as currency to purchase different abilities
-	var/list/software = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/software = list() // ALLOW(instance_list): d: per-mob software, sized at creation and filled in place; mobs are few
 	var/userDNA		// The DNA string of our assigned user
 
 	var/default_pai_card_path = /obj/item/paicard // Used when the pai is spawned directly by mapping or admin

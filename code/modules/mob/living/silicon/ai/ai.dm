@@ -50,7 +50,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	density = TRUE
 	status_flags = CANPUSH
 	shouldnt_see = list(/mob/observer/eye, /obj/effect/rune)
-	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/network = list(NETWORK_DEFAULT) // ALLOW(instance_list): d: per-mob network with starting entries, edited at runtime; mobs are few
 	var/obj/machinery/camera/camera = null
 	var/aiRestorePowerRoutine = 0
 	/// Backup capacitor charge, 0..AI_BACKUP_CAPACITY. Drains while the core is
@@ -59,7 +59,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/viewalerts = 0
 	var/icon/holo_icon				//Default is assigned when AI is created.
 	var/holo_color = null
-	var/list/connected_robots = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/connected_robots = list() // ALLOW(instance_list): d: per-mob connected_robots, filled at runtime; mobs are few
 	var/obj/item/pda/ai/aiPDA = null
 	var/obj/item/communicator/aiCommunicator = null
 	var/obj/item/multitool/aiMulti = null
@@ -98,7 +98,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	var/multicam_allowed = TRUE
 	var/multicam_on = FALSE
 	var/atom/movable/screen/movable/pic_in_pic/ai/master_multicam
-	var/list/multicam_screens = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/multicam_screens = list() // ALLOW(instance_list): d: per-mob multicam_screens, filled at runtime; mobs are few
 	var/max_multicams = 6
 
 	can_be_antagged = TRUE

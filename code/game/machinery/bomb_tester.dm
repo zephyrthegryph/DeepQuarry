@@ -26,6 +26,8 @@
 
 	var/simulating = 0
 	TIMESTAMP_VAR(simulation_started)
+	/// om_after() timer that ends the running simulation, or 0.
+	var/tmp/simulation_timer = 0
 	var/simulation_delay = 20 SECONDS
 
 	var/simulation_results
@@ -53,8 +55,6 @@
 	..()
 	if(test_canister() && !Adjacent(test_canister()))
 		test_canister_handle = null
-	if(simulating && world.time >= simulation_started + simulation_delay)
-		simulation_finish()
 
 /obj/machinery/bomb_tester/update_icon()
 	cut_overlays()
@@ -220,6 +220,7 @@
 	simulating = 1
 	update_use_power(USE_POWER_ACTIVE)
 	simulation_started = world.time
+	simulation_timer = om_after(src, simulation_delay, PROC_REF(simulation_timer_fired))
 	update_icon()
 	switch(sim_mode)
 		if(MODE_SINGLE)
@@ -343,7 +344,16 @@
 	if(intervals == 10)
 		simulation_results += "<hr>Final Result: No detonation."
 
+/// om_after() callback: the simulation's run time is up.
+/obj/machinery/bomb_tester/proc/simulation_timer_fired()
+	simulation_timer = 0
+	if(simulating)
+		simulation_finish()
+
 /obj/machinery/bomb_tester/proc/simulation_finish(cancelled = 0)
+	if(simulation_timer)
+		om_cancel_timer(src, simulation_timer)
+		simulation_timer = 0
 	simulating = 0
 	update_use_power(USE_POWER_IDLE)
 	update_icon()

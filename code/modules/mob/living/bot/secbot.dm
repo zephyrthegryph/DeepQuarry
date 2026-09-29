@@ -35,7 +35,7 @@
 	var/used_weapon	= /obj/item/melee/baton	//Weapon used by the bot
 
 	var/static/list/threat_found_sounds = list('sound/voice/bcriminal.ogg', 'sound/voice/bjustice.ogg', 'sound/voice/bfreeze.ogg')
-	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg') // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/preparing_arrest_sounds = list('sound/voice/bgod.ogg', 'sound/voice/biamthelaw.ogg', 'sound/voice/bsecureday.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bcreep.ogg') // ALLOW(instance_list): c: read-only per-subtype table on a mob (0 subtype overrides); mobs are few, a getter is not worth it
 	var/static/list/fighting_sounds = list('sound/voice/biamthelaw.ogg', 'sound/voice/bradio.ogg', 'sound/voice/bjustice.ogg')
 // They don't like being pulled. This is going to fuck with slimesky, but meh. //Screw you. Just screw you and your 'meh'
 /datum/om/stage/life/type_post/bot/secbot

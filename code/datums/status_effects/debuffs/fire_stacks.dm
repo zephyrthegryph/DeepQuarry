@@ -147,7 +147,7 @@
 	/// Type of mob light emitter we use when on fire
 	var/moblight_type = /obj/effect/dummy/lighting_obj/moblight/fire
 	/// Cached particle type
-	var/cached_state
+	var/applied_particle_type
 
 /datum/status_effect/fire_handler/fire_stacks/get_examine_text()
 	if(owner.on_fire)
@@ -182,22 +182,22 @@
 
 /datum/status_effect/fire_handler/fire_stacks/update_particles()
 	if (!on_fire)
-		if (cached_state)
-			owner.remove_shared_particles(cached_state)
-		cached_state = null
+		if (applied_particle_type)
+			owner.remove_shared_particles(applied_particle_type)
+		applied_particle_type = null
 		return
 
 	var/particle_type = /particles/embers/minor
 	if(stacks > MOB_BIG_FIRE_STACK_THRESHOLD)
 		particle_type = /particles/embers
 
-	if (cached_state == particle_type)
+	if (applied_particle_type == particle_type)
 		return
 
-	if (cached_state)
-		owner.remove_shared_particles(cached_state)
+	if (applied_particle_type)
+		owner.remove_shared_particles(applied_particle_type)
 	owner.add_shared_particles(particle_type)
-	cached_state = particle_type
+	applied_particle_type = particle_type
 
 /**
  * Proc that handles damage dealing and all special effects
@@ -284,8 +284,8 @@
 		extinguish()
 	set_stacks(0)
 	owner.update_fire()
-	if (cached_state)
-		owner.remove_shared_particles(cached_state)
+	if (applied_particle_type)
+		owner.remove_shared_particles(applied_particle_type)
 	return ..()
 
 /datum/status_effect/fire_handler/fire_stacks/on_apply()

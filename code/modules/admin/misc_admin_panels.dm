@@ -187,7 +187,7 @@
 
 /datum/unban_panel
 	var/tmp/holder_handle
-	var/list/cached_rows
+	var/list/shown_rows
 
 /datum/unban_panel/New(datum/admins/owner_holder)
 	..()
@@ -205,7 +205,7 @@
 	ui.set_autoupdate(FALSE)
 
 /datum/unban_panel/proc/snapshot_bans()
-	cached_rows = list()
+	shown_rows = list()
 	if(!GLOB.banlist)
 		return
 	// GLOB.banlist is a shared savefile cursor — record the prior cd
@@ -231,7 +231,7 @@
 				expiry = "[raw_min] Minutes"
 		else
 			expiry = "Permaban"
-		cached_rows += list(list(
+		shown_rows += list(list(
 			"key_id" = "[key][id]",
 			"key" = "[key]",
 			"id" = "[id]",
@@ -246,8 +246,8 @@
 	var/list/data = list()
 	if(!holder())
 		return data
-	data["bans"] = cached_rows || list()
-	data["count"] = length(cached_rows)
+	data["bans"] = shown_rows || list()
+	data["count"] = length(shown_rows)
 	return data
 
 /datum/unban_panel/tgui_act(action, list/params, datum/tgui/ui)

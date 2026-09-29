@@ -53,6 +53,8 @@
 	var/duration = 0
 	var/interval = 0
 	TIMESTAMP_VAR(time_end)
+	/// om_after() timer that ends the emission at time_end, or 0.
+	var/tmp/emission_timer = 0
 	var/last_activation = 0
 	var/last_process = 0
 	var/tmp/inserted_battery_handle
@@ -127,7 +129,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 		if("changeduration")
 			duration = clamp(text2num(params["duration"]), 0, 300)
 			if(activated)
-				time_end = world.time + duration
+				arm_emission_timer()
 			return TRUE
 		if("changeinterval")
 			interval = clamp(text2num(params["interval"]), 0, 100)
@@ -139,7 +141,7 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 				visible_message(span_blue("[icon2html(src,viewers(src))] [src] whirrs."), span_blue("[icon2html(src,viewers(src))]You hear something whirr."))
 				if(!inserted_battery().battery_effect.activated)
 					inserted_battery().battery_effect.ToggleActivate(1)
-				time_end = world.time + duration
+				arm_emission_timer()
 				last_process = world.time
 			else
 				to_chat(ui.user, span_warning("[src] is unable to start due to no anomolous power source inserted/remaining."))
@@ -213,15 +215,30 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 			if(inserted_battery().stored_charge <= 0)
 				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 				shutdown_emission()
-			else if(world.time > time_end)
-				src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
-				shutdown_emission()
 		else
 			src.visible_message(span_blue("[icon2html(src,viewers(src))] [src] buzzes."), span_blue("[icon2html(src,viewers(src))] You hear something buzz."))
 			shutdown_emission()
 		last_process = world.time
 
+/// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
+/obj/item/anodevice/proc/arm_emission_timer()
+	time_end = world.time + duration
+	if(emission_timer)
+		om_cancel_timer(src, emission_timer)
+	emission_timer = om_after(src, duration + 1, PROC_REF(emission_timer_fired))
+
+/// om_after() callback: the set duration has run out.
+/obj/item/anodevice/proc/emission_timer_fired()
+	emission_timer = 0
+	if(!activated)
+		return
+	src.loc.visible_message(span_blue("[icon2html(src,viewers(src))] [src] chimes."), span_blue("[icon2html(src,viewers(src))] You hear something chime."))
+	shutdown_emission()
+
 /obj/item/anodevice/proc/shutdown_emission()
+	if(emission_timer)
+		om_cancel_timer(src, emission_timer)
+		emission_timer = 0
 	if(activated)
 		activated = 0
 		if(inserted_battery()?.battery_effect?.activated)

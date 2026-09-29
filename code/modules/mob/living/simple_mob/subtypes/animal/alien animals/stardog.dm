@@ -51,7 +51,7 @@
 	var/affinity = 0
 	var/obj/structure/control_pod/control_node = null
 	var/admin_override = FALSE	//If true, makes affinity and nutrition irrelevant.
-	// ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	// ALLOW(instance_list): d: per-mob weather_areas, sized at creation and filled in place; mobs are few
 	var/list/weather_areas = list()	//We'll call a proc on these areas when we eat, don't worry!
 
 /mob/living/simple_mob/vore/overmap/stardog/Login()

@@ -45,8 +45,10 @@ GLOBAL_DATUM_INIT(emergency_shuttle_service, /datum/world_service/emergency_shut
 		if(!wait_for_launch)
 			return TRUE
 
+		// ALLOW(sys_deadline_poll): evac countdown: the service steps every tick during it for announcements, and admin verbs move the times in place
 		if(evac && auto_recall && world.time >= auto_recall_at)
 			recall()
+		// ALLOW(sys_deadline_poll): evac countdown: the service steps every tick during it for announcements, and admin verbs move the times in place
 		if(world.time >= launch_time)	//time to launch the shuttle
 			stop_launch_countdown()
 

@@ -42,12 +42,12 @@
 	can_breach = 1
 
 	//Inbuilt devices.
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	// ALLOW(state_ref): owned: deployable boots, kept in the suit's contents
 	var/obj/item/clothing/shoes/magboots/boots = null // Deployable boots, if any.
 	hood = null   // Deployable helmet, if any.
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	// ALLOW(state_ref): owned: deployable tank, kept in the suit's contents
 	var/obj/item/tank/tank = null              // Deployable tank, if any.
-	// ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	// ALLOW(state_ref): owned: installed cooling unit, kept in the suit's contents
 	var/obj/item/suit_cooling_unit/cooler = null// Cooling unit, for FBPs.  Cannot be installed alongside a tank.
 
 	//Cycler settings

@@ -17,7 +17,7 @@
 
 /datum/round_status_panel
 	var/datum/admins/owner_admin
-	var/list/cached_antag_blocks
+	var/list/shown_antag_blocks
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
 	..()
@@ -44,7 +44,7 @@ DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 			var/list/block = A?.get_check_antag_data(owner_admin)
 			if(block)
 				blocks += list(block)
-	cached_antag_blocks = blocks
+	shown_antag_blocks = blocks
 
 /datum/round_status_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -76,7 +76,7 @@ DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 		shuttle_data["state"] = SHUTTLE_STATE_IDLE
 	data["shuttle"] = shuttle_data
 
-	data["antag_blocks"] = cached_antag_blocks || list()
+	data["antag_blocks"] = shown_antag_blocks || list()
 	return data
 
 /datum/round_status_panel/proc/format_shuttle_timer(seconds)

@@ -12,7 +12,8 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 	lane = /datum/om/behaviour/world/mobs
 
 	var/list/death_list = list()
-	TIMESTAMP_VAR(profile_next_dump)
+	/// om_after() timer for the next two-minute profile summary, or 0 before the first step.
+	var/tmp/profile_timer = 0
 	/// Pipeline counters at the last summary (parks, unparks, missed wakes), for the deltas.
 	var/list/last_counts = list(0, 0, 0)
 
@@ -26,10 +27,8 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 		var/list/batch = death_list
 		death_list = list()
 		insert_deaths(batch)
-	if(!profile_next_dump)
-		profile_next_dump = world.time + 2 MINUTES
-	else if(world.time >= profile_next_dump)
-		dump_profile()
+	if(!profile_timer)
+		profile_timer = om_after(src, 2 MINUTES, PROC_REF(dump_profile))
 	return TRUE
 
 /// The database insert sleeps, so the lane hands it off (the lane itself must not sleep).
@@ -45,7 +44,7 @@ GLOBAL_DATUM_INIT(mob_service, /datum/world_service/mobs, new)
 /// MOB_PROFILE lines (sampled cost per mob type and per stage, every Nth frame) and one
 /// MOB_PARK_SUMMARY line, every two minutes.
 /datum/world_service/mobs/proc/dump_profile()
-	profile_next_dump = world.time + 2 MINUTES
+	profile_timer = om_after(src, 2 MINUTES, PROC_REF(dump_profile))
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(!sched)
 		return

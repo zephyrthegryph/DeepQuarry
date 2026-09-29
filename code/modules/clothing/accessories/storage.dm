@@ -6,7 +6,7 @@
 	show_messages = 1
 
 	var/slots = 5
-	var/obj/item/storage/internal/hold // ALLOW(state_ref): baseline when CI was wired (2026-09-26); convert or give a real reason
+	var/obj/item/storage/internal/hold // ALLOW(state_ref): owned: the internal storage object that holds the webbing's contents
 	w_class = ITEMSIZE_NORMAL
 	on_rolled = list("down" = "none")
 	var/hide_on_roll = FALSE

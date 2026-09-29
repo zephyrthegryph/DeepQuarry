@@ -141,7 +141,7 @@ GLOBAL_DATUM(ai_camera_room_landmark, /obj/effect/landmark/ai_multicam_room)
 /mob/observer/eye/aiEye/pic_in_pic
 	name = "Secondary AI Eye"
 	var/atom/movable/screen/movable/pic_in_pic/ai/screen
-	var/list/cameras_telegraphed = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/cameras_telegraphed = list() // ALLOW(instance_list): d: per-mob cameras_telegraphed, filled at runtime; mobs are few
 	var/telegraph_cameras = TRUE
 	var/telegraph_range = 7
 

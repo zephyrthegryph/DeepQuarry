@@ -209,7 +209,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 
 	vore_default_mode = DM_HOLD
 	/// OM handles of the help-touchers she remembers.
-	var/list/petters = list() // ALLOW(instance_list): mob: 15 mobs at boot; per-instance state, see audit
+	var/list/petters = list() // ALLOW(instance_list): d: per-mob petters, filled at runtime; mobs are few
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun/snapdragon/snappy, INTERACT_HAND_UNGATED_AS(I_HELP, "Pet", PROC_REF(snappy_interaction_hand)))
 

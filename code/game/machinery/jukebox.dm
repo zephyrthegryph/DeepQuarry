@@ -48,6 +48,7 @@
 		playing = 0
 		return PROCESS_KILL
 	// If the current track isn't finished playing, let it keep going
+	// ALLOW(sys_deadline_poll): track end rides on the playback step, which re-checks power and the media source every tick while playing
 	if(current_track() && world.time < media_start_time + current_track().duration)
 		return
 	// Oh... nothing in queue? Well then pick next according to our rules

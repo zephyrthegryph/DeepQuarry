@@ -12,7 +12,7 @@
 /datum/edit_memory_panel
 	var/datum/mind/target_mind
 	var/tmp/admin_user_handle
-	var/list/cached_antag_blocks
+	var/list/shown_antag_blocks
 
 /datum/edit_memory_panel/New(datum/mind/target_mind, mob/admin_user)
 	..()
@@ -40,7 +40,7 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 			var/list/entry = A?.get_panel_data(target_mind)
 			if(entry)
 				blocks += list(entry)
-	cached_antag_blocks = blocks
+	shown_antag_blocks = blocks
 
 /datum/edit_memory_panel/tgui_close(mob/user)
 	SStgui.close_uis(src)
@@ -74,7 +74,7 @@ DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 			num++
 	data["objectives"] = objectives
 
-	data["antag_blocks"] = cached_antag_blocks || list()
+	data["antag_blocks"] = shown_antag_blocks || list()
 	return data
 
 /datum/edit_memory_panel/tgui_act(action, list/params, datum/tgui/ui)

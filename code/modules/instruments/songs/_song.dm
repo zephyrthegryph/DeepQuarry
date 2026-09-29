@@ -44,12 +44,6 @@
 	//////////// Cached instrument variables /////////////
 	/// Instrument we are currently using
 	var/tmp/datum/instrument/using_instrument_static
-	/// Cached legacy ext for legacy instruments
-	var/cached_legacy_ext
-	/// Cached legacy dir for legacy instruments
-	var/cached_legacy_dir
-	/// Cached list of samples, referenced directly from the instrument for synthesized instruments
-	var/list/cached_samples
 	/// Are we operating in legacy mode (so if the instrument is a legacy instrument)
 	var/legacy = FALSE
 	//////////////////////////////////////////////////////
@@ -113,12 +107,6 @@
 	var/sustain_linear_duration = 5
 	/// Exponential sustain dropoff rate per decisecond
 	var/sustain_exponential_dropoff = 1.4
-	////////// DO NOT DIRECTLY SET THESE!
-	/// Do not directly set, use update_sustain()
-	var/cached_linear_dropoff = 10
-	/// Do not directly set, use update_sustain()
-	var/cached_exponential_dropoff = 1.045
-	/////////////////////////////////////////////////////////////////////////
 
 /datum/song/New(atom/parent, list/instrument_ids, new_range)
 	join_registries() // REGISTRY_SONGS; the destroy transaction leaves it
@@ -131,7 +119,6 @@
 		set_instrument(allowed_instrument_ids[1])
 	hearing_mobs = list()
 	volume = clamp(volume, min_volume, max_volume)
-	update_sustain()
 	if(new_range)
 		instrument_range = new_range
 
@@ -169,9 +156,6 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 		LAZYREMOVE(using_instrument().songs_using, om_handle_of(src))
 		old_legacy = (using_instrument().instrument_flags & INSTRUMENT_LEGACY)
 	using_instrument_static = null
-	cached_samples = null
-	cached_legacy_ext = null
-	cached_legacy_dir = null
 	legacy = null
 	if(istext(I) || ispath(I))
 		I = instrument_service().instrument_data[I]
@@ -180,11 +164,8 @@ DECLARE_REF(/datum/song, "using_instrument_static", BACK_VIA, "songs_using")
 		LAZYADD(I.songs_using, om_handle(src))
 		var/instrument_legacy = (I.instrument_flags & INSTRUMENT_LEGACY)
 		if(instrument_legacy)
-			cached_legacy_ext = I.legacy_instrument_ext
-			cached_legacy_dir = I.legacy_instrument_path
 			legacy = TRUE
 		else
-			cached_samples = I.samples
 			legacy = FALSE
 		if(isnull(old_legacy) || (old_legacy != instrument_legacy))
 			if(playing)
@@ -352,45 +333,34 @@ REGISTRY_MEMBERSHIP(/datum/song, REGISTRY_SONGS)
 	process_song(world.tick_lag)
 	process_decay(world.tick_lag)
 
-/**
- * Updates our cached linear/exponential falloff stuff, saving calculations down the line.
- */
-/datum/song/proc/update_sustain()
-	// Exponential is easy
-	cached_exponential_dropoff = sustain_exponential_dropoff
-	// Linear, not so much, since it's a target duration from 100 volume rather than an exponential rate.
-	var/target_duration = sustain_linear_duration
-	var/volume_diff = max(0, 100 - sustain_dropoff_volume)
-	var/volume_decrease_per_decisecond = volume_diff / target_duration
-	cached_linear_dropoff = volume_decrease_per_decisecond
+/// Linear sustain dropoff, in volume per decisecond: a 100-volume note reaches
+/// sustain_dropoff_volume after sustain_linear_duration. Derived from the sustain vars on read.
+/datum/song/proc/linear_dropoff_rate()
+	return max(0, 100 - sustain_dropoff_volume) / sustain_linear_duration
 
 /**
  * Setter for setting output volume.
  */
 /datum/song/proc/set_volume(volume)
 	src.volume = clamp(round(volume, 1), max(0, min_volume), min(100, max_volume))
-	update_sustain()
 
 /**
  * Setter for setting how low the volume has to get before a note is considered "dead" and dropped
  */
 /datum/song/proc/set_dropoff_volume(volume)
 	sustain_dropoff_volume = clamp(round(volume, 0.01), INSTRUMENT_MIN_SUSTAIN_DROPOFF, 100)
-	update_sustain()
 
 /**
  * Setter for setting exponential falloff factor.
  */
 /datum/song/proc/set_exponential_drop_rate(drop)
 	sustain_exponential_dropoff = clamp(round(drop, 0.00001), INSTRUMENT_EXP_FALLOFF_MIN, INSTRUMENT_EXP_FALLOFF_MAX)
-	update_sustain()
 
 /**
  * Setter for setting linear falloff duration.
  */
 /datum/song/proc/set_linear_falloff_duration(duration)
 	sustain_linear_duration = clamp(round(duration * 10, world.tick_lag), world.tick_lag, INSTRUMENT_MAX_TOTAL_SUSTAIN)
-	update_sustain()
 
 /datum/song/vv_edit_var(var_name, var_value)
 	. = ..()
