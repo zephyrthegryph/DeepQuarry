@@ -24,11 +24,14 @@ NOT_WORTH = re.compile(r"ALLOW\(instance_list\):.*not worth it", re.I)
 # paths, nested list(), operators. Any lowercase identifier (a var or proc call) disqualifies.
 STRING = re.compile(r'"(?:[^"\\[]|\.)*"')
 PATH = re.compile(r"(?<![\w/])/[a-z_][\w/]*")
-TOKEN_OK = re.compile(r"^[\sA-Z0-9_.=,+\-*|()&~<>]*$")
+IDENT = re.compile(r"(?<![\w.])[A-Za-z_]\w*")
+DEFINE = re.compile(r"^[A-Z][A-Z0-9_]+$")
+LITERALS = {"null", "TRUE", "FALSE", "list", "alist"}
 
 
 def gather(lines, start, col):
-    """Text of the balanced list( ... ) that starts at lines[start][col]."""
+    """Text of the balanced list( ... ) that starts at lines[start][col], its last line index,
+    and whatever follows the closing paren on that line (comments removed)."""
     depth = 0
     out = []
     for index in range(start, min(start + 400, len(lines))):
@@ -40,25 +43,28 @@ def gather(lines, start, col):
                 depth -= 1
                 if depth == 0:
                     out.append(line[: position + 1])
+                    gather.tail = line[position + 1:].strip()
                     return " ".join(out), index
         out.append(line.rstrip("\\"))
+    gather.tail = ""
     return None, start
 
 
 def constant(text):
+    """A non-empty list literal of strings (no interpolation), numbers, UPPER_CASE defines and
+    type paths. Any other identifier (a var, a proc call) disqualifies it."""
     if text is None:
         return False
-    if '"' in text and "[" in STRING.sub("", text) and False:
-        return False
-    body = STRING.sub("S", text)
+    body = STRING.sub(" 0 ", text)
     if '"' in body or "{" in body:
         return False
-    body = PATH.sub("P", body)
-    body = re.sub(r"\blist\(", "(", body)
-    inner = body.strip()
-    if inner.replace(" ", "") in ("()",):
+    body = PATH.sub(" 0 ", body)
+    if re.sub(r"\s", "", body) in ("list()", "alist()"):
         return False  # an empty list is a fresh mutable result, not a table
-    return bool(TOKEN_OK.match(body.replace("S", "A").replace("P", "A")))
+    for ident in IDENT.findall(body):
+        if ident not in LITERALS and not DEFINE.match(ident):
+            return False
+    return not re.search(r"\w\s*\(", re.sub(r"\b(a?list)\(", "(", body))
 
 
 PROC_HDR = re.compile(r"^/[\w/]*\w\((.*)\)")
@@ -114,7 +120,7 @@ def scan(files):
                 continue
             if RETURN_LIST.match(code):
                 text, end = gather(lines, number - 1, line.index("list("))
-                if constant(text):
+                if constant(text) and not gather.tail:
                     if not code.lstrip().startswith("return") and any(
                             DOT_WRITE.search(lines[k].split("//", 1)[0]) for k in proc_body(lines, end)):
                         continue  # `. = list(...)` seeding a result the proc then fills in
