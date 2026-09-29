@@ -28,7 +28,7 @@
 		rel_add(src, "history", new_page)
 
 /// The reader state for `user`, made on first use.
-/datum/codex_tree/proc/reader_of(mob/user)
+/datum/codex_tree/proc/reader_of(mob/user) as /datum/codex_reader
 	var/key = "[user]"
 	var/datum/codex_reader/R = LAZYACCESS(readers, key)
 	if(!R)
@@ -36,7 +36,7 @@
 	return R
 
 /// `user`'s current page, or null.
-/datum/codex_tree/proc/current_page_of(mob/user)
+/datum/codex_tree/proc/current_page_of(mob/user) as /datum/lore/codex
 	var/datum/codex_reader/R = LAZYACCESS(readers, "[user]")
 	return R?.page
 
