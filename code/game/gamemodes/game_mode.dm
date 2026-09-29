@@ -40,45 +40,61 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 /datum/game_mode/New()
 	..()
 
-/datum/game_mode/Topic(href, href_list[])
-	if(..())
-		return
-	if(href_list["toggle"])
-		switch(href_list["toggle"])
-			if("respawn")
-				deny_respawn = !deny_respawn
-			if("ert")
-				ert_disabled = !ert_disabled
-				announce_ert_disabled()
-			if("shuttle_recall")
-				auto_recall_shuttle = !auto_recall_shuttle
-			if("autotraitor")
-				round_autoantag = !round_autoantag
-		message_admins("Admin [key_name_admin(usr)] toggled game mode option '[href_list["toggle"]]'.")
-	else if(href_list["set"])
-		om_ask(usr, /datum/om/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), message = game_mode_option_prompt(href_list["set"]), max = href_list["set"] == "shuttle_delay" ? 20 : 100, option = href_list["set"])
-	else if(href_list["debug_antag"])
-		if(href_list["debug_antag"] == "self")
-			usr.client.debug_variables(src)
-			return
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["debug_antag"]]
-		if(antag)
-			usr.client.debug_variables(antag)
-			message_admins("Admin [key_name_admin(usr)] is debugging the [antag.role_text] template.")
-	else if(href_list["remove_antag_type"])
-		if(antag_tags && (href_list["remove_antag_type"] in antag_tags))
-			to_chat(usr, "Cannot remove core mode antag type.")
-			return
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[href_list["remove_antag_type"]]
-		if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
-			antag_templates -= antag
-			GLOB.additional_antag_types -= antag.id
-			message_admins("Admin [key_name_admin(usr)] removed [antag.role_text] template from game mode.")
-	else if(href_list["add_antag_type"])
-		om_ask(usr, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = GLOB.antag_service.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
-		return
+TOPIC_ACTION(/datum/game_mode, "toggle", PROC_REF(topic_toggle), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("toggle"))
+TOPIC_ACTION(/datum/game_mode, "set", PROC_REF(topic_set), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("set"))
+TOPIC_ACTION(/datum/game_mode, "debug_antag", PROC_REF(topic_debug_antag), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("debug_antag"))
+TOPIC_ACTION(/datum/game_mode, "remove_antag_type", PROC_REF(topic_remove_antag_type), TOPIC_RIGHTS(R_ADMIN|R_EVENT), TOPIC_TEXT("remove_antag_type"))
+TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type), TOPIC_RIGHTS(R_ADMIN|R_EVENT))
 
-	SSadmin_verbs.dynamic_invoke_verb(usr.client, /datum/admin_verb/show_game_mode)
+/// Re-opens the game mode panel after a game mode href action.
+/datum/game_mode/proc/refresh_game_mode_panel(mob/user)
+	SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/show_game_mode)
+
+/datum/game_mode/proc/topic_toggle(mob/user, list/args)
+	var/option = args["toggle"]
+	switch(option)
+		if("respawn")
+			deny_respawn = !deny_respawn
+		if("ert")
+			ert_disabled = !ert_disabled
+			announce_ert_disabled()
+		if("shuttle_recall")
+			auto_recall_shuttle = !auto_recall_shuttle
+		if("autotraitor")
+			round_autoantag = !round_autoantag
+	message_admins("Admin [key_name_admin(user)] toggled game mode option '[option]'.")
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/topic_set(mob/user, list/args)
+	var/option = args["set"]
+	om_ask(user, /datum/om/prompt/number/game_mode_option, PROC_REF(game_mode_option_entered), message = game_mode_option_prompt(option), max = option == "shuttle_delay" ? 20 : 100, option = option)
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/topic_debug_antag(mob/user, list/args)
+	var/id = args["debug_antag"]
+	if(id == "self")
+		user.client.debug_variables(src)
+		return
+	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
+	if(antag)
+		user.client.debug_variables(antag)
+		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/topic_remove_antag_type(mob/user, list/args)
+	var/id = args["remove_antag_type"]
+	if(antag_tags && (id in antag_tags))
+		to_chat(user, "Cannot remove core mode antag type.")
+		return
+	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
+	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
+		antag_templates -= antag
+		GLOB.additional_antag_types -= antag.id
+		message_admins("Admin [key_name_admin(user)] removed [antag.role_text] template from game mode.")
+	refresh_game_mode_panel(user)
+
+/datum/game_mode/proc/topic_add_antag_type(mob/user, list/args)
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = GLOB.antag_service.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
 
 /datum/game_mode/proc/game_mode_option_prompt(option)
 	switch(option)
@@ -457,9 +473,6 @@ GLOBAL_LIST_EMPTY(additional_antag_types)
 	for(var/mob/new_player/P in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(P.client && P.ready)
 			. ++
-
-/datum/game_mode/proc/check_antagonists_topic(href, href_list[])
-	return 0
 
 /datum/game_mode/proc/create_antagonists()
 
