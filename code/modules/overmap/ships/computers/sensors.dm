@@ -24,7 +24,7 @@
 		return
 	for(var/obj/machinery/shipsensors/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(linked().check_ownership(S))
-			rel_set(src, "sensors", S)
+			rel_set(src, nameof(sensors), S)
 			refresh_sensor_light()
 			break
 
@@ -180,7 +180,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/sensors, ui_act_toggle_sensor)
 	for(var/obj/machinery/computer/ship/sensors/console in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(!(console.sensors == src))
 			continue
-		rel_clear(console, "sensors")
+		rel_clear(console, nameof(console.sensors))
 		console.refresh_sensor_light()
 	return ..()
 

@@ -55,7 +55,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PI
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
-	own_set(src, "internal", new /datum/gas_mixture)
+	own_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 	update_icon()

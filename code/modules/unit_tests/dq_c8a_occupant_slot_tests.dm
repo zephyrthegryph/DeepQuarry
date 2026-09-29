@@ -78,7 +78,7 @@
 	// seconds out (update_triggers.dm); nothing here exercises camera vision,
 	// and that timer can still be pending when the robot is torn down at the
 	// end of this test, well after it, in an unrelated one.
-	own_clear(R, "camera", OWN_DELETE)
+	own_clear(R, nameof(R.camera), OWN_DELETE)
 	c8a_check_occupant_slot(S, R, OCCUPANT_SLOT_RECHARGE_STATION)
 
 /datum/unit_test/dq_c8a_dna_scanner_occupant_slot

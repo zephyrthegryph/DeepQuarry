@@ -335,7 +335,7 @@
 	var/datum/native_watch/world/watch
 
 /datum/world_test_gauge/New(cell)
-	own_set(src, "watch", om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure)))
+	own_set(src, nameof(watch), om_world_on_change(src, WORLD_PROBE(cell), CH_BIT(CH_PROBE_PRESSURE), PROC_REF(on_pressure)))
 
 
 

@@ -16,7 +16,7 @@
 	if(!ishuman(new_owner))
 		log_runtime("XENOCHIMERA: /datum/xenochimera created for non-human [new_owner] ([new_owner?.type]); ignoring.")
 		return
-	rel_set(src, "owner", new_owner) // one-sided back view: the mob owns us in xenochimera
+	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in xenochimera
 	om_hook(owner, /datum/om/event/human_dna_finalized, src, PROC_REF(on_dna_finalized))
 	if(owner.dna)
 		handle_record()
@@ -37,7 +37,7 @@
 /datum/xenochimera/proc/handle_record()
 	if(QDELETED(owner))
 		return
-	own_set(src, "revival_record", new /datum/transhuman/body_record(owner))
+	own_set(src, nameof(revival_record), new /datum/transhuman/body_record(owner))
 
 /// Ticked from the human species_components life stage.
 /datum/xenochimera/proc/handle_comp()
@@ -518,9 +518,9 @@
 	RETURN_TYPE(/datum/xenochimera)
 	if(xenochimera)
 		return xenochimera
-	own_set(src, "xenochimera", new /datum/xenochimera(src))
+	own_set(src, nameof(xenochimera), new /datum/xenochimera(src))
 	return xenochimera
 
 /// Removes the xenochimera state datum, if any.
 /mob/living/carbon/human/proc/remove_xenochimera()
-	own_clear(src, "xenochimera", OWN_DELETE)
+	own_clear(src, nameof(xenochimera), OWN_DELETE)

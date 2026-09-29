@@ -20,7 +20,7 @@
 		if (tempnetwork.len)
 			T[text("[][]", C.c_tag, (C.can_use() ? null : " (Deactivated)"))] = C
 
-	own_set(src, "track", new /datum/trackable())
+	own_set(src, nameof(track), new /datum/trackable())
 	track.cameras = T
 	return T
 
@@ -123,7 +123,7 @@
 		else
 			TB.names.Add(name)
 			LAZYSET(TB.namecounts, name, 1)
-		rel_add(TB, "tracked", M)
+		rel_add(TB, nameof(TB.tracked), M)
 		var/mob_ref = REF(M)
 		if(ishuman(M))
 			LAZYSET(TB.humans, name, mob_ref)
@@ -131,7 +131,7 @@
 			LAZYSET(TB.others, name, mob_ref)
 
 	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
-	own_set(src, "track", TB)
+	own_set(src, nameof(track), TB)
 	return targets
 
 /mob/living/silicon/ai/proc/ai_camera_track(target_name in trackable_mobs())
@@ -143,11 +143,11 @@
 		to_chat(src, "You can't follow [target_name] with cameras because you are dead!")
 		return
 	if(!target_name)
-		rel_clear(src, "cameraFollow")
+		rel_clear(src, nameof(cameraFollow))
 
 	var/target_ref = LAZYACCESS(track?.humans, target_name) || LAZYACCESS(track?.others, target_name)
 	var/mob/target = target_ref ? locate_in_list(track.tracked, target_ref) : null
-	own_clear(src, "track", OWN_DELETE)
+	own_clear(src, nameof(track), OWN_DELETE)
 	ai_actual_track(target)
 
 /mob/living/silicon/ai/proc/ai_cancel_tracking(forced = 0)
@@ -156,7 +156,7 @@
 
 	to_chat(src, "Follow camera mode [forced ? "terminated" : "ended"].")
 	cameraFollow.tracking_cancelled()
-	rel_clear(src, "cameraFollow")
+	rel_clear(src, nameof(cameraFollow))
 
 /mob/living/silicon/ai/proc/ai_actual_track(mob/living/target as mob)
 	if(!istype(target))	return FALSE
@@ -168,7 +168,7 @@
 	if(U.cameraFollow)
 		U.ai_cancel_tracking()
 	U.track_delay = 1 SECOND
-	rel_set(U, "cameraFollow", target)
+	rel_set(U, nameof(U.cameraFollow), target)
 	to_chat(U, "Now tracking [target.name] on camera.")
 	target.tracking_initiated()
 

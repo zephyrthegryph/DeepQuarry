@@ -16,7 +16,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 /datum/sun_holder/New(source)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
-	own_set(src, "sun", new /atom/movable/sun_visuals(null))
+	own_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
 	our_planet_static = source
 
 /datum/sun_holder/proc/update_color(new_color)

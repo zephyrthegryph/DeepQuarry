@@ -119,7 +119,7 @@ UI_ACT_PROC(/datum/data/pda/app/messenger, ui_act_messenger_plugin)
 
 	var/datum/data/pda/messenger_plugin/plugin = params["plugin"]
 	if(plugin && (plugin in pda().cartridge.messenger_plugins))
-		rel_set(plugin, "messenger", src)
+		rel_set(plugin, nameof(/datum/data/pda/messenger_plugin::messenger), src)
 		plugin.user_act(ui.user, P)
 
 UI_ACT(/datum/data/pda/app/messenger, "Back", ui_act_back)

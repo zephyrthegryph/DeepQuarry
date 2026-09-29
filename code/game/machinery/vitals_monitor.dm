@@ -67,11 +67,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 /// Tracks its patient while it has one (the declaration above).
 /obj/machinery/vitals_monitor/machine_step()
 	if(!victim() || QDELETED(victim()))
-		rel_clear(src, "victim")
+		rel_clear(src, nameof(victim))
 		update_icon()
 		set_use_power(USE_POWER_IDLE)
 	if(victim() && !Adjacent(victim()))
-		rel_clear(src, "victim")
+		rel_clear(src, nameof(victim))
 		update_icon()
 		set_use_power(USE_POWER_IDLE)
 	if(victim())
@@ -83,10 +83,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 	if(!CanMouseDrop(over_object))
 		return
 	if(victim())
-		rel_clear(src, "victim")
+		rel_clear(src, nameof(victim))
 		set_use_power(USE_POWER_IDLE)
 	else if(ishuman(over_object))
-		rel_set(src, "victim", over_object)
+		rel_set(src, nameof(victim), over_object)
 		set_use_power(USE_POWER_ACTIVE)
 		visible_message(span_notice("\The [src] is now showing data for [victim()]."))
 

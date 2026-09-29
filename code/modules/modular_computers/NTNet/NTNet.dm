@@ -42,7 +42,7 @@
 		GLOB.ntnet_global = src // There can be only one.
 	if (SSatoms && SSatoms.initialized > INITIALIZATION_INSSATOMS)
 		for(var/obj/machinery/ntnet_relay/R in REGISTRY_MEMBERS(REGISTRY_MACHINES))
-			rel_add(src, "relays", R)
+			rel_add(src, nameof(relays), R)
 			R.NTNet_static = src // a registered singleton: shared
 	build_software_lists()
 	build_news_list()
@@ -115,8 +115,8 @@
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_software_lists()
-	own_take_all(src, "available_station_software")
-	own_take_all(src, "available_antag_software")
+	own_take_all(src, nameof(available_station_software))
+	own_take_all(src, nameof(available_antag_software))
 	for(var/F in typesof(/datum/computer_file/program))
 		var/datum/computer_file/program/prog = new F
 		// Invalid type (shouldn't be possible but just in case), invalid filetype (not executable program) or invalid filename (unset program)
@@ -124,22 +124,22 @@
 			continue
 		// Check whether the program should be available for station/antag download, if yes, add it to lists.
 		if(prog.available_on_ntnet)
-			own_add(src, "available_station_software", prog)
+			own_add(src, nameof(available_station_software), prog)
 		if(prog.available_on_syndinet)
-			own_add(src, "available_antag_software", prog)
+			own_add(src, nameof(available_antag_software), prog)
 
 // Builds lists that contain downloadable software.
 /datum/ntnet/proc/build_news_list()
-	own_take_all(src, "available_news")
+	own_take_all(src, nameof(available_news))
 	for(var/F in typesof(/datum/computer_file/data/news_article/))
 		var/datum/computer_file/data/news_article/news = new F(1)
 		if(news.stored_data)
-			own_add(src, "available_news", news)
+			own_add(src, nameof(available_news), news)
 
 // Generates service email list. Currently only used by broadcaster service
 /datum/ntnet/proc/build_emails_list()
 	for(var/F in subtypesof(/datum/computer_file/data/email_account/service))
-		own_add(src, "email_accounts", new F(TRUE))
+		own_add(src, nameof(email_accounts), new F(TRUE))
 
 // Attempts to find a downloadable file according to filename var
 /datum/ntnet/proc/find_ntnet_file_by_name(filename)

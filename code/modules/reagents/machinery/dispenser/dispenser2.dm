@@ -71,7 +71,7 @@
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/proc/remove_cartridge(label)
-	. = own_take_member(src, "cartridges", label)
+	. = own_take_member(src, nameof(cartridges), label)
 	SStgui.update_uis(src)
 
 /obj/machinery/chemical_dispenser/declare_interactions(list/into)
@@ -213,7 +213,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_ejectbeaker)
 		container.forceMove(get_turf(src))
 		if(Adjacent(ui.user)) // So the AI doesn't get a beaker somehow.
 			ui.user.put_in_hands(container)
-		own_take(src, "container")
+		own_take(src, nameof(/datum/cooking_item::container))
 	. = TRUE
 
 UI_ACT(/obj/machinery/chemical_dispenser, "import_config", ui_act_import_config, UI_ARG_LIST("config"))
@@ -329,5 +329,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove_recipe)
 	tgui_interact(user)
 	return TRUE
 
-OWN(/obj/machinery/chemical_dispenser, container, OWN_CONTAINED)
+/obj/machinery/chemical_dispenser/ownership()
+	. = ..()
+	. += owns(nameof(container), policy = OWN_CONTAINED)
 // Label -> installed cartridge (in contents); they go with the machine.

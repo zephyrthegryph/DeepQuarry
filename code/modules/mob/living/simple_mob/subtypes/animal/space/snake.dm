@@ -152,12 +152,12 @@
 		if(self.turns_since_scan > 5)
 			self.turns_since_scan = 0
 			if((self.movement_target) && !(isturf(self.movement_target.loc) || ishuman(self.movement_target.loc) ))
-				rel_clear(self, "movement_target")
+				rel_clear(self, nameof(self.movement_target))
 			if(!self.movement_target || !(self.movement_target.loc in oview(self, 7)) )
-				rel_clear(self, "movement_target")
+				rel_clear(self, nameof(self.movement_target))
 				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
-						rel_set(self, "movement_target", S)
+						rel_set(self, nameof(self.movement_target), S)
 						om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "turns towards \the [self.movement_target] and slithers towards it.")
 						break
 			if(self.movement_target)

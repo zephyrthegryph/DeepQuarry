@@ -81,7 +81,7 @@
 		user.show_message(span_notice("Virus Sent!  The unlock code to the target is: [lock_code]"))
 		if(!item_hidden_uplink(P))
 			var/obj/item/uplink/hidden/uplink = new(P)
-			own_set(P, "hidden_uplink", uplink)
+			own_set(P, nameof(P.hidden_uplink), uplink)
 			P.lock_code = lock_code
 		// else
 			// P.hidden_uplink.hidden_crystals += P.hidden_uplink.uses //Temporarially hide the PDA's crystals, so you can't steal telecrystals.

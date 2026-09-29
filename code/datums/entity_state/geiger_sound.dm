@@ -18,12 +18,12 @@
 	if(!isatom(new_owner))
 		log_world("[type] was created for a non-atom ([new_owner]); it does nothing.")
 		return
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	attach()
 
 /datum/geiger_sound/proc/attach()
 	if(!wall_mounted)
-		own_set(src, "sound", new /datum/looping_sound/geiger(list(owner), TRUE))
+		own_set(src, nameof(sound), new /datum/looping_sound/geiger(list(owner), TRUE))
 
 	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
@@ -55,7 +55,7 @@
 	var/datum/radiation_pulse_information/pulse_information = event.pulse_information
 
 	sound.last_insulation_to_target = event.insulation_to_target
-	rel_set(sound, "last_radiation_pulse_ref", pulse_information)
+	rel_set(sound, nameof(sound.last_radiation_pulse_ref), pulse_information)
 	sound.start(source)
 
 	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
@@ -110,13 +110,13 @@
 /datum/looping_sound/geiger/stop(null_parent = FALSE)
 	. = ..()
 
-	rel_clear(src, "last_radiation_pulse_ref")
+	rel_clear(src, nameof(last_radiation_pulse_ref))
 
 /datum/geiger_sound/wall
 	wall_mounted = TRUE
 
 /datum/geiger_sound/wall/attach()
-	own_set(src, "sound", new /datum/looping_sound/geiger/wall(list(owner), TRUE))
+	own_set(src, nameof(sound), new /datum/looping_sound/geiger/wall(list(owner), TRUE))
 	..()
 
 //Subtype for wall mounted geiger counters, which should be quieter and not have the chance to play when radiation is low.

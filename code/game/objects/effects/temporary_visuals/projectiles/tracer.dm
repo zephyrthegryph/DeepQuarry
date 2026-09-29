@@ -24,9 +24,9 @@
 				for(var/obj/effect/projectile_lighting/PL in contents_of(T))
 					if(PL.owner == instance_key)
 						continue tracing_line
-				own_add(beam_components, "beam_components", new /obj/effect/projectile_lighting(T, light_color_override, light_range, light_intensity, instance_key))
+				own_add(beam_components, nameof(beam_components.beam_components), new /obj/effect/projectile_lighting(T, light_color_override, light_range, light_intensity, instance_key))
 		line = null
-	own_add(beam_components, "beam_components", PB)
+	own_add(beam_components, nameof(beam_components.beam_components), PB)
 
 /obj/effect/projectile/tracer
 	name = "beam"

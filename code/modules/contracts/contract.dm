@@ -64,13 +64,13 @@
 	id = _id
 	title = _title
 	description = _description
-	own_take_all(src, "options")
+	own_take_all(src, nameof(options))
 
 
 /datum/contract_negotiation_clause/proc/add_option(datum/contract_clause_option/option, make_default = FALSE)
 	if(!option?.id || options?[option.id])
 		return FALSE
-	own_put(src, "options", option.id, option)
+	own_put(src, nameof(options), option.id, option)
 	if(make_default || !default_option_id)
 		default_option_id = option.id
 	return TRUE
@@ -243,8 +243,8 @@ OWN_TIMER(/datum/contract, offer_timer)
 	. = ..()
 	contributions = list()
 	contributor_names = list()
-	own_take_all(src, "audit_log")
-	own_take_all(src, "negotiation_clauses")
+	own_take_all(src, nameof(audit_log))
+	own_take_all(src, nameof(negotiation_clauses))
 	negotiation_selections = list()
 	negotiated_effects = list()
 	secondary_faction_reputation_rewards = list()
@@ -278,26 +278,25 @@ OWN_TIMER(/datum/contract, offer_timer)
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
 /datum/contract/proc/audit(category, detail)
-	own_add(src, "audit_log", new /datum/contract_audit_entry(category, detail))
+	own_add(src, nameof(audit_log), new /datum/contract_audit_entry(category, detail))
 
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
 		return FALSE
-	rel_set(requirement, "contract", src)
-	own_add(src, "requirements", requirement)
+	rel_set(requirement, nameof(requirement.contract), src)
+	own_add(src, nameof(requirements), requirement)
 	return TRUE
 
 /datum/contract/proc/add_child(datum/contract/child)
 	if(!child || child == src || child.parent)
 		return FALSE
-	rel_set(child, "parent", src)
-	rel_add(src, "children", child)
+	rel_set(child, nameof(child.parent), src)
 	return TRUE
 
 /datum/contract/proc/add_negotiation_clause(datum/contract_negotiation_clause/clause)
 	if(!clause?.id || state != CONTRACT_OFFERED || negotiation_clauses?[clause.id] || !length(clause.options))
 		return FALSE
-	own_put(src, "negotiation_clauses", clause.id, clause)
+	own_put(src, nameof(negotiation_clauses), clause.id, clause)
 	negotiation_selections[clause.id] = clause.default_option_id
 	return TRUE
 
@@ -769,5 +768,7 @@ OWN_TIMER(/datum/contract, offer_timer)
 	return TRUE
 
 // A sub-contract sits in its parent's children list; Destroy() orphans our own children.
-REL_PAIR(/datum/contract, parent, children)
-REL_PAIR_LIST(/datum/contract, children, parent)
+/datum/contract/relations()
+	. = ..()
+	. += rel_one(nameof(parent), back = nameof(/datum/contract::children))
+	. += rel_many(nameof(children), back = nameof(/datum/contract::parent))

@@ -18,17 +18,17 @@
 /mob/living/proc/mob_belly_transfer(mob/living/M)
 	for(var/obj/belly/B as anything in M.vore_organs)
 		B.forceMove(src)
-		rel_set(B, "owner", src)
-		own_transfer(M, "vore_organs", src, "vore_organs", B)
+		rel_set(B, nameof(B.owner), src)
+		own_transfer(M, nameof(M.vore_organs), src, nameof(vore_organs), B)
 
 /mob/living/proc/transfer_mob_identity(mob/living/new_mob)
-	own_clear(new_mob, "vore_organs", OWN_DELETE)
+	own_clear(new_mob, nameof(new_mob.vore_organs), OWN_DELETE)
 	new_mob.name = src.name
 	new_mob.real_name = src.real_name
 	for(var/lang in src.languages)
 		new_mob.languages |= lang
 	src.copy_vore_prefs_to_mob(new_mob)
-	rel_set(new_mob, "vore_selected", src.vore_selected)
+	rel_set(new_mob, nameof(new_mob.vore_selected), src.vore_selected)
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		if(ishuman(new_mob))
@@ -75,10 +75,10 @@
 				var/datum/mind/theirmind = ourmob.mind
 				ourmob.ghostize()
 				src.ghostize()
-				rel_clear(ourmob, "mind")
-				rel_clear(src, "mind")
-				rel_clear(ourmind, "current")
-				rel_clear(theirmind, "current")
+				rel_clear(ourmob, nameof(ourmob.mind))
+				rel_clear(src, nameof(mind))
+				rel_clear(ourmind, nameof(ourmind.current))
+				rel_clear(theirmind, nameof(theirmind.current))
 				transfer_mind(ourmind, ourmob, "mob transform body swap with [src]", force = TRUE)
 				transfer_mind(theirmind, src, "mob transform body swap with [ourmob]", force = TRUE)
 				ourmob.set_tf_mob_holder(null)
@@ -98,8 +98,8 @@
 	ourmob.forceMove(get_dat_turf)
 	ourmob.forceMove(get_dat_turf)
 	if(!tf_form_mind)
-		rel_set(ourmob, "vore_selected", vore_selected)
-		rel_clear(src, "vore_selected")
+		rel_set(ourmob, nameof(ourmob.vore_selected), vore_selected)
+		rel_clear(src, nameof(vore_selected))
 		ourmob.mob_belly_transfer(src)
 
 	om_run_frame_now(ourmob, /datum/om/pipeline/life)
@@ -113,8 +113,8 @@
 	if(tf_form == ourmob)
 		if(tf_form_mind)
 			transfer_mind(tf_form_mind, src, "returned to shapeshift form [src]", tf_form_holds_key)
-			rel_clear(src, "tf_form_mind")
-		rel_set(ourmob, "tf_form", src)
+			rel_clear(src, nameof(tf_form_mind))
+		rel_set(ourmob, nameof(ourmob.tf_form), src)
 		src.forceMove(ourmob)
 	else
 		qdel(src)
@@ -172,11 +172,11 @@
 		if(shapeshifting && src.tf_form)
 			new_mob = src.tf_form
 			om_grant(new_mob, GRANT_VERB, /mob/living/proc/shapeshift_form, new_mob)
-			rel_set(new_mob, "tf_form", src)
+			rel_set(new_mob, nameof(new_mob.tf_form), src)
 			new_mob.forceMove(src.loc)
 			act_message(src, null, others = span_warning("%U% twists and contorts, shapeshifting into a different form!"))
 			if(new_mob.ensure_mind())
-				rel_set(new_mob, "tf_form_mind", new_mob.mind)
+				rel_set(new_mob, nameof(new_mob.tf_form_mind), new_mob.mind)
 				new_mob.tf_form_holds_key = new_mob.key == new_mob.mind.key
 		else
 			if(isliving(new_form))

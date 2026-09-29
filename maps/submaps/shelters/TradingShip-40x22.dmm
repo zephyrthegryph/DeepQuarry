@@ -377,10 +377,10 @@
 	command = "cycle_exterior"
 	},
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_outer";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -573,10 +573,10 @@
 /area/survivalpod/superpose/TradingShip)
 "nh" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_inner";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -1027,10 +1027,10 @@
 "wz" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_inner";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -1399,10 +1399,10 @@
 /area/survivalpod/superpose/TradingShip)
 "FW" = (
 /obj/machinery/door/airlock/external{
+	cap_state = 128;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_outer";
-	locked = 1;
 	name = "Ship Hatch";
 	req_access = null
 	},
@@ -1859,7 +1859,7 @@
 /area/survivalpod/superpose/TradingShip)
 "SR" = (
 /obj/machinery/vending/tool{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)
@@ -1967,7 +1967,7 @@
 /area/survivalpod/superpose/TradingShip)
 "VL" = (
 /obj/machinery/vending/engivend{
-	emagged = 1
+	cap_state = 16
 	},
 /turf/simulated/shuttle/floor/black,
 /area/survivalpod/superpose/TradingShip)

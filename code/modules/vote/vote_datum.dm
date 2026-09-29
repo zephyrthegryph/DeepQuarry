@@ -137,7 +137,7 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 /datum/vote/lifecycle_dematerialize()
 	..()
 	if(GLOB.vote_service.active_vote == src)
-		rel_clear(GLOB.vote_service, "active_vote")
+		rel_clear(GLOB.vote_service, nameof(/datum/world_service/vote::active_vote))
 
 /datum/vote/proc/handle_result(result)
 	return

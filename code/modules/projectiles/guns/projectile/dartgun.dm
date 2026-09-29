@@ -10,7 +10,7 @@
 /obj/item/projectile/bullet/chemdart/Initialize(mapload)
 	. = ..()
 	create_reagents(reagent_amount)
-	rel_set(reagents, "my_atom", src)
+	rel_set(reagents, nameof(reagents.my_atom), src)
 
 /obj/item/ammo_casing/chemdart
 	name = "chemical dart"
@@ -65,8 +65,13 @@
 	special_weapon_handling = TRUE
 
 // Slotted beakers sit in the gun's contents; mixing is a subset of them.
-OWN(/obj/item/gun/projectile/dartgun, beakers, OWN_CONTAINED)
-REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
+/obj/item/gun/projectile/dartgun/ownership()
+	. = ..()
+	. += owns(nameof(beakers), policy = OWN_CONTAINED)
+
+/obj/item/gun/projectile/dartgun/relations()
+	. = ..()
+	. += rel_many(nameof(mixing))
 
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()
@@ -74,7 +79,7 @@ REL_LIST(/obj/item/gun/projectile/dartgun, mixing)
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			own_add(src, "beakers", B)
+			own_add(src, nameof(beakers), B)
 	update_icon()
 
 /// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.
@@ -217,9 +222,9 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun/tranq, "tranqgun")
 	if(!B)
 		return
 	if(mix)
-		rel_add(src, "mixing", B)
+		rel_add(src, nameof(mixing), B)
 	else
-		rel_remove(src, "mixing", B)
+		rel_remove(src, nameof(mixing), B)
 	updateUsrDialog(user)
 
 /// Ejects the beaker in slot `index` onto the floor.
@@ -231,7 +236,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/dartgun/tranq, "tranqgun")
 	if(!B)
 		return
 	to_chat(user, "You remove [B] from [src].")
-	rel_remove(src, "mixing", B)
-	own_take_member(src, "beakers", B)
+	rel_remove(src, nameof(mixing), B)
+	own_take_member(src, nameof(beakers), B)
 	B.forceMove(get_turf(src))
 	updateUsrDialog(user)

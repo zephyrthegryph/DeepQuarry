@@ -39,7 +39,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	var/tint = "#FFFFFF"
 	if(comp)
 		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
-		rel_set(comp, "statue", src)
+		rel_set(comp, nameof(comp.statue), src)
 		comp.transformed = TRUE
 		comp.paused = FALSE
 		identifier = length(comp.identifier) > 0 ? comp.identifier : initial(identifier)
@@ -48,7 +48,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		adjective = length(comp.adjective) > 0 ? comp.adjective : initial(adjective)
 		if(copytext_char(adjective, -1) != "s")
 			adjective += "s"
-	rel_set(src, "WR_gargoyle", H)
+	rel_set(src, nameof(WR_gargoyle), H)
 
 	if(H.get_effective_size(TRUE) < 0.5) // "So small! I can step over it!"
 		set_density(FALSE)
@@ -188,7 +188,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	var/datum/trait_state/gargoyle/comp = gargoyle.get_trait_state(/datum/trait_state/gargoyle)
 	if(comp)
 		EXPIRY_SET(comp, cooldown, (15 SECONDS), CLOCK_WORLD)
-		rel_clear(comp, "statue")
+		rel_clear(comp, nameof(comp.statue))
 		comp.transformed = FALSE
 	else
 		if(was_rayed)

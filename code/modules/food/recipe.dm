@@ -217,7 +217,7 @@
 				if(hol.held_mob?.client)
 					hol.held_mob.ghostize()
 				qdel(hol.held_mob)
-				rel_clear(hol, "held_mob")
+				rel_clear(hol, nameof(hol.held_mob))
 			qdel(I)
 
 	//Find fruits

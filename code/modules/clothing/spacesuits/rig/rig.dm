@@ -171,7 +171,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 /obj/item/rig/Moved(old_loc, direction, forced)
 	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)
 	if(!ismob(loc))
-		own_clear(src, "minihud", OWN_DELETE) // Just in case we get removed some other way
+		own_clear(src, nameof(minihud), OWN_DELETE) // Just in case we get removed some other way
 
 		// The control module has left the wearer's body — dropped, force-dropped on
 		// damage, stuffed into storage, gibbed off, or a protean transforming out of
@@ -188,8 +188,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 			reset()
 		// Off a mob the slow step no longer runs (carried_by_mob), so let go of the wearer here.
 		if(wearer()?.wearing_rig == src)
-			own_take(wearer(), "wearing_rig")
-		rel_clear(src, "wearer")
+			own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+		rel_clear(src, nameof(wearer))
 
 	// If we've lost any parts, grab them back.
 	var/mob/living/M
@@ -416,9 +416,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	canremove = seal_target
 	if(M.hud_used)
 		if(canremove)
-			own_clear(src, "minihud", OWN_DELETE)
+			own_clear(src, nameof(minihud), OWN_DELETE)
 		else
-			own_set(src, "minihud", new /datum/mini_hud/rig (M.hud_used, src))
+			own_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
@@ -664,8 +664,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 /obj/item/rig/proc/put_on_done(mob/living/carbon/human/M)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
-		rel_set(src, "wearer", M)
-		own_set(wearer(), "wearing_rig", src)
+		rel_set(src, nameof(wearer), M)
+		own_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
 		update_icon()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)
@@ -715,7 +715,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 					if(use_obj && check_slot == use_obj)
 						balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "retract" : "retracts"] swiftly.")
 						play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
-						rel_clear(use_obj, "master_rig")   // intentional retract: silence the dropped() safety net
+						rel_clear(use_obj, nameof(use_obj.master_rig))   // intentional retract: silence the dropped() safety net
 						use_obj.canremove = TRUE
 						holder.drop_from_inventory(use_obj)
 						use_obj.forceMove(get_turf(src))
@@ -733,7 +733,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 					to_chat(H, span_danger("You are unable to deploy \the [piece] as \the [check_slot] [check_slot.gender == PLURAL ? "are" : "is"] in the way."))
 					return
 			else
-				rel_set(use_obj, "master_rig", src)   // the piece now knows its controller, so it can free itself
+				rel_set(use_obj, nameof(use_obj.master_rig), src)   // the piece now knows its controller, so it can free itself
 				balloon_alert(H, "your [use_obj.name] [use_obj.gender == PLURAL ? "deploy" : "deploys"] swiftly.")
 				play_sfx(src, SFX_MACHINES_RIG_RIGSERVO)
 
@@ -776,8 +776,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	// Piece retraction and seal-state reset are handled in Moved() (the universal hook
 	// that also catches forceMove); here we just drop the wearer back-references.
 	if(wearer() && wearer().wearing_rig == src)
-		own_take(wearer(), "wearing_rig")
-	rel_clear(src, "wearer")
+		own_take(wearer(), nameof(/mob/living/carbon/human::wearing_rig))
+	rel_clear(src, nameof(wearer))
 
 //Todo
 /obj/item/rig/proc/malfunction()
@@ -1030,10 +1030,12 @@ DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
 	M.client?.screen -= booting_R
 	qdel(booting_R)
 
-OWN(/obj/item/rig, air_supply, OWN_CONTAINED)
-OWN(/obj/item/rig, cell, OWN_CONTAINED)
-OWN(/obj/item/rig, installed_modules, OWN_CONTAINED)
-OWN(/obj/item/rig, rig_storage, OWN_CONTAINED)
+/obj/item/rig/ownership()
+	. = ..()
+	. += owns(nameof(air_supply), policy = OWN_CONTAINED)
+	. += owns(nameof(cell), policy = OWN_CONTAINED)
+	. += owns(nameof(installed_modules), policy = OWN_CONTAINED)
+	. += owns(nameof(rig_storage), policy = OWN_CONTAINED)
 
 /// The person currently wearing the rig. (a relation view: null once it is deleted).
 /obj/item/rig/proc/wearer() as /mob/living/carbon/human

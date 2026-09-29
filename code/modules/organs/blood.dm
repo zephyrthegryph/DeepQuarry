@@ -28,8 +28,8 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(species.flags & NO_BLOOD)
 		return
 
-	own_set(src, "vessel", new/datum/reagents(species.blood_volume))
-	rel_set(vessel, "my_atom", src)
+	own_set(src, nameof(vessel), new/datum/reagents(species.blood_volume))
+	rel_set(vessel, nameof(vessel.my_atom), src)
 
 	if(!should_have_organ(O_HEART)) //We want the var for safety but we can do without the actual blood.
 		return
@@ -288,7 +288,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		return null
 	if(!B)
 		B = new /datum/reagent/blood
-	rel_set(B, "holder", container.reagents)
+	rel_set(B, nameof(B.holder), container.reagents)
 	B.volume += amount
 
 	//set reagent data
@@ -374,7 +374,7 @@ BLOOD_VOLUME_SURVIVE = 40
 		return
 	if(!our)
 		log_runtime("[src] has no blood reagent, proceeding with fallback reinitialization.")
-		own_clear(src, "vessel", OWN_DELETE)
+		own_clear(src, nameof(vessel), OWN_DELETE)
 		make_blood(amount)
 		if(!vessel)
 			log_runtime("Failed to re-initialize blood datums on [src]!")
@@ -498,7 +498,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	// Update virus information.
 	// Each holder owns its own contagion copies: never alias the reagent's list or its members.
 	for(var/datum/affliction/contagion/D in source.data["viruses"])
-		own_add(B, "viruses", D.Copy())
+		own_add(B, nameof(B.viruses), D.Copy())
 
 	dq_set_fluorescent(B, 0)
 	B.invisibility = INVISIBILITY_NONE

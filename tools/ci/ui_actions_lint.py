@@ -284,7 +284,10 @@ def tsx_acts(interface):
 
 CAP_ROOT = "/datum/capability"
 NEW_CAP = re.compile(r"\bnew\s+(/datum/capability[\w/]*)|\bvar/(/datum/capability[\w/]*)/\w+\s*=\s*new\b")
-CTOR_CALL = re.compile(r"(?<![\w./:])(cap_\w+)\s*\(")
+# A bare call inside capabilities() or a constructor: followed when it names a global cap_* proc or
+# a global proc under code/datums/capabilities/ (the bundles: door(), machine_basics(), ...).
+CTOR_CALL = re.compile(r"(?<![\w./:])([A-Za-z_]\w*)\s*\(")
+CAPS_DIR = "code/datums/capabilities/"
 
 
 class Hosts:
@@ -323,7 +326,7 @@ class Hosts:
             if proc.name.startswith("act_") and not proc.is_global():
                 table = self.cap_acts if dm.is_subtype(proc.path, CAP_ROOT) else self.acts
                 table.setdefault(proc.path, {})[proc.name[4:]] = proc
-            elif proc.is_global() and proc.name.startswith("cap_"):
+            elif proc.is_global() and (proc.name.startswith("cap_") or proc.rel.startswith(CAPS_DIR)):
                 ctor_bodies[proc.name] = "\n".join(proc.body)
             elif proc.name == "capabilities" and not proc.is_global():
                 caps_bodies.setdefault(proc.path, []).append("\n".join(proc.body))
@@ -333,7 +336,7 @@ class Hosts:
         self.type_caps = {path: set().union(*(self.caps_in(b) for b in bodies)) for path, bodies in caps_bodies.items()}
 
     def ctor_caps(self, name, seen=None):
-        """The capability types a global cap_* constructor (or preset) builds."""
+        """The capability types a global cap_* constructor (or bundle) builds."""
         if name in self._ctor_caps:
             return self._ctor_caps[name]
         seen = set(seen or ())
@@ -645,17 +648,19 @@ DECLARE_UI(/obj/old, UI_TITLE("Old"))
 /datum/capability/breakers
 /proc/cap_breakers()
 	return new /datum/capability/breakers
-/proc/cap_thing_preset()
-	. = list(cap_breakers())
 /obj/thing/capabilities()
 	. = ..()
-	. += cap_thing_preset()
+	. += thing_bundle()
 /datum/capability/breakers/proc/act_breaker(mob/user, atom/holder, channel, force)
 	channel = ui_number(channel, 1, 3)
 	if(!channel)
 		return
 /datum/capability/unused/proc/act_unused(mob/user, atom/holder, level)
 	world << level
+"""
+# A bundle (a plain-noun global proc in the capabilities library) that adds the capability.
+BUNDLE_FIXTURE = """/proc/thing_bundle()
+	. = list(cap_breakers())
 """
 
 
@@ -700,7 +705,7 @@ def selftest():
     assert calls[7][1:] == ("bogus", []), calls[7]
 
     lines = DM_FIXTURE.split("\n")
-    tree = dm.Tree([("x.dm", lines)])
+    tree = dm.Tree([("x.dm", lines), (CAPS_DIR + "library/fixture.dm", BUNDLE_FIXTURE.split("\n"))])
     hosts = Hosts(tree)
     acts = {"Thing": [("x.tsx", n, a, k) for n, a, k in calls], "Old": [("o.tsx", 1, "nope", [])]}
 
@@ -710,7 +715,7 @@ def selftest():
         return acts.get(interface, [])
     problems = check(hosts, norm, acts_for)
     assert len(problems) == 5, problems
-    # act('breaker') is answered by the capability the host declares through a preset.
+    # act('breaker') is answered by the capability the host declares through a bundle.
     assert "breaker" in hosts.actions_of("/obj/thing") and hosts.caps_of("/obj/thing") == {"/datum/capability/breakers"}
     assert "act('bogus') has no act_bogus" in problems[0], problems
     assert "passes bogus" in problems[1] and "reserved" in problems[2] and "'bad key' is rejected" in problems[3], problems

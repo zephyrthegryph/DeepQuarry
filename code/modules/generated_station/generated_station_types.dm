@@ -10,8 +10,8 @@
 
 /datum/generated_station_department_definition/New()
 	..()
-	own_take_all(src, "requirements")
-	own_take_all(src, "provisions")
+	own_take_all(src, nameof(requirements))
+	own_take_all(src, nameof(provisions))
 
 
 /// A capability consumed by a department. Providers may be implemented later
@@ -81,9 +81,9 @@
 	frontage_reservation = list()
 	local_circulation = list()
 	partition_walls = list()
-	own_take_all(src, "frontage_sockets")
-	own_take_all(src, "eva_vestibules")
-	own_take_all(src, "room_program")
+	own_take_all(src, nameof(frontage_sockets))
+	own_take_all(src, nameof(eva_vestibules))
+	own_take_all(src, nameof(room_program))
 
 
 /datum/generated_station_layout_node/proc/owns_tile(x, y)
@@ -120,7 +120,7 @@
 /datum/generated_station_room_allocation/New()
 	..()
 	tiles = list()
-	own_take_all(src, "door_sockets")
+	own_take_all(src, nameof(door_sockets))
 	content_circulation = list()
 	fixture_ids = list()
 
@@ -201,7 +201,7 @@
 /datum/generated_station_eva_vestibule/New()
 	..()
 	tiles = list()
-	own_take_all(src, "door_sockets")
+	own_take_all(src, nameof(door_sockets))
 
 
 /// Abstract relationship between two layout vertices.
@@ -241,11 +241,11 @@
 
 /datum/generated_station_validation_result/New()
 	..()
-	own_take_all(src, "issues")
+	own_take_all(src, nameof(issues))
 
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
-	own_add(src, "issues", new /datum/generated_station_validation_issue(severity, code, message, subject_id))
+	own_add(src, nameof(issues), new /datum/generated_station_validation_issue(severity, code, message, subject_id))
 
 /datum/generated_station_validation_result/proc/is_valid()
 	for(var/datum/generated_station_validation_issue/issue in issues)
@@ -300,15 +300,15 @@
 
 /datum/generated_station_spec/New()
 	..()
-	own_take_all(src, "departments")
-	own_take_all(src, "layout_nodes")
-	own_take_all(src, "layout_edges")
+	own_take_all(src, nameof(departments))
+	own_take_all(src, nameof(layout_nodes))
+	own_take_all(src, nameof(layout_edges))
 	circulation_tiles = list()
 	maintenance_tiles = list()
-	own_take_all(src, "maintenance_doors")
+	own_take_all(src, nameof(maintenance_doors))
 	structural_tiles = list()
-	own_take_all(src, "fixture_blueprint")
-	own_take_all(src, "network_blueprint")
+	own_take_all(src, nameof(fixture_blueprint))
+	own_take_all(src, nameof(network_blueprint))
 	content_quality = list()
 	fixture_type_registry = list()
 

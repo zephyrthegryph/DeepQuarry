@@ -593,7 +593,7 @@ ADMIN_VERB(spawn_atom, R_SPAWN, "Spawn", "(atom path) Spawn an atom", ADMIN_CATE
 	if(!chosen_path)
 		var/datum/spawn_menu/menu = user.holder.spawn_menu
 		if(!menu)
-			menu = own_set(user.holder, "spawn_menu", new /datum/spawn_menu())
+			menu = own_set(user.holder, nameof(/datum/admins::spawn_menu), new /datum/spawn_menu())
 		menu.init_value = object
 		menu.tgui_interact(user.mob)
 		feedback_add_details("admin_verb","SA")
@@ -830,11 +830,11 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	for(var/obj/machinery/photocopier/faxmachine/sendto in REGISTRY_MEMBERS(REGISTRY_FAXES))
 		if(sendto.department == department)
 			var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
-			own_set(user.holder, "faxreply", P) // a replaced reply is deleted
+			own_set(user.holder, nameof(/datum/admins::faxreply), P) // a replaced reply is deleted
 
-			rel_set(P, "admindatum", user.holder)
+			rel_set(P, nameof(/obj/item/paper/admin::admindatum), user.holder)
 			P.origin = replyorigin
-			rel_set(P, "destination", sendto)
+			rel_set(P, nameof(/datum/ai_brain::destination), sendto)
 
 			P.adminbrowse()
 
@@ -928,7 +928,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 
 	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
 		if(faxreply == P)
-			own_clear(src, "faxreply", OWN_DELETE)
+			own_clear(src, nameof(faxreply), OWN_DELETE)
 		else
 			qdel(P)
 	return

@@ -32,7 +32,7 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 		user.put_in_active_hand(case)
 
 		src.case.add_fingerprint(user)
-		own_take(src, "case")
+		own_take(src, nameof(case))
 
 		src.add_fingerprint(user)
 		update()
@@ -96,4 +96,6 @@ UI_ACT_PROC(/obj/item/implantpad, ui_act_tracking_id)
 	T.id = clamp(T.id, 1, 1000)
 	return TRUE
 
-OWN(/obj/item/implantpad, case, OWN_CONTAINED)
+/obj/item/implantpad/ownership()
+	. = ..()
+	. += owns(nameof(case), policy = OWN_CONTAINED)

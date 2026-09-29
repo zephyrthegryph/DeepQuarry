@@ -19,13 +19,13 @@
 /mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
 	RETURN_TYPE(/datum/forms)
 	if(!character_forms)
-		own_set(src, "character_forms", new forms_type(src))
+		own_set(src, nameof(character_forms), new forms_type(src))
 	return character_forms
 
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).
 /mob/living/carbon/human/proc/remove_forms(forms_type = /datum/forms)
 	if(istype(character_forms, forms_type))
-		own_clear(src, "character_forms", OWN_DELETE)
+		own_clear(src, nameof(character_forms), OWN_DELETE)
 
 /// The form the character is currently wearing, or null for ordinary humans.
 /mob/living/carbon/human/proc/current_form()
@@ -56,12 +56,12 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	if(!ishuman(H))
 		log_runtime("FORMS: forms datum created for a non-human ([H]).")
 		return
-	rel_set(src, "owner", H)
-	own_take_all(src, "forms")
+	rel_set(src, nameof(owner), H)
+	own_take_all(src, nameof(forms))
 	var/list/types = TYPE_TABLE_GET(src, get_form_types)
 	for(var/form_type in types)
-		own_put(src, "forms", form_type, new form_type())
-	rel_set(src, "current", forms[types[1]])
+		own_put(src, nameof(forms), form_type, new form_type())
+	rel_set(src, nameof(current), forms[types[1]])
 	attach()
 
 /// Joins the owner (was RegisterWithParent).
@@ -103,7 +103,7 @@ TYPE_TABLE_DECLARE(/datum/forms, get_form_types, list(/datum/form/human))
 	switching = TRUE
 	var/datum/form/old = current
 	old.on_exit(src, H)
-	rel_set(src, "current", next)
+	rel_set(src, nameof(current), next)
 	next.on_enter(src, H)
 	H.invalidate_factors()
 	if(!silent)

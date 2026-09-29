@@ -8,7 +8,7 @@ REGISTRY_MEMBERSHIP(/datum/ship_engine, REGISTRY_SHIP_ENGINES)
 
 /datum/ship_engine/New(obj/machinery/_holder)
 	..()
-	rel_set(src, "holder", _holder)
+	rel_set(src, nameof(holder), _holder)
 	join_registries()
 
 /datum/ship_engine/proc/can_burn()
@@ -43,7 +43,7 @@ GLOBAL_LIST_INIT(ship_engine_nominal_status, list("All systems nominal"))
 // ships drop the engine.
 /datum/ship_engine/lifecycle_dematerialize()
 	for(var/obj/effect/overmap/visitable/ship/S in SSshuttles.ships)
-		rel_remove(S, "engines", src)
+		rel_remove(S, nameof(S.engines), src)
 	return ..()
 
 /// actual engine object

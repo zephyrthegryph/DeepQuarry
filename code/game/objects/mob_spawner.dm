@@ -30,7 +30,9 @@ TYPE_TABLE_DECLARE(/obj/structure/mob_spawner, mob_spawner_types, list( \
 DECLARE_PERIODIC(/obj/structure/mob_spawner, PERIODIC_SLOW)
 
 // Spawned mobs leave the list when they die (one-sided: the mob's own `nest` var is its side).
-REL_LIST(/obj/structure/mob_spawner, spawned_mobs)
+/obj/structure/mob_spawner/relations()
+	. = ..()
+	. += rel_many(nameof(spawned_mobs))
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/structure/mob_spawner/periodic_step()
@@ -65,20 +67,20 @@ REL_LIST(/obj/structure/mob_spawner, spawned_mobs)
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(src))
 		L.nest = src
-		rel_add(src, "spawned_mobs", L)
+		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(src))
-		rel_add(src, "spawned_mobs", O)
+		rel_add(src, nameof(spawned_mobs), O)
 		O.nest = src
 		return O
 	return 0
 
 /obj/structure/mob_spawner/proc/get_death_report(mob/living/L)
 	if(L in spawned_mobs)
-		rel_remove(src, "spawned_mobs", L)
+		rel_remove(src, nameof(spawned_mobs), L)
 
 DECLARE_INTERACTIONS(/obj/structure/mob_spawner, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -130,7 +132,7 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 
 /obj/structure/mob_spawner/scanner/Initialize(mapload)
 	. = ..()
-	own_set(src, "prox", new /datum/proximity_monitor/mobspawner(src, range))
+	own_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
 
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))
@@ -154,24 +156,24 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	if(ispath(mob_path, /mob/living))
 		var/mob/living/L = new mob_path(get_turf(spawn_turf))
 		L.nest = src
-		rel_add(src, "spawned_mobs", L)
+		rel_add(src, nameof(spawned_mobs), L)
 		if(mob_faction)
 			L.faction = mob_faction
 		return L
 	if(ispath(mob_path, /obj/structure/closet/crate/mimic))
 		var/obj/structure/closet/crate/mimic/O = new mob_path(get_turf(spawn_turf))
-		rel_add(src, "spawned_mobs", O)
+		rel_add(src, nameof(spawned_mobs), O)
 		O.nest = src
 		return O
 	return 0
 
 /obj/structure/mob_spawner/scanner/proc/NewProximity(atom/movable/AM)
 	if(istype(AM,/mob/living) && !(AM in mobs_in_range))
-		rel_add(src, "mobs_in_range", AM)
+		rel_add(src, nameof(mobs_in_range), AM)
 
 /obj/structure/mob_spawner/scanner/proc/CheckProximity(atom/movable/AM,turf/new_loc)
 	if((AM in mobs_in_range) && (!AM || get_dist(src,new_loc) > range))
-		rel_remove(src, "mobs_in_range", AM)
+		rel_remove(src, nameof(mobs_in_range), AM)
 
 /obj/structure/mob_spawner/scanner/periodic_step()
 	if(!can_spawn())
@@ -302,7 +304,7 @@ TYPE_TABLE(/obj/structure/mob_spawner/scanner/mining_animals, mob_spawner_types,
 
 /obj/structure/mob_spawner/proc/get_used_report(obj/structure/closet/crate/mimic/O)
 	if(O in spawned_mobs)
-		rel_remove(src, "spawned_mobs", O)
+		rel_remove(src, nameof(spawned_mobs), O)
 
 /obj/structure/mob_spawner/mouse_nest/mousehole
 	name = "small hole"

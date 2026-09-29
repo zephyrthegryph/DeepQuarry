@@ -21,7 +21,7 @@
 	if(!displayTo || !displayTo.len)
 		return
 	for(var/mob/M as anything in displayTo)
-		rel_add(src, "viewers", M) // lists us in M.alt_appearances_viewing too
+		rel_add(src, nameof(viewers), M) // lists us in M.alt_appearances_viewing too
 		if(M.client)
 			M.client.images |= img
 
@@ -31,7 +31,7 @@
 	for(var/mob/M as anything in hiding)
 		if(M.client)
 			M.client.images -= img
-		rel_remove(src, "viewers", M) // and from M.alt_appearances_viewing
+		rel_remove(src, nameof(viewers), M) // and from M.alt_appearances_viewing
 
 /datum/alternate_appearance/proc/remove()
 	hide()
@@ -48,19 +48,19 @@
 	var/datum/alternate_appearance/AA = new()
 	AA.img = img
 	AA.key = key
-	rel_set(AA, "owner", src)
+	rel_set(AA, nameof(AA.owner), src)
 
-	own_put(src, "alt_appearances_owned", key, AA) // deletes the one it replaces
+	own_put(src, nameof(alt_appearances_owned), key, AA) // deletes the one it replaces
 	if(displayTo && displayTo.len)
 		display_alt_appearance(key, displayTo)
 
 /atom/proc/remove_alt_appearance(key)
 	var/list/owned = dq_get_alt_appearances(src)
 	if(owned && owned[key])
-		own_put(src, "alt_appearances_owned", key, null)
+		own_put(src, nameof(alt_appearances_owned), key, null)
 
 /atom/proc/remove_all_alt_appearances()
-	own_clear(src, "alt_appearances_owned", OWN_DELETE)
+	own_clear(src, nameof(alt_appearances_owned), OWN_DELETE)
 
 /atom/proc/display_alt_appearance(key, list/displayTo)
 	var/list/owned = dq_get_alt_appearances(src)

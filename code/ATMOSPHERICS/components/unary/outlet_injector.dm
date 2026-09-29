@@ -112,7 +112,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
 
 /obj/machinery/atmospherics/unary/outlet_injector/proc/broadcast_status()
 	if(!radio_connection)
@@ -120,7 +120,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 
 	var/datum/signal/signal = new
 	signal.transmission_method = TRANSMISSION_RADIO //radio signal
-	rel_set(signal, "source", src)
+	rel_set(signal, nameof(signal.source), src)
 
 	signal.data = list(
 		"tag" = id,
@@ -212,7 +212,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 
 		if("-SAVE TO BUFFER-")
 			var/obj/item/multitool/tool = W
-			rel_set(tool, "connectable", src)
+			rel_set(tool, nameof(tool.connectable), src)
 			to_chat(user, span_notice("You copied the [src] into the [tool]'s buffer!"))
 
 	return ITEM_INTERACT_SUCCESS

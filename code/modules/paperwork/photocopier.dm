@@ -64,7 +64,7 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_remove)
 		copyitem.forceMove(ui.user.loc)
 		ui.user.put_in_hands(copyitem)
 		to_chat(ui.user, span_notice("You take \the [copyitem] out of \the [src]."))
-		own_take(src, "copyitem")
+		own_take(src, nameof(/obj/machinery/photocopier::copyitem))
 	else if(has_buckled_mobs())
 		to_chat(src?.buckled_mob_list()[1], span_notice("You feel a slight pressure on your ass.")) // It can't eject your asscheeks, but it'll try.
 	. = TRUE
@@ -373,7 +373,7 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 		else if(istype(W, /obj/item/photo))
 			W = photocopy(W)
 		W.forceMove(p)
-		rel_add(p, "pages", W)
+		rel_add(p, nameof(p.pages), W)
 
 	p.forceMove(src.loc)
 	p.update_icon()
@@ -406,4 +406,6 @@ DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopi
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OWN(/obj/machinery/photocopier, copyitem, OWN_CONTAINED)
+/obj/machinery/photocopier/ownership()
+	. = ..()
+	. += owns(nameof(copyitem), policy = OWN_CONTAINED)

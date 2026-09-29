@@ -41,7 +41,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 		to_chat(user, "You attach \the [W] into the assembly inner circuits.")
 		user.remove_from_mob(W)
 		W.forceMove(src)
-		own_move(W, src, "upgrades")
+		own_move(W, src, nameof(upgrades))
 		return INTERACTION_HANDLED_PASS
 
 	// Taking out upgrades
@@ -97,7 +97,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(upgrade)
 		to_chat(user, span_notice("You unattach an upgrade from the assembly."))
 		playsound(src, tool.usesound, 50, TRUE)
-		own_take_member(src, "upgrades", upgrade)
+		own_take_member(src, nameof(upgrades), upgrade)
 		upgrade.forceMove(get_turf(src))
 	return TRUE
 
@@ -136,7 +136,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
-	own_set(C, "assembly", src)
+	own_set(C, nameof(C.assembly), src)
 	C.auto_turn()
 	C.replace_networks(uniqueList(ask.networks))
 	C.c_tag = sanitizeSafe(ask.text, MAX_NAME_LEN)

@@ -586,7 +586,7 @@
 /area/survivalpod/superpose/FieldLab)
 "XZ" = (
 /obj/machinery/vending/engivend{
-	emagged = 1;
+	cap_state = 16;
 	req_access = null;
 	req_log_access = null
 	},

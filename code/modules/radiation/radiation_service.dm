@@ -44,7 +44,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		var/atom/source = pulse_information.source_ref
 		if (isnull(source))
 			profile_dropped_sources++
-			own_remove(src, "processing", pulse_information)
+			own_remove(src, nameof(processing), pulse_information)
 			continue
 
 		profile_pulse_invocations++
@@ -62,7 +62,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		// or an overloaded tick would keep re-running a finished pulse forever.
 		if(!pulse_information.remaining_targets())
 			profile_pulses_completed++
-			own_remove(src, "processing", pulse_information)
+			own_remove(src, nameof(processing), pulse_information)
 
 		if (length(processing) && TICK_CHECK)
 			profile_yields++

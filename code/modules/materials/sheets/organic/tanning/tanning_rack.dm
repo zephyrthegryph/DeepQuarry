@@ -19,7 +19,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/tanning_rack, PERIODIC_SLOW, "has_wet_leat
 /// Dries its leather while it holds wet leather; otherwise it sleeps until some is hung on it.
 /obj/structure/tanning_rack/periodic_step()
 	if(QDELETED(drying()))
-		rel_clear(src, "drying")
+		rel_clear(src, nameof(drying))
 		return
 	drying().set_wetness(max(drying().wetness - 1, 0))
 	if(!drying().wetness)
@@ -45,7 +45,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/tanning_rack, TYPE_PROC_REF(/atom, appear
 	if(istype(A, /obj/item/stack/wetleather))
 		if(!drying()) // If not drying anything, start drying the thing
 			if(user.unEquip(A, target = src))
-				rel_set(src, "drying", A)
+				rel_set(src, nameof(drying), A)
 		else // Drying something, add if possible
 			var/obj/item/stack/wetleather/W = A
 			W.transfer_to(drying(), W.get_amount(), TRUE)
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/structure/tanning_rack, \
 				S.forceMove(get_turf(src))
 		else
 			S.forceMove(get_turf(src))
-		rel_clear(src, "drying")
+		rel_clear(src, nameof(drying))
 		update_icon()
 	return TRUE
 

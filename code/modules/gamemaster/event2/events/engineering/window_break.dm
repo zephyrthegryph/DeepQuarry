@@ -38,7 +38,7 @@
 		for(var/obj/structure/window/W in contents_of(area))
 			if(!is_window_to_space(W))
 				continue
-			rel_set(src, "chosen_turf_with_windows", get_turf(W))
+			rel_set(src, nameof(chosen_turf_with_windows), get_turf(W))
 			collateral_windows = gather_collateral_windows(W)
 			break // Break out of the inner loop.
 
@@ -62,7 +62,7 @@
 
 	for(var/obj/structure/window/W in chosen_turf_with_windows().contents)
 		if(W.is_fulltile()) // Full tile windows are simple and can always be used.
-			rel_set(src, "chosen_window", W)
+			rel_set(src, nameof(chosen_window), W)
 			break
 		else // Otherwise we only want the window that is on the inside side of the station.
 			var/turf/T = get_step(W, W.dir)
@@ -70,7 +70,7 @@
 				continue
 			if(T.check_density())
 				continue
-			rel_set(src, "chosen_window", W)
+			rel_set(src, nameof(chosen_window), W)
 			break
 
 	if(!chosen_window())

@@ -4,8 +4,8 @@
 
 /datum/flight_operations_ui/New(new_host, datum/flight_vessel/new_forced_vessel = null)
 	..()
-	rel_set(src, "host", new_host)
-	rel_set(src, "forced_vessel", new_forced_vessel)
+	rel_set(src, nameof(host), new_host)
+	rel_set(src, nameof(forced_vessel), new_forced_vessel)
 
 /datum/flight_operations_ui/tgui_host()
 	return host()
@@ -157,7 +157,7 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
 		GLOB.flight_service.plans -= vessel.active_plan.id
-		own_clear(vessel, "active_plan", OWN_DELETE)
+		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
 	var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 	if(!jump_plan || !jump_plan.start())
 		to_chat(ui.user, span_warning("The jump could not be initiated."))
@@ -172,7 +172,7 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_select_destination)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
 		GLOB.flight_service.plans -= vessel.active_plan.id
-		own_clear(vessel, "active_plan", OWN_DELETE)
+		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
 	var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
 	if(!plan)
 		to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
@@ -224,7 +224,7 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()
 	if(!flight_operations_ui)
-		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
+		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 /obj/machinery/computer/ship/helm/ui_redirect(mob/user)
@@ -238,7 +238,7 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 
 /obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)
 	if(!flight_operations_ui)
-		own_set(src, "flight_operations_ui", new /datum/flight_operations_ui(src))
+		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 

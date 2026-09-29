@@ -37,18 +37,18 @@
 	can_be_pushed = 0
 
 /obj/item/robot_module/robot/chound/create_equipment(mob/living/silicon/robot/R)
-	own_add(src, "modules", new /obj/item/pen/robopen(src))
-	own_add(src, "modules", new /obj/item/form_printer(src))
-	own_add(src, "modules", new /obj/item/gripper/paperwork(src))
-	own_add(src, "modules", new /obj/item/hand_labeler(src))
-	own_add(src, "modules", new /obj/item/stamp(src))
-	own_add(src, "modules", new /obj/item/stamp/denied(src))
-	own_add(src, "modules", new /obj/item/taskmanager(src)) // Needs to be ported over. // ENABLE
-	own_add(src, "emag", new /obj/item/stamp/chameleon(src))
-	own_add(src, "emag", new /obj/item/pen/chameleon(src))
+	own_add(src, nameof(modules), new /obj/item/pen/robopen(src))
+	own_add(src, nameof(modules), new /obj/item/form_printer(src))
+	own_add(src, nameof(modules), new /obj/item/gripper/paperwork(src))
+	own_add(src, nameof(modules), new /obj/item/hand_labeler(src))
+	own_add(src, nameof(modules), new /obj/item/stamp(src))
+	own_add(src, nameof(modules), new /obj/item/stamp/denied(src))
+	own_add(src, nameof(modules), new /obj/item/taskmanager(src)) // Needs to be ported over. // ENABLE
+	own_add(src, nameof(emag), new /obj/item/stamp/chameleon(src))
+	own_add(src, nameof(emag), new /obj/item/pen/chameleon(src))
 
-	own_add(src, "modules", new /obj/item/dogborg/sleeper/command(src))
-	own_add(src, "emag", new /obj/item/dogborg/pounce(src))
+	own_add(src, nameof(modules), new /obj/item/dogborg/sleeper/command(src))
+	own_add(src, nameof(emag), new /obj/item/dogborg/pounce(src))
 	..()
 
 /datum/robot_sprite/dogborg/command

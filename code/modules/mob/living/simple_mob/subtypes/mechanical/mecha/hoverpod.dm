@@ -36,7 +36,7 @@
 	pilot_type = /mob/living/simple_mob/humanoid/merc/ranged
 
 /mob/living/simple_mob/mechanical/mecha/hoverpod/Initialize(mapload)
-	own_set(src, "ion_trail", new /datum/effect/effect/system/ion_trail_follow()) // ALLOW(decl): configured and started before parent init
+	own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow()) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()

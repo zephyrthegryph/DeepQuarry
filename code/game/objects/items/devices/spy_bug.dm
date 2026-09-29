@@ -27,9 +27,9 @@
 /obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
-	rel_clear(src, "linkedmonitor")
+	rel_clear(src, nameof(linkedmonitor))
 	qdel(camera)
-	own_set(src, "camera", new camtype(src))
+	own_set(src, nameof(camera), new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug
@@ -100,11 +100,11 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	if(!linkedmonitor())
 		to_chat(user, span_notice("\The [src] has been paired with \the [SM]."))
 		SM.pair(src)
-		rel_set(src, "linkedmonitor", SM)
+		rel_set(src, nameof(linkedmonitor), SM)
 	else if (linkedmonitor() == SM)
 		to_chat(user, span_notice("\The [src] has been unpaired from \the [SM]."))
 		linkedmonitor().unpair(src)
-		rel_clear(src, "linkedmonitor")
+		rel_clear(src, nameof(linkedmonitor))
 	else
 		to_chat(user, "Error: The device is linked to another monitor.")
 	return TRUE
@@ -116,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 		new brokentype(get_turf(src))
 		if(linkedmonitor())
 			linkedmonitor().unpair(src)
-		rel_clear(src, "linkedmonitor")
+		rel_clear(src, nameof(linkedmonitor))
 		consume(src, user)
 	return FALSE
 
@@ -136,7 +136,7 @@ DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot)
 	visible_message("The [src] lens shatters!")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
-	rel_clear(src, "linkedmonitor")
+	rel_clear(src, nameof(linkedmonitor))
 	replace_with(src, brokentype)
 	return DAMAGE_REACTION_BLOCK
 
@@ -179,11 +179,11 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	return TRUE
 
 /obj/item/bug_monitor/proc/unpair(obj/item/camerabug/SB)
-	rel_remove(src, "paired", SB.camera)
+	rel_remove(src, nameof(paired), SB.camera)
 
 /obj/item/bug_monitor/proc/pair(obj/item/camerabug/SB)
 	if(SB.camera)
-		rel_add(src, "paired", SB.camera)
+		rel_add(src, nameof(paired), SB.camera)
 
 /// The paired cameras still alive (a deleted one leaves the view).
 /obj/item/bug_monitor/proc/paired_cameras()
@@ -203,7 +203,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 		return
 
 	if(cameras.len == 1)
-		rel_set(src, "selected_camera", cameras[1])
+		rel_set(src, nameof(selected_camera), cameras[1])
 	else
 		if(in_use) // Don't allow spamming tgui menus
 			return
@@ -232,7 +232,7 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 
 /obj/item/bug_monitor/proc/camera_chosen(datum/om/prompt/choice/bug_camera/ask)
 	in_use = FALSE
-	rel_set(src, "selected_camera", ask.choice)
+	rel_set(src, nameof(selected_camera), ask.choice)
 	view_camera(ask.answerer)
 
 /obj/item/bug_monitor/proc/view_camera(mob/user)
@@ -241,8 +241,8 @@ DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
 	var/turf/T = get_turf(selected_camera())
 	if(!T || !is_on_same_plane_or_station(T.z, user.z) || !selected_camera().can_use())
 		to_chat(user, span_notice("Link to [selected_camera()] has been lost."))
-		rel_remove(src, "paired", selected_camera)
-		rel_clear(src, "selected_camera")
+		rel_remove(src, nameof(paired), selected_camera)
+		rel_clear(src, nameof(selected_camera))
 		return
 	user.begin_remote_view(/datum/remote_view/item_zoom, selected_camera(), null, /datum/remote_view_config/camera_standard, src, 0, TRUE)
 

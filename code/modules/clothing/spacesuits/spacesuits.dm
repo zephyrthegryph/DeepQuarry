@@ -49,7 +49,7 @@ DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/he
 		return
 
 	if(!camera)
-		own_set(src, "camera", new /obj/machinery/camera(src))
+		own_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.replace_networks(camera_networks)
 		camera.set_status(FALSE) //So the camera will activate in the following check.
 
@@ -125,19 +125,21 @@ TYPE_TABLE(/obj/item/clothing/suit/space, suit_storage_spec, list(HOLD_ONLY(list
 		for(var/obj/item/organ/external/E in user.bad_external_organs)
 			if(E.is_broken() && E.apply_splint(src))
 				to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-				rel_add(src, "supporting_limbs", E)
+				rel_add(src, nameof(supporting_limbs), E)
 	else
 		// Otherwise, remove the splints.
 		for(var/obj/item/organ/external/E in supporting_limbs)
 			if(E.splinted == src && E.remove_splint(src))
 				to_chat(user, "\The [src] stops supporting your [E.name].")
-		rel_clear(src, "supporting_limbs")
+		rel_clear(src, nameof(supporting_limbs))
 
 /obj/item/clothing/suit/space/proc/handle_fracture(mob/living/carbon/human/user, obj/item/organ/external/E)
 	if(!istype(user) || !supports_limbs)
 		return
 	if(E.is_broken() && E.apply_splint(src))
 		to_chat(user, "You feel [src] constrict about your [E.name], supporting it.")
-		rel_add(src, "supporting_limbs", E)
+		rel_add(src, nameof(supporting_limbs), E)
 
-REL_LIST(/obj/item/clothing/suit/space, supporting_limbs)
+/obj/item/clothing/suit/space/relations()
+	. = ..()
+	. += rel_many(nameof(supporting_limbs))

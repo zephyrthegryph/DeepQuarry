@@ -66,4 +66,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/fusion_core_control, "monitor", /d
 /obj/machinery/computer/fusion_core_control/proc/cur_viewed_device() as /obj/machinery/power/fusion_core
 	return cur_viewed_device
 
-REL(/obj/machinery/computer/fusion_core_control, cur_viewed_device)
+/obj/machinery/computer/fusion_core_control/relations()
+	. = ..()
+	. += rel_one(nameof(cur_viewed_device))

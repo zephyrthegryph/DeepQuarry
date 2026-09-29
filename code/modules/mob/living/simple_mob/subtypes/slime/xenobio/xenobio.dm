@@ -233,7 +233,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 	baby.untamable_inheirit = untamable_inheirit
 	baby.faction = faction
 	for(var/mob/living/friend as anything in friends)
-		rel_add(baby, "friends", friend)
+		rel_add(baby, nameof(baby.friends), friend)
 
 	if(no_step != 1)
 		step_away(baby, src)

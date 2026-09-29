@@ -16,13 +16,13 @@
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 
 /datum/effect/effect/system/confetti_spread/proc/emit_one_confetti_spark()
 	if(holder)
-		rel_set(src, "location", get_turf(holder))
+		rel_set(src, nameof(location), get_turf(holder))
 	var/obj/effect/effect/sparks/confetti = new /obj/effect/effect/sparks/confetti(src.get_location())
 	src.total_sparks++
 	var/direction

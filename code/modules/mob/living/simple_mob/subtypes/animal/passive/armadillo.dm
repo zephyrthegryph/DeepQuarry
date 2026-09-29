@@ -48,7 +48,9 @@
 	var/obj/item/clothing/head/hat = null // The hat the armadillo may be wearing.
 
 //Hat simulator stolen from slime code.
-OWN(/mob/living/simple_mob/animal/passive/armadillo, hat, OWN_SPILL)
+/mob/living/simple_mob/animal/passive/armadillo/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/passive/armadillo, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/passive/armadillo/appearance_overlays()
@@ -103,7 +105,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
@@ -112,7 +114,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/armadillo, \
 /mob/living/simple_mob/animal/passive/armadillo/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
 	update_icon()
 

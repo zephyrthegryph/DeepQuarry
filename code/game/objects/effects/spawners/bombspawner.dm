@@ -70,11 +70,11 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	var/obj/item/tank/phoron/PT = new(V)
 	var/obj/item/tank/oxygen/OT = new(V)
 
-	own_set(V, "tank_one", PT)
-	own_set(V, "tank_two", OT)
+	own_set(V, nameof(V.tank_one), PT)
+	own_set(V, nameof(V.tank_two), OT)
 
-	rel_set(PT, "master", V)
-	rel_set(OT, "master", V)
+	rel_set(PT, nameof(PT.master), V)
+	rel_set(OT, nameof(OT.master), V)
 
 	PT.valve_welded = 1
 	// XGM exposed total_moles as a writable var; LINDA exposes it only
@@ -90,9 +90,9 @@ MAP_RESOLVER_VARS(/obj/effect/spawner/newbomb, "carbon_amt;oxygen_amt;phoron_amt
 	OT.air_contents.set_temperature(PLASMA_MINIMUM_BURN_TEMPERATURE+1)
 
 	var/obj/item/assembly/S = new assembly_type(V)
-	own_set(V, "attached_device", S)
+	own_set(V, nameof(V.attached_device), S)
 
-	rel_set(S, "holder", V)
+	rel_set(S, nameof(S.holder), V)
 	S.toggle_secure()
 
 	V.update_icon()

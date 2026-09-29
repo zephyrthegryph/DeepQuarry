@@ -64,7 +64,7 @@ OM_FIELD(/obj/item/assembly, secured, TRUE, CHANGE_EXPLICIT)
 	return secured
 
 /obj/item/assembly/proc/attach_assembly(obj/item/assembly/A, mob/user)
-	rel_set(src, "holder", new/obj/item/assembly_holder(get_turf(src)))
+	rel_set(src, nameof(holder), new/obj/item/assembly_holder(get_turf(src)))
 	if(holder().attach(A,src,user))
 		to_chat(user, span_notice("You attach \the [A] to \the [src]!"))
 		return TRUE

@@ -12,11 +12,11 @@
 /obj/machinery/mineral/unloading_machine/Initialize(mapload)
 	. = ..()
 	for(var/dir in GLOB.cardinal)
-		rel_set(src, "input", locate(/obj/machinery/mineral/input, get_step(src, dir)))
+		rel_set(src, nameof(input), locate(/obj/machinery/mineral/input, get_step(src, dir)))
 		if(input_marker())
 			break
 	for(var/dir in GLOB.cardinal)
-		rel_set(src, "output", locate(/obj/machinery/mineral/output, get_step(src, dir)))
+		rel_set(src, nameof(output), locate(/obj/machinery/mineral/output, get_step(src, dir)))
 		if(output_marker())
 			break
 	watch_input(input_marker())

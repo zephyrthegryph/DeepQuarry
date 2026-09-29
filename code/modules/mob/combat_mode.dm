@@ -180,10 +180,10 @@
 	button.off_state = off_state
 	button.on_state = on_state
 	button.screen_loc = ui_acti
-	rel_set(button, "hud", src)
+	rel_set(button, nameof(button.hud), src)
 	button.update_for(owner)
 	// The caller owns the button through one of its screen lists (adding); this names it.
-	rel_set(src, "combat_mode_button", button)
+	rel_set(src, nameof(combat_mode_button), button)
 	return button
 
 // ---------------------------------------------------------------------------

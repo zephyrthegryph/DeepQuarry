@@ -21,7 +21,7 @@
 
 /datum/round_status_panel/New(datum/admins/owner_admin)
 	..()
-	rel_set(src, "owner_admin", owner_admin)
+	rel_set(src, nameof(owner_admin), owner_admin)
 
 // The admin holder owns this panel (round_status_panel); owner_admin is a plain relation back.
 
@@ -195,7 +195,7 @@ UI_ACT_PROC(/datum/round_status_panel, ui_act_antag_tp)
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		own_set(src, "round_status_panel", new /datum/round_status_panel(src))
+		own_set(src, nameof(round_status_panel), new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

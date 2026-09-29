@@ -57,7 +57,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 /obj/effect/mine/proc/trigger_trap(mob/living/victim)
 	if(istype(trap, /obj/item/grenade))
 		var/obj/item/grenade/G = trap
-		own_take(src, "trap")
+		own_take(src, nameof(trap))
 		G.forceMove(get_turf(src))
 		if(victim && victim.ckey)
 			msg_admin_attack("[key_name_admin(victim)] stepped on \a [src.name], triggering [trap]")
@@ -65,7 +65,7 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 
 	if(istype(trap, /obj/item/transfer_valve))
 		var/obj/item/transfer_valve/TV = trap
-		own_take(src, "trap")
+		own_take(src, nameof(trap))
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
@@ -443,7 +443,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 		return
 	to_chat(user, span_notice("You finish disconnecting the mine's trigger."))
 	trap.forceMove(get_turf(src))
-	own_take(src, "trap")
+	own_take(src, nameof(trap))
 
 //Lasertag mines
 
@@ -505,4 +505,6 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	desc = "A small grey mine with 'BOOM' written on top, and an optical hazard warning on the side."
 	minetype = /obj/effect/mine/lasertag/all
 
-OWN(/obj/item/mine, trap, OWN_CONTAINED)
+/obj/item/mine/ownership()
+	. = ..()
+	. += owns(nameof(trap), policy = OWN_CONTAINED)

@@ -192,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		else if(bcell)
 			bcell.update_icon()
 			user.put_in_hands(bcell)
-			own_take(src, "bcell")
+			own_take(src, nameof(bcell))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			status = 0
 			update_held_icon()
@@ -306,4 +306,6 @@ DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp)
 	injury_kind = INJURY_PAIN
 	launch_force = 0
 
-OWN(/obj/item/melee/shock_maul, bcell, OWN_CONTAINED)
+/obj/item/melee/shock_maul/ownership()
+	. = ..()
+	. += owns(nameof(bcell), policy = OWN_CONTAINED)

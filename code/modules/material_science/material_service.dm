@@ -73,7 +73,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		return
 	var/first_sample = 0
 	if(!material_service)
-		own_set(src, "material_service", new /datum/material_service(src))
+		own_set(src, nameof(material_service), new /datum/material_service(src))
 		// Services admitted while the world initializes (every power cell, pipes seeing their
 		// first pressure) take their baseline sample spread over the first seconds after boot
 		// rather than all on the first tick.
@@ -217,7 +217,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 
 /datum/material_service/New(obj/assembly)
 	..()
-	rel_set(src, "owner", assembly)
+	rel_set(src, nameof(owner), assembly)
 	if(!owner().material_assembly_id)
 		owner().material_assembly_id = "ME-[++GLOB.next_material_assembly_id]"
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
@@ -238,10 +238,10 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 		// it holds, on the doomed owner and on its turf and holders alike.
 		var/watch_key = om_watch_entity_key(src) // ref text: plain data, not an entity
 		batch.material_service_watch_keys += watch_key
-		rel_clear(src, "monitor_tool")
-		rel_clear(src, "monitor_user")
+		rel_clear(src, nameof(monitor_tool))
+		rel_clear(src, nameof(monitor_user))
 		last_reading = null
-		rel_clear(src, "watched_turf")
+		rel_clear(src, nameof(watched_turf))
 		mixture_ids = null
 		mixture_pressures = null
 		mixture_corrosion = null
@@ -268,7 +268,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 /datum/material_service/proc/clear_watches()
 	if(watched_turf())
 		om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		rel_clear(src, "watched_turf")
+		rel_clear(src, nameof(watched_turf))
 	// om_watch_disarm() keys off this datum's own ref string (code/datums/om/watch.dm), not a
 	// handle, so unlike the old subscribe_gas_dependency() transport there's no QDELETED race
 	// to work around here.
@@ -290,7 +290,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	EVENT_HANDLER
 	var/list/post_change_callbacks = event.post_change_callbacks
 	om_unhook(source, /datum/om/event/turf_change, src)
-	rel_clear(src, "watched_turf")
+	rel_clear(src, nameof(watched_turf))
 	watches_dirty = TRUE
 	post_change_callbacks += list(om_callable(src, PROC_REF(environment_changed)))
 
@@ -362,7 +362,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	if(location != watched_turf())
 		if(watched_turf())
 			om_unhook(watched_turf(), /datum/om/event/turf_change, src)
-		rel_set(src, "watched_turf", location)
+		rel_set(src, nameof(watched_turf), location)
 		if(watched_turf())
 			om_hook(watched_turf(), /datum/om/event/turf_change, src, PROC_REF(changing_turf))
 	var/datum/gas_mixture/ambient = location?.return_air()

@@ -138,7 +138,7 @@
 	user.drop_from_inventory(src)
 	stuck.forceMove(get_turf(src))
 	user.put_in_hands(stuck)
-	own_take(src, "stuck")
+	own_take(src, nameof(stuck))
 	overlays = null
 	consume(src, user)
 	return TRUE
@@ -200,4 +200,6 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 			else if(dir_offset & SOUTH)
 				pixel_y -= 32
 
-OWN(/obj/item/ducttape, stuck, OWN_CONTAINED)
+/obj/item/ducttape/ownership()
+	. = ..()
+	. += owns(nameof(stuck), policy = OWN_CONTAINED)

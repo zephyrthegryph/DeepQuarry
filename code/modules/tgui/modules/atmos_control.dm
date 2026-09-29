@@ -10,7 +10,7 @@
 
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
-	own_set(src, "access", new /obj())
+	own_set(src, nameof(access), new /obj())
 	access.req_access = req_access
 	access.req_one_access = req_one_access
 
@@ -21,7 +21,7 @@
 				found += alarm
 		// machines may not yet be ordered at this point
 		for(var/obj/machinery/alarm/alarm as anything in dd_sortedObjectList(found))
-			rel_add(src, "monitored_alarms", alarm)
+			rel_add(src, nameof(monitored_alarms), alarm)
 
 /// The alarms this monitor shows (its own list, else every machine), for the UI's alarm refs.
 /datum/tgui_module/atmos_control/proc/alarm_sources()
@@ -91,8 +91,8 @@ UI_DATA_REPLACE(/datum/tgui_module/atmos_control, "merge:ui_data_datum_tgui_modu
 
 /datum/tgui_module/atmos_control/proc/generate_state(air_alarm)
 	var/datum/tgui_state/air_alarm_remote/state = new()
-	rel_set(state, "atmos_control", src)
-	rel_set(state, "air_alarm", air_alarm)
+	rel_set(state, nameof(state.atmos_control), src)
+	rel_set(state, nameof(state.air_alarm), air_alarm)
 	return state
 
 /datum/tgui_state/air_alarm_remote

@@ -17,7 +17,7 @@
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "materials", new /datum/material_container( \
+	own_set(src, nameof(materials), new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \
@@ -74,7 +74,7 @@
 
 /obj/machinery/ore_silo/multitool_act(mob/user, obj/item/tool)
 	var/obj/item/multitool/multitool = tool
-	rel_set(multitool, "buffer", src)
+	rel_set(multitool, nameof(multitool.buffer), src)
 	balloon_alert(user, "saved to multitool buffer")
 	return ITEM_INTERACT_SUCCESS
 
@@ -267,5 +267,7 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
 	return msg.Join()
 
 
-REL_LIST(/obj/machinery/ore_silo, holds)
-REL_LIST(/obj/machinery/ore_silo, ore_connected_machines)
+/obj/machinery/ore_silo/relations()
+	. = ..()
+	. += rel_many(nameof(holds))
+	. += rel_many(nameof(ore_connected_machines))

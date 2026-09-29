@@ -166,9 +166,9 @@
 	dir = 4
 	},
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
-	locked = 1;
 	req_access = list(11)
 	},
 /turf/simulated/floor,
@@ -947,9 +947,9 @@
 	dir = 4
 	},
 /obj/machinery/door/airlock/hatch{
+	cap_state = 128;
 	icon_state = "door_locked";
 	id_tag = "engine_access_hatch";
-	locked = 1;
 	req_access = list(11)
 	},
 /turf/simulated/floor,

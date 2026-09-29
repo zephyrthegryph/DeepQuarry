@@ -65,17 +65,17 @@
 
 
 /datum/contract/medical_trial/proc/initialize_trial(cohort, target_metric)
-	own_set(src, "profile", new /datum/medical_trial_profile(cohort, target_metric))
-	own_take_all(src, "participants")
+	own_set(src, nameof(profile), new /datum/medical_trial_profile(cohort, target_metric))
+	own_take_all(src, nameof(participants))
 	deadline_duration = 90 MINUTES
 	title = "Experimental Medication Study: [profile.code_name]"
 	description = "VeyMed requests a [profile.cohort] study of [profile.code_name], provisionally indicated for [profile.target_metric] conditions. [profile.protocol_instructions()] For each of three subjects, fax one packet containing the signed consent form, a pre-exposure body-scanner printout, and a body-scanner printout taken at least one minute after exposure."
-	rel_set(src, "observation_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, 3, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
+	rel_set(src, nameof(observation_requirement), new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_OBSERVATION_ACCEPTED, 3, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	observation_requirement.name = "Valid clinical observations"
 	observation_requirement.description = "VeyMed requires three evidence packets. Each must contain the subject's signed consent form plus genuine pre-exposure and one-minute post-exposure body-scanner printouts."
 	observation_requirement.unique_field = "subject_id"
 	add_requirement(observation_requirement)
-	rel_set(src, "analysis_requirement", new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_ANALYSIS_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
+	rel_set(src, nameof(analysis_requirement), new /datum/contract_requirement/event_count(CONTRACT_EVENT_MEDICAL_ANALYSIS_ACCEPTED, 1, null, null, TRUE, CONTRACT_EVIDENCE_SCOPE_CONTRACT))
 	analysis_requirement.name = "Clinical interpretation"
 	analysis_requirement.description = "Payment is contingent upon correct identification of the medication's therapeutic target and primary adverse effect."
 	add_requirement(analysis_requirement)
@@ -151,7 +151,7 @@
 		if(matching_class >= 2)
 			return FALSE
 	var/datum/medical_trial_participant/participant = new(identity.id, baseline, is_healthy, clinician_account)
-	own_put(src, "participants", identity.id, participant)
+	own_put(src, nameof(participants), identity.id, participant)
 	om_hook(subject, /datum/om/event/mob_death, src, PROC_REF(on_participant_death))
 	medical_trial_offer_patient_advocate(src, participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject.real_name] consented and baseline telemetry was recorded.")
@@ -290,7 +290,7 @@
 		"signature_time" = participant.consent_time,
 		"replacement" = TRUE,
 	))
-	rel_set(participant, "consent_record", document)
+	rel_set(participant, nameof(participant.consent_record), document)
 	audit(CONTRACT_AUDIT_RECOVERY, "Issued a certified replacement consent record for [subject?.real_name || subject_id].")
 	return TRUE
 
@@ -320,7 +320,7 @@
 		om_unhook(subject, /datum/om/event/mob_death, src)
 	SScontracts.void_evidence(participant.consent_evidence_id, "The subject withdrew consent before submission.")
 	medical_trial_cancel_subject_contracts(id, subject_id)
-	own_take_member(src, "participants", subject_id)
+	own_take_member(src, nameof(participants), subject_id)
 	qdel(participant)
 	audit(CONTRACT_AUDIT_PROGRESS, "[subject?.real_name || subject_id] withdrew consent; unsubmitted observations were discarded and the cohort slot reopened.")
 	return TRUE

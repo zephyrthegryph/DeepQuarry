@@ -202,8 +202,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		return
 	for(var/obj/item/O in holdingitems)
 		O.forceMove(src.loc)
-		own_take_member(src, "holdingitems", O)
-	own_take_all(src, "holdingitems")
+		own_take_member(src, nameof(holdingitems), O)
+	own_take_all(src, nameof(holdingitems))
 	if(beaker)
 		replace_beaker(user)
 
@@ -231,10 +231,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			user.put_in_hands(beaker)
 		else
 			beaker.forceMove(drop_location())
-		own_take(src, "beaker")
+		own_take(src, nameof(beaker))
 	if(new_beaker)
 		own_set(src, nameof(src.beaker), new_beaker, user = user)
 	update_icon()
 	return TRUE
 
-OWN(/obj/machinery/reagentgrinder, beaker, OWN_CONTAINED)
+/obj/machinery/reagentgrinder/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)

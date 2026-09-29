@@ -130,11 +130,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/
 
 	for(var/obj/machinery/atmospherics/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 	for(var/obj/machinery/atmospherics/target in get_step(src,node2_dir))
 		if(can_be_node(target, 2))
-			rel_set(src, "node2", target)
+			rel_set(src, nameof(node2), target)
 			break
 
 	if(!node1 && !node2)
@@ -150,12 +150,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/pipe/simple, TYPE_PROC_REF(/
 	if(reference == node1)
 		if(istype(node1, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	if(reference == node2)
 		if(istype(node2, /obj/machinery/atmospherics/pipe))
 			rust_invalidate_pipeline_wrapper(parent)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	update_icon()
 	handle_leaking()

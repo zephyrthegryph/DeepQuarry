@@ -12,9 +12,9 @@
 /datum/nifsoft/apc_recharge/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		rel_set(src, "apc", locate_within(get_step(H,H.dir), /obj/machinery/power/apc))
+		rel_set(src, nameof(apc), locate_within(get_step(H,H.dir), /obj/machinery/power/apc))
 		if(!apc())
-			rel_set(src, "apc", locate_within(get_step(H,0), /obj/machinery/power/apc))
+			rel_set(src, nameof(apc), locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
 			om_after(src, 0, PROC_REF(deactivate))
@@ -25,7 +25,7 @@
 
 /datum/nifsoft/apc_recharge/deactivate(force = FALSE)
 	if((. = ..()))
-		rel_clear(src, "apc")
+		rel_clear(src, nameof(apc))
 
 /datum/nifsoft/apc_recharge/life()
 	if((. = ..()))

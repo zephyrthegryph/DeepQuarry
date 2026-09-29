@@ -1,16 +1,16 @@
 /datum/antagonist/proc/update_leader()
 	if(!leader() && length(current_antagonists) && (flags & ANTAG_HAS_LEADER))
-		rel_set(src, "leader", LAZYACCESS(current_antagonists, 1))
+		rel_set(src, nameof(leader), LAZYACCESS(current_antagonists, 1))
 
 /datum/antagonist/proc/update_antag_mob(datum/mind/player, preserve_appearance)
 
 	// Get the mob.
 	if((flags & ANTAG_OVERRIDE_MOB) && (!player.current || (mob_path && !istype(player.current, mob_path))))
 		var/mob/holder = player.current
-		rel_set(player, "current", new mob_path(get_turf(player.current)))
+		rel_set(player, nameof(player.current), new mob_path(get_turf(player.current)))
 		player.transfer_to(player.current)
 		if(holder) qdel(holder)
-	rel_set(player, "original_character", player.current)
+	rel_set(player, nameof(player.original_character), player.current)
 	if(!preserve_appearance && (flags & ANTAG_SET_APPEARANCE))
 		om_after(src, 3, PROC_REF(deferred_set_appearance), player)
 	return player.current

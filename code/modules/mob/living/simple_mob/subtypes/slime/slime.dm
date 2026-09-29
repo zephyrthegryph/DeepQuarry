@@ -102,7 +102,9 @@ DECLARE_VERB(/mob/living/simple_mob/slime, /mob/living/proc/ventcrawl)
 	update_icon()
 	return ..()
 
-OWN(/mob/living/simple_mob/slime, hat, OWN_SPILL)
+/mob/living/simple_mob/slime/ownership()
+	. = ..()
+	. += owns(nameof(hat), policy = OWN_SPILL)
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \
@@ -249,7 +251,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 	if(!hat)
 		to_chat(user, span_warning("\The [src] doesn't have a hat to remove."))
 	else
-		var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+		var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 		old_hat.forceMove(get_turf(src))
 		user.put_in_hands(old_hat)
 		to_chat(user, span_warning("You take away \the [src]'s [old_hat.name].  How mean."))
@@ -258,7 +260,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime, \
 /mob/living/simple_mob/slime/proc/drop_hat()
 	if(!hat)
 		return
-	var/obj/item/clothing/head/old_hat = own_take(src, "hat")
+	var/obj/item/clothing/head/old_hat = own_take(src, nameof(hat))
 	old_hat.forceMove(get_turf(src))
 	update_icon()
 

@@ -45,13 +45,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 
 	if(attached())
 		visible_message("The feeding tube is pulled out of [attached()].")
-		rel_clear(src, "attached")
+		rel_clear(src, nameof(attached))
 		update_icon()
 		return
 
 	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
-		rel_set(src, "attached", over_object)
+		rel_set(src, nameof(attached), over_object)
 		update_icon()
 
 
@@ -102,7 +102,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	new /obj/item/stack/material/plastic(loc, 4)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
-		own_take(src, "beaker")
+		own_take(src, nameof(beaker))
 	qdel(src)
 
 /// Feeds while a patient and a container are attached; otherwise it sleeps until one is.
@@ -110,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	if(attached())
 		if(!(get_dist(src, attached()) <= 1 && isturf(attached().loc)))
 			visible_message("The tube is pulled out of [attached()].")
-			rel_clear(src, "attached")
+			rel_clear(src, nameof(attached))
 			update_icon()
 			return
 	// Give food
@@ -130,7 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 	if(!beaker)
 		return FALSE
 	beaker.forceMove(get_turf(src))
-	own_take(src, "beaker")
+	own_take(src, nameof(beaker))
 	update_icon()
 	return TRUE
 
@@ -153,7 +153,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 		return 1
 	return ..()
 
-OWN(/obj/machinery/feeder, beaker, OWN_CONTAINED)
+/obj/machinery/feeder/ownership()
+	. = ..()
+	. += owns(nameof(beaker), policy = OWN_CONTAINED)
 
 /// attached (a relation view: it reads null once the target is deleted).
 /obj/machinery/feeder/proc/attached() as /mob/living/carbon/human

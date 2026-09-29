@@ -18,7 +18,7 @@
 	var/atom/movable/overlay/animation = new(loc)
 	animation.icon_state = "blank"
 	animation.icon = anim_file
-	rel_set(animation, "master", src)
+	rel_set(animation, nameof(animation.master), src)
 	flick(anim, animation)
 
 	if(remains)

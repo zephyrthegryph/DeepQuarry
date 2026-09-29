@@ -104,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/water/underwater/open, TYPE_PROC_R
 
 /turf/simulated/floor/water/underwater/indoors/handle_water_icons()
 	SHOULD_CALL_PARENT(FALSE)
-	own_set(src, "visuals", new /atom/movable/weather_visuals(null))
+	own_set(src, nameof(visuals), new /atom/movable/weather_visuals(null))
 	visuals.icon = overlay_icon
 	visuals.icon_state = overlay_state
 	vis_contents += visuals

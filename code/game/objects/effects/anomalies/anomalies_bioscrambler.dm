@@ -18,7 +18,7 @@
 
 /obj/effect/anomaly/bioscrambler/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
-	rel_set(src, "pursuit_target", find_nearest_target())
+	rel_set(src, nameof(pursuit_target), find_nearest_target())
 
 /obj/effect/anomaly/bioscrambler/anomalyEffect(seconds_per_tick)
 	. = ..()
@@ -47,19 +47,19 @@
 /obj/effect/anomaly/bioscrambler/proc/update_target()
 	var/mob/living/current_target = pursuit_target
 	if(QDELETED(current_target))
-		rel_clear(src, "pursuit_target")
+		rel_clear(src, nameof(pursuit_target))
 	if(!isnull(pursuit_target) && prob(80))
 		return
 	var/mob/living/new_target = find_nearest_target()
 	if(isnull(new_target))
-		rel_clear(src, "pursuit_target")
+		rel_clear(src, nameof(pursuit_target))
 		return
 	if(new_target == current_target)
 		return
 	if(isbelly(new_target.loc) || istype(new_target.loc, /area/crew_quarters))
 		return
 	current_target = new_target
-	rel_set(src, "pursuit_target", new_target)
+	rel_set(src, nameof(pursuit_target), new_target)
 
 /obj/effect/anomaly/bioscrambler/proc/find_nearest_target()
 	var/closest_distance = INFINITY

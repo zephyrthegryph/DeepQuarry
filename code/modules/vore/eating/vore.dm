@@ -138,7 +138,7 @@
 
 /datum/vore_preferences/New(client/C)
 	if(istype(C))
-		rel_set(src, "client", C)
+		rel_set(src, nameof(client), C)
 		client_ckey = C.ckey
 		load_vore()
 

@@ -29,13 +29,15 @@
 
 
 // Fitted parts sit in the gun's contents.
-OWN(/obj/item/gun/energy/modular, guncomponents, OWN_CONTAINED)
+/obj/item/gun/energy/modular/ownership()
+	. = ..()
+	. += owns(nameof(guncomponents), policy = OWN_CONTAINED)
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
-	own_add(src, "guncomponents", new /obj/item/stock_parts/capacitor(src))
-	own_add(src, "guncomponents", new /obj/item/stock_parts/micro_laser(src))
-	own_add(src, "guncomponents", new /obj/item/stock_parts/manipulator(src))
+	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
+	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
+	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 	CheckParts()
 	FireModeModify()
 
@@ -65,7 +67,7 @@ OWN(/obj/item/gun/energy/modular, guncomponents, OWN_CONTAINED)
 	for(var/obj/item/I in guncomponents)
 		to_chat(user, span_notice("You remove the gun's components."))
 		playsound(src, tool.usesound, 50, 1)
-		own_take_member(src, "guncomponents", I)
+		own_take_member(src, nameof(guncomponents), I)
 		I.forceMove(get_turf(src))
 		CheckParts()
 	return ITEM_INTERACT_SUCCESS
@@ -125,11 +127,11 @@ OWN(/obj/item/gun/energy/modular, guncomponents, OWN_CONTAINED)
 		chargecost = 100
 		chargecost_lethal = 200
 
-	own_clear(src, "firemodes", OWN_DELETE)
-	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
-	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
-	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
-	own_add(src, "firemodes", new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
+	own_clear(src, nameof(firemodes), OWN_DELETE)
+	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
+	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
+	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
+	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
 
 /obj/item/gun/energy/modular/load_ammo(obj/item/C, mob/user)
 	if(istype(C, cell_type))

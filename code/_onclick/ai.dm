@@ -104,9 +104,9 @@
 		return TRUE
 	add_fingerprint(user)
 	if(electrified_until)
-		electrify(0, 1)
+		electrify(0, TRUE, user)
 	else
-		electrify(-1, 1)
+		electrify(-1, TRUE, user)
 	// Clientside only notification
 	var/turf/root_turf = get_turf(src)
 	var/image/client_only/electrify_notice/zap = new('icons/hud/screen_gen.dmi', root_turf, electrified_until ? "stamina_crit" : "stamina_dead", OBFUSCATION_LAYER, SOUTH)
@@ -119,12 +119,12 @@
 
 /obj/machinery/door/airlock/silicon_swap_hands(mob/living/silicon/user) // Toggles door bolt lights.
 	add_fingerprint(user)
-	if(wires.is_cut(WIRE_BOLT_LIGHT))
+	if(wire_cut(WIRE_BOLT_LIGHT))
 		to_chat(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
 		return
 	lights = !lights
 	to_chat(user, span_notice("Lights are now [lights ? "on." : "off."]"))
-	update_icon()
+	changed(src) // an AI hotkey, not a dispatched call
 	return TRUE
 
 /obj/machinery/power/apc/silicon_pull(mob/living/silicon/user) // turns off/on APCs.

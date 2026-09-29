@@ -34,10 +34,10 @@
 				inv_box.set_dir(slot_data["dir"])
 
 			if(slot_data["toggle"])
-				own_add(HUD, "other", inv_box)
+				own_add(HUD, nameof(HUD.other), inv_box)
 				has_hidden_gear = 1
 			else
-				own_add(HUD, "adding", inv_box)
+				own_add(HUD, nameof(HUD.adding), inv_box)
 
 	if(has_hidden_gear)
 		using = new /atom/movable/screen()
@@ -48,14 +48,14 @@
 		using.hud_layerise()
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "adding", using)
+		own_add(HUD, nameof(HUD.adding), using)
 
 	// The combat mode button (it replaced the intent selector).
 	using = HUD.make_combat_mode_button(src)
 	using.icon = ui_style
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "adding", using)
+	own_add(HUD, nameof(HUD.adding), using)
 	hud_elements |= using
 
 	//Move intent (walk/run)
@@ -66,8 +66,8 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "adding", using)
-	rel_set(HUD, "move_intent", using)
+	own_add(HUD, nameof(HUD.adding), using)
+	rel_set(HUD, nameof(HUD.move_intent), using)
 
 	//Resist button
 	using = new /atom/movable/screen()
@@ -77,10 +77,10 @@
 	using.screen_loc = ui_pull_resist
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, "hotkeybuttons", using)
+	own_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	own_set(src, "pullin", new /atom/movable/screen())
+	own_set(src, nameof(pullin), new /atom/movable/screen())
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
@@ -88,14 +88,14 @@
 	hud_elements |= pullin
 
 	//Health status
-	own_set(src, "healths", new /atom/movable/screen())
+	own_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
 	hud_elements |= healths
 
-	own_set(src, "autowhisper_display", new /atom/movable/screen())
+	own_set(src, nameof(autowhisper_display), new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"
@@ -108,7 +108,7 @@
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
 	hud_elements |= aw
-	own_add(HUD, "extra_screens", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -116,7 +116,7 @@
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, "extra_screens", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -124,7 +124,7 @@
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, "extra_screens", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
 
 	aw = new /atom/movable/screen()
 	aw.icon = 'icons/mob/screen/minimalist.dmi'
@@ -132,11 +132,11 @@
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
 	hud_elements |= aw
-	own_add(HUD, "extra_screens", aw)
+	own_add(HUD, nameof(HUD.extra_screens), aw)
 
-	own_set(src, "pain", new /atom/movable/screen( null ))
+	own_set(src, nameof(pain), new /atom/movable/screen( null ))
 
-	own_set(src, "zone_sel", new /atom/movable/screen/zone_sel( null ))
+	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = ui_style
 	zone_sel.color = ui_color
 	zone_sel.alpha = ui_alpha
@@ -159,7 +159,7 @@
 		using.screen_loc = ui_drop_throw
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "hotkeybuttons", using)
+		own_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 		//Equip detail
 		using = new /atom/movable/screen()
@@ -169,11 +169,11 @@
 		using.screen_loc = ui_equip
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "adding", using)
+		own_add(HUD, nameof(HUD.adding), using)
 
 		//Hand slots themselves
 		inv_box = new /atom/movable/screen/inventory/hand()
-		rel_set(inv_box, "hud", HUD)
+		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "r_hand"
 		inv_box.icon = ui_style
 		inv_box.icon_state = "r_hand_inactive"
@@ -183,12 +183,12 @@
 		inv_box.slot_id = SLOT_ID_HAND_R
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		rel_set(HUD, "r_hand_hud_object", inv_box)
-		own_add(HUD, "adding", inv_box)
+		rel_set(HUD, nameof(HUD.r_hand_hud_object), inv_box)
+		own_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_R]"] = inv_box.screen_loc
 
 		inv_box = new /atom/movable/screen/inventory/hand()
-		rel_set(inv_box, "hud", HUD)
+		rel_set(inv_box, nameof(inv_box.hud), HUD)
 		inv_box.name = "l_hand"
 		inv_box.icon = ui_style
 		inv_box.icon_state = "l_hand_inactive"
@@ -198,8 +198,8 @@
 		inv_box.slot_id = SLOT_ID_HAND_L
 		inv_box.color = ui_color
 		inv_box.alpha = ui_alpha
-		rel_set(HUD, "l_hand_hud_object", inv_box)
-		own_add(HUD, "adding", inv_box)
+		rel_set(HUD, nameof(HUD.l_hand_hud_object), inv_box)
+		own_add(HUD, nameof(HUD.adding), inv_box)
 		slot_info["[SLOT_ID_HAND_L]"] = inv_box.screen_loc
 
 		//Swaphand titlebar
@@ -210,7 +210,7 @@
 		using.screen_loc = ui_swaphand1
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "adding", using)
+		own_add(HUD, nameof(HUD.adding), using)
 
 		using = new /atom/movable/screen/inventory()
 		using.name = "hand"
@@ -219,10 +219,10 @@
 		using.screen_loc = ui_swaphand2
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_add(HUD, "adding", using)
+		own_add(HUD, nameof(HUD.adding), using)
 
 		//Throw button
-		own_set(src, "throw_icon", new /atom/movable/screen())
+		own_set(src, nameof(throw_icon), new /atom/movable/screen())
 		throw_icon.icon = ui_style
 		throw_icon.icon_state = "act_throw_off"
 		throw_icon.name = "throw"

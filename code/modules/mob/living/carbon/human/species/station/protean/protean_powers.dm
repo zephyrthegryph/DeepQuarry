@@ -54,7 +54,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 /datum/protean_power/New()
 	..()
 	if(in_stat_panel)
-		own_set(src, "button", new /obj/effect/protean_power_button(null, src))
+		own_set(src, nameof(button), new /obj/effect/protean_power_button(null, src))
 
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)
@@ -101,7 +101,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 
 /obj/effect/protean_power_button/Initialize(mapload, datum/protean_power/new_power)
 	. = ..()
-	rel_set(src, "power", new_power)
+	rel_set(src, nameof(power), new_power)
 	name = power.name
 	desc = power.desc
 	icon = power.icon
@@ -197,7 +197,7 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 /mob/living/carbon/human/proc/nano_fitting_chosen(datum/om/prompt/choice/ask)
 	if(!species)
 		return
-	proto_private(src, "species") // per-mob change: never mutate the shared species
+	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.base_species = ask.choice
 	regenerate_icons()
 

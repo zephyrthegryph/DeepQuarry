@@ -42,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 /obj/structure/anomaly_container/proc/contain(obj/machinery/artifact/artifact)
 	if(contained())
 		return
-	rel_set(src, "contained", artifact)
+	rel_set(src, nameof(contained), artifact)
 	artifact.forceMove(src)
 	underlays += image(artifact)
 	desc = "Used to safely contain and move anomalies. \The [contained()] is kept inside."
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/structure/anomaly_container, \
 	if(!contained())
 		return
 	contained().dropInto(src)
-	rel_clear(src, "contained")
+	rel_clear(src, nameof(contained))
 	underlays.Cut()
 	desc = initial(desc)
 

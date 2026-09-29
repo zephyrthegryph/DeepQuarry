@@ -340,18 +340,17 @@
 /datum/unit_test/dq_expedition_assignment_prevents_ready_expiry/Run()
 	var/datum/expedition_site/site = new(world.maxz + 1, EXP_DIFF_LOW)
 	var/obj/machinery/computer/shuttle_control/explore/console = new(null)
-	rel_set(site, "origin_console", console)
-	rel_set(console, "active_expedition", site)
+	rel_set(site, nameof(site.origin_console), console)
 	TEST_ASSERT(site.has_active_assignment(), "A site owned by its origin console was not recognized as actively assigned")
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
-	own_put(GLOB.expedition_service, "sites", "assignment-lifecycle-test", site)
+	own_put(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), "assignment-lifecycle-test", site)
 	GLOB.expedition_service.service_step()
 	TEST_ASSERT(GLOB.expedition_service.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
-	own_take_member(GLOB.expedition_service, "sites", "assignment-lifecycle-test")
+	own_take_member(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), "assignment-lifecycle-test")
 
-	rel_clear(console, "active_expedition")
+	rel_clear(console, nameof(console.active_expedition))
 	TEST_ASSERT(!site.has_active_assignment(), "A site remained actively assigned after its console released it")
 	qdel(console)
 	qdel(site)

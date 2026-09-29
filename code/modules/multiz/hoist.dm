@@ -58,7 +58,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 /obj/structure/hoist/proc/attach_hoistee(atom/movable/AM)
 	if (get_turf(AM) != get_turf(source_hook))
 		AM.forceMove(get_turf(source_hook))
-	rel_set(src, "hoistee", AM)
+	rel_set(src, nameof(hoistee), AM)
 	if(ismob(AM))
 		source_hook.buckle_mob(AM)
 	AM.set_anchored(TRUE) // why isn't this being set by buckle_mob for silicons?
@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	if (. && !QDELETED(source_hoist()))
 		var/mob/M = .
-		rel_clear(source_hoist(), "hoistee")
+		rel_clear(source_hoist(), nameof(/obj/structure/hoist::hoistee))
 		M.fall()
 
 /obj/structure/hoist
@@ -119,8 +119,8 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	. = ..()
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
-	own_set(src, "source_hook", new /obj/effect/hoist_hook(newloc))
-	rel_set(source_hook, "source_hoist", src)
+	own_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
+	rel_set(source_hook, nameof(source_hook.source_hoist), src)
 
 
 // whatever hangs from the hoist is released.
@@ -141,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 		source_hook.unbuckle_mob(hoistee())
 	else
 		hoistee().anchored = FALSE
-	rel_clear(src, "hoistee")
+	rel_clear(src, nameof(hoistee))
 	layer = NORMAL_LAYER
 
 /obj/structure/hoist/proc/break_hoist()
@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	desc += " It looks broken, and the clamp has retracted back into the hoist. Seems like you'd have to re-deploy it to get it to work again."
 	if(hoistee())
 		release_hoistee()
-	own_clear(src, "source_hook", OWN_DELETE)
+	own_clear(src, nameof(source_hook), OWN_DELETE)
 
 DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
 DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))

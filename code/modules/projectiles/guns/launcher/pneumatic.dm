@@ -52,7 +52,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/launcher/pneumatic, "item_storage", /obj/ite
 
 	to_chat(user, "You twist the valve and pop the tank out of [src].")
 	user.put_in_hands(tank())
-	rel_clear(src, "tank")
+	rel_clear(src, nameof(tank))
 	update_icon()
 
 /obj/item/gun/launcher/pneumatic/proc/unload_hopper(mob/user)
@@ -83,7 +83,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 	. = INTERACTION_HANDLED_PASS
 	if(!tank() && istype(W,/obj/item/tank))
 		user.drop_from_inventory(W, src)
-		rel_set(src, "tank", W)
+		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
 		update_icon()
 	else if(istype(W))

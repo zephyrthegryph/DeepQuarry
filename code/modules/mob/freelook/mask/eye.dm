@@ -10,4 +10,4 @@
 
 /mob/observer/eye/maskEye/Initialize(mapload)
 	. = ..()
-	rel_set(src, "visualnet", GLOB.cultnet)
+	rel_set(src, nameof(visualnet), GLOB.cultnet)

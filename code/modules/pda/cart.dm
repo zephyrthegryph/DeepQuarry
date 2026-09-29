@@ -65,9 +65,9 @@ GLOBAL_LIST_INIT(civilian_cartridges, list(
 
 /obj/item/cartridge/proc/update_programs(obj/item/pda/pda)
 	for(var/datum/data/pda/P as anything in programs)
-		rel_set(P, "pda", pda)
+		rel_set(P, nameof(P.pda), pda)
 	for(var/datum/data/pda/messenger_plugin/P as anything in messenger_plugins)
-		rel_set(P, "pda", pda)
+		rel_set(P, nameof(P.pda), pda)
 
 /obj/item/cartridge/engineering
 	name = "\improper Power-ON cartridge"
@@ -273,7 +273,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/cartridge/rd, "radio", /obj/item/radio/integrate
 	if(!frequency) return
 
 	var/datum/signal/status_signal = new
-	rel_set(status_signal, "source", src)
+	rel_set(status_signal, nameof(status_signal.source), src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

@@ -199,7 +199,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 				children -= var_name
 				continue
 			// Every default child is owned: the var is OWN, implicitly (DELETE) or declared (a
-			// movable child in contents may use OWN(..., CONTAINED)). Any other kind is refused.
+			// movable child in contents may use owns(policy = OWN_CONTAINED)). Any other kind is refused.
 			var/list/entry = own_entry(D, var_name)
 			if(entry && entry[OWNE_KIND] != OWNK_OWN)
 				stack_trace("DECLARE_DEFAULT_CHILD([owner_type], \"[var_name]\"): the var is declared [own_kind_name(entry[OWNE_KIND])], but a default child is owned; dropped")

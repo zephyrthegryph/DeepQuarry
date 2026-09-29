@@ -40,7 +40,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/powersink, PERIODIC_SLOW, "operating")
 		if(!isturf(T) || !T.is_plating())
 			to_chat(user, "Device must be placed over an exposed cable to attach to it.")
 			return ITEM_INTERACT_BLOCKING
-		rel_set(src, "attached", locate_within(T, /obj/structure/cable))
+		rel_set(src, nameof(attached), locate_within(T, /obj/structure/cable))
 		if(!attached())
 			to_chat(user, "No exposed cable here to attach to.")
 			return ITEM_INTERACT_BLOCKING

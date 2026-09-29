@@ -28,7 +28,7 @@
 
 /datum/event_container/proc/start_event()
 	if(!next_event())	// If non-one has explicitly set an event, randomly pick one
-		rel_set(src, "next_event", acquire_event())
+		rel_set(src, nameof(next_event), acquire_event())
 
 	// Has an event been acquired?
 	if(next_event())
@@ -41,7 +41,7 @@
 		new new_event_type_path(next_event())	// Events are added and removed from the processing queue in their New/kill procs
 
 		log_game("Starting event '[next_event().name]' of severity [GLOB.severity_to_string[severity]].")
-		rel_clear(src, "next_event")						// When set to null, a random event will be selected next time
+		rel_clear(src, nameof(next_event))						// When set to null, a random event will be selected next time
 	else
 		// If not, wait for one minute, instead of one tick, before checking again.
 		next_event_time += (60 * 10)
@@ -63,7 +63,7 @@
 
 	// Select an event and remove it from the pool of available events
 	var/picked_event = pickweight(possible_events)
-	rel_remove(src, "available_events", picked_event)
+	rel_remove(src, nameof(available_events), picked_event)
 	return picked_event
 
 /datum/event_container/proc/get_weight(datum/event_meta/EM, list/active_with_role)
@@ -136,9 +136,9 @@
 	var/mob/user = ask.answerer
 	var/datum/event_meta/EM = ask.choice
 	if(next_event())
-		rel_add(src, "available_events", next_event())
-	rel_remove(src, "available_events", EM)
-	rel_set(src, "next_event", EM)
+		rel_add(src, nameof(available_events), next_event())
+	rel_remove(src, nameof(available_events), EM)
+	rel_set(src, nameof(next_event), EM)
 	log_and_message_admins("has queued the [GLOB.severity_to_string[severity]] event '[EM.name]'.", user)
 
 /datum/event_container/mundane

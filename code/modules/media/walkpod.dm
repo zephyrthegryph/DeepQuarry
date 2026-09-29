@@ -53,13 +53,13 @@ APPEARANCE_TEMPLATE(/obj/item/walkpod, "{appearance_base}{listener?_on:}")
 	if(deployed_headpods)
 		restore_headpods()
 	to_chat(listener(), span_notice("You are no longer wearing the [src]'s headphones."))
-	rel_clear(src, "listener")
+	rel_clear(src, nameof(listener))
 	update_icon()
 
 /obj/item/walkpod/proc/set_listener(mob/living/L)
 	if(listener())
 		remove_listener()
-	rel_set(src, "listener", L)
+	rel_set(src, nameof(listener), L)
 	to_chat(L, span_notice("You put the [src]'s headphones on and power it up, preparing to listen to some <b>sick tunes</b>."))
 	update_icon()
 
@@ -108,16 +108,16 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 		if(JUKEMODE_NEXT)
 			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			rel_set(src, "current_track", tracks[newTrackIndex])
+			rel_set(src, nameof(current_track), tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
 			var/previous_track = current_track()
 			do
-				rel_set(src, "current_track", pick(tracks))
+				rel_set(src, nameof(current_track), pick(tracks))
 			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			rel_set(src, "current_track", current_track())
+			rel_set(src, nameof(current_track), current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			rel_clear(src, "current_track")
+			rel_clear(src, nameof(current_track))
 			playing = 0
 			update_icon()
 	start_stop_song()
@@ -149,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	rel_set(src, "current_track", tracks[newTrackIndex])
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -159,7 +159,7 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	rel_set(src, "current_track", tracks[newTrackIndex])
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -195,7 +195,7 @@ UI_ACT(/obj/item/walkpod, "change_track", ui_act_change_track, UI_ARG_REF("chang
 UI_ACT_PROC(/obj/item/walkpod, ui_act_change_track)
 	var/datum/track/T = params["change_track"]
 	if(istype(T))
-		rel_set(src, "current_track", T)
+		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 		StartPlaying()
 	return TRUE
 
@@ -231,7 +231,7 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
 	var/mob/living/L = user
 	if(!istype(L))
 		return
-	own_set(src, "deployed_headpods", new /obj/item/headpods ())
+	own_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
 	L.put_in_any_hand_if_possible(deployed_headpods)
 	update_icon()
 
@@ -251,7 +251,7 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
 
 	if(istype(potential_holder))
 		potential_holder.unEquip(deployed_headpods, force = TRUE)
-	own_clear(src, "deployed_headpods", OWN_DELETE)
+	own_clear(src, nameof(deployed_headpods), OWN_DELETE)
 	update_icon()
 
 /obj/item/walkpod/proc/check_headpods()

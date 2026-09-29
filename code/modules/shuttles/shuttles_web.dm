@@ -24,7 +24,7 @@
 	var/list/obj/item/clothing/head/pilot/helmets
 
 /datum/shuttle/autodock/web_shuttle/New()
-	own_set(src, "web_master", new web_master_type(src))
+	own_set(src, nameof(web_master), new web_master_type(src))
 	build_destinations()
 	if(autopilot)
 		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)
@@ -115,10 +115,10 @@
 /datum/shuttle/autodock/web_shuttle/proc/update_helmets()
 	for(var/obj/item/clothing/head/pilot/H as anything in helmets?.Copy())
 		if(!H.shuttle_comp() || !(get_area(H) in shuttle_area))
-			rel_clear(H, "shuttle_comp")
+			rel_clear(H, nameof(H.shuttle_comp))
 			H.audible_message(span_warning("\The [H] pings as it loses it's connection with the ship."), runemessage = "ping")
 			H.update_hud("discon")
-			rel_remove(src, "helmets", H)
+			rel_remove(src, nameof(helmets), H)
 		else
 			H.update_hud(moving_status)
 
@@ -183,7 +183,7 @@
 		var/list/find_doors = my_doors.Copy()
 		for(var/obj/machinery/door/airlock/A in area_contents_of_type(my_area, /obj/machinery/door/airlock))
 			if(A.id_tag in find_doors)
-				rel_add(src, "linked_doors", A)
+				rel_add(src, nameof(linked_doors), A)
 				find_doors -= A.id_tag
 		for(var/lost in find_doors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] door!")
@@ -192,7 +192,7 @@
 		var/list/find_sensors = my_sensors.Copy()
 		for(var/obj/machinery/shuttle_sensor/S in area_contents_of_type(my_area, /obj/machinery/shuttle_sensor))
 			if(S.id_tag in find_sensors)
-				rel_add(src, "linked_sensors", S)
+				rel_add(src, nameof(linked_sensors), S)
 				find_sensors -= S.id_tag
 		for(var/lost in find_sensors)
 			log_shuttle("[my_area] shuttle computer couldn't find [lost] sensor!")
@@ -215,8 +215,8 @@
 
 /obj/machinery/computer/shuttle_control/web/proc/interaction_register_helmet(mob/user, obj/item/clothing/head/pilot/H, datum/interaction/interaction)
 	var/datum/shuttle/autodock/web_shuttle/shuttle = SSshuttles.shuttles[shuttle_tag]
-	rel_set(H, "shuttle_comp", src)
-	rel_add(shuttle, "helmets", H)
+	rel_set(H, nameof(H.shuttle_comp), src)
+	rel_add(shuttle, nameof(shuttle.helmets), H)
 	to_chat(user, span_notice("You register the helmet with the ship's console."))
 	shuttle.update_helmets()
 	return TRUE
@@ -270,7 +270,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control/web, "merge:ui_data_obj_
 
 	var/list/doors = list()
 	for(var/obj/machinery/door/airlock/A as anything in linked_doors)
-		doors[my_doors[A.id_tag]] = list("bolted" = A.locked, "open" = !A.density)
+		doors[my_doors[A.id_tag]] = list("bolted" = is_bolted(A), "open" = !A.density)
 
 	var/list/sensors = list()
 	for(var/obj/machinery/shuttle_sensor/S as anything in linked_sensors)
@@ -375,11 +375,11 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 		message_admins("ERROR: Shuttle computer was asked to travel to a nonexistant destination.")
 		return
 
-	rel_set(WS, "next_location", target_destination.my_landmark())
+	rel_set(WS, nameof(/datum/shuttle/autodock::next_location), target_destination.my_landmark())
 	if(!can_move(WS, ui.user))
 		return
 
-	rel_set(WS.web_master, "future_destination", target_destination)
+	rel_set(WS.web_master, nameof(/datum/shuttle_web_master::future_destination), target_destination)
 	to_chat(ui.user, span_notice("[WS.visible_name] flight computer received command."))
 	WS.web_master.reset_autopath() // Deviating from the path will almost certainly confuse the autopilot, so lets just reset its memory.
 
@@ -449,7 +449,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 
 		for(var/new_dest in destinations)
 			var/datum/shuttle_destination/D = new new_dest(WM)
-			own_add(WM, "destinations", D)
+			own_add(WM, nameof(WM.destinations), D)
 
 			for(var/type_to_link in D.routes_to_make)
 				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)
@@ -503,6 +503,10 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	if(aircontents)
 		return aircontents
 
-REL_LIST(/datum/shuttle/autodock/web_shuttle, helmets)
-REL_LIST(/obj/machinery/computer/shuttle_control/web, linked_doors)
-REL_LIST(/obj/machinery/computer/shuttle_control/web, linked_sensors)
+/datum/shuttle/autodock/web_shuttle/relations()
+	. = ..()
+	. += rel_many(nameof(helmets))
+/obj/machinery/computer/shuttle_control/web/relations()
+	. = ..()
+	. += rel_many(nameof(linked_doors))
+	. += rel_many(nameof(linked_sensors))

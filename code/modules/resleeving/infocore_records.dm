@@ -37,7 +37,7 @@
 	src.one_time = one_time
 
 	//The mind!
-	rel_set(src, "mind_ref", mind)
+	rel_set(src, nameof(mind_ref), mind)
 	mindname = mind.name
 	ckey = ckey(mind.key)
 
@@ -146,7 +146,7 @@
 	M.dna.check_integrity()
 
 	//The DNA2 stuff
-	own_set(src, "mydna", new /datum/dna2/record ())
+	own_set(src, nameof(mydna), new /datum/dna2/record ())
 	QDEL_SWAP(mydna.dna, M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
@@ -156,7 +156,7 @@
 	//My stuff
 	client_ref = M.client
 	ckey = M.ckey
-	rel_set(src, "mind_ref", M.mind)
+	rel_set(src, nameof(mind_ref), M.mind)
 
 	//External organ status. 0:gone, 1:normal, "string":manufacturer
 	for(var/limb in limb_data)
@@ -215,10 +215,10 @@
 			if(BLACKLISTED_COPY_VARS)
 				continue
 			if("mydna")
-				own_set(src, "mydna", orig.mydna.copy())
+				own_set(src, nameof(mydna), orig.mydna.copy())
 				continue
 			if("mind_ref")
-				rel_set(src, "mind_ref", orig.mind_ref) // a relation view: never a raw copy
+				rel_set(src, nameof(mind_ref), orig.mind_ref) // a relation view: never a raw copy
 				continue
 		if(islist(vars[A]))
 			var/list/L = orig.vars[A]
@@ -254,7 +254,7 @@
 	H.name = H.real_name
 	H.suiciding = 0
 	H.losebreath = 0
-	rel_clear(H, "mind")
+	rel_clear(H, nameof(H.mind))
 
 	return H
 
@@ -317,7 +317,7 @@
 
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
-		own_set(mydna, "dna", new /datum/dna())
+		own_set(mydna, nameof(mydna.dna), new /datum/dna())
 	QDEL_SWAP(H.dna, mydna.dna.Clone())
 	H.original_player = ckey
 

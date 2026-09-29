@@ -53,6 +53,12 @@ OWN_TIMER(/datum, periodic_interval)
 	if(!E || QDELING(E))
 		return
 	om_changed(E, channel)
+	refresh_mark(E, channel)
+
+/// Queues E's refresh (and its drawing owners', H2). changed() and om_changed() both come here.
+/proc/refresh_mark(datum/E, channel)
+	if(!E || QDELING(E))
+		return
 	// The look applying itself (set_light, vis_contents) is presentation, not a state change.
 	if(E == GLOB.refresh_applying)
 		return
@@ -65,6 +71,12 @@ OWN_TIMER(/datum, periodic_interval)
 			stack_trace(msg)
 #endif
 	refresh_trace_note(E, channel)
+	// Sources watching E through a relation view (rel_one/rel_many(watch = ...)) re-derive too. Only on
+	// E's first mark this frame, so two entities watching each other stop after one round.
+	if(E.rel_watchers && !E.refresh_queued)
+		E.refresh_queued = TRUE
+		GLOB.refresh_queue += E
+		rel_notify_watchers(E)
 	var/datum/D = E
 	for(var/depth in 1 to 8)
 		D.refresh_bits |= channel
@@ -126,6 +138,8 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 /atom/proc/draw(datum/look/look)
 	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "draw"))
+		GLOB.derive_probe_found |= TYPE_DERIVES_LOOK
 	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
 
@@ -136,8 +150,26 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 
 /// The verbs to hide right now. Call ..() (capabilities hide theirs). Re-evaluated on change.
 /atom/proc/hidden_verbs()
+	SHOULD_CALL_PARENT(TRUE)
 	SHOULD_NOT_SLEEP(TRUE)
+	if(GLOB.derive_probing && derive_called_by_override(callee.caller, "hidden_verbs"))
+		GLOB.derive_probe_found |= TYPE_DERIVES_VERBS
 	return caps_hidden_verbs()
+
+// ---- what a type derives, decided by its declared overrides (never by one instance's result) ----
+
+/// Set while a type's first refresh probes which derived procs it overrides.
+GLOBAL_VAR_INIT(derive_probing, FALSE)
+/// TYPE_DERIVES_* found by the probe: the base proc was reached through a type's override.
+GLOBAL_VAR_INIT(derive_probe_found, 0)
+
+/// Whether `caller` (the proc that called a base derived proc) is an override of `name`: the base was
+/// reached through a type's own draw()/hidden_verbs() calling ..(), not directly by the engine.
+/proc/derive_called_by_override(callee/caller, name)
+	if(!caller)
+		return FALSE
+	var/path = "[caller.proc]"
+	return copytext(path, -(length(name) + 1)) == "/[name]"
 
 /// Side effects of a state change (a Rust device sync, a network rebuild), coalesced to once per
 /// frame. `bits` are the channels raised since the last refresh. Never call it by hand.
@@ -223,10 +255,19 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		var/flags = type_derive_flags(A)
 		var/may_draw = flags & (TYPE_DERIVES_LOOK | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || !isnull(A.look_key)
 		var/may_hide = flags & (TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING) || A.refresh_hidden_verbs
-		var/drew = may_draw ? !isnull(refresh_look(A)) : FALSE
-		var/hid = may_hide ? length(refresh_verbs(A)) : FALSE
-		if(flags & TYPE_DERIVES_PENDING)
-			type_derive_record(A, drew, hid)
+		var/probing = flags & TYPE_DERIVES_PENDING
+		if(probing)
+			GLOB.derive_probing = TRUE
+			GLOB.derive_probe_found = 0
+		if(may_draw)
+			refresh_look(A)
+		if(may_hide)
+			refresh_verbs(A)
+		if(probing)
+			GLOB.derive_probing = FALSE
+			// Type-pure: the type overrides draw()/hidden_verbs() or it doesn't, whatever this
+			// instance's state drew or hid (review: never record a negative from one result).
+			type_derive_record(A, GLOB.derive_probe_found & TYPE_DERIVES_LOOK, GLOB.derive_probe_found & TYPE_DERIVES_VERBS)
 		refresh_sweep_track(A)
 	if(LAZYLEN(D.open_tguis))
 		SStgui.update_uis(D)
@@ -334,7 +375,9 @@ GLOBAL_LIST_EMPTY(refresh_drift)
 			continue
 		GLOB.refresh_sweep_index++
 		scanned++
-		if(A.refresh_queued)
+		// Queued here, or by a declared appearance watch (a stat or density change) whose
+		// update_icon() on this same lane marks it: its refresh is pending, not missed.
+		if(A.refresh_queued || A.appearance_queued)
 			continue
 #if !defined(UNIT_TESTS)
 		if(!LAZYLEN(A.open_tguis) && !refresh_near(A, client_turfs))

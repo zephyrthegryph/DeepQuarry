@@ -30,11 +30,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	rel_set(src, "location", loc)
+	rel_set(src, nameof(location), loc)
 	setup = 1
 
 /datum/effect/effect/system/proc/attach(atom/atom)
-	rel_set(src, "holder", atom)
+	rel_set(src, nameof(holder), atom)
 
 /datum/effect/effect/system/proc/start()
 
@@ -64,11 +64,11 @@ would spawn and follow the beaker, even if it is carried or thrown.
 		n = 10
 	number = n
 	cardinals = c
-	rel_set(src, "location", loc)
+	rel_set(src, nameof(location), loc)
 
 /datum/effect/effect/system/steam_spread/proc/emit_one_steam()
 	if(holder)
-		rel_set(src, "location", get_turf(holder))
+		rel_set(src, nameof(location), get_turf(holder))
 	var/obj/effect/effect/steam/steam = new /obj/effect/effect/steam(src.get_location())
 	var/direction
 	if(src.cardinals)
@@ -343,15 +343,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/smoke_spread/proc/emit_one_smoke(color_override)
 	if(holder)
-		rel_set(src, "location", get_turf(holder))
+		rel_set(src, nameof(location), get_turf(holder))
 	var/obj/effect/effect/smoke/smoke = new smoke_type(src.get_location())
 	src.total_smoke++
 	if(color_override)
@@ -418,7 +418,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/ion_trail_follow/set_up(atom/atom)
 	attach(atom)
-	rel_set(src, "oldposition", get_turf(atom))
+	rel_set(src, nameof(oldposition), get_turf(atom))
 
 /datum/effect/effect/system/ion_trail_follow/proc/trail_step()
 	var/turf/T
@@ -433,7 +433,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	if(T != src.oldposition())
 		if(isturf(T))
 			var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition())
-			rel_set(src, "oldposition", T)
+			rel_set(src, nameof(oldposition), T)
 			I.set_dir(src.holder.dir)
 			flick("ion_fade", I)
 			I.icon_state = "blank"
@@ -469,13 +469,13 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/steam_trail_follow/set_up(atom/atom)
 	attach(atom)
-	rel_set(src, "oldposition", get_turf(atom))
+	rel_set(src, nameof(oldposition), get_turf(atom))
 
 /datum/effect/effect/system/steam_trail_follow/proc/steam_step()
 	if(src.number < 3)
 		var/obj/effect/effect/steam/I = new /obj/effect/effect/steam(src.oldposition())
 		src.number++
-		rel_set(src, "oldposition", get_turf(holder))
+		rel_set(src, nameof(oldposition), get_turf(holder))
 		I.set_dir(src.holder.dir)
 		om_after(src, 10, PROC_REF(expire_steam_trail), I)
 	om_after(src, 2, PROC_REF(reschedule_steam))
@@ -509,9 +509,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 /datum/effect/effect/system/reagents_explosion/set_up(amt, loc, flash = 0, flash_fact = 0)
 	amount = amt
 	if(istype(loc, /turf/))
-		rel_set(src, "location", loc)
+		rel_set(src, nameof(location), loc)
 	else
-		rel_set(src, "location", get_turf(loc))
+		rel_set(src, nameof(location), get_turf(loc))
 
 	flashing = flash
 	flashing_factor = flash_fact
@@ -577,9 +577,9 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 
 /datum/effect/effect/system/teleport_greyscale/set_up(cl, loca)
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 	color = cl
 
 /datum/effect/effect/system/teleport_greyscale/start()
@@ -620,15 +620,15 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 	number = n
 	cardinals = c
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 	if(direct)
 		direction = direct
 
 /datum/effect/effect/system/confetti_spread/proc/emit_one_confetti(color_override)
 	if(holder)
-		rel_set(src, "location", get_turf(holder))
+		rel_set(src, nameof(location), get_turf(holder))
 	var/obj/effect/effect/confetti/confetti = new confetti_type(src.get_location())
 	src.total_confetti++
 	if(color_override)

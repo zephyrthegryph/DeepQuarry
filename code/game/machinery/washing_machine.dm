@@ -35,7 +35,9 @@
 	default_apply_parts()
 	make_climbable()
 
-OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
+/obj/machinery/washing_machine/ownership()
+	. = ..()
+	. += owns(nameof(washing), policy = OWN_SPILL)
 
 /obj/machinery/washing_machine/declare_interactions(list/into)
 	into += list(
@@ -94,11 +96,11 @@ OWN(/obj/machinery/washing_machine, washing, OWN_SPILL)
 	//Tanning!
 	for(var/obj/item/stack/hairlesshide/HH in washing)
 		var/obj/item/stack/wetleather/WL = new(src, HH.get_amount())
-		own_take_member(src, "washing", HH)
+		own_take_member(src, nameof(washing), HH)
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		own_add(src, "washing", WL)
+		own_add(src, nameof(washing), WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE
@@ -169,7 +171,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
 				user.drop_item()
-				rel_set(src, "crayon", W)
+				rel_set(src, nameof(crayon), W)
 				crayon().forceMove(src)
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
@@ -236,14 +238,14 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			set_state(EMPTY_OPEN)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			own_take_all(src, "washing")
+			own_take_all(src, nameof(washing))
 		if(FULL_OPEN)
 			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, "crayon")
-			own_take_all(src, "washing")
+			rel_clear(src, nameof(crayon))
+			own_take_all(src, nameof(washing))
 			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
@@ -259,9 +261,9 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, "crayon")
+			rel_clear(src, nameof(crayon))
 			set_state(EMPTY_OPEN)
-			own_take_all(src, "washing")
+			own_take_all(src, nameof(washing))
 
 	update_icon()
 	return TRUE

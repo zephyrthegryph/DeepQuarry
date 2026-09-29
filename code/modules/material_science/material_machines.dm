@@ -62,8 +62,10 @@ OWN_TIMER(/obj/machinery/material_furnace, firing_timer)
 	var/datum/gas_mixture/chamber_air
 
 // The unfired charge sits in the furnace's contents until it is fired or unloaded.
-OWN(/obj/machinery/material_furnace, feedstock, OWN_CONTAINED)
-OWN(/obj/machinery/material_furnace, carbon_feed, OWN_CONTAINED)
+/obj/machinery/material_furnace/ownership()
+	. = ..()
+	. += owns(nameof(feedstock), policy = OWN_CONTAINED)
+	. += owns(nameof(carbon_feed), policy = OWN_CONTAINED)
 
 DECLARE_GAS(/obj/machinery/material_furnace, "chamber_air", 500, T20C, null)
 DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
@@ -194,7 +196,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 /obj/machinery/material_furnace/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(output_stock() && !firing)
 		var/obj/item/stack/material/processed_alloy/finished = output_stock()
-		rel_clear(src, "output_stock")
+		rel_clear(src, nameof(output_stock))
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		act_message(user, src, others = span_notice("%U% removes [finished] from %T%'s output tray."))
@@ -238,7 +240,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		return
 	if(output_stock())
 		var/obj/item/stack/material/processed_alloy/finished = output_stock()
-		rel_clear(src, "output_stock")
+		rel_clear(src, nameof(output_stock))
 		finished.forceMove(user.drop_location())
 		user.put_in_hands(finished)
 		act_message(user, src, MSG_SELF(span_notice("You remove [finished] from %T%'s output tray.")), \
@@ -270,11 +272,11 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 				break
 		if(!QDELETED(stock) && stock.get_amount())
 			stock.forceMove(get_turf(src))
-	own_take_all(src, "feedstock")
+	own_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
 		qdel(coal)
-	own_take_all(src, "carbon_feed")
+	own_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
 		qdel(batch)
 		return
@@ -291,16 +293,16 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	if(heat_treatment && batch.phase == MATERIAL_PHASE_SOLID)
 		if(!batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT))
 			visible_message(span_warning("[src] could not complete the heat treatment. The stock remains recoverable."))
-			rel_set(src, "output_stock", processed_spawn_stack(get_turf(src), batch, batch.amount))
+			rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, batch.amount))
 			qdel(batch)
 			return
 	else
 		if(!batch.apply_process(MATERIAL_PROCESS_MELT) || !batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE) || !batch.apply_process(MATERIAL_PROCESS_CAST))
 			visible_message(span_warning("[src] could not fully melt and combine the charge. The material remains recoverable."))
-			rel_set(src, "output_stock", processed_spawn_stack(get_turf(src), batch, batch.amount))
+			rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, batch.amount))
 			qdel(batch)
 			return
-	rel_set(src, "output_stock", processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction))))
+	rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction))))
 	if(output_stock())
 		output_stock().forceMove(src)
 	visible_message(span_notice("[src] finishes firing. The completed alloy is ready to collect."))
@@ -353,10 +355,10 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		return FALSE
 	for(var/obj/item/stack/material/stock as anything in feedstock)
 		stock.forceMove(user.drop_location())
-	own_take_all(src, "feedstock")
+	own_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal as anything in carbon_feed)
 		coal.forceMove(user.drop_location())
-	own_take_all(src, "carbon_feed")
+	own_take_all(src, nameof(carbon_feed))
 	act_message(user, src, others = span_notice("%U% unloads the unfired charge from %T%."))
 	return TRUE
 
@@ -382,7 +384,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		if(!user.drop_from_inventory(incoming))
 			return INTERACTION_HANDLED_PASS
 		incoming.forceMove(src)
-		rel_set(src, "stock", incoming)
+		rel_set(src, nameof(stock), incoming)
 		return INTERACTION_HANDLED_PASS
 	if(istype(item, /obj/item/melee/hammer) && stock())
 		var/datum/material_batch/batch = stock().physical_batch().copy_batch()
@@ -391,7 +393,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 			qdel(batch)
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock(), batch, src)
-		rel_set(src, "stock", replacement)
+		rel_set(src, nameof(stock), replacement)
 		stock().forceMove(src)
 		qdel(batch)
 		act_message(user, null, others = span_notice("%U% works the alloy under the hammer, refining its shape and internal structure."))
@@ -408,7 +410,7 @@ DECLARE_INTERACTIONS(/obj/structure/material_anvil, \
 	if(!stock())
 		return FALSE
 	stock().forceMove(get_turf(src))
-	rel_clear(src, "stock")
+	rel_clear(src, nameof(stock))
 	return TRUE
 
 /obj/structure/bed/bath/material_treatment
@@ -563,7 +565,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	batch.homogeneity = clamp(batch.homogeneity + round(strength / 8), 0, 100)
 	batch.record_electricity(300)
 	batch.recalculate()
-	own_set(src, "target", replace_processed_stack(stock, batch, src))
+	own_set(src, nameof(target), replace_processed_stack(stock, batch, src))
 	set_energy(max(0, energy - 300))
 	qdel(batch)
 	return TRUE

@@ -59,7 +59,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	M.forceMove(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	var/datum/ai_brain/B = M.ai_brain
 	TEST_ASSERT_NOTNULL(B, "simple mob did not receive an AI brain")
-	rel_clear(B, "primary_threat")
+	rel_clear(B, nameof(B.primary_threat))
 	B.active_behavior_type = null
 	TEST_ASSERT(B.hibernate_calm(), "calm brain refused spatial hibernation")
 	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")

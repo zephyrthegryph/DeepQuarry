@@ -4,7 +4,7 @@
 
 /datum/ship_engine/ion/New(obj/machinery/_holder)
 	..()
-	rel_set(src, "thruster", _holder)
+	rel_set(src, nameof(thruster), _holder)
 
 /datum/ship_engine/ion/get_status()
 	return thruster().get_status()

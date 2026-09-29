@@ -10,8 +10,8 @@
 	var/datum/feed_channel/channel
 
 /datum/news_panel/New(mob/new_player/host_mob, datum/feed_channel/CHANNEL)
-	rel_set(src, "host", host_mob)
-	rel_set(src, "channel", CHANNEL)
+	rel_set(src, nameof(host), host_mob)
+	rel_set(src, nameof(channel), CHANNEL)
 
 DECLARE_UI_STATE(/datum/news_panel, GLOB.tgui_always_state)
 
@@ -69,9 +69,9 @@ UI_ACT_PROC(/datum/news_panel, ui_act_prev)
 	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())
 		return
 	if(!dq_news_panel_cache)
-		own_set(src, "dq_news_panel_cache", new /datum/news_panel(src, CHANNEL))
+		own_set(src, nameof(dq_news_panel_cache), new /datum/news_panel(src, CHANNEL))
 	else
-		rel_set(dq_news_panel_cache, "channel", CHANNEL)
+		rel_set(dq_news_panel_cache, nameof(dq_news_panel_cache.channel), CHANNEL)
 	if(!current_news_page && length(CHANNEL.messages))
 		current_news_page = 1
 	dq_news_panel_cache.tgui_interact(src)

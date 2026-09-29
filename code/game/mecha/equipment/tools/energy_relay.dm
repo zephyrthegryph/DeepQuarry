@@ -40,13 +40,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/tesla_energy_re
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/detach()
 	set_relaying(FALSE)
 	if(chassis?.energy_relay == src)
-		rel_clear(chassis, "energy_relay")
+		rel_clear(chassis, nameof(chassis.energy_relay))
 	..()
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/attach(obj/mecha/M)
 	..()
-	rel_set(chassis, "energy_relay", src)
+	rel_set(chassis, nameof(chassis.energy_relay), src)
 	return
 
 /obj/item/mecha_parts/mecha_equipment/tesla_energy_relay/can_attach(obj/mecha/M)

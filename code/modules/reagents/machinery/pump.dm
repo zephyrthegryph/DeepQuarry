@@ -26,7 +26,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	rel_set(src, "cell", default_use_hicell()) // component_parts owns the cell; this is a view onto it
+	rel_set(src, nameof(cell), default_use_hicell()) // component_parts owns the cell; this is a view onto it
 
 	add_hose_connector(/datum/hose_connector/output)
 
@@ -46,9 +46,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	own_set(src, "reagents", R)
+	own_set(src, nameof(reagents), R)
 
-	rel_set(src, "cell", locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
+	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/pump/appearance_overlays()
@@ -153,7 +153,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 	user.drop_from_inventory(W, src)
 	materialize_parts()
 	W.move_into(src, CONTAINER_SLOT_INTERNALS)
-	own_move(W, src, "component_parts") // the cell is a part; `cell` views it (RefreshParts())
+	own_move(W, src, nameof(component_parts)) // the cell is a part; `cell` views it (RefreshParts())
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()
@@ -168,8 +168,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
 /obj/machinery/pump/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
 	if(open && istype(cell))
 		var/obj/item/cell/removed = cell
-		own_take_member(src, "component_parts", removed)
-		rel_clear(src, "cell")
+		own_take_member(src, nameof(component_parts), removed)
+		rel_clear(src, nameof(cell))
 		user.put_in_hands(removed)
 		removed.add_fingerprint(user)
 		removed.update_icon()

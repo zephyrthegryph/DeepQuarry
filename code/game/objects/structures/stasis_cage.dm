@@ -42,7 +42,7 @@
 	if(contained() || !istype(animal))
 		return
 
-	rel_set(src, "contained", animal)
+	rel_set(src, nameof(contained), animal)
 	animal.forceMove(src)
 	animal.set_stasis(/datum/body_effect/stasis/total, src)
 	if(animal?.buckled_to() && istype(animal?.buckled_to(), /obj/effect/energy_net))
@@ -60,7 +60,7 @@
 		var/atom/movable/_tmp_buck_12 = contained()?.buckled_to()
 		_tmp_buck_12.dropInto(src)
 	contained().set_stasis(null, src)
-	rel_clear(src, "contained")
+	rel_clear(src, nameof(contained))
 	icon_state = "critteropen"
 	underlays.Cut()
 	desc = initial(desc)

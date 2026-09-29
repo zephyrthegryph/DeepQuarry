@@ -25,12 +25,12 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 		return
 	steps_left = step_count
 	step_delay = delay
-	rel_set(src, "spray_target", target)
+	rel_set(src, nameof(spray_target), target)
 	step_process()
 
 /// Ends the spray's travel (the declared repeat stops with spray_target).
 /obj/effect/effect/water/proc/stop_spray()
-	rel_clear(src, "spray_target")
+	rel_clear(src, nameof(spray_target))
 	return REPEAT_STOP
 
 /obj/effect/effect/water/proc/step_process()

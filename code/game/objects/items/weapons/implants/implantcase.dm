@@ -56,13 +56,13 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 			if ((imp || M.imp.implanted))
 				return INTERACTION_HANDLED_PASS
 			M.imp.forceMove(src)
-			own_transfer(M, "imp", src, "imp")
+			own_transfer(M, nameof(M.imp), src, nameof(imp))
 			update()
 			M.update()
 		else
 			if (imp)
 				imp.forceMove(M)
-				own_transfer(src, "imp", M, "imp")
+				own_transfer(src, nameof(imp), M, nameof(M.imp))
 				update()
 			M.update()
 	return INTERACTION_HANDLED_PASS
@@ -263,4 +263,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/implantcase/vrlanguage, "imp", /obj/item/implant
 	I.reagents.trans_to_obj(imp, 5)
 	to_chat(user, span_notice("You inject 5 units of the solution. The syringe now contains [I.reagents.total_volume] units."))
 
-OWN(/obj/item/implantcase, imp, OWN_CONTAINED)
+/obj/item/implantcase/ownership()
+	. = ..()
+	. += owns(nameof(imp), policy = OWN_CONTAINED)

@@ -45,7 +45,7 @@
 	desc += "\n You see [K] engraved on \the [src]."
 	var/obj/item/flame/lighter/zippo/c4detonator/detonator = new(src.loc)
 	detonator.desc += " You see [K] engraved on the lighter."
-	rel_set(detonator, "bomb", src)
+	rel_set(detonator, nameof(detonator.bomb), src)
 
 /obj/item/syndie/c4explosive/proc/detonate()
 	icon_state = "c-4[size]_1"
@@ -73,7 +73,7 @@ DECLARE_INTERACTIONS(/obj/item/syndie/c4explosive, INTERACT_ITEM(null, PROC_REF(
 /obj/item/syndie/c4explosive/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/flame/lighter/zippo/c4detonator))
 		var/obj/item/flame/lighter/zippo/c4detonator/D = W
-		rel_set(D, "bomb", src)
+		rel_set(D, nameof(D.bomb), src)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 
@@ -113,7 +113,7 @@ EXTEND_INTERACTIONS(/obj/item/flame/lighter/zippo/c4detonator, INTERACT_SELF(nul
 			icon_state = "[base_state]click"
 			if(bomb())
 				var/obj/item/syndie/c4explosive/bomb_to_explode = bomb()
-				rel_clear(src, "bomb") //clear up our ref
+				rel_clear(src, nameof(bomb)) //clear up our ref
 				bomb_to_explode.detonate()
 				log_admin("[key_name(user)] has triggered [bomb_to_explode] with [src].")
 				message_admins(span_danger("[key_name_admin(user)] has triggered [bomb_to_explode] with [src]."))

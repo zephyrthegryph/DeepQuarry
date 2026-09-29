@@ -81,7 +81,7 @@
 		return TRUE
 	var/mob/living/silicon/ai/picked = select_active_ai(user, src, PROC_REF(interaction_select_ai), args)
 	if(picked)
-		rel_set(src, "current", picked)
+		rel_set(src, nameof(current), picked)
 		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 
@@ -136,7 +136,7 @@
 		return TRUE
 	var/mob/living/silicon/robot/picked = freeborg(user, src, PROC_REF(interaction_select_borg), args)
 	if(picked)
-		rel_set(src, "current", picked)
+		rel_set(src, nameof(current), picked)
 		to_chat(user, "[src.current().name] selected for law changes.")
 	return TRUE
 

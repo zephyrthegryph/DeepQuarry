@@ -68,7 +68,7 @@
 	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
-	own_set(src, "base_disease", D)
+	own_set(src, nameof(base_disease), D)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()
@@ -151,7 +151,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 		sick.update_icon()
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		own_add(sick, "viruses", base_disease.Copy())
+		own_add(sick, nameof(sick.viruses), base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"
@@ -168,6 +168,6 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 
 /mob/living/simple_mob/vore/aggressive/macrophage/load_default_bellies()
 	var/obj/belly/B = new /obj/belly/macrophage(src)
-	rel_set(src, "vore_selected", B)
+	rel_set(src, nameof(vore_selected), B)
 
 // The macrophage's own strain (owned); victims and decals get their own copies.

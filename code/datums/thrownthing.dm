@@ -16,7 +16,7 @@
 /datum/om/relation/throw_of/on_unlink(datum/thrownthing/source, atom/movable/target, datum/om/edge/edge)
 	om_unhook(target, /datum/om/event/before/living_turf_collision, source)
 	if(target.throwing == source)
-		rel_clear(target, "throwing")
+		rel_clear(target, nameof(target.throwing))
 
 /datum/thrownthing
 	///The original intended target of the throw (a relation view).
@@ -72,16 +72,16 @@
 	. = ..()
 	om_link(src, thrownthing, /datum/om/relation/throw_of)
 	om_hook(thrownthing, /datum/om/event/before/living_turf_collision, src, PROC_REF(hit_atom))
-	rel_set(src, "starting_turf", get_turf(thrownthing))
+	rel_set(src, nameof(starting_turf), get_turf(thrownthing))
 	var/turf/target_turf = get_turf(target)
-	rel_set(src, "target_turf", target_turf)
+	rel_set(src, nameof(target_turf), target_turf)
 	if(target_turf != target)
-		rel_set(src, "initial_target", target)
+		rel_set(src, nameof(initial_target), target)
 	src.init_dir = init_dir
 	src.maxrange = maxrange
 	src.speed = speed
 	if(thrower)
-		rel_set(src, "thrower", thrower)
+		rel_set(src, nameof(thrower), thrower)
 	src.diagonals_first = diagonals_first
 	src.force = force
 	src.gentle = gentle
@@ -195,7 +195,7 @@
 	var/atom/movable/thrownthing = throw_subject()
 	if(QDELETED(thrownthing))
 		return
-	rel_clear(thrownthing, "throwing")
+	rel_clear(thrownthing, nameof(thrownthing.throwing))
 	if (!hit)
 		var/atom/movable/actual_target = initial_target
 		for (var/thing in get_turf(thrownthing)) //looking for our target on the turf we land on.

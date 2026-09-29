@@ -9,7 +9,7 @@
 
 /datum/game_mode_panel/New(datum/game_mode/target_mode)
 	..()
-	rel_set(src, "target_mode", target_mode)
+	rel_set(src, nameof(target_mode), target_mode)
 
 // The game mode owns this panel (tgui_game_mode_panel); target_mode is a plain relation back.
 
@@ -121,5 +121,5 @@ UI_ACT_PROC(/datum/game_mode_panel, ui_act_refresh)
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
 	if(!SSticker.mode.tgui_game_mode_panel)
-		own_set(SSticker.mode, "tgui_game_mode_panel", new /datum/game_mode_panel(SSticker.mode))
+		own_set(SSticker.mode, nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(SSticker.mode))
 	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)

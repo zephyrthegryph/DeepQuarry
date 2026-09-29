@@ -56,8 +56,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 /obj/item/weldingtool/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	own_set(src, "reagents", R)
-	rel_set(R, "my_atom", src)
+	own_set(src, nameof(reagents), R)
+	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	update_icon()
 
@@ -479,7 +479,7 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	. = ..()
 	if(istype(loc, /obj/item/weldpack))
 		var/obj/item/weldpack/holder = loc
-		rel_set(src, "mounted_pack", holder)
+		rel_set(src, nameof(mounted_pack), holder)
 	else
 		return INITIALIZE_HINT_QDEL
 
@@ -609,7 +609,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 		if(power_supply)
 			power_supply.update_icon()
 			user.put_in_hands(power_supply)
-			own_take(src, "power_supply")
+			own_take(src, nameof(power_supply))
 			to_chat(user, span_notice("You remove the cell from the [src]."))
 			setWelding(0)
 			update_icon()
@@ -670,7 +670,7 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 	. = ..()
 
 	if(istype(loc, /obj/item/mecha_parts/mecha_equipment))
-		rel_set(src, "equip_mount", loc)
+		rel_set(src, nameof(equip_mount), loc)
 
 /obj/item/weldingtool/electric/mounted/exosuit/periodic_step()
 	..()
@@ -704,7 +704,9 @@ EXTEND_INTERACTIONS(/obj/item/weldingtool/electric, \
 
 #undef WELDER_FUEL_BURN_INTERVAL
 
-OWN(/obj/item/weldingtool/electric, power_supply, OWN_CONTAINED)
+/obj/item/weldingtool/electric/ownership()
+	. = ..()
+	. += owns(nameof(power_supply), policy = OWN_CONTAINED)
 DECLARE_DEFAULT_CHILD(/obj/item/weldingtool/electric, "power_supply", "cell_type")
 
 /// Relation view: equip mount (reads null once it is gone).

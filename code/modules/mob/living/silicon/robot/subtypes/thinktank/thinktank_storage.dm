@@ -4,14 +4,14 @@
 
 		if(recharging)
 			var/obj/item/recharging_atom = recharging
-			rel_clear(src, "recharging")
+			rel_clear(src, nameof(recharging))
 			if(!QDELETED(recharging_atom) && recharging_atom.loc == src)
 				recharging_atom.dropInto(loc)
 				recharging_atom.throw_at(get_edge_target_turf(src,pick(GLOB.alldirs)),rand(1,3),30)
 
 		if(length(stored_atoms))
 			var/list/dropping_atoms = stored_atoms.Copy()
-			rel_clear(src, "stored_atoms")
+			rel_clear(src, nameof(stored_atoms))
 			for(var/atom/movable/dropping as anything in dropping_atoms)
 				if(!QDELETED(dropping) && dropping.loc == src)
 					dropping.dropInto(loc)
@@ -67,14 +67,14 @@
 /mob/living/silicon/robot/platform/proc/store_atom(atom/movable/storing, mob/user)
 	if(istype(storing))
 		storing.forceMove(src)
-		rel_add(src, "stored_atoms", storing)
+		rel_add(src, nameof(stored_atoms), storing)
 
 /mob/living/silicon/robot/platform/proc/drop_stored_atom(atom/movable/ejecting, mob/user)
 
 	if(!ejecting && length(stored_atoms))
 		ejecting = stored_atoms[1]
 
-	rel_remove(src, "stored_atoms", ejecting)
+	rel_remove(src, nameof(stored_atoms), ejecting)
 	if(istype(ejecting) && !QDELETED(ejecting) && ejecting.loc == src)
 		ejecting.dropInto(loc)
 		if(user == src)
@@ -94,7 +94,7 @@
 		return FALSE
 	var/atom/movable/removing = stored_atoms[length(stored_atoms)]
 	if(QDELETED(removing) || removing.loc != src)
-		rel_remove(src, "stored_atoms", removing)
+		rel_remove(src, nameof(stored_atoms), removing)
 	else
 		act_message(user, removing, others = span_infoplain(span_bold("%U%") + " begins unloading %T% from \the [src]'s cargo compartment."))
 		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(try_remove_cargo_platform_done), done_args = list(user, removing))

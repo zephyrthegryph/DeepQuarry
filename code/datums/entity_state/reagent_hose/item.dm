@@ -21,7 +21,7 @@
 /obj/item/stack/hose/item_ctrl_click(mob/user)
 	if(remembered)
 		to_chat(user, span_notice("You wind \the [src] back up."))
-		rel_clear(src, "remembered")
+		rel_clear(src, nameof(remembered))
 	return
 
 /obj/item/stack/hose/afterattack(atom/target, mob/living/user, proximity, params)
@@ -49,24 +49,24 @@
 			var/datum/hose_connector/AC = available_sockets[key]
 			if(REMB && REMB.get_carrier() == AC.get_carrier())
 				to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))
-				rel_clear(src, "remembered") // Unintuitive if it does not reset state
+				rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 			else if(REMB && REMB.valid_connection(AC))
 				var/distancetonode = get_dist(REMB.get_carrier(),AC.get_carrier())
 				if(distancetonode > HOSE_MAX_DISTANCE)
 					to_chat(user, span_notice("\The [src] would probably burst if it were this long. You wind \the [src] back up."))
-					rel_clear(src, "remembered") // Unintuitive if it does not reset state
+					rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 				else if(distancetonode <= amount)
 					REMB.setup_hoses(AC,distancetonode,user,src)
-					rel_clear(src, "remembered")
+					rel_clear(src, nameof(remembered))
 
 				else
 					to_chat(user, span_notice("You do not have enough tubing to connect the sockets. You wind \the [src] back up."))
-					rel_clear(src, "remembered") // Unintuitive if it does not reset state
+					rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 			else
-				rel_set(src, "remembered", AC)
+				rel_set(src, nameof(remembered), AC)
 				to_chat(user, span_notice("You connect one end of tubing to \the [AC]."))
 
 		else
@@ -81,24 +81,24 @@
 				if(REMB)
 					if(REMB.get_carrier() == CC.get_carrier())
 						to_chat(user, span_notice("Connecting \the [REMB.get_carrier()] to itself seems like a bad idea. You wind \the [src] back up."))
-						rel_clear(src, "remembered") // Unintuitive if it does not reset state
+						rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 					else if(REMB.valid_connection(CC))
 						var/distancetonode = get_dist(REMB.get_carrier(), CC.get_carrier())
 						if(distancetonode > HOSE_MAX_DISTANCE)
 							to_chat(user, span_notice("\The [src] would probably burst if it were this long. You wind \the [src] back up."))
-							rel_clear(src, "remembered") // Unintuitive if it does not reset state
+							rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 						else if(distancetonode <= amount)
 							REMB.setup_hoses(CC,distancetonode,user,src)
-							rel_clear(src, "remembered")
+							rel_clear(src, nameof(remembered))
 
 						else
 							to_chat(user, span_notice("You do not have enough tubing to connect the sockets. You wind \the [src] back up."))
-							rel_clear(src, "remembered") // Unintuitive if it does not reset state
+							rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 
 				else
-					rel_set(src, "remembered", CC)
+					rel_set(src, nameof(remembered), CC)
 					to_chat(user, span_notice("You connect one end of tubing to \the [CC]."))
 
 		return
@@ -106,5 +106,5 @@
 	else
 		if(remembered)
 			to_chat(user, span_notice("There are no available connectors on \the [target]. You wind \the [src] back up."))
-		rel_clear(src, "remembered") // Unintuitive if it does not reset state
+		rel_clear(src, nameof(remembered)) // Unintuitive if it does not reset state
 		..()

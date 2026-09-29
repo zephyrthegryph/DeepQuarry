@@ -240,7 +240,7 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 
 /obj/machinery/librarycomp/proc/interaction_link_scanner(mob/user, obj/item/held, datum/interaction/interaction)
 	var/obj/item/barcodescanner/scanner = held
-	rel_set(scanner, "computer", src)
+	rel_set(scanner, nameof(scanner.computer), src)
 	to_chat(user, "[scanner]'s associated machine has been set to [src].")
 	for(var/mob/V in hearers(src))
 		V.show_message("[src] lets out a low, short blip.", 2)
@@ -304,7 +304,7 @@ UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=
 	// Ensure a connected scanner is auto-discovered like the legacy UI did.
 	if(!scanner())
 		for(var/obj/machinery/libraryscanner/S in range(9))
-			rel_set(src, "scanner", S)
+			rel_set(src, nameof(scanner), S)
 			break
 	data["has_scanner"] = !!scanner()
 	if(scanner()?.cache())
@@ -414,21 +414,21 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkout)
 	b.mobname = sanitize(buffer_mob)
 	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
-	own_add(src, "checkouts", b)
+	own_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
 UI_ACT(/obj/machinery/librarycomp, "checkin", ui_act_checkin, UI_ARG_REF("ref", null, /datum/borrowbook))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkin)
 	var/datum/borrowbook/b = params["ref"]
 	if(b)
-		own_remove(src, "checkouts", b)
+		own_remove(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
 UI_ACT(/obj/machinery/librarycomp, "delbook", ui_act_delbook, UI_ARG_REF("ref", null, /obj/item/book))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delbook)
 	var/obj/item/book/b = params["ref"]
 	if(b)
-		rel_remove(src, "inventory", b)
+		rel_remove(src, nameof(/obj/machinery/librarycomp::inventory), b)
 	return TRUE
 
 UI_ACT(/obj/machinery/librarycomp, "setauthor", ui_act_setauthor)
@@ -642,14 +642,14 @@ UI_ACT(/obj/machinery/libraryscanner, "scan", ui_act_scan)
 UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_scan)
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/book/B in contents) // ALLOW(latent): materialized above
-		rel_set(src, "cache", B)
+		rel_set(src, nameof(/datum/om/edge::cache), B)
 		break
 	add_fingerprint(usr)
 	return TRUE
 
 UI_ACT(/obj/machinery/libraryscanner, "clear", ui_act_clear)
 UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_clear)
-	rel_clear(src, "cache")
+	rel_clear(src, nameof(/datum/om/edge::cache))
 	return TRUE
 
 UI_ACT(/obj/machinery/libraryscanner, "eject", ui_act_eject)

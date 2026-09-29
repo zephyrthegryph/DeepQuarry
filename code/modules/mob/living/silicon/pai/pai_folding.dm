@@ -13,7 +13,7 @@
 		var/obj/item/pda/ourpda = loc.loc
 		if(ourpda.pai == card)
 			ourpda.pai.forceMove(ourpda.loc)
-			own_take(ourpda, "pai")
+			own_take(ourpda, nameof(ourpda.pai))
 			visible_message(span_warning("\The [card] ejects itself from \the [ourpda]."))
 		return
 	if(istype(loc.loc, /obj/item/storage/vore_egg))
@@ -49,7 +49,7 @@
 			for(var/obj/item/organ/external/affecting in H.organs)
 				if(card in affecting.implants)
 					H.injure(INJURY_BLUNT, rand(30,50), affecting, src)
-					rel_remove(affecting, "implants", card)
+					rel_remove(affecting, nameof(affecting.implants), card)
 					act_message(src, H, others = span_danger("%U% explodes out of %T%'s [affecting.name] in shower of gore!"))
 					break
 		holder.drop_from_inventory(card)
@@ -58,7 +58,7 @@
 		return 0 // .
 	else if(istype(card.loc,/obj/item/pda))
 		var/obj/item/pda/holder = card.loc
-		own_take(holder, "pai")
+		own_take(holder, nameof(holder.pai))
 
 	src.forceMove(card.loc)
 	card.forceMove(src)

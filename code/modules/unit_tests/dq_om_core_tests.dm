@@ -311,7 +311,7 @@
 	var/datum/om/scheduler/sched
 
 /datum/unit_test/om/Run()
-	rel_set(src, "sched", om_test_begin())
+	rel_set(src, nameof(sched), om_test_begin())
 	var/list/made = list()
 	try
 		run_om(made)
@@ -1171,9 +1171,9 @@
 	var/datum/om_test_entity/cached/E = entity(made, /datum/om_test_entity/cached)
 	var/datum/om_test_entity/other = entity(made)
 	om_rec_of(E)
-	rel_set(E, "on_change_cache", other)
-	rel_set(E, "on_event_cache", other)
-	rel_set(E, "on_relation_cache", other)
+	rel_set(E, nameof(E.on_change_cache), other)
+	rel_set(E, nameof(E.on_event_cache), other)
+	rel_set(E, nameof(E.on_relation_cache), other)
 	om_changed(E, CHANGE_CONTENTS)
 	TEST_ASSERT(E.on_change_cache == other, "an unrelated channel leaves the cache")
 	om_changed(E, CHANGE_EXPLICIT)

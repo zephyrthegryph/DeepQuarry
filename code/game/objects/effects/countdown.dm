@@ -26,7 +26,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 	. += "This countdown is displaying: [displayed_text]."
 
 /obj/effect/countdown/proc/attach(atom/A)
-	rel_set(src, "attached_to", A)
+	rel_set(src, nameof(attached_to), A)
 	var/turf/loc_turf = get_turf(A)
 	if(!loc_turf)
 		om_hook(attached_to, /datum/om/event/moved, src, PROC_REF(retry_attach))

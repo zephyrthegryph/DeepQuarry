@@ -27,10 +27,10 @@
 
 /datum/event/electrical_storm/start()
 	..()
-	rel_clear(src, "valid_apcs")
+	rel_clear(src, nameof(valid_apcs))
 	for(var/obj/machinery/power/apc/A in REGISTRY_MEMBERS(REGISTRY_APCS))
 		if(A.z in affecting_z)
-			rel_add(src, "valid_apcs", A)
+			rel_add(src, nameof(valid_apcs), A)
 	endWhen = (severity * 60) + startWhen
 
 /datum/event/electrical_storm/tick()

@@ -36,7 +36,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 /// never aliases (or mutates) its source's contagions.
 /obj/effect/decal/cleanable/proc/add_contagions(list/contagions, copy = TRUE)
 	for(var/datum/affliction/contagion/D in contagions)
-		own_add(src, "viruses", (copy || owner_of(D)) ? D.Copy() : D)
+		own_add(src, nameof(viruses), (copy || owner_of(D)) ? D.Copy() : D)
 
 /obj/effect/decal/cleanable/wash(clean_types)
 	. = ..()

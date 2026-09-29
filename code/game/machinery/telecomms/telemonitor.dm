@@ -80,19 +80,19 @@ UI_ACT(/obj/machinery/computer/telecomms/monitor, "view", ui_act_view, UI_ARG_VA
 UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_view)
 	for(var/obj/machinery/telecomms/T in machinelist)
 		if(T.id == params["id"])
-			rel_set(src, "SelectedMachine", T)
+			rel_set(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine), T)
 			break
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/monitor, "mainmenu", ui_act_mainmenu)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_mainmenu)
-	rel_clear(src, "SelectedMachine")
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine))
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/monitor, "release", ui_act_release)
 UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_release)
-	rel_clear(src, "machinelist")
-	rel_clear(src, "SelectedMachine")
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::machinelist))
+	rel_clear(src, nameof(/obj/machinery/computer/telecomms/monitor::SelectedMachine))
 	. = TRUE
 
 UI_ACT(/obj/machinery/computer/telecomms/monitor, "scan", ui_act_scan)
@@ -103,7 +103,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_scan)
 
 	for(var/obj/machinery/telecomms/T in range(25, src))
 		if(T.network == network)
-			rel_add(src, "machinelist", T)
+			rel_add(src, nameof(/obj/machinery/computer/telecomms/monitor::machinelist), T)
 
 	if(!length(machinelist))
 		set_temp("FAILED: UNABLE TO LOCATE NETWORK ENTITIES IN \[[network]\]", "bad")
@@ -130,7 +130,7 @@ UI_ACT_PROC(/obj/machinery/computer/telecomms/monitor, ui_act_cleartemp)
 			set_temp("FAILED: NETWORK TAG STRING TOO LENGTHY", "bad")
 			return TRUE
 		network = newnet
-		rel_clear(src, "machinelist")
+		rel_clear(src, nameof(machinelist))
 		set_temp("NEW NETWORK TAG SET IN ADDRESS \[[network]\]", "good")
 
 	. = TRUE

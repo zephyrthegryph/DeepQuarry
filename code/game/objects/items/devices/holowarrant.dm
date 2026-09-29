@@ -29,7 +29,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 )
 
 /obj/item/holowarrant/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	rel_clear(src, "active")
+	rel_clear(src, nameof(active))
 	var/list/warrants = list()
 	if(!isnull(GLOB.data_core.general))
 		for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
@@ -51,7 +51,7 @@ DECLARE_INTERACTIONS(/obj/item/holowarrant, \
 /obj/item/holowarrant/proc/warrant_chosen(datum/om/prompt/choice/ask)
 	for(var/datum/data/record/warrant/W in GLOB.data_core.warrants)
 		if(W.fields["namewarrant"] == ask.choice)
-			rel_set(src, "active", W)
+			rel_set(src, nameof(active), W)
 	update_icon()
 
 /obj/item/holowarrant/proc/authorize_answered(datum/om/prompt/confirm/holowarrant_authorize/ask)

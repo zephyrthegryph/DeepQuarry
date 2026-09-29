@@ -22,7 +22,7 @@
 		return
 	var/datum/rule_binding/binding = new(A, rules)
 	if(!binding.active_count())
-		own_clear(A, "rule_binding", OWN_DELETE)
+		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 		return
 	return binding
 
@@ -43,7 +43,7 @@
 /// Drops `A`'s subscriptions. /atom/on_dematerialize() calls it.
 /proc/dq_rules_on_dematerialize(atom/A)
 	if(dq_rule_binding_of(A))
-		own_clear(A, "rule_binding", OWN_DELETE)
+		own_clear(A, nameof(/datum::rule_binding), OWN_DELETE)
 
 /// Evaluate `thing`'s rules now instead of at the next dispatch. For code about
 /// to destroy the object (take_damage before atom_destruction), so every rule
@@ -147,9 +147,9 @@
 
 /datum/rule_binding/New(atom/owner, list/rules)
 	..()
-	rel_set(src, "owner", owner)
+	rel_set(src, nameof(owner), owner)
 	table = dq_rule_table_for(rules)
-	own_set(owner, "rule_binding", src)
+	own_set(owner, nameof(owner.rule_binding), src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))

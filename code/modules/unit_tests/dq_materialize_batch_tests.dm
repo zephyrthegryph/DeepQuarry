@@ -12,7 +12,7 @@ GLOBAL_LIST_EMPTY(dq_batch_probe_log)
 
 /obj/effect/dq_batch_probe/Initialize(mapload)
 	. = ..()
-	rel_set(src, "seen_batch", SSatoms.active_batch)
+	rel_set(src, nameof(seen_batch), SSatoms.active_batch)
 	GLOB.dq_batch_probe_log.Add(list(list("init", src)))
 	return INITIALIZE_HINT_LATELOAD
 

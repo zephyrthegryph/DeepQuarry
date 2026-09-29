@@ -10,7 +10,7 @@
 	if(met_class)
 		metabolism_class = met_class
 	if(istype(parent_mob))
-		rel_set(src, "parent", parent_mob)
+		rel_set(src, nameof(parent), parent_mob)
 
 /datum/reagents/metabolism/proc/metabolize()
 

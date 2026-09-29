@@ -133,7 +133,7 @@ SUBSYSTEM_DEF(atoms)
 	testing("[length(queued_deletions)] atoms were queued for deletion.")
 	for (var/atom/queued as anything in queued_deletions?.Copy())
 		qdel(queued)
-	rel_clear(src, "queued_deletions")
+	rel_clear(src, nameof(queued_deletions))
 
 	#ifdef PROFILE_MAPLOAD_INIT_ATOM
 	rustg_file_write(json_encode(mapload_init_times), "[GLOB.log_directory]/init_times.json")
@@ -260,14 +260,16 @@ SUBSYSTEM_DEF(atoms)
 		// Atoms SS has already completed, just kill it now.
 		qdel(target)
 	else
-		rel_add(src, "queued_deletions", target)
+		rel_add(src, nameof(queued_deletions), target)
 
 /datum/controller/subsystem/atoms/Shutdown()
 	var/initlog = InitLog()
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
-REL_LIST(/datum/controller/subsystem/atoms, queued_deletions)
+/datum/controller/subsystem/atoms/relations()
+	. = ..()
+	. += rel_many(nameof(queued_deletions))
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
 /datum/controller/subsystem/atoms/var/list/atom/queued_deletions

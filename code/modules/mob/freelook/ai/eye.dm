@@ -9,13 +9,13 @@
 
 /mob/observer/eye/aiEye/Initialize(mapload)
 	. = ..()
-	rel_set(src, "visualnet", GLOB.cameranet)
+	rel_set(src, nameof(visualnet), GLOB.cameranet)
 
 /// Phase 2: the eye leaves its visualnet.
 /mob/observer/eye/aiEye/lifecycle_dematerialize()
 	. = ..()
 	visualnet?.clear_references(src, src.client)
-	rel_clear(src, "visualnet")
+	rel_clear(src, nameof(visualnet))
 
 /mob/observer/eye/aiEye/setLoc(T, cancel_tracking = 1)
 	var/mob/owner = src?.eye_owner()
@@ -81,7 +81,7 @@
 
 /mob/living/silicon/ai/proc/view_core()
 	var/mob/observer/eye/eyeobj = src?.active_eye()
-	rel_clear(src, "camera")
+	rel_clear(src, nameof(camera))
 	unset_machine()
 
 	if(!eyeobj)

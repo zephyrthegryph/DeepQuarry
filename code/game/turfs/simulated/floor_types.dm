@@ -12,7 +12,7 @@
 /obj/landed_holder/Initialize(mapload)
 	. = ..()
 	if(loc)
-		rel_set(src, "my_turf", get_turf(src))
+		rel_set(src, nameof(my_turf), get_turf(src))
 		moveToNullspace()
 
 /obj/landed_holder/proc/land_on(turf/T)
@@ -45,8 +45,8 @@
 	new_dest.lighting_build_overlay()
 
 	// Associate the holder with the new turf.
-	rel_set(new_holder, "my_turf", new_dest)
-	own_set(new_dest, "landed_holder_ref", new_holder)
+	rel_set(new_holder, nameof(new_holder.my_turf), new_dest)
+	own_set(new_dest, nameof(new_dest.landed_holder_ref), new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)

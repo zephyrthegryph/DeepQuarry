@@ -30,7 +30,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 
 /datum/hallucinations/New(mob/living/carbon/human/H)
 	..()
-	rel_set(src, "our_human", H)
+	rel_set(src, nameof(our_human), H)
 	make_timer()
 
 // a held hallucination item is removed.
@@ -68,7 +68,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
 	if(hallucinations || !ishuman(src))
 		return hallucinations
-	own_set(src, "hallucinations", new hallucination_type(src))
+	own_set(src, nameof(hallucinations), new hallucination_type(src))
 	return hallucinations
 
 /mob/living/carbon/proc/get_hallucination_state()

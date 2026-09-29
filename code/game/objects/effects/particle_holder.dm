@@ -24,7 +24,7 @@
 		vis_flags &= ~VIS_INHERIT_PLANE // don't yoink the floor plane. we'll just sit on game plane, it's fine
 
 	// We nullspace ourselves because some objects use their contents (e.g. storage) and some items may drop everything in their contents on deconstruct.
-	rel_set(src, "parent", loc)
+	rel_set(src, nameof(parent), loc)
 	moveToNullspace()
 
 	// Mouse opacity can get set to opaque by some objects when placed into the object's contents (storage containers).

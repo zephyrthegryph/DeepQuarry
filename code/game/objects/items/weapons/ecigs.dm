@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		set_active(0)
 		user.put_in_hands(ec_cartridge)
 		to_chat(user, span_notice("You eject [ec_cartridge] from \the [src]."))
-		own_take(src, "ec_cartridge")
+		own_take(src, nameof(ec_cartridge))
 		update_icon()
 	return TRUE
 

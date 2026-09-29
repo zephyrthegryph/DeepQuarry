@@ -195,7 +195,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	for(var/path in TYPE_TABLE_GET(src, tool_types))
 		if(integrated_object && istype(integrated_object, path))
 			continue
-		own_put(src, "integrated_tools", path, new path(src))
+		own_put(src, nameof(integrated_tools), path, new path(src))
 
 	var/list/tools = all_integrated_tools()
 	if(!length(tools))
@@ -205,25 +205,25 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 
 	var/list/synth_paths = TYPE_TABLE_GET(src, synth_types)
 	for(var/datumpath in synth_paths)
-		own_add(src, "synths", new datumpath)
+		own_add(src, nameof(synths), new datumpath)
 
 	for(var/obj/item/I as anything in tools)
 		I.canremove = FALSE
 		I.toolspeed = toolspeed
-		rel_set(I, "my_augment", src)
+		rel_set(I, nameof(I.my_augment), src)
 		I.name = "integrated [I.name]"
 
 	for(var/obj/item/Tool as anything in tools)
 		if(istype(Tool, /obj/item/stack))
 			var/obj/item/stack/S = Tool
 			for(var/datum/matter_synth/MS as anything in synths)
-				rel_add(S, "synths", MS)
+				rel_add(S, nameof(S.synths), MS)
 			S.uses_charge = length(synths)
 		integrated_tool_images[Tool.name] = image(icon = Tool.icon, icon_state = Tool.icon_state)
 
 /// Every tool this augment carries: the stowed ones and the deployed one.
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/proc/all_integrated_tools()
-	. = own_values(src, "integrated_tools")
+	. = own_values(src, nameof(integrated_tools))
 	if(integrated_object)
 		. |= integrated_object
 
@@ -247,8 +247,8 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 	if(isnull(tool_key))
 		return
 	if(integrated_object)
-		own_transfer(src, "integrated_object", src, "integrated_tools", null, integrated_object.type)
-	own_transfer(src, "integrated_tools", src, "integrated_object", tool_key)
+		own_transfer(src, nameof(integrated_object), src, nameof(integrated_tools), null, integrated_object.type)
+	own_transfer(src, nameof(integrated_tools), src, nameof(integrated_object), tool_key)
 
 /obj/item/organ/internal/augment/armmounted/shoulder/multiple/handle_organ_proc_special()
 	..()

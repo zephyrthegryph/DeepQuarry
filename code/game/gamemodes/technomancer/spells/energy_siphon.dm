@@ -52,14 +52,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 		if(!length(things_to_siphon))
 			to_chat(user, span_warning("You cannot steal energy from \a [AM]."))
 			return 0
-		rel_set(src, "siphoning", AM)
+		rel_set(src, nameof(siphoning), AM)
 		update_icon()
 		add_attack_logs(user,AM,"Siphoned energy from [src]")
 	else
 		stop_siphoning()
 
 /obj/item/spell/energy_siphon/proc/populate_siphon_list(atom/movable/target)
-	rel_clear(src, "things_to_siphon")
+	rel_clear(src, nameof(things_to_siphon))
 	var/list/found = list(target) // The recursive check below does not add the object being checked to its list.
 	found |= recursive_content_check(target, found, recursion_limit = 3, client_check = 0, sight_check = 0, include_mobs = 1, include_objects = 1, ignore_show_messages = 1)
 	for(var/atom/movable/AM in found)
@@ -69,11 +69,11 @@ DECLARE_PERIODIC_WHILE(/obj/item/spell/energy_siphon, PERIODIC_SLOW, "siphoning"
 				continue
 		if(AM.drain_power(1) <= 0) // This checks if whatever's in the list can be drained from.
 			continue
-		rel_add(src, "things_to_siphon", AM)
+		rel_add(src, nameof(things_to_siphon), AM)
 
 /obj/item/spell/energy_siphon/proc/stop_siphoning()
-	rel_clear(src, "siphoning")
-	rel_clear(src, "things_to_siphon")
+	rel_clear(src, nameof(siphoning))
+	rel_clear(src, nameof(things_to_siphon))
 	update_icon()
 
 #define SIPHON_CELL_TO_ENERGY	0.5
@@ -158,7 +158,7 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 /// Seven bolts 0.3 s apart: process() takes two seconds to tick, this ensures the appearance of a ongoing beam.
 /obj/item/spell/energy_siphon/proc/create_lightning_beam(mob/user, atom/source, left = 7)
 	var/obj/item/projectile/beam/lightning/energy_siphon/lightning = new(get_turf(source))
-	rel_set(lightning, "firer", user)
+	rel_set(lightning, nameof(lightning.firer), user)
 	lightning.old_style_target(user)
 	lightning.fire()
 	if(left > 1)
@@ -201,4 +201,6 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 /obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
 	return siphoning
 
-REL_LIST(/obj/item/spell/energy_siphon, things_to_siphon)
+/obj/item/spell/energy_siphon/relations()
+	. = ..()
+	. += rel_many(nameof(things_to_siphon))

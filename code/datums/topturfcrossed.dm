@@ -11,7 +11,7 @@
 	if(!ismovable(new_owner))
 		log_runtime("TOPTURFCROSSED: attached to non-movable [new_owner] ([new_owner?.type])")
 		return
-	rel_set(src, "owner", new_owner)
+	rel_set(src, nameof(owner), new_owner)
 	dq_add_recursive_move(owner) // Required if we want to be useful at all
 	om_hook(owner, /datum/om/event/movable_attempted_move, src, PROC_REF(handle_location_change))
 	update_turf_hooks(get_turf(owner))
@@ -32,13 +32,13 @@
 	// Always remove the hook from our old turf when hooking the new one
 	if(our_old_turf())
 		om_unhook(our_old_turf(), /datum/om/event/observer_turf_entered, src)
-		rel_clear(src, "our_old_turf")
+		rel_clear(src, nameof(our_old_turf))
 	// Only hook the turf if we are inside something, otherwise we'd get DOUBLECROSSED
 	if(new_loc && !isturf(owner.loc))
 		var/turf/find_new = isturf(new_loc) ? new_loc : get_turf(new_loc)
 		if(find_new)
 			om_hook(find_new, /datum/om/event/observer_turf_entered, src, PROC_REF(handle_turf_entered))
-			rel_set(src, "our_old_turf", find_new)
+			rel_set(src, nameof(our_old_turf), find_new)
 
 /// Forwards the Cross() call from the turf to the object hooked
 /datum/topturfcrossed/proc/handle_turf_entered(datum/source, datum/om/event/observer_turf_entered/event)

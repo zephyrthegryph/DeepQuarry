@@ -1,7 +1,7 @@
 
 ADMIN_VERB_AND_CONTEXT_MENU(player_effects, R_FUN, "Player Effects", "Modify a player character with various 'special treatments' from a list.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target in get_mob_with_client_list())
 	var/datum/eventkit/player_effects/spawner = new()
-	rel_set(spawner, "target", target)
+	rel_set(spawner, nameof(/datum/accessory_stat_modifier::target), target)
 	spawner.tgui_interact(user.mob)
 
 /datum/eventkit/player_effects
@@ -582,7 +582,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_darksight)
 	if(isnull(change_sight))
 		return
 	if(change_sight)
-		var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+		var/datum/species/own_species = proto_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
 		own_species.darksight = change_sight
 
 UI_ACT(/datum/eventkit/player_effects, "cocoon", ui_act_cocoon)
@@ -621,12 +621,12 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_lleill_energy)
 	var/energy_max = act_ask(ui.user, action, params, ui, "a23", /datum/om/prompt/number, message = "What should their max lleill energy be set to? It is currently [Tar.species.lleill_energy_max].", title = "Max energy")
 	if(isnull(energy_max))
 		return
-	var/datum/species/own_species = proto_private(Tar, "species") // PROTO: private copy
+	var/datum/species/own_species = proto_private(Tar, nameof(/datum/dna::species)) // PROTO: private copy
 	own_species.lleill_energy_max = energy_max
 	var/energy_new = act_ask(ui.user, action, params, ui, "a24", /datum/om/prompt/number, message = "What should their current lleill energy be set to? It is currently [Tar.species.lleill_energy].", title = "Max energy")
 	if(isnull(energy_new))
 		return
-	own_species = proto_private(Tar, "species")
+	own_species = proto_private(Tar, nameof(/datum/dna::species))
 	own_species.lleill_energy = energy_new
 
 UI_ACT(/datum/eventkit/player_effects, "lleill_invisibility", ui_act_lleill_invisibility)
@@ -929,7 +929,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_ai)
 	if(isnull(wake))
 		return
 	if(L.ai_brain)	//Cleaning up the original ai
-		own_clear(L, "ai_brain", OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
+		own_clear(L, nameof(/mob/living::ai_brain), OWN_DELETE)	//Only way I could make #TESTING - Unable to be GC'd to stop. del() logs show it works.
 	L.initialize_ai_brain()
 	L.faction = faction
 	if(stance)

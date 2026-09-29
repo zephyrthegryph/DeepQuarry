@@ -165,7 +165,9 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/overmap/stardog, INTERACT_HAND_U
 	. = ..()
 	child_om_marker?.set_light(5, 1, "#ff8df5")
 
-REL_PAIR(/mob/living/simple_mob/vore/overmap/stardog, control_node, host)
+/mob/living/simple_mob/vore/overmap/stardog/relations()
+	. = ..()
+	. += rel_one(nameof(control_node), back = nameof(/obj/structure/control_pod::host))
 
 /mob/living/simple_mob/vore/overmap/stardog/get_status_tab_items()
 	. = ..()
@@ -700,11 +702,11 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 /area/redgate/stardog/flesh_abyss/EvalValidSpawnTurfs()
 	for(var/turf/simulated/floor/F in area_contents_of_type(src, /turf/simulated/floor))
 		if(istype(F, /turf/simulated/floor/flesh))
-			rel_add(src, "valid_spawn_turfs", F)
+			rel_add(src, nameof(valid_spawn_turfs), F)
 
 		if(include_enzyme)
 			if(istype(F, /turf/simulated/floor/water/digestive_enzymes))
-				rel_add(src, "valid_spawn_turfs", F)
+				rel_add(src, nameof(valid_spawn_turfs), F)
 
 /area/redgate/stardog/flesh_abyss/spawn_flora_on_turf()
 	if(!spawnstuff)
@@ -833,9 +835,11 @@ EXTEND_INTERACTIONS(/obj/structure/flora/tree/fur/wall, INTERACT_ITEM(null, TYPE
 	if(istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
 		var/mob/living/simple_mob/vore/overmap/stardog/dog = s.parent
 		if(!dog.control_node)
-			rel_set(src, "host", dog)
+			rel_set(src, nameof(host), dog)
 
-REL_PAIR(/obj/structure/control_pod, host, control_node)
+/obj/structure/control_pod/relations()
+	. = ..()
+	. += rel_one(nameof(host), back = nameof(/mob/living/simple_mob/vore/overmap/stardog::control_node))
 
 DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(interaction_hand)))
 
@@ -864,7 +868,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	if(controller)	//got busy while you were waiting, get rekt
 		to_chat(user, span_warning("You can see \the [controller] inside! Tendrils of nerves seem to have attached themselves to \the [controller]! There's no room for you right now!"))
 		return
-	rel_set(src, "controller", user)
+	rel_set(src, nameof(controller), user)
 	visible_message(span_warning("\The [src] accepts \the [controller], submerging them beneath the surface of the flesh!"))
 	user.stop_pulling()
 	user.forceMove(src)
@@ -893,7 +897,7 @@ DECLARE_INTERACTIONS(/obj/structure/control_pod, INTERACT_HAND(null, PROC_REF(in
 	var/turf/throwtarg = locate(our_x, our_y, z)	//teehee
 	play_sfx(src, SFX_VORE_SCHLORP, volume_channel = VOLUME_CHANNEL_VORE)
 	controller.throw_at(throwtarg, 10, 1)
-	rel_clear(src, "controller")
+	rel_clear(src, nameof(controller))
 
 /obj/effect/landmark/stardog	//I didn't know how else to decide where the dog will land
 	name = "stardog landing"
@@ -1062,7 +1066,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 	. = ..()
 	var/area/redgate/stardog/eyes/e = get_area(src)
 	if(istype(e,/area/redgate/stardog/eyes))
-		rel_add(e, "our_eyes", src)
+		rel_add(e, nameof(e.our_eyes), src)
 
 /obj/effect/dog_teleporter	//look, I could have just used a bump teleporter, and I don't have an excuse, also everyone is going to be angry but it hurts too much for me to care right now, hopefully I will finish this before I start caring
 	name = "mouth"
@@ -1084,7 +1088,7 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 
 /obj/effect/dog_teleporter/Initialize(mapload)
 	. = ..()
-	rel_add(src, "dog_teleporters", src)
+	rel_add(src, nameof(dog_teleporters), src)
 	do_setup()
 	if(icon_state == "exit_b")	//♪♫Blinded by the light♪♫
 		set_light(5, 1, "#ffffff")
@@ -1094,14 +1098,14 @@ EXTEND_INTERACTIONS(/obj/effect/dog_nose, \
 		return
 	for(var/obj/effect/dog_teleporter/T in dog_teleporters.Copy())
 		if(!istype(T,/obj/effect/dog_teleporter))
-			rel_remove(src, "dog_teleporters", T)
+			rel_remove(src, nameof(dog_teleporters), T)
 			continue
 		if(id == T.id)
 			if(T == src)
 				continue
-			rel_set(src, "target", T)
+			rel_set(src, nameof(target), T)
 			if(!T.target)
-				rel_set(T, "target", src)
+				rel_set(T, nameof(T.target), src)
 
 /obj/effect/dog_teleporter/Crossed(atom/movable/AM as mob|obj)	//I am ashamed to admit how long it took to get this to do anything
 	. = ..()
@@ -1318,7 +1322,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 	if(mobstuff && !linked_mob)	//You might be wondering how we got here. It all started when I decided that I would make a vore level and make some of the turfs affect some mob somewhere in the world. So I used some convenient tools that people who are actually smart made, to make this horrible abomination.
 		var/obj/effect/overmap/visitable/ship/simplemob/stardog/s = get_overmap_sector(z)
 		if(s && istype(s,/obj/effect/overmap/visitable/ship/simplemob/stardog))
-			rel_set(src, "linked_mob", s.parent) //dogge
+			rel_set(src, nameof(linked_mob), s.parent) //dogge
 
 	if(linked_mob)	//Please for the love of all that is good, make all this mob shit its own proc, future me
 		damage += clamp(((500 - linked_mob.nutrition) / 100), 1 , 5)

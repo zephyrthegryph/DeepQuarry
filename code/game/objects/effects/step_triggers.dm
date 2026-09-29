@@ -44,7 +44,7 @@
 		if(immobilize)
 			M.canmove = 0
 
-	rel_add(src, "affecting", AM)
+	rel_add(src, nameof(affecting), AM)
 	throw_next(AM, 0)
 
 /// Moves AM one tile every `speed` until it runs out of tiles or hits a stopper.
@@ -76,7 +76,7 @@
 	throw_next(AM, curtiles)
 
 /obj/effect/step_trigger/thrower/proc/throw_end(atom/movable/AM)
-	rel_remove(src, "affecting", AM)
+	rel_remove(src, nameof(affecting), AM)
 
 	if(ismob(AM))
 		var/mob/M = AM
@@ -168,7 +168,7 @@
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in REGISTRY_MEMBERS(REGISTRY_TELE_LANDMARKS))
 		if(mark.landmark_id == landmark_id)
-			rel_set(src, "the_landmark", mark)
+			rel_set(src, nameof(the_landmark), mark)
 			return
 
 /obj/effect/step_trigger/teleporter/landmark/Trigger(atom/movable/A)
@@ -254,9 +254,13 @@ But for now, for what it's been used for, it works.
 	var/remove_implants = 0	//Havn't bothered to implement this yet
 	var/remove_mutations = 0
 
-REL_KEYED(/obj/effect/step_trigger/autostrip, target, targetid, /obj/effect/autostriptarget)
-REL_KEYED(/obj/effect/step_trigger/autostrip, Mtarget, targetid, /obj/effect/autostriptarget/mob)
-KEYED_TARGET(/obj/effect/autostriptarget, targetid)
+/obj/effect/step_trigger/autostrip/relations()
+	. = ..()
+	. += rel_one(nameof(target), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget)
+	. += rel_one(nameof(Mtarget), keyed = nameof(targetid), keyed_target = /obj/effect/autostriptarget/mob)
+/obj/effect/autostriptarget/relations()
+	. = ..()
+	. += rel_key(nameof(targetid))
 
 /obj/effect/step_trigger/autostrip/Trigger(mob/living/carbon/human/H as mob)
 	if(!istype(H))

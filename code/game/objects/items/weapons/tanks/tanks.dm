@@ -52,8 +52,8 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
-	rel_set(proxy, "tank", src)
-	own_set(src, "proxyassembly", proxy)
+	rel_set(proxy, nameof(proxy.tank), src)
+	own_set(src, nameof(proxyassembly), proxy)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()
@@ -210,14 +210,14 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 	var/obj/item/assembly_holder/assy = src.proxyassembly.assembly
 	if(assy.a_left && assy.a_right)
 		assy.dropInto(user.loc)
-		rel_clear(assy, "master")
-		rel_clear(src.proxyassembly, "assembly")
+		rel_clear(assy, nameof(assy.master))
+		rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	else
 		if(!src.proxyassembly.assembly.a_left)
 			assy.a_right.dropInto(user.loc)
-			rel_clear(assy.a_right, "holder")
-			own_take(assy, "a_right")
-			rel_clear(src.proxyassembly, "assembly")
+			rel_clear(assy.a_right, nameof(/client::holder))
+			own_take(assy, nameof(assy.a_right))
+			rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 			qdel(assy)
 	cut_overlays()
 	last_gauge_pressure = 0
@@ -346,7 +346,7 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	if(istype(loc,/mob/living/carbon))
 		var/mob/living/carbon/location = loc
 		if(location.internal == src)
-			rel_clear(location, "internal")
+			rel_clear(location, nameof(location.internal))
 			location.internals.icon_state = "internal0"
 			to_chat(user, span_notice("You close the tank release valve."))
 			if (location.internals)
@@ -361,7 +361,7 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 					can_open_valve = 1
 
 			if(can_open_valve)
-				rel_set(location, "internal", src)
+				rel_set(location, nameof(location.internal), src)
 				to_chat(user, span_notice("You open \the [src] valve."))
 				if (location.internals)
 					location.internals.icon_state = "internal1"
@@ -612,8 +612,8 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	src.wired = 1
 
 	var/obj/item/assembly_holder/H = new(src)
-	rel_set(src.proxyassembly, "assembly", H)
-	rel_set(H, "master", src.proxyassembly)
+	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), H)
+	rel_set(H, nameof(H.master), src.proxyassembly)
 
 	H.update_icon()
 
@@ -665,8 +665,8 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 	M.remove_from_mob(src)	//Remove the tank from your character,in case you were holding it
 	M.put_in_hands(src)		//Equips the bomb if possible, or puts it on the floor.
 
-	rel_set(src.proxyassembly, "assembly", S) //Tell the bomb about its assembly part
-	rel_set(S, "master", src.proxyassembly) //Tell the assembly about its new owner
+	rel_set(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly), S) //Tell the bomb about its assembly part
+	rel_set(S, nameof(S.master), src.proxyassembly) //Tell the assembly about its new owner
 	S.forceMove(src)			//Move the assembly
 
 	src.update_icon()
@@ -687,8 +687,8 @@ UI_ACT_PROC(/obj/item/tank, ui_act_toggle)
 
 	other.dropInto(get_turf(src))
 	qdel(ign)
-	rel_clear(assy, "master")
-	rel_clear(src.proxyassembly, "assembly")
+	rel_clear(assy, nameof(assy.master))
+	rel_clear(src.proxyassembly, nameof(/obj/item/integrated_circuit::assembly))
 	qdel(assy)
 	src.update_icon()
 	src.update_gauge()

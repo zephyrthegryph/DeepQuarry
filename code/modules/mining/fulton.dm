@@ -37,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 		if(!A)
 			return TRUE
-		rel_set(src, "beacon", A)
+		rel_set(src, nameof(beacon), A)
 		to_chat(user, "You link the extraction pack to the beacon system.")
 	return TRUE
 

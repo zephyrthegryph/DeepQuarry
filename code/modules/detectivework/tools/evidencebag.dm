@@ -68,7 +68,7 @@
 
 	desc = "An evidence bag containing [I]."
 	I.forceMove(src)
-	rel_set(src, "stored_item", I)
+	rel_set(src, nameof(stored_item), I)
 	w_class = I.w_class
 	return
 
@@ -85,7 +85,7 @@ DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interact
 		cut_overlays()	//remove the overlays
 
 		user.put_in_hands(I)
-		rel_clear(src, "stored_item")
+		rel_clear(src, nameof(stored_item))
 
 		w_class = initial(w_class)
 		icon_state = "evidenceobj"

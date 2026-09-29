@@ -38,7 +38,7 @@
 			om_grant(nif().human, GRANT_VERB, /mob/proc/nme, src)
 
 /datum/nifsoft/soulcatcher/uninstall()
-	own_clear(src, "brainmobs", OWN_DELETE)
+	own_clear(src, nameof(brainmobs), OWN_DELETE)
 	if((. = ..()) && nif()?.human) //Sometimes NIFs are deleted outside of a human
 		om_revoke(nif().human, GRANT_VERB, /mob/proc/nsay, src)
 		om_revoke(nif().human, GRANT_VERB, /mob/proc/nme, src)
@@ -170,7 +170,7 @@
 				if(isnull(warning))
 					return
 				if(warning == "DELETE")
-					own_remove(src, "brainmobs", brainpick)
+					own_remove(src, nameof(brainmobs), brainpick)
 				return TRUE
 
 			//Must just be a flag without special handling then.
@@ -231,12 +231,12 @@
 
 	//Create a new brain mob
 	var/mob/living/carbon/brain/caught_soul/brainmob = new(nif())
-	rel_set(brainmob, "nif", nif())
-	rel_set(brainmob, "soulcatcher", src)
-	rel_set(brainmob, "container", src)
+	rel_set(brainmob, nameof(brainmob.nif), nif())
+	rel_set(brainmob, nameof(brainmob.soulcatcher), src)
+	rel_set(brainmob, nameof(brainmob.container), src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, "brainmobs", brainmob)
+	own_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference
@@ -437,7 +437,7 @@
 		return INITIALIZE_HINT_QDEL
 
 	brainmob.take_eye(src)			//Look through us
-	rel_set(src, "parent_human", human)			//E-z reference to human
+	rel_set(src, nameof(parent_human), human)			//E-z reference to human
 	sight |= SEE_SELF				//Always see yourself
 
 	name = "[brainmob.name] (AR)"	//Set the name

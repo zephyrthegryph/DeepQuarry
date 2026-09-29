@@ -18,7 +18,7 @@
 		return
 	COOLDOWN_START(src, hover_next_update, INPUT_HOVER_THROTTLE)
 	if(mob)
-		rel_set(mob, "hovered_atom_view", hovered)
+		rel_set(mob, nameof(/mob::hovered_atom_view), hovered)
 	if(screentip || screentips_enabled())
 		update_screentip()
 

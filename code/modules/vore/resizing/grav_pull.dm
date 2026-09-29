@@ -11,13 +11,13 @@
 	pull_radius = range
 	number = num
 	if(istype(loca, /turf/))
-		rel_set(src, "location", loca)
+		rel_set(src, nameof(location), loca)
 	else
-		rel_set(src, "location", get_turf(loca))
+		rel_set(src, nameof(location), get_turf(loca))
 
 /datum/effect/effect/system/grav_pull/start()
 	if(holder)
-		rel_set(src, "location", get_turf(holder))
+		rel_set(src, nameof(location), get_turf(holder))
 	for(var/i = 0, i < number, i++)
 		om_after(src, i * 25, PROC_REF(do_pull))
 

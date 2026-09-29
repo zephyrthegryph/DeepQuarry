@@ -32,7 +32,7 @@
 
 /obj/structure/lift/Initialize(mapload, datum/turbolift/_lift)
 	. = ..()
-	rel_set(src, "lift", _lift)
+	rel_set(src, nameof(lift), _lift)
 
 /obj/structure/lift
 	silicon_use = SILICON_USE_HAND
@@ -62,8 +62,12 @@ DECLARE_INTERACTIONS(/obj/structure/lift, INTERACT_HAND_UNGATED_AS(I_HURT, "Hamm
 	req_access = list(ACCESS_EVA)
 	var/datum/turbolift_floor/floor
 
-REL_PAIR(/obj/structure/lift/button, floor, ext_panel)
-REL_PAIR(/datum/turbolift_floor, ext_panel, floor)
+/obj/structure/lift/button/relations()
+	. = ..()
+	. += rel_one(nameof(floor), back = nameof(/datum/turbolift_floor::ext_panel))
+/datum/turbolift_floor/relations()
+	. = ..()
+	. += rel_one(nameof(ext_panel), back = nameof(/obj/structure/lift/button::floor))
 
 /obj/structure/lift/button/proc/reset()
 	light_up = FALSE

@@ -73,14 +73,14 @@
 	var/datum/contract_damage_report/report = LAZYACCESS(pending_damage_reports, key)
 	if(!report)
 		report = new(source)
-		own_put(src, "pending_damage_reports", key, report)
+		own_put(src, nameof(pending_damage_reports), key, report)
 	report.total_amount += amount
 	report.integrity = source.get_integrity()
 
 /datum/controller/subsystem/contracts/proc/flush_damage_reports()
 	// own_take_all() empties the owned list in place and hands back its values (the reports),
 	// so iterate what it returns, not the var.
-	var/list/reports = own_take_all(src, "pending_damage_reports")
+	var/list/reports = own_take_all(src, nameof(pending_damage_reports))
 	// Publishing here must not re-queue: the batch is closed by now, but keep
 	// the broker batched so every window is evaluated once for all reports.
 	contract_batch_depth++
@@ -134,7 +134,7 @@
 		if(!window)
 			continue
 		var/datum/contract_event/event = window.batch_event
-		rel_clear(window, "batch_event")
+		rel_clear(window, nameof(window.batch_event))
 		if(QDELETED(event))
 			continue
 		var/rule_id = splittext(window_key, "|")[1]

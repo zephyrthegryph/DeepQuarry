@@ -173,10 +173,10 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_outer";
-	locked = 1;
 	name = "Engine North Airlock Exterior"
 	},
 /obj/structure/cable/cyan{
@@ -632,10 +632,10 @@
 /area/engineering/engine_room)
 "bB" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_inner";
-	locked = 1;
 	name = "Engine North Airlock Interior"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{
@@ -1083,10 +1083,10 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_outer";
-	locked = 1;
 	name = "Engine South Airlock Exterior"
 	},
 /obj/structure/cable/cyan{
@@ -1096,10 +1096,10 @@
 /area/engineering/engine_room)
 "cB" = (
 /obj/machinery/door/airlock/glass_external{
+	cap_state = 128;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_inner";
-	locked = 1;
 	name = "Engine South Airlock Interior"
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden{

@@ -38,7 +38,7 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 		stop_pulling() //TG does this on atom/movable but our stop_pulling proc is here so whatever
 
 	// our bellies go with us (the mob owns them)
-	own_clear(src, "vore_organs", OWN_DELETE)
+	own_clear(src, nameof(vore_organs), OWN_DELETE)
 	for(var/mob/observer/dead/M in src?.follower_list())
 		M.stop_following()
 	motiontracker_unsubscribe(TRUE) // Force unsubscribe
@@ -879,7 +879,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 				if(O == selection)
 					affected = organ
 
-		rel_remove(affected, "implants", selection)
+		rel_remove(affected, nameof(affected.implants), selection)
 		H.adjust_shock(20, "implant extraction")
 		H.injure(INJURY_CUT, selection.w_class * 3, affected.organ_tag, selection, 0, null, INJURE_IGNORE_RESISTANCE) // Embedded object extraction
 
@@ -904,7 +904,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 	for(var/obj/item/O in pinned)
 		if(O == selection)
-			rel_remove(src, "pinned", O)
+			rel_remove(src, nameof(pinned), O)
 		if(!LAZYLEN(pinned))
 			set_anchored(FALSE)
 	return 1
@@ -1146,7 +1146,7 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 
 /mob/proc/amend_exploitable(obj/item/I)
 	if(istype(I))
-		rel_add(src, "exploit_addons", I) // pair: sets I.exploit_for too
+		rel_add(src, nameof(exploit_addons), I) // pair: sets I.exploit_for too
 		var/exploitmsg = html_decode("\n" + "Has " + I.name + ".")
 		exploit_record += exploitmsg
 
@@ -1515,7 +1515,7 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 		return
 
 	if(ai_brain)	//Cleaning up the original ai
-		own_clear(src, "ai_brain", OWN_DELETE)
+		own_clear(src, nameof(ai_brain), OWN_DELETE)
 	initialize_ai_brain()
 	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
 	return TRUE

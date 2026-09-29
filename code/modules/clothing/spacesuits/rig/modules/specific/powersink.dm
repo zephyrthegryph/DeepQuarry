@@ -22,12 +22,12 @@
 		if(holder && holder.wearer())
 			to_chat(holder.wearer(), span_warning("Your power sink retracts as the module deactivates."))
 		drain_complete()
-	rel_clear(src, "interfaced_with")
+	rel_clear(src, nameof(interfaced_with))
 	total_power_drained = 0
 	return ..()
 
 /obj/item/rig_module/power_sink/activate()
-	rel_clear(src, "interfaced_with")
+	rel_clear(src, nameof(interfaced_with))
 	total_power_drained = 0
 	return ..()
 
@@ -53,7 +53,7 @@
 		return 0
 
 	to_chat(H, span_danger("You begin draining power from [target]!"))
-	rel_set(src, "interfaced_with", target)
+	rel_set(src, nameof(interfaced_with), target)
 	drain_loc = interfaced_with().loc
 
 	fx_sparks(holder, 5, FALSE)
@@ -125,7 +125,7 @@
 		interfaced_with().drain_power(0,1,0) // Damage the victim.
 
 	drain_loc = null
-	rel_clear(src, "interfaced_with")
+	rel_clear(src, nameof(interfaced_with))
 	total_power_drained = 0
 
 /// Currently draining power from this device. (a relation view: null once it is deleted).

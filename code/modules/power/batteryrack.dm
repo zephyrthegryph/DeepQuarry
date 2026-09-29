@@ -201,7 +201,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 /obj/machinery/power/smes/batteryrack/dismantle()
 	for(var/obj/item/cell/C in internal_cells)
 		C.forceMove(get_turf(src))
-		own_take_member(src, "internal_cells", C)
+		own_take_member(src, nameof(internal_cells), C)
 	return ..()
 
 /obj/machinery/power/smes/batteryrack/declare_interactions(list/into)
@@ -311,7 +311,7 @@ UI_ACT_PROC(/obj/machinery/power/smes/batteryrack, ui_act_ejectcell)
 		return TRUE
 
 	C.forceMove(get_turf(src))
-	own_take_member(src, "internal_cells", C)
+	own_take_member(src, nameof(/obj/machinery/power/smes/batteryrack::internal_cells), C)
 	update_icon()
 	RefreshParts()
 	update_maxcharge()

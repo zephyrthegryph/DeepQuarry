@@ -104,7 +104,7 @@ DECLARE_PERIODIC(/obj/structure/blob/core, PERIODIC_SLOW)
 	. = ..()
 	update_icon() //so it atleast appears
 	point_rate = new_rate
-	rel_set(src, "controller", new_overmind)
+	rel_set(src, nameof(controller), new_overmind)
 
 	if(!placed && !overmind)
 		return INITIALIZE_HINT_LATELOAD
@@ -158,8 +158,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		if(!desired_blob_type && !isnull(difficulty_threshold))
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
-		rel_set(src, "overmind", B)
-		rel_set(B, "blob_core", src)
+		rel_set(src, nameof(overmind), B)
+		rel_set(B, nameof(B.blob_core), src)
 		B.ai_controlled = TRUE
 		update_icon()
 		return TRUE
@@ -171,14 +171,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 
 	var/client/C = null
 	if(!new_overmind)
-		own_set(src, "Q", new /datum/ghost_query/blob())
+		own_set(src, nameof(Q), new /datum/ghost_query/blob())
 		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 		Q.query()
 
 	else
 		C = new_overmind
 		overmind_creation(C)
-	rel_clear(src, "controller") //Controller has been set. Let's null it now.
+	rel_clear(src, nameof(controller)) //Controller has been set. Let's null it now.
 
 /obj/structure/blob/core/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
 	EVENT_HANDLER
@@ -188,7 +188,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		C = D.client
 		overmind_creation(C)
 	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, "Q", OWN_DELETE) //get rid of the query
+	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)
 	if(new_overmind)
@@ -196,8 +196,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 			desired_blob_type = get_random_blob_type()
 		var/mob/observer/blob/B = new(loc, TRUE, 60, desired_blob_type)
 		B.key = new_overmind.key
-		rel_set(B, "blob_core", src)
-		rel_set(src, "overmind", B)
+		rel_set(B, nameof(B.blob_core), src)
+		rel_set(src, nameof(overmind), B)
 		update_icon()
 		if(B.mind && !B.mind.special_role)
 			B.mind.special_role = "Blob Overmind"

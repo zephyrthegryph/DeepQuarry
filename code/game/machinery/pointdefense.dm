@@ -180,13 +180,15 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 			return FALSE
 	return TRUE
 
-REL_LIST(/obj/machinery/pointdefense_control, targets)
+/obj/machinery/pointdefense_control/relations()
+	. = ..()
+	. += rel_many(nameof(targets))
 
 /obj/machinery/pointdefense/proc/Shoot(obj/effect/meteor/M)
 	if(!istype(M))
-		rel_clear(src, "engaging")
+		rel_clear(src, nameof(engaging))
 		return
-	rel_set(src, "engaging", M)
+	rel_set(src, nameof(engaging), M)
 	var/Angle = round(Get_Angle(src,M))
 	var/matrix/rot_matrix = matrix()
 	rot_matrix.Turn(Angle)
@@ -198,9 +200,9 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 /obj/machinery/pointdefense/proc/finish_shot(obj/effect/meteor/M)
 
 	var/obj/machinery/pointdefense_control/PC = get_controller()
-	rel_clear(src, "engaging")
+	rel_clear(src, nameof(engaging))
 	if(PC && M)
-		rel_remove(PC, "targets", M)
+		rel_remove(PC, nameof(PC.targets), M)
 
 	EXPIRY_STAMP(src, last_shot, CLOCK_WORLD)
 	if(!istype(M))
@@ -247,7 +249,7 @@ REL_LIST(/obj/machinery/pointdefense_control, targets)
 	var/list/potential_targets = REGISTRY_COPY(REGISTRY_METEORS) - existing_targets
 	for(var/obj/effect/meteor/M in potential_targets)
 		if(targeting_check(M))
-			rel_add(PC, "targets", M)
+			rel_add(PC, nameof(PC.targets), M)
 			Shoot(M)
 			return
 

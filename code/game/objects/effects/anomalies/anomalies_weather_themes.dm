@@ -17,15 +17,15 @@
 
 /datum/anomalous_weather/New()
 	..()
-	own_set(src, "visuals", new /atom/movable/weather_visuals())
+	own_set(src, nameof(visuals), new /atom/movable/weather_visuals())
 
 	visuals.icon = icon
 	visuals.icon_state = icon_state
 
-	own_set(src, "loop_sounds", new sounds(list(), FALSE, TRUE))
+	own_set(src, nameof(loop_sounds), new sounds(list(), FALSE, TRUE))
 
 	if(reagent_id)
-		own_set(src, "reagent_holder", new /datum/reagents(10000, null))
+		own_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
 		reagent_holder.add_reagent(reagent_id, 10000)
 		weather_colour = reagent_holder.get_color()
 
@@ -37,7 +37,7 @@
 		return FALSE
 
 	if(!reagent_holder)
-		own_set(src, "reagent_holder", new /datum/reagents(10000, null))
+		own_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
 
 	reagent_id = reagent
 	reagent_holder.clear_reagents()

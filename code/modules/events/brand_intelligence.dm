@@ -23,14 +23,14 @@
 /datum/event/brand_intelligence/start()
 	for(var/obj/machinery/vending/V in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(isNotStationLevel(V.z))	continue
-		rel_add(src, "vendingMachines", V)
+		rel_add(src, nameof(vendingMachines), V)
 
 	if(!length(vendingMachines))
 		kill()
 		return
 
-	rel_set(src, "originMachine", DEFAULTPICK(vendingMachines, null))
-	rel_remove(src, "vendingMachines", originMachine)
+	rel_set(src, nameof(originMachine), DEFAULTPICK(vendingMachines, null))
+	rel_remove(src, nameof(vendingMachines), originMachine)
 	originMachine().set_shut_up(FALSE)
 	originMachine().set_shoot_inventory(1)
 
@@ -51,8 +51,8 @@
 		if(prob(15))
 			var/obj/machinery/vending/infectedMachine = DEFAULTPICK(vendingMachines, null)
 			if(infectedMachine)
-				rel_remove(src, "vendingMachines", infectedMachine)
-				rel_add(src, "infectedVendingMachines", infectedMachine)
+				rel_remove(src, nameof(vendingMachines), infectedMachine)
+				rel_add(src, nameof(infectedVendingMachines), infectedMachine)
 				infectedMachine.set_shut_up(FALSE)
 				infectedMachine.set_shoot_inventory(1)
 
@@ -68,5 +68,7 @@
 /datum/event/brand_intelligence/proc/originMachine() as /obj/machinery/vending
 	return originMachine
 
-REL_LIST(/datum/event/brand_intelligence, vendingMachines)
-REL_LIST(/datum/event/brand_intelligence, infectedVendingMachines)
+/datum/event/brand_intelligence/relations()
+	. = ..()
+	. += rel_many(nameof(vendingMachines))
+	. += rel_many(nameof(infectedVendingMachines))

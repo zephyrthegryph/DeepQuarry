@@ -29,7 +29,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 
 		for(var/obj/machinery/atmospherics/unary/heat_exchanger/target in get_step(src,partner_connect))
 			if(target.dir & get_dir(src,target))
-				rel_set(src, "partner", target)
+				rel_set(src, nameof(partner), target)
 				break
 
 	..()
@@ -112,4 +112,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
 
-REL_PAIR(/obj/machinery/atmospherics/unary/heat_exchanger, partner, partner)
+/obj/machinery/atmospherics/unary/heat_exchanger/relations()
+	. = ..()
+	. += rel_one(nameof(partner), back = nameof(/obj/machinery/atmospherics/unary/heat_exchanger::partner))

@@ -17,10 +17,13 @@
 	var/list/ask_needs
 	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
 	var/returned = FALSE
+	/// A target was given (a null target means "none", never "deleted").
+	var/had_target = FALSE
 
 /datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/interaction/entry, datum/tgui/ui)
 	src.user = user
 	src.target = target
+	had_target = !isnull(target)
 	src.held = held
 	src.entry = entry
 	src.ui = ui
@@ -29,10 +32,11 @@
 /datum/dispatch_context/proc/invalid_reason()
 	if(QDELETED(user))
 		return "you are gone"
-	if(QDELETED(target))
+	// The target is optional (a native verb, a Topic, world code): only a target that existed and was
+	// deleted since refuses. Consciousness is not assumed: ghosts and admins answer prompts too; an
+	// action that needs a conscious user says so in its needs (chk_conscious).
+	if(had_target && QDELETED(target))
 		return "it's gone"
-	if(user.stat != CONSCIOUS)
-		return "you can't do that now"
 	if(ask_needs)
 		var/needs_reason = cap_needs_reason(target, user, held, ask_needs)
 		if(needs_reason)

@@ -107,11 +107,11 @@
 
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,node1_dir))
 		if(can_be_node(target, 1))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,node2_dir))
 		if(can_be_node(target, 2))
-			rel_set(src, "node2", target)
+			rel_set(src, nameof(node2), target)
 			break
 	if(!node1 && !node2)
 		qdel(src)
@@ -239,11 +239,11 @@
 /obj/machinery/atmospherics/pipe/simple/heat_exchanging/junction/atmos_init()
 	for(var/obj/machinery/atmospherics/target in get_step(src,initialize_directions))
 		if(target.initialize_directions & get_dir(target,src))
-			rel_set(src, "node1", target)
+			rel_set(src, nameof(node1), target)
 			break
 	for(var/obj/machinery/atmospherics/pipe/simple/heat_exchanging/target in get_step(src,initialize_directions_he))
 		if(target.initialize_directions_he & get_dir(target,src))
-			rel_set(src, "node2", target)
+			rel_set(src, nameof(node2), target)
 			break
 
 	if(!node1&&!node2)

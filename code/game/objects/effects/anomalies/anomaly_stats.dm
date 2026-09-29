@@ -79,7 +79,7 @@
 /datum/anomaly_stats/proc/update_severity(lower, upper)
 	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		rel_clear(src, "attached_anomaly")
+		rel_clear(src, nameof(attached_anomaly))
 		return
 	var/sev_change = rand(lower, upper)
 	severity += sev_change
@@ -114,7 +114,7 @@
 /datum/anomaly_stats/proc/kill_anomaly(critical)
 	var/obj/effect/anomaly/anom = attached_anomaly
 	if(!istype(anom))
-		rel_clear(src, "attached_anomaly")
+		rel_clear(src, nameof(attached_anomaly))
 		return
 	if(critical)
 		anom.detonate()
@@ -159,7 +159,7 @@
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
 
-	own_set(src, "modifier", new picked_mod) // disposes of the old modifier
+	own_set(src, nameof(modifier), new picked_mod) // disposes of the old modifier
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return

@@ -18,7 +18,7 @@
 	if(A)
 		A.forceMove(src) // helo
 		podfall(auto_open)
-	own_set(src, "air", new /datum/gas_mixture/pod_air)
+	own_set(src, nameof(air), new /datum/gas_mixture/pod_air)
 
 
 /obj/structure/drop_pod/proc/podfall(auto_open)
@@ -102,7 +102,7 @@
 	for(var/atom/movable/AM in contents_of(src))
 		AM.forceMove(loc)
 		AM.set_dir(SOUTH) // cus
-	own_clear(src, "air", OWN_DELETE)
+	own_clear(src, nameof(air), OWN_DELETE)
 	finished = TRUE
 
 /obj/structure/drop_pod/declare_interactions(list/into)

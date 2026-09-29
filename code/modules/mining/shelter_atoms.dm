@@ -653,7 +653,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!linked_door())
 		var/turf/dT = get_step(src,dir)
-		rel_set(src, "door", locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
+		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(linked_door())
 		linked_door().glass = !linked_door().glass
 		linked_door().opacity = !linked_door().opacity
@@ -679,7 +679,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
 	interaction_glass(user, held, interaction)
 	if(linked_door())
-		if(linked_door().locked)
+		if(is_bolted(linked_door()))
 			linked_door().unlock()
 			linked_door().stop_blocking_light()
 		else
@@ -712,7 +712,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 	if(!target_light())
 		var/turf/dT = get_step(src, dir)
-		rel_set(src, "target_light", locate_within(dT, /obj/machinery/light))
+		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
 		target_light().update()

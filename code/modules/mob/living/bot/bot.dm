@@ -229,10 +229,10 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 				if(past_key in ignore_past)
 					if(prob(10/ignore_past[past_key]) || !A.loc)
 						ignore_past[past_key]++
-						rel_remove(src, "ignore_list", A)
+						rel_remove(src, nameof(ignore_list), A)
 				else
 					LAZYSET(ignore_past, past_key, 1)
-					rel_remove(src, "ignore_list", A)
+					rel_remove(src, nameof(ignore_list), A)
 	handleRegular()
 
 	var/panic_speed_mod = 0
@@ -323,12 +323,12 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	return
 
 /mob/living/bot/proc/handleFrustrated(has_target)
-	rel_clear(src, "obstacle")
+	rel_clear(src, nameof(obstacle))
 	if (has_target)
 		if (length(target_path))
-			rel_set(src, "obstacle", target_path[1])
+			rel_set(src, nameof(obstacle), target_path[1])
 	else if (length(patrol_path))
-		rel_set(src, "obstacle", patrol_path[1])
+		rel_set(src, nameof(obstacle), patrol_path[1])
 	target_path = list()
 	patrol_path = list()
 
@@ -357,7 +357,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 		patrol_path = om_pathfinder().default_bot_pathfinding(src, T, 1)
 		if(!patrol_path)
 			patrol_path = list()
-		rel_clear(src, "obstacle")
+		rel_clear(src, nameof(obstacle))
 	return
 
 /mob/living/bot/proc/getPatrolTurf()
@@ -389,9 +389,9 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	target_path = om_pathfinder().default_bot_pathfinding(src, get_turf(target), 0)
 	if(!target_path)
 		if(target && target.loc)
-			rel_add(src, "ignore_list", target)
+			rel_add(src, nameof(ignore_list), target)
 		resetTarget()
-		rel_clear(src, "obstacle")
+		rel_clear(src, nameof(obstacle))
 	else if(target)
 		LAZYREMOVE(ignore_past, REF(target))
 	return
@@ -407,7 +407,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	return step_towards(src, T)
 
 /mob/living/bot/proc/resetTarget()
-	rel_clear(src, "target")
+	rel_clear(src, nameof(target))
 	target_path = list()
 
 /mob/living/bot/proc/turn_on()
@@ -418,7 +418,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	update_icons()
 	resetTarget()
 	patrol_path = list()
-	rel_clear(src, "ignore_list")
+	rel_clear(src, nameof(ignore_list))
 	update_canmove()
 	return 1
 
@@ -573,7 +573,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 		var/mob/living/silicon/pai/AI = paicard.pai
 		transfer_mind(mind, AI, "pAI ejected from [src]")
 		paicard.forceMove(src.loc)
-		own_take(src, "paicard")
+		own_take(src, nameof(paicard))
 		name = initial(name)
 		botcard.access = botcard_access.Copy()
 		to_chat(AI, span_notice("You feel a tad claustrophobic as your mind closes back into your card, ejecting from \the [initial(src.name)]."))
@@ -622,6 +622,11 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "botcard", /obj/item/card/id)
 DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
-OWN(/mob/living/bot, paicard, OWN_CONTAINED)
-/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
-REL_LIST(/mob/living/bot, ignore_list)
+/mob/living/bot/ownership()
+	. = ..()
+	. += owns(nameof(paicard), policy = OWN_CONTAINED)
+
+/mob/living/bot/relations()
+	. = ..()
+	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
+	. += rel_many(nameof(ignore_list))

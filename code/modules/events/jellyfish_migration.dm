@@ -71,7 +71,7 @@
 /datum/event/jellyfish_migration/proc/spawn_one_jellyfish(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_jellyfish_destruction))
-	own_add(src, "spawned_jellyfish", M)
+	own_add(src, nameof(spawned_jellyfish), M)
 	return M
 
 // Counts living jellyfish spawned by this event.
@@ -85,7 +85,7 @@
 /datum/event/jellyfish_migration/proc/on_jellyfish_destruction(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
 	var/mob/M = source
-	own_take_member(src, "spawned_jellyfish", M)
+	own_take_member(src, nameof(spawned_jellyfish), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 
 /datum/event/jellyfish_migration/end()

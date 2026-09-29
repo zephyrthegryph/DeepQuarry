@@ -11,4 +11,4 @@
 		var/datum/lore/organization/instance = path
 		if(initial(instance.name))
 			instance = new path()
-			own_put(src, "organizations", path, instance)
+			own_put(src, nameof(organizations), path, instance)

@@ -163,7 +163,7 @@ UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_tweak)
 /datum/om/flow/ask_sequence/gear_tweak/underwear/New(category, datum/gear_tweak/tweak)
 	..()
 	src.category = category
-	rel_set(src, "tweak", tweak)
+	rel_set(src, nameof(tweak), tweak)
 
 /obj/structure/undies_wardrobe/proc/underwear_tweak_answered(mob/living/carbon/human/H, new_metadata, datum/om/flow/ask_sequence/gear_tweak/underwear/seq)
 	var/underwear = seq.category

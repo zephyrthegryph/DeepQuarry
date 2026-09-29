@@ -6,7 +6,7 @@
 
 /mob/living/silicon/robot/platform/explorer/Initialize(mapload)
 	. = ..()
-	own_set(src, "laws", new /datum/ai_laws/explorer) // ALLOW(decl): replaces the laws the base set up
+	own_set(src, nameof(laws), new /datum/ai_laws/explorer) // ALLOW(decl): replaces the laws the base set up
 
 /mob/living/silicon/robot/platform/explorer/welcome_client()
 	..()

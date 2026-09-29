@@ -74,8 +74,8 @@
 	if(owner?.body)
 		owner.body.add_affliction(W, src)
 	else
-		rel_set(W, "location", src)
-		own_add(src, "detached_afflictions", W)
+		rel_set(W, nameof(W.location), src)
+		own_add(src, nameof(detached_afflictions), W)
 	W.sync()
 	integrity_dirty = TRUE
 
@@ -83,7 +83,7 @@
 /obj/item/organ/external/proc/remove_wound(datum/affliction/wound/W)
 	if(W.body)
 		W.body.remove_affliction(W)
-	own_take_member(src, "detached_afflictions", W)
+	own_take_member(src, nameof(detached_afflictions), W)
 	integrity_dirty = TRUE
 	qdel(W)
 
@@ -160,8 +160,8 @@
 /datum/body/proc/detach_part(obj/item/organ/O)
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
-		rel_set(A, "location", O)
-		own_add(O, "detached_afflictions", A)
+		rel_set(A, nameof(A.location), O)
+		own_add(O, nameof(O.detached_afflictions), A)
 
 /// The organ joined this body: adopt what it carries. Called only by
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.
@@ -174,7 +174,7 @@
 			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1
-	own_take_all(O, "detached_afflictions")
+	own_take_all(O, nameof(O.detached_afflictions))
 	O.recalc_integrity() // lesions / wounds moved: one recompute from the index
 
 /// Offline tick for afflictions riding a detached organ.
@@ -182,7 +182,7 @@
 	for(var/datum/affliction/A as anything in detached_afflictions)
 		A.tick_offline()
 		if(A.severity <= 0 && !istype(A, /datum/affliction/load))
-			own_take_member(src, "detached_afflictions", A)
+			own_take_member(src, nameof(detached_afflictions), A)
 			qdel(A)
 
 /// Afflictions located on this organ, whether it's in a body or detached.

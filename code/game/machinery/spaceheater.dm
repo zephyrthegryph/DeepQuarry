@@ -210,7 +210,7 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellremove)
 		cell.update_icon()
 		ui.user.put_in_hands(cell)
 		cell.add_fingerprint(ui.user)
-		own_take(src, "cell")
+		own_take(src, nameof(/obj/mecha::cell))
 		power_change()
 		. = TRUE
 
@@ -277,4 +277,6 @@ UI_ACT_PROC(/obj/machinery/space_heater, ui_act_cellinstall)
 #undef DEFAULT_HEATING_POWER
 
 
-OWN(/obj/machinery/space_heater, cell, OWN_CONTAINED)
+/obj/machinery/space_heater/ownership()
+	. = ..()
+	. += owns(nameof(cell), policy = OWN_CONTAINED)

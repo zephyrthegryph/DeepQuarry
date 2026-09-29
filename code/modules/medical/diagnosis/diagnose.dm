@@ -34,7 +34,7 @@
 		CRASH("diagnose() called with an invalid profile: [profile]")
 	ensure_vitals()
 	var/datum/diagnosis/D = new
-	shared_set(D, "profile", P)
+	shared_set(D, nameof(D.profile), P)
 	D.patient_name = owner.name
 	D.fake_death = (owner.status_flags & FAKEDEATH) && !P.sees_fake_death
 

@@ -43,7 +43,7 @@
 	else
 		set_wires(new /datum/wires/smartfridge(src))
 
-	own_set(src, "soundloop", new /datum/looping_sound/fridge(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
 	update_icon()
 	default_apply_parts()
 
@@ -239,7 +239,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		own_add(src, "item_records", I)
+		own_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
 	update_icon()
@@ -421,8 +421,8 @@ UI_ACT_OVERRIDE(/obj/machinery/smartfridge/secure, ui_act_release)
 	. = ..()
 	var/obj/machinery/smartfridge/chemistry/chemvator/above = locate(/obj/machinery/smartfridge/chemistry/chemvator,get_zstep(src,UP))
 	if(istype(above))
-		rel_set(above, "attached", src)
-		rel_set(src, "attached", above)
+		rel_set(above, nameof(above.attached), src)
+		rel_set(src, nameof(attached), above)
 		item_records = attached().item_records // ALLOW(ownership): read-only alias of the upper unit's owned list; stock() forwards writes there
 	else
 		to_chat(world,span_danger("[src] at [x],[y],[z] cannot find the unit above it!"))

@@ -73,9 +73,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	shuttle_area = areas
 
 	if(initial_location)
-		rel_set(src, "current_location", initial_location)
+		rel_set(src, nameof(current_location), initial_location)
 	else
-		rel_set(src, "current_location", SSshuttles.get_landmark(current_location_tag))
+		rel_set(src, nameof(current_location), SSshuttles.get_landmark(current_location_tag))
 	if(!istype(current_location(), /obj/effect/shuttle_landmark))
 		// landmark missing usually means the shuttle's home map
 		// was removed. Log once and skip registration so subtype New()s
@@ -233,8 +233,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 		return // It handled it for us (shuttle crash or such)
 
 	COOLDOWN_RESET(src, progress_sound_cooldown)
-	rel_set(src, "transit_start", start_location)
-	rel_set(src, "transit_dest", destination)
+	rel_set(src, nameof(transit_start), start_location)
+	rel_set(src, nameof(transit_dest), destination)
 	transit_warned = FALSE
 	set_transit_active(TRUE) // the transit repeat runs while this is set
 	long_jump_transit()
@@ -246,8 +246,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	var/obj/effect/shuttle_landmark/destination = transit_dest
 	if(EXPIRY_EXPIRED(src, arrive_time, CLOCK_WORLD))
 		set_transit_active(FALSE)
-		rel_clear(src, "transit_dest")
-		rel_clear(src, "transit_start")
+		rel_clear(src, nameof(transit_dest))
+		rel_clear(src, nameof(transit_start))
 		if(!attempt_move(destination))
 			attempt_move(start_location) //try to go back to where we started. If that fails, I guess we're stuck in the interim location
 		long_jump_arrived(start_location, destination)
@@ -417,7 +417,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 	// Actually do the movement of everything - This replaces origin.move_contents_to(destination)
 	translate_turfs(turf_translation, current_location().landing_area(), current_location().base_turf)
-	rel_set(src, "current_location", destination)
+	rel_set(src, nameof(current_location), destination)
 
 	// If there's a zlevel above our destination, paint in a ceiling on it so we retain our air
 	if(ceiling_type && HasAbove(current_location().z))

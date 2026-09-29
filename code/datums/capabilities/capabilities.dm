@@ -11,6 +11,7 @@
 /// per type and cached: `. = ..()` then `. += ...`; `. = without(., /datum/capability/x)` drops one.
 /// Pure: read no instance state here.
 /atom/proc/capabilities()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -53,7 +54,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
 /proc/cap_of(atom/A, key)
-	for(var/datum/capability/C as anything in caps_of(A))
+	for(var/datum/capability/C as anything in caps_all(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			return C
 	return null
@@ -80,6 +81,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 
 /// Sets or clears `bits` on A through the change path. TRUE when the state changed.
 /proc/cap_set(atom/A, bits, on)
+	if(isnull(on))
+		CRASH("cap_set: `on` is required (TRUE to set, FALSE to clear) for [A?.type]")
 	var/was = A.cap_state
 	if(on)
 		A.cap_state |= bits
@@ -135,6 +138,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
  *			. += /obj/item/healthanalyzer/proc/toggle_adv
  */
 /atom/proc/type_verbs()
+	SHOULD_CALL_PARENT(TRUE)
 	RETURN_TYPE(/list)
 	return list()
 
@@ -197,6 +201,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /atom/proc/caps_destroy()
+	if(timed_until)
+		timed_cancel_all(src)
 	var/flags = GLOB.type_derives_cache[type]
 	if(!isnull(flags) && !(flags & TYPE_DERIVES_CAPS) && !cap_data && !cap_extras)
 		return
@@ -330,6 +336,8 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	/// A proc on the holder, () -> whether this entry is offered at all on this instance (not a refusal:
 	/// the entry doesn't exist for it). Cheap, no actor.
 	var/applies
+	/// The entry never touches the holder's live parts (cap_electrify() doesn't zap it).
+	var/insulated = FALSE
 
 /// Keyed by the entry itself: two capabilities can build entries with one id (the same handler
 /// and name) but different selectors (anchor(tool = TOOL_WRENCH) vs anchor(tool = TOOL_SCREWDRIVER)).
@@ -376,7 +384,11 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 
 /// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
 /// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
+/// The default asks each capability's own before_entry() (cap_electrify() zaps here).
 /atom/proc/before_entry(mob/user, datum/interaction/capability/entry, obj/item/held)
+	for(var/datum/capability/C as anything in caps_all(src))
+		if(C.before_entry(src, user, held, entry))
+			return FALSE // stopped (the capability told the user)
 	return TRUE
 
 /// TRUE while none of this atom's capability entries are offered at all (a frozen airlock): input
@@ -483,6 +495,9 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	E.log = log
 	E.form = form
 	E.name_proc = name_proc
+	// Reach, as every resolver-native interaction has it: the empty-hand path asks the resolver
+	// before it checks adjacency.
+	E.requires = list(REQ_INTERACTION_REACH)
 	E.applies = applies
 	E.priority = priority || 0
 	E.stance = stance

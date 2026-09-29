@@ -19,7 +19,7 @@
 	var/tmp/obj/item/rig/holder
 
 /datum/rig_component_registry/New(obj/item/rig/new_holder)
-	rel_set(src, "holder", new_holder)
+	rel_set(src, nameof(holder), new_holder)
 
 /*
  * proc/initialize_pieces()
@@ -34,28 +34,28 @@
 	if(holder().initial_modules && holder().initial_modules.len)
 		for(var/path in holder().initial_modules)
 			var/obj/item/rig_module/module = new path(holder())
-			own_add(holder(), "installed_modules", module)
+			own_add(holder(), nameof(/obj/item/rig::installed_modules), module)
 			module.installed(holder())
 
 	// Spawn the six physical components
 	if(holder().cell_type)
 		var/new_cell_type_path = holder().cell_type
-		own_set(holder(), "cell", new new_cell_type_path(holder()))
+		own_set(holder(), nameof(/obj/mecha::cell), new new_cell_type_path(holder()))
 	if(holder().air_type)
 		var/new_air_type_path = holder().air_type
-		own_set(holder(), "air_supply", new new_air_type_path(holder()))
+		own_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))
 	if(holder().glove_type)
 		var/new_glove_type_path = holder().glove_type
-		own_set(holder(), "gloves", new new_glove_type_path(holder()))
+		own_set(holder(), nameof(/obj/item/rig::gloves), new new_glove_type_path(holder()))
 	if(holder().helm_type)
 		var/new_helm_type_path = holder().helm_type
-		own_set(holder(), "helmet", new new_helm_type_path(holder()))
+		own_set(holder(), nameof(/obj/item/rig::helmet), new new_helm_type_path(holder()))
 	if(holder().boot_type)
 		var/new_boot_type_path = holder().boot_type
-		own_set(holder(), "boots", new new_boot_type_path(holder()))
+		own_set(holder(), nameof(/obj/item/rig::boots), new new_boot_type_path(holder()))
 	if(holder().chest_type)
 		var/new_chest_type_path = holder().chest_type
-		own_set(holder(), "chest", new new_chest_type_path(holder()))
+		own_set(holder(), nameof(/obj/item/rig::chest), new new_chest_type_path(holder()))
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
 
 	// Apply shared stats to equippable pieces
@@ -110,18 +110,18 @@
 		// safety net stays inert while we deliberately drop and delete it.
 		if(istype(piece, /obj/item/clothing))
 			var/obj/item/clothing/deployed = piece
-			rel_clear(deployed, "master_rig")
+			rel_clear(deployed, nameof(deployed.master_rig))
 		var/mob/living/M = piece.loc
 		if(istype(M))
 			M.drop_from_inventory(piece)
 		qdel(piece)
 
-	own_take(R, "gloves")
-	own_take(R, "boots")
-	own_take(R, "helmet")
-	own_take(R, "chest")
-	own_take(R, "cell")
-	own_take(R, "air_supply")
+	own_take(R, nameof(R.gloves))
+	own_take(R, nameof(R.boots))
+	own_take(R, nameof(R.helmet))
+	own_take(R, nameof(R.chest))
+	own_take(R, nameof(R.cell))
+	own_take(R, nameof(R.air_supply))
 
 	for(var/obj/item/rig_module/module in R.installed_modules)
 		qdel(module)

@@ -33,17 +33,17 @@
 	// Like the old component's highlander replace: the previous view goes after the new one began.
 	if(old_view && old_view != new_view && !QDELETED(old_view))
 		qdel(old_view)
-	own_set(src, "remote_view", new_view)
+	own_set(src, nameof(remote_view), new_view)
 	new_view.attach()
 	return new_view
 
 /datum/remote_view/New(mob/viewer)
 	..()
-	rel_set(src, "host_mob", viewer) // one-sided back view: the mob owns us in remote_view
+	rel_set(src, nameof(host_mob), viewer) // one-sided back view: the mob owns us in remote_view
 
 /// Drops the host without restoring its perspective: for a view that never started.
 /datum/remote_view/proc/forget_host()
-	rel_clear(src, "host_mob")
+	rel_clear(src, nameof(host_mob))
 
 /// Begins the view (was the component's Initialize). Returns FALSE if the view cannot start.
 /datum/remote_view/proc/start(atom/focused_on, viewsize, vconfig_path)
@@ -52,7 +52,7 @@
 	// Set config
 	if(!vconfig_path)
 		vconfig_path = /datum/remote_view_config
-	own_set(src, "settings", new vconfig_path)
+	own_set(src, nameof(settings), new vconfig_path)
 	// Safety check, focus on ourselves if the target is deleted, and flag any movement to end the view.
 	if(QDELETED(focused_on))
 		focused_on = host_mob
@@ -93,7 +93,7 @@
 	if(isturf(focused_on))
 		om_hook(host_mob, /datum/om/event/movable_attempted_move, src, PROC_REF(on_recursive_moved_event))
 	// Focus on remote view
-	rel_set(src, "remote_view_target", focused_on)
+	rel_set(src, nameof(remote_view_target), focused_on)
 	if(host_mob != remote_view_target) // Some items just offset our view, so we set ourselves as the view target, don't double dip if so!
 		om_hook(remote_view_target, /datum/om/event/qdeleting, src, PROC_REF(handle_endview))
 		om_hook(remote_view_target, /datum/om/event/mob_reset_perspective, src, PROC_REF(on_remotetarget_reset_perspective))
@@ -130,8 +130,8 @@
 		settings?.handle_remove_visuals(src, host_mob)
 		host_mob.refresh_vision()
 		host_mob.refresh_hud()
-	rel_clear(src, "host_mob")
-	rel_clear(src, "remote_view_target")
+	rel_clear(src, nameof(host_mob))
+	rel_clear(src, nameof(remote_view_target))
 
 // Event handlers
 
@@ -340,7 +340,7 @@
 	. = ..()
 	if(!.)
 		return
-	rel_set(src, "host_item", our_item)
+	rel_set(src, nameof(host_item), our_item)
 	om_hook(host_item, list(
 		/datum/om/event/qdeleting,
 		/datum/om/event/moved,
@@ -384,7 +384,7 @@
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
 		host_mob.refresh_vision()
-	rel_clear(src, "host_item")
+	rel_clear(src, nameof(host_item))
 	. = ..()
 
 /**
@@ -426,10 +426,10 @@
 	. = ..()
 	if(!.)
 		return
-	rel_set(src, "view_coordinator", coordinator)
+	rel_set(src, nameof(view_coordinator), coordinator)
 	view_coordinator.look(host_mob)
 	if("viewers" in view_coordinator.vars)
-		rel_add(view_coordinator, "viewers", host_mob)
+		rel_add(view_coordinator, nameof(/datum/action::viewers), host_mob)
 	om_hook(view_coordinator, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
 
 // The view coordinator stops showing to this viewer.
@@ -437,8 +437,8 @@
 	if(host_mob && view_coordinator)
 		view_coordinator.unlook(host_mob, FALSE)
 		if("viewers" in view_coordinator.vars)
-			rel_remove(view_coordinator, "viewers", host_mob)
-	rel_clear(src, "view_coordinator")
+			rel_remove(view_coordinator, nameof(/datum/action::viewers), host_mob)
+	rel_clear(src, nameof(view_coordinator))
 	. = ..()
 
 /datum/remote_view/viewer_managed/get_coordinator()

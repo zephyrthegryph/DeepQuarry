@@ -65,13 +65,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 	var/current_spot = get_turf(src)
 	for(var/i = 1 to limit)
 		var/obj/effect/beam/i_beam/I = new /obj/effect/beam/i_beam(current_spot)
-		rel_set(I, "master", src)
+		rel_set(I, nameof(I.master), src)
 		I.set_density(TRUE)
 		I.set_dir(dir)
 		if(!step(I, I.dir)) //Try to take a step in that direction
 			return //Couldn't, oh well, we hit a wall or something. Beam should qdel itself in it's Bump().
 		I.set_density(FALSE)
-		own_add(src, "i_beams", I)
+		own_add(src, nameof(i_beams), I)
 		I.visible = visible
 
 /// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven

@@ -30,7 +30,7 @@
 /datum/admin_report/New(report_title, mob/viewer, datum/host)
 	..()
 	title = report_title
-	rel_set(src, "forward_host", host)
+	rel_set(src, nameof(forward_host), host)
 
 DECLARE_UI_STATE(/datum/admin_report, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG|R_SERVER|R_EVENT))
 

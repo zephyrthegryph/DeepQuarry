@@ -2,7 +2,7 @@
 	var/datum/ghost_query/ghost_check // Used to unregister our signal
 
 /mob/living/simple_mob/animal/borer/proc/request_player()
-	own_set(src, "ghost_check", new /datum/ghost_query/borer())
+	own_set(src, nameof(ghost_check), new /datum/ghost_query/borer())
 	om_hook(ghost_check, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	ghost_check.query() // This will sleep the proc for awhile.
 
@@ -12,5 +12,5 @@
 		var/mob/observer/dead/D = ghost_check.candidates[1]
 		transfer_personality(D)
 	om_unhook(ghost_check, /datum/om/event/ghost_query_complete, src)
-	own_clear(src, "ghost_check", OWN_DELETE) //get rid of the query
+	own_clear(src, nameof(ghost_check), OWN_DELETE) //get rid of the query
 

@@ -116,12 +116,14 @@
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
+/obj/machinery/maint_recycler/ownership()
+	. = ..()
+	. += owns(nameof(inserted_item), policy = OWN_SPILL)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	own_set(src, "hatch", new /obj/effect/overlay/recycler)
+	own_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
@@ -133,7 +135,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 	//at least for 32x32 stuff!
 	src.underlays |= underlay
 
-	own_set(src, "monitor_screen", new /obj/effect/overlay/recycler)
+	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -141,7 +143,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 
 	src.vis_contents |= monitor_screen
 
-	own_set(src, "item_overlay", new /obj/effect/overlay/recycler)
+	own_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
 
@@ -318,7 +320,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 			eject_item_act(user)
 
 /obj/machinery/maint_recycler/proc/eject_item_act(mob/user)
-	var/atom/movable/ejected = own_take(src, "inserted_item")
+	var/atom/movable/ejected = own_take(src, nameof(inserted_item))
 	if(!ejected)
 		return
 	ejected.forceMove(get_turf(src))
@@ -346,7 +348,7 @@ OWN(/obj/machinery/maint_recycler, inserted_item, OWN_SPILL)
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
 	credit_user(user,value)
-	var/recycled = own_take(src, "inserted_item")
+	var/recycled = own_take(src, nameof(inserted_item))
 	if(istype(recycled,/mob))
 		var/mob/m = recycled
 		m.gib() //do we want logs here, or in the mob consent?

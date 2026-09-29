@@ -172,7 +172,7 @@
 	if(Chest.robotic >= 2)
 		act_message(src, null, others = span_warning("%U% shudders slightly, then ejects a cluster of nymphs with a wet slithering noise."))
 		species.remove_inherent_verbs(src) // the diona species granted split and regenerate
-		proto_set(src, "species", GLOB.all_species[SPECIES_HUMAN]) // This is hard-set to default the body to a normal FBP, without changing anything.
+		proto_set(src, nameof(species), GLOB.all_species[SPECIES_HUMAN]) // This is hard-set to default the body to a normal FBP, without changing anything.
 
 		// Bust it
 		src.death()

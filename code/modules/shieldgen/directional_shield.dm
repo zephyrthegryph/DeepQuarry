@@ -19,7 +19,7 @@
 /obj/effect/directional_shield/Initialize(mapload, new_projector)
 	. = ..()
 	if(new_projector)
-		rel_set(src, "projector", new_projector)
+		rel_set(src, nameof(projector), new_projector)
 		var/turf/us = get_turf(src)
 		var/turf/them = get_turf(projector)
 		if(them)
@@ -118,7 +118,7 @@
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
 	S.dir = new_dir
-	own_add(src, "active_shields", S)
+	own_add(src, nameof(active_shields), S)
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.
@@ -129,7 +129,7 @@
 	return TRUE
 
 /obj/item/shield_projector/proc/destroy_shields()
-	own_clear(src, "active_shields", OWN_DELETE)
+	own_clear(src, nameof(active_shields), OWN_DELETE)
 	set_light(0)
 	active = FALSE
 

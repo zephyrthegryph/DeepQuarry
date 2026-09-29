@@ -70,7 +70,7 @@ MAP_RESOLVER_VARS(/obj/effect/map_helper/airlock, "command;my_controller_type;my
 	if(istype(device, /obj/machinery/door/airlock))
 		var/obj/machinery/door/airlock/my_airlock = device
 		my_airlock.lock()
-		keyed_set_id(my_airlock, "id_tag", controller.id_tag + tag_addon) // airlocks are keyed targets by id_tag
+		keyed_set_id(my_airlock, nameof(my_airlock.id_tag), controller.id_tag + tag_addon) // airlocks are keyed targets by id_tag
 		my_airlock.frequency = controller.frequency
 		my_airlock.set_frequency(controller.frequency)
 		my_airlock.req_access = controller.req_access

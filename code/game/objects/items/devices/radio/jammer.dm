@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 	if(user.get_inactive_hand() == src && power_source)
 		to_chat(user,span_notice("You eject \the [power_source] from \the [src]."))
 		user.put_in_hands(power_source)
-		own_take(src, "power_source")
+		own_take(src, nameof(power_source))
 		turn_off()
 		return TRUE
 	return FALSE

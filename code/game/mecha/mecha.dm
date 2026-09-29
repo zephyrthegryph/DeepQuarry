@@ -337,14 +337,14 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 
 	if(wrecked && wreckage)
 		var/obj/effect/decal/mecha_wreckage/WR = new wreckage(loc)
-		rel_clear(src, "hull_equipment")
-		rel_clear(src, "weapon_equipment")
-		rel_clear(src, "utility_equipment")
-		rel_clear(src, "universal_equipment")
-		rel_clear(src, "special_equipment")
+		rel_clear(src, nameof(hull_equipment))
+		rel_clear(src, nameof(weapon_equipment))
+		rel_clear(src, nameof(utility_equipment))
+		rel_clear(src, nameof(universal_equipment))
+		rel_clear(src, nameof(special_equipment))
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
 			if(E.salvageable && prob(30))
-				rel_add(WR, "crowbar_salvage", E)
+				rel_add(WR, nameof(WR.crowbar_salvage), E)
 				E.forceMove(WR)
 				E.equip_ready = TRUE
 			else
@@ -356,18 +356,18 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 			if(istype(C))
 				C.damage_part(rand(10, 20))
 				C.detach()
-				rel_add(WR, "crowbar_salvage", C)
+				rel_add(WR, nameof(WR.crowbar_salvage), C)
 				C.forceMove(WR)
 
 		// cell and tank leave our ownership and become the wreck's salvage.
-		var/obj/item/cell/salvaged_cell = own_take(src, "cell")
+		var/obj/item/cell/salvaged_cell = own_take(src, nameof(cell))
 		if(salvaged_cell)
-			rel_add(WR, "crowbar_salvage", salvaged_cell)
+			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_cell)
 			salvaged_cell.forceMove(WR)
 			salvaged_cell.charge = rand(0, salvaged_cell.charge)
-		var/obj/item/tank/salvaged_tank = own_take(src, "internal_tank")
+		var/obj/item/tank/salvaged_tank = own_take(src, nameof(internal_tank))
 		if(salvaged_tank)
-			rel_add(WR, "crowbar_salvage", salvaged_tank)
+			rel_add(WR, nameof(WR.crowbar_salvage), salvaged_tank)
 			salvaged_tank.forceMove(WR)
 	else
 		for(var/obj/item/mecha_parts/mecha_equipment/E in equipment)
@@ -378,7 +378,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 			if(istype(C))
 				C.detach()
 				qdel(C)
-	rel_clear(src, "equipment")
+	rel_clear(src, nameof(equipment))
 
 	GLOB.mech_destroyed_roundstat++
 
@@ -479,20 +479,20 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	// the ZAS portable canister type was deleted in the LINDA migration.
 	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
 	// has return_air() and persists in the mech's contents.
-	own_set(src, "internal_tank", new /obj/item/tank/air(src))
+	own_set(src, nameof(internal_tank), new /obj/item/tank/air(src))
 	return internal_tank
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
 		own_set(src, nameof(src.cell), C, into = TRUE)
 		return
-	own_set(src, "cell", new /obj/item/cell/mech(src))
+	own_set(src, nameof(cell), new /obj/item/cell/mech(src))
 
 /obj/mecha/get_cell()
 	return cell
 
 /obj/mecha/proc/add_cabin()
-	proto_set(src, "cabin_air", new /datum/gas_mixture) // a private mixture the mech owns
+	proto_set(src, nameof(cabin_air), new /datum/gas_mixture) // a private mixture the mech owns
 	cabin_air.set_temperature(T20C)
 	cabin_air.set_volume(200)
 	// adjust_multi was XGM; LINDA's gas_mixture has adjust_gas per-call.
@@ -505,7 +505,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	return cabin_air
 
 /obj/mecha/proc/add_radio()
-	own_set(src, "radio", new /obj/item/radio(src))
+	own_set(src, nameof(radio), new /obj/item/radio(src))
 	radio.name = "[src] radio"
 	radio.icon = icon
 	radio.icon_state = icon_state
@@ -1112,7 +1112,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(istype(Proj, /obj/item/projectile/test))
 		var/obj/item/projectile/test/Test = Proj
-		rel_add(Test, "hit", occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
+		rel_add(Test, nameof(Test.hit), occupant) // Register a hit on the occupant, for things like turrets, or in simple-mob cases stopping friendly fire in firing line mode.
 		return
 
 	src.mecha_log_message("Hit by projectile. Type: [Proj.name]([armor_kind_name(Proj.injury_kind)]).",1)
@@ -1323,7 +1323,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.forceMove(src)
-		rel_set(mmi_as_oc, "mecha", src)
+		rel_set(mmi_as_oc, nameof(mmi_as_oc.mecha), src)
 		src.Entered(mmi_as_oc)
 		src.Move(src.loc)
 		update_icon()
@@ -1389,7 +1389,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	return cabin_air
 
 /obj/mecha/set_port_network_air(datum/gas_mixture/new_air)
-	atmos_air_set(src, "cabin_air", new_air) // a network's air is referenced, a private mixture owned
+	atmos_air_set(src, nameof(cabin_air), new_air) // a network's air is referenced, a private mixture owned
 	return TRUE
 
 /obj/mecha/proc/connect(obj/machinery/atmospherics/portables_connector/new_port)
@@ -1400,8 +1400,8 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	if(!(new_port.loc in locs) || !cabin_air)
 		return 0
 
-	rel_set(src, "connected_port", new_port)
-	rel_set(connected_port, "connected_device", src)
+	rel_set(src, nameof(connected_port), new_port)
+	rel_set(connected_port, nameof(connected_port.connected_device), src)
 	connected_port.set_on(1)
 
 	// Inject cabin_air into the port's pipe network so an external supply can
@@ -1419,8 +1419,8 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 	connected_port.rust_detach_external_device()
 
-	rel_clear(connected_port, "connected_device")
-	rel_clear(src, "connected_port")
+	rel_clear(connected_port, nameof(connected_port.connected_device))
+	rel_clear(src, nameof(connected_port))
 
 	play_sfx(src, SFX_MECHA_GASDISCONNECTED)
 	mecha_log_message("Disconnected from gas port.")
@@ -1643,7 +1643,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
 		if(occupant.hud_used)
-			own_set(src, "minihud", new /datum/mini_hud/mech (occupant.hud_used, src))
+			own_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
@@ -1706,7 +1706,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(!src?.slot_item(MECHA_SLOT_PILOT)) return
 	var/atom/movable/mob_container
-	own_clear(src, "minihud", OWN_DELETE)
+	own_clear(src, nameof(minihud), OWN_DELETE)
 	if(ishuman(occupant))
 		mob_container = src?.slot_item(MECHA_SLOT_PILOT)
 		RemoveActions(occupant, human_occupant=1)//AEIOU
@@ -1730,7 +1730,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			mmi.forceMove(src.loc)
 			if(mmi.get_occupant())
 				occupant.forceMove(mmi)
-			rel_clear(mmi, "mecha")
+			rel_clear(mmi, nameof(mmi.mecha))
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
@@ -2232,7 +2232,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 /obj/mecha/proc/output_access_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	rel_set(src, "active_id_card", id_card)
+	rel_set(src, nameof(active_id_card), id_card)
 	tgui_subview = "access"
 	tgui_interact(user)
 	return
@@ -2242,7 +2242,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 /obj/mecha/proc/output_maintenance_dialog(obj/item/card/id/id_card, mob/user)
 	if(!id_card || !user)
 		return
-	rel_set(src, "active_id_card", id_card)
+	rel_set(src, nameof(active_id_card), id_card)
 	tgui_subview = "maint"
 	tgui_interact(user)
 	return
@@ -2342,7 +2342,7 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	var/obj/item/mecha_parts/mecha_equipment/equip = args["select_equip"]
 	if(!equip)
 		return
-	rel_set(src, "selected", equip)
+	rel_set(src, nameof(selected), equip)
 	occupant_message("You switch to [equip].")
 	visible_message("[src] raises [equip].")
 	send_byjax(user, "exosuit.browser", "eq_list", get_equipment_list())
@@ -2761,16 +2761,18 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 	return "brute"
 
 // selected, active_jetpack and energy_relay name mounted equipment: relation views (implicit REL).
-// cell and internal_tank are implicit OWN(DELETE): a wreck takes them as salvage in Destroy()
+// cell and internal_tank are implicit owns(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
-PROTO(/obj/mecha, cabin_air)
+/obj/mecha/ownership()
+	. = ..()
+	. += proto(nameof(cabin_air))
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.
 /obj/mecha/proc/release_component(slot)
 	var/list/slots = internal_components
-	. = own_take_member(src, "internal_components", slot)
+	. = own_take_member(src, nameof(internal_components), slot)
 	if(!islist(slots))
 		return
 	if(!islist(internal_components))

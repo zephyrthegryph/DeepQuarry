@@ -1,6 +1,6 @@
 /datum/tgs_api/v4/proc/ListCustomCommands()
 	var/results = list()
-	own_take_all(src, "custom_commands")
+	own_take_all(src, nameof(custom_commands))
 	for(var/I in typesof(/datum/tgs_chat_command) - /datum/tgs_chat_command)
 		var/datum/tgs_chat_command/stc = new I
 		if(stc.ignore_type == I)
@@ -16,7 +16,7 @@
 			TGS_ERROR_LOG("Custom commands [other.type] and [I] have the same name (\"[command_name]\"), only [other.type] will be available!")
 			continue
 		results += list(list("name" = command_name, "help_text" = stc.help_text, "admin_only" = stc.admin_only))
-		own_put(src, "custom_commands", command_name, stc)
+		own_put(src, nameof(custom_commands), command_name, stc)
 
 	var/commands_file = chat_commands_json_path
 	if(!commands_file)
@@ -33,7 +33,7 @@
 	u.id = user["id"]
 	u.friendly_name = user["friendlyName"]
 	u.mention = user["mention"]
-	own_set(u, "channel", DecodeChannel(user["channel"]))
+	own_set(u, nameof(u.channel), DecodeChannel(user["channel"]))
 
 	var/datum/tgs_chat_command/sc = custom_commands[command]
 	if(sc)

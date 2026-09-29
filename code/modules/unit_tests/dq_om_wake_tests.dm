@@ -84,7 +84,7 @@
 	om_attach(S, /datum/om/behaviour/sleeper/test_subscriber)
 	om_watch(S, target, mask, /datum/om/behaviour/sleeper/test_subscriber)
 
-/// Deadline wakes: a door's autoclose, power and electrification deadlines share one om_after() timer.
+/// Deadline wakes: a door's autoclose runs on one om_after() timer; power and electrification restore through timed_set().
 /datum/unit_test/dq_om_wake_airlock_deadlines
 
 /datum/unit_test/dq_om_wake_airlock_deadlines/Run()
@@ -96,26 +96,26 @@
 	var/failure = om_wake_test(A, om_callable(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1), 20)
 	TEST_ASSERT(!failure, failure)
 
-	// Electrification expires on its timer, with no process() poll.
-	A.close_door_at = 0
-	A.schedule_door_timer()
-	A.electrified_until = world.time + 1
-	A.schedule_door_timer()
-	TEST_ASSERT(om_timer_slot_pending(A, "door_timer_token"), "electrifying did not schedule the door's timer")
+	// Electrification and power loss are timed_set() values: each restores on its own timer, with
+	// no process() poll and no door deadline.
+	timed_set(A, nameof(A.electrified_until), 1, for_time = 0.1 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
+	TEST_ASSERT(A.isElectrified(), "timed_set electrified the airlock")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "an electrified airlock's audit failed")
-	om_test_ticks(20)
 	// A due timer still in flight (a busy world: GC reference searches stall the MC) is given
 	// time to land; a timer that was never set, or never comes due, still fails.
-	om_settle(A, 200)
-	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification deadline passed without a wake")
+	for(var/i in 1 to 200)
+		if(!A.electrified_until)
+			break
+		om_test_ticks(1)
+	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification did not revert on its timer")
 	TEST_ASSERT(!om_timer_slot_pending(A, "door_timer_token"), "an airlock with no deadline kept a timer")
 
 	// Main power returns on its timer.
-	A.main_power_lost_until = world.time + 1
-	A.backup_power_lost_until = -1
-	A.schedule_door_timer()
-	om_test_ticks(20)
-	om_settle(A, 200)
+	timed_set(A, nameof(A.main_power_lost_until), 1, for_time = 0.1 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
+	for(var/i in 1 to 200)
+		if(A.main_power_lost_until <= 0)
+			break
+		om_test_ticks(1)
 	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
 
 	// A missing timer is what the audit catches.

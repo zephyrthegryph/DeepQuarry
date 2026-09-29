@@ -27,7 +27,7 @@
 		if(!own_set(src, slot, H, user = user))
 			return
 		to_chat(user, "You install \the [H] into \the [src]")
-		rel_set(H, "holder2", src)
+		rel_set(H, nameof(H.holder2), src)
 
 // Installs hardware during preset construction (no user interaction).
 // Used by install_default_hardware() overrides and the laptop vendor.
@@ -40,7 +40,7 @@
 	if(!slot)
 		return
 	own_set(src, slot, H)
-	rel_set(H, "holder2", src)
+	rel_set(H, nameof(/obj/item/computer_hardware/::holder2), src)
 
 // Uninstalls a component. Found and Critical vars may be passed by parent types
 // when they carry additional hardware slots beyond the base set.
@@ -59,7 +59,7 @@
 		if(user)
 			to_chat(user, "You remove \the [H] from \the [src].")
 		H.forceMove(get_turf(src))
-		rel_clear(H, "holder2")
+		rel_clear(H, nameof(/obj/item/computer_hardware/::holder2))
 	if(critical && enabled)
 		if(user)
 			to_chat(user, span_danger("\The [src]'s screen freezes for few seconds and then displays an \"HARDWARE ERROR: Critical component disconnected. Please verify component connection and reboot the device. If the problem persists contact technical support for assistance.\" warning."))

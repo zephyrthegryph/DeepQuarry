@@ -20,7 +20,7 @@
 	"Alternate Light Blue Plate Carrier" = /obj/item/clothing/suit/armor/pcarrier/modarm/lightblue
 	)
 	var/path_tweak = new /datum/gear_tweak/path(pcarriers) // gear_tweaks is SHARED (_gear.dm): a plain tweak list, not an owned roster
-	own_add(src, "gear_tweaks", path_tweak)
+	own_add(src, nameof(gear_tweaks), path_tweak)
 
 
 /datum/gear/suit/winterhood

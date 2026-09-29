@@ -59,7 +59,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_R
 		transfer_blooddna_to(N)
 		transfer_fingerprints_to(N)
 		transfer_fibres_to(N)
-		rel_set(N, "hailer", I)
+		rel_set(N, nameof(N.hailer), I)
 		I.forceMove(N)
 		if(!isturf(N.loc))
 			user.put_in_hands(N)

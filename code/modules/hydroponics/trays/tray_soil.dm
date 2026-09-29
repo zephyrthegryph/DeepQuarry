@@ -73,7 +73,7 @@
 	. = ..()
 	if(isopenturf(loc))
 		return INITIALIZE_HINT_QDEL
-	proto_set(src, "seed", seed_shareable(newseed))
+	proto_set(src, nameof(seed), seed_shareable(newseed))
 	dead = 0
 	age = 1
 	health = seed.get_trait(TRAIT_ENDURANCE)

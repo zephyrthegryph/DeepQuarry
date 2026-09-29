@@ -85,23 +85,23 @@
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	own_set(src, "extras_holder", new /atom/movable/screen/mapper/extras_holder())
+	own_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
 	mark.icon_state = "mapper_none"
 	mark.layer = 10
-	own_put(src, "icon_image_cache", "bad", mark)
+	own_put(src, nameof(icon_image_cache), "bad", mark)
 
 	var/atom/movable/screen/mapper/map/tmp = new()
 	var/icon/canvas = icon(HOLOMAP_ICON, "blank")
 	canvas.Crop(1,1,world.maxx,world.maxy)
 	canvas.DrawBox("#A7BE97",1,1,world.maxx,world.maxy)
 	tmp.icon = canvas
-	own_put(src, "map_image_cache", "bad", tmp)
+	own_put(src, nameof(map_image_cache), "bad", tmp)
 
 	if(uses_power && cell_type)
-		own_set(src, "cell", new cell_type(src))
+		own_set(src, nameof(cell), new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -154,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	if(cell && user.get_inactive_hand() == src) // click with empty off hand
 		to_chat(user,span_notice("You eject \the [cell] from \the [src]."))
 		user.put_in_hands(cell)
-		own_take(src, "cell")
+		own_take(src, nameof(cell))
 		if(updating)
 			stop_updates()
 	else
@@ -171,8 +171,8 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
-	own_set(src, "hud_datum", new /datum/mini_hud/mapper(user.hud_used, src))
-	rel_set(src, "hud_item", hud_datum.screenobjs[1])
+	own_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))
+	rel_set(src, nameof(hud_item), hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)
 	if(!hud_datum)
@@ -202,8 +202,8 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 /obj/item/mapping_unit/proc/last_run()
 	stop_updates()
-	rel_clear(src, "hud_item")
-	own_clear(src, "hud_datum", OWN_DELETE) // its holder screen object goes with it
+	rel_clear(src, nameof(hud_item))
+	own_clear(src, nameof(hud_datum), OWN_DELETE) // its holder screen object goes with it
 
 /obj/item/mapping_unit/periodic_step()
 	if(uses_power && !cell)
@@ -279,7 +279,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 
 			var/atom/movable/screen/mapper/map/tmp = new()
 			tmp.appearance = map_app
-			own_put(src, "map_image_cache", map_cache_key, tmp)
+			own_put(src, nameof(map_image_cache), map_cache_key, tmp)
 
 	bgmap = LAZYACCESS(map_image_cache, map_cache_key)
 
@@ -335,7 +335,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 			if(!(marker_cache_key in icon_image_cache))
 				var/atom/movable/screen/mapper/marker/mark = new()
 				mark.icon_state = "[HC.marker_prefix][mob_indicator]"
-				own_put(src, "icon_image_cache", marker_cache_key, mark)
+				own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
 				switch(mob_indicator)
 					if(HOLOMAP_YOU)
 						mark.layer = 3 // Above the other markers
@@ -363,7 +363,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mapping_unit, PERIODIC_SLOW, "updating")
 			var/atom/movable/screen/mapper/marker/mark = new()
 			mark.icon_state = "beacon"
 			mark.layer = 1
-			own_put(src, "icon_image_cache", marker_cache_key, mark)
+			own_put(src, nameof(icon_image_cache), marker_cache_key, mark)
 
 		var/atom/movable/screen/mapper/marker/mark = LAZYACCESS(icon_image_cache, marker_cache_key)
 		handle_marker(mark,TB.x,TB.y)

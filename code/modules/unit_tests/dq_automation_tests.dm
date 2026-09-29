@@ -56,11 +56,11 @@
 
 	var/obj/item/reagent_containers/glass/beaker/B = allocate(/obj/item/reagent_containers/glass/beaker)
 	B.reagents.add_reagent(REAGENT_ID_BICARIDINE, 30)
-	own_set(cell, "beaker", B)
+	own_set(cell, nameof(cell.beaker), B)
 	var/list/boosted = cell.cryo_treatment_rates(100)
 	TEST_ASSERT(boosted[TREAT_TISSUE_REPAIR] > cold[TREAT_TISSUE_REPAIR], "bicaridine in the beaker should boost tissue repair")
 	TEST_ASSERT_EQUAL(boosted[TREAT_BURN_CARE], cold[TREAT_BURN_CARE], "bicaridine should not boost burn care")
-	own_take(cell, "beaker")
+	own_take(cell, nameof(cell.beaker))
 
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.injure(INJURY_CUT, 25, BP_L_ARM, flags = INJURE_IGNORE_RESISTANCE | INJURE_SILENT)

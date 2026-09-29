@@ -150,9 +150,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 
 /obj/machinery/atmospherics/valve/reassign_network(datum/pipe_network/old_network, datum/pipe_network/new_network)
 	if(network_node1 == old_network)
-		rel_set(src, "network_node1", new_network)
+		rel_set(src, nameof(network_node1), new_network)
 	if(network_node2 == old_network)
-		rel_set(src, "network_node2", new_network)
+		rel_set(src, nameof(network_node2), new_network)
 
 	return 1
 
@@ -162,11 +162,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 /obj/machinery/atmospherics/valve/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
 		rust_release_network_wrapper(network_node1)
-		rel_clear(src, "node1")
+		rel_clear(src, nameof(node1))
 
 	else if(reference==node2)
 		rust_release_network_wrapper(network_node2)
-		rel_clear(src, "node2")
+		rel_clear(src, nameof(node2))
 
 	update_underlays()
 
@@ -217,7 +217,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF
 	GLOB.radio_service.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, "radio_connection", GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/valve/digital/Initialize(mapload)
 	. = ..()

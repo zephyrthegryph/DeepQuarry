@@ -21,8 +21,8 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		current_run = REGISTRY_COPY(REGISTRY_SOLAR_CONTROLS)
 		// Clear secondary process lists so they're fresh for the impending run ahead
 		for(var/obj/machinery/power/solar_control/old_SC as anything in controller_run)
-			rel_clear(old_SC, "solar_pending")
-		rel_clear(src, "controller_run")
+			rel_clear(old_SC, nameof(old_SC.solar_pending))
+		rel_clear(src, nameof(controller_run))
 
 	////////////////////////////////////////////////////////////////////////////////
 	// First processing cycle collects the controllers we'll be processing
@@ -40,10 +40,10 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 
 		// Update the controller and prepare each of the solar array lists it needs
 		SC.update()
-		rel_add(src, "controller_run", SC) // this pass's work queue (like current_run); a deleted controller leaves it
-		rel_clear(SC, "solar_pending")
+		rel_add(src, nameof(controller_run), SC) // this pass's work queue (like current_run); a deleted controller leaves it
+		rel_clear(SC, nameof(SC.solar_pending))
 		for(var/obj/machinery/power/solar/panel as anything in SC.get_connected_panels())
-			rel_add(SC, "solar_pending", panel)
+			rel_add(SC, nameof(SC.solar_pending), panel)
 		SC.solar_pending_sum = 0
 
 		if(TICK_CHECK)
@@ -59,7 +59,7 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		while(length(SC.solar_pending))
 			var/obj/machinery/power/solar/S = SC.solar_pending[length(SC.solar_pending)]
 			SC.solar_pending_sum += S.update_power_generation(SC)
-			rel_remove(SC, "solar_pending", S)
+			rel_remove(SC, nameof(SC.solar_pending), S)
 
 			if(TICK_CHECK)
 				return FALSE
@@ -68,7 +68,7 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		SC.connected_power = SC.solar_pending_sum
 		SC.set_power_supply(SC.connected_power)
 		SC.update_icon()
-		rel_remove(src, "controller_run", SC)
+		rel_remove(src, nameof(controller_run), SC)
 
 		if(TICK_CHECK)
 			return FALSE

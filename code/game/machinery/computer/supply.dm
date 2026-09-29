@@ -532,7 +532,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	if(!frequency) return
 
 	var/datum/signal/status_signal = new
-	rel_set(status_signal, "source", src)
+	rel_set(status_signal, nameof(status_signal.source), src)
 	status_signal.transmission_method = TRANSMISSION_RADIO
 	status_signal.data["command"] = command
 

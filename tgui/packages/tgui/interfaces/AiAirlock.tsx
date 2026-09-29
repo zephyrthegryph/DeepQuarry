@@ -3,7 +3,13 @@ import { Window } from 'tgui/layouts';
 import { Button, LabeledList, Section, Stack } from 'tgui-core/components';
 import type { BooleanLike } from 'tgui-core/react';
 
+// Each capability's data arrives under data.caps[<its key>] (caps_ui_data()); the window reads
+// them as one flat record.
 type Data = {
+  caps?: Record<string, Partial<Flat>>;
+};
+
+type Flat = {
   power: {
     main: number;
     main_timeleft: number;
@@ -22,11 +28,12 @@ type Data = {
     safe: BooleanLike;
     timing: BooleanLike;
   };
-  shock: number;
-  shock_timeleft: number;
+  electrified: BooleanLike;
+  electrified_left: number;
+  emergency: BooleanLike;
   id_scanner: BooleanLike;
   lights: BooleanLike;
-  locked: BooleanLike;
+  bolted: BooleanLike;
   safe: BooleanLike;
   speed: BooleanLike;
   opened: BooleanLike;
@@ -50,26 +57,29 @@ const dangerMap: Record<number, { color: string; localStatusText: string }> = {
 
 export const AiAirlock = (props) => {
   const { act, data } = useBackend<Data>();
+  const flat = Object.assign({}, ...Object.values(data.caps ?? {})) as Flat;
 
   const {
     power,
     wires,
-    shock,
-    shock_timeleft,
+    electrified,
+    electrified_left,
+    emergency,
     id_scanner,
     lights,
-    locked,
+    bolted,
     safe,
     speed,
     opened,
     welded,
-  } = data;
+  } = flat;
 
-  const statusMain = dangerMap[power.main] || dangerMap[0];
-  const statusBackup = dangerMap[power.backup] || dangerMap[0];
-  const statusElectrify = dangerMap[shock] || dangerMap[0];
+  const statusMain = dangerMap[power?.main] || dangerMap[0];
+  const statusBackup = dangerMap[power?.backup] || dangerMap[0];
+  const shock = electrified ? 0 : 2;
+  const statusElectrify = dangerMap[shock];
   return (
-    <Window width={500} height={390}>
+    <Window width={500} height={420}>
       <Window.Content>
         <Section title="Power Status">
           <LabeledList>
@@ -145,8 +155,8 @@ export const AiAirlock = (props) => {
             >
               {shock === 2 ? 'Safe' : 'Electrified'}{' '}
               {(!wires.shock && '[Wires have been cut!]') ||
-                (shock_timeleft > 0 && `[${shock_timeleft}s]`) ||
-                (shock_timeleft === -1 && '[Permanent]')}
+                (electrified_left > 0 && `[${electrified_left}s]`) ||
+                (electrified_left === -1 && '[Permanent]')}
             </LabeledList.Item>
           </LabeledList>
         </Section>
@@ -168,18 +178,31 @@ export const AiAirlock = (props) => {
             >
               {!wires.id_scanner && '[Wires have been cut!]'}
             </LabeledList.Item>
+            <LabeledList.Item
+              label="Emergency Access"
+              color="bad"
+              buttons={
+                <Button
+                  icon={emergency ? 'power-off' : 'times'}
+                  selected={emergency}
+                  onClick={() => act('emergency-toggle')}
+                >
+                  {emergency ? 'Enabled' : 'Disabled'}
+                </Button>
+              }
+            />
             <LabeledList.Divider />
             <LabeledList.Item
               label="Door Bolts"
               color="bad"
               buttons={
                 <Button
-                  icon={locked ? 'lock' : 'unlock'}
-                  selected={locked}
+                  icon={bolted ? 'lock' : 'unlock'}
+                  selected={bolted}
                   disabled={!wires.bolts}
                   onClick={() => act('bolt-toggle')}
                 >
-                  {locked ? 'Lowered' : 'Raised'}
+                  {bolted ? 'Lowered' : 'Raised'}
                 </Button>
               }
             >
@@ -241,17 +264,17 @@ export const AiAirlock = (props) => {
                 <Button
                   icon={opened ? 'sign-out-alt' : 'sign-in-alt'}
                   selected={opened}
-                  disabled={locked || welded}
+                  disabled={bolted || welded}
                   onClick={() => act('open-close')}
                 >
                   {opened ? 'Open' : 'Closed'}
                 </Button>
               }
             >
-              {!!(locked || welded) && (
+              {!!(bolted || welded) && (
                 <span>
-                  [Door is {locked ? 'bolted' : ''}
-                  {locked && welded ? ' and ' : ''}
+                  [Door is {bolted ? 'bolted' : ''}
+                  {bolted && welded ? ' and ' : ''}
                   {welded ? 'welded' : ''}!]
                 </span>
               )}

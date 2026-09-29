@@ -10,7 +10,7 @@
 
 /obj/item/implant/integrated_circuit/Initialize(mapload)
 	. = ..()
-	rel_set(IC, "implant", src)
+	rel_set(IC, nameof(IC.implant), src)
 
 DECLARE_DEFAULT_CHILD(/obj/item/implant/integrated_circuit, "IC", /obj/item/electronic_assembly/implant)
 

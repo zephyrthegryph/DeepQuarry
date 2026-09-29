@@ -208,12 +208,12 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		if("eject input")
 			if(InputBeaker)
 				InputBeaker.forceMove(get_turf(src))
-				own_take(src, "InputBeaker")
+				own_take(src, nameof(InputBeaker))
 
 		if("eject output")
 			if(OutputBeaker)
 				OutputBeaker.forceMove(get_turf(src))
-				own_take(src, "OutputBeaker")
+				own_take(src, nameof(OutputBeaker))
 
 		if("adjust temp")
 			om_ask(user, /datum/om/prompt/number, PROC_REF(target_temp_entered), max = max_temp, min = min_temp, title = "Temperature.", message = "Choose a target temperature.", default = T20C, round_entry = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)

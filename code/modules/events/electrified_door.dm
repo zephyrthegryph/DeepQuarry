@@ -17,7 +17,7 @@
 
 		for(var/obj/machinery/door/airlock/target_door in target_doors)
 			if(!target_door.isElectrified() && target_door.arePowerSystemsOn() && target_door.get_integrity() >= target_door.max_integrity)
-				rel_set(src, "chosen_door", target_door)
+				rel_set(src, nameof(chosen_door), target_door)
 				return
 
 /datum/event/electrified_door/start()

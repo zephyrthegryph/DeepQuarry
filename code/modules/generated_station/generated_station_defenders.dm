@@ -10,11 +10,11 @@
 
 /datum/generated_station_defender_agent/New(mob/living/simple_mob/new_defender, datum/generated_station_defense_runtime/new_runtime, new_department_id, new_squad_id, turf/new_home)
 	..()
-	rel_set(src, "defender", new_defender)
-	rel_set(src, "runtime", new_runtime)
+	rel_set(src, nameof(defender), new_defender)
+	rel_set(src, nameof(runtime), new_runtime)
 	department_id = new_department_id
 	squad_id = new_squad_id
-	rel_set(src, "home", new_home)
+	rel_set(src, nameof(home), new_home)
 	om_hook(defender(), /datum/om/event/dqai_damage_taken, src, PROC_REF(on_damage))
 	om_hook(defender(), /datum/om/event/mob_death, src, PROC_REF(on_death))
 
@@ -33,7 +33,7 @@
 	EVENT_HANDLER
 	var/atom/attacker = event.attacker
 	if(attacker)
-		rel_set(src, "last_contact", attacker)
+		rel_set(src, nameof(last_contact), attacker)
 		runtime()?.report_contact(src, attacker)
 	if(defender() && defender().vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime()?.retreat_agent(src)
@@ -86,13 +86,13 @@
 
 /datum/generated_station_defense_runtime/New(datum/expedition_site/new_site, datum/generated_station_director/new_director)
 	..()
-	rel_set(src, "site", new_site)
-	rel_set(src, "director", new_director)
-	own_take_all(src, "agents")
+	rel_set(src, nameof(site), new_site)
+	rel_set(src, nameof(director), new_director)
+	own_take_all(src, nameof(agents))
 	squads_by_department = list()
 	department_coords = list()
 	active_patrols = list()
-	rel_set(director(), "defense_runtime", src)
+	rel_set(director(), nameof(/datum/generated_station_director::defense_runtime), src)
 
 // its director forgets it.
 
@@ -115,7 +115,7 @@
 		if(QDELETED(relay))
 			continue
 		if(relay.station_id == site().station_spec?.id)
-			rel_set(relay, "defense_runtime", src)
+			rel_set(relay, nameof(relay.defense_runtime), src)
 	spawn_department("security-1", 2)
 	spawn_department("medical-1", 1)
 	spawn_department("engineering-1", 1)
@@ -143,7 +143,7 @@
 	defender.ai_brain?.set_hostile(FALSE)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
-	own_add(src, "agents", agent)
+	own_add(src, nameof(agents), agent)
 	squad.add_member(REF(defender))
 	director().register_defender(defender)
 	return agent
@@ -172,7 +172,7 @@
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, REF(contact), "hostile-contact", "[source_kind] detected a hostile.", confidence, GENERATED_STATION_CONTACT_LIFETIME)
 	if(!report)
 		return null
-	rel_set(report, "target", contact)
+	rel_set(report, nameof(report.target), contact)
 	director().set_alert(GENERATED_STATION_ALERT_RED, department_id)
 	if(issue_response)
 		var/coordinated = director().ai_can_coordinate()
@@ -237,7 +237,7 @@
 	var/datum/generated_station_knowledge_report/report = director().submit_report(department_id, "patrol-[world.time]", "patrol", "Finite patrol route.", 100, GENERATED_STATION_PATROL_DURATION)
 	if(!report)
 		return FALSE
-	rel_set(report, "target", destination || department_turf(department_id))
+	rel_set(report, nameof(report.target), destination || department_turf(department_id))
 	var/datum/generated_station_order/order = director().issue_order(squad_id, report.id, GENERATED_STATION_ORDER_PATROL, FALSE)
 	if(!order)
 		return FALSE
@@ -261,7 +261,7 @@
 	if(squad && agent.defender())
 		squad.member_ids -= REF(agent.defender())
 	director()?.unregister_defender(agent.defender())
-	own_take_member(src, "agents", agent)
+	own_take_member(src, nameof(agents), agent)
 	qdel(agent)
 	if(department_id == "security-1" && director()?.request_security_reserve())
 		om_after(src, 10 SECONDS, PROC_REF(spawn_reinforcement), "security-1")
@@ -373,7 +373,7 @@
 /datum/expedition_site/proc/initialize_generated_station_defenders()
 	if(!station_director || station_defense)
 		return FALSE
-	own_set(src, "station_defense", new /datum/generated_station_defense_runtime(src, station_director))
+	own_set(src, nameof(station_defense), new /datum/generated_station_defense_runtime(src, station_director))
 	station_defense.create_roster()
 	return TRUE
 
@@ -409,5 +409,9 @@
 			qdel(defender)
 	return ..()
 
-REL_PAIR(/datum/generated_station_defense_runtime, director, defense_runtime)
-REL_PAIR(/datum/generated_station_director, defense_runtime, director)
+/datum/generated_station_defense_runtime/relations()
+	. = ..()
+	. += rel_one(nameof(director), back = nameof(/datum/generated_station_director::defense_runtime))
+/datum/generated_station_director/relations()
+	. = ..()
+	. += rel_one(nameof(defense_runtime), back = nameof(/datum/generated_station_defense_runtime::director))

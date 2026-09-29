@@ -47,7 +47,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owne
 
 	default_apply_parts()
 
-OWN(/obj/machinery/power/fusion_core, material_sample, OWN_SPILL)
+/obj/machinery/power/fusion_core/ownership()
+	. = ..()
+	. += owns(nameof(material_sample), policy = OWN_SPILL)
 
 /obj/machinery/power/fusion_core/proc/check_core_status()
 	if(has_stat(BROKEN))
@@ -87,7 +89,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
 		return
-	own_set(src, "owned_field", new /obj/effect/fusion_em_field(loc, src))
+	own_set(src, nameof(owned_field), new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
 	icon_state = "core1"
 	set_use_power(USE_POWER_ACTIVE)
@@ -100,7 +102,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 			owned_field.MRC()
 		else
 			owned_field.RadiateAll()
-		own_clear(src, "owned_field", OWN_DELETE)
+		own_clear(src, nameof(owned_field), OWN_DELETE)
 	set_use_power(USE_POWER_IDLE)
 
 /obj/machinery/power/fusion_core/proc/AddParticles(name, quantity = 1)
@@ -190,7 +192,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		Shutdown()
 	else if(material_sample)
 		var/obj/item/stack/material/processed_alloy/finished_sample = material_sample
-		own_take(src, "material_sample")
+		own_take(src, nameof(material_sample))
 		finished_sample.forceMove(user.drop_location())
 		user.put_in_hands(finished_sample)
 		act_message(user, src, others = span_notice("%U% releases [finished_sample] from %T%'s material cradle."))
@@ -239,7 +241,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		batch.add_dissolved_gas("fusion hydrogen", min(hydrogen / 50, field_work))
 		owned_field.dormant_reactant_quantities[hydrogen_key] = max(0, hydrogen - 5)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(material_sample, batch, src)
-	own_set(src, "material_sample", replacement)
+	own_set(src, nameof(material_sample), replacement)
 	if(material_sample)
 		material_sample.forceMove(src)
 	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))

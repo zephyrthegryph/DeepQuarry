@@ -18,9 +18,9 @@
 	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
-	rel_set(src, "actor", actor)
-	rel_set(src, "target", target)
-	rel_set(src, "held", held)
+	rel_set(src, nameof(actor), actor)
+	rel_set(src, nameof(target), target)
+	rel_set(src, nameof(held), held)
 
 /// The available interactions that answer `action` at the best priority. Several means a tie.
 /datum/interaction_resolution/proc/best_for_action(action)
@@ -74,6 +74,10 @@
 		if(quality && interaction.tool != quality)
 			continue
 		if(!interaction.tool || !held()?.has_tool_quality(interaction.tool))
+			continue
+		// One declared for another stance (a pry offered outside combat mode) is not what was meant:
+		// the tool falls through to the target's next use, as a legacy entry skipped it.
+		if(!interaction.is_meant(actor(), target(), held()))
 			continue
 		return interaction
 	return null

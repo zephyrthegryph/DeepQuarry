@@ -75,7 +75,7 @@
 /datum/event/carp_migration/proc/spawn_one_carp(loc)
 	var/mob/living/simple_mob/animal/carp_to_spawn = new /mob/living/simple_mob/animal/space/carp/event(loc)
 	om_hook(carp_to_spawn, /datum/om/event/qdeleting, src, PROC_REF(on_carp_destruction))
-	own_add(src, "spawned_carp", carp_to_spawn)
+	own_add(src, nameof(spawned_carp), carp_to_spawn)
 	return carp_to_spawn
 
 // Counts living carp spawned by this event.
@@ -88,7 +88,7 @@
 // If carp is bomphed, remove it from the list.
 /datum/event/carp_migration/proc/on_carp_destruction(mob/carp_to_remove, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	own_take_member(src, "spawned_carp", carp_to_remove)
+	own_take_member(src, nameof(spawned_carp), carp_to_remove)
 	om_unhook(carp_to_remove, /datum/om/event/qdeleting, src)
 
 /datum/event/carp_migration/end()

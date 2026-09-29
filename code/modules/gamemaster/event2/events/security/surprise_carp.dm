@@ -25,7 +25,7 @@
 			potential_victims += L
 
 	if(potential_victims.len)
-		rel_set(src, "victim", pick(potential_victims))
+		rel_set(src, nameof(victim), pick(potential_victims))
 
 /datum/event2/event/surprise_carp/start()
 	if(!victim())

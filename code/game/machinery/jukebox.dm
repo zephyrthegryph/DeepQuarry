@@ -33,7 +33,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, "wires", new/datum/wires/jukebox(src))
+	own_set(src, nameof(wires), new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		stat_add(BROKEN)
@@ -56,16 +56,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 		if(JUKEMODE_NEXT)
 			var/curTrackIndex = max(1, tracks.Find(current_track()))
 			var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-			rel_set(src, "current_track", tracks[newTrackIndex])
+			rel_set(src, nameof(current_track), tracks[newTrackIndex])
 		if(JUKEMODE_RANDOM)
 			var/previous_track = current_track()
 			do
-				rel_set(src, "current_track", pick(tracks))
+				rel_set(src, nameof(current_track), pick(tracks))
 			while(current_track() == previous_track && tracks.len > 1)
 		if(JUKEMODE_REPEAT_SONG)
-			rel_set(src, "current_track", current_track())
+			rel_set(src, nameof(current_track), current_track())
 		if(JUKEMODE_PLAY_ONCE)
-			rel_clear(src, "current_track")
+			rel_clear(src, nameof(current_track))
 			set_playing(0)
 			update_icon()
 	start_stop_song()
@@ -207,7 +207,7 @@ UI_ACT(/obj/machinery/media/jukebox, "change_track", ui_act_change_track, UI_ARG
 UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_change_track)
 	var/datum/track/T = params["change_track"]
 	if(istype(T))
-		rel_set(src, "current_track", T)
+		rel_set(src, nameof(/obj/item/walkpod::current_track), T)
 		StartPlaying()
 	return TRUE
 
@@ -309,7 +309,7 @@ DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null, null)
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = (curTrackIndex % tracks.len) + 1  // Loop back around if past end
-	rel_set(src, "current_track", tracks[newTrackIndex])
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -319,7 +319,7 @@ DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null, null)
 	if(!tracks.len) return
 	var/curTrackIndex = max(1, tracks.Find(current_track()))
 	var/newTrackIndex = curTrackIndex == 1 ? tracks.len : curTrackIndex - 1
-	rel_set(src, "current_track", tracks[newTrackIndex])
+	rel_set(src, nameof(current_track), tracks[newTrackIndex])
 	if(playing)
 		start_stop_song()
 
@@ -432,7 +432,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	var/obj/machinery/media/jukebox/ghost/jukebox = target
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-	own_add(jukebox, "custom_tracks", new /datum/track(url, title, duration, ask.text, genre))
+	own_add(jukebox, nameof(jukebox.custom_tracks), new /datum/track(url, title, duration, ask.text, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
 	if(!check_rights(R_FUN|R_ADMIN))
@@ -449,7 +449,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 
 	for(var/datum/track/T in custom_tracks)
 		if(T.title == track || T.url == track)
-			own_take_member(src, "custom_tracks", T)
+			own_take_member(src, nameof(custom_tracks), T)
 			qdel(T)
 			return
 

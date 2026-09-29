@@ -10,7 +10,7 @@
 
 /datum/game_panel/New(datum/admins/owner_admin)
 	..()
-	rel_set(src, "owner_admin", owner_admin)
+	rel_set(src, nameof(owner_admin), owner_admin)
 
 // The admin holder owns this panel (tgui_game_panel); owner_admin is a plain relation back.
 
@@ -66,5 +66,5 @@ UI_ACT_PROC(/datum/game_panel, ui_act_vsc)
 
 /datum/admins/proc/open_game_panel(mob/user)
 	if(!tgui_game_panel)
-		own_set(src, "tgui_game_panel", new /datum/game_panel(src))
+		own_set(src, nameof(tgui_game_panel), new /datum/game_panel(src))
 	tgui_game_panel.tgui_interact(user)

@@ -55,10 +55,10 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(!istype(new_holder) || new_holder.artifact_master)
 		qdel(src)
 		return
-	rel_set(src, "holder", new_holder)
-	own_set(new_holder, "artifact_master", src) // the anomalous atom owns its artifact state
+	rel_set(src, nameof(holder), new_holder)
+	own_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
 
-	own_take_all(src, "my_effects")
+	own_take_all(src, nameof(my_effects))
 	lifecycle_decls_init(src) // a non-atom: starts the holder declaration
 
 	do_setup()
@@ -117,7 +117,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
 		if(istype(holder(), my_effect.req_type))
-			own_add(src, "my_effects", my_effect)
+			own_add(src, nameof(my_effects), my_effect)
 
 		else
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
@@ -129,7 +129,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		return
 
 	if(to_remove_effect)
-		own_remove(src, "my_effects", to_remove_effect)
+		own_remove(src, nameof(my_effects), to_remove_effect)
 
 // its effects (owned by my_effects) go with it; leaving the holder's artifact_master is automatic.
 /datum/artifact_master/on_destroy(force)
@@ -141,7 +141,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
 			if(istype(holder(), new_effect.req_type))
-				own_add(src, "my_effects", new_effect)
+				own_add(src, nameof(my_effects), new_effect)
 
 	else
 		generate_effects()
@@ -180,10 +180,10 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
 			if(istype(holder(), AE.req_type))
-				own_add(src, "my_effects", AE)
+				own_add(src, nameof(my_effects), AE)
 				effect_generation_chance -= 30
 			else
-				rel_set(AE, "master", src)
+				rel_set(AE, nameof(AE.master), src)
 				qdel(AE)
 			continue
 
@@ -191,7 +191,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		effect_generation_chance /= 2
 
 		if(prob(effect_generation_chance))
-			own_add(src, "my_effects", new chosen_path(src))
+			own_add(src, nameof(my_effects), new chosen_path(src))
 
 		effect_generation_chance = round(effect_generation_chance)
 

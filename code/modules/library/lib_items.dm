@@ -203,7 +203,7 @@ Book Cart End
 		if(store())
 			to_chat(user, span_notice("[store()] falls out of [title]!"))
 			store().forceMove(get_turf(src.loc))
-			rel_clear(src, "store")
+			rel_clear(src, nameof(store))
 			return TRUE
 		else
 			to_chat(user, span_notice("The pages of [title] have been cut out!"))
@@ -252,7 +252,7 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 			if(W.w_class < ITEMSIZE_LARGE)
 				user.drop_item()
 				W.forceMove(src)
-				rel_set(src, "store", W)
+				rel_set(src, nameof(store), W)
 				to_chat(user, span_notice("You put [W] in [title]."))
 				return INTERACTION_HANDLED_PASS
 			else
@@ -307,27 +307,27 @@ DECLARE_INTERACTIONS(/obj/item/book, \
 		else
 			switch(scanner.mode)
 				if(0)
-					rel_set(scanner, "book", src)
+					rel_set(scanner, nameof(scanner.book), src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer.'")
 				if(1)
-					rel_set(scanner, "book", src)
+					rel_set(scanner, nameof(scanner.book), src)
 					scanner.computer().buffer_book = src.name
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book title stored in associated computer buffer.'")
 				if(2)
-					rel_set(scanner, "book", src)
+					rel_set(scanner, nameof(scanner.book), src)
 					for(var/datum/borrowbook/b in scanner.computer().checkouts)
 						if(b.bookname == src.name)
-							own_remove(scanner.computer(), "checkouts", b)
+							own_remove(scanner.computer(), nameof(/obj/machinery/librarycomp::checkouts), b)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Book has been checked in.'")
 							return INTERACTION_HANDLED_PASS
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. No active check-out record found for current title.'")
 				if(3)
-					rel_set(scanner, "book", src)
+					rel_set(scanner, nameof(scanner.book), src)
 					for(var/obj/item/book in scanner.computer().inventory)
 						if(book == src)
 							to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title already present in inventory, aborting to avoid duplicate entry.'")
 							return INTERACTION_HANDLED_PASS
-					rel_add(scanner.computer(), "inventory", src)
+					rel_add(scanner.computer(), nameof(/obj/machinery/librarycomp::inventory), src)
 					to_chat(user, "[W]'s screen flashes: 'Book stored in buffer. Title added to general inventory.'")
 	else if(istype(W, /obj/item/material/knife))
 		return carve_pages(user)

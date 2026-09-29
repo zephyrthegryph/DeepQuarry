@@ -37,7 +37,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio, INTERACT_HAND_UNGATED(
 
 			if(user in friends) // Friend attacking us for no reason.
 				if(prob(25))
-					rel_remove(src, "friends", user)
+					rel_remove(src, nameof(friends), user)
 					say("[user]... not friend...")
 
 		else // We're actually being bad.

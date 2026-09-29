@@ -35,8 +35,8 @@ why aren't these accessories?
 	if(linked())
 		return
 
-	rel_set(src, "linked", to_link)
-	// REL_PAIR(linked, linked): the partner now names us back.
+	rel_set(src, nameof(linked), to_link)
+	// rel_one(back =): the partner now names us back.
 
 /obj/item/remote_scene_tool/proc/register_to_mob(mob)
 	if(worn_mob() == mob)
@@ -45,7 +45,7 @@ why aren't these accessories?
 	if(worn_mob())
 		unregister_from_mob(worn_mob())
 
-	rel_set(src, "worn_mob", mob)
+	rel_set(src, nameof(worn_mob), mob)
 
 	om_hook(mob, /datum/om/event/mob_login, src, PROC_REF(worn_mob_logged_in))
 	om_hook(mob, /datum/om/event/mob_logout, src, PROC_REF(worn_mob_logged_out))
@@ -54,7 +54,7 @@ why aren't these accessories?
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
 	if(worn_mob() == null) return
 	om_unhook(worn_mob(), list(/datum/om/event/mob_login, /datum/om/event/mob_logout), src)
-	rel_clear(src, "worn_mob")
+	rel_clear(src, nameof(worn_mob))
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
@@ -216,4 +216,6 @@ EXTEND_INTERACTIONS(/obj/item/remote_scene_tool, INTERACT_VERB("Summon Counterpa
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
 
-REL_PAIR(/obj/item/remote_scene_tool, linked, linked)
+/obj/item/remote_scene_tool/relations()
+	. = ..()
+	. += rel_one(nameof(linked), back = nameof(/obj/item/remote_scene_tool::linked))

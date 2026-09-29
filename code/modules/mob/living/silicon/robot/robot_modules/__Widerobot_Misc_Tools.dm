@@ -5,4 +5,4 @@
 //TFF 5/1/20 - Add Ore Scanner for mining drones
 /obj/item/robot_module/drone/mining/create_equipment()
 	..()
-	own_add(src, "modules", new /obj/item/mining_scanner(src))
+	own_add(src, nameof(modules), new /obj/item/mining_scanner(src))

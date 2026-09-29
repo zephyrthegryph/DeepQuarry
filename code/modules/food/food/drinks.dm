@@ -58,7 +58,7 @@
 		var/mob/living/living_mob = holder.held_mob
 
 		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, "held_mob")
+		rel_clear(holder, nameof(holder.held_mob))
 		consume(holder, user)
 
 		to_chat(user, span_warning("You drop [living_mob] into \the [src]."))
@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 
 			if(do_nom)
 				eater.vore_selected.nom_atom(micro)
-				own_take_member(src, "food_inserted_micros", micro)
+				own_take_member(src, nameof(food_inserted_micros), micro)
 
 	if(!reagents.total_volume && changed)
 		act_message(eater, src, MSG_SELF(span_notice("You finish drinking from %T%.")), MSG_OTHERS(span_notice("%U% finishes drinking from %T%.")))

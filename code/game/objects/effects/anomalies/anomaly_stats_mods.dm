@@ -11,13 +11,13 @@
 	return value
 
 /datum/anomaly_modifiers/proc/on_add(obj/effect/anomaly/anomaly)
-	rel_set(src, "attached_anomaly", anomaly)
+	rel_set(src, nameof(attached_anomaly), anomaly)
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE
 
 /datum/anomaly_modifiers/proc/on_remove(obj/effect/anomaly/anomaly)
-	rel_set(src, "attached_anomaly", anomaly)
+	rel_set(src, nameof(attached_anomaly), anomaly)
 	if(!istype(attached_anomaly(), /obj/effect/anomaly))
 		return FALSE
 	return TRUE

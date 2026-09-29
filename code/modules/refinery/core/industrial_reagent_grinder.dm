@@ -18,7 +18,9 @@
 	update_neighbours()
 	update_icon()
 
-OWN(/obj/machinery/reagent_refinery/grinder, holdingitems, OWN_SPILL)
+/obj/machinery/reagent_refinery/grinder/ownership()
+	. = ..()
+	. += owns(nameof(holdingitems), policy = OWN_SPILL)
 
 /obj/machinery/reagent_refinery/grinder/declare_interactions(list/into)
 	// Old attackby tried the parent's attackby FIRST, only falling to its own

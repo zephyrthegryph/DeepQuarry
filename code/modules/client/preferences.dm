@@ -124,10 +124,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 /datum/preferences/New(client/C)
-	rel_set(src, "client", C)
+	rel_set(src, nameof(client), C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		own_add(src, "middleware", new middleware_type(src))
+		own_add(src, nameof(middleware), new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey
@@ -479,7 +479,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 									/datum/trait/neutral/micro_size_up)
 	if(character.species)
 		// species is PROTO: mutate the mob's private copy, never the shared prototype
-		var/datum/species/own_species = proto_private(character, "species")
+		var/datum/species/own_species = proto_private(character, nameof(character.species))
 		own_species.micro_size_mod = 0
 		own_species.icon_scale_x = 1
 		own_species.icon_scale_y = 1
@@ -504,7 +504,7 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	else
 		bodytype_selected = selected_species.get_bodytype(character)
 	character.dna.base_species = bodytype_selected
-	var/datum/species/private_species = proto_private(character, "species") // PROTO: private copy
+	var/datum/species/private_species = proto_private(character, nameof(character.species)) // PROTO: private copy
 	private_species.base_species = bodytype_selected
 	private_species.icobase = private_species.get_icobase()
 	private_species.deform = private_species.get_icobase(get_deform = TRUE)

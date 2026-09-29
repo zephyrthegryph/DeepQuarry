@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_tyr, /datum/planet/tyr)
 /datum/planet/tyr/New()
 	..()
 	GLOB.planet_tyr = src
-	own_set(src, "weather_holder", new /datum/weather_holder/tyr(src))
+	own_set(src, nameof(weather_holder), new /datum/weather_holder/tyr(src))
 
 /datum/planet/tyr/update_sun()
 	..()
