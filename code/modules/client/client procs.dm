@@ -947,7 +947,6 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 /client/proc/set_eye(new_eye)
 	if(new_eye == eye)
 		return
-	var/atom/old_eye = eye
 	eye = new_eye
 
 /mob/proc/is_remote_viewing()

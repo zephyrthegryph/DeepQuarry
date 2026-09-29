@@ -291,7 +291,6 @@
 /atom/proc/set_dir(new_dir)
 	SHOULD_CALL_PARENT(TRUE)
 	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
-	var/oldDir = dir
 	dir = new_dir
 
 // Called to set the atom's density and used to add behavior to density changes.

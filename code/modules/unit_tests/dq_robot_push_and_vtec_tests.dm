@@ -65,7 +65,7 @@
 	TEST_ASSERT(proto.is_installed(R), "VTEC should be installed before the reset")
 
 	R.set_hud_used(new /datum/hud(R)) // module_reset() needs a HUD to update; test mobs have no client to build one automatically.
-	var/obj/item/robot_module/module = new(R)
+	new /obj/item/robot_module(R)
 	R.module_reset(notify = FALSE)
 
 	TEST_ASSERT(!proto.is_installed(R), "module_reset() should uninstall VTEC along with the module, not leave the verb behind")
