@@ -141,32 +141,3 @@
 /datum/integrated_io/list/display_pin_type()
 	return IC_FORMAT_LIST
 
-/datum/integrated_io/list/Topic(href, href_list, state = GLOB.tgui_always_state)
-	if(!holder().check_interactivity(usr))
-		return
-	if(..())
-		return 1
-
-	if(href_list["add"])
-		add_to_list(usr)
-
-	if(href_list["swap"])
-		swap_inside_list(usr)
-
-	if(href_list["clear"])
-		clear_list(usr)
-
-	if(href_list["remove"])
-		if(href_list["pos"])
-			remove_from_list_by_position(usr, text2num(href_list["pos"]))
-		else
-			remove_from_list(usr)
-
-	if(href_list["edit"])
-		if(href_list["pos"])
-			edit_in_list_by_position(usr, text2num(href_list["pos"]))
-		else
-			edit_in_list(usr)
-
-	holder().interact(usr) // Refresh the main UI,
-	interact(usr) // and the list UI.

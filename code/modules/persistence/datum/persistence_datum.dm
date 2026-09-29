@@ -138,15 +138,3 @@
 	else
 		. = "<td colspan = 4>[thing]</td>"
 
-/datum/persistent/Topic(href, href_list)
-	. = ..()
-	if(!.)
-		if(href_list["remove_entry"])
-			var/datum/value = locate(href_list["remove_entry"])
-			if(istype(value))
-				RemoveValue(value)
-				. = TRUE
-		if(.)
-			var/mob/user = locate(href_list["caller"])
-			if(user)
-				SSpersistence.show_info(user)

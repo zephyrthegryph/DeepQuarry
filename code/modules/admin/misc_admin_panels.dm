@@ -594,8 +594,8 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(.)
 		return
 	if(action == "transfer_supplies")
-		var/ref = "[params["mob_ref"]]"
-		Topic("betraitor=1;traitormob=[ref]", list("betraitor" = "1", "traitormob" = ref))
+		var/mob/M = locate_in_list(REGISTRY_MEMBERS(REGISTRY_MOBS), "[params["mob_ref"]]")
+		betraitor(ui.user, M)
 		SStgui.update_uis(src)
 		return TRUE
 

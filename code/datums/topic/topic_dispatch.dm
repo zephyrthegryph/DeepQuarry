@@ -11,6 +11,11 @@ GLOBAL_LIST_EMPTY(topic_tables)
 /datum/proc/topic_allowed(mob/user, list/href_list)
 	return TRUE
 
+/// A datum whose href actions this one's links also reach (a page forwarding to its book):
+/// hrefs matching none of this type's rows are dispatched to it instead.
+/datum/proc/topic_forward()
+	return null
+
 /// Appends one row (list(key, proc, specs)) to `rows`; used by TOPIC_ACTION.
 /proc/topic_register(list/rows, key, proc_name, list/specs)
 	if(!rows)
@@ -45,8 +50,6 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		var/client/UC = user
 		user = UC.mob
 	var/list/table = topic_table(target)
-	if(!length(table))
-		return null
 	var/list/row
 	for(var/key in href_list)
 		if(!istext(key))
@@ -58,6 +61,10 @@ GLOBAL_LIST_EMPTY(topic_tables)
 		if(row)
 			break
 	if(!row)
+		var/datum/D = target
+		var/datum/forward = D.topic_forward()
+		if(forward && forward != D)
+			return topic_dispatch(forward, user, href_list)
 		return null
 	return topic_run(target, user, href_list, row)
 
