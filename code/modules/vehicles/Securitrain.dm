@@ -97,9 +97,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 	if(!istype(W, key_type))
 		return FALSE
 	if(!key)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "key", W)
+		own_set(src, "key", W, user = user)
 	return TRUE
 
 

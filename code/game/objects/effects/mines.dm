@@ -354,9 +354,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 				break
 
 		if(allowed)
-			user.drop_from_inventory(W)
-			W.forceMove(src)
-			own_set(src, "trap", W)
+			own_set(src, "trap", W, user = user)
 
 	return FALSE
 
@@ -366,9 +364,7 @@ DECLARE_INTERACTIONS(/obj/item/mine, \
 	src.transfer_fingerprints_to(R)
 	R.add_fingerprint(user)
 	if(trap)
-		var/obj/item/T = trap
-		T.forceMove(R) // CONTAINED on the mine: moved in first
-		own_transfer(src, "trap", R, "trap")
+		own_transfer(src, "trap", R, "trap") // CONTAINED on the mine: the transfer moves it in
 	if(explode_now)
 		R.explode(user)
 	consume(src)

@@ -146,9 +146,8 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 	also_requires = list(REQ_FIELD_NOT("material_sample", "the material cradle is already occupied"))
 
 /obj/machinery/power/fusion_core/proc/interaction_material_insert(mob/user, obj/item/stack/material/processed_alloy/stock, datum/interaction/interaction)
-	user.drop_from_inventory(stock)
-	stock.forceMove(src)
-	own_set(src, "material_sample", stock)
+	if(!own_set(src, "material_sample", stock, user = user))
+		return TRUE
 	act_message(user, src, others = span_notice("%U% secures [stock] in %T%'s shielded treatment cradle."))
 	return TRUE
 

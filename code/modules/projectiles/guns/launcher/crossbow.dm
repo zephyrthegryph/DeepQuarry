@@ -176,8 +176,8 @@
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt)
 		if (istype(W,/obj/item/arrow))
-			user.drop_from_inventory(W, src)
-			own_set(src, "bolt", W)
+			if(!own_set(src, "bolt", W, user = user))
+				return
 			act_message(user, src, MSG_SELF("You slide [bolt] into %T%."), MSG_OTHERS("%U% slides [bolt] into %T%."))
 			update_icon()
 			return

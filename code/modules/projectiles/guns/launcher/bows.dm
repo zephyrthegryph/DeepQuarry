@@ -126,8 +126,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 /obj/item/gun/launcher/crossbow/bow/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
 	. = INTERACTION_HANDLED_PASS
 	if(!bolt && istype(W,/obj/item/arrow/standard))
-		user.drop_from_inventory(W, src)
-		own_set(src, "bolt", W)
+		if(!own_set(src, "bolt", W, user = user))
+			return
 		act_message(user, src, MSG_SELF(span_infoplain("You slide [bolt] into %T%.")), MSG_OTHERS(span_infoplain("%U% slides [bolt] into %T%.")))
 		update_icon()
 

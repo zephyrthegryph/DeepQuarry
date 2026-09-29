@@ -25,8 +25,8 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 	if(istype(user))
 		user.stop_aiming(no_message=1)
-	user.drop_from_inventory(I, target = src)
-	own_set(src, "holstered", I) // CONTAINED: in our contents first
+	if(!own_set(src, "holstered", I, user = user))
+		return
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)
 	act_message(user, null, MSG_SELF(span_notice("You holster \the [holstered].")), MSG_OTHERS(span_notice("%U% holsters \the [holstered].")))

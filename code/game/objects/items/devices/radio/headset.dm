@@ -93,14 +93,10 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 /obj/item/radio/headset/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!keyslot1)
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "keyslot1", W)
+		own_set(src, "keyslot1", W, user = user)
 
 	else
-		user.drop_item()
-		W.forceMove(src)
-		own_set(src, "keyslot2", W)
+		own_set(src, "keyslot2", W, user = user)
 
 
 	recalculateChannels()
@@ -208,9 +204,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(isanimal(target))
 		var/mob/living/simple_mob/M = target
 		if(!M.mob_radio)
-			user.drop_item()
-			forceMove(M)
-			own_set(M, "mob_radio", src)
+			own_set(M, "mob_radio", src, user = user)
 			return
 		if(M.mob_radio)
 			M.mob_radio.forceMove(M.loc)

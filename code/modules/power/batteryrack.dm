@@ -152,10 +152,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	own_add(src, "internal_cells", C)
-	if(user)
-		user.drop_from_inventory(C)
-	C.forceMove(src)
+	if(!own_add(src, "internal_cells", C, user = user, into = TRUE))
+		return 0
 	RefreshParts()
 	update_maxcharge()
 	update_icon()

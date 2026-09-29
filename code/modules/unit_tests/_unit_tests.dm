@@ -215,6 +215,7 @@
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"
 #include "dq_ownership_tests.dm"
+#include "dq_ownership_transfer_tests.dm"
 #include "dq_destroy_guard_tests.dm"
 #include "dq_pool_tests.dm"
 #include "dq_robot_machine_tests.dm"

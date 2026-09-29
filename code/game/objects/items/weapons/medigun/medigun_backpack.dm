@@ -382,12 +382,10 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/cell))
-		if(!user.unEquip(W))
-			return INTERACTION_HANDLED_PASS
-		W.forceMove(src)
 		if(ccell)
 			to_chat(user, span_notice("You swap the [W] for \the [ccell]."))
-		own_set(src, "ccell", W)
+		if(!own_set(src, "ccell", W, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You install the [W] into \the [src]."))
 		charging = TRUE
 		return INTERACTION_HANDLED_PASS
@@ -397,10 +395,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smodule)
 				to_chat(user, span_notice("\The [src] already has a scanning module."))
 			else
-				if(!user.unEquip(W))
+				if(!own_set(src, "smodule", W, user = user))
 					return INTERACTION_HANDLED_PASS
-				W.forceMove(src)
-				own_set(src, "smodule", W)
 				to_chat(user, span_notice("You install the [W] into \the [src]."))
 				medigun.beam_range = 3+smodule.get_rating()
 				update_icon()
@@ -410,10 +406,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(smanipulator)
 				to_chat(user, span_notice("\The [src] already has a manipulator."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, "smanipulator", W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "smanipulator", W)
 			smaniptier = smanipulator.get_rating()
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
@@ -423,10 +417,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(slaser)
 				to_chat(user, span_notice("\The [src] already has a micro laser."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, "slaser", W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "slaser", W)
 			to_chat(user, span_notice("You install the [W] into \the [src]."))
 			update_icon()
 			return INTERACTION_HANDLED_PASS
@@ -435,10 +427,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(scapacitor)
 				to_chat(user, span_notice("\The [src] already has a capacitor."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, "scapacitor", W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "scapacitor", W)
 			var/scaptier = scapacitor.get_rating()
 			if(scaptier == 1)
 				chargecap = 1000
@@ -474,10 +464,8 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 			if(sbin)
 				to_chat(user, span_notice("\The [src] already has a matter bin."))
 				return INTERACTION_HANDLED_PASS
-			if(!user.unEquip(W))
+			if(!own_set(src, "sbin", W, user = user))
 				return INTERACTION_HANDLED_PASS
-			W.forceMove(src)
-			own_set(src, "sbin", W)
 			sbintier = sbin.get_rating()
 			if(sbintier >= 5)
 				chemcap = 300

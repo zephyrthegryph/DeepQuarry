@@ -84,10 +84,8 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		if(bcell)
 			to_chat(user, span_notice("\The [src] already has a cell."))
 		else
-			if(!user.unEquip(W))
+			if(!own_set(src, "bcell", W, user = user))
 				return TRUE
-			W.forceMove(src)
-			own_set(src, "bcell", W)
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()
 		return TRUE

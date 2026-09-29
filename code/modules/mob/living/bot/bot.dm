@@ -560,9 +560,8 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	if(!card.pai)
 		to_chat(user, span_notice("This card does not currently have a personality!"))
 		return
-	user.unEquip(card)
-	card.forceMove(src)
-	own_set(src, "paicard", card)
+	if(!own_set(src, "paicard", card, user = user))
+		return
 	transfer_mind(AI.mind, src, "pAI installed into [src]")
 	name = AI.name
 	to_chat(src, span_notice("You feel a tingle in your circuits as your systems interface with \the [initial(src.name)]."))

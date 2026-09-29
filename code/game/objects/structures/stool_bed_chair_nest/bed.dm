@@ -303,8 +303,7 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 		var/obj/item/roller_holder/RH = W
 		if(!RH.held)
 			to_chat(user, span_notice("You collect the roller bed."))
-			src.forceMove(RH)
-			own_set(RH, "held", src)
+			own_set(RH, "held", src, user = user, into = TRUE)
 			return INTERACTION_HANDLED_PASS
 
 	return FALSE

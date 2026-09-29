@@ -75,7 +75,16 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
 /proc/refuse(mob/user, text)
 	if(user && text)
 		to_chat(user, span_warning(text))
+		#ifdef UNIT_TESTS
+		var/list/capture = GLOB.refuse_capture
+		capture?.Add(list(list(user, text)))
+		#endif
 	return UI_REFUSED
+
+#ifdef UNIT_TESTS
+/// Test builds: while a test sets this to a list, refuse() also appends list(user, text) to it.
+GLOBAL_VAR(refuse_capture)
+#endif
 
 /**
  * The fingerprint and the declared log line for a successful dispatch. log: LOG_GAME, LOG_ADMIN or

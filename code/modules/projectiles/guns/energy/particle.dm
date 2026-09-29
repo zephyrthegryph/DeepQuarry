@@ -138,9 +138,8 @@
 			to_chat(user, span_notice("\The [src] already has a [attached_safety]."))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You insert \the [A] into \the [src]."))
-		user.drop_item()
-		A.forceMove(src)
-		own_set(src, "attached_safety", A)
+		if(!own_set(src, "attached_safety", A, user = user))
+			return INTERACTION_HANDLED_PASS
 		safetycatch = 1
 		return INTERACTION_HANDLED_PASS
 

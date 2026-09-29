@@ -41,10 +41,7 @@
 	H.caliber = a.caliber
 	H.name = "handful of [a.caliber] rounds"
 	for(var/obj/item/ammo_casing/C in list(a, b))
-		if(user)
-			user.remove_from_mob(C)
-		C.forceMove(H)
-		own_add(H, "stored_ammo", C)
+		own_add(H, "stored_ammo", C, user = user, into = TRUE)
 	H.update_icon()
 	return H
 
@@ -68,8 +65,6 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 		var/moved = 0
 		while(length(other.stored_ammo) && length(stored_ammo) < max_ammo)
 			var/obj/item/ammo_casing/C = other.stored_ammo[length(other.stored_ammo)]
-			own_take_member(other, "stored_ammo", C)
-			C.forceMove(src)
 			own_add(src, "stored_ammo", C)
 			moved++
 		if(moved)

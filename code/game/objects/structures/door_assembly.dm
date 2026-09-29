@@ -229,11 +229,9 @@
 		to_chat(user, span_notice("You wire the airlock."))
 /obj/structure/door_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
 	if(!src) return
-	user.drop_item()
-	W.forceMove(src)
 	to_chat(user, span_notice("You installed the airlock electronics!"))
 	src.state = 2
-	own_set(src, "electronics", W)
+	own_set(src, "electronics", W, user = user)
 /obj/structure/door_assembly/proc/attackby_timed_done3(mob/user, obj/item/stack/S)
 	if(!(!glass))
 		return

@@ -317,9 +317,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/shieldgen, PROC_REF(on_emag), null)
 		// insert cell
 		var/obj/item/cell/C = user.get_active_hand()
 		if(istype(C))
-			user.drop_item()
-			C.forceMove(src)
-			own_set(src, "cell", C) // CONTAINED: in our contents first
+			if(!own_set(src, "cell", C, user = user))
+				return TRUE
 			C.add_fingerprint(user)
 
 			act_message(user, src, MSG_SELF(span_notice("You insert the power cell into %T%.")), MSG_OTHERS(span_notice("%U% inserts a power cell into %T%.")))

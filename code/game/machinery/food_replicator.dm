@@ -153,9 +153,8 @@
 	effect = /obj/machinery/food_replicator/proc/interaction_insert_container
 
 /obj/machinery/food_replicator/proc/interaction_insert_container(mob/user, obj/item/reagent_containers/glass/O, datum/interaction/interaction)
-	user.drop_item()
-	O.forceMove(src)
-	own_set(src, "container", O)
+	if(!own_set(src, "container", O, user = user))
+		return TRUE
 	balloon_alert(user, "placed \the [O] in \the [src]")
 	return TRUE
 

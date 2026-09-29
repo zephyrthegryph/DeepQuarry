@@ -181,12 +181,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
 
+	if(!own_put(src, "cartridges", C.label, C, user = user, into = TRUE))
+		return
 	if(user)
-		user.drop_from_inventory(C)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
 
-	C.forceMove(src)
-	own_put(src, "cartridges", C.label, C)
 	sortTim(cartridges, GLOBAL_PROC_REF(cmp_text_asc)) // in place: the owned list keeps its identity
 	MACHINE_WAKE(src)
 	SStgui.update_uis(src)
@@ -236,9 +235,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/chemical_synthesizer, TYPE_PROC_REF(/atom
 
 /obj/machinery/chemical_synthesizer/proc/interaction_add_catalyst(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
 
-	user.drop_from_inventory(RC)
-	RC.forceMove(src)
-	own_set(src, "catalyst", RC) // CONTAINED: in our contents first
+	if(!own_set(src, "catalyst", RC, user = user))
+		return TRUE
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	update_icon()
 

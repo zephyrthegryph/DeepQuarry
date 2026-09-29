@@ -1977,10 +1977,12 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 	om_task_timed(user, 2 SECONDS, T, src, PROC_REF(translocator_equip_done), list(T, user))
 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
-	user.unEquip(T)
-	translocator_unequip(translocator, user)
-	T.forceMove(src)
-	own_set(src, "translocator", T)
+	var/obj/item/perfect_tele/old = own_take(src, "translocator") // handed back below, not disposed of
+	if(!own_set(src, "translocator", T, user = user))
+		own_set(src, "translocator", old)
+		return
+	if(old)
+		user.put_in_hands(old)
 	user.show_message("[icon2html(src, user.client)]*click!*")
 	play_sfx(src, SFX_MACHINES_CLICK, 0.6)
 

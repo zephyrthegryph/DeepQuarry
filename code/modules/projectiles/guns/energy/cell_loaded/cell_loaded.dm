@@ -163,9 +163,8 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/cell_mag, INTERACT_ITEM("Load", PROC
 		if(length(stored_ammo) >= max_ammo)
 			to_chat(user, span_warning("[src] is full!"))
 			return
-		user.remove_from_mob(B)
-		B.forceMove(src)
-		own_add(src, "stored_ammo", B)
+		if(!own_add(src, "stored_ammo", B, user = user))
+			return
 		update_icon()
 	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
 	update_icon()

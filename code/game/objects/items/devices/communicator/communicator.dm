@@ -177,16 +177,16 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 			return 1
 		else
 			var/obj/item/I = user.get_active_hand()
-			if (istype(I, /obj/item/card/id) && user.unEquip(I))
-				I.forceMove(src)
-				own_set(src, "id", I)
+			if (istype(I, /obj/item/card/id))
+				own_set(src, "id", I, user = user)
 			return 1
 	else
 		var/obj/item/card/I = user.get_active_hand()
-		if (istype(I, /obj/item/card/id) && I:registered_name && user.unEquip(I))
+		if (istype(I, /obj/item/card/id) && I:registered_name)
 			var/obj/old_id = own_take(src, "id")
-			I.forceMove(src)
-			own_set(src, "id", I)
+			if(!own_set(src, "id", I, user = user))
+				own_set(src, "id", old_id)
+				return 0
 			user.put_in_hands(old_id)
 			return 1
 	return 0

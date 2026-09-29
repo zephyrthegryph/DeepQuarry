@@ -80,8 +80,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 
 /obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
 	var/obj/item/stack/material/piece = M.split(1)
-	piece.forceMove(src)
-	own_set(src, "target", piece)
+	own_set(src, "target", piece, user = user)
 	update_icon()
 	return TRUE
 
@@ -94,13 +93,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 	also_requires = list(REQ_FIELD_NOT("reagent_container", "it already has a container attached"))
 
 /obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
-		var/obj/item/gripper/G = W.loc
-		G.drop_item()
-	else
-		user.drop_from_inventory(W)
-	W.forceMove(src)
-	own_set(src, "reagent_container", W)
+	if(!own_set(src, "reagent_container", W, user = user))
+		return TRUE
 	to_chat(user, span_notice("You add \the [reagent_container()] to \the [src]."))
 	update_icon()
 	return TRUE
@@ -129,13 +123,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/particle_smasher, MACHINE_PIPELINE, "energ
 	return ((isrobot(actor) && istype(held.loc, /obj/item/gripper)) || (!isrobot(actor) && held.canremove)) && length(storage) < max_storage
 
 /obj/machinery/particle_smasher/proc/interaction_store(mob/user, obj/item/W, datum/interaction/interaction)
-	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
-		var/obj/item/gripper/G = W.loc
-		G.drop_item()
-	else
-		user.drop_from_inventory(W)
-	W.forceMove(src)
-	own_add(src, "storage", W)
+	own_add(src, "storage", W, user = user)
 	return TRUE
 
 /obj/machinery/particle_smasher/wrench_act(mob/user, obj/item/W)

@@ -268,9 +268,8 @@ DECLARE_UI(/mob/living/bot/medbot, "Medbot")
 /// Old attackby: load a beaker; anything else falls to the bot's item handling.
 /mob/living/bot/medbot/proc/medbot_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 
-	user.drop_item()
-	O.forceMove(src)
-	own_set(src, "reagent_glass", O)
+	if(!own_set(src, "reagent_glass", O, user = user))
+		return TRUE
 	to_chat(user, span_notice("You insert [O]."))
 	return TRUE
 

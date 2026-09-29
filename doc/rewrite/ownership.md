@@ -34,7 +34,8 @@ proto.dm, shared.dm, registry_types.dm, clone.dm, audit.dm, table.dm), the rich-
   `-=`, `|=`, `[k] =`, `Cut/Add/Remove/Insert` and the `QDEL_*` / `LAZY*` list macros on an owned
   or relation var anywhere but the accessors.
 - **O3 No double ownership.** Adopting a value another holder owns is refused and reported
-  (`OWN: ... already owned by ...`). Moves are explicit: `own_transfer` / `own_move`.
+  (`OWN: ... already owned by ...`). Moves are explicit: `own_transfer` / `own_move`, or a
+  one-call transfer (§1.3a), which takes a movable out of the holder that has it.
 - **O4 No orphans.** `own_set` disposes of the value it replaces by policy; `own_take` hands the
   value to the caller, who adopts or destroys it. The orphan audit (§1.5) reports anything that
   slipped out (a raw drop, an owner that died without disposing of it).
@@ -74,7 +75,8 @@ OWN_IF(/obj/mecha, cell, OWN_SPILL, salvageable, OWN_DELETE)
 - **Shape comes from the value**: one value, a list of members, or an assoc list of values.
 - **Policies.** `OWN_DELETE` destroys. `OWN_SPILL` moves a movable still inside the holder to its
   drop location (anything else is destroyed). `OWN_CONTAINED` leaves a movable in the holder's
-  contents to the ledger slot policy; `own_set` asserts `loc == holder`.
+  contents to the ledger slot policy; `own_set` moves the value into the holder's contents itself
+  (§1.3a), wherever it was.
 - **Conditional policy**: `OWN_POLICY` names a holder proc returning the policy at teardown;
   `OWN_IF` picks between two by a flag var.
 - **Gas mixtures and other arena resources** are owned by the holder that makes them (deleting a
@@ -85,7 +87,7 @@ OWN_IF(/obj/mecha, cell, OWN_SPILL, salvageable, OWN_DELETE)
 
 | Proc | Meaning |
 |---|---|
-| `own_set(holder, "var", value)` | adopt `value`; the previous value is disposed of by policy. Returns `value` (null when refused). |
+| `own_set(holder, "var", value, user =, into =, slot =, force =, log =)` | adopt `value`, transferring a movable in from wherever it is (§1.3a); the previous value is disposed of by policy. Returns `value` (null when refused). |
 | `own_take(holder, "var")` | detach and return the value, now unowned |
 | `own_add` / `own_remove(holder, "var", value)` | list shape; `own_remove` disposes |
 | `own_put(holder, "var", key, value)` | assoc values; disposes of the value it replaces |
@@ -95,6 +97,41 @@ OWN_IF(/obj/mecha, cell, OWN_SPILL, salvageable, OWN_DELETE)
 | `own_clear(holder, "var", policy)` | dispose of everything the var owns, now (`OWN_DELETE` for the old `QDEL_NULL`/`QDEL_LIST`) |
 | `own_values(holder, "var")` | the owned values as a list |
 | `/datum/proc/on_owned_release(var, child)` | hook: a child is leaving (disposed, taken or moved), still intact |
+
+### 1.3a One-call transfers (`code/datums/ownership/transfer.dm`)
+
+`own_set`, `own_add` and `own_put` on an atom holder, given a movable that is somewhere else, are
+the whole transfer:
+
+```dm
+own_set(src, "beaker", W, user = user)
+```
+
+replaces `user.drop_item(); W.forceMove(src); own_set(src, "beaker", W)`. In one call:
+
+1. **Checks** (requirements; a refusal changes nothing, returns null and, with `user`, tells the user
+   why through `refuse()`): the item can leave its current place, asked through
+   `place.release_refusal(thing, user)` (a mob: NODROP and `mob_can_unequip()`; any ledger holder,
+   storage included: its slot's `removal_refusal()` and the pre-remove event), and it can enter the
+   holder (`dq_ledger_refusal()` on the holder's slot when it has slots: acceptance, capacity, a
+   full storage).
+2. **Release**: the current place lets it go through `place.release_to(thing, holder, slot, user)`.
+   A mob goes through `remove_from_mob()` (the slot clears, the HUD drops it, the slot redraws,
+   `dropped()` runs); a storage item through `storage_exit()` (HUD, `on_exit_storage()`); anything
+   else is a ledger commit into the holder's `slot` (null: its default slot). Nothing sleeps between
+   the checks and the commit.
+3. **Adoption**: another holder's owned var naming it lets it go (its `on_owned_release()` runs), and
+   the holder adopts it.
+4. **With `user`** the transfer is a dispatched call: `changed(holder)` and
+   `dispatch_record(user, holder, "insert", log)` (the fingerprint, and the `log =` line).
+
+When it moves the value: never with `into = FALSE` (`own_transfer` / `own_move` re-own in place);
+never when the value is already in the holder or anywhere inside it; always with `into = TRUE`, a
+`user`, or an `OWN_CONTAINED` var (off a turf too); otherwise only when the value is inside
+something else (a mob, a storage, a machine), so an owned effect or item left on a turf on purpose
+(a beam, a field, a pAI cable) stays where it is. `slot =` picks the holder's ledger slot; `force =
+TRUE` skips the checks (a worn item swallowing the one under it). The old sequences are flagged by
+`tools/ci/sys_rules/dx_manual_transfer.py` (empty baseline).
 
 The accessors are generic procs keyed by the var name rather than generated `set_x()` procs: a
 generated setter per var collided with the domain setters many types already have (`set_species`,

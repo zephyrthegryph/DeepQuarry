@@ -301,9 +301,8 @@ DECLARE_EMAG_REPEATABLE(/obj/vehicle, PROC_REF(on_emag), null)
 	if(!istype(C))
 		return
 
-	H.drop_from_inventory(C)
-	C.forceMove(src)
-	own_set(src, "cell", C)
+	if(!own_set(src, "cell", C, user = H))
+		return
 	powercheck()
 	to_chat(H, span_notice("You install [C] in [src]."))
 

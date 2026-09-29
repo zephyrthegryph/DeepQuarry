@@ -85,9 +85,8 @@ DECLARE_INTERACTIONS(/obj/item/implant, INTERACT_ITEM(null, PROC_REF(interaction
 		var/obj/item/implanter/implanter = I
 		if(implanter.imp)
 			return INTERACTION_HANDLED_PASS
-		user.drop_from_inventory(src)
-		forceMove(implanter)
-		own_set(implanter, "imp", src)
+		if(!own_set(implanter, "imp", src, user = user))
+			return INTERACTION_HANDLED_PASS
 		implanter.update()
 	else
 		return FALSE

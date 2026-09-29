@@ -89,10 +89,8 @@
 	return !scan
 
 /obj/machinery/computer/secure_data/proc/interaction_secure_data_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!user.unEquip(held))
+	if(!own_set(src, "scan", held, user = user))
 		return FALSE
-	held.forceMove(src)
-	own_set(src, "scan", held)
 	to_chat(user, "You insert \the [held].")
 	tgui_interact(user)
 	return TRUE
@@ -213,9 +211,7 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			ui.user.drop_item()
-			I.forceMove(src)
-			own_set(src, "scan", I)
+			own_set(src, "scan", I, user = ui.user)
 
 UI_ACT(/obj/machinery/computer/secure_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_login)

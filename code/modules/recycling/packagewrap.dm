@@ -29,11 +29,9 @@
 			to_chat(user, span_warning("You need more paper."))
 			return
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(get_turf(O.loc))	//Aaannd wrap it up!
-		if(!istype(O.loc, /turf))
-			if(user.client)
-				user.client.screen -= O
-		O.forceMove(P)
-		own_set(P, "wrapped", O) // CONTAINED: in P first
+		if(!own_set(P, "wrapped", O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
+			qdel(P)
+			return
 		P.w_class = O.w_class
 		var/i = round(O.w_class)
 		if(i in list(1,2,3,4,5))

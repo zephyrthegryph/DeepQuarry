@@ -72,9 +72,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		if (beaker)
 			return TRUE
 		else
-			user.drop_item()
-			O.forceMove(src)
-			own_set(src, "beaker", O) // CONTAINED: in our contents first
+			if(!own_set(src, "beaker", O, user = user))
+				return TRUE
 			update_icon()
 			return TRUE
 
@@ -92,8 +91,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			bag.remove_from_storage(G, src)
-			own_add(src, "holdingitems", G)
+			own_add(src, "holdingitems", G) // out of the bag: a one-call transfer
 			if(holdingitems && length(holdingitems) >= limit)
 				break
 
@@ -123,9 +121,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 
-	user.remove_from_mob(O)
-	O.forceMove(src)
-	own_add(src, "holdingitems", O)
+	if(!own_add(src, "holdingitems", O, user = user))
+		return TRUE
 	// start
 	if(istype(O,/obj/item/stack/material/supermatter))
 		var/obj/item/stack/material/supermatter/S = O
@@ -237,8 +234,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			beaker.forceMove(drop_location())
 		own_take(src, "beaker")
 	if(new_beaker)
-		new_beaker.forceMove(src) // CONTAINED: in our contents first
-		own_set(src, "beaker", new_beaker)
+		own_set(src, "beaker", new_beaker, user = user)
 	update_icon()
 	return TRUE
 
