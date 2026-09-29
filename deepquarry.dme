@@ -613,6 +613,7 @@
 #include "code\datums\capabilities\refresh.dm"
 #include "code\datums\capabilities\slot.dm"
 #include "code\datums\capabilities\timed.dm"
+#include "code\datums\capabilities\condition.dm"
 #include "code\datums\capabilities\ui_actions.dm"
 #include "code\datums\capabilities\construction.dm"
 #include "code\datums\capabilities\frame_ladder.dm"
