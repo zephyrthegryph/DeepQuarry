@@ -20,7 +20,7 @@
 	if(mess || attempting)
 		return 0
 	attempting = 1 //One at a time!!
-	locked = 1
+	set_locked(1)
 	eject_wait = 1
 	om_after(src, 3 SECONDS, PROC_REF(allow_eject))
 
@@ -60,15 +60,15 @@
 /// Grows its clone while it has one (set_occupant() wakes it); empty, it sleeps.
 /obj/machinery/clonepod/transhuman/machine_step()
 	var/mob/living/occupant = get_occupant()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		if(occupant)
-			locked = 0
+			set_locked(0)
 			go_out()
 		return PROCESS_KILL
 
 	if((occupant) && (occupant.loc == src))
 		if(occupant.stat == DEAD)
-			locked = 0
+			set_locked(0)
 			go_out()
 			connected_message("Clone Rejected: Deceased.")
 			return
@@ -95,14 +95,14 @@
 			playsound(src, 'sound/machines/ding.ogg', 50, 1)
 			audible_message("\The [src] signals that the growing process is complete.", runemessage = "ding")
 			connected_message("Growing Process Complete.")
-			locked = 0
+			set_locked(0)
 			go_out()
 			return
 
 	else if((!occupant) || (occupant.loc != src))
 		set_occupant(null)
 		if(locked)
-			locked = 0
+			set_locked(0)
 		update_icon()
 		return PROCESS_KILL
 
@@ -188,7 +188,7 @@
 
 /// Prints while busy with a body; idle, it sleeps until one is queued.
 /obj/machinery/transhuman/synthprinter/machine_step()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		if(busy)
 			busy = 0
 			current_br = null
@@ -254,7 +254,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 
 /// Old attack_hand.
 /obj/machinery/transhuman/synthprinter/proc/synthprinter_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if((busy == 0) || (stat & NOPOWER))
+	if((busy == 0) || (has_stat(NOPOWER)))
 		return TRUE
 	to_chat(user, "Current print cycle is [busy]% complete.")
 	return TRUE
@@ -297,7 +297,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/synthprinter, \
 /obj/machinery/transhuman/synthprinter/update_icon()
 	..()
 	icon_state = "pod_0"
-	if(busy && !(stat & NOPOWER))
+	if(busy && !has_stat(NOPOWER))
 		icon_state = "pod_1"
 	else if(broken)
 		icon_state = "pod_g"
@@ -379,7 +379,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 )
 
 /obj/machinery/transhuman/resleever/tgui_interact(mob/user, datum/tgui/ui = null)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -570,7 +570,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/resleever, \
 
 /// Old Move INSIDE verb.
 /obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.stat != 0 || stat & (NOPOWER|BROKEN))
+	if(user.stat != 0 || !operable())
 		return
 	put_mob(user)
 	return

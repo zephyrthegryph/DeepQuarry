@@ -35,7 +35,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/furnace, "beaker", OWNED, null)
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	// extract and filter side products

@@ -29,10 +29,10 @@
 
 /obj/machinery/anomaly_harvester/machine_step()
 	..()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		update_use_power(USE_POWER_OFF)
+	if(!operable() || !anchored)
+		set_use_power(USE_POWER_OFF)
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		harvest_anomaly()
 		if(points && points >= points_to_create)
 			points -= points_to_create
@@ -121,7 +121,7 @@
 	return TRUE
 
 /obj/machinery/anomaly_harvester/proc/generate_sample()
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	playsound(src, 'sound/machines/ping.ogg', 50, TRUE)
 	switch(rand(1, 100))
 		if(1 to 50)
@@ -137,7 +137,7 @@
 
 /obj/machinery/anomaly_harvester/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
+	if(!operable() || !anchored)
 		add_overlay("harvester_off")
 	else
 		add_overlay("harvester_on")

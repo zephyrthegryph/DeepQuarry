@@ -30,7 +30,7 @@
 	update_icon()
 
 /obj/machinery/computer/pandemic/update_icon()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = (beaker ? "pandemic1_b" : "pandemic0_b")
 		return
 	icon_state = "pandemic[(beaker)?"1":"0"][!(stat & NOPOWER) ? "" : "_nopower"]"
@@ -39,7 +39,7 @@
 	. = ..()
 	if(.)
 		return
-	if(inoperable())
+	if(!operable())
 		return
 
 	switch(action)
@@ -230,7 +230,7 @@
 
 /// The old stat check was silent (no message), so it stays in the effect.
 /obj/machinery/computer/pandemic/proc/interaction_insert_beaker(mob/user, obj/item/I, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	user.drop_item()
 	beaker = I

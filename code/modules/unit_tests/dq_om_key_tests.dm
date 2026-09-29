@@ -59,7 +59,7 @@
 /datum/unit_test/dq_om_keys_wake_turret/Run()
 	var/turf/T = locate(1, 1, 1)
 	var/obj/machinery/porta_turret/turret = allocate(/obj/machinery/porta_turret, T)
-	turret.stat = 0
+	turret.set_stat(0)
 	turret.enabled = FALSE
 	turret.machine_step()
 	TEST_ASSERT(turret.asleep_on_keys(), "disabled turret did not sleep on its settings key")
@@ -71,8 +71,8 @@
 
 /datum/unit_test/dq_om_keys_wake_point_defense/Run()
 	var/obj/machinery/pointdefense/PD = allocate(/obj/machinery/pointdefense, test_floor())
-	PD.stat = 0
-	PD.active = TRUE
+	PD.set_stat(0)
+	PD.set_active(TRUE)
 	if(LAZYLEN(REGISTRY_MEMBERS(REGISTRY_METEORS)))
 		return
 	PD.machine_step()
@@ -88,9 +88,9 @@
 	var/obj/machinery/disposal/D = allocate(/obj/machinery/disposal, test_floor())
 	if(!D.air_contents)
 		return
-	D.stat = 0
+	D.set_stat(0)
 	D.flush = 0
-	D.mode = 2 // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
+	D.set_mode(2) // DISPOSALMODE_CHARGED, which disposal_machines.dm #undefs
 	for(var/atom/movable/AM as anything in contents_of(D))
 		qdel(AM)
 	D.machine_step()

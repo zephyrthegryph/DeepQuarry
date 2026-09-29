@@ -46,7 +46,7 @@
 		invisibility = initial(invisibility)
 		see_invisible = initial(see_invisible)
 		incorporeal_move = initial(incorporeal_move)
-		density = initial(density)
+		set_density(initial(density))
 		force_max_speed = initial(force_max_speed)
 
 		//Cosmetics mostly
@@ -131,7 +131,7 @@
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
 	incorporeal_move = initial(incorporeal_move)
-	density = initial(density)
+	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE
@@ -151,7 +151,7 @@
 	is_shifting = FALSE
 	canmove = original_canmove
 	incorporeal_move = TRUE
-	density = FALSE
+	set_density(FALSE)
 	force_max_speed = TRUE
 
 	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
@@ -318,7 +318,7 @@
 	invisibility = initial(invisibility)
 	see_invisible = initial(see_invisible)
 	incorporeal_move = initial(incorporeal_move)
-	density = initial(density)
+	set_density(initial(density))
 	force_max_speed = initial(force_max_speed)
 	var/original_canmove = canmove
 	canmove = FALSE

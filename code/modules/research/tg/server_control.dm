@@ -42,7 +42,7 @@
 /obj/machinery/computer/rdservercontrol/emag_act(remaining_charges, mob/user, emag_source)
 	if(emagged)
 		return FALSE
-	emagged = TRUE
+	set_emagged(TRUE)
 	playsound(src, "sparks", 75, TRUE)
 	balloon_alert(user, "console emagged")
 	return TRUE
@@ -100,7 +100,7 @@
 			var/obj/machinery/computer/rdconsole_tg/console_selected = locate_in_list(stored_research().consoles_accessing, params["selected_console"])
 			if(!console_selected)
 				return FALSE
-			console_selected.locked = !console_selected.locked
+			console_selected.set_locked(!console_selected.locked)
 			return TRUE
 
 /// DECLARE_REF(..., STATIC): a shared definition/flyweight, held strongly and never cleared.

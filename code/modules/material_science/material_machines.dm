@@ -192,7 +192,7 @@ DECLARE_REF(/obj/machinery/material_furnace, "chamber_air", OWNED, null)
 	if(!LAZYLEN(feedstock))
 		to_chat(user, span_notice("The furnace is empty. Load material sheets before firing it."))
 		return TRUE
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		to_chat(user, span_warning("The furnace has no power or requires repairs."))
 		return TRUE
 	firing = TRUE

@@ -54,8 +54,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	icon_state = text("suitstorage[][][][][][][][][]", hashelmet, hassuit, hashuman, isopen, islocked, isUV, ispowered, isbroken, issuperUV)
 
 /obj/machinery/suit_storage_unit/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		ispowered = 1
 		update_icon()
 	else
@@ -82,7 +82,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	effect = /obj/machinery/suit_storage_unit/proc/interaction_use
 
 /obj/machinery/suit_storage_unit/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return TRUE
 	if(!user.IsAdvancedToolUser())
 		return TRUE

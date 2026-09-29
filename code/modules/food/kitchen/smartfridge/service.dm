@@ -36,11 +36,11 @@
 	if(panel_open)
 		add_overlay("[icon_base]-panel")
 
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		cut_overlays()
 		icon_state = "[icon_base]-broken"
 
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_base]-off"
 	else
 		icon_state = icon_base

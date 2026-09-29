@@ -120,7 +120,7 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 
 /// Wrenching it down (any stance but harm; a harmful swing falls through to the hit).
 /obj/item/camerabug/proc/interaction_wrench(mob/user, obj/item/tool, datum/interaction/interaction)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "" : "un"]secure \the [src]."))
 	update_icon()
 	return TRUE

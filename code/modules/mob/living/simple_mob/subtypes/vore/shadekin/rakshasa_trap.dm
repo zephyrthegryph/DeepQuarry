@@ -42,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
-	anchored = 0
+	set_anchored(0)
 
 /obj/structure/gootrap/proc/attack_mob(mob/living/L)
 	//trap the victim in place
@@ -72,7 +72,7 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 				)
 			attack_mob(L)
 			if(!has_buckled_mobs())
-				anchored = 0
+				set_anchored(0)
 			deployed = 0
 			message_admins("[key_name(usr)] has stepped in the goo trap.")
 	..()

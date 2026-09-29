@@ -9,7 +9,7 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 750
 	maintenance_flags = MACHINE_MAINT_STANDARD
-	var/on = 1		// If we're currently active,
+	on = 1		// If we're currently active,
 	var/toggle = 1	// If we /should/ be active or not,
 	var/list/internal_PDAs // Assoc list of PDAs inside of this, with the department name being the index,
 
@@ -87,22 +87,22 @@ DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 
 /obj/machinery/pda_multicaster/proc/update_power()
 	if(toggle)
-		if(stat & (BROKEN|NOPOWER|EMPED))
-			on = 0
+		if(!operable())
+			set_on(0)
 			update_PDAs(1) // 1 being to turn off.
 			update_idle_power_usage(0)
 			if(soundloop)
 				soundloop.stop()
 			noisy = FALSE
 		else
-			on = 1
+			set_on(1)
 			update_PDAs(0)
 			update_idle_power_usage(750)
 			if(soundloop)
 				soundloop.start()
 			noisy = TRUE
 	else
-		on = 0
+		set_on(0)
 		update_PDAs(1)
 		update_idle_power_usage(0)
 		if(soundloop)
@@ -120,9 +120,9 @@ DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 
 /obj/machinery/pda_multicaster/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & EMPED))
+	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
 		return
-	stat |= EMPED
+	stat_add(EMPED)
 	update_power()
 	var/duration = (300 * 10)/severity
 	om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover))
@@ -130,7 +130,7 @@ DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 	..()
 
 /obj/machinery/pda_multicaster/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	update_power()
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

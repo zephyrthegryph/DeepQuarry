@@ -136,7 +136,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 
 /// The second half of expand(): the new blob slides into `T`.
 /obj/structure/blob/proc/slide_into(turf/T, obj/structure/blob/origin, expand_reaction)
-	density = initial(density)
+	set_density(initial(density))
 	forceMove(T)
 	update_icon()
 	if(overmind && expand_reaction)
@@ -181,7 +181,7 @@ DESTROY_EFFECTS(/obj/structure/blob, new /datum/destroy_effects_data(sound = 'so
 			B.overmind = controller
 		else
 			B.overmind = overmind
-		B.density = TRUE
+		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
 			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)

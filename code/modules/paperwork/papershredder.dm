@@ -64,7 +64,7 @@
 		if(istype(W, shred_type))
 			paper_result = shred_amounts[shred_type]
 	if(paper_result)
-		if(inoperable())
+		if(!operable())
 			return TRUE // Need powah!
 		if(paperamount == max_paper)
 			to_chat(user, span_warning("\The [src] is full; please empty it before you continue."))
@@ -136,7 +136,7 @@
 	return new /obj/item/shreddedp(get_turf(src))
 
 /obj/machinery/papershredder/power_change()
-	..()
+	. = ..()
 	om_after(src, rand(0,15), TYPE_PROC_REF(/atom, update_icon))
 
 /obj/machinery/papershredder/update_icon()

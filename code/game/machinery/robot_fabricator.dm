@@ -114,7 +114,7 @@
 		return FALSE
 
 	operating = TRUE
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	metal_amount = max(0, metal_amount - build_cost)
 	add_overlay("fab-active")
 
@@ -125,7 +125,7 @@
 	being_built = new building(src)
 	being_built.forceMove(get_turf(src))
 	being_built = null
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	operating = FALSE
 	cut_overlay("fab-active")
 

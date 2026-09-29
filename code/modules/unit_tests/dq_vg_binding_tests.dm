@@ -75,8 +75,8 @@
 	var/turf/T = get_turf(run_loc_floor_bottom_left ? run_loc_floor_bottom_left : locate(1, 1, 1))
 	TEST_ASSERT_NOTNULL(T, "no floor for the vg reconciler test")
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
-	P.anchored = TRUE
-	P.stat &= ~BROKEN
+	P.set_anchored(TRUE)
+	P.stat_remove(BROKEN)
 	// Bring Rust's operable up to date with the honest input before
 	// desyncing it, so the mismatch below is caused by the bypass alone.
 	P.pump_reconcile()

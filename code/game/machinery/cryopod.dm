@@ -16,7 +16,7 @@
 	circuit = /obj/item/circuitboard/cryopodcontrol
 	density = FALSE
 	interact_offline = 1
-	var/mode = null
+	mode = null
 
 	//Used for logging people entering cryosleep and important items they are carrying.
 	var/list/frozen_crew
@@ -31,7 +31,7 @@
 
 /obj/machinery/computer/cryopod/update_icon()
 	..()
-	if((stat & NOPOWER) || (stat & BROKEN))
+	if((has_stat(NOPOWER)) || (has_stat(BROKEN)))
 		icon_state = "[initial(icon_state)]-p"
 	else
 		icon_state = initial(icon_state)
@@ -85,7 +85,7 @@
 	effect = /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl
 
 /obj/machinery/computer/cryopod/proc/interaction_open_ui_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE

@@ -25,7 +25,7 @@
 
 /obj/machinery/smartfridge/drying_rack/machine_step()
 	..()
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return PROCESS_KILL
 	if(stored_count())
 		dry()
@@ -37,7 +37,7 @@
 	return ..() || stored_count()
 
 /obj/machinery/smartfridge/drying_rack/update_icon()
-	var/not_working = stat & (BROKEN|NOPOWER)
+	var/not_working = !operable()
 	var/hasItems
 	for(var/datum/stored_item/I in item_records)
 		if(I.get_amount())

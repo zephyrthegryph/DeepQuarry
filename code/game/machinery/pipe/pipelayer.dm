@@ -7,7 +7,7 @@
 	circuit = /obj/item/circuitboard/pipelayer
 	var/old_turf_handle		// Last turf we were on.
 	var/old_dir				// Last direction we were facing.
-	var/on = 0				// Pipelaying online?
+	on = 0				// Pipelaying online?
 	var/a_dis = 0			// Auto-dismantling - If enabled it will remove floor tiles
 	var/P_type = null		// Currently selected pipe type
 	var/P_type_t = ""		// Name of currently selected pipe type
@@ -75,7 +75,7 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	if(!metal && !on)
 		to_chat(user, span_warning("\The [src] doesn't work without metal."))
 		return TRUE
-	on = !on
+	set_on(!on)
 	old_turf_handle = om_handle(get_turf(src))
 	old_dir = dir
 	user.visible_message(span_notice("[user] has [!on?"de":""]activated \the [src]."), span_notice("You [!on?"de":""]activate \the [src]."))
@@ -156,7 +156,7 @@ DECLARE_REF(/obj/machinery/pipelayer, "W", OWNED, null)
 	. += "[src] has [metal] sheet\s, is set to produce [P_type_t], and auto-dismantling is [!a_dis?"de":""]activated."
 
 /obj/machinery/pipelayer/proc/reset()
-	on = 0
+	set_on(0)
 	return
 
 /obj/machinery/pipelayer/proc/load_metal(obj/item/stack/MM)

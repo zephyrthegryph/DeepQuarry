@@ -181,7 +181,7 @@
 	. = ..()
 	if(.)
 		return
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return FALSE
 
 	add_fingerprint(ui.user)
@@ -312,7 +312,7 @@
 
 /// Old attack_ghost: view the interface unless broken. Never fell through.
 /obj/machinery/chemical_dispenser/proc/chemical_dispenser_ghost_view(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!(stat & BROKEN))
+	if(!has_stat(BROKEN))
 		tgui_interact(user)
 	return TRUE
 
@@ -322,7 +322,7 @@
 	effect = /obj/machinery/chemical_dispenser/proc/interaction_use
 
 /obj/machinery/chemical_dispenser/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return TRUE
 	tgui_interact(user)
 	return TRUE

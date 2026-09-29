@@ -583,7 +583,12 @@ function dmAncestors(dmType: string): string[] {
 function procHeader(root: string, dmType: string, name: string, args: string): string {
   const src = dmSource(root);
   const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const declares = (t: string) => new RegExp(`(^|\\n)${esc(t)}/proc/${esc(name)}\\(`).test(src);
+  // An OM_FIELD()-family declaration (code/__defines/om.dm) generates `T/proc/set_F()` too.
+  const field = name.startsWith('set_') ? name.slice(4) : null;
+  const declaresField = (t: string) =>
+    field !== null &&
+    new RegExp(`(^|\\n)OM_(?:FLAG_)?FIELD(?:_TYPED|_BITS)?\\(\\s*${esc(t)}\\s*,(?:\\s*[\\w/]+\\s*,)?\\s*${esc(field)}\\s*,`).test(src);
+  const declares = (t: string) => new RegExp(`(^|\\n)${esc(t)}/proc/${esc(name)}\\(`).test(src) || declaresField(t);
   if (declares(dmType)) {
     throw new Error(`${dmType}/proc/${name}() is hand-written in DM but also generated from a #[vg::component] field; remove one`);
   }

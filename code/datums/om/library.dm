@@ -129,7 +129,7 @@
 
 /datum/om/relation/buckled_to/on_unlink(mob/living/source, atom/movable/target, datum/om/edge/edge)
 	if(istype(source) && !QDELETED(source))
-		source.anchored = initial(source.anchored)
+		source.set_anchored(initial(source.anchored))
 		source.update_canmove()
 		source.update_floating(source.Check_Dense_Object())
 		source.clear_alert("buckled")

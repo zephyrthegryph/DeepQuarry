@@ -212,7 +212,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	om_after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/inflatable/door/proc/open_finish()
-	density = FALSE
+	set_density(FALSE)
 	opacity = 0
 	state = 1
 	update_icon()
@@ -224,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/inflatable, INTERACT_SELF("Inflate", PROC_REF(inf
 	om_after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/inflatable/door/proc/close_finish()
-	density = TRUE
+	set_density(TRUE)
 	opacity = 0
 	state = 0
 	update_icon()

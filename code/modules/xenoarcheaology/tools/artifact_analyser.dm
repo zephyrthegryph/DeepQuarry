@@ -48,7 +48,7 @@
 
 /obj/machinery/artifact_analyser/proc/interaction_artifact_analyser_use(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN) || get_dist(src, user) > 1)
+	if(!operable() || get_dist(src, user) > 1)
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -96,7 +96,7 @@
 						if(A.in_use)
 							artifact_in_use = 1
 						else
-							A.anchored = TRUE
+							A.set_anchored(TRUE)
 							A.in_use = 1
 
 					if(artifact_in_use)
@@ -152,7 +152,7 @@
 
 	if(scanned_object() && istype(scanned_object(), /obj/machinery/artifact))
 		var/obj/machinery/artifact/A = scanned_object()
-		A.anchored = FALSE
+		A.set_anchored(FALSE)
 		A.in_use = 0
 	scanned_object_handle = null
 

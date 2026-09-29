@@ -107,7 +107,7 @@
 	return vg_component_get(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, 0)
 
 /// Returns the stored value.
-/obj/machinery/atmospherics/binary/pump/proc/set_on(value)
+/obj/machinery/atmospherics/binary/pump/set_on(value)
 	return vg_component_set(vg_entity, VG_KIND_PUMP, VG_PUMP_FIELD_ON, -1, value)
 
 /// mol/s, read-only (state).
@@ -922,7 +922,7 @@
 	return vg_component_get(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, 0)
 
 /// Returns the stored value.
-/obj/machinery/power/apc/proc/set_active(value)
+/obj/machinery/power/apc/set_active(value)
 	return vg_component_set(vg_entity, VG_KIND_APC, VG_APC_FIELD_ACTIVE, -1, value)
 
 /// unitless;.

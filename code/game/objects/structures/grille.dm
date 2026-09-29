@@ -182,7 +182,7 @@
 /obj/structure/grille/atom_break(damage_flag)
 	. = ..()
 	if(!destroyed)
-		density = FALSE
+		set_density(FALSE)
 		destroyed = TRUE
 		update_icon()
 		new /obj/item/stack/rods(get_turf(src))
@@ -203,7 +203,7 @@
 		return TRUE
 	if(!shock(user, 90))
 		playsound(src, W.usesound, 100, 1)
-		anchored = !anchored
+		set_anchored(!anchored)
 		user.visible_message(span_notice("[user] [anchored ? "fastens" : "unfastens"] the grille."), \
 			span_notice("You have [anchored ? "fastened the grille to" : "unfastened the grille from"] the floor."))
 	return TRUE

@@ -54,7 +54,7 @@
 /obj/machinery/atmospherics/unary/proc/invalidate_gas_dependencies()
 	om_watch_invalidate(src)
 
-/obj/machinery/atmospherics/unary/update_use_power(new_use_power)
+/obj/machinery/atmospherics/unary/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	invalidate_gas_dependencies()
@@ -150,7 +150,7 @@
 		user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 		if(allowed(user))
 			invalidate_gas_dependencies()
-			update_use_power(!use_power)
+			set_use_power(!use_power)
 			update_icon()
 			add_fingerprint(user)
 			if(use_power)

@@ -11,7 +11,7 @@
 	animate(src, alpha = 255, time = 50)
 	var/prev_lockcharge = lockcharge
 	SetLockdown(1)
-	anchored = TRUE
+	set_anchored(TRUE)
 	om_after(src, 0.2 SECONDS, PROC_REF(transform_animation_sounds), 6, prev_lockcharge)
 
 /mob/living/silicon/robot/proc/transform_animation_sounds(recall, prev_lockcharge)
@@ -29,5 +29,5 @@
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!prev_lockcharge)
 		SetLockdown(0)
-	anchored = FALSE
+	set_anchored(FALSE)
 	notransform = FALSE

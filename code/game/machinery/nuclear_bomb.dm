@@ -165,7 +165,7 @@ GLOBAL_VAR(bomb_set)
 	if(!src || !user)
 		return ITEM_INTERACT_SUCCESS
 	user.visible_message("[user] crowbars [src] off of the anchors. It can now be moved.", "You jam the crowbar under the nuclear device and lift it off its anchors. You can now move it!")
-	anchored = FALSE
+	set_anchored(FALSE)
 	removal_stage = 5
 
 /obj/machinery/nuclearbomb/wrench_act(mob/user, obj/item/tool)
@@ -203,7 +203,7 @@ GLOBAL_VAR(bomb_set)
 		tgui_interact(user)
 	else if(deployable)
 		if(removal_stage < 5)
-			anchored = TRUE
+			set_anchored(TRUE)
 			visible_message(span_warning("With a steely snap, bolts slide out of [src] and anchor it to the flooring!"))
 		else
 			visible_message(span_warning("\The [src] makes a highly unpleasant crunching noise. It looks like the anchoring bolts have been cut."))
@@ -340,10 +340,10 @@ GLOBAL_VAR(bomb_set)
 			if(!auth() || !yes_code)
 				return TRUE
 			if(removal_stage == 5)
-				anchored = FALSE
+				set_anchored(FALSE)
 				visible_message(span_warning("\The [src] makes a highly unpleasant crunching noise. It looks like the anchoring bolts have been cut."))
 				return TRUE
-			anchored = !anchored
+			set_anchored(!anchored)
 			if(anchored)
 				visible_message(span_warning("With a steely snap, bolts slide out of [src] and anchor it to the flooring."))
 			else

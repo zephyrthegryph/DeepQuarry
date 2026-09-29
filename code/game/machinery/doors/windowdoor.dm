@@ -51,7 +51,7 @@
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"
 		operating = 0
-	src.density = FALSE
+	set_density(FALSE)
 	playsound(src, "shatter", 70, 1)
 	if(display_message)
 		visible_message("[src] shatters!")
@@ -86,10 +86,10 @@
 		return !density
 	return TRUE
 /obj/machinery/door/window/can_pathfinding_enter(atom/movable/actor, dir, datum/pathfinding/search)
-	return (src.dir != dir) || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !inoperable())
+	return (src.dir != dir) || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && operable())
 
 /obj/machinery/door/window/can_pathfinding_exit(atom/movable/actor, dir, datum/pathfinding/search)
-	return (src.dir != dir)  || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && !inoperable())
+	return (src.dir != dir)  || ..() || (has_access(req_access, req_one_access, search.ss13_with_access) && operable())
 /obj/machinery/door/window/Uncross(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
 		return TRUE
@@ -119,7 +119,7 @@
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	explosion_resistance = 0
-	density = FALSE
+	set_density(FALSE)
 	update_icon()
 	update_nearby_tiles()
 
@@ -134,7 +134,7 @@
 	flick(text("[]closing", src.base_state), src)
 	playsound(src, 'sound/machines/door/windowdoor.ogg', 100, 1)
 
-	density = TRUE
+	set_density(TRUE)
 	update_icon()
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
@@ -336,7 +336,7 @@
 	if(base_state == "right" || base_state == "rightsecure")
 		assembly.facing = "r"
 	assembly.set_dir(dir)
-	assembly.anchored = TRUE
+	assembly.set_anchored(TRUE)
 	assembly.created_name = name
 	assembly.state = "02"
 	assembly.step = 2

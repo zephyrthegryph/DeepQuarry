@@ -28,7 +28,7 @@
 	switch(wire)
 		if(WIRE_IDSCAN)
 			if(!mend)
-				A.locked = TRUE
+				A.set_locked(TRUE)
 
 		if(WIRE_MAIN_POWER1)
 			A.shock(usr, 50)
@@ -41,7 +41,7 @@
 
 		if(WIRE_SYPHON)
 			if(!mend)
-				A.mode = 3 // MODE_PANIC
+				A.set_mode(3) // MODE_PANIC
 				A.apply_mode()
 
 		if(WIRE_AALARM)
@@ -54,7 +54,7 @@
 	var/obj/machinery/alarm/A = holder
 	switch(wire)
 		if(WIRE_IDSCAN)
-			A.locked = !A.locked
+			A.set_locked(!A.locked)
 
 		if(WIRE_MAIN_POWER1)
 			if(!A.shorted)
@@ -71,9 +71,9 @@
 
 		if(WIRE_SYPHON)
 			if(A.mode == 1) // MODE_SCRUB
-				A.mode = 3 // MODE_PANIC
+				A.set_mode(3) // MODE_PANIC
 			else
-				A.mode = 1 // MODE_SCRUB
+				A.set_mode(1) // MODE_SCRUB
 			A.apply_mode()
 
 		if(WIRE_AALARM)

@@ -163,7 +163,7 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 
 /// Old attack_hand.
 /obj/item/ducttape/proc/interaction_hand(mob/living/L, obj/item/held, datum/interaction/interaction)
-	anchored = FALSE
+	set_anchored(FALSE)
 	return FALSE // Pick it up now that it's unanchored.
 
 /obj/item/ducttape/afterattack(A, mob/user, flag, params)
@@ -184,7 +184,7 @@ DECLARE_INTERACTIONS(/obj/item/ducttape, \
 	user.drop_from_inventory(src)
 	playsound(src, 'sound/effects/tape.ogg',25)
 	forceMove(source_turf)
-	anchored = TRUE
+	set_anchored(TRUE)
 
 	if(params)
 		var/list/mouse_control = params2list(params)

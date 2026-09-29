@@ -28,7 +28,7 @@
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	refinery_transfer()

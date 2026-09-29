@@ -97,7 +97,7 @@
 	return TRUE
 
 /obj/structure/bed/nest/atom_destruction(damage_flag)
-	density = FALSE
+	set_density(FALSE)
 	return ..()
 
 // start - Allows xenos to clean nests.

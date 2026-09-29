@@ -20,7 +20,7 @@
 	clickvol = 40
 
 	circuit = /obj/item/circuitboard/washing
-	var/state = EMPTY_OPEN
+	state = EMPTY_OPEN
 	var/hacked = TRUE //Bleh, screw hacking, let's have it hacked by default.
 	var/gibs_ready = FALSE
 	var/crayon_handle
@@ -78,9 +78,9 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		return
 
 	if(locate(/mob,washing))
-		state = BLOODY_RUNNING
+		set_state(BLOODY_RUNNING)
 	else
-		state = RUNNING
+		set_state(RUNNING)
 	update_icon()
 	visible_message("The washing machine starts a cycle.")
 	playsound(src, 'sound/items/washingmachine.ogg', 50, 1, 1)
@@ -111,10 +111,10 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		mobs.stat = DEAD //Kill them so they can't interact anymore.
 
 	if(has_mobs)
-		state = BLOODY_CLOSED
+		set_state(BLOODY_CLOSED)
 		gibs_ready = TRUE
 	else
-		state = FULL_CLOSED
+		set_state(FULL_CLOSED)
 	update_icon()
 
 /datum/interaction/machine_verb/washing_machine_climb_out
@@ -196,7 +196,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 				user.drop_item()
 				W.forceMove(src)
 				LAZYADD(washing, W)
-				state = FULL_OPEN
+				set_state(FULL_OPEN)
 			else
 				to_chat(user, span_notice("You can't put the item in right now."))
 		else
@@ -212,7 +212,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		grabbed.forceMove(src)
 		LAZYADD(washing, grabbed)
 		consume(G, user)
-		state = FULL_CLOSED
+		set_state(FULL_CLOSED)
 	else
 		to_chat(user, "You can't shove [G?.grab_target()] in unless the washer is empty and open!")
 
@@ -235,25 +235,25 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 		return TRUE //No interacting with it from the inside!
 	switch(state)
 		if(EMPTY_OPEN)
-			state = EMPTY_CLOSED
+			set_state(EMPTY_CLOSED)
 		if(EMPTY_CLOSED)
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			LAZYCLEARLIST(washing)
 		if(FULL_OPEN)
-			state = FULL_CLOSED
+			set_state(FULL_CLOSED)
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			crayon_handle = null
 			LAZYCLEARLIST(washing)
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 		if(RUNNING)
 			if(user)
 				to_chat(user, span_warning("The [src] is busy."))
 		if(BLOODY_OPEN)
-			state = BLOODY_CLOSED
+			set_state(BLOODY_CLOSED)
 		if(BLOODY_CLOSED)
 			if(gibs_ready)
 				gibs_ready = FALSE
@@ -264,7 +264,7 @@ DECLARE_REF(/obj/machinery/washing_machine, "washing", SPILL_LIST, null)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			crayon_handle = null
-			state = EMPTY_OPEN
+			set_state(EMPTY_OPEN)
 			LAZYCLEARLIST(washing)
 
 	update_icon()

@@ -18,7 +18,7 @@
 	input_attempt = FALSE
 
 	var/max_transfer_rate = 0							// Maximal input/output rate. Determined by used capacitors when building the device.
-	var/mode = PSU_OFFLINE								// Current inputting/outputting mode
+	mode = PSU_OFFLINE								// Current inputting/outputting mode
 	var/list/internal_cells					// Cells stored in this PSU
 	var/max_cells = 3									// Maximal amount of stored cells at once. Capped at 9.
 	var/previous_charge = 0								// Charge previous tick.
@@ -76,7 +76,7 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 
 // Sets input/output depending on our "mode" var.
 /obj/machinery/power/smes/batteryrack/proc/update_io(newmode)
-	mode = newmode
+	set_mode(newmode)
 	switch(mode)
 		if(PSU_OFFLINE)
 			input_attempt = 0

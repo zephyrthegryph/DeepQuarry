@@ -42,11 +42,9 @@ DECLARE_REF(/obj/machinery/hyperpad/centre, "linked", OWNED_LIST, null)
 		mapped_hyper_pads -= map_pad_id
 	return ..()
 
-/obj/machinery/hyperpad/operable()
-	return 1
-
-/obj/machinery/hyperpad/inoperable() //A lame way of making this machine always useable
-	return 0
+/// Always usable, powered or not.
+/obj/machinery/hyperpad/operable(additional_flags = 0)
+	return TRUE
 
 /// Old attack_ghost: ran the parent pad's first (the ghost default, then the primary pad's),
 /// then drifts the ghost to the linked pad.

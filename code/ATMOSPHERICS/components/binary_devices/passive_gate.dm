@@ -181,7 +181,7 @@
 	return TRUE
 
 /obj/machinery/atmospherics/binary/passive_gate/tgui_interact(mob/user, datum/tgui/ui)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return FALSE
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)

@@ -108,7 +108,7 @@
 /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/emag_act(remaining_charges, mob/user)
 	if (!emagged)
 		to_chat(user, span_notice("You emag the [src], arming the escape pod!"))
-		emagged = 1
+		set_emagged(1)
 		if (istype(program, /datum/embedded_program/docking/simple/escape_pod_berth))
 			var/datum/embedded_program/docking/simple/escape_pod_berth/P = program
 			if (!P.armed)

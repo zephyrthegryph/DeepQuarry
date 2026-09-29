@@ -116,7 +116,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 		return ITEM_INTERACT_BLOCKING
 	add_fingerprint(user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS
 
 ADMIN_VERB(generic_structure, R_SPAWN, "Spawn Generic Structure", "Spawn a customisable structure with a range of different options.", ADMIN_CATEGORY_FUN_EVENT_KIT)

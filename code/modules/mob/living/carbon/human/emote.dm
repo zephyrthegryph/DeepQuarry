@@ -495,7 +495,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 	var/added_passtable = FALSE
 
 	//Briefly un-dense to dodge projectiles
-	density = FALSE
+	set_density(FALSE)
 
 	//Parkour!
 	var/parkour_chance = 20 //Default
@@ -535,7 +535,7 @@ GLOBAL_LIST_INIT(simple_mob_default_emotes, list(
 
 /mob/living/carbon/human/proc/flip_end(original_density, added_passtable)
 	if(!lying)
-		density = original_density
+		set_density(original_density)
 	if(added_passtable)
 		pass_flags &= ~PASSTABLE
 

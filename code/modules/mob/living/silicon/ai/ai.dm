@@ -132,9 +132,9 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	if(!is_dummy)
 		aiPDA = new/obj/item/pda/ai(src) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
-	anchored = TRUE
+	set_anchored(TRUE)
 	canmove = 0
-	density = TRUE
+	set_density(TRUE)
 
 	if(!is_dummy)
 		aiCommunicator = new /obj/item/communicator/integrated(src) // ALLOW(decl): conditional on is_dummy
@@ -367,14 +367,14 @@ DECLARE_REF(/mob/living/silicon/ai, "selected_sprite", STATIC, null)
 		qdel(src)
 		return
 	if(powered_ai.APU_power)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(!powered_ai.anchored)
 		forceMove(powered_ai.loc)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		use_power(50000) // Less optimalised but only called if AI is unwrenched. This prevents usage of wrenching as method to keep AI operational without power. Intellicard is for that.
 	if(powered_ai.anchored)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 
 /mob/living/silicon/ai/proc/pick_icon()
 	set category = "AI.Settings"
@@ -853,7 +853,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/ai, INTERACT_INSERT(/obj/item/aicard, PR
 	return ITEM_INTERACT_SUCCESS
 
 /mob/living/silicon/ai/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message(span_notice("\The [user] finishes [anchored ? "fastening down" : "unfastening"] \the [src]!"))
 	return ITEM_INTERACT_SUCCESS
 

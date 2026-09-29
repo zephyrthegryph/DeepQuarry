@@ -30,7 +30,7 @@
 	. = ..()
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
-		anchored = FALSE
+		set_anchored(FALSE)
 	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
 	make_rotatable()
 	if(src.anchored)
@@ -238,7 +238,7 @@ DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor
 	return TRUE
 
 /obj/structure/railing/proc/screwdriver_act_timed_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You have [anchored ? "fastened \the [src] to" : "unfastened \the [src] from"] the floor."))
 	update_icon()
 

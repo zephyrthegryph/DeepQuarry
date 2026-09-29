@@ -267,7 +267,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob, update_icon_timer)
 	. = ..()
 	update_icon()
 	release_vore_contents()
-	density = FALSE //We don't block even if we did before
+	set_density(FALSE) //We don't block even if we did before
 
 	if(has_eye_glow)
 		remove_eyes()
@@ -286,7 +286,7 @@ OM_TIMER_SLOT(/mob/living/simple_mob, update_icon_timer)
 /// Undo what on_death() cleared: a revived creature blocks again, glows again and looks alive.
 /mob/living/simple_mob/on_revived(reason, datum/source)
 	. = ..()
-	density = initial(density)
+	set_density(initial(density))
 	if(has_eye_glow)
 		add_eyes()
 	update_icon()

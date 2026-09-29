@@ -89,7 +89,7 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 		return
 	if(showing)
 		stop_showing()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	if(!thing || !other_thing)
 		return
@@ -118,8 +118,8 @@ DECLARE_REF(/obj/machinery/computer/security/telescreen/bodycamera, "bradio", OW
 		stop_showing()
 
 /obj/machinery/computer/security/telescreen/bodycamera/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		bradio?.on = FALSE
 		stop_showing()
 	else if(enabled)

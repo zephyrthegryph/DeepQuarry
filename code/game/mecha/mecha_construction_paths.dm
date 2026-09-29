@@ -84,7 +84,7 @@
 /datum/construction_graph/mecha/proc/finish_parts(atom/target)
 	target.icon = icon_finished
 	target.icon_state = "[icon_prefix]0"
-	target.density = TRUE
+	target.set_density(TRUE)
 	target.overlays.len = 0
 
 /datum/construction_graph/mecha/proc/finish_mecha(atom/target, mob/actor)

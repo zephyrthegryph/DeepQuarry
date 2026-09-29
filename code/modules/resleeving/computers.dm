@@ -124,7 +124,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	updatemodules()
@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 	)
 
 /obj/machinery/computer/transhuman/resleeving/tgui_interact(mob/user, datum/tgui/ui = null)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	ui = SStgui.try_update_ui(user, src, ui)
@@ -156,7 +156,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 		var/mob/living/occupant = pod.get_occupant()
 		if(pod.mess)
 			status = "mess"
-		else if(occupant && !(pod.stat & NOPOWER))
+		else if(occupant && !pod.has_stat(NOPOWER))
 			status = "cloning"
 		clonepods += list(list(
 			"pod" = REF(pod),

@@ -80,7 +80,7 @@
 
 /obj/machinery/computer/arcade/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & (NOPOWER|BROKEN)))
+	if (. & EMP_PROTECT_SELF || (!operable()))
 		return
 	var/empprize = null
 	var/num_of_prizes = 0
@@ -209,7 +209,7 @@
 
 		if(emagged)
 			randomize_characters()
-			emagged = 0
+			set_emagged(0)
 
 	add_fingerprint(ui.user)
 	return TRUE
@@ -235,7 +235,7 @@
 				message_admins("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				log_game("[key_name_admin(user)] has outbombed Cuban Pete and been awarded a bomb.")
 				randomize_characters()
-				emagged = 0
+				set_emagged(0)
 			else if(!contents_count(src) && !has_latent()) // ALLOW(latent): latent entries checked
 				feedback_inc("arcade_win_normal")
 				prizevend(user)
@@ -302,7 +302,7 @@
 		enemy_mp = 20
 		gameover = 0
 		blocked = 0
-		emagged = 1
+		set_emagged(1)
 
 		enemy_name = "Cuban Pete"
 		name = "Outbomb Cuban Pete"
@@ -573,7 +573,7 @@
 				if(emagged)
 					src.visible_message("\The [src] produces a loud, gunlike sound.")
 					L.injure(INJURY_PIERCE, 30, null, src)
-					emagged = 0
+					set_emagged(0)
 				gameStatus = ORION_STATUS_GAMEOVER
 				event = null
 			else if(emagged)
@@ -970,7 +970,7 @@
 		log_game("[key_name(user)] made it to Orion on an emagged machine and got an explosive toy ship.")
 	else
 		prizevend(user)
-	emagged = 0
+	set_emagged(0)
 	name = "The Orion Trail"
 	desc = "Learn how our ancestors got to Orion, and have fun in the process!"
 
@@ -980,7 +980,7 @@
 		name = "The Orion Trail: Realism Edition"
 		desc = "Learn how our ancestors got to Orion, and try not to die in the process!"
 		newgame(user)
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 /obj/item/orion_ship
@@ -1266,7 +1266,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 			winscreen = "You won!"
 		else if(emagged)
 			gameprice = 1
-			emagged = 0
+			set_emagged(0)
 			winscreen = "You won...?"
 			var/obj/item/grenade/G = new /obj/item/grenade/explosive(get_turf(src)) /// YEAAAAAAAAAAAAAAAAAAH!!!!!!!!!!
 			G.activate()
@@ -1293,7 +1293,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		gamepaid = 0
 		wintick = 0
 		gameStatus = "CLAWMACHINE_NEW"
-		emagged = 1
+		set_emagged(1)
 		return 1
 
 // === merged from arcade_vr.dm during hard-fork de-suffix (verified no override-order change) ===

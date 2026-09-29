@@ -176,10 +176,10 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	brightness_range = 5
 	brightness_power = 1
 	brightness_color = "#DA0205"
-	var/state = 0
+	state = 0
 
-/obj/machinery/light/small/readylight/proc/set_state(new_state)
-	state = new_state
+/obj/machinery/light/small/readylight/set_state(new_state)
+	. = ..()
 	if(state)
 		brightness_color = "00FF00"
 	else

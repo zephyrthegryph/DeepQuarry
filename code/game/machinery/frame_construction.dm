@@ -49,7 +49,7 @@
 		return
 	if(state == "loose")
 		frame.state = FRAME_PLACED
-		frame.anchored = FALSE
+		frame.set_anchored(FALSE)
 		return
 	frame.state = state
 
@@ -77,7 +77,7 @@
 
 /datum/interaction/construction/frame/anchor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	frame.anchored = TRUE
+	frame.set_anchored(TRUE)
 	if(!frame.need_circuit && frame.circuit)
 		frame.state = FRAME_FASTENED
 		frame.check_components()

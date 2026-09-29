@@ -36,8 +36,8 @@
 		sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 
 /obj/machinery/flasher/power_change()
-	..()
-	if(!(stat & NOPOWER))
+	. = ..()
+	if(!has_stat(NOPOWER))
 		icon_state = "[base_state]1"
 	else
 		icon_state = "[base_state]1-p"
@@ -99,7 +99,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 
 /obj/machinery/flasher/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 	if(prob(75/severity))
 		flash()
@@ -122,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 
 /obj/machinery/flasher/portable/wrench_act(mob/user, obj/item/tool)
 	add_fingerprint(user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	if(!anchored)
 		user.show_message(span_warning("[src] can now be moved."))
 		cut_overlays()
@@ -155,7 +155,7 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 	if(active)
 		return TRUE
 
-	active = TRUE
+	set_active(TRUE)
 	icon_state = "launcheract"
 
 	for(var/obj/machinery/flasher/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -168,4 +168,4 @@ EXTEND_INTERACTIONS(/obj/machinery/flasher, INTERACT_SILICON("Flash", PROC_REF(f
 /obj/machinery/button/flasher/proc/finish_trigger()
 	PRIVATE_PROC(TRUE)
 	icon_state = "launcherbtt"
-	active = FALSE
+	set_active(FALSE)

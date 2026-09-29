@@ -58,7 +58,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 	return 0
 
 /obj/machinery/appliance/mixer/can_remove_items(mob/user, show_warning = TRUE)
-	if(stat)
+	if(has_stat(MACHINE_STAT_ANY))
 		return 1
 	else
 		if(show_warning)
@@ -100,22 +100,22 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 		to_chat(user, span_filter_notice("There's nothing in it! Add ingredients before turning [src] on!"))
 		return
 
-	if(stat & POWEROFF)//Its turned off
-		stat &= ~POWEROFF
+	if(has_stat(POWEROFF))//Its turned off
+		stat_remove(POWEROFF)
 		if(user)
 			user.visible_message(span_filter_notice("[user] turns the [src] on."), span_filter_notice("You turn on \the [src]."))
 			get_cooking_work(CI)
-			use_power = 2
+			set_use_power(2)
 	else //Its on, turn it off
-		stat |= POWEROFF
-		use_power = 0
+		stat_add(POWEROFF)
+		set_use_power(0)
 		if(user)
 			user.visible_message(span_filter_notice("[user] turns the [src] off."), span_filter_notice("You turn off \the [src]."))
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
 	update_icon()
 
 /obj/machinery/appliance/mixer/can_insert(obj/item/I, mob/user)
-	if(!stat)
+	if(!has_stat(MACHINE_STAT_ANY))
 		to_chat(user, span_warning(",You can't add items while \the [src] is running. Wait for it to finish or turn the power off to abort."))
 		return 0
 	else
@@ -123,14 +123,14 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 
 /obj/machinery/appliance/mixer/finish_cooking(datum/cooking_item/CI)
 	..()
-	stat |= POWEROFF
+	stat_add(POWEROFF)
 	playsound(src, 'sound/machines/click.ogg', 40, 1)
-	use_power = 0
+	set_use_power(0)
 	CI.reset()
 	update_icon()
 
 /obj/machinery/appliance/mixer/update_icon()
-	if (!stat)
+	if (!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(mixer_loop)
 			mixer_loop.start(src)
@@ -140,7 +140,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 			mixer_loop.stop(src)
 
 /obj/machinery/appliance/mixer/machine_step()
-	if(stat || !cooking || !length(cooking_objs))
+	if(has_stat(MACHINE_STAT_ANY) || !cooking || !length(cooking_objs))
 		return PROCESS_KILL
 	for(var/i in cooking_objs)
 		do_cooking_tick(i)

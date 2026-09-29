@@ -31,7 +31,7 @@
 			S.electrified = 30
 			MACHINE_WAKE(S)
 		if(WIRE_IDSCAN)
-			S.locked = !S.locked
+			S.set_locked(!S.locked)
 
 /datum/wires/suit_storage_unit/on_cut(wire, mend)
 	var/obj/machinery/suit_cycler/S = holder
@@ -39,7 +39,7 @@
 		if(WIRE_SAFETY)
 			S.safeties = mend
 		if(WIRE_IDSCAN)
-			S.locked = mend
+			S.set_locked(mend)
 		if(WIRE_ELECTRIFY)
 			if(mend)
 				S.electrified = 0

@@ -61,7 +61,7 @@
 	effect = /atom/proc/interaction_open_ui
 
 /obj/machinery/dnaforensics/tgui_interact(mob/user, datum/tgui/ui)
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		return
 	ui = SStgui.try_update_ui(user, src, ui)
 	if(!ui)
@@ -80,7 +80,7 @@
 	if(..())
 		return TRUE
 
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		return FALSE // don't update UIs attached to this object
 
 	. = TRUE
@@ -155,7 +155,7 @@
 
 /obj/machinery/dnaforensics/update_icon()
 	..()
-	if(!(stat & NOPOWER) && scanning)
+	if(!has_stat(NOPOWER) && scanning)
 		icon_state = "dnaworking"
 	else if(bloodsamp())
 		icon_state = "dnaclosed"

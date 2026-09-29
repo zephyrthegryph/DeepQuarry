@@ -191,7 +191,7 @@
 	var/obj/item/weldingtool/welder = dq_zero_speed(allocate(/obj/item/weldingtool, T))
 	var/obj/structure/door_assembly/assembly = allocate(/obj/structure/door_assembly, T)
 
-	assembly.anchored = FALSE
+	assembly.set_anchored(FALSE)
 	TEST_ASSERT(assembly.wrench_act(H, wrench) & ITEM_INTERACT_SUCCESS, "the wrench anchors it")
 	TEST_ASSERT(assembly.anchored, "anchored")
 	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "anchoring takes 4 s")

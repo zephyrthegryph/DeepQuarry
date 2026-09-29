@@ -196,7 +196,7 @@
 				our_guy.visible_message(span_danger("[our_guy] slips near the [evil_washer] and falls in, the door shutting!"), span_boldwarning("You slip on a wet spot near the [evil_washer] and fall in, the door shutting! You're stuck!"))
 				our_guy.forceMove(evil_washer)
 				LAZYADD(evil_washer.washing, our_guy)
-				evil_washer.state = 4
+				evil_washer.set_state(4)
 				evil_washer.visible_message(span_danger("[evil_washer] begins its spin cycle!"))
 				evil_washer.start(TRUE, omen_damage)
 				omen_consume()
@@ -204,7 +204,7 @@
 
 		if((omen_evil || omen_safe_disposals) && living_guy.m_intent == I_RUN) //On servers without safe disposals, this is a death sentence. With servers with safe disposals, it's just funny. Either way, walk near disposals.
 			for(var/obj/machinery/disposal/evil_disposal in the_turf)
-				if(evil_disposal.stat & (BROKEN|NOPOWER))
+				if(!evil_disposal.operable())
 					continue
 				if(evil_disposal.loc == living_guy.loc) //Let's not do a continual loop of them falling into it as soon as they climb out, as funny as that is.
 					continue
@@ -236,7 +236,7 @@
 				return
 
 		for(var/obj/machinery/vending/darth_vendor in the_turf)
-			if(darth_vendor.stat & (BROKEN|NOPOWER))
+			if(!darth_vendor.operable())
 				continue
 			darth_vendor.visible_message(span_warning("[darth_vendor] suddenly clunks and the delivery chute raises up!"))
 			darth_vendor.throw_item(living_guy)

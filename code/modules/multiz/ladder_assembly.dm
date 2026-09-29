@@ -34,12 +34,12 @@ DECLARE_INTERACTIONS(/obj/structure/ladder_assembly, INTERACT_ITEM(null, PROC_RE
 			state = LADDER_CONSTRUCTION_WRENCHED
 			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
 			user.visible_message("\The [user] secures \the [src]'s reinforcing bolts.", "You secure the reinforcing bolts.", "You hear a ratchet")
-			anchored = TRUE
+			set_anchored(TRUE)
 		if(LADDER_CONSTRUCTION_WRENCHED)
 			state = LADDER_CONSTRUCTION_UNANCHORED
 			playsound(src, 'sound/items/Ratchet.ogg', 75, TRUE)
 			user.visible_message("\The [user] unsecures \the [src]'s reinforcing bolts.", "You undo the reinforcing bolts.", "You hear a ratchet")
-			anchored = FALSE
+			set_anchored(FALSE)
 		if(LADDER_CONSTRUCTION_WELDED)
 			to_chat(user, span_warning("\The [src] needs to be unwelded."))
 	return ITEM_INTERACT_SUCCESS

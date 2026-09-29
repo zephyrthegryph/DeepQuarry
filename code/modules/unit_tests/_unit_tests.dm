@@ -240,6 +240,7 @@
 #include "dq_lifecycle_declared_kinds_tests.dm"
 #include "dq_lifecycle_verb_tests.dm"
 #include "dq_surgery_tests.dm"
+#include "dq_sys_fields_tests.dm"
 #include "dq_wires_tests.dm"
 #include "dq_quick_fix_tests.dm"
 #include "dq_om_world_watch_tests.dm"

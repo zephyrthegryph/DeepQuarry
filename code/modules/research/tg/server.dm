@@ -31,7 +31,7 @@
 DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_servers")
 
 /obj/machinery/rnd/server/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "[base_icon_state]-off"
 	else
 		// "working" will cover EMP'd, disabled, or just broken
@@ -44,7 +44,7 @@ DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_ser
 
 /// Checks if we should be working or not, and updates accordingly.
 /obj/machinery/rnd/server/proc/refresh_working()
-	if(stat & (NOPOWER|EMPED) || research_disabled)
+	if(has_stat(NOPOWER | EMPED) || research_disabled)
 		working = FALSE
 	else
 		working = TRUE
@@ -63,13 +63,13 @@ DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_ser
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	stat |= EMPED
+	stat_add(EMPED)
 	om_after(src, 60 SECONDS, PROC_REF(fix_emp))
 	refresh_working()
 
 /// Callback to un-emp the server afetr some time.
 /obj/machinery/rnd/server/proc/fix_emp()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	refresh_working()
 
 /// Toggles whether or not researched_disabled is, yknow, disabled
@@ -80,9 +80,9 @@ DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_ser
 
 /// Gets status text based on this server's status for the computer.
 /obj/machinery/rnd/server/proc/get_status_text()
-	if(stat & EMPED)
+	if(has_stat(EMPED))
 		return "O&F@I*$ - R3*&O$T R@U!R%D"
-	else if(stat & NOPOWER)
+	else if(has_stat(NOPOWER))
 		return "Offline - Server Unpowered"
 	else if(research_disabled)
 		return "Offline - Server Control Disabled"

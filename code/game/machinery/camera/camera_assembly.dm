@@ -51,7 +51,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(state == 0 && isturf(loc))
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You wrench the assembly into place."))
-		anchored = TRUE
+		set_anchored(TRUE)
 		state = 1
 		update_icon()
 		auto_turn()
@@ -59,7 +59,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	if(state == 1)
 		playsound(src, tool.usesound, 50, TRUE)
 		to_chat(user, span_notice("You unattach the assembly from its place."))
-		anchored = FALSE
+		set_anchored(FALSE)
 		state = 0
 		update_icon()
 		return TRUE
@@ -78,7 +78,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	else
 		to_chat(user, span_notice("You unweld the assembly from its place."))
 		state = 1
-	anchored = TRUE
+	set_anchored(TRUE)
 	return TRUE
 
 /obj/item/camera_assembly/wirecutter_act(mob/user, obj/item/tool)

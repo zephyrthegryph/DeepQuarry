@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 /turf/simulated/mineral/proc/make_floor()
 	if(!density && !opacity)
 		return FALSE
-	density = FALSE
+	set_density(FALSE)
 	opacity = 0
 	blocks_air = 0
 	can_build_into_floor = TRUE
@@ -127,7 +127,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 /turf/simulated/mineral/proc/make_wall()
 	if(density && opacity)
 		return FALSE
-	density = TRUE
+	set_density(TRUE)
 	opacity = 1
 	blocks_air = 1
 	can_build_into_floor = FALSE

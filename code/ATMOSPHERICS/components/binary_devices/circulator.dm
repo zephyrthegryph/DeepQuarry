@@ -31,7 +31,7 @@
 
 /obj/machinery/atmospherics/binary/circulator/proc/return_transfer_air()
 	var/datum/gas_mixture/removed
-	if(anchored && !(stat&BROKEN) && network1)
+	if(anchored && !has_stat(BROKEN) && network1)
 		var/input_starting_pressure = air1.return_pressure()
 		var/output_starting_pressure = air2.return_pressure()
 		last_pressure_delta = max(input_starting_pressure - output_starting_pressure - 5, 0)
@@ -81,7 +81,7 @@
 /obj/machinery/atmospherics/binary/circulator/update_icon()
 	icon_state = anchored ? "circ-assembled" : "circ-unassembled"
 	cut_overlays()
-	if (stat & (BROKEN|NOPOWER) || !anchored)
+	if (!operable() || !anchored)
 		return 1
 	if (last_pressure_delta > 0 && recent_moles_transferred > 0)
 		if (temperature_overlay)
@@ -97,7 +97,7 @@
 
 /obj/machinery/atmospherics/binary/circulator/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 75, 1)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", \
 				"You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", \
 				"You hear a ratchet.")

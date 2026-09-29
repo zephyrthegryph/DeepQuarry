@@ -350,10 +350,10 @@ GLOBAL_LIST(construction_frame_floor)
 			circuit = new frame_type.circuit(src)
 
 	if(frame_type.name == "Computer")
-		density = TRUE
+		set_density(TRUE)
 
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
-		density = TRUE
+		set_density(TRUE)
 
 	update_icon()
 

@@ -224,7 +224,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 /obj/machinery/gear_dispenser/proc/can_use(mob/living/carbon/human/user)
 	var/list/used_by = GLOB.gear_distributed_to["[type]"]
-	if(needs_power && inoperable())
+	if(needs_power && !operable())
 		to_chat(user,span_warning("The machine does not respond to your prodding."))
 		return 0
 	if(!istype(user))
@@ -293,7 +293,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	S.spawn_gear(T, user)
 
 	if(emagged)
-		emagged = FALSE
+		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 
@@ -312,7 +312,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /obj/machinery/gear_dispenser/emag_act(remaining_charges, mob/user, emag_source)
 	. = ..()
 	if(!emagged)
-		emagged = TRUE
+		set_emagged(TRUE)
 		visible_message(span_warning("\The [user] slides a weird looking ID into \the [src]!"),span_warning("You temporarily short the safety mechanisms."))
 		return 1
 
@@ -354,7 +354,7 @@ DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 	if(special_frame)
 		add_overlay(special_frame)
 
-	if(needs_power && inoperable())
+	if(needs_power && !operable())
 		add_overlay("nopower")
 	else
 		add_overlay("light1")
@@ -410,7 +410,7 @@ DECLARE_REF(/obj/machinery/gear_dispenser/suit_fancy, "door", OWNED, null)
 	dispenser_flags &= ~GD_BUSY
 
 	if(emagged)
-		emagged = FALSE
+		set_emagged(FALSE)
 	if(greet && user && !user.stat) // in case we got destroyed while we slept
 		to_chat(user,span_notice("[S.name] dispensing processed. Have a good day."))
 

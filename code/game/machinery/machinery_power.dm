@@ -37,15 +37,10 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	var/oldstat = stat
-	if(powered(power_channel))
-		stat &= ~NOPOWER
-	else
-		stat |= NOPOWER
-	if(stat == oldstat)
+	var/changed = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
+	if(!changed) // the setter raised CHANGE_MACHINE_POWER
 		return FALSE
-	OM_CHANGED(src, CHANGE_MACHINE_POWER) // dm-health: tracked(CHANGE_MACHINE_POWER)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		OM_EMIT(src, /datum/om/event/machinery_power_lost)
 	else
 		OM_EMIT(src, /datum/om/event/machinery_power_restored)
@@ -148,7 +143,7 @@
 //
 
 // Sets the use_power var and then forces an area power update
-/obj/machinery/proc/update_use_power(new_use_power)
+/obj/machinery/proc/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).

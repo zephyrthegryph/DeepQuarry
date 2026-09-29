@@ -49,24 +49,24 @@
 		deactivate()
 
 /obj/machinery/holoplant/proc/activate()
-	if(!anchored || stat & (NOPOWER|BROKEN))
+	if(!anchored || !operable())
 		return
 
 	plant = prepare_icon(emagged ? "emagged" : null)
 	cut_overlays()
 	add_overlay(plant)
 	set_light(2)
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/holoplant/proc/deactivate()
 	cut_overlays()
 	QDEL_NULL(plant)
 	set_light(0)
-	update_use_power(USE_POWER_OFF)
+	set_use_power(USE_POWER_OFF)
 
 /obj/machinery/holoplant/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		deactivate()
 	else
 		activate()
@@ -97,7 +97,7 @@
 	if(emagged)
 		return
 
-	emagged = TRUE
+	set_emagged(TRUE)
 	if(plant)
 		deactivate()
 	activate()

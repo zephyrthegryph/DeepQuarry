@@ -33,7 +33,7 @@ OM_TIMER_SLOT(/obj/machinery/telecomms, thermal_timer)
 
 	var/machinetype = 0 // just a hacky way of preventing alike machines from pairing
 	var/toggled = 1 	// Is it toggled on
-	var/on = 1
+	on = 1
 	max_integrity = 100
 	var/produces_heat = 1	//whether the machine will produce heat when on.
 	heat_output = 1 // scaled by current_heat_output()
@@ -189,14 +189,14 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 /obj/machinery/telecomms/proc/update_power()
 	var/was_on = on
 	if(toggled)
-		if(stat & (BROKEN|NOPOWER|EMPED) || get_integrity() <= 0)
-			on = FALSE
+		if(!operable() || get_integrity() <= 0)
+			set_on(FALSE)
 			soundloop.stop()
 			noisy = FALSE
 		else
-			on = TRUE
+			set_on(TRUE)
 	else
-		on = FALSE
+		set_on(FALSE)
 		soundloop.stop()
 		noisy = FALSE
 	if(on && !noisy)
@@ -243,8 +243,8 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(prob(100/severity))
-		if(!(stat & EMPED))
-			stat |= EMPED
+		if(!has_stat(EMPED))
+			stat_add(EMPED)
 			MACHINE_WAKE(src)
 			playsound(src, 'sound/machines/tcomms/tcomms_pulse.ogg', 70, 1, 30)
 			var/duration = (300 * 10)/severity
@@ -254,7 +254,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 /// through the machine's heat body (heat_objects.dm); overheating is the
 /// overheating rule at the telecomms heat limit (temperature_thresholds.dm).
 /obj/machinery/telecomms/current_heat_output()
-	if(!produces_heat || !on || !use_power || (stat & (NOPOWER|BROKEN)))
+	if(!produces_heat || !on || !use_power || (!operable()))
 		return 0
 	return traffic > 0 ? idle_power_usage : idle_power_usage * 0.3
 
@@ -701,7 +701,7 @@ DECLARE_REF(/obj/machinery/telecomms, "soundloop", OWNED, null)
 	return src_z in using_map.get_map_levels(dst_z, TRUE, om_range = DEFAULT_OVERMAP_RANGE)
 
 /obj/machinery/telecomms/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	MACHINE_WAKE(src)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

@@ -623,14 +623,14 @@
 				if(!V.riding_datum) // If it has a riding datum, the datum handles moving the pixel_ vars.
 					pixel_y = V.mob_offset_y
 		else if(buckled)
-			anchored = TRUE
+			set_anchored(TRUE)
 			canmove = TRUE //The line above already makes the chair not swooce away if the sitter presses a button. No need to incapacitate them as a criminally large amount of mechanics read this var as a type of stun.
 			if(istype(buckled))
 				if(buckled.buckle_lying != -1)
 					lying = buckled.buckle_lying
 					canmove = buckled.buckle_movable
 				if(buckled.buckle_movable)
-					anchored = FALSE
+					set_anchored(FALSE)
 					canmove = TRUE
 		else
 			lying = incapacitated(INCAPACITATION_KNOCKDOWN)
@@ -647,7 +647,7 @@
 		canmove = FALSE
 
 	if(lying)
-		density = FALSE
+		set_density(FALSE)
 		update_water() // Submerges the mob.
 		stop_pulling()
 
@@ -660,7 +660,7 @@
 				pass_flags |= PASSTABLE
 
 	else
-		density = initial(density)
+		set_density(initial(density))
 		if(passtable_reset)
 			passtable_reset = FALSE
 			pass_flags &= ~PASSTABLE

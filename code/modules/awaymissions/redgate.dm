@@ -87,12 +87,12 @@
 /obj/structure/redgate/proc/toggle_portal()
 	if(target())
 		icon_state = "on"
-		density = TRUE
+		set_density(TRUE)
 		plane = ABOVE_MOB_PLANE
 		set_light(5, 0.75, "#da5656")
 	else
 		icon_state = "off"
-		density = FALSE
+		set_density(FALSE)
 		plane = OBJ_PLANE
 		set_light(0)
 

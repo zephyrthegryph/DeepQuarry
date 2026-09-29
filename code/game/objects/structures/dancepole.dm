@@ -8,7 +8,7 @@
 	anchored = TRUE
 
 /obj/structure/dancepole/screwdriver_act(mob/user, obj/item/O)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, O.usesound, 50, 1)
 	to_chat(user, span_blue("You [anchored ? "secure" : "unsecure"] \the [src]."))
 	return TRUE

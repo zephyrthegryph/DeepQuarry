@@ -680,7 +680,7 @@
 		return
 
 	if(!C.anchored && !C?.pulled_by_mob()) //Not currently anchored, and not pulled by anyone.
-		C.anchored = TRUE //This is the only way to stop the inertial_drift.
+		C.set_anchored(TRUE) //This is the only way to stop the inertial_drift.
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))

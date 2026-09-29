@@ -45,7 +45,7 @@
 	. = ..()
 	if(.)
 		return
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	var/mob/user = ui?.user
 	if(!user)

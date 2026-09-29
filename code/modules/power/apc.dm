@@ -78,7 +78,7 @@
 	var/opened = 0                  // 0=closed, 1=opened, 2=cover removed
 	var/shorted = 0
 	var/grid_check = FALSE
-	var/locked = 1
+	locked = 1
 	var/coverlocked = 1
 	var/aidisabled = 0
 	var/obj/machinery/power/terminal/terminal = null
@@ -193,7 +193,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		opened    = 1
 		operating = 0
 		name = "[area().name] APC"
-		stat |= MAINT
+		stat_add(MAINT)
 		update_icon()
 		return
 
@@ -248,7 +248,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 /obj/machinery/power/apc/proc/power_sync()
 	if(QDELETED(src) || !vg_entity)
 		return
-	set_active(area()?.requires_power && !(stat & (BROKEN | MAINT)) && !failure_timer ? 1 : 0)
+	set_active(area()?.requires_power && !has_stat(BROKEN | MAINT) && !failure_timer ? 1 : 0)
 	set_has_cell(cell ? 1 : 0)
 	set_failed(failure_timer ? 1 : 0)
 	set_shorted_or_grid_check(shorted || grid_check ? 1 : 0)
@@ -360,7 +360,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 /obj/machinery/power/apc/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			. += "This APC is broken."
 		else if(opened)
 			if(has_electronics && terminal)
@@ -434,10 +434,10 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			opened = 0
 			update_icon()
 		return ITEM_INTERACT_SUCCESS
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return ITEM_INTERACT_BLOCKING
 	var/remaining_power = cell ? cell.percent() : 0
-	if(coverlocked && !(stat & MAINT) && remaining_power > 15)
+	if(coverlocked && !has_stat(MAINT) && remaining_power > 15)
 		to_chat(user, span_warning("The cover is locked and cannot be opened."))
 		return ITEM_INTERACT_BLOCKING
 	opened = 1
@@ -448,7 +448,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(!(has_electronics == APC_HAS_ELECTRONICS_WIRED))
 		return
 	has_electronics = APC_HAS_ELECTRONICS_NONE
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		user.visible_message(span_warning("[user.name] has broken the charred power control board inside [name]!"), span_notice("You broke the charred power control board and remove the remains."), "You hear a crack!")
 	else
 		user.visible_message(span_warning("[user.name] has removed the power control board from [name]!"), span_notice("You remove the power control board."))
@@ -463,11 +463,11 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			return ITEM_INTERACT_BLOCKING
 		if(has_electronics == APC_HAS_ELECTRONICS_WIRED && terminal)
 			has_electronics = APC_HAS_ELECTRONICS_SECURED
-			stat &= ~MAINT
+			stat_remove(MAINT)
 			to_chat(user, "You screw the circuit electronics into place.")
 		else if(has_electronics == APC_HAS_ELECTRONICS_SECURED)
 			has_electronics = APC_HAS_ELECTRONICS_WIRED
-			stat |= MAINT
+			stat_add(MAINT)
 			to_chat(user, "You unfasten the electronics.")
 		else
 			to_chat(user, span_warning("There is nothing to secure."))
@@ -516,7 +516,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/power/apc/proc/welder_act_tool_done(mob/user, obj/item/tool)
-	if(emagged || (stat & BROKEN) || opened == 2)
+	if(emagged || (has_stat(BROKEN)) || opened == 2)
 		new /obj/item/stack/material/steel(loc)
 		user.visible_message(span_warning("[src] has been cut apart by [user.name] with [tool]."), span_notice("You disassembled the broken APC frame."), "You hear welding.")
 	else
@@ -590,7 +590,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		consume(W, user)
 
 /obj/machinery/power/apc/proc/replace_cover_done(mob/user, obj/item/W)
-	if(!(stat & BROKEN) || cell)
+	if(!has_stat(BROKEN) || cell)
 		return
 	user.visible_message(span_notice("[user.name] has replaced the damaged APC cover with a new one."),\
 		"You replace the damaged APC cover with a new one.")
@@ -611,7 +611,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		if(cell)
 			to_chat(user, "The [name] already has a power cell installed.")
 			return TRUE
-		if(stat & MAINT)
+		if(has_stat(MAINT))
 			to_chat(user, span_warning("You need to install the wiring and electronics first."))
 			return TRUE
 		if(W.w_class != ITEMSIZE_NORMAL)
@@ -642,16 +642,16 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			"You start adding cables to the APC frame...")
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 		om_task_timed(user, 2 SECONDS, src, src, PROC_REF(add_cables_done), list(user, C))
-	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((stat & BROKEN)))
+	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && !((has_stat(BROKEN))))
 		user.visible_message(span_warning("[user.name] inserts the power control board into [src]."), \
 			"You start to insert the power control board into the frame...")
 		playsound(src, 'sound/items/Deconstruct.ogg', 50, 1)
 		om_task_timed(user, 1 SECOND, src, src, PROC_REF(insert_board_done), list(user, W))
-	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (stat & BROKEN))
+	else if(istype(W, /obj/item/module/power_control) && opened && has_electronics == APC_HAS_ELECTRONICS_NONE && (has_stat(BROKEN)))
 		to_chat(user, span_warning("The [src] is too broken for that. Repair it first."))
 		return TRUE
-	else if(opened && ((stat & BROKEN) || hacker || emagged))
-		if(istype(W, /obj/item/frame/apc) && (stat & BROKEN))
+	else if(opened && ((has_stat(BROKEN)) || hacker || emagged))
+		if(istype(W, /obj/item/frame/apc) && (has_stat(BROKEN)))
 			if(cell)
 				to_chat(user, span_warning("You need to remove the power cell first."))
 				return TRUE
@@ -659,7 +659,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 				"You begin to replace the damaged APC cover...")
 			om_task_timed(user, 5 SECONDS, src, src, PROC_REF(replace_cover_done), list(user, W))
 	else
-		if((stat & BROKEN) \
+		if((has_stat(BROKEN)) \
 				&& !opened \
 				&& W.force >= 5 \
 				&& W.w_class >= ITEMSIZE_SMALL)
@@ -689,13 +689,13 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		to_chat(user, "You must close the cover to swipe an ID card.")
 	else if(wiresexposed)
 		to_chat(user, "You must close the wire panel.")
-	else if(stat & (BROKEN | MAINT))
+	else if(has_stat(BROKEN | MAINT))
 		to_chat(user, "Nothing happens.")
 	else if(hacker)
 		to_chat(user, span_warning("Access denied."))
 	else
 		if(allowed(user) && !wires.is_cut(WIRE_IDSCAN))
-			locked = !locked
+			set_locked(!locked)
 			to_chat(user, "You [locked ? "lock" : "unlock"] the APC interface.")
 			update_icon()
 		else
@@ -718,7 +718,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			to_chat(user, "You must close the cover to do that.")
 		else if(wiresexposed)
 			to_chat(user, "You must close the wire panel first.")
-		else if(stat & (BROKEN | MAINT))
+		else if(has_stat(BROKEN | MAINT))
 			to_chat(user, "The [src] isn't working.")
 		else
 			flick("apc-spark", src)
@@ -726,8 +726,8 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			return 1
 
 /obj/machinery/power/apc/proc/emag_done(mob/user)
-	emagged = 1
-	locked = 0
+	set_emagged(1)
+	set_locked(0)
 	to_chat(user, span_notice("You emag the APC interface."))
 	update_icon()
 
@@ -777,7 +777,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 			power_sync()
 			update_icon()
 		return TRUE
-	if(stat & (BROKEN | MAINT))
+	if(has_stat(BROKEN | MAINT))
 		return TRUE
 	interact(user)
 	return TRUE
@@ -911,7 +911,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		return 1
 	if(user.stat)
 		return 0
-	if(inoperable())
+	if(!operable())
 		return 0
 	if(!user.IsAdvancedToolUser())
 		return 0
@@ -963,10 +963,10 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	switch(action)
 		if("lock")
 			if(locked_exception)
-				if(emagged || (stat & (BROKEN | MAINT)))
+				if(emagged || (has_stat(BROKEN | MAINT)))
 					to_chat(ui.user, "The APC does not respond to the command.")
 					return
-				locked = !locked
+				set_locked(!locked)
 				update_icon()
 		if("cover")
 			coverlocked = !coverlocked
@@ -1138,7 +1138,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		return 0
 	hacker = A
 	A.hacked_apcs += src
-	locked = 1
+	set_locked(1)
 	update_icon()
 	return 1
 
@@ -1171,7 +1171,7 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	if(hacker && hacker.hacked_apcs && (src in hacker.hacked_apcs))
 		hacker.hacked_apcs -= src
 	hacker = null
-	emagged = initial(emagged)
+	set_emagged(initial(emagged))
 
 	// Force icon renderer to recompute from scratch.
 	if(icon_renderer)
@@ -1191,8 +1191,8 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 		for(var/obj/machinery/light/L in area())
 			L.flicker(rand(20, 30))
 	if(prob(25))
-		emagged = 1
-		locked = 0
+		set_emagged(1)
+		set_locked(0)
 		update_icon()
 	if(prob(25))
 		if(cell)
@@ -1217,9 +1217,10 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 	power_sync()
 	om_changed(src, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/power/apc/proc/set_locked(state)
-	locked = state
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
+/obj/machinery/power/apc/set_locked(state)
+	. = ..()
+	if(.)
+		om_changed(src, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/power/apc/proc/set_nightshift(on, automated)
 	set waitfor = FALSE // ALLOW(scheduler): update_nightshift() CHECK_TICKs over the area lights

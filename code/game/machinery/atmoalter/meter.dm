@@ -90,7 +90,7 @@
 		icon_state = "meterX"
 		return PROCESS_KILL
 
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		icon_state = "meter0"
 		return PROCESS_KILL
 
@@ -128,7 +128,7 @@
 	if(get_dist(user, src) > 3 && !(isAI(user) || isobserver(user)))
 		. += span_warning("You are too far away to read it.")
 
-	else if(stat & (NOPOWER|BROKEN))
+	else if(!operable())
 		. += span_warning("The display is off.")
 
 	else if(target_ref())

@@ -430,7 +430,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 /obj/item/electronic_assembly/wrench_act(mob/user, obj/item/tool)
 	if(!can_anchor)
 		return FALSE
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You've [anchored ? "" : "un"]secured \the [src] to \the [get_turf(src)]."))
 	if(anchored)
 		on_anchored()

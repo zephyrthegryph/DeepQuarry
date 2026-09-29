@@ -32,7 +32,7 @@ DECLARE_REF(/obj/machinery/computer/rcon, "rcon", OWNED, null)
 
 /obj/machinery/computer/rcon/update_icon()
 	..()
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		add_overlay("ai-fixer-empty")
 	else
 		cut_overlay("ai-fixer-empty")

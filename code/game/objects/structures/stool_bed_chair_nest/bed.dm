@@ -350,12 +350,12 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	if(M?.buckled_to() == src)
 		M.pixel_y = 6
 		M.old_y = 6
-		density = TRUE
+		set_density(TRUE)
 		icon_state = "[initial(icon_state)]_up"
 	else
 		M.pixel_y = 0
 		M.old_y = 0
-		density = FALSE
+		set_density(FALSE)
 		icon_state = "[initial(icon_state)]"
 	update_icon()
 	return ..()
@@ -447,7 +447,7 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	return TRUE
 
 /obj/structure/dirtybed/proc/wrench_act_tool_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
 
 DECLARE_REF(/obj/item/roller_holder, "held", OWNED, null)

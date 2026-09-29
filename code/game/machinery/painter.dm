@@ -47,7 +47,7 @@
 /obj/machinery/gear_painter/update_icon()
 	if(panel_open)
 		icon_state = "colormate_open"
-	else if(inoperable())
+	else if(!operable())
 		icon_state = "colormate_off"
 	else if(inserted)
 		icon_state = "colormate_active"
@@ -80,7 +80,7 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 	effect = /obj/machinery/gear_painter/proc/interaction_insert
 
 /obj/machinery/gear_painter/proc/gear_painter_operable(mob/actor, atom/target, obj/item/held)
-	return !inoperable()
+	return operable()
 
 /obj/machinery/gear_painter/proc/gear_painter_empty(mob/actor, atom/target, obj/item/held)
 	return !inserted

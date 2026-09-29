@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 
 /obj/structure/closet/body_bag/close()
 	if(..())
-		density = FALSE
+		set_density(FALSE)
 		return 1
 	return 0
 

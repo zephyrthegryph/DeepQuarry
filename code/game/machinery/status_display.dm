@@ -24,7 +24,7 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 	idle_power_usage = 10
 	circuit =  /obj/item/circuitboard/status_display
 	flags = WALL_ITEM
-	var/mode = 1	// 0 = Blank
+	mode = 1	// 0 = Blank
 					// 1 = Shuttle timer
 					// 2 = Arbitrary message(s)
 					// 3 = alert picture
@@ -132,14 +132,14 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 
 /// Redraws now and schedules the next redraw.
 /obj/machinery/status_display/proc/refresh()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		remove_display()
 	else
 		update()
 	schedule_refresh()
 
 /obj/machinery/status_display/proc/schedule_refresh()
-	var/powered = !(stat & NOPOWER)
+	var/powered = !has_stat(NOPOWER)
 	var/want_shuttle = powered ? watched_shuttle() : 0
 	if(want_shuttle != shuttle_key_id)
 		if(!isnull(shuttle_key_token))
@@ -167,7 +167,7 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 	refresh()
 
 /obj/machinery/status_display/om_sleep_violation()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return null
 	if(next_refresh_delay() && !om_timer_slot_pending(src, "refresh_token"))
 		return "mode [mode] needs redrawing but has no timer"
@@ -181,7 +181,7 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 		refresh()
 
 /obj/machinery/status_display/emp_act(severity, recursive)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		..(severity, recursive)
 		return
 	set_picture("ai_bsod")
@@ -290,11 +290,11 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 	// On most alerts, this will change to a flashing alert picture in a specific color.
 	// Doing that for green alert automatically doesn't really make sense, but it is still available on the comm consoles/PDAs.
 	if(seclevel2num(new_level) == SEC_LEVEL_GREEN)
-		mode = STATUS_DISPLAY_TIME
+		set_mode(STATUS_DISPLAY_TIME)
 		set_light(0) // Remove any glow we had from the alert previously.
 		refresh()
 		return
-	mode = STATUS_DISPLAY_ALERT
+	set_mode(STATUS_DISPLAY_ALERT)
 	display_alert(new_level)
 	schedule_refresh()
 
@@ -346,24 +346,24 @@ OM_TIMER_SLOT(/obj/machinery/status_display, refresh_token)
 /obj/machinery/status_display/receive_signal(datum/signal/signal)
 	switch(signal.data["command"])
 		if("blank")
-			mode = STATUS_DISPLAY_BLANK
+			set_mode(STATUS_DISPLAY_BLANK)
 			set_light(0)
 
 		if("shuttle")
-			mode = STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME
+			set_mode(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
 			set_light(0)
 
 		if("message")
-			mode = STATUS_DISPLAY_MESSAGE
+			set_mode(STATUS_DISPLAY_MESSAGE)
 			set_message(signal.data["msg1"], signal.data["msg2"])
 			set_light(0)
 
 		if("alert")
-			mode = STATUS_DISPLAY_ALERT
+			set_mode(STATUS_DISPLAY_ALERT)
 			set_picture(signal.data["picture_state"])
 
 		if("time")
-			mode = STATUS_DISPLAY_TIME
+			set_mode(STATUS_DISPLAY_TIME)
 			set_light(0)
 	refresh()
 

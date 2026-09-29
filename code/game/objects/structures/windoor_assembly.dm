@@ -35,7 +35,7 @@
 	. = ..()
 	if(constructed)
 		state = "01"
-		anchored = FALSE
+		set_anchored(FALSE)
 	switch(start_dir)
 		if(NORTH, SOUTH, EAST, WEST)
 			set_dir(start_dir)
@@ -177,11 +177,11 @@
 
 /obj/structure/windoor_assembly/proc/wrench_act_tool_done(mob/user)
 	to_chat(user,span_notice("You've secured the windoor assembly!"))
-	src.anchored = TRUE
+	set_anchored(TRUE)
 	step = 0
 /obj/structure/windoor_assembly/proc/wrench_act_tool_done2(mob/user)
 	to_chat(user,span_notice("You've unsecured the windoor assembly!"))
-	src.anchored = FALSE
+	set_anchored(FALSE)
 	step = null
 
 /obj/structure/windoor_assembly/wirecutter_act(mob/user, obj/item/W)
@@ -234,7 +234,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/windoor_assembly/proc/crowbar_act_tool_done(mob/user)
-	density = TRUE //Shouldn't matter but just incase
+	set_density(TRUE) //Shouldn't matter but just incase
 	to_chat(user,span_notice("You finish the windoor!"))
 
 	if(secure)
@@ -246,7 +246,7 @@
 			windoor.icon_state = "rightsecureopen"
 			windoor.base_state = "rightsecure"
 		windoor.set_dir(src.dir)
-		windoor.density = FALSE
+		windoor.set_density(FALSE)
 		if(created_name)
 			windoor.name = created_name
 		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
@@ -267,7 +267,7 @@
 			windoor.icon_state = "rightopen"
 			windoor.base_state = "right"
 		windoor.set_dir(src.dir)
-		windoor.density = FALSE
+		windoor.set_density(FALSE)
 		if(created_name)
 			windoor.name = created_name
 		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))

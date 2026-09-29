@@ -119,7 +119,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 			pulledby.stop_pulling()
 
 	kickstand = !kickstand
-	anchored = (kickstand || on)
+	set_anchored((kickstand || on))
 
 /obj/vehicle/bike/load(atom/movable/C, mob/user as mob)
 	var/mob/living/M = C
@@ -174,7 +174,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 
 /obj/vehicle/bike/turn_on()
 	ion.start()
-	anchored = TRUE
+	set_anchored(TRUE)
 
 	update_icon()
 
@@ -185,7 +185,7 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 
 /obj/vehicle/bike/turn_off()
 	ion.stop()
-	anchored = kickstand
+	set_anchored(kickstand)
 
 	update_icon()
 

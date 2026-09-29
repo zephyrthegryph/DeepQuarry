@@ -327,7 +327,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 		if(heat_proof)
 			to_chat(user, span_warning("\The [src] is already reinforced."))
 			return TRUE
-		if((stat & BROKEN) || (get_integrity() < max_integrity))
+		if((has_stat(BROKEN)) || (get_integrity() < max_integrity))
 			to_chat(user, span_notice("It looks like \the [src] broken. Repair it before reinforcing it."))
 			return TRUE
 		if(!density)
@@ -437,7 +437,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door/examine(mob/user)
 	. = ..()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		. += "It is broken!"
 
 /// What a door does when it breaks, after the base machinery break.
@@ -455,7 +455,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/door/blob_act(obj/structure/blob/B)
 	if(density) // If it's closed.
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			open(1)
 		else
 			receive_blob(B)
@@ -483,7 +483,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 			if(density)
 				flick("door_spark", src)
 		if("deny")
-			if(density && !(stat & (NOPOWER|BROKEN)))
+			if(density && operable())
 				flick("door_deny", src)
 				playsound(src, 'sound/machines/buzz-two.ogg', 50, 0)
 	return
@@ -503,7 +503,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/open_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
-	density = FALSE
+	set_density(FALSE)
 	update_nearby_tiles()
 	om_after(src, anim_length_before_finalize, PROC_REF(open_internalfinish), forced)
 
@@ -561,7 +561,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 /obj/machinery/door/proc/close_internalsetdensity(forced = 0)
 	PRIVATE_PROC(TRUE) //do not touch this or BYOND will devour you
 	SHOULD_NOT_OVERRIDE(TRUE)
-	density = TRUE
+	set_density(TRUE)
 	explosion_resistance = initial(explosion_resistance)
 	layer = closed_layer
 	update_nearby_tiles()
@@ -649,7 +649,7 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 
 /obj/machinery/button/windowtint/doortint/toggle_tint()
 	use_power(5)
-	active = !active
+	set_active(!active)
 	update_icon()
 
 	for(var/obj/machinery/door/D in range(src,range))

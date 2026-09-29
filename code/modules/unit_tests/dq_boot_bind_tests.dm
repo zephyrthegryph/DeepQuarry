@@ -52,7 +52,7 @@
 	term.disconnect_from_network()
 	var/list/saved = SSatoms.deferred_machine_binds
 	SSatoms.deferred_machine_binds = list()
-	term.anchored = TRUE
+	term.set_anchored(TRUE)
 	term.connect_to_network(FALSE)
 	TEST_ASSERT(SSatoms.deferred_machine_binds[term], "inside a batch the node is queued")
 	term.disconnect_from_network()

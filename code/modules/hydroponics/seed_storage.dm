@@ -259,7 +259,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 	effect = /obj/machinery/seed_storage/proc/interaction_use
 
 /obj/machinery/seed_storage/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return TRUE
 
 	if(seconds_electrified != 0)
@@ -444,7 +444,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 
 /obj/machinery/seed_storage/wrench_act(mob/user, obj/item/tool)
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
@@ -468,7 +468,7 @@ DECLARE_REF(/datum/seed_pile, "seeds", SPILL_LIST, null)
 
 /obj/machinery/seed_storage/emag_act(remaining_charges, mob/user)
 	if(!src.emagged)
-		emagged = 1
+		set_emagged(1)
 		if(lockdown)
 			to_chat(user, span_notice("\The [src]'s control panel thunks, as its cover retracts."))
 			lockdown = 0

@@ -48,7 +48,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/maintenance_panel, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/window/maintenance_panel/proc/weld_toggle_done(mob/user)
-	anchored = !anchored
+	set_anchored(!anchored)
 	update_nearby_tiles(need_rebuild = 1)
 	update_nearby_icons()
 	update_verbs()

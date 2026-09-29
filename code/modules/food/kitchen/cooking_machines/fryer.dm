@@ -106,7 +106,7 @@ DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 	cooking_power *= oil_efficiency
 
 /obj/machinery/appliance/cooker/fryer/update_icon() // We add our own version of the proc to use the special fryer double-lights.
-	if(!stat)
+	if(!has_stat(MACHINE_STAT_ANY))
 		..()
 		if(cooking == TRUE)
 			icon_state = on_icon
@@ -124,9 +124,9 @@ DECLARE_REF(/obj/machinery/appliance/cooker/fryer, "oil", OWNED, null)
 	// Special fryer double-lights overlay.
 	cut_overlays()
 	var/image/light
-	if(use_power == 1 && !stat)
+	if(use_power == 1 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "fryer_light_idle")
-	else if(use_power == 2 && !stat)
+	else if(use_power == 2 && !has_stat(MACHINE_STAT_ANY))
 		light = image(icon, "fryer_light_preheating")
 	else
 		light = image(icon, "fryer_light_off")

@@ -69,7 +69,7 @@
 /obj/machinery/partslathe/update_icon()
 	if(panel_open)
 		icon_state = "partslathe-open"
-	else if(inoperable())
+	else if(!operable())
 		icon_state = "partslathe-off"
 	else if(busy)
 		icon_state = "partslathe-lidclose"
@@ -98,7 +98,7 @@
 		return TRUE
 	if(default_part_replacement(user, O))
 		return TRUE
-	if(inoperable())
+	if(!operable())
 		return TRUE
 	if(panel_open)
 		to_chat(user, span_notice("You can't load \the [src] while it's opened."))
@@ -142,7 +142,7 @@
 
 /obj/machinery/partslathe/machine_step()
 	..()
-	if(stat)
+	if(has_stat(MACHINE_STAT_ANY))
 		update_icon()
 		return
 	if(queue.len == 0)
@@ -154,7 +154,7 @@
 	var/datum/category_item/partslathe/D = queue[1]
 	if(canBuild(D))
 		busy = 1
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 		progress += speed
 		if(progress >= D.time)
 			build(D, queue_producer_accounts[1])
@@ -164,7 +164,7 @@
 	else if(busy)
 		visible_message(span_notice("[icon2html(src,viewers(src))] flashes: insufficient materials: [getLackingMaterials(D)]."))
 		busy = 0
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		update_icon()
 		playsound(src, 'sound/machines/chime.ogg', 50, 0)
 

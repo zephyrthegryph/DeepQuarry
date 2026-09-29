@@ -36,7 +36,7 @@ EXTEND_INTERACTIONS(/obj/item/modular_computer/laptop, INTERACT_ALT(null, PROC_R
 		to_chat(user, "You will need a better supporting surface before opening \the [src]!")
 		return TRUE
 	// ition End
-	anchored = !anchored
+	set_anchored(!anchored)
 	screen_on = anchored
 	update_icon()
 	return TRUE

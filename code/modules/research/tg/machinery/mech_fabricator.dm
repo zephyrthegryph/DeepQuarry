@@ -183,7 +183,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_start_printing()
 	add_overlay("fab-active")
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	print_sound.start()
 
 /**
@@ -193,7 +193,7 @@ DECLARE_REF(/obj/machinery/mecha_part_fabricator_tg, "rmat", OWNED, null)
  */
 /obj/machinery/mecha_part_fabricator_tg/proc/on_finish_printing()
 	cut_overlay("fab-active")
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	desc = initial(desc)
 	process_queue = FALSE
 	print_sound.stop()

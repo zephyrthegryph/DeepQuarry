@@ -8,7 +8,7 @@
 
 	if(density)
 		can_open = WALL_OPENING
-		density = FALSE
+		set_density(FALSE)
 		blocks_air = ZONE_BLOCKED
 		update_icon()
 		update_air()
@@ -19,7 +19,7 @@
 			SSair.mark_for_update(turf)
 	else
 		can_open = WALL_OPENING
-		density = TRUE
+		set_density(TRUE)
 		blocks_air = AIR_BLOCKED
 		update_icon()
 		update_air()

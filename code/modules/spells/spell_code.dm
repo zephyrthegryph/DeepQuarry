@@ -179,8 +179,8 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 			var/obj/effect/overlay/spell = new /obj/effect/overlay(location)
 			spell.icon = overlay_icon
 			spell.icon_state = overlay_icon_state
-			spell.anchored = TRUE
-			spell.density = FALSE
+			spell.set_anchored(TRUE)
+			spell.set_density(FALSE)
 			om_qdel_after(spell, overlay_lifespan)
 	return valid_targets
 

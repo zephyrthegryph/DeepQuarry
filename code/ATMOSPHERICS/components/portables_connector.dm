@@ -21,7 +21,7 @@
 
 	var/datum/pipe_network/network
 
-	var/on = 0
+	on = 0
 	use_power = USE_POWER_OFF
 	level = 1
 
@@ -77,7 +77,7 @@
 	if(!on)
 		return PROCESS_KILL
 	if(!connected_device)
-		on = 0
+		set_on(0)
 		return PROCESS_KILL
 	if(network)
 		network.mark_dirty()
@@ -192,7 +192,7 @@
 		rust_release_network_wrapper(network)
 		node = null
 	if(reference == connected_device || !connected_device)
-		on = 0
+		set_on(0)
 		MACHINE_SLEEP(src)
 
 	update_underlays()

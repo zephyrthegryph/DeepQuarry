@@ -74,5 +74,5 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 
 /obj/structure/musician/proc/wrench_act_tool_done(mob/user)
 	to_chat(user, span_notice("You [anchored ? "un" : ""]secured \the [src]!"))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return ITEM_INTERACT_SUCCESS

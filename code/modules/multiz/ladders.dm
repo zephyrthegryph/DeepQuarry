@@ -60,17 +60,17 @@ DECLARE_REF(/obj/structure/ladder, "target_up", PAIR, "target_down")
 		target_up.visible_message("\The [target_up] deconstructs from below")
 		A = new /obj/structure/ladder_assembly(target_up.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(target_up)
 	if(target_down)
 		target_down.visible_message("\The [target_down] deconstructs from above")
 		A = new /obj/structure/ladder_assembly(target_down.loc)
 		A.state = LADDER_CONSTRUCTION_WELDED
-		A.anchored = TRUE
+		A.set_anchored(TRUE)
 		qdel(target_down)
 	A = new /obj/structure/ladder_assembly(loc)
 	A.state = LADDER_CONSTRUCTION_WRENCHED
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	qdel(src)
 
 DECLARE_INTERACTIONS(/obj/structure/ladder, \

@@ -27,7 +27,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/timeclock, "announce", /obj/item/r
 DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
 /obj/machinery/computer/timeclock/update_icon()
-	if(inoperable())
+	if(!operable())
 		icon_state = "[initial(icon_state)]_off"
 	else if(card)
 		icon_state = "[initial(icon_state)]_card"
@@ -35,11 +35,10 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 		icon_state = "[initial(icon_state)]"
 
 /obj/machinery/computer/timeclock/power_change()
-	var/old_stat = stat
 	. = ..()
-	if(old_stat != stat)
+	if(.)
 		update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		set_light(0)
 	else
 		set_light(light_range_on, light_power_on)

@@ -679,7 +679,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics/hydroponics, "ov_alert3", OWNED
 	if(locate_within(loc, /obj/machinery/atmospherics/portables_connector/))
 		return ..()
 	playsound(src, tool.usesound, 50, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	to_chat(user, span_filter_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 

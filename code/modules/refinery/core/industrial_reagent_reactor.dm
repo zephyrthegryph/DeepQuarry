@@ -39,7 +39,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 		return
 
 	power_change()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(COOLDOWN_FINISHED(src, next_mode_toggle))
@@ -70,7 +70,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 	var/image/pipe = image(icon, icon_state = "reactor_cons", dir = dir)
 	add_overlay(pipe)
 	if(anchored)
-		if(!(stat & (NOPOWER|BROKEN)))
+		if(operable())
 			var/image/dot = image(icon, icon_state = "vat_dot_[ toggle_mode > REACTOR_MODE_INTAKE ? "on" : "off" ]") // Show refinery output mode
 			add_overlay(dot)
 		update_input_connection_overlays("reactor_intakes")
@@ -109,7 +109,7 @@ DECLARE_REF(/obj/machinery/reagent_refinery/reactor, "internal_tank", OWNED, nul
 			// Perform the connection, forcibly... we're ignoring adjacency checks with this
 			internal_tank.connected_port_handle = om_handle(pad)
 			pad.connected_device = internal_tank
-			pad.on = 1 //Activate port updates
+			pad.set_on(1) //Activate port updates
 			// Actually enforce the air sharing
 			pad.rust_attach_external_device(internal_tank)
 			// Sfx

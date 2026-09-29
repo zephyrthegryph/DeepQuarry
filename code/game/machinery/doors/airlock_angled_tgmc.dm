@@ -13,22 +13,22 @@
 		if(p_open || welded)
 			if(p_open)
 				add_overlay("panel_open")
-			if (!(stat & NOPOWER))
-				if(stat & BROKEN)
+			if (!has_stat(NOPOWER))
+				if(has_stat(BROKEN))
 					add_overlay("sparks_broken")
 				else if (get_integrity() < max_integrity * 3/4)
 					add_overlay("sparks_damaged")
 			if(welded)
 				add_overlay("welded")
-		else if (get_integrity() < max_integrity * 3/4 && !(stat & NOPOWER))
+		else if (get_integrity() < max_integrity * 3/4 && !has_stat(NOPOWER))
 			add_overlay("sparks_damaged")
 	else if (locked)
 		icon_state = "o_door_locked"
-		if((stat & BROKEN) && !(stat & NOPOWER))
+		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
 			add_overlay("sparks_open")
 	else
 		icon_state = "door_open"
-		if((stat & BROKEN) && !(stat & NOPOWER))
+		if((has_stat(BROKEN)) && !has_stat(NOPOWER))
 			add_overlay("sparks_open")
 	return
 

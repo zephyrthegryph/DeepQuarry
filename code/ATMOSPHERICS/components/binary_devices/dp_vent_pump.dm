@@ -114,7 +114,7 @@
 	last_power_draw = 0
 	last_flow_rate = 0
 
-	if(stat & (NOPOWER|BROKEN) || !use_power)
+	if(!operable() || !use_power)
 		hibernate_until_gas_changes()
 		return PROCESS_KILL
 
@@ -174,7 +174,7 @@
 	MACHINE_SLEEP(src)
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/gas_wake_condition()
-	if(!use_power || (stat & (NOPOWER|BROKEN)))
+	if(!use_power || (!operable()))
 		return FALSE
 	var/datum/gas_mixture/environment = loc?.return_air()
 	if(!environment || get_pressure_delta(environment) <= 0.5)
@@ -189,7 +189,7 @@
 	clear_gas_dependencies()
 	MACHINE_WAKE(src)
 
-/obj/machinery/atmospherics/binary/dp_vent_pump/update_use_power(new_use_power)
+/obj/machinery/atmospherics/binary/dp_vent_pump/set_use_power(new_use_power)
 	if(use_power == new_use_power)
 		return
 	wake_for_state_change()
@@ -249,9 +249,8 @@
 		. += "A small gauge in the corner reads [round(last_flow_rate, 0.1)] L/s; [round(last_power_draw)] W"
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		// process() hibernates on NOPOWER; re-evaluate when power returns.
 		wake_for_state_change()
 		update_icon()
@@ -260,10 +259,10 @@
 	if(!signal.data["tag"] || (signal.data["tag"] != id) || (signal.data["sigtype"]!="command"))
 		return 0
 	if(signal.data["power"])
-		update_use_power(text2num(signal.data["power"]))
+		set_use_power(text2num(signal.data["power"]))
 
 	if(signal.data["power_toggle"])
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 
 	if(signal.data["direction"])
 		pump_direction = text2num(signal.data["direction"])

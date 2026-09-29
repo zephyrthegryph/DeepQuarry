@@ -22,7 +22,7 @@
 	var/generation_rate = 350000
 
 /obj/machinery/power/generator/generated_station/machine_step()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		return
 	add_avail(generation_rate)
 
@@ -123,13 +123,13 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 /datum/generated_station_utility_topology/proc/power_available()
 	var/has_source = FALSE
 	for(var/obj/machinery/power/generator/generated_station/generator in power_objects)
-		if(!QDELETED(generator) && !(generator.stat & BROKEN) && generator.power_region)
+		if(!QDELETED(generator) && !generator.has_stat(BROKEN) && generator.power_region)
 			has_source = TRUE
 			break
 	for(var/obj/machinery/power/smes/SMES in power_objects)
 		if(has_source)
 			break
-		if(QDELETED(SMES) || (SMES.stat & BROKEN) || SMES.charge <= 0)
+		if(QDELETED(SMES) || (SMES.has_stat(BROKEN)) || SMES.charge <= 0)
 			continue
 		for(var/obj/machinery/power/terminal/terminal in SMES.terminals)
 			if(terminal.power_region)
@@ -140,13 +140,13 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 	if(!has_source)
 		return FALSE
 	for(var/obj/machinery/power/apc/APC in apcs)
-		if(!QDELETED(APC) && !(APC.stat & BROKEN) && APC.cell && APC.terminal?.power_region)
+		if(!QDELETED(APC) && !APC.has_stat(BROKEN) && APC.cell && APC.terminal?.power_region)
 			return TRUE
 	return FALSE
 
 /datum/generated_station_utility_topology/proc/atmosphere_available()
 	for(var/obj/machinery/atmospherics/unary/vent_pump/vent in supply_vents)
-		if(!QDELETED(vent) && !(vent.stat & BROKEN) && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
+		if(!QDELETED(vent) && !vent.has_stat(BROKEN) && vent.node && vent.network && vent.air_contents?.return_pressure() > ONE_ATMOSPHERE)
 			return TRUE
 	return FALSE
 
@@ -810,7 +810,7 @@ DECLARE_REF(/datum/generated_station_utility_topology, "atmos_objects", OWNED_LI
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/generator/generated_station/step_start_condition()
-	return !(stat & BROKEN)
+	return !has_stat(BROKEN)
 
 DECLARE_REF(/datum/generated_station_utility_builder, "result", OWNED, null)
 

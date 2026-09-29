@@ -191,7 +191,7 @@
 /datum/om/stage/life/type_post/simple_mob/shadekin/perform(mob/living/simple_mob/shadekin/self, datum/om/frame/life/ctx)
 	..()
 	if(self.shadekin.in_phase)
-		self.density = FALSE
+		self.set_density(FALSE)
 
 	//Convert spare nutrition into energy at a certain ratio
 	if(. && self.nutrition > initial(self.nutrition) && self.shadekin.dark_energy < 100)

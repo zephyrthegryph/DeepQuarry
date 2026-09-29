@@ -74,8 +74,8 @@
 
 /obj/machinery/protean_reconstitutor/update_icon()
 	cut_overlays()
-	if(stat & (NOPOWER|BROKEN) || !anchored)
-		if(stat & BROKEN)
+	if(!operable() || !anchored)
+		if(has_stat(BROKEN))
 			icon_state = "[state_base]-broken"
 		else
 			icon_state = "[state_base]-nopower"

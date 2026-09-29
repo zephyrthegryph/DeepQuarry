@@ -21,6 +21,8 @@
 	var/field
 	/// The channel its setter raises.
 	var/channel = 0
+	/// OM_DERIVE_FIELD(): computed by the proc named `field`; no var, no setter.
+	var/derived = FALSE
 
 /datum/om/registry
 	/// type path -> field name -> channel (every field_def whose `of` is an ancestor, merged).
@@ -98,6 +100,8 @@
 /// The one write path for a declared field: sets `E.name` to `value` and raises the field's
 /// declared channel. Nothing is raised when the value is unchanged. Returns TRUE on a change.
 /proc/om_set(datum/E, name, value)
+	if(!(name in E.vars))
+		CRASH("om_set: [E.type].[name] is not a writable field (derived fields have no var)")
 	if(E.vars[name] == value)
 		return FALSE
 	var/channel = om_field_channel(E, name)
@@ -114,3 +118,15 @@
 	if(!channel)
 		CRASH("om_field_changed: [E.type].[name] is not a declared field")
 	om_changed(E, channel)
+
+/// OM_FLAG_FIELD_BITS() helper: the union of the channels of the `changed` bits in `table`
+/// ("[bit]" = channel); a changed bit with no row adds `fallback`.
+/proc/om_flag_channels(list/table, changed, fallback)
+	. = 0
+	var/bit = 1
+	while(changed && bit <= 0x800000)
+		if(changed & bit)
+			changed &= ~bit
+			var/channel = table["[bit]"]
+			. |= channel ? channel : fallback
+		bit <<= 1

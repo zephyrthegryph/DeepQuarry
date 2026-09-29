@@ -47,7 +47,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/atm, "spark_system", /datum/effect/effect/s
 DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 /obj/machinery/atm/machine_step()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return PROCESS_KILL
 
 	if(ticks_left_timeout > 0)
@@ -72,7 +72,7 @@ DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 
 /obj/machinery/atm/power_change()
 	. = ..()
-	if(. && !(stat & NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
+	if(. && !has_stat(NOPOWER) && (ticks_left_timeout > 0 || ticks_left_locked_down > 0))
 		MACHINE_WAKE(src)
 
 /obj/machinery/atm/emag_act(remaining_charges, mob/user)
@@ -80,7 +80,7 @@ DECLARE_REF(/obj/machinery/atm, "spark_system", OWNED, null)
 		return
 
 	//short out the machine, shoot sparks, spew money!
-	emagged = 1
+	set_emagged(1)
 	spark_system.start()
 	spawn_money(rand(100,500),src.loc)
 	//we don't want to grief people by locking their id in an emagged ATM

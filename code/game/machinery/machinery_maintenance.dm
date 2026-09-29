@@ -105,7 +105,7 @@
 	return list("You [un]secure %TARGET%.", "%ACTOR% has [un]secured %TARGET%.")
 
 /obj/machinery/proc/toggle_maintenance_anchor(mob/actor, obj/item/held, datum/interaction/interaction)
-	anchored = !anchored
+	set_anchored(!anchored)
 	power_change()
 	update_icon()
 	return TRUE

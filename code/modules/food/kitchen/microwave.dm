@@ -286,7 +286,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		span_notice("\The [user] [anchored ? "unsecures" : "secures"] \the [src]."),
 		span_notice("You [anchored ? "unsecure" : "secure"] \the [src].")
 	)
-	anchored = !anchored
+	set_anchored(!anchored)
 
 /obj/machinery/microwave/tgui_status(mob/user)
 	if(user == paicard?.pai)
@@ -399,7 +399,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 ************************************/
 
 /obj/machinery/microwave/proc/cook()
-	if(inoperable())
+	if(!operable())
 		return
 
 	if(operating || broken > NOT_BROKEN || panel_open || !anchored || dirty >= MAX_MICROWAVE_DIRTINESS)
@@ -430,7 +430,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 	cook_loop(type = MICROWAVE_MUCK, cycles = 4)
 
 /obj/machinery/microwave/proc/cook_loop(type = MICROWAVE_NORMAL, cycles = 10, wait = max(12 - 2 * efficiency, 2))
-	if((stat & BROKEN) && type == MICROWAVE_PRE)
+	if((has_stat(BROKEN)) && type == MICROWAVE_PRE)
 		broke()
 		return
 
@@ -450,7 +450,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 
 /obj/machinery/microwave/power_change()
 	. = ..()
-	if((stat & NOPOWER) && operating)
+	if((has_stat(NOPOWER)) && operating)
 		broke()
 		dispose(FALSE)
 
@@ -507,7 +507,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 /obj/machinery/microwave/proc/wzhzhzh() // Whoever named this proc is fucking literally Satan. ~ Z
 	visible_message(span_notice("\The [src] [visible_action]."), span_notice("You hear a [audible_action ? audible_action : "[src]"]."))
 	operating = TRUE
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	post_state_change()
 	soundloop.start()
 
@@ -524,9 +524,9 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 		playsound(src.loc, 'sound/machines/ding.ogg', 50, 1)
 	operating = FALSE // Turn it off again aferwards
 	if(broken)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 	post_state_change()
 	soundloop.stop()
 

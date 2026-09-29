@@ -100,39 +100,39 @@
 		backwards = turn(dir, 180)
 
 /obj/machinery/conveyor/proc/update()
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		icon_state = "conveyor-broken"
 		operating = OFF
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(!operable)
 		operating = OFF
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		// Keep the commanded direction across a power blip: process() already
 		// kills itself on NOPOWER, and power_change() re-enters here to restart
 		// the belt. Clearing `operating` left belts (and their cargo) stalled
 		// until someone re-toggled the switch.
 		icon_state = "conveyor[OFF]"
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	icon_state = "conveyor[operating]"
 
 	if(!operating)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		return
 	if(speed_process) // high gear
 		MACHINE_SLEEP(src)
 		om_task_periodic(src, PERIODIC_FAST)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 	else // low gear
 		om_task_periodic_stop(src)
 		MACHINE_WAKE(src)
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 
 	// machine process
 	// move items to the target location
 /obj/machinery/conveyor/machine_step()
-	if(stat & (BROKEN | NOPOWER))
+	if(!operable())
 		return PROCESS_KILL
 	if(!operating)
 		return PROCESS_KILL

@@ -68,7 +68,7 @@
 	var/mob/living/simple_mob/vore/solargrub/G = brain.get_owner()
 	if(!istype(G))
 		return DQ_BEHAVIOR_FAILED
-	G.anchored = FALSE
+	G.set_anchored(FALSE)
 	G.ai_busy_end()
 	return DQ_BEHAVIOR_DONE
 
@@ -79,7 +79,7 @@
 	var/mob/living/simple_mob/vore/solargrub/G = brain.get_owner()
 	if(istype(G) && G.anchored)
 		dqai_log("[G] solargrub: struck while draining, breaking free")
-		G.anchored = FALSE
+		G.set_anchored(FALSE)
 		brain.set_cooldown(type, null, cooldown)
 	return ..()
 

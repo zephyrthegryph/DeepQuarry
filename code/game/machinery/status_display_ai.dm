@@ -70,7 +70,7 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	circuit =  /obj/item/circuitboard/ai_status_display
 	flags = WALL_ITEM
 
-	var/mode = 0	// 0 = Blank
+	mode = 0	// 0 = Blank
 					// 1 = AI emoticon
 					// 2 = Blue screen of death
 
@@ -129,8 +129,8 @@ GLOBAL_LIST_INIT(ai_status_emotions, list(
 	add_overlay(picture_state)
 
 /obj/machinery/ai_status_display/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		cut_overlays()
 	else
 		update()

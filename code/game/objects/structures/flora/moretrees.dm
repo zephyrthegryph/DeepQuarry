@@ -25,7 +25,7 @@
 		return
 
 	is_stump = TRUE
-	density = FALSE
+	set_density(FALSE)
 	icon_state = "[icon_state]_stump"
 	cut_overlays()
 	set_light(0)

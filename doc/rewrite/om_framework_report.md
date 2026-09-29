@@ -167,11 +167,11 @@ nothing to do, and every wake that followed paid one more poll just to kill itse
 ```dm
 /obj/machinery/recharger/process()
 	if(stat & (NOPOWER|BROKEN) || !anchored)
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 		icon_state = icon_state_idle
 		return PROCESS_KILL
 	if(!charging)
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		icon_state = icon_state_idle
 		return PROCESS_KILL
 	...
@@ -188,7 +188,7 @@ wakes on the change:
 
 /datum/om/stage/machine/power/recharger/perform(obj/machinery/recharger/M, datum/om/frame/machine/F)
 	if(!F.usable())
-		M.update_use_power(USE_POWER_OFF)
+		M.set_use_power(USE_POWER_OFF)
 		M.icon_state = M.icon_state_idle
 		return STAGE_IDLE
 	...

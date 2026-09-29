@@ -85,7 +85,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 				var/datum/effect/effect/system/spark_spread/sparks = new /datum/effect/effect/system/spark_spread()
 				sparks.set_up(5, 0, get_turf(self))
 				sparks.start()
-			self.anchored = TRUE
+			self.set_anchored(TRUE)
 			self.PN = self.attached.get_power_region()
 			power_draw(self.PN, self.powerdraw)
 			self.charge = self.charge + (self.powerdraw/1000) //This adds raw powerdraw to charge(Charge is in Ks as in 1 = 1000)
@@ -98,10 +98,10 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 						var/drain_val = min(apc_drain_rate, cur_charge)
 						A.cell.use(drain_val * CELLRATE)
 		else if(!self.attached && self.anchored)
-			self.anchored = FALSE
+			self.set_anchored(FALSE)
 			self.PN = 0
 		if(prob(1) && self.charge >= 32000 && self.can_evolve == 1 && GLOB.moth_amount < 1) //it's reading from the moth_amount global list to determine if it can evolve. There should only ever be a maxcap of 1 existing solar moth alive at any time. TODO: make the code decrease the list after 1 has spawned this shift.
-			self.anchored = 0
+			self.set_anchored(0)
 			self.PN = 0
 			self.release_vore_contents()
 			if(self.prey_excludes)
@@ -154,7 +154,7 @@ GLOBAL_VAR_INIT(moth_amount, 0)
 		L.reagents.add_reagent(poison_type, poison_per_bite)
 
 /mob/living/simple_mob/vore/solargrub/on_death(gibbed)
-	src.anchored = FALSE
+	set_anchored(FALSE)
 	set_light(0)
 	..()
 

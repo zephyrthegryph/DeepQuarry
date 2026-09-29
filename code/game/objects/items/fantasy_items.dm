@@ -121,7 +121,7 @@ DECLARE_REAGENTS(/obj/structure/bed/bath, 300, null)
 
 /obj/machinery/appliance/cooker/oven/yeoldoven/update_icon()
 	if(!open)
-		if(!stat)
+		if(!has_stat(MACHINE_STAT_ANY))
 			icon_state = "yeoldovenclosed_on"
 			if(cooking == TRUE)
 				icon_state = "yeoldovenclosed_cooking"

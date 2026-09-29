@@ -67,7 +67,7 @@
 	active_power_usage = 300
 	interact_offline = 1
 	circuit = /obj/item/circuitboard/clonescanner
-	var/locked = 0
+	locked = 0
 	VAR_PRIVATE/occupant_handle = null
 	var/obj/item/reagent_containers/glass/beaker = null
 	var/opened = 0

@@ -8,7 +8,7 @@
 	var/uses = 20
 	var/disabled = 1
 	var/lethal = 0
-	var/locked = 1
+	locked = 1
 	var/cooldown_time = 0
 	var/cooldown_timeleft = 0
 	var/cooldown_on = 0
@@ -19,11 +19,11 @@
 	update_icon()
 
 /obj/machinery/ai_slipper/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/ai_slipper/update_icon()
-	if(stat & NOPOWER || stat & BROKEN)
+	if(has_stat(NOPOWER) || has_stat(BROKEN))
 		icon_state = "liquid_dispenser"
 	else
 		icon_state = disabled ? "liquid_dispenser" : "liquid_dispenser_on"
@@ -49,13 +49,13 @@
 	effect = /obj/machinery/ai_slipper/proc/interaction_toggle_lock
 
 /obj/machinery/ai_slipper/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(istype(user, /mob/living/silicon))
 		attack_hand(user)
 		return TRUE
 	if(allowed(user))
-		locked = !locked
+		set_locked(!locked)
 		to_chat(user, "You [ locked ? "lock" : "unlock"] the device.")
 		if(locked)
 			SStgui.close_uis(src)
@@ -72,7 +72,7 @@
 	effect = /obj/machinery/ai_slipper/proc/interaction_use
 
 /obj/machinery/ai_slipper/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(get_dist(src, user) > 1 && !istype(user, /mob/living/silicon))
 		to_chat(user, "Too far away.")

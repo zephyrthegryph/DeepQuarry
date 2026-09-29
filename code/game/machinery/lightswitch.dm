@@ -14,7 +14,7 @@
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
 	flags = WALL_ITEM
-	var/on = 1
+	on = 1
 	var/area_handle
 	var/otherarea = null
 	var/image/overlay
@@ -30,12 +30,12 @@
 	if(!name)
 		name = "light switch ([area().name])"
 
-	on = area().lightswitch
+	set_on(area().lightswitch)
 	update_icon()
 
 /obj/machinery/light_switch/update_icon()
 	cut_overlays()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "light-p"
 		set_light(0)
 	else
@@ -66,14 +66,14 @@
 	effect = /obj/machinery/light_switch/proc/interaction_toggle
 
 /obj/machinery/light_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+	set_on(!on)
 
 	area().lightswitch = on
 	area().update_icon()
 	playsound(src, 'sound/machines/button.ogg', 100, 1, 0)
 
 	for(var/obj/machinery/light_switch/L in area())
-		L.on = on
+		L.set_on(on)
 		L.update_icon()
 
 	area().power_change()
@@ -87,15 +87,15 @@
 
 	if(!otherarea)
 		if(powered(LIGHT))
-			stat &= ~NOPOWER
+			stat_remove(NOPOWER)
 		else
-			stat |= NOPOWER
+			stat_add(NOPOWER)
 
 		update_icon()
 
 /obj/machinery/light_switch/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || stat & (BROKEN|NOPOWER))
+	if (. & EMP_PROTECT_SELF || !operable())
 		return
 	power_change()
 

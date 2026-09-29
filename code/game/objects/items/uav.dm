@@ -246,14 +246,14 @@ DECLARE_INTERACTIONS(/obj/item/uav, \
 			state = UAV_PACKED
 			w_class = ITEMSIZE_LARGE
 			slowdown = 0.5
-			density = FALSE
+			set_density(FALSE)
 			update_icon()
 			return TRUE
 		if(UAV_PACKED) //Unpacking
 			state = UAV_OFF
 			w_class = ITEMSIZE_HUGE
 			slowdown = 1.5
-			density = TRUE
+			set_density(TRUE)
 			update_icon()
 			return TRUE
 	return FALSE

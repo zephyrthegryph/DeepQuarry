@@ -30,7 +30,7 @@
 	effect = /obj/machinery/computer/aifixer/proc/interaction_use_card
 
 /obj/machinery/computer/aifixer/proc/can_use_card(mob/actor, atom/target, obj/item/held)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return "this terminal isn't functioning right now"
 	if(restoring)
 		return "terminal is busy restoring [occupier()] right now"
@@ -58,7 +58,7 @@
 /obj/machinery/computer/aifixer/screwdriver_act(mob/user, obj/item/tool)
 	if(!occupier())
 		return ..()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(user, span_warning("The screws on [name]'s screen won't budge."))
 	else
 		to_chat(user, span_warning("The screws on [name]'s screen won't budge and it emits a warning beep."))
@@ -71,7 +71,7 @@
 	effect = /obj/machinery/computer/aifixer/proc/interaction_use
 
 /obj/machinery/computer/aifixer/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	tgui_interact(user)
 	return TRUE
@@ -139,7 +139,7 @@
 /obj/machinery/computer/aifixer/machine_step()
 	if(!restoring || !occupier())
 		return PROCESS_KILL
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	var/oldstat = occupier().stat
 	restoring = Fix()
@@ -150,7 +150,7 @@
 
 /obj/machinery/computer/aifixer/update_icon()
 	. = ..()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 
 	if(restoring)

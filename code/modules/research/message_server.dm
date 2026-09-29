@@ -62,7 +62,7 @@
 
 	var/list/datum/data_pda_msg/pda_msgs
 	var/list/datum/data_rc_msg/rc_msgs
-	var/active = 1
+	active = 1
 	var/decryptkey = "password"
 
 	//Spam filtering stuff
@@ -108,8 +108,8 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 	return newKey
 
 /obj/machinery/message_server/machine_step()
-	if(active && (stat & (BROKEN|NOPOWER)))
-		active = 0
+	if(active && (!operable()))
+		set_active(0)
 		soundloop.stop()
 		noisy = FALSE
 		return
@@ -137,7 +137,7 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 		authmsg += "([stamp])\n"
 	for (var/obj/machinery/requests_console/Console in REGISTRY_MEMBERS(REGISTRY_ALARM_CONSOLES))
 		if (ckey(Console.department) == ckey(recipient))
-			if(Console.inoperable())
+			if(!Console.operable())
 				LAZYADD(Console.message_log, list(list("Message lost due to console failure.","Please contact [station_name()] system adminsitrator or AI for technical assistance.")))
 				continue
 			if(Console.newmessagepriority < priority)
@@ -172,7 +172,7 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 
 /obj/machinery/message_server/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user, span_filter_notice("You toggle PDA message passing from [active ? "On" : "Off"] to [active ? "Off" : "On"]."))
-	active = !active
+	set_active(!active)
 	update_icon()
 	MACHINE_WAKE(src)
 	return TRUE
@@ -188,7 +188,7 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 
 /// No side effects: whether this server can currently take the upgrade board.
 /obj/machinery/message_server/proc/can_upgrade(mob/actor, atom/target, obj/item/held)
-	return active && !(stat & (BROKEN|NOPOWER)) && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
+	return active && operable() && (spamfilter_limit < MESSAGE_SERVER_DEFAULT_SPAM_LIMIT*2)
 
 /obj/machinery/message_server/proc/interaction_upgrade(mob/user, obj/item/O, datum/interaction/interaction)
 	spamfilter_limit += round(MESSAGE_SERVER_DEFAULT_SPAM_LIMIT / 2)
@@ -198,7 +198,7 @@ DECLARE_REF(/obj/machinery/message_server, "soundloop", OWNED, null)
 	return TRUE
 
 /obj/machinery/message_server/update_icon()
-	if((stat & (BROKEN|NOPOWER)))
+	if((!operable()))
 		icon_state = "server-nopower"
 	else if (!active)
 		icon_state = "server-off"

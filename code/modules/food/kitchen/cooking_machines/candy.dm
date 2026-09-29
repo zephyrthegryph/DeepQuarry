@@ -27,7 +27,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer/candy, "candymaker_loop", OWNED, null
 /obj/machinery/appliance/mixer/candy/update_icon()
 	. = ..()
 
-	if(!stat)
+	if(!has_stat(MACHINE_STAT_ANY))
 		icon_state = on_icon
 		if(candymaker_loop)
 			candymaker_loop.start(src)

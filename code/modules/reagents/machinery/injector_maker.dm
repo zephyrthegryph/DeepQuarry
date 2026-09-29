@@ -212,7 +212,7 @@
 	. += span_notice("It can hold [capacity_small_injector] small and [capacity_large_injector] large injectors respectively.") + "\n"
 	. += span_notice("\The [src] contains [src.count_plastic] units of plastic. It can hold up to [capacity_plastic] units.") + "\n"
 
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		. += span_notice("The status display reads the following reagents:") + "\n"
 		if(beaker)
 			for(var/datum/reagent/R in beaker.reagents.reagent_list)

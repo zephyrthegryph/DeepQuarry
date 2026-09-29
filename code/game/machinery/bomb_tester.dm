@@ -62,15 +62,15 @@
 		add_overlay("[icon_name]-tank1")
 	if(tank2)
 		add_overlay("[icon_name]-tank2")
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_name]-p"
 	else
 		icon_state = "[icon_name][simulating]"
 
 /obj/machinery/bomb_tester/power_change()
-	..()
+	. = ..()
 	update_icon()
-	if(simulating && stat & NOPOWER)
+	if(simulating && has_stat(NOPOWER))
 		simulation_finish(1)
 
 /obj/machinery/bomb_tester/RefreshParts()
@@ -218,7 +218,7 @@
 		simulation_finish()
 		return
 	simulating = 1
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	simulation_started = world.time
 	simulation_timer = om_after(src, simulation_delay, PROC_REF(simulation_timer_fired))
 	update_icon()
@@ -355,7 +355,7 @@
 		om_cancel_timer(src, simulation_timer)
 		simulation_timer = 0
 	simulating = 0
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	update_icon()
 	if(test_canister() && test_canister().anchored && !test_canister().connected_port())
 		test_canister().anchored = FALSE

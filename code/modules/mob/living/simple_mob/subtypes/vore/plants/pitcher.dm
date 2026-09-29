@@ -145,7 +145,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 		self.vore_checks()
 		self.handle_hungry()
 	if (!self.anchored)
-		self.anchored = 1 // If it's alive, it should root itself back down and once again be impossible to move.
+		self.set_anchored(1) // If it's alive, it should root itself back down and once again be impossible to move.
 
 /mob/living/simple_mob/vore/pitcher_plant/Initialize(mapload)
 	. = ..()
@@ -154,7 +154,7 @@ GLOBAL_LIST_INIT(pitcher_plant_lure_messages, list(
 
 /mob/living/simple_mob/vore/pitcher_plant/on_death(gibbed)
 	..()
-	anchored = 0
+	set_anchored(0)
 	if(fruit)
 		new /obj/item/reagent_containers/food/snacks/pitcher_fruit(get_turf(src))
 		fruit = FALSE

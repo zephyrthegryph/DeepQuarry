@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 /obj/item/juke_remote/proc/anchor()
 	if(anchored)
 		return
-	anchored = TRUE
+	set_anchored(TRUE)
 	if(attach_area())
 		visible_message("[src] attaches to the nearest surface and bounces happily, ready to pump tunes.", runemessage = "clank")
 		if(paired_juke()) // we were able to claim the area
@@ -75,7 +75,7 @@ DECLARE_INTERACTIONS(/obj/item/juke_remote, \
 
 /obj/item/juke_remote/proc/unanchor()
 	detach_area()
-	anchored = FALSE
+	set_anchored(FALSE)
 	visible_message("[src] detaches from it's mounting surface, able to be moved once again.", runemessage = "clunk")
 	if(paired_juke())
 		icon_state = "[initial(icon_state)]_ready"

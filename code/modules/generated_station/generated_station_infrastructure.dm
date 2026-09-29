@@ -35,7 +35,7 @@
 /obj/machinery/generated_station_data_relay/proc/report_hostile(atom/contact, confidence = 80)
 	var/datum/generated_station_defense_runtime/runtime = om_resolve(defense_runtime_ref)
 	var/obj/machinery/camera/camera = om_resolve(camera_ref)
-	if(!runtime || !camera || QDELETED(camera) || (camera.stat & (BROKEN | NOPOWER)) || !can_see(camera, contact, 7))
+	if(!runtime || !camera || QDELETED(camera) || (!camera.operable()) || !can_see(camera, contact, 7))
 		return null
 	return runtime?.notify_sensor_contact(department_id, contact, "camera relay", confidence)
 

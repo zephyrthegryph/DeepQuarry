@@ -6,7 +6,7 @@
 
 /// The motion alarm fires once a target has been seen for alarm_delay (the camera's timer).
 /obj/machinery/camera/proc/check_motion_alarm()
-	if(stat & (NOPOWER|EMPED))
+	if(has_stat(NOPOWER | EMPED))
 		return
 	if(!isMotion())
 		return
@@ -44,7 +44,7 @@
 		cancelAlarm()
 
 /obj/machinery/camera/proc/cancelAlarm()
-	if (!status || (stat & NOPOWER))
+	if (!status || (has_stat(NOPOWER)))
 		return 0
 	if (detectTime == -1)
 		GLOB.motion_alarm.clearAlarm(loc, src)
@@ -52,7 +52,7 @@
 	return 1
 
 /obj/machinery/camera/proc/triggerAlarm()
-	if (!status || (stat & NOPOWER))
+	if (!status || (has_stat(NOPOWER)))
 		return 0
 	if (!detectTime) return 0
 	GLOB.motion_alarm.triggerAlarm(loc, src)

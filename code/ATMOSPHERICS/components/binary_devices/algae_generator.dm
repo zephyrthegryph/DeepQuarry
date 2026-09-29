@@ -49,20 +49,19 @@
 	add_overlay(I)
 
 /obj/machinery/atmospherics/binary/algae_farm/power_change()
-	var/old_stat = stat
 	. = ..()
-	if(old_stat != stat)
+	if(.)
 		update_icon()
 		// machine_step() sleeps while inoperable; wake it when power returns
 		// to a farm that is still switched on.
-		if(!inoperable() && use_power >= USE_POWER_ACTIVE)
+		if(operable() && use_power >= USE_POWER_ACTIVE)
 			MACHINE_WAKE(src)
 
 /obj/machinery/atmospherics/binary/algae_farm/machine_step()
 	..()
 	recent_moles_transferred = 0
 
-	if(inoperable() || use_power < USE_POWER_ACTIVE)
+	if(!operable() || use_power < USE_POWER_ACTIVE)
 		ui_error = null
 		update_icon()
 		if(use_power == USE_POWER_IDLE)
@@ -119,7 +118,7 @@
 	update_icon()
 
 /obj/machinery/atmospherics/binary/algae_farm/update_icon()
-	if(inoperable() || !anchored || use_power < USE_POWER_ACTIVE)
+	if(!operable() || !anchored || use_power < USE_POWER_ACTIVE)
 		icon_state = "algae-off"
 	else if(recent_moles_transferred >= moles_per_tick)
 		icon_state = "algae-full"
@@ -242,10 +241,10 @@
 	switch(action)
 		if("toggle")
 			if(use_power == USE_POWER_IDLE)
-				update_use_power(USE_POWER_ACTIVE)
+				set_use_power(USE_POWER_ACTIVE)
 				MACHINE_WAKE(src)
 			else
-				update_use_power(USE_POWER_IDLE)
+				set_use_power(USE_POWER_IDLE)
 			update_icon()
 			. = TRUE
 

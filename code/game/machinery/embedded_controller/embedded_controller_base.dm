@@ -6,7 +6,7 @@
 	idle_power_usage = 10
 	var/datum/embedded_program/program	//the currently executing program
 	var/list/valid_actions
-	var/on = 1
+	on = 1
 
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))

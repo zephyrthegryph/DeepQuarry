@@ -23,8 +23,8 @@
 	var/noisy = TRUE
 
 // TODO: Implement more logic here. For now it's only a placeholder.
-/obj/machinery/ntnet_relay/operable()
-	if(!..(EMPED))
+/obj/machinery/ntnet_relay/operable(additional_flags = 0)
+	if(!..(additional_flags))
 		return 0
 	if(dos_failure)
 		return 0
@@ -45,9 +45,9 @@
 
 /obj/machinery/ntnet_relay/machine_step()
 	if(operable())
-		update_use_power(USE_POWER_ACTIVE)
+		set_use_power(USE_POWER_ACTIVE)
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 
 	if(dos_overload)
 		dos_overload = max(0, dos_overload - dos_dissipate)

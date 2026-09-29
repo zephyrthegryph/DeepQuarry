@@ -7,7 +7,7 @@
 	req_access = list(ACCESS_HEADS)
 	anchored = TRUE
 
-	var/locked = 1
+	locked = 1
 	var/cash_locked = 1
 	var/cash_open = 0
 	var/machine_id = ""
@@ -160,7 +160,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	switch(action)
 		if("toggle_lock")
 			if(allowed(ui.user))
-				locked = !locked
+				set_locked(!locked)
 				return TRUE
 			to_chat(ui.user, "[icon2html(src, ui.user.client)]" + span_warning("Insufficient access."))
 			return FALSE
@@ -610,7 +610,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 	else
 		user.visible_message(span_warning("\The [user] has unsecured \the [src] from the floor."),
 							span_notice("You have unsecured \the [src] from the floor."))
-	anchored = !anchored
+	set_anchored(!anchored)
 	return
 
 /obj/machinery/cash_register/emag_act(remaining_charges, mob/user)
@@ -618,8 +618,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 		src.visible_message(span_danger("The [src]'s cash box springs open as [user] swipes the card through the scanner!"))
 		playsound(src, "sparks", 50, 1)
 		req_access = list()
-		emagged = 1
-		locked = 0
+		set_emagged(1)
+		set_locked(0)
 		cash_locked = 0
 		open_cash_box(user)
 

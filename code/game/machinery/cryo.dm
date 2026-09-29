@@ -19,7 +19,7 @@
 	layer = UNDER_JUNK_LAYER
 	interact_offline = 1
 
-	var/on = 0
+	on = 0
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 20
 	active_power_usage = 200
@@ -163,11 +163,11 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	. = TRUE
 	switch(action)
 		if("switchOn")
-			on = 1
+			set_on(1)
 			MACHINE_WAKE(src)
 			update_icon()
 		if("switchOff")
-			on = 0
+			set_on(0)
 			update_icon()
 		if("ejectBeaker")
 			if(beaker)
@@ -326,13 +326,13 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	occupant.cozyloop.stop() // Cozy Music
 	//this doesn't account for walls or anything, but i don't forsee that being a problem.
 	slot_remove(occupant, get_step(src.loc, SOUTH))
-	update_use_power(USE_POWER_IDLE)
+	set_use_power(USE_POWER_IDLE)
 	SStgui.update_uis(src)
 	return
 
 /obj/machinery/atmospherics/unary/cryo_cell/proc/put_mob(mob/living/carbon/M as mob)
 	var/mob/living/carbon/occupant = src?.slot_item(OCCUPANT_SLOT_CRYO)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		to_chat(usr, span_warning("The cryo cell is not functioning."))
 		return
 	if(!istype(M))
@@ -359,7 +359,7 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 	buckle_mob(occupant, forced = TRUE, check_loc = FALSE)
 	vis_contents |= occupant
 	occupant.pixel_y += 19
-	update_use_power(USE_POWER_ACTIVE)
+	set_use_power(USE_POWER_ACTIVE)
 	add_fingerprint(usr)
 	update_icon()
 	SStgui.update_uis(src)

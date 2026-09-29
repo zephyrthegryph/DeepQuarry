@@ -125,10 +125,10 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	if(panel_open)
 		return wires.Interact(user)
 
-	if(stat & (NOPOWER | EMPED))
+	if(has_stat(NOPOWER | EMPED))
 		return
 
-	if(shocked && !(stat & NOPOWER))
+	if(shocked && !has_stat(NOPOWER))
 		shock(user, 50)
 		return
 
@@ -365,7 +365,7 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	if(items_remaining <= 0) // how
 		return 0
 
-	if(stat & (NOPOWER|EMPED))
+	if(has_stat(NOPOWER | EMPED))
 		atom_say("Unable to continue production, power failure.")
 		return 0
 
@@ -478,7 +478,7 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 	if(default_part_replacement(user, O))
 		return TRUE
 
-	if(stat)
+	if(has_stat(MACHINE_STAT_ANY))
 		return TRUE
 
 	if(panel_open)
@@ -566,7 +566,7 @@ DECLARE_REF(/obj/machinery/autolathe, "materials", OWNED, null)
 
 	if(panel_open)
 		add_overlay("[icon_state]_panel")
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		return
 	if(om_busy(src))
 		icon_state = "[icon_state]_work"

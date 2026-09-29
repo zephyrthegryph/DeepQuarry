@@ -493,7 +493,7 @@
 	density = FALSE
 	anchored = TRUE
 	use_power = USE_POWER_OFF
-	var/on = 0
+	on = 0
 	var/current_temperature = SHOWER_NORMAL		//SHOWER_FREEZING, SHOWER_NORMAL, or SHOWER_BOILING
 	var/datum/looping_sound/showering/soundloop
 	var/reagent_id = REAGENT_ID_WATER
@@ -551,7 +551,7 @@ DECLARE_REF(/obj/machinery/shower, "reagents", OWNED, null)
 	effect = /obj/machinery/shower/proc/interaction_toggle
 
 /obj/machinery/shower/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+	set_on(!on)
 	update_icon()
 	handle_mist()
 	add_fingerprint(user)

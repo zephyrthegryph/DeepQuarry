@@ -176,7 +176,7 @@
 
 	var/radio_connection_handle
 
-	var/on = 1
+	on = 1
 	var/alert = 0
 	var/previousPressure
 
@@ -325,7 +325,7 @@
 
 	var/radio_connection_handle
 
-	var/on = 1
+	on = 1
 
 /obj/machinery/access_button/update_icon()
 	if(panel_open)

@@ -97,8 +97,6 @@ OM_TIMER_SLOT(/obj/machinery, first_wake)
 	w_class = ITEMSIZE_NO_CONTAINER
 	layer = UNDER_JUNK_LAYER
 
-	var/stat = 0
-	var/emagged = 0
 	var/use_power = USE_POWER_IDLE
 		//0 = dont run the auto
 		//1 = run auto, use idle
@@ -302,20 +300,20 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 	. = ..()
 	if (. & EMP_PROTECT_SELF)
 		return
-	if(use_power && stat == 0)
+	if(use_power && !has_stat(MACHINE_STAT_ANY))
 		use_power(7500/severity)
 
 		var/obj/effect/overlay/pulse2 = new /obj/effect/overlay(src.loc)
 		pulse2.icon = 'icons/effects/effects.dmi'
 		pulse2.icon_state = "empdisable"
 		pulse2.name = "emp sparks"
-		pulse2.anchored = TRUE
+		pulse2.set_anchored(TRUE)
 		pulse2.set_dir(pick(GLOB.cardinal))
 		pulse2.expire(1 SECOND)
 
 /obj/machinery/vv_edit_var(var_name, new_value)
 	if(var_name == NAMEOF(src, use_power))
-		update_use_power(new_value)
+		set_use_power(new_value)
 		return TRUE
 	else if(var_name == NAMEOF(src, power_channel))
 		update_power_channel(new_value)
@@ -415,21 +413,15 @@ REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 		else
 			component_parts += I
 
-/obj/machinery/proc/operable(additional_flags = 0)
-	return !inoperable(additional_flags)
-
-/obj/machinery/proc/inoperable(additional_flags = 0)
-	return (stat & (NOPOWER | BROKEN | additional_flags))
-
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
 /obj/machinery/tgui_status(mob/user)
-	if(!interact_offline && (stat & (NOPOWER | BROKEN)))
+	if(!interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
 /obj/machinery/CanUseTopic(mob/user)
-	if(!interact_offline && (stat & (NOPOWER | BROKEN)))
+	if(!interact_offline && (!operable()))
 		return STATUS_CLOSE
 	return ..()
 
@@ -447,7 +439,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)
 
-	if(inoperable(MAINT))
+	if(!operable(MAINT))
 		return 1
 	if(user.lying || user.stat)
 		return 1
@@ -519,7 +511,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	playsound(src, 'sound/machines/ping.ogg', 50, 0)
 
 /obj/machinery/proc/shock(mob/user, prb)
-	if(inoperable())
+	if(!operable())
 		return 0
 	if(!prob(prb))
 		return 0
@@ -607,7 +599,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	return TRUE
 
 /obj/machinery/proc/deconstruct_display_tool_done(mob/user)
-	if(stat & BROKEN)
+	if(has_stat(BROKEN))
 		to_chat(user, span_notice("The broken glass falls out."))
 		new /obj/item/material/shard(loc)
 	else
@@ -629,15 +621,15 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	var/obj/structure/frame/A = new /obj/structure/frame(src.loc)
 	var/obj/item/circuitboard/M = circuit
 	A.circuit = M
-	A.anchored = TRUE
+	A.set_anchored(TRUE)
 	A.frame_type = M.board_type
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		A.density = FALSE
+		A.set_density(FALSE)
 	else
-		A.density = TRUE
+		A.set_density(TRUE)
 
 	if(A.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		for(var/obj/D in component_parts)
@@ -652,7 +644,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	if(A.frame_type.frame_class == FRAME_CLASS_ALARM)
 		A.state = FRAME_FASTENED
 	else if(A.frame_type.frame_class == FRAME_CLASS_COMPUTER || A.frame_type.frame_class == FRAME_CLASS_DISPLAY)
-		if(stat & BROKEN)
+		if(has_stat(BROKEN))
 			A.state = FRAME_WIRED
 		else
 			A.state = FRAME_PANELED
@@ -701,10 +693,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
  */
 /obj/machinery/atom_break(damage_flag)
 	. = ..()
-	if(stat & BROKEN)
+	if(!stat_add(BROKEN)) // raises CHANGE_MACHINE_BROKEN
 		return FALSE
-	stat |= BROKEN
-	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
@@ -712,10 +702,8 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 /// The inverse of atom_break(). Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
 	. = ..()
-	if(!(stat & BROKEN))
+	if(!stat_remove(BROKEN)) // raises CHANGE_MACHINE_BROKEN
 		return FALSE
-	stat &= ~BROKEN
-	OM_CHANGED(src, CHANGE_MACHINE_BROKEN)
 	update_icon()
 	return TRUE
 

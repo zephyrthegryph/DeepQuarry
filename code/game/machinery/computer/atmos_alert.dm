@@ -47,7 +47,7 @@
 	return data
 
 /obj/machinery/computer/atmos_alert/update_icon()
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		var/list/alarms = GLOB.atmosphere_alarm.major_alarms()
 		if(alarms.len)
 			icon_screen = "alert:2"

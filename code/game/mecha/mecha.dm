@@ -939,7 +939,7 @@ DECLARE_REF(/obj/mecha, "minihud", PAIR, "owner_mech")
 	else if(istype(obstacle, /obj))//Then we check for regular obstacles.
 		var/obj/O = obstacle
 		if(istype(O, /obj/effect/portal))	//derpfix
-			src.anchored = 0				// Portals can only move unanchored objects.
+			set_anchored(0) // Portals can only move unanchored objects.
 			O.Crossed(src)
 			om_after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), TRUE) //countering the portal's deferred teleport
 		if(O.anchored)
@@ -1401,7 +1401,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 	connected_port = new_port
 	connected_port.connected_device = src
-	connected_port.on = 1
+	connected_port.set_on(1)
 
 	// Inject cabin_air into the port's pipe network so an external supply can
 	// equalise with it. connected_device is set first so return_network()

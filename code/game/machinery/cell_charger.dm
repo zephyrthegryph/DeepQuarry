@@ -24,7 +24,7 @@
 		cut_overlays()
 		icon_state = "ccharger2"
 
-	if(charging && !(stat & (BROKEN|NOPOWER)))
+	if(charging && operable())
 		var/newlevel = 	round(charging.percent() * 4.0 / 99)
 
 		cut_overlays()
@@ -74,7 +74,7 @@
 	effect = /obj/machinery/cell_charger/proc/interaction_insert
 
 /obj/machinery/cell_charger/proc/is_working(mob/actor, atom/target, obj/item/held)
-	return !(stat & BROKEN)
+	return !has_stat(BROKEN)
 
 /obj/machinery/cell_charger/proc/is_anchored(mob/actor, atom/target, obj/item/held)
 	return anchored
@@ -106,7 +106,7 @@
 	if(charging)
 		to_chat(user, span_warning("Remove [charging] first!"))
 		return ITEM_INTERACT_BLOCKING
-	anchored = !anchored
+	set_anchored(!anchored)
 	om_changed(src, CHANGE_MACHINE_ANCHORED)
 	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
 	playsound(src, tool.usesound, 75, TRUE)

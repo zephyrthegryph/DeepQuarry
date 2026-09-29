@@ -29,7 +29,7 @@ DECLARE_REF(/obj/machinery/computer/shutoff_monitor, "monitor", OWNED, null)
 
 /obj/machinery/computer/shutoff_monitor/update_icon()
 	..()
-	if(!(stat & (NOPOWER|BROKEN)))
+	if(operable())
 		add_overlay("ai-fixer-empty")
 	else
 		cut_overlay("ai-fixer-empty")

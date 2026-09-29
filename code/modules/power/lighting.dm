@@ -242,7 +242,7 @@ OM_TIMER_SLOT(/obj/machinery/light, light_timer_token)
 	/// Charge of a pristine emergency cell held as data (C5), or null for none.
 	/// emergency_cell() makes it real.
 	var/latent_cell_charge = null
-	var/on = 0					// 1 if on, 0 if off
+	on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
 	var/brightness_color
@@ -375,15 +375,15 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 					remove_light_overlay()
 		if(LIGHT_EMPTY)
 			icon_state = "[base_state]-empty"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 		if(LIGHT_BURNED)
 			icon_state = "[base_state]-burned"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 		if(LIGHT_BROKEN)
 			icon_state = "[base_state]-broken"
-			on = 0
+			set_on(0)
 			remove_light_overlay()
 	return
 
@@ -398,15 +398,15 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 				else
 					remove_light_overlay()
 			if(LIGHT_EMPTY)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 			if(LIGHT_BURNED)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 			if(LIGHT_BROKEN)
-				on = 0
+				set_on(0)
 				icon_state = "[base_state][on]"
 				remove_light_overlay()
 		return
@@ -484,22 +484,22 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 				if(status == LIGHT_OK && trigger)
 					status = LIGHT_BURNED
 					update_icon()
-					on = 0
+					set_on(0)
 					set_light(0)
 			else
-				update_use_power(USE_POWER_ACTIVE)
+				set_use_power(USE_POWER_ACTIVE)
 				set_light(correct_range, correct_power, correct_color)
 				overlay_color = correct_overlay
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
 	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		emergency_mode = TRUE
 		begin_emergency_discharge()
 		if(auto_flicker)
 			start_flicker_watch()
 	else
-		update_use_power(USE_POWER_IDLE)
+		set_use_power(USE_POWER_IDLE)
 		set_light(0)
 	update_light()
 	update_active_power_usage((light_range * light_power) * LIGHTING_POWER_FACTOR)
@@ -528,7 +528,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 // attempt to set the light's on/off status
 // will not switch on if broken/burned/empty
 /obj/machinery/light/proc/seton(s)
-	on = (s && status == LIGHT_OK)
+	set_on((s && status == LIGHT_OK))
 	update()
 
 /obj/machinery/light/get_cell()
@@ -614,7 +614,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	installed_light = L
 	L.forceMove(src) //Move it into the socket!
 
-	on = powered() && !turned_off() // Do not instantly turn on lights if the area lightswitch is off
+	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	update()
 
 	if(on && rigged)
@@ -762,7 +762,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	return bulb().multitool_act(user, tool)
 
 /obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	playsound(src, tool.usesound, 50, TRUE)
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
@@ -835,7 +835,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	if(status != LIGHT_OK)
 		flickering = 0
 		return
-	on = !on
+	set_on(!on)
 	if(flicker_color && brightness_color != flicker_color)
 		brightness_color = flicker_color
 		brightness_color_ns = flicker_color
@@ -848,7 +848,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		om_after(src, rand(5, 15), PROC_REF(do_flicker), remaining_flicks, flicker_color, original_color, original_color_ns)
 		return
 	//All this happens after our final flicker.
-	on = (status == LIGHT_OK)
+	set_on((status == LIGHT_OK))
 	brightness_color = original_color
 	brightness_color_ns = original_color_ns
 	update(0)
@@ -958,10 +958,10 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 		return TRUE
 
 	if(on)
-		on = 0
+		set_on(0)
 		update()
 	else
-		on = has_power()
+		set_on(has_power())
 		update()
 	return TRUE
 
@@ -1016,7 +1016,7 @@ DECLARE_REF(/obj/machinery/light, "overlay_layer", OWNED, null)
 	status = LIGHT_OK
 	if(installed_light)
 		installed_light.status = LIGHT_OK
-	on = 1
+	set_on(1)
 	update()
 
 //blob effect
@@ -1517,7 +1517,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		if(prob(L.broken_chance))
 			broken(1)
 
-	on = powered()
+	set_on(powered())
 	last_area_power = !!has_power()
 	subscribe_area_power()
 	update(0)
@@ -1752,7 +1752,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 /// A power surge blows the light.
 /obj/machinery/light/proc/surge_break()
-	on = 1
+	set_on(1)
 	broken()
 
 DECLARE_REF(/obj/machinery/light, "installed_light", HELD, null)

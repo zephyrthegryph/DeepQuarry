@@ -264,7 +264,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 		return FALSE
 	upright = 0
 	icon_state = base_state
-	anchored = FALSE
+	set_anchored(FALSE)
 	src.visible_message(span_infoplain(span_bold("[user]") + " knocks down [src]."))
 	return TRUE
 
@@ -284,7 +284,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/flag, \
 	var/obj/item/stack/flag/newflag = new src.type(T)
 	newflag.amount = 1
 	newflag.upright = 1
-	newflag.anchored = TRUE
+	newflag.set_anchored(TRUE)
 	newflag.name = newflag.singular_name
 	newflag.icon_state = "[newflag.base_state]_open"
 	newflag.visible_message(span_infoplain(span_bold("[user]") + " plants [newflag] firmly in the ground."))

@@ -375,7 +375,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/photocopier/faxmachine/proc/sendfax(destination, mob/living/sender)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	use_power(200)
@@ -398,7 +398,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	return success
 
 /obj/machinery/photocopier/faxmachine/proc/receivefax(obj/item/incoming)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return 0
 
 	if(department == "Unknown")
@@ -424,7 +424,7 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	use_power(active_power_usage)
 
 /obj/machinery/photocopier/faxmachine/proc/send_admin_fax(mob/sender, destination)
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 
 	use_power(200)

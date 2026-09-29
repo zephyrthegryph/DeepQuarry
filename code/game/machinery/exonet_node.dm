@@ -7,7 +7,7 @@
 	icon_state = "exonet"
 	idle_power_usage = 2500
 	density = TRUE
-	var/on = 1
+	on = 1
 	var/toggle = 1
 
 	var/allow_external_PDAs = 1
@@ -61,16 +61,16 @@ DECLARE_REF(/obj/machinery/exonet_node, "soundloop", OWNED, null)
 // Description: Sets the device on/off and adjusts power draw based on stat and toggle variables.
 /obj/machinery/exonet_node/proc/update_power()
 	if(toggle)
-		if(stat & (BROKEN|NOPOWER|EMPED))
-			on = 0
+		if(!operable())
+			set_on(0)
 			update_idle_power_usage(0)
 			soundloop.stop()
 			noisy = FALSE
 		else
-			on = 1
+			set_on(1)
 			update_idle_power_usage(2500)
 	else
-		on = 0
+		set_on(0)
 		update_idle_power_usage(0)
 		soundloop.stop()
 		noisy = FALSE
@@ -84,15 +84,15 @@ DECLARE_REF(/obj/machinery/exonet_node, "soundloop", OWNED, null)
 // Description: Shuts off the machine for awhile if an EMP hits it.  Ion anomalies also call this to turn it off.
 /obj/machinery/exonet_node/emp_act(severity, recursive)
 	. = ..()
-	if (. & EMP_PROTECT_SELF || (stat & EMPED))
+	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
 		return
-	stat |= EMPED
+	stat_add(EMPED)
 	var/duration = (300 * 10)/severity
 	om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover))
 	update_power()
 
 /obj/machinery/exonet_node/proc/emp_recover()
-	stat &= ~EMPED
+	stat_remove(EMPED)
 	update_power()
 
 // Proc: process()

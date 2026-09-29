@@ -46,9 +46,8 @@
 	update_underlays()
 
 /obj/machinery/atmospherics/trinary/power_change()
-	var/old_stat = stat
 	. = ..()
-	if(old_stat != stat)
+	if(.)
 		update_icon()
 
 /obj/machinery/atmospherics/trinary/wrench_act(mob/user, obj/item/W)
@@ -212,7 +211,7 @@
 /obj/machinery/atmospherics/trinary/click_ctrl(mob/user)
 	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	if(allowed(user))
-		update_use_power(!use_power)
+		set_use_power(!use_power)
 		update_icon()
 		add_fingerprint(user)
 		if(use_power)

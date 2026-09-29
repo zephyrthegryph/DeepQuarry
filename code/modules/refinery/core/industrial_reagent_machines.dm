@@ -114,7 +114,7 @@
 				to_chat(user, span_warning("You cannot anchor \the [src] until \the [other] is moved out of the way!"))
 				return ITEM_INTERACT_BLOCKING
 	playsound(src, tool.usesound, 75, TRUE)
-	anchored = !anchored
+	set_anchored(!anchored)
 	user.visible_message("[user.name] [anchored ? "secures" : "unsecures"] the bolts holding [src.name] to the floor.", "You [anchored ? "secure" : "unsecure"] the bolts holding [src] to the floor.", "You hear a ratchet.")
 	update_neighbours()
 	update_icon()

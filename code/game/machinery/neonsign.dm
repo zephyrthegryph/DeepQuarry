@@ -17,10 +17,10 @@
 	var/signlight = "#E9E4AF"
 
 /obj/machinery/neonsign/proc/toggle()
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		return
 	lit = !lit
-	update_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
+	set_use_power(lit ? USE_POWER_ACTIVE : USE_POWER_IDLE)
 	update_icon()
 
 /obj/machinery/neonsign/update_icon()
@@ -32,10 +32,10 @@
 		set_light(2, 0.25, signlight)
 
 /obj/machinery/neonsign/power_change()
-	..()
-	if(stat & NOPOWER)
+	. = ..()
+	if(has_stat(NOPOWER))
 		lit = 0
-		update_use_power(USE_POWER_OFF)
+		set_use_power(USE_POWER_OFF)
 
 	update_icon()
 
@@ -72,7 +72,7 @@
 
 	use_power(5)
 
-	active = !active
+	set_active(!active)
 	icon_state = "light[active]"
 
 	for(var/obj/machinery/neonsign/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))

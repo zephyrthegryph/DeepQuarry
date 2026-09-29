@@ -166,7 +166,7 @@ OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
 			var/attempt = step - 4
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!(APC.stat & BROKEN))
+				if(!APC.has_stat(BROKEN))
 					theAPC = APC
 					break
 			if(!theAPC)
@@ -186,7 +186,7 @@ OM_TIMER_SLOT(/mob/living/silicon/ai, power_restore_timer)
 		if(9)
 			var/obj/machinery/power/apc/theAPC = null
 			for(var/obj/machinery/power/apc/APC in current_area)
-				if(!(APC.stat & BROKEN))
+				if(!APC.has_stat(BROKEN))
 					theAPC = APC
 					break
 			if(!theAPC)

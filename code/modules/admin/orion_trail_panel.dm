@@ -52,7 +52,7 @@
 				to_chat(user, span_danger(span_large("You feel an immense wave of heat emanate from \the [src]. Your skin bursts into flames.")))
 			to_chat(user, span_danger(span_large("You're never going to make it to Orion...")))
 			user.death()
-			emagged = 0
+			set_emagged(0)
 			gameStatus = ORION_STATUS_START
 			name = "The Orion Trail"
 			desc = "Learn how our ancestors got to Orion, and have fun in the process!"

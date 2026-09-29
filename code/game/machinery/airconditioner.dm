@@ -18,7 +18,7 @@
 	*/
 
 /obj/machinery/power/thermoregulator/cryogaia/wrench_act(mob/user, obj/item/I)
-	anchored = !anchored
+	set_anchored(!anchored)
 	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user].")) //Does this not need to be disabled?
 	playsound(src, I.usesound, 75, 1)
 	if(anchored)
@@ -74,7 +74,7 @@
 // Given the power behind this thermodynamics defying machine, nerfing EMP effectiveness.
 /obj/machinery/power/thermoregulator/southerncross/emp_act(severity)
 	if(!on)
-		on = 1
+		set_on(1)
 	target_temp += rand(0, 20)
 	wake_for_state_change()
 	update_icon()
@@ -103,9 +103,9 @@
 	circuit = /obj/item/circuitboard/thermoregulator
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
-	var/on = 0
+	on = 0
 	var/target_temp = T20C
-	var/mode = MODE_IDLE
+	mode = MODE_IDLE
 	/// Fraction of the Carnot COP this unit's pump achieves (H4, the
 	/// generic vg_heat_regulator_step -- rust_core.md §15's "the heat
 	/// regulator" row). Was a bespoke `removed.return_temperature()/TN60C`
@@ -173,7 +173,7 @@
 	return ..()
 
 /obj/machinery/power/thermoregulator/wrench_act(mob/user, obj/item/tool)
-	anchored = !anchored
+	set_anchored(!anchored)
 	visible_message(span_notice("\The [src] has been [anchored ? "bolted to the floor" : "unbolted from the floor"] by [user]."))
 	playsound(src, tool.usesound, 75, 1)
 	if(anchored)
@@ -213,7 +213,7 @@
 /obj/machinery/power/thermoregulator/interact(mob/user)
 	if(!anchored)
 		return
-	on = !on
+	set_on(!on)
 	user.visible_message(span_notice("[user] [on ? "activates" : "deactivates"] \the [src]."),span_notice("You [on ? "activate" : "deactivate"] \the [src]."))
 	if(!on)
 		change_mode(MODE_IDLE)
@@ -278,7 +278,7 @@
 				add_overlay("lasergen-cool")
 
 /obj/machinery/power/thermoregulator/proc/turn_off()
-	on = FALSE
+	set_on(FALSE)
 	change_mode(MODE_IDLE)
 	update_icon()
 
@@ -303,7 +303,7 @@
 /obj/machinery/power/thermoregulator/proc/change_mode(new_mode = MODE_IDLE)
 	if(mode == new_mode)
 		return
-	mode = new_mode
+	set_mode(new_mode)
 	update_icon()
 
 /obj/machinery/power/thermoregulator/emp_act(severity, recursive)
@@ -311,7 +311,7 @@
 	if (. & EMP_PROTECT_SELF)
 		return
 	if(!on)
-		on = TRUE
+		set_on(TRUE)
 	target_temp += rand(0, 1000)
 	wake_for_state_change()
 	update_icon()

@@ -56,7 +56,7 @@
 	deployed = 1
 	user.drop_from_inventory(src)
 	update_icon()
-	anchored = TRUE
+	set_anchored(TRUE)
 	log_and_message_admins("has set up a [name] at \the [get_area(loc)]", user)
 
 DECLARE_INTERACTIONS(/obj/item/beartrap, \
@@ -90,14 +90,14 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	user.visible_message(span_notice("[victim] has been freed from \the [src] by [user]."))
 	for(var/A in src?.buckled_mob_list())
 		unbuckle_mob(A)
-	anchored = FALSE
+	set_anchored(FALSE)
 /obj/item/beartrap/proc/attack_hand_timed_done2(mob/user)
 	user.visible_message(
 		span_danger("[user] has disarmed \the [src]."),
 		span_notice("You have disarmed \the [src]!")
 		)
 	deployed = 0
-	anchored = FALSE
+	set_anchored(FALSE)
 	update_icon()
 
 /obj/item/beartrap/proc/attack_mob(mob/living/L)
@@ -124,7 +124,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			to_chat(H, span_danger("The steel jaws of \the [src] take your limb clean off!"))
 			L.status_at_least(EFFECT_STUNNED, stun_length*2)
 			deployed = 0
-			anchored = FALSE
+			set_anchored(FALSE)
 			return
 
 	//trap the victim in place
@@ -134,7 +134,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 	L.status_at_least(EFFECT_STUNNED, stun_length)
 	to_chat(L, span_danger("The steel jaws of \the [src] bite into you, trapping you in place!"))
 	deployed = 0
-	anchored = FALSE
+	set_anchored(FALSE)
 	can_buckle = initial(can_buckle)
 
 /obj/item/beartrap/Crossed(atom/movable/AM as mob|obj)
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			GLOB.motiontracker_service.ping(src,100) // Clunk!
 			attack_mob(L)
 			if(!has_buckled_mobs())
-				anchored = FALSE
+				set_anchored(FALSE)
 			deployed = 0
 			update_icon()
 			log_and_message_admins("has sprung a [name] at \the [get_area(loc)], last touched by [forensic_data?.get_lastprint()]", L)
@@ -238,7 +238,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 		span_danger("[user] has collected \the [src]."),
 		span_notice("You have collected \the [src]!")
 		)
-	anchored = FALSE
+	set_anchored(FALSE)
 	update_icon()
 
 /// Old attack_self.
@@ -263,7 +263,7 @@ EXTEND_INTERACTIONS(/obj/item/material/barbedwire, \
 	om_after(src, 2, TYPE_PROC_REF(/atom, om_playsound), 'sound/items/Wirecutter.ogg', 40, 1)
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
-	anchored = TRUE
+	set_anchored(TRUE)
 	update_icon()
 
 /// Old attackby: wear from being hit, then falls through as its ..() did.

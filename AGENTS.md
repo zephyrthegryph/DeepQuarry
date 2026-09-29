@@ -424,6 +424,13 @@ accident or assume they work:
   `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by
   obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
   and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
+- **Machine core state is declared fields.** `on`, `active`, `state`, `mode`, `locked`, `emagged`
+  and the `stat` bits are OM fields on `/obj/machinery` (`code/game/machinery/machinery_fields.dm`);
+  `anchored`, `density` and `use_power` are registered with their setters. Write through
+  `set_<field>()` (`stat_add()`/`stat_remove()` for bits, `set_use_power()` for power mode), read
+  "powered and working" with `operable()` and single bits with `has_stat()`; there is no
+  `inoperable()`/`update_use_power()`. `tools/ci/sys_rules/fields.py` rejects raw `stat` bit use and
+  direct field writes.
 - **Health model — body & afflictions, no health pools on ANY mob.** Read
   `doc/body_architecture.md`. Every `/mob/living` has a `/datum/body` (plans: humanoid,
   simple, simple/machine, simple/machine/robot) in `code/modules/body/`. There is no

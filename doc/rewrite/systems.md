@@ -29,7 +29,7 @@ Numbering below follows the audit.
 ```dm
 OM_FIELD(/obj/machinery, on, FALSE, CHANGE_MACHINE_SETTINGS)
 OM_FLAG_FIELD(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN|CHANGE_MACHINE_POWER)
-OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"), PROC_REF(compute_operable))
+OM_DERIVE_FIELD(/obj/machinery, operable, CHANGE_MACHINE_BROKEN|CHANGE_MACHINE_POWER)
 ```
 
 - `OM_FLAG_FIELD(T, F, D, C)` declares a bitfield: generates `set_F(v)`, `F_add(bits)`,
@@ -47,6 +47,45 @@ OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"), PROC_REF(compute_operabl
 - Lint `sys_stat_bits`: raw `stat & (`, `stat |=`, `stat &= ~` outside the field runtime.
   `sys_field_write`: direct writes to a core field (`on = `, `locked = `...) outside its setter
   (extends `field_write_lint.py`).
+
+**As built (rewrite/sys-fields).**
+
+- Macros (`code/__defines/om.dm`): `OM_FLAG_FIELD(T, F, D, C)`; `OM_FLAG_FIELD_BITS(T, F, D, ALL,
+  list("[BIT]" = CHANNEL, ...))` (text keys; `ALL` is the registered union; a write raises only
+  the changed bits' channels via `om_flag_channels()`); `OM_FIELD_SETTER(T, F, C)` registers an
+  existing var whose hand-written `set_F()` is the setter (register it again on a family root to
+  add that family's channel; `fields_of()` ORs them); `OM_DERIVE_FIELD(T, F, C)` registers a
+  read-only field computed by `T/proc/F()` that changes with `C` (`om_set()` on it crashes).
+- Declarations: `code/game/machinery/machinery_fields.dm`. On `/obj/machinery`: `on`, `active`,
+  `state`, `mode`, `emagged` (CHANGE_MACHINE_SETTINGS), `locked` (CHANGE_MACHINE_MODE), `stat`
+  (bits: BROKEN/MAINT/EMPED -> CHANGE_MACHINE_BROKEN, NOPOWER/POWEROFF -> CHANGE_MACHINE_POWER),
+  derived `operable`. `anchored` (set_anchored; /obj/machinery CHANGE_MACHINE_ANCHORED, /mob
+  CHANGE_MOB_CAN_MOVE), `density` (set_density; /obj/machinery CHANGE_MACHINE_SETTINGS) and
+  `use_power` (set_use_power) are OM_FIELD_SETTER registrations. `/obj/vehicle` keeps its own
+  `stat` as an OM_FLAG_FIELD. Items' same-named vars (flashlight `on`, ...) are unrelated vars and
+  out of scope. Subtype `var/on = ...` redeclarations became plain overrides; colliding procs were
+  renamed (`set_breaker_on`, `set_gravity_state`, `set_pump_on`) or made overrides (APC
+  `set_locked`, readylight `set_state`); the verdigris binding generator emits an override when an
+  OM_FIELD already declares `set_F` (binary pump `set_on`, APC `set_active` stay Rust-backed).
+- `operable(additional_flags = 0)` = `!(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags))`
+  (NOPOWER|BROKEN|MAINT|EMPED). **Refinement:** `interact_offline` is not folded in; it stays a
+  UI-reach rule in `tgui_status()`/`CanUseTopic()`. Single conditions read `has_stat(BITS)`;
+  "anything wrong" is `has_stat(MACHINE_STAT_ANY)`. `inoperable()` is deleted. `power_change()`
+  returns TRUE when NOPOWER changed and every override propagates it (`. = ..()`), which replaced
+  the `var/old_stat = stat ... if(old_stat != stat)` snapshots.
+- **Power draw refinement:** the type-body `idle_power_usage` / `active_power_usage` rows are the
+  per-state declaration (a `POWER_DRAW()` macro would restate them); `update_use_power()` became
+  the field setter `set_use_power()`, which moves the area tally, so the draw follows the field
+  and the former direct `use_power =` writes (which skipped the tally) go through it.
+- Lint (`tools/ci/sys_rules/fields.py`, all 0): `stat_bits` (any bare `stat` in a machine or
+  vehicle proc, `x.stat` with a bit operator or a machine/vehicle-typed receiver), `stat_helper`
+  (`inoperable(` / `is_operational(`), `field_write` (direct writes to the core fields, sharing
+  `field_write_lint.py`, which is also api_lints `field_write` including unit tests).
+  `field_write_lint.py` now resolves DM's implicit parents (/obj, /mob -> /atom/movable), untyped
+  locals and parameters, named arguments/list entries, and typed member chains (`a.b.c.on`,
+  `GLOB.x.on`). Limit: a read `x.stat` (no bit operator) through an untyped receiver is not
+  flagged, since it can't be told from a mob's `stat`.
+- Test: `code/modules/unit_tests/dq_sys_fields_tests.dm`.
 
 ## 1. Appearance keyed on declared state
 

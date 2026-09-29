@@ -18,7 +18,7 @@
 	update_icon()
 
 /obj/machinery/doorbell_chime/proc/chime()
-	if(inoperable())
+	if(!operable())
 		return
 	use_power(active_power_usage)
 	playsound(src, chime_sound, 75)
@@ -32,14 +32,14 @@
 	update_icon()
 
 /obj/machinery/doorbell_chime/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/doorbell_chime/update_icon()
 	cut_overlays()
 	if(panel_open)
 		add_overlay("dbchime-open")
-	if(inoperable())
+	if(!operable())
 		icon_state = "dbchime-off"
 	if(!id_tag)
 		icon_state = "dbchime-red"
@@ -113,11 +113,11 @@
 	update_icon()
 
 /obj/machinery/button/doorbell/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/button/doorbell/update_icon()
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		icon_state = "doorbell-off"
 	else
 		icon_state = "doorbell-standby"

@@ -41,10 +41,10 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 	if (istype(AM, /obj/machinery/computer/aiupload))
 		var/obj/machinery/computer/aiupload/comp = AM
-		if(comp.stat & NOPOWER)
+		if(comp.has_stat(NOPOWER))
 			to_chat(user, "The upload computer has no power!")
 			return
-		if(comp.stat & BROKEN)
+		if(comp.has_stat(BROKEN))
 			to_chat(user, "The upload computer is broken!")
 			return
 		if (!comp.current())
@@ -68,10 +68,10 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 
 	else if (istype(AM, /obj/machinery/computer/borgupload))
 		var/obj/machinery/computer/borgupload/comp = AM
-		if(comp.stat & NOPOWER)
+		if(comp.has_stat(NOPOWER))
 			to_chat(user, "The upload computer has no power!")
 			return
-		if(comp.stat & BROKEN)
+		if(comp.has_stat(BROKEN))
 			to_chat(user, "The upload computer is broken!")
 			return
 		if (!comp.current())

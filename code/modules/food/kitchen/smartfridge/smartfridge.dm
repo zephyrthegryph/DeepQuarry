@@ -19,7 +19,7 @@
 	var/collapse_stock = TRUE
 	var/seconds_electrified = 0;
 	var/shoot_inventory = 0
-	var/locked = 0
+	locked = 0
 	var/scan_id = 1
 	var/is_secure = 0
 	var/wrenchable = 0
@@ -72,11 +72,11 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 	return FALSE
 
 /obj/machinery/smartfridge/machine_step()
-	if(stat & (BROKEN|NOPOWER))
+	if(!operable())
 		soundloop.stop()
 		playing_sound = FALSE
 		return PROCESS_KILL
-	if(!playing_sound && !stat)
+	if(!playing_sound && !has_stat(MACHINE_STAT_ANY))
 		soundloop.start()
 		playing_sound = TRUE
 	if(src.seconds_electrified > 0)
@@ -87,11 +87,10 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 		return PROCESS_KILL
 
 /obj/machinery/smartfridge/power_change()
-	var/old_stat = stat
-	..()
-	if(old_stat != stat)
+	. = ..()
+	if(.)
 		update_icon()
-		if(stat & (NOPOWER | BROKEN))
+		if(!operable())
 			soundloop?.stop()
 			playing_sound = FALSE
 		else
@@ -119,11 +118,11 @@ DECLARE_REF(/obj/machinery/smartfridge, "item_records", OWNED_LIST, null)
 	if(panel_open)
 		add_overlay("[icon_base]-panel")
 
-	if(stat & (BROKEN))
+	if(has_stat(BROKEN))
 		cut_overlays()
 		icon_state = "[icon_base]-broken"
 
-	if(stat & (NOPOWER))
+	if(has_stat(NOPOWER))
 		icon_state = "[icon_base]-off"
 		switch(stored_count())
 			if(0)
@@ -153,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /// Old attackby.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		to_chat(user, span_notice("\The [src] is unpowered and useless."))
 		return INTERACTION_HANDLED_PASS
 
@@ -225,8 +224,8 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /obj/machinery/smartfridge/secure/emag_act(remaining_charges, mob/user)
 	if(!emagged)
-		emagged = 1
-		locked = -1
+		set_emagged(1)
+		set_locked(-1)
 		to_chat(user, span_filter_notice("You short out the product lock on [src]."))
 		return TRUE
 
@@ -260,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /// Old attack_hand.
 /obj/machinery/smartfridge/proc/smartfridge_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	wires.Interact(user)
 	tgui_interact(user)
@@ -340,7 +339,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
  * Secure Smartfridges
  */
 /obj/machinery/smartfridge/secure/tgui_act(action, params, datum/tgui/ui)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(ui.user.contents.Find(src) || (in_range(src, ui.user) && istype(loc, /turf)))
 		if((!allowed(ui.user) && scan_id) && !emagged && locked != -1 && action == "Release")
@@ -424,7 +423,7 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/smartfridge/step_start_condition()
-	return !(stat & (BROKEN|NOPOWER)) // its hum
+	return operable() // its hum
 
 /// LC-refs: What we're putting out of the machine. -- an OM handle (om_handle()), so it reads null once that is deleted.
 /obj/machinery/smartfridge/proc/currently_vending() as /datum/stored_item

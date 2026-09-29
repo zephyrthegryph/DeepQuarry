@@ -65,7 +65,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			om_task_periodic_stop(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 
@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 			user.do_attack_animation(src)
 			playsound(src,shatter_sound, 75, 1)
 			isbroken = 1
-			density = FALSE
+			set_density(FALSE)
 			icon_state = "[initial(icon_state)]-broken"
 			set_light(0)
 		else
@@ -100,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 		om_task_periodic(src, PERIODIC_SLOW)
 		to_chat(user, "You repair \the [src].")
 		isbroken = 0
-		density = TRUE
+		set_density(TRUE)
 		icon_state = initial(icon_state)
 		set_light(5)
 

@@ -111,7 +111,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 	var/duration = 5
 
 	var/list/internal_log
-	var/mode = 0  // 0 - making pass, 1 - viewing logs
+	mode = 0  // 0 - making pass, 1 - viewing logs
 
 /obj/machinery/computer/guestpass/Initialize(mapload)
 	. = ..()
@@ -146,7 +146,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 	effect = /obj/machinery/computer/guestpass/proc/interaction_insert_id
 
 /obj/machinery/computer/guestpass/proc/interaction_insert_id(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & NOPOWER) //checking for power in here so crowbar and screwdriver and stuff still works.
+	if(has_stat(NOPOWER)) //checking for power in here so crowbar and screwdriver and stuff still works.
 		to_chat(user, span_warning("The terminal refuses your I.D as it is unpowered!"))
 		return TRUE
 	if(!giver && user.unEquip(held))
@@ -214,7 +214,7 @@ DECLARE_PERIODIC(/obj/item/card/id/guest, PERIODIC_SLOW)
 
 	switch(action)
 		if("mode")
-			mode = params["mode"]
+			set_mode(params["mode"])
 
 		if("giv_name")
 			om_ask(ui.user, /datum/om/prompt/text, PROC_REF(pass_name_entered), title = "Name", message = "Person pass is issued to", default = giv_name, requires = PROMPT_USABLE)

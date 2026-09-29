@@ -65,7 +65,7 @@
 	cut_overlays()
 	if (dirty)
 		add_overlay("grbloody")
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return
 	if (!occupant)
 		add_overlay("grjam")
@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 
 /// Old attack_hand.
 /obj/machinery/gibber/proc/gibber_interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 	if(operating)
 		to_chat(user, span_danger("The gibber is locked and running, wait for it to finish."))
@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/machinery/gibber, \
 	. += "The safety guard is [emagged ? span_danger("disabled") : "enabled"]."
 
 /obj/machinery/gibber/emag_act(remaining_charges, mob/user)
-	emagged = !emagged
+	set_emagged(!emagged)
 	to_chat(user, span_danger("You [emagged ? "disable" : "enable"] the gibber safety guard."))
 	return 1
 

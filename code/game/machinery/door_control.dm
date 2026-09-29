@@ -67,7 +67,7 @@
 
 /obj/machinery/button/remote/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
-	if(stat & (NOPOWER|BROKEN))
+	if(!operable())
 		return TRUE
 
 	if(!allowed(user) && (wires_num & 1))
@@ -86,11 +86,11 @@
 	return
 
 /obj/machinery/button/remote/power_change()
-	..()
+	. = ..()
 	update_icon()
 
 /obj/machinery/button/remote/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "doorctrl-p"
 	else
 		icon_state = "doorctrl0"
@@ -186,7 +186,7 @@
 	icon_state = "stuffedbear"
 
 /obj/machinery/button/remote/blast_door/bear/update_icon()
-	if(stat & NOPOWER)
+	if(has_stat(NOPOWER))
 		icon_state = "stuffedbear"
 	else
 		icon_state = "stuffedbear"
@@ -217,7 +217,7 @@
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)
 		return
-	active = TRUE
+	set_active(TRUE)
 	update_icon()
 
 	for(var/obj/machinery/door/blast/M in REGISTRY_MEMBERS(REGISTRY_MACHINES))
@@ -239,7 +239,7 @@
 		if(M.id == id)
 			M.close()
 
-	active = FALSE
+	set_active(FALSE)
 	update_icon()
 
 /obj/machinery/button/remote/driver/declare_interactions(list/into)
@@ -267,7 +267,7 @@
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/button/remote/driver/update_icon()
-	if(!active || (stat & NOPOWER))
+	if(!active || (has_stat(NOPOWER)))
 		icon_state = "launcherbtt"
 	else
 		icon_state = "launcheract"

@@ -58,8 +58,8 @@
 /datum/apc_icon_renderer/proc/_compute_state(obj/machinery/power/apc/apc)
 	var/s = 0
 	if(apc.cell)       s |= UPDATE_CELL_IN
-	if(apc.stat & BROKEN) s |= UPDATE_BROKE
-	if(apc.stat & MAINT)  s |= UPDATE_MAINT
+	if(apc.has_stat(BROKEN)) s |= UPDATE_BROKE
+	if(apc.has_stat(MAINT))  s |= UPDATE_MAINT
 	if(apc.opened == 1)   s |= UPDATE_OPENED1
 	else if(apc.opened == 2) s |= UPDATE_OPENED2
 	else if(apc.wiresexposed) s |= UPDATE_WIREEXP
@@ -149,7 +149,7 @@
 	apc.cut_overlays()
 	if(!(state & UPDATE_ALLGOOD))
 		return
-	if(apc.stat & (BROKEN | MAINT))
+	if(apc.has_stat(BROKEN | MAINT))
 		return
 
 	var/list/new_overlays = list()
@@ -171,7 +171,7 @@
 	if(state & UPDATE_BLUESCREEN)
 		apc.set_light(l_range = 2, l_power = 0.25, l_color = "#0000FF")
 		return
-	if((state & UPDATE_ALLGOOD) && !(apc.stat & (BROKEN | MAINT)))
+	if((state & UPDATE_ALLGOOD) && !apc.has_stat(BROKEN | MAINT))
 		var/color
 		switch(apc.charging)
 			if(0) color = "#F86060"
