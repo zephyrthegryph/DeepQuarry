@@ -20,9 +20,9 @@
 /obj/machinery/atmospherics/trinary/Initialize(mapload)
 	. = ..()
 
-	own_set(src, "air1", new /datum/gas_mixture)
-	own_set(src, "air2", new /datum/gas_mixture)
-	own_set(src, "air3", new /datum/gas_mixture)
+	atmos_air_set(src, "air1", new /datum/gas_mixture)
+	atmos_air_set(src, "air2", new /datum/gas_mixture)
+	atmos_air_set(src, "air3", new /datum/gas_mixture)
 
 	air1.set_volume(200)
 	air2.set_volume(200)
@@ -124,19 +124,19 @@
 
 /obj/machinery/atmospherics/trinary/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		own_set(src, "air1", network_air)
+		atmos_air_set(src, "air1", network_air)
 	if(network2 == reference)
-		own_set(src, "air2", network_air)
+		atmos_air_set(src, "air2", network_air)
 	if(network3 == reference)
-		own_set(src, "air3", network_air)
+		atmos_air_set(src, "air3", network_air)
 
 /obj/machinery/atmospherics/trinary/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air1 == network_air)
-		own_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, "air1", detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air2 == network_air)
-		own_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, "air2", detached_pipenet_air(network_air, 200, network_volume))
 	if(network3 == reference && air3 == network_air)
-		own_set(src, "air3", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, "air3", detached_pipenet_air(network_air, 200, network_volume))
 
 /obj/machinery/atmospherics/trinary/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
@@ -223,12 +223,8 @@
 	else
 		to_chat(user, span_warning("Access denied."))
 
-/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
-/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
-/obj/machinery/atmospherics/trinary/lifecycle_unbind()
-	. = ..()
-	rel_clear(src, "node3")
-	rel_clear(src, "network1")
-	rel_clear(src, "network2")
-	rel_clear(src, "network3")
 
+
+PROTO(/obj/machinery/atmospherics/trinary, air1)
+PROTO(/obj/machinery/atmospherics/trinary, air2)
+PROTO(/obj/machinery/atmospherics/trinary, air3)

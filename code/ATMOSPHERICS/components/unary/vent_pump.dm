@@ -321,7 +321,7 @@
 	//some vents work his own special way
 	radio_filter_in = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_FROM_AIRALARM, area_uid) : null
 	radio_filter_out = new_frequency==1439 ? AIRALARM_AREA_FILTER(RADIO_TO_AIRALARM, area_uid) : null
-	radio_connection = register_radio(src, frequency, new_frequency, radio_filter_in)
+	rel_set(src, "radio_connection", register_radio(src, frequency, new_frequency, radio_filter_in))
 	frequency = new_frequency
 	broadcast_status()
 

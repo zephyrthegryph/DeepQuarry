@@ -11,8 +11,9 @@
 
 	var/efficiency = 0.4
 	var/kin_energy = 0
-	var/datum/gas_mixture/air_in = new
-	var/datum/gas_mixture/air_out = new
+	/// PROTO gas ports (atmos_air_set()): private until bound to a pipe network's mixture.
+	var/datum/gas_mixture/air_in
+	var/datum/gas_mixture/air_out
 	var/volume_ratio = 0.2
 	var/kin_loss = 0.001
 
@@ -23,6 +24,8 @@
 
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
 	. = ..()
+	atmos_air_set(src, "air_in", new /datum/gas_mixture(200))
+	atmos_air_set(src, "air_out", new /datum/gas_mixture(800))
 	air_in.set_volume(200)
 	air_out.set_volume(800)
 	volume_ratio = air_in.return_volume() / (air_in.return_volume() + air_out.return_volume())
@@ -182,15 +185,15 @@
 
 /obj/machinery/atmospherics/pipeturbine/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network1 == reference)
-		own_set(src, "air_in", network_air)
+		atmos_air_set(src, "air_in", network_air)
 	if(network2 == reference)
-		own_set(src, "air_out", network_air)
+		atmos_air_set(src, "air_out", network_air)
 
 /obj/machinery/atmospherics/pipeturbine/detach_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air, network_volume)
 	if(network1 == reference && air_in == network_air)
-		own_set(src, "air_in", detached_pipenet_air(network_air, 200, network_volume))
+		atmos_air_set(src, "air_in", detached_pipenet_air(network_air, 200, network_volume))
 	if(network2 == reference && air_out == network_air)
-		own_set(src, "air_out", detached_pipenet_air(network_air, 800, network_volume))
+		atmos_air_set(src, "air_out", detached_pipenet_air(network_air, 800, network_volume))
 
 /obj/machinery/atmospherics/pipeturbine/disconnect(obj/machinery/atmospherics/reference)
 	if(reference==node1)
@@ -263,10 +266,6 @@
 	if(air_in && air_out)
 		om_watch_arm_condition(src, "gas", list(air_in.arena_id(), air_out.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
 
-/// Phase 1, after the shared topology teardown: let go of the arms and network wrappers the
-/// base unbind doesn't know about, so two doomed neighbours can't keep each other alive.
-/obj/machinery/atmospherics/pipeturbine/lifecycle_unbind()
-	. = ..()
-	rel_clear(src, "network1")
-	rel_clear(src, "network2")
+PROTO(/obj/machinery/atmospherics/pipeturbine, air_in)
+PROTO(/obj/machinery/atmospherics/pipeturbine, air_out)
 
