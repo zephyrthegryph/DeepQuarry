@@ -124,9 +124,8 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 		return GLOB.tail_styles_list[tail_style]
 	return null
 
-// The loadout catalog is built once at boot and never torn down: its tweak list is boot-time data
-// mixing the shared GLOB.gear_tweak_* singletons with per-entry variant tweaks, owned by nobody.
-SHARED(/datum/gear, gear_tweaks)
+// Each catalog entry owns its gear_tweaks (own_add of a fresh tweak): one kind for the whole list,
+// instead of mixing the GLOB.gear_tweak_* singletons with per-entry variant tweaks.
 
 /datum/gear/New()
 	..()
@@ -136,7 +135,12 @@ SHARED(/datum/gear, gear_tweaks)
 	// gear_tweak_free_matrix_recolor swapped for gear_tweak_unified_recolor,
 	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
 	// code/datums/gear/gear_tweak_recolor.dm).
-	gear_tweaks = list(GLOB.gear_tweak_free_name, GLOB.gear_tweak_free_desc, GLOB.gear_tweak_item_tf_spawn, GLOB.gear_tweak_unified_recolor, GLOB.gear_tweak_free_digestable)
+	own_clear(src, "gear_tweaks", OWN_DELETE)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/custom_name)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/custom_desc)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/item_tf_spawn)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/recolor)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/toggle_digestable)
 
 /datum/gear_data
 	var/path

@@ -4,7 +4,7 @@
 
 /datum/gear/plushieteshcolor/New()
 	..()
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
 
 /datum/gear/medication
 	display_name = "medication selection"
@@ -24,4 +24,4 @@
 	"Pill Bottle (Aphrodisiac)" = /obj/item/storage/pill_bottle/aphrodisiac
 	)
 	var/path_tweak = new /datum/gear_tweak/path(medications) // gear_tweaks is SHARED (_gear.dm): a plain tweak list, not an owned roster
-	LAZYADD(gear_tweaks, path_tweak)
+	own_add(src, "gear_tweaks", path_tweak)

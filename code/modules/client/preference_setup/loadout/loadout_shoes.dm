@@ -12,4 +12,4 @@
 	"visible extra large jackboots" = /obj/item/clothing/shoes/mech_shoes/mister_x/visible
 	)
 	var/path_tweak = new /datum/gear_tweak/path(mechshoes) // gear_tweaks is SHARED (_gear.dm): a plain tweak list, not an owned roster
-	LAZYADD(gear_tweaks, path_tweak)
+	own_add(src, "gear_tweaks", path_tweak)

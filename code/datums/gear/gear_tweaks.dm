@@ -301,7 +301,7 @@ GLOBAL_DATUM_INIT(gear_tweak_free_matrix_recolor, /datum/gear_tweak/matrix_recol
 
 //Custom name and desciption code
 //note to devs downstream: where 'gear_tweaks = list(GLOB.gear_tweak_free_color_choice)' was used before for color selection
-//in the loadout, now 'gear_tweaks += GLOB.gear_tweak_free_color_choice' will need to be used, otherwise the item will not
+//in the loadout, now an owned color tweak must be added to gear_tweaks (see _gear.dm), otherwise the item will not
 // be able to be given a custom name or description
 /*
 Custom Name

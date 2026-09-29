@@ -932,10 +932,10 @@ SUBSYSTEM_DEF(internal_wiki)
 				data["grind_reagents"] = grind_list
 
 	data["recipies"] = null
-	M.get_recipes() // generate if not already
-	if(M.recipes != null && length(M.recipes) > 0)
+	var/list/mat_recipes = M.get_recipes()
+	if(length(mat_recipes))
 		var/list/recipie_list = list()
-		for(var/datum/stack_recipe/R in M.recipes)
+		for(var/datum/stack_recipe/R in mat_recipes)
 			recipie_list.Add(R.title)
 		data["recipies"] = recipie_list
 

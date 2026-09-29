@@ -287,7 +287,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 		if(finds && finds.len)
 			var/datum/find/F = finds[1]
 			if(newDepth > F.excavation_required) // Digging too deep with something as clumsy or random as a blaster will destroy artefacts
-				finds.Remove(finds[1])
+				own_remove(src, "finds", finds[1])
 				if(prob(50))
 					artifact_debris()
 
@@ -538,7 +538,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 						//Technically you CAN KEEP RUNNING INTO THE TILE but like, you're wasting so much time at that point. Just buy a pick set from the mining vendor.
 			excavate_find(prob(1), finds[1]) //1 in 100 chance of digging it out
 	else //destructive methods will always destroy finds, no bowls menacing with spikes for you
-		finds.Remove(finds[1])
+		own_remove(src, "finds", finds[1])
 		artifact_debris()
 
 /turf/simulated/mineral/proc/update_archeo_overlays(excavation_amount = 0)
@@ -684,7 +684,7 @@ EXTEND_INTERACTIONS(/turf/simulated/mineral, INTERACT_ITEM("Dig", PROC_REF(miner
 				visible_message(span_danger("\The [pick("[display_name] crumbles away into dust","[display_name] breaks apart")]."))
 				qdel(X)
 
-	finds.Remove(F)
+	own_remove(src, "finds", F)
 
 /turf/simulated/mineral/proc/artifact_debris(severity = 0)
 	//cael's patented random limited drop componentized loot system!

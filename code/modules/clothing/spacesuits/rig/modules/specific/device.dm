@@ -154,25 +154,30 @@
 	interface_desc = "Leave your mark."
 	engage_string = "Toggle stamp type"
 	usable = 1
-	var/iastamp
-	var/deniedstamp
+	/// The stamp not currently mounted as `device`; the two swap on toggle.
+	var/obj/item/stamp/spare_stamp
+
+OWN(/obj/item/rig_module/device/stamp, spare_stamp, OWN_CONTAINED)
 
 /obj/item/rig_module/device/stamp/Initialize(mapload)
 	. = ..()
-	iastamp = new /obj/item/stamp/internalaffairs(src)
-	deniedstamp = new /obj/item/stamp/denied(src)
-	own_set(src, "device", iastamp)
+	own_set(src, "device", new /obj/item/stamp/internalaffairs(src))
+	own_set(src, "spare_stamp", new /obj/item/stamp/denied(src))
 
 /obj/item/rig_module/device/stamp/engage(atom/target)
 	if(!..() || !device)
 		return 0
 
 	if(!target)
-		if(device == iastamp)
-			own_set(src, "device", deniedstamp)
+		if(!spare_stamp)
+			return 1
+		var/obj/item/mounted = own_take(src, "device")
+		var/obj/item/spare = own_take(src, "spare_stamp")
+		own_set(src, "device", spare)
+		own_set(src, "spare_stamp", mounted)
+		if(istype(device, /obj/item/stamp/denied))
 			to_chat(holder.wearer(), span_notice("Switched to denied stamp."))
-		else if(device == deniedstamp)
-			own_set(src, "device", iastamp)
+		else
 			to_chat(holder.wearer(), span_notice("Switched to internal affairs stamp."))
 		return 1
 

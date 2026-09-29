@@ -115,10 +115,11 @@
 			else
 				data["viewMode"] = "Compressed"
 
-			for (var/datum/stock/S in GLOB.stockExchange.last_read)
-				var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-				if (!(logged_in in LR))
-					LR[logged_in] = 0
+			for (var/datum/stock/S in GLOB.stockExchange.stocks)
+				if (!S.last_read)
+					S.last_read = list()
+				if (!(logged_in in S.last_read))
+					S.last_read[logged_in] = 0
 
 			data["stocks"] = list()
 
@@ -146,8 +147,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-						var/lrt = LR[logged_in]
+						var/lrt = LAZYACCESS(S.last_read, logged_in)
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)
 								news = 1
@@ -179,8 +179,7 @@
 
 					var/news = 0
 					if (logged_in)
-						var/list/LR = LAZYACCESS(GLOB.stockExchange.last_read, S)
-						var/lrt = LR[logged_in]
+						var/lrt = LAZYACCESS(S.last_read, logged_in)
 						for (var/datum/article/A in S.articles)
 							if (A.ticks > lrt)
 								news = 1
@@ -242,7 +241,9 @@
 						"current_desc" = E.current_desc,
 				))
 
-			for (var/datum/article/A in current_stock().articles)
+			var/list/stock_articles = current_stock().articles
+			for (var/article_index = length(stock_articles), article_index >= 1, article_index--) // articles are appended oldest first; show newest first
+				var/datum/article/A = stock_articles[article_index]
 				data["articles"] += list(list(
 						"headline" = A.headline,
 						"subtitle" = A.subtitle,

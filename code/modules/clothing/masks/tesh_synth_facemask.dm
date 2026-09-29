@@ -63,7 +63,7 @@
 
 /datum/gear/mask/synthface/New()
 	..()
-	LAZYADD(gear_tweaks, GLOB.gear_tweak_free_color_choice)
+	own_add(src, "gear_tweaks", new /datum/gear_tweak/color)
 
 /// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon
