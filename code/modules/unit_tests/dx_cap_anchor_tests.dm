@@ -2,12 +2,12 @@
 
 /obj/cap_fixture/anchorable/capabilities()
 	. = ..()
-	. += anchor()
+	. += cap_anchor()
 
 /obj/cap_fixture/anchorable/space_ok/capabilities()
 	. = ..()
 	. = without(., /datum/capability/anchor)
-	. += anchor(tool = TOOL_SCREWDRIVER, delay = 0, needs_floor = FALSE)
+	. += cap_anchor(tool = TOOL_SCREWDRIVER, delay = 0, needs_floor = FALSE)
 
 /datum/unit_test/dx_cap_anchor
 

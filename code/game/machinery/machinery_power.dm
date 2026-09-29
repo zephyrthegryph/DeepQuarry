@@ -37,9 +37,10 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	var/changed = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
-	if(!changed) // the setter raised CHANGE_MACHINE_POWER
+	var/flipped = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
+	if(!flipped) // the setter raised CHANGE_MACHINE_POWER
 		return FALSE
+	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(has_stat(NOPOWER))
 		OM_EMIT(src, /datum/om/event/machinery_power_lost)
 	else

@@ -13,7 +13,7 @@
 	/// Only restrained mobs can be buckled (pipes).
 	var/needs_restraints = FALSE
 
-/proc/buckle(max = 1, lying = FALSE, needs_restraints = FALSE, behind = NONE, log = LOG_GAME)
+/proc/cap_buckle(max = 1, lying = FALSE, needs_restraints = FALSE, behind = NONE, log = LOG_GAME)
 	var/datum/capability/buckle/C = new
 	C.max = max
 	C.lying = lying
@@ -26,14 +26,18 @@
 	var/atom/movable/AM = holder
 	if(!istype(AM))
 		return
+	// The args are type defaults (design review H1): a map varedit of these holder vars wins.
 	AM.can_buckle = TRUE
-	AM.max_buckled_mobs = max
-	AM.buckle_lying = lying ? 1 : 0
-	AM.buckle_require_restraints = needs_restraints
+	if(AM.max_buckled_mobs == initial(AM.max_buckled_mobs))
+		AM.max_buckled_mobs = max
+	if(AM.buckle_lying == initial(AM.buckle_lying))
+		AM.buckle_lying = lying ? 1 : 0
+	if(AM.buckle_require_restraints == initial(AM.buckle_require_restraints))
+		AM.buckle_require_restraints = needs_restraints
 
 /datum/capability/buckle/interactions(atom/holder)
-	var/datum/capability/entry/grabbed = use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
-	var/datum/capability/entry/release = hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), behind = behind, needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/grabbed = cap_use_on("Buckle", /obj/item/grab, TYPE_PROC_REF(/atom/movable, cap_buckle_grabbed), behind = behind, works_broken = TRUE, works_unpowered = TRUE, log = log)
+	var/datum/capability/entry/release = cap_hand("Unbuckle", TYPE_PROC_REF(/atom/movable, cap_buckle_release), behind = behind, needs = TYPE_PROC_REF(/atom/movable, cap_buckle_occupied), else_say = "nobody is buckled to it", works_broken = TRUE, works_unpowered = TRUE, log = log)
 	return list(adopt_entry(grabbed), adopt_entry(release))
 
 /datum/capability/buckle/examine(atom/holder, mob/user)

@@ -26,18 +26,18 @@
 
 /obj/cap_fixture/entries/capabilities()
 	. = ..()
-	. += hand("Poke", PROC_REF(fx_poke), log = LOG_GAME)
-	. += hand("Covered", PROC_REF(fx_poke), behind = COVER)
-	. += hand("Paneled", PROC_REF(fx_poke), behind = PANEL)
-	. += hand("Locked", PROC_REF(fx_poke), locked_by = LOCK)
-	. += hand("Needy", PROC_REF(fx_poke), needs = PROC_REF(fx_ready), else_say = "it isn't ready")
-	. += hand("Needy text", PROC_REF(fx_poke), needs = PROC_REF(fx_ready_text))
-	. += hand("Broken ok", PROC_REF(fx_poke), works_broken = TRUE)
-	. += hand("Unpowered ok", PROC_REF(fx_poke), works_unpowered = TRUE)
-	. += tool("Tighten", TOOL_WRENCH, PROC_REF(fx_held), log = LOG_GAME)
-	. += use_on("Write", /obj/item/pen, PROC_REF(fx_held))
-	. += insert("Insert", /obj/item/paper, PROC_REF(fx_held))
-	. += hand("Form", PROC_REF(fx_form), form = list(dx_canned_field(/datum/form_field/choice/dx_canned, "pack", "medical"), dx_canned_field(/datum/form_field/text/dx_canned, "reason", "because"), dx_canned_field(/datum/form_field/number/dx_canned, "qty", 3)))
+	. += cap_hand("Poke", PROC_REF(fx_poke), log = LOG_GAME)
+	. += cap_hand("Covered", PROC_REF(fx_poke), behind = COVER)
+	. += cap_hand("Paneled", PROC_REF(fx_poke), behind = PANEL)
+	. += cap_hand("Locked", PROC_REF(fx_poke), locked_by = LOCK)
+	. += cap_hand("Needy", PROC_REF(fx_poke), needs = PROC_REF(fx_ready), else_say = "it isn't ready")
+	. += cap_hand("Needy text", PROC_REF(fx_poke), needs = PROC_REF(fx_ready_text))
+	. += cap_hand("Broken ok", PROC_REF(fx_poke), works_broken = TRUE)
+	. += cap_hand("Unpowered ok", PROC_REF(fx_poke), works_unpowered = TRUE)
+	. += cap_tool("Tighten", TOOL_WRENCH, PROC_REF(fx_held), log = LOG_GAME)
+	. += cap_use_on("Write", /obj/item/pen, PROC_REF(fx_held))
+	. += cap_insert("Insert", /obj/item/paper, PROC_REF(fx_held))
+	. += cap_hand("Form", PROC_REF(fx_form), form = list(dx_entries_canned_field(/datum/form_field/choice/dx_canned, "pack", "medical"), dx_entries_canned_field(/datum/form_field/text/dx_canned, "reason", "because"), dx_entries_canned_field(/datum/form_field/number/dx_canned, "qty", 3)))
 
 /obj/cap_fixture/entries/proc/fx_poke(mob/user, obj/item/held)
 	LAZYADD(calls, "poke")
@@ -71,7 +71,7 @@
 /datum/form_field/number/dx_canned/ask(datum/dispatch_context/ctx)
 	return canned
 
-/proc/dx_canned_field(path, name, canned)
+/proc/dx_entries_canned_field(path, name, canned)
 	var/datum/form_field/F = new path
 	F.name = name
 	if(istype(F, /datum/form_field/choice/dx_canned))
@@ -130,7 +130,9 @@
 	F.powered = FALSE
 	TEST_ASSERT_EQUAL(poke.why_not(H, F, null), "it has no power", "entries refuse unpowered")
 	TEST_ASSERT_NULL(dx_cap_entry(F, "Unpowered ok").why_not(H, F, null), "works_unpowered ignores it")
-	TEST_ASSERT_NULL(dx_cap_entry(F, "Tighten").why_not(H, F, null), "tool entries default to works_unpowered")
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	TEST_ASSERT_EQUAL(dx_cap_entry(F, "Tighten").why_not(H, F, null), "needs a wrench", "a tool entry wants its tool")
+	TEST_ASSERT_NULL(dx_cap_entry(F, "Tighten").why_not(H, F, wrench), "tool entries default to works_unpowered")
 	F.powered = TRUE
 
 /// tool/use_on/insert pass the held item to the handler; the selector wants the right item.

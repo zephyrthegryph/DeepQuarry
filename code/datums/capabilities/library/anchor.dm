@@ -16,7 +16,7 @@
 	/// Refuse to anchor on space, open space, or anywhere that isn't a turf.
 	var/needs_floor = TRUE
 
-/proc/anchor(tool = TOOL_WRENCH, delay = 2 SECONDS, needs_floor = TRUE, behind = NONE, log = LOG_GAME)
+/proc/cap_anchor(tool = TOOL_WRENCH, delay = 2 SECONDS, needs_floor = TRUE, behind = NONE, log = LOG_GAME)
 	var/datum/capability/anchor/C = new
 	C.tool_quality = tool
 	C.delay = delay
@@ -26,7 +26,7 @@
 	return C
 
 /datum/capability/anchor/interactions(atom/holder)
-	var/datum/capability/entry/wrapper = tool("Anchor", tool_quality, TYPE_PROC_REF(/atom/movable, cap_anchor_toggle), delay = delay, behind = behind, needs = needs_floor ? TYPE_PROC_REF(/atom/movable, cap_anchor_floor_ok) : null, log = log, name_proc = TYPE_PROC_REF(/atom/movable, cap_anchor_name))
+	var/datum/capability/entry/wrapper = cap_tool("Anchor", tool_quality, TYPE_PROC_REF(/atom/movable, cap_anchor_toggle), delay = delay, behind = behind, needs = needs_floor ? TYPE_PROC_REF(/atom/movable, cap_anchor_floor_ok) : null, log = log, name_proc = TYPE_PROC_REF(/atom/movable, cap_anchor_name))
 	return list(adopt_entry(wrapper))
 
 /datum/capability/anchor/examine(atom/holder, mob/user)

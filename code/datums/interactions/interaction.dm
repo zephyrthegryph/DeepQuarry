@@ -176,6 +176,10 @@
 /datum/interaction/proc/start_feedback_for(mob/actor, atom/target, obj/item/held)
 	return start_feedback
 
+/// Inline start lines, list(self, others), for a timed interaction with no start_feedback template; or null.
+/datum/interaction/proc/start_lines(mob/actor, atom/target, obj/item/held)
+	return null
+
 /**
  * Pays the cost through the tool pipeline (use_tool(), tools.dm): quality and
  * tier, fuel or charge, the sound, the scaled wait and the resources. Returns
@@ -296,7 +300,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 				stack_trace("Duplicate interaction id [interaction.id] ([path])")
 				continue
 			by_id[interaction.id] = interaction
-	return by_id[id] || construction_edge_by_id(id)
+	return by_id[id] || GLOB.cap_entries_by_id[id] || construction_edge_by_id(id)
 
 /**
  * Compact interaction specs (doc/rewrite/interactions.md §5a): built with the
