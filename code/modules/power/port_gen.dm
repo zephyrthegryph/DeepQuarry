@@ -13,6 +13,11 @@
 	var/power_gen = 5000
 	var/recent_fault = 0
 	var/power_output = 1
+	/// Until when an EMP keeps the generator down (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
+
+EMP_DISABLE(/obj/machinery/power/port_gen, 10 MINUTES, "emp_until")
+DAMAGE_REACTION(/obj/machinery/power/port_gen, DAMAGE_EMP, PROC_REF(port_gen_emp_fault))
 
 /obj/machinery/power/port_gen/proc/IsBroken()
 	return (has_stat(BROKEN | EMPED))
@@ -81,28 +86,23 @@
 		else
 			. += span_notice("The generator is off.")
 
-/obj/machinery/power/port_gen/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	var/duration = 6000 //ten minutes
-	switch(severity)
+/// A pulse can break the generator outright, or blow it up (the outage itself is the EMP_DISABLE).
+/obj/machinery/power/port_gen/proc/port_gen_emp_fault(datum/damage_packet/packet)
+	switch(packet.severity)
 		if(EMP_HEAVY)
 			stat_add(BROKEN)
-			if(prob(75)) explode()
+			if(prob(75))
+				explode()
+				return DAMAGE_REACTION_BLOCK
 		if(EMP_MEDIUM)
 			if(prob(50)) stat_add(BROKEN)
-			if(prob(10)) explode()
+			if(prob(10))
+				explode()
+				return DAMAGE_REACTION_BLOCK
 		if(EMP_LIGHT)
 			if(prob(25)) stat_add(BROKEN)
-			duration = 300
 		if(EMP_HARMLESS)
 			if(prob(10)) stat_add(BROKEN)
-			duration = 300
-
-	stat_add(EMPED)
-	if(duration)
-		om_after(src, duration, PROC_REF(emp_recover))
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)
@@ -812,10 +812,16 @@
 
 	state_change = FALSE
 
-/obj/machinery/power/rtg/abductor/blob_act(obj/structure/blob/B)
-	asplod()
+DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_BLOB, PROC_REF(void_core_hit_asplod))
+DAMAGE_REACTION(/obj/machinery/power/rtg/abductor, DAMAGE_EXPLOSION, PROC_REF(void_core_blast))
 
-/obj/machinery/power/rtg/abductor/ex_act()
+/// A blob arms the core instead of damaging it.
+/obj/machinery/power/rtg/abductor/proc/void_core_hit_asplod(datum/damage_packet/packet)
+	asplod()
+	return DAMAGE_REACTION_BLOCK
+
+/// A blast arms the core, or finishes one already armed.
+/obj/machinery/power/rtg/abductor/proc/void_core_blast(datum/damage_packet/packet)
 	// Exception: asplod() is this volatile core's already-armed detonation lifecycle.
 	// qdel here only completes that lifecycle; ordinary shell damage enters through
 	// the inherited obj_integrity projectile path before arming the core.
@@ -823,6 +829,7 @@
 		qdel(src)
 	else
 		asplod()
+	return DAMAGE_REACTION_BLOCK
 
 /// Heat behaviour rule: fire sets off a void core.
 /obj/machinery/power/rtg/abductor/proc/rule_asplod(datum/rule/rule)
@@ -874,11 +881,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 	qdel(src)
 	new /obj/singularity(T)
 
-/obj/machinery/power/rtg/kugelblitz/blob_act(obj/structure/blob/B)
-	asplod()
+DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_BLOB, PROC_REF(kugelblitz_hit_asplod))
+DAMAGE_REACTION(/obj/machinery/power/rtg/kugelblitz, DAMAGE_EXPLOSION, PROC_REF(kugelblitz_hit_asplod))
 
-/obj/machinery/power/rtg/kugelblitz/ex_act()
+/// A blob or a blast collapses the containment.
+/obj/machinery/power/rtg/kugelblitz/proc/kugelblitz_hit_asplod(datum/damage_packet/packet)
 	asplod()
+	return DAMAGE_REACTION_BLOCK
 
 /// Heat behaviour rule: fire sets off a kugelblitz.
 /obj/machinery/power/rtg/kugelblitz/proc/rule_asplod(datum/rule/rule)
@@ -1166,11 +1175,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 		explosion(T, 7, 12, 18, 20)
 		new /obj/effect/bhole(T)
 
-/obj/machinery/power/rtg/antimatter_core/blob_act(obj/structure/blob/B)
-	return
+DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_block))
+DAMAGE_REACTION(/obj/machinery/power/rtg/antimatter_core, DAMAGE_EXPLOSION, PROC_REF(antimatter_core_blast))
 
-/obj/machinery/power/rtg/antimatter_core/ex_act()
+/// A blast ruptures the reactor.
+/obj/machinery/power/rtg/antimatter_core/proc/antimatter_core_blast(datum/damage_packet/packet)
 	asplod()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/machinery/power/rtg/antimatter_core/bullet_act(obj/item/projectile/Proj)
 	. = ..()
@@ -1178,8 +1189,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/power/rtg/abductor/hybrid/built, "cell", /o
 		log_and_message_admins("[ADMIN_LOOKUPFLW(Proj.firer)] triggered an antimatter core explosion at [x],[y],[z] via projectile.", Proj.firer)
 		asplod()
 
-/obj/machinery/power/port_gen/proc/emp_recover()
-	stat_remove(EMPED)
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).
 /obj/machinery/power/rtg/step_start_condition()

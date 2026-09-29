@@ -16,6 +16,10 @@
 	var/working = TRUE
 	/// if TRUE, someone manually disabled us via console.
 	var/research_disabled = FALSE
+	/// Until when an EMP keeps the server halted (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
+
+EMP_DISABLE(/obj/machinery/rnd/server, 60 SECONDS, "emp_until")
 
 /obj/machinery/rnd/server/Initialize(mapload)
 	. = ..()
@@ -59,17 +63,9 @@ DECLARE_REF(/obj/machinery/rnd/server, "stored_research", BACKLIST, "techweb_ser
 		return 0
 	return ..()
 
-/obj/machinery/rnd/server/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	stat_add(EMPED)
-	om_after(src, 60 SECONDS, PROC_REF(fix_emp))
-	refresh_working()
-
-/// Callback to un-emp the server afetr some time.
-/obj/machinery/rnd/server/proc/fix_emp()
-	stat_remove(EMPED)
+/// Halted while EMP'd, working again once the outage lapses.
+/obj/machinery/rnd/server/emp_disable_changed(disabled)
+	..()
 	refresh_working()
 
 /// Toggles whether or not researched_disabled is, yknow, disabled

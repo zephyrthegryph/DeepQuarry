@@ -135,8 +135,11 @@
 		return receive_projectile(P, def_zone, girder_material.reflectivity)
 	return receive_projectile(P, def_zone)
 
-/obj/structure/girder/blob_act()
+DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
+/// A blob pulls the girder apart.
+/obj/structure/girder/proc/girder_blob(datum/damage_packet/packet)
 	dismantle()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/girder/proc/reset_girder()
 	name = "[girder_material.display_name] [initial(name)]"

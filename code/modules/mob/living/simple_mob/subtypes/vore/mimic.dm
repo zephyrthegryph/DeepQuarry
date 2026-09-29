@@ -48,12 +48,15 @@
 	else
 		return ..()
 
-/obj/structure/closet/crate/mimic/ex_act(severity)
+DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(blast_consume))
+
+/// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
+/obj/structure/closet/crate/mimic/proc/blast_consume(datum/damage_packet/packet)
 	latent_discard()
 	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
 		consume(O)
 	qdel(src)
-	return
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/closet/crate/mimic/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
@@ -184,13 +187,6 @@
 	else
 		return ..()
 
-/obj/structure/closet/crate/mimic/airlock/ex_act(severity) //Stores Mimic Contents for later
-	latent_discard()
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
-		consume(O)
-	qdel(src)
-	return
-
 /obj/structure/closet/crate/mimic/airlock/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
@@ -273,13 +269,6 @@
 			return ..()
 	else
 		return ..()
-
-/obj/structure/closet/crate/mimic/closet/ex_act(severity) //Stores Mimic Contents for later
-	latent_discard()
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
-		consume(O)
-	qdel(src)
-	return
 
 /obj/structure/closet/crate/mimic/closet/take_damage(damage_amount, damage_type = BRUTE, damage_flag = "", sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
@@ -379,8 +368,7 @@ EXTEND_INTERACTIONS(/obj/effect/floormimic, INTERACT_ITEM(null, PROC_REF(floormi
 		return TRUE
 	return FALSE
 
-/obj/effect/floormimic/ex_act(severity)
-	qdel(src)
+DAMAGE_REACTION(/obj/effect/floormimic, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
 /obj/effect/floormimic/safe
 	mimic_chance = 0

@@ -165,5 +165,8 @@
 
 	say_list_type = /datum/say_list/rabbit
 
-/mob/living/simple_mob/vore/rabbit/killer/ex_act()
+DAMAGE_REACTION(/mob/living/simple_mob/vore/rabbit/killer, DAMAGE_EXPLOSION, PROC_REF(blast_gib))
+
+/mob/living/simple_mob/vore/rabbit/killer/proc/blast_gib(datum/damage_packet/packet)
 	gib()
+	return DAMAGE_REACTION_BLOCK

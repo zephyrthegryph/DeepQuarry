@@ -51,8 +51,12 @@
 
 DECLARE_REF(/obj/structure/noticeboard, "notices", OWNED_LIST, null)
 
-/obj/structure/noticeboard/ex_act(severity)
+DAMAGE_REACTION(/obj/structure/noticeboard, DAMAGE_EXPLOSION, PROC_REF(noticeboard_blast_dismantle))
+
+/// Any blast knocks the board down into its parts.
+/obj/structure/noticeboard/proc/noticeboard_blast_dismantle(datum/damage_packet/packet)
 	dismantle()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/noticeboard/update_icon()
 	icon_state = "[base_icon_state][LAZYLEN(notices)]"

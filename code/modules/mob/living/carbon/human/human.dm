@@ -166,6 +166,8 @@ REGISTRY_MEMBERSHIP(/mob/living/carbon/human, REGISTRY_PRISONWARPED)
 		RigPanel(R)
 
 /mob/living/carbon/human/ex_act(severity)
+	if(..())
+		return
 	if(is_incorporeal()) // Can't explode shadekin in phase
 		return
 

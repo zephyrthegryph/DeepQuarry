@@ -29,11 +29,10 @@ DECLARE_DEFAULT_CHILD(/obj/item/implant/integrated_circuit, "IC", /obj/item/elec
 	<b>Integrity:</b> Implant is not shielded from electromagnetic interference, otherwise it is independent of subject's status."}
 	return dat
 
-/obj/item/implant/integrated_circuit/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	IC.emp_act(severity, recursive)
+DAMAGE_REACTION(/obj/item/implant/integrated_circuit, DAMAGE_EMP, PROC_REF(circuit_implant_emp))
+/// The pulse reaches the assembly inside.
+/obj/item/implant/integrated_circuit/proc/circuit_implant_emp(datum/damage_packet/packet)
+	IC.emp_act(packet.severity)
 
 /obj/item/implant/integrated_circuit/examine(mob/user)
 	. = ..()

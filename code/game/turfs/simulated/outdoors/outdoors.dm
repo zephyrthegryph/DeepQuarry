@@ -144,8 +144,11 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	return // Todo: Add heavy snow.
 
 /// Outdoor ground erodes a layer (demote) instead of losing integrity.
+// ALLOW(sys_entry_override): the blast sink of outdoor ground: it changes turf (demote) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it
 /turf/simulated/floor/outdoors/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)
+		return 0
+	if(react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)) // the ladder below is not a DAMAGE_ENTRY_EXPLOSION packet
 		return 0
 	switch(round(severity))
 		// Outdoor turfs less explosion resistant

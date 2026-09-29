@@ -154,15 +154,19 @@ DECLARE_REF(/obj/structure/hoist, "source_hook", OWNED, null)
 		release_hoistee()
 	QDEL_NULL(source_hook)
 
-/obj/structure/hoist/ex_act(severity)
-	. = ..()
-	if(!QDELETED(src) && severity <= 2 && !broken)
+DAMAGE_REACTION_AFTER(/obj/structure/hoist, DAMAGE_EXPLOSION, PROC_REF(hoist_blast_break))
+DAMAGE_REACTION(/obj/effect/hoist_hook, DAMAGE_EXPLOSION, PROC_REF(hook_blast_break))
+
+/// A hoist that survives a heavy blast is broken by it.
+/obj/structure/hoist/proc/hoist_blast_break(datum/damage_packet/packet)
+	if(packet.severity <= 2 && !broken)
 		break_hoist()
 
-/obj/effect/hoist_hook/ex_act(severity)
-	// A hit on the hook wrenches the hoist; it breaks more often the closer the blast.
-	if(prob(100 / severity))
+/// A hit on the hook wrenches the hoist; it breaks more often the closer the blast (the hook itself takes nothing).
+/obj/effect/hoist_hook/proc/hook_blast_break(datum/damage_packet/packet)
+	if(prob(100 / packet.severity))
 		source_hoist().break_hoist()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/hoist
 	silicon_use = ROBOT_USE_HAND

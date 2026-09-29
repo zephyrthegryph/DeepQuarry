@@ -417,8 +417,10 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 		name = "Generic Entry"
 	prize_list += new /datum/data/mining_equipment(name, path, cost)
 
-/obj/machinery/mineral/equipment_vendor/ex_act(severity, target)
+DAMAGE_REACTION(/obj/machinery/mineral/equipment_vendor, DAMAGE_EXPLOSION, PROC_REF(vendor_blast_sparks))
+
+/// A blast throws sparks off the vendor.
+/obj/machinery/mineral/equipment_vendor/proc/vendor_blast_sparks(datum/damage_packet/packet)
 	fx_sparks(src, 5)
-	return ..()
 
 DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "prize_list", OWNED_LIST, null)

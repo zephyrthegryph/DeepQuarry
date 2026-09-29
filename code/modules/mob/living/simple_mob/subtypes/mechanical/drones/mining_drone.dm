@@ -135,9 +135,6 @@ DECLARE_REF(/mob/living/simple_mob/mechanical/mining_drone, "my_storage", OWNED,
 // poked legacy ai_brain.check_attacker / add_attacker. The modern brain handles
 // retaliation automatically via dq_notify_damage; these wrappers are noops now.
 
-/mob/living/simple_mob/mechanical/mining_drone/bullet_act(obj/item/projectile/P, def_zone)
-	return ..()
-
 /mob/living/simple_mob/mechanical/mining_drone/hit_with_weapon(obj/item/I, mob/living/user, effective_force, hit_zone)
 	return ..()
 /datum/om/stage/life/special/mechanical/mining_drone

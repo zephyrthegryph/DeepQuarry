@@ -34,6 +34,11 @@
 	/// matters (fire burns an object down, acid melts it). Null derives it per
 	/// kind from injury_armor_key(). Mobs ignore it: injure() looks armour up by kind.
 	var/armor_flag
+	/// The entry point that built the packet (DAMAGE_ENTRY_*), 0 for a direct delivery.
+	/// Entry triggers of declared damage reactions match on it (code/datums/sys/damage_reactions.dm).
+	var/entry = 0
+	/// EMP / explosion severity for those entries, 0 otherwise.
+	var/severity = 0
 
 POOL_DECLARE(/datum/damage_packet)
 DECLARE_REF(/datum/damage_packet, "source", TRANSIENT, null)
@@ -44,6 +49,8 @@ DECLARE_REF(/datum/damage_packet, "penetration", TRANSIENT, null)
 DECLARE_REF(/datum/damage_packet, "direction", TRANSIENT, null)
 DECLARE_REF(/datum/damage_packet, "flags", TRANSIENT, null)
 DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "entry", TRANSIENT, null)
+DECLARE_REF(/datum/damage_packet, "severity", TRANSIENT, null)
 
 /datum/damage_packet/New()
 	amounts = new /list(DAMAGE_KIND_COUNT)
@@ -51,7 +58,7 @@ DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
 		amounts[i] = 0
 
 /// Take a clean packet from the pool.
-/proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null)
+/proc/damage_packet(atom/source, atom/attacker, atom/weapon, zone, flags = NONE, penetration = 0, direction = 0, armor_flag = null, entry = 0, severity = 0)
 	var/datum/damage_packet/packet = pool_take(/datum/damage_packet)
 	var/list/amounts = packet.amounts
 	for(var/i in 1 to DAMAGE_KIND_COUNT)
@@ -64,6 +71,8 @@ DECLARE_REF(/datum/damage_packet, "armor_flag", TRANSIENT, null)
 	packet.penetration = penetration
 	packet.direction = direction
 	packet.armor_flag = armor_flag
+	packet.entry = entry
+	packet.severity = severity
 	return packet
 
 /datum/damage_packet/proc/add(kind, amount)
@@ -213,8 +222,22 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 // --- The sinks ------------------------------------------------------------------
 
 /// Apply a damage packet. Returns the amount actually applied after mitigation.
-/// The default sink is object integrity; /mob/living overrides it with injure().
+/// The type's declared damage reactions run first (DAMAGE_REACTION, systems.md section 12): one
+/// that blocks stops the hit. Then the sink applies it, then the DAMAGE_REACTION_AFTER rows.
+/// Not overridable: a type changes where damage lands by overriding damage_sink().
 /atom/proc/receive_damage(datum/damage_packet/packet)
+	SHOULD_NOT_OVERRIDE(TRUE)
+	var/datum/lifecycle_decls/decls = lifecycle_decls_of(src)
+	if(!decls?.damage_reactions)
+		return damage_sink(packet)
+	if(run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_BEFORE))
+		return 0
+	. = damage_sink(packet)
+	if(decls.damage_reactions_after && !QDELETED(src))
+		run_damage_reactions(decls, packet, DAMAGE_REACTION_PHASE_AFTER)
+
+/// Where a packet lands. The default sink is object integrity; /mob/living overrides it with injure().
+/atom/proc/damage_sink(datum/damage_packet/packet)
 	if(!uses_integrity || QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
@@ -271,11 +294,13 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	packet.release()
 
 /// Deliver `amount` of an item's (or blob's) declared kinds in `packet`, then release it.
+/// A packet from an entry that lands nothing still runs the type's declared reactions.
 /atom/proc/receive_split(datum/damage_packet/packet, injury_kind, alist/injury_kinds, amount)
-	if(amount > 0)
-		if(packet.add_split(injury_kind, injury_kinds, amount))
-			. = receive_damage(packet)
-		else
+	if(amount > 0 && packet.add_split(injury_kind, injury_kinds, amount))
+		. = receive_damage(packet)
+	else
+		var/blocked = packet.entry && react_to_packet(packet)
+		if(amount > 0 && !blocked)
 			. = receive_internal_injury(packet, injury_kind, injury_kinds, amount)
 	packet.release()
 
@@ -283,8 +308,11 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 /// a round they catch. Ion rounds (emp_on_hit) pulse instead of harming.
 /atom/proc/receive_projectile(obj/item/projectile/P, def_zone, multiplier = 1)
 	if(P.nodamage || !P.damage || P.emp_on_hit)
+		react_to_entry(DAMAGE_ENTRY_PROJECTILE, 0, P, P.firer)
 		return 0
-	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir)
+	var/datum/damage_packet/packet = damage_packet(P, P.firer, null, def_zone, DAMAGE_PACKET_PROJECTILE, P.armor_penetration, P.dir, null, DAMAGE_ENTRY_PROJECTILE)
+	if(GLOB.projectile_pre_reacted == ref(src))
+		packet.flags |= DAMAGE_PACKET_PRE_REACTED
 	if(P.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	return receive_split(packet, P.injury_kind, P.injury_kinds, P.damage * multiplier)
@@ -295,7 +323,7 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	var/flags = silent ? DAMAGE_PACKET_SILENT : NONE
 	if(!armored)
 		flags |= DAMAGE_PACKET_UNARMORED
-	var/datum/damage_packet/packet = damage_packet(W, user, W, zone, flags, W.armor_penetration, user ? get_dir(user, src) : 0)
+	var/datum/damage_packet/packet = damage_packet(W, user, W, zone, flags, W.armor_penetration, user ? get_dir(user, src) : 0, null, DAMAGE_ENTRY_WEAPON)
 	if(W.edge)
 		packet.flags |= DAMAGE_PACKET_EDGE
 	if(injury_kind)
@@ -324,8 +352,9 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 /atom/proc/receive_thrown(atom/movable/AM, datum/thrownthing/throwingdatum, multiplier = 1, zone = null)
 	var/amount = AM.thrown_impact_force(throwingdatum) * multiplier
 	if(amount <= 0)
+		react_to_entry(DAMAGE_ENTRY_THROWN, 0, AM, throwingdatum?.get_thrower())
 		return 0
-	var/datum/damage_packet/packet = damage_packet(AM, throwingdatum?.get_thrower(), null, zone, DAMAGE_PACKET_THROWN, 0, get_dir(AM, src))
+	var/datum/damage_packet/packet = damage_packet(AM, throwingdatum?.get_thrower(), null, zone, DAMAGE_PACKET_THROWN, 0, get_dir(AM, src), null, DAMAGE_ENTRY_THROWN)
 	if(!isitem(AM))
 		packet.add(DAMAGE_BLUNT, amount)
 		. = receive_damage(packet)
@@ -354,16 +383,22 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	if(!armored)
 		flags |= DAMAGE_PACKET_UNARMORED
 	var/mob/living/simple_mob/S = user
-	var/datum/damage_packet/packet = damage_packet(user, user, null, zone, flags, istype(S) ? S.attack_armor_pen : 0, user ? get_dir(user, src) : 0)
+	var/datum/damage_packet/packet = damage_packet(user, user, null, zone, flags, istype(S) ? S.attack_armor_pen : 0, user ? get_dir(user, src) : 0, null, DAMAGE_ENTRY_GENERIC)
 	return receive_split(packet, generic_attack_kind(user), null, amount)
 
 /// Explosion: blast from the propagated severity. Explosions deliver it in
 /// type batches (GLOB.explosion_service.deliver_blast_batches); objects are destroyed by
 /// integrity, never by a severity ladder.
 /atom/proc/receive_explosion(severity)
-	if(!uses_integrity || (resistance_flags & BOMB_PROOF))
+	if(resistance_flags & BOMB_PROOF)
 		return 0
-	return deal_damage(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity), flags = DAMAGE_PACKET_SILENT)
+	if(!uses_integrity)
+		react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)
+		return 0
+	var/datum/damage_packet/packet = damage_packet(null, null, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, DAMAGE_ENTRY_EXPLOSION, severity)
+	packet.add(DAMAGE_BLAST, max_integrity * explosion_blast_fraction(severity))
+	. = receive_damage(packet)
+	packet.release()
 
 /// Severity the explosion delivers to this atom's contents, in bulk, in the
 /// same batch epoch; 0 shields them. A destroyed container spills whatever it
@@ -377,17 +412,27 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 
 /// EMP: ionic from the severity, through the shared ladder.
 /atom/proc/receive_emp(severity)
-	return deal_damage(DAMAGE_IONIC, emp_ionic_damage(severity), flags = DAMAGE_PACKET_SILENT | DAMAGE_PACKET_UNARMORED)
+	var/datum/damage_packet/packet = damage_packet(null, null, null, null, DAMAGE_PACKET_SILENT | DAMAGE_PACKET_UNARMORED, 0, 0, null, DAMAGE_ENTRY_EMP, severity)
+	packet.add(DAMAGE_IONIC, emp_ionic_damage(severity))
+	. = receive_damage(packet)
+	packet.release()
 
 /// Electric shock (electrocute_act): `amount` is after insulation (siemens)
 /// scaling, so armour does not apply again.
 /atom/proc/receive_shock(amount, atom/source, zone = null)
-	return deal_damage(DAMAGE_SHOCK, amount, null, source, zone = zone, flags = DAMAGE_PACKET_UNARMORED)
+	var/datum/damage_packet/packet = damage_packet(source, null, null, zone, DAMAGE_PACKET_UNARMORED, 0, 0, null, DAMAGE_ENTRY_SHOCK)
+	packet.add(DAMAGE_SHOCK, amount)
+	. = receive_damage(packet)
+	packet.release()
 
 /// Blob attack: kinds from the blob type's profile.
 /atom/proc/receive_blob(obj/structure/blob/B, zone = null)
 	var/datum/blob_type/blob = B?.overmind?.blob_type
 	if(!blob)
-		return deal_damage(DAMAGE_BLUNT, rand(30, 40), null, B, zone = zone)
-	var/datum/damage_packet/packet = damage_packet(B, B.overmind, null, zone, NONE, blob.armor_pen)
+		var/datum/damage_packet/plain = damage_packet(B, null, null, zone, NONE, 0, 0, null, DAMAGE_ENTRY_BLOB)
+		plain.add(DAMAGE_BLUNT, rand(30, 40))
+		. = receive_damage(plain)
+		plain.release()
+		return
+	var/datum/damage_packet/packet = damage_packet(B, B.overmind, null, zone, NONE, blob.armor_pen, 0, null, DAMAGE_ENTRY_BLOB)
 	return receive_split(packet, blob.injury_kind, blob.injury_kinds, rand(blob.damage_lower, blob.damage_upper))

@@ -25,12 +25,13 @@
 		cell = new/obj/item/cell/apc(src)
 	make_climbable()
 
-/obj/machinery/portable_atmospherics/powered/scrubber/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))
+/// An EMP may toggle a working scrubber.
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/scrubber_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 
-	if(prob(50/severity))
+	if(prob(50/packet.severity))
 		set_on(!on)
 		if(on)
 			om_changed(src, CHANGE_MACHINE_SETTINGS)

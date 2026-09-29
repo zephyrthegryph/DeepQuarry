@@ -296,20 +296,20 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 		health -= aggression*5
 		check_health()
 
-/obj/effect/plant/ex_act(severity)
-	switch(severity)
+DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_off))
+
+/// A blast kills the plant by its own severity odds (instead of the blast packet).
+/obj/effect/plant/proc/plant_blast_die_off(datum/damage_packet/packet)
+	switch(packet.severity)
 		if(1.0)
 			die_off()
-			return
 		if(2.0)
 			if (prob(50))
 				die_off()
-				return
 		if(3.0)
 			if (prob(5))
 				die_off()
-				return
-	return
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/plant/proc/check_health()
 	if(health <= 0)

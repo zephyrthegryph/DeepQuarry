@@ -1,4 +1,8 @@
-/mob/living/carbon/alien/ex_act(severity)
+DAMAGE_REACTION(/mob/living/carbon/alien, DAMAGE_EXPLOSION, PROC_REF(alien_blast))
+
+/// Aliens take the blast through their own ladder (the mob explosion entry delivers no damage).
+/mob/living/carbon/alien/proc/alien_blast(datum/damage_packet/packet)
+	var/severity = packet.severity
 
 	if(!blinded)
 		flash_eyes()

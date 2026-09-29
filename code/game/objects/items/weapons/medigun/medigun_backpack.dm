@@ -309,12 +309,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/medigun_backpack, "slaser", null)
 /obj/item/medigun_backpack/proc/get_medigun()
 	return tethered_handheld()
 
-/obj/item/medigun_backpack/emp_act(severity)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/medigun_backpack, DAMAGE_EMP, PROC_REF(medigun_backpack_emp))
+/// The pulse reaches the cell.
+/obj/item/medigun_backpack/proc/medigun_backpack_emp(datum/damage_packet/packet)
 	if(bcell)
-		bcell.emp_act(severity)
+		bcell.emp_act(packet.severity)
 
 DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	INTERACT_HAND(null, PROC_REF(interaction_hand)), \

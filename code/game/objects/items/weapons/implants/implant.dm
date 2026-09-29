@@ -150,14 +150,15 @@ circuitry. As a result neurotoxins can cause massive damage.<HR>
 Implant Specifics:<BR>"}
 	return dat
 
-/obj/item/implant/tracking/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || malfunction) //no, dawg, you can't malfunction while you are malfunctioning
+DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implant_emp))
+/// An EMP makes the tracker malfunction for a while, maybe melting it down.
+/obj/item/implant/tracking/proc/tracking_implant_emp(datum/damage_packet/packet)
+	if(malfunction) //no, dawg, you can't malfunction while you are malfunctioning
 		return
 	malfunction = MALFUNCTION_TEMPORARY
 
 	var/delay = 20
-	switch(severity)
+	switch(packet.severity)
 		if(1)
 			if(prob(60))
 				meltdown()
@@ -313,12 +314,13 @@ Implant Specifics:<BR>"}
 	user.mind?.store_memory("Explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.", 0, 0)
 	to_chat(user, "The implanted explosive implant in [source] can be activated by saying something containing the phrase ''[src.phrase]'', <B>say [src.phrase]</B> to attempt to activate.")
 
-/obj/item/implant/explosive/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || malfunction)
+DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_implant_emp))
+/// An EMP may set the charge off, or melt it down.
+/obj/item/implant/explosive/proc/explosive_implant_emp(datum/damage_packet/packet)
+	if(malfunction)
 		return
 	malfunction = MALFUNCTION_TEMPORARY
-	switch (severity)
+	switch (packet.severity)
 		if (4)	//Weak EMP will make implant tear limbs off.
 			if (prob(25))
 				small_boom()
@@ -405,13 +407,14 @@ the implant may become unstable and either pre-maturely inject the subject or si
 		expire(0)
 	return
 
-/obj/item/implant/chem/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || malfunction)
+DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
+/// An EMP may make the implant release its chemicals.
+/obj/item/implant/chem/proc/chem_implant_emp(datum/damage_packet/packet)
+	if(malfunction)
 		return
 	malfunction = MALFUNCTION_TEMPORARY
 
-	switch(severity)
+	switch(packet.severity)
 		if(1)
 			if(prob(60))
 				activate(20)
@@ -559,14 +562,15 @@ the implant may become unstable and either pre-maturely inject the subject or si
 			qdel(a)
 			om_task_periodic_stop(src)
 
-/obj/item/implant/death_alarm/emp_act(severity, recursive)			//for some reason alarms stop going off in case they are emp'd, even without this
-	. = ..()
-	if (. & EMP_PROTECT_SELF || malfunction) //so I'm just going to add a meltdown chance here
+DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_emp))
+/// For some reason alarms stop going off in case they are emp'd, even without this.
+/obj/item/implant/death_alarm/proc/death_alarm_emp(datum/damage_packet/packet)
+	if(malfunction) //so I'm just going to add a meltdown chance here
 		return
 	malfunction = MALFUNCTION_TEMPORARY
 	if(prob(40)) // Make the malfunction a probability because annoying
 		activate("emp")	//let's shout that this dude is dead
-	if(severity == 1)
+	if(packet.severity == 1)
 		if(prob(40))	//small chance of obvious meltdown
 			meltdown()
 		else if (prob(60))	//but more likely it will just quietly die
@@ -754,10 +758,9 @@ the implant may become unstable and either pre-maturely inject the subject or si
 	if(source != user)
 		owner = user
 
-/obj/item/implant/sizecontrol/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_emp))
+/// An EMP resizes the implantee at random.
+/obj/item/implant/sizecontrol/proc/sizecontrol_emp(datum/damage_packet/packet)
 	if(isliving(imp_in()))
 		var/newsize = pick(RESIZE_HUGE,RESIZE_BIG,RESIZE_NORMAL,RESIZE_SMALL,RESIZE_TINY,RESIZE_A_HUGEBIG,RESIZE_A_BIGNORMAL,RESIZE_A_NORMALSMALL,RESIZE_A_SMALLTINY)
 		var/mob/living/H = imp_in()

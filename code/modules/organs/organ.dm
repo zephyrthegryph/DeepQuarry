@@ -435,17 +435,17 @@ DECLARE_REAGENTS(/obj/item/organ, 5, null)
 /obj/item/organ/proc/digitize() //Used to make the circuit-brain. On this level in the event more circuit-organs are added/tweaks are wanted.
 	robotize()
 
-/obj/item/organ/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/organ, DAMAGE_EMP, PROC_REF(organ_emp))
+
+/// A pulse reaches what the organ holds, and damages assisted/robotic organs by severity.
+/obj/item/organ/proc/organ_emp(datum/damage_packet/packet)
 	for(var/obj/O as anything in contents_of(src))
-		O.emp_act(severity, recursive)
+		O.emp_act(packet.severity)
 
 	if(!(is_assisted()))
 		return
 	for(var/i = 1; i <= robotic; i++)
-		switch (severity)
+		switch (packet.severity)
 			if (EMP_HEAVY)
 				suffer_emp_damage(rand(5,9))
 			if (EMP_MEDIUM)

@@ -70,14 +70,18 @@ DECLARE_APPEARANCE(/obj/effect/mine, null, list(APPEARANCE_ANY = list(APPEARANCE
 		TV.forceMove(get_turf(src))
 		TV.toggle_valve()
 
-/obj/effect/mine/bullet_act()
+DAMAGE_REACTION(/obj/effect/mine, DAMAGE_PROJECTILE, PROC_REF(mine_shot))
+/// A round may set the mine off; either way it takes no damage.
+/obj/effect/mine/proc/mine_shot(datum/damage_packet/packet)
 	if(prob(50))
 		explode()
+	return DAMAGE_REACTION_BLOCK
 
-/obj/effect/mine/ex_act(severity)
-	if(severity <= 2 || prob(50))
+DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
+/// A blast sets the mine off (always if heavy).
+/obj/effect/mine/proc/mine_blast(datum/damage_packet/packet)
+	if(packet.severity <= 2 || prob(50))
 		explode()
-	..()
 
 /obj/effect/mine/Crossed(atom/movable/AM as mob|obj)
 	if(AM.is_incorporeal())

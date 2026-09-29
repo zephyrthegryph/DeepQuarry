@@ -14,8 +14,12 @@
 	if(Proj.get_structure_damage())
 		explode()
 
-/obj/structure/reagent_dispensers/coolanttank/ex_act()
+DAMAGE_REACTION(/obj/structure/reagent_dispensers/coolanttank, DAMAGE_EXPLOSION, PROC_REF(tank_blast_explode))
+
+/// A blast bursts the tank.
+/obj/structure/reagent_dispensers/coolanttank/proc/tank_blast_explode(datum/damage_packet/packet)
 	explode()
+	return DAMAGE_REACTION_BLOCK
 
 /obj/structure/reagent_dispensers/coolanttank/proc/explode()
 	var/datum/effect/effect/system/smoke_spread/S = new /datum/effect/effect/system/smoke_spread

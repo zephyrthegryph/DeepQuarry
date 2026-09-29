@@ -88,9 +88,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle
 	owner.visible_message(span_danger("The reactive armor doesn't do much, despite being emp'd! Besides giving off a special message, of course."))
 	return TRUE
 
-/obj/item/clothing/suit/armor/reactive/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !COOLDOWN_FINISHED(src, bad_effect) || !active)
+DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(reactive_emp_glitch))
+
+/// A pulse makes active armour act up (at most once per cooldown).
+/obj/item/clothing/suit/armor/reactive/proc/reactive_emp_glitch(datum/damage_packet/packet)
+	if(!COOLDOWN_FINISHED(src, bad_effect) || !active)
 		return
 	visible_message(emp_message)
 	COOLDOWN_START(src, bad_effect, 30 SECONDS)

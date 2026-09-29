@@ -56,13 +56,13 @@ EXTEND_INTERACTIONS(/obj/machinery/bluespace_denier, INTERACT_SILICON("Pulse", P
 			continue
 		SK.attack_dephase(null, src) //Won't dephase them if they're not in phase. It has built in checks.
 
-/obj/machinery/bluespace_denier/emp_act(severity)
+DAMAGE_REACTION(/obj/machinery/bluespace_denier, DAMAGE_EMP, PROC_REF(denier_emp))
+/// An EMP may set off a pulse.
+/obj/machinery/bluespace_denier/proc/denier_emp(datum/damage_packet/packet)
 	if(!operable())
-		..(severity)
 		return
-	if(prob(75/severity))
+	if(prob(75/packet.severity))
 		pulse()
-	..(severity)
 
 /obj/machinery/bluespace_denier/HasProximity(turf/T, WF, oldloc)
 	if(isnull(WF))

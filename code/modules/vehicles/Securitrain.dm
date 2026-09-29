@@ -102,8 +102,6 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/security/engine, \
 		key = W
 	return TRUE
 
-//cargo trains are open topped, so there is a chance the projectile will hit the mob ridding the train instead
-///obj/vehicle/train/security/bullet_act(obj/item/projectile/Proj)
 
 /obj/vehicle/train/security/update_icon()
 	if(open)

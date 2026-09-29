@@ -64,8 +64,7 @@ DECLARE_REF(/obj/machinery/portable_atmospherics, "holding", OWNED, null)
 	clear_gas_dependency()
 	om_changed(src, CHANGE_MACHINE_GAS)
 
-/obj/machinery/portable_atmospherics/blob_act()
-	qdel(src)
+DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_qdel))
 
 /obj/machinery/portable_atmospherics/proc/StandardAirMix()
 	return list(

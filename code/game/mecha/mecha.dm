@@ -1074,7 +1074,7 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 /// (mech_body_plan().injure), keyed by the kind's armour key. Projectiles and throws
 /// come in through their own body entry points (receive_projectile, receive_thrown),
 /// which apply deflection and penetration first.
-/obj/mecha/receive_damage(datum/damage_packet/packet)
+/obj/mecha/damage_sink(datum/damage_packet/packet)
 	if(QDELETED(src))
 		return 0
 	var/list/amounts = packet.amounts
@@ -1130,21 +1130,28 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 	return FALSE
 
 //This refer to whenever you are caught in an explosion.
-/obj/mecha/ex_act(severity)
-	src.mecha_log_message("Affected by explosion of severity: [severity].",1)
-	severity = mech_body_plan().blast_severity(src, severity)
-	. = ..(severity)
-	if(!QDELETED(src) && severity <= 3)
+DAMAGE_REACTION(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast))
+/// The armour may soften a blast by a severity step: the packet is rescaled to the new severity.
+/obj/mecha/proc/mecha_blast(datum/damage_packet/packet)
+	src.mecha_log_message("Affected by explosion of severity: [packet.severity].",1)
+	var/severity = mech_body_plan().blast_severity(src, packet.severity)
+	if(severity != packet.severity)
+		var/old_fraction = explosion_blast_fraction(packet.severity)
+		packet.scale(old_fraction ? explosion_blast_fraction(severity) / old_fraction : 0)
+		packet.severity = severity
+
+DAMAGE_REACTION_AFTER(/obj/mecha, DAMAGE_EXPLOSION, PROC_REF(mecha_blast_afflictions))
+/// A blast that got through the armour risks internal damage.
+/obj/mecha/proc/mecha_blast_afflictions(datum/damage_packet/packet)
+	if(packet.severity <= 3)
 		mech_body_plan().roll_affliction(src, list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_TANK_BREACH,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)
 
-
-/obj/mecha/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
+/// An EMP drains the cell, burns the hull and risks internal damage.
+/obj/mecha/proc/mecha_emp(datum/damage_packet/packet)
 	if(get_charge())
-		use_power((cell.charge/2)/severity)
-		take_damage(50 / severity,"energy")
+		use_power((cell.charge/2)/packet.severity)
+		take_damage(50 / packet.severity,"energy")
 	src.mecha_log_message("EMP detected",1)
 	if(prob(80))
 		mech_body_plan().roll_affliction(src, list(MECHA_INT_FIRE,MECHA_INT_TEMP_CONTROL,MECHA_INT_CONTROL_LOST,MECHA_INT_SHORT_CIRCUIT),1)

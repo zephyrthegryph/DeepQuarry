@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "What objects and mobs do when shot, EMP'd, blown up, hit by a blob or struck by a thrown object is now declared per type (damage reactions) instead of hand-written entry overrides."
+  - balance: "EMP outages (telecomms, exonet node, PDA multicaster, port generators, R&D servers, vehicles, GPS, retention field generators) now last a fixed time divided by the pulse severity, and a second pulse no longer extends one."
+  - bugfix: "The clonepod, flash, sleeper and PDA multicaster no longer take every EMP twice."

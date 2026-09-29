@@ -541,10 +541,9 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		update_icon()
 		return 1
 
-/obj/item/shockpaddles/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/shockpaddles, DAMAGE_EMP, PROC_REF(paddles_emp))
+/// An EMP scrambles the safety.
+/obj/item/shockpaddles/proc/paddles_emp(datum/damage_packet/packet)
 	var/new_safety = rand(0, 1)
 	if(safety != new_safety)
 		safety = new_safety
@@ -643,12 +642,10 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 	else
 		om_task_periodic_stop(src)
 
-/obj/item/shockpaddles/standalone/emp_act(severity, recursive)
+/obj/item/shockpaddles/standalone/paddles_emp(datum/damage_packet/packet)
 	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
 	var/new_fail = 0
-	switch(severity)
+	switch(packet.severity)
 		if(1)
 			new_fail = max(fail_counter, 20)
 			visible_message("\The [src]'s reactor overloads!")

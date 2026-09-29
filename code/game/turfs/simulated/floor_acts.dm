@@ -13,6 +13,8 @@
 /turf/simulated/floor/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)
 		return 0
+	if(react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)) // the ladder below is not a DAMAGE_ENTRY_EXPLOSION packet
+		return 0
 	switch(round(severity))
 		if(1)
 			ChangeTurf(get_base_turf_by_area(src))
@@ -41,8 +43,7 @@
 /turf/simulated/floor/projectile_damage(obj/item/projectile/P, def_zone)
 	return 0
 
-/turf/simulated/floor/blob_act(obj/structure/blob/B)
-	return
+DAMAGE_REACTION(/turf/simulated/floor, DAMAGE_BLOB, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 /// The tile breaks as its condition crosses the failure fraction.
 /turf/simulated/floor/on_update_integrity(old_value, new_value)

@@ -31,12 +31,16 @@
 	item_state = "lgloves"
 	loc.assume_air(air_contents)
 
-/obj/item/latexballon/ex_act(severity)
+DAMAGE_REACTION(/obj/item/latexballon, DAMAGE_EXPLOSION, PROC_REF(balloon_blast))
+/// A blast bursts the balloon.
+/obj/item/latexballon/proc/balloon_blast(datum/damage_packet/packet)
 	burst()
-	return ..()
 
-/obj/item/latexballon/bullet_act()
+DAMAGE_REACTION(/obj/item/latexballon, DAMAGE_PROJECTILE, PROC_REF(balloon_shot))
+/// A round bursts the balloon, and that's all it does.
+/obj/item/latexballon/proc/balloon_shot(datum/damage_packet/packet)
 	burst()
+	return DAMAGE_REACTION_BLOCK
 
 
 DECLARE_INTERACTIONS(/obj/item/latexballon, INTERACT_ITEM(null, PROC_REF(interaction_item)))

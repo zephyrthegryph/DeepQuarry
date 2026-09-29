@@ -192,10 +192,12 @@ GLOBAL_LIST_EMPTY(vending_products)
 DECLARE_REF(/obj/machinery/vending, "coin", OWNED, null)
 DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
-/obj/machinery/vending/ex_act(severity)
-	if(severity == 3 && prob(25))
+DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast_malfunction))
+
+/// A light blast can jolt the vendor into malfunctioning.
+/obj/machinery/vending/proc/vending_blast_malfunction(datum/damage_packet/packet)
+	if(packet.severity == 3 && prob(25))
 		malfunction()
-	return ..()
 
 /obj/machinery/vending/emag_act(remaining_charges, mob/user)
 	if(!emagged)

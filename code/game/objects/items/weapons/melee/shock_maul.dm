@@ -277,9 +277,10 @@ DECLARE_INTERACTIONS(/obj/item/melee/shock_maul, \
 		update_held_icon()
 	powercheck(hitcost)
 
-/obj/item/melee/shock_maul/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !status)
+DAMAGE_REACTION(/obj/item/melee/shock_maul, DAMAGE_EMP, PROC_REF(shock_maul_emp))
+/// An EMP kills the power field.
+/obj/item/melee/shock_maul/proc/shock_maul_emp(datum/damage_packet/packet)
+	if(!status)
 		return
 	status = FALSE
 	visible_message(span_warning("\The [src]'s power field hisses and sputters out."))

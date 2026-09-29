@@ -470,12 +470,12 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 		return
 	go_out()
 
-/obj/machinery/clonepod/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !(prob(100/severity)))
+DAMAGE_REACTION(/obj/machinery/clonepod, DAMAGE_EMP, PROC_REF(clonepod_emp))
+/// An EMP may make the pod malfunction.
+/obj/machinery/clonepod/proc/clonepod_emp(datum/damage_packet/packet)
+	if(!prob(100/packet.severity))
 		return
 	malfunction()
-	..()
 
 /obj/machinery/clonepod/explosion_contents_severity(severity)
 	return severity

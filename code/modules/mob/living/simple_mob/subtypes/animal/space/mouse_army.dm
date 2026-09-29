@@ -250,9 +250,7 @@
 	uncloak()
 	..()
 
-/mob/living/simple_mob/animal/space/mouse_army/stealth/bullet_act(obj/item/projectile/P)
-	. = ..()
-	break_cloak()
+DAMAGE_REACTION_AFTER(/mob/living/simple_mob/animal/space/mouse_army/stealth, DAMAGE_PROJECTILE, PROC_REF(break_cloak))
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth/hit_with_weapon(obj/item/O, mob/living/user, effective_force, hit_zone)
 	. = ..()

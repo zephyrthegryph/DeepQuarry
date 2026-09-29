@@ -579,15 +579,15 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 			explosion(get_turf(src), 0, 1, 2)
 	return ..()
 
-/obj/machinery/power/smes/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/machinery/power/smes, DAMAGE_EMP, PROC_REF(smes_emp_scramble))
+
+/// A pulse scrambles the settings and drains charge.
+/obj/machinery/power/smes/proc/smes_emp_scramble(datum/damage_packet/packet)
 	inputting(rand(0,1))
 	outputting(rand(0,1))
 	output_level = rand(0, output_level_max)
 	input_level = rand(0, input_level_max)
-	charge -= 1e6/severity
+	charge -= 1e6/packet.severity
 	if (charge < 0)
 		charge = 0
 	power_sync()

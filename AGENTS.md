@@ -441,6 +441,13 @@ accident or assume they work:
   `fire_act`, `blob_act`, `attack_generic`, weapon `attackby`, `electrocute_act`) builds a pooled damage
   packet and calls `receive_damage(packet)` (`code/game/atom/damage_packet.dm`, doc/rewrite/damage.md);
   use the `receive_*`/`deal_damage` helpers there instead of calling `take_damage()` from an entry point.
+  `receive_damage()` is fixed (`SHOULD_NOT_OVERRIDE`): it runs the type's **declared damage reactions**
+  and then the sink, `damage_sink()` (override that to change where damage lands). A fixed thing a type
+  does when hit is declared, never an entry override: `DAMAGE_REACTION(type, DAMAGE_EMP|DAMAGE_PROJECTILE|
+  DAMAGE_EXPLOSION|…|DAMAGE_<kind>, PROC_REF(x))` (proc takes the packet; `packet.severity`; return
+  `DAMAGE_REACTION_BLOCK` to stop the hit), `DAMAGE_REACTION_AFTER`, `REFLECTS(type, kinds, chance)`,
+  `EMP_DISABLE(type, duration, "expiry_field")` (doc/rewrite/systems.md §12). Lint `sys_entry_override`
+  (`tools/ci/sys_rules/damage_reactions.py`) is 0 with an empty baseline.
   The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
   **gone** — don't reintroduce it; set `max_integrity` (and `integrity_failure` for a "broken
   but not destroyed" state) and route damage through `take_damage()`. Turfs/walls keep their own

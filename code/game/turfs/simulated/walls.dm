@@ -230,6 +230,8 @@
 /turf/simulated/wall/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)
 		return 0
+	if(react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)) // the ladder below is not a DAMAGE_ENTRY_EXPLOSION packet
+		return 0
 	switch(round(severity))
 		if(1)
 			if(girder_material.explosion_resistance >= 25 && prob(girder_material.explosion_resistance))

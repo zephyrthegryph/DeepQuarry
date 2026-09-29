@@ -389,9 +389,6 @@ DECLARE_REF(/obj/item/paicard, "screen_layer", OWNED, null)
 		audible_message(span_notice("\The [src] flashes a message across its screen, \"Additional personalities available for download.\""), hearing_distance = world.view, runemessage = "bleeps!")
 		COOLDOWN_START(src, notify_cooldown, 5 MINUTES)
 /*
-/obj/item/paicard/emp_act(severity, recursive)
-	for(var/mob/M in src)
-		M.emp_act(severity, recursive)
 */
 /obj/item/paicard/explosion_contents_severity(severity)
 	return severity

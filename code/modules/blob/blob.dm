@@ -24,14 +24,18 @@
 /obj/effect/blob/CanPass(atom/movable/mover, turf/target)
 	return FALSE
 
-/obj/effect/blob/ex_act(severity)
-	switch(severity)
+DAMAGE_REACTION(/obj/effect/blob, DAMAGE_EXPLOSION, PROC_REF(blob_blast_damage))
+
+/// A blast hurts the blob by its own severity ladder, scaled down by its brute resistance (instead of the blast packet).
+/obj/effect/blob/proc/blob_blast_damage(datum/damage_packet/packet)
+	switch(packet.severity)
 		if(1)
 			take_damage(rand(100, 120) / brute_resist)
 		if(2)
 			take_damage(rand(60, 100) / brute_resist)
 		if(3)
 			take_damage(rand(20, 60) / brute_resist)
+	return DAMAGE_REACTION_BLOCK
 
 /obj/effect/blob/update_icon()
 	if(get_integrity() > max_integrity / 2)

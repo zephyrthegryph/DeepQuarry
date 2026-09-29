@@ -402,19 +402,21 @@ DECLARE_INTERACTIONS(/obj/item/cell, INTERACT_ITEM(null, PROC_REF(interaction_it
 	if (prob(10))
 		rigged = 1 //broken batterys are dangerous
 
-/obj/item/cell/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	charge -= (charge / severity) * (1 - material_emp_resistance / 100)
+DAMAGE_REACTION(/obj/item/cell, DAMAGE_EMP, PROC_REF(cell_emp_drain))
+
+/// A pulse drains charge, less the material's EMP resistance.
+/obj/item/cell/proc/cell_emp_drain(datum/damage_packet/packet)
+	charge -= (charge / packet.severity) * (1 - material_emp_resistance / 100)
 	if (charge < 0)
 		charge = 0
 
 	update_icon()
 
-/obj/item/cell/ex_act(severity)
-	. = ..()
-	if(!QDELETED(src) && prob(50 / severity))
+DAMAGE_REACTION_AFTER(/obj/item/cell, DAMAGE_EXPLOSION, PROC_REF(cell_blast_corrupt))
+
+/// A cell that survives a blast can come out of it corrupted.
+/obj/item/cell/proc/cell_blast_corrupt(datum/damage_packet/packet)
+	if(prob(50 / packet.severity))
 		corrupt()
 
 /obj/item/cell/proc/get_electrocute_damage()

@@ -93,9 +93,10 @@
 
 		update_icon()
 
-/obj/machinery/light_switch/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/light_switch, DAMAGE_EMP, PROC_REF(light_switch_emp))
+/// An EMP makes the switch re-read its power.
+/obj/machinery/light_switch/proc/light_switch_emp(datum/damage_packet/packet)
+	if(!operable())
 		return
 	power_change()
 

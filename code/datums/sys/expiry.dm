@@ -37,7 +37,7 @@ OM_TIMER_SLOT(/datum, expiry_lapse)
 /proc/expiry_arm(datum/D, var_name, value, at_materialize = FALSE)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
 	var/list/hook = decls?.expiry_hooks?[var_name]
-	if(!hook || QDELETED(D) || (!value && !at_materialize))
+	if(!hook || QDELETED(D) || (!value && (!at_materialize || hook[3])))
 		return
 	var/left = value - EXPIRY_NOW(D, hook[1])
 	if(left < 0)

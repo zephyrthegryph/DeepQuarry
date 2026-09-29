@@ -255,9 +255,11 @@
 	change_power_consumption(1500 * (range**2), USE_POWER_IDLE) //Exponential increase, also affects speed of overheating
 	refresh_linked_consoles()
 
-/obj/machinery/shipsensors/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !use_power)
+DAMAGE_REACTION(/obj/machinery/shipsensors, DAMAGE_EMP, PROC_REF(sensors_emp_shutdown))
+
+/// A pulse knocks running sensors offline.
+/obj/machinery/shipsensors/proc/sensors_emp_shutdown(datum/damage_packet/packet)
+	if(!use_power)
 		return
 	toggle()
 

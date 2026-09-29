@@ -243,10 +243,9 @@
 		icon_state = "control_standby"
 		set_light(1.5, 1,"#003300")
 
-/obj/machinery/turretid/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/machinery/turretid, DAMAGE_EMP, PROC_REF(turretid_emp))
+/// An EMP on an active control panel disables its turrets for a while and scrambles its settings.
+/obj/machinery/turretid/proc/turretid_emp(datum/damage_packet/packet)
 	if(enabled)
 		//if the turret is on, the EMP no matter how severe disables the turret for a while
 		//and scrambles its settings, with a slight chance of having an emag effect

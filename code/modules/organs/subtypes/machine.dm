@@ -16,11 +16,10 @@
 	if(owner && owner.is_dead() && owner.return_from_death("power cell replaced", src) == TRUE)
 		owner.visible_message(span_danger("\The [owner] twitches visibly!"))
 
-/obj/item/organ/internal/cell/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	owner?.adjust_nutrition(-rand(10 / severity, 50 / severity))
+/// A pulse drains the owner's charge.
+/obj/item/organ/internal/cell/organ_emp(datum/damage_packet/packet)
+	..()
+	owner?.adjust_nutrition(-rand(10 / packet.severity, 50 / packet.severity))
 
 /obj/item/organ/internal/cell/machine/handle_organ_proc_special()
 	..()

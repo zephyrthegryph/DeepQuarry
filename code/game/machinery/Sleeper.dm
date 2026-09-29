@@ -452,11 +452,10 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		return
 	go_out()
 
-/obj/machinery/sleeper/emp_act(severity, recursive)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/machinery/sleeper, DAMAGE_EMP, PROC_REF(sleeper_emp))
+/// An EMP stops the filter and pump and throws the occupant out of a working sleeper.
+/obj/machinery/sleeper/proc/sleeper_emp(datum/damage_packet/packet)
+	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_SLEEPER)
 
 	if(filtering)
 		toggle_filter()
@@ -465,7 +464,6 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 		toggle_pump()
 
 	if(!operable())
-		..(severity, recursive)
 		return
 
 	if(occupant)

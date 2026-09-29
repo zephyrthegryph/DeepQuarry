@@ -1633,10 +1633,10 @@
 
 DECLARE_REF(/obj/structure/sign/flag, "linked_flag", PAIR, "linked_flag")
 
-/obj/structure/sign/flag/ex_act(severity)
-	. = ..()
-	if(!QDELETED(src))
-		rip()
+DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_blast))
+/// A flag that survives a blast is torn.
+/obj/structure/sign/flag/proc/flag_blast(datum/damage_packet/packet)
+	rip()
 
 /obj/structure/sign/flag/unfasten(mob/user)
 	if(!ripped)

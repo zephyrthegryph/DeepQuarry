@@ -15,6 +15,8 @@
 
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
+	/// Until when an EMP keeps the multicaster down (EMP_DISABLE).
+	EXPIRY_DECLARE(emp_until)
 
 /obj/machinery/pda_multicaster/Initialize(mapload)
 	. = ..()
@@ -118,19 +120,10 @@ DECLARE_REF(/obj/machinery/pda_multicaster, "soundloop", OWNED, null)
 	. = ..()
 	update_power()
 
-/obj/machinery/pda_multicaster/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || (has_stat(EMPED)))
-		return
-	stat_add(EMPED)
-	update_power()
-	var/duration = (300 * 10)/severity
-	om_after(src, rand(duration - 20, duration + 20), PROC_REF(emp_recover))
-	update_icon()
-	..()
+EMP_DISABLE(/obj/machinery/pda_multicaster, 300 SECONDS, "emp_until")
 
-/obj/machinery/pda_multicaster/proc/emp_recover()
-	stat_remove(EMPED)
+/obj/machinery/pda_multicaster/emp_disable_changed(disabled)
+	..()
 	update_power()
 
 /// Its declared start condition (machine_pipeline.dm, materialize_wakes()).

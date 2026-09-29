@@ -322,12 +322,15 @@
 	..()
 	return
 
-/obj/machinery/shieldwall/ex_act(severity)
-	// The wall itself is energy; the blast drains a generator instead.
+DAMAGE_REACTION(/obj/machinery/shieldwall, DAMAGE_EXPLOSION, PROC_REF(shieldwall_blast_drain))
+
+/// The wall itself is energy; the blast drains a generator instead.
+/obj/machinery/shieldwall/proc/shieldwall_blast_drain(datum/damage_packet/packet)
 	if(needs_power)
 		var/obj/machinery/shieldwallgen/G = prob(50) ? gen_primary : gen_secondary
 		var/static/list/drain = list(120000, 30000, 12000)
-		G.storedpower -= drain[clamp(round(severity), 1, 3)]
+		G.storedpower -= drain[clamp(round(packet.severity), 1, 3)]
+	return DAMAGE_REACTION_BLOCK
 
 /obj/machinery/shieldwall/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))

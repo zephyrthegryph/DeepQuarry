@@ -32,9 +32,7 @@
 	play_sfx(src, SFX_H_SOUNDS_HEADCRAB)
 	..()
 
-/mob/living/simple_mob/horror/Eddy/bullet_act()
-	play_sfx(src, SFX_H_SOUNDS_HOLLA)
-	..()
+DAMAGE_REACTION(/mob/living/simple_mob/horror/Eddy, DAMAGE_PROJECTILE, PROC_REF(play_reaction_sound))
 
 /datum/say_list/Eddy
 	speak = list("Uuurrgh?","Aauuugghh...", "AAARRRGH!")

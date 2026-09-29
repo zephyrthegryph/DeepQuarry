@@ -32,9 +32,7 @@
 	play_sfx(src, SFX_H_SOUNDS_LYNX)
 	..()
 
-/mob/living/simple_mob/horror/Sally/bullet_act()
-	play_sfx(src, SFX_H_SOUNDS_HOLLA)
-	..()
+DAMAGE_REACTION(/mob/living/simple_mob/horror/Sally, DAMAGE_PROJECTILE, PROC_REF(play_reaction_sound))
 
 /datum/say_list/Sally
 	speak = list("Yeeeeee?","Haaah! Gashuuuuuh!", "Gahgahgahgah...")

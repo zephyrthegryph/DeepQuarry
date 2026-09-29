@@ -138,6 +138,8 @@
 
 // Exploding.
 /mob/living/simple_mob/ex_act(severity)
+	if(..())
+		return
 	if(is_incorporeal()) // Can't explode shadekin in phase
 		return
 
@@ -228,12 +230,12 @@
 
 
 // Electromagnetism
-/mob/living/simple_mob/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/mob/living/simple_mob, DAMAGE_EMP, PROC_REF(synthetic_emp_surge))
+
+/mob/living/simple_mob/proc/synthetic_emp_surge(datum/damage_packet/packet)
 	if(!(biology & BIOLOGY_SYNTHETIC))
 		return
+	var/severity = packet.severity
 	var/endurance_scale = get_endurance()
 	// Scaled to endurance: weak mobs always take two direct EMP hits to kill; stronger ones may take more.
 	var/static/list/cap_by_severity = list(60, 30, 15, 7)
@@ -282,7 +284,8 @@
 	/// Played whenever the mob is touched, hit with an item or struck by something thrown (the horrors' shrieks).
 	var/reaction_sound
 
-/mob/living/simple_mob/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
+DAMAGE_REACTION(/mob/living/simple_mob, DAMAGE_THROWN, PROC_REF(play_reaction_sound))
+
+/mob/living/simple_mob/proc/play_reaction_sound(datum/damage_packet/packet)
 	if(reaction_sound)
 		playsound(src, reaction_sound, 50, 1)
-	return ..()

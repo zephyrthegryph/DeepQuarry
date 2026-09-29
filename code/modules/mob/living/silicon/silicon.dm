@@ -276,6 +276,8 @@ DECLARE_REF(/mob/living/silicon, "queued_alarms", STATIC, null)
 	return 1
 
 /mob/living/silicon/ex_act(severity)
+	if(..())
+		return
 	if(!blinded)
 		flash_eyes()
 

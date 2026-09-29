@@ -251,8 +251,11 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 					T.update_icon()
 
 /// Rock is drilled out by a blast rather than losing integrity.
+// ALLOW(sys_entry_override): the blast sink of rock: it is drilled out (GetDrilled) instead of losing integrity (damage.md D-turf), so this is where the hit lands, not a reaction to it
 /turf/simulated/mineral/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)
+		return 0
+	if(react_to_entry(DAMAGE_ENTRY_EXPLOSION, severity)) // the ladder below is not a DAMAGE_ENTRY_EXPLOSION packet
 		return 0
 	switch(round(severity))
 		if(2.0)

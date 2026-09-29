@@ -315,11 +315,11 @@ MATERIAL_MIX(/obj/item/ammo_casing/a12g/stunshell, list(MAT_STEEL = 360, MAT_GLA
 	icon_state = "stunshell"
 	projectile_type = /obj/item/projectile/energy/electrode/stunshot
 
-/obj/item/ammo_casing/a12g/stunshell/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(prob(100/severity)) BB = null
+DAMAGE_REACTION(/obj/item/ammo_casing/a12g/stunshell, DAMAGE_EMP, PROC_REF(stunshell_emp_fry))
+
+/// A pulse can fry the shell's payload.
+/obj/item/ammo_casing/a12g/stunshell/proc/stunshell_emp_fry(datum/damage_packet/packet)
+	if(prob(100/packet.severity)) BB = null
 	update_icon()
 
 MATERIAL_MIX(/obj/item/ammo_casing/a12g/flash, list(MAT_STEEL = 90, MAT_GLASS = 90))

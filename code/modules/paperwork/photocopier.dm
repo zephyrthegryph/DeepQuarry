@@ -211,11 +211,13 @@
 	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/photocopier/ex_act(severity)
-	if(severity >= 2 && prob(50) && toner > 0)
+DAMAGE_REACTION(/obj/machinery/photocopier, DAMAGE_EXPLOSION, PROC_REF(photocopier_blast_spill))
+
+/// A blast can burst the toner out onto the floor.
+/obj/machinery/photocopier/proc/photocopier_blast_spill(datum/damage_packet/packet)
+	if(packet.severity >= 2 && prob(50) && toner > 0)
 		new /obj/effect/decal/cleanable/blood/oil(get_turf(src))
 		toner = 0
-	return ..()
 
 /obj/machinery/photocopier/proc/copy(obj/item/paper/copy, need_toner=1)
 	var/obj/item/paper/c = new /obj/item/paper (loc)

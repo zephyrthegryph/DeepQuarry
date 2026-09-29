@@ -134,11 +134,13 @@
 	go_in(target, user)
 	return TRUE
 
-/obj/machinery/vr_sleeper/emp_act(severity, recursive)
-	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_VR_POD)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || !operable())
+DAMAGE_REACTION(/obj/machinery/vr_sleeper, DAMAGE_EMP, PROC_REF(vr_sleeper_emp))
+/// An EMP throws the occupant out of VR, maybe frying their brain on the way.
+/obj/machinery/vr_sleeper/proc/vr_sleeper_emp(datum/damage_packet/packet)
+	var/mob/living/carbon/human/occupant = slot_item(OCCUPANT_SLOT_VR_POD)
+	if(!operable())
 		return
+	var/severity = packet.severity
 
 	if(occupant)
 		// This will eject the user from VR

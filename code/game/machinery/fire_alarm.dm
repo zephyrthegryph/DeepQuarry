@@ -127,16 +127,16 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 	if(detecting)
 		alarm()
 
-/obj/machinery/firealarm/bullet_act(obj/item/projectile/Proj, def_zone)
+DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_PROJECTILE, PROC_REF(firealarm_shot))
+/// Getting shot sets the alarm off.
+/obj/machinery/firealarm/proc/firealarm_shot(datum/damage_packet/packet)
 	alarm()
-	return ..()
 
-/obj/machinery/firealarm/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(prob(50 / severity))
-		alarm(rand(30 / severity, 60 / severity))
+DAMAGE_REACTION(/obj/machinery/firealarm, DAMAGE_EMP, PROC_REF(firealarm_emp))
+/// An EMP may set the alarm off for a while.
+/obj/machinery/firealarm/proc/firealarm_emp(datum/damage_packet/packet)
+	if(prob(50 / packet.severity))
+		alarm(rand(30 / packet.severity, 60 / packet.severity))
 
 /obj/machinery/firealarm/declare_interactions(list/into)
 	into += list(

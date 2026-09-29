@@ -295,9 +295,10 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 
 	return
 
-/obj/item/flash/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF || broken)
+DAMAGE_REACTION(/obj/item/flash, DAMAGE_EMP, PROC_REF(flash_emp))
+/// An EMP sets a working flash off in its holder's face.
+/obj/item/flash/proc/flash_emp(datum/damage_packet/packet)
+	if(broken)
 		return
 	flash_recharge()
 	if(!check_capacitor())
@@ -310,7 +311,6 @@ DECLARE_INTERACTIONS(/obj/item/flash, INTERACT_USE("Flash", PROC_REF(interaction
 			C.injure(INJURY_PAIN, halloss_per_flash, BP_HEAD, src)
 			C.flash_eyes()
 			act_message(C, null, MSG_SELF(span_danger("You're blinded by the flash!")), MSG_OTHERS(span_disarm("%U% is blinded by the flash!")), MSG_BLIND(span_warning("You hear the sound of a flash!")))
-	..()
 
 /obj/item/flash/synthetic
 	name = "synthetic flash"

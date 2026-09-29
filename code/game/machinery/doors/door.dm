@@ -256,9 +256,10 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 	if(damage && !QDELETED(src))
 		update_icon()
 
-/obj/machinery/door/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
-	..()
-	visible_message(span_danger("[name] was hit by [source]."))
+DAMAGE_REACTION_AFTER(/obj/machinery/door, DAMAGE_THROWN, PROC_REF(door_thrown_at))
+/// A throw that lands is loud.
+/obj/machinery/door/proc/door_thrown_at(datum/damage_packet/packet)
+	visible_message(span_danger("[name] was hit by [packet.source]."))
 	playsound(src, hitsound, 100, 1)
 
 /obj/machinery/door/declare_interactions(list/into)
@@ -446,11 +447,10 @@ OM_TIMER_SLOT(/obj/machinery/door, door_timer_token)
 		if ((O.client && !( O.blinded )))
 			O.show_message("[name] breaks!" )
 
-/obj/machinery/door/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(prob(20/severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
+DAMAGE_REACTION(/obj/machinery/door, DAMAGE_EMP, PROC_REF(door_emp))
+/// An EMP may pop an airlock or windoor open.
+/obj/machinery/door/proc/door_emp(datum/damage_packet/packet)
+	if(prob(20/packet.severity) && (istype(src,/obj/machinery/door/airlock) || istype(src,/obj/machinery/door/window)) )
 		open()
 
 /obj/machinery/door/blob_act(obj/structure/blob/B)

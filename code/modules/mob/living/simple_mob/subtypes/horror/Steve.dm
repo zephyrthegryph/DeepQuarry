@@ -39,9 +39,7 @@
 	play_sfx(src, SFX_H_SOUNDS_HOLLA)
 	..()
 
-/mob/living/simple_mob/horror/Steve/bullet_act()
-	play_sfx(src, SFX_H_SOUNDS_HOLLA)
-	..()
+DAMAGE_REACTION(/mob/living/simple_mob/horror/Steve, DAMAGE_PROJECTILE, PROC_REF(play_reaction_sound))
 
 /datum/say_list/Steve
 	speak = list("Uuurrgh?","Aauuugghh...", "AAARRRGH!")

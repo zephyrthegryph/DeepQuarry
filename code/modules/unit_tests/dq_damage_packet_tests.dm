@@ -50,7 +50,7 @@ DECLARE_REF(/datum/dq_packet_record, "weapon", HELD, null)
 	var/datum/dq_packet_record/last
 	var/received = 0
 
-/obj/machinery/dq_damage_probe/receive_damage(datum/damage_packet/packet)
+/obj/machinery/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	QDEL_NULL(last)
 	last = new(packet)
@@ -67,7 +67,7 @@ DECLARE_REF(/obj/machinery/dq_damage_probe, "last", OWNED, null)
 	var/datum/dq_packet_record/last
 	var/received = 0
 
-/mob/living/simple_mob/dq_damage_probe/receive_damage(datum/damage_packet/packet)
+/mob/living/simple_mob/dq_damage_probe/damage_sink(datum/damage_packet/packet)
 	received++
 	QDEL_NULL(last)
 	last = new(packet)

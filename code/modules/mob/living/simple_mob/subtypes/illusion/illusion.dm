@@ -99,8 +99,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/illusion, \
 	act_message(user, src, null, MSG_OTHERS(span_warning("%U%'s %I% goes through %T%!")), item = I)
 	return FALSE
 
-/mob/living/simple_mob/illusion/ex_act()
-	return
+DAMAGE_REACTION(/mob/living/simple_mob/illusion, DAMAGE_EXPLOSION, TYPE_PROC_REF(/atom, damage_reaction_block))
 
 // Try to have the same tooltip, or else it becomes really obvious which one is fake.
 /mob/living/simple_mob/illusion/get_nametag_name(mob/user)

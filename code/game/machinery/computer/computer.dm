@@ -25,15 +25,17 @@
 	update_icon()
 	make_climbable()
 
-/obj/machinery/computer/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
-	if(prob(20/severity))
+DAMAGE_REACTION(/obj/machinery/computer, DAMAGE_EMP, PROC_REF(computer_emp))
+/// An EMP may break the computer.
+/obj/machinery/computer/proc/computer_emp(datum/damage_packet/packet)
+	if(prob(20/packet.severity))
 		atom_break()
 
-/obj/machinery/computer/blob_act()
+DAMAGE_REACTION(/obj/machinery/computer, DAMAGE_BLOB, PROC_REF(computer_blob))
+/// A blob hits a computer like a medium blast.
+/obj/machinery/computer/proc/computer_blob(datum/damage_packet/packet)
 	ex_act(2)
+	return DAMAGE_REACTION_BLOCK
 
 /obj/machinery/computer/update_icon()
 	cut_overlays()

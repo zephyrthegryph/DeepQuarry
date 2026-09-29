@@ -238,10 +238,12 @@ DECLARE_REF(/obj/machinery/shield_gen, "field", OWNED_LIST, null)
 			z_range = clamp(text2num(params["val"]), 0, 10)
 			. = TRUE
 
-/obj/machinery/shield_gen/ex_act(severity)
+DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen_blast_trip))
+
+/// A blast trips a running generator off.
+/obj/machinery/shield_gen/proc/shield_gen_blast_trip(datum/damage_packet/packet)
 	if(active)
 		toggle()
-	return ..()
 
 /obj/machinery/shield_gen/proc/toggle()
 	set background = 1

@@ -104,10 +104,10 @@
 	if(..())
 		update_icon()
 
-/obj/item/gun/energy/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/gun/energy, DAMAGE_EMP, PROC_REF(energy_gun_emp_refresh))
+
+/// The pulse drained the cell (through the contents): show the new charge.
+/obj/item/gun/energy/proc/energy_gun_emp_refresh(datum/damage_packet/packet)
 	update_icon()
 
 /obj/item/gun/energy/consume_next_projectile()

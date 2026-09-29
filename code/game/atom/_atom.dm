@@ -193,11 +193,17 @@ DECLARE_REF(/atom, "wires", OWNED, null)
 /atom/proc/bullet_act(obj/item/projectile/P, def_zone)
 	if(OM_EMIT(src, /datum/om/event/before/atom_bullet_act, P, def_zone) & COMPONENT_CANCEL_ATTACK_CHAIN)
 		return
+	if(reflect_projectile(P)) // REFLECTS (systems.md section 12)
+		return PROJECTILE_CONTINUE
+	// Declared projectile reactions run before on_hit(): a blocking one stops the round's effects too.
+	if(projectile_pre_reactions(P))
+		return 0
 
 	P.on_hit(src, 0, def_zone)
 	. = 0
 	if(!QDELETED(src))
 		projectile_damage(P, def_zone)
+	end_projectile_reactions()
 
 /// The projectile adapter: how much of a round this atom catches. Types whose
 /// shape changes that (grilles, girders, barricades) override this, not bullet_act().

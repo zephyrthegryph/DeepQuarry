@@ -786,21 +786,21 @@ DECLARE_REF(/obj/item/rig, "component_registry", OWNED, null)
 /obj/item/rig/proc/malfunction()
 	return 0
 
-/obj/item/rig/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/rig, DAMAGE_EMP, PROC_REF(rig_emp_malfunction))
+
+/// A pulse makes the suit malfunction, drains its cell and can damage modules.
+/obj/item/rig/proc/rig_emp_malfunction(datum/damage_packet/packet)
 	//set malfunctioning
 	if(emp_protection < 30) //for ninjas, really.
 		malfunctioning += 10
 		if(malfunction_delay <= 0)
-			malfunction_delay = max(malfunction_delay, round(30/severity))
+			malfunction_delay = max(malfunction_delay, round(30/packet.severity))
 
 	//drain some charge
-	if(cell) cell.emp_act(severity + 15)
+	if(cell) cell.emp_act(packet.severity + 15)
 
 	//possibly damage some modules
-	take_hit((100/severity), "electrical pulse", 1)
+	take_hit((100/packet.severity), "electrical pulse", 1)
 
 /obj/item/rig/proc/shock(mob/user)
 	if (electrocute_mob(user, cell, src)) //electrocute_mob() handles removing charge from the cell, no need to do that here.

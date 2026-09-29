@@ -398,6 +398,7 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 		dismantled = 1
 		replace_with(src, /obj/item/stack/rods, 20)
 
-/obj/structure/janitorialcart/ex_act(severity)
-	spill(100 / severity)
-	..()
+DAMAGE_REACTION(/obj/structure/janitorialcart, DAMAGE_EXPLOSION, PROC_REF(janicart_blast))
+/// A blast spills the bucket.
+/obj/structure/janitorialcart/proc/janicart_blast(datum/damage_packet/packet)
+	spill(100 / packet.severity)

@@ -47,10 +47,10 @@
 		var/blocked = list(src.type, /obj/item/clothing/under/gimmick)//Prevent infinite loops and bad jumpsuits.
 		GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
 
-/obj/item/clothing/under/chameleon/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/under/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/under/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "psychedelic"
 	desc = "Groovy!"
 	icon_state = "psyche"
@@ -89,10 +89,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
 		var/blocked = list(src.type)//Prevent infinite loops and bad hats.
 		GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, blocked)
 
-/obj/item/clothing/head/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/head/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/head/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "grey cap"
 	desc = "It's a baseball hat in a tasteful grey colour."
 	icon_state = "greysoft"
@@ -129,10 +129,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
 		var/blocked = list(src.type, /obj/item/clothing/suit/cyborg_suit, /obj/item/clothing/suit/justice, /obj/item/clothing/suit/greatcoat)
 		GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, blocked)
 
-/obj/item/clothing/suit/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/suit/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/suit/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "armor"
 	desc = "An armored vest that protects against some damage."
 	icon_state = "armor"
@@ -168,10 +168,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
 		var/blocked = list(src.type, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/shoes/cyborg)//prevent infinite loops and bad shoes.
 		GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, blocked)
 
-/obj/item/clothing/shoes/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/shoes/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/shoes/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "black shoes"
 	desc = "A pair of black shoes."
 	icon_state = "black"
@@ -207,10 +207,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon, \
 		var/blocked = list(src.type, /obj/item/storage/backpack/satchel/withwallet)
 		GLOB.chamelion_back_choices = generate_chameleon_choices(/obj/item/storage/backpack, blocked)
 
-/obj/item/storage/backpack/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/storage/backpack/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/storage/backpack/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "backpack"
 	desc = "You wear this on your back and put items into it."
 	icon_state = "backpack"
@@ -264,10 +264,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon, \
 	if(!GLOB.chamelion_glove_choices)
 		GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(src.type))
 
-/obj/item/clothing/gloves/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/gloves/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/gloves/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "black gloves"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 	icon_state = "black"
@@ -303,10 +303,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
 	if(!GLOB.chamelion_mask_choices)
 		GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(src.type))
 
-/obj/item/clothing/mask/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/mask/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/mask/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "gas mask"
 	desc = "It's a gas mask."
 	icon_state = "gas_alt" // file change
@@ -344,10 +344,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
 	if(!clothing_choices)
 		clothing_choices = generate_chameleon_choices(/obj/item/clothing/glasses, list(src.type))
 
-/obj/item/clothing/glasses/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/glasses/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/glasses/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "Optical Meson Scanner"
 	desc = "It's a set of mesons."
 	icon_state = "meson"
@@ -383,10 +383,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon, \
 	if(!GLOB.chamelion_belt_choices)
 		GLOB.chamelion_belt_choices = generate_chameleon_choices(/obj/item/storage/belt, list(src.type))
 
-/obj/item/storage/belt/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/storage/belt/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/storage/belt/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "belt"
 	desc = "Can hold various things."
 	icon_state = "utilitybelt"
@@ -429,10 +429,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon, \
 		var/blocked = list(src.type, /obj/item/clothing/accessory/storage)
 		GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, blocked)
 
-/obj/item/clothing/accessory/chameleon/emp_act(severity, recursive) //Because we don't have psych for all slots right now but still want a downside to EMP.  In this case your cover's blown.
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/clothing/accessory/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/clothing/accessory/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "black tie"
 	desc = "Looks like a black tie, but his one also has a dial inside."
 	icon_state = "blacktie"
@@ -496,10 +496,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 		P.impact_type = initial(copy_type.impact_type)
 	return P
 
-/obj/item/gun/energy/chameleon/emp_act(severity, recursive)
-	. = ..()
-	if (. & EMP_PROTECT_SELF)
-		return
+DAMAGE_REACTION(/obj/item/gun/energy/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
+
+/// A pulse scrambles the disguise back to its base look (the cover is blown).
+/obj/item/gun/energy/chameleon/proc/chameleon_emp_reveal(datum/damage_packet/packet)
 	name = "desert eagle"
 	desc = "It's a desert eagle."
 	icon_state = "deagle"

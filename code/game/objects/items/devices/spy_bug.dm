@@ -128,12 +128,15 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 /obj/item/camerabug/proc/lies_on_turf(mob/actor, atom/target, obj/item/held)
 	return isturf(loc)
 
-/obj/item/camerabug/bullet_act()
+DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot))
+/// A round shatters the bug.
+/obj/item/camerabug/proc/camerabug_shot(datum/damage_packet/packet)
 	visible_message("The [src] lens shatters!")
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	linkedmonitor_handle = null
 	replace_with(src, brokentype)
+	return DAMAGE_REACTION_BLOCK
 
 // its monitor unpairs it.
 /obj/item/camerabug/on_destroy(force)
