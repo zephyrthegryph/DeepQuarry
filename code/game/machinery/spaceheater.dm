@@ -167,7 +167,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/space_heater, TYPE_PROC_REF(/atom, appear
 		set_state(state ? SHEATER_OFF : SHEATER_STANDBY)
 		if(state)
 			MACHINE_WAKE(src)
-		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")), \n			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
+		act_message(user, src, MSG_SELF(span_notice("You switch [state ? "on" : "off"] %T%.")),
+			MSG_OTHERS(span_notice("%U% switches [state ? "on" : "off"] %T%.")))
 	return
 
 /obj/machinery/space_heater/tgui_state(mob/user)

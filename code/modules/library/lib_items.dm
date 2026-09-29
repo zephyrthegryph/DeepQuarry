@@ -96,7 +96,7 @@ DECLARE_INTERACTIONS(/obj/structure/bookcase, \
 	return ..()
 
 /obj/structure/bookcase/proc/appearance_books()
-	return contents_count(src) < 5 ? contents.len : 5
+	return min(contents_count(src), 5)
 
 APPEARANCE_TEMPLATE(/obj/structure/bookcase, "book-{appearance_books}")
 

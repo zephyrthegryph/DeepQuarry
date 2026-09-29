@@ -423,7 +423,7 @@ DECLARE_SHARED_CACHE_EX(decl_appearance, GLOBAL_PROC_REF(build_decl_appearance),
 			if(T != src && istype(T, kind))
 				om_changed(T, CHANGE_NEIGHBOURS)
 			continue
-		for(var/atom/movable/A as anything in T)
+		FOR_CONTENTS(var/atom/movable/A as anything, T)
 			if(A != src && istype(A, kind))
 				om_changed(A, CHANGE_NEIGHBOURS)
 

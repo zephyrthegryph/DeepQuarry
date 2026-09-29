@@ -260,12 +260,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	hibernate_until_input_changes()
 
 /// A filter missing a node can't run: it switches off when it loses one (the redraw used to do this).
-/obj/machinery/atmospherics/trinary/filter/disconnect(obj/machinery/atmospherics/reference)
+/obj/machinery/atmospherics/trinary/atmos_filter/disconnect(obj/machinery/atmospherics/reference)
 	. = ..()
 	if(!(node1 && node2 && node3))
 		set_use_power(USE_POWER_OFF)
 
-/obj/machinery/atmospherics/trinary/filter/atmos_init()
+/obj/machinery/atmospherics/trinary/atmos_filter/atmos_init()
 	. = ..()
 	if(!(node1 && node2 && node3))
 		set_use_power(USE_POWER_OFF)
