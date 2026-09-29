@@ -84,9 +84,9 @@ GLOBAL_LIST_EMPTY(msg_defs)
 /**
  * An action seen from two sides: `user` reads `self`, everyone else in `range` who can see
  * reads `others`, and those who can't see get `blind`. Any line may be null. A non-mob user
- * (a machine acting) only has the others and blind lines. Returns nothing.
+ * (a machine acting) only has the others and blind lines. `exclude` lists mobs that see none of it.
  */
-/proc/act_message(atom/user, atom/target, self, others, blind, range = world.view, obj/item/item)
+/proc/act_message(atom/user, atom/target, self, others, blind, range = world.view, obj/item/item, list/exclude)
 	if(!user)
 		return
 	self = msg_fill(self, user, target, item)
@@ -95,12 +95,12 @@ GLOBAL_LIST_EMPTY(msg_defs)
 	if(ismob(user))
 		var/mob/M = user
 		if(others || blind)
-			M.visible_message(others, self, blind, range = range)
+			M.visible_message(others, self, blind, exclude ? exclude.Copy() : null, range)
 		else if(self)
 			to_chat(M, self)
 		return
 	if(others || blind)
-		user.visible_message(others, blind, range = range)
+		user.visible_message(others, blind, exclude ? exclude.Copy() : null, range)
 
 /// act_message() with a declared template (a /datum/msg type). Null msg_type sends nothing.
 /proc/act_message_t(atom/user, atom/target, msg_type, obj/item/item, range)
