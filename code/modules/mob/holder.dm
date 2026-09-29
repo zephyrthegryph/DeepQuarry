@@ -116,7 +116,7 @@ OWN_TIMER(/obj/item/holder, cleanup_timer)
 /// right after the move that did it (Exited(), Moved()), never polled.
 /obj/item/holder/proc/schedule_cleanup_check()
 	if(!om_timer_slot_pending(src, "cleanup_timer"))
-		om_after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
+		after_slot(src, "cleanup_timer", 0, PROC_REF(cleanup_check))
 
 /obj/item/holder/proc/cleanup_check()
 	if(held_mob?.loc != src || isturf(loc) || isbelly(loc))

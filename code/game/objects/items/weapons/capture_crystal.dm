@@ -237,7 +237,7 @@ OWN_TIMER(/obj/item/capture_crystal, cooldown_icon)
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
 	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-	om_after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
+	after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))

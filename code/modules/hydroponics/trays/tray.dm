@@ -238,7 +238,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
 		return
-	om_after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
+	after_slot(src, "growth_timer", max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth))
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	MACHINE_WAKE(src)

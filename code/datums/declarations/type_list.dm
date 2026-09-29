@@ -9,7 +9,7 @@
 	RETURN_TYPE(/list)
 	var/list/result = CACHED_KEY(type_lists, "[D.type]|[proc_ref]", D, proc_ref, post)
 #ifdef UNIT_TESTS
-	type_list_purity_check(D, proc_ref, result)
+	type_list_purity_check(D, proc_ref, result, post)
 #endif
 	return result
 
@@ -80,7 +80,7 @@ GLOBAL_VAR_INIT(type_list_expect_impure, FALSE)
 #ifdef UNIT_TESTS
 /// The first time a second, different instance of a type asks for a list, rebuild it on that
 /// instance and compare: a per-type list that reads instance state fails the run.
-/proc/type_list_purity_check(datum/D, proc_ref, list/cached)
+/proc/type_list_purity_check(datum/D, proc_ref, list/cached, post)
 	var/key = "[D.type]|[proc_ref]"
 	var/seen = GLOB.type_list_purity[key]
 	if(seen == TRUE)
@@ -92,7 +92,7 @@ GLOBAL_VAR_INIT(type_list_expect_impure, FALSE)
 	if(seen == my_ref)
 		return
 	GLOB.type_list_purity[key] = TRUE
-	var/list/again = build_type_list(D, proc_ref)
+	var/list/again = build_type_list(D, proc_ref, post)
 	if(!type_list_same(cached, again, 0))
 		var/msg = TYPE_LIST_IMPURE(D.type, proc_ref)
 		GLOB.type_list_impure += msg

@@ -93,15 +93,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 			to_chat(user, span_infoplain("[user == target ? "you can't" : "\The [target] can't"] consume that, it contains something produced from a belly!"))
 			return FALSE
 
-	if(ishuman(target))
-		var/mob/living/carbon/human/H = target
-		if(!H.check_has_mouth())
-			balloon_alert(user, "[user == target ? "you don't" : "\the [H] doesn't"] have a mouth!")
-			return FALSE
-		var/obj/item/blocked = H.check_mouth_coverage()
-		if(blocked)
-			balloon_alert(user, "\the [blocked] is in the way!")
-			return FALSE
+	var/mouth_reason = mouth_blocked_reason(user, target)
+	if(mouth_reason)
+		balloon_alert(user, mouth_reason)
+		return FALSE
 
 	user.setClickCooldown(user.get_attack_speed(src)) //puts a limit on how fast people can eat/drink things
 	if(user == target)
@@ -114,6 +109,28 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 		other_feed_message_start(user, target)
 		om_task_timed(user, 3 SECONDS, target, src, PROC_REF(standard_feed_done), list(user, target))
 		return TRUE
+
+/// Why user can't put something in target's mouth (no mouth, or a mask in the way), or null.
+/// Shared by standard_feed_mob() and the edible/drinkable capabilities.
+/proc/mouth_blocked_reason(mob/user, mob/target)
+	if(!ishuman(target))
+		return null
+	var/mob/living/carbon/human/H = target
+	if(!H.check_has_mouth())
+		return "[user == target ? "you don't" : "\the [H] doesn't"] have a mouth!"
+	var/obj/item/blocked = H.check_mouth_coverage()
+	if(blocked)
+		return "\the [blocked] is in the way!"
+	return null
+
+/// Whether source holds a reagent produced from a belly (refused by mobs that don't consume those).
+/proc/reagents_from_belly(atom/source)
+	if(!source?.reagents)
+		return FALSE
+	for(var/datum/reagent/R in source.reagents.reagent_list)
+		if(R.from_belly)
+			return TRUE
+	return FALSE
 
 /obj/item/reagent_containers/proc/standard_feed_done(mob/user, mob/target)
 	if(!reagents?.total_volume)
@@ -142,12 +159,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 	return 1
 
 /obj/item/reagent_containers/proc/liquid_belly_check()
-	if(!reagents)
-		return FALSE
-	for(var/datum/reagent/R in reagents.reagent_list)
-		if(R.from_belly)
-			return TRUE
-	return FALSE
+	return reagents_from_belly(src)
 
 /obj/item/reagent_containers/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()

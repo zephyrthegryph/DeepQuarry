@@ -269,3 +269,45 @@ GLOBAL_DATUM_INIT(look_builder, /datum/look, new)
 #undef LOOK_SET_PLANE
 #undef LOOK_SET_LAYER
 #undef LOOK_SET_LIGHT
+
+
+// ---- transient visuals: look_flash() ----
+
+/atom
+	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
+	var/tmp/list/look_flashes
+	/// The base state look_flash(as_state = TRUE) is showing now, or null.
+	var/tmp/look_flash_state
+
+/**
+ * Shows `state` on A for `duration` (an overlay, or the base icon_state with as_state = TRUE), then
+ * takes it back: a transient visual needs no var and no draw() branch of its own. Re-flashing the same
+ * state restarts its time.
+ *	look_flash(src, "pointer_flash", 0.5 SECONDS)
+ */
+/proc/look_flash(atom/A, state, duration, as_state = FALSE)
+	if(QDELETED(A) || !state || duration <= 0)
+		return
+	if(as_state)
+		A.look_flash_state = state
+	else
+		LAZYSET(A.look_flashes, state, TRUE)
+	changed(A)
+	var/token = "[state]:[++GLOB.look_flash_seq]"
+	LAZYSET(A.look_flash_tokens, state, token)
+	after(A, duration, GLOBAL_PROC_REF(look_flash_end), A, state, token, as_state)
+
+GLOBAL_VAR_INIT(look_flash_seq, 0)
+
+/atom/var/tmp/list/look_flash_tokens
+
+/proc/look_flash_end(atom/A, state, token, as_state)
+	if(QDELETED(A) || A.look_flash_tokens?[state] != token)
+		return
+	LAZYREMOVE(A.look_flash_tokens, state)
+	if(as_state)
+		if(A.look_flash_state == state)
+			A.look_flash_state = null
+	else
+		LAZYREMOVE(A.look_flashes, state)
+	changed(A)
