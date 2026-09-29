@@ -100,9 +100,9 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/crossbow/bow, INTERACT_HAND(null, PR
 		drawn = FALSE
 		update_icon()
 	else
-		draw(user)
+		draw_string(user)
 
-/obj/item/gun/launcher/crossbow/bow/draw(mob/user)
+/obj/item/gun/launcher/crossbow/bow/draw_string(mob/user)
 	if(!bolt)
 		to_chat(user, span_infoplain("You don't have anything nocked to [src]."))
 		return
@@ -169,7 +169,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
 		own_set(src, "bolt", new /obj/item/arrow/energy(src))
 		update_icon()
-	draw(user)
+	draw_string(user)
 
 /obj/item/gun/launcher/crossbow/bow/glamour
 	name = "glamour bow"

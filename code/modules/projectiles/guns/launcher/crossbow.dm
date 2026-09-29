@@ -109,9 +109,9 @@
 		tension = 0
 		update_icon()
 	else
-		draw(user)
+		draw_string(user)
 
-/obj/item/gun/launcher/crossbow/proc/draw(mob/user as mob)
+/obj/item/gun/launcher/crossbow/proc/draw_string(mob/user as mob)
 
 	if(!bolt)
 		to_chat(user, "You don't have anything nocked to [src].")

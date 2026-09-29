@@ -78,6 +78,7 @@
 	// threshold crossing (e.g. the overheating rule never firing).
 	dematerialize()
 	// ---- end L2 ----
+	caps_destroy()
 	if(!isnull(heat_body))
 		release_heat_body()
 	if(reagents)
@@ -281,6 +282,7 @@
 	if(damage_band)
 		output += damage_flavour_text(damage_band)
 
+	output += caps_examine(user)
 	om_emit_examine(src, user, output)
 	return output
 

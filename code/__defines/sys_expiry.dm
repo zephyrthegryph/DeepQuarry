@@ -20,8 +20,6 @@
 // A stored value is a point on that clock; EXPIRY_AT(D, clock, delay) computes one without a var
 // (for list slots and records).
 
-#define CLOCK_WORLD 0
-#define CLOCK_OWN 1
 
 /// "Now" on `clock` for datum D.
 #define EXPIRY_NOW(D, clock) ((clock) ? expiry_clock_now(D) : world.time)

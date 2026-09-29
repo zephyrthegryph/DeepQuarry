@@ -251,6 +251,7 @@
 	if(!run_effect(actor, target, held))
 		return null
 	if(!QDELETED(target))
+		changed(target) // an interaction is a dispatched call (dx_conventions.md §1)
 		target.interaction_ran(actor, src)
 	log_input("Interaction: [key_name(actor)] did [id] ([shown_name]) on [target] ([target.type]).")
 	act_message_t(actor, target, msg_type, held)
@@ -356,6 +357,8 @@ DECLARE_SHARED_CACHE(interaction_candidates, GLOBAL_PROC_REF(build_interaction_c
 	var/list/candidates
 	var/list/entries = list()
 	target.declare_interactions(entries)
+	// Capability entries, in capabilities() order (code/datums/capabilities/).
+	entries += cap_interactions(target)
 	candidates = list()
 	for(var/entry in entries)
 		var/datum/interaction/interaction = istype(entry, /datum/interaction) ? entry : GLOB.interactions_by_type[entry]

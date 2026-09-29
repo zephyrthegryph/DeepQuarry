@@ -177,6 +177,9 @@
 	var/datum/om/pipeline/periodic/P = F.pipeline
 	if(E.periodic_step(P.delta) == PROCESS_KILL && E.periodic_pipe == pipeline)
 		_om_periodic_stop(E)
+	// A step on a should_run() type is a dispatched call (dx_conventions.md §1): its derived procs re-run.
+	if(E.periodic_cadence)
+		changed(E)
 	if(E.periodic_pipe != pipeline)
 		return STAGE_IDLE
 

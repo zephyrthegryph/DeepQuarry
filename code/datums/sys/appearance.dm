@@ -454,6 +454,10 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 /// Runs the queued refreshes within the lane budget. TRUE when the queue is empty. Refreshes raised
 /// by a refresh join the same pass.
 /proc/appearance_drain(datum/om/scheduler/sched)
+	// The refresh engine shares the presentation lane (code/datums/capabilities/refresh.dm).
+	if(!refresh_drain(sched))
+		return FALSE
+	refresh_sweep_step()
 	var/list/Q = GLOB.appearance_queue
 	if(!length(Q))
 		return TRUE
@@ -476,5 +480,6 @@ GLOBAL_LIST_EMPTY(appearance_queue)
 
 /// Runs every queued refresh now, ignoring the budget (unit tests, admin tools).
 /proc/appearance_flush()
+	refresh_flush()
 	while(length(GLOB.appearance_queue))
 		appearance_drain(null)

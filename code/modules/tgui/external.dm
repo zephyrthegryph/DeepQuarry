@@ -95,6 +95,10 @@
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
 		return TRUE
+	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
+	var/list/named = ui_named_dispatch(src, action, params, ui)
+	if(named)
+		return named[2]
 	// The declared UI model: the UI_ACT row for `action` parses and validates params, then runs.
 	return ui_dispatch(src, action, params, ui, state)
 

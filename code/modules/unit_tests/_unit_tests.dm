@@ -92,6 +92,7 @@
 #include "clothing_tests.dm"
 #include "construction_tests.dm"
 #include "cosmetic_tests.dm"
+#include "type_list_tests.dm"
 #include "decl_tests.dm"
 #include "disease_tests.dm"
 #include "focus_only_tests.dm"
