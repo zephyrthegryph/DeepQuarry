@@ -6,7 +6,6 @@
 	icon_state = "syringegun"
 	var/list/syringes
 	var/list/known_reagents
-	var/list/processed_reagents
 	var/max_syringes = 10
 	var/max_volume = 75 //max reagent volume
 	var/synth_speed = 5 //[num] reagent units per cycle
@@ -17,10 +16,12 @@
 	required_type = list(/obj/mecha/medical)
 
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
-OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, CHANGE_EXPLICIT)
+/// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
+OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, synthesizing, list("chassis", "processed_reagents"))
 DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, PERIODIC_FAST, "synthesizing")
 
-/// Derived field: mounted with reagents selected for synthesis (raised by set_chassis and select_reagents).
+/// Derived field: mounted with reagents selected for synthesis.
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/proc/synthesizing()
 	return chassis && length(processed_reagents)
 
@@ -29,7 +30,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, P
 	flags |= NOREACT
 	own_take_all(src, "syringes")
 	known_reagents = list(REAGENT_ID_INAPROVALINE=REAGENT_INAPROVALINE,REAGENT_ID_ANTITOXIN=REAGENT_ANTITOXIN)
-	processed_reagents = new
+	set_processed_reagents(list())
 
 /obj/item/mecha_parts/mecha_equipment/tool/syringe_gun/critfail()
 	..()
@@ -137,15 +138,15 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "purge_all"
 	switch(action)
 		if("select_reagents")
 			var/list/picks = params["reagents"]
-			processed_reagents.Cut()
+			var/list/selected = list()
 			var/m = 0
 			for(var/reagent_id in picks)
 				if(m >= synth_speed)
 					break
 				if(reagent_id in known_reagents)
-					processed_reagents += reagent_id
+					selected += reagent_id
 					m++
-			om_changed(src, CHANGE_EXPLICIT) // processed_reagents feeds the derived `synthesizing`
+			set_processed_reagents(selected)
 			if(processed_reagents.len)
 				occupant_message("Reagent processing started.")
 				src.mecha_log_message("Reagent processing started.")

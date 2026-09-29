@@ -66,14 +66,21 @@ DECLARE_GAS(/obj/item/tank, "air_contents", "volume", T20C, null)
 
 /// TRUE while the relief valve or a failed seal is venting.
 OM_FIELD(/obj/item/tank, leaking, FALSE, CHANGE_EXPLICIT)
+/// TRUE while the seal is below max integrity. Kept by on_update_integrity(), the hook every
+/// integrity write (take_damage, repair_damage, update_integrity) goes through.
+OM_FIELD(/obj/item/tank, seal_damaged, FALSE, CHANGE_EXPLICIT)
 /// The tank reacts its gas and checks its seal every 2 s while it is leaking, damaged, or held or
 /// worn by a mob (moving raises CHANGE_ITEM_LOC). MANY tanks during rounds are never touched, and
 /// an intact, sealed tank lying about has no reason to explode spontaneously.
-OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, CHANGE_EXPLICIT | CHANGE_ITEM_LOC)
+OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "seal_damaged", CHANGE_ITEM_LOC))
 DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 
 /obj/item/tank/proc/pressure_watched()
-	return leaking || ismob(loc) || get_integrity() < max_integrity
+	return leaking || seal_damaged || ismob(loc)
+
+/obj/item/tank/on_update_integrity(old_value, new_value)
+	. = ..()
+	set_seal_damaged(new_value < max_integrity)
 
 // a tank in a transfer valve leaves the valve.
 /obj/item/tank/on_destroy(force)
@@ -89,7 +96,6 @@ DECLARE_PERIODIC_WHILE(/obj/item/tank, PERIODIC_SLOW, "pressure_watched")
 /obj/item/tank/material_environment_repaired()
 	set_leaking(FALSE)
 	repair_damage(max_integrity)
-	om_changed(src, CHANGE_EXPLICIT) // integrity is an input of pressure_watched
 	return ..()
 
 /obj/item/tank/material_environment_owns_leak()
@@ -569,14 +575,13 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 /// Pressure and heat wear on the seal. Armour doesn't help a seal from the inside.
 /obj/item/tank/proc/tank_stress(amount)
 	take_damage(amount, BRUTE, null, FALSE)
-	om_changed(src, CHANGE_EXPLICIT) // integrity is an input of pressure_watched
 
 /// A failed seal is a state, not a wreck: the tank keeps its gas until the next
 /// pressure check ruptures or vents it. Fire and acid still destroy it.
 /obj/item/tank/atom_destruction(damage_flag)
 	if(damage_flag == FIRE || damage_flag == ACID)
 		return ..()
-	om_changed(src, CHANGE_EXPLICIT) // a failed seal: pressure_watched() holds while damaged
+	// A failed seal: pressure_watched() holds through seal_damaged (set by the integrity write).
 
 /////////////////////////////////
 ///Prewelded tanks

@@ -388,8 +388,8 @@ DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/sm
 OM_FLAG_FIELD(/obj/mecha, current_processes, MECHA_PROC_INT_TEMP, CHANGE_EXPLICIT)
 /// Derived field: the cabin simulation has something to advance -- a pilot, or inertial movement /
 /// internal damage. An empty parked mech with neither does not tick. Pilot entry/exit raise the
-/// relation channels (the pilot slot's om_link); moved_inside() also raises CHANGE_EXPLICIT.
-OM_DERIVE_FIELD(/obj/mecha, cabin_active, CHANGE_EXPLICIT | CHANGE_RELATION_ADDED | CHANGE_RELATION_REMOVED)
+/// relation channels (the pilot slot's om_link/om_unlink).
+OM_DERIVE_FIELD(/obj/mecha, cabin_active, list("current_processes", CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 
 /obj/mecha/proc/cabin_active()
@@ -1641,7 +1641,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		H.stop_pulling()
 		if(!H.move_into(src, MECHA_SLOT_PILOT))
 			return
-		om_changed(src, CHANGE_EXPLICIT) // the pilot feeds the derived `cabin_active`
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
@@ -1723,7 +1722,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	// and unlinks it, automatically, for both a human and an MMI/brain pilot.
 	var/moved = slot_remove(occupant, src.loc)
 	if(moved)//ejecting occupant
-		om_changed(src, CHANGE_EXPLICIT) // the pilot feeds the derived `cabin_active`
 		src.mecha_log_message("[mob_container] moved out.")
 		// TGUI: close the exosuit interface on eject.
 		SStgui.close_uis(src)

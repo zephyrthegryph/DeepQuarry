@@ -322,9 +322,8 @@ EXTEND_INTERACTIONS(/obj/item/organ/external, INTERACT_ITEM(null, PROC_REF(exter
 			if(istype(W,/obj/item/surgical/bioregen))
 				act_message(user, src, others = span_danger(span_bold("%U%") + " rejuvinates formerly necrotic tissue on %T% with [W]!"))
 				germ_level = 0
-				status &= ~ORGAN_DEAD
+				set_status(status & ~ORGAN_DEAD)
 				clear_necrosis() // the dead-tissue afflictions go too (audit D12)
-				om_changed(src, CHANGE_EXPLICIT) //Dead limbs stop processing; organ_ticks_loose() holds again.
 				stage-- //Go back to stage 2
 				return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -723,7 +722,7 @@ This function completely restores a damaged organ to perfect condition.
 */
 /obj/item/organ/external/rejuvenate(ignore_prosthetic_prefs)
 	damage_state = "00"
-	status = 0
+	set_status(0)
 	germ_level = 0
 	for(var/datum/affliction/wound/W as anything in get_wounds())
 		remove_wound(W)
@@ -952,7 +951,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 	if(. >= 3 && antibiotics < ANTIBIO_OD)	//INFECTION_LEVEL_THREE
 		if (!(status & ORGAN_DEAD))
-			status |= ORGAN_DEAD
+			set_status(status | ORGAN_DEAD)
 			to_chat(owner, span_notice("You can't feel your [name] anymore..."))
 			owner.update_icons_body()
 			for (var/obj/item/organ/external/child in children)
@@ -1011,7 +1010,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 /// and fractures.
 /obj/item/organ/external/proc/update_damages()
 	recalc_integrity()
-	status &= ~ORGAN_BLEEDING
+	set_status(status & ~ORGAN_BLEEDING)
 
 	var/mob/living/carbon/human/H
 	if(ishuman(owner))
@@ -1024,12 +1023,12 @@ Note that amputating the affected organ does in fact remove the infection from t
 		if(can_bleed)
 			W.run_bleed_clock(bio_now, bleeding)
 		if(bleeding)
-			status |= ORGAN_BLEEDING
+			set_status(status | ORGAN_BLEEDING)
 
 	// An open, unclamped surgical site bleeds.
 	var/datum/affliction/surgical_incision/incision = get_incision()
 	if(incision?.is_bleeding() && !flow_occluded())
-		status |= ORGAN_BLEEDING
+		set_status(status | ORGAN_BLEEDING)
 
 	//Bone fractures
 	if(CONFIG_GET(flag/bones_can_break) && get_trauma() > min_broken_damage * CONFIG_GET(number/organ_health_multiplier) && !(is_robotic()))
@@ -1258,7 +1257,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/proc/bandage()
 	var/rval = 0
-	status &= ~ORGAN_BLEEDING
+	set_status(status & ~ORGAN_BLEEDING)
 	for(var/datum/affliction/wound/W as anything in get_wounds())
 		if(W.internal) continue
 		rval |= !W.bandaged
@@ -1283,7 +1282,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 
 /obj/item/organ/external/proc/organ_clamp()
 	var/rval = 0
-	src.status &= ~ORGAN_BLEEDING
+	src.set_status(src.status & ~ORGAN_BLEEDING)
 	for(var/datum/affliction/wound/W as anything in get_wounds())
 		if(W.internal) continue
 		rval |= !W.clamped
@@ -1393,7 +1392,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 		o_encased = encased
 		o_max_damage = max_damage
 		o_min_broken_damage = min_broken_damage
-		robotic = FALSE
+		set_robotic(FALSE)
 		keep_organs = TRUE
 
 	if(is_robotic())
@@ -1413,7 +1412,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			skip_robo_icon = R.no_icon
 			digi_prosthetic = R.can_be_digitigrade
 			if(R.lifelike)
-				robotic = ORGAN_LIFELIKE
+				set_robotic(ORGAN_LIFELIKE)
 				name = "[initial(name)]"
 			else if(R.modular_bodyparts == MODULAR_BODYPART_PROSTHETIC)
 				name = "prosthetic [initial(name)]"
@@ -1444,9 +1443,9 @@ Note that amputating the affected organ does in fact remove the infection from t
 		owner.refresh_modular_limb_verbs()
 
 	if(restore_nanoform)
-		robotic = original_robotic
+		set_robotic(original_robotic)
 		encased = o_encased
-		max_damage = o_max_damage
+		set_max_damage(o_max_damage)
 		min_broken_damage = o_min_broken_damage
 
 	shed_mismatched_afflictions()
@@ -1455,11 +1454,11 @@ Note that amputating the affected organ does in fact remove the infection from t
 /obj/item/organ/external/proc/mutate()
 	if(src.is_robotic())
 		return
-	src.status |= ORGAN_MUTATED
+	src.set_status(src.status | ORGAN_MUTATED)
 	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/unmutate()
-	src.status &= ~ORGAN_MUTATED
+	src.set_status(src.status & ~ORGAN_MUTATED)
 	if(owner) owner.update_icons_body()
 
 /obj/item/organ/external/proc/get_damage()	//returns total damage

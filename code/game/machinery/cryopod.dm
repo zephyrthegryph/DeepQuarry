@@ -195,10 +195,11 @@
 	density = TRUE
 
 //Cryopods themselves.
-OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, CHANGE_MACHINE_OCCUPANT)
+OM_DERIVE_FIELD(/obj/machinery/cryopod, cryopod_occupied, list(CHANGE_RELATION_ADDED, CHANGE_RELATION_REMOVED))
 DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupied")
 
-/// Derived field: the pod holds someone. set_occupant() raises CHANGE_MACHINE_OCCUPANT.
+/// Derived field: the pod holds someone. The occupant slot's link/unlink raises
+/// CHANGE_RELATION_ADDED/REMOVED on the pod (om_link/om_unlink).
 /obj/machinery/cryopod/proc/cryopod_occupied()
 	return slot_item(OCCUPANT_SLOT_CRYOPOD) ? TRUE : FALSE
 
@@ -730,7 +731,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/cryopod, "announce", /obj/item/radio/interc
 
 /obj/machinery/cryopod/proc/set_occupant(mob/new_occupant)
 	var/mob/occupant = src?.slot_item(OCCUPANT_SLOT_CRYOPOD)
-	om_changed(src, CHANGE_MACHINE_OCCUPANT)
 	name = initial(name)
 	if(occupant)
 		name = "[name] ([occupant])"

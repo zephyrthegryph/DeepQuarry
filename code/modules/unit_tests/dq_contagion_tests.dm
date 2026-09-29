@@ -140,7 +140,7 @@
 	qdel(template)
 	var/datum/affliction/contagion/flu/D = contagion_of(H, /datum/affliction/contagion/flu)
 	TEST_ASSERT_NOTNULL(D, "the flu should have taken")
-	D.virus_modifiers |= CARRIER
+	D.set_virus_modifiers(D.virus_modifiers | CARRIER)
 	D.stage_prob = 100
 	D.progress()
 	TEST_ASSERT_EQUAL(D.stage, 1, "a carrier's disease should not advance")
@@ -182,8 +182,7 @@
 	TEST_ASSERT(target.has_contagion(/datum/affliction/contagion/flu), "the adjacent host should catch the flu")
 
 	// A non-airborne strain has no lane.
-	D.spread_flags = DISEASE_SPREAD_CONTACT
-	D.update_spread_lane()
+	D.set_spread_flags(DISEASE_SPREAD_CONTACT)
 	TEST_ASSERT_NULL(D.periodic_pipe, "a contact-only strain should park its lane")
 
 /// Protection on the contact route: impermeable clothing blocks, blood

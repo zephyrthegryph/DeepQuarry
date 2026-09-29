@@ -79,12 +79,12 @@
 	rel_remove(src, "vending_machines", V)
 	rel_add(src, "infected_vending_machines", V)
 	V.set_shut_up(FALSE)
-	V.shoot_inventory = TRUE
+	V.set_shoot_inventory(TRUE)
 
 /datum/event2/event/brand_intelligence/proc/cure_vender(obj/machinery/vending/V)
 	rel_remove(src, "infected_vending_machines", V)
 	V.set_shut_up(TRUE)
-	V.shoot_inventory = FALSE
+	V.set_shoot_inventory(FALSE)
 
 /datum/event2/event/brand_intelligence/proc/can_propagate(obj/machinery/vending/V)
 	return V && V.shut_up == FALSE

@@ -15,7 +15,7 @@ OM_FIELD(/obj/item/deadringer, activated, FALSE, CHANGE_EXPLICIT)
 /// Cooldown steps left after triggering.
 OM_FIELD(/obj/item/deadringer, timer, 0, CHANGE_EXPLICIT)
 /// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
-OM_DERIVE_FIELD(/obj/item/deadringer, ringer_busy, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/deadringer, ringer_busy, list("activated", "timer"))
 DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
 
 /obj/item/deadringer/proc/ringer_busy()

@@ -78,6 +78,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE,
 				rel_remove(I, "instances", WL)
 				break
 
-			WL.wetness = max(0, WL.wetness - rand(1, 3))
+			WL.set_wetness(max(0, WL.wetness - rand(1, 3)))
 
 	return

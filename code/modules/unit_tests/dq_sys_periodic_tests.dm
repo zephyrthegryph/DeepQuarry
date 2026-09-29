@@ -92,3 +92,45 @@ DECLARE_REPEAT(/datum/sys_periodic_test_entity, 2 SECONDS, pulse, "pulsing")
 	if(!sys_periodic_allows(M, MACHINE_PIPELINE))
 		return TRUE
 	return M.machine_step() == PROCESS_KILL
+
+/// Cross-entity derived input: the holder's work follows a field on the entity its relation names.
+/datum/sys_periodic_test_target
+OM_FIELD(/datum/sys_periodic_test_target, lit, FALSE, CHANGE_DATUM_A)
+
+/datum/sys_periodic_test_holder
+/// A relation view (rel_set/rel_clear); a field, so relinking resubscribes the relay.
+OM_FIELD_VIEW(/datum/sys_periodic_test_holder, datum/sys_periodic_test_target, target, CHANGE_DATUM_B)
+OM_DERIVE_FIELD(/datum/sys_periodic_test_holder, target_lit, list("target.lit"))
+DECLARE_PERIODIC_WHILE(/datum/sys_periodic_test_holder, PERIODIC_SECOND, "target_lit")
+
+/datum/sys_periodic_test_holder/New()
+	..()
+	lifecycle_decls_init(src)
+
+/datum/sys_periodic_test_holder/proc/target_lit()
+	return target?.lit
+
+/datum/unit_test/om/sys_periodic_relay
+
+/datum/unit_test/om/sys_periodic_relay/run_om(list/made)
+	var/datum/sys_periodic_test_holder/H = entity(made, /datum/sys_periodic_test_holder)
+	var/datum/sys_periodic_test_target/A = entity(made, /datum/sys_periodic_test_target)
+	var/datum/sys_periodic_test_target/B = entity(made, /datum/sys_periodic_test_target)
+	rel_set(H, "target", A)
+	TEST_ASSERT_NULL(H.periodic_pipe, "an unlit target: no work")
+	A.set_lit(TRUE)
+	TEST_ASSERT_EQUAL(H.periodic_pipe, PERIODIC_SECOND, "lighting the related target started the holder's work")
+	rel_set(H, "target", B)
+	TEST_ASSERT_NULL(H.periodic_pipe, "relinking to an unlit target stopped it")
+	A.set_lit(FALSE)
+	A.set_lit(TRUE)
+	TEST_ASSERT_NULL(H.periodic_pipe, "the old target no longer relays")
+	B.set_lit(TRUE)
+	TEST_ASSERT_EQUAL(H.periodic_pipe, PERIODIC_SECOND, "the new target relays")
+	rel_clear(H, "target")
+	TEST_ASSERT_NULL(H.periodic_pipe, "no target: no work")
+	rel_set(H, "target", B)
+	TEST_ASSERT_EQUAL(H.periodic_pipe, PERIODIC_SECOND, "relinking to a lit target resubscribes")
+	qdel(B)
+	TEST_ASSERT_NULL(H.target, "the view cleared when its target was destroyed")
+	TEST_ASSERT_NULL(H.periodic_pipe, "the framework's auto-clear of the relation re-evaluated the derived input")

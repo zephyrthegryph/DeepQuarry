@@ -27,7 +27,7 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 		else
 			own_set(src, "chosen_disease", create_virus(severity * 2))
 
-	chosen_disease.virus_modifiers |= CARRIER
+	chosen_disease.set_virus_modifiers(chosen_disease.virus_modifiers | CARRIER)
 
 /datum/event/disease_outbreak/start()
 	GLOB.current_pending_diseases += chosen_disease.Copy()

@@ -483,10 +483,13 @@
 /// OM_FIELD_VIEW() for a var already declared on T or an ancestor (registers it, declares nothing).
 #define OM_FIELD_VIEW_OF(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C }
 
-/// A derived (read-only) field: `T/proc/F()` computes it and it changes whenever any of the
-/// channels C is raised, so a stage that `reads = list("F")` wakes on C. There is no var and no
-/// setter; om_set() on it crashes.
-#define OM_DERIVE_FIELD(T, F, C) /datum/om/field_def##T/F { of = T; field = #F; channel = C; derived = TRUE }
+/// A derived (read-only) field: `T/proc/F()` computes it from its declared INPUTS, a list of the
+/// declared fields it reads (by name) and of raw channels for inputs that are not fields (an item's
+/// location: CHANGE_ITEM_LOC). Its channel is the union of the inputs' channels, resolved once per
+/// type (om_field_table()), so every input setter raises it: nothing refreshes a derived field by
+/// hand. A stage that `reads = list("F")` wakes on it. There is no var and no setter; om_set() on it
+/// crashes. `OM_DERIVE_FIELD(/obj/item/tank, pressure_watched, list("leaking", "atom_integrity", CHANGE_ITEM_LOC))`
+#define OM_DERIVE_FIELD(T, F, INPUTS) /datum/om/field_def##T/F { of = T; field = #F; inputs = INPUTS; derived = TRUE }
 
 // Keyed and counted timers (timer.dm): scheduler procs, called as if they were globals.
 #define om_after_unique(args...) om_scheduler().after_unique(args)

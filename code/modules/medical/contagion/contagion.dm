@@ -58,8 +58,6 @@
 	//Flags
 	var/visibility_flags = 0
 	var/disease_flags = CURABLE|CAN_CARRY|CAN_RESIST
-	var/spread_flags = DISEASE_SPREAD_AIRBORNE
-	var/virus_modifiers = NEEDS_ALL_CURES
 
 	//Fluff
 	/// Used for identification of viruses in the Medical Records Virus Database
@@ -80,7 +78,6 @@
 	// Other
 	/// Reagent ids that cure this disease (all of them with NEEDS_ALL_CURES).
 	var/list/cures
-	var/infectivity = 10
 	var/cure_chance = 8
 	var/permeability_mod = 1
 	var/danger = DISEASE_MINOR
@@ -96,8 +93,14 @@
 	var/immunogenicity = 1
 	/// Immunity accrued from this tick's continuous treatment.
 	var/tmp/pending_immunity = 0
-	/// Typed view of the owner while attached (contagions are humanoid-only).
-	var/tmp/mob/living/carbon/human/host
+
+/// Typed view of the owner while attached (contagions are humanoid-only).
+OM_FIELD_VIEW(/datum/affliction/contagion, tmp/mob/living/carbon/human, host, CHANGE_DATUM_A)
+/// DISEASE_SPREAD_* routes.
+OM_FIELD(/datum/affliction/contagion, spread_flags, DISEASE_SPREAD_AIRBORNE, CHANGE_DATUM_A)
+/// Strain modifier bits (NEEDS_ALL_CURES, DORMANT, SPREAD_DEAD, PROCESSING, ...).
+OM_FIELD(/datum/affliction/contagion, virus_modifiers, NEEDS_ALL_CURES, CHANGE_DATUM_A)
+OM_FIELD(/datum/affliction/contagion, infectivity, 10, CHANGE_DATUM_A)
 
 REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 
@@ -139,17 +142,14 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	rel_set(src, "host", owner)
 	sync_severity()
 	registry_join(REGISTRY_ACTIVE_DISEASES, src)
-	update_spread_lane()
 
 /datum/affliction/contagion/on_removed()
 	if(global_flag_check(virus_modifiers, PROCESSING))
-		virus_modifiers &= ~PROCESSING
+		set_virus_modifiers(virus_modifiers & ~PROCESSING)
 		End()
 	..()
 	registry_leave(REGISTRY_ACTIVE_DISEASES, src)
 	rel_clear(src, "host")
-	// Out of a body: spread_lane_wanted no longer holds, which parks the spread lane.
-	update_spread_lane()
 
 /datum/affliction/contagion/proc/try_infect(mob/living/infectee, make_copy = TRUE)
 	return infect(infectee, make_copy)
@@ -185,7 +185,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 	var/old_stage = stage
 	stage = new_stage
 	if(!global_flag_check(virus_modifiers, DISCOVERED) && stage >= CEILING(max_stages * discovery_threshold, 1))
-		virus_modifiers |= DISCOVERED
+		set_virus_modifiers(virus_modifiers | DISCOVERED)
 	sync_severity()
 	OnStageChange(old_stage)
 	return TRUE
@@ -261,7 +261,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 		return
 
 	if(!global_flag_check(virus_modifiers, PROCESSING))
-		virus_modifiers |= PROCESSING
+		set_virus_modifiers(virus_modifiers | PROCESSING)
 		Start()
 
 	immunity = clamp(immunity + immune_gain(), 0, CONTAGION_IMMUNITY_CLEAR)
@@ -377,7 +377,7 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/proc/Copy()
 	var/datum/affliction/contagion/D = new type()
 	D.strain_data = LAZYCOPY(strain_data)
-	D.virus_modifiers = virus_modifiers & ~(PROCESSING | HAS_TIMER)
+	D.set_virus_modifiers(virus_modifiers & ~(PROCESSING | HAS_TIMER))
 	return D
 
 /datum/affliction/contagion/proc/GetDiseaseID()
@@ -410,10 +410,10 @@ REGISTRY_MEMBERSHIP(/datum/affliction/contagion, REGISTRY_ACTIVE_DISEASES)
 /datum/affliction/contagion/proc/End()
 	return
 
-/// Called when the host dies. A SPREAD_DEAD strain moves onto its lane (the
-/// body no longer ticks it).
+/// Called when the host dies (engineered strains fire their traits' death effects). The spread lane
+/// needs nothing here: it reads "host.stat" as a derived input.
 /datum/affliction/contagion/proc/OnDeath()
-	update_spread_lane()
+	return
 
 // Adds a virus to the virus DB
 /datum/affliction/contagion/proc/addToDB()

@@ -83,13 +83,16 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 /obj/effect/overmap/visitable/ship/proc/is_still()
 	return !MOVING(speed[1]) && !MOVING(speed[2])
 
-/// Under way (not still). adjust_speed(), the only writer of speed, raises CHANGE_EXPLICIT when
-/// the ship starts or stops moving.
-OM_DERIVE_FIELD(/obj/effect/overmap/visitable/ship, is_moving, CHANGE_EXPLICIT)
+/// Mirror of "not still": speed is a list mutated in place, so adjust_speed() (its only writer)
+/// publishes the start/stop transition through this field.
+OM_FIELD_TYPED(/obj/effect/overmap/visitable/ship, tmp, under_way, FALSE, CHANGE_EXPLICIT)
+
+/// Under way (not still).
+OM_DERIVE_FIELD(/obj/effect/overmap/visitable/ship, is_moving, list("under_way"))
 DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_moving")
 
 /obj/effect/overmap/visitable/ship/proc/is_moving()
-	return !is_still()
+	return under_way
 
 /obj/effect/overmap/visitable/ship/get_scan_data(mob/user)
 	. = ..()
@@ -151,7 +154,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	// If nothing changed
 	if(still == old_still)
 		return
-	om_changed(src, CHANGE_EXPLICIT) // is_moving() changed: its declaration starts or stops the work
+	set_under_way(!still) // is_moving() changed: its declaration starts or stops the work
 	// If it is now still, stopped moving
 	if(still)
 		for(var/zz in map_z)

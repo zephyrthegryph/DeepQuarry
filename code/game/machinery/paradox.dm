@@ -10,7 +10,7 @@
 	var/chaos_eff = 1
 
 /// Unpowered: the rift spills loot only while it has no power.
-OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, CHANGE_MACHINE_POWER)
+OM_DERIVE_FIELD(/obj/machinery/paradoxrift, unpowered, list("stat"))
 /obj/machinery/paradoxrift/proc/unpowered()
 	return has_stat(NOPOWER)
 

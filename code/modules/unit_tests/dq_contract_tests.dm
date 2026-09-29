@@ -1526,7 +1526,7 @@
 	new /obj/item/card/id(held_bag)
 	TEST_ASSERT(!SScontracts.is_physically_custodied(subject), "ID nested inside a carried container bypassed custody verification")
 	qdel(held_bag)
-	subject.stat = DEAD
+	subject.set_stat(DEAD)
 	TEST_ASSERT(!SScontracts.is_physically_custodied(subject), "dead body was accepted as a physically custodied prisoner")
 	ChangeArea(test_turf, original_area)
 	qdel(subject)

@@ -22,7 +22,7 @@
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/structure/medical_stand, stand_working, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/structure/medical_stand, stand_working, list("valve_opened", "breather", "attached"))
 /// Feeds gas and reagents every 2 s while its valve is open or it has a patient on the mask or needle.
 DECLARE_PERIODIC_WHILE(/obj/structure/medical_stand, PERIODIC_SLOW, "stand_working")
 

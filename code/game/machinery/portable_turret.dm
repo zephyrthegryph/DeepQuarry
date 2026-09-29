@@ -476,7 +476,6 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 				check_down = !check_down
 
 /obj/machinery/porta_turret/power_change()
-	om_changed(src, CHANGE_MACHINE_SETTINGS)
 	if(powered())
 		stat_remove(NOPOWER)
 		update_icon()

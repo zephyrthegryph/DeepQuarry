@@ -18,7 +18,7 @@ OM_FLAG_FIELD_BITS(/obj/machinery, stat, 0, CHANGE_MACHINE_BROKEN | CHANGE_MACHI
 /// Powered and working: none of NOPOWER, BROKEN, MAINT, EMPED (plus `additional_flags`).
 /// interact_offline is deliberately not folded in: it is a UI-reach rule (tgui_status,
 /// CanUseTopic), not "the machine works".
-OM_DERIVE_FIELD(/obj/machinery, operable, CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+OM_DERIVE_FIELD(/obj/machinery, operable, list("stat"))
 /obj/machinery/proc/operable(additional_flags = 0)
 	return !(stat & (MACHINE_INOPERABLE_FLAGS | additional_flags))
 

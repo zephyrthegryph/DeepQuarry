@@ -23,6 +23,8 @@
 	var/channel = 0
 	/// OM_DERIVE_FIELD(): computed by the proc named `field`; no var, no setter.
 	var/derived = FALSE
+	/// OM_DERIVE_FIELD(): its inputs, field names and raw channels (its channel is their union).
+	var/list/inputs
 
 /datum/om/registry
 	/// type path -> field name -> channel (every field_def whose `of` is an ancestor, merged).
@@ -42,10 +44,7 @@
 			var/datum/om/field_def/D = def_path
 			if(initial(D.field))
 				field_defs += def_path
-	F = list()
-	for(var/datum/om/field_def/D as anything in field_defs)
-		if(ispath(path, initial(D.of)))
-			F[initial(D.field)] |= initial(D.channel)
+	F = om_field_table(path)
 	fields_by_type[path] = F
 	return F
 
@@ -130,3 +129,175 @@
 			var/channel = table["[bit]"]
 			. |= channel ? channel : fallback
 		bit <<= 1
+
+/// Declared fields of `path` (and its ancestors), field name -> channel, with derived fields
+/// resolved to the union of their inputs' channels. Usable before the registry exists (the
+/// declared-periodic service build reads it); the registry caches it per type in fields_of().
+/proc/om_field_table(path)
+	RETURN_TYPE(/list)
+	var/static/list/plain_defs
+	var/static/list/derived_defs
+	if(!plain_defs)
+		plain_defs = list()
+		derived_defs = list()
+		for(var/def_path in subtypesof(/datum/om/field_def))
+			var/datum/om/field_def/D = def_path
+			if(!initial(D.field))
+				continue
+			if(initial(D.derived))
+				derived_defs += new def_path // inputs is a list: read from an instance
+			else
+				plain_defs += def_path
+	var/list/F = list()
+	for(var/datum/om/field_def/D as anything in plain_defs)
+		if(ispath(path, initial(D.of)))
+			F[initial(D.field)] |= initial(D.channel)
+	var/list/mine = list()
+	for(var/datum/om/field_def/D as anything in derived_defs)
+		if(ispath(path, D.of))
+			mine += D
+	// Derived fields may read other derived fields: resolve until nothing changes.
+	for(var/pass in 1 to max(1, length(mine)))
+		var/changed = FALSE
+		for(var/datum/om/field_def/D as anything in mine)
+			var/channel = F[D.field]
+			for(var/input in D.inputs)
+				if(isnum(input))
+					channel |= input
+				else if(findtext(input, "."))
+					// "rel.field": the relation var's own channel (relink) plus the relay's CHANGE_RELATED.
+					channel |= F[copytext(input, 1, findtext(input, "."))] | CHANGE_RELATED
+				else
+					channel |= F[input]
+			if(channel != F[D.field])
+				F[D.field] = channel
+				changed = TRUE
+		if(!changed)
+			break
+	return F
+
+/// Boot check: every derived field's inputs are declared fields of its type (or raw channels).
+/proc/om_check_derived_inputs()
+	. = list()
+	for(var/def_path in subtypesof(/datum/om/field_def))
+		var/datum/om/field_def/proto = def_path
+		if(!initial(proto.field) || !initial(proto.derived))
+			continue
+		var/datum/om/field_def/D = new def_path
+		var/list/F = om_field_table(D.of)
+		if(!length(D.inputs))
+			. += "OM_DERIVE_FIELD([D.of], [D.field]) declares no inputs"
+		for(var/input in D.inputs)
+			if(isnum(input))
+				continue
+			var/dot = findtext(input, ".")
+			var/local = dot ? copytext(input, 1, dot) : input
+			if(!F[local])
+				. += "OM_DERIVE_FIELD([D.of], [D.field]) reads [input]: [local] is not a declared field of [D.of]"
+
+// ---------------------------------------------------------------- cross-entity derived inputs
+//
+// A derived input "rel.field" reads `field` on the entity held in the holder's declared field `rel`
+// (a relation view or an owned child, declared with OM_FIELD_VIEW; om_relay_targets()). Each holder subscribes to that entity's `field` channel: the target's
+// rec.relay_in names the holder, and a raise there raises CHANGE_RELATED on the holder, which is part
+// of the derived field's channel. Writing `rel` (an ownership accessor, or the framework clearing it
+// when its entity dies, raises its channel, the type's relay_mask) resubscribes; teardown of either
+// end drops the subscription.
+
+/// Stride 2 (relation var, field) for every cross-entity input of `path`'s derived fields.
+/proc/om_derived_relays_of(path)
+	var/static/list/all // stride 3: declaring type, relation var, field (built once)
+	if(!all)
+		all = list()
+		for(var/def_path in subtypesof(/datum/om/field_def))
+			var/datum/om/field_def/proto = def_path
+			if(!initial(proto.derived))
+				continue
+			var/datum/om/field_def/D = new def_path
+			for(var/input in D.inputs)
+				if(istext(input) && findtext(input, "."))
+					var/dot = findtext(input, ".")
+					all += list(D.of, copytext(input, 1, dot), copytext(input, dot + 1))
+	var/list/out
+	for(var/i in 1 to length(all) step 3)
+		if(ispath(path, all[i]))
+			LAZYADD(out, list(all[i + 1], all[i + 2]))
+	return out
+
+/// The entities E's field `var_name` names now, read through the ownership model
+/// (doc/rewrite/ownership.md): a relation view (rel_targets(), single or list), or an owned child
+/// or list of children (own_values()); anything else is a plain var read. Every writer of such a var
+/// is an ownership accessor or a framework auto-clear, and each raises the field's channel (the
+/// type's relay_mask), so om_dispatch_change() calls om_derived_relink() again whenever what this
+/// returns changes, including when a related entity is destroyed.
+/proc/om_relay_targets(datum/E, var_name)
+	RETURN_TYPE(/list)
+	var/list/entry = own_entry(E, var_name)
+	if(entry)
+		switch(entry[OWNE_KIND])
+			if(OWNK_REL)
+				return rel_targets(E, var_name)
+			if(OWNK_OWN)
+				return own_values(E, var_name)
+	var/value = E.vars[var_name]
+	if(islist(value))
+		. = list()
+		for(var/datum/D in value)
+			. += D
+		return .
+	return isdatum(value) ? list(value) : list()
+
+/// Resubscribes E to the entities its relation vars name now.
+/proc/om_derived_relink(datum/E, datum/om/rec/rec)
+	var/list/relays = rec.table.derived_relays
+	var/list/wanted = list() // target -> mask
+	for(var/i in 1 to length(relays) step 2)
+		for(var/datum/target as anything in om_relay_targets(E, relays[i]))
+			if(QDELETED(target))
+				continue
+			var/channel = om_field_table(target.type)[relays[i + 1]]
+			if(channel)
+				wanted[target] |= channel
+	for(var/datum/old as anything in rec.relay_out?.Copy())
+		if(!wanted[old])
+			om_relay_remove(E, rec, old)
+	for(var/datum/target as anything in wanted)
+		var/datum/om/rec/trec = om_rec_of(target)
+		if(!trec)
+			continue
+		var/found = FALSE
+		for(var/j in 1 to length(trec.relay_in) step 2)
+			if(trec.relay_in[j] == E)
+				trec.relay_in[j + 1] = wanted[target]
+				found = TRUE
+				break
+		if(!found)
+			LAZYADD(trec.relay_in, list(E, wanted[target]))
+			LAZYOR(rec.relay_out, target)
+		om_recompute_listen(trec)
+
+/proc/om_relay_remove(datum/E, datum/om/rec/rec, datum/target)
+	LAZYREMOVE(rec.relay_out, target)
+	var/datum/om/rec/trec = target.om_rec
+	if(!trec?.relay_in)
+		return
+	for(var/j in 1 to length(trec.relay_in) step 2)
+		if(trec.relay_in[j] == E)
+			trec.relay_in.Cut(j, j + 2)
+			break
+	if(!length(trec.relay_in))
+		trec.relay_in = null
+	om_recompute_listen(trec)
+
+/// Teardown (links phase): E stops relaying from its targets, and its holders stop relaying from E.
+/proc/om_relay_clear(datum/E, datum/om/rec/rec)
+	for(var/datum/target as anything in rec.relay_out?.Copy())
+		om_relay_remove(E, rec, target)
+	rec.relay_out = null
+	for(var/j in 1 to length(rec.relay_in) step 2)
+		var/datum/holder = rec.relay_in[j]
+		var/datum/om/rec/hrec = holder?.om_rec
+		if(hrec)
+			LAZYREMOVE(hrec.relay_out, E)
+			om_changed(holder, CHANGE_RELATED) // what it read is going away
+	rec.relay_in = null

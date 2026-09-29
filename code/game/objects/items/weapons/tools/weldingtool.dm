@@ -35,7 +35,6 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 	var/flame_color = "#FF9933" // What color the welder light emits when its on.  Default is an orange-ish color.
 	var/eye_safety_modifier = 0 // Increasing this will make less eye protection needed to stop eye damage.  IE at 1, sunglasses will fully protect.
 	var/burned_fuel_for = 0 // Keeps track of how long the welder's been on, used to gradually empty the welder if left one, without RNG.
-	var/always_process = FALSE // If true, keeps the welder on the process list even if it's off.  Used for when it needs to regenerate fuel.
 	var/no_passive_burn = FALSE // If true, the welder will not passively burn fuel. Used for things like electric welders.
 	toolspeed = 1
 	drop_sound = SFX_ITEMS_DROP_WELDINGTOOL
@@ -44,7 +43,9 @@ MATERIAL_MIX(/obj/item/weldingtool, list(MAT_STEEL = 70, MAT_GLASS = 30))
 
 //Whether or not the welding tool is off(0), on(1) or currently welding(2)
 OM_FIELD(/obj/item/weldingtool, welding, 0, CHANGE_EXPLICIT)
-OM_DERIVE_FIELD(/obj/item/weldingtool, burner_active, CHANGE_EXPLICIT)
+/// If true, keeps the welder processing even while off (fuel regeneration).
+OM_FIELD(/obj/item/weldingtool, always_process, FALSE, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/weldingtool, burner_active, list("welding", "always_process"))
 /// Burns fuel (or regenerates it, for always_process welders) every 2 s while lit.
 DECLARE_PERIODIC_WHILE(/obj/item/weldingtool, PERIODIC_SLOW, "burner_active")
 
@@ -472,7 +473,6 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 	flame_intensity = 1
 	eye_safety_modifier = 1
 	always_process = FALSE
-	var/obj/item/weldpack/mounted_pack = null
 
 /obj/item/weldingtool/tubefed/Initialize(mapload)
 	. = ..()
@@ -483,7 +483,10 @@ MATERIAL_MIX(/obj/item/weldingtool/experimental, list(MAT_STEEL = 70, MAT_GLASS 
 		return INITIALIZE_HINT_QDEL
 
 // The weldpack owns its nozzle (implicit OWN); the nozzle names its pack (one-sided REL).
-OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, CHANGE_ITEM_LOC)
+/// The pack this nozzle belongs to (a relation view, set once in Initialize()): a field, so its
+/// automatic clear when the pack is destroyed re-evaluates burner_active.
+OM_FIELD_VIEW(/obj/item/weldingtool/tubefed, obj/item/weldpack, mounted_pack, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/weldingtool/tubefed, burner_active, list("mounted_pack", CHANGE_ITEM_LOC))
 
 /// A nozzle works (and watches its hose) only while it is out of its pack.
 /obj/item/weldingtool/tubefed/burner_active()

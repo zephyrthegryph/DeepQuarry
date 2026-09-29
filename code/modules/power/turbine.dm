@@ -60,10 +60,10 @@
 /// Started by its control computer: set_starter() is the setter.
 OM_FIELD_SETTER(/obj/machinery/compressor, starter, CHANGE_MACHINE_SETTINGS)
 /// Not BROKEN (BROKEN also marks "no partner connected"; see locate_machinery()).
-OM_DERIVE_FIELD(/obj/machinery/compressor, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/compressor, unbroken, list("stat"))
 /obj/machinery/compressor/proc/unbroken()
 	return !has_stat(BROKEN)
-OM_DERIVE_FIELD(/obj/machinery/power/turbine, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/power/turbine, unbroken, list("stat"))
 /obj/machinery/power/turbine/proc/unbroken()
 	return !has_stat(BROKEN)
 

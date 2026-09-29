@@ -13,8 +13,6 @@
 	icon = 'icons/obj/railgun.dmi'
 	w_class = ITEMSIZE_HUGE //.
 
-	var/obj/item/cell/cell                              // Currently installed powercell.
-	var/obj/item/stock_parts/capacitor/capacitor        // Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.
 	var/removable_components = TRUE                            // Whether or not the gun can be dismantled.
 	var/gun_unreliable = 15                                    // Percentage chance of detonating in your hands.
 
@@ -27,9 +25,16 @@
 
 	var/state = 0
 
+/// Currently installed powercell.
+OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/cell, cell, CHANGE_EXPLICIT)
+/// Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.
+OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor, CHANGE_EXPLICIT)
+
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
-/// Swapping parts raises CHANGE_EXPLICIT; the step's own charging settles it (it then parks).
-OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, CHANGE_EXPLICIT)
+/// Swapping parts goes through own_set()/own_take() (and a destroyed part is cleared by the
+/// ownership framework), all of which raise the part fields; the capacitor's charge is a cross-entity
+/// input (max_charge is fixed at the part's Initialize).
+OM_DERIVE_FIELD(/obj/item/gun/magnetic, capacitor_unsettled, list("cell", "capacitor", "capacitor.charge"))
 /obj/item/gun/magnetic/proc/capacitor_unsettled()
 	return capacitor && (cell ? capacitor.charge < capacitor.max_charge : capacitor.charge)
 DECLARE_PERIODIC_WHILE(/obj/item/gun/magnetic, PERIODIC_SLOW, "capacitor_unsettled")
@@ -42,7 +47,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	// So you can have some spawn with components
 	if(ispath(capacitor))
 		own_set(src, "capacitor", new capacitor(src))
-		capacitor.charge = capacitor.max_charge
+		capacitor.set_charge(capacitor.max_charge)
 
 	if(capacitor)
 		power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -54,7 +59,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	return cell
 
 /// Charges its capacitor from its cell (or bleeds it without one) every 2 s while it isn't settled
-/// (declared on capacitor_unsettled); firing and swapping parts start it again.
+/// (declared on capacitor_unsettled); firing drains the capacitor, which restarts it.
 /obj/item/gun/magnetic/periodic_step()
 	if(!capacitor_unsettled())
 		update_state()
@@ -165,7 +170,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 				return
 			user.drop_from_inventory(thing, src)
 			own_set(src, "cell", thing)
-			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
 			update_icon()
@@ -176,7 +180,6 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
 			own_set(src, "capacitor", thing)
-			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 			user.drop_from_inventory(capacitor, src)
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -220,7 +223,6 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 		else if(cell && removable_components)
 			removing = cell
 			own_take(src, "cell")
-			om_changed(src, CHANGE_EXPLICIT) // capacitor_unsettled may have changed
 
 		if(removing)
 			removing.forceMove(get_turf(src))
@@ -244,7 +246,6 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 
 	use_ammo()
 	capacitor.use(power_cost)
-	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 
 	if(gun_unreliable && prob(gun_unreliable))
@@ -315,7 +316,6 @@ DECLARE_INTERACTIONS(/obj/item/gun/magnetic, INTERACT_HAND(null, PROC_REF(intera
 					projectile_type = /obj/item/projectile/bullet/magnetic/fuelrod
 	use_ammo()
 	capacitor.use(power_cost)
-	om_task_periodic(src, PERIODIC_SLOW)
 	update_icon()
 	if(projectile_type)
 		return new projectile_type(src)

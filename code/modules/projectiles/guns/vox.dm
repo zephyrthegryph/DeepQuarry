@@ -19,7 +19,7 @@
 
 OM_FIELD(/obj/item/gun/launcher/spikethrower, spikes, 5, CHANGE_EXPLICIT)
 /// Short of spikes: derived from spikes (raised by set_spikes()).
-OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/gun/launcher/spikethrower, spikes_short, list("spikes"))
 /obj/item/gun/launcher/spikethrower/proc/spikes_short()
 	return spikes < max_spikes
 DECLARE_PERIODIC_WHILE(/obj/item/gun/launcher/spikethrower, PERIODIC_SLOW, "spikes_short")

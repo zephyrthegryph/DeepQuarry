@@ -5,7 +5,7 @@ OM_FIELD(/obj/machinery/suit_cycler, irradiating, 0, CHANGE_MACHINE_SETTINGS)
 /// Shock timer from the electrify wire: > 0 counts down each step, -1 is permanent (cut wire).
 OM_FIELD(/obj/machinery/suit_cycler, electrified, 0, CHANGE_MACHINE_SETTINGS)
 /// Derived field: a UV cycle is running, or the electrify timer is counting down.
-OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/suit_cycler, cycler_has_work, list("active", "irradiating", "electrified"))
 /obj/machinery/suit_cycler/proc/cycler_has_work()
 	return (active && irradiating > 0) || electrified > 0
 

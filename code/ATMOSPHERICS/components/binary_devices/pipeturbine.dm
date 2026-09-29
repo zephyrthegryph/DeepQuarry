@@ -23,7 +23,7 @@
 	var/datum/pipe_network/network2
 
 /// Not BROKEN (the turbine needs no power, so operable() is too strict).
-OM_DERIVE_FIELD(/obj/machinery/atmospherics/pipeturbine, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/atmospherics/pipeturbine, unbroken, list("stat"))
 /obj/machinery/atmospherics/pipeturbine/proc/unbroken()
 	return !has_stat(BROKEN)
 
@@ -222,7 +222,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/pipeturbine, MACHINE_PIPE
 	var/obj/machinery/atmospherics/pipeturbine/turbine
 
 /// Not BROKEN (the motor is a generator; operable() would also demand power).
-OM_DERIVE_FIELD(/obj/machinery/power/turbinemotor, unbroken, CHANGE_MACHINE_BROKEN)
+OM_DERIVE_FIELD(/obj/machinery/power/turbinemotor, unbroken, list("stat"))
 /obj/machinery/power/turbinemotor/proc/unbroken()
 	return !has_stat(BROKEN)
 

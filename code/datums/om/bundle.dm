@@ -83,6 +83,10 @@
 	/// Channels of this type's declared periodic fields: a raise re-evaluates its declarations at once
 	/// (code/datums/sys/periodic.dm).
 	var/sys_periodic_mask = 0
+	/// Cross-entity derived inputs ("rel.field", fields.dm): stride 2, relation var name, field name.
+	var/list/derived_relays
+	/// The channels of those relation vars: a raise resubscribes (om_derived_relink()).
+	var/relay_mask = 0
 	/// Services observing this type.
 	var/list/services
 	/// Parallel to services: the channels each service observes on this type (per-(service, type) mask).

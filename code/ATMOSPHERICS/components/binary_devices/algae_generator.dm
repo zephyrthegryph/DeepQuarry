@@ -34,7 +34,7 @@
 	var/const/output_gas = GAS_O2
 
 /// Switched to active (grow lights on) and operable: it converts while this holds.
-OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_BROKEN | CHANGE_MACHINE_POWER)
+OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, list("operable", "use_power"))
 /obj/machinery/atmospherics/binary/algae_farm/proc/farming()
 	return operable() && use_power >= USE_POWER_ACTIVE
 

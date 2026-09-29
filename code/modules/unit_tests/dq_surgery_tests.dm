@@ -194,7 +194,7 @@
 	var/obj/item/organ/internal/brain/brain = H.organ_in(O_BRAIN)
 	TEST_ASSERT_NOTNULL(brain, "no brain")
 	H.injure(INJURY_CUT, 10, brain, affliction = /datum/affliction/lesion/laceration, flags = INJURE_IGNORE_RESISTANCE)
-	brain.status |= ORGAN_DEAD
+	brain.set_status(brain.status | ORGAN_DEAD)
 	TEST_ASSERT(brain.is_beyond_repair(), "a dead brain is beyond repair")
 	var/datum/surgical_step/treat/organ/suture = surgical_step(/datum/surgical_step/treat/organ/suture)
 	TEST_ASSERT(suture.location_needs_treatment(H, brain), "the surgeon can still work on it")
@@ -365,9 +365,9 @@
 
 	// A conscious patient with no pain relief flinches; an unconscious one doesn't.
 	TEST_ASSERT(S.patient_mult(H, arm) < 1, "a conscious, unmedicated patient is a risk")
-	H.stat = UNCONSCIOUS
+	H.set_stat(UNCONSCIOUS)
 	TEST_ASSERT_EQUAL(S.patient_mult(H, arm), 1, "an anaesthetised patient holds still")
-	H.stat = CONSCIOUS
+	H.set_stat(CONSCIOUS)
 
 	// Operating on yourself is harder.
 	var/self = S.success_chance(H, H, arm, scalpel, 100)

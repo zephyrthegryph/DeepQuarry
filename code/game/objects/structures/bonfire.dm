@@ -289,7 +289,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 						WL.dry()
 						continue
 
-					WL.wetness = max(0, WL.wetness - rand(1, 4))
+					WL.set_wetness(max(0, WL.wetness - rand(1, 4)))
 
 				env.merge(removed)
 

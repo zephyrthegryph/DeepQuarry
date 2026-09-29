@@ -15,7 +15,7 @@ OM_FIELD(/obj/machinery/beehive, bee_count, 0, CHANGE_MACHINE_SETTINGS)
 /// Timer (machine steps).
 OM_FIELD(/obj/machinery/beehive, smoked, 0, CHANGE_MACHINE_SETTINGS)
 /// Bees inside or smoke still clearing: the hive has something to tick.
-OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/beehive, hive_active, list("bee_count", "smoked"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/beehive, MACHINE_PIPELINE, "hive_active")
 
 /obj/machinery/beehive/proc/hive_active()

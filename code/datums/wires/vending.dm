@@ -27,11 +27,11 @@
 	var/obj/machinery/vending/V = holder
 	switch(wire)
 		if(WIRE_THROW_ITEM)
-			V.shoot_inventory = !V.shoot_inventory
+			V.set_shoot_inventory(!V.shoot_inventory)
 		if(WIRE_CONTRABAND)
 			V.categories ^= CAT_HIDDEN
 		if(WIRE_ELECTRIFY)
-			V.seconds_electrified = 30
+			V.set_seconds_electrified(30)
 		if(WIRE_IDSCAN)
 			V.scan_id = !V.scan_id
 	if(V.shoot_inventory || V.seconds_electrified)
@@ -42,14 +42,14 @@
 	var/obj/machinery/vending/V = holder
 	switch(wire)
 		if(WIRE_THROW_ITEM)
-			V.shoot_inventory = !mend
+			V.set_shoot_inventory(!mend)
 		if(WIRE_CONTRABAND)
 			V.categories &= ~CAT_HIDDEN
 		if(WIRE_ELECTRIFY)
 			if(mend)
-				V.seconds_electrified = 0
+				V.set_seconds_electrified(0)
 			else
-				V.seconds_electrified = -1
+				V.set_seconds_electrified(-1)
 		if(WIRE_IDSCAN)
 			V.scan_id = 1
 	if(V.shoot_inventory || V.seconds_electrified)

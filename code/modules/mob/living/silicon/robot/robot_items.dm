@@ -448,7 +448,7 @@ OM_FIELD(/obj/item/borg/combat/shield, active, TRUE, CHANGE_EXPLICIT)
 /// Counter for how many times the shield has been flashed.
 OM_FIELD(/obj/item/borg/combat/shield, flash_count, 0, CHANGE_EXPLICIT)
 /// Derived field: an overload or a flash count is pending recovery.
-OM_DERIVE_FIELD(/obj/item/borg/combat/shield, recovering, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/borg/combat/shield, recovering, list("active", "flash_count"))
 DECLARE_PERIODIC_WHILE(/obj/item/borg/combat/shield, PERIODIC_SLOW, "recovering")
 
 /obj/item/borg/combat/shield/proc/recovering()

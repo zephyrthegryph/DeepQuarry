@@ -140,7 +140,7 @@
 /datum/surgical_step/organ/reconnect/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	var/obj/item/organ/internal/I = work_target
 	if(istype(I))
-		I.status &= ~ORGAN_CUT_AWAY
+		I.set_status(I.status & ~ORGAN_CUT_AWAY)
 		log_game("SURGERY: [key_name(user)] reconnected [I] in [key_name(target)]")
 
 

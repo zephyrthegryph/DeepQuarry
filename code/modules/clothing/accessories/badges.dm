@@ -296,13 +296,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 	item_state = "dosimeter"
 	overlay_state = "dosimeter"
 	slot_flags = SLOT_TIE
-	var/obj/item/dosimeter_film/current_film = null
+
+/// The loaded film (set at init by DECLARE_DEFAULT_CHILD).
+OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
 
-/// A film that can still darken is loaded: it reads the wearer's radiation. update_state() (every
-/// film insert, removal and darkening) raises CHANGE_EXPLICIT.
-OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, CHANGE_EXPLICIT)
+/// A film that can still darken is loaded: it reads the wearer's radiation.
+OM_DERIVE_FIELD(/obj/item/clothing/accessory/dosimeter, film_live, list("current_film", "current_film.state"))
 DECLARE_PERIODIC_WHILE(/obj/item/clothing/accessory/dosimeter, PERIODIC_SLOW, "film_live")
 
 /obj/item/clothing/accessory/dosimeter/proc/film_live()
@@ -361,12 +362,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /obj/item/clothing/accessory/dosimeter/proc/update_state(tostate)
 	var/obj/item/dosimeter_film/film = current_film
 	if(film)
-		film.state = tostate
+		film.set_state(tostate)
 		icon_state = "[initial(icon_state)][tostate]"
 		current_film.icon_state = "dosimeter_film[tostate]"
 	else
 		icon_state = "[initial(icon_state)]-empty"
-	om_changed(src, CHANGE_EXPLICIT)
 	update_icon()
 
 /obj/item/dosimeter_film
@@ -375,7 +375,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "dosimeter_film0"
-	var/state = 0 //0 - White, 1 - Darker, 2 - Black (same as iconstates)
+
+/// How dark the film is: 0 white, 1 darker, 2 black (same as the icon states). A dosimeter holding it
+/// reads it through its "current_film.state" derived input.
+OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 
 /obj/item/dosimeter_film/proc/update_state(tostate)
 	icon_state = tostate

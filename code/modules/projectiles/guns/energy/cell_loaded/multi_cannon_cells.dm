@@ -14,7 +14,7 @@
 
 OM_FIELD(/obj/item/ammo_casing/macrobattery, charge, null, CHANGE_EXPLICIT)
 /// Below full charge: derived from charge (raised by set_charge()).
-OM_DERIVE_FIELD(/obj/item/ammo_casing/macrobattery, charge_short, CHANGE_EXPLICIT)
+OM_DERIVE_FIELD(/obj/item/ammo_casing/macrobattery, charge_short, list("charge"))
 /obj/item/ammo_casing/macrobattery/proc/charge_short()
 	return charge < max_charge
 /// Recharges while below full; full, it parks until a shot is expended.

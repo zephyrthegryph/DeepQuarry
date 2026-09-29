@@ -68,8 +68,6 @@
 
 	// Things that can go wrong
 	emagged = 0 //Ignores if somebody doesn't have card access to that machine.
-	var/seconds_electrified = 0 //Shock customers like an airlock.
-	var/shoot_inventory = 0 //Fire items at customers! We're broken!
 	var/shoot_inventory_chance = 1
 
 	var/scan_id = 1
@@ -82,8 +80,13 @@
 
 /// Stop spouting those godawful pitches!
 OM_FIELD(/obj/machinery/vending, shut_up, TRUE, CHANGE_MACHINE_SETTINGS)
+/// Shock customers like an airlock: steps left (-1 for permanently, from a cut wire).
+OM_FIELD(/obj/machinery/vending, seconds_electrified, 0, CHANGE_MACHINE_SETTINGS)
+/// Fire items at customers! We're broken!
+OM_FIELD(/obj/machinery/vending, shoot_inventory, 0, CHANGE_MACHINE_SETTINGS)
 /// Active with something time-dependent to do: electrified, shooting inventory, or advertising.
-OM_DERIVE_FIELD(/obj/machinery/vending, vend_has_timed_work, CHANGE_MACHINE_SETTINGS)
+/// slogan_list is filled once in Initialize() and never changes afterwards, so it is not an input.
+OM_DERIVE_FIELD(/obj/machinery/vending, vend_has_timed_work, list("active", "seconds_electrified", "shoot_inventory", "shut_up"))
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/vending, MACHINE_PIPELINE, list("operable", "vend_has_timed_work"))
 
 /obj/machinery/vending/proc/vend_has_timed_work()
@@ -736,7 +739,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		return PROCESS_KILL
 
 	if(seconds_electrified > 0)
-		seconds_electrified--
+		set_seconds_electrified(seconds_electrified - 1)
 
 	//Pitch to the people!  Really sell it!
 	if((COOLDOWN_FINISHED(src, slogan_cooldown)) && length(slogan_list) && (!shut_up) && prob(5))

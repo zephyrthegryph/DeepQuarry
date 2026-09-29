@@ -25,7 +25,7 @@
 		use_power = USE_POWER_OFF	//Draws directly from power net. Does not use APC power.
 
 /// Runs while switched on, or while bolted down to charge its store (it parks once full).
-OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, CHANGE_MACHINE_SETTINGS | CHANGE_MACHINE_ANCHORED)
+OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "anchored"))
 /obj/machinery/shieldwallgen/proc/wallgen_has_work()
 	return active || anchored
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_has_work")

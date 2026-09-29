@@ -59,7 +59,7 @@ OM_FIELD(/obj/machinery/mecha_part_fabricator_tg, process_queue, FALSE, CHANGE_M
 /// Part currently stored in the Exofab (its exit was obstructed when it finished).
 OM_FIELD_VIEW(/obj/machinery/mecha_part_fabricator_tg, obj/item, stored_part, CHANGE_MACHINE_SETTINGS)
 /// Building the queue, or holding a finished part to dispense once the exit clears.
-OM_DERIVE_FIELD(/obj/machinery/mecha_part_fabricator_tg, fab_has_work, CHANGE_MACHINE_SETTINGS)
+OM_DERIVE_FIELD(/obj/machinery/mecha_part_fabricator_tg, fab_has_work, list("process_queue", "stored_part"))
 DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "fab_has_work")
 
 /obj/machinery/mecha_part_fabricator_tg/proc/fab_has_work()

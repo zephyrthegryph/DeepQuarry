@@ -88,11 +88,11 @@
 
 /obj/item/organ/internal/nano/robotize()
 	. = ..()
-	robotic = ORGAN_NANOFORM
+	set_robotic(ORGAN_NANOFORM)
 
 /obj/item/organ/internal/nano/mechassist()
 	. = ..()
-	robotic = ORGAN_NANOFORM
+	set_robotic(ORGAN_NANOFORM)
 
 /// Control: coordinates the swarm. Its damage (orchestrator_damage) degrades
 /// fine control and the swarm's hold on a form.
