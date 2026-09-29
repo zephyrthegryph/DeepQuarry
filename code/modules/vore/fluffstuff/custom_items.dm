@@ -925,7 +925,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //Give them numbing bites.
 			var/mob/living/carbon/human/H = user
-			H.species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
+			var/datum/species/own_species = proto_private(H, "species")
+			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
 			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
