@@ -52,3 +52,7 @@
 #define CLOCK_WORLD 0
 /// The holder's own clock (paused in stasis or suspension).
 #define CLOCK_OWN 1
+
+// ---- capability ordering (caps_ordered()) ----
+#define CAP_ORDER_DRAW "draw"
+#define CAP_ORDER_EXAMINE "examine"

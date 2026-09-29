@@ -104,6 +104,7 @@
 	var/list/caps = caps_of(src)
 	for(var/datum/capability/C as anything in caps)
 		C.on_holder_init(src, mapload)
+		cap_join_systems(src, C)
 	if(length(caps) || periodic_cadence || type_derives(src))
 		changed(src)
 
@@ -124,10 +125,13 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /atom/proc/caps_destroy()
-	if(!length(caps_of(src)))
+	var/list/caps = caps_all(src)
+	if(!length(caps))
 		return
-	for(var/datum/capability/C as anything in caps_of(src))
+	for(var/datum/capability/C as anything in caps)
 		C.on_holder_destroy(src)
+		cap_leave_systems(src, C)
+	cap_extras = null
 	for(var/key in cap_data)
 		var/datum/D = cap_data[key]
 		if(isdatum(D))
@@ -137,20 +141,20 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 /// Examine lines from every capability, in list order (appended by /atom/examine()).
 /atom/proc/caps_examine(mob/user)
 	. = list()
-	for(var/datum/capability/C as anything in caps_of(src))
+	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_EXAMINE))
 		var/list/lines = C.examine(src, user)
 		if(lines)
 			. += lines
 
 /// Adds every capability's UI data. /datum/tgui_data() callers merge it through ..().
 /atom/proc/caps_ui_data(mob/user, list/data)
-	for(var/datum/capability/C as anything in caps_of(src))
+	for(var/datum/capability/C as anything in caps_all(src))
 		C.ui_data(src, user, data)
 
 /// Every capability's hidden verbs plus the type's own hidden_verbs().
 /atom/proc/caps_hidden_verbs()
 	. = list()
-	for(var/datum/capability/C as anything in caps_of(src))
+	for(var/datum/capability/C as anything in caps_all(src))
 		var/list/hidden = C.hidden_verbs(src)
 		if(hidden)
 			. |= hidden
@@ -159,12 +163,20 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 /proc/cap_interactions(atom/A)
 	. = list()
 	for(var/datum/capability/C as anything in caps_of(A))
-		if(isnull(C.built_entries))
-			C.built_entries = C.interactions(A) || list()
-			for(var/datum/interaction/capability/E as anything in C.built_entries)
-				if(!E.cap)
-					E.cap = C
-		. += C.built_entries
+		. += cap_built_entries(C, A)
+
+/// C's entries, built on first use and registered by id (the Menu runs a chosen entry by id).
+/proc/cap_built_entries(datum/capability/C, atom/A)
+	if(isnull(C.built_entries))
+		C.built_entries = C.interactions(A) || list()
+		for(var/datum/interaction/capability/E as anything in C.built_entries)
+			if(!E.cap)
+				E.cap = C
+			var/datum/interaction/clash = GLOB.cap_entries_by_id[E.id]
+			if(clash && clash != E)
+				E.id = "[E.id]#[C.key]"
+			GLOB.cap_entries_by_id[E.id] = E
+	return C.built_entries
 
 // ---- gating ----
 
@@ -192,7 +204,7 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 				return result
 			if(!result)
 				return entry.else_say || "you can't do that right now"
-	for(var/datum/capability/C as anything in caps_of(A))
+	for(var/datum/capability/C as anything in caps_all(A))
 		var/reason = C.gate(A, user, entry)
 		if(reason)
 			return reason
@@ -217,6 +229,9 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 	var/list/form
 	/// A proc on the holder, (mob/user) -> the Menu name for this state ("Open cover"/"Close cover").
 	var/name_proc
+	/// A proc on the holder, () -> whether this entry is offered at all on this instance (not a refusal:
+	/// the entry doesn't exist for it). Cheap, no actor.
+	var/applies
 
 /datum/interaction/capability/predicate_key()
 	return "cap:[id]"
@@ -225,6 +240,9 @@ GLOBAL_LIST_EMPTY(type_draws_cache)
 	if(name_proc)
 		return call(target, name_proc)(actor)
 	return name
+
+/datum/interaction/capability/applies_to(atom/target)
+	return applies ? call(target, applies)() : TRUE
 
 /datum/interaction/capability/why_not(mob/actor, atom/target, obj/item/held)
 	. = ..()

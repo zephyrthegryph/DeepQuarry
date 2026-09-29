@@ -296,7 +296,7 @@ GLOBAL_LIST_INIT(interactions_by_type, init_interactions_by_type())
 				stack_trace("Duplicate interaction id [interaction.id] ([path])")
 				continue
 			by_id[interaction.id] = interaction
-	return by_id[id] || construction_edge_by_id(id)
+	return by_id[id] || GLOB.cap_entries_by_id[id] || construction_edge_by_id(id)
 
 /**
  * Compact interaction specs (doc/rewrite/interactions.md §5a): built with the

@@ -17,6 +17,26 @@
 		return ctx
 	return new /datum/dispatch_context(user, target)
 
+/// "[user]|[target]|[action]" -> TRUE while that prompt is open (M7: one per user per action).
+GLOBAL_LIST_EMPTY(asks_open)
+
+/// The key of ctx's action for the one-open-prompt rule.
+/proc/ask_key(datum/dispatch_context/ctx)
+	var/action = ctx.entry ? ctx.entry.id : (ctx.ui ? "ui" : "direct")
+	return "[ctx.user ? SHARED_CACHE_UID(ctx.user) : "-"]|[ctx.target ? SHARED_CACHE_UID(ctx.target) : "-"]|[action]"
+
+/// Claims the prompt slot of ctx's action for its user. FALSE (and a message) when one is already open.
+/proc/ask_open(datum/dispatch_context/ctx)
+	var/key = ask_key(ctx)
+	if(GLOB.asks_open[key])
+		to_chat(ctx.user, span_warning("You already have that open."))
+		return FALSE
+	GLOB.asks_open[key] = TRUE
+	return TRUE
+
+/proc/ask_close(datum/dispatch_context/ctx)
+	GLOB.asks_open -= ask_key(ctx)
+
 /// Null if ctx still holds (the answer counts), else tells the user why and returns FALSE.
 /proc/ask_still_valid(datum/dispatch_context/ctx)
 	var/reason = ctx.invalid_reason()
@@ -27,7 +47,10 @@
 
 /proc/ask_text(mob/user, message, title, default, max_length = MAX_MESSAGE_LEN, multiline = FALSE, datum/target)
 	var/datum/dispatch_context/ctx = ask_context(user, target)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_text(user, message, title || "Input", default, max_length, multiline)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	answer = sanitize(answer, max_length)
@@ -35,14 +58,20 @@
 
 /proc/ask_number(mob/user, message, min_value = 0, max_value = INFINITY, title, default = 0, round_value = TRUE, datum/target)
 	var/datum/dispatch_context/ctx = ask_context(user, target)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_number(user, message, title || "Input", default, max_value, min_value, 0, round_value)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return ui_number(answer, min_value, max_value, round_value ? 1 : 0)
 
 /proc/ask_list(mob/user, message, list/choices, title, default, datum/target)
 	var/datum/dispatch_context/ctx = ask_context(user, target)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_input_list(user, message, title || "Select", choices, default)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return ui_choice(answer, choices)
@@ -50,14 +79,20 @@
 /// TRUE for yes, FALSE for no, null when cancelled or no longer valid.
 /proc/ask_yes_no(mob/user, message, title, datum/target)
 	var/datum/dispatch_context/ctx = ask_context(user, target)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_alert(user, message, title || "Confirm", list("Yes", "No"))
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return answer == "Yes"
 
 /proc/ask_color(mob/user, message, title, default = "#ffffff", datum/target)
 	var/datum/dispatch_context/ctx = ask_context(user, target)
+	if(!ask_open(ctx))
+		return null
 	var/answer = tgui_color_picker(user, message, title || "Colour", default)
+	ask_close(ctx)
 	if(isnull(answer) || !ask_still_valid(ctx))
 		return null
 	return sanitize_hexcolor(answer, default)

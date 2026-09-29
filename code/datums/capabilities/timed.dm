@@ -38,7 +38,7 @@ OWN_TIMER(/datum, timed)
 	timed_write(D, var_name, value)
 	if(!for_time)
 		return TRUE
-	LAZYSET(D.timed_until, var_name, list(ends, prior))
+	LAZYSET(D.timed_until, var_name, list(ends, prior, D.vars[var_name]))
 	var/slot = "timed:[var_name]"
 	if(clock == CLOCK_WORLD)
 		// Real time runs on the global owner; the call is dropped if D is deleted first.
@@ -54,6 +54,9 @@ OWN_TIMER(/datum, timed)
 	if(!pending || pending[1] != ends)
 		return
 	LAZYREMOVE(D.timed_until, var_name)
+	// M5: something else wrote the var since (it had the right to, through the setter): keep its value.
+	if(D.vars[var_name] != pending[3])
+		return
 	timed_write(D, var_name, pending[2])
 
 /// Deciseconds until var_name reverts (0 when nothing is pending).
