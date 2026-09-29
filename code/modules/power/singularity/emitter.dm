@@ -210,20 +210,24 @@
 	held_type = /obj/item/stack/material
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/emitter/proc/repair_material_ok, null))
 	effect = /obj/machinery/power/emitter/proc/interaction_repair
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/power/emitter/proc/can_repair_with))
 
 /// Whether `held` is a steel material stack.
 /obj/machinery/power/emitter/proc/repair_material_ok(mob/actor, atom/target, obj/item/held)
 	var/obj/item/stack/material/stack = held
 	return istype(stack) && stack.get_material_name() == MAT_STEEL
+/// Requirement: TRUE, or why this stack can't repair the emitter now.
+/obj/machinery/power/emitter/proc/can_repair_with(mob/user, atom/target, obj/item/stack/material/held)
+	var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
+	if(!amt)
+		return "it's already fully repaired"
+	if(!istype(held) || !held.can_use(amt))
+		return "you don't have enough sheets to repair this; you need at least [amt] sheets"
+	return TRUE
+
 
 /obj/machinery/power/emitter/proc/interaction_repair(mob/user, obj/item/stack/material/P, datum/interaction/interaction)
 	var/amt = CEILING((max_integrity - get_integrity()) / 10, 1)
-	if(!amt)
-		to_chat(user, span_notice("\The [src] is already fully repaired."))
-		return TRUE
-	if(!P.can_use(amt))
-		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-		return TRUE
 	to_chat(user, span_notice("You begin repairing \the [src]..."))
 	om_task_start(/datum/om/task/timed/emitter_repair, user, src, receiver = src, P = P, amt = amt)
 	return TRUE
@@ -251,11 +255,9 @@
 	category = INTERACTION_CAT_LOCK
 	held_type = list(/obj/item/card/id, /obj/item/pda)
 	effect = /obj/machinery/power/emitter/proc/interaction_toggle_lock
+	also_requires = list(REQ_BECAUSE(REQ_NOT_EMAGGED, "the lock seems to be broken"))
 
 /obj/machinery/power/emitter/proc/interaction_toggle_lock(mob/user, obj/item/held, datum/interaction/interaction)
-	if(emagged)
-		to_chat(user, span_warning("The lock seems to be broken."))
-		return TRUE
 	if(allowed(user))
 		set_locked(!locked)
 		to_chat(user, "The controls are now [locked ? "locked." : "unlocked."]")

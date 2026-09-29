@@ -76,14 +76,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 	name = "Load phoron tank"
 	held_type = /obj/item/tank/phoron
 	effect = /obj/machinery/power/rad_collector/proc/interaction_load_tank
+	also_requires = list(REQ_BECAUSE(REQ_ANCHORED, "it needs to be secured to the floor first"), REQ_FIELD_NOT("P", "there's already a phoron tank loaded"))
 
 /obj/machinery/power/rad_collector/proc/interaction_load_tank(mob/user, obj/item/tank/phoron/W, datum/interaction/interaction)
-	if(!src.anchored)
-		to_chat(user, span_red("The [src] needs to be secured to the floor first."))
-		return TRUE
-	if(src.P())
-		to_chat(user, span_red("There's already a phoron tank loaded."))
-		return TRUE
 	user.drop_item()
 	src.P_handle = om_handle(W)
 	W.forceMove(src)

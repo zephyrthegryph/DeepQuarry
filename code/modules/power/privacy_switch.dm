@@ -14,13 +14,14 @@
 /obj/structure/privacyswitch
 	silicon_use = SILICON_USE_HAND
 
-DECLARE_INTERACTIONS(/obj/structure/privacyswitch, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+DECLARE_INTERACTIONS(/obj/structure/privacyswitch, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/privacyswitch/proc/cooled_down)))
+
+/// Requirement: the switch has a use cooldown.
+/obj/structure/privacyswitch/proc/cooled_down(mob/user, atom/target, obj/item/held)
+	return COOLDOWN_FINISHED(src, use_cooldown) ? TRUE : "the area can not be altered so soon again"
 
 /// Old attack_hand.
 /obj/structure/privacyswitch/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!COOLDOWN_FINISHED(src, use_cooldown))
-		to_chat(user, span_warning("The area can not be altered so soon again!"))
-		return TRUE
 	var/area/A = get_area(src)
 	if(!A)
 		return TRUE

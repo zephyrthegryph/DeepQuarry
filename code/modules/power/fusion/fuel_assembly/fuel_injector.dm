@@ -67,11 +67,9 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 	name = "Insert fuel rod"
 	held_type = /obj/item/fuel_assembly
 	effect = /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_insert_assembly
+	also_requires = list(REQ_FIELD_NOT("injecting", "shut it off before playing with the fuel rod"))
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_insert_assembly(mob/user, obj/item/fuel_assembly/held, datum/interaction/interaction)
-	if(injecting)
-		to_chat(user, span_warning("Shut \the [src] off before playing with the fuel rod!"))
-		return TRUE
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		var/secondchance = rerun_ask(user, "k78", PROC_REF(interaction_fuel_injector_insert_assembly), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to put the blitz rod in the fuel injector? This definitely wasn't meant to be used like this, and could only end badly.", title = "Confirm", choices = list("Yes","No"))
 		if(isnull(secondchance))
@@ -101,11 +99,9 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 	category = INTERACTION_CAT_MAINTAIN
 	held_type = /obj/item/storage/part_replacer
 	effect = /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_part_replace
+	also_requires = list(REQ_FIELD_NOT("injecting", "shut it off first"))
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_part_replace(mob/user, obj/item/held, datum/interaction/interaction)
-	if(injecting)
-		to_chat(user, span_warning("Shut \the [src] off first!"))
-		return TRUE
 	if(default_part_replacement(user, held))
 		return TRUE
 	return FALSE
@@ -136,12 +132,9 @@ DECLARE_REF(/obj/machinery/fusion_fuel_injector, "cur_assembly", SPILL, null)
 	name = "Take fuel rod"
 	category = INTERACTION_CAT_EJECT
 	effect = /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_take
+	also_requires = list(REQ_FIELD_NOT("injecting", "shut it off before playing with the fuel rod"))
 
 /obj/machinery/fusion_fuel_injector/proc/interaction_fuel_injector_take(mob/user, obj/item/held, datum/interaction/interaction)
-	if(injecting)
-		to_chat(user, span_warning("Shut \the [src] off before playing with the fuel rod!"))
-		return TRUE
-
 	if(cur_assembly)
 		cur_assembly.forceMove(get_turf(src))
 		user.put_in_hands(cur_assembly)

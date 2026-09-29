@@ -70,14 +70,13 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/stack/material
 	effect = /obj/machinery/particle_smasher/proc/interaction_fill_target
+	also_requires = list(REQ_FIELD_NOT("target", "it already contains a target"), REQ_TARGET_STATE(/obj/machinery/particle_smasher/proc/can_fill_with))
+
+/// Requirement: synthesiser stock can't fill the target.
+/obj/machinery/particle_smasher/proc/can_fill_with(mob/user, atom/target, obj/item/stack/material/held)
+	return (istype(held) && held.uses_charge) ? "you cannot fill it with a synthesizer" : TRUE
 
 /obj/machinery/particle_smasher/proc/interaction_fill_target(mob/user, obj/item/stack/material/M, datum/interaction/interaction)
-	if(target)
-		to_chat(user, span_notice("\The [src] already contains a target."))
-		return TRUE
-	if(M.uses_charge)
-		to_chat(user, span_notice("You cannot fill \the [src] with a synthesizer!"))
-		return TRUE
 	target = M.split(1)
 	target.forceMove(src)
 	update_icon()
@@ -89,11 +88,9 @@ DECLARE_REF(/obj/machinery/particle_smasher, "recipes", OWNED_LIST, null)
 	category = INTERACTION_CAT_INSERT
 	held_type = /obj/item/reagent_containers/glass/beaker
 	effect = /obj/machinery/particle_smasher/proc/interaction_attach_beaker
+	also_requires = list(REQ_FIELD_NOT("reagent_container", "it already has a container attached"))
 
 /obj/machinery/particle_smasher/proc/interaction_attach_beaker(mob/user, obj/item/W, datum/interaction/interaction)
-	if(reagent_container())
-		to_chat(user, span_notice("\The [src] already has a container attached."))
-		return TRUE
 	if(isrobot(user) && istype(W.loc, /obj/item/gripper))
 		var/obj/item/gripper/G = W.loc
 		G.drop_item()

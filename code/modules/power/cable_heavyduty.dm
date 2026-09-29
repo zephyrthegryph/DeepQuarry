@@ -40,13 +40,10 @@
 
 	qdel(src)
 
-EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_ITEM(null, PROC_REF(heavyduty_interaction_item)))
+EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_INSERT(/obj/item/stack/cable_coil, PROC_REF(heavyduty_interaction_item), "Connect cable", REQ_BECAUSE(REQ_TYPE(PRED_HELD, list(/obj/item/stack/cable_coil/heavyduty)), "you will need heavier cables to connect to these")))
 
-/// Old attackby.
+/// Old attackby: only heavy-duty coil connects (the requirement); it then falls through to the cable's own coil handling.
 /obj/structure/cable/heavyduty/proc/heavyduty_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/cable_coil) && !istype(W, /obj/item/stack/cable_coil/heavyduty))
-		to_chat(user, span_notice("You will need heavier cables to connect to these."))
-		return INTERACTION_HANDLED_PASS
 	return FALSE
 
 /obj/item/stack/cable_coil/heavyduty/turf_place(turf/simulated/F, mob/user)

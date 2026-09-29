@@ -369,20 +369,21 @@
 	held_type = /obj/item/smes_coil
 	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/panel_is_open_impl, null))
 	effect = /obj/machinery/power/smes/buildable/proc/interaction_install_coil
+	also_requires = list(REQ_TARGET_STATE(/obj/machinery/power/smes/buildable/proc/can_modify))
 
 /obj/machinery/power/smes/buildable/proc/panel_is_open_impl(mob/actor, atom/target, obj/item/held)
 	return panel_open
 
-/obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)
+/// Requirement: TRUE, or why the SMES can't be modified now.
+/obj/machinery/power/smes/buildable/proc/can_modify(mob/user, atom/target, obj/item/held)
 	// Charged above 1% and safeties are enabled.
 	if((charge > (capacity/100)) && safeties_enabled)
-		to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
-		return TRUE
+		return "the safety circuit is preventing modifications while there is charge stored"
+	if(output_attempt || input_attempt)
+		return "turn it off first"
+	return TRUE
 
-	if (output_attempt || input_attempt)
-		to_chat(user, span_warning("Turn off the [src] first!"))
-		return TRUE
-
+/obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)
 	// Probability of failure if safety circuit is disabled (in %)
 	var/failure_probability = round((charge / capacity) * 100)
 
