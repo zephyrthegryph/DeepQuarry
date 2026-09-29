@@ -13,6 +13,8 @@
 	var/obj/item/held
 	var/datum/interaction/entry
 	var/datum/tgui/ui
+	/// dispatch_call() has returned to its caller (TRUE once the handler finished or slept).
+	var/returned = FALSE
 
 /datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/interaction/entry, datum/tgui/ui)
 	src.user = user
@@ -50,26 +52,58 @@ GLOBAL_DATUM(dispatch_context_now, /datum/dispatch_context)
  * Calls proc_ref on target with the named args (arglist), inside ctx. Returns the handler's result,
  * or null if it slept (it continues on its own and records itself when it finishes). A named arg
  * the handler doesn't declare is a runtime DM raises; it is caught, logged and refused here.
+ * The current context is set only while the handler runs synchronously: when it sleeps, control
+ * comes back here and the outer context is restored, so a sleeping handler never leaks its context
+ * to unrelated code (ask_*() captured it before sleeping and re-binds it when the answer arrives).
  */
 /proc/dispatch_call(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log)
-	set waitfor = FALSE
 	var/datum/dispatch_context/outer = GLOB.dispatch_context_now
 	GLOB.dispatch_context_now = ctx
+	ctx.returned = FALSE
+	. = dispatch_call_inner(ctx, target, proc_ref, named, action_name, log)
+	ctx.returned = TRUE
+	GLOB.dispatch_context_now = outer
+
+/proc/dispatch_call_inner(datum/dispatch_context/ctx, datum/target, proc_ref, list/named, action_name, log)
+	set waitfor = FALSE
 	var/result
 	var/failed = FALSE
 	try
 		result = call(target, proc_ref)(arglist(named))
 	catch(var/exception/e)
 		failed = TRUE
-		stack_trace("dispatch: [target.type].[proc_ref] ([action_name]) by [key_name(ctx.user)] failed: [e] ([e.file]:[e.line])")
+		var/msg = "dispatch: [target.type].[proc_ref] ([action_name]) by [key_name(ctx.user)] failed: [e] ([e.file]:[e.line])"
+		GLOB.dispatch_failures += msg
+		if(!GLOB.dispatch_failure_expected)
+			stack_trace(msg)
+		else
+			log_runtime(msg)
 		if(ctx.user)
 			refuse(ctx.user, "that didn't work")
-	GLOB.dispatch_context_now = outer
-	if(failed || result == UI_REFUSED || QDELETED(target))
+	if(ctx.returned && GLOB.dispatch_context_now == ctx)
+		// Resumed after a sleep: an ask_*() re-bound ctx; unbind it now the handler is done.
+		GLOB.dispatch_context_now = null
+	if(failed || QDELETED(target))
 		return failed ? FALSE : result
+	// Every dispatched call marks its target (it may have written plain vars); only a success
+	// (truthy, not refused: a cancelled prompt returns null) is fingerprinted and logged.
 	changed(target)
-	dispatch_record(ctx.user, target, action_name, log, null)
+	if(dispatch_succeeded(result))
+		dispatch_record(ctx.user, target, action_name, log, null)
 	return result
+
+/// Handler failures this round (the dispatch tests read them).
+GLOBAL_LIST_EMPTY(dispatch_failures)
+/// Set by a test around a deliberate failure: logged without a stack trace.
+GLOBAL_VAR_INIT(dispatch_failure_expected, FALSE)
+/// Test builds: "[action]|[fingerprinted]|[logged]" per dispatch_record() (the dispatch tests read it).
+GLOBAL_LIST_EMPTY(dispatch_records)
+/// The last dispatch_record() call (user, target, action, log). Only unit tests write and read it.
+GLOBAL_LIST_EMPTY(dispatch_last_record)
+
+/// Whether a handler's result counts as done: truthy and not UI_REFUSED.
+/proc/dispatch_succeeded(result)
+	return result && result != UI_REFUSED
 
 /// Tells user why an action was refused; a ui_<action> or entry handler returns its result.
 /proc/refuse(mob/user, text)
@@ -91,9 +125,15 @@ GLOBAL_VAR(refuse_capture)
  * null. details: an assoc list rendered "k=v" after the line.
  */
 /proc/dispatch_record(mob/user, datum/target, action, log, list/details)
+#ifdef UNIT_TESTS
+	GLOB.dispatch_last_record = list("user" = user, "target" = target, "action" = action, "log" = log)
+#endif
 	if(isatom(target) && isliving(user))
 		var/atom/A = target
 		A.add_fingerprint(user)
+#if defined(UNIT_TESTS)
+	GLOB.dispatch_records += "[action]|[isatom(target) && isliving(user)]|[log ? TRUE : FALSE]"
+#endif
 	if(!log)
 		return
 	var/line = "[key_name(user)] [action]"
