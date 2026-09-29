@@ -21,8 +21,7 @@
 	source_handle = om_handle(src_mind)
 	recipient_handle = om_handle(recipient_mob)
 
-/datum/mind_memory_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/mind_memory_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/mind_memory_panel, "MindMemory", UI_TITLE("Memory"))
 
@@ -31,7 +30,10 @@ DECLARE_UI(/datum/mind_memory_panel, "MindMemory", UI_TITLE("Memory"))
 		return FALSE
 	return TRUE
 
-/datum/mind_memory_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/mind_memory_panel, "merge:ui_data_datum_mind_memory_panel{name:unknown,memory:bool,ambitions:bool,objectives:list}")
+
+/// The computed part of /datum/mind_memory_panel's window data (declared on its UI_DATA row).
+/datum/mind_memory_panel/proc/ui_data_datum_mind_memory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!source())
 		return data
@@ -62,12 +64,14 @@ DECLARE_UI(/datum/mind_memory_panel, "MindMemory", UI_TITLE("Memory"))
 	..()
 	holder_handle = om_handle(owner_holder)
 
-/datum/tag_menu_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/tag_menu_panel, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/tag_menu_panel, "TagMenu", UI_TITLE("Tag Menu"))
 
-/datum/tag_menu_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tag_menu_panel, "merge:ui_data_datum_tag_menu_panel{entries:list}")
+
+/// The computed part of /datum/tag_menu_panel's window data (declared on its UI_DATA row).
+/datum/tag_menu_panel/proc/ui_data_datum_tag_menu_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!holder())
 		return data
@@ -150,12 +154,14 @@ UI_ACT_PROC(/datum/tag_menu_panel, ui_act_follow)
 	..()
 	addresses = addr || list()
 
-/datum/dq_torban_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_SERVER)
+DECLARE_UI_STATE(/datum/dq_torban_panel, ADMIN_STATE(R_ADMIN|R_SERVER))
 
 DECLARE_UI(/datum/dq_torban_panel, "TorbanList", UI_TITLE("Torban"))
 
-/datum/dq_torban_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/dq_torban_panel, "merge:ui_data_datum_dq_torban_panel{addresses:bool}")
+
+/// The computed part of /datum/dq_torban_panel's window data (declared on its UI_DATA row).
+/datum/dq_torban_panel/proc/ui_data_datum_dq_torban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list("addresses" = addresses || list())
 
 // ---- Admin Investigate log viewer ----------------------------------------
@@ -169,15 +175,17 @@ DECLARE_UI(/datum/dq_torban_panel, "TorbanList", UI_TITLE("Torban"))
 	subject = subj
 	log_text = text
 
-/datum/dq_investigate_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD|R_SERVER)
+DECLARE_UI_STATE(/datum/dq_investigate_panel, ADMIN_STATE(R_ADMIN|R_MOD|R_SERVER))
 
 DECLARE_UI(/datum/dq_investigate_panel, "InvestigateLog")
 
 /datum/dq_investigate_panel/ui_title(mob/user)
 	return "Investigate: [subject]"
 
-/datum/dq_investigate_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/dq_investigate_panel, "merge:ui_data_datum_dq_investigate_panel{subject:text,log_text:text}")
+
+/// The computed part of /datum/dq_investigate_panel's window data (declared on its UI_DATA row).
+/datum/dq_investigate_panel/proc/ui_data_datum_dq_investigate_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"subject" = subject,
 		"log_text" = log_text,
@@ -199,8 +207,7 @@ DECLARE_UI(/datum/dq_investigate_panel, "InvestigateLog")
 	..()
 	holder_handle = om_handle(owner_holder)
 
-/datum/unban_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/unban_panel, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
 
@@ -245,7 +252,10 @@ DECLARE_UI(/datum/unban_panel, "UnbanPanel", UI_TITLE("Unban"))
 		))
 	GLOB.banlist.cd = prior_cd
 
-/datum/unban_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/unban_panel, "merge:ui_data_datum_unban_panel{bans:bool,count:num}")
+
+/// The computed part of /datum/unban_panel's window data (declared on its UI_DATA row).
+/datum/unban_panel/proc/ui_data_datum_unban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!holder())
 		return data
@@ -313,8 +323,7 @@ GLOBAL_LIST_EMPTY(dq_jobban_panels)
 	if(holder() && target())
 		GLOB.dq_jobban_panels -= "[REF(holder())]-[REF(target())]"
 
-/datum/jobban_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD)
+DECLARE_UI_STATE(/datum/jobban_panel, ADMIN_STATE(R_ADMIN|R_MOD))
 
 DECLARE_UI(/datum/jobban_panel, "JobBanPanel")
 
@@ -382,7 +391,10 @@ GLOBAL_LIST_INIT(jobban_dept_layout, list(
 		"jobs" = jobs,
 	)
 
-/datum/jobban_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/jobban_panel, "merge:ui_data_datum_jobban_panel{target_name:text,target_ref:text,departments:list}")
+
+/// The computed part of /datum/jobban_panel's window data (declared on its UI_DATA row).
+/datum/jobban_panel/proc/ui_data_datum_jobban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!target())
 		return data
@@ -497,15 +509,17 @@ UI_ACT_PROC(/datum/jobban_panel, ui_act_refresh)
 	user_name = viewer_name
 	entries = log_entries || list()
 
-/datum/dq_vending_log_panel/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/datum/dq_vending_log_panel, GLOB.tgui_default_state)
 
 DECLARE_UI(/datum/dq_vending_log_panel, "VendingLog")
 
 /datum/dq_vending_log_panel/ui_title(mob/user)
 	return "[machine_name] Vending Log"
 
-/datum/dq_vending_log_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/dq_vending_log_panel, "merge:ui_data_datum_dq_vending_log_panel{machine_name:text,user_name:text,entries:list}")
+
+/// The computed part of /datum/dq_vending_log_panel's window data (declared on its UI_DATA row).
+/datum/dq_vending_log_panel/proc/ui_data_datum_dq_vending_log_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"machine_name" = machine_name,
 		"user_name" = user_name,
@@ -530,12 +544,14 @@ DECLARE_UI(/datum/dq_vending_log_panel, "VendingLog")
 	books = book_rows || list()
 	error_msg = error || ""
 
-/datum/dq_delete_book_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/dq_delete_book_panel, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/dq_delete_book_panel, "DeleteBookPanel", UI_TITLE("Delete Book"))
 
-/datum/dq_delete_book_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/dq_delete_book_panel, "merge:ui_data_datum_dq_delete_book_panel{books:list,error:text,sort_by:text}")
+
+/// The computed part of /datum/dq_delete_book_panel's window data (declared on its UI_DATA row).
+/datum/dq_delete_book_panel/proc/ui_data_datum_dq_delete_book_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"books" = books,
 		"error" = error_msg,
@@ -571,16 +587,17 @@ UI_ACT_PROC(/datum/dq_delete_book_panel, ui_act_delete)
 
 // ---- Syndicate beacon (Virgo) --------------------------------------------
 
-/obj/machinery/syndicate_beacon/virgo/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/syndicate_beacon/virgo, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/machinery/syndicate_beacon/virgo, "SyndicateBeacon", UI_TITLE("Ominous Beacon"))
 
-/obj/machinery/syndicate_beacon/virgo/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/syndicate_beacon/virgo, "charges:num", "merge:ui_data_obj_machinery_syndicate_beacon_virgo{temp:bool,selfdestructing:bool,recognized:bool,connection_severed:bool,user_ref:text,user_name:text,honorific:text}")
+
+/// The computed part of /obj/machinery/syndicate_beacon/virgo's window data (declared on its UI_DATA row).
+/obj/machinery/syndicate_beacon/virgo/proc/ui_data_obj_machinery_syndicate_beacon_virgo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["temp"] = temptext || ""
 	data["selfdestructing"] = !!selfdestructing
-	data["charges"] = charges
 	if(ishuman(user) || isAI(user))
 		data["recognized"] = !!is_special_character(user)
 		data["connection_severed"] = (charges < 1) && !is_special_character(user)

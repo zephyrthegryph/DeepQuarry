@@ -19,16 +19,15 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/telecomms/traffic/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/computer/telecomms/traffic, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/machinery/computer/telecomms/traffic, "TrafficControl", UI_TITLE("Telecommunications Traffic Control"))
 
-/obj/machinery/computer/telecomms/traffic/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/telecomms/traffic, "temp:text", "network", "screen:num", "merge:ui_data_obj_machinery_computer_telecomms_traffic{servers:list,selected_id:num,autoruncode:bool}")
+
+/// The computed part of /obj/machinery/computer/telecomms/traffic's window data (declared on its UI_DATA row).
+/obj/machinery/computer/telecomms/traffic/proc/ui_data_obj_machinery_computer_telecomms_traffic(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["temp"] = temp
-	data["network"] = network
-	data["screen"] = screen
 	if(screen == 0)
 		var/list/server_rows = list()
 		for(var/obj/machinery/telecomms/T in servers)

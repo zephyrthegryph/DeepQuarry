@@ -105,14 +105,12 @@
 
 DECLARE_UI(/obj/machinery/computer/secure_data, "SecurityRecords", UI_TITLE("Security Records"))
 
-/obj/machinery/computer/secure_data/tgui_data(mob/user)
-	var/data[0]
-	data["temp"] = temp
+UI_DATA_REPLACE(/obj/machinery/computer/secure_data, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_secure_data{scan:text,isAI:num,isRobot:num,records:list,general:list,security:list,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/secure_data's window data (declared on its UI_DATA row).
+/obj/machinery/computer/secure_data/proc/ui_data_obj_machinery_computer_secure_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["authenticated"] = authenticated
-	data["rank"] = rank
-	data["screen"] = screen
-	data["printing"] = printing
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)

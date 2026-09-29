@@ -12,8 +12,7 @@
 
 DECLARE_UI(/datum/spawn_menu, "SpawnSearch")
 
-/datum/spawn_menu/tgui_state(mob/user)
-	return ADMIN_STATE(R_SPAWN)
+DECLARE_UI_STATE(/datum/spawn_menu, ADMIN_STATE(R_SPAWN))
 
 /datum/spawn_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -22,22 +21,22 @@ DECLARE_UI(/datum/spawn_menu, "SpawnSearch")
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setRegexSearch", ui_act_setregexsearch, UI_ARG_VALUE("regexSearch"))
+UI_ACT(/datum/spawn_menu, "setRegexSearch", ui_act_setregexsearch, UI_ARG_BOOL("regexSearch"))
 UI_ACT_PROC(/datum/spawn_menu, ui_act_setregexsearch)
 	regex_search = params["regexSearch"]
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setNameSearch", ui_act_setnamesearch, UI_ARG_VALUE("searchNames"))
+UI_ACT(/datum/spawn_menu, "setNameSearch", ui_act_setnamesearch, UI_ARG_BOOL("searchNames"))
 UI_ACT_PROC(/datum/spawn_menu, ui_act_setnamesearch)
 	name_search = params["searchNames"]
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setFancyTypes", ui_act_setfancytypes, UI_ARG_VALUE("fancyTypes"))
+UI_ACT(/datum/spawn_menu, "setFancyTypes", ui_act_setfancytypes, UI_ARG_BOOL("fancyTypes"))
 UI_ACT_PROC(/datum/spawn_menu, ui_act_setfancytypes)
 	fancy_types = params["fancyTypes"]
 	return TRUE
 
-UI_ACT(/datum/spawn_menu, "setIncludeAbstracts", ui_act_setincludeabstracts, UI_ARG_VALUE("includeAbstracts"))
+UI_ACT(/datum/spawn_menu, "setIncludeAbstracts", ui_act_setincludeabstracts, UI_ARG_BOOL("includeAbstracts"))
 UI_ACT_PROC(/datum/spawn_menu, ui_act_setincludeabstracts)
 	include_abstracts = params["includeAbstracts"]
 	return TRUE
@@ -65,14 +64,7 @@ UI_ACT_PROC(/datum/spawn_menu, ui_act_cancel)
 	SStgui.close_uis(src)
 	return TRUE
 
-/datum/spawn_menu/tgui_data(mob/user)
-	var/list/data = list()
-	data["initValue"] = init_value
-	data["searchNames"] = name_search
-	data["regexSearch"] = regex_search
-	data["fancyTypes"] = fancy_types
-	data["includeAbstracts"] = include_abstracts
-	return data
+UI_DATA_REPLACE(/datum/spawn_menu, "initValue=init_value", "searchNames=name_search:num", "regexSearch=regex_search:num", "fancyTypes=fancy_types:num", "includeAbstracts=include_abstracts:num")
 
 /datum/spawn_menu/ui_assets(mob/user)
 	return list(

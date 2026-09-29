@@ -106,14 +106,13 @@ DECLARE_UI(/obj/item/assembly/prox_sensor, "AssemblyProx")
 		return FALSE
 	return TRUE
 
-/obj/item/assembly/prox_sensor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/item/assembly/prox_sensor, "time:num", "timing:num", "range:num", "scanning:num", "merge:ui_data_obj_item_assembly_prox_sensor{maxRange:num}")
 
-	data["time"] = time
-	data["timing"] = timing
-	data["range"] = range
+/// The computed part of /obj/item/assembly/prox_sensor's window data (declared on its UI_DATA row).
+/obj/item/assembly/prox_sensor/proc/ui_data_obj_item_assembly_prox_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["maxRange"] = 5
-	data["scanning"] = scanning
 
 	return data
 
@@ -128,7 +127,7 @@ UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_timing)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/prox_sensor, "set_time", ui_act_set_time, UI_ARG_VALUE("time"))
+UI_ACT(/obj/item/assembly/prox_sensor, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
 UI_ACT_PROC(/obj/item/assembly/prox_sensor, ui_act_set_time)
 	var/real_new_time = 0
 	var/new_time = params["time"]

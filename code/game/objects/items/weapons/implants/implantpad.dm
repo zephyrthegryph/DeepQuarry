@@ -63,7 +63,10 @@ DECLARE_INTERACTIONS(/obj/item/implantpad, \
 
 DECLARE_UI(/obj/item/implantpad, "ImplantPad", UI_TITLE("Implant Mini-Computer"))
 
-/obj/item/implantpad/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/implantpad, "merge:ui_data_obj_item_implantpad{has_case:bool,has_implant:unknown,implant_info:unknown,is_tracking:bool,tracking_id:num}")
+
+/// The computed part of /obj/item/implantpad's window data (declared on its UI_DATA row).
+/obj/item/implantpad/proc/ui_data_obj_item_implantpad(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_case"] = !!case
 	data["has_implant"] = !!(case?.imp)

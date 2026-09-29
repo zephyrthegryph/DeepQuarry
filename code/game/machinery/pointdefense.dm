@@ -63,7 +63,10 @@ UI_ACT_PROC(/obj/machinery/pointdefense_control, ui_act_toggle_active)
 		PD.Deactivate()
 	return TRUE
 
-/obj/machinery/pointdefense_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/pointdefense_control, "merge:ui_data_obj_machinery_pointdefense_control{id:text,turrets:list}")
+
+/// The computed part of /obj/machinery/pointdefense_control's window data (declared on its UI_DATA row).
+/obj/machinery/pointdefense_control/proc/ui_data_obj_machinery_pointdefense_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["id"] = id_tag
 	var/list/turrets = list()

@@ -4,7 +4,7 @@
 /obj/item/electronic_assembly
 	name = "electronic assembly"
 	/// The export window's view (made on first export).
-	var/tmp/datum/ic_export_view/export_view
+	var/datum/ic_export_view/export_view
 	desc = "It's a case, for building small electronics with."
 	w_class = ITEMSIZE_SMALL
 	icon = 'icons/obj/integrated_electronics/electronic_setups.dmi'
@@ -95,8 +95,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/electronic_assembly, "battery", /obj/item/cell/d
 	return battery
 
 // TGUI
-/obj/item/electronic_assembly/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/item/electronic_assembly, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 
@@ -105,8 +104,11 @@ DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 		get_asset_datum(/datum/asset/simple/circuit_assets)
 	)
 
-/obj/item/electronic_assembly/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/electronic_assembly, "max_components:num", "max_complexity", "assembly_name=name:text", "merge:ui_data_obj_item_electronic_assembly{total_parts:num,total_complexity:num,battery_charge:num,battery_max:num,net_power:num,export_data:unknown,circuits:list,component_positions:bool}")
+
+/// The computed part of /obj/item/electronic_assembly's window data (declared on its UI_DATA row).
+/obj/item/electronic_assembly/proc/ui_data_obj_item_electronic_assembly(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/total_parts = 0
 	var/total_complexity = 0
@@ -115,9 +117,7 @@ DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 		total_complexity = total_complexity + part.complexity
 
 	data["total_parts"] = total_parts
-	data["max_components"] = max_components
 	data["total_complexity"] = total_complexity
-	data["max_complexity"] = max_complexity
 
 	data["battery_charge"] = round(battery?.charge, 0.1)
 	data["battery_max"] = round(battery?.maxcharge, 0.1)
@@ -125,7 +125,6 @@ DECLARE_UI(/obj/item/electronic_assembly, "ICAssembly")
 
 	// Include export data - the UI component will handle displaying it if needed
 	data["export_data"] = serialize_electronic_assembly()
-	data["assembly_name"] = name
 
 	var/list/circuits = list()
 	FOR_REAL_CONTENTS(var/obj/item/integrated_circuit/circuit, src)
@@ -147,6 +146,8 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 	export_view.tgui_interact(user)
 	return TRUE
 
+DECLARE_REF(/obj/item/electronic_assembly, "export_view", OWNED, null)
+
 /// The assembly's export window, a second window next to its editor.
 /datum/ic_export_view
 	var/tmp/assembly_handle
@@ -165,7 +166,10 @@ DECLARE_UI(/datum/ic_export_view, "ICExport", UI_TITLE("Circuit Export"))
 /datum/ic_export_view/tgui_state(mob/user)
 	return assembly()?.tgui_state(user) || ..()
 
-/datum/ic_export_view/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/ic_export_view, "merge:ui_data_datum_ic_export_view{}")
+
+/// The computed part of /datum/ic_export_view's window data (declared on its UI_DATA row).
+/datum/ic_export_view/proc/ui_data_datum_ic_export_view(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return assembly()?.tgui_data(user, ui, state) || list()
 
 /datum/ic_export_view/tgui_static_data(mob/user)

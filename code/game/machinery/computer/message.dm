@@ -74,15 +74,14 @@
 
 DECLARE_UI(/obj/machinery/computer/message_monitor, "MessageMonitor")
 
-/obj/machinery/computer/message_monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/message_monitor, "customsender:text", "customjob:text", "custommessage:text", "temp:text", "merge:ui_data_obj_machinery_computer_message_monitor{customrecepient:text,hacking:bool,emag:bool,auth:bool,linkedServer:list,possibleRecipients:list,isMalfAI:bool}")
+
+/// The computed part of /obj/machinery/computer/message_monitor's window data (declared on its UI_DATA row).
+/obj/machinery/computer/message_monitor/proc/ui_data_obj_machinery_computer_message_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["customsender"] = customsender
 	data["customrecepient"] = "[customrecepient()]"
-	data["customjob"] = customjob
-	data["custommessage"] = custommessage
 
-	data["temp"] = temp
 	data["hacking"] = !!hacking
 	data["emag"] = !!emag
 	data["auth"] = !!auth

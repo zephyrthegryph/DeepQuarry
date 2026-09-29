@@ -69,11 +69,7 @@ DECLARE_UI(/obj/item/assembly/timer, "AssemblyTimer")
 		return FALSE
 	return TRUE
 
-/obj/item/assembly/timer/tgui_data(mob/user)
-	var/list/data = ..()
-	data["time"] = time
-	data["timing"] = timing
-	return data
+UI_DATA(/obj/item/assembly/timer, "time:num", "timing:num")
 
 UI_ACT(/obj/item/assembly/timer, "timing", ui_act_timing)
 UI_ACT_PROC(/obj/item/assembly/timer, ui_act_timing)
@@ -81,7 +77,7 @@ UI_ACT_PROC(/obj/item/assembly/timer, ui_act_timing)
 	update_icon()
 	return TRUE
 
-UI_ACT(/obj/item/assembly/timer, "set_time", ui_act_set_time, UI_ARG_VALUE("time"))
+UI_ACT(/obj/item/assembly/timer, "set_time", ui_act_set_time, UI_ARG_NUM("time"))
 UI_ACT_PROC(/obj/item/assembly/timer, ui_act_set_time)
 	var/real_new_time = 0
 	var/new_time = params["time"]

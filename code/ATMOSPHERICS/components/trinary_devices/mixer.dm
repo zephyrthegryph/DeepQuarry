@@ -123,9 +123,11 @@
 
 DECLARE_UI(/obj/machinery/atmospherics/trinary/mixer, "AtmosMixer")
 
-/obj/machinery/atmospherics/trinary/mixer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/mixer, "on=use_power", "merge:ui_data_obj_machinery_atmospherics_trinary_mixer{set_pressure:num,max_pressure:num,node1_concentration:num,node2_concentration:num,node1_dir:text,node2_dir:text}")
+
+/// The computed part of /obj/machinery/atmospherics/trinary/mixer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/trinary/mixer/proc/ui_data_obj_machinery_atmospherics_trinary_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["on"] = use_power
 	data["set_pressure"] = round(set_flow_rate)
 	data["max_pressure"] = min(air1.return_volume(), air2.return_volume())
 	data["node1_concentration"] = round(node1_concentration*100, 1)

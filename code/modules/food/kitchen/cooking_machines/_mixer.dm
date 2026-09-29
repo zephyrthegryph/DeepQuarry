@@ -89,9 +89,7 @@ DECLARE_REF(/obj/machinery/appliance/mixer, "mixer_loop", OWNED, null)
 		return 1
 	return 0
 
-/obj/machinery/appliance/mixer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	.["icon_used"] = off_icon
+UI_DATA(/obj/machinery/appliance/mixer, "icon_used=off_icon:text")
 
 /obj/machinery/appliance/mixer/appliance_toggle_power_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

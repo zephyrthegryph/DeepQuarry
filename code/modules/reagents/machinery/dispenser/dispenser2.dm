@@ -147,13 +147,14 @@ DECLARE_UI(/obj/machinery/chemical_dispenser, "ChemDispenser")
 /obj/machinery/chemical_dispenser/ui_title(mob/user)
 	return ui_title
 
-/obj/machinery/chemical_dispenser/tgui_data(mob/user)
-	var/data[0]
-	data["amount"] = amount
-	data["isBeakerLoaded"] = container ? 1 : 0
-	data["glass"] = accept_drinking
+UI_DATA_REPLACE(/obj/machinery/chemical_dispenser, "amount:num", "glass=accept_drinking:num", "recordingRecipe=recording_recipe:list", "merge:ui_data_obj_machinery_chemical_dispenser{isBeakerLoaded:num,beakerContents:list,beakerCurrentVolume:num,beakerMaxVolume:num,chemicals:list,recipes:bool}")
 
-	var/beakerContents[0]
+/// The computed part of /obj/machinery/chemical_dispenser's window data (declared on its UI_DATA row).
+/obj/machinery/chemical_dispenser/proc/ui_data_obj_machinery_chemical_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+	data["isBeakerLoaded"] = container ? 1 : 0
+
+	var/list/beakerContents = list()
 	if(container && container.reagents && container.reagents.reagent_list.len)
 		for(var/datum/reagent/R in container.reagents.reagent_list)
 			beakerContents.Add(list(list("name" = R.name, "id" = R.id, "volume" = R.volume))) // list in a list because Byond merges the first list...
@@ -166,14 +167,13 @@ DECLARE_UI(/obj/machinery/chemical_dispenser, "ChemDispenser")
 		data["beakerCurrentVolume"] = null
 		data["beakerMaxVolume"] = null
 
-	var/chemicals[0]
+	var/list/chemicals = list()
 	for(var/label in cartridges)
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = cartridges[label]
 		chemicals.Add(list(list("name" = label, "id" = label, "volume" = C.reagents.total_volume))) // list in a list because Byond merges the first list...
 	data["chemicals"] = chemicals
 
 	data["recipes"] = (saved_recipes || list())
-	data["recordingRecipe"] = recording_recipe
 	return data
 
 /obj/machinery/chemical_dispenser/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
@@ -189,7 +189,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_amount)
 	amount = clamp(round(params["amount"], 1), 0, 120) // round to nearest 1 and clamp 0 - 120
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "dispense", ui_act_dispense, UI_ARG_VALUE("reagent"))
+UI_ACT(/obj/machinery/chemical_dispenser, "dispense", ui_act_dispense, UI_ARG_TEXT("reagent"))
 UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense)
 	var/label = params["reagent"]
 	if(recording_recipe)
@@ -279,7 +279,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_save_recording)
 		recording_recipe = null
 		. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "dispense_recipe", ui_act_dispense_recipe, UI_ARG_VALUE("recipe"))
+UI_ACT(/obj/machinery/chemical_dispenser, "dispense_recipe", ui_act_dispense_recipe, UI_ARG_TEXT("recipe"))
 UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense_recipe)
 	var/list/chemicals_to_dispense = LAZYACCESS(saved_recipes, params["recipe"])
 	if(!LAZYLEN(chemicals_to_dispense))
@@ -314,7 +314,7 @@ UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_dispense_recipe)
 		recording_recipe += chemicals_to_dispense
 	. = TRUE
 
-UI_ACT(/obj/machinery/chemical_dispenser, "remove_recipe", ui_act_remove_recipe, UI_ARG_VALUE("recipe"))
+UI_ACT(/obj/machinery/chemical_dispenser, "remove_recipe", ui_act_remove_recipe, UI_ARG_TEXT("recipe"))
 UI_ACT_PROC(/obj/machinery/chemical_dispenser, ui_act_remove_recipe)
 	LAZYREMOVE(saved_recipes, params["recipe"])
 	. = TRUE

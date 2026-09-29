@@ -25,7 +25,10 @@
 
 DECLARE_UI(/datum/board_game/vore_sweeper, "VoreSweeper")
 
-/datum/board_game/vore_sweeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/vore_sweeper, "merge:ui_data_datum_board_game_vore_sweeper{grid_size:num,mine_count:num,max_mines:num,dealer:unknown,placed_mines:bool,revealed_fields:bool,placed_flags:bool,game_state:unknown,is_dealer:bool}")
+
+/// The computed part of /datum/board_game/vore_sweeper's window data (declared on its UI_DATA row).
+/datum/board_game/vore_sweeper/proc/ui_data_datum_board_game_vore_sweeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/dealer_mob = om_resolve(dealer)
 
 	var/placed_mine_data = game_state > GAME_PLAYING || (ui.user == dealer_mob) ? (placed_mines || list()) : null

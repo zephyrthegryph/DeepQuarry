@@ -31,8 +31,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(debug_variables, (R_DEBUG|R_SERVER|R_ADMIN|R_SPAWN|R
 // clears the client's cached panel (clients aren't datums).
 DECLARE_REF(/datum/view_variables_panel, "owner_handle", BACK_HANDLE, "dq_vv_panel")
 
-/datum/view_variables_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_HOLDER)
+DECLARE_UI_STATE(/datum/view_variables_panel, ADMIN_STATE(R_HOLDER))
 
 DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
 
@@ -63,7 +62,10 @@ DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
 		))
 	return out
 
-/datum/view_variables_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/view_variables_panel, "ref=refid", "merge:ui_data_datum_view_variables_panel{has_target:bool,is_list:bool,type:unknown,ref_for_paste:text,title:text,coords:listmap,marked:bool,tagged_index:bool,varedited:num,gc_destroyed:bool,header:unknown,dropdown:unknown,variables:list}")
+
+/// The computed part of /datum/view_variables_panel's window data (declared on its UI_DATA row).
+/datum/view_variables_panel/proc/ui_data_datum_view_variables_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_target"] = !!thing
 	if(!thing)
@@ -77,7 +79,6 @@ DECLARE_UI(/datum/view_variables_panel, "ViewVariables", UI_TITLE("Variables"))
 	else
 		type_text = "[maybe_datum.type]"
 	data["type"] = type_text
-	data["ref"] = refid
 	data["ref_for_paste"] = "@[copytext(refid, 2, -1)]"
 	data["title"] = "[thing] ([refid]) = [type_text]"
 

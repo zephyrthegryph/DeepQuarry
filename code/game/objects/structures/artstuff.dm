@@ -123,11 +123,7 @@ DECLARE_UI(/obj/item/canvas, "Canvas")
 	tgui_interact(user)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/canvas/tgui_data(mob/user)
-	. = ..()
-	.["grid"] = grid
-	.["name"] = painting_name
-	.["finalized"] = finalized
+UI_DATA(/obj/item/canvas, "grid:list", "name=painting_name:text", "finalized")
 
 /obj/item/canvas/examine(mob/user)
 	. = ..()

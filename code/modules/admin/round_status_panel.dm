@@ -26,8 +26,7 @@
 DECLARE_REF(/datum/round_status_panel, "owner_admin", PAIR, "round_status_panel")
 DECLARE_REF(/datum/admins, "round_status_panel", PAIR, "owner_admin")
 
-/datum/round_status_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/round_status_panel, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/round_status_panel, "RoundStatusPanel", UI_TITLE("Round Status"))
 
@@ -48,7 +47,10 @@ DECLARE_UI(/datum/round_status_panel, "RoundStatusPanel", UI_TITLE("Round Status
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/round_status_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/round_status_panel, "merge:ui_data_datum_round_status_panel{mode_name:unknown,round_duration:text,delay_end:unknown,shuttle:list,antag_blocks:bool}")
+
+/// The computed part of /datum/round_status_panel's window data (declared on its UI_DATA row).
+/datum/round_status_panel/proc/ui_data_datum_round_status_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["mode_name"] = SSticker?.mode?.name || "(none)"
 	data["round_duration"] = roundduration2text()

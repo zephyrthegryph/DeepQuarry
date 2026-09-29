@@ -131,25 +131,17 @@ DECLARE_UI(/obj/machinery/requests_console, "RequestConsole")
 /obj/machinery/requests_console/ui_title(mob/user)
 	return "[department] Request Console"
 
-/obj/machinery/requests_console/tgui_data(mob/user)
-	var/list/data = ..()
-	data["department"] = department
-	data["screen"] = screen
+UI_DATA(/obj/machinery/requests_console, "department:text", "screen:num", "newmessagepriority:num", "silent:num", "announcementConsole:num", "message:text", "recipient:text", "priority:num", "msgStamped:text", "msgVerified:text", "announceAuth:num", "merge:ui_data_obj_machinery_requests_console{message_log:bool,assist_dept:unknown,supply_dept:unknown,info_dept:unknown}")
+
+/// The computed part of /obj/machinery/requests_console's window data (declared on its UI_DATA row).
+/obj/machinery/requests_console/proc/ui_data_obj_machinery_requests_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["message_log"] = (message_log || list())
-	data["newmessagepriority"] = newmessagepriority
-	data["silent"] = silent
-	data["announcementConsole"] = announcementConsole
 
 	data["assist_dept"] = GLOB.req_console_assistance
 	data["supply_dept"] = GLOB.req_console_supplies
 	data["info_dept"]   = GLOB.req_console_information
 
-	data["message"] = message
-	data["recipient"] = recipient
-	data["priority"] = priority
-	data["msgStamped"] = msgStamped
-	data["msgVerified"] = msgVerified
-	data["announceAuth"] = announceAuth
 	return data
 
 /obj/machinery/requests_console/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
@@ -158,7 +150,7 @@ DECLARE_UI(/obj/machinery/requests_console, "RequestConsole")
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/machinery/requests_console, "write", ui_act_write, UI_ARG_VALUE("priority"), UI_ARG_TEXT("write"))
+UI_ACT(/obj/machinery/requests_console, "write", ui_act_write, UI_ARG_NUM("priority"), UI_ARG_TEXT("write"))
 UI_ACT_PROC(/obj/machinery/requests_console, ui_act_write)
 	if(reject_bad_text(params["write"]))
 		recipient = params["write"] //write contains the string of the receiving department's name

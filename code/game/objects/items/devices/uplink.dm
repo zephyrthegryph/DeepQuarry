@@ -96,8 +96,7 @@ DECLARE_START_TIMER(/obj/item/uplink, "offer_time", PROC_REF(next_offer)) //It s
 /obj/item/uplink/tgui_host()
 	return loc
 
-/obj/item/uplink/hidden/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/uplink/hidden, GLOB.tgui_deep_inventory_state)
 
 DECLARE_UI(/obj/item/uplink/hidden, "Uplink", UI_TITLE("Remote Uplink"))
 
@@ -106,15 +105,17 @@ DECLARE_UI(/obj/item/uplink/hidden, "Uplink", UI_TITLE("Remote Uplink"))
 		toggle()
 	return TRUE
 
-/obj/item/uplink/hidden/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA(/obj/item/uplink/hidden, "compactMode=compact_mode:num", "merge:ui_data_obj_item_uplink_hidden{telecrystals:num,lockable:bool,discount_name:text,discount_amount:num,offer_expiry:unknown,exploit:list,locked_records:list}")
+
+/// The computed part of /obj/item/uplink/hidden's window data (declared on its UI_DATA row).
+/obj/item/uplink/hidden/proc/ui_data_obj_item_uplink_hidden(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!user.mind)
 		return
 
-	var/list/data = ..()
+	var/list/data = list()
 
 	data["telecrystals"] = user.mind.tcrystals
 	data["lockable"] = TRUE
-	data["compactMode"] = compact_mode
 
 	data["discount_name"] = discount_item() ? discount_item().name : ""
 	data["discount_amount"] = (1-discount_amount)*100
@@ -205,7 +206,7 @@ UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_compact_toggle)
 	compact_mode = !compact_mode
 	return TRUE
 
-UI_ACT(/obj/item/uplink/hidden, "view_exploits", ui_act_view_exploits, UI_ARG_VALUE("id"))
+UI_ACT(/obj/item/uplink/hidden, "view_exploits", ui_act_view_exploits, UI_ARG_NUM("id"))
 UI_ACT_PROC(/obj/item/uplink/hidden, ui_act_view_exploits)
 	exploit_id = params["id"]
 	return TRUE

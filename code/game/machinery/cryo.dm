@@ -113,14 +113,17 @@ EXTEND_INTERACTIONS(/obj/machinery/atmospherics/unary/cryo_cell, \
 
 DECLARE_UI(/obj/machinery/atmospherics/unary/cryo_cell, "Cryo", UI_TITLE("Cryo Cell"))
 
-/obj/machinery/atmospherics/unary/cryo_cell/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/cryo_cell, "merge:ui_data_obj_machinery_atmospherics_unary_cryo_cell{isOperating:num,hasOccupant:bool,occupant:unknown,cellTemperature:num,cellTemperatureStatus:text,isBeakerLoaded:bool,beakerLabel:text,beakerVolume:unknown}")
+
+/// The computed part of /obj/machinery/atmospherics/unary/cryo_cell's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/unary/cryo_cell/proc/ui_data_obj_machinery_atmospherics_unary_cryo_cell(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/occupant = slot_item_real(OCCUPANT_SLOT_CRYO)
 	// this is the data which will be sent to the ui
-	var/data[0]
+	var/list/data = list()
 	data["isOperating"] = on
 	data["hasOccupant"] = occupant ? TRUE : FALSE
 
-	var/occupantData[0]
+	var/list/occupantData = list()
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat

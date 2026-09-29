@@ -149,11 +149,12 @@
 
 DECLARE_UI(/obj/machinery/atmospherics/omni/atmos_filter, "OmniFilter")
 
-/obj/machinery/atmospherics/omni/atmos_filter/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/atmos_filter, "power=use_power", "config=configuring:num", "merge:ui_data_obj_machinery_atmospherics_omni_atmos_filter{ports:unknown,set_flow_rate:num,last_flow_rate:num}")
+
+/// The computed part of /obj/machinery/atmospherics/omni/atmos_filter's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/omni/atmos_filter/proc/ui_data_obj_machinery_atmospherics_omni_atmos_filter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["power"] = use_power
-	data["config"] = configuring
 
 	var/portData[0]
 	for(var/datum/omni_port/P in ports)
@@ -242,7 +243,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_set_flow_rate)
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_VALUE("mode"))
+UI_ACT(/obj/machinery/atmospherics/omni/atmos_filter, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_TEXT("mode"))
 UI_ACT_PROC(/obj/machinery/atmospherics/omni/atmos_filter, ui_act_switch_mode)
 	if(!configuring || use_power)
 		return

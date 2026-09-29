@@ -4,11 +4,11 @@
 export type KeybindingEditorData = Record<string, unknown>;
 
 export type KeybindingEditorActions = {
-  bind: { id?: string | number; key?: string };
+  bind: { id?: string; key?: string };
   change_ui_state: { new_state?: string };
-  reset: { id?: string | number };
+  reset: { id?: string };
   reset_all: Record<string, never>;
-  set_profile: { profile?: string | number };
-  set_right_click: { binding?: string | number };
-  unbind: { id?: string | number; key?: string | number };
+  set_profile: { profile?: string };
+  set_right_click: { binding?: string };
+  unbind: { id?: string; key?: string };
 };

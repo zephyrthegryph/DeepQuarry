@@ -121,10 +121,12 @@ DECLARE_UI(/obj/machinery/chem_master, "ChemMaster")
  *
  *  See NanoUI documentation for details.
  */
-/obj/machinery/chem_master/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/chem_master, "condi:num", "pillsprite:num", "bottlesprite:num", "printing:num", "merge:ui_data_obj_machinery_chem_master{loaded_pill_bottle:bool,loaded_pill_bottle_name:text,loaded_pill_bottle_contents_len:unknown,loaded_pill_bottle_storage_slots:num,beaker:bool,beaker_reagents:list,buffer_reagents:list,mode:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/chem_master's window data (declared on its UI_DATA row).
+/obj/machinery/chem_master/proc/ui_data_obj_machinery_chem_master(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["condi"] = condi
 
 	data["loaded_pill_bottle"] = !!loaded_pill_bottle
 	if(loaded_pill_bottle)
@@ -144,10 +146,7 @@ DECLARE_UI(/obj/machinery/chem_master, "ChemMaster")
 		for(var/datum/reagent/R in reagents.reagent_list)
 			buffer_reagents_list[++buffer_reagents_list.len] = list("name" = R.name, "volume" = R.volume, "id" = R.id, "description" = R.description)
 
-	data["pillsprite"] = pillsprite
-	data["bottlesprite"] = bottlesprite
 	data["mode"] = mode
-	data["printing"] = printing
 
 	// Transfer modal information if there is one
 	data["modal"] = tgui_modal_data(src)
@@ -458,7 +457,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_print)
 	P.name = "Chemical Analysis - [R.name]"
 	om_after(src, 5 SECONDS, PROC_REF(printing_done))
 
-UI_ACT(/obj/machinery/chem_master, "add", ui_act_add, UI_ARG_NUM("amount"), UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/chem_master, "add", ui_act_add, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/chem_master, ui_act_add)
 	. = TRUE
 	if(!beaker)

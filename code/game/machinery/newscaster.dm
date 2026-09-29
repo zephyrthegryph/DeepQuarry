@@ -265,14 +265,15 @@ DECLARE_UI(/obj/machinery/newscaster, "Newscaster")
 /obj/machinery/newscaster/ui_title(mob/user)
 	return "Newscaster Unit #[unit_no]"
 
-/obj/machinery/newscaster/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/newscaster, "temp:text", "unit_no", "channel_name:text", "c_locked:num", "msg:text", "title:text", "paper_remaining:num", "merge:ui_data_obj_machinery_newscaster{user:text,wanted_issue:unknown,securityCaster:bool,channels:list,photo_data:bool,total_num:num,active_num:num,message_num:num,viewing_channel:unknown,company:text}")
+
+/// The computed part of /obj/machinery/newscaster's window data (declared on its UI_DATA row).
+/obj/machinery/newscaster/proc/ui_data_obj_machinery_newscaster(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// Main menu
-	data["temp"] = temp
 
 	data["user"] = tgui_user_name(user)
-	data["unit_no"] = unit_no
 
 	var/list/wanted_issue = null
 	if(GLOB.news_network.wanted_issue())
@@ -300,13 +301,9 @@ DECLARE_UI(/obj/machinery/newscaster, "Newscaster")
 	data["channels"] = network_channels
 
 	// Creating Channels
-	data["channel_name"] = channel_name
-	data["c_locked"] = c_locked
 
 	// Creating Messages
 	// data["channel_name"] = channel_name
-	data["msg"] = msg
-	data["title"] = title
 	data["photo_data"] = !!photo_data
 
 	// Printing menu
@@ -321,7 +318,6 @@ DECLARE_UI(/obj/machinery/newscaster, "Newscaster")
 	data["total_num"] = total_num
 	data["active_num"] = active_num
 	data["message_num"] = message_num
-	data["paper_remaining"] = paper_remaining
 
 	// Viewing a specific channel
 	var/list/viewing = null

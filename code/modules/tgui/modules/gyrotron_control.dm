@@ -43,7 +43,10 @@ UI_ACT_PROC(/datum/tgui_module/gyrotron_control, ui_act_set_rate)
 		G.rate = new_delay
 	return TRUE
 
-/datum/tgui_module/gyrotron_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/gyrotron_control, "merge:ui_data_datum_tgui_module_gyrotron_control{gyros:list}")
+
+/// The computed part of /datum/tgui_module/gyrotron_control's window data (declared on its UI_DATA row).
+/datum/tgui_module/gyrotron_control/proc/ui_data_datum_tgui_module_gyrotron_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/gyros = list()
 

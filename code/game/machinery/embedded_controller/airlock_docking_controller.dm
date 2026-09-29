@@ -31,7 +31,10 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/embedded_controller/radio/airlock/docking_p
 	to_chat(user, "[tool]'s screen displays '[code]'")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/airlock/docking_port, "merge:ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port{chamber_pressure:num,exterior_status:unknown,interior_status:unknown,processing:unknown,docking_status:unknown,airlock_disabled:bool,override_enabled:num,docking_codes:unknown,name:unknown,internalTemplateName:text}")
+
+/// The computed part of /obj/machinery/embedded_controller/radio/airlock/docking_port's window data (declared on its UI_DATA row).
+/obj/machinery/embedded_controller/radio/airlock/docking_port/proc/ui_data_obj_machinery_embedded_controller_radio_airlock_docking_port(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/embedded_program/docking/airlock/docking_program = program
 	var/datum/embedded_program/airlock/docking/airlock_program = docking_program.airlock_program
 

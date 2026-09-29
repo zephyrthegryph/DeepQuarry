@@ -119,13 +119,7 @@ DECLARE_UI(/obj/item/assembly/infra, "AssemblyInfrared")
 		return FALSE
 	return TRUE
 
-/obj/item/assembly/infra/tgui_data(mob/user)
-	var/list/data = ..()
-
-	data["on"] = on
-	data["visible"] = visible
-
-	return data
+UI_DATA(/obj/item/assembly/infra, "on:num", "visible:num")
 
 UI_ACT(/obj/item/assembly/infra, "state", ui_act_state)
 UI_ACT_PROC(/obj/item/assembly/infra, ui_act_state)

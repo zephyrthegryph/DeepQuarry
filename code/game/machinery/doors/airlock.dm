@@ -459,7 +459,10 @@ About the new airlock wires panel:
 
 DECLARE_UI(/obj/machinery/door/airlock, "AiAirlock")
 
-/obj/machinery/door/airlock/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/door/airlock, "speed=normalspeed:num", "welded", "merge:ui_data_obj_machinery_door_airlock{power:list,shock:num,shock_timeleft:unknown,id_scanner:bool,locked:num,lights:num,safe:num,opened:bool,wires:list}")
+
+/// The computed part of /obj/machinery/door/airlock's window data (declared on its UI_DATA row).
+/obj/machinery/door/airlock/proc/ui_data_obj_machinery_door_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/power = list()
@@ -475,8 +478,6 @@ DECLARE_UI(/obj/machinery/door/airlock, "AiAirlock")
 	data["locked"] = locked // bolted
 	data["lights"] = lights // bolt lights
 	data["safe"] = safe // safeties
-	data["speed"] = normalspeed // safe speed
-	data["welded"] = welded // welded
 	data["opened"] = !density // opened
 
 	var/list/wire = list()

@@ -89,14 +89,13 @@ DECLARE_INTERACTIONS(/obj/item/eftpos, \
 
 DECLARE_UI(/obj/item/eftpos, "Eftpos", UI_TITLE("EFTPOS scanner"))
 
-/obj/item/eftpos/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transaction_purpose:text", "transaction_amount:num", "merge:ui_data_obj_item_eftpos{transaction_locked:bool,transaction_paid:bool,linked_account_name:text}")
+
+/// The computed part of /obj/item/eftpos's window data (declared on its UI_DATA row).
+/obj/item/eftpos/proc/ui_data_obj_item_eftpos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["eftpos_name"] = eftpos_name
-	data["machine_id"] = machine_id
 	data["transaction_locked"] = !!transaction_locked
 	data["transaction_paid"] = !!transaction_paid
-	data["transaction_purpose"] = transaction_purpose
-	data["transaction_amount"] = transaction_amount
 	data["linked_account_name"] = linked_account() ? linked_account().owner_name : ""
 	return data
 

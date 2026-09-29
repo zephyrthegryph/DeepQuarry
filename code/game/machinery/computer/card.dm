@@ -106,12 +106,14 @@ DECLARE_UI(/obj/machinery/computer/card, "IdentificationComputer")
 	data["manifest"] = GLOB.PDA_Manifest
 	return data
 
-/obj/machinery/computer/card/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/card, "printing:num", "merge:ui_data_obj_machinery_computer_card{station_name:text,mode:num,target_name:text,target_owner:text,target_rank:unknown,scan_name:text,authenticated:unknown,has_modify:bool,account_number:num,centcom_access:unknown,all_centcom_access:list,regions:list,id_rank:text,departments:list}")
+
+/// The computed part of /obj/machinery/computer/card's window data (declared on its UI_DATA row).
+/obj/machinery/computer/card/proc/ui_data_obj_machinery_computer_card(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["station_name"] = station_name()
 	data["mode"] = mode
-	data["printing"] = printing
 	data["target_name"] = modify ? modify.name : "-----"
 	data["target_owner"] = modify && modify.registered_name ? modify.registered_name : "-----"
 	data["target_rank"] = get_target_rank()

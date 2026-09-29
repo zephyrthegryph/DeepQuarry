@@ -120,7 +120,10 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "inject", PROC_
 
 DECLARE_UI(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "MechaSleeper", UI_TITLE("Mounted Sleeper"))
 
-/obj/item/mecha_parts/mecha_equipment/tool/sleeper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, "merge:ui_data_obj_item_mecha_parts_mecha_equipment_tool_sleeper{has_occupant:num,occupant_name:text,status:text,health_percent:num,diagnosis:unknown,body_temp_c:num,body_temp_f:num,reagents:list,injectables:list}")
+
+/// The computed part of /obj/item/mecha_parts/mecha_equipment/tool/sleeper's window data (declared on its UI_DATA row).
+/obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/ui_data_obj_item_mecha_parts_mecha_equipment_tool_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_MECHA_SLEEPER)
 	var/list/data = list()
 	data["has_occupant"] = occupant ? 1 : 0

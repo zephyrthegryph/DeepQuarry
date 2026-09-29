@@ -14,8 +14,7 @@ GLOBAL_LIST_EMPTY(dq_attacks_panels)
 	if(host)
 		GLOB.dq_attacks_panels -= "[REF(host)]"
 
-/datum/attacks_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/attacks_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/attacks_panel, "AttacksPanel", UI_TITLE("Known Attacks"))
 
@@ -24,7 +23,10 @@ DECLARE_UI(/datum/attacks_panel, "AttacksPanel", UI_TITLE("Known Attacks"))
 		return FALSE
 	return TRUE
 
-/datum/attacks_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/attacks_panel, "merge:ui_data_datum_attacks_panel{default_name:text,attacks:list}")
+
+/// The computed part of /datum/attacks_panel's window data (declared on its UI_DATA row).
+/datum/attacks_panel/proc/ui_data_datum_attacks_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host || !host.species)
 		return data

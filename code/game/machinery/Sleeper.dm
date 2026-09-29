@@ -76,7 +76,10 @@ EXTEND_INTERACTIONS(/obj/machinery/sleep_console, \
 
 DECLARE_UI(/obj/machinery/sleep_console, "Sleeper", UI_TITLE("Sleeper"))
 
-/obj/machinery/sleep_console/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/sleep_console, "merge:ui_data_obj_machinery_sleep_console{}")
+
+/// The computed part of /obj/machinery/sleep_console's window data (declared on its UI_DATA row).
+/obj/machinery/sleep_console/proc/ui_data_obj_machinery_sleep_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(sleeper)
 		return sleeper.tgui_data(user)
 	return null
@@ -184,12 +187,14 @@ EXTEND_INTERACTIONS(/obj/machinery/sleeper, \
 
 DECLARE_UI(/obj/machinery/sleeper, "Sleeper", UI_TITLE("Sleeper"))
 
-/obj/machinery/sleeper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/sleeper, "amounts:list", "maxchem=max_chem:num", "dialysis=filtering:num", "stomachpumping=pumping:num", "auto_eject_dead:num", "merge:ui_data_obj_machinery_sleeper{hasOccupant:num,occupant:list,isBeakerLoaded:num,beakerMaxSpace:num,beakerFreeSpace:unknown,stasis:text,chemicals:list}")
+
+/// The computed part of /obj/machinery/sleeper's window data (declared on its UI_DATA row).
+/obj/machinery/sleeper/proc/ui_data_obj_machinery_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SLEEPER)
-	var/data[0]
-	data["amounts"] = amounts
+	var/list/data = list()
 	data["hasOccupant"] = occupant ? 1 : 0
-	var/occupantData[0]
+	var/list/occupantData = list()
 	if(occupant)
 		occupantData["name"] = occupant.name
 		occupantData["stat"] = occupant.stat
@@ -243,10 +248,6 @@ DECLARE_UI(/obj/machinery/sleeper, "Sleeper", UI_TITLE("Sleeper"))
 			occupantData["bloodType"] = occupant.dna.b_type
 
 	data["occupant"] = occupantData
-	data["maxchem"] = max_chem
-	data["dialysis"] = filtering
-	data["stomachpumping"] = pumping
-	data["auto_eject_dead"] = auto_eject_dead
 	if(beaker)
 		data["isBeakerLoaded"] = 1
 		if(beaker.reagents)
@@ -265,7 +266,7 @@ DECLARE_UI(/obj/machinery/sleeper, "Sleeper", UI_TITLE("Sleeper"))
 			break
 	data["stasis"] = stasis_level_name
 
-	var/chemicals[0]
+	var/list/chemicals = list()
 	for(var/re in available_chemicals)
 		var/datum/reagent/temp = chemistry_service().chemical_reagents[re]
 		if(temp)
@@ -300,7 +301,7 @@ DECLARE_UI(/obj/machinery/sleeper, "Sleeper", UI_TITLE("Sleeper"))
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/sleeper, "chemical", ui_act_chemical, UI_ARG_NUM("amount"), UI_ARG_VALUE("chemid"))
+UI_ACT(/obj/machinery/sleeper, "chemical", ui_act_chemical, UI_ARG_NUM("amount"), UI_ARG_NUM("chemid"))
 UI_ACT_PROC(/obj/machinery/sleeper, ui_act_chemical)
 	. = TRUE
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_SLEEPER)

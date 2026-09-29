@@ -134,7 +134,10 @@ DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-/obj/item/paicard/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_data:unknown,selected_pai_data:unknown,available_pais:unknown,waiting_for_response:num,emag_systems:unknown}")
+
+/// The computed part of /obj/item/paicard's window data (declared on its UI_DATA row).
+/obj/item/paicard/proc/ui_data_obj_item_paicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"active_pai_data" = null,
 		"selected_pai_data" = null,
@@ -281,7 +284,7 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_clearlaws)
 	pai.pai_laws = null
 	return TRUE
 
-UI_ACT(/obj/item/paicard, "select_pai", ui_act_select_pai, UI_ARG_VALUE("ref"))
+UI_ACT(/obj/item/paicard, "select_pai", ui_act_select_pai, UI_ARG_TEXT("ref"))
 UI_ACT_PROC(/obj/item/paicard, ui_act_select_pai)
 	if(pai)
 		return FALSE

@@ -6,8 +6,11 @@
 	var/tmp/station_handle
 	var/tmp/hub_handle
 
-/datum/tgui_module/teleport_control/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/teleport_control, "merge:ui_data_datum_tgui_module_teleport_control{locked_name:bool,station_connected:bool,hub_connected:bool,calibrated:num,teleporter_on:num}")
+
+/// The computed part of /datum/tgui_module/teleport_control's window data (declared on its UI_DATA row).
+/datum/tgui_module/teleport_control/proc/ui_data_datum_tgui_module_teleport_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["locked_name"] = locked_name || "No Target"
 	data["station_connected"] = !!station()

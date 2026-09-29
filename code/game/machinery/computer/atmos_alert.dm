@@ -26,7 +26,10 @@
 
 DECLARE_UI(/obj/machinery/computer/atmos_alert, "AtmosAlertConsole")
 
-/obj/machinery/computer/atmos_alert/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/atmos_alert, "merge:ui_data_obj_machinery_computer_atmos_alert{priority_alarms:list,minor_alarms:list}")
+
+/// The computed part of /obj/machinery/computer/atmos_alert's window data (declared on its UI_DATA row).
+/obj/machinery/computer/atmos_alert/proc/ui_data_obj_machinery_computer_atmos_alert(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/major_alarms = list()
 	var/list/minor_alarms = list()

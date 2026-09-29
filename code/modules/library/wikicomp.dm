@@ -56,7 +56,10 @@ DECLARE_UI(/obj/machinery/librarywikicomp, "PublicLibraryWiki")
 	sub_category= null
 	searchmode = null
 
-/obj/machinery/librarywikicomp/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/librarywikicomp, "merge:ui_data_obj_machinery_librarywikicomp{crash:unknown,botany_data:unknown,material_data:unknown,particle_data:unknown,catalog_data:unknown,ore_data:unknown,virus_data:unknown,gene_data:unknown,sub_categories:unknown,donated:unknown,goal:unknown,has_donated:unknown,errorText:text,searchmode:unknown,search:unknown,food_data:unknown,drink_data:unknown,chemistry_data:unknown,print:bool}")
+
+/// The computed part of /obj/machinery/librarywikicomp's window data (declared on its UI_DATA row).
+/obj/machinery/librarywikicomp/proc/ui_data_obj_machinery_librarywikicomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 	if(SSinternal_wiki)
 		data["crash"] = crash
@@ -163,7 +166,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_closesearch)
 		doc_body = ""
 	. = TRUE
 
-UI_ACT(/obj/machinery/librarywikicomp, "swapsearch", ui_act_swapsearch, UI_ARG_VALUE("data"))
+UI_ACT(/obj/machinery/librarywikicomp, "swapsearch", ui_act_swapsearch, UI_ARG_TEXT("data"))
 UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_swapsearch)
 	if(!crash)
 		var/new_mode = params["data"]
@@ -209,7 +212,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_setsubcat)
 	. = TRUE
 // final search
 
-UI_ACT(/obj/machinery/librarywikicomp, "search", ui_act_search, UI_ARG_VALUE("data"))
+UI_ACT(/obj/machinery/librarywikicomp, "search", ui_act_search, UI_ARG_TEXT("data"))
 UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_search)
 	if(!crash)
 		var/search = params["data"]
@@ -249,7 +252,7 @@ UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_search)
 	. = TRUE
 // Support the wiki
 
-UI_ACT(/obj/machinery/librarywikicomp, "donate", ui_act_donate, UI_ARG_VALUE("donate"))
+UI_ACT(/obj/machinery/librarywikicomp, "donate", ui_act_donate, UI_ARG_NUM("donate"))
 UI_ACT_PROC(/obj/machinery/librarywikicomp, ui_act_donate)
 	if(!crash)
 		var/amount = params["donate"]

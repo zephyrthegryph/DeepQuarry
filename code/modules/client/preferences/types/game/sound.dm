@@ -198,16 +198,18 @@
 
 // Neat little volume adjuster thing in case you don't wanna touch preferences by hand you lazy fuck
 /datum/volume_panel
-/datum/volume_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/volume_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/volume_panel, "VolumePanel", UI_TITLE("Volume Panel"))
 
-/datum/volume_panel/tgui_data(mob/user)
+UI_DATA(/datum/volume_panel, "merge:ui_data_datum_volume_panel{volume_channels:num}")
+
+/// The computed part of /datum/volume_panel's window data (declared on its UI_DATA row).
+/datum/volume_panel/proc/ui_data_datum_volume_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!user.client || !user.client.prefs)
 		return list("error" = TRUE)
 
-	var/list/data = ..()
+	var/list/data = list()
 	data["volume_channels"] = user.client.prefs.read_preference(/datum/preference/volume_channels)
 	return data
 

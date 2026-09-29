@@ -121,7 +121,10 @@ DECLARE_UI(/datum/tgui_list_input, "ListInputModal")
 	data["title"] = title
 	return data
 
-/datum/tgui_list_input/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_list_input, "merge:ui_data_datum_tgui_list_input{timeout:num}")
+
+/// The computed part of /datum/tgui_list_input's window data (declared on its UI_DATA row).
+/datum/tgui_list_input/proc/ui_data_datum_tgui_list_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)

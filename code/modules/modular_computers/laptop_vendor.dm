@@ -255,7 +255,10 @@ DECLARE_UI(/obj/machinery/lapvend, "ComputerFabricator")
 
 	return TRUE
 
-/obj/machinery/lapvend/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/lapvend, "merge:ui_data_obj_machinery_lapvend{state:num,devtype:num,hw_battery:num,hw_disk:num,hw_netcard:num,hw_tesla:num,hw_nanoprint:num,hw_card:num,hw_cpu:num,totalprice:num}")
+
+/// The computed part of /obj/machinery/lapvend's window data (declared on its UI_DATA row).
+/obj/machinery/lapvend/proc/ui_data_obj_machinery_lapvend(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["state"] = state

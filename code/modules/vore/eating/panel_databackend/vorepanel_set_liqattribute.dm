@@ -33,7 +33,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_gen)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_type", liq_b_liq_reagent_type, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_type", liq_b_liq_reagent_type, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_type)
 	var/new_reagent = params["val"]
 	if(!(new_reagent in host().vore_selected.reagent_choices))
@@ -45,7 +45,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_type)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_name", liq_b_liq_reagent_name, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_name", liq_b_liq_reagent_name, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_name)
 	var/new_name = params["val"]
 
@@ -58,7 +58,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_name)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_transfer_verb", liq_b_liq_reagent_transfer_verb, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_transfer_verb", liq_b_liq_reagent_transfer_verb, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_transfer_verb)
 	var/new_verb = params["val"]
 
@@ -71,7 +71,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_transfer_verb)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_nutri_rate", liq_b_liq_reagent_nutri_rate, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_nutri_rate", liq_b_liq_reagent_nutri_rate, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_nutri_rate)
 	host().vore_selected.gen_time_display = params["val"]
 	switch(host().vore_selected.gen_time_display)
@@ -115,7 +115,7 @@ UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_sloshing)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_addons", liq_b_liq_reagent_addons, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "liq", "b_liq_reagent_addons", liq_b_liq_reagent_addons, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, liq_b_liq_reagent_addons)
 	var/reagent_toggle_addon = params["val"]
 	if(!reagent_toggle_addon)

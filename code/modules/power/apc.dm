@@ -800,7 +800,10 @@ DECLARE_REF(/obj/machinery/power/apc, "hacker", BACKLIST, "hacked_apcs")
 
 DECLARE_UI(/obj/machinery/power/apc, "APC")
 
-/obj/machinery/power/apc/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/apc, "merge:ui_data_obj_machinery_power_apc{locked:num,normallyLocked:num,emagged:num,isOperating:num,externalPower:unknown,powerCellStatus:unknown,chargeMode:num,chargingStatus:num,totalLoad:num,totalCharging:num,failTime:num,gridCheck:num,coverLocked:num,siliconUser:bool,emergencyLights:bool,nightshiftLights:num,nightshiftSetting:unknown,powerChannels:listmap}")
+
+/// The computed part of /obj/machinery/power/apc's window data (declared on its UI_DATA row).
+/obj/machinery/power/apc/proc/ui_data_obj_machinery_power_apc(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked"          = locked,
 		"normallyLocked"  = locked,

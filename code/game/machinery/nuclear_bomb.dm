@@ -215,7 +215,10 @@ GLOBAL_VAR(bomb_set)
 
 DECLARE_UI(/obj/machinery/nuclearbomb, "NuclearBomb", UI_TITLE("Nuclear Fission Explosive"))
 
-/obj/machinery/nuclearbomb/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/nuclearbomb, "timeleft:num", "merge:ui_data_obj_machinery_nuclearbomb{wire_view:bool,lighthack:bool,wires:list,auth:bool,yes_code:bool,timing:bool,safety:bool,anchored:bool,status_label:num,code_display:unknown}")
+
+/// The computed part of /obj/machinery/nuclearbomb's window data (declared on its UI_DATA row).
+/obj/machinery/nuclearbomb/proc/ui_data_obj_machinery_nuclearbomb(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["wire_view"] = !!wire_view
 	data["lighthack"] = !!lighthack
@@ -229,7 +232,6 @@ DECLARE_UI(/obj/machinery/nuclearbomb, "NuclearBomb", UI_TITLE("Nuclear Fission 
 	data["auth"] = !!auth()
 	data["yes_code"] = !!yes_code
 	data["timing"] = !!timing
-	data["timeleft"] = timeleft
 	data["safety"] = !!safety
 	data["anchored"] = !!anchored
 	var/safe_label = safety ? "Safe" : "Engaged"
@@ -357,7 +359,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_anchor)
 		visible_message(span_warning("The anchoring bolts slide back into the depths of [src]."))
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "wire", ui_act_wire, UI_ARG_VALUE("wire"))
+UI_ACT(/obj/machinery/nuclearbomb, "wire", ui_act_wire, UI_ARG_TEXT("wire"))
 UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
 	var/wire = params["wire"]
 	if(!(wire in wires_list))
@@ -379,7 +381,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
 		lighthack = !lighthack
 	return TRUE
 
-UI_ACT(/obj/machinery/nuclearbomb, "pulse", ui_act_pulse, UI_ARG_VALUE("wire"))
+UI_ACT(/obj/machinery/nuclearbomb, "pulse", ui_act_pulse, UI_ARG_TEXT("wire"))
 UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 	var/wire = params["wire"]
 	if(!(wire in wires_list))

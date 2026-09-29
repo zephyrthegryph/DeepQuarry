@@ -5,10 +5,12 @@ merge conflicts down the line.
 So here it sits, snowflake code for a single item.
 */
 
-/obj/item/rig/protean/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/obj/item/rig/protean, GLOB.tgui_always_state)
 
-/obj/item/rig/protean/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/rig/protean, "cooling=cooling_on:num", "sealing", "emagged=subverted:num", "coverlock=locked:num", "interfacelock=interface_locked:num", "aicontrol=control_overridden:num", "aioverride=ai_override_enabled:num", "securitycheck=security_check_enabled:num", "malf=malfunction_delay:num", "merge:ui_data_obj_item_rig_protean{primarysystem:text,ai:bool,sealed:bool,helmet:text,gauntlets:text,boots:text,chest:text,helmetDeployed:bool,gauntletsDeployed:bool,bootsDeployed:bool,chestDeployed:bool,charge:num,maxcharge:num,chargestatus:num,modules:list}")
+
+/// The computed part of /obj/item/rig/protean's window data (declared on its UI_DATA row).
+/obj/item/rig/protean/proc/ui_data_obj_item_rig_protean(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(selected_module)
@@ -21,9 +23,7 @@ So here it sits, snowflake code for a single item.
 	else
 		data["ai"] = FALSE
 
-	data["cooling"] = cooling_on
 	data["sealed"] = !canremove
-	data["sealing"] = sealing
 	data["helmet"] = (helmet ? "[helmet.name]" : "None.")
 	data["gauntlets"] = (gloves ? "[gloves.name]" : "None.")
 	data["boots"] = (boots ?  "[boots.name]" :  "None.")
@@ -38,13 +38,6 @@ So here it sits, snowflake code for a single item.
 	data["maxcharge"] = cell ? cell.maxcharge : 0
 	data["chargestatus"] = cell ? FLOOR((cell.charge/cell.maxcharge)*50, 1) : 0
 
-	data["emagged"] = subverted
-	data["coverlock"] = locked
-	data["interfacelock"] = interface_locked
-	data["aicontrol"] = control_overridden
-	data["aioverride"] = ai_override_enabled
-	data["securitycheck"] = security_check_enabled
-	data["malf"] = malfunction_delay
 
 	var/list/module_list = list()
 	if(!canremove && !sealing)

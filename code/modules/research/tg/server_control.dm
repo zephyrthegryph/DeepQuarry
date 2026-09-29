@@ -49,7 +49,10 @@
 
 DECLARE_UI(/obj/machinery/computer/rdservercontrol, "ServerControl")
 
-/obj/machinery/computer/rdservercontrol/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/rdservercontrol, "merge:ui_data_obj_machinery_computer_rdservercontrol{server_connected:bool,logs:list,servers:list,consoles:list}")
+
+/// The computed part of /obj/machinery/computer/rdservercontrol's window data (declared on its UI_DATA row).
+/obj/machinery/computer/rdservercontrol/proc/ui_data_obj_machinery_computer_rdservercontrol(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["server_connected"] = !!stored_research()

@@ -112,14 +112,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/secure, \
 
 DECLARE_UI(/obj/item/storage/secure, "SecureSafe")
 
-/obj/item/storage/secure/tgui_data(mob/user)
-	var/list/data = list()
-	data["locked"] = locked
-	data["code"] = code
-	data["emagged"] = emagged
-	data["l_setshort"] = l_setshort
-	data["l_set"] = l_set
-	return data
+UI_DATA_REPLACE(/obj/item/storage/secure, "locked:num", "code", "emagged:num", "l_setshort:num", "l_set:num")
 
 UI_ACT(/obj/item/storage/secure, "type", ui_act_type, UI_ARG_TEXT("digit"))
 UI_ACT_PROC(/obj/item/storage/secure, ui_act_type)

@@ -70,8 +70,7 @@
 	while(!submitted && !closed && !QDELETED(src))
 		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
 
-/datum/tgui_bitfield_input/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_bitfield_input, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/tgui_bitfield_input, "BitfieldInput")
 
@@ -82,20 +81,7 @@ DECLARE_UI(/datum/tgui_bitfield_input, "BitfieldInput")
 	. = ..()
 	closed = TRUE
 
-/datum/tgui_bitfield_input/tgui_data(mob/user)
-	var/list/flags = list()
-	for(var/name in bitflags)
-		var/bit = bitflags[name]
-		flags += list(list(
-			"name" = name,
-			"bit" = bit,
-			"checked" = !!(value & bit),
-			"editable" = !!(allowed_edit_field & bit),
-		))
-	return list(
-		"title" = title,
-		"flags" = flags,
-	)
+UI_DATA_REPLACE(/datum/tgui_bitfield_input)
 
 UI_ACT(/datum/tgui_bitfield_input, "toggle", ui_act_toggle, UI_ARG_NUM("bit"))
 UI_ACT_PROC(/datum/tgui_bitfield_input, ui_act_toggle)

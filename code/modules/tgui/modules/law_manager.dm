@@ -17,7 +17,7 @@
 /datum/tgui_module/law_manager/proc/law_sets()
 	return GLOB.admin_laws | GLOB.player_laws
 
-UI_ACT(/datum/tgui_module/law_manager, "law_channel", ui_act_law_channel, UI_ARG_VALUE("law_channel"))
+UI_ACT(/datum/tgui_module/law_manager, "law_channel", ui_act_law_channel, UI_ARG_TEXT("law_channel"))
 UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_law_channel)
 	if(params["law_channel"] in owner().law_channels())
 		owner().lawchannel = params["law_channel"]
@@ -153,15 +153,13 @@ UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_notify_laws)
 	owner().lawsync()
 	return ..()
 
-/datum/tgui_module/law_manager/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/law_manager, "ion_law:text", "zeroth_law:text", "inherent_law:text", "supplied_law:text", "supplied_law_position", "merge:ui_data_datum_tgui_module_law_manager{ion_law_nr:unknown,isAI:num,isMalf:unknown,isSlaved:unknown,isAdmin:num,channel:unknown,channels:list,law_sets:unknown}")
+
+/// The computed part of /datum/tgui_module/law_manager's window data (declared on its UI_DATA row).
+/datum/tgui_module/law_manager/proc/ui_data_datum_tgui_module_law_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["ion_law_nr"] = ionnum()
-	data["ion_law"] = ion_law
-	data["zeroth_law"] = zeroth_law
-	data["inherent_law"] = inherent_law
-	data["supplied_law"] = supplied_law
-	data["supplied_law_position"] = supplied_law_position
 
 	package_laws(data, "zeroth_laws", list(owner().laws.zeroth_law))
 	package_laws(data, "ion_laws", owner().laws.ion_laws)
@@ -224,12 +222,10 @@ UI_ACT_PROC(/datum/tgui_module/law_manager, ui_act_notify_laws)
 	log_and_message_admins("has syncronized [AI]'s laws with its borgs.")
 
 /datum/tgui_module/law_manager/robot
-/datum/tgui_module/law_manager/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/law_manager/robot, GLOB.tgui_self_state)
 
 /datum/tgui_module/law_manager/admin
-/datum/tgui_module/law_manager/admin/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/tgui_module/law_manager/admin, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/tgui_module/law_manager/admin/tgui_close(mob/user)
 	. = ..()

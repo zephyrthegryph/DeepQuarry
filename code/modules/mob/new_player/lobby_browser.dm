@@ -22,15 +22,17 @@ DECLARE_UI(/mob/new_player, "LobbyMenu", UI_PINNED, UI_PREINITIALIZED)
 /mob/new_player/ui_window(mob/user)
 	return lobby_window
 
-/mob/new_player/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/mob/new_player, GLOB.tgui_always_state)
 
 /mob/new_player/ui_assets(mob/user)
 	. = ..()
 	. += get_asset_datum(/datum/asset/simple/lobby_files)
 
-/mob/new_player/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/new_player, "ready:num", "merge:ui_data_mob_new_player{server_name:text,map:unknown,station_time:text,display_loading:bool,round_start:bool,round_time:text,new_news:unknown,can_submit_feedback:unknown,show_station_news:unknown,new_station_news:bool,new_changelog:bool,can_start_now:bool,immediate_start:bool}")
+
+/// The computed part of /mob/new_player's window data (declared on its UI_DATA row).
+/mob/new_player/proc/ui_data_mob_new_player(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/displayed_name = world.name
 	if(config && CONFIG_GET(string/servername))
@@ -42,7 +44,6 @@ DECLARE_UI(/mob/new_player, "LobbyMenu", UI_PINNED, UI_PREINITIALIZED)
 	data["display_loading"] = SSticker.current_state == GAME_STATE_STARTUP
 	data["round_start"] = !SSticker.mode || SSticker.current_state <= GAME_STATE_PREGAME
 	data["round_time"] = roundduration2text()
-	data["ready"] = ready
 	data["new_news"] = client?.check_for_new_server_news()
 	data["can_submit_feedback"] = SSsqlite.can_submit_feedback(client)
 	data["show_station_news"] = GLOB.news_data.station_newspaper()

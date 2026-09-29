@@ -137,7 +137,10 @@ DECLARE_UI(/obj/machinery/computer/shuttle_control, "ShuttleControl")
 	return "[shuttle_tag] Shuttle Control"
 
 // We delegate populating data to another proc to make it easier for overriding types to add their data.
-/obj/machinery/computer/shuttle_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/shuttle_control, "merge:ui_data_obj_machinery_computer_shuttle_control{}")
+
+/// The computed part of /obj/machinery/computer/shuttle_control's window data (declared on its UI_DATA row).
+/obj/machinery/computer/shuttle_control/proc/ui_data_obj_machinery_computer_shuttle_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/shuttle/autodock/shuttle = SSshuttles.shuttles[shuttle_tag]
 	if(!istype(shuttle))
 		to_chat(user, span_warning("Unable to establish link with the shuttle."))

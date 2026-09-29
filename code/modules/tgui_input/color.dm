@@ -102,11 +102,13 @@ DECLARE_UI(/datum/tgui_color_picker, "ColorPickerModal")
 	.["default_color"] = default
 	.["message"] = message
 
-/datum/tgui_color_picker/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_color_picker, "presets=preset_colors:list", "merge:ui_data_datum_tgui_color_picker{timeout:num}")
+
+/// The computed part of /datum/tgui_color_picker's window data (declared on its UI_DATA row).
+/datum/tgui_color_picker/proc/ui_data_datum_tgui_color_picker(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 	if(timeout)
 		.["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
-	.["presets"] = preset_colors
 
 UI_ACT(/datum/tgui_color_picker, "submit", ui_act_submit, UI_ARG_TEXT("entry"))
 UI_ACT_PROC(/datum/tgui_color_picker, ui_act_submit)

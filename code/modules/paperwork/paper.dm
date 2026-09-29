@@ -188,10 +188,11 @@
 
 DECLARE_UI(/obj/item/paper, "Paper")
 
-/obj/item/paper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merge:ui_data_obj_item_paper{segments:unknown,stamps:bool,garbled:bool}")
+
+/// The computed part of /obj/item/paper's window data (declared on its UI_DATA row).
+/obj/item/paper/proc/ui_data_obj_item_paper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["title"] = name
-	data["view"] = tgui_view
 	data["segments"] = get_segments()
 	data["stamps"] = stamps || ""
 	data["garbled"] = !can_read_view

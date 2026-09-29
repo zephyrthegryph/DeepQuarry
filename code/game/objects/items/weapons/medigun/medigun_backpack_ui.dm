@@ -1,6 +1,9 @@
 DECLARE_UI(/obj/item/medigun_backpack, "Medigun")
 
-/obj/item/medigun_backpack/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/medigun_backpack, "merge:ui_data_obj_item_medigun_backpack{volume:num,max_volume:num}")
+
+/// The computed part of /obj/item/medigun_backpack's window data (declared on its UI_DATA row).
+/obj/item/medigun_backpack/proc/ui_data_obj_item_medigun_backpack(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/obj/item/bork_medigun/medigun = get_medigun()
 	if(!medigun)
 		return list()

@@ -60,8 +60,7 @@ DECLARE_UI(/datum/spawnpanel, "SpawnPanel")
 	if (precise_mode && precise_mode != PRECISE_MODE_OFF)
 		toggle_precise_mode(PRECISE_MODE_OFF, user)
 
-/datum/spawnpanel/tgui_state(mob/user)
-	return ADMIN_STATE(R_SPAWN)
+DECLARE_UI_STATE(/datum/spawnpanel, ADMIN_STATE(R_SPAWN))
 
 /datum/spawnpanel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -158,7 +157,7 @@ UI_ACT_PROC(/datum/spawnpanel, ui_act_create_atom_action)
 	spawn_atom(spawn_params, ui.user)
 	return TRUE
 
-UI_ACT(/datum/spawnpanel, "toggle-precise-mode", ui_act_toggle_precise_mode, UI_ARG_VALUE("newPreciseType"), UI_ARG_VALUE("where_target_type"))
+UI_ACT(/datum/spawnpanel, "toggle-precise-mode", ui_act_toggle_precise_mode, UI_ARG_TEXT("newPreciseType"), UI_ARG_TEXT("where_target_type"))
 UI_ACT_PROC(/datum/spawnpanel, ui_act_toggle_precise_mode)
 	var/precise_type = params["newPreciseType"]
 	if(precise_type == PRECISE_MODE_TARGET && params["where_target_type"])
@@ -270,18 +269,16 @@ UI_ACT_PROC(/datum/spawnpanel, ui_act_update_settings)
 
 		return TRUE
 
-/datum/spawnpanel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/spawnpanel, "icon=selected_atom_icon", "iconState=selected_atom_icon_state", "iconSize=atom_icon_size:num", "apply_icon_override:num", "precise_mode", "merge:ui_data_datum_spawnpanel{iconStates:list,selected_object:text}")
+
+/// The computed part of /datum/spawnpanel's window data (declared on its UI_DATA row).
+/datum/spawnpanel/proc/ui_data_datum_spawnpanel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
-	data["icon"] = selected_atom_icon
-	data["iconState"] = selected_atom_icon_state
-	data["iconSize"] = atom_icon_size
-	data["apply_icon_override"] = apply_icon_override
 	var/list/states = list()
 	if(available_icon_states)
-		for(var/state in available_icon_states)
-			states += state
+		for(var/icon_state_name in available_icon_states)
+			states += icon_state_name
 	data["iconStates"] = states
-	data["precise_mode"] = precise_mode
 	data["selected_object"] = selected_atom ? "[selected_atom]" : ""
 	return data
 

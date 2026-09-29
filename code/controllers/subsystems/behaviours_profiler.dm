@@ -7,12 +7,14 @@
 	/// world.time the profiler counters were last cleared (0: since boot).
 	EXPIRY_DECLARE(profile_reset_time)
 
-/datum/controller/subsystem/behaviours/tgui_state(mob/user)
-	return ADMIN_STATE(R_DEBUG)
+DECLARE_UI_STATE(/datum/controller/subsystem/behaviours, ADMIN_STATE(R_DEBUG))
 
 DECLARE_UI(/datum/controller/subsystem/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
 
-/datum/controller/subsystem/behaviours/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
+
+/// The computed part of /datum/controller/subsystem/behaviours's window data (declared on its UI_DATA row).
+/datum/controller/subsystem/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()

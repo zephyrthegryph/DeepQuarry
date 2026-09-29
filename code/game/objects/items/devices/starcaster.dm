@@ -27,7 +27,10 @@ DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(inte
 
 DECLARE_UI(/obj/item/starcaster_news, "StarcasterCh")
 
-/obj/item/starcaster_news/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Mostly ripped off from news_browser.dm
+UI_DATA_REPLACE(/obj/item/starcaster_news, "merge:ui_data_obj_item_starcaster_news{showing_archived:num,article:list,all_articles:list}")
+
+/// The computed part of /obj/item/starcaster_news's window data (declared on its UI_DATA row).
+/obj/item/starcaster_news/proc/ui_data_obj_item_starcaster_news(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/all_articles = list()

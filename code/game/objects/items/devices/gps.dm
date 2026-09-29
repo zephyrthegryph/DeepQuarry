@@ -198,8 +198,7 @@ DECLARE_INTERACTIONS(/obj/item/gps, \
 
 	tgui_interact(user)
 
-/obj/item/gps/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/gps, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/gps, "Gps")
 
@@ -213,7 +212,10 @@ DECLARE_UI(/obj/item/gps, "Gps")
 
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units
-/obj/item/gps/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,power:num,tag:text,localMode:unknown,currentCoords:text,currentZName:unknown,canHide:unknown,isHidden:unknown,signals:list}")
+
+/// The computed part of /obj/item/gps's window data (declared on its UI_DATA row).
+/obj/item/gps/proc/ui_data_obj_item_gps(mob/user, datum/tgui/ui, datum/tgui_state/state)
 
 	var/turf/curr = get_turf(src)
 	var/area/my_area = get_area(src)
@@ -293,7 +295,7 @@ UI_ACT_PROC(/obj/item/gps, ui_act_hidesignal)
 	hide_signal = !hide_signal
 	return TRUE
 
-UI_ACT(/obj/item/gps, "trackLabel", ui_act_tracklabel, UI_ARG_VALUE("ref"))
+UI_ACT(/obj/item/gps, "trackLabel", ui_act_tracklabel, UI_ARG_TEXT("ref"))
 UI_ACT_PROC(/obj/item/gps, ui_act_tracklabel)
 	var/gps_ref = params["ref"]
 	if(!gps_ref)
@@ -305,7 +307,7 @@ UI_ACT_PROC(/obj/item/gps, ui_act_tracklabel)
 		LAZYREMOVE(showing_tracked_names, gps_ref)
 	return TRUE
 
-UI_ACT(/obj/item/gps, "stopTrack", ui_act_stoptrack, UI_ARG_VALUE("ref"))
+UI_ACT(/obj/item/gps, "stopTrack", ui_act_stoptrack, UI_ARG_TEXT("ref"))
 UI_ACT_PROC(/obj/item/gps, ui_act_stoptrack)
 	var/gps_ref = params["ref"]
 	if(!gps_ref)

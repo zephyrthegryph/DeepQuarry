@@ -16,10 +16,12 @@
 	var/tmp/current_message_handle
 	var/error = ""
 
-/datum/computer_file/program/email_administration/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/email_administration, "error:text", "merge:ui_data_datum_computer_file_program_email_administration{cur_title:text,cur_body:unknown,cur_timestamp:unknown,cur_source:text,current_account:text,cur_suspended:num,messages:list,accounts:list}")
+
+/// The computed part of /datum/computer_file/program/email_administration's window data (declared on its UI_DATA row).
+/datum/computer_file/program/email_administration/proc/ui_data_datum_computer_file_program_email_administration(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
-	data["error"] = error
 
 	data["cur_title"] = null
 	data["cur_body"] = null

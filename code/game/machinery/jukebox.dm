@@ -171,12 +171,12 @@
 
 DECLARE_UI(/obj/machinery/media/jukebox, "Jukebox", UI_TITLE("RetroBox - Space Style"))
 
-/obj/machinery/media/jukebox/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/media/jukebox, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_machinery_media_jukebox{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list,admin:num}")
 
-	data["playing"] = playing
-	data["loop_mode"] = loop_mode
-	data["volume"] = volume
+/// The computed part of /obj/machinery/media/jukebox's window data (declared on its UI_DATA row).
+/obj/machinery/media/jukebox/proc/ui_data_obj_machinery_media_jukebox(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["current_track_ref"] = null
 	data["current_track"] = null
 	data["current_genre"] = null
@@ -244,7 +244,7 @@ UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
 		StartPlaying()
 	return TRUE
 
-UI_ACT(/obj/machinery/media/jukebox, "add_new_track", ui_act_add_new_track, UI_ARG_VALUE("artist"), UI_ARG_NUM("duration"), UI_ARG_VALUE("genre"), UI_ARG_NUM("lobby"), UI_ARG_NUM("secret"), UI_ARG_VALUE("title"), UI_ARG_VALUE("url"))
+UI_ACT(/obj/machinery/media/jukebox, "add_new_track", ui_act_add_new_track, UI_ARG_TEXT("artist"), UI_ARG_NUM("duration"), UI_ARG_TEXT("genre"), UI_ARG_NUM("lobby"), UI_ARG_NUM("secret"), UI_ARG_TEXT("title"), UI_ARG_TEXT("url"))
 UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_add_new_track)
 	SSmedia_tracks.add_track(ui.user, params["url"], params["title"], params["duration"] * 10, params["artist"], params["genre"], params["secret"], params["lobby"])
 

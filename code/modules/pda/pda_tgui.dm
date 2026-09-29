@@ -1,14 +1,14 @@
 // Self contained file for all things TGUI
-/obj/item/pda/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/pda, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/pda, "Pda", UI_TITLE("Personal Data Assistant"))
 
-/obj/item/pda/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/pda, "owner:text", "ownjob", "useRetro=retro_mode:num", "touch_silent:num", "merge:ui_data_obj_item_pda{idInserted:num,idLink:unknown,cartridge_name:text,stationTime:text,app:list}")
 
-	data["owner"] = owner					// Who is your daddy...
-	data["ownjob"] = ownjob					// ...and what does he do?
+/// The computed part of /obj/item/pda's window data (declared on its UI_DATA row).
+/obj/item/pda/proc/ui_data_obj_item_pda(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 
 	// update list of shortcuts, only if they changed
 	if(!length(shortcut_cache))
@@ -39,8 +39,6 @@ DECLARE_UI(/obj/item/pda, "Pda", UI_TITLE("Personal Data Assistant"))
 	data["idInserted"] = (id ? 1 : 0)
 	data["idLink"] = (id ? text("[id.registered_name], [id.assignment]") : "--------")
 
-	data["useRetro"] = retro_mode
-	data["touch_silent"] = touch_silent
 
 	data["cartridge_name"] = cartridge ? cartridge.name : ""
 	data["stationTime"] = stationtime2text() //worldtime2stationtime(world.time) // Aaa which fucking one is canonical there's SO MANY

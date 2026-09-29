@@ -225,11 +225,12 @@
 
 DECLARE_UI(/obj/machinery/particle_accelerator/control_box, "ParticleAccelerator")
 
-/obj/machinery/particle_accelerator/control_box/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/particle_accelerator/control_box, "assembled:num", "strength:num", "merge:ui_data_obj_machinery_particle_accelerator_control_box{power:num}")
+
+/// The computed part of /obj/machinery/particle_accelerator/control_box's window data (declared on its UI_DATA row).
+/obj/machinery/particle_accelerator/control_box/proc/ui_data_obj_machinery_particle_accelerator_control_box(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["assembled"] = assembled
 	data["power"] = active
-	data["strength"] = strength
 	return data
 
 UI_ACT(/obj/machinery/particle_accelerator/control_box, "power", ui_act_power)

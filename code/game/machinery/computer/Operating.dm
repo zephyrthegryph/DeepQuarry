@@ -37,13 +37,16 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/operating, \
 
 DECLARE_UI(/obj/machinery/computer/operating, "OperatingComputer", UI_TITLE("Patient Monitor"))
 
-/obj/machinery/computer/operating/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/machinery/computer/operating, "verbose:num", "spo2Alarm:num", "choice", "health=healthAnnounce:num", "crit:num", "healthAlarm:num", "spo2:num", "merge:ui_data_obj_machinery_computer_operating{hasOccupant:num,occupant:list}")
+
+/// The computed part of /obj/machinery/computer/operating's window data (declared on its UI_DATA row).
+/obj/machinery/computer/operating/proc/ui_data_obj_machinery_computer_operating(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/mob/living/carbon/human/occupant
 	if(table)
 		occupant = table.victim
 	data["hasOccupant"] = occupant ? 1 : 0
-	var/occupantData[0]
+	var/list/occupantData = list()
 
 	if(occupant)
 		occupantData["name"] = occupant.name
@@ -58,13 +61,6 @@ DECLARE_UI(/obj/machinery/computer/operating, "OperatingComputer", UI_TITLE("Pat
 			occupantData["surgery"] = build_surgery_list(user)
 
 	data["occupant"] = occupantData
-	data["verbose"]=verbose
-	data["spo2Alarm"]=spo2Alarm
-	data["choice"]=choice
-	data["health"]=healthAnnounce
-	data["crit"]=crit
-	data["healthAlarm"]=healthAlarm
-	data["spo2"]=spo2
 
 	return data
 

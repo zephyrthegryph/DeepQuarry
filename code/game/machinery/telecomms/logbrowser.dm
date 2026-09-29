@@ -19,12 +19,12 @@
 
 	req_access = list(ACCESS_TCOMSAT)
 
-/obj/machinery/computer/telecomms/server/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/telecomms/server, "universal_translate:num", "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_server{servers:list,selectedServer:list}")
+
+/// The computed part of /obj/machinery/computer/telecomms/server's window data (declared on its UI_DATA row).
+/obj/machinery/computer/telecomms/server/proc/ui_data_obj_machinery_computer_telecomms_server(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["universal_translate"] = universal_translate
-	data["network"] = network
-	data["temp"] = temp
 
 	var/list/serverData = list()
 	for(var/obj/machinery/telecomms/T in servers)
@@ -90,7 +90,7 @@ DECLARE_UI(/obj/machinery/computer/telecomms/server, "TelecommsLogBrowser")
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/telecomms/server, "view", ui_act_view, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/telecomms/server, ui_act_view)
 	for(var/obj/machinery/telecomms/T in servers)
 		if(T.id == params["id"])

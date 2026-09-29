@@ -80,11 +80,12 @@ DECLARE_INTERACTIONS(/obj/item/photo, \
 
 DECLARE_UI(/obj/item/photo, "Photo")
 
-/obj/item/photo/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merge:ui_data_obj_item_photo{scribble:bool,image_html:text}")
+
+/// The computed part of /obj/item/photo's window data (declared on its UI_DATA row).
+/obj/item/photo/proc/ui_data_obj_item_photo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["title"] = name
 	data["scribble"] = scribble || ""
-	data["size"] = photo_size
 	if(img)
 		var/icon/scaled = icon(img)
 		scaled.Scale(64 * photo_size, 64 * photo_size)

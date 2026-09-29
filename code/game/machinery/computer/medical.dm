@@ -94,14 +94,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/med_data, \
 
 DECLARE_UI(/obj/machinery/computer/med_data, "MedicalRecords", UI_TITLE("Medical Records"))
 
-/obj/machinery/computer/med_data/tgui_data(mob/user)
-	var/data[0]
-	data["temp"] = temp
+UI_DATA_REPLACE(/obj/machinery/computer/med_data, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_med_data{scan:text,isAI:num,isRobot:num,records:list,general:list,medical:list,virus:list,medbots:list,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/med_data's window data (declared on its UI_DATA row).
+/obj/machinery/computer/med_data/proc/ui_data_obj_machinery_computer_med_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["authenticated"] = authenticated
-	data["rank"] = rank
-	data["screen"] = screen
-	data["printing"] = printing
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)

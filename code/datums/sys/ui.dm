@@ -21,6 +21,9 @@ GLOBAL_LIST_EMPTY(ui_decls)
 /datum/ui_declared/proc/watch_mask()
 	return 0
 
+/datum/ui_declared/proc/state_row()
+	return null
+
 /datum/ui_declared/proc/subact_rows()
 	return null
 
@@ -66,23 +69,46 @@ DECLARE_REF(/datum/ui_decl, "state", STATIC, null)
 	if(!rows)
 		rows = list()
 	for(var/field in fields)
-		var/text = "[field]"
-		var/ts_type = "unknown"
-		var/colon = findlasttext(text, ":")
-		var/kind = UI_FIELD_VAR
-		var/name = text
-		if(findtext(text, "proc:") == 1)
-			kind = UI_FIELD_PROC
-			name = copytext(text, 6)
-		else if(findtext(text, "slot:") == 1)
-			kind = UI_FIELD_SLOT
-			name = copytext(text, 6)
-		colon = findtext(name, ":")
-		if(colon)
-			ts_type = copytext(name, colon + 1)
-			name = copytext(name, 1, colon)
-		rows += list(list(kind, name, name, ts_type))
+		rows += list(ui_parse_field("[field]"))
 	return rows
+
+/// One UI_DATA field: list(kind, source name, data key, ts type, merge keys). Forms:
+/// "var", "key=var", "proc:getter", "key=proc:getter", "slot:SLOT", each with an optional
+/// ":type" suffix, and "merge:getter{key:type,...}" (the getter returns several keys at once;
+/// the braces list them for the generated TS).
+/proc/ui_parse_field(text)
+	var/key
+	var/equals = findtext(text, "=")
+	if(equals)
+		key = copytext(text, 1, equals)
+		text = copytext(text, equals + 1)
+	var/kind = UI_FIELD_VAR
+	var/list/merge_keys
+	if(findtext(text, "proc:") == 1)
+		kind = UI_FIELD_PROC
+		text = copytext(text, 6)
+	else if(findtext(text, "slot:") == 1)
+		kind = UI_FIELD_SLOT
+		text = copytext(text, 6)
+	else if(findtext(text, "merge:") == 1)
+		kind = UI_FIELD_MERGE
+		text = copytext(text, 7)
+		var/brace = findtext(text, "{")
+		merge_keys = list()
+		if(brace)
+			for(var/entry in splittext(copytext(text, brace + 1, length(text)), ","))
+				var/entry_colon = findtext(entry, ":")
+				if(entry_colon)
+					merge_keys[copytext(entry, 1, entry_colon)] = copytext(entry, entry_colon + 1)
+				else if(length(entry))
+					merge_keys[entry] = "unknown"
+			text = copytext(text, 1, brace)
+	var/ts_type = "unknown"
+	var/colon = findtext(text, ":")
+	if(colon)
+		ts_type = copytext(text, colon + 1)
+		text = copytext(text, 1, colon)
+	return list(kind, text, key || text, ts_type, merge_keys)
 
 /proc/ui_declare_act(list/rows, action, proc_name, list/specs, list/nested)
 	if(!rows)
@@ -128,6 +154,8 @@ DECLARE_REF(/datum/ui_decl, "state", STATIC, null)
 		decl.autoupdate = declared["autoupdate"] ? TRUE : FALSE
 		decl.pinned = declared["pinned"] ? TRUE : FALSE
 		decl.preinitialized = declared["preinitialized"] ? TRUE : FALSE
+	// A DECLARE_UI_STATE row (nearest in the hierarchy) wins over a DECLARE_UI's UI_STATE option.
+	decl.state = M.state_row() || decl.state
 	decl.fields = M.field_rows() || list()
 	decl.acts = M.act_rows() || list()
 	decl.subacts = M.subact_rows() || list()
@@ -165,7 +193,7 @@ DECLARE_REF(/datum/ui_decl, "state", STATIC, null)
 			if(UI_FIELD_VAR)
 				if(!(field[2] in D.vars))
 					stack_trace("UI_DATA on [decl.host]: '[field[2]]' is not a var of [D.type]")
-			if(UI_FIELD_PROC)
+			if(UI_FIELD_PROC, UI_FIELD_MERGE)
 				if(!hascall(D, field[2]))
 					stack_trace("UI_DATA on [decl.host]: 'proc:[field[2]]' is not a proc of [D.type]")
 
@@ -278,8 +306,8 @@ DECLARE_REF(/datum/ui_decl, "state", STATIC, null)
 		return
 	SStgui.try_update_ui(user, host, ui)
 
-/// The declared data of `host` for `user`.
-/proc/ui_declared_data(datum/host, mob/user)
+/// The declared data of `host` for `user` (getters take (user, ui, state)).
+/proc/ui_declared_data(datum/host, mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 	var/datum/ui_decl/decl = ui_decl_of(host)
 	if(!decl)
@@ -289,9 +317,14 @@ DECLARE_REF(/datum/ui_decl, "state", STATIC, null)
 			if(UI_FIELD_VAR)
 				.[field[3]] = host.vars[field[2]]
 			if(UI_FIELD_PROC)
-				.[field[3]] = call(host, field[2])(user)
+				.[field[3]] = call(host, field[2])(user, ui, state)
 			if(UI_FIELD_SLOT)
 				.[field[3]] = host.ui_slot_fragment(field[2], user)
+			if(UI_FIELD_MERGE)
+				var/list/part = call(host, field[2])(user, ui, state)
+				if(islist(part))
+					for(var/key in part)
+						.[key] = part[key]
 
 /// Finds `action`'s row, parses its args and runs the handler. Returns the handler's result
 /// (TRUE updates the window), or null when no row matched or validation failed.
@@ -549,6 +582,11 @@ UI_ACT_PROC(/datum, ui_act_change_ui_state)
 			acts["[action]"] = list("action" = action, "args" = ui_types_args(row[2]))
 		var/list/fields = list()
 		for(var/list/field as anything in decl.fields)
+			if(field[1] == UI_FIELD_MERGE)
+				var/list/merge_keys = field[5]
+				for(var/merge_key in merge_keys)
+					fields += list(list("key" = merge_key, "kind" = field[1], "type" = merge_keys[merge_key]))
+				continue
 			fields += list(list("key" = field[3], "kind" = field[1], "type" = field[4]))
 		var/list/interfaces = list()
 		if(decl.interface)

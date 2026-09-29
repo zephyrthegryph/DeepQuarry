@@ -37,8 +37,11 @@
 
 DECLARE_UI(/obj/machinery/mineral/stacking_unit_console, "MiningStackingConsole")
 
-/obj/machinery/mineral/stacking_unit_console/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/mineral/stacking_unit_console, "merge:ui_data_obj_machinery_mineral_stacking_unit_console{stacktypes:list,stackingAmt:num}")
+
+/// The computed part of /obj/machinery/mineral/stacking_unit_console's window data (declared on its UI_DATA row).
+/obj/machinery/mineral/stacking_unit_console/proc/ui_data_obj_machinery_mineral_stacking_unit_console(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/stacktypes = list()
 	for(var/stacktype in machine().stack_storage)
@@ -58,7 +61,7 @@ UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_change_stack)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/mineral/stacking_unit_console, "release_stack", ui_act_release_stack, UI_ARG_VALUE("stack"))
+UI_ACT(/obj/machinery/mineral/stacking_unit_console, "release_stack", ui_act_release_stack, UI_ARG_TEXT("stack"))
 UI_ACT_PROC(/obj/machinery/mineral/stacking_unit_console, ui_act_release_stack)
 	var/stack = params["stack"]
 	if(LAZYACCESS(machine().stack_storage, stack) > 0)

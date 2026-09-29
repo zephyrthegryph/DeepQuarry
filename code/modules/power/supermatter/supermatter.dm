@@ -611,7 +611,10 @@ DECLARE_REF(/obj/machinery/power/supermatter, "soundloop", OWNED, null)
 DECLARE_UI(/obj/machinery/power/supermatter, "AiSupermatter")
 
 // This is purely informational UI that may be accessed by AIs or robots
-/obj/machinery/power/supermatter/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/supermatter, "detonating=grav_pulling:num", "merge:ui_data_obj_machinery_power_supermatter{integrity_percentage:num,ambient_temp:num,ambient_pressure:num}")
+
+/// The computed part of /obj/machinery/power/supermatter's window data (declared on its UI_DATA row).
+/obj/machinery/power/supermatter/proc/ui_data_obj_machinery_power_supermatter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["integrity_percentage"] = round(get_integrity())
@@ -625,7 +628,6 @@ DECLARE_UI(/obj/machinery/power/supermatter, "AiSupermatter")
 	else
 		data["ambient_temp"] = round(env.return_temperature())
 		data["ambient_pressure"] = round(env.return_pressure())
-	data["detonating"] = grav_pulling
 
 	return data
 

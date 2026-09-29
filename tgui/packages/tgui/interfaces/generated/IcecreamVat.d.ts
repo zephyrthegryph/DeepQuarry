@@ -5,7 +5,7 @@ export type IcecreamVatData = Record<string, unknown>;
 
 export type IcecreamVatActions = {
   change_ui_state: { new_state?: string };
-  clear_reagent: { id?: string | number };
+  clear_reagent: { id?: string };
   index_action: { iceIndex?: number };
   make_type: { amount?: number; index?: number };
 };

@@ -134,7 +134,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/cash_register, REGISTRY_TRANSACTION_DEVICES)
 
 DECLARE_UI(/obj/machinery/cash_register, "RetailScanner")
 
-/obj/machinery/cash_register/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/cash_register, "merge:ui_data_obj_machinery_cash_register{locked:num,cash_locked:num,linked_account:text,machine_id:text,department_checkout:unknown,subsidized_checkout:unknown,transaction_logs:unknown,current_transactioon:unknown}")
+
+/// The computed part of /obj/machinery/cash_register's window data (declared on its UI_DATA row).
+/obj/machinery/cash_register/proc/ui_data_obj_machinery_cash_register(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(
 		"locked" = locked,
@@ -193,7 +196,7 @@ UI_ACT_PROC(/obj/machinery/cash_register, ui_act_link_account)
 	to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 	return FALSE
 
-UI_ACT(/obj/machinery/cash_register, "custom_order", ui_act_custom_order, UI_ARG_VALUE("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
+UI_ACT(/obj/machinery/cash_register, "custom_order", ui_act_custom_order, UI_ARG_NUM("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
 UI_ACT_PROC(/obj/machinery/cash_register, ui_act_custom_order)
 	if(locked)
 		return FALSE
@@ -224,7 +227,7 @@ UI_ACT_PROC(/obj/machinery/cash_register, ui_act_custom_order)
 	visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 	return TRUE
 
-UI_ACT(/obj/machinery/cash_register, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_VALUE("item"))
+UI_ACT(/obj/machinery/cash_register, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_TEXT("item"))
 UI_ACT_PROC(/obj/machinery/cash_register, ui_act_set_amount)
 	if(locked)
 		return FALSE

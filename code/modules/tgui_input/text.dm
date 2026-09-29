@@ -120,7 +120,10 @@ DECLARE_UI(/datum/tgui_input_text, "TextInputModal")
 	data["spellcheck"] = user.read_preference(/datum/preference/toggle/tgui_use_spellcheck)
 	return data
 
-/datum/tgui_input_text/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_input_text, "merge:ui_data_datum_tgui_input_text{timeout:num}")
+
+/// The computed part of /datum/tgui_input_text's window data (declared on its UI_DATA row).
+/datum/tgui_input_text/proc/ui_data_datum_tgui_input_text(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = clamp((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS), 0, 1)

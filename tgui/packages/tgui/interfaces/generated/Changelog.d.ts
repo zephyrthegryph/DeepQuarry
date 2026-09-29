@@ -5,5 +5,5 @@ export type ChangelogData = Record<string, unknown>;
 
 export type ChangelogActions = {
   change_ui_state: { new_state?: string };
-  get_month: { date?: string | number };
+  get_month: { date?: string };
 };

@@ -55,9 +55,11 @@
 
 DECLARE_UI(/obj/machinery/librarypubliccomp, "LibraryVisitor", UI_TITLE("Library Visitor"))
 
-/obj/machinery/librarypubliccomp/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/librarypubliccomp, "screenstate:num", "merge:ui_data_obj_machinery_librarypubliccomp{title:bool,category:bool,author:bool,has_db:unknown,has_query:bool,results:bool}")
+
+/// The computed part of /obj/machinery/librarypubliccomp's window data (declared on its UI_DATA row).
+/obj/machinery/librarypubliccomp/proc/ui_data_obj_machinery_librarypubliccomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["screenstate"] = screenstate
 	data["title"] = title || ""
 	data["category"] = category || "Any"
 	data["author"] = author || ""
@@ -275,17 +277,16 @@ DECLARE_UI(/obj/machinery/librarycomp, "LibraryComp", UI_TITLE("Book Inventory M
 		else
 			return "author"
 
-/obj/machinery/librarycomp/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/librarycomp, "screenstate:num", "checkout_period=checkoutperiod:num", "sort_by=sortby:text", "upload_category:text", "merge:ui_data_obj_machinery_librarycomp{emagged:bool,is_admin:bool,buffer_book:bool,buffer_mob:bool,world_time_min:num,has_db:unknown,has_scanner:bool,scanner_cache:list,inventory:list,checkouts:list,internal_archive:list,external_archive:list}")
+
+/// The computed part of /obj/machinery/librarycomp's window data (declared on its UI_DATA row).
+/obj/machinery/librarycomp/proc/ui_data_obj_machinery_librarycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["screenstate"] = screenstate
 	data["emagged"] = !!emagged
 	data["is_admin"] = !!is_admin_view
 	data["buffer_book"] = buffer_book || ""
 	data["buffer_mob"] = buffer_mob || ""
-	data["checkout_period"] = checkoutperiod
 	data["world_time_min"] = world.time / 600
-	data["sort_by"] = sortby
-	data["upload_category"] = upload_category
 	data["has_db"] = SSdbcore.IsConnected()
 	// Ensure a connected scanner is auto-discovered like the legacy UI did.
 	if(!scanner())
@@ -507,7 +508,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_orderbyid)
 		tgui_act("targetid", list("id" = "[orderid]"), ui, state)
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "sort", ui_act_sort, UI_ARG_VALUE("field"))
+UI_ACT(/obj/machinery/librarycomp, "sort", ui_act_sort, UI_ARG_TEXT("field"))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_sort)
 	var/field = params["field"]
 	if(field in list("author", "title", "category"))
@@ -614,7 +615,10 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_hardprint)
 
 DECLARE_UI(/obj/machinery/libraryscanner, "LibraryScanner", UI_TITLE("Scanner"))
 
-/obj/machinery/libraryscanner/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/libraryscanner, "merge:ui_data_obj_machinery_libraryscanner{has_cache:bool,cache_name:text,has_book:bool}")
+
+/// The computed part of /obj/machinery/libraryscanner's window data (declared on its UI_DATA row).
+/obj/machinery/libraryscanner/proc/ui_data_obj_machinery_libraryscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_cache"] = !!cache()
 	data["cache_name"] = cache() ? cache().name : ""

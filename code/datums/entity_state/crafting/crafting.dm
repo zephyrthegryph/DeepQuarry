@@ -443,8 +443,7 @@
 	if(user == owner)
 		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
 
-/datum/personal_crafting/tgui_state(mob/user)
-	return GLOB.tgui_not_incapacitated_turf_state
+DECLARE_UI_STATE(/datum/personal_crafting, GLOB.tgui_not_incapacitated_turf_state)
 
 //For the UI related things we're going to assume the user is a mob rather than typesetting it to an atom as the UI isn't generated if the parent is an atom
 DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
@@ -457,7 +456,10 @@ DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
 	else
 		cur_subcategory = CAT_NONE
 
-/datum/personal_crafting/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/personal_crafting, "category=cur_category", "subcategory=cur_subcategory", "display_craftable_only:num", "display_compact:num", "merge:ui_data_datum_personal_crafting{busy:unknown,materialChoices:list,craftability:list}")
+
+/// The computed part of /datum/personal_crafting's window data (declared on its UI_DATA row).
+/datum/personal_crafting/proc/ui_data_datum_personal_crafting(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// ANNOYING. We won't know what category will be on top (and thus first selected) in the UI
 	// until we crunch all the resources in tgui_static_data. So it just sets a hint and we
 	// consume it and set the category on the first UI open
@@ -472,10 +474,6 @@ DECLARE_UI(/datum/personal_crafting, "PersonalCrafting")
 
 	var/list/data = list()
 	data["busy"] = om_busy(src)
-	data["category"] = cur_category
-	data["subcategory"] = cur_subcategory
-	data["display_craftable_only"] = display_craftable_only
-	data["display_compact"] = display_compact
 	var/list/material_choices = list()
 	var/list/seen_materials = list()
 	var/list/surroundings = get_surroundings(user)
@@ -557,7 +555,7 @@ UI_ACT_PROC(/datum/personal_crafting, ui_act_toggle_compact)
 	display_compact = !display_compact
 	. = TRUE
 
-UI_ACT(/datum/personal_crafting, "set_category", ui_act_set_category, UI_ARG_VALUE("category"), UI_ARG_VALUE("subcategory"))
+UI_ACT(/datum/personal_crafting, "set_category", ui_act_set_category, UI_ARG_TEXT("category"), UI_ARG_TEXT("subcategory"))
 UI_ACT_PROC(/datum/personal_crafting, ui_act_set_category)
 	cur_category = params["category"]
 	cur_subcategory = params["subcategory"] || ""

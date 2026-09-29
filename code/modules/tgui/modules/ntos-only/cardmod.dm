@@ -14,13 +14,15 @@
 	data["manifest"] = GLOB.PDA_Manifest
 	return data
 
-/datum/tgui_module/cardmod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA(/datum/tgui_module/cardmod, "mode=mod_mode:num", "centcom_access=is_centcom:num", "merge:ui_data_datum_tgui_module_cardmod{station_name:text,printing:bool,have_id_slot:num,have_printer:num,authenticated:unknown,has_modify:bool,account_number:num,id_rank:text,target_owner:text,target_name:text,departments:list,all_centcom_access:list,regions:list}")
+
+/// The computed part of /datum/tgui_module/cardmod's window data (declared on its UI_DATA row).
+/datum/tgui_module/cardmod/proc/ui_data_datum_tgui_module_cardmod(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/computer_file/program/card_mod/program = host()
 	if(!istype(program))
 		return 0
-	var/list/data = ..()
+	var/list/data = list()
 	data["station_name"] = station_name()
-	data["mode"] = mod_mode
 	data["printing"] = FALSE
 	if(program && program.computer())
 		data["have_id_slot"] = !!program.computer().card_slot
@@ -32,7 +34,6 @@
 		data["have_id_slot"] = 0
 		data["have_printer"] = 0
 		data["authenticated"] = 0
-	data["centcom_access"] = is_centcom
 
 
 	data["has_modify"] = null

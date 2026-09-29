@@ -104,15 +104,11 @@
 /**
  * This provides all of the relevant data to the UI in a list().
  */
-/datum/computer_file/program/game/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/game, "Hitpoints=boss_hp:num", "PlayerHitpoints=player_hp:num", "PlayerMP=player_mp:num", "TicketCount=ticket_count:num", "GameActive=game_active:num", "PauseState=pause_state:num", "Status=heads_up:text", "merge:ui_data_datum_computer_file_program_game{BossID:text}")
+
+/// The computed part of /datum/computer_file/program/game's window data (declared on its UI_DATA row).
+/datum/computer_file/program/game/proc/ui_data_datum_computer_file_program_game(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
-	data["Hitpoints"] = boss_hp
-	data["PlayerHitpoints"] = player_hp
-	data["PlayerMP"] = player_mp
-	data["TicketCount"] = ticket_count
-	data["GameActive"] = game_active
-	data["PauseState"] = pause_state
-	data["Status"] = heads_up
 	data["BossID"] = "boss[boss_id].gif"
 	return data
 

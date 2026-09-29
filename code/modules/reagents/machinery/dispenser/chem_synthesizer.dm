@@ -300,17 +300,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/chemical_synthesizer, "catalyst", /obj/item
 
 DECLARE_UI(/obj/machinery/chemical_synthesizer, "ChemSynthesizer")
 
-/obj/machinery/chemical_synthesizer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/chemical_synthesizer, "busy:num", "production_mode", "panel_open:num", "use_catalyst", "drug_substance:num", "bottle_icon:num", "pill_icon:num", "patch_icon:num", "merge:ui_data_obj_machinery_chemical_synthesizer{queue:list,recipes:list,rxn_vessel:list,catalyst:num,catalyst_reagents:list,catalystCurrentVolume:num,catalystMaxVolume:num,chemicals:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/chemical_synthesizer's window data (declared on its UI_DATA row).
+/obj/machinery/chemical_synthesizer/proc/ui_data_obj_machinery_chemical_synthesizer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["busy"] = busy
-	data["production_mode"] = production_mode
-	data["panel_open"] = panel_open
-	data["use_catalyst"] = use_catalyst
-	data["drug_substance"] = drug_substance
-	data["bottle_icon"] = bottle_icon
-	data["pill_icon"] = pill_icon
-	data["patch_icon"] = patch_icon
 
 	var/list/tmp_queue = list()
 	for(var/i = 1, i <= queue.len, i++)
@@ -451,7 +446,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_recipe)
 	else
 		import_recipe(usr)
 
-UI_ACT(/obj/machinery/chemical_synthesizer, "rem_recipe", ui_act_rem_recipe, UI_ARG_VALUE("rm_index"))
+UI_ACT(/obj/machinery/chemical_synthesizer, "rem_recipe", ui_act_rem_recipe, UI_ARG_TEXT("rm_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_recipe)
 	. = TRUE
 	// Allows the user to remove recipes while the machine is idle.
@@ -466,14 +461,14 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_rem_recipe)
 	else
 		to_chat(usr, span_warning("You cannot remove recipes while the machine is running!"))
 
-UI_ACT(/obj/machinery/chemical_synthesizer, "exp_recipe", ui_act_exp_recipe, UI_ARG_VALUE("exp_index"))
+UI_ACT(/obj/machinery/chemical_synthesizer, "exp_recipe", ui_act_exp_recipe, UI_ARG_TEXT("exp_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_exp_recipe)
 	. = TRUE
 	// Allows the user to export recipes to chat formatted for easy importing.
 	var/index = params["exp_index"]
 	export_recipe(usr, index)
 
-UI_ACT(/obj/machinery/chemical_synthesizer, "add_queue", ui_act_add_queue, UI_ARG_VALUE("qa_index"))
+UI_ACT(/obj/machinery/chemical_synthesizer, "add_queue", ui_act_add_queue, UI_ARG_TEXT("qa_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_queue)
 	. = TRUE
 	// Adds recipes to the queue.
@@ -485,7 +480,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_add_queue)
 	if(index in recipes)
 		queue[++queue.len] = index
 
-UI_ACT(/obj/machinery/chemical_synthesizer, "drug_form", ui_act_drug_form, UI_ARG_VALUE("drug_index"))
+UI_ACT(/obj/machinery/chemical_synthesizer, "drug_form", ui_act_drug_form, UI_ARG_NUM("drug_index"))
 UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 	. = TRUE
 	// Toggles between bottles, pills, and patches.

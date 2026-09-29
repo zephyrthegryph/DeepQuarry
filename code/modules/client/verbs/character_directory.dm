@@ -18,13 +18,15 @@ GLOBAL_DATUM(character_directory, /datum/character_directory)
 
 // This is a global singleton. Keep in mind that all operations should occur on usr, not src.
 /datum/character_directory
-/datum/character_directory/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/character_directory, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/character_directory, "CharacterDirectory", UI_TITLE("Character Directory"))
 
-/datum/character_directory/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/character_directory, "merge:ui_data_datum_character_directory{personalVisibility:unknown,personalTag:bool,personalErpTag:bool,personalEventTag:unknown,personalGenderTag:bool,personalSexualityTag:bool}")
+
+/// The computed part of /datum/character_directory's window data (declared on its UI_DATA row).
+/datum/character_directory/proc/ui_data_datum_character_directory(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if (user?.mind)
 		data["personalVisibility"] = user.mind.show_in_directory

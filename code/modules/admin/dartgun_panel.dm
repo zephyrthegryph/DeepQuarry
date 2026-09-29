@@ -1,14 +1,16 @@
 // Dartgun mixing control — structured TGUI.
 
-/obj/item/gun/projectile/dartgun/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/gun/projectile/dartgun, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/gun/projectile/dartgun, "Dartgun")
 
 /obj/item/gun/projectile/dartgun/ui_title(mob/user)
 	return "[src] mixing control"
 
-/obj/item/gun/projectile/dartgun/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/gun/projectile/dartgun, "merge:ui_data_obj_item_gun_projectile_dartgun{beakers:list,ammo_count:num}")
+
+/// The computed part of /obj/item/gun/projectile/dartgun's window data (declared on its UI_DATA row).
+/obj/item/gun/projectile/dartgun/proc/ui_data_obj_item_gun_projectile_dartgun(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/beaker_rows = list()
 	var/i = 0

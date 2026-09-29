@@ -105,7 +105,10 @@ DECLARE_REF(/obj/machinery/computer/telescience, "inserted_gps", SPILL, null)
 
 DECLARE_UI(/obj/machinery/computer/telescience, "TelesciConsole")
 
-/obj/machinery/computer/telescience/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/computer/telescience, "merge:ui_data_obj_machinery_computer_telescience{noTelepad:num,insertedGps:unknown,rotation:num,currentZ:num,cooldown:num,crystalCount:num,maxCrystals:num,maxPossibleDistance:num,maxAllowedDistance:unknown,distance:num,tempMsg:text,sectorOptions:unknown,lastTeleData:list}")
+
+/// The computed part of /obj/machinery/computer/telescience's window data (declared on its UI_DATA row).
+/obj/machinery/computer/telescience/proc/ui_data_obj_machinery_computer_telescience(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!telepad())
 		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console

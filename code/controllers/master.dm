@@ -194,7 +194,10 @@ DECLARE_UI(/datum/controller/master, "ControllerOverview")
 		use_rolling_usage = FALSE
 	return ..()
 
-/datum/controller/master/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/controller/master, "fast_update=overview_fast_update:num", "rolling_length=rolling_usage_length:num", "merge:ui_data_datum_controller_master{subsystems:list,world_time:unknown,map_cpu:unknown}")
+
+/// The computed part of /datum/controller/master's window data (declared on its UI_DATA row).
+/datum/controller/master/proc/ui_data_datum_controller_master(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/subsystem_data = list()
@@ -231,8 +234,6 @@ DECLARE_UI(/datum/controller/master, "ControllerOverview")
 	data["subsystems"] = subsystem_data
 	data["world_time"] = world.time
 	data["map_cpu"] = world.map_cpu
-	data["fast_update"] = overview_fast_update
-	data["rolling_length"] = rolling_usage_length
 
 	return data
 

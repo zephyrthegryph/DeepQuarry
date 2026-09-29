@@ -85,7 +85,10 @@ DECLARE_INTERACTIONS(/obj/item/clipboard, \
 
 DECLARE_UI(/obj/item/clipboard, "Clipboard", UI_TITLE("Clipboard"))
 
-/obj/item/clipboard/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/clipboard, "merge:ui_data_obj_item_clipboard{has_pen:bool,items:list}")
+
+/// The computed part of /obj/item/clipboard's window data (declared on its UI_DATA row).
+/obj/item/clipboard/proc/ui_data_obj_item_clipboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["has_pen"] = !!haspen()
 	var/list/items = list()

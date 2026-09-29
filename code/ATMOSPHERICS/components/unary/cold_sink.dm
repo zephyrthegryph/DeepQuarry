@@ -74,9 +74,12 @@ DECLARE_REAGENTS(/obj/machinery/atmospherics/unary/freezer, 120, null)
 
 DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
 
-/obj/machinery/atmospherics/unary/freezer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/unary/freezer, "powerSetting=power_setting:num", "reagentPower=reagent_cooling:num", "merge:ui_data_obj_machinery_atmospherics_unary_freezer{on:num,gasPressure:num,gasTemperature:num,minGasTemperature:num,maxGasTemperature:num,targetGasTemperature:num,reagentVolume:num,reagentMaximum:num,gasTemperatureClass:text}")
+
+/// The computed part of /obj/machinery/atmospherics/unary/freezer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/unary/freezer/proc/ui_data_obj_machinery_atmospherics_unary_freezer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
-	var/data[0]
+	var/list/data = list()
 	var/air_temperature = air_contents.return_temperature()
 	data["on"] = use_power ? 1 : 0
 	data["gasPressure"] = round(air_contents.return_pressure())
@@ -84,11 +87,9 @@ DECLARE_UI(/obj/machinery/atmospherics/unary/freezer, "GasTemperatureSystem")
 	data["minGasTemperature"] = 0
 	data["maxGasTemperature"] = round(T20C+500)
 	data["targetGasTemperature"] = round(set_temperature)
-	data["powerSetting"] = power_setting
 
 	data["reagentVolume"] = reagents.total_volume
 	data["reagentMaximum"] = reagents.maximum_volume
-	data["reagentPower"] = reagent_cooling
 
 	var/temp_class = "good"
 	if(air_temperature > (T0C - 20))

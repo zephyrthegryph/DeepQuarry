@@ -115,9 +115,11 @@ DECLARE_INTERACTIONS(/obj/item/paper_bundle, \
 
 DECLARE_UI(/obj/item/paper_bundle, "PaperBundle")
 
-/obj/item/paper_bundle/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_paper_bundle{total_pages:num,scribble:unknown,page_name:text,page_kind:text,page_info:text}")
+
+/// The computed part of /obj/item/paper_bundle's window data (declared on its UI_DATA row).
+/obj/item/paper_bundle/proc/ui_data_obj_item_paper_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["page"] = page
 	data["total_pages"] = pages.len
 	data["scribble"] = ""
 	if(pages.len)

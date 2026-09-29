@@ -278,8 +278,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/sleeper, INTERACT_USE(null, PROC_REF(inte
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/dogborg/sleeper/tgui_state(mob/user)
-	return GLOB.tgui_conscious_state
+DECLARE_UI_STATE(/obj/item/dogborg/sleeper, GLOB.tgui_conscious_state)
 
 DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 
@@ -303,7 +302,10 @@ DECLARE_UI(/obj/item/dogborg/sleeper, "RobotSleeper")
 	data["chems"] = robot_chems
 	return data
 
-/obj/item/dogborg/sleeper/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/dogborg/sleeper, "merge:ui_data_obj_item_dogborg_sleeper{our_patient:list,eject_port:text,cleaning:num,medsensor:unknown,delivery:num,delivery_tag:text,delivery_lists:list,compactor:num,max_item_count:num,ore_storage:num,current_capacity:num,max_ore_storage:num,contents:list,deliveryslot_1:bool,deliveryslot_2:bool,deliveryslot_3:bool,items_preserved:list,has_destructive_analyzer:num,techweb_name:unknown}")
+
+/// The computed part of /obj/item/dogborg/sleeper's window data (declared on its UI_DATA row).
+/obj/item/dogborg/sleeper/proc/ui_data_obj_item_dogborg_sleeper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/patient_data
 
 	if(patient)
@@ -389,7 +391,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_analyze)
 	med_analyzer.scan_mob(patient,hound)
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "port", ui_act_port, UI_ARG_VALUE("value"))
+UI_ACT(/obj/item/dogborg/sleeper, "port", ui_act_port, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_port)
 	var/new_port = params["value"]
 	if(!(new_port in list("disposal", "ingestion")))
@@ -402,7 +404,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_ingest)
 	vore_ingest_all()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "deliveryslot", ui_act_deliveryslot, UI_ARG_VALUE("value"))
+UI_ACT(/obj/item/dogborg/sleeper, "deliveryslot", ui_act_deliveryslot, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_deliveryslot)
 	var/new_tag = params["value"]
 	if(!(new_tag in deliverylists))
@@ -422,7 +424,7 @@ UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_slot_eject)
 	deliverylists[delivery_tag].Cut()
 	return TRUE
 
-UI_ACT(/obj/item/dogborg/sleeper, "inject", ui_act_inject, UI_ARG_VALUE("value"))
+UI_ACT(/obj/item/dogborg/sleeper, "inject", ui_act_inject, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/obj/item/dogborg/sleeper, ui_act_inject)
 	if(!patient || (patient.stat & DEAD))
 		to_chat(ui.user, span_notice("ERROR: Subject cannot metabolise chemicals."))

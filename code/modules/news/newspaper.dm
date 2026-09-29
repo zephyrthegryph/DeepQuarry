@@ -40,10 +40,12 @@ DECLARE_INTERACTIONS(/obj/item/newspaper, \
 
 DECLARE_UI(/obj/item/newspaper, "Newspaper", UI_TITLE("The Griffon"))
 
-/obj/item/newspaper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/newspaper, "curr_page:num", "merge:ui_data_obj_item_newspaper{company_name:text,scribble_page:unknown,scribble:bool,channels:list,wanted:list}")
+
+/// The computed part of /obj/item/newspaper's window data (declared on its UI_DATA row).
+/obj/item/newspaper/proc/ui_data_obj_item_newspaper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["company_name"] = using_map.company_name
-	data["curr_page"] = curr_page
 	data["scribble_page"] = isnum(scribble_page) ? scribble_page : -1
 	data["scribble"] = scribble || ""
 	var/list/chs = list()

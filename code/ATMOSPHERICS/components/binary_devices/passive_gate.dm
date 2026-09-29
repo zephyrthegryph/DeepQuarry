@@ -187,9 +187,12 @@ DECLARE_UI(/obj/machinery/atmospherics/binary/passive_gate, "PressureRegulator")
 		return FALSE
 	return TRUE
 
-/obj/machinery/atmospherics/binary/passive_gate/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_obj_machinery_atmospherics_binary_passive_gate{}")
+
+/// The computed part of /obj/machinery/atmospherics/binary/passive_gate's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/binary/passive_gate/proc/ui_data_obj_machinery_atmospherics_binary_passive_gate(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
-	var/data[0]
+	var/list/data = list()
 
 	data = list(
 		"on" = unlocked,

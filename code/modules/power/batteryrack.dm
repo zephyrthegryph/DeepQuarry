@@ -241,17 +241,16 @@ DECLARE_REF(/obj/machinery/power/smes/batteryrack, "internal_cells", OWNED_LIST,
 
 DECLARE_UI(/obj/machinery/power/smes/batteryrack, "Batteryrack")
 
-/obj/machinery/power/smes/batteryrack/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/smes/batteryrack, "transfer_max=max_transfer_rate:num", "equalise:num", "blink_tick=ui_tick:num", "cells_max=max_cells:num", "merge:ui_data_obj_machinery_power_smes_batteryrack{mode:num,output_load:num,input_load:num,cells_cur:num,cells_list:list}")
+
+/// The computed part of /obj/machinery/power/smes/batteryrack's window data (declared on its UI_DATA row).
+/obj/machinery/power/smes/batteryrack/proc/ui_data_obj_machinery_power_smes_batteryrack(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// DO NOT CALL PARENT.
 	var/list/data = list()
 
 	data["mode"] = mode
-	data["transfer_max"] = max_transfer_rate
 	data["output_load"] = round(output_used)
 	data["input_load"] = round(input_available)
-	data["equalise"] = equalise
-	data["blink_tick"] = ui_tick
-	data["cells_max"] = max_cells
 	data["cells_cur"] = length(internal_cells)
 	var/list/cells = list()
 	var/cell_index = 0

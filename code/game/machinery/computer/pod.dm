@@ -71,7 +71,10 @@ DECLARE_UI(/obj/machinery/computer/pod, "PodComputer")
 /obj/machinery/computer/pod/ui_title(mob/user)
 	return title
 
-/obj/machinery/computer/pod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/computer/pod, "merge:ui_data_obj_machinery_computer_pod{connected:unknown,timing:num,time:num,power_level:num}")
+
+/// The computed part of /obj/machinery/computer/pod's window data (declared on its UI_DATA row).
+/obj/machinery/computer/pod/proc/ui_data_obj_machinery_computer_pod(mob/user, datum/tgui/ui, datum/tgui_state/state)
 
 	return list(
 		"connected" = connected(),

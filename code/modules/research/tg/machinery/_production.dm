@@ -249,16 +249,18 @@ DECLARE_UI(/obj/machinery/rnd/production, "Fabricator")
 
 	return data
 
-/obj/machinery/rnd/production/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/rnd/production, "busy:num", "merge:ui_data_obj_machinery_rnd_production{materials:list,materialChoices:unknown,onHold:bool,materialMaximum:unknown,queue:list}")
+
+/// The computed part of /obj/machinery/rnd/production's window data (declared on its UI_DATA row).
+/obj/machinery/rnd/production/proc/ui_data_obj_machinery_rnd_production(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	var/list/material_data = materials.mat_container()?.tgui_data(user)
+	var/list/material_data = materials.mat_container()?.material_list_data(user)
 	if(material_data)
 		data["materials"] = material_data
 	// Loaded materials offered in the per-design material picker (selectable designs).
 	data["materialChoices"] = material_choice_list()
 	data["onHold"] = FALSE //materials.on_hold()
-	data["busy"] = busy
 	data["materialMaximum"] = materials.local_size
 	data["queue"] = list()
 

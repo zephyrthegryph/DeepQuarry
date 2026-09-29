@@ -200,14 +200,16 @@ DECLARE_REF(/obj/machinery/botany, "loaded_disk", SPILL, null)
 
 DECLARE_UI(/obj/machinery/botany/extractor, "BotanyIsolator")
 
-/obj/machinery/botany/extractor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_machinery_botany_extractor{geneMasks:list,activity:num,disk:num,loaded:unknown,hasGenetics:num,sourceName:unknown}")
+
+/// The computed part of /obj/machinery/botany/extractor's window data (declared on its UI_DATA row).
+/obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/geneMasks = GLOB.plant_service.gene_masked_list
 	data["geneMasks"] = geneMasks
 
 	data["activity"] = active
-	data["degradation"] = degradation
 
 	if(loaded_disk)
 		data["disk"] = 1
@@ -324,8 +326,11 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_clear_buffer)
 
 DECLARE_UI(/obj/machinery/botany/editor, "BotanyEditor")
 
-/obj/machinery/botany/editor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor{activity:num,degradation:num,disk:num,sourceName:unknown,locus:unknown,loaded:unknown}")
+
+/// The computed part of /obj/machinery/botany/editor's window data (declared on its UI_DATA row).
+/obj/machinery/botany/editor/proc/ui_data_obj_machinery_botany_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["activity"] = active
 

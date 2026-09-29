@@ -155,11 +155,13 @@
 
 DECLARE_UI(/obj/machinery/door_timer, "BrigTimer")
 
-/obj/machinery/door_timer/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/door_timer, "timing:num", "merge:ui_data_obj_machinery_door_timer{time_left:unknown,max_time_left:num,flash_found:bool,flash_charging:bool,preset_short:unknown,preset_medium:unknown,preset_long:unknown}")
+
+/// The computed part of /obj/machinery/door_timer's window data (declared on its UI_DATA row).
+/obj/machinery/door_timer/proc/ui_data_obj_machinery_door_timer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["time_left"] = time_left()
 	data["max_time_left"] = MAX_TIMER
-	data["timing"] = timing
 	data["flash_found"] = FALSE
 	data["flash_charging"] = FALSE
 	data["preset_short"] = PRESET_SHORT
@@ -180,7 +182,7 @@ DECLARE_UI(/obj/machinery/door_timer, "BrigTimer")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/door_timer, "time", ui_act_time, UI_ARG_VALUE("time"))
+UI_ACT(/obj/machinery/door_timer, "time", ui_act_time, UI_ARG_NUM("time"))
 UI_ACT_PROC(/obj/machinery/door_timer, ui_act_time)
 	. = TRUE
 	var/real_new_time = 0

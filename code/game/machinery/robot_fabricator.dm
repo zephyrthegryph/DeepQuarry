@@ -69,7 +69,10 @@
 
 DECLARE_UI(/obj/machinery/robotic_fabricator, "AncientDroneFab")
 
-/obj/machinery/robotic_fabricator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/robotic_fabricator, "merge:ui_data_obj_machinery_robotic_fabricator{operating:num,metal_amount:num}")
+
+/// The computed part of /obj/machinery/robotic_fabricator's window data (declared on its UI_DATA row).
+/obj/machinery/robotic_fabricator/proc/ui_data_obj_machinery_robotic_fabricator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"operating" = operating,
 		"metal_amount" = metal_amount

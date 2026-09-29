@@ -30,7 +30,10 @@ UI_ACT_PROC(/datum/tgui_module/rustfuel_control, ui_act_set_tag)
 /datum/tgui_module/rustfuel_control/proc/ui_source_registry_members_registry_fuel_injectors()
 	return REGISTRY_MEMBERS(REGISTRY_FUEL_INJECTORS)
 
-/datum/tgui_module/rustfuel_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/rustfuel_control, "merge:ui_data_datum_tgui_module_rustfuel_control{fuels:list}")
+
+/// The computed part of /datum/tgui_module/rustfuel_control's window data (declared on its UI_DATA row).
+/datum/tgui_module/rustfuel_control/proc/ui_data_datum_tgui_module_rustfuel_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/fuels = list()
 

@@ -36,12 +36,13 @@
 		requires_ntnet = 0 // Turn off NTNet requirement as we already loaded the file into local memory.
 	SStgui.update_uis(src)
 
-/datum/computer_file/program/newsbrowser/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/newsbrowser, "message:text", "showing_archived=show_archived:num", "merge:ui_data_datum_computer_file_program_newsbrowser{download:list,article:list,all_articles:list}")
+
+/// The computed part of /datum/computer_file/program/newsbrowser's window data (declared on its UI_DATA row).
+/datum/computer_file/program/newsbrowser/proc/ui_data_datum_computer_file_program_newsbrowser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
 	var/list/all_articles = list()
-	data["message"] = message
-	data["showing_archived"] = show_archived
 	data["download"] = null
 	data["article"] = null
 	if(loaded_article && !downloading) 	// Viewing an article.

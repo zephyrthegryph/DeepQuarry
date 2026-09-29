@@ -31,8 +31,7 @@
 DECLARE_REF(/datum/newscaster_panel, "holder", PAIR, "dq_newscaster_panel")
 DECLARE_REF(/datum/admins, "dq_newscaster_panel", PAIR, "holder")
 
-/datum/newscaster_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT)
+DECLARE_UI_STATE(/datum/newscaster_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
 
 DECLARE_UI(/datum/newscaster_panel, "AdminNewscaster", UI_TITLE("Admin Newscaster"))
 
@@ -60,7 +59,10 @@ DECLARE_UI(/datum/newscaster_panel, "AdminNewscaster", UI_TITLE("Admin Newscaste
 		"has_image" = !!MSG.img,
 	)
 
-/datum/newscaster_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/newscaster_panel, "merge:ui_data_datum_newscaster_panel{screen:num,signature:unknown,company_name:text,has_wanted:bool,channel:unknown,message:unknown,channels:list,channel_messages:list,wanted_issue:list}")
+
+/// The computed part of /datum/newscaster_panel's window data (declared on its UI_DATA row).
+/datum/newscaster_panel/proc/ui_data_datum_newscaster_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!holder)
 		return data

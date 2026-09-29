@@ -23,8 +23,11 @@
 
 	tgui_id = "CookingAppliance"
 
-/obj/machinery/appliance/cooker/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_cooker{temperature:num,optimalTemp:num,temperatureEnough:bool,efficiency:num}")
+
+/// The computed part of /obj/machinery/appliance/cooker's window data (declared on its UI_DATA row).
+/obj/machinery/appliance/cooker/proc/ui_data_obj_machinery_appliance_cooker(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/temperature = get_temperature()
 	data["temperature"] = round(temperature - T0C, 0.1)

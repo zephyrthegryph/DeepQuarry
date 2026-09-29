@@ -57,7 +57,10 @@ GLOBAL_VAR_INIT(prison_shuttle_timeleft, 0)
 
 DECLARE_UI(/obj/machinery/computer/prison_shuttle, "PrisonShuttleConsole", UI_TITLE("Prison Shuttle"))
 
-/obj/machinery/computer/prison_shuttle/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machinery_computer_prison_shuttle{moving:bool,at_station:bool,time_left:unknown,can_move:bool}")
+
+/// The computed part of /obj/machinery/computer/prison_shuttle's window data (declared on its UI_DATA row).
+/obj/machinery/computer/prison_shuttle/proc/ui_data_obj_machinery_computer_prison_shuttle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["moving"] = GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison
 	data["at_station"] = !!GLOB.prison_shuttle_at_station

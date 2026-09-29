@@ -151,7 +151,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_gender)
 			return 1
 	return FALSE
 
-UI_ACT(/datum/tgui_module/appearance_changer, "gender_id", ui_act_gender_id, UI_ARG_VALUE("gender_id"))
+UI_ACT(/datum/tgui_module/appearance_changer, "gender_id", ui_act_gender_id, UI_ARG_TEXT("gender_id"))
 UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_gender_id)
 	if(can_change(owner(), APPEARANCE_GENDER) && (params["gender_id"] in all_genders_define_list))
 		owner().identifying_gender = params["gender_id"]
@@ -396,7 +396,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_wing_alpha)
 		return 1
 	return FALSE
 
-UI_ACT(/datum/tgui_module/appearance_changer, "marking", ui_act_marking, UI_ARG_VALUE("name"), UI_ARG_NUM("todo"))
+UI_ACT(/datum/tgui_module/appearance_changer, "marking", ui_act_marking, UI_ARG_TEXT("name"), UI_ARG_NUM("todo"))
 UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_marking)
 	if(can_change(owner(), APPEARANCE_ALL_HAIR))
 		var/todo = params["todo"]
@@ -651,7 +651,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_view_brec)
 			DC.selected_record = TRUE
 	return TRUE
 
-UI_ACT(/datum/tgui_module/appearance_changer, "view_stock_brec", ui_act_view_stock_brec, UI_ARG_VALUE("view_stock_brec"))
+UI_ACT(/datum/tgui_module/appearance_changer, "view_stock_brec", ui_act_view_stock_brec, UI_ARG_TEXT("view_stock_brec"))
 UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_view_stock_brec)
 	var/obj/machinery/computer/transhuman/designer/DC = null
 	var/datum/tgui_module/appearance_changer/body_designer/BD = null
@@ -825,8 +825,11 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_back_to_library)
 
 	return data
 
-/datum/tgui_module/appearance_changer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/appearance_changer, "merge:ui_data_datum_tgui_module_appearance_changer{is_design_console:bool,disk:bool,selected_a_record:num,character_records:list,stock_records:list,change_race:unknown,change_misc:unknown,gender_id:unknown,change_gender:unknown,change_hair:unknown,change_eye_color:unknown,change_hair_color:unknown,change_facial_hair_color:unknown,species_name:unknown,use_custom_icon:bool,base_icon:unknown,synthetic:text,size_scale:text,scale_appearance:text,offset_override:text,weight:num,digitigrade:num,blood_reagent:text,blood_color:text,species_sound:text,species_sounds_gendered:num,species_sounds_female:text,species_sounds_male:text,flavor_text:unknown,name:text,specimen:text,gender:unknown,saveslot_load:unknown,genders:list,id_genders:unknown,hair_style:text,ear_style:unknown,ear_secondary_style:text,tail_style:unknown,wing_style:unknown,markings:unknown,change_facial_hair:unknown,facial_hair_style:text,change_skin_tone:unknown,change_skin_color:unknown,skin_color:text,eye_color:text,hair_color:text,hair_color_grad:text,ears_color:text,ears2_color:text,hair_grad:text,ear_secondary_colors:bool,tail_color:text,tail2_color:text,tail3_color:text,wing_color:text,wing2_color:text,wing3_color:text,wing_alpha:num,tail_alpha:num,ears_alpha:num,secondary_ears_alpha:num,facial_hair_color:text}")
+
+/// The computed part of /datum/tgui_module/appearance_changer's window data (declared on its UI_DATA row).
+/datum/tgui_module/appearance_changer/proc/ui_data_datum_tgui_module_appearance_changer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	generate_data(user, owner())
 
@@ -1106,8 +1109,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_back_to_library)
 	name = "Appearance Editor (Vore)"
 	flags = APPEARANCE_ALL
 
-/datum/tgui_module/appearance_changer/vore/tgui_state(mob/user)
-	return GLOB.tgui_conscious_state
+DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious_state)
 
 /datum/tgui_module/appearance_changer/vore/tgui_status(mob/user, datum/tgui_state/state)
 	if(!isbelly(owner().loc))

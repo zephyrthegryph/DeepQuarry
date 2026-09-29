@@ -129,8 +129,11 @@ DECLARE_INTERACTIONS(/obj/structure/noticeboard, \
 
 DECLARE_UI(/obj/structure/noticeboard, "NoticeBoard")
 
-/obj/structure/noticeboard/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/structure/noticeboard, "merge:ui_data_obj_structure_noticeboard{notices:list}")
+
+/// The computed part of /obj/structure/noticeboard's window data (declared on its UI_DATA row).
+/obj/structure/noticeboard/proc/ui_data_obj_structure_noticeboard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/tgui_notices = list()
 	for(var/obj/item/I in src.notices)

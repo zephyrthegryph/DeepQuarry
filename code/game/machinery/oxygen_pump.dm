@@ -208,8 +208,11 @@ DECLARE_UI(/obj/machinery/oxygen_pump, "Tank")
 
 	return TRUE
 
-/obj/machinery/oxygen_pump/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/oxygen_pump, "merge:ui_data_obj_machinery_oxygen_pump{showToggle:bool,maskConnected:bool,tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num}")
+
+/// The computed part of /obj/machinery/oxygen_pump's window data (declared on its UI_DATA row).
+/obj/machinery/oxygen_pump/proc/ui_data_obj_machinery_oxygen_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["showToggle"] = FALSE
 	data["maskConnected"] = !!breather()

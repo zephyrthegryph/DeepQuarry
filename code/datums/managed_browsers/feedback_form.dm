@@ -43,19 +43,19 @@ DECLARE_REF(/datum/managed_browser/feedback_form, "my_client_handle", BACK_HANDL
 		return
 	tgui_interact(my_client().mob)
 
-/datum/managed_browser/feedback_form/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/managed_browser/feedback_form, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/managed_browser/feedback_form, "FeedbackForm")
 
 /datum/managed_browser/feedback_form/ui_title(mob/user)
 	return title
 
-/datum/managed_browser/feedback_form/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/managed_browser/feedback_form, "topic=feedback_topic", "hide_author=feedback_hide_author:num", "merge:ui_data_datum_managed_browser_feedback_form{body:bool,author_ckey:text,author_hashed:unknown,can_be_private:bool,topics:unknown,max_length:num,cooldown_days:num}")
+
+/// The computed part of /datum/managed_browser/feedback_form's window data (declared on its UI_DATA row).
+/datum/managed_browser/feedback_form/proc/ui_data_datum_managed_browser_feedback_form(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["topic"] = feedback_topic
 	data["body"] = feedback_body || ""
-	data["hide_author"] = feedback_hide_author
 	data["author_ckey"] = my_client()?.ckey
 	data["author_hashed"] = my_client() ? md5(ckey(lowertext(my_client().ckey + (SSsqlite.get_feedback_pepper() || "")))) : ""
 	data["can_be_private"] = can_be_private() ? TRUE : FALSE

@@ -141,9 +141,11 @@ DECLARE_UI(/datum/tgui_input_colormatrix, "ColorMate")
 	data["matrix_only"] = matrix_only
 	return data
 
-/datum/tgui_input_colormatrix/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_input_colormatrix, "activemode=active_mode", "buildhue=build_hue:num", "buildsat=build_sat:num", "buildval=build_val:num", "merge:ui_data_datum_tgui_input_colormatrix{matrixcolors:list,item_preview:text,temp:text,timeout:num}")
+
+/// The computed part of /datum/tgui_input_colormatrix's window data (declared on its UI_DATA row).
+/datum/tgui_input_colormatrix/proc/ui_data_datum_tgui_input_colormatrix(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["activemode"] = active_mode
 	data["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
 		"rg" = color_matrix_last[2],
@@ -158,9 +160,6 @@ DECLARE_UI(/datum/tgui_input_colormatrix, "ColorMate")
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	data["buildhue"] = build_hue
-	data["buildsat"] = build_sat
-	data["buildval"] = build_val
 	data["item_preview"] = icon2base64(build_preview(user))
 	if(temp)
 		data["temp"] = temp
@@ -206,7 +205,7 @@ UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_clear)
 	update_tgui_static_data(ui.user, ui)
 	return TRUE
 
-UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_VALUE("color"), UI_ARG_VALUE("value"))
+UI_ACT(/datum/tgui_input_colormatrix, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_NUM("color"), UI_ARG_NUM("value"))
 UI_ACT_PROC(/datum/tgui_input_colormatrix, ui_act_set_matrix_color)
 	color_matrix_last[params["color"]] = params["value"]
 	return TRUE

@@ -80,7 +80,10 @@ UI_ACT_PROC(/datum/computer_file/program/access_decrypter, ui_act_prg_execute)
 		GLOB.ntnet_global.intrusion_detection_alarm = TRUE
 	return TRUE
 
-/datum/computer_file/program/access_decrypter/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/access_decrypter, "merge:ui_data_datum_computer_file_program_access_decrypter{message:text,running:num,rate:num,factor:num,regions:list}")
+
+/// The computed part of /datum/computer_file/program/access_decrypter's window data (declared on its UI_DATA row).
+/datum/computer_file/program/access_decrypter/proc/ui_data_datum_computer_file_program_access_decrypter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global)
 		return
 	var/list/data = get_header_data()

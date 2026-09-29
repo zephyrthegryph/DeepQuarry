@@ -15,8 +15,7 @@
 DECLARE_REF(/datum/player_panel, "owner_admin", PAIR, "tgui_player_panel")
 DECLARE_REF(/datum/admins, "tgui_player_panel", PAIR, "owner_admin")
 
-/datum/player_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_HOLDER)
+DECLARE_UI_STATE(/datum/player_panel, ADMIN_STATE(R_HOLDER))
 
 DECLARE_UI(/datum/player_panel, "PlayerPanel", UI_TITLE("Player Panel"))
 
@@ -77,7 +76,10 @@ DECLARE_UI(/datum/player_panel, "PlayerPanel", UI_TITLE("Player Panel"))
 		))
 	shown_players = players
 
-/datum/player_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/player_panel, "merge:ui_data_datum_player_panel{players:bool}")
+
+/// The computed part of /datum/player_panel's window data (declared on its UI_DATA row).
+/datum/player_panel/proc/ui_data_datum_player_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list("players" = shown_players || list())
 
 /datum/player_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

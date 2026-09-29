@@ -193,7 +193,10 @@ It is used to destroy hand-held objects and advance technological research. Used
 
 DECLARE_UI(/obj/machinery/rnd/destructive_analyzer, "DestructiveAnalyzer")
 
-/obj/machinery/rnd/destructive_analyzer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_machinery_rnd_destructive_analyzer{server_connected:bool,node_data:list,item_icon:text,indestructible:unknown,loaded_item:unknown,already_deconstructed:bool,recoverable_points:unknown}")
+
+/// The computed part of /obj/machinery/rnd/destructive_analyzer's window data (declared on its UI_DATA row).
+/obj/machinery/rnd/destructive_analyzer/proc/ui_data_obj_machinery_rnd_destructive_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["server_connected"] = !!stored_research
 	data["node_data"] = null
@@ -233,7 +236,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_eject_item)
 		unload_item()
 		return TRUE
 
-UI_ACT(/obj/machinery/rnd/destructive_analyzer, "deconstruct", ui_act_deconstruct, UI_ARG_VALUE("deconstruct_id"))
+UI_ACT(/obj/machinery/rnd/destructive_analyzer, "deconstruct", ui_act_deconstruct, UI_ARG_TEXT("deconstruct_id"))
 UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 	if(!user_try_decon_id(params["deconstruct_id"]))
 		balloon_alert(user, "analysis failed!")

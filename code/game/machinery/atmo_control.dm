@@ -249,7 +249,10 @@
 
 DECLARE_UI(/obj/machinery/computer/general_air_control, "GeneralAtmoControl")
 
-/obj/machinery/computer/general_air_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/general_air_control, "merge:ui_data_obj_machinery_computer_general_air_control{sensors:unknown}")
+
+/// The computed part of /obj/machinery/computer/general_air_control's window data (declared on its UI_DATA row).
+/obj/machinery/computer/general_air_control/proc/ui_data_obj_machinery_computer_general_air_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/sensors_ui[0]
 	if(length(sensors))
@@ -408,8 +411,11 @@ DECLARE_UI(/obj/machinery/computer/general_air_control, "GeneralAtmoControl")
 	var/pressure_setting = ONE_ATMOSPHERE * 45
 	circuit = /obj/item/circuitboard/air_management/tank_control
 
-/obj/machinery/computer/general_air_control/large_tank_control/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/general_air_control/large_tank_control, "pressure_setting:num", "merge:ui_data_obj_machinery_computer_general_air_control_large_tank_control{tanks:num,input_info:listmap,output_info:listmap,input_flow_setting:num,max_pressure:unknown,max_flowrate:num}")
+
+/// The computed part of /obj/machinery/computer/general_air_control/large_tank_control's window data (declared on its UI_DATA row).
+/obj/machinery/computer/general_air_control/large_tank_control/proc/ui_data_obj_machinery_computer_general_air_control_large_tank_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["tanks"] = 1
 
@@ -424,7 +430,6 @@ DECLARE_UI(/obj/machinery/computer/general_air_control, "GeneralAtmoControl")
 		data["output_info"] = null
 
 	data["input_flow_setting"] = round(input_flow_setting, 0.1)
-	data["pressure_setting"] = pressure_setting
 	data["max_pressure"] = 50*ONE_ATMOSPHERE
 	data["max_flowrate"] = ATMOS_DEFAULT_VOLUME_PUMP + 500
 
@@ -556,8 +561,11 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_a
 	var/pressure_setting = 100
 	circuit = /obj/item/circuitboard/air_management/supermatter_core
 
-/obj/machinery/computer/general_air_control/supermatter_core/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/general_air_control/supermatter_core, "pressure_setting:num", "merge:ui_data_obj_machinery_computer_general_air_control_supermatter_core{core:num,input_info:listmap,output_info:listmap,input_flow_setting:num,max_pressure:unknown,max_flowrate:num}")
+
+/// The computed part of /obj/machinery/computer/general_air_control/supermatter_core's window data (declared on its UI_DATA row).
+/obj/machinery/computer/general_air_control/supermatter_core/proc/ui_data_obj_machinery_computer_general_air_control_supermatter_core(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["core"] = 1
 
 	if(input_info)
@@ -574,7 +582,6 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/large_tank_control, ui_a
 		data["output_info"] = null
 
 	data["input_flow_setting"] = round(input_flow_setting, 0.1)
-	data["pressure_setting"] = pressure_setting
 	data["max_pressure"] = 10*ONE_ATMOSPHERE
 	data["max_flowrate"] = ATMOS_DEFAULT_VOLUME_PUMP + 500
 
@@ -735,10 +742,12 @@ UI_ACT_PROC(/obj/machinery/computer/general_air_control/supermatter_core, ui_act
 
 		radio_connection().post_signal(src, signal, radio_filter = RADIO_ATMOSIA)
 
-/obj/machinery/computer/general_air_control/fuel_injection/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/general_air_control/fuel_injection, "automation:num", "merge:ui_data_obj_machinery_computer_general_air_control_fuel_injection{fuel:num,device_info:listmap}")
+
+/// The computed part of /obj/machinery/computer/general_air_control/fuel_injection's window data (declared on its UI_DATA row).
+/obj/machinery/computer/general_air_control/fuel_injection/proc/ui_data_obj_machinery_computer_general_air_control_fuel_injection(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["fuel"] = 1
-	data["automation"] = automation
 
 	if(device_info)
 		data["device_info"] = list("power" = device_info["power"], "volume_rate" = device_info["volume_rate"])

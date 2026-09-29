@@ -33,12 +33,14 @@ DECLARE_REF(/datum/interaction_menu, "owner_handle", BACK_HANDLE, "interaction_m
 	var/atom/target = om_resolve(target_ref)
 	return QDELETED(target) ? null : target
 
-/datum/interaction_menu/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/interaction_menu, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/interaction_menu, "InteractionMenu")
 
-/datum/interaction_menu/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/interaction_menu, "merge:ui_data_datum_interaction_menu{}")
+
+/// The computed part of /datum/interaction_menu's window data (declared on its UI_DATA row).
+/datum/interaction_menu/proc/ui_data_datum_interaction_menu(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/atom/target = target()
 	if(!target)
 		return list("target" = null)
@@ -93,14 +95,14 @@ DECLARE_UI(/datum/interaction_menu, "InteractionMenu")
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "run", ui_act_run, UI_ARG_VALUE("id"))
+UI_ACT(/datum/interaction_menu, "run", ui_act_run, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/interaction_menu, ui_act_run)
 	var/atom/target = target()
 	ui.close()
 	run_chosen_interaction(user, target, params["id"])
 	return TRUE
 
-UI_ACT(/datum/interaction_menu, "action", ui_act_action, UI_ARG_VALUE("id"))
+UI_ACT(/datum/interaction_menu, "action", ui_act_action, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/interaction_menu, ui_act_action)
 	var/atom/target = target()
 	var/action_id = params["id"]

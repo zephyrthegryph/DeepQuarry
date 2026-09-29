@@ -279,12 +279,14 @@ DECLARE_REF(/obj/machinery/firealarm, "causality", OWNED, null)
 
 DECLARE_UI(/obj/machinery/partyalarm, "PartyAlarm", UI_TITLE("Party Button"))
 
-/obj/machinery/partyalarm/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machinery_partyalarm{party_on:unknown,timing:bool,scrambled:bool}")
+
+/// The computed part of /obj/machinery/partyalarm's window data (declared on its UI_DATA row).
+/obj/machinery/partyalarm/proc/ui_data_obj_machinery_partyalarm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/area/A = get_area(src)
 	data["party_on"] = !!A?.party
 	data["timing"] = !!timing
-	data["time"] = time
 	data["scrambled"] = !(ishuman(user) || isAI(user))
 	return data
 

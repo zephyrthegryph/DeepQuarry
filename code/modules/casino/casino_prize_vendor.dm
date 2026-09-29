@@ -297,8 +297,11 @@
 		get_asset_datum(/datum/asset/spritesheet_batched/vending),
 	)
 
-/obj/machinery/casino_prize_dispenser/tgui_data(mob/user)
-	var/list/data[0]
+UI_DATA_REPLACE(/obj/machinery/casino_prize_dispenser, "merge:ui_data_obj_machinery_casino_prize_dispenser{items:list}")
+
+/// The computed part of /obj/machinery/casino_prize_dispenser's window data (declared on its UI_DATA row).
+/obj/machinery/casino_prize_dispenser/proc/ui_data_obj_machinery_casino_prize_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["items"] = list()
 	for(var/cat in item_list)
@@ -320,7 +323,7 @@ DECLARE_UI(/obj/machinery/casino_prize_dispenser, "CasinoPrizeDispenser")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/casino_prize_dispenser, "purchase", ui_act_purchase, UI_ARG_VALUE("cat"), UI_ARG_TEXT("name"), UI_ARG_VALUE("price"), UI_ARG_TEXT("restriction"))
+UI_ACT(/obj/machinery/casino_prize_dispenser, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"), UI_ARG_NUM("price"), UI_ARG_TEXT("restriction"))
 UI_ACT_PROC(/obj/machinery/casino_prize_dispenser, ui_act_purchase)
 	. = TRUE
 	var/paid = FALSE

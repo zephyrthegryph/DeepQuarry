@@ -78,7 +78,10 @@
 
 DECLARE_UI(/obj/machinery/computer/aifixer, "AiRestorer")
 
-/obj/machinery/computer/aifixer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/aifixer, "merge:ui_data_obj_machinery_computer_aifixer{ejectable:bool,AI_present:bool,error:text,name:text,restoring:num,health:unknown,isDead:bool,laws:list}")
+
+/// The computed part of /obj/machinery/computer/aifixer's window data (declared on its UI_DATA row).
+/obj/machinery/computer/aifixer/proc/ui_data_obj_machinery_computer_aifixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["ejectable"] = FALSE

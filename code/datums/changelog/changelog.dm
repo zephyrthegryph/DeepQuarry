@@ -3,8 +3,7 @@
 	var/static/list/dates
 	var/static/list/testmerges
 
-/datum/changelog/tgui_state()
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/changelog, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/changelog, "Changelog")
 
@@ -16,7 +15,7 @@ DECLARE_UI(/datum/changelog, "Changelog")
 
 	return TRUE
 
-UI_ACT(/datum/changelog, "get_month", ui_act_get_month, UI_ARG_VALUE("date"))
+UI_ACT(/datum/changelog, "get_month", ui_act_get_month, UI_ARG_TEXT("date"))
 UI_ACT_PROC(/datum/changelog, ui_act_get_month)
 	var/datum/asset/changelog_item/changelog_item = changelog_items[params["date"]]
 	if (!changelog_item)

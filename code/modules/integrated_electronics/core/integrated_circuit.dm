@@ -73,8 +73,7 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input
 
-/obj/item/integrated_circuit/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/item/integrated_circuit, GLOB.tgui_physical_state)
 
 /obj/item/integrated_circuit/tgui_host(mob/user)
 	if(istype(loc, /obj/item/electronic_assembly))
@@ -83,19 +82,14 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 
 DECLARE_UI(/obj/item/integrated_circuit, "ICCircuit")
 
-/obj/item/integrated_circuit/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/integrated_circuit, "name:text", "desc:text", "displayed_name:text", "removable", "complexity:num", "power_draw_idle:num", "power_draw_per_use:num", "extended_desc:text", "merge:ui_data_obj_item_integrated_circuit{ref:text,inputs:list,outputs:list,activators:list}")
 
-	data["name"] = name
-	data["desc"] = desc
+/// The computed part of /obj/item/integrated_circuit's window data (declared on its UI_DATA row).
+/obj/item/integrated_circuit/proc/ui_data_obj_item_integrated_circuit(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["ref"] = REF(src)
-	data["displayed_name"] = displayed_name
-	data["removable"] = removable
 
-	data["complexity"] = complexity
-	data["power_draw_idle"] = power_draw_idle
-	data["power_draw_per_use"] = power_draw_per_use
-	data["extended_desc"] = extended_desc
 
 	var/list/inputs_list = list()
 	var/list/outputs_list = list()

@@ -96,8 +96,11 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	user.client?.clear_map(linked()?.map_name)
 	user.reset_perspective()
 
-/obj/machinery/computer/ship/helm/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/ship/helm, "d_x=dx", "d_y=dy", "autopilot_disabled:num", "autopilot:num", "merge:ui_data_obj_machinery_computer_ship_helm{mapRef:unknown,sector:text,sector_info:text,landed:unknown,s_x:num,s_y:num,dest:bool,speedlimit:unknown,accel:num,heading:unknown,manual_control:unknown,canburn:unknown,accellimit:unknown,speed:num,speed_color:unknown,ETAnext:text,locations:unknown}")
+
+/// The computed part of /obj/machinery/computer/ship/helm's window data (declared on its UI_DATA row).
+/obj/machinery/computer/ship/helm/proc/ui_data_obj_machinery_computer_ship_helm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
@@ -109,13 +112,9 @@ REGISTRY_MEMBERSHIP(/datum/computer_file/data/waypoint, REGISTRY_WAYPOINTS)
 	data["s_x"] = linked().x
 	data["s_y"] = linked().y
 	data["dest"] = dy && dx
-	data["d_x"] = dx
-	data["d_y"] = dy
 	data["speedlimit"] = speedlimit ? speedlimit*1000 : "Halted"
 	data["accel"] = min(round(linked().get_acceleration()*1000, 0.01),accellimit*1000)
 	data["heading"] = linked().get_heading_degrees()
-	data["autopilot_disabled"] = autopilot_disabled
-	data["autopilot"] = autopilot
 	data["manual_control"] = viewing_overmap(user)
 	data["canburn"] = linked().can_burn()
 	data["accellimit"] = accellimit*1000
@@ -214,7 +213,7 @@ UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_remove)
 	if(. && !issilicon(ui.user))
 		play_sfx(src, SFX_TERMINAL_TYPE)
 
-UI_ACT(/obj/machinery/computer/ship/helm, "setcoord", ui_act_setcoord, UI_ARG_VALUE("setx"), UI_ARG_VALUE("sety"))
+UI_ACT(/obj/machinery/computer/ship/helm, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))
 UI_ACT_PROC(/obj/machinery/computer/ship/helm, ui_act_setcoord)
 	if(params["setx"])
 		var/newx = act_ask(ui.user, action, params, ui, "k214", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)

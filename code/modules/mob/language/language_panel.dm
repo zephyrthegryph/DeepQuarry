@@ -24,12 +24,14 @@ GLOBAL_LIST_EMPTY(dq_languages_panels)
 	if(host)
 		GLOB.dq_languages_panels -= "[REF(host)]"
 
-/datum/languages_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/languages_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/languages_panel, "LanguagesPanel", UI_TITLE("Known Languages"))
 
-/datum/languages_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/languages_panel, "merge:ui_data_datum_languages_panel{prefix:unknown,has_default:bool,default_name:text,languages:list}")
+
+/// The computed part of /datum/languages_panel's window data (declared on its UI_DATA row).
+/datum/languages_panel/proc/ui_data_datum_languages_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host)
 		return data

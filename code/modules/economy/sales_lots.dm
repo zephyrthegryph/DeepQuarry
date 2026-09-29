@@ -258,7 +258,10 @@
 
 DECLARE_UI(/obj/machinery/department_storefront, "DepartmentStorefront")
 
-/obj/machinery/department_storefront/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/department_storefront, "merge:ui_data_obj_machinery_department_storefront{}")
+
+/// The computed part of /obj/machinery/department_storefront's window data (declared on its UI_DATA row).
+/obj/machinery/department_storefront/proc/ui_data_obj_machinery_department_storefront(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/stock = list()
 	var/list/rows_by_key = list()
 	// Listing never materializes (systems.md §18): stock is placed real by the stocking action.

@@ -79,7 +79,10 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 		destination_data += list(render_data)
 	return destination_data
 
-/datum/flight_operations_ui/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operations_ui{vessel:unknown,vessel_id:num,vessel_destination_id:num,orbit_parent_id:unknown,docked_port_id:unknown,capabilities:unknown,engines_online:unknown,thrust_limit:unknown,total_thrust:unknown,can_burn:unknown,destinations:unknown,contacts:list,plan:list,expedition:list,server_time:unknown}")
+
+/// The computed part of /datum/flight_operations_ui's window data (declared on its UI_DATA row).
+/datum/flight_operations_ui/proc/ui_data_datum_flight_operations_ui(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = vessel?.ship()
 	var/list/data = list(
@@ -147,7 +150,7 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/flight_operations_ui, "jump", ui_act_jump, UI_ARG_VALUE("destination_id"))
+UI_ACT(/datum/flight_operations_ui, "jump", ui_act_jump, UI_ARG_TEXT("destination_id"))
 UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
 	var/datum/flight_vessel/vessel = resolve_vessel()
 	if(vessel.active_plan)

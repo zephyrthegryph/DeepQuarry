@@ -148,15 +148,12 @@ DECLARE_UI(/obj/item/radio, "Radio")
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/obj/item/radio/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/radio, "rawfreq=frequency:num", "listening:num", "broadcasting:num", "subspace=subspace_transmission:num", "subspaceSwitchable=subspace_switchable:num", "loudspeaker", "merge:ui_data_obj_item_radio{mic_cut:bool,spk_cut:bool,chan_list:list,useSyndMode:bool,minFrequency:num,maxFrequency:num}")
+
+/// The computed part of /obj/item/radio's window data (declared on its UI_DATA row).
+/obj/item/radio/proc/ui_data_obj_item_radio(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 
-	data["rawfreq"] = frequency
-	data["listening"] = listening
-	data["broadcasting"] = broadcasting
-	data["subspace"] = subspace_transmission
-	data["subspaceSwitchable"] = subspace_switchable
-	data["loudspeaker"] = loudspeaker
 
 	data["mic_cut"] = (wires.is_cut(WIRE_RADIO_TRANSMIT) || wires.is_cut(WIRE_RADIO_SIGNAL))
 	data["spk_cut"] = (wires.is_cut(WIRE_RADIO_RECEIVER) || wires.is_cut(WIRE_RADIO_SIGNAL))
@@ -261,7 +258,7 @@ UI_ACT_PROC(/obj/item/radio, ui_act_listen)
 	if(. && iscarbon(ui.user))
 		play_sfx(src, SFX_BUTTON)
 
-UI_ACT(/obj/item/radio, "channel", ui_act_channel, UI_ARG_VALUE("channel"))
+UI_ACT(/obj/item/radio, "channel", ui_act_channel, UI_ARG_NUM("channel"))
 UI_ACT_PROC(/obj/item/radio, ui_act_channel)
 	var/chan_name = params["channel"]
 	if(channels[chan_name] & FREQ_LISTENING)

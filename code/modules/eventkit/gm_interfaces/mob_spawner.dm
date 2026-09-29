@@ -17,8 +17,7 @@
 
 DECLARE_UI(/datum/eventkit/mob_spawner, "MobSpawner", UI_TITLE("EventKit - Mob Spawner"))
 
-/datum/eventkit/mob_spawner/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/eventkit/mob_spawner, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/eventkit/mob_spawner/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -29,16 +28,17 @@ DECLARE_UI(/datum/eventkit/mob_spawner, "MobSpawner", UI_TITLE("EventKit - Mob S
 
 	return data
 
-/datum/eventkit/mob_spawner/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/eventkit/mob_spawner, "loc_lock:num", "use_custom_ai:num", "ai_type:text", "faction:text", "intent:text", "merge:ui_data_datum_eventkit_mob_spawner{loc_x:num,loc_y:num,loc_z:num,path:unknown,path_name:text,desc:text,flavor_text:text,max_health:unknown,health:unknown,melee_damage_lower:num,melee_damage_upper:num}")
+
+/// The computed part of /datum/eventkit/mob_spawner's window data (declared on its UI_DATA row).
+/datum/eventkit/mob_spawner/proc/ui_data_datum_eventkit_mob_spawner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["loc_lock"] = loc_lock
 	if(loc_lock)
 		data["loc_x"] = user.x
 		data["loc_y"] = user.y
 		data["loc_z"] = user.z
 
-	data["use_custom_ai"] = use_custom_ai
 	if(new_path)
 		data["path"] = path;
 		if(path)
@@ -68,9 +68,6 @@ DECLARE_UI(/datum/eventkit/mob_spawner, "MobSpawner", UI_TITLE("EventKit - Mob S
 						qdel(S)
 					qdel(L)
 			qdel(M)
-	data["ai_type"] = ai_type
-	data["faction"] = faction
-	data["intent"]	= intent
 
 	return data
 
@@ -125,7 +122,7 @@ UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_loc_lock)
 	loc_lock = !loc_lock
 	return TRUE
 
-UI_ACT(/datum/eventkit/mob_spawner, "start_spawn", ui_act_start_spawn, UI_ARG_VALUE("amount"), UI_ARG_TEXT("desc"), UI_ARG_TEXT("flavor_text"), UI_ARG_NUM("health"), UI_ARG_NUM("max_health"), UI_ARG_NUM("melee_damage_lower"), UI_ARG_NUM("melee_damage_upper"), UI_ARG_TEXT("name"), UI_ARG_VALUE("size_multiplier"), UI_ARG_TEXT("x"), UI_ARG_TEXT("y"), UI_ARG_TEXT("z"))
+UI_ACT(/datum/eventkit/mob_spawner, "start_spawn", ui_act_start_spawn, UI_ARG_NUM("amount"), UI_ARG_TEXT("desc"), UI_ARG_TEXT("flavor_text"), UI_ARG_NUM("health"), UI_ARG_NUM("max_health"), UI_ARG_NUM("melee_damage_lower"), UI_ARG_NUM("melee_damage_upper"), UI_ARG_TEXT("name"), UI_ARG_NUM("size_multiplier"), UI_ARG_TEXT("x"), UI_ARG_TEXT("y"), UI_ARG_TEXT("z"))
 UI_ACT_PROC(/datum/eventkit/mob_spawner, ui_act_start_spawn)
 	var/confirm = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/choice/alert, message = "Are you sure that you want to start spawning your custom mobs?", title = "Confirmation", choices = list("Yes", "Cancel"))
 	if(isnull(confirm))

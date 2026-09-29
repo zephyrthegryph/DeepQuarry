@@ -3,8 +3,7 @@
 
 DECLARE_UI(/datum/preferences, "PreferencesMenu", UI_TITLE("Preferences"))
 
-/datum/preferences/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/preferences, GLOB.tgui_always_state)
 
 /datum/preferences/tgui_status(mob/user, datum/tgui_state/state)
 	return user.client == client() ? STATUS_INTERACTIVE : STATUS_CLOSE
@@ -25,7 +24,10 @@ DECLARE_UI(/datum/preferences, "PreferencesMenu", UI_TITLE("Preferences"))
 
 	return assets
 
-/datum/preferences/tgui_data(mob/user, datum/tgui/ui)
+UI_DATA_REPLACE(/datum/preferences, "active_slot=default_slot:num", "merge:ui_data_datum_preferences{character_profiles:unknown,character_preferences:unknown,saved_notification:bool,character_preview_assets:list,dq_server_profile:list}")
+
+/// The computed part of /datum/preferences's window data (declared on its UI_DATA row).
+/datum/preferences/proc/ui_data_datum_preferences(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(tainted_character_profiles)
@@ -38,7 +40,6 @@ DECLARE_UI(/datum/preferences, "PreferencesMenu", UI_TITLE("Preferences"))
 	if(current_window != PREFERENCE_TAB_CHARACTER_PREFERENCES)
 		data["character_preferences"] = compile_character_preferences(user)
 
-	data["active_slot"] = default_slot
 	data["saved_notification"] = !COOLDOWN_FINISHED(src, saved_notification)
 
 	// preview assets ship in ui_data so they reach React via the
@@ -163,7 +164,7 @@ UI_ACT_PROC(/datum/preferences, ui_act_cycle_background)
 
 // Pref-value actions
 
-UI_ACT(/datum/preferences, "set_preference", ui_act_set_preference, UI_ARG_VALUE("preference"), UI_ARG_VALUE("value"))
+UI_ACT(/datum/preferences, "set_preference", ui_act_set_preference, UI_ARG_TEXT("preference"), UI_ARG_VALUE("value"))
 UI_ACT_PROC(/datum/preferences, ui_act_set_preference)
 	var/requested_preference_key = params["preference"]
 	var/value = params["value"]
@@ -182,7 +183,7 @@ UI_ACT_PROC(/datum/preferences, ui_act_set_preference)
 
 	return TRUE
 
-UI_ACT(/datum/preferences, "set_color_preference", ui_act_set_color_preference, UI_ARG_VALUE("preference"))
+UI_ACT(/datum/preferences, "set_color_preference", ui_act_set_color_preference, UI_ARG_TEXT("preference"))
 UI_ACT_PROC(/datum/preferences, ui_act_set_color_preference)
 	var/requested_preference_key = params["preference"]
 

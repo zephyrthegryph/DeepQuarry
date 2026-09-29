@@ -39,7 +39,10 @@ DECLARE_INTERACTIONS(/obj/item/locator, INTERACT_USE(null, PROC_REF(interaction_
 
 DECLARE_UI(/obj/item/locator, "Locator", UI_TITLE("Persistent Signal Locator"))
 
-/obj/item/locator/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:text,has_scan:bool,location:bool,beacons:bool,implants:bool}")
+
+/// The computed part of /obj/item/locator's window data (declared on its UI_DATA row).
+/obj/item/locator/proc/ui_data_obj_item_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["frequency"] = format_frequency(frequency)
 	data["has_scan"] = !!last_location

@@ -51,7 +51,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_wetloop)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_mode", attr_b_mode, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_mode", attr_b_mode, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_mode)
 	var/new_mode = params["val"]
 	if(!(new_mode in host().vore_selected.digest_modes))
@@ -84,7 +84,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_addons)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_item_mode", attr_b_item_mode, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_item_mode", attr_b_item_mode, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_item_mode)
 	var/new_mode = params["val"]
 	if(!(new_mode in host().vore_selected.item_digest_modes))
@@ -103,7 +103,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_contaminates)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_contamination_flavor", attr_b_contamination_flavor, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_contamination_flavor", attr_b_contamination_flavor, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_flavor)
 	var/new_flavor = params["val"]
 	if(!(new_flavor in GLOB.contamination_flavors))
@@ -113,7 +113,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_flavor)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_contamination_color", attr_b_contamination_color, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_contamination_color", attr_b_contamination_color, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_color)
 	var/new_color = params["val"]
 	if(!(new_color in GLOB.contamination_colors))
@@ -124,7 +124,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_contamination_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_egg_type", attr_b_egg_type, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_egg_type", attr_b_egg_type, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_egg_type)
 	var/new_egg_type = params["val"]
 	if(!(new_egg_type in GLOB.global_vore_egg_types))
@@ -473,7 +473,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_release_verb)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_eating_privacy", attr_b_eating_privacy, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_eating_privacy", attr_b_eating_privacy, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_eating_privacy)
 	var/privacy_choice = params["val"]
 	if(!(privacy_choice in list("default", "subtle", "loud")))
@@ -483,7 +483,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_eating_privacy)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_silicon_belly", attr_b_silicon_belly, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_silicon_belly", attr_b_silicon_belly, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_silicon_belly)
 	var/belly_choice = params["val"]
 	if(!(belly_choice in list("Sleeper", "Vorebelly", "Both")))
@@ -546,7 +546,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_fancy_sound)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_release", attr_b_release, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_release", attr_b_release, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_release)
 	var/choice = params["val"]
 	if(host().vore_selected.fancy_vore)
@@ -576,7 +576,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_releasesoundtest)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_sound", attr_b_sound, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_sound", attr_b_sound, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_sound)
 	var/choice = params["val"]
 	if(host().vore_selected.fancy_vore)
@@ -782,7 +782,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_temperature_damage)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_drainmode", attr_b_drainmode, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_drainmode", attr_b_drainmode, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_drainmode)
 	var/new_drainmode = params["val"]
 	if(!(new_drainmode in host().vore_selected.drainmodes))
@@ -799,7 +799,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_emoteactive)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_selective_mode_pref_toggle", attr_b_selective_mode_pref_toggle, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_selective_mode_pref_toggle", attr_b_selective_mode_pref_toggle, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_selective_mode_pref_toggle)
 	var/new_mode = params["val"]
 	switch(new_mode)
@@ -952,7 +952,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferchance_primary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransferwait", attr_b_autotransferwait, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_autotransferwait", attr_b_autotransferwait, UI_ARG_NUM("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransferwait)
 	var/autotransferwait_input = params["val"]
 	if(!isnum(autotransferwait_input))
@@ -1103,7 +1103,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_blacklist_items_secondary)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_min_amount", attr_b_autotransfer_min_amount, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_min_amount", attr_b_autotransfer_min_amount, UI_ARG_NUM("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_min_amount)
 	var/autotransfer_min_amount_input = params["val"]
 	if(!isnum(autotransfer_min_amount_input))
@@ -1113,7 +1113,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_min_amount)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_max_amount", attr_b_autotransfer_max_amount, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_autotransfer_max_amount", attr_b_autotransfer_max_amount, UI_ARG_NUM("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_autotransfer_max_amount)
 	var/autotransfer_max_amount_input = params["val"]
 	if(!isnum(autotransfer_max_amount_input))
@@ -1322,7 +1322,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_vorespawn_absorbed)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_belly_sprite_to_affect", attr_b_belly_sprite_to_affect, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_belly_sprite_to_affect", attr_b_belly_sprite_to_affect, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_belly_sprite_to_affect)
 	var/belly_choice = params["val"]
 	if(!(belly_choice in host().vore_icon_bellies))
@@ -1405,7 +1405,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_size_factor_sprites)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_vore_sprite_flags", attr_b_vore_sprite_flags, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_vore_sprite_flags", attr_b_vore_sprite_flags, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_vore_sprite_flags)
 	var/toggle_vs_flag = params["val"]
 	if(!(toggle_vs_flag in host().vore_selected.vore_sprite_flag_list))
@@ -1434,7 +1434,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_liquid_multiplier)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_choice", attr_b_undergarment_choice, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_choice", attr_b_undergarment_choice, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_choice)
 	var/new_undergarment = params["val"]
 	if(!(GLOB.global_underwear.categories_by_name[new_undergarment]))
@@ -1445,7 +1445,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_choice)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_if_none", attr_b_undergarment_if_none, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_undergarment_if_none", attr_b_undergarment_if_none, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_if_none)
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[host().vore_selected.undergarment_chosen]
 	var/selected_underwear = UWC.items_by_name[params["val"]]
@@ -1468,7 +1468,7 @@ UI_SUBACT_PROC(/datum/vore_look, attr_b_undergarment_color)
 	if(.)
 		unsaved_changes = TRUE
 
-UI_SUBACT(/datum/vore_look, "attr", "b_tail_to_change_to", attr_b_tail_to_change_to, UI_ARG_VALUE("val"))
+UI_SUBACT(/datum/vore_look, "attr", "b_tail_to_change_to", attr_b_tail_to_change_to, UI_ARG_TEXT("val"))
 UI_SUBACT_PROC(/datum/vore_look, attr_b_tail_to_change_to)
 	var/tail_choice = params["val"]
 	if(!(tail_choice in GLOB.tail_styles_list))

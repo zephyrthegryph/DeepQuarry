@@ -420,14 +420,16 @@ DECLARE_UI(/obj/machinery/mecha_part_fabricator_tg, "ExosuitFabricatorTg")
 
 	return data
 
-/obj/machinery/mecha_part_fabricator_tg/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/mecha_part_fabricator_tg, "processing=process_queue:num", "merge:ui_data_obj_machinery_mecha_part_fabricator_tg{materials:list,queue:list}")
+
+/// The computed part of /obj/machinery/mecha_part_fabricator_tg's window data (declared on its UI_DATA row).
+/obj/machinery/mecha_part_fabricator_tg/proc/ui_data_obj_machinery_mecha_part_fabricator_tg(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	var/list/material_data =rmat.mat_container()?.tgui_data(user)
+	var/list/material_data =rmat.mat_container()?.material_list_data(user)
 	if(material_data)
 		data["materials"] = material_data
 	data["queue"] = list()
-	data["processing"] = process_queue
 
 	if(being_built())
 		data["queue"] += list(list(
@@ -451,7 +453,7 @@ DECLARE_UI(/obj/machinery/mecha_part_fabricator_tg, "ExosuitFabricatorTg")
 
 	return data
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build", ui_act_build, UI_ARG_LIST("designs"), UI_ARG_VALUE("now"))
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "build", ui_act_build, UI_ARG_LIST("designs"), UI_ARG_BOOL("now"))
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_build)
 	. = TRUE
 	var/designs = params["designs"]
@@ -519,7 +521,7 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_stop_queue)
 	process_queue = FALSE
 	return
 
-UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/mecha_part_fabricator_tg, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)
 	. = TRUE
 	var/datum/material/material = GET_MATERIAL_REF(params["id"])

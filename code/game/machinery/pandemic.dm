@@ -42,14 +42,14 @@
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "create_culture_bottle", ui_act_create_culture_bottle, UI_ARG_VALUE("index"))
+UI_ACT(/obj/machinery/computer/pandemic, "create_culture_bottle", ui_act_create_culture_bottle, UI_ARG_NUM("index"))
 UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_culture_bottle)
 	if(wait)
 		return FALSE
 	create_culture_bottle(params["index"])
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "create_vaccine_bottle", ui_act_create_vaccine_bottle, UI_ARG_VALUE("index"))
+UI_ACT(/obj/machinery/computer/pandemic, "create_vaccine_bottle", ui_act_create_vaccine_bottle, UI_ARG_TEXT("index"))
 UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_vaccine_bottle)
 	if(wait)
 		atom_say("The replicator is not ready yet.")
@@ -75,7 +75,7 @@ UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_empty_beaker)
 	beaker.reagents.clear_reagents()
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/pandemic, "rename_disease", ui_act_rename_disease, UI_ARG_VALUE("index"), UI_ARG_VALUE("name"))
+UI_ACT(/obj/machinery/computer/pandemic, "rename_disease", ui_act_rename_disease, UI_ARG_VALUE("index"), UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_rename_disease)
 	rename_disease(params["index"], params["name"])
 	return TRUE
@@ -97,12 +97,14 @@ UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_print_release_form)
 	print_form(A, ui.user)
 	return TRUE
 
-/obj/machinery/computer/pandemic/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/computer/pandemic, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/machinery/computer/pandemic, "Pandemic")
 
-/obj/machinery/computer/pandemic/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_computer_pandemic{is_ready:bool,has_beaker:bool,has_blood:bool,beaker:list,blood:list,viruses:unknown,resistances:unknown}")
+
+/// The computed part of /obj/machinery/computer/pandemic's window data (declared on its UI_DATA row).
+/obj/machinery/computer/pandemic/proc/ui_data_obj_machinery_computer_pandemic(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["is_ready"] = !wait
 	if(!beaker)

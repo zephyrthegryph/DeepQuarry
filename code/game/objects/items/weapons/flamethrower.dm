@@ -176,11 +176,11 @@ DECLARE_INTERACTIONS(/obj/item/flamethrower, \
 
 DECLARE_UI(/obj/item/flamethrower, "Flamethrower")
 
-/obj/item/flamethrower/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "throw_amount", "merge:ui_data_obj_item_flamethrower{has_tank:bool,throw_min:num,throw_max:num,fuel_kpa:unknown}")
+
+/// The computed part of /obj/item/flamethrower's window data (declared on its UI_DATA row).
+/obj/item/flamethrower/proc/ui_data_obj_item_flamethrower(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/dat = list()
-	dat["lit"] = lit
-	dat["constructed"] = status
-	dat["throw_amount"] = throw_amount
 	// Tank
 	dat["has_tank"] = !isnull(ptank)
 	dat["throw_min"] = THROWER_MIN

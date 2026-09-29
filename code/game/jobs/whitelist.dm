@@ -14,12 +14,14 @@ ADMIN_VERB(open_whitelist_editor, R_ADMIN|R_SERVER, "Open Whitelist Editor", "Op
 
 /datum/whitelist_editor
 
-/datum/whitelist_editor/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/whitelist_editor, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/whitelist_editor, "WhitelistEdit")
 
-/datum/whitelist_editor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/whitelist_editor, "merge:ui_data_datum_whitelist_editor{alienwhitelist:unknown,languagewhitelist:unknown,robotwhitelist:unknown,jobwhitelist:unknown}")
+
+/// The computed part of /datum/whitelist_editor's window data (declared on its UI_DATA row).
+/datum/whitelist_editor/proc/ui_data_datum_whitelist_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"alienwhitelist" = GLOB.alien_whitelist,
 		"languagewhitelist" = GLOB.language_whitelist,

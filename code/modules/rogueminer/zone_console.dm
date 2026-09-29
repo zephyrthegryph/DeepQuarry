@@ -53,18 +53,19 @@
 
 DECLARE_UI(/obj/machinery/computer/roguezones, "RogueZones")
 
-/obj/machinery/computer/roguezones/tgui_data(mob/user)
+UI_DATA(/obj/machinery/computer/roguezones, "scanning:num", "debug:num", "merge:ui_data_obj_machinery_computer_roguezones{timeout_percent:num,diffstep:num,difficulty:unknown,occupied:unknown,updated:bool,shuttle_location:text,shuttle_at_station:num,scan_ready:num,can_recall_shuttle:bool}")
+
+/// The computed part of /obj/machinery/computer/roguezones's window data (declared on its UI_DATA row).
+/obj/machinery/computer/roguezones/proc/ui_data_obj_machinery_computer_roguezones(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/chargePercent = min(100, ((((world.time - GLOB.rm_controller.last_scan) / 10) / 60) / GLOB.rm_controller.scan_wait) * 100)
 	var/curZoneOccupied = GLOB.rm_controller.current_zone() ? GLOB.rm_controller.current_zone().is_occupied() : 0
 
-	var/list/data = ..()
+	var/list/data = list()
 	data["timeout_percent"] = chargePercent
 	data["diffstep"] = GLOB.rm_controller.diffstep
 	data["difficulty"] = GLOB.rm_controller.diffstep_strs[GLOB.rm_controller.diffstep]
 	data["occupied"] = curZoneOccupied
-	data["scanning"] = scanning
 	data["updated"] = ELAPSED(GLOB.rm_controller, last_scan, CLOCK_WORLD) < 20 SECONDS //Very recently scanned (20 seconds)
-	data["debug"] = debug
 
 	if(!shuttle_control())
 		data["shuttle_location"] = "Unknown"

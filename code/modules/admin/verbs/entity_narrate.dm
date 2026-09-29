@@ -190,19 +190,15 @@ ADMIN_VERB(narrate_mob_args, R_FUN, "Narrate Entity", "Narrate entities using po
 			return
 
 
-/datum/entity_narrate/tgui_state(mob/user)
-	return ADMIN_STATE(R_FUN)
+DECLARE_UI_STATE(/datum/entity_narrate, ADMIN_STATE(R_FUN))
 
 DECLARE_UI(/datum/entity_narrate, UI_FROM_VAR("tgui_id"), UI_TITLE("Entity Narration"))
 
-/datum/entity_narrate/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/entity_narrate, "mode_select=tgui_narrate_mode:num", "privacy_select=tgui_narrate_privacy:num", "selected_id=tgui_selected_id:text", "selected_name=tgui_selected_name:text", "selected_type=tgui_selected_type:text", "selection_mode=tgui_selection_mode:num", "merge:ui_data_datum_entity_narrate{multi_id_selection:bool,number_mob_selected:num,entity_names:bool}")
+
+/// The computed part of /datum/entity_narrate's window data (declared on its UI_DATA row).
+/datum/entity_narrate/proc/ui_data_datum_entity_narrate(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["mode_select"] = tgui_narrate_mode
-	data["privacy_select"] = tgui_narrate_privacy
-	data["selected_id"] = tgui_selected_id
-	data["selected_name"] = tgui_selected_name
-	data["selected_type"] = tgui_selected_type
-	data["selection_mode"] = tgui_selection_mode
 	data["multi_id_selection"] = (tgui_selected_id_multi || list())
 	data["number_mob_selected"] = LAZYLEN(tgui_selected_id_multi)
 	data["entity_names"] = (entity_names || list())
@@ -237,7 +233,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_change_mode_narration)
 	tgui_narrate_mode = !tgui_narrate_mode
 	return TRUE
 
-UI_ACT(/datum/entity_narrate, "select_entity", ui_act_select_entity, UI_ARG_VALUE("id_selected"))
+UI_ACT(/datum/entity_narrate, "select_entity", ui_act_select_entity, UI_ARG_TEXT("id_selected"))
 UI_ACT_PROC(/datum/entity_narrate, ui_act_select_entity)
 	if(tgui_selection_mode)
 		if(params["id_selected"] in tgui_selected_id_multi)
@@ -279,7 +275,7 @@ UI_ACT_PROC(/datum/entity_narrate, ui_act_select_entity)
 				tgui_selected_name = A.name
 	return TRUE
 
-UI_ACT(/datum/entity_narrate, "narrate", ui_act_narrate, UI_ARG_VALUE("message"))
+UI_ACT(/datum/entity_narrate, "narrate", ui_act_narrate, UI_ARG_TEXT("message"))
 UI_ACT_PROC(/datum/entity_narrate, ui_act_narrate)
 	if(!COOLDOWN_FINISHED(src, tgui_message_cooldown))
 		to_chat(ui.user, span_notice("You can't messages that quickly! Wait at least half a second"))

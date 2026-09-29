@@ -96,7 +96,10 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 
 DECLARE_UI(/obj/item/radio/electropack, "Electropack")
 
-/obj/item/radio/electropack/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_electropack{on:num,frequency:num,freq_display:text,code:unknown}")
+
+/// The computed part of /obj/item/radio/electropack's window data (declared on its UI_DATA row).
+/obj/item/radio/electropack/proc/ui_data_obj_item_radio_electropack(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"on" = on,
 		"frequency" = frequency,

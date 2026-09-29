@@ -16,8 +16,7 @@
 		GLOB.event_service.tgui_event_manager_panel = null
 	..()
 
-/datum/event_manager_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT)
+DECLARE_UI_STATE(/datum/event_manager_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
 
 DECLARE_UI(/datum/event_manager_panel, "EventManagerPanel", UI_TITLE("Event Manager"))
 
@@ -25,7 +24,10 @@ DECLARE_UI(/datum/event_manager_panel, "EventManagerPanel", UI_TITLE("Event Mana
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/event_manager_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_panel{events_paused:bool,report_at_round_end:bool,selected_severity:unknown,selected_time_left_minutes:num,available_events:list,new_event:list,selected_container_ref:text,severities:list,next_events:list,running_events:list}")
+
+/// The computed part of /datum/event_manager_panel's window data (declared on its UI_DATA row).
+/datum/event_manager_panel/proc/ui_data_datum_event_manager_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
 	data["report_at_round_end"] = !!GLOB.event_service.report_at_round_end

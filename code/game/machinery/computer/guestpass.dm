@@ -178,8 +178,11 @@ EXPIRY_ON_LAPSE(/obj/item/card/id/guest, expiration_time, CLOCK_WORLD, PROC_REF(
 
 DECLARE_UI(/obj/machinery/computer/guestpass, "GuestPass")
 
-/obj/machinery/computer/guestpass/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/guestpass, "giver", "giveName=giv_name:text", "reason:text", "duration:num", "uid", "merge:ui_data_obj_machinery_computer_guestpass{access:unknown,area:list,mode:num,log:bool}")
+
+/// The computed part of /obj/machinery/computer/guestpass's window data (declared on its UI_DATA row).
+/obj/machinery/computer/guestpass/proc/ui_data_obj_machinery_computer_guestpass(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/area_list = list()
 
@@ -193,17 +196,12 @@ DECLARE_UI(/obj/machinery/computer/guestpass, "GuestPass")
 				area_list.Add(list(list("area" = A, "area_name" = SSaccess.get_access_desc(A), "on" = null)))
 	data["area"] = area_list
 
-	data["giver"] = giver
-	data["giveName"] = giv_name
-	data["reason"] = reason
-	data["duration"] = duration
 	data["mode"] = mode
 	data["log"] = (internal_log || list())
-	data["uid"] = uid
 
 	return data
 
-UI_ACT(/obj/machinery/computer/guestpass, "mode", ui_act_mode, UI_ARG_VALUE("mode"))
+UI_ACT(/obj/machinery/computer/guestpass, "mode", ui_act_mode, UI_ARG_NUM("mode"))
 UI_ACT_PROC(/obj/machinery/computer/guestpass, ui_act_mode)
 	set_mode(params["mode"])
 	add_fingerprint(ui.user)

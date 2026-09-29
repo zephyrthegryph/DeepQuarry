@@ -46,8 +46,7 @@ DECLARE_UI(/datum/log_holder, "LogViewer", UI_TITLE("Log Viewer"))
 
 	return TRUE
 
-/datum/log_holder/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG)
+DECLARE_UI_STATE(/datum/log_holder, ADMIN_STATE(R_ADMIN|R_MOD|R_DEBUG))
 
 /datum/log_holder/tgui_static_data(mob/user)
 	var/list/data = list(
@@ -69,7 +68,10 @@ DECLARE_UI(/datum/log_holder, "LogViewer", UI_TITLE("Log Viewer"))
 
 	return data
 
-/datum/log_holder/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/log_holder, "merge:ui_data_datum_log_holder{}")
+
+/// The computed part of /datum/log_holder's window data (declared on its UI_DATA row).
+/datum/log_holder/proc/ui_data_datum_log_holder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!last_data_update || ELAPSED_SINCE(src, last_data_update, CLOCK_WORLD) > LOG_UPDATE_TIMEOUT)
 		cache_ui_data()
 	return data_cache || list()

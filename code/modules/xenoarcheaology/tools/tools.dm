@@ -162,8 +162,7 @@ DECLARE_INTERACTIONS(/obj/item/depth_scanner, INTERACT_USE(null, PROC_REF(intera
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/depth_scanner/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/depth_scanner, GLOB.tgui_deep_inventory_state)
 
 DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 
@@ -173,8 +172,11 @@ DECLARE_UI(/obj/item/depth_scanner, "XenoarchDepthScanner")
 		var/mob/living/silicon/robot/robot_owner = loc
 		.["theme"] = robot_owner.get_ui_theme()
 
-/obj/item/depth_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/depth_scanner, "merge:ui_data_obj_item_depth_scanner{current:list,positive_locations:list}")
+
+/// The computed part of /obj/item/depth_scanner's window data (declared on its UI_DATA row).
+/obj/item/depth_scanner/proc/ui_data_obj_item_depth_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["current"] = list()
 	if(current())
@@ -281,20 +283,20 @@ DECLARE_INTERACTIONS(/obj/item/beacon_locator, INTERACT_USE("Open", PROC_REF(int
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/beacon_locator/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/beacon_locator, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/beacon_locator, "BeaconLocator")
 
-/obj/item/beacon_locator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/beacon_locator, "scan_ticks:num", "rawfreq=frequency:num", "merge:ui_data_obj_item_beacon_locator{degrees:num,minFrequency:num,maxFrequency:num}")
 
-	data["scan_ticks"] = scan_ticks
+/// The computed part of /obj/item/beacon_locator's window data (declared on its UI_DATA row).
+/obj/item/beacon_locator/proc/ui_data_obj_item_beacon_locator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["degrees"] = null
 	if(target_radio())
 		data["degrees"] = round(Get_Angle(get_turf(src), get_turf(target_radio())))
 
-	data["rawfreq"] = frequency
 	data["minFrequency"] = RADIO_LOW_FREQ
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 

@@ -27,7 +27,7 @@ UI_ACT_PROC(/datum/tgui_module/crew_monitor, ui_act_track)
 			AI.ai_actual_track(H)
 	return TRUE
 
-UI_ACT(/datum/tgui_module/crew_monitor, "setZLevel", ui_act_setzlevel, UI_ARG_VALUE("mapZLevel"))
+UI_ACT(/datum/tgui_module/crew_monitor, "setZLevel", ui_act_setzlevel, UI_ARG_NUM("mapZLevel"))
 UI_ACT_PROC(/datum/tgui_module/crew_monitor, ui_act_setzlevel)
 	ui.set_map_z_level(params["mapZLevel"])
 	return TRUE
@@ -48,8 +48,11 @@ DECLARE_UI(/datum/tgui_module/crew_monitor, UI_FROM_VAR("tgui_id"), UI_AUTOUPDAT
 
 	return TRUE
 
-/datum/tgui_module/crew_monitor/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/datum/tgui_module/crew_monitor, "merge:ui_data_datum_tgui_module_crew_monitor{isAI:num,map_levels:list,crewmembers:list}")
+
+/// The computed part of /datum/tgui_module/crew_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/crew_monitor/proc/ui_data_datum_tgui_module_crew_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["isAI"] = isAI(user)
 
@@ -74,15 +77,12 @@ DECLARE_UI(/datum/tgui_module/crew_monitor, UI_FROM_VAR("tgui_id"), UI_AUTOUPDAT
 
 // Subtype for glasses_state
 /datum/tgui_module/crew_monitor/glasses
-/datum/tgui_module/crew_monitor/glasses/tgui_state(mob/user)
-	return GLOB.tgui_glasses_state
+DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/glasses, GLOB.tgui_glasses_state)
 
 // Subtype for self_state
 /datum/tgui_module/crew_monitor/robot
-/datum/tgui_module/crew_monitor/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/robot, GLOB.tgui_self_state)
 
 // Subtype for nif_state
 /datum/tgui_module/crew_monitor/nif
-/datum/tgui_module/crew_monitor/nif/tgui_state(mob/user)
-	return GLOB.tgui_nif_state
+DECLARE_UI_STATE(/datum/tgui_module/crew_monitor/nif, GLOB.tgui_nif_state)

@@ -11,8 +11,7 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/destTagger/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/destTagger, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/destTagger, "DestinationTagger")
 
@@ -20,11 +19,13 @@ DECLARE_UI(/obj/item/destTagger, "DestinationTagger")
 	. = ..()
 	.["level_names"] = using_map.zlevels
 
-/obj/item/destTagger/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/destTagger, "currTag:num", "merge:ui_data_obj_item_destTagger{taggerLocs:unknown}")
+
+/// The computed part of /obj/item/destTagger's window data (declared on its UI_DATA row).
+/obj/item/destTagger/proc/ui_data_obj_item_destTagger(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["taggerLocs"] = GLOB.tagger_locations
-	data["currTag"] = currTag
 
 	return data
 
@@ -41,7 +42,7 @@ DECLARE_INTERACTIONS(/obj/item/destTagger, INTERACT_USE(null, PROC_REF(interacti
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/item/destTagger, "set_tag", ui_act_set_tag, UI_ARG_VALUE("tag"))
+UI_ACT(/obj/item/destTagger, "set_tag", ui_act_set_tag, UI_ARG_TEXT("tag"))
 UI_ACT_PROC(/obj/item/destTagger, ui_act_set_tag)
 	var/new_tag = params["tag"]
 	if(!(new_tag in GLOB.tagger_locations))

@@ -4,8 +4,8 @@
 export type InteractionMenuData = Record<string, unknown>;
 
 export type InteractionMenuActions = {
-  action: { id?: string | number };
+  action: { id?: string };
   change_ui_state: { new_state?: string };
-  run: { id?: string | number };
+  run: { id?: string };
   verb: { name?: string };
 };

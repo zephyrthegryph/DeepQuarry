@@ -51,7 +51,10 @@ DECLARE_INTERACTIONS(/obj/item/soulstone, INTERACT_USE(null, PROC_REF(interactio
 
 DECLARE_UI(/obj/item/soulstone, "Soulstone", UI_TITLE("Soul Stone"))
 
-/obj/item/soulstone/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/soulstone, "merge:ui_data_obj_item_soulstone{has_shade:bool,shade_name:text}")
+
+/// The computed part of /obj/item/soulstone's window data (declared on its UI_DATA row).
+/obj/item/soulstone/proc/ui_data_obj_item_soulstone(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/mob/living/simple_mob/construct/shade/A = locate_within(src, /mob/living/simple_mob/construct/shade)
 	data["has_shade"] = !!A

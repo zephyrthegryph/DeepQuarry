@@ -18,8 +18,7 @@ GLOBAL_LIST_EMPTY(dq_ooc_notes_panels)
 	if(host)
 		GLOB.dq_private_notes_panels -= "[REF(host)]"
 
-/datum/private_notes_panel/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/datum/private_notes_panel, GLOB.tgui_default_state)
 
 DECLARE_UI(/datum/private_notes_panel, "PrivateNotes")
 
@@ -31,7 +30,10 @@ DECLARE_UI(/datum/private_notes_panel, "PrivateNotes")
 /datum/private_notes_panel/ui_title(mob/user)
 	return "Private Notes: [host.name]"
 
-/datum/private_notes_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/private_notes_panel, "merge:ui_data_datum_private_notes_panel{owner:text,notes:unknown}")
+
+/// The computed part of /datum/private_notes_panel's window data (declared on its UI_DATA row).
+/datum/private_notes_panel/proc/ui_data_datum_private_notes_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["owner"] = host ? host.name : "(unknown)"
 	data["notes"] = host ? html_decode(host.private_notes || "") : ""
@@ -82,8 +84,7 @@ UI_ACT_PROC(/datum/private_notes_panel, ui_act_save)
 	if(host)
 		GLOB.dq_ooc_notes_panels -= "[REF(host)]"
 
-/datum/ooc_notes_panel/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/datum/ooc_notes_panel, GLOB.tgui_default_state)
 
 DECLARE_UI(/datum/ooc_notes_panel, "OocNotes")
 
@@ -95,7 +96,10 @@ DECLARE_UI(/datum/ooc_notes_panel, "OocNotes")
 /datum/ooc_notes_panel/ui_title(mob/user)
 	return "OOC Notes: [host.name]"
 
-/datum/ooc_notes_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/ooc_notes_panel, "merge:ui_data_datum_ooc_notes_panel{owner:text,is_owner:bool,ooc_notes:bool,ooc_likes:bool,ooc_dislikes:bool,ooc_favs:bool,ooc_maybes:bool,ooc_style:bool}")
+
+/// The computed part of /datum/ooc_notes_panel's window data (declared on its UI_DATA row).
+/datum/ooc_notes_panel/proc/ui_data_datum_ooc_notes_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host)
 		return data

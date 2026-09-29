@@ -111,21 +111,17 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 
 DECLARE_UI(/obj/machinery/radiocarbon_spectrometer, "XenoarchSpectrometer")
 
-/obj/machinery/radiocarbon_spectrometer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/radiocarbon_spectrometer, "last_scan_data:text", "scanning:num", "scan_progress:num", "scanner_rpm:num", "scanner_rpm_delta:num", "radiation:num", "heat:num", "merge:ui_data_obj_machinery_radiocarbon_spectrometer{scanned_item:unknown,scanned_item_desc:unknown,coolant:num}")
+
+/// The computed part of /obj/machinery/radiocarbon_spectrometer's window data (declared on its UI_DATA row).
+/obj/machinery/radiocarbon_spectrometer/proc/ui_data_obj_machinery_radiocarbon_spectrometer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// this is the data which will be sent to the ui
 	data["scanned_item"] = (scanned_item() ? scanned_item().name : "")
 	data["scanned_item_desc"] = (scanned_item() ? (scanned_item().desc ? scanned_item().desc : "No information on record.") : "")
-	data["last_scan_data"] = last_scan_data
-	data["scanning"] = scanning
-	data["scan_progress"] = scan_progress
 
 	// Mechanics
-	data["scanner_rpm"] = scanner_rpm
-	data["scanner_rpm_delta"] = scanner_rpm_delta
-	data["radiation"] = radiation
-	data["heat"] = heat
 	data["coolant"] = reagents.total_volume
 
 	return data

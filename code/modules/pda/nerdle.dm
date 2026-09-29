@@ -102,7 +102,7 @@
 	unnotify()
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/nerdle, "guess", ui_act_guess, UI_ARG_VALUE("lastword"))
+UI_ACT(/datum/data/pda/app/nerdle, "guess", ui_act_guess, UI_ARG_TEXT("lastword"))
 UI_ACT_PROC(/datum/data/pda/app/nerdle, ui_act_guess)
 	. = TRUE
 	var/guess = params["lastword"]

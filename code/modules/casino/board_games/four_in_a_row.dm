@@ -32,7 +32,10 @@ DECLARE_UI(/datum/board_game/four_row, "FourInARow")
 		"colors" = possible_colors
 	)
 
-/datum/board_game/four_row/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/four_row, "merge:ui_data_datum_board_game_four_row{player_one:unknown,player_two:unknown,placed_chips_pone:bool,placed_chips_ptwo:bool,game_state:unknown,grid_x_size:num,grid_y_size:num,player_one_color:text,player_two_color:text,win_count:num,winner:unknown,has_won:bool,winning_tiles:bool}")
+
+/// The computed part of /datum/board_game/four_row's window data (declared on its UI_DATA row).
+/datum/board_game/four_row/proc/ui_data_datum_board_game_four_row(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
 	var/mob/player_two_mob = om_resolve(player_two)
 

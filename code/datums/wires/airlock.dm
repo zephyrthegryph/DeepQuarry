@@ -42,8 +42,11 @@
 	. += "The 'Check Timing Mechanism' light is [(A.normalspeed == 0 && haspower) ? "on" : "off"]."
 	. += "The IDScan light is [(A.aiDisabledIdScanner == 0 && haspower) ? "on" : "off."]"
 
-/datum/wires/airlock/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/wires/airlock, "merge:ui_data_datum_wires_airlock{id_tag:text,frequency:num,min_freq:num,max_freq:num}")
+
+/// The computed part of /datum/wires/airlock's window data (declared on its UI_DATA row).
+/datum/wires/airlock/proc/ui_data_datum_wires_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/obj/machinery/door/airlock/A = holder
 	data["id_tag"] = A.id_tag

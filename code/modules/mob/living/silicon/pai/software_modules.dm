@@ -18,8 +18,7 @@
 /datum/pai_software/proc/is_active(mob/living/silicon/pai/user)
 	return 0
 
-/datum/pai_software/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/pai_software, GLOB.tgui_always_state)
 
 /datum/pai_software/tgui_status(mob/user)
 	if(!ispAI(user))
@@ -35,7 +34,10 @@
 
 DECLARE_UI(/datum/pai_software/directives, "pAIDirectives")
 
-/datum/pai_software/directives/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/pai_software/directives, "merge:ui_data_datum_pai_software_directives{master:unknown,dna:unknown,prime:text,supplemental:unknown}")
+
+/// The computed part of /datum/pai_software/directives's window data (declared on its UI_DATA row).
+/datum/pai_software/directives/proc/ui_data_datum_pai_software_directives(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["master"] = user.master
@@ -118,8 +120,11 @@ UI_ACT_PROC(/datum/pai_software/directives, ui_act_getdna)
 
 DECLARE_UI(/datum/pai_software/crew_manifest, "CrewManifest")
 
-/datum/pai_software/crew_manifest/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/crew_manifest, "merge:ui_data_datum_pai_software_crew_manifest{manifest:unknown}")
+
+/// The computed part of /datum/pai_software/crew_manifest's window data (declared on its UI_DATA row).
+/datum/pai_software/crew_manifest/proc/ui_data_datum_pai_software_crew_manifest(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	if(GLOB.data_core)
 		GLOB.data_core.get_manifest_list()
 	data["manifest"] = GLOB.PDA_Manifest
@@ -143,8 +148,11 @@ DECLARE_UI(/datum/pai_software/crew_manifest, "CrewManifest")
 
 DECLARE_UI(/datum/pai_software/med_records, "pAIMedrecords")
 
-/datum/pai_software/med_records/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/med_records, "merge:ui_data_datum_pai_software_med_records{records:list,general:text,medical:text,could_not_find:num}")
+
+/// The computed part of /datum/pai_software/med_records's window data (declared on its UI_DATA row).
+/datum/pai_software/med_records/proc/ui_data_datum_pai_software_med_records(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/records = list()
 	for(var/datum/data/record/general in sortRecord(GLOB.data_core.general))
@@ -199,8 +207,11 @@ UI_ACT_PROC(/datum/pai_software/med_records, ui_act_select)
 
 DECLARE_UI(/datum/pai_software/sec_records, "pAISecrecords")
 
-/datum/pai_software/sec_records/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/sec_records, "merge:ui_data_datum_pai_software_sec_records{records:list,general:text,security:text,could_not_find:num}")
+
+/// The computed part of /datum/pai_software/sec_records's window data (declared on its UI_DATA row).
+/datum/pai_software/sec_records/proc/ui_data_datum_pai_software_sec_records(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/records = list()
 	for(var/datum/data/record/general in sortRecord(GLOB.data_core.general))
@@ -259,8 +270,11 @@ UI_ACT_PROC(/datum/pai_software/sec_records, ui_act_select)
 
 DECLARE_UI(/datum/pai_software/door_jack, "pAIDoorjack", UI_TITLE("Door Jack"))
 
-/datum/pai_software/door_jack/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/door_jack, "merge:ui_data_datum_pai_software_door_jack{cable:bool,machine:unknown,inprogress:bool,progress_a:num,progress_b:num,aborted:num}")
+
+/// The computed part of /datum/pai_software/door_jack's window data (declared on its UI_DATA row).
+/datum/pai_software/door_jack/proc/ui_data_datum_pai_software_door_jack(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["cable"] = user.cable != null
 	data["machine"] = !!user.cable?.machine()
@@ -344,8 +358,11 @@ UI_ACT_PROC(/datum/pai_software/door_jack, ui_act_cable)
 
 DECLARE_UI(/datum/pai_software/atmosphere_sensor, "pAIAtmos")
 
-/datum/pai_software/atmosphere_sensor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/atmosphere_sensor, "merge:ui_data_datum_pai_software_atmosphere_sensor{aircontents:unknown}")
+
+/// The computed part of /datum/pai_software/atmosphere_sensor's window data (declared on its UI_DATA row).
+/datum/pai_software/atmosphere_sensor/proc/ui_data_datum_pai_software_atmosphere_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/turf/location = get_turf(user)
 	data["aircontents"] = get_gas_mixture_default_scan_data(location?.return_air())
 	return data
@@ -414,8 +431,11 @@ DECLARE_UI(/datum/pai_software/atmosphere_sensor, "pAIAtmos")
 
 DECLARE_UI(/datum/pai_software/signaller, "Signaler", UI_TITLE("Signaler"))
 
-/datum/pai_software/signaller/tgui_data(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/pai_software/signaller, "merge:ui_data_datum_pai_software_signaller{frequency:num,minFrequency:num,maxFrequency:num,code:num}")
+
+/// The computed part of /datum/pai_software/signaller's window data (declared on its UI_DATA row).
+/datum/pai_software/signaller/proc/ui_data_datum_pai_software_signaller(mob/living/silicon/pai/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/obj/item/radio/integrated/signal/R = user.sradio
 
@@ -436,7 +456,7 @@ UI_ACT_PROC(/datum/pai_software/signaller, ui_act_signal)
 	for(var/mob/O in hearers(1, R.loc))
 		O.show_message("[icon2html(R,O.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 
-UI_ACT(/datum/pai_software/signaller, "freq", ui_act_freq, UI_ARG_VALUE("freq"))
+UI_ACT(/datum/pai_software/signaller, "freq", ui_act_freq, UI_ARG_NUM("freq"))
 UI_ACT_PROC(/datum/pai_software/signaller, ui_act_freq)
 	var/mob/living/silicon/pai/pai = ui.user
 	if(!istype(pai))

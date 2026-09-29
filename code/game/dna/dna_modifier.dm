@@ -401,18 +401,19 @@ DECLARE_UI(/obj/machinery/computer/scan_consolenew, "DNAModifier")
 		return FALSE
 	return TRUE
 
-/obj/machinery/computer/scan_consolenew/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/scan_consolenew, "selectedMenuKey=selected_menu_key", "isInjectorReady=injector_ready:num", "radiationIntensity=radiation_intensity:num", "radiationDuration=radiation_duration:num", "irradiating:num", "selectedUIBlock=selected_ui_block:num", "selectedUISubBlock=selected_ui_subblock:num", "selectedSEBlock=selected_se_block:num", "selectedSESubBlock=selected_se_subblock:num", "selectedUITarget=selected_ui_target:num", "selectedUITargetHex=selected_ui_target_hex:num", "merge:ui_data_obj_machinery_computer_scan_consolenew{locked:unknown,hasOccupant:num,hasDisk:num,disk:list,buffers:unknown,dnaBlockSize:num,occupant:unknown,isBeakerLoaded:num,beakerLabel:text,beakerVolume:unknown,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/scan_consolenew's window data (declared on its UI_DATA row).
+/obj/machinery/computer/scan_consolenew/proc/ui_data_obj_machinery_computer_scan_consolenew(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
-	var/data[0]
-	data["selectedMenuKey"] = selected_menu_key
+	var/list/data = list()
 	data["locked"] = src.connected().locked
 	data["hasOccupant"] = connected().get_occupant() ? 1 : 0
 
-	data["isInjectorReady"] = injector_ready
 
 	data["hasDisk"] = disk ? 1 : 0
 
-	var/diskData[0]
+	var/list/diskData = list()
 	if(!disk || !disk.stored || !disk.stored.mydna) // Traitgenesbody record disks are used instead of a unique disk
 		diskData["data"] = null
 		diskData["owner"] = null
@@ -433,19 +434,10 @@ DECLARE_UI(/obj/machinery/computer/scan_consolenew, "DNAModifier")
 			new_buffers[i]=list("data" = list(), "owner" = null, "label" = null, "type" = DNA2_BUF_SE, "ue" = 0)
 	data["buffers"]=new_buffers
 
-	data["radiationIntensity"] = radiation_intensity
-	data["radiationDuration"] = radiation_duration
-	data["irradiating"] = irradiating
 
 	data["dnaBlockSize"] = DNA_BLOCK_SIZE
-	data["selectedUIBlock"] = selected_ui_block
-	data["selectedUISubBlock"] = selected_ui_subblock
-	data["selectedSEBlock"] = selected_se_block
-	data["selectedSESubBlock"] = selected_se_subblock
-	data["selectedUITarget"] = selected_ui_target
-	data["selectedUITargetHex"] = selected_ui_target_hex
 
-	var/occupantData[0]
+	var/list/occupantData = list()
 	var/mob/living/carbon/WC = connected()?.get_occupant()
 	if(!WC || !WC.dna)
 		occupantData["name"] = null
@@ -508,7 +500,7 @@ DECLARE_UI(/obj/machinery/computer/scan_consolenew, "DNAModifier")
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/scan_consolenew, "selectMenuKey", ui_act_selectmenukey, UI_ARG_VALUE("key"))
+UI_ACT(/obj/machinery/computer/scan_consolenew, "selectMenuKey", ui_act_selectmenukey, UI_ARG_TEXT("key"))
 UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_selectmenukey)
 	play_sfx(src, SFX_MACHINES_BUTTON)
 	var/key = params["key"]

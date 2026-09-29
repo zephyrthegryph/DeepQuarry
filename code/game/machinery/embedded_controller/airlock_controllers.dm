@@ -31,10 +31,12 @@
 /obj/machinery/embedded_controller/radio/airlock/crowbar_act(mob/user, obj/item/tool)
 	return deconstructable ? ..() : ITEM_INTERACT_BLOCKING
 
-/obj/machinery/embedded_controller/radio/airlock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/embedded_controller/radio/airlock, "panel_open:num", "merge:ui_data_obj_machinery_embedded_controller_radio_airlock{tags:unknown,frequency:num,min_freq:num,max_freq:num}")
 
-	data["panel_open"] = panel_open
+/// The computed part of /obj/machinery/embedded_controller/radio/airlock's window data (declared on its UI_DATA row).
+/obj/machinery/embedded_controller/radio/airlock/proc/ui_data_obj_machinery_embedded_controller_radio_airlock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["tags"] = null
 
 	data["frequency"] = null
@@ -94,21 +96,6 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_set_frequen
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-/obj/machinery/embedded_controller/radio/airlock/advanced_airlock_controller/tgui_data(mob/user)
-	var/list/data = ..()
-
-	// Deliberately not using UNTYPED_LIST_ADD, we want this to be appended
-	data += list(
-		"chamber_pressure" = round(program.memory["chamber_sensor_pressure"]),
-		"external_pressure" = round(program.memory["external_sensor_pressure"]),
-		"internal_pressure" = round(program.memory["internal_sensor_pressure"]),
-		"processing" = program.memory["processing"],
-		"purge" = program.memory["purge"],
-		"secure" = program.memory["secure"],
-		"internalTemplateName" = "AirlockConsoleAdvanced",
-	)
-
-	return data
 
 //Airlock controller for airlock control - most airlocks on the station use this
 /obj/machinery/embedded_controller/radio/airlock/airlock_controller
@@ -118,19 +105,6 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_set_frequen
 	deconstructable = TRUE
 	circuit = /obj/item/circuitboard/airlock_cycling
 
-/obj/machinery/embedded_controller/radio/airlock/airlock_controller/tgui_data(mob/user)
-	var/list/data = ..()
-
-	// Deliberately not using UNTYPED_LIST_ADD, we want this to be appended
-	data += list(
-		"chamber_pressure" = round(program.memory["chamber_sensor_pressure"]),
-		"exterior_status" = program.memory["exterior_status"],
-		"interior_status" = program.memory["interior_status"],
-		"processing" = program.memory["processing"],
-		"internalTemplateName" = "AirlockConsoleSimple",
-	)
-
-	return data
 
 //Access controller for door control - used in virology and the like
 /obj/machinery/embedded_controller/radio/airlock/access_controller
@@ -152,15 +126,3 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/airlock, ui_act_set_frequen
 	else
 		icon_state = "access_control_off"
 
-/obj/machinery/embedded_controller/radio/airlock/access_controller/tgui_data(mob/user)
-	var/list/data = ..()
-
-	// Deliberately not using UNTYPED_LIST_ADD, we want this to be appended
-	data += list(
-		"exterior_status" = program.memory["exterior_status"],
-		"interior_status" = program.memory["interior_status"],
-		"processing" = program.memory["processing"],
-		"internalTemplateName" = "DoorAccessConsole",
-	)
-
-	return data

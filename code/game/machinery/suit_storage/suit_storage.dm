@@ -89,23 +89,18 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/suit_storage_unit/tgui_state(mob/user)
-	return GLOB.tgui_notcontained_state
+DECLARE_UI_STATE(/obj/machinery/suit_storage_unit, GLOB.tgui_notcontained_state)
 
 DECLARE_UI(/obj/machinery/suit_storage_unit, "SuitStorageUnit")
 
-/obj/machinery/suit_storage_unit/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/suit_storage_unit, "broken=isbroken:num", "panelopen:num", "locked=islocked:num", "open=isopen:num", "safeties=safetieson:num", "uv_active=isUV:num", "uv_super=issuperUV:num", "merge:ui_data_obj_machinery_suit_storage_unit{helmet:text,suit:text,mask:text,storage:unknown,occupied:bool}")
+
+/// The computed part of /obj/machinery/suit_storage_unit's window data (declared on its UI_DATA row).
+/obj/machinery/suit_storage_unit/proc/ui_data_obj_machinery_suit_storage_unit(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/OCCUPANT = slot_item_real(OCCUPANT_SLOT_SUIT_STORAGE)
 	var/list/data = list()
 
-	data["broken"] = isbroken
-	data["panelopen"] = panelopen
 
-	data["locked"] = islocked
-	data["open"] = isopen
-	data["safeties"] = safetieson
-	data["uv_active"] = isUV
-	data["uv_super"] = issuperUV
 	if(HELMET)
 		data["helmet"] = HELMET.name
 	else

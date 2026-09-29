@@ -21,7 +21,10 @@ UI_ACT_PROC(/datum/tgui_module/shutoff_monitor, ui_act_toggle_open)
 		S.open()
 	return TRUE
 
-/datum/tgui_module/shutoff_monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/shutoff_monitor, "merge:ui_data_datum_tgui_module_shutoff_monitor{valves:list}")
+
+/// The computed part of /datum/tgui_module/shutoff_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/shutoff_monitor/proc/ui_data_datum_tgui_module_shutoff_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/valves = list()
 

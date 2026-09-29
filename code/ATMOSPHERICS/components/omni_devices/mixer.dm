@@ -176,13 +176,14 @@
 
 DECLARE_UI(/obj/machinery/atmospherics/omni/mixer, "OmniMixer")
 
-/obj/machinery/atmospherics/omni/mixer/tgui_data(mob/user)
-	var/list/data = new()
+UI_DATA_REPLACE(/obj/machinery/atmospherics/omni/mixer, "power=use_power", "config=configuring:num", "merge:ui_data_obj_machinery_atmospherics_omni_mixer{ports:list,set_flow_rate:num,last_flow_rate:num}")
 
-	data["power"] = use_power
-	data["config"] = configuring
+/// The computed part of /obj/machinery/atmospherics/omni/mixer's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/omni/mixer/proc/ui_data_obj_machinery_atmospherics_omni_mixer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
-	var/portData[0]
+
+	var/list/portData = list()
 	for(var/datum/omni_port/P in ports)
 		if(!configuring && P.mode == 0)
 			continue
@@ -246,7 +247,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_set_flow_rate)
 	wake_for_state_change()
 	update_icon()
 
-UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_VALUE("mode"))
+UI_ACT(/obj/machinery/atmospherics/omni/mixer, "switch_mode", ui_act_switch_mode, UI_ARG_VALUE("dir"), UI_ARG_TEXT("mode"))
 UI_ACT_PROC(/obj/machinery/atmospherics/omni/mixer, ui_act_switch_mode)
 	. = TRUE
 	if(!configuring || use_power)

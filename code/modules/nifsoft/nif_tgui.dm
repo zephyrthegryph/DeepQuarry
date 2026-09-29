@@ -98,8 +98,7 @@ DECLARE_REF(/datum/nif_menu, "owner", BACK, null)
 /**
  * The NIF State ensures that only our authorized implanted user can touch us.
  */
-/obj/item/nif/tgui_state(mob/user)
-	return GLOB.tgui_nif_main_state
+DECLARE_UI_STATE(/obj/item/nif, GLOB.tgui_nif_main_state)
 
 /**
  * Standard TGUI stub to open the NIF.js template.
@@ -115,19 +114,19 @@ DECLARE_UI(/obj/item/nif, "NIF")
  * tgui_data gives the UI any relevant data it needs.
  * In our case, that's basically everything from our statpanel.
  */
-/obj/item/nif/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/nif, "valid_themes=valid_ui_themes:list", "last_notification", "nif_stat=stat", "merge:ui_data_obj_item_nif{theme:unknown,nutrition:num,isSynthetic:unknown,nif_percent:num,modules:list}")
 
-	data["valid_themes"] = valid_ui_themes
+/// The computed part of /obj/item/nif's window data (declared on its UI_DATA row).
+/obj/item/nif/proc/ui_data_obj_item_nif(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["theme"] = save_data["ui_theme"]
-	data["last_notification"] = last_notification
 
 	// Random biometric information
 	data["nutrition"] = human.nutrition
 	data["isSynthetic"] = HAS_SYNTHETIC_BIOLOGY(human)
 
 	data["nif_percent"] = round((durability/initial(durability))*100)
-	data["nif_stat"] = stat
 
 	var/list/modules = list()
 	if(stat == NIF_WORKING)

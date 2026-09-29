@@ -128,9 +128,12 @@ DECLARE_UI(/obj/machinery/atmospherics/binary/pump, "GasPump")
 		return FALSE
 	return TRUE
 
-/obj/machinery/atmospherics/binary/pump/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_machinery_atmospherics_binary_pump{}")
+
+/// The computed part of /obj/machinery/atmospherics/binary/pump's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/binary/pump/proc/ui_data_obj_machinery_atmospherics_binary_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
-	var/data[0]
+	var/list/data = list()
 
 	data = list(
 		"on" = use_power,

@@ -4,14 +4,15 @@
 // view. The DM side picks based on whether `displayed_data` is set on
 // the cataloguer.
 
-/obj/item/cataloguer/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/cataloguer, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/cataloguer, "Cataloguer", UI_TITLE("Cataloguer"))
 
-/obj/item/cataloguer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/cataloguer, "points_stored:num", "merge:ui_data_obj_item_cataloguer{debug:bool,detail:list,groups:list}")
+
+/// The computed part of /obj/item/cataloguer's window data (declared on its UI_DATA row).
+/obj/item/cataloguer/proc/ui_data_obj_item_cataloguer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["points_stored"] = points_stored
 	data["debug"] = !!debug
 	if(displayed_data)
 		var/cataloguers_text = null

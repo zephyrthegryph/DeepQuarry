@@ -12,7 +12,10 @@
 	tgui_id = "NtosNetMonitor"
 	category = PROG_ADMIN
 
-/datum/computer_file/program/ntnetmonitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/ntnetmonitor, "merge:ui_data_datum_computer_file_program_ntnetmonitor{ntnetstatus:unknown,ntnetrelays:num,idsstatus:num,idsalarm:num,config_softwaredownload:num,config_peertopeer:num,config_communication:num,config_systemcontrol:num,ntnetlogs:list,minlogs:num,maxlogs:num,banned_nids:bool,ntnetmaxlogs:num}")
+
+/// The computed part of /datum/computer_file/program/ntnetmonitor's window data (declared on its UI_DATA row).
+/datum/computer_file/program/ntnetmonitor/proc/ui_data_datum_computer_file_program_ntnetmonitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global)
 		return
 	var/list/data = get_header_data()
@@ -74,7 +77,7 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_purgelogs)
 		GLOB.ntnet_global.purge_logs()
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "updatemaxlogs", ui_act_updatemaxlogs, UI_ARG_VALUE("new_number"))
+UI_ACT(/datum/computer_file/program/ntnetmonitor, "updatemaxlogs", ui_act_updatemaxlogs, UI_ARG_NUM("new_number"))
 UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_updatemaxlogs)
 	var/logcount = params["new_number"]
 	if(GLOB.ntnet_global)

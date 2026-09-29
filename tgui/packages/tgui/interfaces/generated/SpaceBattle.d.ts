@@ -8,13 +8,13 @@ export type SpaceBattleActions = {
   be_player_two: Record<string, never>;
   change_ui_state: { new_state?: string };
   clear_game: Record<string, never>;
-  game_action: { action?: string | number; data?: unknown[] | Record<string, unknown> };
+  game_action: { action?: string; data?: unknown[] | Record<string, unknown> };
   invite_player: Record<string, never>;
   place_ship: { ship?: unknown[] | Record<string, unknown> };
   play_again: Record<string, never>;
   play_again_swapped: Record<string, never>;
   prepare_game: Record<string, never>;
-  remove_ship: { loc_x?: string | number; loc_y?: string | number; player?: number };
+  remove_ship: { loc_x?: number; loc_y?: number; player?: number };
   start_game: Record<string, never>;
   swap_players: Record<string, never>;
 };

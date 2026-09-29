@@ -130,14 +130,14 @@ DECLARE_UI(/obj/machinery/exonet_node, "ExonetNode")
 // Proc: tgui_data()
 // Parameters: 1 (user - the person using the interface)
 // Description: Allows the user to turn the machine on or off, or open or close certain 'ports' for things like external PDA messages, newscasters, etc.
-/obj/machinery/exonet_node/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/exonet_node, "allowPDAs=allow_external_PDAs:num", "allowCommunicators=allow_external_communicators:num", "allowNewscasters=allow_external_newscasters:num", "merge:ui_data_obj_machinery_exonet_node{on:num,logs:bool}")
+
+/// The computed part of /obj/machinery/exonet_node's window data (declared on its UI_DATA row).
+/obj/machinery/exonet_node/proc/ui_data_obj_machinery_exonet_node(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()
 
 	data["on"] = toggle ? 1 : 0
-	data["allowPDAs"] = allow_external_PDAs
-	data["allowCommunicators"] = allow_external_communicators
-	data["allowNewscasters"] = allow_external_newscasters
 	data["logs"] = (logs || list())
 
 	return data

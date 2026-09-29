@@ -5,8 +5,7 @@
 	var/selected_chassis
 	var/selected_color
 
-/datum/tgui_module/pai_chassis/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/pai_chassis, GLOB.tgui_self_state)
 
 /datum/tgui_module/pai_chassis/ui_assets(mob/user)
 	return list(
@@ -29,8 +28,11 @@
 
 	return data
 
-/datum/tgui_module/pai_chassis/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/pai_chassis, "merge:ui_data_datum_tgui_module_pai_chassis{pai_color:text,pai_chassis:text,selected_chassis:unknown,sprite_datum_class:text,sprite_datum_size:num}")
+
+/// The computed part of /datum/tgui_module/pai_chassis's window data (declared on its UI_DATA row).
+/datum/tgui_module/pai_chassis/proc/ui_data_datum_tgui_module_pai_chassis(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/pai/pai_host = host()
 	data["pai_color"] = selected_color ? selected_color : pai_host.eye_color
@@ -45,7 +47,7 @@
 
 	return data
 
-UI_ACT(/datum/tgui_module/pai_chassis, "pick_icon", ui_act_pick_icon, UI_ARG_VALUE("value"))
+UI_ACT(/datum/tgui_module/pai_chassis, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/datum/tgui_module/pai_chassis, ui_act_pick_icon)
 	var/new_chassis = params["value"]
 	if(new_chassis && (new_chassis in GLOB.pai_service.get_chassis_list()))

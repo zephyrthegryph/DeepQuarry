@@ -120,10 +120,12 @@
 
 DECLARE_UI(/obj/machinery/bomb_tester, "BombTester")
 
-/obj/machinery/bomb_tester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/bomb_tester, "simulating:num", "merge:ui_data_obj_machinery_bomb_tester{mode:unknown,tank1:unknown,tank1ref:text,tank2:unknown,tank2ref:text,canister:unknown,sim_canister_output:num}")
 
-	data["simulating"] = simulating
+/// The computed part of /obj/machinery/bomb_tester's window data (declared on its UI_DATA row).
+/obj/machinery/bomb_tester/proc/ui_data_obj_machinery_bomb_tester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	if(!simulating)
 		data["mode"] = sim_mode
 		data["tank1"] = tank1
@@ -160,7 +162,7 @@ UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_set_mode)
 	to_chat(ui.user, span_notice("[src] set to simulate a [text_mode]."))
 	return TRUE
 
-UI_ACT(/obj/machinery/bomb_tester, "add_tank", ui_act_add_tank, UI_ARG_VALUE("slot"))
+UI_ACT(/obj/machinery/bomb_tester, "add_tank", ui_act_add_tank, UI_ARG_NUM("slot"))
 UI_ACT_PROC(/obj/machinery/bomb_tester, ui_act_add_tank)
 	if(istype(ui.user.get_active_hand(), /obj/item/tank))
 		var/obj/item/tank/T = ui.user.get_active_hand()

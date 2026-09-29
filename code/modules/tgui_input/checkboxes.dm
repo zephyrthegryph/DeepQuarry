@@ -84,7 +84,10 @@ DECLARE_UI(/datum/tgui_checkbox_input, "CheckboxInput")
 /datum/tgui_checkbox_input/tgui_state(mob/user)
 	return state()
 
-/datum/tgui_checkbox_input/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_checkbox_input, "merge:ui_data_datum_tgui_checkbox_input{timeout:num}")
+
+/// The computed part of /datum/tgui_checkbox_input's window data (declared on its UI_DATA row).
+/datum/tgui_checkbox_input/proc/ui_data_datum_tgui_checkbox_input(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(timeout)

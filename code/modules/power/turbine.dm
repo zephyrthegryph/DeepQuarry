@@ -311,7 +311,10 @@ DECLARE_UI(/obj/machinery/power/turbine, "Turbine")
 		return FALSE
 	return TRUE
 
-/obj/machinery/power/turbine/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/power/turbine, "merge:ui_data_obj_machinery_power_turbine{display_power:unknown,turbine_rpm:num,starter:num}")
+
+/// The computed part of /obj/machinery/power/turbine's window data (declared on its UI_DATA row).
+/obj/machinery/power/turbine/proc/ui_data_obj_machinery_power_turbine(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"display_power" = lastgen,
 		"turbine_rpm" = compressor()?.rpm,
@@ -381,7 +384,10 @@ UI_ACT_PROC(/obj/machinery/power/turbine, ui_act_start_stop)
 
 DECLARE_UI(/obj/machinery/computer/turbine_computer, "TurbineControl")
 
-/obj/machinery/computer/turbine_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/computer/turbine_computer, "merge:ui_data_obj_machinery_computer_turbine_computer{connected:bool,compressor_broke:bool,turbine_broke:bool,broken:bool,door_status:bool,online:num,power:unknown,rpm:num,temp:unknown}")
+
+/// The computed part of /obj/machinery/computer/turbine_computer's window data (declared on its UI_DATA row).
+/obj/machinery/computer/turbine_computer/proc/ui_data_obj_machinery_computer_turbine_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["connected"] = (compressor() && compressor().turbine()) ? TRUE : FALSE
 	data["compressor_broke"] = (!compressor() || (compressor().stat & BROKEN)) ? TRUE : FALSE

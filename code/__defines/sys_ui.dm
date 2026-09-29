@@ -20,10 +20,14 @@
 
 /// Declares the host's tgui window: interface name plus options (UI_STATE, UI_TITLE, UI_AUTOUPDATE).
 #define DECLARE_UI(PATH, INTERFACE, OPTS...) /datum/ui_declared##PATH/declaration() { return ui_declare(INTERFACE, list(OPTS)) }
-/// Exported data fields: "var" (a var of the host), "proc:getter" (host proc taking (mob/user)),
-/// "slot:SLOT" (a slot fragment from ui_slot_fragment(), the slot system's hook). A "name:type"
-/// suffix (num, text, bool, list, any) types the field for the generated TS.
+/// Exported data fields: "var" (a var of the host), "proc:getter" (host proc taking
+/// (mob/user, datum/tgui/ui, datum/tgui_state/state)), "slot:SLOT" (a slot fragment from
+/// ui_slot_fragment(), the slot system's hook), "merge:getter{key:type,...}" (a getter returning
+/// several computed keys at once). "key=" before a form names the data key; a ":type" suffix
+/// (num, text, bool, list, any) types the field for the generated TS.
 #define UI_DATA(PATH, FIELDS...) /datum/ui_declared##PATH/field_rows() { return ui_declare_fields(..(), list(FIELDS)) }
+/// UI_DATA for a type whose fields replace its parents' instead of adding to them.
+#define UI_DATA_REPLACE(PATH, FIELDS...) /datum/ui_declared##PATH/field_rows() { return ui_declare_fields(null, list(FIELDS)) }
 /// One action row. PROC is the handler's bare name on PATH (checked at compile time).
 #define UI_ACT(PATH, ACTION, PROC, ARGS...) /datum/ui_declared##PATH/act_rows() { return ui_declare_act(..(), ACTION, TYPE_PROC_REF(PATH, PROC), list(ARGS)) }
 /// The row for any action no UI_ACT row names (a controller whose actions are data, a host passing
@@ -38,6 +42,10 @@
 #define UI_ACT_FORWARD(PATH, PROC) /datum/ui_declared##PATH/act_rows() { return ui_declare_act(..(), UI_ACT_FORWARD_KEY, TYPE_PROC_REF(PATH, PROC), null) }
 /// act_rows() key of the UI_ACT_FORWARD row.
 #define UI_ACT_FORWARD_KEY "->"
+/// The host's tgui state (who may see and use its window), when it is the same for every instance:
+/// the base tgui_state() returns it. A state that depends on the instance stays a tgui_state()
+/// override.
+#define DECLARE_UI_STATE(PATH, STATE) /datum/ui_declared##PATH/state_row() { return STATE }
 /// Extra channels that push the window, beyond the UI_DATA fields' own.
 #define UI_WATCH(PATH, MASK) /datum/ui_declared##PATH/watch_mask() { return ..() | (MASK) }
 /// A UI_ACT handler's header.
@@ -115,6 +123,7 @@
 #define UI_FIELD_VAR 1
 #define UI_FIELD_PROC 2
 #define UI_FIELD_SLOT 3
+#define UI_FIELD_MERGE 4
 
 /// The tgui modal actions (code/modules/tgui/modal.dm) on PATH: the host implements
 /// ui_modal_opened() and ui_modal_answered().

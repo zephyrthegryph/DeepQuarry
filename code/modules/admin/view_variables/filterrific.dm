@@ -4,8 +4,7 @@
 /datum/filter_editor/New(atom/target)
 	src.target_handle = om_handle(target)
 
-/datum/filter_editor/tgui_state(mob/user)
-	return ADMIN_STATE(R_VAREDIT)
+DECLARE_UI_STATE(/datum/filter_editor, ADMIN_STATE(R_VAREDIT))
 
 DECLARE_UI(/datum/filter_editor, "Filteriffic")
 
@@ -14,13 +13,16 @@ DECLARE_UI(/datum/filter_editor, "Filteriffic")
 	data["filter_info"] = GLOB.master_filter_info
 	return data
 
-/datum/filter_editor/tgui_data()
+UI_DATA_REPLACE(/datum/filter_editor, "merge:ui_data_datum_filter_editor{target_name:text,target_filter_data:unknown}")
+
+/// The computed part of /datum/filter_editor's window data (declared on its UI_DATA row).
+/datum/filter_editor/proc/ui_data_datum_filter_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_name"] = target().name
 	data["target_filter_data"] = target().filter_data
 	return data
 
-UI_ACT(/datum/filter_editor, "add_filter", ui_act_add_filter, UI_ARG_TEXT("name"), UI_ARG_VALUE("priority"), UI_ARG_VALUE("type"))
+UI_ACT(/datum/filter_editor, "add_filter", ui_act_add_filter, UI_ARG_TEXT("name"), UI_ARG_NUM("priority"), UI_ARG_VALUE("type"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_add_filter)
 	var/target_name = params["name"]
 	while(target().filter_data && target().filter_data[target_name])
@@ -28,12 +30,12 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_add_filter)
 	target().add_filter(target_name, params["priority"], list("type" = params["type"]))
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "remove_filter", ui_act_remove_filter, UI_ARG_VALUE("name"))
+UI_ACT(/datum/filter_editor, "remove_filter", ui_act_remove_filter, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_remove_filter)
 	target().remove_filter(params["name"])
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "rename_filter", ui_act_rename_filter, UI_ARG_VALUE("name"), UI_ARG_VALUE("new_name"))
+UI_ACT(/datum/filter_editor, "rename_filter", ui_act_rename_filter, UI_ARG_TEXT("name"), UI_ARG_TEXT("new_name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_rename_filter)
 	var/list/filter_data = target().filter_data[params["name"]]
 	target().remove_filter(params["name"])
@@ -46,18 +48,18 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_edit_filter)
 	target().add_filter(params["name"], params["priority"], params["new_filter"])
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "change_priority", ui_act_change_priority, UI_ARG_VALUE("name"), UI_ARG_VALUE("new_priority"))
+UI_ACT(/datum/filter_editor, "change_priority", ui_act_change_priority, UI_ARG_TEXT("name"), UI_ARG_NUM("new_priority"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_change_priority)
 	var/new_priority = params["new_priority"]
 	target().change_filter_priority(params["name"], new_priority)
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "transition_filter_value", ui_act_transition_filter_value, UI_ARG_VALUE("name"), UI_ARG_VALUE("new_data"))
+UI_ACT(/datum/filter_editor, "transition_filter_value", ui_act_transition_filter_value, UI_ARG_TEXT("name"), UI_ARG_VALUE("new_data"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_transition_filter_value)
 	target().transition_filter(params["name"], params["new_data"], 4)
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "modify_filter_value", ui_act_modify_filter_value, UI_ARG_VALUE("name"), UI_ARG_LIST("new_data"))
+UI_ACT(/datum/filter_editor, "modify_filter_value", ui_act_modify_filter_value, UI_ARG_TEXT("name"), UI_ARG_LIST("new_data"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_filter_value)
 	var/list/old_filter_data = target().filter_data[params["name"]]
 	var/list/new_filter_data = old_filter_data.Copy()
@@ -70,14 +72,14 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_modify_filter_value)
 	target().add_filter(params["name"], old_filter_data["priority"], new_filter_data)
 	. = TRUE
 
-UI_ACT(/datum/filter_editor, "modify_color_value", ui_act_modify_color_value, UI_ARG_VALUE("name"))
+UI_ACT(/datum/filter_editor, "modify_color_value", ui_act_modify_color_value, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_color_value)
 	var/new_color = act_ask(usr, action, params, ui, "color", /datum/om/prompt/color, message = "Pick new filter color", title = "Filteriffic Colors!")
 	if(new_color)
 		target().transition_filter(params["name"], list("color" = new_color), 4)
 		. = TRUE
 
-UI_ACT(/datum/filter_editor, "modify_icon_value", ui_act_modify_icon_value, UI_ARG_VALUE("name"))
+UI_ACT(/datum/filter_editor, "modify_icon_value", ui_act_modify_icon_value, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_icon_value)
 	if(!GLOB.prompt_flow) // the icon questions re-run this action
 		return prompt_flow(src, PROC_REF(tgui_act), args)

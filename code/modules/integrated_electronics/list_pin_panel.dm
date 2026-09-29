@@ -3,15 +3,17 @@
 /datum/integrated_io/list/interact(mob/user)
 	tgui_interact(user)
 
-/datum/integrated_io/list/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/integrated_io/list, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/integrated_io/list, "ListPin")
 
 /datum/integrated_io/list/ui_title(mob/user)
 	return "List Pin: [name]"
 
-/datum/integrated_io/list/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/integrated_io/list, "merge:ui_data_datum_integrated_io_list{name:text,length:num,entries:list}")
+
+/// The computed part of /datum/integrated_io/list's window data (declared on its UI_DATA row).
+/datum/integrated_io/list/proc/ui_data_datum_integrated_io_list(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data_out = list()
 	data_out["name"] = "[src]"
 	var/list/my_list = data

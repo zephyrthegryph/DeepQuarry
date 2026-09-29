@@ -386,7 +386,10 @@ DECLARE_UI(/obj/machinery/transhuman/resleever, "ResleevingPod", UI_TITLE("Resle
 
 	return TRUE
 
-/obj/machinery/transhuman/resleever/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machinery_transhuman_resleever{occupied:bool,name:text,health:num,stat:num,mindStatus:bool,mindName:text}")
+
+/// The computed part of /obj/machinery/transhuman/resleever's window data (declared on its UI_DATA row).
+/obj/machinery/transhuman/resleever/proc/ui_data_obj_machinery_transhuman_resleever(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/mob/living/carbon/human/H = get_occupant()

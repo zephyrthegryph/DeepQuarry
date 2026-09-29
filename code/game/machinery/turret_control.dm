@@ -144,7 +144,10 @@
 
 DECLARE_UI(/obj/machinery/turretid, "PortableTurret")
 
-/obj/machinery/turretid/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/turretid, "merge:ui_data_obj_machinery_turretid{locked:unknown,on:num,targetting_is_configurable:unknown,lethal:num,lethal_is_configurable:num,check_weapons:unknown,neutralize_noaccess:unknown,one_access:bool,selectedAccess:list,access_is_configurable:bool,neutralize_norecord:num,neutralize_criminals:num,neutralize_nonsynth:unknown,neutralize_all:unknown,neutralize_unidentified:unknown,neutralize_down:unknown}")
+
+/// The computed part of /obj/machinery/turretid's window data (declared on its UI_DATA row).
+/obj/machinery/turretid/proc/ui_data_obj_machinery_turretid(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled,

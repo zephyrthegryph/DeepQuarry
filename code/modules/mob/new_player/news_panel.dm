@@ -13,8 +13,7 @@
 	host = host_mob
 	channel = CHANNEL
 
-/datum/news_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/news_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/news_panel, "LatestNews", UI_TITLE("Latest News"))
 
@@ -23,7 +22,10 @@ DECLARE_UI(/datum/news_panel, "LatestNews", UI_TITLE("Latest News"))
 		return FALSE
 	return TRUE
 
-/datum/news_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/news_panel, "merge:ui_data_datum_news_panel{channel_name:text,page:bool,total:num,has_messages:bool,title:text,author:text,body:text}")
+
+/// The computed part of /datum/news_panel's window data (declared on its UI_DATA row).
+/datum/news_panel/proc/ui_data_datum_news_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host || !channel)
 		return data

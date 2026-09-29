@@ -267,7 +267,10 @@ EXTEND_INTERACTIONS(/obj/machinery/smartfridge, \
 
 DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
 
-/obj/machinery/smartfridge/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/smartfridge, "name:text", "secure=is_secure:num", "merge:ui_data_obj_machinery_smartfridge{contents:list,locked:num}")
+
+/// The computed part of /obj/machinery/smartfridge's window data (declared on its UI_DATA row).
+/obj/machinery/smartfridge/proc/ui_data_obj_machinery_smartfridge(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 
 	var/list/items = list()
@@ -278,9 +281,7 @@ DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
 			items.Add(list(list("name" = capitalize(I.item_name), "index" = i, "amount" = count)))
 
 	.["contents"] = items
-	.["name"] = name
 	.["locked"] = locked
-	.["secure"] = is_secure
 
 /obj/machinery/smartfridge/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -288,7 +289,7 @@ DECLARE_UI(/obj/machinery/smartfridge, "SmartVend")
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/machinery/smartfridge, "Release", ui_act_release, UI_ARG_VALUE("amount"), UI_ARG_NUM("index"))
+UI_ACT(/obj/machinery/smartfridge, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
 UI_ACT_PROC(/obj/machinery/smartfridge, ui_act_release)
 	var/amount = 0
 	if(params["amount"])

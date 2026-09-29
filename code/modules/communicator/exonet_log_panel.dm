@@ -15,8 +15,7 @@
 	if(host()?.dq_exonet_log_panel_cache == src)
 		host().dq_exonet_log_panel_cache = null
 
-/datum/exonet_log_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/exonet_log_panel, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/exonet_log_panel, "ExonetLog", UI_TITLE("Exonet Message Log"))
 
@@ -25,7 +24,10 @@ DECLARE_UI(/datum/exonet_log_panel, "ExonetLog", UI_TITLE("Exonet Message Log"))
 		return FALSE
 	return TRUE
 
-/datum/exonet_log_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{lines:unknown}")
+
+/// The computed part of /datum/exonet_log_panel's window data (declared on its UI_DATA row).
+/datum/exonet_log_panel/proc/ui_data_datum_exonet_log_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["lines"] = host() ? (host().exonet_messages ? host().exonet_messages.Copy() : list()) : list()
 	return data

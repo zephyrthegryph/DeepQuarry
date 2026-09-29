@@ -45,7 +45,10 @@ GLOBAL_LIST_INIT(checkers_static_data, list("game_type" = "checkers"))
 /datum/board_game/checkers/tgui_static_data(mob/user)
 	return GLOB.checkers_static_data
 
-/datum/board_game/checkers/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/checkers, "merge:ui_data_datum_board_game_checkers{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_figure:bool,valid_moves:bool,game_state:unknown,winner:unknown,has_won:bool,possible_jumps:bool}")
+
+/// The computed part of /datum/board_game/checkers's window data (declared on its UI_DATA row).
+/datum/board_game/checkers/proc/ui_data_datum_board_game_checkers(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
 	var/mob/player_two_mob = om_resolve(player_two)
 

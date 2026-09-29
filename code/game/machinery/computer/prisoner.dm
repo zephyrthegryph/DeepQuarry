@@ -23,7 +23,10 @@
 
 DECLARE_UI(/obj/machinery/computer/prisoner, "PrisonerManagement")
 
-/obj/machinery/computer/prisoner/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/prisoner, "merge:ui_data_obj_machinery_computer_prisoner{}")
+
+/// The computed part of /obj/machinery/computer/prisoner's window data (declared on its UI_DATA row).
+/obj/machinery/computer/prisoner/proc/ui_data_obj_machinery_computer_prisoner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/chemImplants = list()
 	var/list/trackImplants = list()
 	if(screen)
@@ -79,7 +82,7 @@ UI_ACT_PROC(/obj/machinery/computer/prisoner, ui_act_lock)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/prisoner, "warn", ui_act_warn, UI_ARG_VALUE("imp"))
+UI_ACT(/obj/machinery/computer/prisoner, "warn", ui_act_warn, UI_ARG_TEXT("imp"))
 UI_ACT_PROC(/obj/machinery/computer/prisoner, ui_act_warn)
 	om_ask(ui.user, /datum/om/prompt/text/implant_warning, PROC_REF(warning_entered), imp_ref = params["imp"], ui_refresh = src)
 	. = TRUE

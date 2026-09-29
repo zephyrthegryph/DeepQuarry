@@ -413,7 +413,10 @@ TGUI PROCS
 */
 DECLARE_UI(/obj/machinery/maint_recycler, "RecyclerInterface")
 
-/obj/machinery/maint_recycler/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/maint_recycler, "merge:ui_data_obj_machinery_maint_recycler{heldItemName:text,heldItemValue:unknown,userName:text,userBalance:unknown,itemIcon:text}")
+
+/// The computed part of /obj/machinery/maint_recycler's window data (declared on its UI_DATA row).
+/obj/machinery/maint_recycler/proc/ui_data_obj_machinery_maint_recycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["heldItemName"] = inserted_item?.name
 	data["heldItemValue"] = try_get_obj_value(inserted_item)

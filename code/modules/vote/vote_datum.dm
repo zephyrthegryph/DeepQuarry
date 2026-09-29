@@ -149,19 +149,20 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 	UI STUFFS
 */
 
-/datum/vote/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/vote, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/vote, "VotePanel", UI_TITLE("Vote Panel"))
 
-/datum/vote/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/vote, "question:text", "merge:ui_data_datum_vote{remaining:unknown,user_vote:unknown,choices:bool,show_counts:bool,counts:list}")
+
+/// The computed part of /datum/vote's window data (declared on its UI_DATA row).
+/datum/vote/proc/ui_data_datum_vote(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["remaining"] = remaining()
 	data["user_vote"] = null
 	if(user.ckey in voted)
 		data["user_vote"] = LAZYACCESS(voted, user.ckey)
 
-	data["question"] = question
 	data["choices"] = (choices || list())
 
 	if(show_counts || check_rights_for(user.client, R_ADMIN))
@@ -181,7 +182,7 @@ DECLARE_UI(/datum/vote, "VotePanel", UI_TITLE("Vote Panel"))
 
 	return data
 
-UI_ACT(/datum/vote, "vote", ui_act_vote, UI_ARG_VALUE("target"))
+UI_ACT(/datum/vote, "vote", ui_act_vote, UI_ARG_TEXT("target"))
 UI_ACT_PROC(/datum/vote, ui_act_vote)
 	. = TRUE
 	if(params["target"] in choices)

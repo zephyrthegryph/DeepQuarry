@@ -270,12 +270,14 @@ DECLARE_INTERACTIONS(/obj/item/tank, \
 		src.proxyassembly.assembly.attack_self(user)
 	return TRUE
 
-/obj/item/tank/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/tank, GLOB.tgui_deep_inventory_state)
 
 DECLARE_UI(/obj/item/tank, "Tank")
 
-/obj/item/tank/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/tank, "merge:ui_data_obj_item_tank{tankPressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,connected:bool,maskConnected:bool}")
+
+/// The computed part of /obj/item/tank's window data (declared on its UI_DATA row).
+/obj/item/tank/proc/ui_data_obj_item_tank(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tankPressure"] = round(air_contents.return_pressure() ? air_contents.return_pressure() : 0)
 	data["releasePressure"] = round(distribute_pressure ? distribute_pressure : 0)

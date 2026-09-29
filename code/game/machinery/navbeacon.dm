@@ -110,7 +110,10 @@ DECLARE_UI(/obj/machinery/navbeacon, "NavBeacon")
 
 	return TRUE
 
-/obj/machinery/navbeacon/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/navbeacon, "merge:ui_data_obj_machinery_navbeacon{siliconUser:num,locked:num,open:num,location:text,codes:bool}")
+
+/// The computed part of /obj/machinery/navbeacon's window data (declared on its UI_DATA row).
+/obj/machinery/navbeacon/proc/ui_data_obj_machinery_navbeacon(mob/user, datum/tgui/ui, datum/tgui_state/state)
 
 	return list(
 		"siliconUser" = issilicon(user),
@@ -136,7 +139,7 @@ UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_loc_edit)
 	location = new_loc
 	return TRUE
 
-UI_ACT(/obj/machinery/navbeacon, "trans_edit_key", ui_act_trans_edit_key, UI_ARG_VALUE("code"), UI_ARG_TEXT("new_key"))
+UI_ACT(/obj/machinery/navbeacon, "trans_edit_key", ui_act_trans_edit_key, UI_ARG_TEXT("code"), UI_ARG_TEXT("new_key"))
 UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_edit_key)
 	if(!open || locked)
 		return FALSE
@@ -155,7 +158,7 @@ UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_edit_key)
 	codes = new_codes
 	return TRUE
 
-UI_ACT(/obj/machinery/navbeacon, "trans_edit_code", ui_act_trans_edit_code, UI_ARG_VALUE("code"), UI_ARG_TEXT("new_val"))
+UI_ACT(/obj/machinery/navbeacon, "trans_edit_code", ui_act_trans_edit_code, UI_ARG_TEXT("code"), UI_ARG_TEXT("new_val"))
 UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_edit_code)
 	if(!open || locked)
 		return FALSE
@@ -183,7 +186,7 @@ UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_add_code)
 	LAZYSET(codes, new_key, new_val)
 	return TRUE
 
-UI_ACT(/obj/machinery/navbeacon, "trans_del", ui_act_trans_del, UI_ARG_VALUE("code"))
+UI_ACT(/obj/machinery/navbeacon, "trans_del", ui_act_trans_del, UI_ARG_TEXT("code"))
 UI_ACT_PROC(/obj/machinery/navbeacon, ui_act_trans_del)
 	if(!open || locked)
 		return FALSE

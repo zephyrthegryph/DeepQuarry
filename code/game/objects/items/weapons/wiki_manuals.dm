@@ -26,15 +26,17 @@
 		return
 	tgui_interact(user)
 
-/obj/item/book/manual/wiki/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/book/manual/wiki, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/book/manual/wiki, "WikiBook")
 
 /obj/item/book/manual/wiki/ui_title(mob/user)
 	return title || name
 
-/obj/item/book/manual/wiki/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/book/manual/wiki, "merge:ui_data_obj_item_book_manual_wiki{title:bool,intro:text,url:unknown}")
+
+/// The computed part of /obj/item/book/manual/wiki's window data (declared on its UI_DATA row).
+/obj/item/book/manual/wiki/proc/ui_data_obj_item_book_manual_wiki(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"title" = title || name,
 		"intro" = wiki_intro_html,

@@ -111,10 +111,12 @@ DECLARE_UI(/datum/wires, UI_FROM_VAR("tgui_template"))
 /datum/wires/ui_title(mob/user)
 	return "[proper_name] wires"
 
-/datum/wires/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/datum/wires, GLOB.tgui_physical_state)
 
-/datum/wires/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/wires, "merge:ui_data_datum_wires{wires:list,status:list}")
+
+/// The computed part of /datum/wires's window data (declared on its UI_DATA row).
+/datum/wires/proc/ui_data_datum_wires(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/replace_colors
 

@@ -93,12 +93,12 @@
 
 DECLARE_UI(/mob/living/bot/secbot, "Secbot")
 
-/mob/living/bot/secbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/secbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_secbot{idcheck:unknown,check_records:num,check_arrest:num,arrest_type:unknown,declare_arrests:unknown,bot_patrolling:unknown,will_patrol:unknown,patrol:num}")
 
-	data["on"] = on
-	data["open"] = open
-	data["locked"] = locked
+/// The computed part of /mob/living/bot/secbot's window data (declared on its UI_DATA row).
+/mob/living/bot/secbot/proc/ui_data_mob_living_bot_secbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 
 	data["idcheck"] = null
 	data["check_records"] = null

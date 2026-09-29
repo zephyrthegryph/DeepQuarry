@@ -49,7 +49,10 @@ DECLARE_UI(/obj/machinery/computer/ship/sensors, "OvermapShipSensors")
 /obj/machinery/computer/ship/sensors/ui_title(mob/user)
 	return "[linked().name] Sensors Control"
 
-/obj/machinery/computer/ship/sensors/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/ship/sensors, "merge:ui_data_obj_machinery_computer_ship_sensors{viewing:unknown,on:unknown,range:unknown,health:unknown,max_health:num,heat:num,critical_heat:num,status:text,contacts:list}")
+
+/// The computed part of /obj/machinery/computer/ship/sensors's window data (declared on its UI_DATA row).
+/obj/machinery/computer/ship/sensors/proc/ui_data_obj_machinery_computer_ship_sensors(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["viewing"] = viewing_overmap(user)

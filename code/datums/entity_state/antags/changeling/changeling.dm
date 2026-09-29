@@ -439,8 +439,7 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 /datum/changeling_panel
 	var/comp_handle
 
-/datum/changeling_panel/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/changeling_panel, GLOB.tgui_always_state)
 
 /datum/changeling_panel/tgui_status(mob/user)
 	if(!isliving(user)) //We ghosted or something.
@@ -449,7 +448,10 @@ DECLARE_INTERACTIONS(/obj/item/changeling_debug, INTERACT_USE(null, PROC_REF(int
 
 DECLARE_UI(/datum/changeling_panel, "ChangelingPanel", UI_TITLE("Changeling Evolution Panel"))
 
-/datum/changeling_panel/tgui_data(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/changeling_panel, "merge:ui_data_datum_changeling_panel{available_points:num,power_list:list}")
+
+/// The computed part of /datum/changeling_panel's window data (declared on its UI_DATA row).
+/datum/changeling_panel/proc/ui_data_datum_changeling_panel(mob/living/carbon/human/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/power_list = list()
 
@@ -467,7 +469,7 @@ DECLARE_UI(/datum/changeling_panel, "ChangelingPanel", UI_TITLE("Changeling Evol
 
 	return data
 
-UI_ACT(/datum/changeling_panel, "evolve_power", ui_act_evolve_power, UI_ARG_VALUE("val"))
+UI_ACT(/datum/changeling_panel, "evolve_power", ui_act_evolve_power, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/datum/changeling_panel, ui_act_evolve_power)
 	comp().purchasePower(comp().owner, params["val"]) //The power must be the power's NAME.
 	return TRUE

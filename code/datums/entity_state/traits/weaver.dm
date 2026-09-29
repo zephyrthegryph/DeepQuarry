@@ -94,7 +94,10 @@ DECLARE_UI(/datum/trait_state/weaver, "WeaverConfig", UI_TITLE("Weaver Config"))
 	RETURN_TYPE(/datum/trait_state/weaver)
 	return get_trait_state(/datum/trait_state/weaver)
 
-/datum/trait_state/weaver/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/trait_state/weaver, "merge:ui_data_datum_trait_state_weaver{silk_reserve:num,silk_max_reserve:num,silk_color:text,silk_production:num,savefile_selected:unknown}")
+
+/// The computed part of /datum/trait_state/weaver's window data (declared on its UI_DATA row).
+/datum/trait_state/weaver/proc/ui_data_datum_trait_state_weaver(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list(
 		"silk_reserve" = silk_reserve,
 		"silk_max_reserve" = silk_max_reserve,

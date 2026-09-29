@@ -602,12 +602,14 @@ GLOBAL_LIST_EMPTY(colored_images)
 // These were previously declared as ui_* procs, so the framework never called them
 // and the panel was dead. Renamed to the fork convention + opened by an admin verb
 // (code/modules/admin/verbs/debug.dm: "Debug Atmospherics").
-/datum/controller/subsystem/air/tgui_state(mob/user)
-	return ADMIN_STATE(R_DEBUG)
+DECLARE_UI_STATE(/datum/controller/subsystem/air, ADMIN_STATE(R_DEBUG))
 
 DECLARE_UI(/datum/controller/subsystem/air, "AtmosControlPanel", UI_TITLE("Atmospherics Debug"))
 
-/datum/controller/subsystem/air/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/controller/subsystem/air, "frozen=can_fire:num", "fire_count=times_fired:num", "merge:ui_data_datum_controller_subsystem_air{excited_groups:list,active_size:num,hotspots_size:num,excited_size:unknown,conducting_size:num,show_all:unknown,display_max:bool,showing_user:unknown}")
+
+/// The computed part of /datum/controller/subsystem/air's window data (declared on its UI_DATA row).
+/datum/controller/subsystem/air/proc/ui_data_datum_controller_subsystem_air(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	// Excited groups + active-turf/superconduction lists live in the Rust arena
 	// now and aren't enumerable from DM. Surface the per-tick auxmos counters the
@@ -617,9 +619,7 @@ DECLARE_UI(/datum/controller/subsystem/air, "AtmosControlPanel", UI_TITLE("Atmos
 	data["hotspots_size"] = hotspots.len
 	data["excited_size"] = num_group_turfs_processed
 	data["conducting_size"] = 0
-	data["frozen"] = can_fire
 	data["show_all"] = display_all_groups
-	data["fire_count"] = times_fired
 	#ifdef TRACK_MAX_SHARE
 	data["display_max"] = TRUE
 	#else

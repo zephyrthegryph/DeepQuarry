@@ -250,14 +250,12 @@
 
 DECLARE_UI(/obj/machinery/computer/skills, "GeneralRecords", UI_TITLE("Department Management"))
 
-/obj/machinery/computer/skills/tgui_data(mob/user)
-	var/data[0]
-	data["temp"] = temp
+UI_DATA_REPLACE(/obj/machinery/computer/skills, "temp:text", "authenticated", "rank", "screen:num", "printing:num", "merge:ui_data_obj_machinery_computer_skills{scan:text,isAI:num,isRobot:num,can_allocate_station_budget:unknown,station_balance:num,station_monthly_income:num,station_monthly_expenses:num,station_income_sources:unknown,nt_salary_support:num,allocation_policy:unknown,next_budget_cycle:num,budget_plan:unknown,department_finances:list,station_transactions:unknown,contract_departments:list,contract_faction_standings:list,contracts:list,records:list,general:list,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/skills's window data (declared on its UI_DATA row).
+/obj/machinery/computer/skills/proc/ui_data_obj_machinery_computer_skills(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["authenticated"] = authenticated
-	data["rank"] = rank
-	data["screen"] = screen
-	data["printing"] = printing
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	if(authenticated)
@@ -523,7 +521,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_screen)
 		screen = clamp(requested_screen || 0, GENERAL_RECORD_LIST, GENERAL_RECORD_MAINT)
 	active1_handle = null
 
-UI_ACT(/obj/machinery/computer/skills, "contract_accept", ui_act_contract_accept, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_accept", ui_act_contract_accept, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_accept)
 	. = TRUE
 	if(!(authenticated))
@@ -532,7 +530,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_accept)
 	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 	return accept_management_contract(contract, ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_decline", ui_act_contract_decline, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_decline", ui_act_contract_decline, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_decline)
 	. = TRUE
 	if(!(authenticated))
@@ -541,7 +539,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_decline)
 	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 	return decline_management_contract(contract, ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_negotiate", ui_act_contract_negotiate, UI_ARG_VALUE("clause"), UI_ARG_VALUE("id"), UI_ARG_VALUE("option"))
+UI_ACT(/obj/machinery/computer/skills, "contract_negotiate", ui_act_contract_negotiate, UI_ARG_TEXT("clause"), UI_ARG_TEXT("id"), UI_ARG_TEXT("option"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_negotiate)
 	. = TRUE
 	if(!(authenticated))
@@ -550,7 +548,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_negotiate)
 	var/datum/contract/contract = SScontracts.contracts_by_id[params["id"]]
 	return negotiate_management_contract(contract, params["clause"], params["option"], ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_finalize_outcome", ui_act_contract_finalize_outcome, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_finalize_outcome", ui_act_contract_finalize_outcome, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_finalize_outcome)
 	. = TRUE
 	if(!(authenticated))
@@ -559,7 +557,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_finalize_outcome)
 	var/datum/contract/social/contract = SScontracts.contracts_by_id[params["id"]]
 	return finalize_social_contract(contract, ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_packet", ui_act_contract_print_trial_packet, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_packet", ui_act_contract_print_trial_packet, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_packet)
 	. = TRUE
 	if(!(authenticated))
@@ -571,7 +569,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_packet)
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return trial.print_clinical_packet(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_report", ui_act_contract_print_trial_report, UI_ARG_VALUE("adverse"), UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_report", ui_act_contract_print_trial_report, UI_ARG_TEXT("adverse"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_report)
 	. = TRUE
 	if(!(authenticated))
@@ -582,7 +580,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_report)
 		return FALSE
 	return trial.print_final_report(get_turf(src), params["adverse"])
 
-UI_ACT(/obj/machinery/computer/skills, "contract_resupply_trial", ui_act_contract_resupply_trial, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_resupply_trial", ui_act_contract_resupply_trial, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_resupply_trial)
 	. = TRUE
 	if(!(authenticated))
@@ -593,7 +591,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_resupply_trial)
 		return FALSE
 	return trial.request_resupply(get_turf(src))
 
-UI_ACT(/obj/machinery/computer/skills, "contract_reissue_trial_packet", ui_act_contract_reissue_trial_packet, UI_ARG_VALUE("id"), UI_ARG_VALUE("subject_id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_reissue_trial_packet", ui_act_contract_reissue_trial_packet, UI_ARG_TEXT("id"), UI_ARG_TEXT("subject_id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_reissue_trial_packet)
 	. = TRUE
 	if(!(authenticated))
@@ -605,7 +603,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_reissue_trial_packet
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return trial.reissue_clinical_packet(get_turf(src), params["subject_id"], account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_revocation", ui_act_contract_print_trial_revocation, UI_ARG_VALUE("id"), UI_ARG_VALUE("subject_id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_print_trial_revocation", ui_act_contract_print_trial_revocation, UI_ARG_TEXT("id"), UI_ARG_TEXT("subject_id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_revocation)
 	. = TRUE
 	if(!(authenticated))
@@ -617,7 +615,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_trial_revocati
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return trial.print_consent_revocation(get_turf(src), params["subject_id"], account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_case_forms", ui_act_contract_print_case_forms, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_print_case_forms", ui_act_contract_print_case_forms, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_forms)
 	. = TRUE
 	if(!(authenticated))
@@ -629,7 +627,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_forms)
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return report.print_case_forms(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "contract_print_case_revocation", ui_act_contract_print_case_revocation, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/computer/skills, "contract_print_case_revocation", ui_act_contract_print_case_revocation, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_revocation)
 	. = TRUE
 	if(!(authenticated))
@@ -641,7 +639,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_contract_print_case_revocatio
 	var/datum/money_account/account = scan ? get_account(scan.associated_account_number) : null
 	return report.print_consent_revocation(get_turf(src), account?.account_number)
 
-UI_ACT(/obj/machinery/computer/skills, "set_department_wages", ui_act_set_department_wages, UI_ARG_VALUE("department"), UI_ARG_NUM("multiplier"))
+UI_ACT(/obj/machinery/computer/skills, "set_department_wages", ui_act_set_department_wages, UI_ARG_TEXT("department"), UI_ARG_NUM("multiplier"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_wages)
 	. = TRUE
 	if(!(authenticated))
@@ -651,7 +649,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_wages)
 	var/new_multiplier = params["multiplier"]
 	return set_department_wage(department, new_multiplier)
 
-UI_ACT(/obj/machinery/computer/skills, "set_department_allocation_percent", ui_act_set_department_allocation_percent, UI_ARG_VALUE("department"), UI_ARG_NUM("percent"))
+UI_ACT(/obj/machinery/computer/skills, "set_department_allocation_percent", ui_act_set_department_allocation_percent, UI_ARG_TEXT("department"), UI_ARG_NUM("percent"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_allocation_percent)
 	. = TRUE
 	if(!(authenticated))
@@ -661,7 +659,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_department_allocation_per
 	var/percent = params["percent"]
 	return set_department_allocation_percent(department, percent, ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "transfer_department_funds", ui_act_transfer_department_funds, UI_ARG_NUM("amount"), UI_ARG_VALUE("department"))
+UI_ACT(/obj/machinery/computer/skills, "transfer_department_funds", ui_act_transfer_department_funds, UI_ARG_NUM("amount"), UI_ARG_TEXT("department"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_transfer_department_funds)
 	. = TRUE
 	if(!(authenticated))
@@ -669,7 +667,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_transfer_department_funds)
 	. = TRUE
 	return transfer_department_funds(params["department"], params["amount"], ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "clear_department_allocation", ui_act_clear_department_allocation, UI_ARG_VALUE("department"))
+UI_ACT(/obj/machinery/computer/skills, "clear_department_allocation", ui_act_clear_department_allocation, UI_ARG_TEXT("department"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_clear_department_allocation)
 	. = TRUE
 	if(!(authenticated))
@@ -677,7 +675,7 @@ UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_clear_department_allocation)
 	. = TRUE
 	return clear_department_allocation(params["department"], ui.user)
 
-UI_ACT(/obj/machinery/computer/skills, "set_allocation_policy", ui_act_set_allocation_policy, UI_ARG_VALUE("policy"))
+UI_ACT(/obj/machinery/computer/skills, "set_allocation_policy", ui_act_set_allocation_policy, UI_ARG_TEXT("policy"))
 UI_ACT_PROC(/obj/machinery/computer/skills, ui_act_set_allocation_policy)
 	. = TRUE
 	if(!(authenticated))

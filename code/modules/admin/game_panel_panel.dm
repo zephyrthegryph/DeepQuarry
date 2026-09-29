@@ -15,8 +15,7 @@
 DECLARE_REF(/datum/game_panel, "owner_admin", PAIR, "tgui_game_panel")
 DECLARE_REF(/datum/admins, "tgui_game_panel", PAIR, "owner_admin")
 
-/datum/game_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN)
+DECLARE_UI_STATE(/datum/game_panel, ADMIN_STATE(R_ADMIN))
 
 DECLARE_UI(/datum/game_panel, "GamePanel", UI_TITLE("Game Panel"))
 
@@ -24,7 +23,10 @@ DECLARE_UI(/datum/game_panel, "GamePanel", UI_TITLE("Game Panel"))
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/game_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/game_panel, "merge:ui_data_datum_game_panel{master_mode:unknown,secret_mode:bool}")
+
+/// The computed part of /datum/game_panel's window data (declared on its UI_DATA row).
+/datum/game_panel/proc/ui_data_datum_game_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"master_mode" = GLOB.master_mode,
 		"secret_mode" = GLOB.master_mode == "secret",

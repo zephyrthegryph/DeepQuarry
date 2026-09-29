@@ -198,7 +198,10 @@ UI_ACT_PROC(/datum/computer_file/program/chatclient, ui_act_prg_setpassword)
 	data["can_admin"] = can_run(user, FALSE, ACCESS_NETWORK)
 	return data
 
-/datum/computer_file/program/chatclient/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/chatclient, "active_channel", "username", "adminmode=netadmin_mode:num", "merge:ui_data_datum_computer_file_program_chatclient{all_channels:list,title:text,authed:bool,clients:list,messages:list,is_operator:bool}")
+
+/// The computed part of /datum/computer_file/program/chatclient's window data (declared on its UI_DATA row).
+/datum/computer_file/program/chatclient/proc/ui_data_datum_computer_file_program_chatclient(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global) // chat_channels is lazy; no channels still shows the client
 		return list()
 
@@ -213,9 +216,6 @@ UI_ACT_PROC(/datum/computer_file/program/chatclient, ui_act_prg_setpassword)
 			)))
 	data["all_channels"] = all_channels
 
-	data["active_channel"] = active_channel
-	data["username"] = username
-	data["adminmode"] = netadmin_mode
 	var/datum/ntnet_conversation/channel = GLOB.ntnet_global.get_chat_channel_by_id(active_channel)
 	if(channel)
 		data["title"] = channel.title

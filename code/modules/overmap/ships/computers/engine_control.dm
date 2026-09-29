@@ -25,7 +25,10 @@ DECLARE_UI(/obj/machinery/computer/ship/engines, "OvermapEngines")
 /obj/machinery/computer/ship/engines/ui_title(mob/user)
 	return "[linked().name] Engines Control"
 
-/obj/machinery/computer/ship/engines/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/computer/ship/engines, "merge:ui_data_obj_machinery_computer_ship_engines{global_state:num,global_limit:num,engines_info:list,total_thrust:num}")
+
+/// The computed part of /obj/machinery/computer/ship/engines's window data (declared on its UI_DATA row).
+/obj/machinery/computer/ship/engines/proc/ui_data_obj_machinery_computer_ship_engines(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["global_state"] = linked().engines_state
 	data["global_limit"] = round(linked().thrust_limit*100)

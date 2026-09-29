@@ -8,8 +8,11 @@
 	var/list/viewers //Who's viewing a UAV through us
 	var/adhoc_range = 30 //How far we can operate on a UAV without NTnet
 
-/datum/tgui_module/uav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/uav, "merge:ui_data_datum_tgui_module_uav{current_uav:unknown,signal_strength:unknown,in_use:num,paired_uavs:list}")
+
+/// The computed part of /datum/tgui_module/uav's window data (declared on its UI_DATA row).
+/datum/tgui_module/uav/proc/ui_data_datum_tgui_module_uav(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if(current_uav())
 		if(QDELETED(current_uav()))

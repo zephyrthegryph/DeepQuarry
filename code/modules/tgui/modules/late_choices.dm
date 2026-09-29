@@ -54,8 +54,11 @@
 		return TRUE
 	return FALSE
 
-/datum/tgui_module/late_choices/tgui_data(mob/new_player/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/late_choices, "merge:ui_data_datum_tgui_module_late_choices{name:unknown,duration:text,evac:text,jobs:list}")
+
+/// The computed part of /datum/tgui_module/late_choices's window data (declared on its UI_DATA row).
+/datum/tgui_module/late_choices/proc/ui_data_datum_tgui_module_late_choices(mob/new_player/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/name = user.client.prefs.read_preference(/datum/preference/toggle/human/name_is_always_random) ? "friend" : user.client.prefs.read_preference(/datum/preference/name/real_name)
 
@@ -116,7 +119,7 @@
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/tgui_module/late_choices, "join", ui_act_join, UI_ARG_VALUE("job"))
+UI_ACT(/datum/tgui_module/late_choices, "join", ui_act_join, UI_ARG_TEXT("job"))
 UI_ACT_PROC(/datum/tgui_module/late_choices, ui_act_join)
 	var/mob/new_player/new_user = ui.user
 	var/job = params["job"]

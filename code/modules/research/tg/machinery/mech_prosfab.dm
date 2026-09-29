@@ -35,12 +35,12 @@
 	print_sound.stop()
 	update_icon()
 
-/obj/machinery/mecha_part_fabricator_tg/prosthetics/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/mecha_part_fabricator_tg/prosthetics, "species_types:list", "species:text", "manufacturer", "merge:ui_data_obj_machinery_mecha_part_fabricator_tg_prosthetics{all_manufacturers:list}")
 
-	data["species_types"] = species_types
-	data["species"] = species
-	data["manufacturer"] = manufacturer
+/// The computed part of /obj/machinery/mecha_part_fabricator_tg/prosthetics's window data (declared on its UI_DATA row).
+/obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/ui_data_obj_machinery_mecha_part_fabricator_tg_prosthetics(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 
 	if(GLOB.all_robolimbs)
 		var/list/T = list()

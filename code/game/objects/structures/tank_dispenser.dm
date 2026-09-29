@@ -50,17 +50,11 @@
 	name = "Use"
 	effect = /atom/proc/interaction_open_ui
 
-/obj/structure/dispenser/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/structure/dispenser, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/structure/dispenser, "TankDispenser")
 
-/obj/structure/dispenser/tgui_data(mob/user)
-	var/list/data = list()
-	data["oxygen"] = oxygentanks
-	data["phoron"] = phorontanks
-
-	return data
+UI_DATA_REPLACE(/obj/structure/dispenser, "oxygen=oxygentanks", "phoron=phorontanks")
 
 /// Old attackby: store a tank, or take a hit on harm intent.
 /datum/interaction/entry_item/dispenser_item

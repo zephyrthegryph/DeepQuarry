@@ -128,12 +128,14 @@
 
 DECLARE_UI(/obj/machinery/computer/robotics, "RoboticsControlConsole")
 
-/obj/machinery/computer/robotics/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/robotics, "safety:num", "merge:ui_data_obj_machinery_computer_robotics{auth:unknown,can_hack:unknown,cyborgs:list,show_detonate_all:bool}")
+
+/// The computed part of /obj/machinery/computer/robotics's window data (declared on its UI_DATA row).
+/obj/machinery/computer/robotics/proc/ui_data_obj_machinery_computer_robotics(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["auth"] = is_authenticated(user)
 	data["can_hack"] = can_hack_any(user)
 	data["cyborgs"] = list()
-	data["safety"] = safety
 	for(var/mob/living/silicon/robot/R in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(!console_shows(R))
 			continue

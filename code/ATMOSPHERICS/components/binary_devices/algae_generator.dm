@@ -194,9 +194,11 @@
 
 DECLARE_UI(/obj/machinery/atmospherics/binary/algae_farm, "AlgaeFarm")
 
-/obj/machinery/atmospherics/binary/algae_farm/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/algae_farm, "panelOpen=panel_open:num", "last_flow_rate:num", "last_power_draw:num", "usePower=use_power", "errorText=ui_error", "merge:ui_data_obj_machinery_atmospherics_binary_algae_farm{materials:list,inputDir:text,outputDir:text,input:list,output:list}")
+
+/// The computed part of /obj/machinery/atmospherics/binary/algae_farm's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/binary/algae_farm/proc/ui_data_obj_machinery_atmospherics_binary_algae_farm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["panelOpen"] = panel_open
 
 	var/list/materials_ui = list()
 	for(var/M in stored_material)
@@ -207,12 +209,8 @@ DECLARE_UI(/obj/machinery/atmospherics/binary/algae_farm, "AlgaeFarm")
 				"max" = storage_capacity[M],
 				"percent" = (stored_material[M] / storage_capacity[M] * 100))
 	data["materials"] = materials_ui
-	data["last_flow_rate"] = last_flow_rate
-	data["last_power_draw"] = last_power_draw
 	data["inputDir"] = dir2text(GLOB.reverse_dir[dir])
 	data["outputDir"] = dir2text(dir)
-	data["usePower"] = use_power
-	data["errorText"] = ui_error
 
 	if(air1 && network1 && node1)
 		data["input"] = list(
@@ -245,7 +243,7 @@ UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_toggle)
 	update_icon()
 	. = TRUE
 
-UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "ejectMaterial", ui_act_ejectmaterial, UI_ARG_VALUE("mat"))
+UI_ACT(/obj/machinery/atmospherics/binary/algae_farm, "ejectMaterial", ui_act_ejectmaterial, UI_ARG_TEXT("mat"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/algae_farm, ui_act_ejectmaterial)
 	var/matName = params["mat"]
 	if(!(matName in stored_material))

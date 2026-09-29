@@ -18,10 +18,12 @@ DECLARE_UI(/datum/ticket_chat, "TicketChat")
 	if(user.client?.current_ticket())
 		user.throw_alert("open ticket", /atom/movable/screen/alert/open_ticket)
 
-/datum/ticket_chat/tgui_state(mob/user)
-	return GLOB.tgui_ticket_state
+DECLARE_UI_STATE(/datum/ticket_chat, GLOB.tgui_ticket_state)
 
-/datum/ticket_chat/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/ticket_chat, "merge:ui_data_datum_ticket_chat{id:num,level:num,handler:text,log:list}")
+
+/// The computed part of /datum/ticket_chat's window data (declared on its UI_DATA row).
+/datum/ticket_chat/proc/ui_data_datum_ticket_chat(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["id"] = T().id

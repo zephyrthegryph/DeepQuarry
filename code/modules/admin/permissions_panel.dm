@@ -116,8 +116,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 // clears its holder's cached panel.
 DECLARE_REF(/datum/permissions_panel, "holder_handle", BACK_HANDLE, "dq_permissions_panel")
 
-/datum/permissions_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_PERMISSIONS)
+DECLARE_UI_STATE(/datum/permissions_panel, ADMIN_STATE(R_PERMISSIONS))
 
 DECLARE_UI(/datum/permissions_panel, "PermissionsPanel", UI_TITLE("Permissions"))
 
@@ -295,7 +294,10 @@ DECLARE_UI(/datum/permissions_panel, "PermissionsPanel", UI_TITLE("Permissions")
 	data["unused_ranks"] = unused_rank_rows
 	return data
 
-/datum/permissions_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/permissions_panel, "merge:ui_data_datum_permissions_panel{page:bool,PERMISSIONS_PAGE_PERMISSIONS:num,PERMISSIONS_PAGE_RANKS:num,PERMISSIONS_PAGE_LOGGING:num,PERMISSIONS_PAGE_HOUSEKEEPING:num,permissions_rows:unknown,ranks_page:unknown,logging_page:unknown,housekeeping_page:unknown}")
+
+/// The computed part of /datum/permissions_panel's window data (declared on its UI_DATA row).
+/datum/permissions_panel/proc/ui_data_datum_permissions_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!holder())
 		return data

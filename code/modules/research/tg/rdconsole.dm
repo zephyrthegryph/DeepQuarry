@@ -174,7 +174,10 @@ DECLARE_UI(/obj/machinery/computer/rdconsole_tg, "Techweb")
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
 	)
 
-/obj/machinery/computer/rdconsole_tg/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machinery_computer_rdconsole_tg{stored_research:bool,locked:num,t_disk:unknown,d_disk:listmap,nodes:list}")
+
+/// The computed part of /obj/machinery/computer/rdconsole_tg's window data (declared on its UI_DATA row).
+/obj/machinery/computer/rdconsole_tg/proc/ui_data_obj_machinery_computer_rdconsole_tg(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["stored_research"] = !!stored_research
 	data["locked"] = locked
@@ -334,27 +337,27 @@ UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_togglelock)
 		to_chat(usr, span_boldwarning("Unauthorized Access."))
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "researchNode", ui_act_researchnode, UI_ARG_VALUE("node_id"))
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "researchNode", ui_act_researchnode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_researchnode)
 	research_node(params["node_id"], usr)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "enqueueNode", ui_act_enqueuenode, UI_ARG_VALUE("node_id"))
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "enqueueNode", ui_act_enqueuenode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_enqueuenode)
 	enqueue_node(params["node_id"], usr)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "dequeueNode", ui_act_dequeuenode, UI_ARG_VALUE("node_id"))
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "dequeueNode", ui_act_dequeuenode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_dequeuenode)
 	dequeue_node(params["node_id"], usr)
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "ejectDisk", ui_act_ejectdisk, UI_ARG_VALUE("type"))
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "ejectDisk", ui_act_ejectdisk, UI_ARG_TEXT("type"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_ejectdisk)
 	eject_disk(params["type"])
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/rdconsole_tg, "uploadDisk", ui_act_uploaddisk, UI_ARG_VALUE("type"))
+UI_ACT(/obj/machinery/computer/rdconsole_tg, "uploadDisk", ui_act_uploaddisk, UI_ARG_TEXT("type"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_uploaddisk)
 	if(params["type"] == RND_DESIGN_DISK)
 		if(QDELETED(d_disk))

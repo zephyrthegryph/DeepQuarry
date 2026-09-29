@@ -135,11 +135,13 @@
 DECLARE_UI(/obj/machinery/portable_atmospherics/powered/pump, "PortablePump")
 
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/powered/pump, GLOB.tgui_physical_state)
 
-/obj/machinery/portable_atmospherics/powered/pump/tgui_data(mob/user)
-	var/list/data[0]
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/pump, "merge:ui_data_obj_machinery_portable_atmospherics_powered_pump{on:bool,direction:bool,connected:bool,pressure:unknown,target_pressure:num,default_pressure:num,min_pressure:num,max_pressure:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/powered/pump's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/powered/pump/proc/ui_data_obj_machinery_portable_atmospherics_powered_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["on"] = on ? TRUE : FALSE
 	data["direction"] = !direction_out ? TRUE : FALSE
 	data["connected"] = connected_port() ? TRUE : FALSE

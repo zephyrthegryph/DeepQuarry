@@ -36,12 +36,14 @@ EXTEND_INTERACTIONS(/obj/item/book/dq_medical_reference, INTERACT_USE("Read", PR
 /obj/item/book/dq_medical_reference/proc/interaction_read_reference(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-/obj/item/book/dq_medical_reference/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/item/book/dq_medical_reference, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/item/book/dq_medical_reference, "DQMedicalBook")
 
-/obj/item/book/dq_medical_reference/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/book/dq_medical_reference, "merge:ui_data_obj_item_book_dq_medical_reference{conditions:unknown,symptoms:unknown,reagents:unknown,causes:unknown,surgeries:unknown}")
+
+/// The computed part of /obj/item/book/dq_medical_reference's window data (declared on its UI_DATA row).
+/obj/item/book/dq_medical_reference/proc/ui_data_obj_item_book_dq_medical_reference(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["conditions"] = _dq_book_conditions()
 	data["symptoms"]   = _dq_book_symptoms()

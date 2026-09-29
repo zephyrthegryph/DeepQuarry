@@ -31,15 +31,16 @@
 
 DECLARE_UI(/mob/living/bot/farmbot, "Farmbot")
 
-/mob/living/bot/farmbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/farmbot, "on:num", "locked:num", "merge:ui_data_mob_living_bot_farmbot{tank:bool,tankVolume:num,tankMaxVolume:num,waters_trays:num,refills_water:num,uproots_weeds:num,replaces_nutriment:num,collects_produce:num,removes_dead:num}")
 
-	data["on"] = on
+/// The computed part of /mob/living/bot/farmbot's window data (declared on its UI_DATA row).
+/mob/living/bot/farmbot/proc/ui_data_mob_living_bot_farmbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["tank"] = !!tank
 	if(tank)
 		data["tankVolume"] = tank.reagents.total_volume
 		data["tankMaxVolume"] = tank.reagents.maximum_volume
-	data["locked"] = locked
 
 	data["waters_trays"] = null
 	data["refills_water"] = null

@@ -126,12 +126,11 @@ DECLARE_INTERACTIONS(/obj/item/technomancer_catalog, \
 
 DECLARE_UI(/obj/item/technomancer_catalog, "TechnomancerCatalog", UI_TITLE("Catalog"))
 
-/obj/item/technomancer_catalog/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/technomancer_catalog, "tab:num", "spell_tab", "budget:num", "max_budget:num", "merge:ui_data_obj_item_technomancer_catalog{spell_categories:list,spells:list,equipment:list,consumables:list,assistance:list}")
+
+/// The computed part of /obj/item/technomancer_catalog's window data (declared on its UI_DATA row).
+/obj/item/technomancer_catalog/proc/ui_data_obj_item_technomancer_catalog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["tab"] = tab
-	data["spell_tab"] = spell_tab
-	data["budget"] = budget
-	data["max_budget"] = max_budget
 	data["spell_categories"] = list(ALL_SPELLS, OFFENSIVE_SPELLS, DEFENSIVE_SPELLS, UTILITY_SPELLS, SUPPORT_SPELLS)
 	var/list/spells = list()
 	for(var/datum/technomancer/spell/s in spell_instances)
@@ -180,12 +179,12 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_tab_choice)
 	tab = params["tab"]
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_category", ui_act_spell_category, UI_ARG_VALUE("category"))
+UI_ACT(/obj/item/technomancer_catalog, "spell_category", ui_act_spell_category, UI_ARG_TEXT("category"))
 UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_category)
 	spell_tab = params["category"]
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "spell_choice", ui_act_spell_choice, UI_ARG_VALUE("name"))
+UI_ACT(/obj/item/technomancer_catalog, "spell_choice", ui_act_spell_choice, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
 	var/mob/living/carbon/human/H = ui.user
 	H.set_machine(src)
@@ -209,7 +208,7 @@ UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_spell_choice)
 			to_chat(H, span_danger("You can't afford that!"))
 	return TRUE
 
-UI_ACT(/obj/item/technomancer_catalog, "item_choice", ui_act_item_choice, UI_ARG_VALUE("name"))
+UI_ACT(/obj/item/technomancer_catalog, "item_choice", ui_act_item_choice, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/technomancer_catalog, ui_act_item_choice)
 	var/mob/living/carbon/human/H = ui.user
 	H.set_machine(src)

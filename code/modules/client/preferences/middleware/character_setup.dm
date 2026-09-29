@@ -537,7 +537,7 @@ GLOBAL_LIST_INIT(dq_group_order, list(
 	var/list/data = ..()
 	return data
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_select_category", ui_act_dq_select_category, UI_ARG_VALUE("category"), UI_ARG_VALUE("force_catalogs"))
+UI_ACT(/datum/preference_middleware/character_setup, "dq_select_category", ui_act_dq_select_category, UI_ARG_TEXT("category"), UI_ARG_BOOL("force_catalogs"))
 UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_select_category)
 	dq_ensure_category_cache()
 	var/category_key = params["category"]
@@ -578,7 +578,7 @@ UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_update_prefe
 // chosen value is written through the same update_preference path so constraints
 // and apply-hooks fire identically to a typed write.
 
-UI_ACT(/datum/preference_middleware/character_setup, "dq_pick_color", ui_act_dq_pick_color, UI_ARG_VALUE("key"))
+UI_ACT(/datum/preference_middleware/character_setup, "dq_pick_color", ui_act_dq_pick_color, UI_ARG_TEXT("key"))
 UI_ACT_PROC(/datum/preference_middleware/character_setup, ui_act_dq_pick_color)
 	var/key = params["key"]
 	var/datum/preference/pref = GLOB.preference_entries_by_key[key]

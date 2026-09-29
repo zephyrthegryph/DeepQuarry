@@ -77,17 +77,12 @@ DECLARE_UI(/mob/living/bot/mulebot, "MuleBot")
 /mob/living/bot/mulebot/ui_title(mob/user)
 	return "Mulebot [suffix ? "([suffix])" : ""]"
 
-/mob/living/bot/mulebot/tgui_data(mob/user)
-	var/list/data = ..()
-	data["suffix"] = suffix
-	data["power"] = on
+UI_DATA(/mob/living/bot/mulebot, "suffix", "power=on:num", "load:num", "locked:num", "auto_return:num", "crates_only:num", "hatch=open:num", "safety:num", "merge:ui_data_mob_living_bot_mulebot{issillicon:num}")
+
+/// The computed part of /mob/living/bot/mulebot's window data (declared on its UI_DATA row).
+/mob/living/bot/mulebot/proc/ui_data_mob_living_bot_mulebot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["issillicon"] = issilicon(user)
-	data["load"] = load
-	data["locked"] = locked
-	data["auto_return"] = auto_return
-	data["crates_only"] = crates_only
-	data["hatch"] = open
-	data["safety"] = safety
 	return data
 
 /mob/living/bot/mulebot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

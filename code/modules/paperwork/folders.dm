@@ -125,9 +125,11 @@ DECLARE_INTERACTIONS(/obj/item/folder, \
 
 DECLARE_UI(/obj/item/folder, "Folder")
 
-/obj/item/folder/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_item_folder{items:list}")
+
+/// The computed part of /obj/item/folder's window data (declared on its UI_DATA row).
+/obj/item/folder/proc/ui_data_obj_item_folder(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["folder_name"] = name
 	var/list/items = list()
 	FOR_REAL_CONTENTS(var/obj/item/paper/P, src)
 		items += list(list("ref" = "\ref[P]", "name" = P.name, "kind" = "paper"))

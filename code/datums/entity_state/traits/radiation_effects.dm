@@ -277,7 +277,10 @@ DECLARE_UI(/datum/trait_state/radiation_effects, "RadiationConfig", UI_TITLE("Ra
 
 	rad.tgui_interact(src)
 
-/datum/trait_state/radiation_effects/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/trait_state/radiation_effects, "merge:ui_data_datum_trait_state_radiation_effects{glowing:num,radiation_color:text,glowtoggle:num,radiation_nutrition:num,nutrition_toggle:num,radiation_nutrition_cap:num,current_nutrition:num}")
+
+/// The computed part of /datum/trait_state/radiation_effects's window data (declared on its UI_DATA row).
+/datum/trait_state/radiation_effects/proc/ui_data_datum_trait_state_radiation_effects(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/living_guy = owner
 	var/data = list(
 		"glowing" = glows,

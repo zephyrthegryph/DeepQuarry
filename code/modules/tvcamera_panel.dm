@@ -2,12 +2,14 @@
 
 // ---- TV camera ------------------------------------------------------------
 
-/obj/item/tvcamera/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/tvcamera, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/tvcamera, "EyeBuddy", UI_TITLE("Eye Buddy"))
 
-/obj/item/tvcamera/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/tvcamera, "merge:ui_data_obj_item_tvcamera{channel:unknown,video_on:bool,audio_on:bool,showing_name:unknown,frequency:text}")
+
+/// The computed part of /obj/item/tvcamera's window data (declared on its UI_DATA row).
+/obj/item/tvcamera/proc/ui_data_obj_item_tvcamera(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["channel"] = channel ? channel : "unidentified broadcast"
 	data["video_on"] = !!camera.status
@@ -39,12 +41,14 @@ UI_ACT_PROC(/obj/item/tvcamera, ui_act_toggle_audio)
 
 // ---- Bodycam --------------------------------------------------------------
 
-/obj/item/clothing/accessory/bodycam/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/clothing/accessory/bodycam, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/clothing/accessory/bodycam, "EyeBuddy", UI_TITLE("Eye Buddy"))
 
-/obj/item/clothing/accessory/bodycam/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/clothing/accessory/bodycam, "merge:ui_data_obj_item_clothing_accessory_bodycam{channel:unknown,video_on:bool,audio_on:bool,showing_name:unknown,frequency:text}")
+
+/// The computed part of /obj/item/clothing/accessory/bodycam's window data (declared on its UI_DATA row).
+/obj/item/clothing/accessory/bodycam/proc/ui_data_obj_item_clothing_accessory_bodycam(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["channel"] = channel ? channel : "unidentified broadcast"
 	data["video_on"] = !!bcamera.status

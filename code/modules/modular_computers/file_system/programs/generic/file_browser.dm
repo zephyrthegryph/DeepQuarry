@@ -16,7 +16,7 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_openfile", ui_act_prg_openfile, UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_openfile", ui_act_prg_openfile, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_openfile)
 	open_file = params["uid"]
 	return TRUE
@@ -44,7 +44,7 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_closefile)
 	open_file = null
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_clone", ui_act_prg_clone, UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_clone", ui_act_prg_clone, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clone)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
@@ -113,7 +113,7 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_printfile)
 		return TRUE
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_deletefile", ui_act_prg_deletefile, UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_deletefile", ui_act_prg_deletefile, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_deletefile)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
@@ -124,7 +124,7 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_deletefile)
 	file.holder().remove_file(file)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_rename", ui_act_prg_rename, UI_ARG_VALUE("new_name"), UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_rename", ui_act_prg_rename, UI_ARG_TEXT("new_name"), UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_rename)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	if(!HDD)
@@ -141,7 +141,7 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_rename)
 	file.filename = newname
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_copytousb", ui_act_prg_copytousb, UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_copytousb", ui_act_prg_copytousb, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copytousb)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive
@@ -157,7 +157,7 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copytousb)
 	RHDD.store_file(C)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_copyfromusb", ui_act_prg_copyfromusb, UI_ARG_VALUE("uid"))
+UI_ACT(/datum/computer_file/program/filemanager, "PRG_copyfromusb", ui_act_prg_copyfromusb, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copyfromusb)
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
 	var/obj/item/computer_hardware/hard_drive/RHDD = computer().portable_drive
@@ -178,7 +178,10 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clearerror)
 	error = null
 	return TRUE
 
-/datum/computer_file/program/filemanager/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/filemanager, "merge:ui_data_datum_computer_file_program_filemanager{error:text,filedata:unknown,filename:text,files:list,usbconnected:bool,usbfiles:list}")
+
+/// The computed part of /datum/computer_file/program/filemanager's window data (declared on its UI_DATA row).
+/datum/computer_file/program/filemanager/proc/ui_data_datum_computer_file_program_filemanager(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive

@@ -166,11 +166,12 @@
 
 DECLARE_UI(/obj/machinery/atmospherics/trinary/atmos_filter, "AtmosFilter")
 
-/obj/machinery/atmospherics/trinary/atmos_filter/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/trinary/atmos_filter, "on=use_power", "rate=set_flow_rate:num", "merge:ui_data_obj_machinery_atmospherics_trinary_atmos_filter{max_rate:unknown,last_flow_rate:num,filter_types:list}")
+
+/// The computed part of /obj/machinery/atmospherics/trinary/atmos_filter's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/trinary/atmos_filter/proc/ui_data_obj_machinery_atmospherics_trinary_atmos_filter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["on"] = use_power
-	data["rate"] = set_flow_rate
 	data["max_rate"] = air1.return_volume()
 	data["last_flow_rate"] = round(last_flow_rate, 0.1)
 

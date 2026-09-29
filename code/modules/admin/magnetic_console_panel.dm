@@ -11,16 +11,14 @@
 
 DECLARE_UI(/obj/machinery/magnetic_controller, "MagneticConsole", UI_TITLE("Magnetic Control Console"))
 
-/obj/machinery/magnetic_controller/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/magnetic_controller, GLOB.tgui_default_state)
 
-/obj/machinery/magnetic_controller/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/magnetic_controller, "frequency:num", "code", "speed:num", "path", "merge:ui_data_obj_machinery_magnetic_controller{autolink:bool,moving:bool,magnets:list}")
+
+/// The computed part of /obj/machinery/magnetic_controller's window data (declared on its UI_DATA row).
+/obj/machinery/magnetic_controller/proc/ui_data_obj_machinery_magnetic_controller(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["autolink"] = !!autolink
-	data["frequency"] = frequency
-	data["code"] = code
-	data["speed"] = speed
-	data["path"] = path
 	data["moving"] = !!moving
 
 	var/list/magnet_rows = list()

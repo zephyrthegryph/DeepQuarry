@@ -31,8 +31,8 @@ DECLARE_REF(/datum/using_machine_shim, "owner", BACK, "machine_shim")
 	linked_machine().in_use = TRUE
 
 	// Lets complain if an object uses TGUI but is still setting the machine.
-	if(length(linked_machine().tgui_data()))
-		log_world("## ERROR [machine.type] implements tgui_data(), and has likely been ported to tgui already. It should no longer use set_machine().")
+	if(ui_decl_of(linked_machine())?.interface)
+		log_world("## ERROR [machine.type] declares a tgui window (DECLARE_UI), and has likely been ported to tgui already. It should no longer use set_machine().")
 
 // the machine is free again and the operator's perspective and trait reset.
 /datum/using_machine_shim/lifecycle_prerelease()

@@ -3,12 +3,14 @@
 // One row per coin type with a "Remove one" button. Uses the existing
 // Topic handler since the coin-removal logic is fine where it is.
 
-/obj/item/moneybag/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/moneybag, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/moneybag, "Moneybag", UI_TITLE("Moneybag"))
 
-/obj/item/moneybag/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/moneybag, "merge:ui_data_obj_item_moneybag{counts:unknown}")
+
+/// The computed part of /obj/item/moneybag's window data (declared on its UI_DATA row).
+/obj/item/moneybag/proc/ui_data_obj_item_moneybag(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list("counts" = count_coins())
 
 /obj/item/moneybag/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

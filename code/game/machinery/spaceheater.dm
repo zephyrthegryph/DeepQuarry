@@ -168,8 +168,7 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 		update_icon()
 	return
 
-/obj/machinery/space_heater/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/space_heater, GLOB.tgui_physical_state)
 
 /obj/machinery/space_heater/tgui_status(mob/user)
 	if(!panel_open)
@@ -178,14 +177,14 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 
 DECLARE_UI(/obj/machinery/space_heater, "SpaceHeater")
 
-/obj/machinery/space_heater/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/space_heater, "temp=set_temperature", "minTemp=min_temperature", "maxTemp=max_temperature:num", "merge:ui_data_obj_machinery_space_heater{cell:bool,power:num}")
+
+/// The computed part of /obj/machinery/space_heater's window data (declared on its UI_DATA row).
+/obj/machinery/space_heater/proc/ui_data_obj_machinery_space_heater(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["cell"] = !!cell
 	data["power"] = round(cell?.percent(), 1)
-	data["temp"] = set_temperature
-	data["minTemp"] = min_temperature
-	data["maxTemp"] = max_temperature
 
 	return data
 

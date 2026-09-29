@@ -69,13 +69,13 @@
 	fx_sparks(src, 3)
 	return ..()
 
-/mob/living/bot/cleanbot/edCLN/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/cleanbot/edCLN, "red_switch:num", "green_switch:num", "blue_switch:num", "merge:ui_data_mob_living_bot_cleanbot_edCLN{version:text,rgbpanel:bool}")
+
+/// The computed part of /mob/living/bot/cleanbot/edCLN's window data (declared on its UI_DATA row).
+/mob/living/bot/cleanbot/edCLN/proc/ui_data_mob_living_bot_cleanbot_edCLN(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["version"] = "v3.0"
 	data["rgbpanel"] = TRUE
-	data["red_switch"] = red_switch
-	data["green_switch"] = green_switch
-	data["blue_switch"] = blue_switch
 	return data
 
 UI_ACT(/mob/living/bot/cleanbot/edCLN, "red_switch", ui_act_red_switch)

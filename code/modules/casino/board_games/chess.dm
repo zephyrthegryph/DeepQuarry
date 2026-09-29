@@ -50,7 +50,10 @@ GLOBAL_LIST_INIT(chess_static_data, list("game_type" = "chess"))
 /datum/board_game/chess/tgui_static_data(mob/user)
 	return GLOB.chess_static_data
 
-/datum/board_game/chess/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/chess, "merge:ui_data_datum_board_game_chess{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_figure:bool,valid_moves:bool,game_state:unknown,winner:unknown,has_won:bool,game_flags:unknown}")
+
+/// The computed part of /datum/board_game/chess's window data (declared on its UI_DATA row).
+/datum/board_game/chess/proc/ui_data_datum_board_game_chess(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
 	var/mob/player_two_mob = om_resolve(player_two)
 

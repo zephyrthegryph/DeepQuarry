@@ -273,12 +273,12 @@ GLOBAL_LIST_EMPTY(gravity_generators)
 
 DECLARE_UI(/obj/machinery/gravity_generator/main, "GravityGenerator")
 
-/obj/machinery/gravity_generator/main/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/machinery/gravity_generator/main, "breaker:num", "charge_count:num", "charging_state", "merge:ui_data_obj_machinery_gravity_generator_main{on:num,operational:bool}")
 
-	data["breaker"] = breaker
-	data["charge_count"] = charge_count
-	data["charging_state"] = charging_state
+/// The computed part of /obj/machinery/gravity_generator/main's window data (declared on its UI_DATA row).
+/obj/machinery/gravity_generator/main/proc/ui_data_obj_machinery_gravity_generator_main(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["on"] = on
 	data["operational"] = (has_stat(BROKEN)) ? FALSE : TRUE
 

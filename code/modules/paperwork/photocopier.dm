@@ -39,17 +39,17 @@
 
 DECLARE_UI(/obj/machinery/photocopier, "Photocopier")
 
-/obj/machinery/photocopier/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copies:num", "max_copies=maxcopies:num", "merge:ui_data_obj_machinery_photocopier{has_item:bool,isAI:num,can_AI_print:bool,has_toner:bool,max_toner:num}")
+
+/// The computed part of /obj/machinery/photocopier's window data (declared on its UI_DATA row).
+/obj/machinery/photocopier/proc/ui_data_obj_machinery_photocopier(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["has_item"] = copyitem || has_buckled_mobs() // Ass copying
 	data["isAI"] = issilicon(user)
 	data["can_AI_print"] = (toner >= 5)
 	data["has_toner"] =	!!toner
-	data["current_toner"] = toner
 	data["max_toner"] = 40
-	data["num_copies"] = copies
-	data["max_copies"] = maxcopies
 
 	return data
 

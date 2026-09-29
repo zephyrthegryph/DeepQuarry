@@ -157,30 +157,11 @@
 			else
 				add_overlay("harvester_grow")
 
-/obj/machinery/anomaly_harvester/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/anomaly_harvester, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/machinery/anomaly_harvester, "AnomalyHarvester")
 
-/obj/machinery/anomaly_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/sample_data = list()
-	FOR_REAL_CONTENTS(var/obj/item/research_sample/sample, src)
-		UNTYPED_LIST_ADD(sample_data, list(
-			"name" = sample.name,
-			"icon" = sample.icon,
-			"icon_state" = sample.icon_state,
-			"ref" = REF(sample)
-		))
-
-	var/obj/effect/anomaly/anom = om_resolve(harvested)
-	var/list/data = list(
-		"name" = anom,
-		"points" = points,
-		"pointsToGenerate" = points_to_create,
-		"samples" = sample_data
-	)
-
-	return data
+UI_DATA_REPLACE(/obj/machinery/anomaly_harvester)
 
 UI_ACT(/obj/machinery/anomaly_harvester, "release_sample", ui_act_release_sample, UI_ARG_REF("ref", "contents", /obj/item/research_sample))
 UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_sample)

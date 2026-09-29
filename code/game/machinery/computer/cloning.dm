@@ -152,16 +152,18 @@ DECLARE_UI(/obj/machinery/computer/cloning, "CloningConsole", UI_TITLE("Cloning 
 
 	return TRUE
 
-/obj/machinery/computer/cloning/tgui_data(mob/user)
-	var/data[0]
-	data["menu"] = menu
+UI_DATA_REPLACE(/obj/machinery/computer/cloning, "menu", "loading:num", "autoprocess:num", "scan_mode:num", "temp:text", "scantemp", "disk=diskette", "merge:ui_data_obj_machinery_computer_cloning{scanner:text,numberofpods:num,pods:list,can_brainscan:unknown,autoallowed:num,occupant:unknown,locked:unknown,selected_pod:text,records:list,podready:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/cloning's window data (declared on its UI_DATA row).
+/obj/machinery/computer/cloning/proc/ui_data_obj_machinery_computer_cloning(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scanner"] = sanitize("[scanner()]")
 
 	var/canpodautoprocess = 0
 	if(pods.len)
 		data["numberofpods"] = pods.len
 
-		var/list/tempods[0]
+		var/list/tempods = list()
 		for(var/obj/machinery/clonepod/pod in pods)
 			if(pod.efficiency > 5)
 				canpodautoprocess = 1
@@ -181,10 +183,7 @@ DECLARE_UI(/obj/machinery/computer/cloning, "CloningConsole", UI_TITLE("Cloning 
 			)))
 			data["pods"] = tempods
 
-	data["loading"] = loading
-	data["autoprocess"] = autoprocess
 	data["can_brainscan"] = can_brainscan() // You'll need tier 4s for this
-	data["scan_mode"] = scan_mode
 
 	if(scanner() && pods.len && ((scanner().scan_level > 2) || canpodautoprocess))
 		data["autoallowed"] = 1
@@ -193,11 +192,8 @@ DECLARE_UI(/obj/machinery/computer/cloning, "CloningConsole", UI_TITLE("Cloning 
 	if(scanner())
 		data["occupant"] = scanner().get_occupant()
 		data["locked"] = scanner().locked
-	data["temp"] = temp
-	data["scantemp"] = scantemp
-	data["disk"] = diskette
 	data["selected_pod"] = "\ref[selected_pod()]"
-	var/list/temprecords[0]
+	var/list/temprecords = list()
 	for(var/datum/transhuman/body_record/BR in records)
 		var tempRealName = BR.mydna.dna.real_name
 		temprecords.Add(list(list("record" = "\ref[BR]", "realname" = sanitize(tempRealName))))

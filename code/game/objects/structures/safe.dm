@@ -91,10 +91,12 @@ FLOOR SAFES
 
 DECLARE_UI(/obj/structure/safe, "Safe")
 
-/obj/structure/safe/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/structure/safe, "dial:num", "merge:ui_data_obj_structure_safe{open:bool,contents:list}")
+
+/// The computed part of /obj/structure/safe's window data (declared on its UI_DATA row).
+/obj/structure/safe/proc/ui_data_obj_structure_safe(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["open"] = !!open
-	data["dial"] = dial
 	var/list/c = list()
 	FOR_REAL_CONTENTS(var/obj/item/P, src)
 		c += list(list("ref" = "\ref[P]", "name" = P.name))

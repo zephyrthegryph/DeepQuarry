@@ -365,7 +365,10 @@ DECLARE_UI(/datum/experiment_handler, "ExperimentConfigure")
 		var/mob/living/silicon/robot/owner_robot = parent_atom.loc
 		.["theme"] = owner_robot.get_ui_theme()
 
-/datum/experiment_handler/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handler{always_active:num,has_start_callback:bool,techwebs:list,experiments:list}")
+
+/// The computed part of /datum/experiment_handler's window data (declared on its UI_DATA row).
+/datum/experiment_handler/proc/ui_data_datum_experiment_handler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list(
 		"always_active" = (config_flags & EXPERIMENT_CONFIG_ALWAYS_ACTIVE),
 		"has_start_callback" = !isnull(start_experiment_callback),

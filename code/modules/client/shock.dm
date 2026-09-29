@@ -90,23 +90,11 @@
 //////////////////////////////////////////
 // TGUI                                 //
 //////////////////////////////////////////
-/datum/tgui_shock/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_shock, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/tgui_shock, "ShockConfigurator", UI_TITLE("Shock Configurator"))
 
-/datum/tgui_shock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-
-	data["port"] = port
-	data["connected"] = connected
-	data["intensity"] = intensity
-	data["duration"] = duration
-	data["selectedDevice"] = selected_device
-	data["availableDevices"] = available_devices
-	data["enabledFlags"] = enabled_flags
-
-	return data
+UI_DATA(/datum/tgui_shock, "port:num", "connected:num", "intensity:num", "duration:num", "selectedDevice=selected_device:num", "availableDevices=available_devices:list", "enabledFlags=enabled_flags:num")
 
 UI_ACT(/datum/tgui_shock, "connect", ui_act_connect)
 UI_ACT_PROC(/datum/tgui_shock, ui_act_connect)

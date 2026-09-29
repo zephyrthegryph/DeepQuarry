@@ -69,8 +69,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(inter
 		get_asset_datum(/datum/asset/spritesheet/pipes),
 	)
 
-/obj/item/pipe_dispenser/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/pipe_dispenser, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
 
@@ -78,7 +77,10 @@ DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
 	SetupPipes()
 	return TRUE
 
-/obj/item/pipe_dispenser/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/pipe_dispenser, "merge:ui_data_obj_item_pipe_dispenser{category:text,piping_layer:unknown,pipe_layers:list,preview_rows:unknown,categories:list,selected_color:text,paint_colors:unknown,mode:num}")
+
+/// The computed part of /obj/item/pipe_dispenser's window data (declared on its UI_DATA row).
+/obj/item/pipe_dispenser/proc/ui_data_obj_item_pipe_dispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"category" = category,
 		"piping_layer" = piping_layer,
@@ -113,7 +115,7 @@ DECLARE_UI(/obj/item/pipe_dispenser, "RapidPipeDispenser")
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "color", ui_act_color, UI_ARG_VALUE("paint_color"))
+UI_ACT(/obj/item/pipe_dispenser, "color", ui_act_color, UI_ARG_TEXT("paint_color"))
 UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_color)
 	var/playeffect = TRUE
 	paint_color = params["paint_color"]
@@ -148,7 +150,7 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_piping_layer)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "pipe_type", ui_act_pipe_type, UI_ARG_VALUE("category"), UI_ARG_NUM("pipe_type"))
+UI_ACT(/obj/item/pipe_dispenser, "pipe_type", ui_act_pipe_type, UI_ARG_TEXT("category"), UI_ARG_NUM("pipe_type"))
 UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_pipe_type)
 	var/playeffect = TRUE
 	var/static/list/recipes
@@ -161,7 +163,7 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_pipe_type)
 		play_sfx(get_turf(src), SFX_EFFECTS_POP)
 	return TRUE
 
-UI_ACT(/obj/item/pipe_dispenser, "setdir", ui_act_setdir, UI_ARG_VALUE("dir"), UI_ARG_NUM("flipped"))
+UI_ACT(/obj/item/pipe_dispenser, "setdir", ui_act_setdir, UI_ARG_TEXT("dir"), UI_ARG_NUM("flipped"))
 UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_setdir)
 	var/playeffect = TRUE
 	p_dir = text2dir(params["dir"])

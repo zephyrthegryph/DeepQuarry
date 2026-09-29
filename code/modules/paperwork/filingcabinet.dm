@@ -96,12 +96,14 @@ DECLARE_INTERACTIONS(/obj/structure/filingcabinet, \
 			return
 	to_chat(user, span_notice("You find nothing in [src]."))
 
-/obj/structure/filingcabinet/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/structure/filingcabinet, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/structure/filingcabinet, "FileCabinet")
 
-/obj/structure/filingcabinet/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filingcabinet{cabinet_name:text,contents:list,contents_ref:list}")
+
+/// The computed part of /obj/structure/filingcabinet's window data (declared on its UI_DATA row).
+/obj/structure/filingcabinet/proc/ui_data_obj_structure_filingcabinet(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["cabinet_name"] = "[name]"

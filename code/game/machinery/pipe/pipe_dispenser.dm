@@ -33,7 +33,10 @@
 
 DECLARE_UI(/obj/machinery/pipedispenser, "PipeDispenser")
 
-/obj/machinery/pipedispenser/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/pipedispenser, "merge:ui_data_obj_machinery_pipedispenser{disposals:num,p_layer:unknown,pipe_layers:list,categories:list}")
+
+/// The computed part of /obj/machinery/pipedispenser's window data (declared on its UI_DATA row).
+/obj/machinery/pipedispenser/proc/ui_data_obj_machinery_pipedispenser(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"disposals" = disposals,
 		"p_layer" = p_layer,

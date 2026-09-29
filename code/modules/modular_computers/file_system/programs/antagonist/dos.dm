@@ -40,13 +40,15 @@
 
 	..(forced)
 
-/datum/computer_file/program/ntnet_dos/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/computer_file/program/ntnet_dos, "error:text", "merge:ui_data_datum_computer_file_program_ntnet_dos{target:bool,speed:num,overload:num,capacity:num,relays:list,focus:unknown}")
+
+/// The computed part of /datum/computer_file/program/ntnet_dos's window data (declared on its UI_DATA row).
+/datum/computer_file/program/ntnet_dos/proc/ui_data_datum_computer_file_program_ntnet_dos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	if(!GLOB.ntnet_global)
 		return
 
 	var/list/data = get_header_data()
 
-	data["error"] = error
 	if(target() && executed)
 		data["target"] = TRUE
 		data["speed"] = dos_speed

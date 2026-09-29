@@ -111,12 +111,14 @@ UI_ACT_PROC(/obj/machinery/computer/stockexchange, ui_act_stocks_cycle_view)
 /obj/machinery/computer/stockexchange/proc/ui_source_glob_stockexchange_stocks()
 	return GLOB.stockExchange.stocks
 
-/obj/machinery/computer/stockexchange/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/stockexchange, "screen:num", "merge:ui_data_obj_machinery_computer_stockexchange{stationName:text,balance:unknown,viewMode:text,stocks:list,logs:list,name:text,events:list,articles:list,maxValue:num,values:list}")
+
+/// The computed part of /obj/machinery/computer/stockexchange's window data (declared on its UI_DATA row).
+/obj/machinery/computer/stockexchange/proc/ui_data_obj_machinery_computer_stockexchange(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["stationName"] = using_map.station_name
 	data["balance"] = balance()
-	data["screen"] = screen
 
 	switch(screen)
 		// Main Stocks List

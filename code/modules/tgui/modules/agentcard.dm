@@ -2,8 +2,11 @@
 	name = "Agent Card"
 	tgui_id = "AgentCard"
 
-/datum/tgui_module/agentcard/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/agentcard, "merge:ui_data_datum_tgui_module_agentcard{entries:list,electronic_warfare:num}")
+
+/// The computed part of /datum/tgui_module/agentcard's window data (declared on its UI_DATA row).
+/datum/tgui_module/agentcard/proc/ui_data_datum_tgui_module_agentcard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/obj/item/card/id/syndicate/S = tgui_host()
 	if(!istype(S))

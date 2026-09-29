@@ -32,8 +32,7 @@ GLOBAL_LIST_EMPTY(dq_edit_player_panels)
 	if(holder() && target())
 		GLOB.dq_edit_player_panels -= "[REF(holder())]-[REF(target())]"
 
-/datum/edit_player_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_HOLDER)
+DECLARE_UI_STATE(/datum/edit_player_panel, ADMIN_STATE(R_HOLDER))
 
 DECLARE_UI(/datum/edit_player_panel, "AdminEditPlayer")
 
@@ -45,7 +44,10 @@ DECLARE_UI(/datum/edit_player_panel, "AdminEditPlayer")
 /datum/edit_player_panel/ui_title(mob/user)
 	return "Edit Player: [target().key]"
 
-/datum/edit_player_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/edit_player_panel, "merge:ui_data_datum_edit_player_panel{ref:text,name:text,key:bool,mob_type:text,has_client:bool,is_newplayer:bool,is_human:bool,is_ai:bool,is_carbon:bool,is_small:bool,is_corgi:bool,is_animal:bool,client_name:text,client_ref:text,client_ckey:text,player_age:text,account_join_date:text,account_age:text,inactivity_minutes:num,rank_names:unknown,editrights_mode:text,muted:num,can_event:num,special_character:unknown,mute_mask_ic:num,mute_mask_ooc:num,mute_mask_looc:num,mute_mask_pray:num,mute_mask_adminhelp:num,mute_mask_deadchat:num,mute_mask_all:num,dna_cells:list,dna_se_length:num,languages:list}")
+
+/// The computed part of /datum/edit_player_panel's window data (declared on its UI_DATA row).
+/datum/edit_player_panel/proc/ui_data_datum_edit_player_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!target())
 		return data

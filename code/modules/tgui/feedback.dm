@@ -3,8 +3,7 @@
 
 DECLARE_UI(/datum/tgui_feedback, "TguiFeedback", UI_TITLE("TGUI Feedback Submission"))
 
-/datum/tgui_feedback/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_feedback, GLOB.tgui_always_state)
 
 /datum/tgui_feedback/tgui_static_data(mob/user)
 	var/list/data = list()
@@ -15,12 +14,7 @@ DECLARE_UI(/datum/tgui_feedback, "TguiFeedback", UI_TITLE("TGUI Feedback Submiss
 
 	return data
 
-/datum/tgui_feedback/tgui_data(mob/user)
-	var/list/data = list()
-
-	data["selected_window"] = selected_window
-
-	return data
+UI_DATA_REPLACE(/datum/tgui_feedback, "selected_window")
 
 UI_ACT(/datum/tgui_feedback, "pick_window", ui_act_pick_window, UI_ARG_TEXT("win"))
 UI_ACT_PROC(/datum/tgui_feedback, ui_act_pick_window)

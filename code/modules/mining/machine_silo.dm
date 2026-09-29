@@ -95,10 +95,13 @@ DECLARE_UI(/obj/machinery/ore_silo, "OreSilo")
 /obj/machinery/ore_silo/tgui_static_data(mob/user)
 	return materials.tgui_static_data(user)
 
-/obj/machinery/ore_silo/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/ore_silo, "merge:ui_data_obj_machinery_ore_silo{materials:unknown,machines:list,logs:list}")
 
-	data["materials"] = materials.tgui_data(user)
+/// The computed part of /obj/machinery/ore_silo's window data (declared on its UI_DATA row).
+/obj/machinery/ore_silo/proc/ui_data_obj_machinery_ore_silo(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
+	data["materials"] = materials.material_list_data(user)
 
 	data["machines"] = list()
 	for(var/datum/remote_materials/remote as anything in ore_connected_machines)
@@ -154,7 +157,7 @@ UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_hold)
 	remote.toggle_holding()
 	return TRUE
 
-UI_ACT(/obj/machinery/ore_silo, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/ore_silo, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/ore_silo, ui_act_remove_mat)
 	var/datum/material/ejecting = GET_MATERIAL_REF(params["id"])
 	if(!istype(ejecting))

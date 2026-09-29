@@ -332,24 +332,22 @@ GLOBAL_LIST_EMPTY(suit_cycler_typecache)
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/suit_cycler/tgui_state(mob/user)
-	return GLOB.tgui_notcontained_state
+DECLARE_UI_STATE(/obj/machinery/suit_cycler, GLOB.tgui_notcontained_state)
 
 DECLARE_UI(/obj/machinery/suit_cycler, "SuitCycler")
 
-/obj/machinery/suit_cycler/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/suit_cycler, "model_text:text", "can_repair:num", "safeties:num", "uv_level=radiation_level:num", "merge:ui_data_obj_machinery_suit_cycler{userHasAccess:unknown,locked:num,active:num,uv_active:bool,max_uv_level:num,helmet:text,suit:text,damage:num,occupied:bool}")
+
+/// The computed part of /obj/machinery/suit_cycler's window data (declared on its UI_DATA row).
+/obj/machinery/suit_cycler/proc/ui_data_obj_machinery_suit_cycler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/living/carbon/human/occupant = slot_item_real(OCCUPANT_SLOT_SUIT_CYCLER)
 	var/list/data = list()
 
-	data["model_text"] = model_text
-	data["can_repair"] = can_repair
 	data["userHasAccess"] = allowed(user)
 
 	data["locked"] = locked
 	data["active"] = active
-	data["safeties"] = safeties
 	data["uv_active"] = (active && irradiating > 0)
-	data["uv_level"] = radiation_level
 	data["max_uv_level"] = emagged ? 5 : 3
 	if(helmet)
 		data["helmet"] = helmet.name

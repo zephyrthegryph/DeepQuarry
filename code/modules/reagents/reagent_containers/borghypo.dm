@@ -211,13 +211,15 @@ DECLARE_UI(/obj/item/reagent_containers/borghypo, "BorgHypo")
 	static_data["maxTransferAmount"] = max_transfer_amount
 	return static_data
 
-/obj/item/reagent_containers/borghypo/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/reagent_containers/borghypo, "amount=amount_per_transfer_from_this:num", "uiChemicalSearch=ui_chemical_search", "recordingRecipe=recording_recipe:list", "isDispensingRecipe=is_dispensing_recipe:num", "selectedRecipeId=selected_recipe_id", "merge:ui_data_obj_item_reagent_containers_borghypo{theme:unknown,transferAmounts:unknown,chemicals:list,selectedReagentId:unknown,recipes:bool}")
+
+/// The computed part of /obj/item/reagent_containers/borghypo's window data (declared on its UI_DATA row).
+/obj/item/reagent_containers/borghypo/proc/ui_data_obj_item_reagent_containers_borghypo(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!isrobot(user))
 		return data
 	var/mob/living/silicon/robot/robot_user = user
 	data["theme"] = robot_user.get_ui_theme()
-	data["amount"] = amount_per_transfer_from_this
 	data["transferAmounts"] = TYPE_TABLE_GET(src, borghypo_transfer_amounts)
 
 	var/list/chemicals = list()
@@ -227,16 +229,12 @@ DECLARE_UI(/obj/item/reagent_containers/borghypo, "BorgHypo")
 		if((ui_chemical_search && findtext(available_reagent.name, ui_chemical_search)) || !ui_chemical_search)
 			UNTYPED_LIST_ADD(chemicals, list("name" = available_reagent.name, "id" = key, "volume" = value))
 	data["chemicals"] = chemicals
-	data["uiChemicalSearch"] = ui_chemical_search
 	data["selectedReagentId"] = TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]
 	data["recipes"] = (saved_recipes || list())
-	data["recordingRecipe"] = recording_recipe
-	data["isDispensingRecipe"] = is_dispensing_recipe
-	data["selectedRecipeId"] = selected_recipe_id
 
 	return data
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "select_reagent", ui_act_select_reagent, UI_ARG_VALUE("selectedReagentId"))
+UI_ACT(/obj/item/reagent_containers/borghypo, "select_reagent", ui_act_select_reagent, UI_ARG_TEXT("selectedReagentId"))
 UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_reagent)
 	var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
 	var/new_mode = ids.Find(params["selectedReagentId"])
@@ -306,7 +304,7 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_save_recording)
 		recording_recipe = null
 		. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "remove_recipe", ui_act_remove_recipe, UI_ARG_VALUE("recipe"))
+UI_ACT(/obj/item/reagent_containers/borghypo, "remove_recipe", ui_act_remove_recipe, UI_ARG_TEXT("recipe"))
 UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_remove_recipe)
 	var/recipe_name = params["recipe"]
 	// If we've selected the recipe we're deleting, un-select it!
@@ -330,7 +328,7 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_recipe)
 	selected_recipe_id = recipe_name
 	. = TRUE
 
-UI_ACT(/obj/item/reagent_containers/borghypo, "set_chemical_search", ui_act_set_chemical_search, UI_ARG_VALUE("uiChemicalSearch"))
+UI_ACT(/obj/item/reagent_containers/borghypo, "set_chemical_search", ui_act_set_chemical_search, UI_ARG_TEXT("uiChemicalSearch"))
 UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_chemical_search)
 	ui_chemical_search = params["uiChemicalSearch"]
 	. = TRUE

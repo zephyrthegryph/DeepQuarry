@@ -31,11 +31,13 @@ DECLARE_INTERACTIONS(/obj/item/aicard, INTERACT_USE(null, PROC_REF(interaction_s
 
 DECLARE_UI(/obj/item/aicard, "AICard")
 
-/obj/item/aicard/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/aicard, GLOB.tgui_inventory_state)
 
-/obj/item/aicard/tgui_data(mob/user)
-	var/data[0]
+UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,name:text,integrity:unknown,backup_capacitor:unknown,radio:bool,wireless:bool,operational:bool,flushing:unknown,laws:list,has_laws:num}")
+
+/// The computed part of /obj/item/aicard's window data (declared on its UI_DATA row).
+/obj/item/aicard/proc/ui_data_obj_item_aicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["has_ai"] = carded_ai() != null
 	if(carded_ai())
@@ -47,7 +49,7 @@ DECLARE_UI(/obj/item/aicard, "AICard")
 		data["operational"] = carded_ai().stat != DEAD
 		data["flushing"] = flush
 
-		var/laws[0]
+		var/list/laws = list()
 		for(var/datum/ai_law/law in carded_ai().laws.all_laws())
 			if(law in carded_ai().laws.ion_laws) // If we're an ion law, give it an ion index code
 				laws.Add(ionnum() + ". " + law.law)

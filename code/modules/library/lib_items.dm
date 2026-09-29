@@ -235,7 +235,10 @@ DECLARE_UI(/obj/item/book, "Book")
 /obj/item/book/ui_title(mob/user)
 	return title || name
 
-/obj/item/book/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/book, "merge:ui_data_obj_item_book{title:bool,author:bool,content:bool}")
+
+/// The computed part of /obj/item/book's window data (declared on its UI_DATA row).
+/obj/item/book/proc/ui_data_obj_item_book(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["title"] = title || name
 	data["author"] = author || ""
@@ -390,9 +393,11 @@ EXTEND_INTERACTIONS(/obj/item/book/bundle, INTERACT_USE("Read", PROC_REF(interac
 
 DECLARE_UI(/obj/item/book/bundle, "BookBundle")
 
-/obj/item/book/bundle/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/book/bundle, "page:num", "merge:ui_data_obj_item_book_bundle{total_pages:num,scribble:unknown,page_name:text,page_kind:text,page_info:unknown}")
+
+/// The computed part of /obj/item/book/bundle's window data (declared on its UI_DATA row).
+/obj/item/book/bundle/proc/ui_data_obj_item_book_bundle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["page"] = page
 	data["total_pages"] = pages.len
 	data["scribble"] = ""
 	if(pages.len)

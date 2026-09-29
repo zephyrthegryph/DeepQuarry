@@ -422,7 +422,10 @@ DECLARE_REF(/obj/machinery/vending, "product_records", OWNED_LIST, null)
 
 DECLARE_UI(/obj/machinery/vending, "Vending")
 
-/obj/machinery/vending/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/vending, "merge:ui_data_obj_machinery_vending{chargesMoney:bool,products:list,coin:unknown,actively_vending:text,panel:num,speaker:num,guestNotice:text,userMoney:num,user:list}")
+
+/// The computed part of /obj/machinery/vending's window data (declared on its UI_DATA row).
+/obj/machinery/vending/proc/ui_data_obj_machinery_vending(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/listed_products = list()
 

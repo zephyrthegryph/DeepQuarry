@@ -25,8 +25,7 @@
 		winset(owner().client, "mapwindow.belly_overlay", "is-visible=false")
 	..()
 
-/datum/belly_overlay_tgui/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/belly_overlay_tgui, GLOB.tgui_always_state)
 
 /datum/belly_overlay_tgui/ui_assets(mob/user)
 	// Belly overlay files are registered + sent lazily via
@@ -42,8 +41,7 @@ DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
 	active_ui = ui
 
-/datum/belly_overlay_tgui/tgui_data(mob/user)
-	return state
+UI_DATA_REPLACE(/datum/belly_overlay_tgui)
 
 /datum/belly_overlay_tgui/tgui_close(mob/user)
 	hide()

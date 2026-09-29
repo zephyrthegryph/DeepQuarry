@@ -1821,9 +1821,11 @@ DECLARE_INTERACTIONS(/obj/mecha, \
 
 DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
 
-/obj/mecha/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/mecha, "view=tgui_subview:text", "smoke_reserve:num", "merge:ui_data_obj_mecha{title:text,log_entries:unknown,ai_target_name:bool,ai_targets:list,access_current:list,access_available:list,maint_can_req_access:bool,maint_can_maint_access:bool,maint_can_set_air:bool,maint_can_remove_passenger:bool,damage_reports:list,high_pressure:bool,has_armor:bool,armor_percent:num,has_hull:bool,hull_percent:num,integrity_percent:num,cell_percent:unknown,use_internal_tank:bool,tank_pressure:unknown,tank_temp_k:unknown,tank_temp_c:unknown,cabin_pressure:num,cabin_temp_k:num,cabin_temp_c:num,lights:bool,dna_lock:bool,defence_mode_possible:bool,defence_mode:bool,overload_possible:bool,overload:bool,smoke_possible:bool,thrusters_possible:bool,thrusters:bool,cargo:list,radio_mic:bool,radio_spk:bool,radio_freq:text,airtank_disconnect:bool,airtank_connect:bool,id_upload_locked:bool,maint_access:bool,equipment:list,slots:list,can_eject:bool}")
+
+/// The computed part of /obj/mecha's window data (declared on its UI_DATA row).
+/obj/mecha/proc/ui_data_obj_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["view"] = tgui_subview
 	data["title"] = "[name]"
 	switch(tgui_subview)
 		if("log")
@@ -1901,7 +1903,6 @@ DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
 	data["overload_possible"] = !!overload_possible
 	data["overload"] = !!overload
 	data["smoke_possible"] = !!smoke_possible
-	data["smoke_reserve"] = smoke_reserve
 	data["thrusters_possible"] = !!thrusters_possible
 	data["thrusters"] = !!thrusters
 	// Cargo.
@@ -1976,12 +1977,12 @@ DECLARE_UI(/obj/mecha, "MechaInterface", UI_AUTOUPDATE)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/mecha, "rfreq", ui_act_rfreq, UI_ARG_VALUE("delta"))
+UI_ACT(/obj/mecha, "rfreq", ui_act_rfreq, UI_ARG_NUM("delta"))
 UI_ACT_PROC(/obj/mecha, ui_act_rfreq)
 	Topic(null, list("rfreq" = params["delta"]))
 	return TRUE
 
-UI_ACT(/obj/mecha, "drop_from_cargo", ui_act_drop_from_cargo, UI_ARG_VALUE("ref"))
+UI_ACT(/obj/mecha, "drop_from_cargo", ui_act_drop_from_cargo, UI_ARG_TEXT("ref"))
 UI_ACT_PROC(/obj/mecha, ui_act_drop_from_cargo)
 	Topic(null, list("drop_from_cargo" = params["ref"]))
 	return TRUE

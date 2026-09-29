@@ -425,17 +425,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 
 DECLARE_UI(/obj/machinery/power/solar_control, "SolarControl")
 
-/obj/machinery/power/solar_control/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rotation_rate=trackrate:num", "tracking_state=track:num", "merge:ui_data_obj_machinery_power_solar_control{generated:num,generated_ratio:num,sun_angle:unknown,max_rotation_rate:num,connected_panels:num,connected_tracker:unknown}")
+
+/// The computed part of /obj/machinery/power/solar_control's window data (declared on its UI_DATA row).
+/obj/machinery/power/solar_control/proc/ui_data_obj_machinery_power_solar_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list()
 
 	data["generated"] = round(connected_power)
 	data["generated_ratio"] = data["generated"] / round(max(connected_panels.len, 1) * GLOB.solar_gen_rate)
 
 	data["sun_angle"] = GLOB.solar_service.get_solar_angle(get_turf(src))
-	data["array_angle"] = cdir
-	data["rotation_rate"] = trackrate
 	data["max_rotation_rate"] = 7200
-	data["tracking_state"] = track
 
 	data["connected_panels"] = connected_panels.len
 	data["connected_tracker"] = (connected_tracker() ? TRUE : FALSE)

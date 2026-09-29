@@ -137,8 +137,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit_printer, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/integrated_circuit_printer/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/item/integrated_circuit_printer, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
 
@@ -193,16 +192,13 @@ DECLARE_UI(/obj/item/integrated_circuit_printer, "ICPrinter")
 
 	return data
 
-/obj/item/integrated_circuit_printer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/integrated_circuit_printer, "metal:num", "max_metal:num", "metal_per_sheet:num", "debug:num", "upgraded", "is_printing", "merge:ui_data_obj_item_integrated_circuit_printer{can_clone:bool,print_time_remaining:num}")
 
-	data["metal"] = metal
-	data["max_metal"] = max_metal
-	data["metal_per_sheet"] = metal_per_sheet
-	data["debug"] = debug
-	data["upgraded"] = upgraded
+/// The computed part of /obj/item/integrated_circuit_printer's window data (declared on its UI_DATA row).
+/obj/item/integrated_circuit_printer/proc/ui_data_obj_item_integrated_circuit_printer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["can_clone"] = can_clone && !is_printing // Can not clone while printing
-	data["is_printing"] = is_printing
 	data["print_time_remaining"] = is_printing ? max(0, print_end_time - world.time) : 0
 
 	return data

@@ -90,14 +90,15 @@
 DECLARE_UI(/obj/machinery/account_database, "AccountsTerminal")
 
 
-/obj/machinery/account_database/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/account_database, "machine_id:text", "creating_new_account:num", "merge:ui_data_obj_machinery_account_database{id_inserted:bool,id_card:unknown,access_level:unknown,detailed_account_view:bool,station_account_number:num,account_number:num,owner_name:text,money:num,suspended:num,transactions:unknown,accounts:list}")
+
+/// The computed part of /obj/machinery/account_database's window data (declared on its UI_DATA row).
+/obj/machinery/account_database/proc/ui_data_obj_machinery_account_database(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["id_inserted"] = !!held_card
 	data["id_card"] = held_card ? text("[held_card.registered_name], [held_card.assignment]") : "-----"
 	data["access_level"] = get_access_level()
-	data["machine_id"] = machine_id
-	data["creating_new_account"] = creating_new_account
 	data["detailed_account_view"] = !!detailed_account_view()
 	data["station_account_number"] = GLOB.station_account.account_number
 
@@ -188,7 +189,7 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_toggle_suspension)
 		OM_EMIT_WORLD(/datum/om/event/world_payment_account_status, detailed_account_view())
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "finalise_create_account", ui_act_finalise_create_account, UI_ARG_VALUE("holder_name"), UI_ARG_NUM("starting_funds"))
+UI_ACT(/obj/machinery/account_database, "finalise_create_account", ui_act_finalise_create_account, UI_ARG_TEXT("holder_name"), UI_ARG_NUM("starting_funds"))
 UI_ACT_PROC(/obj/machinery/account_database, ui_act_finalise_create_account)
 	var/account_name = params["holder_name"]
 	var/starting_funds = max(params["starting_funds"], 0)

@@ -32,10 +32,11 @@ MATERIAL_MIX(/obj/item/assembly/signaler, list(MAT_STEEL = 1000, MAT_GLASS = 200
 
 DECLARE_UI(/obj/item/assembly/signaler, "Signaler")
 
-/obj/item/assembly/signaler/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/assembly/signaler, "frequency:num", "code", "merge:ui_data_obj_item_assembly_signaler{minFrequency:num,maxFrequency:num}")
+
+/// The computed part of /obj/item/assembly/signaler's window data (declared on its UI_DATA row).
+/obj/item/assembly/signaler/proc/ui_data_obj_item_assembly_signaler(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["frequency"] = frequency
-	data["code"] = code
 	data["minFrequency"] = RADIO_LOW_FREQ
 	data["maxFrequency"] = RADIO_HIGH_FREQ
 	return data
@@ -46,7 +47,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_signal)
 	. = TRUE
 	update_icon()
 
-UI_ACT(/obj/item/assembly/signaler, "freq", ui_act_freq, UI_ARG_VALUE("freq"))
+UI_ACT(/obj/item/assembly/signaler, "freq", ui_act_freq, UI_ARG_NUM("freq"))
 UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_freq)
 	frequency = unformat_frequency(params["freq"])
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)

@@ -107,7 +107,10 @@
 
 DECLARE_UI(/obj/machinery/portable_atmospherics/powered/scrubber, "PortableScrubber")
 
-/obj/machinery/portable_atmospherics/powered/scrubber/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/powered/scrubber, "merge:ui_data_obj_machinery_portable_atmospherics_powered_scrubber{on:num,connected:num,pressure:unknown,rate:num,minrate:num,maxrate:num,powerDraw:num,cellCharge:num,cellMaxCharge:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/powered/scrubber's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/powered/scrubber/proc/ui_data_obj_machinery_portable_atmospherics_powered_scrubber(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["on"] = on ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0

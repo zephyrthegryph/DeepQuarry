@@ -67,8 +67,11 @@
 	last_message_count = 0
 	read_message_count = 0
 
-/datum/tgui_module/email_client/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/email_client, "merge:ui_data_datum_tgui_module_email_client{accounts:list,addressbook:num,cur_attachment_filename:text,cur_attachment_size:num,cur_body:unknown,cur_hasattachment:num,cur_source:text,cur_timestamp:unknown,cur_title:text,cur_uid:unknown,current_account:text,down_filename:text,down_progress:num,down_size:num,down_speed:num,downloading:num,error:text,folder:text,label_deleted:text,label_inbox:text,label_spam:text,messagecount:num,messages:list,msg_attachment_filename:text,msg_attachment_size:num,msg_body:unknown,msg_hasattachment:num,msg_recipient:text,msg_title:text,new_message:num,stored_login:text,stored_password:unknown}")
+
+/// The computed part of /datum/tgui_module/email_client's window data (declared on its UI_DATA row).
+/datum/tgui_module/email_client/proc/ui_data_datum_tgui_module_email_client(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// Password has been changed by other client connected to this email account
 	if(current_account())
@@ -316,7 +319,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_edit_password)
 		stored_password = newpass
 	return 1
 
-UI_ACT(/datum/tgui_module/email_client, "delete", ui_act_delete, UI_ARG_VALUE("delete"))
+UI_ACT(/datum/tgui_module/email_client, "delete", ui_act_delete, UI_ARG_NUM("delete"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_delete)
 	if(!istype(current_account(), /datum/computer_file/data/email_account))
 		return 1
@@ -355,12 +358,12 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_send)
 		clear_message()
 		return 1
 
-UI_ACT(/datum/tgui_module/email_client, "set_folder", ui_act_set_folder, UI_ARG_VALUE("set_folder"))
+UI_ACT(/datum/tgui_module/email_client, "set_folder", ui_act_set_folder, UI_ARG_TEXT("set_folder"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_set_folder)
 	folder = params["set_folder"]
 	return 1
 
-UI_ACT(/datum/tgui_module/email_client, "reply", ui_act_reply, UI_ARG_VALUE("reply"))
+UI_ACT(/datum/tgui_module/email_client, "reply", ui_act_reply, UI_ARG_NUM("reply"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_reply)
 	var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["reply"])
 	if(!istype(M))
@@ -373,7 +376,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_reply)
 	msg_body += "Received by [current_account().login] at [M.timestamp]\[br\]\[editorbr\][M.stored_data]"
 	return 1
 
-UI_ACT(/datum/tgui_module/email_client, "view", ui_act_view, UI_ARG_VALUE("view"))
+UI_ACT(/datum/tgui_module/email_client, "view", ui_act_view, UI_ARG_NUM("view"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_view)
 	var/datum/computer_file/data/email_message/M = find_message_by_fuid(params["view"])
 	if(istype(M))
@@ -417,7 +420,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_changepassword)
 
 // The following entries are Modular Computer framework only, and therefore won't do anything in other cases (like AI View)
 
-UI_ACT(/datum/tgui_module/email_client, "save", ui_act_save, UI_ARG_VALUE("save"))
+UI_ACT(/datum/tgui_module/email_client, "save", ui_act_save, UI_ARG_NUM("save"))
 UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_save)
 	// Fully dependant on modular computers here.
 	var/obj/item/modular_computer/MC = tgui_host()

@@ -21,8 +21,7 @@ DECLARE_UI(/datum/eventkit/player_effects, "PlayerEffects", UI_TITLE("Player Eff
 
 	return data
 
-/datum/eventkit/player_effects/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/om/prompt/text/admin_popup
 	title = "Reply"

@@ -23,8 +23,7 @@ DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 /*
  * tgui_state() gives the UI the state to use by default.
  */
-/obj/item/rig/tgui_state()
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/rig, GLOB.tgui_inventory_state)
 
 /*
  * tgui_status() is middlewere for objects to add little exceptions or special cases to the state they use.
@@ -42,7 +41,10 @@ DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 /*
  * tgui_data() is the heavy lifter, it gives the UI it's relevant datastructure every SStgui tick.
  */
-/obj/item/rig/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/rig, "cooling=cooling_on:num", "sealing", "emagged=subverted:num", "coverlock=locked:num", "interfacelock=interface_locked:num", "aicontrol=control_overridden:num", "aioverride=ai_override_enabled:num", "securitycheck=security_check_enabled:num", "malf=malfunction_delay:num", "merge:ui_data_obj_item_rig{primarysystem:text,ai:bool,sealed:bool,helmet:text,gauntlets:text,boots:text,chest:text,helmetDeployed:bool,gauntletsDeployed:bool,bootsDeployed:bool,chestDeployed:bool,charge:num,maxcharge:num,chargestatus:num,modules:list}")
+
+/// The computed part of /obj/item/rig's window data (declared on its UI_DATA row).
+/obj/item/rig/proc/ui_data_obj_item_rig(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(selected_module)
@@ -55,9 +57,7 @@ DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 	else
 		data["ai"] = FALSE
 
-	data["cooling"] = cooling_on
 	data["sealed"] = !canremove
-	data["sealing"] = sealing
 	data["helmet"] = (helmet ? "[helmet.name]" : "None.")
 	data["gauntlets"] = (gloves ? "[gloves.name]" : "None.")
 	data["boots"] = (boots ?  "[boots.name]" :  "None.")
@@ -72,13 +72,6 @@ DECLARE_UI(/obj/item/rig, UI_FROM_VAR("interface_path"))
 	data["maxcharge"] = cell ? cell.maxcharge : 0
 	data["chargestatus"] = cell ? FLOOR((cell.charge/cell.maxcharge)*50, 1) : 0
 
-	data["emagged"] = subverted
-	data["coverlock"] = locked
-	data["interfacelock"] = interface_locked
-	data["aicontrol"] = control_overridden
-	data["aioverride"] = ai_override_enabled
-	data["securitycheck"] = security_check_enabled
-	data["malf"] = malfunction_delay
 
 	var/list/module_list = list()
 	if(!canremove && !sealing)
@@ -171,14 +164,14 @@ UI_ACT_PROC(/obj/item/rig, ui_act_toggle_suit_lock)
 	locked = !locked
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "toggle_piece", ui_act_toggle_piece, UI_ARG_VALUE("piece"))
+UI_ACT(/obj/item/rig, "toggle_piece", ui_act_toggle_piece, UI_ARG_TEXT("piece"))
 UI_ACT_PROC(/obj/item/rig, ui_act_toggle_piece)
 	if(ishuman(ui.user) && (ui.user.stat || ui.user.has_status(EFFECT_STUNNED) || ui.user.lying))
 		return FALSE
 	toggle_piece(params["piece"], ui.user)
 	. = TRUE
 
-UI_ACT(/obj/item/rig, "interact_module", ui_act_interact_module, UI_ARG_VALUE("charge_type"), UI_ARG_NUM("module"), UI_ARG_TEXT("module_mode"))
+UI_ACT(/obj/item/rig, "interact_module", ui_act_interact_module, UI_ARG_TEXT("charge_type"), UI_ARG_NUM("module"), UI_ARG_TEXT("module_mode"))
 UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
 	var/module_index = params["module"]
 

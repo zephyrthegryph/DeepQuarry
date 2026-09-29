@@ -119,7 +119,10 @@ DECLARE_UI(/obj/machinery/shield_gen, "ShieldGenerator")
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/shield_gen/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/shield_gen, "merge:ui_data_obj_machinery_shield_gen{capacitors:list,active:num,failing:bool,radius:num,max_radius:num,z_range:num,max_z_range:num,average_field_strength:num,target_field_strength:num,max_field_strength:num,shields:num,upkeep:num,strengthen_rate:num,max_strengthen_rate:num,gen_power:num}")
+
+/// The computed part of /obj/machinery/shield_gen's window data (declared on its UI_DATA row).
+/obj/machinery/shield_gen/proc/ui_data_obj_machinery_shield_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/lockedData = list()
 
 	if(!locked)

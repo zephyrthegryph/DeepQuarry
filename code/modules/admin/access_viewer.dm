@@ -7,8 +7,7 @@
 
 DECLARE_UI(/datum/access_viewer, "AccessViewer", UI_TITLE("Access Viewer"))
 
-/datum/access_viewer/tgui_state(mob/user)
-	return ADMIN_STATE(R_DEBUG)
+DECLARE_UI_STATE(/datum/access_viewer, ADMIN_STATE(R_DEBUG))
 
 /datum/access_viewer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -62,7 +61,10 @@ UI_ACT_PROC(/datum/access_viewer, ui_act_req_one)
 	data["access_list"] = access_list
 	return data
 
-/datum/access_viewer/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/access_viewer, "merge:ui_data_datum_access_viewer{name:text,coords:text,req_access:unknown,req_one_access:list}")
+
+/// The computed part of /datum/access_viewer's window data (declared on its UI_DATA row).
+/datum/access_viewer/proc/ui_data_datum_access_viewer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	// Check if the object still exists
 	var/obj/machinery/req_thing = om_resolve(focused_obj)

@@ -237,16 +237,16 @@ EXTEND_INTERACTIONS(/mob/living/bot/medbot, \
 /mob/living/bot/medbot/proc/attack_hand_medbot_done2(mob/living/carbon/human/H)
 	set_right(H)
 
-/mob/living/bot/medbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["on"] = on
-	data["open"] = open
+UI_DATA(/mob/living/bot/medbot, "on:num", "open:num", "locked:num", "merge:ui_data_mob_living_bot_medbot{beaker:bool,beaker_total:num,beaker_max:num,min_urgency:num,urgency_bands:list,injection_amount_min:num,injection_amount:num,injection_amount_max:num,use_beaker:num,declare_treatment:num,vocal:num}")
+
+/// The computed part of /mob/living/bot/medbot's window data (declared on its UI_DATA row).
+/mob/living/bot/medbot/proc/ui_data_mob_living_bot_medbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["beaker"] = FALSE
 	if(reagent_glass)
 		data["beaker"] = TRUE
 		data["beaker_total"] = reagent_glass.reagents.total_volume
 		data["beaker_max"] = reagent_glass.reagents.maximum_volume
-	data["locked"] = locked
 	data["min_urgency"] = null
 	data["urgency_bands"] = list(DIAG_BAND_MINOR, DIAG_BAND_MODERATE, DIAG_BAND_SEVERE, DIAG_BAND_CRITICAL)
 	data["injection_amount_min"] = MEDBOT_MIN_INJECTION

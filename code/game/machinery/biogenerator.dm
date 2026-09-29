@@ -125,12 +125,12 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 
 	return static_data
 
-/obj/machinery/biogenerator/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/biogenerator, "build_eff:num", "points:num", "processing:num", "merge:ui_data_obj_machinery_biogenerator{beaker:bool}")
 
-	data["build_eff"] = build_eff
-	data["points"] = points
-	data["processing"] = processing
+/// The computed part of /obj/machinery/biogenerator's window data (declared on its UI_DATA row).
+/obj/machinery/biogenerator/proc/ui_data_obj_machinery_biogenerator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["beaker"] = !!beaker
 
 	return data
@@ -150,7 +150,7 @@ UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_detach)
 		update_icon()
 	return TRUE
 
-UI_ACT(/obj/machinery/biogenerator, "purchase", ui_act_purchase, UI_ARG_NUM("amount"), UI_ARG_VALUE("cat"), UI_ARG_VALUE("name"))
+UI_ACT(/obj/machinery/biogenerator, "purchase", ui_act_purchase, UI_ARG_NUM("amount"), UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/machinery/biogenerator, ui_act_purchase)
 	var/category = params["cat"] // meow
 	var/name = params["name"]

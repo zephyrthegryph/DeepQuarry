@@ -27,7 +27,10 @@ GLOBAL_VAR_INIT(warrant_uid, 0)
 
 	var/tmp/datum/data/record/warrant/activewarrant_ref
 
-/datum/computer_file/program/digitalwarrant/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/digitalwarrant, "merge:ui_data_datum_computer_file_program_digitalwarrant{warrantname:unknown,warrantcharges:unknown,warrantauth:unknown,type:unknown,allwarrants:list}")
+
+/// The computed part of /datum/computer_file/program/digitalwarrant's window data (declared on its UI_DATA row).
+/datum/computer_file/program/digitalwarrant/proc/ui_data_datum_computer_file_program_digitalwarrant(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
 	data["warrantname"] = null

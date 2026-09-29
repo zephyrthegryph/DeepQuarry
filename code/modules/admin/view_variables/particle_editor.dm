@@ -5,8 +5,7 @@
 /datum/particle_editor/New(atom/target)
 	src.target_handle = om_handle(target)
 
-/datum/particle_editor/tgui_state(mob/user)
-	return ADMIN_STATE(R_VAREDIT)
+DECLARE_UI_STATE(/datum/particle_editor, ADMIN_STATE(R_VAREDIT))
 
 DECLARE_UI(/datum/particle_editor, "ParticleEdit")
 
@@ -101,7 +100,10 @@ DECLARE_UI(/datum/particle_editor, "ParticleEdit")
 		data["drift"] = drift
 	return data
 
-/datum/particle_editor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/particle_editor, "merge:ui_data_datum_particle_editor{target_name:text,particle_data:unknown}")
+
+/// The computed part of /datum/particle_editor's window data (declared on its UI_DATA row).
+/datum/particle_editor/proc/ui_data_datum_particle_editor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["target_name"] = target().name
 	if(!target().particles)
@@ -145,7 +147,7 @@ UI_ACT_PROC(/datum/particle_editor, ui_act_transform_size)
 				target().particles.transform = TRANSFORM_PROJECTION_MATRIX_IDENTITY
 		return
 
-UI_ACT(/datum/particle_editor, "edit", ui_act_edit, UI_ARG_LIST("new_value"), UI_ARG_VALUE("var"), UI_ARG_VALUE("var_mod"))
+UI_ACT(/datum/particle_editor, "edit", ui_act_edit, UI_ARG_LIST("new_value"), UI_ARG_TEXT("var"), UI_ARG_TEXT("var_mod"))
 UI_ACT_PROC(/datum/particle_editor, ui_act_edit)
 	var/particles/owner = target().particles
 	var/param_var_name = params["var"]

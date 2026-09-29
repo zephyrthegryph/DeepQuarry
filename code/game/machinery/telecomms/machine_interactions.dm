@@ -42,10 +42,12 @@
 	attack_hand(user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/machinery/telecomms/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/telecomms, "temp:text", "merge:ui_data_obj_machinery_telecomms{on:num,id:unknown,network:unknown,autolinkers:bool,shadowlink:bool,options:unknown,linked:list,filter:list,multitool:bool,multitool_buffer:listmap}")
+
+/// The computed part of /obj/machinery/telecomms's window data (declared on its UI_DATA row).
+/obj/machinery/telecomms/proc/ui_data_obj_machinery_telecomms(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["temp"] = temp
 	data["on"] = on
 
 	data["id"] = null

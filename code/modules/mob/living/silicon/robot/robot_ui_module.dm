@@ -6,8 +6,7 @@
 	var/new_name
 	var/datum/robot_sprite/sprite_datum
 
-/datum/tgui_module/robot_ui_module/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/robot_ui_module, GLOB.tgui_self_state)
 
 /datum/tgui_module/robot_ui_module/tgui_close(mob/user)
 	. = ..()
@@ -65,8 +64,11 @@
 
 	return data
 
-/datum/tgui_module/robot_ui_module/tgui_data()
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/robot_ui_module, "merge:ui_data_datum_tgui_module_robot_ui_module{currentName:text,isDefaultName:bool,selected_module:unknown,possible_sprites:list,sprite_datum:unknown,sprite_datum_class:text,sprite_datum_size:num}")
+
+/// The computed part of /datum/tgui_module/robot_ui_module's window data (declared on its UI_DATA row).
+/datum/tgui_module/robot_ui_module/proc/ui_data_datum_tgui_module_robot_ui_module(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
 
@@ -105,7 +107,7 @@
 
 	return data
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "pick_module", ui_act_pick_module, UI_ARG_VALUE("value"))
+UI_ACT(/datum/tgui_module/robot_ui_module, "pick_module", ui_act_pick_module, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_module)
 	var/mob/living/silicon/robot/R = host()
 	if(R.module)
@@ -126,7 +128,7 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_module)
 		sprite_datum = new_datum
 	return TRUE
 
-UI_ACT(/datum/tgui_module/robot_ui_module, "pick_icon", ui_act_pick_icon, UI_ARG_VALUE("value"))
+UI_ACT(/datum/tgui_module/robot_ui_module, "pick_icon", ui_act_pick_icon, UI_ARG_TEXT("value"))
 UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_pick_icon)
 	var/mob/living/silicon/robot/R = host()
 	var/sprite = params["value"]

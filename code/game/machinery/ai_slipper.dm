@@ -84,16 +84,17 @@
 
 DECLARE_UI(/obj/machinery/ai_slipper, "AiSlipper", UI_TITLE("AI Liquid Dispenser"))
 
-/obj/machinery/ai_slipper/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/ai_slipper, "uses:num", "cooldown_timeleft:num", "merge:ui_data_obj_machinery_ai_slipper{area_name:unknown,locked:bool,is_silicon:num,disabled:bool,cooldown_on:bool}")
+
+/// The computed part of /obj/machinery/ai_slipper's window data (declared on its UI_DATA row).
+/obj/machinery/ai_slipper/proc/ui_data_obj_machinery_ai_slipper(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/area/A = get_area(src)
 	data["area_name"] = A?.name || "Unknown"
 	data["locked"] = !!locked
 	data["is_silicon"] = istype(user, /mob/living/silicon)
 	data["disabled"] = !!disabled
-	data["uses"] = uses
 	data["cooldown_on"] = !!cooldown_on
-	data["cooldown_timeleft"] = cooldown_timeleft
 	return data
 
 /obj/machinery/ai_slipper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

@@ -66,13 +66,7 @@
 
 DECLARE_UI(/obj/machinery/ntnet_relay, "NTNetRelay")
 
-/obj/machinery/ntnet_relay/tgui_data(mob/user)
-	var/list/data = list()
-	data["enabled"] = enabled
-	data["dos_capacity"] = dos_capacity
-	data["dos_overload"] = dos_overload
-	data["dos_crashed"] = dos_failure
-	return data
+UI_DATA_REPLACE(/obj/machinery/ntnet_relay, "enabled:num", "dos_capacity:num", "dos_overload:num", "dos_crashed=dos_failure:num")
 
 /obj/machinery/ntnet_relay/declare_interactions(list/into)
 	into += list(

@@ -31,10 +31,12 @@
 DECLARE_REF(/datum/privacy_poll_dialog, "owner", PAIR, "privacy_poll_dialog")
 DECLARE_REF(/mob/new_player, "privacy_poll_dialog", PAIR, "owner")
 
-/datum/privacy_poll_dialog/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/privacy_poll_dialog, GLOB.tgui_always_state)
 
-/datum/privacy_poll_dialog/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/privacy_poll_dialog, "merge:ui_data_datum_privacy_poll_dialog{answered:num}")
+
+/// The computed part of /datum/privacy_poll_dialog's window data (declared on its UI_DATA row).
+/datum/privacy_poll_dialog/proc/ui_data_datum_privacy_poll_dialog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list("answered" = answered)
 
 DECLARE_UI(/datum/privacy_poll_dialog, "PrivacyPoll", UI_TITLE("Player Poll — Privacy"))
@@ -112,8 +114,7 @@ UI_ACT_PROC(/datum/privacy_poll_dialog, ui_act_vote)
 DECLARE_REF(/datum/poll_browser_dialog, "owner", PAIR, "poll_browser_dialog")
 DECLARE_REF(/mob/new_player, "poll_browser_dialog", PAIR, "owner")
 
-/datum/poll_browser_dialog/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/poll_browser_dialog, GLOB.tgui_always_state)
 
 DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
 
@@ -146,7 +147,10 @@ DECLARE_UI(/datum/poll_browser_dialog, "PollBrowser", UI_TITLE("Player Polls"))
 		poll_meta[id_str] = list("id" = text2num(id_str), "question" = question)
 	qdel(q)
 
-/datum/poll_browser_dialog/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/poll_browser_dialog, "merge:ui_data_datum_poll_browser_dialog{polls:list,selected:list}")
+
+/// The computed part of /datum/poll_browser_dialog's window data (declared on its UI_DATA row).
+/datum/poll_browser_dialog/proc/ui_data_datum_poll_browser_dialog(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["polls"] = list()
 	for(var/id_str in poll_ids)

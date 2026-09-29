@@ -168,7 +168,10 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 
 DECLARE_UI(/obj/machinery/bodyscanner, "BodyScanner", UI_TITLE("Body Scanner"))
 
-/obj/machinery/bodyscanner/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/bodyscanner, "merge:ui_data_obj_machinery_bodyscanner{}")
+
+/// The computed part of /obj/machinery/bodyscanner's window data (declared on its UI_DATA row).
+/obj/machinery/bodyscanner/proc/ui_data_obj_machinery_bodyscanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// qualitative scanner output. The old block dumped exact
 	// damage numbers and every affliction's name; the new builder
 	// returns qualitative bands plus DQ scanner-audience findings.

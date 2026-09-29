@@ -295,8 +295,11 @@ DECLARE_UI(/obj/machinery/seed_storage, "SeedStorage")
 
 	return TRUE
 
-/obj/machinery/seed_storage/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/seed_storage, "merge:ui_data_obj_machinery_seed_storage{scanner:bool,seeds:list}")
+
+/// The computed part of /obj/machinery/seed_storage's window data (declared on its UI_DATA row).
+/obj/machinery/seed_storage/proc/ui_data_obj_machinery_seed_storage(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if(smart)
 		scanner = list("stats", "produce", "soil", "temperature", "light", "pressure")

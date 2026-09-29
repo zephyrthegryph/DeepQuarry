@@ -25,9 +25,11 @@ DECLARE_UI(/obj/item/modular_computer, "NtosMain", UI_AUTOUPDATE)
 
 	return TRUE
 
-/obj/item/modular_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/modular_computer, "device_theme:text", "merge:ui_data_obj_item_modular_computer{login:list,removable_media:list,programs:list,has_light:bool,light_on:bool,comp_light_color:unknown}")
+
+/// The computed part of /obj/item/modular_computer's window data (declared on its UI_DATA row).
+/obj/item/modular_computer/proc/ui_data_obj_item_modular_computer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
-	data["device_theme"] = device_theme
 
 	data["login"] = list()
 	var/obj/item/computer_hardware/card_slot/cardholder = card_slot
@@ -83,7 +85,7 @@ UI_ACT(/obj/item/modular_computer, "PC_minimize", ui_act_pc_minimize)
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_minimize)
 	minimize_program(ui.user)
 
-UI_ACT(/obj/item/modular_computer, "PC_killprogram", ui_act_pc_killprogram, UI_ARG_VALUE("name"))
+UI_ACT(/obj/item/modular_computer, "PC_killprogram", ui_act_pc_killprogram, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
 	var/prog = params["name"]
 	var/datum/computer_file/program/P = null
@@ -97,11 +99,11 @@ UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
 	to_chat(ui.user, span_notice("Program [P.filename].[P.filetype] with PID [rand(100,999)] has been killed."))
 	return TRUE
 
-UI_ACT(/obj/item/modular_computer, "PC_runprogram", ui_act_pc_runprogram, UI_ARG_VALUE("name"))
+UI_ACT(/obj/item/modular_computer, "PC_runprogram", ui_act_pc_runprogram, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_runprogram)
 	return run_program(params["name"])
 
-UI_ACT(/obj/item/modular_computer, "PC_setautorun", ui_act_pc_setautorun, UI_ARG_VALUE("name"))
+UI_ACT(/obj/item/modular_computer, "PC_setautorun", ui_act_pc_setautorun, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_setautorun)
 	if(!hard_drive)
 		return

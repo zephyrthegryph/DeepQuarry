@@ -19,19 +19,14 @@ ADMIN_VERB(secrets, R_HOLDER, "Secrets", "Abuse harder than you ever have before
 	is_debugger = check_rights(R_DEBUG)
 	is_funmin = check_rights(R_FUN)
 
-/datum/secrets_menu/tgui_state(mob/user)
-	return ADMIN_STATE(R_HOLDER)
+DECLARE_UI_STATE(/datum/secrets_menu, ADMIN_STATE(R_HOLDER))
 
 /datum/secrets_menu/tgui_close()
 	qdel(src)
 
 DECLARE_UI(/datum/secrets_menu, "Secrets")
 
-/datum/secrets_menu/tgui_data(mob/user)
-	var/list/data = list()
-	data["is_debugger"] = is_debugger
-	data["is_funmin"] = is_funmin
-	return data
+UI_DATA_REPLACE(/datum/secrets_menu, "is_debugger:num", "is_funmin:num")
 
 #define HIGHLANDER_DELAY_TEXT "40 seconds (crush the hope of a normal shift)"
 /datum/secrets_menu/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

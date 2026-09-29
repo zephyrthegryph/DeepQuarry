@@ -91,8 +91,11 @@
 
 DECLARE_UI(/obj/machinery/artifact_harvester, "XenoarchArtifactHarvester")
 
-/obj/machinery/artifact_harvester/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/artifact_harvester, "merge:ui_data_obj_machinery_artifact_harvester{info:list}")
+
+/// The computed part of /obj/machinery/artifact_harvester's window data (declared on its UI_DATA row).
+/obj/machinery/artifact_harvester/proc/ui_data_obj_machinery_artifact_harvester(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["info"] = list(
 		"no_scanner" = TRUE,

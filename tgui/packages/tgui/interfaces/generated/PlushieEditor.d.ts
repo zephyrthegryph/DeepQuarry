@@ -4,15 +4,15 @@
 export type PlushieEditorData = Record<string, unknown>;
 
 export type PlushieEditorActions = {
-  add_overlay: { new_overlay?: string | number };
+  add_overlay: { new_overlay?: string };
   change_base_color: Record<string, never>;
-  change_overlay_color: { icon_state?: string | number };
+  change_overlay_color: { icon_state?: string };
   change_ui_state: { new_state?: string };
   clear: Record<string, never>;
   import_config: { config?: unknown[] | Record<string, unknown> };
-  move_overlay_down: { icon?: string | number };
-  move_overlay_up: { icon?: string | number };
-  remove_overlay: { removed_overlay?: string | number };
-  rename: { name?: string | number };
-  set_overlay_alpha: { alpha?: string | number; icon_state?: string | number };
+  move_overlay_down: { icon?: string };
+  move_overlay_up: { icon?: string };
+  remove_overlay: { removed_overlay?: string };
+  rename: { name?: string };
+  set_overlay_alpha: { alpha?: number; icon_state?: string };
 };

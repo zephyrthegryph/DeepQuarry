@@ -3,8 +3,7 @@
 	name = "Robot Decal & Animation Control"
 	tgui_id = "RobotDecals"
 
-/datum/tgui_module/robot_ui_decals/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/robot_ui_decals, GLOB.tgui_self_state)
 
 /datum/tgui_module/robot_ui_decals/tgui_static_data()
 	var/list/data = ..()
@@ -19,8 +18,11 @@
 
 	return data
 
-/datum/tgui_module/robot_ui_decals/tgui_data()
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/robot_ui_decals, "merge:ui_data_datum_tgui_module_robot_ui_decals{active_decals:bool,theme:unknown}")
+
+/// The computed part of /datum/tgui_module/robot_ui_decals's window data (declared on its UI_DATA row).
+/datum/tgui_module/robot_ui_decals/proc/ui_data_datum_tgui_module_robot_ui_decals(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
 	data["active_decals"] = (R.robotdecal_on || list())

@@ -78,17 +78,18 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 /obj/item/transfer_valve/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	tgui_interact(user)
 
-/obj/item/transfer_valve/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/transfer_valve, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/transfer_valve, "TransferValve")
 
-/obj/item/transfer_valve/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/transfer_valve, "valve=valve_open:num", "merge:ui_data_obj_item_transfer_valve{tank_one:text,tank_two:text,attached_device:text}")
+
+/// The computed part of /obj/item/transfer_valve's window data (declared on its UI_DATA row).
+/obj/item/transfer_valve/proc/ui_data_obj_item_transfer_valve(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["tank_one"] = tank_one ? tank_one.name : null
 	data["tank_two"] = tank_two ? tank_two.name : null
 	data["attached_device"] = attached_device ? attached_device.name : null
-	data["valve"] = valve_open
 	return data
 
 UI_ACT(/obj/item/transfer_valve, "tankone", ui_act_tankone)

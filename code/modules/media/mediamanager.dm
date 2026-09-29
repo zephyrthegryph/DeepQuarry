@@ -131,10 +131,12 @@
 	media_window?.close()
 	return ..()
 
-/datum/media_manager/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/media_manager, GLOB.tgui_always_state)
 
-/datum/media_manager/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/media_manager, "merge:ui_data_datum_media_manager{url:text,start_time:num,volume:num}")
+
+/// The computed part of /datum/media_manager's window data (declared on its UI_DATA row).
+/datum/media_manager/proc/ui_data_datum_media_manager(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/should_play = TRUE
 	if(owner()?.prefs)
 		should_play = owner().prefs.read_preference(/datum/preference/toggle/play_jukebox) || url == ""

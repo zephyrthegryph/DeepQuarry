@@ -48,9 +48,7 @@
 
 DECLARE_REF(/obj/machinery/appliance/cooker/oven, "oven_loop", OWNED, null)
 
-/obj/machinery/appliance/cooker/oven/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	. = ..()
-	.["is_open"] = open
+UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")
 
 UI_ACT(/obj/machinery/appliance/cooker/oven, "toggle_door", ui_act_toggle_door)
 UI_ACT_PROC(/obj/machinery/appliance/cooker/oven, ui_act_toggle_door)

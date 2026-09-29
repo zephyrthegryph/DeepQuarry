@@ -56,7 +56,10 @@
 	var/tmp/pod_handle
 	valid_actions = list("toggle_override", "force_door")
 
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, "merge:ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod{docking_status:unknown,override_enabled:num,exterior_status:unknown,can_force:unknown,armed:num,internalTemplateName:text}")
+
+/// The computed part of /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod's window data (declared on its UI_DATA row).
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod/proc/ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
 
 	. = list(
@@ -87,7 +90,10 @@ UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/e
 	program = /datum/embedded_program/docking/simple/escape_pod_berth
 	valid_actions = list("toggle_override", "force_door")
 
-/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth, "merge:ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod_berth{docking_status:unknown,override_enabled:num,exterior_status:unknown,armed:unknown,internalTemplateName:text}")
+
+/// The computed part of /obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth's window data (declared on its UI_DATA row).
+/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod_berth/proc/ui_data_obj_machinery_embedded_controller_radio_simple_docking_controller_escape_pod_berth(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/datum/embedded_program/docking/simple/docking_program = program // Cast to proper type
 
 	var/armed = null

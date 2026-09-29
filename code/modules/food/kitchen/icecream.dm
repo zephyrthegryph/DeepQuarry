@@ -67,18 +67,7 @@ DECLARE_UI(/obj/machinery/icecream_vat, "IcecreamVat")
 		UNTYPED_LIST_ADD(ice_data, list("index" = entry, "name" = get_flavour_name(entry), "amount_left" = LAZYACCESS(product_types, entry), "ingredients" = get_ingredient_list(entry)))
 	return ice_data
 
-/obj/machinery/icecream_vat/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-
-	var/list/reagent_data = list()
-	for(var/datum/reagent/current_reagent in reagents.reagent_list)
-		UNTYPED_LIST_ADD(reagent_data, list("name" = current_reagent.name, "volume" = current_reagent.volume, "id" = current_reagent.id))
-
-	return list(
-		"current_flavor" = flavour_name,
-		"icecrem_data" = build_icecream_data(list(ICECREAM_VANILLA, ICECREAM_STRAWBERRY, ICECREAM_CHOCOLATE, ICECREAM_BLUE)),
-		"cone_data" = build_icecream_data(list(CONE_WAFFLE, CONE_CHOC)),
-		"reagent_data" = reagent_data
-	)
+UI_DATA_REPLACE(/obj/machinery/icecream_vat)
 
 UI_ACT(/obj/machinery/icecream_vat, "index_action", ui_act_index_action, UI_ARG_NUM("iceIndex"))
 UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_index_action)
@@ -114,7 +103,7 @@ UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_make_type)
 	make(ui.user, index, amount)
 	return TRUE
 
-UI_ACT(/obj/machinery/icecream_vat, "clear_reagent", ui_act_clear_reagent, UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/icecream_vat, "clear_reagent", ui_act_clear_reagent, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/icecream_vat, ui_act_clear_reagent)
 	var/reagent_id = params["id"]
 	if(!reagent_id)

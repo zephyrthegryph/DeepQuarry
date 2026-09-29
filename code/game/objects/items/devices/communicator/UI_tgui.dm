@@ -106,8 +106,7 @@ DECLARE_REF(/obj/item/communicator, "cam_plane_masters", OWNED_LIST, null)
 // Proc: tgui_state()
 // Parameters: User
 // Description: This tells TGUI to only allow us to be interacted with while in a mob inventory.
-/obj/item/communicator/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/communicator, GLOB.tgui_inventory_state)
 
 // Proc: tgui_interact()
 // Parameters: User, UI, Parent UI
@@ -129,7 +128,10 @@ DECLARE_UI(/obj/item/communicator, "Communicator")
 // Proc: tgui_data()
 // Parameters: User, UI, State
 // Description: Uses a bunch of for loops to turn lists into lists of lists, so they can be displayed in nanoUI, then displays various buttons to the user.
-/obj/item/communicator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targetAddress=target_address:text", "targetAddressName=target_address_name:text", "currentTab=selected_tab", "ring=ringer:num", "note:text", "flashlight=fon:num", "selfie_mode:num", "merge:ui_data_obj_item_communicator{user:text,owner:text,occupation:text,connectionStatus:unknown,address:text,knownDevices:list,invitesSent:list,requestsReceived:list,voice_mobs:list,communicating:list,video_comm:text,imContacts:list,imList:list,time:text,homeScreen:list,weather:list,aircontents:unknown,feeds:unknown,latest_news:unknown,target_feed:unknown}")
+
+/// The computed part of /obj/item/communicator's window data (declared on its UI_DATA row).
+/obj/item/communicator/proc/ui_data_obj_item_communicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list()						//General nanoUI information
 	var/list/communicators = list()			    //List of communicators
@@ -269,11 +271,7 @@ DECLARE_UI(/obj/item/communicator, "Communicator")
 	data["owner"] = owner ? owner : "Unset"
 	data["occupation"] = occupation ? occupation : "Swipe ID to set."
 	data["connectionStatus"] = get_connection_to_tcomms()
-	data["visible"] = network_visibility
 	data["address"] = exonet.address ? exonet.address : "Unallocated"
-	data["targetAddress"] = target_address
-	data["targetAddressName"] = target_address_name
-	data["currentTab"] = selected_tab
 	data["knownDevices"] = communicators
 	data["invitesSent"] = invites
 	data["requestsReceived"] = requests
@@ -283,19 +281,15 @@ DECLARE_UI(/obj/item/communicator, "Communicator")
 	data["imContacts"] = im_contacts_ui
 	data["imList"] = im_list_ui
 	data["time"] = stationtime2text()
-	data["ring"] = ringer
 	data["homeScreen"] = modules_ui
-	data["note"] = note					// current notes
 	data["weather"] = weather
 	data["aircontents"] = src.analyze_air()
-	data["flashlight"] = fon
 	data["feeds"] = compile_news()
 	data["latest_news"] = get_recent_news()
 	if(newsfeed_channel)
 		data["target_feed"] = data["feeds"][newsfeed_channel]
 	else
 		data["target_feed"] = null
-	data["selfie_mode"] = selfie_mode
 
 	return data
 
@@ -416,7 +410,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_selfie_mode)
 	. = TRUE
 	selfie_mode = !selfie_mode
 
-UI_ACT(/obj/item/communicator, "add_hex", ui_act_add_hex, UI_ARG_VALUE("add_hex"))
+UI_ACT(/obj/item/communicator, "add_hex", ui_act_add_hex, UI_ARG_TEXT("add_hex"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_add_hex)
 	. = TRUE
 	var/hex = params["add_hex"]
@@ -432,7 +426,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_clear_target_address)
 	. = TRUE
 	target_address = ""
 
-UI_ACT(/obj/item/communicator, "dial", ui_act_dial, UI_ARG_VALUE("dial"))
+UI_ACT(/obj/item/communicator, "dial", ui_act_dial, UI_ARG_TEXT("dial"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_dial)
 	. = TRUE
 	if(!get_connection_to_tcomms())
@@ -448,7 +442,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_decline)
 	if(decline)
 		del_request(decline)
 
-UI_ACT(/obj/item/communicator, "message", ui_act_message, UI_ARG_VALUE("message"))
+UI_ACT(/obj/item/communicator, "message", ui_act_message, UI_ARG_TEXT("message"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_message)
 	. = TRUE
 	if(!get_connection_to_tcomms())
@@ -456,7 +450,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_message)
 		return FALSE
 	om_ask(ui.user, /datum/om/prompt/text/communicator/text_message, PROC_REF(text_message_entered), address = params["message"])
 
-UI_ACT(/obj/item/communicator, "disconnect", ui_act_disconnect, UI_ARG_VALUE("disconnect"))
+UI_ACT(/obj/item/communicator, "disconnect", ui_act_disconnect, UI_ARG_TEXT("disconnect"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_disconnect)
 	. = TRUE
 	var/name_to_disconnect = params["disconnect"]
@@ -480,12 +474,12 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_endvideo)
 	if(video_source)
 		end_video()
 
-UI_ACT(/obj/item/communicator, "copy", ui_act_copy, UI_ARG_VALUE("copy"))
+UI_ACT(/obj/item/communicator, "copy", ui_act_copy, UI_ARG_TEXT("copy"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_copy)
 	. = TRUE
 	target_address = params["copy"]
 
-UI_ACT(/obj/item/communicator, "copy_name", ui_act_copy_name, UI_ARG_VALUE("copy_name"))
+UI_ACT(/obj/item/communicator, "copy_name", ui_act_copy_name, UI_ARG_TEXT("copy_name"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_copy_name)
 	. = TRUE
 	target_address_name = params["copy_name"]
@@ -498,7 +492,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_hang_up)
 	for(var/obj/item/communicator/comm in communicating)
 		close_connection(ui.user, comm, "[ui.user] hung up")
 
-UI_ACT(/obj/item/communicator, "switch_tab", ui_act_switch_tab, UI_ARG_VALUE("switch_tab"))
+UI_ACT(/obj/item/communicator, "switch_tab", ui_act_switch_tab, UI_ARG_NUM("switch_tab"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_switch_tab)
 	. = TRUE
 	selected_tab = params["switch_tab"]

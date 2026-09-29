@@ -190,8 +190,11 @@ DECLARE_REF(/obj/machinery/mineral/equipment_vendor, "inserted_id", SPILL, null)
 	)
 	..()
 
-/obj/machinery/mineral/equipment_vendor/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/mineral/equipment_vendor, "merge:ui_data_obj_machinery_mineral_equipment_vendor{has_id:bool,id:list}")
+
+/// The computed part of /obj/machinery/mineral/equipment_vendor's window data (declared on its UI_DATA row).
+/obj/machinery/mineral/equipment_vendor/proc/ui_data_obj_machinery_mineral_equipment_vendor(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// ID
 	if(inserted_id)
@@ -252,7 +255,7 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_logoff)
 	inserted_id = null
 	add_fingerprint()
 
-UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_VALUE("cat"), UI_ARG_VALUE("name"))
+UI_ACT(/obj/machinery/mineral/equipment_vendor, "purchase", ui_act_purchase, UI_ARG_TEXT("cat"), UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 	. = TRUE
 	if(!inserted_id)

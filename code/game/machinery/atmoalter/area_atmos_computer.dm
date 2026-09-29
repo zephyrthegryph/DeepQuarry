@@ -27,7 +27,10 @@
 
 DECLARE_UI(/obj/machinery/computer/area_atmos, "AreaScrubberControl")
 
-/obj/machinery/computer/area_atmos/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/area_atmos, "merge:ui_data_obj_machinery_computer_area_atmos{}")
+
+/// The computed part of /obj/machinery/computer/area_atmos's window data (declared on its UI_DATA row).
+/obj/machinery/computer/area_atmos/proc/ui_data_obj_machinery_computer_area_atmos(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/working = list()
 	for(var/id in connectedscrubbers)
 		var/obj/machinery/portable_atmospherics/powered/scrubber/huge/scrubber = connectedscrubbers[id]

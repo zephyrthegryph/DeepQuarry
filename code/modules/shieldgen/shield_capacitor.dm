@@ -95,15 +95,13 @@ DECLARE_UI(/obj/machinery/shield_capacitor, "ShieldCapacitor")
 		return STATUS_CLOSE
 	return ..()
 
-/obj/machinery/shield_capacitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/shield_capacitor, "time_since_fail:num", "stored_charge:num", "max_charge:num", "charge_rate:num", "max_charge_rate:num", "merge:ui_data_obj_machinery_shield_capacitor{active:num}")
+
+/// The computed part of /obj/machinery/shield_capacitor's window data (declared on its UI_DATA row).
+/obj/machinery/shield_capacitor/proc/ui_data_obj_machinery_shield_capacitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["active"] = active
-	data["time_since_fail"] = time_since_fail
-	data["stored_charge"] = stored_charge
-	data["max_charge"] = max_charge
-	data["charge_rate"] = charge_rate
-	data["max_charge_rate"] = max_charge_rate
 
 	return data
 

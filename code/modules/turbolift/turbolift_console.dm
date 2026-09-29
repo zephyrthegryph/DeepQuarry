@@ -161,7 +161,10 @@ EXTEND_INTERACTIONS(/obj/structure/lift/panel, \
 
 DECLARE_UI(/obj/structure/lift/panel, "Turbolift")
 
-/obj/structure/lift/panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/structure/lift/panel, "merge:ui_data_obj_structure_lift_panel{doors_open:unknown,fire_mode:unknown,floors:list}")
+
+/// The computed part of /obj/structure/lift/panel's window data (declared on its UI_DATA row).
+/obj/structure/lift/panel/proc/ui_data_obj_structure_lift_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["doors_open"] = lift().doors_are_open()

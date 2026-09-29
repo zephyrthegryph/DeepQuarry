@@ -237,7 +237,10 @@ DECLARE_REF(/mob/living, "shadekin", OWNED, null)
 
 DECLARE_UI(/datum/shadekin, "ShadekinConfig", UI_TITLE("Shadekin Config"))
 
-/datum/shadekin/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/shadekin, "merge:ui_data_datum_shadekin{stun_time:unknown,flicker_time:num,flicker_color:unknown,flicker_break_chance:num,flicker_distance:num,no_retreat:num,nutrition_energy_conversion:num,hide_voice_in_phase:num,extended_kin:num,savefile_selected:unknown}")
+
+/// The computed part of /datum/shadekin's window data (declared on its UI_DATA row).
+/datum/shadekin/proc/ui_data_datum_shadekin(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/data = list(
 		"stun_time" = calculate_stun(),
 		"flicker_time" = flicker_time,

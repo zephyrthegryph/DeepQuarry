@@ -18,8 +18,11 @@
 
 DECLARE_UI(/obj/machinery/computer/mecha, "MechaControlConsole")
 
-/obj/machinery/computer/mecha/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/mecha, "stored_data:list", "merge:ui_data_obj_machinery_computer_mecha{beacons:list}")
+
+/// The computed part of /obj/machinery/computer/mecha's window data (declared on its UI_DATA row).
+/obj/machinery/computer/mecha/proc/ui_data_obj_machinery_computer_mecha(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 
 	var/list/beacons = list()
@@ -30,7 +33,6 @@ DECLARE_UI(/obj/machinery/computer/mecha, "MechaControlConsole")
 	data["beacons"] = beacons
 
 	LAZYINITLIST(stored_data)
-	data["stored_data"] = stored_data
 
 	return data
 
@@ -78,8 +80,11 @@ UI_ACT_PROC(/obj/machinery/computer/mecha, ui_act_clear_log)
 	icon = 'icons/obj/device.dmi'
 	icon_state = "motion2"
 
-/obj/item/mecha_parts/mecha_tracking/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/item/mecha_parts/mecha_tracking, "merge:ui_data_obj_item_mecha_parts_mecha_tracking{ref:text,charge:unknown,name:text,health:unknown,maxHealth:num,cell:num,cellCharge:num,cellMaxCharge:num,airtank:unknown,pilot:unknown,location:unknown,active:unknown,cargoUsed:num,cargoMax:num}")
+
+/// The computed part of /obj/item/mecha_parts/mecha_tracking's window data (declared on its UI_DATA row).
+/obj/item/mecha_parts/mecha_tracking/proc/ui_data_obj_item_mecha_parts_mecha_tracking(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	if(!in_mecha())
 		return FALSE
 

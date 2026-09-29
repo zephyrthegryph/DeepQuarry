@@ -711,7 +711,10 @@ TYPE_TABLE_DECLARE(/obj/machinery/alarm, alarm_TLV, air_alarm_TLV_base())
 
 DECLARE_UI(/obj/machinery/alarm, "AirAlarm")
 
-/obj/machinery/alarm/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/alarm, "merge:ui_data_obj_machinery_alarm{locked:num,siliconUser:bool,remoteUser:bool,danger_level:num,target_temperature:text,rcon:num,atmos_alarm:num,fire_alarm:unknown,environment_data:list,vents:list,scrubbers:list,mode:num,modes:list,thresholds:list}")
+
+/// The computed part of /obj/machinery/alarm's window data (declared on its UI_DATA row).
+/obj/machinery/alarm/proc/ui_data_obj_machinery_alarm(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked" = locked,
 		"siliconUser" = siliconaccess(user) || (isobserver(user) && is_admin(user)),
@@ -934,7 +937,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset_pressure)
 	refresh_area_alarms()
 	return TRUE
 
-UI_ACT(/obj/machinery/alarm, "threshold", ui_act_threshold, UI_ARG_TEXT("env", 64), UI_ARG_VALUE("var", 64))
+UI_ACT(/obj/machinery/alarm, "threshold", ui_act_threshold, UI_ARG_TEXT("env", 64), UI_ARG_NUM("var"))
 UI_ACT_PROC(/obj/machinery/alarm, ui_act_threshold)
 	if(!controls_usable(user, state))
 		return

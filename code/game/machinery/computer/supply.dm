@@ -76,8 +76,11 @@
 // TGUI
 DECLARE_UI(/obj/machinery/computer/supplycomp, "SupplyConsole")
 
-/obj/machinery/computer/supplycomp/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/supplycomp, "merge:ui_data_obj_machinery_computer_supplycomp{shuttle_auth:num,order_auth:num,shuttle:list,supply_points:unknown,can_personal_order:bool,personal_balance:unknown,orders:list,receipts:list,contraband:num,market_auth:unknown,market:num,modal:unknown}")
+
+/// The computed part of /obj/machinery/computer/supplycomp's window data (declared on its UI_DATA row).
+/obj/machinery/computer/supplycomp/proc/ui_data_obj_machinery_computer_supplycomp(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/list/shuttle_status = list()
 
 	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
@@ -236,7 +239,7 @@ DECLARE_UI_MODAL(/obj/machinery/computer/supplycomp)
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/computer/supplycomp, "market_request", ui_act_market_request, UI_ARG_BOOL("contract"), UI_ARG_VALUE("id"), UI_ARG_BOOL("personal"))
+UI_ACT(/obj/machinery/computer/supplycomp, "market_request", ui_act_market_request, UI_ARG_BOOL("contract"), UI_ARG_TEXT("id"), UI_ARG_BOOL("personal"))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_market_request)
 	var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(params["id"])
 	if(!listing)
@@ -249,7 +252,7 @@ UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_market_request)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/supplycomp, "market_route", ui_act_market_route, UI_ARG_VALUE("bid"), UI_ARG_REF("crate", null, /obj/structure/closet/crate))
+UI_ACT(/obj/machinery/computer/supplycomp, "market_route", ui_act_market_route, UI_ARG_TEXT("bid"), UI_ARG_REF("crate", null, /obj/structure/closet/crate))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_market_route)
 	var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(params["bid"])
 	var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[bid?.counterparty_id]
@@ -320,7 +323,7 @@ UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_request_crate)
 	// Approving Orders
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/supplycomp, "edit_order_value", ui_act_edit_order_value, UI_ARG_VALUE("default"), UI_ARG_VALUE("edit"), UI_ARG_REF("ref", null, /datum/supply_order))
+UI_ACT(/obj/machinery/computer/supplycomp, "edit_order_value", ui_act_edit_order_value, UI_ARG_TEXT("default"), UI_ARG_TEXT("edit"), UI_ARG_REF("ref", null, /datum/supply_order))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_edit_order_value)
 	var/datum/supply_order/O = params["ref"]
 	if(!istype(O))
@@ -373,7 +376,7 @@ UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_clear_all_requests)
 	// Exports
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/supplycomp, "export_edit_field", ui_act_export_edit_field, UI_ARG_VALUE("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT(/obj/machinery/computer/supplycomp, "export_edit_field", ui_act_export_edit_field, UI_ARG_NUM("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_edit_field)
 	var/datum/exported_crate/E = params["ref"]
 	// Invalid ref
@@ -385,7 +388,7 @@ UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_edit_field)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/supplycomp, "export_delete_field", ui_act_export_delete_field, UI_ARG_VALUE("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT(/obj/machinery/computer/supplycomp, "export_delete_field", ui_act_export_delete_field, UI_ARG_NUM("index"), UI_ARG_REF("ref", null, /datum/exported_crate))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_delete_field)
 	var/datum/exported_crate/E = params["ref"]
 	// Invalid ref
@@ -409,7 +412,7 @@ UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_add_field)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/supplycomp, "export_edit", ui_act_export_edit, UI_ARG_VALUE("default"), UI_ARG_VALUE("edit"), UI_ARG_REF("ref", null, /datum/exported_crate))
+UI_ACT(/obj/machinery/computer/supplycomp, "export_edit", ui_act_export_edit, UI_ARG_TEXT("default"), UI_ARG_TEXT("edit"), UI_ARG_REF("ref", null, /datum/exported_crate))
 UI_ACT_PROC(/obj/machinery/computer/supplycomp, ui_act_export_edit)
 	var/datum/exported_crate/E = params["ref"]
 	// Invalid ref

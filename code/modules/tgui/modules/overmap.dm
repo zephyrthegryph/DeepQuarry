@@ -19,8 +19,11 @@
 		user.client.register_map_obj(linked().cam_background)
 		linked().update_screen()
 
-/datum/tgui_module/ship/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:unknown}")
+
+/// The computed part of /datum/tgui_module/ship's window data (declared on its UI_DATA row).
+/datum/tgui_module/ship/proc/ui_data_datum_tgui_module_ship(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	if(linked())
 		data["mapRef"] = linked().map_name
 	return data
@@ -94,8 +97,11 @@
 		return FALSE
 	return ..()
 
-/datum/tgui_module/ship/nav/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/ship/nav, "merge:ui_data_datum_tgui_module_ship_nav{sector:text,sector_info:text,s_x:num,s_y:num,speed:num,accel:num,heading:unknown,viewing:unknown,ETAnext:text}")
+
+/// The computed part of /datum/tgui_module/ship/nav's window data (declared on its UI_DATA row).
+/datum/tgui_module/ship/nav/proc/ui_data_datum_tgui_module_ship_nav(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/turf/T = get_turf(linked())
 	var/obj/effect/overmap/visitable/sector/current_sector = locate_on(T, /obj/effect/overmap/visitable/sector)
@@ -152,8 +158,7 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 	// SENSORS
 	var/tmp/sensors_handle
 
-/datum/tgui_module/ship/fullmonty/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/tgui_module/ship/fullmonty, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
 /datum/tgui_module/ship/fullmonty/tgui_close(mob/user)
 	. = ..()
@@ -190,8 +195,11 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 	return ..()
 
 // Beware ye eyes. This holds all of the data from helm, engine, and sensor control all at once.
-/datum/tgui_module/ship/fullmonty/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/ship/fullmonty, "d_x=dx", "d_y=dy", "autopilot_disabled:num", "autopilot:num", "merge:ui_data_datum_tgui_module_ship_fullmonty{sector:text,sector_info:text,landed:unknown,s_x:num,s_y:num,dest:bool,speedlimit:unknown,accel:num,heading:unknown,manual_control:unknown,canburn:unknown,accellimit:unknown,speed:num,speed_color:unknown,ETAnext:text,locations:unknown,global_state:num,global_limit:num,engines_info:list,total_thrust:num,viewing:unknown,on:unknown,range:unknown,health:unknown,max_health:num,heat:num,critical_heat:num,status:text,contacts:list}")
+
+/// The computed part of /datum/tgui_module/ship/fullmonty's window data (declared on its UI_DATA row).
+/datum/tgui_module/ship/fullmonty/proc/ui_data_datum_tgui_module_ship_fullmonty(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// HELM
 	var/turf/T = get_turf(linked())
@@ -203,13 +211,9 @@ UI_ACT_PROC(/datum/tgui_module/ship/nav, ui_act_viewing)
 	data["s_x"] = linked().x
 	data["s_y"] = linked().y
 	data["dest"] = dy && dx
-	data["d_x"] = dx
-	data["d_y"] = dy
 	data["speedlimit"] = speedlimit ? speedlimit*1000 : "Halted"
 	data["accel"] = min(round(linked().get_acceleration()*1000, 0.01),accellimit*1000)
 	data["heading"] = linked().get_heading_degrees()
-	data["autopilot_disabled"] = autopilot_disabled
-	data["autopilot"] = autopilot
 	data["manual_control"] = viewing_overmap(user)
 	data["canburn"] = linked().can_burn()
 	data["accellimit"] = accellimit*1000
@@ -346,7 +350,7 @@ UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_remove)
 		qdel(R)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ship/fullmonty, "setcoord", ui_act_setcoord, UI_ARG_VALUE("setx"), UI_ARG_VALUE("sety"))
+UI_ACT(/datum/tgui_module/ship/fullmonty, "setcoord", ui_act_setcoord, UI_ARG_BOOL("setx"), UI_ARG_BOOL("sety"))
 UI_ACT_PROC(/datum/tgui_module/ship/fullmonty, ui_act_setcoord)
 	if(params["setx"])
 		var/newx = act_ask(ui.user, action, params, ui, "a4", /datum/om/prompt/number, message = "Input new destiniation x coordinate", title = "Coordinate input", default = dx, max = world.maxx, min = 1)

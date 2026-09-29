@@ -7,5 +7,5 @@ export type PrisonerManagementActions = {
   change_ui_state: { new_state?: string };
   inject: { imp?: string; val?: number };
   lock: Record<string, never>;
-  warn: { imp?: string | number };
+  warn: { imp?: string };
 };

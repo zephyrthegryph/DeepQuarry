@@ -87,8 +87,11 @@
 
 DECLARE_UI(/obj/item/stack, "MaterialStack")
 
-/obj/item/stack/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/stack, "merge:ui_data_obj_item_stack{amount:unknown}")
+
+/// The computed part of /obj/item/stack's window data (declared on its UI_DATA row).
+/obj/item/stack/proc/ui_data_obj_item_stack(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["amount"] = get_amount()
 
@@ -121,8 +124,7 @@ DECLARE_UI(/obj/item/stack, "MaterialStack")
 		"ref" = "\ref[R]",
 	)
 
-/obj/item/stack/tgui_state(mob/user)
-	return GLOB.tgui_hands_state
+DECLARE_UI_STATE(/obj/item/stack, GLOB.tgui_hands_state)
 
 UI_ACT(/obj/item/stack, "make", ui_act_make, UI_ARG_NUM("multiplier"), UI_ARG_REF("ref", null, /datum/stack_recipe))
 UI_ACT_PROC(/obj/item/stack, ui_act_make)

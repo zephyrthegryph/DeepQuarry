@@ -271,7 +271,10 @@ TYPE_TABLE(/obj/machinery/porta_turret/lasertag/blue, turret_vests_to_target, li
 				return TURRET_PRIORITY_TARGET
 		return TURRET_NOT_TARGET
 
-/obj/machinery/porta_turret/lasertag/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/porta_turret/lasertag, "merge:ui_data_obj_machinery_porta_turret_lasertag{locked:unknown,on:num,lethal:num,lethal_is_configurable:num}")
+
+/// The computed part of /obj/machinery/porta_turret/lasertag's window data (declared on its UI_DATA row).
+/obj/machinery/porta_turret/lasertag/proc/ui_data_obj_machinery_porta_turret_lasertag(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled, // is turret turned on?
@@ -420,7 +423,10 @@ DECLARE_UI(/obj/machinery/porta_turret, "PortableTurret")
 		return FALSE
 	return TRUE
 
-/obj/machinery/porta_turret/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/porta_turret, "merge:ui_data_obj_machinery_porta_turret{locked:unknown,on:num,targetting_is_configurable:unknown,lethal:num,lethal_is_configurable:num,check_weapons:unknown,neutralize_noaccess:unknown,neutralize_norecord:num,neutralize_criminals:num,neutralize_all:unknown,neutralize_nonsynth:unknown,neutralize_unidentified:unknown,neutralize_down:unknown}")
+
+/// The computed part of /obj/machinery/porta_turret's window data (declared on its UI_DATA row).
+/obj/machinery/porta_turret/proc/ui_data_obj_machinery_porta_turret(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"locked" = isLocked(user), // does the current user have access?
 		"on" = enabled,

@@ -57,8 +57,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	var/game_state = GAME_SETUP
 	var/table_icon = "gamble_preview"
 
-/datum/board_game/tgui_state(mob/user)
-	return GLOB.tgui_board_game_state
+DECLARE_UI_STATE(/datum/board_game, GLOB.tgui_board_game_state)
 
 /datum/board_game/New(atom/holder)
 	. = ..()

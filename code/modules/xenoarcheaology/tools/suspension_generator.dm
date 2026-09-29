@@ -69,15 +69,16 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high
 
 DECLARE_UI(/obj/machinery/suspension_gen, "XenoarchSuspension")
 
-/obj/machinery/suspension_gen/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/suspension_gen, "cell:num", "suspension_field", "merge:ui_data_obj_machinery_suspension_gen{cellCharge:num,cellMaxCharge:num,locked:num}")
 
-	data["cell"] = cell
+/// The computed part of /obj/machinery/suspension_gen's window data (declared on its UI_DATA row).
+/obj/machinery/suspension_gen/proc/ui_data_obj_machinery_suspension_gen(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["cellCharge"] = cell?.charge
 	data["cellMaxCharge"] = cell?.maxcharge
 
 	data["locked"] = locked
-	data["suspension_field"] = suspension_field
 
 	return data
 

@@ -6,13 +6,13 @@ DECLARE_UI(/datum/song, "InstrumentEditor")
 /datum/song/tgui_host(mob/user)
 	return parent()
 
-/datum/song/tgui_data(mob/user)
-	var/list/data = ..()
-	data["id"] = id
+UI_DATA(/datum/song, "id", "note_shift:num", "sustain_mode", "volume:num", "volume_dropoff_threshold=sustain_dropoff_volume:num", "sustain_indefinitely=full_sustain_held_note:num", "playing:num", "repeat:num", "merge:ui_data_datum_song{using_instrument:unknown,octaves:num,sustain_mode_button:text,sustain_mode_duration:num,sustain_mode_min:num,sustain_mode_max:unknown,instrument_ready:unknown,bpm:num,lines:list}")
+
+/// The computed part of /datum/song's window data (declared on its UI_DATA row).
+/datum/song/proc/ui_data_datum_song(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["using_instrument"] = using_instrument()?.name || "No instrument loaded!"
-	data["note_shift"] = note_shift
 	data["octaves"] = round(note_shift / 12, 0.01)
-	data["sustain_mode"] = sustain_mode
 	switch(sustain_mode)
 		if(SUSTAIN_LINEAR)
 			data["sustain_mode_button"] = "Linear Sustain Duration (in seconds)"
@@ -25,11 +25,6 @@ DECLARE_UI(/datum/song, "InstrumentEditor")
 			data["sustain_mode_min"] = INSTRUMENT_EXP_FALLOFF_MIN
 			data["sustain_mode_max"] = INSTRUMENT_EXP_FALLOFF_MAX
 	data["instrument_ready"] = using_instrument()?.ready()
-	data["volume"] = volume
-	data["volume_dropoff_threshold"] = sustain_dropoff_volume
-	data["sustain_indefinitely"] = full_sustain_held_note
-	data["playing"] = playing
-	data["repeat"] = repeat
 	data["bpm"] = round(60 SECONDS / tempo)
 	data["lines"] = list()
 	var/linecount
@@ -79,7 +74,7 @@ UI_ACT_PROC(/datum/song, ui_act_set_instrument_id)
 		id = new_id
 	return TRUE
 
-UI_ACT(/datum/song, "change_instrument", ui_act_change_instrument, UI_ARG_VALUE("new_instrument"))
+UI_ACT(/datum/song, "change_instrument", ui_act_change_instrument, UI_ARG_TEXT("new_instrument"))
 UI_ACT_PROC(/datum/song, ui_act_change_instrument)
 	var/new_instrument = params["new_instrument"]
 	//only one instrument, so no need to bother changing it.

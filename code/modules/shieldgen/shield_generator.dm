@@ -431,13 +431,13 @@
 
 DECLARE_UI(/obj/machinery/power/shield_generator, "OvermapShieldGenerator")
 
-/obj/machinery/power/shield_generator/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/power/shield_generator, "running:num", "overloaded:num", "mitigation_max:num", "field_radius:num", "target_radius:num", "hacked:num", "idle_multiplier:num", "idle_valid_values:list", "spinup_counter:num", "merge:ui_data_obj_machinery_power_shield_generator{modes:unknown,mitigation_physical:num,mitigation_em:num,mitigation_heat:num,field_integrity:unknown,max_energy:num,current_energy:num,percentage_energy:num,total_segments:num,functional_segments:unknown,input_cap_kw:num,upkeep_power_usage:num,power_usage:num,offline_for:num}")
+
+/// The computed part of /obj/machinery/power/shield_generator's window data (declared on its UI_DATA row).
+/obj/machinery/power/shield_generator/proc/ui_data_obj_machinery_power_shield_generator(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["running"] = running
 	data["modes"] = get_flag_descriptions()
-	data["overloaded"] = overloaded
-	data["mitigation_max"] = mitigation_max
 	data["mitigation_physical"] = round(mitigation_physical, 0.1)
 	data["mitigation_em"] = round(mitigation_em, 0.1)
 	data["mitigation_heat"] = round(mitigation_heat, 0.1)
@@ -447,16 +447,10 @@ DECLARE_UI(/obj/machinery/power/shield_generator, "OvermapShieldGenerator")
 	data["percentage_energy"] = round(data["current_energy"] / data["max_energy"] * 100)
 	data["total_segments"] = field_segments ? field_segments.len : 0
 	data["functional_segments"] = damaged_segments ? data["total_segments"] - damaged_segments.len : data["total_segments"]
-	data["field_radius"] = field_radius
-	data["target_radius"] = target_radius
 	data["input_cap_kw"] = round(input_cap / 1000)
 	data["upkeep_power_usage"] = round(upkeep_power_usage / 1000, 0.1)
 	data["power_usage"] = round(power_usage / 1000)
-	data["hacked"] = hacked
 	data["offline_for"] = offline_for * 2
-	data["idle_multiplier"] = idle_multiplier
-	data["idle_valid_values"] = idle_valid_values
-	data["spinup_counter"] = spinup_counter
 
 	return data
 

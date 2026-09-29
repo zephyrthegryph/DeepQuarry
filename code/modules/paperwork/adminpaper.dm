@@ -88,9 +88,11 @@
 
 DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
 
-/obj/item/paper/admin/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_item_paper_admin{segments:unknown,stamps:bool,header_html:bool,footer_html:bool,header_on:bool,footer_on:bool,is_crayon:bool}")
+
+/// The computed part of /obj/item/paper/admin's window data (declared on its UI_DATA row).
+/obj/item/paper/admin/proc/ui_data_obj_item_paper_admin(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["title"] = name
 	data["segments"] = get_segments()
 	data["stamps"] = stamps || ""
 	data["header_html"] = header || ""

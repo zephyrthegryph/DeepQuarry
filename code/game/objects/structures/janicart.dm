@@ -242,8 +242,11 @@ DECLARE_REF(/obj/structure/janitorialcart, "mybucket", OWNED, null)
 
 DECLARE_UI(/obj/structure/janitorialcart, "JanitorCart")
 
-/obj/structure/janitorialcart/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/structure/janitorialcart, "merge:ui_data_obj_structure_janitorialcart{mybag:text,mybucket:text,mymop:text,myspray:text,myreplacer:text,signs:text,icons:bool}")
+
+/// The computed part of /obj/structure/janitorialcart's window data (declared on its UI_DATA row).
+/obj/structure/janitorialcart/proc/ui_data_obj_structure_janitorialcart(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["mybag"] = mybag ? capitalize(mybag.name) : null
 	data["mybucket"] = mybucket ? capitalize(mybucket.name) : null

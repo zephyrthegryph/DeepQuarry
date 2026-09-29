@@ -78,10 +78,12 @@ GLOBAL_VAR_INIT(nttransfer_uid, 0)
 	remote_handle = null
 	download_completion = 0
 
-/datum/computer_file/program/nttransfer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/nttransfer, "error:text", "merge:ui_data_datum_computer_file_program_nttransfer{downloading:bool,download_size:num,download_progress:num,download_netspeed:num,download_name:text,uploading:bool,upload_uid:unknown,upload_clients:num,upload_haspassword:num,upload_filename:text,upload_filelist:list,servers:list}")
+
+/// The computed part of /datum/computer_file/program/nttransfer's window data (declared on its UI_DATA row).
+/datum/computer_file/program/nttransfer/proc/ui_data_datum_computer_file_program_nttransfer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
-	data["error"] = error
 
 	data["downloading"] = !!downloaded_file
 	if(downloaded_file)

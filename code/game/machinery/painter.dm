@@ -138,9 +138,11 @@ DECLARE_REF(/obj/machinery/gear_painter, "inserted", SPILL, null)
 
 DECLARE_UI(/obj/machinery/gear_painter, "ColorMate")
 
-/obj/machinery/gear_painter/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/gear_painter, "activemode=active_mode", "buildhue=build_hue:num", "buildsat=build_sat:num", "buildval=build_val:num", "merge:ui_data_obj_machinery_gear_painter{matrixcolors:list,temp:text,item_name:text,item_sprite:text,item_preview:text}")
+
+/// The computed part of /obj/machinery/gear_painter's window data (declared on its UI_DATA row).
+/obj/machinery/gear_painter/proc/ui_data_obj_machinery_gear_painter(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
-	.["activemode"] = active_mode
 	.["matrixcolors"] = list(
 		"rr" = color_matrix_last[1],
 		"rg" = color_matrix_last[2],
@@ -155,9 +157,6 @@ DECLARE_UI(/obj/machinery/gear_painter, "ColorMate")
 		"cg" = color_matrix_last[11],
 		"cb" = color_matrix_last[12],
 	)
-	.["buildhue"] = build_hue
-	.["buildsat"] = build_sat
-	.["buildval"] = build_val
 	if(temp)
 		.["temp"] = temp
 	if(inserted)
@@ -214,7 +213,7 @@ UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_clear)
 	temp = "Cleared Successfully!"
 	return TRUE
 
-UI_ACT(/obj/machinery/gear_painter, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_VALUE("color"), UI_ARG_VALUE("value"))
+UI_ACT(/obj/machinery/gear_painter, "set_matrix_color", ui_act_set_matrix_color, UI_ARG_NUM("color"), UI_ARG_NUM("value"))
 UI_ACT_PROC(/obj/machinery/gear_painter, ui_act_set_matrix_color)
 	if(!(inserted))
 		return

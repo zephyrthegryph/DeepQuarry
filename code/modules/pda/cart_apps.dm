@@ -83,7 +83,7 @@ UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_signal)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	R?.send_signal("ACTIVATE")
 
-UI_ACT(/datum/data/pda/app/signaller, "freq", ui_act_freq, UI_ARG_VALUE("freq", 16))
+UI_ACT(/datum/data/pda/app/signaller, "freq", ui_act_freq, UI_ARG_NUM("freq"))
 UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_freq)
 	var/obj/item/radio/integrated/signal/R = signal_radio()
 	if(!R)

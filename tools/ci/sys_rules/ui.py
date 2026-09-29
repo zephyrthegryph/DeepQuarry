@@ -7,6 +7,9 @@ The whole old pattern:
   and the declared-UI runtime. DECLARE_UI rows plus the ui_* hooks replace them.
 - `ui_act_dispatch`: any `tgui_act()` override (the base /datum/tgui_act is the one dispatcher;
   rows, UI_ACT_FALLBACK, UI_ACT_FORWARD and UI_ACT_NESTED cover dispatch, forwarding and nesting).
+- `tgui_data_override`: any `tgui_data()` override (UI_DATA declares the data).
+- `tgui_state_override`: a `tgui_state()` override that only returns a shared state
+  (DECLARE_UI_STATE); an instance-dependent state stays an override.
 - `text2num_params`: every shape of raw params parsing in the tgui message path:
   * any read of `params` inside a `tgui_act()` override (overrides only forward to another
     datum's tgui_act, which parses again);
@@ -26,6 +29,10 @@ RULES = {
     "ui_act_dispatch": "one UI_ACT(type, action, handler, args...) row per action (UI_ACT_FORWARD to "
     "hand unknown actions to another datum, UI_ACT_NESTED / UI_SUBACT for nested ones) instead of "
     "a tgui_act() override",
+    "tgui_data_override": "declare the window's data with UI_DATA(type, \"var\", \"key=var\", "
+    "\"proc:getter\", \"merge:getter{key:type,...}\") instead of a tgui_data() override",
+    "tgui_state_override": "declare a state every instance shares with DECLARE_UI_STATE(type, state) "
+    "instead of a tgui_state() override that returns it",
     "text2num_params": "declare the arg on the UI_ACT row (UI_ARG_NUM/INT/TEXT/BOOL/CHOICE/REF/PATH/"
     "LIST/VALUE) and read the typed params[name] in the handler; never parse raw params",
 }
@@ -48,6 +55,9 @@ HANDLER = re.compile(r"^UI_(?:ACT|SUBACT)_(?:PROC|OVERRIDE|PREF_PROC)\(\s*(/[\w/
 SUBROW = re.compile(r'^UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$')
 ROW = re.compile(r'^UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$')
 ARGNAME = re.compile(r'UI_ARG_\w+\(\s*"([^"]+)"')
+DATA_OVERRIDE = re.compile(r"^/[\w/]+?/(?:proc/)?tgui_data\s*\(")
+STATE_OVERRIDE = re.compile(r"^(/[\w/]+?)/(?:proc/)?tgui_state\s*\(")
+CONST_STATE = re.compile(r"^	return\s+(GLOB\.\w+|ADMIN_STATE\([^)]*\))\s*$")
 INTERACT = re.compile(r"^/[\w/]+?/(?:proc/)?tgui_interact\s*\(")
 HAND_OPEN = re.compile(r"\bSStgui\.try_update_ui\s*\(|\bnew\s*/datum/tgui\s*\(|\bui\s*=\s*new\s*\(|var/datum/tgui/\w+\s*=\s*new\s*\(")
 RAW = re.compile(
@@ -248,6 +258,17 @@ def scan(files):
         exempt_open = rel.startswith(OPEN_EXEMPT)
         for number, line in enumerate(lines, 1):
             code = code_of(line)
+            if DATA_OVERRIDE.match(line) and not line.startswith("/datum/proc/tgui_data("):
+                out["tgui_data_override"].append((rel, number))
+            if STATE_OVERRIDE.match(line) and not line.startswith("/datum/proc/tgui_state("):
+                body = []
+                for follow in lines[number:]:
+                    if follow.strip() and not follow[0].isspace():
+                        break
+                    if code_of(follow).strip():
+                        body.append(code_of(follow).rstrip())
+                if len(body) == 1 and CONST_STATE.match(body[0]):
+                    out["tgui_state_override"].append((rel, number))
             if INTERACT.match(line) and not line.startswith("/datum/proc/tgui_interact("):
                 out["tgui_interact_boilerplate"].append((rel, number))
             elif not exempt_open and HAND_OPEN.search(code):

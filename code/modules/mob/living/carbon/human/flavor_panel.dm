@@ -24,8 +24,7 @@ GLOBAL_LIST_EMPTY(dq_flavor_panels)
 	if(host)
 		GLOB.dq_flavor_panels -= "[REF(host)]"
 
-/datum/flavor_panel/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/datum/flavor_panel, GLOB.tgui_default_state)
 
 DECLARE_UI(/datum/flavor_panel, "FlavorText", UI_TITLE("Update Flavour Text"))
 
@@ -48,7 +47,10 @@ TYPE_TABLE_DECLARE(/datum/flavor_panel, get_flavor_labels, list( \
 		"feet" = "Feet", \
 	))
 
-/datum/flavor_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/flavor_panel, "merge:ui_data_datum_flavor_panel{parts:list}")
+
+/// The computed part of /datum/flavor_panel's window data (declared on its UI_DATA row).
+/datum/flavor_panel/proc/ui_data_datum_flavor_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!host)
 		return data

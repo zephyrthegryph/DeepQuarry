@@ -35,18 +35,13 @@
 	detail_overlay.color = detail_color
 	add_overlay(detail_overlay)
 
-/obj/item/integrated_electronics/detailer/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/integrated_electronics/detailer, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/integrated_electronics/detailer, "ICDetailer")
 
-/obj/item/integrated_electronics/detailer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["detail_color"] = detail_color
-	data["color_list"] = color_list
-	return data
+UI_DATA(/obj/item/integrated_electronics/detailer, "detail_color", "color_list:list")
 
-UI_ACT(/obj/item/integrated_electronics/detailer, "change_color", ui_act_change_color, UI_ARG_VALUE("color"))
+UI_ACT(/obj/item/integrated_electronics/detailer, "change_color", ui_act_change_color, UI_ARG_TEXT("color"))
 UI_ACT_PROC(/obj/item/integrated_electronics/detailer, ui_act_change_color)
 	if(!(params["color"] in color_list))
 		return // to prevent href exploits causing runtimes

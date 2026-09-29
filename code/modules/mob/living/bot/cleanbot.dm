@@ -211,18 +211,13 @@ EXTEND_INTERACTIONS(/mob/living/bot/cleanbot, INTERACT_HAND_UNGATED("Open contro
 
 DECLARE_UI(/mob/living/bot/cleanbot, "Cleanbot")
 
-/mob/living/bot/cleanbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["on"] = on
-	data["open"] = open
-	data["locked"] = locked
-	data["blood"] = blood
+UI_DATA(/mob/living/bot/cleanbot, "on:num", "open:num", "locked:num", "blood:num", "patrol=will_patrol:num", "vocal:num", "wet_floors:num", "spray_blood:num", "merge:ui_data_mob_living_bot_cleanbot{version:text}")
 
-	data["patrol"] = will_patrol
-	data["vocal"] = vocal
+/// The computed part of /mob/living/bot/cleanbot's window data (declared on its UI_DATA row).
+/mob/living/bot/cleanbot/proc/ui_data_mob_living_bot_cleanbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
-	data["wet_floors"] = wet_floors
-	data["spray_blood"] = spray_blood
+
 	data["version"] = "v2.0"
 	return data
 

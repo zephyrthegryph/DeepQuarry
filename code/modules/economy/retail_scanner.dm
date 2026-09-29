@@ -85,7 +85,10 @@ DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
 
 DECLARE_UI(/obj/item/retail_scanner, "RetailScanner")
 
-/obj/item/retail_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/retail_scanner, "merge:ui_data_obj_item_retail_scanner{locked:num,linked_account:text,machine_id:text,department_checkout:unknown,subsidized_checkout:unknown,transaction_logs:unknown,current_transactioon:unknown}")
+
+/// The computed part of /obj/item/retail_scanner's window data (declared on its UI_DATA row).
+/obj/item/retail_scanner/proc/ui_data_obj_item_retail_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/department_checkout = linked_account?.is_department_budget()
 	return list(
 		"locked" = locked,
@@ -137,7 +140,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_link_account)
 	to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 	return FALSE
 
-UI_ACT(/obj/item/retail_scanner, "custom_order", ui_act_custom_order, UI_ARG_VALUE("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
+UI_ACT(/obj/item/retail_scanner, "custom_order", ui_act_custom_order, UI_ARG_NUM("amount"), UI_ARG_NUM("price"), UI_ARG_TEXT("purpose"))
 UI_ACT_PROC(/obj/item/retail_scanner, ui_act_custom_order)
 	if(locked)
 		return FALSE
@@ -168,7 +171,7 @@ UI_ACT_PROC(/obj/item/retail_scanner, ui_act_custom_order)
 	visible_message("[icon2html(src, viewers(src))][t_purpose][amount > 1 ? " [amount] x" : ""]: [amount * price] Thaler\s.")
 	return TRUE
 
-UI_ACT(/obj/item/retail_scanner, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_VALUE("item"))
+UI_ACT(/obj/item/retail_scanner, "set_amount", ui_act_set_amount, UI_ARG_NUM("amount"), UI_ARG_TEXT("item"))
 UI_ACT_PROC(/obj/item/retail_scanner, ui_act_set_amount)
 	if(locked)
 		return FALSE

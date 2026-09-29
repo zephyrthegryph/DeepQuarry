@@ -107,13 +107,16 @@ DECLARE_UI(/datum/tgui_alert, "AlertModal")
 	data["title"] = title
 	return data
 
-/datum/tgui_alert/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_alert, "merge:ui_data_datum_tgui_alert{timeout:num}")
+
+/// The computed part of /datum/tgui_alert's window data (declared on its UI_DATA row).
+/datum/tgui_alert/proc/ui_data_datum_tgui_alert(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))
 	return data
 
-UI_ACT(/datum/tgui_alert, "choose", ui_act_choose, UI_ARG_VALUE("choice"))
+UI_ACT(/datum/tgui_alert, "choose", ui_act_choose, UI_ARG_TEXT("choice"))
 UI_ACT_PROC(/datum/tgui_alert, ui_act_choose)
 	if (!(params["choice"] in buttons))
 		return

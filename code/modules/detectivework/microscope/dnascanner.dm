@@ -67,10 +67,12 @@ DECLARE_UI(/obj/machinery/dnaforensics, "DNAForensics", UI_TITLE("QuikScan DNA A
 		return FALSE
 	return TRUE
 
-/obj/machinery/dnaforensics/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/dnaforensics, "scanning:num", "merge:ui_data_obj_machinery_dnaforensics{scan_progress:num,bloodsamp:unknown,bloodsamp_desc:unknown}")
+
+/// The computed part of /obj/machinery/dnaforensics's window data (declared on its UI_DATA row).
+/obj/machinery/dnaforensics/proc/ui_data_obj_machinery_dnaforensics(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan_progress"] = round(scanner_progress)
-	data["scanning"] = scanning
 	data["bloodsamp"] = (bloodsamp() ? bloodsamp().name : "")
 	data["bloodsamp_desc"] = (bloodsamp() ? (bloodsamp().desc ? bloodsamp().desc : "No information on record.") : "")
 	return data

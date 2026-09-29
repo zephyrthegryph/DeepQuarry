@@ -240,6 +240,18 @@ test `code/modules/unit_tests/dq_sys_ui_tests.dm`, lint `tools/ci/sys_rules/ui.p
   that only reads declared keys or passes them to `act_ask()`/`rerun_ask()`). The vendored TGS
   DMAPI (`code/modules/tgs/`, world.Topic query strings) is outside the rule. Href parsing in
   `Topic()` is section 20's (`sys_topic_*`).
+- **Data and state declared (rewrite/sys-ui-data).** Every `tgui_data()` override is gone: a key
+  read straight from a host var is a var field (`"key=var:type"`), and whatever is computed stays
+  in one getter per type declared as `"merge:ui_data_<type>{key:type,...}"`, so the dump (and the
+  generated `<Interface>Data`) knows every key. Getters take `(mob/user, datum/tgui/ui,
+  datum/tgui_state/state)`; `UI_DATA_REPLACE` is for a type whose old override did not call
+  `..()`. Key types are inferred from the assignments (77% typed; the rest, mostly proc results,
+  are `unknown`). A shared tgui state is `DECLARE_UI_STATE(type, state)` and the base
+  `tgui_state()` returns it; only the 12 instance-dependent states remain overrides. Lint:
+  `tgui_data_override` and `tgui_state_override` (a constant-returning override), both 0.
+  `UI_ARG_VALUE` was audited against the TSX (TypeScript checker types of every `act()` payload,
+  generic components followed through their `action` props): 458 became 153, the rest are args
+  no literal `act()` sends (dynamic action names), `any`-typed payloads or genuinely mixed.
 - **Bench** (3 exclusive runs each, virgo_minitest, against the stored `13ff5ddbe5` baseline): no
   count or timing regression beyond noise; `types_datum` +532 (+2.5%, the marker types) and
   booted private memory +22 MB (+2.5%, the ~5,200 row and handler procs that replaced inline

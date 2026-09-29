@@ -60,12 +60,14 @@
 	tgui_interact(user)
 	return TRUE
 
-/obj/machinery/computer/arcade/orion_trail/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/machinery/computer/arcade/orion_trail, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/machinery/computer/arcade/orion_trail, "OrionTrail", UI_TITLE("The Orion Trail"))
 
-/obj/machinery/computer/arcade/orion_trail/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/arcade/orion_trail, "merge:ui_data_obj_machinery_computer_arcade_orion_trail{screen:text,reasons:list,event_html:unknown,turn:num,stop_name:unknown,stop_blurb:unknown,crew:list,food:num,fuel:num,engine:num,hull:num,electronics:num,at_blackhole:bool}")
+
+/// The computed part of /obj/machinery/computer/arcade/orion_trail's window data (declared on its UI_DATA row).
+/obj/machinery/computer/arcade/orion_trail/proc/ui_data_obj_machinery_computer_arcade_orion_trail(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(gameStatus == ORION_STATUS_GAMEOVER)
 		data["screen"] = ORION_SCREEN_GAMEOVER

@@ -186,19 +186,17 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 
 DECLARE_UI(/obj/machinery/photocopier/faxmachine, "Fax")
 
-/obj/machinery/photocopier/faxmachine/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/photocopier/faxmachine, "authenticated", "rank", "copyItem=copyitem", "cooldown=sendcooldown:num", "destination", "merge:ui_data_obj_machinery_photocopier_faxmachine{scan:text,isAI:num,isRobot:num,adminDepartments:unknown,bossName:text}")
+
+/// The computed part of /obj/machinery/photocopier/faxmachine's window data (declared on its UI_DATA row).
+/obj/machinery/photocopier/faxmachine/proc/ui_data_obj_machinery_photocopier_faxmachine(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["scan"] = scan ? scan.name : null
-	data["authenticated"] = authenticated
-	data["rank"] = rank
 	data["isAI"] = isAI(user)
 	data["isRobot"] = isrobot(user)
 	data["adminDepartments"] = GLOB.admin_departments
 
 	data["bossName"] = using_map.boss_name
-	data["copyItem"] = copyitem
-	data["cooldown"] = sendcooldown
-	data["destination"] = destination
 
 	return data
 

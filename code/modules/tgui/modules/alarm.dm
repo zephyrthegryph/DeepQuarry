@@ -15,12 +15,10 @@
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/all/glasses
-/datum/tgui_module/alarm_monitor/all/glasses/tgui_state(mob/user)
-	return GLOB.tgui_glasses_state
+DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/glasses, GLOB.tgui_glasses_state)
 
 /datum/tgui_module/alarm_monitor/all/robot
-/datum/tgui_module/alarm_monitor/all/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/all/robot, GLOB.tgui_self_state)
 
 /datum/tgui_module/alarm_monitor/engineering
 /datum/tgui_module/alarm_monitor/engineering/New()
@@ -29,13 +27,11 @@
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/engineering/glasses
-/datum/tgui_module/alarm_monitor/engineering/glasses/tgui_state(mob/user)
-	return GLOB.tgui_glasses_state
+DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/glasses, GLOB.tgui_glasses_state)
 
 // Subtype for nif_state
 /datum/tgui_module/alarm_monitor/engineering/nif
-/datum/tgui_module/alarm_monitor/engineering/nif/tgui_state(mob/user)
-	return GLOB.tgui_nif_state
+DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/engineering/nif, GLOB.tgui_nif_state)
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/engineering/ntos
@@ -48,8 +44,7 @@
 
 // Subtype for glasses_state
 /datum/tgui_module/alarm_monitor/security/glasses
-/datum/tgui_module/alarm_monitor/security/glasses/tgui_state(mob/user)
-	return GLOB.tgui_glasses_state
+DECLARE_UI_STATE(/datum/tgui_module/alarm_monitor/security/glasses, GLOB.tgui_glasses_state)
 
 // Subtype for NTOS
 /datum/tgui_module/alarm_monitor/security/ntos
@@ -116,7 +111,10 @@ UI_ACT_PROC(/datum/tgui_module/alarm_monitor, ui_act_switchto)
 /datum/tgui_module/alarm_monitor/proc/ui_source_registry_members_registry_cameras()
 	return REGISTRY_MEMBERS(REGISTRY_CAMERAS)
 
-/datum/tgui_module/alarm_monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/alarm_monitor, "merge:ui_data_datum_tgui_module_alarm_monitor{categories:list}")
+
+/// The computed part of /datum/tgui_module/alarm_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/alarm_monitor/proc/ui_data_datum_tgui_module_alarm_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/categories[0]

@@ -24,9 +24,12 @@
 	for(var/index = lower_bound, index <= upper_bound, index++)
 		filtered_smeslist += known_SMESs[index]
 
-/datum/tgui_module/rcon/tgui_data(mob/user)
+UI_DATA(/datum/tgui_module/rcon, "pages=number_pages:num", "current_page:num", "merge:ui_data_datum_tgui_module_rcon{smes_info:unknown,breaker_info:unknown}")
+
+/// The computed part of /datum/tgui_module/rcon's window data (declared on its UI_DATA row).
+/datum/tgui_module/rcon/proc/ui_data_datum_tgui_module_rcon(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	FindDevices() // Update our devices list
-	var/list/data = ..()
+	var/list/data = list()
 
 	filter_smeslist(current_page)
 
@@ -37,8 +40,6 @@
 		smes_data["RCON_tag"] = SMES.RCon_tag
 		smeslist.Add(list(smes_data))
 
-	data["pages"] = number_pages
-	data["current_page"] = current_page
 	data["smes_info"] = sortByKey(smeslist, "RCON_tag")
 
 	// BREAKER DATA (simplified view)
@@ -52,7 +53,7 @@
 
 	return data
 
-UI_ACT(/datum/tgui_module/rcon, "set_smes_page", ui_act_set_smes_page, UI_ARG_VALUE("index"))
+UI_ACT(/datum/tgui_module/rcon, "set_smes_page", ui_act_set_smes_page, UI_ARG_NUM("index"))
 UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_set_smes_page)
 	var/page = params["index"]
 	current_page = page
@@ -86,7 +87,7 @@ UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_smes_out_set)
 		SMES.tgui_set_io(SMES_TGUI_OUTPUT, params["target"], params["adjust"])
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/rcon, "toggle_breaker", ui_act_toggle_breaker, UI_ARG_VALUE("breaker"))
+UI_ACT(/datum/tgui_module/rcon, "toggle_breaker", ui_act_toggle_breaker, UI_ARG_TEXT("breaker"))
 UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_toggle_breaker)
 	var/obj/machinery/power/breakerbox/toggle = null
 	for(var/obj/machinery/power/breakerbox/breaker in known_breakers)
@@ -136,7 +137,6 @@ UI_ACT_PROC(/datum/tgui_module/rcon, ui_act_toggle_breaker)
 	ntos = TRUE
 
 /datum/tgui_module/rcon/robot
-/datum/tgui_module/rcon/robot/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/rcon/robot, GLOB.tgui_self_state)
 
 #undef SMES_PER_PAGE

@@ -87,8 +87,11 @@ DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 /**
  * Data for the TGUI UI
  */
-/obj/machinery/computer/HolodeckControl/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/HolodeckControl, "currentProgram=current_program:text", "safetyDisabled=safety_disabled:num", "merge:ui_data_obj_machinery_computer_HolodeckControl{supportedPrograms:list,restrictedPrograms:list,isSilicon:bool,emagged:num,gravity:bool}")
+
+/// The computed part of /obj/machinery/computer/HolodeckControl's window data (declared on its UI_DATA row).
+/obj/machinery/computer/HolodeckControl/proc/ui_data_obj_machinery_computer_HolodeckControl(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	var/list/program_list = list()
 	var/list/restricted_program_list = list()
 
@@ -100,12 +103,10 @@ DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 
 	data["supportedPrograms"] = program_list
 	data["restrictedPrograms"] = restricted_program_list
-	data["currentProgram"] = current_program
 	data["isSilicon"] = FALSE
 	if(issilicon(user))
 		data["isSilicon"] = TRUE
 
-	data["safetyDisabled"] = safety_disabled
 	data["emagged"] = emagged
 	data["gravity"] = FALSE
 	if(linkedholodeck().get_gravity())
@@ -113,7 +114,7 @@ DECLARE_UI(/obj/machinery/computer/HolodeckControl, "Holodeck")
 
 	return data
 
-UI_ACT(/obj/machinery/computer/HolodeckControl, "program", ui_act_program, UI_ARG_VALUE("program"))
+UI_ACT(/obj/machinery/computer/HolodeckControl, "program", ui_act_program, UI_ARG_TEXT("program"))
 UI_ACT_PROC(/obj/machinery/computer/HolodeckControl, ui_act_program)
 	var/prog = params["program"]
 	if(prog in (supported_programs + restricted_programs))

@@ -570,8 +570,9 @@ accident or assume they work:
   REF/PATH/LIST/VALUE(...))` rows with `UI_ACT_PROC` handlers take its actions, which receive only
   the declared args, typed and validated; `ui_act_allowed()` is the type-wide guard.
   `UI_ACT_FORWARD`, `UI_ACT_FALLBACK`, `UI_ACT_NESTED`/`UI_SUBACT` and `DECLARE_UI_MODAL` cover
-  forwarding, data-driven actions, nested actions and modals. `UI_DATA` declares simple data
-  fields (their OM_FIELD channels push the window). `tools/ci/sys_rules/ui.py` keeps all of this at 0;
+  forwarding, data-driven actions, nested actions and modals. `UI_DATA` declares the window's data
+  (var fields, `"proc:x"`/`"merge:x{key:type}"` getters; never a `tgui_data()` override) and
+  `DECLARE_UI_STATE` its shared state. `tools/ci/sys_rules/ui.py` keeps all of this at 0;
   `tools/build/build.sh ui-types` regenerates `tgui/packages/tgui/interfaces/generated/*.d.ts`.
 - **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
   the build warns and skips it, and **both** subsystems that depend on it fail at runtime:

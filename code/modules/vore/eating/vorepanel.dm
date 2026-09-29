@@ -70,8 +70,7 @@ DECLARE_UI(/datum/vore_look, "VorePanel", UI_TITLE("Vore Panel"))
 
 // Note, in order to allow others to look at others vore panels, this state would need
 // to be modified.
-/datum/vore_look/tgui_state(mob/user)
-	return GLOB.tgui_vorepanel_state
+DECLARE_UI_STATE(/datum/vore_look, GLOB.tgui_vorepanel_state)
 
 /datum/vore_look/var/static/list/nom_icons
 /datum/vore_look/proc/cached_nom_icon(atom/target)
@@ -114,17 +113,17 @@ DECLARE_UI(/datum/vore_look, "VorePanel", UI_TITLE("Vore Panel"))
 
 	return data
 
-/datum/vore_look/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/vore_look, "unsaved_changes:num", "active_tab:num", "presets=preset_colors:list", "merge:ui_data_datum_vore_look{persist_edit_mode:num,inside:unknown,host_mobtype:unknown,show_pictures:num,icon_overflow:num,prey_abilities:unknown,intent_data:unknown,our_bellies:unknown,selected:unknown,soulcatcher:unknown,abilities:unknown,prefs:unknown,general_pref_data:unknown,active_vore_tab:num}")
+
+/// The computed part of /datum/vore_look's window data (declared on its UI_DATA row).
+/datum/vore_look/proc/ui_data_datum_vore_look(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	if(!host())
 		return data
 
 	// General Data
-	data["unsaved_changes"] = unsaved_changes
-	data["active_tab"] = active_tab
 	data["persist_edit_mode"] = host().persistend_edit_mode
-	data["presets"] = preset_colors
 
 	// Inisde Data
 	data["inside"] = get_inside_data(host())
@@ -781,7 +780,7 @@ UI_ACT_PROC(/datum/vore_look, ui_act_toggle_weight_ex)
 	unsaved_changes = TRUE
 	return TRUE
 
-UI_ACT(/datum/vore_look, "set_vs_color", ui_act_set_vs_color, UI_ARG_VALUE("attribute"), UI_ARG_TEXT("val"))
+UI_ACT(/datum/vore_look, "set_vs_color", ui_act_set_vs_color, UI_ARG_TEXT("attribute"), UI_ARG_TEXT("val"))
 UI_ACT_PROC(/datum/vore_look, ui_act_set_vs_color)
 	var/belly_choice = params["attribute"]
 	if(!(belly_choice in host().vore_icon_bellies))
@@ -794,7 +793,7 @@ UI_ACT_PROC(/datum/vore_look, ui_act_set_vs_color)
 	unsaved_changes = TRUE
 	return TRUE
 
-UI_ACT(/datum/vore_look, "toggle_vs_multiply", ui_act_toggle_vs_multiply, UI_ARG_VALUE("attribute"))
+UI_ACT(/datum/vore_look, "toggle_vs_multiply", ui_act_toggle_vs_multiply, UI_ARG_TEXT("attribute"))
 UI_ACT_PROC(/datum/vore_look, ui_act_toggle_vs_multiply)
 	var/belly_choice = params["attribute"]
 	if(!(belly_choice in host().vore_icon_bellies))
@@ -1044,7 +1043,7 @@ UI_ACT_PROC(/datum/vore_look, ui_act_toggle_sr_vision)
 	unsaved_changes = TRUE
 	return TRUE
 
-UI_ACT(/datum/vore_look, "soulcatcher_rename", ui_act_soulcatcher_rename, UI_ARG_VALUE("val"))
+UI_ACT(/datum/vore_look, "soulcatcher_rename", ui_act_soulcatcher_rename, UI_ARG_TEXT("val"))
 UI_ACT_PROC(/datum/vore_look, ui_act_soulcatcher_rename)
 	var/new_name = params["val"]
 	if(!host().soulgem.rename(new_name))

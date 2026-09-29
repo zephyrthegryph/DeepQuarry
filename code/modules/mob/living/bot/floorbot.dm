@@ -32,15 +32,13 @@
 
 DECLARE_UI(/mob/living/bot/floorbot, "Floorbot")
 
-/mob/living/bot/floorbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/living/bot/floorbot, "on:num", "open:num", "locked:num", "vocal:num", "amount:num", "merge:ui_data_mob_living_bot_floorbot{possible_bmode:list,improvefloors:num,eattiles:num,maketiles:num,bmode:text}")
 
-	data["on"] = on
-	data["open"] = open
-	data["locked"] = locked
+/// The computed part of /mob/living/bot/floorbot's window data (declared on its UI_DATA row).
+/mob/living/bot/floorbot/proc/ui_data_mob_living_bot_floorbot(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
-	data["vocal"] = vocal
-	data["amount"] = amount
+
 
 	data["possible_bmode"] = list("NORTH", "EAST", "SOUTH", "WEST")
 

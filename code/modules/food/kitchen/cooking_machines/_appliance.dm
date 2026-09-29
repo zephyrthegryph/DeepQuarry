@@ -649,13 +649,14 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 
 DECLARE_UI(/obj/machinery/appliance, UI_FROM_VAR("tgui_id"))
 
-/obj/machinery/appliance/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/appliance, "safety=food_safety", "selected_option", "merge:ui_data_obj_machinery_appliance{on:bool,containersRemovable:unknown,output_options:bool,our_contents:list}")
+
+/// The computed part of /obj/machinery/appliance's window data (declared on its UI_DATA row).
+/obj/machinery/appliance/proc/ui_data_obj_machinery_appliance(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["on"] = !has_stat(POWEROFF)
-	data["safety"] = food_safety
 	data["containersRemovable"] = can_remove_items(user, show_warning = FALSE)
-	data["selected_option"] = selected_option
 	data["output_options"] = (output_options || list())
 
 	var/list/our_contents = list()

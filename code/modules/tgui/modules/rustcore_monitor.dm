@@ -42,7 +42,10 @@ UI_ACT_PROC(/datum/tgui_module/rustcore_monitor, ui_act_set_fieldstr)
 		C.target_field_strength = new_strength
 	return TRUE
 
-/datum/tgui_module/rustcore_monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_module/rustcore_monitor, "merge:ui_data_datum_tgui_module_rustcore_monitor{cores:list}")
+
+/// The computed part of /datum/tgui_module/rustcore_monitor's window data (declared on its UI_DATA row).
+/datum/tgui_module/rustcore_monitor/proc/ui_data_datum_tgui_module_rustcore_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/cores = list()
 

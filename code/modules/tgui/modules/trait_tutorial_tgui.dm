@@ -20,20 +20,12 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 
 DECLARE_UI(/datum/tgui_module/trait_tutorial_tgui, UI_FROM_VAR("tgui_id"))
 
-/datum/tgui_module/trait_tutorial_tgui/tgui_data(mob/user)
-	var/list/data = list()
-	data["names"] = trait_names //passes a list of strings
-	data["descriptions"] = trait_desc //passes an assoc list as obj
-	data["categories"] = trait_category //passes an assoc list as obj
-	data["tutorials"] = trait_tutorial //passes an assoc list as obj
-	data["selection"] = trait_selected //passes a string
-	return data
+UI_DATA_REPLACE(/datum/tgui_module/trait_tutorial_tgui, "names=trait_names:list", "descriptions=trait_desc:list", "categories=trait_category:list", "tutorials=trait_tutorial:list", "selection=trait_selected:text")
 
-UI_ACT(/datum/tgui_module/trait_tutorial_tgui, "select_trait", ui_act_select_trait, UI_ARG_VALUE("name"))
+UI_ACT(/datum/tgui_module/trait_tutorial_tgui, "select_trait", ui_act_select_trait, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/tgui_module/trait_tutorial_tgui, ui_act_select_trait)
 	var/selection = params["name"]
 	trait_selected = selection
 	. = TRUE
 
-/datum/tgui_module/trait_tutorial_tgui/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tgui_module/trait_tutorial_tgui, GLOB.tgui_always_state)

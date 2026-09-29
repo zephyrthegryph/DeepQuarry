@@ -473,11 +473,13 @@ DECLARE_GAS(/obj/machinery/disposal, "air_contents", PRESSURE_TANK_VOLUME, T20C,
 // user interaction
 DECLARE_UI(/obj/machinery/disposal, "DisposalBin")
 
-/obj/machinery/disposal/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/disposal, "flushing=flush", "merge:ui_data_obj_machinery_disposal{isAI:num,mode:num,pressure:num}")
+
+/// The computed part of /obj/machinery/disposal's window data (declared on its UI_DATA row).
+/obj/machinery/disposal/proc/ui_data_obj_machinery_disposal(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["isAI"] = isAI(user)
-	data["flushing"] = flush
 	data["mode"] = mode
 	data["pressure"] = round(clamp(100* air_contents.return_pressure() / (SEND_PRESSURE), 0, 100),1)
 

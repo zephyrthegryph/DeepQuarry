@@ -98,7 +98,10 @@
 
 DECLARE_UI(/obj/machinery/chemical_analyzer, "ChemAnalyzerPro")
 
-/obj/machinery/chemical_analyzer/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/chemical_analyzer, "merge:ui_data_obj_machinery_chemical_analyzer{scannedReagents:list,beakerTotal:num,beakerMax:unknown}")
+
+/// The computed part of /obj/machinery/chemical_analyzer's window data (declared on its UI_DATA row).
+/obj/machinery/chemical_analyzer/proc/ui_data_obj_machinery_chemical_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/total_vol = 0

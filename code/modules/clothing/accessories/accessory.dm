@@ -757,14 +757,7 @@ DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 
 	return data
 
-/obj/item/clothing/accessory/collar/shock/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-
-	data["on"] = on
-	data["frequency"] = frequency
-	data["code"] = code
-
-	return data
+UI_DATA(/obj/item/clothing/accessory/collar/shock, "on:num", "frequency:num", "code")
 
 UI_ACT(/obj/item/clothing/accessory/collar/shock, "freq", ui_act_freq, UI_ARG_TEXT("freq"))
 UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock, ui_act_freq)
@@ -967,10 +960,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	data["target_size_max"] = RESIZE_MAXIMUM_DORMS
 	return data
 
-/obj/item/clothing/accessory/collar/shock/bluespace/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["target_size"] = target_size
-	return data
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace, "target_size:num")
 
 UI_ACT(/obj/item/clothing/accessory/collar/shock/bluespace, "size", ui_act_size, UI_ARG_NUM("size"))
 UI_ACT_PROC(/obj/item/clothing/accessory/collar/shock/bluespace, ui_act_size)
@@ -1061,8 +1051,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/modified
 	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/modified/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/modified, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified{target_size:text}")
+
+/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/modified's window data (declared on its UI_DATA row).
+/obj/item/clothing/accessory/collar/shock/bluespace/modified/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_modified(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["target_size"] = "code"
 	return data
 
@@ -1127,8 +1120,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock/bluespace/malfunct
 	to_chat(user, span_notice("The signaler doesn't respond to the connection attempt [src]."))
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning, "merge:ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning{target_size:text}")
+
+/// The computed part of /obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning's window data (declared on its UI_DATA row).
+/obj/item/clothing/accessory/collar/shock/bluespace/malfunctioning/proc/ui_data_obj_item_clothing_accessory_collar_shock_bluespace_malfunctioning(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["target_size"] = "locked"
 	return data
 

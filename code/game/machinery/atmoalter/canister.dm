@@ -350,8 +350,7 @@ update_flag
 		disconnect()
 	replace_with(src, /obj/item/stack/material/steel, 10)
 
-/obj/machinery/portable_atmospherics/canister/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/obj/machinery/portable_atmospherics/canister, GLOB.tgui_physical_state)
 
 DECLARE_UI(/obj/machinery/portable_atmospherics/canister, "Canister")
 
@@ -360,7 +359,10 @@ DECLARE_UI(/obj/machinery/portable_atmospherics/canister, "Canister")
 		return FALSE
 	return TRUE
 
-/obj/machinery/portable_atmospherics/canister/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/portable_atmospherics/canister, "merge:ui_data_obj_machinery_portable_atmospherics_canister{can_relabel:num,connected:num,pressure:num,releasePressure:num,defaultReleasePressure:num,minReleasePressure:num,maxReleasePressure:num,valveOpen:num,holding:list}")
+
+/// The computed part of /obj/machinery/portable_atmospherics/canister's window data (declared on its UI_DATA row).
+/obj/machinery/portable_atmospherics/canister/proc/ui_data_obj_machinery_portable_atmospherics_canister(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["can_relabel"] = can_label ? 1 : 0
 	data["connected"] = connected_port() ? 1 : 0
@@ -397,7 +399,7 @@ UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_relabel)
 	add_fingerprint(ui.user)
 	update_icon()
 
-UI_ACT(/obj/machinery/portable_atmospherics/canister, "pressure", ui_act_pressure, UI_ARG_VALUE("pressure"))
+UI_ACT(/obj/machinery/portable_atmospherics/canister, "pressure", ui_act_pressure, UI_ARG_NUM("pressure"))
 UI_ACT_PROC(/obj/machinery/portable_atmospherics/canister, ui_act_pressure)
 	var/pressure = params["pressure"]
 	if(pressure == "reset")

@@ -234,9 +234,11 @@
 
 DECLARE_UI(/obj/machinery/partslathe, "PartsLathe")
 
-/obj/machinery/partslathe/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["panelOpen"] = panel_open
+UI_DATA(/obj/machinery/partslathe, "panelOpen=panel_open:num", "merge:ui_data_obj_machinery_partslathe{materials:list,SHEET_MATERIAL_AMOUNT:num,copyBoard:text,copyBoardReqComponents:list,queue:list,building:text,buildPercent:num,error:unknown,recipies:list}")
+
+/// The computed part of /obj/machinery/partslathe's window data (declared on its UI_DATA row).
+/obj/machinery/partslathe/proc/ui_data_obj_machinery_partslathe(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/materials_ui = list()
 	for(var/M in materials)
@@ -337,7 +339,7 @@ UI_ACT_PROC(/obj/machinery/partslathe, ui_act_ejectboard)
 		copy_board = null
 	return TRUE
 
-UI_ACT(/obj/machinery/partslathe, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_VALUE("id"))
+UI_ACT(/obj/machinery/partslathe, "remove_mat", ui_act_remove_mat, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/partslathe, ui_act_remove_mat)
 	if(busy)
 		to_chat(ui.user, span_notice("[src] is busy. Please wait for completion of previous operation."))

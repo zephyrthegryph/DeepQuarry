@@ -325,11 +325,12 @@ DECLARE_UI(/obj/machinery/microwave, "Microwave")
 
 	return data
 
-/obj/machinery/microwave/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/microwave, "broken:num", "operating:num", "merge:ui_data_obj_machinery_microwave{dirty:bool,items:list,reagents:list}")
 
-	data["broken"] = broken
-	data["operating"] = operating
+/// The computed part of /obj/machinery/microwave's window data (declared on its UI_DATA row).
+/obj/machinery/microwave/proc/ui_data_obj_machinery_microwave(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["dirty"] = dirty == MAX_MICROWAVE_DIRTINESS
 	data["items"] = get_items_list()
 

@@ -33,7 +33,10 @@ DECLARE_UI(/datum/lootpanel, "LootPanel")
 	source_turf_handle = null
 	reset_contents()
 
-/datum/lootpanel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/lootpanel, "merge:ui_data_datum_lootpanel{contents:unknown,is_blind:bool,searching:num}")
+
+/// The computed part of /datum/lootpanel's window data (declared on its UI_DATA row).
+/datum/lootpanel/proc/ui_data_datum_lootpanel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["contents"] = get_contents()

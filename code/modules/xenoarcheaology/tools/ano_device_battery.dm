@@ -90,13 +90,15 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	tgui_interact(user)
 	return TRUE
 
-/obj/item/anodevice/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/anodevice, GLOB.tgui_inventory_state)
 
 DECLARE_UI(/obj/item/anodevice, "XenoarchHandheldPowerUtilizer")
 
-/obj/item/anodevice/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/anodevice, "merge:ui_data_obj_item_anodevice{inserted_battery:unknown,anomaly:text,charge:num,capacity:num,timeleft:num,activated:num,duration:num,interval:num}")
+
+/// The computed part of /obj/item/anodevice's window data (declared on its UI_DATA row).
+/obj/item/anodevice/proc/ui_data_obj_item_anodevice(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["inserted_battery"] = inserted_battery()
 	data["anomaly"] = null

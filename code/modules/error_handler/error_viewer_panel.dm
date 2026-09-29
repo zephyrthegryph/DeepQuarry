@@ -12,8 +12,7 @@
 		return
 	tgui_interact(user.mob)
 
-/datum/error_viewer/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_DEBUG)
+DECLARE_UI_STATE(/datum/error_viewer, ADMIN_STATE(R_ADMIN|R_DEBUG))
 
 DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 
@@ -36,18 +35,23 @@ DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 		return null
 	return "[REF(EV)]"
 
-/datum/error_viewer/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/error_viewer, "title=name:text", "merge:ui_data_datum_error_viewer{view_kind:text,back_ref:unknown,linear:bool,total_runtimes:unknown,total_skipped:unknown}")
+
+/// The computed part of /datum/error_viewer's window data (declared on its UI_DATA row).
+/datum/error_viewer/proc/ui_data_datum_error_viewer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["view_kind"] = "unknown"
-	data["title"] = name
 	data["back_ref"] = dq_pack_link_ref(dq_back_to())
 	data["linear"] = !!dq_linear
 	data["total_runtimes"] = GLOB.total_runtimes
 	data["total_skipped"] = GLOB.total_runtimes_skipped
 	return data
 
-/datum/error_viewer/error_cache/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/error_viewer/error_cache, "merge:ui_data_datum_error_viewer_error_cache{view_kind:text,items:list}")
+
+/// The computed part of /datum/error_viewer/error_cache's window data (declared on its UI_DATA row).
+/datum/error_viewer/error_cache/proc/ui_data_datum_error_viewer_error_cache(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["view_kind"] = "cache"
 	var/list/items = list()
 	if(!dq_linear)
@@ -69,8 +73,11 @@ DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 	data["items"] = items
 	return data
 
-/datum/error_viewer/error_source/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/error_viewer/error_source, "merge:ui_data_datum_error_viewer_error_source{view_kind:text,items:list}")
+
+/// The computed part of /datum/error_viewer/error_source's window data (declared on its UI_DATA row).
+/datum/error_viewer/error_source/proc/ui_data_datum_error_viewer_error_source(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["view_kind"] = "source"
 	var/list/items = list()
 	for(var/datum/error_viewer/error_entry/error_entry in errors)
@@ -82,10 +89,12 @@ DECLARE_UI(/datum/error_viewer, "ErrorViewer", UI_TITLE("Error Viewer"))
 	data["items"] = items
 	return data
 
-/datum/error_viewer/error_entry/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/error_viewer/error_entry, "desc:text", "merge:ui_data_datum_error_viewer_error_entry{view_kind:text,usr_ref:bool,usr_loc_ref:text,usr_loc_x:num,usr_loc_y:num,usr_loc_z:num}")
+
+/// The computed part of /datum/error_viewer/error_entry's window data (declared on its UI_DATA row).
+/datum/error_viewer/error_entry/proc/ui_data_datum_error_viewer_error_entry(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["view_kind"] = "entry"
-	data["desc"] = desc
 	data["usr_ref"] = usr_ref || null
 	data["usr_loc_ref"] = usr_loc() ? "[REF(usr_loc())]" : null
 	if(usr_loc())

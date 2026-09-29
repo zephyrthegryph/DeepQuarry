@@ -155,12 +155,15 @@
 
 DECLARE_UI(/obj/machinery/replicator, "XenoarchReplicator")
 
-/obj/machinery/replicator/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator, "merge:ui_data_obj_machinery_replicator{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/proc/ui_data_obj_machinery_replicator(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_construction || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator, "construct", ui_act_construct, UI_ARG_VALUE("key"))
+UI_ACT(/obj/machinery/replicator, "construct", ui_act_construct, UI_ARG_TEXT("key"))
 UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	var/key = params["key"]
 	if(key in construction)
@@ -428,12 +431,15 @@ UI_ACT_PROC(/obj/machinery/replicator, ui_act_construct)
 	src.visible_message(span_filter_notice(span_bold("\The [user]") + " inserts \the [W] into \the [src]."))
 	return TRUE
 
-/obj/machinery/replicator/vore/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator/vore, "merge:ui_data_obj_machinery_replicator_vore{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator/vore's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/vore/proc/ui_data_obj_machinery_replicator_vore(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator/vore, "construct", ui_act_construct, UI_ARG_VALUE("key"))
+UI_ACT(/obj/machinery/replicator/vore, "construct", ui_act_construct, UI_ARG_TEXT("key"))
 UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 	. = ..()
 	if(.)
@@ -693,12 +699,15 @@ UI_ACT_OVERRIDE(/obj/machinery/replicator/vore, ui_act_construct)
 
 DECLARE_UI(/obj/machinery/replicator/clothing, "XenoarchReplicatorClothing")
 
-/obj/machinery/replicator/clothing/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) //Gives data to the menu.
-	var/list/data = ..()
+UI_DATA(/obj/machinery/replicator/clothing, "merge:ui_data_obj_machinery_replicator_clothing{tgui_construction:bool}")
+
+/// The computed part of /obj/machinery/replicator/clothing's window data (declared on its UI_DATA row).
+/obj/machinery/replicator/clothing/proc/ui_data_obj_machinery_replicator_clothing(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["tgui_construction"] = (tgui_vore_selection || list())
 	return data
 
-UI_ACT(/obj/machinery/replicator/clothing, "construct", ui_act_construct, UI_ARG_VALUE("key"))
+UI_ACT(/obj/machinery/replicator/clothing, "construct", ui_act_construct, UI_ARG_TEXT("key"))
 UI_ACT_OVERRIDE(/obj/machinery/replicator/clothing, ui_act_construct)
 	. = ..()
 	if(.)

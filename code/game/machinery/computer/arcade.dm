@@ -144,17 +144,7 @@
 
 DECLARE_UI(/obj/machinery/computer/arcade/battle, "ArcadeBattle")
 
-/obj/machinery/computer/arcade/battle/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
-	data["name"] = name
-	data["temp"] = temp
-	data["enemyAction"] = enemy_action
-	data["enemyName"] = enemy_name
-	data["playerHP"] = player_hp
-	data["playerMP"] = player_mp
-	data["enemyHP"] = enemy_hp
-	data["gameOver"] = gameover
-	return data
+UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyAction=enemy_action:text", "enemyName=enemy_name:text", "playerHP=player_hp:num", "playerMP=player_mp:num", "enemyHP=enemy_hp:num", "gameOver=gameover:num")
 
 /obj/machinery/computer/arcade/battle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -1254,15 +1244,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 
 DECLARE_UI(/obj/machinery/computer/arcade/clawmachine, "ClawMachine", UI_AUTOUPDATE)
 
-/obj/machinery/computer/arcade/clawmachine/tgui_data(mob/user)
-	var/list/data = list()
-
-	data["wintick"] = wintick
-	data["instructions"] = instructions
-	data["gameStatus"] = gameStatus
-	data["winscreen"] = winscreen
-
-	return data
+UI_DATA_REPLACE(/obj/machinery/computer/arcade/clawmachine, "wintick:num", "instructions:text", "gameStatus:text", "winscreen:text")
 
 UI_ACT(/obj/machinery/computer/arcade/clawmachine, "newgame", ui_act_newgame)
 UI_ACT_PROC(/obj/machinery/computer/arcade/clawmachine, ui_act_newgame)

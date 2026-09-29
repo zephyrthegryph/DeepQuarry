@@ -104,14 +104,14 @@ OM_TIMER_SLOT(/obj/machinery/power/sensor, record_timer)
 		if(demand.len > record_size)
 			demand.Cut(1, 2)
 
-/obj/machinery/power/sensor/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/power/sensor, "name=name_tag:text", "stored=record_size:num", "history:list", "merge:ui_data_obj_machinery_power_sensor{interval:num,attached:bool,areas:list}")
+
+/// The computed part of /obj/machinery/power/sensor's window data (declared on its UI_DATA row).
+/obj/machinery/power/sensor/proc/ui_data_obj_machinery_power_sensor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["name"] = name_tag
-	data["stored"] = record_size
 	data["interval"] = record_interval / 10
 	data["attached"] = !!power_region
-	data["history"] = history
 
 	data["areas"] = list()
 	if(power_region)

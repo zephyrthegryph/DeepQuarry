@@ -209,7 +209,10 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
 		return TRUE
 	return TRUE
 
-/datum/computer_file/program/wordprocessor/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/computer_file/program/wordprocessor, "merge:ui_data_datum_computer_file_program_wordprocessor{error:text,browsing:num,files:list,usbconnected:num,usbfiles:list,filedata:unknown,filename:unknown}")
+
+/// The computed part of /datum/computer_file/program/wordprocessor's window data (declared on its UI_DATA row).
+/datum/computer_file/program/wordprocessor/proc/ui_data_datum_computer_file_program_wordprocessor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = get_header_data()
 
 	var/obj/item/computer_hardware/hard_drive/HDD = computer().hard_drive
@@ -230,7 +233,7 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
 		if(!computer() || !HDD)
 			data["error"] = "I/O ERROR: Unable to access hard drive."
 		else
-			var/list/files[0]
+			var/list/files = list()
 			for(var/datum/computer_file/F in HDD.stored_files)
 				if(F.filetype == "TXT")
 					files.Add(list(list(
@@ -241,7 +244,7 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
 
 			if(RHDD)
 				data["usbconnected"] = 1
-				var/list/usbfiles[0]
+				var/list/usbfiles = list()
 				for(var/datum/computer_file/F in RHDD.stored_files)
 					if(F.filetype == "TXT")
 						usbfiles.Add(list(list(

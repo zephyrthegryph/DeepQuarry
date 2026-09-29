@@ -205,13 +205,16 @@ DECLARE_UI(/obj/machinery/autolathe, "Autolathe")
 		get_asset_datum(/datum/asset/spritesheet_batched/research_designs),
 	)
 
-/obj/machinery/autolathe/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/machinery/autolathe, "merge:ui_data_obj_machinery_autolathe{materialtotal:unknown,materialsmax:num,active:unknown,materials:unknown,materialChoices:unknown}")
+
+/// The computed part of /obj/machinery/autolathe's window data (declared on its UI_DATA row).
+/obj/machinery/autolathe/proc/ui_data_obj_machinery_autolathe(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	data["materialtotal"] = materials.total_amount()
 	data["materialsmax"] = materials.max_amount
 	data["active"] = om_busy(src)
-	data["materials"] = materials.tgui_data()
+	data["materials"] = materials.material_list_data()
 	data["materialChoices"] = lathe_material_choice_list(materials)
 
 	return data

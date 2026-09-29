@@ -92,7 +92,10 @@
 
 DECLARE_UI(/datum/board_game/nine_mens, "NineMen")
 
-/datum/board_game/nine_mens/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/nine_mens, "merge:ui_data_datum_board_game_nine_mens{player_one:unknown,player_two:unknown,player_one_time:unknown,player_two_time:unknown,current_board:list,selected_node:unknown,valid_moves:bool,valid_removes:bool,game_state:unknown,winner:unknown,has_won:bool,phase:text,pone_pieces:num,ptwo_pieces:num}")
+
+/// The computed part of /datum/board_game/nine_mens's window data (declared on its UI_DATA row).
+/datum/board_game/nine_mens/proc/ui_data_datum_board_game_nine_mens(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
 	var/mob/player_two_mob = om_resolve(player_two)
 

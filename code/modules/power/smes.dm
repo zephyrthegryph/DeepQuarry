@@ -478,7 +478,10 @@ DECLARE_REF(/obj/machinery/power/smes, "soundloop", OWNED, null)
 
 DECLARE_UI(/obj/machinery/power/smes, "Smes")
 
-/obj/machinery/power/smes/tgui_data()
+UI_DATA_REPLACE(/obj/machinery/power/smes, "merge:ui_data_obj_machinery_power_smes{capacity:num,capacityPercent:num,charge:num,inputAttempt:num,inputting:num,inputLevel:num,inputLevel_text:unknown,inputLevelMax:num,inputAvailable:num,outputAttempt:num,outputting:num,outputLevel:num,outputLevel_text:unknown,outputLevelMax:num,outputUsed:num}")
+
+/// The computed part of /obj/machinery/power/smes's window data (declared on its UI_DATA row).
+/obj/machinery/power/smes/proc/ui_data_obj_machinery_power_smes(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 		"capacity" = capacity,
 		"capacityPercent" = round(100*charge/capacity, 0.1),

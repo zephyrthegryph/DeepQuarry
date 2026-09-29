@@ -55,8 +55,11 @@
 
 DECLARE_UI(/obj/machinery/computer/looking_glass, "LookingGlass")
 
-/obj/machinery/computer/looking_glass/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/looking_glass, "currentProgram=current_program:text", "immersion:num", "merge:ui_data_obj_machinery_computer_looking_glass{supportedPrograms:list,gravity:num}")
+
+/// The computed part of /obj/machinery/computer/looking_glass's window data (declared on its UI_DATA row).
+/obj/machinery/computer/looking_glass/proc/ui_data_obj_machinery_computer_looking_glass(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/program_list = list()
 	for(var/P in supported_programs)
@@ -67,8 +70,6 @@ DECLARE_UI(/obj/machinery/computer/looking_glass, "LookingGlass")
 			program_list.Add(P)
 
 	data["supportedPrograms"] = program_list
-	data["currentProgram"] = current_program
-	data["immersion"] = immersion
 	if(my_area()?.get_gravity())
 		data["gravity"] = 1
 	else

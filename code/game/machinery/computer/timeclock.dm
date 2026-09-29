@@ -70,8 +70,11 @@ DECLARE_REF(/obj/machinery/computer/timeclock, "card", SPILL, null)
 
 DECLARE_UI(/obj/machinery/computer/timeclock, "TimeClock")
 
-/obj/machinery/computer/timeclock/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/computer/timeclock, "merge:ui_data_obj_machinery_computer_timeclock{department_hours:unknown,user_name:text,card:text,assignment:text,job_datum:list,allow_change_job:bool,job_choices:unknown,card_cooldown:unknown}")
+
+/// The computed part of /obj/machinery/computer/timeclock's window data (declared on its UI_DATA row).
+/obj/machinery/computer/timeclock/proc/ui_data_obj_machinery_computer_timeclock(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// Okay, data for showing the user's OWN PTO stuff
 	if(user.client)

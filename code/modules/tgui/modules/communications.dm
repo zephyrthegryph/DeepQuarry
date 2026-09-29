@@ -93,11 +93,13 @@
 		COOLDOWN_START(src, level_change_cooldown, 2 MINUTES) // 2 minute cd on station alert changing.
 	tmp_alertlevel = 0
 
-/datum/tgui_module/communications/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=current_viewing_message_id:num", "message_current=current_viewing_message", "merge:ui_data_datum_tgui_module_communications{is_ai:bool,menu_state:unknown,authenticated:unknown,authmax:bool,boss_short:text,stat_display:list,security_level:num,security_level_color:text,str_security_level:text,levels:list,messages:list,message_deletion_allowed:bool,msg_cooldown:num,cc_cooldown:num,esc_callable:bool,esc_recallable:bool,esc_status:unknown}")
+
+/// The computed part of /datum/tgui_module/communications's window data (declared on its UI_DATA row).
+/datum/tgui_module/communications/proc/ui_data_datum_tgui_module_communications(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	data["is_ai"]         = isAI(user) || isrobot(user)
 	data["menu_state"]    = data["is_ai"] ? ai_menu_state : menu_state
-	data["emagged"]       = emagged
 	data["authenticated"] = is_authenticated(user, 0)
 	data["authmax"] = data["authenticated"] == COMM_AUTHENTICATION_MAX ? TRUE : FALSE
 	data["boss_short"] = using_map.boss_short
@@ -144,8 +146,6 @@
 	var/datum/comm_message_listener/l = obtain_message_listener()
 	data["messages"] = l.messages
 	data["message_deletion_allowed"] = l != GLOB.global_message_listener
-	data["message_current_id"] = current_viewing_message_id
-	data["message_current"] = current_viewing_message
 
 	// data["lastCallLoc"]     = SSshuttle.emergencyLastCallLoc ? strip_improper(SSshuttle.emergencyLastCallLoc.name) : null
 	data["msg_cooldown"] = message_cooldown ? (round((message_cooldown - world.time) / 10)) : 0
@@ -338,7 +338,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_status)
 
 // Status display stuff
 
-UI_ACT(/datum/tgui_module/communications, "setstat", ui_act_setstat, UI_ARG_VALUE("alert"), UI_ARG_VALUE("statdisp"))
+UI_ACT(/datum/tgui_module/communications, "setstat", ui_act_setstat, UI_ARG_VALUE("alert"), UI_ARG_TEXT("statdisp"))
 UI_ACT_PROC(/datum/tgui_module/communications, ui_act_setstat)
 	. = TRUE
 	display_type = params["statdisp"]

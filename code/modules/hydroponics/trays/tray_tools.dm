@@ -40,11 +40,13 @@ DECLARE_INTERACTIONS(/obj/item/analyzer/plant_analyzer, INTERACT_USE(null, TYPE_
 
 DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
 
-/obj/item/analyzer/plant_analyzer/tgui_state(mob/user)
-	return GLOB.tgui_inventory_state
+DECLARE_UI_STATE(/obj/item/analyzer/plant_analyzer, GLOB.tgui_inventory_state)
 
-/obj/item/analyzer/plant_analyzer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge:ui_data_obj_item_analyzer_plant_analyzer{no_seed:bool,seed:unknown}")
+
+/// The computed part of /obj/item/analyzer/plant_analyzer's window data (declared on its UI_DATA row).
+/obj/item/analyzer/plant_analyzer/proc/ui_data_obj_item_analyzer_plant_analyzer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/datum/seed/grown_seed = last_seed
 	if(!istype(grown_seed))
@@ -52,7 +54,6 @@ DECLARE_UI(/obj/item/analyzer/plant_analyzer, "PlantAnalyzer")
 
 	data["no_seed"] = FALSE
 	data["seed"] = grown_seed.get_tgui_analyzer_data(user)
-	data["reagents"] = last_reagents
 
 	return data
 

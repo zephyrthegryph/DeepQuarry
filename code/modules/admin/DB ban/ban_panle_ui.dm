@@ -21,8 +21,7 @@
 	admin_datum_handle = om_handle(admind)
 	database_lookup()
 
-/datum/tgui_ban_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_BAN)
+DECLARE_UI_STATE(/datum/tgui_ban_panel, ADMIN_STATE(R_BAN))
 
 /datum/tgui_ban_panel/tgui_close()
 	holder_handle = null
@@ -49,13 +48,16 @@ DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))
 	return data
 
 
-/datum/tgui_ban_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/tgui_ban_panel, "merge:ui_data_datum_tgui_ban_panel{min_search:num}")
+
+/// The computed part of /datum/tgui_ban_panel's window data (declared on its UI_DATA row).
+/datum/tgui_ban_panel/proc/ui_data_datum_tgui_ban_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list(
 							"min_search" = min_search,
 						)
 	return data
 
-UI_ACT(/datum/tgui_ban_panel, "confirmBan", ui_act_confirmban, UI_ARG_VALUE("cid"), UI_ARG_TEXT("ckey"), UI_ARG_NUM("duration"), UI_ARG_VALUE("ip"), UI_ARG_VALUE("job"), UI_ARG_VALUE("reason"), UI_ARG_NUM("type"))
+UI_ACT(/datum/tgui_ban_panel, "confirmBan", ui_act_confirmban, UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_NUM("duration"), UI_ARG_TEXT("ip"), UI_ARG_TEXT("job"), UI_ARG_TEXT("reason"), UI_ARG_NUM("type"))
 UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 
 	var/bantype = params["type"]
@@ -112,7 +114,7 @@ UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 
 	return TRUE
 
-UI_ACT(/datum/tgui_ban_panel, "searchBans", ui_act_searchbans, UI_ARG_TEXT("aCkey"), UI_ARG_NUM("banType"), UI_ARG_VALUE("cid"), UI_ARG_TEXT("ckey"), UI_ARG_VALUE("ip"), UI_ARG_NUM("minMatch"))
+UI_ACT(/datum/tgui_ban_panel, "searchBans", ui_act_searchbans, UI_ARG_TEXT("aCkey"), UI_ARG_NUM("banType"), UI_ARG_TEXT("cid"), UI_ARG_TEXT("ckey"), UI_ARG_TEXT("ip"), UI_ARG_NUM("minMatch"))
 UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_searchbans)
 	playerckey = ckey(params["ckey"])
 	adminckey = ckey(params["aCkey"])
@@ -124,7 +126,7 @@ UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_searchbans)
 	update_tgui_static_data(ui.user, ui)
 	return TRUE
 
-UI_ACT(/datum/tgui_ban_panel, "banEdit", ui_act_banedit, UI_ARG_VALUE("action"), UI_ARG_NUM("banid"))
+UI_ACT(/datum/tgui_ban_panel, "banEdit", ui_act_banedit, UI_ARG_TEXT("action"), UI_ARG_NUM("banid"))
 UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_banedit)
 	var/banedit = params["action"]
 	var/banid = params["banid"]

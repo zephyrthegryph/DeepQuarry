@@ -39,8 +39,7 @@
 /obj/item/card/id/proc/prevent_tracking()
 	return 0
 
-/obj/item/card/id/tgui_state(mob/user)
-	return GLOB.tgui_deep_inventory_state
+DECLARE_UI_STATE(/obj/item/card/id, GLOB.tgui_deep_inventory_state)
 
 DECLARE_UI(/obj/item/card/id, "IDCard")
 
@@ -77,20 +76,7 @@ DECLARE_UI(/obj/item/card/id, "IDCard")
 	// Save time by reusing our ID card photo instead of generating it for the char directory specifically
 	set_chardirectory_photo(id_card.front)
 
-/obj/item/card/id/tgui_data(mob/user)
-	var/list/data = list()
-
-	data["registered_name"] = registered_name
-	data["sex"] = sex
-	data["species"] = species
-	data["age"] = age
-	data["assignment"] = assignment
-	data["fingerprint_hash"] = fingerprint_hash
-	data["blood_type"] = blood_type
-	data["dna_hash"] = dna_hash
-	data["photo_front"] = front
-
-	return data
+UI_DATA_REPLACE(/obj/item/card/id, "registered_name:text", "sex:text", "species:text", "age:num", "assignment:text", "fingerprint_hash:text", "blood_type:text", "dna_hash:text", "photo_front=front")
 
 DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interaction_show)))
 

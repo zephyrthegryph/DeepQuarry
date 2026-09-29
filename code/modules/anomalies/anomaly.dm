@@ -98,7 +98,10 @@ DECLARE_INTERACTIONS(/obj/item/anomaly_scanner, INTERACT_USE(null, PROC_REF(inte
 
 DECLARE_UI(/obj/item/anomaly_scanner, "AnomalyScanner")
 
-/obj/item/anomaly_scanner/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scanner{anomaly_name:text,severity:num,stability:num,point_output:unknown,danger_type:unknown,unstable_type:unknown,containment_type:unknown,transformation_type:unknown,modifier:unknown,countdown:unknown}")
+
+/// The computed part of /obj/item/anomaly_scanner's window data (declared on its UI_DATA row).
+/obj/item/anomaly_scanner/proc/ui_data_obj_item_anomaly_scanner(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/obj/effect/anomaly/anom = om_resolve(buffered_anomaly)
 

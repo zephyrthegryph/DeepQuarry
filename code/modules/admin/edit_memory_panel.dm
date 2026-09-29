@@ -22,8 +22,7 @@
 DECLARE_REF(/datum/edit_memory_panel, "target_mind", PAIR, "tgui_edit_memory_panel")
 DECLARE_REF(/datum/mind, "tgui_edit_memory_panel", PAIR, "target_mind")
 
-/datum/edit_memory_panel/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT)
+DECLARE_UI_STATE(/datum/edit_memory_panel, ADMIN_STATE(R_ADMIN|R_FUN|R_EVENT))
 
 DECLARE_UI(/datum/edit_memory_panel, "EditMemoryPanel")
 
@@ -47,7 +46,10 @@ DECLARE_UI(/datum/edit_memory_panel, "EditMemoryPanel")
 	SStgui.close_uis(src)
 	qdel(src)
 
-/datum/edit_memory_panel/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/edit_memory_panel, "merge:ui_data_datum_edit_memory_panel{alive:bool,name:text,real_name:text,key:text,synced:bool,assigned_role:unknown,ambitions:bool,memory:bool,objectives:list,antag_blocks:bool}")
+
+/// The computed part of /datum/edit_memory_panel's window data (declared on its UI_DATA row).
+/datum/edit_memory_panel/proc/ui_data_datum_edit_memory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(!target_mind)
 		data["alive"] = FALSE
@@ -160,7 +162,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_refresh_antags)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_add", ui_act_antag_add, UI_ARG_VALUE("id"))
+UI_ACT(/datum/edit_memory_panel, "antag_add", ui_act_antag_add, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
 	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 	if(A && A.add_antagonist(target_mind, 1, 1, 0, 1, 1))
@@ -169,7 +171,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_remove", ui_act_antag_remove, UI_ARG_VALUE("id"))
+UI_ACT(/datum/edit_memory_panel, "antag_remove", ui_act_antag_remove, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_remove)
 	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 	if(A)
@@ -178,7 +180,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_remove)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_equip", ui_act_antag_equip, UI_ARG_VALUE("id"))
+UI_ACT(/datum/edit_memory_panel, "antag_equip", ui_act_antag_equip, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_equip)
 	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 	if(A && target_mind.current)
@@ -194,7 +196,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_unequip)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/datum/edit_memory_panel, "antag_move_to_spawn", ui_act_antag_move_to_spawn, UI_ARG_VALUE("id"))
+UI_ACT(/datum/edit_memory_panel, "antag_move_to_spawn", ui_act_antag_move_to_spawn, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_move_to_spawn)
 	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
 	if(A && target_mind.current)

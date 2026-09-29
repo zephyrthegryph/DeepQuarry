@@ -185,7 +185,10 @@ DECLARE_UI(/obj/machinery/atmospherics/binary/volume_pump, "GasPump")
 		return FALSE
 	return TRUE
 
-/obj/machinery/atmospherics/binary/volume_pump/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_obj_machinery_atmospherics_binary_volume_pump{on:unknown,rate:unknown,max_rate:num,last_flow_rate:unknown,last_power_draw:num,max_power_draw:unknown}")
+
+/// The computed part of /obj/machinery/atmospherics/binary/volume_pump's window data (declared on its UI_DATA row).
+/obj/machinery/atmospherics/binary/volume_pump/proc/ui_data_obj_machinery_atmospherics_binary_volume_pump(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	// this is the data which will be sent to the ui
 	var/list/data = list(
 		"on" = use_power,

@@ -4,8 +4,7 @@
 	user.set_machine(src)
 	tgui_interact(user)
 
-/obj/item/spellbook/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+DECLARE_UI_STATE(/obj/item/spellbook, GLOB.tgui_default_state)
 
 DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
@@ -47,7 +46,10 @@ DECLARE_UI(/obj/item/spellbook, "Spellbook", UI_TITLE("The Book of Spells"))
 
 GLOBAL_TABLE(spellbook_catalog, GLOBAL_PROC_REF(build_spellbook_catalog))
 
-/obj/item/spellbook/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/spellbook, "merge:ui_data_obj_item_spellbook{}")
+
+/// The computed part of /obj/item/spellbook's window data (declared on its UI_DATA row).
+/obj/item/spellbook/proc/ui_data_obj_item_spellbook(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/catalog = GLOBAL_TABLE_GET(spellbook_catalog)
 	var/list/data = list()
 	data["temp"] = temp || ""

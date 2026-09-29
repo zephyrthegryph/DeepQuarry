@@ -4,8 +4,7 @@
 
 DECLARE_UI(/datum/tickets, "TicketsPanel", UI_TITLE("Tickets"))
 
-/datum/tickets/tgui_state(mob/user)
-	return GLOB.tgui_mentor_state
+DECLARE_UI_STATE(/datum/tickets, GLOB.tgui_mentor_state)
 
 /datum/tickets/proc/get_ticket_state(state)
 	var/ticket_state
@@ -22,7 +21,10 @@ DECLARE_UI(/datum/tickets, "TicketsPanel", UI_TITLE("Tickets"))
 
 	return ticket_state
 
-/datum/tickets/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tickets, "merge:ui_data_datum_tickets{tickets:list,is_admin:num,selected_ticket:unknown}")
+
+/// The computed part of /datum/tickets's window data (declared on its UI_DATA row).
+/datum/tickets/proc/ui_data_datum_tickets(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/list/tickets = list()
 
@@ -170,7 +172,7 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 			ui.user.client.cmd_admin_pm(player, ticket_text, T)
 	. = TRUE
 
-UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_VALUE("ticket_id"))
+UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_NUM("ticket_id"))
 UI_ACT_PROC(/datum/tickets, ui_act_pick_ticket)
 	var/datum/ticket/T = ID2Ticket(params["ticket_id"])
 	ui.user.client.selected_ticket_handle = om_handle(T)
@@ -192,7 +194,7 @@ UI_ACT_PROC(/datum/tickets, ui_act_undock_ticket)
 	ui.user.client.selected_ticket_handle = null
 	. = TRUE
 
-UI_ACT(/datum/tickets, "send_msg", ui_act_send_msg, UI_ARG_VALUE("msg"))
+UI_ACT(/datum/tickets, "send_msg", ui_act_send_msg, UI_ARG_TEXT("msg"))
 UI_ACT_PROC(/datum/tickets, ui_act_send_msg)
 	if(!params["msg"])
 		return
@@ -223,16 +225,16 @@ DECLARE_UI(/datum/ticket, "Ticket")
 /datum/ticket/ui_title(mob/user)
 	return "Ticket #[id] - [LinkedReplyName("\ref[src]")]"
 
-/datum/ticket/tgui_state(mob/user)
-	return GLOB.tgui_mentor_state
+DECLARE_UI_STATE(/datum/ticket, GLOB.tgui_mentor_state)
 
-/datum/ticket/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/ticket, "id", "title=name:text", "level:num", "handler:text", "log=_interactions:list", "merge:ui_data_datum_ticket{name:unknown,ticket_ref:text,state:text,opened_at:num,closed_at:num,opened_at_date:unknown,closed_at_date:unknown,actions:num}")
+
+/// The computed part of /datum/ticket's window data (declared on its UI_DATA row).
+/datum/ticket/proc/ui_data_datum_ticket(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["id"] = id
 
 	var/ref_src = "\ref[src]"
-	data["title"] = name
 	data["name"] = LinkedReplyName(ref_src)
 	data["ticket_ref"] = ref_src
 
@@ -247,8 +249,6 @@ DECLARE_UI(/datum/ticket, "Ticket")
 		else
 			data["state"] = "unknown"
 
-	data["level"] = level
-	data["handler"] = handler
 
 	data["opened_at"] = (world.time - opened_at)
 	data["closed_at"] = (world.time - closed_at)
@@ -257,7 +257,6 @@ DECLARE_UI(/datum/ticket, "Ticket")
 
 	data["actions"] = FullMonty(ref_src, check_rights_for(user.client, (R_ADMIN|R_SERVER|R_MOD)))
 
-	data["log"] = _interactions
 
 	return data
 

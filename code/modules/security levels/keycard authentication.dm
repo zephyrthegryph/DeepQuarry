@@ -117,10 +117,11 @@
 
 DECLARE_UI(/obj/machinery/keycard_auth, "KeycardAuth", UI_TITLE("Keycard Authentication"))
 
-/obj/machinery/keycard_auth/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_data_obj_machinery_keycard_auth{ert_admin_only:num}")
+
+/// The computed part of /obj/machinery/keycard_auth's window data (declared on its UI_DATA row).
+/obj/machinery/keycard_auth/proc/ui_data_obj_machinery_keycard_auth(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
-	data["screen"] = screen
-	data["event"] = event
 	data["ert_admin_only"] = CONFIG_GET(flag/ert_admin_call_only) ? 1 : 0
 	return data
 
@@ -135,7 +136,7 @@ DECLARE_UI(/obj/machinery/keycard_auth, "KeycardAuth", UI_TITLE("Keycard Authent
 		return FALSE
 	return TRUE
 
-UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_VALUE("event"))
+UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_TEXT("event"))
 UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_triggerevent)
 	event = params["event"]
 	screen = 2

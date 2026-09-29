@@ -35,7 +35,10 @@ DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(
 
 DECLARE_UI(/obj/item/airlock_electronics, "AirlockElectronics", UI_TITLE("Airlock Electronics"))
 
-/obj/item/airlock_electronics/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/item/airlock_electronics, "merge:ui_data_obj_item_airlock_electronics{locked:bool,one_access:bool,last_configurator:bool,all_selected:bool,accesses:list}")
+
+/// The computed part of /obj/item/airlock_electronics's window data (declared on its UI_DATA row).
+/obj/item/airlock_electronics/proc/ui_data_obj_item_airlock_electronics(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["locked"] = !!locked
 	data["one_access"] = !!one_access

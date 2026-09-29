@@ -43,8 +43,7 @@ ADMIN_VERB(persistent_client_logs, R_ADMIN|R_MOD, "Check Player Logs", "Displays
 
 DECLARE_UI(/datum/player_log_viwer, "PlayerLogViewer")
 
-/datum/player_log_viwer/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_MOD)
+DECLARE_UI_STATE(/datum/player_log_viwer, ADMIN_STATE(R_ADMIN|R_MOD))
 
 /datum/player_log_viwer/tgui_static_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
@@ -55,7 +54,10 @@ DECLARE_UI(/datum/player_log_viwer, "PlayerLogViewer")
 		"view_client" = client_view
 	)
 
-/datum/player_log_viwer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/player_log_viwer, "merge:ui_data_datum_player_log_viwer{on_cooldown:unknown,all_clients:unknown}")
+
+/// The computed part of /datum/player_log_viwer's window data (declared on its UI_DATA row).
+/datum/player_log_viwer/proc/ui_data_datum_player_log_viwer(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"on_cooldown" = refresh_cooldown(),
 		"all_clients" = GLOB.persistent_clients_by_ckey,

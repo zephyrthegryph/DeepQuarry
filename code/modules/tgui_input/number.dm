@@ -121,7 +121,10 @@ DECLARE_UI(/datum/tgui_input_number, "NumberInputModal")
 	data["round_value"] = round_value
 	return data
 
-/datum/tgui_input_number/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tgui_input_number, "merge:ui_data_datum_tgui_input_number{timeout:num}")
+
+/// The computed part of /datum/tgui_input_number's window data (declared on its UI_DATA row).
+/datum/tgui_input_number/proc/ui_data_datum_tgui_input_number(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	if(timeout)
 		data["timeout"] = CLAMP01((timeout - (world.time - start_time) - 1 SECONDS) / (timeout - 1 SECONDS))

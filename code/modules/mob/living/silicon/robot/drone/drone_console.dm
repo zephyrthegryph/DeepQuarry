@@ -24,7 +24,10 @@
 
 DECLARE_UI(/obj/machinery/computer/drone_control, "DroneConsole")
 
-/obj/machinery/computer/drone_control/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/drone_control, "fabricator=dronefab", "merge:ui_data_obj_machinery_computer_drone_control{drones:list,fabPower:num,areas:list,selected_area:text}")
+
+/// The computed part of /obj/machinery/computer/drone_control's window data (declared on its UI_DATA row).
+/obj/machinery/computer/drone_control/proc/ui_data_obj_machinery_computer_drone_control(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
 	var/list/drones = list()
@@ -46,7 +49,6 @@ DECLARE_UI(/obj/machinery/computer/drone_control, "DroneConsole")
 		)))
 	data["drones"] = drones
 
-	data["fabricator"] = dronefab
 	data["fabPower"] = dronefab?.produce_drones
 
 	var/list/areas = list()

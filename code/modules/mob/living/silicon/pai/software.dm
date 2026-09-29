@@ -8,13 +8,15 @@
 
 	tgui_interact(src)
 
-/mob/living/silicon/pai/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/mob/living/silicon/pai, GLOB.tgui_self_state)
 
 DECLARE_UI(/mob/living/silicon/pai, "pAIInterface", UI_TITLE("pAI Software Interface"))
 
-/mob/living/silicon/pai/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/mob/living/silicon/pai, "available_ram=ram:num", "merge:ui_data_mob_living_silicon_pai{bought:list,not_bought:list,emotions:list,current_emotion:num}")
+
+/// The computed part of /mob/living/silicon/pai's window data (declared on its UI_DATA row).
+/mob/living/silicon/pai/proc/ui_data_mob_living_silicon_pai(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	// Software we have bought
 	var/list/bought_software = list()
@@ -35,7 +37,6 @@ DECLARE_UI(/mob/living/silicon/pai, "pAIInterface", UI_TITLE("pAI Software Inter
 
 	data["bought"] = bought_software
 	data["not_bought"] = not_bought_software
-	data["available_ram"] = ram
 
 	// Emotions
 	var/list/emotions = list()
@@ -51,7 +52,7 @@ DECLARE_UI(/mob/living/silicon/pai, "pAIInterface", UI_TITLE("pAI Software Inter
 
 	return data
 
-UI_ACT(/mob/living/silicon/pai, "software", ui_act_software, UI_ARG_VALUE("software"))
+UI_ACT(/mob/living/silicon/pai, "software", ui_act_software, UI_ARG_TEXT("software"))
 UI_ACT_PROC(/mob/living/silicon/pai, ui_act_software)
 	var/soft = params["software"]
 	var/datum/pai_software/S = software[soft]
@@ -61,7 +62,7 @@ UI_ACT_PROC(/mob/living/silicon/pai, ui_act_software)
 		S.tgui_interact(src, parent_ui = ui)
 	return TRUE
 
-UI_ACT(/mob/living/silicon/pai, "purchase", ui_act_purchase, UI_ARG_VALUE("purchase"))
+UI_ACT(/mob/living/silicon/pai, "purchase", ui_act_purchase, UI_ARG_TEXT("purchase"))
 UI_ACT_PROC(/mob/living/silicon/pai, ui_act_purchase)
 	var/soft = params["purchase"]
 	var/datum/pai_software/S = GLOB.pai_software_by_key[soft]

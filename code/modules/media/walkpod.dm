@@ -175,12 +175,12 @@ DECLARE_INTERACTIONS(/obj/item/walkpod, \
 
 DECLARE_UI(/obj/item/walkpod, "Jukebox", UI_TITLE("PodZu Music Player"))
 
-/obj/item/walkpod/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/item/walkpod, "playing:num", "loop_mode", "volume:num", "merge:ui_data_obj_item_walkpod{current_track_ref:text,current_track:unknown,current_genre:unknown,percent:unknown,tracks:list}")
 
-	data["playing"] = playing
-	data["loop_mode"] = loop_mode
-	data["volume"] = volume
+/// The computed part of /obj/item/walkpod's window data (declared on its UI_DATA row).
+/obj/item/walkpod/proc/ui_data_obj_item_walkpod(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
+
 	data["current_track_ref"] = null
 	data["current_track"] = null
 	data["current_genre"] = null

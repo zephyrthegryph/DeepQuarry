@@ -40,7 +40,10 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = GLOB.robot_sprite_sheets[target().modtype]
 	return spritesheet ? list(spritesheet) : list()
 
-/datum/eventkit/modify_robot/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/eventkit/modify_robot, "ion_law:text", "zeroth_law:text", "inherent_law:text", "supplied_law:text", "supplied_law_position", "merge:ui_data_datum_eventkit_modify_robot{theme:unknown,target:list,model_options:list,cell:listmap,cell_options:unknown,camera_options:unknown,radio_options:unknown,actuator_options:unknown,diagnosis_options:unknown,comms_options:unknown,armour_options:unknown,current_gear:unknown,id_icon:text,access_options:list,source:list,all_robots:list,ion_law_nr:unknown,isAI:num,isMalf:unknown,isSlaved:unknown,active_ais:list,selected_ai:unknown,channel:unknown,channels:list,law_sets:unknown}")
+
+/// The computed part of /datum/eventkit/modify_robot's window data (declared on its UI_DATA row).
+/datum/eventkit/modify_robot/proc/ui_data_datum_eventkit_modify_robot(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = list()
 	// Target section for general data
 	var/datum/asset/spritesheet_batched/robot_icons/spritesheet = target() ? GLOB.robot_sprite_sheets[target().modtype] : null
@@ -120,11 +123,6 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 	.["all_robots"] = all_robots
 	// Law data
 	.["ion_law_nr"] = ionnum()
-	.["ion_law"] = ion_law
-	.["zeroth_law"] = zeroth_law
-	.["inherent_law"] = inherent_law
-	.["supplied_law"] = supplied_law
-	.["supplied_law_position"] = supplied_law_position
 
 	package_laws(., "zeroth_laws", list(target().laws.zeroth_law))
 	package_laws(., "ion_laws", target().laws.ion_laws)
@@ -149,10 +147,9 @@ DECLARE_REF(/datum/eventkit/modify_robot, "source", OWNED, null)
 	.["channels"] = channels
 	.["law_sets"] = package_multiple_laws(law_list)
 
-/datum/eventkit/modify_robot/tgui_state(mob/user)
-	return ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG)
+DECLARE_UI_STATE(/datum/eventkit/modify_robot, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
 
-UI_ACT(/datum/eventkit/modify_robot, "rename", ui_act_rename, UI_ARG_VALUE("new_name"))
+UI_ACT(/datum/eventkit/modify_robot, "rename", ui_act_rename, UI_ARG_TEXT("new_name"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rename)
 	target().name = params["new_name"]
 	target().custom_name = params["new_name"]
@@ -172,7 +169,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_toggle_crisis)
 	target().crisis_override = !target().crisis_override
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "add_restriction", ui_act_add_restriction, UI_ARG_VALUE("new_restriction"))
+UI_ACT(/datum/eventkit/modify_robot, "add_restriction", ui_act_add_restriction, UI_ARG_TEXT("new_restriction"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_restriction)
 	var/new_restriction = params["new_restriction"]
 	if(!(new_restriction in GLOB.robot_modules))
@@ -180,7 +177,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_restriction)
 	LAZYOR(target().restrict_modules_to, new_restriction)
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "remove_restriction", ui_act_remove_restriction, UI_ARG_VALUE("rem_restriction"))
+UI_ACT(/datum/eventkit/modify_robot, "remove_restriction", ui_act_remove_restriction, UI_ARG_TEXT("rem_restriction"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_remove_restriction)
 	var/rem_restriction = params["rem_restriction"]
 	if(!(rem_restriction in GLOB.robot_modules))
@@ -489,7 +486,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_station)
 	target().idcard.access -= ACCESS_SYNTH
 	return TRUE
 
-UI_ACT(/datum/eventkit/modify_robot, "law_channel", ui_act_law_channel, UI_ARG_VALUE("law_channel"))
+UI_ACT(/datum/eventkit/modify_robot, "law_channel", ui_act_law_channel, UI_ARG_TEXT("law_channel"))
 UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_law_channel)
 	if(params["law_channel"] in target().law_channels())
 		target().lawchannel = params["law_channel"]

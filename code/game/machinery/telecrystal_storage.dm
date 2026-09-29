@@ -40,7 +40,7 @@
 	add_fingerprint(ui.user)
 	return TRUE
 
-UI_ACT(/obj/machinery/smartfridge/tcrystal, "Release", ui_act_release, UI_ARG_VALUE("amount"), UI_ARG_NUM("index"))
+UI_ACT(/obj/machinery/smartfridge/tcrystal, "Release", ui_act_release, UI_ARG_NUM("amount"), UI_ARG_NUM("index"))
 UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
 	// The fridge's own Release runs first, as the old parent-first tgui_act() did.
 	. = ..()

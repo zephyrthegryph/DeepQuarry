@@ -116,7 +116,10 @@ DECLARE_REF(/datum/tgui_module/camera, "cam_screen_tg", OWNED, null)
 	// Register map objects
 	cam_screen_tg.display_to(user, ui.window())
 
-/datum/tgui_module/camera/tgui_data()
+UI_DATA_REPLACE(/datum/tgui_module/camera, "merge:ui_data_datum_tgui_module_camera{activeCamera:list}")
+
+/// The computed part of /datum/tgui_module/camera's window data (declared on its UI_DATA row).
+/datum/tgui_module/camera/proc/ui_data_datum_tgui_module_camera(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["activeCamera"] = null
 	if(active_camera())
@@ -163,7 +166,7 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_switch_camera)
 	update_active_camera_screen()
 	return TRUE
 
-UI_ACT(/datum/tgui_module/camera, "pan", ui_act_pan, UI_ARG_VALUE("dir"))
+UI_ACT(/datum/tgui_module/camera, "pan", ui_act_pan, UI_ARG_NUM("dir"))
 UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 	var/dir = params["dir"]
 	var/turf/T = get_turf(active_camera())
@@ -309,11 +312,13 @@ UI_ACT_PROC(/datum/tgui_module/camera, ui_act_pan)
 /datum/tgui_module/camera/ntos/hacked/New(host)
 	. = ..(host, using_map.station_networks.Copy())
 
-/datum/tgui_module/camera/bigscreen/tgui_state(mob/user)
-	return GLOB.tgui_physical_state_bigscreen
+/datum/tgui_module/camera/bigscreen
 
-/datum/tgui_module/camera/virtual/tgui_state(mob/user)
-	return GLOB.tgui_camera_view
+DECLARE_UI_STATE(/datum/tgui_module/camera/bigscreen, GLOB.tgui_physical_state_bigscreen)
+
+/datum/tgui_module/camera/virtual
+
+DECLARE_UI_STATE(/datum/tgui_module/camera/virtual, GLOB.tgui_camera_view)
 
 #undef DEFAULT_MAP_SIZE
 

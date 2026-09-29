@@ -11,12 +11,15 @@
 
 DECLARE_UI(/datum/board_game/rpg_dice, "RpgDice")
 
-/datum/board_game/rpg_dice/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/rpg_dice, "merge:ui_data_datum_board_game_rpg_dice{last_rolls:bool}")
+
+/// The computed part of /datum/board_game/rpg_dice's window data (declared on its UI_DATA row).
+/datum/board_game/rpg_dice/proc/ui_data_datum_board_game_rpg_dice(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"last_rolls" = (last_rolls || list()),
 	)
 
-UI_ACT(/datum/board_game/rpg_dice, "roll_dice", ui_act_roll_dice, UI_ARG_NUM("dice_count"), UI_ARG_NUM("dice_mod"), UI_ARG_NUM("dice_size"), UI_ARG_VALUE("mod_all"))
+UI_ACT(/datum/board_game/rpg_dice, "roll_dice", ui_act_roll_dice, UI_ARG_NUM("dice_count"), UI_ARG_NUM("dice_mod"), UI_ARG_NUM("dice_size"), UI_ARG_BOOL("mod_all"))
 UI_ACT_PROC(/datum/board_game/rpg_dice, ui_act_roll_dice)
 	var/dice_size = params["dice_size"]
 	if(!isnum(dice_size) || dice_size > 10000)

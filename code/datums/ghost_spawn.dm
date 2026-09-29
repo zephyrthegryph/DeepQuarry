@@ -10,8 +10,7 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	tgui_id = "GhostSpawn"
 	var/active_tab = GHOST_POD_TAB
 
-/datum/tgui_module/ghost_spawn_menu/tgui_state(mob/user)
-	return GLOB.tgui_observer_state
+DECLARE_UI_STATE(/datum/tgui_module/ghost_spawn_menu, GLOB.tgui_observer_state)
 
 /datum/tgui_module/ghost_spawn_menu/tgui_close(mob/user)
 	. = ..()
@@ -27,8 +26,11 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 		var/mob/observer/dead/observer = user
 		observer.selecting_ghostrole = TRUE
 
-/datum/tgui_module/ghost_spawn_menu/tgui_data(mob/user)
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/ghost_spawn_menu, "active_tab:num", "merge:ui_data_datum_tgui_module_ghost_spawn_menu{all_ghost_pods:unknown,all_ghost_join_options:unknown,all_vore_spawns:unknown,user_z:num}")
+
+/// The computed part of /datum/tgui_module/ghost_spawn_menu's window data (declared on its UI_DATA row).
+/datum/tgui_module/ghost_spawn_menu/proc/ui_data_datum_tgui_module_ghost_spawn_menu(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	if(active_tab == GHOST_POD_TAB)
 		data["all_ghost_pods"] = compile_pod_data()
@@ -39,11 +41,10 @@ GLOBAL_VAR_INIT(allowed_ghost_spawns, 2)
 	if(active_tab == GHOST_VORE_SPAWN)
 		data["all_vore_spawns"] = compile_vorespawn_data()
 
-	data["active_tab"] = active_tab
 	data["user_z"] = user.z
 	return data
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "select_pod", ui_act_select_pod, UI_ARG_VALUE("selected_pod"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "select_pod", ui_act_select_pod, UI_ARG_TEXT("selected_pod"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_select_pod)
 	var/mob/observer/dead/observer = ui.user
 	if(istype(observer))
@@ -57,19 +58,19 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_set_tab)
 		active_tab = new_tab
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_spawn", ui_act_soulcatcher_spawn, UI_ARG_VALUE("selected_player"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_spawn", ui_act_soulcatcher_spawn, UI_ARG_TEXT("selected_player"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_soulcatcher_spawn)
 	soulcatcher_spawn(ui.user, params["selected_player"])
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_vore_spawn", ui_act_soulcatcher_vore_spawn, UI_ARG_VALUE("selected_player"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "soulcatcher_vore_spawn", ui_act_soulcatcher_vore_spawn, UI_ARG_TEXT("selected_player"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_soulcatcher_vore_spawn)
 	soulcatcher_vore_spawn(ui.user, params["selected_player"])
 	close_ui()
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "bellyspawn", ui_act_bellyspawn, UI_ARG_VALUE("selected_player"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "bellyspawn", ui_act_bellyspawn, UI_ARG_TEXT("selected_player"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_bellyspawn)
 	vore_belly_spawn(ui.user, params["selected_player"])
 	close_ui()
@@ -80,12 +81,12 @@ UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_mouse_spawn)
 	become_mouse(ui.user)
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "drone_spawn", ui_act_drone_spawn, UI_ARG_VALUE("fabricator"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "drone_spawn", ui_act_drone_spawn, UI_ARG_TEXT("fabricator"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_drone_spawn)
 	become_drone(ui.user, params["fabricator"])
 	. = TRUE
 
-UI_ACT(/datum/tgui_module/ghost_spawn_menu, "vr_spawn", ui_act_vr_spawn, UI_ARG_VALUE("landmark"))
+UI_ACT(/datum/tgui_module/ghost_spawn_menu, "vr_spawn", ui_act_vr_spawn, UI_ARG_TEXT("landmark"))
 UI_ACT_PROC(/datum/tgui_module/ghost_spawn_menu, ui_act_vr_spawn)
 	join_vr(ui.user, params["landmark"])
 	. = TRUE

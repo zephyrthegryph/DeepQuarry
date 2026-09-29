@@ -60,11 +60,13 @@ DECLARE_UI(/obj/machinery/artifact_analyser, "XenoarchArtifactAnalyzer")
 		reconnect_scanner()
 	return TRUE
 
-/obj/machinery/artifact_analyser/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/artifact_analyser, "scan_in_progress:num", "merge:ui_data_obj_machinery_artifact_analyser{owned_scanner:unknown}")
+
+/// The computed part of /obj/machinery/artifact_analyser's window data (declared on its UI_DATA row).
+/obj/machinery/artifact_analyser/proc/ui_data_obj_machinery_artifact_analyser(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["owned_scanner"] = owned_scanner()
-	data["scan_in_progress"] = scan_in_progress
 
 	return data
 

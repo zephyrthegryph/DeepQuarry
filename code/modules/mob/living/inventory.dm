@@ -207,8 +207,7 @@
 /datum/inventory_panel/tgui_host(mob/user)
 	return host.tgui_host()
 
-/datum/inventory_panel/tgui_state(mob/user)
-	return GLOB.tgui_physical_state
+DECLARE_UI_STATE(/datum/inventory_panel, GLOB.tgui_physical_state)
 
 /datum/inventory_panel/tgui_status(mob/user, datum/tgui_state/state)
 	if(!host)
@@ -228,8 +227,11 @@ DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
 /datum/inventory_panel/ui_title(mob/user)
 	return host.name
 
-/datum/inventory_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/datum/inventory_panel, "merge:ui_data_datum_inventory_panel{slots:list,internals:unknown,internalsValid:bool}")
+
+/// The computed part of /datum/inventory_panel's window data (declared on its UI_DATA row).
+/datum/inventory_panel/proc/ui_data_datum_inventory_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/list/slots = list()
 	slots.Add(list(list(
@@ -275,7 +277,7 @@ DECLARE_UI(/datum/inventory_panel, UI_FROM_VAR("tgui_id"))
 		return
 	return ..() // Let our parent assign the host.
 
-UI_ACT(/datum/inventory_panel/human, "targetSlot", ui_act_targetslot, UI_ARG_VALUE("slot"))
+UI_ACT(/datum/inventory_panel/human, "targetSlot", ui_act_targetslot, UI_ARG_TEXT("slot"))
 UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
 	var/mob/living/carbon/human/H = host
 	H.handle_strip(params["slot"], ui.user)
@@ -286,7 +288,10 @@ UI_ACT_PROC(/datum/inventory_panel/human, ui_act_targetslot)
 		get_asset_datum(/datum/asset/simple/inventory)
 	)
 
-/datum/inventory_panel/human/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_panel_human{slots:list,specialSlots:list,internals:unknown,internalsValid:bool,sensors:bool,handcuffed:bool,handcuffedParams:listmap,legcuffed:bool,legcuffedParams:listmap,accessory:bool}")
+
+/// The computed part of /datum/inventory_panel/human's window data (declared on its UI_DATA row).
+/datum/inventory_panel/human/proc/ui_data_datum_inventory_panel_human(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list() // We don't inherit TGUI data because humans are soooo different.
 
 	var/mob/living/carbon/human/H = host // Not my fault if this runtimes, a human inventory panel should never be created without a human attached.

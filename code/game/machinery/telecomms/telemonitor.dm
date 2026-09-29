@@ -20,11 +20,12 @@
 
 	var/list/temp = null				// temporary feedback messages
 
-/obj/machinery/computer/telecomms/monitor/tgui_data(mob/user)
+UI_DATA_REPLACE(/obj/machinery/computer/telecomms/monitor, "network", "temp:text", "merge:ui_data_obj_machinery_computer_telecomms_monitor{machinelist:list,selectedMachine:list}")
+
+/// The computed part of /obj/machinery/computer/telecomms/monitor's window data (declared on its UI_DATA row).
+/obj/machinery/computer/telecomms/monitor/proc/ui_data_obj_machinery_computer_telecomms_monitor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	data["network"] = network
-	data["temp"] = temp
 
 	var/list/machinelistData = list()
 	for(var/obj/machinery/telecomms/T in machinelist)

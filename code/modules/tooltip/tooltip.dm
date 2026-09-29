@@ -55,10 +55,12 @@
 	return ..()
 
 // drops its owner and last target.
-/datum/tooltip/tgui_state(mob/user)
-	return GLOB.tgui_always_state
+DECLARE_UI_STATE(/datum/tooltip, GLOB.tgui_always_state)
 
-/datum/tooltip/tgui_data(mob/user)
+UI_DATA_REPLACE(/datum/tooltip, "merge:ui_data_datum_tooltip{visible:num,control:text,title:text,theme:text,cursor_params:text,screen_loc:text,view_w:num,view_h:num,revision:num,tile_size:unknown}")
+
+/// The computed part of /datum/tooltip's window data (declared on its UI_DATA row).
+/datum/tooltip/proc/ui_data_datum_tooltip(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	return list(
 		"visible" = _visible,
 		"control" = control,

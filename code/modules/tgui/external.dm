@@ -31,7 +31,7 @@
  * return list Data to be sent to the UI.
  */
 /datum/proc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	return ui_declared_data(src, user) // UI_DATA fields; overrides add to it with . = ..()
+	return ui_declared_data(src, user, ui, state) // UI_DATA fields
 
 /**
  * public
@@ -136,7 +136,8 @@
  * This is a proc over a var for memory reasons
  */
 /datum/proc/tgui_state(mob/user)
-	return GLOB.tgui_default_state
+	// DECLARE_UI_STATE / UI_STATE (declared UI model); an instance-dependent state overrides this.
+	return ui_decl_of(src)?.state || GLOB.tgui_default_state
 
 /**
  * global

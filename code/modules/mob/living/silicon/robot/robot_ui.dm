@@ -3,8 +3,7 @@
 	name = "Robotact"
 	tgui_id = "Robotact"
 
-/datum/tgui_module/robot_ui/tgui_state(mob/user)
-	return GLOB.tgui_self_state
+DECLARE_UI_STATE(/datum/tgui_module/robot_ui, GLOB.tgui_self_state)
 
 /datum/tgui_module/robot_ui/tgui_static_data()
 	var/list/data = ..()
@@ -43,8 +42,11 @@
 
 	return data
 
-/datum/tgui_module/robot_ui/tgui_data()
-	var/list/data = ..()
+UI_DATA(/datum/tgui_module/robot_ui, "merge:ui_data_datum_tgui_module_robot_ui{module_name:text,theme:unknown,name:text,ai:text,charge:num,max_charge:num,health:num,max_health:num,light_color:text,weapon_lock:bool,modules:list,emag_modules:list,diag_functional:unknown,components:list,faults:list}")
+
+/// The computed part of /datum/tgui_module/robot_ui's window data (declared on its UI_DATA row).
+/datum/tgui_module/robot_ui/proc/ui_data_datum_tgui_module_robot_ui(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	var/mob/living/silicon/robot/R = host()
 

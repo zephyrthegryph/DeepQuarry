@@ -158,15 +158,17 @@ DECLARE_UI(/obj/machinery/atm, "AutomatedTellerMachine")
 	data["machine_id"] = machine_id
 	return data
 
-/obj/machinery/atm/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
-	var/list/data = ..()
+UI_DATA(/obj/machinery/atm, "locked_down=ticks_left_locked_down:num", "merge:ui_data_obj_machinery_atm{emagged:num,held_card:unknown,authenticated_account:list,suspended:bool}")
+
+/// The computed part of /obj/machinery/atm's window data (declared on its UI_DATA row).
+/obj/machinery/atm/proc/ui_data_obj_machinery_atm(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 
 	data["emagged"] = emagged
 	if(emagged > 0)
 		return data
 
 	data["held_card"] = held_card()
-	data["locked_down"] = ticks_left_locked_down
 	if(ticks_left_locked_down > 0)
 		return data
 

@@ -48,7 +48,10 @@ DECLARE_UI(/datum/board_game/space_battle, "SpaceBattle")
 		"total_ships" = total_ships
 	)
 
-/datum/board_game/space_battle/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+UI_DATA_REPLACE(/datum/board_game/space_battle, "merge:ui_data_datum_board_game_space_battle{}")
+
+/// The computed part of /datum/board_game/space_battle's window data (declared on its UI_DATA row).
+/datum/board_game/space_battle/proc/ui_data_datum_board_game_space_battle(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/mob/player_one_mob = om_resolve(player_one)
 	var/mob/player_two_mob = om_resolve(player_two)
 
@@ -222,7 +225,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_place_ship)
 
 	return TRUE
 
-UI_ACT(/datum/board_game/space_battle, "remove_ship", ui_act_remove_ship, UI_ARG_VALUE("loc_x"), UI_ARG_VALUE("loc_y"), UI_ARG_NUM("player"))
+UI_ACT(/datum/board_game/space_battle, "remove_ship", ui_act_remove_ship, UI_ARG_NUM("loc_x"), UI_ARG_NUM("loc_y"), UI_ARG_NUM("player"))
 UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
 	if(game_state != GAME_PLACE_SHIPS)
 		return FALSE
@@ -257,7 +260,7 @@ UI_ACT_PROC(/datum/board_game/space_battle, ui_act_remove_ship)
 				return TRUE
 	return FALSE
 
-UI_ACT(/datum/board_game/space_battle, "game_action", ui_act_game_action, UI_ARG_VALUE("action"), UI_ARG_LIST("data"))
+UI_ACT(/datum/board_game/space_battle, "game_action", ui_act_game_action, UI_ARG_TEXT("action"), UI_ARG_LIST("data"))
 UI_ACT_PROC(/datum/board_game/space_battle, ui_act_game_action)
 	if(ui.user == om_resolve(player_one) && game_state == GAME_PLAYER_ONE)
 		if(params["data"]["player"] == 1)
